@@ -6,6 +6,7 @@ import (
 	"log"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
+	"path"
 	"runtime"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
@@ -37,9 +38,14 @@ func main() {
 		}
 	}()
 
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	// Setup logging
 	fileLogger := &lumberjack.Logger{
-		Filename:   internal.UserHomeDir() + internal.LogFilePath,
+		Filename:   path.Join(configDir, internal.LogFilePath),
 		MaxSize:    500,
 		MaxBackups: 3,
 		MaxAge:     28,

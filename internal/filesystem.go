@@ -10,7 +10,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -22,9 +21,6 @@ import (
 const (
 	// listenFdsStart corresponds to `SD_LISTEN_FDS_START`.
 	listenFdsStart = 3
-
-	// xdgConfigHome env variable that defines home folder path
-	envXDGConfigHome = "XDG_CONFIG_HOME"
 )
 
 // systemDFile returns a `os.systemDFile` object for
@@ -88,27 +84,6 @@ func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error
 		}
 		return listener, nil
 	}
-}
-
-// UserHomeDir returns the folder for user home dir
-func UserHomeDir() (home string) {
-	home, _ = os.UserHomeDir()
-
-	// fallback to home dir from user package
-	if home == "" {
-		usr, _ := user.Current()
-		// try to get homedir from Current
-		if usr != nil {
-			home = usr.HomeDir
-		}
-	}
-
-	// fallback to XDG_CONFIG_HOME env
-	if home == "" {
-		home = os.Getenv(envXDGConfigHome)
-	}
-
-	return
 }
 
 func EnsureDir(path string) error {

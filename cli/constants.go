@@ -5,10 +5,10 @@ import "github.com/NordSecurity/nordvpn-linux/internal"
 const (
 	// MaxLoginAttempts defines maximal login attempts count
 	MaxLoginAttempts = 3
-	// UserDataPath defines path where user data is stored
-	UserDataPath = "/.config/nordvpn/"
+	// ConfigDirName defines configuration subdirectory name
+	ConfigDirName = "nordvpn/"
 	// ConfigFilePath defines config file path
-	ConfigFilePath = UserDataPath + "nordvpn.conf"
+	ConfigFilePath = ConfigDirName + "nordvpn.conf"
 	// IconPath defines icon file path
 	IconPath = internal.AppDataPath + "icon.svg"
 	// WhitelistProtocol defines whitelist commands argument

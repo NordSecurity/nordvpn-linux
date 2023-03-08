@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
@@ -85,7 +86,11 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 	fileshareConn *grpc.ClientConn,
 	loaderInterceptor *LoaderInterceptor,
 ) (*cli.App, error) {
-	configManager := cconfig.NewEncryptedManager(internal.UserHomeDir()+ConfigFilePath, 0, 0, salt)
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return nil, err
+	}
+	configManager := cconfig.NewEncryptedManager(path.Join(configDir, ConfigFilePath), 0, 0, salt)
 	cfg, err := configManager.Load()
 	if err != nil {
 		cfg = cconfig.NewConfig()

@@ -19,13 +19,6 @@ type Manager interface {
 	Load() (Config, error)
 }
 
-const (
-	// UserDataPath defines path where user data is stored
-	UserDataPath = "/.config/nordvpn/"
-	// ConfigFilePath defines config file path
-	ConfigFilePath = UserDataPath + "nordvpn.conf"
-)
-
 // EncryptedManager is an implementation of configuration manager by using encrypted files
 type EncryptedManager struct {
 	filePath string

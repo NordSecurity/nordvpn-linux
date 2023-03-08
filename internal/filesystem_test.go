@@ -33,24 +33,6 @@ func TestManualListener(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestUserHomeDir(t *testing.T) {
-	category.Set(t, category.Integration)
-
-	t.Run("default homedir", func(t *testing.T) {
-		home := UserHomeDir()
-		assert.NotEmpty(t, home)
-	})
-
-	t.Run("user package homedir", func(t *testing.T) {
-		homeEnv := os.Getenv("HOME")
-		os.Unsetenv("HOME")
-		defer os.Setenv("HOME", homeEnv)
-
-		home := UserHomeDir()
-		assert.NotEmpty(t, home)
-	})
-}
-
 func TestMachineID(t *testing.T) {
 	category.Set(t, category.Integration)
 

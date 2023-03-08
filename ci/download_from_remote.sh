@@ -39,7 +39,6 @@ get_credentials() {
     fi
 }
 
-SCRIPT_DIR="$(dirname "$0")"
 REPOSITORY_TYPE='releases'
 REPOSITORY_NAME=''
 FILE_EXTENSION=''
@@ -133,7 +132,7 @@ for arch in ${ARCHS} ; do
     ln -fsnr "${output_dir}" "${latest_dir}" 
     [[ -e "${output_file}" ]] && continue
     echo "Downloading ${REPOSITORY_NAME}-${arch} ${BINARY_VERSION}..."
-    "${SCRIPT_DIR}"/nexus_get.sh -r "${REPOSITORY_TYPE}" -o "${output_file}" \
+    "${CI_PROJECT_DIR}"/ci/nexus_get.sh -r "${REPOSITORY_TYPE}" -o "${output_file}" \
         "${REPOSITORY_ID}/${BINARY_VERSION}/${OS}/${arch}/${REPOSITORY_NAME}${FILE_EXTENSION}"
 
 done

@@ -81,7 +81,7 @@ const (
 
 const (
 	// UserDataPath defines path where user data is stored
-	UserDataPath = "/.config/nordvpn/"
+	UserDataPath = "nordvpn/"
 
 	// ResolvconfFilePath defines path to resolv.conf file for DNS
 	ResolvconfFilePath = "/etc/resolv.conf"
