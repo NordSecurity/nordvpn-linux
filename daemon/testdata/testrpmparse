@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<filelists xmlns="http://linux.duke.edu/metadata/filelists" packages="15"><package arch="x86_64" name="nordvpn" pkgid="e6b247fbeb9ada5834a37879c60b61b773acdb3cc3d498e7bc458d1e3e0a02f8">
+  <version epoch="0" rel="2" ver="2.2.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/icon.svg</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+  <file>/var/lib/nordvpn/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/ovpn_xor_template.xslt</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="11b7a8b1f3a663d40a884fff703986759195651dae63cef2348f581462ad307a">
+  <version epoch="0" rel="4" ver="3.0.0" />
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/lib/systemd/system/nordvpnd.service</file>
+  <file>/usr/lib/systemd/system/nordvpnd.socket</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/man/man1/nordvpn.1.gz</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete</file>
+  <file>/var/lib/nordvpn/data/cybersec.dat</file>
+  <file>/var/lib/nordvpn/data/insights.dat</file>
+  <file>/var/lib/nordvpn/data/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/data/ovpn_xor_template.xslt</file>
+  <file>/var/lib/nordvpn/data/servers.dat</file>
+  <file>/var/lib/nordvpn/icon.svg</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="a90b0bf6b1beaa870bf09073d56bd33562aed8e2aec6dae9549e74cdc5a40f80">
+  <version epoch="0" rel="5" ver="2.1.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+  <file>/var/lib/nordvpn/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/ovpn_xor_template.xslt</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="af9df8ca8cef875428c985c77f503ebbf5d4d616425b3e0c40cb18a52958e9a1">
+  <version epoch="0" rel="1" ver="2.1.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="75a7728d8212744570323ae15d69e18fc5c3feaf82cd0f9168b5c7f4e18d666a">
+  <version epoch="0" rel="3" ver="2.1.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="db0ed6cacab449a9caadfe36c6891b2d412c8a0aea4c1835dfcb7cc9826c08e5">
+  <version epoch="0" rel="2" ver="2.1.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="2c6269445e98f06d378a08e67c184342bec6fea7873ba0f4fbfed3b2120228c6">
+  <version epoch="0" rel="4" ver="2.1.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+  <file>/var/lib/nordvpn/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/ovpn_xor_template.xslt</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="0d74dee037c37823f0c1b68dc12da8846b90aab21fde35eb80ae92cb9ea03db4">
+  <version epoch="0" rel="3" ver="2.2.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/icon.svg</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+  <file>/var/lib/nordvpn/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/ovpn_xor_template.xslt</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="1080f27461eff78698176236102b0f53d639adf9e56b16c1e202896a02056fff">
+  <version epoch="0" rel="0" ver="2.1.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="50374eb78620a407d28c00d39237bcf62f7c91a5f74cb67f2694c6d73485be95">
+  <version epoch="0" rel="3" ver="3.0.0" />
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/lib/systemd/system/nordvpnd.service</file>
+  <file>/usr/lib/systemd/system/nordvpnd.socket</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/man/man1/nordvpn.1.gz</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete</file>
+  <file>/var/lib/nordvpn/data/cybersec.dat</file>
+  <file>/var/lib/nordvpn/data/insights.dat</file>
+  <file>/var/lib/nordvpn/data/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/data/ovpn_xor_template.xslt</file>
+  <file>/var/lib/nordvpn/data/servers.dat</file>
+  <file>/var/lib/nordvpn/icon.svg</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="82f7e9ba9a3b2bbdbf49d16e97e96dfa5e6e72b6db22138793045ca0d1af9561">
+  <version epoch="0" rel="0" ver="2.2.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/icon.svg</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+  <file>/var/lib/nordvpn/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/ovpn_xor_template.xslt</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="4c5d5ef90dcefa0a1b08fefa470d3d19ca58e85f961a62ee7522719a15dab700">
+  <version epoch="0" rel="1" ver="2.2.0" />
+  <file>/etc/init.d/nordvpn</file>
+  <file>/etc/systemd/system/nordvpnd.service</file>
+  <file>/etc/systemd/system/nordvpnd.socket</file>
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/icon.svg</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+  <file>/var/lib/nordvpn/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/ovpn_xor_template.xslt</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="d81057e9cf9985771472bb11359d3e4ea456735f35939e003a760fd8a060b3da">
+  <version epoch="0" rel="1" ver="2.0.0" />
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/lib/systemd/system/nordvpnd.service</file>
+  <file>/usr/lib/systemd/system/nordvpnd.socket</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="4924074d0a284df04d7db119c59c386d20af913f58ab8b28d5264011cce8b433">
+  <version epoch="0" rel="1" ver="3.0.0" />
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/lib/systemd/system/nordvpnd.service</file>
+  <file>/usr/lib/systemd/system/nordvpnd.socket</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/man/man1/nordvpn.1.gz</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete</file>
+  <file>/var/lib/nordvpn/data/cybersec.dat</file>
+  <file>/var/lib/nordvpn/data/insights.dat</file>
+  <file>/var/lib/nordvpn/data/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/data/ovpn_xor_template.xslt</file>
+  <file>/var/lib/nordvpn/data/servers.dat</file>
+  <file>/var/lib/nordvpn/icon.svg</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package><package arch="x86_64" name="nordvpn" pkgid="20609da02f4cd484e70e09fb0e70ed62a6171c325767d978f2e0015f4d67427b">
+  <version epoch="0" rel="2" ver="3.0.0" />
+  <file>/usr/bin/nordvpn</file>
+  <file>/usr/lib/systemd/system/nordvpnd.service</file>
+  <file>/usr/lib/systemd/system/nordvpnd.socket</file>
+  <file>/usr/sbin/nordvpnd</file>
+  <file>/usr/share/bash-completion/completions/nordvpn</file>
+  <file>/usr/share/man/man1/nordvpn.1.gz</file>
+  <file>/usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete</file>
+  <file>/var/lib/nordvpn/data/cybersec.dat</file>
+  <file>/var/lib/nordvpn/data/insights.dat</file>
+  <file>/var/lib/nordvpn/data/ovpn_template.xslt</file>
+  <file>/var/lib/nordvpn/data/ovpn_xor_template.xslt</file>
+  <file>/var/lib/nordvpn/data/servers.dat</file>
+  <file>/var/lib/nordvpn/icon.svg</file>
+  <file>/var/lib/nordvpn/openvpn</file>
+</package></filelists>

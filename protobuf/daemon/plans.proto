@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+message PlansResponse {
+  int64 type = 1;
+  repeated Plan plans = 2;
+}
+
+message Plan {
+  string id = 1;
+  string title = 2;
+  string cost = 3;
+  string currency = 4;
+}

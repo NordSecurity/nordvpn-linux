@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+
+LOG_DIR="/var/log/nordvpn"
+DEFAULT_USER=${SUDO_USER:-"$(logname 2> /dev/null)"}
+if [[ ! "$DEFAULT_USER" || "$DEFAULT_USER" == "root" ]]; then
+    DEFAULT_USER=$(id -un -- "1000" 2> /dev/null)
+fi
+DEFAULT_USER_ID=$(id -u ${DEFAULT_USER})
+ENV=$(ps --no-headers -o comm 1)
+NORDVPN_GROUP="nordvpn"
+installSuccess="NordVPN for Linux successfully installed!"
+userModMessage="To allow other users to use the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
+userAddMessage=', please re-login or execute `su - $USER` in the current shell'
+userShowMessage=""
+if [[ "$DEFAULT_USER" ]]; then
+    userShowMessage="$userAddMessage"
+fi
+quickTutorial="To get started${userShowMessage}, type 'nordvpn login' and enter your NordVPN account details. Then type 'nordvpn connect' and you’re all set! $userModMessage If you need help using the app, use the command 'nordvpn --help'."
+
+groupadd --system "$NORDVPN_GROUP" 1>/dev/null 2> /dev/null
+installSuccess="NordVPN for Linux successfully installed!"
+userModMessage="To allow other users to use the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
+userAddMessage=', please re-login or execute `su - $USER` in the current shell'
+userShowMessage=""
+if [[ "$DEFAULT_USER" ]]; then
+    usermod -aG "$NORDVPN_GROUP" "$DEFAULT_USER"
+    userShowMessage="$userAddMessage"    
+fi
+mkdir -m 0750 -p "$LOG_DIR"
+chown root:$NORDVPN_GROUP "$LOG_DIR"
+quickTutorial="To get started${userShowMessage}, type 'nordvpn login' and enter your NordVPN account details. Then type 'nordvpn connect' and you’re all set! $userModMessage If you need help using the app, use the command 'nordvpn --help'."
+
+export XDG_RUNTIME_DIR="/run/user/${DEFAULT_USER_ID}"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+
+case "$1" in
+    configure)
+        update-desktop-database 2> /dev/null
+        mkdir -m 0750 -p "$LOG_DIR"
+        chown root:$NORDVPN_GROUP "$LOG_DIR"
+
+        # cleanup files from older version without systemd
+        if [[ -f "/etc/systemd/system/nordvpnd.service" ]]; then
+            rm -f /etc/systemd/system/nordvpnd.service || true
+        fi
+        if [[ -f "/etc/systemd/system/nordvpnd.socket" ]]; then
+            rm -f /etc/systemd/system/nordvpnd.socket || true
+        fi
+        if [[ -S "/run/nordvpnd.sock" ]]; then
+            rm -f /run/nordvpnd.sock || true
+        fi
+        case "$ENV" in
+            init)
+                update-rc.d nordvpn defaults &>/dev/null || :
+                /etc/init.d/nordvpn restart &>/dev/null || :
+            ;;
+            systemd)
+                systemctl daemon-reload &>/dev/null || :
+                systemd-tmpfiles --create || :
+                systemctl enable nordvpnd.socket &>/dev/null || :
+                systemctl enable nordvpnd.service &>/dev/null || :
+                systemctl start nordvpnd.socket &>/dev/null || :
+                systemctl start nordvpnd.service &>/dev/null || :
+            ;;
+            *)
+                mkdir -p /dev/net || :
+                [[ -c /dev/net/tun ]] || mknod -m 0666 /dev/net/tun c 10 200 || :
+                [[ -e /usr/sbin/ip ]] || ln -s /sbin/ip /usr/sbin/ip || :
+            ;;
+        esac
+
+        if [[ "$DEFAULT_USER" ]]; then
+            su -c 'source /usr/share/bash-completion/completions/nordvpn' "${DEFAULT_USER}" &>/dev/null || true
+        fi
+
+        # message will be shown only on fresh install (after purge)
+        if [[ ! "$2" ]]; then
+            echo "${installSuccess}"
+            echo "${quickTutorial}"
+        fi
+    ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+    *)
+        echo "[ERROR] postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0
+

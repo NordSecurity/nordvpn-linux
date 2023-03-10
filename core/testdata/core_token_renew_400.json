@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 100110,
+    "message": "Invalid renew token"
+  }
+}

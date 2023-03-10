@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+message Empty {}
+
+message Bool {
+  bool value = 1;
+}
+
+message Payload {
+  int64 type = 1;
+  repeated string data = 2;
+}
+
+message Whitelist {
+  Ports ports = 1;
+  repeated string subnets = 2;
+}
+
+message Ports {
+  repeated int64 udp = 1;
+  repeated int64 tcp = 2;
+}

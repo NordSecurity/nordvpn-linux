@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 101116,
+    "message": "Invitation already exists for this email"
+  }
+}

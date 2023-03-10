@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 101117,
+    "message": "Machine with this public key already exists"
+  }
+}

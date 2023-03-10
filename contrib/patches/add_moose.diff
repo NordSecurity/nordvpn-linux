@@ -1,0 +1,25 @@
+diff --git a/go.mod b/go.mod
+index 1674a806..ded04190 100644
+--- a/go.mod
++++ b/go.mod
+@@ -2,6 +2,11 @@ module github.com/NordSecurity/nordvpn-linux
+ 
+ go 1.20
+ 
++replace (
++	moose/events => ./third-party/moose-events/moosenordvpnappgo
++	moose/worker => ./third-party/moose-worker/mooseworkergo
++)
++
+ require (
+ 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
+ 	github.com/NordSecurity/libdrop v1.0.0
+@@ -35,6 +40,8 @@ require (
+ 	google.golang.org/grpc v1.53.0
+ 	google.golang.org/protobuf v1.29.1
+ 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
++	moose/events v0.0.0
++	moose/worker v0.0.0
+ )
+ 
+ require (

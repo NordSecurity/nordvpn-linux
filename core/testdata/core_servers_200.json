@@ -1,0 +1,458 @@
+[
+  {
+    "created_at": "2016-12-16 00:00:00",
+    "groups": [
+      {
+        "created_at": "2017-06-13 13:43:00",
+        "id": 11,
+        "title": "Standard VPN servers",
+        "type": {
+          "created_at": "2017-06-13 13:40:17",
+          "id": 3,
+          "identifier": "legacy_group_category",
+          "title": "Legacy category",
+          "updated_at": "2017-06-13 13:40:23"
+        },
+        "updated_at": "2017-06-13 13:43:00"
+      },
+      {
+        "created_at": "2017-10-27 14:23:03",
+        "id": 21,
+        "title": "The Americas",
+        "type": {
+          "created_at": "2017-10-27 14:16:30",
+          "id": 5,
+          "identifier": "regions",
+          "title": "Regions",
+          "updated_at": "2017-10-27 14:16:30"
+        },
+        "updated_at": "2017-10-30 08:09:48"
+      }
+    ],
+    "hostname": "cl1.nordvpn.com",
+    "id": 45019,
+    "ips": [
+      {
+        "created_at": "2017-06-15 14:06:46",
+        "id": 821,
+        "ip": {
+          "id": 4579,
+          "ip": "190.105.239.98",
+          "version": 4
+        },
+        "ip_id": 4579,
+        "server_id": 45019,
+        "type": "entry",
+        "updated_at": "2017-06-15 14:06:46"
+      }
+    ],
+    "load": 91,
+    "locations": [
+      {
+        "country": {
+          "city": {
+            "dns_name": "santiago",
+            "id": 1217552,
+            "latitude": -33.45,
+            "longitude": -70.666667,
+            "name": "Ciudad Santiago"
+          },
+          "code": "CL",
+          "id": 43,
+          "name": "Chile"
+        },
+        "created_at": "2017-06-15 14:06:47",
+        "id": 61,
+        "latitude": -33.439899,
+        "longitude": -70.653099,
+        "updated_at": "2017-06-15 14:06:47"
+      }
+    ],
+    "name": "Chile #1",
+    "services": [
+      {
+        "created_at": "2017-03-21 12:00:45",
+        "id": 1,
+        "identifier": "vpn",
+        "name": "VPN",
+        "updated_at": "2017-05-25 13:12:31"
+      },
+      {
+        "created_at": "2017-05-29 19:38:30",
+        "id": 5,
+        "identifier": "proxy",
+        "name": "Proxy",
+        "updated_at": "2017-05-29 19:38:30"
+      }
+    ],
+    "specifications": [
+      {
+        "id": 8,
+        "identifier": "version",
+        "title": "Version",
+        "values": [
+          {
+            "id": 194,
+            "value": "0.0.7"
+          }
+        ]
+      }
+    ],
+    "station": "190.105.239.98",
+    "status": "online",
+    "technologies": [
+      {
+        "created_at": "2017-05-09 19:29:16",
+        "id": 11,
+        "identifier": "pptp",
+        "name": "PPTP",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 11
+        },
+        "updated_at": "2017-05-09 19:29:16"
+      },
+      {
+        "created_at": "2017-05-09 19:29:26",
+        "id": 13,
+        "identifier": "l2tp",
+        "name": "L2TP/IPSec",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 13
+        },
+        "updated_at": "2017-09-05 14:19:42"
+      },
+      {
+        "created_at": "2017-05-09 19:29:09",
+        "id": 9,
+        "identifier": "proxy",
+        "name": "HTTP Proxy",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 9
+        },
+        "updated_at": "2017-06-13 14:25:29"
+      },
+      {
+        "created_at": "2017-05-09 19:28:14",
+        "id": 5,
+        "identifier": "openvpn_tcp",
+        "name": "OpenVPN TCP",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 5
+        },
+        "updated_at": "2017-05-09 19:28:14"
+      },
+      {
+        "created_at": "2017-05-04 08:03:24",
+        "id": 3,
+        "identifier": "openvpn_udp",
+        "name": "OpenVPN UDP",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 3
+        },
+        "updated_at": "2017-05-09 19:27:37"
+      },
+      {
+        "created_at": "2017-05-09 19:28:57",
+        "id": 7,
+        "identifier": "socks",
+        "name": "Socks 5",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 7
+        },
+        "updated_at": "2017-06-13 14:27:05"
+      },
+      {
+        "created_at": "2017-08-22 12:44:49",
+        "id": 19,
+        "identifier": "proxy_cybersec",
+        "name": "HTTP CyberSec Proxy",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 19
+        },
+        "updated_at": "2017-08-22 12:44:49"
+      },
+      {
+        "created_at": "2017-10-02 12:45:14",
+        "id": 21,
+        "identifier": "proxy_ssl",
+        "name": "HTTP Proxy (SSL)",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 21
+        },
+        "updated_at": "2017-10-02 12:45:14"
+      },
+      {
+        "created_at": "2017-10-02 12:50:49",
+        "id": 23,
+        "identifier": "proxy_ssl_cybersec",
+        "name": "HTTP CyberSec Proxy (SSL)",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 23
+        },
+        "updated_at": "2017-10-02 12:50:49"
+      },
+      {
+        "created_at": "2017-03-21 12:00:24",
+        "id": 1,
+        "identifier": "ikev2",
+        "name": "IKEv2/IPSec",
+        "pivot": {
+          "server_id": 45019,
+          "status": "online",
+          "technology_id": 1
+        },
+        "updated_at": "2017-09-05 14:20:16"
+      }
+    ],
+    "updated_at": "2017-12-11 15:21:19"
+  },
+  {
+    "created_at": "2015-11-18 00:00:00",
+    "groups": [
+      {
+        "created_at": "2017-06-13 13:43:00",
+        "id": 11,
+        "title": "Standard VPN servers",
+        "type": {
+          "created_at": "2017-06-13 13:40:17",
+          "id": 3,
+          "identifier": "legacy_group_category",
+          "title": "Legacy category",
+          "updated_at": "2017-06-13 13:40:23"
+        },
+        "updated_at": "2017-06-13 13:43:00"
+      },
+      {
+        "created_at": "2017-06-13 13:43:38",
+        "id": 15,
+        "title": "P2P",
+        "type": {
+          "created_at": "2017-06-13 13:40:17",
+          "id": 3,
+          "identifier": "legacy_group_category",
+          "title": "Legacy category",
+          "updated_at": "2017-06-13 13:40:23"
+        },
+        "updated_at": "2017-06-13 13:43:38"
+      },
+      {
+        "created_at": "2017-10-27 14:17:17",
+        "id": 19,
+        "title": "Europe",
+        "type": {
+          "created_at": "2017-10-27 14:16:30",
+          "id": 5,
+          "identifier": "regions",
+          "title": "Regions",
+          "updated_at": "2017-10-27 14:16:30"
+        },
+        "updated_at": "2017-10-27 14:17:17"
+      }
+    ],
+    "hostname": "fr3.nordvpn.com",
+    "id": 60237,
+    "ips": [
+      {
+        "created_at": "2017-06-15 14:06:46",
+        "id": 913,
+        "ip": {
+          "id": 825,
+          "ip": "163.172.5.218",
+          "version": 4
+        },
+        "ip_id": 825,
+        "server_id": 60237,
+        "type": "entry",
+        "updated_at": "2017-06-15 14:06:46"
+      }
+    ],
+    "load": 30,
+    "locations": [
+      {
+        "country": {
+          "code": "FR",
+          "id": 74,
+          "name": "France"
+        },
+        "created_at": "2017-06-15 14:06:47",
+        "id": 87,
+        "latitude": 48.858952,
+        "longitude": 2.277518,
+        "updated_at": "2017-06-15 14:06:47"
+      }
+    ],
+    "name": "France #3",
+    "services": [
+      {
+        "created_at": "2017-03-21 12:00:45",
+        "id": 1,
+        "identifier": "vpn",
+        "name": "VPN",
+        "updated_at": "2017-05-25 13:12:31"
+      },
+      {
+        "created_at": "2017-05-29 19:38:30",
+        "id": 5,
+        "identifier": "proxy",
+        "name": "Proxy",
+        "updated_at": "2017-05-29 19:38:30"
+      }
+    ],
+    "specifications": [
+      {
+        "id": 8,
+        "identifier": "version",
+        "title": "Version",
+        "values": [
+          {
+            "id": 194,
+            "value": "0.0.7"
+          }
+        ]
+      }
+    ],
+    "station": "163.172.5.218",
+    "status": "online",
+    "technologies": [
+      {
+        "created_at": "2017-05-09 19:29:16",
+        "id": 11,
+        "identifier": "pptp",
+        "name": "PPTP",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 11
+        },
+        "updated_at": "2017-05-09 19:29:16"
+      },
+      {
+        "created_at": "2017-05-09 19:29:26",
+        "id": 13,
+        "identifier": "l2tp",
+        "name": "L2TP/IPSec",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 13
+        },
+        "updated_at": "2017-09-05 14:19:42"
+      },
+      {
+        "created_at": "2017-05-09 19:29:09",
+        "id": 9,
+        "identifier": "proxy",
+        "name": "HTTP Proxy",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 9
+        },
+        "updated_at": "2017-06-13 14:25:29"
+      },
+      {
+        "created_at": "2017-05-09 19:28:14",
+        "id": 5,
+        "identifier": "openvpn_tcp",
+        "name": "OpenVPN TCP",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 5
+        },
+        "updated_at": "2017-05-09 19:28:14"
+      },
+      {
+        "created_at": "2017-05-04 08:03:24",
+        "id": 3,
+        "identifier": "openvpn_udp",
+        "name": "OpenVPN UDP",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 3
+        },
+        "updated_at": "2017-05-09 19:27:37"
+      },
+      {
+        "created_at": "2017-05-09 19:28:57",
+        "id": 7,
+        "identifier": "socks",
+        "name": "Socks 5",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 7
+        },
+        "updated_at": "2017-06-13 14:27:05"
+      },
+      {
+        "created_at": "2017-08-22 12:44:49",
+        "id": 19,
+        "identifier": "proxy_cybersec",
+        "name": "HTTP CyberSec Proxy",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 19
+        },
+        "updated_at": "2017-08-22 12:44:49"
+      },
+      {
+        "created_at": "2017-10-02 12:45:14",
+        "id": 21,
+        "identifier": "proxy_ssl",
+        "name": "HTTP Proxy (SSL)",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 21
+        },
+        "updated_at": "2017-10-02 12:45:14"
+      },
+      {
+        "created_at": "2017-10-02 12:50:49",
+        "id": 23,
+        "identifier": "proxy_ssl_cybersec",
+        "name": "HTTP CyberSec Proxy (SSL)",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 23
+        },
+        "updated_at": "2017-10-02 12:50:49"
+      },
+      {
+        "created_at": "2017-03-21 12:00:24",
+        "id": 1,
+        "identifier": "ikev2",
+        "name": "IKEv2/IPSec",
+        "pivot": {
+          "server_id": 60237,
+          "status": "online",
+          "technology_id": 1
+        },
+        "updated_at": "2017-09-05 14:20:16"
+      }
+    ],
+    "updated_at": "2017-12-11 15:21:19"
+  }
+]

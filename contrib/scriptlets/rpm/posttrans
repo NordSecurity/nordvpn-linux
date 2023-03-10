@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+DEFAULT_USER=${SUDO_USER:-"$(logname 2> /dev/null)"}
+if [[ ! "$DEFAULT_USER" || "$DEFAULT_USER" == "root" ]]; then
+    DEFAULT_USER=$(id -un -- "1000" 2> /dev/null)
+fi
+DEFAULT_USER_ID=$(id -u ${DEFAULT_USER})
+ENV=$(ps --no-headers -o comm 1)
+
+export XDG_RUNTIME_DIR="/run/user/${DEFAULT_USER_ID}"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+
+# cleanup files from older version 
+if [[ -f "/etc/systemd/system/nordvpnd.service" ]]; then
+    rm -f /etc/systemd/system/nordvpnd.service || true
+fi
+if [[ -f "/etc/systemd/system/nordvpnd.socket" ]]; then
+    rm -f /etc/systemd/system/nordvpnd.socket || true
+fi
+if [[ -S "/run/nordvpnd.sock" ]]; then
+    rm -f /run/nordvpnd.sock || true
+fi
+
+case "$ENV" in
+    init)
+        update-rc.d nordvpn defaults &>/dev/null || :
+        /etc/init.d/nordvpn restart &>/dev/null || :
+    ;;
+    systemd)
+        systemctl daemon-reload &>/dev/null || :
+        systemd-tmpfiles --create || :
+        systemctl enable nordvpnd.socket &>/dev/null || :
+        systemctl enable nordvpnd.service &>/dev/null || :
+        systemctl start nordvpnd.socket &>/dev/null || :
+        systemctl start nordvpnd.service &>/dev/null || :
+    ;;
+    *)
+        echo "Unknown init system, not running. Please start the daemon /usr/sbin/nordvpnd manually"
+    ;;
+esac
+
+exit 0

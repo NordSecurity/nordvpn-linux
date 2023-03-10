@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+import "common.proto";
+import "config/protocol.proto";
+import "config/technology.proto";
+
+message SetAutoconnectRequest {
+  string server_tag = 4;
+  config.Protocol protocol = 5;
+  bool threat_protection_lite = 7;
+  bool obfuscate = 8;
+  bool auto_connect = 9;
+  repeated string dns = 10;
+  Whitelist whitelist = 11;
+}
+
+message SetGenericRequest {
+  bool enabled = 1;
+}
+
+message SetUint32Request {
+  uint32 value = 1;
+}
+
+message SetThreatProtectionLiteRequest {
+  bool threat_protection_lite = 2;
+  repeated string dns = 3;
+}
+
+message SetDNSRequest {
+  repeated string dns = 2;
+  bool threat_protection_lite = 3;
+}
+
+message SetKillSwitchRequest {
+  bool kill_switch = 2;
+  Whitelist whitelist = 3;
+}
+
+message SetNotifyRequest {
+  int64 uid = 2;
+  bool notify = 3;
+}
+    
+message SetProtocolRequest {
+  config.Protocol protocol = 2;
+}
+
+message SetTechnologyRequest {
+  config.Technology technology = 2;
+}
+
+message SetWhitelistRequest {
+  Whitelist whitelist = 2;
+}

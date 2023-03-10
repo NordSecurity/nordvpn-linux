@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package meshpb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
+
+import "empty.proto";
+import "service_response.proto";
+
+import "google/protobuf/timestamp.proto";
+
+// GetInvitesResponse defines a response for GetInvites request
+message GetInvitesResponse {
+	oneof response {
+		InvitesList invites = 1;
+		ServiceErrorCode service_error_code = 2;
+		MeshnetErrorCode meshnet_error_code = 3;
+	}
+}
+
+// InvitesList defines the list of sent and received invitations
+message InvitesList {
+	repeated Invite sent = 1;
+	repeated Invite received = 2;
+}
+
+// Invite defines the structure of the meshnet invite
+message Invite {
+	string email = 1;
+	google.protobuf.Timestamp expires_at = 2;
+	string os = 3;
+}
+
+// InviteRequest defines an accepting response request for a
+// meshnet invitation
+// InviteRequest is the same as the accepting to the invitation.
+// Both specify the email and allow traffic flags
+message InviteRequest {
+	// email is the email of the invitation sender
+	string email = 1;
+	// allowIncomingTraffic defines that another peer is allowed
+	// to send traffic to this device
+	bool allowIncomingTraffic = 2;
+	// AllowTrafficRouting defines that another peer is allowed to
+	// route traffic through this device
+	bool allowTrafficRouting = 3;
+	// AllowLocalNetwork defines that another peer is allowed to
+	// access device's local network when routing traffic through this device
+	bool allowLocalNetwork = 4;
+	// AllowLocalNetwork defines that another peer is allowed to send files to this device
+	bool allowFileshare = 5;
+}
+
+// DenyInviteRequest defines a denying response request for a meshnet
+// invitation
+message DenyInviteRequest {
+	// email is the email of the invitation sender
+	string email = 1;
+}
+
+// Note: Naming RespondToInvite was chosen because
+// InviteResponseResponse does not look nice
+
+// RespondToInviteResponse defines an empty gRPC response with the
+// status
+message RespondToInviteResponse {
+	oneof response {
+		Empty empty = 1;
+		RespondToInviteErrorCode respond_to_invite_error_code = 2;
+		ServiceErrorCode service_error_code = 3;
+		MeshnetErrorCode meshnet_error_code = 4;
+	}
+}
+
+// RespondToInviteErrorCode defines the error of meshnet service
+// response to the invitation response
+enum RespondToInviteErrorCode {
+	// UNKNOWN defines that the exact error was nto determined
+	UNKNOWN = 0;
+	// NO_SUCH_INVITATION defines that the request was not handled
+	// successfully
+	NO_SUCH_INVITATION = 1;
+	// DEVICE_COUNT defines that no more devices can be added
+	DEVICE_COUNT = 2;
+}
+
+// InviteResponse defines the response to the invite send
+message InviteResponse {
+	oneof response {
+		Empty empty = 1;
+		InviteResponseErrorCode invite_response_error_code = 2;
+		ServiceErrorCode service_error_code = 3;
+		MeshnetErrorCode meshnet_error_code = 4;
+	}
+}
+
+// InviteResponseCode defines a response code specific to the
+// invitation send action
+enum InviteResponseErrorCode {
+	// ALREADY_EXISTS defines that the invitation to the specified
+	// email already exists
+	ALREADY_EXISTS = 0;
+	// INVALID_EMAIL defines that the given email is invalid,
+	// therefore, cannot receive an invitation
+	INVALID_EMAIL = 1;
+	// SAME_ACCOUNT_EMAIL defines that the given email is for the same account,
+	// cannot send invite to myself
+	SAME_ACCOUNT_EMAIL = 2;
+	// LIMIT_REACHED defines that the weekly invitation limit (20)
+	// has been reached
+	LIMIT_REACHED = 3;
+	// PEER_COUNT defines that no more devices can be invited
+	PEER_COUNT = 4;
+}

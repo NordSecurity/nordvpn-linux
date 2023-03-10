@@ -1,0 +1,46 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.txt
+contrib/manual/*.[0-9]
+
+# Rust
+build/*/target/
+
+# Openvpn
+build/openvpn/*
+!build/openvpn/build.sh
+
+# Linux packages
+*.deb
+
+# Test binary, build with `go test -c`
+*.test
+*.log
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Binary artifacts
+bin
+dist
+linux
+
+# Python
+.venv
+__pycache__
+
+.vagrant
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+contrib/manual/nordvpn.1
+coverage.txt
+
+# Env files
+.env
+.pcap

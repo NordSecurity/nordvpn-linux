@@ -1,0 +1,44 @@
+[
+	{
+		"identifier": "fd3bd812-0fe7-4147-b247-4a4ad48ad8cb",
+		"public_key": "PkAYPLxAYWWOvi3mySgSDqWE/x9vD3ZwxLAZ0IDFxiw=",
+		"hostname": "user1-himalayas.nord",
+		"os": "linux",
+		"os_version": "Raspbian GNU/Linux",
+		"ip_addresses": [
+			"100.64.0.150"
+		],
+		"endpoints": [
+			"1.2.3.4:8000"
+		],
+		"traffic_routing_supported": false,
+		"is_local": false,
+		"user_email": "nonmountainpenguin+test-0@gmail.com",
+		"allow_connections": false,
+		"allow_incoming_connections": false,
+		"allow_outgoing_connections": true,
+		"peer_allows_traffic_routing": true,
+		"allow_peer_traffic_routing": false
+	},
+	{
+		"identifier": "fe3bd812-0fe7-4147-b247-4a4ad48ad8cb",
+		"public_key": "PpAYPLxAYWWOvi3mySgSDqWE/x9vD3ZwxLAZ0IDFxiw=",
+		"hostname": "user1-andes.nord",
+		"os": "linux",
+		"os_version": "Manjaro Linux",
+		"ip_addresses": [
+			"100.64.0.151"
+		],
+		"endpoints": [
+			"1.2.3.5:8800"
+		],
+		"traffic_routing_supported": false,
+		"is_local": false,
+		"user_email": "nonmountainpenguin+test-0@gmail.com",
+		"allow_connections": false,
+		"allow_incoming_connections": false,
+		"allow_outgoing_connections": true,
+		"peer_allows_traffic_routing": true,
+		"allow_peer_traffic_routing": false
+	}
+]

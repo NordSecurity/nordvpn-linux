@@ -1,0 +1,225 @@
+syntax = "proto3";
+
+package meshpb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
+
+import "empty.proto";
+import "service_response.proto";
+
+// GetPeersResponse defines
+message GetPeersResponse {
+	oneof response {
+		PeerList peers = 1;
+		ServiceErrorCode service_error_code = 2;
+		MeshnetErrorCode meshnet_error_code = 3;
+	}
+}
+
+// PeerList defines a list of all the peers related to the device
+message PeerList {
+	Peer self = 1;
+	repeated Peer local = 2;
+	repeated Peer external = 3;
+}
+
+// Peer defines a single meshnet peer
+message Peer {
+	string identifier = 1;
+	string pubkey = 2;
+	string ip = 3;
+	repeated string endpoints = 4;
+	string os = 5;
+	string os_version = 6;
+	string hostname = 7;
+	string distro = 8;
+	string email = 9;
+	bool is_inbound_allowed = 10;
+	bool is_routable = 11;
+	bool is_local_network_allowed = 15;
+	bool is_fileshare_allowed = 17;
+	bool do_i_allow_inbound = 12;
+	bool do_i_allow_routing = 13;
+	bool do_i_allow_local_network = 16;
+	bool do_i_allow_fileshare = 18;
+	PeerStatus status = 14;
+}
+
+// PeerStatus defines the current connection status with the peer
+enum PeerStatus {
+	DISCONNECTED = 0;
+	CONNECTED = 1;
+}
+// UpdatePeerRequest defines a request to remove a peer from a meshnet
+message UpdatePeerRequest {
+	string identifier = 1;
+}
+
+// UpdatePeerErrorCode defines an error code on updateing a peer within
+// the meshnet
+enum UpdatePeerErrorCode {
+	PEER_NOT_FOUND = 0;
+}
+
+// RemovePeerResponse defines a peer removal response
+message RemovePeerResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		ServiceErrorCode service_error_code = 3;
+		MeshnetErrorCode meshnet_error_code = 4;
+	}
+}
+
+// AllowRoutingErrorCode defines an error code which is specific to
+// allow routing
+enum AllowRoutingErrorCode {
+	ROUTING_ALREADY_ALLOWED = 0;
+}
+
+
+// DenyRoutingErrorCode defines an error code which is specific to
+// deny routing
+enum DenyRoutingErrorCode {
+	ROUTING_ALREADY_DENIED = 0;
+}
+
+// AllowIncomingErrorCode defines an error code which is specific to
+// allow incoming traffic
+enum AllowIncomingErrorCode {
+	INCOMING_ALREADY_ALLOWED = 0;
+}
+
+// DenyIncomingErrorCode defines an error code which is specific to
+// deny incoming traffic
+enum DenyIncomingErrorCode {
+	INCOMING_ALREADY_DENIED = 0;
+}
+
+// AllowLocalNetworkErrorCode defines an error code which is specific to
+// allow local network traffic
+enum AllowLocalNetworkErrorCode {
+	LOCAL_NETWORK_ALREADY_ALLOWED = 0;
+}
+
+// DenyLocalNetworkErrorCode defines an error code which is specific to
+// deny local network traffic
+enum DenyLocalNetworkErrorCode {
+	LOCAL_NETWORK_ALREADY_DENIED = 0;
+}
+
+enum AllowFileshareErrorCode {
+	SEND_ALREADY_ALLOWED = 0;
+}
+
+enum DenyFileshareErrorCode {
+	SEND_ALREADY_DENIED = 0;
+}
+
+// AllowRoutingResponse defines a response for allow routing request
+message AllowRoutingResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		AllowRoutingErrorCode allow_routing_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// DenyRoutingResponse defines a response for allow routing request
+message DenyRoutingResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		DenyRoutingErrorCode deny_routing_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// AllowIncomingResponse defines a response for allow incoming
+// traffic request
+message AllowIncomingResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		AllowIncomingErrorCode allow_incoming_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// DenyIncomingResponse defines a response for deny incoming
+// traffic request
+message DenyIncomingResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		DenyIncomingErrorCode deny_incoming_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// AllowLocalNetworkResponse defines a response for allow local network
+// traffic request
+message AllowLocalNetworkResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		AllowLocalNetworkErrorCode allow_local_network_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// DenyIncomingResponse defines a response for deny local network
+// traffic request
+message DenyLocalNetworkResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		DenyLocalNetworkErrorCode deny_local_network_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// AllowSendFileResponse defines a response for allow send file request
+message AllowFileshareResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		AllowFileshareErrorCode allow_send_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// DenySendFileResponse defines a response for deny send file request
+message DenyFileshareResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		DenyFileshareErrorCode deny_send_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+enum ConnectErrorCode {
+	PEER_DOES_NOT_ALLOW_ROUTING = 0;
+	ALREADY_CONNECTED = 1;
+	CONNECT_FAILED = 2;
+}
+
+message ConnectResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		ConnectErrorCode connect_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}

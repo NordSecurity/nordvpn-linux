@@ -1,0 +1,256 @@
+Package: nordvpn
+Version: 2.2.0-0
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 22844
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 6538162
+Filename: pool/main/nordvpn_2.2.0-0_amd64.deb
+SHA256: d02661dd3f28501210b67d91a571d439146d4d2be9e1d3469f3582b067bf956c
+SHA1: bc05758e026bfd6640ed75254cebded33f364155
+MD5sum: 04247e3481f3300b4fc306cee66bcc95
+
+Package: nordvpn
+Version: 2.1.0-1
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 18828
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 4057462
+Filename: pool/main/nordvpn_2.1.0-1_amd64.deb
+SHA256: c2ec1eb7ee48c42904b5fe72a349ec795854f68ac54d4f616b04e8b072ce2b28
+SHA1: 911efc88f192d3ddd7e0f4f1a2c2297e7f2cb3f1
+MD5sum: 58064ee96c528e4ecd58b0b701d9895a
+
+Package: nordvpn
+Version: 3.0.0-2
+Depends: procps, iproute2 | iproute, iptables, xsltproc, systemd
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 38948
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 10737504
+Filename: pool/main/nordvpn_3.0.0-2_amd64.deb
+SHA256: 10c009da047ed35d1dc51ac34436a419de3ba637bdc10f4995c1d50a53c85374
+SHA1: 756b00a698c352ff3fa0bc84e45195f24c296ed9
+MD5sum: ee4ac297b8d3dce95008d58c891d98e8
+
+Package: nordvpn
+Version: 2.1.0-2
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 18828
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 4061722
+Filename: pool/main/nordvpn_2.1.0-2_amd64.deb
+SHA256: 7f754be3e527a5a9cc9263a9f28b6427710fd84fab2a0f1556b8f51ec4e6c386
+SHA1: 112908aa355a2268dcf4542945712bf6b331940d
+MD5sum: dc6ebd3252b96a595e832f3148f9c027
+
+Package: nordvpn
+Version: 2.0.0
+Depends: systemd, procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 18716
+Maintainer: https://nordvpn.com/
+Description: NordVPN package
+Size: 4025158
+Filename: pool/main/nordvpn_2.0.0_amd64.deb
+SHA256: 5fb4f832ce7997b34f90a0671bf3806b44d35c5c24a664d06b40234999dd97d4
+SHA1: a916f15d3ebf6b4f27d1b2bfcdc744180a477935
+MD5sum: 5d2d517256e94a08ca2629f2615026e8
+
+Package: nordvpn
+Version: 2.2.0-3
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 24292
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 7048820
+Filename: pool/main/nordvpn_2.2.0-3_amd64.deb
+SHA256: 84fbb3cf9c4c73f3158987e51ea7e9a73bac2ec4e0bafaecec70997bdee07763
+SHA1: 2b18de69b9d742ac73dfb7d22afbcafc909cbf15
+MD5sum: 4fc0004c1d5fcb9930bb3d98351e093f
+
+Package: nordvpn
+Version: 3.0.0-4
+Depends: procps, iproute2 | iproute, iptables, xsltproc, systemd
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 38944
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 10741532
+Filename: pool/main/nordvpn_3.0.0-4_amd64.deb
+SHA256: a4a9602a9ecc1b29eb4ef9667993bd68999f42fc1962588951845a797d31ecfa
+SHA1: fed0893bda867270361581b3380fc4daabbe45d7
+MD5sum: 9b601fc28a7c1b04e493d0fe312bdaf6
+
+Package: nordvpn
+Version: 2.1.0-5
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 18928
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 4076620
+Filename: pool/main/nordvpn_2.1.0-5_amd64.deb
+SHA256: 684ab467fed5f84d3200a97d92d2f796fe9bb19cecc1f15900a1f88d819bb08b
+SHA1: abda3a0b9f1d4f2e130edcea1bd26e133128fd1a
+MD5sum: 85924185032692395e0dcf3bcac0e52d
+
+Package: nordvpn
+Version: 2.1.0-4
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 18928
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 4082648
+Filename: pool/main/nordvpn_2.1.0-4_amd64.deb
+SHA256: 737989cb58e44e6a4264efc72b84a6592af142b3a2fa941b4bedc0a66ffbc518
+SHA1: 515f97137edcc0444bd411f636774c069ab65cc7
+MD5sum: c4a069a29a6311e29f77fcc1bed6fa7c
+
+Package: nordvpn
+Version: 2.1.0-0
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 18832
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 4054588
+Filename: pool/main/nordvpn_2.1.0-0_amd64.deb
+SHA256: 04700da2c5f47d630dc7563b61c673be9e38a90bcca98add0cfb4564976974c5
+SHA1: fcc7880ec125fb886fddbc734d0c89d98e7dfc68
+MD5sum: 42830fcf2be67977aa4160cb71bb89fb
+
+Package: nordvpn
+Version: 2.2.0-2
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 22836
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 6535890
+Filename: pool/main/nordvpn_2.2.0-2_amd64.deb
+SHA256: 33f1a216d1e8b62aa064b5f201d343a9d8172771c63f0224f6946c7f939e76a8
+SHA1: 530835e493a4415f600ddfe24f28dd4d5dc89c39
+MD5sum: 7b2f7247cf063bf988be5c9098a2980f
+
+Package: nordvpn
+Version: 3.0.0-1
+Depends: procps, iproute2 | iproute, iptables, xsltproc, systemd
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 38940
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 10736456
+Filename: pool/main/nordvpn_3.0.0-1_amd64.deb
+SHA256: c7895ddb600146dd158a11b9f47fce08bf5ef002476a4c341e57df83896b7229
+SHA1: 21c74bea844ab35555502ebbaf0e7ab60fb2b2a9
+MD5sum: b0ba574a82a91e6ce3d644054d2cb2c4
+
+Package: nordvpn
+Version: 2.2.0-1
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 22832
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 6538136
+Filename: pool/main/nordvpn_2.2.0-1_amd64.deb
+SHA256: 77c8540b9fe7a055840b27e1d0f4fd29d61d753a4db2c8a51cac0db9a5696c34
+SHA1: 12f5b9e69b98fdb0466aa1917f3415930d71a7e5
+MD5sum: bf3c465ae94ccead747b48293a95ff07
+
+Package: nordvpn
+Version: 3.0.0-3
+Depends: procps, iproute2 | iproute, iptables, xsltproc, systemd
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 38944
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 10738222
+Filename: pool/main/nordvpn_3.0.0-3_amd64.deb
+SHA256: 74accb8a2b3490eae80e730d9057c25b4862dc8eb0835de5a3f21672d81f5a70
+SHA1: 94a3d0b93f526db424e174ac8456286f0e131190
+MD5sum: d025b29fc37133eeb6fedc13082d91b0
+
+Package: nordvpn
+Version: 2.1.0-3
+Depends: procps, net-tools, iptables, xsltproc
+Section: custom
+Priority: optional
+Architecture: amd64
+Essential: no
+Installed-Size: 18884
+Maintainer: https://nordvpn.com/
+Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+Size: 4068872
+Filename: pool/main/nordvpn_2.1.0-3_amd64.deb
+SHA256: de2e47749d573db46dce8f6506173a16df5ed495796783ac4e577886fe98bef1
+SHA1: 96a18e40510c89c605315317feba0a2873093ebf
+MD5sum: 06ff27f34a3dbf26e07b6d4d6d355078
+
+Package: nordvpn-release
+Version: 1.0.0
+Depends: gnupg | gnupg2, apt-transport-https
+Recommends: gpgv
+Architecture: all
+Maintainer: https://nordvpn.com/
+Installed-Size: 36
+Section: misc
+Priority: optional
+Homepage: https://nordvpn.com/
+Description: Package to install NordVPN GPG key and APT repo
+Size: 5056
+Filename: pool/main/nordvpn-release_1.0.0_all.deb
+SHA256: 16a05919b7259e679e4483aa39f61ef9bc9c07cbe040276e04884b5f9d7f933d
+SHA1: 37f93b511eaa918e4ae434c864ee617041b57ac0
+MD5sum: e229fa715be1684e6bd9a0427bbd5b65

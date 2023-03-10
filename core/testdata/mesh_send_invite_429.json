@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 101118,
+    "message": "Weekly invitation limit reached"
+  }
+}

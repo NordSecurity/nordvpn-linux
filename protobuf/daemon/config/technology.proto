@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package config;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/config";
+
+enum Technology {
+  UNKNOWN_TECHNOLOGY = 0;
+  OPENVPN = 1;
+  NORDLYNX = 2;
+}

@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+import "account.proto";
+import "cities.proto";
+import "common.proto";
+import "connect.proto";
+import "countries.proto";
+import "features.proto";
+import "groups.proto";
+import "login.proto";
+import "logout.proto";
+import "login_with_token.proto";
+import "plans.proto";
+import "rate.proto";
+import "register.proto";
+import "set.proto";
+import "settings.proto";
+import "status.proto";
+import "token.proto";
+
+service Daemon {
+  rpc AccountInfo(Empty) returns (AccountResponse);
+  rpc TokenInfo(Empty) returns (TokenInfoResponse);
+  rpc Cities(CitiesRequest) returns (Payload);
+  rpc Connect(ConnectRequest) returns (stream Payload);
+  rpc Countries(CountriesRequest) returns (Payload);
+  rpc Disconnect(Empty) returns (stream Payload);
+  rpc FrontendCountries(CountriesRequest) returns (CountriesResponse);
+  rpc Groups(GroupsRequest) returns (Payload);
+  rpc IsLoggedIn(Empty) returns (Bool);
+  rpc IsFeatureSupported(FeatureRequest) returns (Bool);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc LoginWithToken(LoginWithTokenRequest) returns (LoginResponse);
+  rpc LoginOAuth2(Empty) returns (stream String);
+  rpc LoginOAuth2Callback(String) returns (Empty);
+  rpc Logout(LogoutRequest) returns (Payload);
+  rpc Plans(Empty) returns (PlansResponse);
+  rpc Ping(Empty) returns (Payload);
+  rpc RateConnection(RateRequest) returns (Payload);
+  rpc Register(RegisterRequest) returns (Payload);
+  rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
+  rpc SetThreatProtectionLite(SetThreatProtectionLiteRequest) returns (Payload);
+  rpc SetDefaults(Empty) returns (Payload);
+  rpc SetDNS(SetDNSRequest) returns (Payload);
+  rpc SetFirewall(SetGenericRequest) returns (Payload);
+  rpc SetFirewallMark(SetUint32Request) returns (Payload);
+  rpc SetRouting(SetGenericRequest) returns (Payload);
+  rpc SetAnalytics(SetGenericRequest) returns (Payload);
+  rpc SetKillSwitch(SetKillSwitchRequest) returns (Payload);
+  rpc SetNotify(SetNotifyRequest) returns (Payload);
+  rpc SetObfuscate(SetGenericRequest) returns (Payload);
+  rpc SetProtocol(SetProtocolRequest) returns (Payload);
+  rpc SetTechnology(SetTechnologyRequest) returns (Payload);
+  rpc SetWhitelist(SetWhitelistRequest) returns (Payload);
+  rpc Settings(SettingsRequest) returns (SettingsResponse);
+  rpc SettingsProtocols(Empty) returns (Payload);
+  rpc SettingsTechnologies(Empty) returns (Payload);
+  rpc Status(Empty) returns (StatusResponse);
+  rpc SetIpv6(SetGenericRequest) returns (Payload);
+}

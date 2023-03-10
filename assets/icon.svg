@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 52.5 (67469) - http://www.bohemiancoding.com/sketch -->
+    <title>icon-64_64x64</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="56" height="56" rx="28"></rect>
+        <filter x="-6.2%" y="-4.5%" width="112.5%" height="112.5%" filterUnits="objectBoundingBox" id="filter-2">
+            <feOffset dx="0" dy="1" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="1" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.35 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <circle id="path-3" cx="28" cy="28" r="28"></circle>
+        <linearGradient x1="50%" y1="-2.48949813e-15%" x2="50%" y2="100%" id="linearGradient-5">
+            <stop stop-color="#1D80C9" offset="0%"></stop>
+            <stop stop-color="#284891" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="52.513587%" id="linearGradient-6">
+            <stop stop-color="#FFFFFF" stop-opacity="0.5" offset="0%"></stop>
+            <stop stop-color="#FFFFFF" stop-opacity="0" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-7">
+            <stop stop-color="#FFFFFF" offset="0%"></stop>
+            <stop stop-color="#FFFFFF" stop-opacity="0.65" offset="100%"></stop>
+        </linearGradient>
+        <path d="M3.80670108,31.75 C1.41217617,28.4269007 0,24.4211993 0,20 C0,8.86701575 8.954305,0 20,0 C31.045695,0 40,8.86701575 40,20 C40,24.4211705 38.5878422,28.4269124 36.1933457,31.75 L26.5,16 L25.5,17.5 L26.5,22 L20,11 L16,17.5 L17,22 L13.5,16 L3.80670108,31.75 Z" id="path-8"></path>
+        <filter x="-8.8%" y="-7.9%" width="117.5%" height="122.0%" filterUnits="objectBoundingBox" id="filter-9">
+            <feOffset dx="0" dy="1" in="SourceAlpha" result="shadowOffsetOuter1"></feOffset>
+            <feGaussianBlur stdDeviation="1" in="shadowOffsetOuter1" result="shadowBlurOuter1"></feGaussianBlur>
+            <feColorMatrix values="0 0 0 0 0   0 0 0 0 0   0 0 0 0 0  0 0 0 0.4 0" type="matrix" in="shadowBlurOuter1"></feColorMatrix>
+        </filter>
+        <filter x="-7.5%" y="-6.3%" width="115.0%" height="118.9%" filterUnits="objectBoundingBox" id="filter-10">
+            <feGaussianBlur stdDeviation="0.5" in="SourceAlpha" result="shadowBlurInner1"></feGaussianBlur>
+            <feOffset dx="0" dy="-1" in="shadowBlurInner1" result="shadowOffsetInner1"></feOffset>
+            <feComposite in="shadowOffsetInner1" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowInnerInner1"></feComposite>
+            <feColorMatrix values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1  0 0 0 0.3 0" type="matrix" in="shadowInnerInner1"></feColorMatrix>
+        </filter>
+    </defs>
+    <g id="Icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Linux" transform="translate(-50.000000, -51.000000)">
+            <g id="Icon-64" transform="translate(50.000000, 51.000000)">
+                <g id="icon-copy-5" transform="translate(4.000000, 3.000000)">
+                    <g id="64-/-shape">
+                        <g id="shadow" fill="black" fill-opacity="1">
+                            <use filter="url(#filter-2)" xlink:href="#path-1"></use>
+                        </g>
+                        <g id="shape">
+                            <mask id="mask-4" fill="white">
+                                <use xlink:href="#path-3"></use>
+                            </mask>
+                            <g id="Oval-2"></g>
+                            <g id="bg" mask="url(#mask-4)" fill="url(#linearGradient-5)" fill-rule="evenodd">
+                                <rect id="fill" x="0" y="0" width="56" height="56"></rect>
+                            </g>
+                            <rect id="highlight" fill="url(#linearGradient-6)" fill-rule="evenodd" style="mix-blend-mode: soft-light;" mask="url(#mask-4)" x="0" y="0" width="56" height="56"></rect>
+                        </g>
+                    </g>
+                    <g id="glyph64" transform="translate(8.000000, 8.000000)">
+                        <g id="logomark">
+                            <use fill="black" fill-opacity="1" filter="url(#filter-9)" xlink:href="#path-8"></use>
+                            <use fill="url(#linearGradient-7)" fill-rule="evenodd" xlink:href="#path-8"></use>
+                            <use fill="black" fill-opacity="1" filter="url(#filter-10)" xlink:href="#path-8"></use>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

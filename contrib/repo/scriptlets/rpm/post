@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+/bin/rpm --import %{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-NordVPN 2>/dev/null
+exit 0

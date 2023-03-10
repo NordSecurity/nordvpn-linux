@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 101120,
+    "message": "Maximum machine count reached"
+  }
+}

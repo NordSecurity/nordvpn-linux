@@ -1,0 +1,13 @@
+[Unit]
+Description=NordVPN Fileshare Daemon Socket
+PartOf=nordfileshared.service
+
+[Socket]
+# %t expands to /run or /run/user/{uid} 
+ListenStream=%t/nordfileshared/nordfileshared.sock
+NoDelay=true
+SocketMode=0700
+DirectoryMode=0700
+
+[Install]
+WantedBy=sockets.target

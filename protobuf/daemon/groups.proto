@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+import "config/protocol.proto";
+
+message GroupsRequest {
+  config.Protocol protocol = 1;
+  bool obfuscate = 2;
+}

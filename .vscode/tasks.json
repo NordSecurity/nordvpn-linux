@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "shell",
+            "label": "message",
+            "command": "echo",
+            "args": [
+                "'Start debugging server with \"sudo dlv dap -l='127.0.0.1:2345' --only-same-user=false\"'"
+            ]
+        },
+        {
+			"label": "create mage_output_file.go",
+			"type": "shell",
+            // sed deletes first line of file which is "// +build ignore" and prevents from building
+			"command": "mage --keep && sed -i '1d' ${workspaceFolder}/magefiles/mage_output_file.go"
+		},
+		{
+			"label": "delete mage_output_file.go",
+			"type": "shell",
+			"command": "rm -f ${workspaceFolder}/magefiles/mage_output_file.go"
+		}
+    ],
+}

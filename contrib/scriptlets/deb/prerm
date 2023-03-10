@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+ENV=$(ps --no-headers -o comm 1)
+
+case "$1" in
+    remove|upgrade|deconfigure)
+        case "$ENV" in
+            init)
+                /etc/init.d/nordvpn stop &>/dev/null || :
+                update-rc.d -f nordvpn remove &>/dev/null || :
+            ;;
+            *sh) # executed in docker
+            ;;
+            systemd)
+                systemctl stop nordvpnd.service &>/dev/null || :
+                systemctl stop nordvpnd.socket &>/dev/null || :
+                systemctl disable nordvpnd.service &>/dev/null || :
+                systemctl disable nordvpnd.socket &>/dev/null || :
+                systemctl daemon-reload &>/dev/null || :
+            ;;
+            *)
+                echo "[ERROR] Unknown environment \`$ENV'"
+            ;;
+        esac
+    ;;
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0

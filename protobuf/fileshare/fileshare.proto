@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package filesharepb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/fileshare/pb";
+
+import "transfer.proto";
+
+// Used when there is no error or there is no data to be sent
+message Empty {}
+
+// ServiceErrorCode defines a set of error codes whose handling
+// does not depend on any specific command used.
+enum ServiceErrorCode {
+	NOT_LOGGED_IN = 0;
+	MESH_NOT_ENABLED = 1;
+	INTERNAL_FAILURE = 2;
+}
+
+// FileshareErrorCode defines a set of fileshare specific error codes.
+enum FileshareErrorCode {
+	LIB_FAILURE = 0;
+	TRANSFER_NOT_FOUND = 1;
+	INVALID_PEER = 2;
+	FILE_NOT_FOUND = 3;
+	ACCEPT_ALL_FILES_FAILED = 5; // Accept failed for all files
+	ACCEPT_OUTGOING = 6; // Can't accept outgoing transfers
+	ALREADY_ACCEPTED = 7;
+	FILE_INVALIDATED = 8;
+	TRANSFER_INVALIDATED = 9;
+	TOO_MANY_FILES = 10;
+	DIRECTORY_TOO_DEEP = 11;
+	SENDING_NOT_ALLOWED = 12;
+	PEER_DISCONNECTED = 13;
+	FILE_NOT_IN_PROGRESS = 14; // Returned when user tries to cancel a file that is not in flight
+	TRANSFER_NOT_CREATED = 15; // When libdrop doesn't return transfer ID, most likely permission issue
+}
+
+// Generic error to be used through all responses. If empty then no error occured.
+// If there's no data to be returned then this can be used as a response type,
+// otherwise it should be included as a field in the response.
+// Response handlers should always firstly check whether error is Empty (like Go err != nil check)
+//
+// Previously (in meshnet) we have used oneof to either return data or an error. But the problem
+// with oneof is that when it is used the same messages are returned as different types
+// (SendResponse_FileshareResponse and ReceiveResponse_FileshareResponse for example). Because of that
+// we couldn't DRY their handling and that resulted in lots of almost duplicate code.
+message Error {
+	oneof response {
+		Empty empty = 1;
+		ServiceErrorCode service_error = 2;
+		FileshareErrorCode fileshare_error = 3;
+	}
+}
+
+message SendRequest {
+	string peer = 1; // IP to which the request will be sent
+	repeated string paths = 2; // Absolute path of the file or dir to be sent
+	bool silent = 3; // Do transfer in background (true) or Report progress info back (false)
+}
+
+message AcceptRequest {
+	string transfer_id = 1; // ID taken from TransferRequested libdrop event
+	string dst_path = 2; // Directory to store the received files
+	bool silent = 3; // Do transfer in background (true) or Report progress info back (false)
+	repeated string files = 4; // A list of specific files to be accepted
+}
+
+message StatusResponse {
+	Error error = 1;
+	string transfer_id = 2; // Newly created transfer's ID
+	uint32 progress = 3; // Transfer progress percent
+	Status status = 4; // Transfer status
+}
+
+message CancelRequest {
+	string transfer_id = 1; // ID taken from TransferRequested libdrop event
+}
+
+message ListResponse {
+	Error error = 1;
+	// Transfers are sorted by creation date from oldest to newest
+	repeated Transfer transfers = 2;
+}
+
+message CancelFileRequest {
+	string transfer_id = 1; // ID taken from TransferRequested libdrop event
+	string file_id = 2; // ID taken from TransferRequested libdrop event
+}

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package filesharepb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/fileshare/pb";
+
+import "fileshare.proto";
+
+service Fileshare {
+	// Ping to test connection between CLI and Fileshare daemon
+	rpc Ping(Empty) returns (Empty);
+	// Send a file to a peer
+	rpc Send(SendRequest) returns (stream StatusResponse);
+	// Accept a request from another peer to send you a file
+	rpc Accept(AcceptRequest) returns (stream StatusResponse);
+	// Reject a request from another peer to send you a file
+	rpc Cancel(CancelRequest) returns (Error);
+	// List all transfers
+	rpc List(Empty) returns (ListResponse);
+	// Cancel file transfer to another peer
+	rpc CancelFile(CancelFileRequest) returns (Error);
+}

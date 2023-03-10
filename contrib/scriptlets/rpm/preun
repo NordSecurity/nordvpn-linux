@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+ENV=$(ps --no-headers -o comm 1)
+
+case "$1" in
+    0|1)
+        case "$ENV" in
+            init)
+                /etc/init.d/nordvpn stop &>/dev/null || :
+                update-rc.d -f nordvpn remove &>/dev/null || :
+            ;;
+            systemd)
+                systemctl stop nordvpnd.service &>/dev/null || :
+                systemctl stop nordvpnd.socket &>/dev/null || :
+                systemctl disable nordvpnd.service &>/dev/null || :
+                systemctl disable nordvpnd.socket &>/dev/null || :
+                systemctl daemon-reload &>/dev/null || :
+            ;;
+            *sh) # executed in docker
+            ;;
+            *)
+                echo "[ERROR] Unknown environment \`$ENV'"
+            ;;
+        esac
+    ;;
+esac
+
+exit 0

@@ -1,0 +1,28 @@
+# .cond.yml defines job execution cond(itions).
+#
+# https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
+#
+# Don't use extends with rules, since only the last extend will take effect.
+# Use !reference instead in the rules block of the specific job.
+.cond/on-master:
+  rules:
+    # commit was pushed to master
+    - if: '$CI_COMMIT_BRANCH == "master"'
+.cond/on-version-tag:
+  rules:
+    # version tagged commit was pushed
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
+.cond/on-merge-request:
+  rules:
+    # merge request was created with at least one commit or a commit was pushed
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+.cond/on-click:
+  rules:
+    # catch all if for basic and merge request pipelines
+    - if: $CI_COMMIT_BRANCH || $CI_PIPELINE_SOURCE == 'merge_request_event'
+      when: manual
+      # required due to 'when: manual' setting it to false and blocking the pipeline
+      allow_failure: true
+.cond/never:
+  rules:
+    - when: never

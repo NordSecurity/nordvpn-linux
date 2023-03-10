@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 100101,
+    "message": "Invalid email"
+  }
+}

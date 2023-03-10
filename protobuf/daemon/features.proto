@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+import "config/feature.proto";
+
+message FeatureRequest {
+  config.Feature feature = 1;
+}

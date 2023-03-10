@@ -1,0 +1,4 @@
+#
+# Testing & pre-release packages
+#
+deb https://repo.nordvpn.com/deb/nordvpn-test/debian stable main

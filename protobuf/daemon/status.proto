@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+import "config/protocol.proto";
+import "config/technology.proto";
+
+message StatusResponse {
+  string state = 1;
+  config.Technology technology = 2;
+  config.Protocol protocol = 3;
+  string ip = 4;
+  string hostname = 5;
+  string country = 6;
+  string city = 7;
+  uint64 download = 8;
+  uint64 upload = 9;
+  int64 uptime = 10;
+}

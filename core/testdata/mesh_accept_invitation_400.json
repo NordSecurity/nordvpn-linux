@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 101122,
+    "message": "Maximum peer count reached on external machine"
+  }
+}

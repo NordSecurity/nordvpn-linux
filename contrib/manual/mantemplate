@@ -1,0 +1,288 @@
+.\" Manpage for nordvpn.
+.TH "NORDVPN" "1" "{DATE}" "NordVPN {VERSION}" "NordVPN Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nordvpn \- command-line interface of the NordVPN service
+.SH "SYNOPSIS"
+\fInordvpn\fR <command> [arguments]
+.sp
+.SH "DESCRIPTION"
+.sp
+The NordVPN app for Linux protects your sensitive data with military-grade encryption, so that whatever you do online stays secure and private\&. More than 5000 servers worldwide\&. No logs of your online activity\&. Secure up to 6 devices with a single account\&. Access online content securely, with no restrictions\&.
+.SH "COMMANDS"
+.PP
+\fBaccount\fR
+.RS 4
+Shows account information\&.
+.RE
+.PP
+\fBcities\fR
+.RS 4
+Shows a list of cities where servers are available\&.
+.RE
+.PP
+\fBconnect, c\fR
+.RS 4
+Connects you to VPN\&.
+.RE
+.PP
+\fBcountries\fR
+.RS 4
+Shows a list of countries where servers are available\&.
+.RE
+.PP
+\fBdisconnect, d\fR
+.RS 4
+Disconnects you from VPN\&.
+.RE
+.PP
+\fBgroups\fR
+.RS 4
+Shows a list of available server groups\&.
+.RE
+.PP
+\fBlogin\fR
+.RS 4
+Logs you in\&.
+.RE
+.PP
+\fBlogout\fR
+.RS 4
+Logs you out\&.
+.RE
+.PP
+\fBrate\fR
+.RS 4
+Rate your last connection quality (1-5)
+.RE
+.PP
+\fBregister\fR
+.RS 4
+Registers a new user account
+.RE
+.PP
+\fBset, s\fR
+.RS 4
+Sets a configuration option\&.
+.RE
+.PP
+\fBsettings\fR
+.RS 4
+Shows current settings\&.
+.RE
+.PP
+\fBstatus\fR
+.RS 4
+Shows connection status\&.
+.RE
+.PP
+\fBwhitelist\fR
+.RS 4
+Adds or removes an option from a whitelist\&.
+.RE
+.PP
+\fBhelp, h\fR
+.RS 4
+Display syntax for the given operation\&. If no operation was supplied, then the general syntax is shown\&.
+.RE
+\fBversion\fR
+.RS 4
+Display version and exit\&.
+.RE
+.SH "OPTIONS"
+.PP
+\fB--help, -h\fR
+.RS 4
+Display syntax for the given operation\&. If no operation was supplied, then the general syntax is shown\&.
+.RE
+.PP
+\fB--version, -v\fR
+.RS 4
+Display version and exit\&.
+.RE
+.SH "EXAMPLES"
+.PP
+\fBExample \&1. Connect to a recommended server\fR
+.RS 4
+$ \fBnordvpn connect\fR
+.RE
+.PP
+\fBExample \&2. Connect to a server in a specific country\fR
+.RS 4
+.nf
+$ \fBnordvpn connect Australia\fR
+$ \fBnordvpn connect Switzerland\fR
+$ \fBnordvpn connect Greece\fR
+.fi
+.RE
+.PP
+\fBExample \&3. Connect to a server in a specific city\fR
+.RS 4
+.nf
+$ \fBnordvpn connect Sweden Stockholm\fR
+$ \fBnordvpn connect Australia Sydney\fR
+$ \fBnordvpn connect Japan Tokyo\fR
+.fi
+.RE
+.PP
+\fBExample \&4. Connect to a server in a specific country using the country code\fR
+.RS 4
+.nf
+$ \fBnordvpn connect US\fR
+$ \fBnordvpn connect JP\fR
+$ \fBnordvpn connect AU\fR
+.fi
+.RE
+.PP
+\fBExample \&5. Connect to a server in a specific group\fR
+.RS 4
+.nf
+$ \fBnordvpn connect P2P\fR
+$ \fBnordvpn connect The_Americas\fR
+$ \fBnordvpn connect Dedicated_IP\fR
+.fi
+.RE
+.PP
+\fBExample \&6. Connect to a server in a specific group and country\fR
+.RS 4
+.nf
+$ \fBnordvpn connect --group P2P Germany\fR
+.fi
+.RE
+.PP
+\fBExample \&7. Disconnect from VPN\fR
+.RS 4
+$ \fBnordvpn disconnect\fR
+.RE
+.PP
+\fBExample \&8. Set a protocol\fR
+.RS 4
+.nf
+$ \fBnordvpn set protocol UDP\fR
+$ \fBnordvpn set protocol TCP\fR
+.fi
+.RE
+.PP
+\fBExample \&9. Enable Kill Switch\fR
+.RS 4
+$ \fBnordvpn set killswitch enabled\fR
+.RE
+.PP
+\fBExample \&10. Enable ThreatProtectionLite\fR
+.RS 4
+$ \fBnordvpn set threatprotectionlite enabled\fR
+.RE
+.PP
+\fBExample \&11. Enable auto-connect\fR
+.RS 4
+$ \fBnordvpn set autoconnect enabled\fR
+.RE
+.PP
+\fBExample \&12. Enable auto-connect to specific country or city\fR
+.RS 4
+.nf
+$ \fBnordvpn set autoconnect enabled\fR
+$ \fBnordvpn set autoconnect enabled Australia\fR
+$ \fBnordvpn set autoconnect enabled Sweden Stockholm\fR
+.fi
+.RE
+.PP
+\fBExample \&13. Enable obfuscation\fR
+.RS 4
+$ \fBnordvpn set obfuscate enabled\fR
+.RE
+.PP
+\fBExample \&14. Enable notifications\fR
+.RS 4
+$ \fBnordvpn set notify enabled\fR
+.RE
+.PP
+\fBExample \&15. Change technology\fR
+.RS 4
+.nf
+$ \fBnordvpn set technology NordLynx\fR
+$ \fBnordvpn set technology OpenVPN\fR
+.fi
+.RE
+.PP
+\fBExample \&16. Whitelist port\fR
+.RS 4
+.nf
+$ \fBnordvpn whitelist add port 22\fR
+$ \fBnordvpn whitelist add port 23 protocol UDP\fR
+$ \fBnordvpn whitelist remove port 23\fR
+$ \fBnordvpn whitelist remove port 22 protocol TCP\fR
+.fi
+.RE
+.PP
+\fBExample \&17. Whitelist ports\fR
+.RS 4
+.nf
+$ \fBnordvpn whitelist add ports 3000 5000\fR
+$ \fBnordvpn whitelist add ports 3000 5000 protocol UDP\fR
+$ \fBnordvpn whitelist remove port 3000 5000\fR
+$ \fBnordvpn whitelist remove port 3000 5000 protocol TCP\fR
+.fi
+.RE
+.PP
+\fBExample \&18. Whitelist subnet\fR
+.RS 4
+.nf
+$ \fBnordvpn whitelist add subnet 192.168.0.0/16\fR
+$ \fBnordvpn whitelist remove subnet 192.168.0.0/16\fR
+.fi
+.RE
+.PP
+\fBExample \&19. Whitelist ports and subnets removal\fR
+.RS 4
+.nf
+$ \fBnordvpn whitelist remove all\fR
+.fi
+.RE
+.PP
+\fBExample \&20. Set custom DNS\fR
+.RS 4
+.nf
+$ \fBnordvpn set dns off\fR
+$ \fBnordvpn set dns 0.0.0.0 1.2.3.4\fR
+.fi
+.RE
+.SH "BUGS"
+.sp
+Our QA team did their best in hunting bugs before the release\&. But if it happens that we missed something, please report to support@nordvpn.com\&.
+.SH "NOTES"
+.sp
+.PP
+\fBNote \&1. ThreatProtectionLite and custom DNS\fR
+.RS 4
+Enabling ThreatProtectionLite disables custom DNS and vice versa\&.
+.RE
+.sp
+\fBNote \&2. Nord Account login without graphical user interface\fR
+.RS 4
+1. Run \fBnordvpn login\fR command on your Linux device.
+2. Open the provided link in the browser.
+3. Complete the login procedure.
+4. Right click on the \fBReturn to the app\fR button and select \fBCopy link address\fR.
+5. Run \fBnordvpn login --callback <URL>\fR with the previously copied URL.
+6. Run \fBnordvpn account\fR to verify that login was successful.
+.RE
+Our customer support works 24/7 so if you have any questions or issues, drop us a line at support@nordvpn\&.com

@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package meshpb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
+
+import "empty.proto";
+
+// ServiceErrorCode defines a set of error codes which handling
+// does not depend on any specific command used.
+enum ServiceErrorCode {
+	NOT_LOGGED_IN = 0;
+	API_FAILURE = 1;
+	CONFIG_FAILURE = 2;
+}
+
+// MeshnetErrorCode defines a set of meshnet specific error codes.
+enum MeshnetErrorCode {
+	NOT_REGISTERED = 0;
+	LIB_FAILURE = 1;
+	ALREADY_ENABLED = 3;
+	ALREADY_DISABLED = 4;
+	NOT_ENABLED = 5;
+	TECH_FAILURE = 6;
+	TUNNEL_CLOSED = 7;
+}
+
+// MeshnetErrorCode is one of the:
+// - Empty response
+// - Service error
+// - Meshnet error
+message MeshnetResponse {
+	oneof response {
+		Empty empty = 1;
+		ServiceErrorCode service_error = 2;
+		MeshnetErrorCode meshnet_error = 3;
+	}
+}
+
+// ServiceResponse is either an empty response or a service error
+message ServiceResponse {
+	oneof response {
+		Empty empty = 1;
+		ServiceErrorCode error_code = 2;
+	}
+}
+
+// ServiceBoolResponse is either a bool response or a service error
+message ServiceBoolResponse {
+	oneof response {
+		bool value = 1;
+		ServiceErrorCode error_code = 2;
+	}
+}

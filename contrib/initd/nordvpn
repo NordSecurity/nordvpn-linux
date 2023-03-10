@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+### BEGIN INIT INFO
+# Provides:          nordvpn
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Protect your privacy online and access media content with no regional restrictions. Strong encryption and no-log policy with 3000+ servers in 60+ countries.
+### END INIT INFO
+
+NAME=nordvpn
+PIDFILE=/run/$NAME/$NAME.pid
+DAEMON=/usr/sbin/${NAME}d
+LOGFILE=/var/log/nordvpn/daemon.log
+SOCKET_DIR=/run/$NAME
+NORDVPN_GROUP="nordvpn"
+
+[ -f /lib/init/vars.sh ] && . /lib/init/vars.sh
+[ -f /lib/lsb/init-functions ] && . /lib/lsb/init-functions
+
+create_socket_dir() {
+  if [[ -d "$SOCKET_DIR" ]]; then
+    return
+  fi
+  mkdir -m 0750 "$SOCKET_DIR"
+  chown root:"$NORDVPN_GROUP" "$SOCKET_DIR"
+}
+
+#
+# Function that starts the daemon
+#
+start() {
+  create_socket_dir
+  # Return
+  #   0 if daemon has been started
+  #   1 if daemon was already running
+  #   2 if daemon could not be started
+  start-stop-daemon --start --quiet -g "$NORDVPN_GROUP" --pidfile $PIDFILE --exec $DAEMON \
+    --background --make-pidfile --no-close --test > /dev/null || return 1
+  start-stop-daemon --start --quiet -g "$NORDVPN_GROUP" --pidfile $PIDFILE --exec $DAEMON \
+    --background --make-pidfile --no-close >> $LOGFILE 2>&1 || return 2
+}
+
+#
+# Function that stops the daemon
+#
+stop() {
+  # Return
+  #   0 if daemon has been stopped
+  #   1 if daemon was already stopped
+  #   2 if daemon could not be stopped
+  #   other if a failure occurred
+  start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE --remove-pidfile
+  RETVAL="$?"
+  [ "$RETVAL" = 2 ] && return 2
+  return "$RETVAL"
+}
+
+#
+# Function that restarts the daemon
+#
+restart() {
+  #
+  # If the "reload" option is implemented then remove the
+  # 'force-reload' alias
+  #
+  log_daemon_msg "Restarting $DAEMON" "$NAME"
+  stop
+  case "$?" in
+    0|1)
+      start
+      case "$?" in
+        0) log_end_msg 0 ;;
+        1) log_end_msg 1 ;; # Old process is still running
+        *) log_end_msg 1 ;; # Failed to start
+      esac
+      ;;
+    *)
+      # Failed to stop
+      log_end_msg 1
+      ;;
+  esac
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  restart)
+    restart
+    ;;
+  status)
+    status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|restart|status}"
+    exit 1
+    ;;
+esac

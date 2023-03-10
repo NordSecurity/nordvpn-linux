@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package filesharepb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/fileshare/pb";
+
+import "google/protobuf/timestamp.proto";
+
+enum Direction {
+	UNKNOWN_DIRECTION = 0;
+	INCOMING = 1;
+	OUTGOING = 2;
+}
+
+enum Status {
+	// Libdrop statuses for finished transfers
+	SUCCESS = 0;
+	CANCELED = 1;
+	BAD_PATH = 2;
+	BAD_FILE = 3;
+	TRANSPORT = 4;
+	BAD_STATUS = 5;
+	SERVICE_STOP = 6;
+	BAD_TRANSFER = 7;
+	BAD_TRANSFER_STATE = 8;
+	BAD_FILE_ID = 9;
+	BAD_SYSTEM_TIME = 10;
+	TRUNCATED_FILE = 11;
+	EVENT_SEND = 12;
+	BAD_UUID = 13;
+	CHANNEL_CLOSED = 14;
+	IO = 15;
+	DATA_SEND = 16;
+	DIRECTORY_NOT_EXPECTED = 17;
+	EMPTY_TRANSFER = 18;
+	TRANSFER_CLOSED_BY_PEER = 19;
+	TRANSFER_LIMITS_EXCEEDED = 20;
+	// Internally defined statuses for unfinished transfers
+	REQUESTED = 100;
+	ONGOING = 101;
+	FINISHED_WITH_ERRORS = 102;
+	ACCEPT_FAILURE = 103;
+	CANCELED_BY_PEER = 104;
+	INTERRUPTED = 105;
+}
+
+message Transfer {
+	string id = 1;
+	Direction direction = 2;
+	string peer = 3;
+	Status status = 4; // Calculated from status of all files in the transfer
+	google.protobuf.Timestamp created = 5;
+	repeated File files = 6;
+	// For outgoing transfers the user provided path to be sent
+	// For incoming transfers path where the files will be downloaded to
+	string path = 7;
+	uint64 total_size = 8;
+	uint64 total_transferred = 9;
+	// TODO: remove once transfer finalization is performed in libdrop
+	bool finalized = 10;
+}
+
+message File {
+	string id = 1;
+	uint64 size = 2;
+	uint64 transferred = 3;
+	Status status = 4; // Received from the events for specific set of files
+	map<string, File> children = 5;
+}

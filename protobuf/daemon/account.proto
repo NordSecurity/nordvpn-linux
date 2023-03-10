@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+message AccountResponse {
+  int64 type = 1;
+  string username = 2;
+  string email = 3;
+  string expires_at = 4;
+}

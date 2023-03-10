@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# postinst script for nordvpn-release
+#
+set -e
+
+case "$1" in
+    configure)
+        if [[ -x apt-key ]]; then
+            echo "Importing NordVPN keyring"
+            apt-key add /etc/apt/trusted.gpg.d/nordvpn-keyring.gpg
+        fi
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0

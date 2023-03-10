@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 100105,
+    "message": "Authorization header not provided"
+  }
+}

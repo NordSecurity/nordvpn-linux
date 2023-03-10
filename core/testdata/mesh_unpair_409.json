@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 101113,
+    "message": "Only local peers can be deleted"
+  }
+}

@@ -1,0 +1,133 @@
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"net/http"
+	"net/netip"
+	"testing"
+
+	"github.com/NordSecurity/nordvpn-linux/test/category"
+
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	serverListLargeURL string = "https://api.nordvpn.com/v1/servers?limit=1073741824"
+	serverListSmallURL string = "https://api.nordvpn.com/v1/servers?limit=1"
+	nonH3serverURL     string = "https://nordsec.com"
+)
+
+type workingResolver struct {
+	IP string
+}
+
+func (w workingResolver) Resolve(string) ([]netip.Addr, error) {
+	if w.IP != "" {
+		return []netip.Addr{netip.MustParseAddr(w.IP)}, nil
+	}
+	return []netip.Addr{netip.MustParseAddr("1.1.1.1")}, nil
+}
+
+func queryAPI(url string, transp http.RoundTripper) error {
+	fmt.Printf("Query API url: %s\n\n", url)
+
+	hclient := &http.Client{
+		Transport: transp,
+	}
+
+	rsp, err := hclient.Get(url)
+	if err != nil {
+		return err
+	}
+	//fmt.Printf("Got response for %s: %#v\n\n", url, rsp)
+
+	body := &bytes.Buffer{}
+	_, err = io.Copy(body, rsp.Body)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Response Body: %d bytes\n\n", body.Len())
+
+	return nil
+}
+
+func TestTransports(t *testing.T) {
+	category.Set(t, category.Integration)
+
+	tests := []struct {
+		comment     string
+		inputURL    string
+		transport   http.RoundTripper
+		expectError bool
+	}{
+		{
+			comment:     "test older transport small req/resp",
+			inputURL:    serverListSmallURL,
+			transport:   createH1Transport(&workingResolver{}, 0)(),
+			expectError: false,
+		},
+		{
+			comment:     "test older transport large resp",
+			inputURL:    serverListLargeURL,
+			transport:   createH1Transport(&workingResolver{}, 0)(),
+			expectError: false,
+		},
+		{
+			comment:     "test quic transport small req/resp",
+			inputURL:    serverListSmallURL,
+			transport:   createH3Transport(),
+			expectError: false,
+		},
+		{
+			comment:     "test quic transport large resp",
+			inputURL:    serverListLargeURL,
+			transport:   createH3Transport(),
+			expectError: false,
+		},
+		{
+			comment:     "test non quic/H3 url with H1 transport",
+			inputURL:    nonH3serverURL,
+			transport:   createH1Transport(&workingResolver{}, 0)(),
+			expectError: false,
+		},
+		{
+			comment:     "test non quic/H3 url with H3 transport",
+			inputURL:    nonH3serverURL,
+			transport:   createH3Transport(),
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		fmt.Println("~~~ RUN TEST:", tt.comment)
+		err := queryAPI(tt.inputURL, tt.transport)
+		if tt.expectError {
+			assert.Error(t, err)
+		} else {
+			assert.NoError(t, err)
+		}
+	}
+}
+
+func TestH1Transport_RoundTrip(t *testing.T) {
+	category.Set(t, category.Integration)
+
+	tests := []struct {
+		ip string
+	}{
+		{ip: "127.0.0.1"},
+		{ip: "::1"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.ip, func(t *testing.T) {
+			transport := createH1Transport(&workingResolver{IP: test.ip}, 0)()
+			req, err := http.NewRequest(http.MethodGet, serverListSmallURL, nil)
+			assert.NoError(t, err)
+			_, err = transport.RoundTrip(req)
+			assert.Contains(t, err.Error(), "connection refused")
+		})
+	}
+}

@@ -1,0 +1,21 @@
+{
+  "allow_incoming_connections": true,
+  "allow_outgoing_connections": true,
+  "allow_peer_traffic_routing": true,
+  "discovery_key": "63fe62d704226c770004d1ec31de1192fba88dffc2539ddda29543be878fb6ea",
+  "endpoints": [
+    "123.123.123.123:1234"
+  ],
+  "hostname": "everest-someuser.nord",
+  "identifier": "14d3030c-3b61-4070-b902-342f80e99364",
+  "ip_addresses": [
+    "192.168.0.1"
+  ],
+  "is_local": true,
+  "os": "android",
+  "os_version": "Arch Linux; kernel=5.11.13-arch1-1",
+  "peer_allows_traffic_routing": true,
+  "public_key": "YyeQW3xNdTHUa3ip8wt0ksiw8HJh3c3u4hsuDVK9mS0=",
+  "relay_address": "disco.nordmesh:12345",
+  "user_email": "user@example.com"
+}

@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package meshpb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
+
+import "empty.proto";
+import "fsnotify.proto";
+import "invite.proto";
+import "peer.proto";
+import "service_response.proto";
+
+// Meshnet defines a service which handles the meshnet
+// functionallity on a single device
+service Meshnet {
+	// EnableMeshnet enables the meshnet on this device
+	rpc EnableMeshnet(Empty) returns (MeshnetResponse);
+	// IsEnabled retrieves whether meshnet is enabled
+	rpc IsEnabled(Empty) returns (ServiceBoolResponse);
+	// DisableMeshnet disables the meshnet on this device
+	rpc DisableMeshnet(Empty) returns (MeshnetResponse);
+	rpc RefreshMeshnet(Empty) returns (MeshnetResponse); // Remove later
+	// GetInvites retrieves a list of all the invites related to
+	// this device
+	rpc GetInvites(Empty) returns (GetInvitesResponse);
+	// Invite sends the invite to the specified email to join the
+	// meshnet.
+	rpc Invite(InviteRequest) returns (InviteResponse);
+	// Invite sends the invite to the specified email to join the
+	// meshnet.
+	rpc RevokeInvite(DenyInviteRequest) returns (RespondToInviteResponse);
+	// AcceptInvite accepts the invite to join someone's meshnet
+	rpc AcceptInvite(InviteRequest) returns (RespondToInviteResponse);
+	// AcceptInvite denies the invite to join someone's meshnet
+	rpc DenyInvite(DenyInviteRequest) returns (RespondToInviteResponse);
+	// GetPeers retries the list of all meshnet peers related to
+	// this device
+	rpc GetPeers(Empty) returns (GetPeersResponse);
+	// RemovePeer removes a peer from the meshnet
+	rpc RemovePeer(UpdatePeerRequest) returns (RemovePeerResponse);
+	// AllowRouting allows a peer to route traffic through this
+	// device
+	rpc AllowRouting(UpdatePeerRequest) returns (AllowRoutingResponse);
+	// DenyRouting allows a peer to route traffic through this
+	// device
+	rpc DenyRouting(UpdatePeerRequest) returns (DenyRoutingResponse);
+	// AllowIncoming allows a peer to send traffic to this device
+	rpc AllowIncoming(UpdatePeerRequest) returns (AllowIncomingResponse);
+	// DenyIncoming denies a peer to send traffic to this device
+	rpc DenyIncoming(UpdatePeerRequest) returns (DenyIncomingResponse);
+	// AllowLocalNetwork allows a peer to access local network when
+	// routing through this device
+	rpc AllowLocalNetwork(UpdatePeerRequest) returns (AllowLocalNetworkResponse);
+	// DenyLocalNetwork denies a peer to access local network when
+	// routing through this device
+	rpc DenyLocalNetwork(UpdatePeerRequest) returns (DenyLocalNetworkResponse);
+	// AllowFileshare allows peer to send files to this device
+	rpc AllowFileshare(UpdatePeerRequest) returns (AllowFileshareResponse);
+	// DenyFileshare denies a peer to send files to this device
+	rpc DenyFileshare(UpdatePeerRequest) returns (DenyFileshareResponse);
+	rpc Connect(UpdatePeerRequest) returns (ConnectResponse);
+	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
+	// notify a corresponding meshnet peer
+	rpc NotifyNewTransfer(NewTransferNotification) returns (NotifyNewTransferResponse);
+}

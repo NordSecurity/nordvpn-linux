@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+import "config/technology.proto";
+
+message SettingsRequest {
+  int64 uid = 1;
+}
+
+message SettingsResponse {
+  int64 type = 1;
+  Settings data = 2;
+}
+
+message Settings {
+  config.Technology technology = 1;
+  bool firewall = 2;
+  bool kill_switch = 3;
+  bool auto_connect = 4;
+  bool notify = 5;
+  bool ipv6 = 6;
+  bool meshnet = 7;
+  bool routing = 8;
+  uint32 fwmark = 9;
+  bool analytics = 10;
+}

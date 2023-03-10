@@ -1,0 +1,120 @@
+---
+# Name. (required)
+name: ${NAME}
+
+# Architecture. (required)
+arch: ${PKG_ARCH}
+
+# Platform.
+platform: linux
+
+# Version. (required)
+version: ${PKG_VERSION}
+
+# Section.
+section: custom
+
+# Priority.
+priority: optional
+
+# Maintaner.
+maintainer: ${PKG_HOMEPAGE}
+
+# Description.
+# Defaults to `no description given`.
+description: "${PKG_DESCRIPTION}"
+
+# Vendor.
+vendor: ${PKG_VENDOR}
+
+# Package's homepage.
+homepage: ${PKG_HOMEPAGE}
+
+# License.
+license: NordVPN License
+
+# Changelog YAML file, see: https://github.com/goreleaser/chglog
+changelog: "${CI_PROJECT_DIR}/dist/changelog.yml"
+
+# Disables globbing for files, config_files, etc.
+disable_globbing: true
+
+# Dependencies. (overridable)
+depends:
+  - iptables
+  - iproute2 | iproute
+  - procps
+  - ca-certificates
+  - libxml2
+  - libidn2-0
+  - zlib1g
+
+# Basic file that applies to all packagers
+contents:
+  - src: ${CI_PROJECT_DIR}/contrib/systemd/system/nordvpnd.socket
+    dst: /usr/lib/systemd/system/nordvpnd.socket
+    file_info:
+      mode: 0644
+  - src: ${CI_PROJECT_DIR}/contrib/systemd/system/nordvpnd.service
+    dst: /usr/lib/systemd/system/nordvpnd.service
+    file_info:
+      mode: 0644
+  - src: ${CI_PROJECT_DIR}/contrib/systemd/tmpfiles.d/nordvpn.conf
+    dst: /usr/lib/tmpfiles.d/nordvpn.conf
+    file_info:
+      mode: 0600
+  - src: ${GOPATH}/pkg/mod/github.com/urfave/cli/v2@v2.25.0/autocomplete/bash_autocomplete
+    dst: /usr/share/bash-completion/completions/nordvpn
+  - src: ${BASEDIR}/_nordvpn_auto_complete
+    dst: /usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete
+  - src: ${CI_PROJECT_DIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn
+    dst: /var/lib/${NAME}/openvpn
+  - src: ${CI_PROJECT_DIR}/contrib/desktop/nordvpn.desktop
+    dst: /usr/share/applications/nordvpn.desktop
+    file_info:
+      mode: 0644
+  - src: ${CI_PROJECT_DIR}/assets/icon.svg
+    dst: /usr/share/icons/hicolor/scalable/apps/${NAME}.svg
+    file_info:
+      mode: 0644
+  - src: ${CI_PROJECT_DIR}/dist/data
+    dst: /var/lib/${NAME}/data
+  - src: ${CI_PROJECT_DIR}/dist/${NAME}.1.gz
+    dst: /usr/share/man/man1/${NAME}.1.gz
+  - src: ${BASEDIR}/usr/sbin/nordvpnd
+    dst: /usr/sbin/nordvpnd
+  - src: ${BASEDIR}/usr/bin/nordvpn
+    dst: /usr/bin/nordvpn
+
+  - src: ${CI_PROJECT_DIR}/contrib/initd/nordvpn
+    dst: /etc/init.d/nordvpn
+    packager: deb
+    file_info:
+      mode: 0744
+
+# All fields above marked as `overridable` can be overriden for a given package format in this section.
+overrides:
+  deb:
+    # Deb specific scripts.
+    scripts:
+      postinstall: ${CI_PROJECT_DIR}/contrib/scriptlets/deb/postinst
+      preremove: ${CI_PROJECT_DIR}/contrib/scriptlets/deb/prerm
+      postremove: ${CI_PROJECT_DIR}/contrib/scriptlets/deb/postrm
+  rpm:
+    depends:
+      - iptables
+      - iproute
+      - procps
+      - ca-certificates
+      - libxml2
+      - libidn2
+      - zlib
+    # RPM specific scripts.
+    scripts:
+      postinstall: ${CI_PROJECT_DIR}/contrib/scriptlets/rpm/post
+      preremove: ${CI_PROJECT_DIR}/contrib/scriptlets/rpm/preun
+      postremove: ${CI_PROJECT_DIR}/contrib/scriptlets/rpm/postun
+
+rpm:
+  scripts:
+    posttrans: ${CI_PROJECT_DIR}/contrib/scriptlets/rpm/posttrans

@@ -1,0 +1,15 @@
+[Unit]
+Description=NordVPN Daemon Socket
+PartOf=nordvpnd.service
+
+[Socket]
+ListenStream=/run/nordvpn/nordvpnd.sock
+NoDelay=true
+# SocketUser=root
+SocketGroup=nordvpn
+SocketMode=0770
+DirectoryMode=0750
+NoDelay=true
+
+[Install]
+WantedBy=sockets.target

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package config;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/config";
+
+enum Protocol {
+  UNKNOWN_PROTOCOL = 0;
+  UDP = 1;
+  TCP = 2;
+}

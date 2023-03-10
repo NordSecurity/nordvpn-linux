@@ -1,0 +1,40 @@
+run:
+  timeout: 2m
+
+linters:
+  disable-all: true
+  enable:
+  #- bodyclose
+  #- depguard
+  #- dogsled
+  #- dupl
+  #- errcheck
+  - exhaustive
+  #- funlen
+  #- gochecknoinits
+  #- goconst
+  #- gocritic
+  #- gocyclo
+  - gofmt
+  - goimports
+  #- gomnd
+  #- goprintffuncname
+  #- gosec
+  #- gosimple
+  - govet
+  #- ineffassign
+  #- interfacer
+  #- lll
+  #- misspell
+  #- nakedret
+  #- rowserrcheck
+  #- scopelint
+  #- staticcheck
+  #- structcheck
+  #- stylecheck
+  #- typecheck
+  #- unconvert
+  #- unparam
+  - unused
+  #- varcheck
+  - whitespace

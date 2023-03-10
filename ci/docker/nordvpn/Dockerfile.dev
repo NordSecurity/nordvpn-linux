@@ -1,0 +1,15 @@
+FROM ubuntu:22.04
+
+RUN apt-get update && \
+    apt-get install -y iputils-ping curl binutils vim strace
+
+# Separate this because the commands above can be cached 
+COPY dist/app/deb /tmp/deb
+RUN apt-get install -y /tmp/deb/* && \
+    rm -rf /tmp/deb && \
+    apt-get clean
+
+COPY ci/docker/nordvpn/entrypoint_dev.sh /entrypoint.sh
+
+ENTRYPOINT [ "/entrypoint.sh" ]
+CMD [ "bash" ]

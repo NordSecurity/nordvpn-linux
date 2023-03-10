@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 101202,
+    "message": "Renew token not found"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "errors": {
+    "code": 100102,
+    "message": "Invalid password"
+  }
+}

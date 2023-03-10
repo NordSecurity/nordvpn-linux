@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package meshpb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
+
+import "empty.proto";
+import "peer.proto";
+import "service_response.proto";
+
+// NewTransferNotification defines a notification structure about a new transfer
+message NewTransferNotification {
+	string identifier = 1; // Identifier of a device
+	string os = 2; // Operating system of a peer
+	string file_name = 3; // Name of a file which is being sent. Empty if file_count > 1
+	int32 file_count = 4; // Amount of files being sent
+}
+
+// NotifyNewTransferResponse defines a response of new transfer notification
+message NotifyNewTransferResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		ServiceErrorCode service_error_code = 3;
+		MeshnetErrorCode meshnet_error_code = 4;
+	}
+}

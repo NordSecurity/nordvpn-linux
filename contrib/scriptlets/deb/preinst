@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+NORDVPN_GROUP="nordvpn"
+DEFAULT_USER=${SUDO_USER:-"$(logname 2> /dev/null)"}
+if [[ ! "$DEFAULT_USER" || "$DEFAULT_USER" == "root" ]]; then
+    DEFAULT_USER=$(id -un -- "1000" 2> /dev/null)
+fi
+ADD_USER_MESSAGE="Adding user $DEFAULT_USER to the group $NORDVPN_GROUP"
+
+groupadd --system "$NORDVPN_GROUP" 1>/dev/null 2> /dev/null
+groupCreated=$?
+
+case "$1" in
+    install)
+        # reset user for installation only
+        gpasswd -M "" "$NORDVPN_GROUP" 2> /dev/null || true
+        if [[ "$DEFAULT_USER" ]]; then
+            usermod -aG "$NORDVPN_GROUP" "$DEFAULT_USER"
+            echo "$ADD_USER_MESSAGE"
+        fi
+        ;;
+    upgrade)
+        # on upgrade add user only if group did not exist before
+        if [[ "$groupCreated" -eq 0 ]]; then
+            if [[ "$DEFAULT_USER" ]]; then
+                usermod -aG "$NORDVPN_GROUP" "$DEFAULT_USER"
+                echo "$ADD_USER_MESSAGE"
+            fi
+        fi
+        ;;
+esac
+
+exit 0
