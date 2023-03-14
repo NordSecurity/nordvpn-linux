@@ -43,7 +43,7 @@ const (
 	PermUserRW = 0600
 
 	// PermUserRWGroupRW permission type for user and group to read and write, everyone else - no access.
-	PermUserRWGroupRW = 660
+	PermUserRWGroupRW = 0660
 
 	// PermUserRWGroupROthersR user permission type for user to read and write to it, everyone else can only read it.
 	PermUserRWGroupROthersR = 0644
