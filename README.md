@@ -21,7 +21,7 @@ The application manages:
 The project follows https://semver.org/. Version tags and release branches must be named accordingly.
 
 ## Release tag
-The correct way of releasing a new version is to create a version tag on `master`, named `X.X.X`.
+The correct way of releasing a new version is to create a version tag on `main`, named `X.X.X`.
 
 # Contributing
 We are happy to accept contibutions for the project. Please check out [Contribute.md](./CONTRIBUTE.md) file for more details on how to do so.
@@ -44,4 +44,4 @@ You can find everything related to building, testing and environment setup in [B
 Distributions are not supported after their end of life.
 
 This project is licensed under the terms of the GNU General Public License v3.0 only.
-The registered trademark Linux® is used pursuant to a sublicense from the Linux Foundation, the exclusive licensee of Linus Torvalds, owner of the mark on a world¬wide basis.
+The registered trademark Linux® is used pursuant to a sublicense from the Linux Foundation, the exclusive licensee of Linus Torvalds, owner of the mark on a world-wide basis.
