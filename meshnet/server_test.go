@@ -128,7 +128,7 @@ func (acceptInvitationsAPI) Accept(string, uuid.UUID, uuid.UUID, bool, bool, boo
 
 func (acceptInvitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error) {
 	return mesh.Invitations{
-		mesh.Invitation{Email: "pwned@by.rytis"},
+		mesh.Invitation{Email: "inviter@nordvpn.com"},
 	}, nil
 }
 
@@ -390,7 +390,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
 	resp, err := server.AcceptInvite(context.Background(), &pb.InviteRequest{
-		Email: "pwned@by.rytis",
+		Email: "inviter@nordvpn.com",
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
