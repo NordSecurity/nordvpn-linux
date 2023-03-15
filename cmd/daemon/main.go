@@ -155,7 +155,6 @@ func main() {
 	infoSubject := &subs.Subject[string]{}
 	errSubject := &subs.Subject[error]{}
 	httpCalls := &subs.Subject[events.DataRequestAPI]{}
-	domainSubject := &subs.Subject[string]{}
 
 	loggerSubscriber := logger.Subscriber{}
 	if internal.Environment(Environment) == internal.Development {
@@ -413,7 +412,6 @@ func main() {
 	}
 	daemonEvents.Subscribe(analytics)
 	httpCalls.Subscribe(analytics.NotifyRequestAPI)
-	domainSubject.Subscribe(analytics.NotifyDomain)
 
 	dm := daemon.NewDataManager(
 		daemon.InsightsFilePath,

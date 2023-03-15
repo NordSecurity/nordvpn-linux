@@ -50,7 +50,7 @@ type Subscriber struct {
 	Version       string
 	Environment   string
 	Salt          string
-	InitialDomain string
+	Domain        string
 	Subdomain     string
 	currentDomain string
 	enabled       bool
@@ -108,7 +108,11 @@ func (s *Subscriber) mooseInit() error {
 		timeBetweenEvents, _ = time.ParseDuration("2s")
 		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
 	}
-	s.currentDomain = s.InitialDomain
+
+	err := s.updateEventDomain()
+	if err != nil {
+		return fmt.Errorf("initializing event domain: %w", err)
+	}
 
 	deviceID := fmt.Sprintf("%x", sha256.Sum256([]byte(cfg.MachineID.String()+s.Salt)))
 
@@ -213,16 +217,6 @@ func (s *Subscriber) NotifyIpv6(data bool) error {
 		return err
 	}
 	return s.response(moose.Set_context_application_config_currentState_ipv6Enabled_value(data))
-}
-
-func (s *Subscriber) NotifyDomain(data string) error {
-	domain, err := url.Parse(data)
-	if err != nil {
-		return err
-	}
-	domain.Host = s.Subdomain + "." + domain.Host
-	s.updateEventDomain(domain.String())
-	return nil
 }
 
 func (s *Subscriber) NotifyLogin(any) error { return nil }
@@ -513,10 +507,12 @@ func (s *Subscriber) sendEvent(contentType, userAgent, requestBody string) int {
 	return errCodeEventSendSuccess
 }
 
-// updateEventDomain by acquiring mutex first so that in would not be updated in the
-// middle of the event sending.
-func (s *Subscriber) updateEventDomain(newDomain string) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
-	s.currentDomain = newDomain
+func (s *Subscriber) updateEventDomain() error {
+	domainUrl, err := url.Parse(s.Domain)
+	if err != nil {
+		return err
+	}
+	domainUrl.Host = s.Subdomain + "." + domainUrl.Host
+	s.currentDomain = domainUrl.String()
+	return nil
 }
