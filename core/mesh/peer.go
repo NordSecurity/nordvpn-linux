@@ -140,21 +140,3 @@ func (p MachinePeer) EndpointsString() []string {
 	}
 	return endpoints
 }
-
-func NewSelf(resp MachinePeerResponse) Machine {
-	var addr netip.Addr
-	if len(resp.Addresses) > 0 {
-		addr = resp.Addresses[0]
-	}
-	return Machine{
-		ID:        resp.ID,
-		Hostname:  resp.Hostname,
-		PublicKey: resp.PublicKey,
-		OS: OperatingSystem{
-			Name:   resp.OS,
-			Distro: resp.Distro,
-		},
-		Address:   addr,
-		Endpoints: resp.Endpoints,
-	}
-}

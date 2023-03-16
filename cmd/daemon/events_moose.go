@@ -7,6 +7,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/moose"
 )
 
+var (
+	EventsDomain    = ""
+	EventsSubdomain = ""
+)
+
 func newAnalytics(eventsDbPath string, fs *config.Filesystem,
 	ver, salt, env string) *moose.Subscriber {
 	return &moose.Subscriber{

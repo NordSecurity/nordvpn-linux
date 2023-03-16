@@ -125,10 +125,3 @@ func (fw *Firewall) swap(current Agent, next Agent) error {
 	}
 	return nil
 }
-
-// IsEnabled reports firewall status.
-func (fw *Firewall) IsEnabled() bool {
-	fw.mu.Lock()
-	defer fw.mu.Unlock()
-	return fw.enabled
-}

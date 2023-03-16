@@ -9,10 +9,6 @@ import (
 
 type mockVersionGetter struct{}
 
-func (mockVersionGetter) MinimalVersion() (*semver.Version, error) {
-	return semver.NewVersion("0.0.0")
-}
-
 func (mockVersionGetter) GetMinFeatureVersion(featureKey string) (*semver.Version, error) {
 	return semver.NewVersion("0.0.0")
 }

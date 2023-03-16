@@ -8,12 +8,10 @@ const (
 	LoginSuccess             = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
 	LoginAttempt             = "Attempt %d/%d"
 	LoginTooManyAttempts     = "Too many login attempts. Type '%s login' to start over."
-	LoginCredsTooLong        = "The entered credentials are too long. Please try again."
 	MsgLoginLegacyDeprecated = "Logging in via ‘--legacy’, ‘--username’, and ‘--password’ flags is deprecated. Use ‘nordvpn login' or ‘nordvpn login --nordaccount’ to log in via browser. Alternatively, you can use ‘nordvpn login --token’ to log in with a generated token."
 	LogoutSuccess            = "You are logged out."
 
 	RateNoArgsMessage    = "Type [1–5] to rate your previous connection (1 – poor, 5 – great): "
-	RateVPNConnected     = "You are connected to VPN. Please rate your connection quality after disconnecting."
 	RateNoConnectionMade = "It seems you haven’t connected to VPN yet. Please rate your experience after your first session."
 	RateAlreadyRated     = "You have already provided a rating for your active/previous connection."
 	RateSuccess          = "Thank you for your feedback!"
@@ -46,8 +44,6 @@ Example: nordvpn set %s on`
 	SetThreatProtectionLiteDisableDNS = "Disabling DNS."
 
 	SetDefaultsSuccess = "Settings were successfully restored to defaults."
-
-	SetDNSDisableThreatProtectionLite = "Disabling Threat Protection Lite."
 
 	FirewallRequired = "Firewall must be enabled to use '%s'."
 
@@ -84,8 +80,6 @@ Example: nordvpn set %s on`
 	WhitelistPortsRangeError = "Ports %s - %s value is out of range [%s - %s]."
 
 	AccountCreationSuccess = "Account has been successfully created."
-	// AccountLoggedIn is displayed when attempting to register when logged in
-	AccountLoggedIn = "Trying to create a new account? You need to log out first. Or continue using NordVPN with the current account."
 	// AccountInvalidData is displayed when backend returns bad request (400)
 	AccountInvalidData = "Invalid email address or password. Please make sure you're entering a valid email address and your password contains at least 8 characters."
 	// AccountEmailTaken is displayed when backend returns conflict (409)
@@ -94,12 +88,9 @@ Example: nordvpn set %s on`
 	AccountInternalError          = "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support."
 	AccountTokenUnauthorizedError = "There was a problem with your credentials. Please try to log out and log back in again. If the issue persists, please contact our customer support."
 	AccountCantFetchVPNService    = "We were not able to fetch your VPN service data. If the issue persists, please contact our customer support."
-
-	UpdateAvailableMessage  = "A new version of NordVPN is available! Please update the application."
-	MeshnetAvailableMessage = "New feature - Meshnet! Link remote devices in Meshnet to connect to them directly over encrypted private tunnels, and route your traffic through another device. Use the `nordvpn meshnet --help` command to get started. Learn more: https://nordvpn.com/features/meshnet/"
-
-	DisconnectNotConnected     = "You are not connected to NordVPN."
-	DisconnectConnectionRating = "How would you rate your connection quality on a scale from 1 (poor) to 5 (excellent)? Type '%s rate [1-5]'."
+	UpdateAvailableMessage        = "A new version of NordVPN is available! Please update the application."
+	DisconnectNotConnected        = "You are not connected to NordVPN."
+	DisconnectConnectionRating    = "How would you rate your connection quality on a scale from 1 (poor) to 5 (excellent)? Type '%s rate [1-5]'."
 
 	CitiesNotFoundError = "Servers by city are not available for this country."
 

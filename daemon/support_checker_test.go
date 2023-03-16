@@ -21,7 +21,6 @@ type mockVersionGetter struct {
 func (m *mockVersionGetter) GetMinFeatureVersion(featureKey string) (*semver.Version, error) {
 	return &m.Version, m.Error
 }
-func (m *mockVersionGetter) MinimalVersion() (*semver.Version, error) { return nil, nil }
 
 type mockCredentialsAPI struct {
 	Resp  core.ServicesResponse

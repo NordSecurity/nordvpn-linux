@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/netip"
-	"strconv"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -70,19 +69,6 @@ const (
 	// AfricaMiddleEastIndia represents a Africa, the Middle East and India server group
 	AfricaMiddleEastIndia ServerGroup = 25
 )
-
-// GroupMap maps group titles to IDs
-var GroupMap = map[string]ServerGroup{
-	"double_vpn":                       DoubleVPN,
-	"onion_over_vpn":                   OnionOverVPN,
-	"dedicated_ip":                     DedicatedIP,
-	"standard_vpn_servers":             StandardVPNServers,
-	"p2p":                              P2P,
-	"europe":                           Europe,
-	"the_americas":                     TheAmericas,
-	"asia_pacific":                     AsiaPacific,
-	"africa_the_middle_east_and_india": AfricaMiddleEastIndia,
-}
 
 type ServerBy int
 
@@ -180,10 +166,6 @@ type TokenRenewResponse struct {
 	Token      string `json:"token"`
 	RenewToken string `json:"renew_token"`
 	ExpiresAt  string `json:"expires_at"`
-}
-
-type PingResponse struct {
-	Status string `json:"status"`
 }
 
 type Plans []Plan
@@ -342,14 +324,6 @@ func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Pr
 		}
 		return false
 	}
-}
-
-func (s *Server) GroupsString() string {
-	var groups []string
-	for _, group := range s.Groups {
-		groups = append(groups, strconv.FormatInt(int64(group.ID), 10))
-	}
-	return strings.Join(groups, " ")
 }
 
 func (s *Server) Version() string {

@@ -85,9 +85,3 @@ func (l *Loader) Stop() {
 	}
 	l.config = nil
 }
-
-func (l *Loader) IsActive() bool {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	return l.active
-}

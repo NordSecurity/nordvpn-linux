@@ -57,16 +57,14 @@ import (
 
 // Values set when building the application
 var (
-	Salt            = ""
-	Version         = ""
-	Environment     = ""
-	PackageType     = ""
-	Arch            = ""
-	Port            = 6960
-	ConnType        = "unix"
-	ConnURL         = internal.DaemonSocket
-	EventsDomain    = ""
-	EventsSubdomain = ""
+	Salt        = ""
+	Version     = ""
+	Environment = ""
+	PackageType = ""
+	Arch        = ""
+	Port        = 6960
+	ConnType    = "unix"
+	ConnURL     = internal.DaemonSocket
 )
 
 // Environment constants

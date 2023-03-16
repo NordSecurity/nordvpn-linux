@@ -36,8 +36,6 @@ type Service interface {
 	Enable() error
 	// Disable firewall
 	Disable() error
-	// IsEnabled reports whether firewall is enabled or not
-	IsEnabled() bool
 }
 
 // Agent carries out required firewall changes.

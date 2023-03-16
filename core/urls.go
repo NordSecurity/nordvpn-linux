@@ -10,9 +10,6 @@ const (
 	// Used by JobInsights every 30mins to set the user country
 	InsightsURL = "/v1/helpers/ips/insights"
 
-	// PingURL defines endpoint to check host validity
-	PingURL = "/v1/ping"
-
 	// PlanURL defines endpoint to fetch plans
 	PlanURL = "/v1/plans?filters[plans.active]=1&filters[plans.type]=linux"
 
@@ -27,9 +24,6 @@ const (
 
 	// RecommendedServersURL defines url for recommended servers list
 	RecommendedServersURL = ServersURL + "/recommendations"
-
-	// ServersTechnologiesConfigurationsURL defines url to get server configurations from (eg. wireguard)
-	ServersTechnologiesConfigurationsURL = ServicesURL + "/%d/technologies/%d/configurations"
 
 	// notificationTokenURL defines url to retrieve Notification Center credentials
 	notificationTokenURL = "/v1/notifications/tokens"
@@ -128,9 +122,6 @@ const (
 
 	// threatProtectionLiteURL defines url of the cybersec file
 	threatProtectionLiteURL = "/configs/dns/cybersec.json"
-
-	// EventURL is the events path we need to submit requests to
-	EventURL = "/appevent"
 
 	// DebFileinfoURLFormat is the path to debian repository's package information
 	DebFileinfoURLFormat = "/deb/%s/debian/dists/stable/main/binary-%s/Packages.gz"

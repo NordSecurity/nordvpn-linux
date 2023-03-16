@@ -8,6 +8,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"golang.org/x/exp/slices"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -632,7 +633,11 @@ func TestServerGroupsString(t *testing.T) {
 	var server Server
 	err := json.Unmarshal([]byte(inputTest), &server)
 	assert.NoError(t, err)
-	assert.Equal(t, "11 15 19", server.GroupsString())
+	groupIDs := []int64{}
+	for _, g := range server.Groups {
+		groupIDs = append(groupIDs, int64(g.ID))
+	}
+	assert.True(t, slices.Equal([]int64{11, 15, 19}, groupIDs))
 }
 
 func TestServer_SupportsIPv6(t *testing.T) {

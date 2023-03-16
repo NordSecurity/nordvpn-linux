@@ -230,6 +230,9 @@ func (c *cmd) MeshPeerAllowRouting(ctx *cli.Context) error {
 			Identifier: peer.Identifier,
 		},
 	)
+	if err != nil {
+		return formatError(err)
+	}
 
 	if err := allowRoutingResponseToError(
 		resp,

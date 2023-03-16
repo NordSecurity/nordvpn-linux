@@ -10,6 +10,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Get the inner value.
+func (f Field[T]) Get() T {
+	if f.value != nil {
+		return *f.value
+	}
+
+	var ret T
+	return ret
+}
+
 // used to take a pointer to primitive types, such as bool
 func pointer[T any](t *testing.T, to T) *T {
 	t.Helper()
