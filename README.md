@@ -31,12 +31,10 @@ For installing an already released version please follow the instructions on our
 ## Supported distros
 * Ubuntu
 * Fedora
-* Manjaro
 * Debian
-* Arch
 * Kali
-* CentOS
-* Rasbian
+* OpenSUSE
+* Raspbian
 
 Distributions are not supported after their end of life.
 
