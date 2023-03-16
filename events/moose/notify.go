@@ -1,3 +1,5 @@
+//go:build moose
+
 package moose
 
 import (

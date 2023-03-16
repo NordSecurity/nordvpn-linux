@@ -1,3 +1,5 @@
+//go:build moose
+
 // Package moose provides convenient wrappers for event sending.
 package moose
 
