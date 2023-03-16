@@ -236,7 +236,6 @@ func (em *EventManager) EventFunc(eventJSON string) {
 			log.Printf("transfer %s from transferStarted event not found", event.TransferID)
 			return
 		}
-		transfer.Status = pb.Status_ONGOING
 
 		if file := FindTransferFile(transfer, event.FileID); file != nil {
 			transfer.TotalSize += file.Size
