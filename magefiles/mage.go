@@ -98,7 +98,6 @@ func (Build) Deb() error {
 	}
 	env["ARCH"] = build.Default.GOARCH
 	env["GOPATH"] = build.Default.GOPATH
-	env["FEATURES"] = "telio moose drop"
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -126,7 +125,6 @@ func (Build) DebDocker(ctx context.Context) error {
 	env["ARCH"] = build.Default.GOARCH
 	env["CI_PROJECT_DIR"] = "/opt"
 	env["ENVIRONMENT"] = "dev"
-	env["FEATURES"] = "telio moose drop"
 	env["GOPATH"] = build.Default.GOPATH
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = "source"
@@ -279,9 +277,8 @@ func (Build) RustDocker(ctx context.Context) error {
 func (Build) Rpm() error {
 	mg.Deps(Build.Data)
 	env := map[string]string{
-		"ARCHS":    build.Default.GOARCH,
-		"GOPATH":   build.Default.GOPATH,
-		"FEATURES": "telio moose drop",
+		"ARCHS":  build.Default.GOARCH,
+		"GOPATH": build.Default.GOPATH,
 	}
 	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", "rpm")
 }
@@ -306,7 +303,6 @@ func (Build) RpmDocker(ctx context.Context) error {
 	env["ARCHS"] = build.Default.GOARCH
 	env["CI_PROJECT_DIR"] = "/opt"
 	env["ENVIRONMENT"] = "dev"
-	env["FEATURES"] = "telio moose drop"
 	env["GOPATH"] = build.Default.GOPATH
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = "source"
@@ -369,7 +365,6 @@ func (Test) CgoDocker(ctx context.Context) error {
 	env["ARCH"] = build.Default.GOARCH
 	env["CI_PROJECT_DIR"] = "/opt"
 	env["ENVIRONMENT"] = "dev"
-	env["FEATURES"] = "telio moose drop"
 	env["GOPATH"] = build.Default.GOPATH
 
 	return RunDockerWithSettings(
