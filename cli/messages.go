@@ -222,6 +222,7 @@ Example: nordvpn set meshnet on`
 	MsgDirectoryToDeep               = "File depth cannot exceed 5 directories. Try archiving the directory."
 	MsgSendingNotAllowed             = "This peer does not allow file transfers from you."
 	MsgFileNotInProgress             = "This file is not in progress"
+	MsgNotEnoughSpace                = "The transfer can't be accepted because there's not enough storage on your device."
 
 	MsgFileshareSendUsage     = "Send files or directories to a Meshnet peer."
 	MsgFileshareSendArgsUsage = "[peer ip|peer hostname|peer pubkey] [path_1] [path_2]...\n\nTo cancel a transfer in progress, press Ctrl+C"

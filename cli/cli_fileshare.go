@@ -331,6 +331,8 @@ func fileshareErrorCodeToError(code pb.FileshareErrorCode) error {
 		return errors.New(MsgFileNotInProgress)
 	case pb.FileshareErrorCode_TRANSFER_NOT_CREATED:
 		return errors.New(MsgTransferNotCreated)
+	case pb.FileshareErrorCode_NOT_ENOUGH_SPACE:
+		return errors.New(MsgNotEnoughSpace)
 	default:
 		return errors.New(AccountInternalError)
 	}

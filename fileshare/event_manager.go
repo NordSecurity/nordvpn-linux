@@ -22,6 +22,7 @@ var (
 	ErrFileNotFound            = errors.New("file not found")
 	ErrTransferAlreadyAccepted = errors.New("can't accept already accepted transfer")
 	ErrTransferAcceptOutgoing  = errors.New("can't accept outgoing transfer")
+	ErrSizeLimitExceeded       = errors.New("provided size limit exceeded")
 )
 
 // EventManager is responsible for libdrop event handling.
@@ -345,7 +346,12 @@ func (em *EventManager) GetTransfer(transferID string) (*pb.Transfer, error) {
 }
 
 // AcceptTransfer changes transfer status to reflect that it is being downloaded
-func (em *EventManager) AcceptTransfer(transferID, path string, fileIDs []string) (*pb.Transfer, error) {
+func (em *EventManager) AcceptTransfer(
+	transferID string,
+	path string,
+	fileIDs []string,
+	sizeLimit uint64,
+) (*pb.Transfer, error) {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
@@ -360,10 +366,24 @@ func (em *EventManager) AcceptTransfer(transferID, path string, fileIDs []string
 		return nil, ErrTransferAlreadyAccepted
 	}
 
+	var files []*pb.File
 	for _, fileID := range fileIDs {
-		if FindTransferFile(transfer, fileID) == nil {
+		file := FindTransferFile(transfer, fileID)
+		if file == nil {
 			return nil, ErrFileNotFound
 		}
+		files = append(files, file)
+	}
+
+	if len(fileIDs) == 0 {
+		files = transfer.Files // All files were accepted
+	}
+	var totalSize uint64
+	ForAllFiles(files, func(f *pb.File) {
+		totalSize += f.Size
+	})
+	if totalSize > sizeLimit {
+		return nil, ErrSizeLimitExceeded
 	}
 
 	transfer.Path = path

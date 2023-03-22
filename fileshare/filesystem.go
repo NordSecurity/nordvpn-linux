@@ -4,12 +4,15 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/sys/unix"
 )
 
 // Filesystem defines file operations used by fileshare
 type Filesystem interface {
 	fs.StatFS
 	fs.ReadDirFS
+	Statfs(path string) (unix.Statfs_t, error)
 }
 
 // StdFilesystem is a wrapper for golang std filesystem implementation
@@ -40,4 +43,12 @@ func (stdFs StdFilesystem) Stat(path string) (fs.FileInfo, error) {
 func (stdFs StdFilesystem) ReadDir(path string) ([]fs.DirEntry, error) {
 	cleanPath := filepath.Clean(filepath.Join(stdFs.basepath, path))
 	return os.ReadDir(cleanPath)
+}
+
+// Statfs returns info about filesystem
+func (stdFs StdFilesystem) Statfs(path string) (unix.Statfs_t, error) {
+	cleanPath := filepath.Clean(filepath.Join(stdFs.basepath, path))
+	var statfs unix.Statfs_t
+	err := unix.Statfs(cleanPath, &statfs)
+	return statfs, err
 }

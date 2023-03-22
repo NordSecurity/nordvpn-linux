@@ -258,7 +258,14 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 		return srv.Send(&pb.StatusResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
-	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files)
+	statfs, err := s.filesystem.Statfs(req.DstPath)
+	if err != nil {
+		log.Printf("doing statfs: %s", err)
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
+	}
+
+	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files,
+		statfs.Bavail*uint64(statfs.Bsize))
 	switch err {
 	case ErrTransferNotFound:
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND)})
@@ -268,6 +275,8 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ALREADY_ACCEPTED)})
 	case ErrFileNotFound:
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)})
+	case ErrSizeLimitExceeded:
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
 	case nil:
 		break
 	default:

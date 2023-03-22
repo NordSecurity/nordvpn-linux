@@ -331,6 +331,7 @@ func TestAcceptTransfer(t *testing.T) {
 		expectedErr    error
 		expectedStatus pb.Status
 		files          []string
+		sizeLimit      uint64
 	}{
 		{
 			testName:       "accept transfer success",
@@ -338,6 +339,7 @@ func TestAcceptTransfer(t *testing.T) {
 			expectedErr:    nil,
 			expectedStatus: pb.Status_ONGOING,
 			files:          []string{},
+			sizeLimit:      6,
 		},
 		{
 			testName:       "accept files success",
@@ -345,6 +347,7 @@ func TestAcceptTransfer(t *testing.T) {
 			expectedErr:    nil,
 			expectedStatus: pb.Status_ONGOING,
 			files:          []string{"test/file_A"},
+			sizeLimit:      1,
 		},
 		{
 			testName:       "transfer doesn't exist",
@@ -352,6 +355,7 @@ func TestAcceptTransfer(t *testing.T) {
 			expectedErr:    ErrTransferNotFound,
 			expectedStatus: pb.Status_REQUESTED,
 			files:          []string{},
+			sizeLimit:      6,
 		},
 		{
 			testName:       "file doesn't exist",
@@ -359,6 +363,23 @@ func TestAcceptTransfer(t *testing.T) {
 			expectedErr:    ErrFileNotFound,
 			expectedStatus: pb.Status_REQUESTED,
 			files:          []string{"invalid_file"},
+			sizeLimit:      6,
+		},
+		{
+			testName:       "size exceeds limit",
+			transfer:       "c13c619c-c70b-49b8-9396-72de88155c43",
+			expectedErr:    ErrSizeLimitExceeded,
+			expectedStatus: pb.Status_REQUESTED,
+			files:          []string{},
+			sizeLimit:      5,
+		},
+		{
+			testName:       "partial transfer size exceeds limit",
+			transfer:       "c13c619c-c70b-49b8-9396-72de88155c43",
+			expectedErr:    ErrSizeLimitExceeded,
+			expectedStatus: pb.Status_REQUESTED,
+			files:          []string{"test/file_C"},
+			sizeLimit:      2,
 		},
 	}
 
@@ -372,15 +393,15 @@ func TestAcceptTransfer(t *testing.T) {
 			Status:    pb.Status_REQUESTED,
 			Path:      "/test",
 			Files: []*pb.File{
-				{Id: "test/file_A"},
-				{Id: "test/file_B"},
-				{Id: "test/file_C"},
+				{Id: "test/file_A", Size: 1},
+				{Id: "test/file_B", Size: 2},
+				{Id: "test/file_C", Size: 3},
 			},
 		}
 		eventManager.CancelFunc = func(transferID string) error { return nil }
 
 		t.Run(test.testName, func(t *testing.T) {
-			transfer, err := eventManager.AcceptTransfer(test.transfer, "/tmp", test.files)
+			transfer, err := eventManager.AcceptTransfer(test.transfer, "/tmp", test.files, test.sizeLimit)
 
 			assert.Equal(t, test.expectedErr, err)
 			assert.Equal(t, test.expectedStatus, eventManager.transfers[transferID].Status)
@@ -400,7 +421,7 @@ func TestAcceptTransfer_Outgoing(t *testing.T) {
 
 	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
 
-	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{})
+	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
 	assert.Equal(t, ErrTransferAcceptOutgoing, err)
 }
 
@@ -416,9 +437,9 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 		Status:    pb.Status_REQUESTED,
 	}
 
-	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{})
+	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
 	assert.NoError(t, err)
-	_, err = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{})
+	_, err = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
 	assert.Equal(t, ErrTransferAlreadyAccepted, err)
 }
 
@@ -438,11 +459,11 @@ func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(2)
 	go func() {
-		_, err1 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{})
+		_, err1 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
 		waitGroup.Done()
 	}()
 	go func() {
-		_, err2 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{})
+		_, err2 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
 		waitGroup.Done()
 	}()
 	waitGroup.Wait()
