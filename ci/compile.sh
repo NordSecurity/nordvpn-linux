@@ -70,6 +70,11 @@ fi
 # Apply moose patch in case compiling with moose
 if [[ $tags == *"moose"* ]]; then 
 	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+	function revert_moose_patch {
+		cd "${CI_PROJECT_DIR}"
+		git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+	}
+	trap revert_moose_patch EXIT
 fi
 
 for program in ${!names_map[*]}; do # looping over keys
@@ -81,7 +86,3 @@ for program in ${!names_map[*]}; do # looping over keys
 	popd
 done
 
-# Revert moose patch
-if [[ $tags == *"moose"* ]]; then 
-	git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
-fi
