@@ -1,5 +1,6 @@
 from enum import Enum
 import sh
+import time
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 STANDARD_TECHNOLOGIES = [
@@ -271,3 +272,9 @@ def is_disconnect_successful(output):
 # returns True when command is invalid
 def is_invalid_command(command, exception):
     return f"Command '{command}' doesn't exist." in str(exception.value)
+
+
+def poll(func, attempts: int = 3, sleep: float = 1.0):
+    for _ in range(attempts):
+        yield func()
+        time.sleep(sleep)

@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -77,6 +79,10 @@ const (
 
 	// Fileshared defines filesharing daemon name
 	Fileshared = "nordfileshared"
+
+	// ConfigDirectory is used for configuration files storage. Hardcoded only for nordfileshared, in
+	// other cases consider using os.UserConfigDir instead.
+	ConfigDirectory = ".config"
 )
 
 const (
@@ -128,6 +134,23 @@ func GetFilesharedSocket(uid int) string {
 	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Fileshared, Fileshared)
 }
 
+// GetFilesharedConfigDirPath returns the directory used to store nordfileshared logs and transfers history
+func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
+	if homeDirectory == "" {
+		return "", errors.New("user does not have a home directory")
+	}
+	// We are running as root, so we cannot retreive user config directory path dynamically. We
+	// hardcode it to /home/<username>/.config, and if it doesn't exist on the expected path
+	// (i.e XDG_CONFIG_HOME is set), we default to /var/log/nordvpn/nordfileshared-<username>-<uid>.log
+	userConfigPath := filepath.Join(homeDirectory, ConfigDirectory, UserDataPath)
+	_, err := os.Stat(userConfigPath)
+	if err == nil {
+		return userConfigPath, nil
+	}
+
+	return "", fmt.Errorf("%s directory not found in users home directory", ConfigDirectory)
+}
+
 // GetFilesharedLogPath when logs aren't handled by systemd
 func GetFilesharedLogPath(uid string) string {
 	if uid == "0" {
@@ -135,11 +158,18 @@ func GetFilesharedLogPath(uid string) string {
 	}
 
 	usr, err := user.LookupId(uid)
-	if err == nil && usr != nil && usr.HomeDir != "" {
-		return filepath.Join(usr.HomeDir, UserDataPath, Fileshared+".log")
+	if err != nil {
+		log.Printf("failed to lookup user, users fileshared logs will be stored in %s: %s", LogPath, err.Error())
 	}
 
-	return filepath.Join(LogPath, Fileshared+"-"+uid+".log")
+	configDir, err := GetFilesharedConfigDirPath(usr.HomeDir)
+
+	if err != nil {
+		log.Printf("users fileshared logs will be stored in %s: %s", LogPath, err.Error())
+		return filepath.Join(LogPath, Fileshared+"-"+uid+".log")
+	}
+
+	return filepath.Join(configDir, Fileshared+".log")
 }
 
 // GetNordvpnGid returns id of group defined in NordvpnGroup

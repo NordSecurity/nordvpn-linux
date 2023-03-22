@@ -56,6 +56,20 @@ def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> str:
     return re.findall("([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})", transfers)[-1]
 
 
+def get_transfer(transfer_id: str, ssh_client: ssh.Ssh = None) -> str:
+    if ssh_client is None:
+        transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    else:
+        transfers = ssh_client.exec_command(f"nordvpn fileshare list")
+
+    transfer_entry = [transfer_entry for transfer_entry in transfers.split("\n") if transfer_id in transfer_entry]
+
+    if len(transfer_entry) == 0:
+        return None
+
+    return transfer_entry[0]
+
+
 def find_transfer_by_id(transfer_list: str, id: str) -> str:
     for transfer_entry in transfer_list.strip("\n").split("\n"):
         if id in transfer_entry:

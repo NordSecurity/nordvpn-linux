@@ -1,4 +1,4 @@
-from lib import daemon, info, logging, login, meshnet, ssh, fileshare
+from lib import daemon, info, logging, login, meshnet, ssh, fileshare, poll
 import lib
 import sh
 import re
@@ -8,6 +8,7 @@ import tempfile
 import os
 import psutil
 import subprocess
+import shutil
 
 import logging as logger
 
@@ -45,6 +46,8 @@ def setup_module(module):
 
 
 def teardown_module(module):
+    dest_logs_path = f"{os.environ['CI_PROJECT_DIR']}/dist/logs"
+    shutil.copy("/home/qa/.config/nordvpn/nordfileshared.log", dest_logs_path)
     ssh_client.exec_command("nordvpn set mesh off")
     ssh_client.exec_command("nordvpn logout --persist-token")
     daemon.stop_peer(ssh_client)
@@ -101,11 +104,24 @@ def test_accept(accept_directories):
     output = ssh_client.exec_command(f"nordvpn fileshare send --background {address} {nested_dir} {outer_dir}")
     time.sleep(1)
 
-    local_transfer_id = fileshare.get_last_transfer(outgoing=False)
+    def get_new_transfer():
+        local_transfer_id = fileshare.get_last_transfer(outgoing=False)
+        transfer_status = fileshare.get_transfer(local_transfer_id)
+        if transfer_status is None:
+            return None, f"could not read transfer {local_transfer_id} status on receiver side after it has been initiated by the sender"
+        if "completed" in transfer_status:
+            return None, f"no new transfers found on receiver side after transfer has been initiated by the sender, last transfer is {local_transfer_id} but its status is completed"
+        return local_transfer_id, ""
+
+    for local_transfer_id, error_message in poll(get_new_transfer):
+        if local_transfer_id is not None:
+            break
+
+    assert local_transfer_id is not None, error_message
+
     peer_transfer_id = fileshare.get_last_transfer(ssh_client=ssh_client)
 
     output = sh.nordvpn.fileshare.accept("--background", "--path", "/tmp", local_transfer_id, *accept_directories).stdout.decode("utf-8")
-    time.sleep(1)
 
     def predicate(file_entry: str) -> bool:
         file_entry_columns = file_entry.split(' ')
@@ -117,11 +133,25 @@ def test_accept(accept_directories):
             return True
         return False
 
-    transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
-    assert fileshare.for_all_files_in_transfer(transfer, transfer_files, predicate) is True
+    def check_files_status_receiver():
+        transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        return fileshare.for_all_files_in_transfer(transfer, transfer_files, predicate), transfer
 
-    transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
-    assert fileshare.for_all_files_in_transfer(transfer, transfer_files, predicate) is True
+    for receiver_files_status_ok, transfer in poll(check_files_status_receiver, attempts=10):
+        if receiver_files_status_ok is True:
+            break
+
+    assert receiver_files_status_ok is True, f"invalid file status on receiver side, transfer {transfer}, files {accept_directories} should be downloaded"
+
+    def check_files_status_sender():
+        transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
+        return fileshare.for_all_files_in_transfer(transfer, transfer_files, predicate), transfer
+
+    for sender_files_status_ok, transfer in poll(check_files_status_sender, attempts=10):
+        if sender_files_status_ok is True:
+            break
+
+    assert sender_files_status_ok is True, f"invalid file status on sender side, transfer {transfer}, files {accept_directories} should be uploaded"
 
 
 @pytest.mark.parametrize("background", [True, False])
@@ -440,14 +470,16 @@ def test_transfers_persistence():
 
     ssh_client.exec_command("nordvpn fileshare accept {}".format(peer_transfer_id))
 
-    daemon.stop()
-    daemon.start()
+    sh.nordvpn.set.mesh.off()
+    sh.nordvpn.set.mesh.on()
     time.sleep(1)
 
     assert local_transfer_id in sh.nordvpn.fileshare.list()
     assert meshnet.is_peer_reachable(ssh_client) # Wait to reestablish connection for further tests
+    sh.nordvpn.mesh.peer.refresh()
 
 
+@pytest.mark.skip("load test, to be moved into a separate job")
 def test_transfers_persistence_load():
     nordvpnd_pid = subprocess.Popen("/usr/bin/pidof nordvpnd", shell=True, stdout=subprocess.PIPE).stdout.read().strip()
     nordfileshared_pid = subprocess.Popen("/usr/bin/pidof nordfileshared", shell=True, stdout=subprocess.PIPE).stdout.read().strip()

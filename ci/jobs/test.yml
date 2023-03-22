@@ -147,7 +147,9 @@ test/deb-fileshare:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-click, rules]
+    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-version-tag, rules]
+    - !reference [.cond/on-merge-request, rules]
   variables:
     QA_PEER_TOKEN: $QA_PEER_TOKEN
   services:
@@ -165,3 +167,6 @@ test/deb-fileshare:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
       - $CI_PROJECT_DIR/dist/logs/nordfileshared.log
       - $CI_PROJECT_DIR/dist/logs/cli.log
+  needs:
+    - "package/deb: [amd64]"
+    - "test/deb-meshnet"
