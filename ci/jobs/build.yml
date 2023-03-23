@@ -4,7 +4,7 @@ build/binaries:
   stage: build
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/compile.sh
@@ -34,7 +34,7 @@ build/openvpn:
   stage: build
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
     - !reference [.cond/on-click, rules]
@@ -50,7 +50,7 @@ build/data:
   stage: build
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
     - !reference [.cond/on-click, rules]

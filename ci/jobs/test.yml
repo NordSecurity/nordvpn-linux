@@ -4,7 +4,7 @@ test/cgo:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test.sh full
@@ -13,7 +13,7 @@ test/go:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test.sh
@@ -22,7 +22,7 @@ test/deb:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test_deb.sh $TEST
@@ -39,7 +39,7 @@ test/deb-connect1:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_nordlynx or test_quick_connect or test_double_quick_connect_only or test_connect_to_absent_server or test_mistype_connect'
@@ -53,7 +53,7 @@ test/deb-connect2:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_without_internet_access'
@@ -67,7 +67,7 @@ test/deb-combinations:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test_deb.sh combinations $PATTERN
@@ -84,7 +84,7 @@ test/deb-autoconnect1:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_default or test_not_autoconnect or test_autoconnect_to_country'
@@ -98,7 +98,7 @@ test/deb-autoconnect2:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_to_city or test_autoconnect_to_random_server_by_name'
@@ -128,7 +128,7 @@ test/deb-meshnet:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   variables:
@@ -147,7 +147,7 @@ test/deb-fileshare:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   variables:

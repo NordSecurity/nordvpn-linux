@@ -10,7 +10,7 @@ source "${CI_PROJECT_DIR}"/ci/archs.sh
 # work with pie executables, its enabled only for development builds.
 branch="${CI_COMMIT_REF_NAME:=$(git describe --contains --all HEAD)}"
 # shellcheck disable=SC2153
-[ "${branch}" != "master" ] && [ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
+[ "${branch}" != "main" ] && [ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
 
 if [[ "${ENVIRONMENT}" == "prod" ]]; then
 	EVENTS_DOMAIN="${EVENTS_PROD_DOMAIN}"
