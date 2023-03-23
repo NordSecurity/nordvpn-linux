@@ -24,13 +24,8 @@ def teardown_function(function):
     logging.log()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
-def test_autoconnect_default(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    output = sh.nordvpn.set.autoconnect.on()
+def autoconnect_base_test(group):
+    output = sh.nordvpn.set.autoconnect.on(group)
     print(output)
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
@@ -46,6 +41,14 @@ def test_autoconnect_default(tech, proto, obfuscated):
     print(output)
     assert lib.is_disconnect_successful(output)
     assert network.is_disconnected()
+
+
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(20)
+def test_autoconnect_default(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    autoconnect_base_test("")
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
@@ -61,57 +64,25 @@ def test_not_autoconnect(tech, proto, obfuscated):
     assert network.is_disconnected()
 
 
-@pytest.mark.parametrize("country", lib.COUNTRIES)
+@pytest.mark.parametrize("group", lib.COUNTRIES + lib.COUNTRY_CODES)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(20)
+def test_autoconnect_to_country(tech, proto, obfuscated, group):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    autoconnect_base_test(group)
+
+
+@pytest.mark.parametrize("group", lib.CITIES)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(20)
-def test_autoconnect_to_country(tech, proto, obfuscated, country):
+def test_autoconnect_to_city(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    output = sh.nordvpn.set.autoconnect.on(country)
-    print(output)
-
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        daemon.restart()
-        daemon.wait_for_autoconnect()
-        with lib.ErrorDefer(sh.nordvpn.set.autoconnect.off):
-            assert network.is_connected()
-
-    output = sh.nordvpn.set.autoconnect.off()
-    print(output)
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    autoconnect_base_test(group)
 
 
-@pytest.mark.parametrize("city", lib.CITIES)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
-def test_autoconnect_to_city(tech, proto, obfuscated, city):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    output = sh.nordvpn.set.autoconnect.on(city)
-    print(output)
-
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        daemon.restart()
-        daemon.wait_for_autoconnect()
-        with lib.ErrorDefer(sh.nordvpn.set.autoconnect.off):
-            assert network.is_connected()
-
-    output = sh.nordvpn.set.autoconnect.off()
-    print(output)
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
-
-
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(20)
 def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
@@ -120,19 +91,22 @@ def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
     _, hostname = server.get_hostname_by(tech, proto, obfuscated)
     name = hostname.split(".")[0]
 
-    output = sh.nordvpn.set.autoconnect.on(name)
-    print(output)
+    autoconnect_base_test(name)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        daemon.restart()
-        daemon.wait_for_autoconnect()
-        with lib.ErrorDefer(sh.nordvpn.set.autoconnect.off):
-            assert network.is_connected()
 
-    output = sh.nordvpn.set.autoconnect.off()
-    print(output)
+@pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(20)
+def test_autoconnect_to_standard_group(tech, proto, obfuscated, group):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    autoconnect_base_test(group)
 
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+
+@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(20)
+def test_autoconnect_to_additional_group(tech, proto, obfuscated, group):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    autoconnect_base_test(group)

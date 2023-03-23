@@ -69,6 +69,14 @@ COUNTRIES = [
     "France",
 ]
 
+# Used for test parametrization, when the same test has to be run for different countries.
+COUNTRY_CODES = [
+    "de",
+    "nl",
+    "us",
+    "fr",
+]
+
 # Used for test parametrization, when the same test has to be run for different cities.
 CITIES = [
     "Berlin",
