@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/netip"
+	"os"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -258,14 +259,28 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 		return srv.Send(&pb.StatusResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
+	destinationFileInfo, err := s.filesystem.Lstat(req.DstPath)
+
+	if err != nil {
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND)})
+	}
+
+	if destinationFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK)})
+	}
+
+	if !destinationFileInfo.IsDir() {
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY)})
+	}
+
 	statfs, err := s.filesystem.Statfs(req.DstPath)
 	if err != nil {
 		log.Printf("doing statfs: %s", err)
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
 	}
 
-	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files,
-		statfs.Bavail*uint64(statfs.Bsize))
+	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files, statfs.Bavail*uint64(statfs.Bsize))
+
 	switch err {
 	case ErrTransferNotFound:
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND)})

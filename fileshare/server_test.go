@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"math"
 	"net/netip"
+	"os"
 	"strconv"
 	"testing"
 	"testing/fstest"
@@ -133,33 +134,44 @@ func (m *mockSendServer) Send(resp *pb.StatusResponse) error {
 	return m.sendReturnValue
 }
 
-type mapFS struct {
+type mockFilesystem struct {
 	fstest.MapFS
 	freeSpace uint64
 }
 
-func (mfs mapFS) Statfs(path string) (unix.Statfs_t, error) {
-	if mfs.freeSpace == 0 {
-		return unix.Statfs_t{Bavail: math.MaxUint64, Bsize: 1}, nil
-	}
-	return unix.Statfs_t{Bavail: mfs.freeSpace, Bsize: 1}, nil
+func newMockFilesystem() mockFilesystem {
+	mockFilesystem := mockFilesystem{}
+	mockFilesystem.MapFS = make(fstest.MapFS)
+	return mockFilesystem
 }
 
-func populateMapFs(t *testing.T, filesystem *mapFS, directoryName string, fileCount int) {
+func (mf mockFilesystem) Lstat(path string) (fs.FileInfo, error) {
+	fileInfo, err := mf.MapFS.Stat(path)
+	return fileInfo, err
+}
+
+func (mf mockFilesystem) Statfs(path string) (unix.Statfs_t, error) {
+	if mf.freeSpace == 0 {
+		return unix.Statfs_t{Bavail: math.MaxUint64, Bsize: 1}, nil
+	}
+	return unix.Statfs_t{Bavail: mf.freeSpace, Bsize: 1}, nil
+}
+
+func populateMapFs(t *testing.T, mapfs *fstest.MapFS, directoryName string, fileCount int) {
 	t.Helper()
 
-	(*filesystem).MapFS[directoryName] = &fstest.MapFile{Mode: fs.ModeDir}
+	(*mapfs)[directoryName] = &fstest.MapFile{Mode: fs.ModeDir}
 	for filename := 0; filename < fileCount; filename++ {
-		(*filesystem).MapFS[directoryName+"/"+strconv.Itoa(filename)] = &fstest.MapFile{}
+		(*mapfs)[directoryName+"/"+strconv.Itoa(filename)] = &fstest.MapFile{}
 	}
 }
 
 func TestSend(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	mapFs := mapFS{MapFS: make(fstest.MapFS)}
+	mockFs := newMockFilesystem()
 	directory := "dir"
-	populateMapFs(t, &mapFs, directory, 3)
+	populateMapFs(t, &mockFs.MapFS, directory, 3)
 
 	internalPeer2IP := "219.150.143.226"
 	internalPeer2Pubkey := "FofTQLNKWoHwep2syHdzEg3RGVErLDizgeMArzwMdWT="
@@ -315,7 +327,7 @@ func TestSend(t *testing.T) {
 			&mockFileshare,
 			&EventManager{transfers: make(map[string]*pb.Transfer)},
 			mockMeshClient,
-			mapFs,
+			mockFs,
 		)
 
 		sendServer := mockSendServer{}
@@ -338,32 +350,32 @@ func TestSend(t *testing.T) {
 func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	mapFs := mapFS{MapFS: make(fstest.MapFS)}
+	mockFs := newMockFilesystem()
 	directoryTooManyFiles := "directory_too_many_files"
-	populateMapFs(t, &mapFs, directoryTooManyFiles, 1001)
+	populateMapFs(t, &mockFs.MapFS, directoryTooManyFiles, 1001)
 
 	directoryTooDeepName := "directory_too_deep"
 	currentDir := directoryTooDeepName
 	for directory := 0; directory < 8; directory++ {
-		mapFs.MapFS[currentDir] = &fstest.MapFile{Mode: fs.ModeDir}
+		mockFs.MapFS[currentDir] = &fstest.MapFile{Mode: fs.ModeDir}
 		currentDir = currentDir + "/" + strconv.Itoa(directory)
 	}
 
 	tooManyFilesCumulative1 := "directory_too_many_files_cumulative_1"
-	populateMapFs(t, &mapFs, tooManyFilesCumulative1, 600)
+	populateMapFs(t, &mockFs.MapFS, tooManyFilesCumulative1, 600)
 
 	tooManyFilesCumulative2 := "directory_too_many_files_cumulative_2"
-	populateMapFs(t, &mapFs, tooManyFilesCumulative2, 600)
+	populateMapFs(t, &mockFs.MapFS, tooManyFilesCumulative2, 600)
 
 	exectFileLimit := "directory_exact_limit"
-	populateMapFs(t, &mapFs, exectFileLimit, 1000)
+	populateMapFs(t, &mockFs.MapFS, exectFileLimit, 1000)
 
 	file1 := "file1"
-	mapFs.MapFS[file1] = &fstest.MapFile{}
+	mockFs.MapFS[file1] = &fstest.MapFile{}
 	file2 := "file2"
-	mapFs.MapFS[file2] = &fstest.MapFile{}
+	mockFs.MapFS[file2] = &fstest.MapFile{}
 	file3 := "file3"
-	mapFs.MapFS[file3] = &fstest.MapFile{}
+	mockFs.MapFS[file3] = &fstest.MapFile{}
 
 	fileshareTests := []struct {
 		testName             string
@@ -414,7 +426,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 			&mockServerFileshare{},
 			&EventManager{transfers: make(map[string]*pb.Transfer)},
 			mockMeshClient{isEnabled: true},
-			mapFs,
+			mockFs,
 		)
 
 		sendServer := mockSendServer{}
@@ -429,16 +441,28 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 	}
 }
 
-func TestAcceptErrors(t *testing.T) {
+func TestAccept(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fileID := "test_a.txt"
 	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
 
+	mockFs := newMockFilesystem()
+
+	acceptDirName := "tmp"
+	mockFs.MapFS[acceptDirName] = &fstest.MapFile{Mode: os.ModeDir}
+
+	acceptSymlinkName := "link"
+	mockFs.MapFS[acceptSymlinkName] = &fstest.MapFile{Mode: os.ModeSymlink}
+
+	acceptNotDirName := "not_dir"
+	mockFs.MapFS[acceptNotDirName] = &fstest.MapFile{}
+
 	fileshareTests := []struct {
 		testName          string
 		transferID        string
 		fileID            string
+		acceptPath        string
 		transferDirection pb.Direction
 		transferStatus    pb.Status
 		serverError       error
@@ -448,6 +472,7 @@ func TestAcceptErrors(t *testing.T) {
 			testName:          "transfer successfully accepted",
 			transferID:        transferID,
 			fileID:            fileID,
+			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
 		},
@@ -455,6 +480,7 @@ func TestAcceptErrors(t *testing.T) {
 			testName:          "server error",
 			transferID:        transferID,
 			fileID:            fileID,
+			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
 			serverError:       errors.New("some error"),
@@ -463,6 +489,7 @@ func TestAcceptErrors(t *testing.T) {
 			testName:          "non-existing transfer",
 			transferID:        "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
 			fileID:            fileID,
+			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
 			respError:         fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND),
@@ -471,6 +498,7 @@ func TestAcceptErrors(t *testing.T) {
 			testName:          "outgoing transfer",
 			transferID:        transferID,
 			fileID:            fileID,
+			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_OUTGOING,
 			transferStatus:    pb.Status_REQUESTED,
 			respError:         fileshareError(pb.FileshareErrorCode_ACCEPT_OUTGOING),
@@ -479,6 +507,7 @@ func TestAcceptErrors(t *testing.T) {
 			testName:          "ongoing transfer",
 			transferID:        transferID,
 			fileID:            fileID,
+			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_ONGOING,
 			respError:         fileshareError(pb.FileshareErrorCode_ALREADY_ACCEPTED),
@@ -487,9 +516,37 @@ func TestAcceptErrors(t *testing.T) {
 			testName:          "non-existing file",
 			transferID:        transferID,
 			fileID:            "some_file.txt",
+			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
 			respError:         fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND),
+		},
+		{
+			testName:          "accept directory does not exist",
+			transferID:        transferID,
+			fileID:            fileID,
+			acceptPath:        "dddd",
+			transferDirection: pb.Direction_INCOMING,
+			transferStatus:    pb.Status_REQUESTED,
+			respError:         fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND),
+		},
+		{
+			testName:          "symlink accept directory",
+			transferID:        transferID,
+			fileID:            fileID,
+			acceptPath:        acceptSymlinkName,
+			transferDirection: pb.Direction_INCOMING,
+			transferStatus:    pb.Status_REQUESTED,
+			respError:         fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK),
+		},
+		{
+			testName:          "accept directory is not a directory",
+			transferID:        transferID,
+			fileID:            fileID,
+			acceptPath:        acceptNotDirName,
+			transferDirection: pb.Direction_INCOMING,
+			transferStatus:    pb.Status_REQUESTED,
+			respError:         fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY),
 		},
 	}
 
@@ -510,12 +567,11 @@ func TestAcceptErrors(t *testing.T) {
 			&mockServerFileshare{},
 			&eventManager,
 			mockMeshClient{isEnabled: true},
-			mapFS{MapFS: make(fstest.MapFS)},
-		)
+			mockFs)
 
 		t.Run(test.testName, func(t *testing.T) {
 			err := server.Accept(
-				&pb.AcceptRequest{TransferId: test.transferID, DstPath: "/tmp", Silent: true, Files: []string{test.fileID}},
+				&pb.AcceptRequest{TransferId: test.transferID, DstPath: test.acceptPath, Silent: true, Files: []string{test.fileID}},
 				acceptServer)
 			assert.ErrorIs(t, err, test.serverError)
 			assert.Equal(t, test.respError, acceptServer.response.Error)
@@ -579,6 +635,9 @@ func TestAcceptDirectory(t *testing.T) {
 		Status:    pb.Status_REQUESTED,
 		Files:     []*pb.File{&nestedDirectory, &outerDirectory},
 	}
+
+	mockFs := newMockFilesystem()
+	mockFs.MapFS["tmp"] = &fstest.MapFile{Mode: fs.ModeDir}
 
 	tests := []struct {
 		testName              string
@@ -664,18 +723,20 @@ func TestAcceptDirectory(t *testing.T) {
 			acceptFirstReturnValue: test.firstFileErr,
 		}
 
+		mockFs.freeSpace = test.filesystemSpace
+
 		server := NewServer(
 			fileshare,
 			&eventManager,
 			mockMeshClient{isEnabled: true},
-			mapFS{MapFS: make(fstest.MapFS), freeSpace: test.filesystemSpace},
+			mockFs,
 		)
 
 		acceptServer := &mockAcceptServer{serverError: nil}
 
 		t.Run(test.testName, func(t *testing.T) {
 			err := server.Accept(
-				&pb.AcceptRequest{TransferId: transferID, DstPath: "/tmp", Silent: true, Files: test.fileIDs},
+				&pb.AcceptRequest{TransferId: transferID, DstPath: "tmp", Silent: true, Files: test.fileIDs},
 				acceptServer)
 			assert.Equal(t, err, nil)
 			if test.respErr != nil {
@@ -775,7 +836,7 @@ func TestCancel(t *testing.T) {
 			&mockServerFileshare{cancelReturnValue: test.cancelError},
 			&eventManager,
 			mockMeshClient{isEnabled: test.isMeshEnabled},
-			mapFS{MapFS: make(fstest.MapFS)},
+			newMockFilesystem(),
 		)
 		eventManager.transfers[transferID].Files[0].Status = test.transferStatus
 

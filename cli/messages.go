@@ -203,14 +203,16 @@ Example: nordvpn set meshnet on`
 	flagFileshareListIn  = "incoming"
 	flagFileshareListOut = "outgoing"
 
-	MsgFileshareUsage            = "Transfer files of any size between Meshnet peers securely and privately."
-	MsgFileshareTransferNotFound = "Transfer not found."
-	MsgFileshareInvalidPath      = "Invalid path provided: %s"
-	MsgFilesharePathNotFound     = "Download directory %q does not exist. Make sure the directory exists or provide an alternative via --" + flagFilesharePath
-	MsgFileshareInvalidPeer      = "Peer name is invalid."
-	MsgFileshareDisconnectedPeer = "Peer is disconnected."
-	MsgFileshareFileNotFound     = "File not found."
-	MsgFileshareSocketNotFound   = "Enable Meshnet to share files. If Meshnet is already enabled, try disabling and enabling it again."
+	MsgFileshareUsage                     = "Transfer files of any size between Meshnet peers securely and privately."
+	MsgFileshareTransferNotFound          = "Transfer not found."
+	MsgFileshareInvalidPath               = "Invalid path provided: %s"
+	MsgFilesharePathNotFound              = "Download directory %q does not exist. Make sure the directory exists or provide an alternative via --" + flagFilesharePath
+	MsgFileshareAcceptPathIsASymlink      = "Download directory %q is a symlink. You can provide provide an alternative via --" + flagFilesharePath
+	MsgFileshareAcceptPathIsNotADirectory = "%q is not a directory, so it cannot be used as a download destination. You can provide provide an alternative via --" + flagFilesharePath
+	MsgFileshareInvalidPeer               = "Peer name is invalid."
+	MsgFileshareDisconnectedPeer          = "Peer is disconnected."
+	MsgFileshareFileNotFound              = "File not found."
+	MsgFileshareSocketNotFound            = "Enable Meshnet to share files. If Meshnet is already enabled, try disabling and enabling it again."
 
 	MsgFileshareAcceptHomeError      = "Cannot determine default download path. Please provide download path explicitly via --" + flagFilesharePath
 	MsgFileshareAcceptAllError       = "Download couldn't start."

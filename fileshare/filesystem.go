@@ -13,6 +13,7 @@ type Filesystem interface {
 	fs.StatFS
 	fs.ReadDirFS
 	Statfs(path string) (unix.Statfs_t, error)
+	Lstat(path string) (fs.FileInfo, error)
 }
 
 // StdFilesystem is a wrapper for golang std filesystem implementation
@@ -51,4 +52,10 @@ func (stdFs StdFilesystem) Statfs(path string) (unix.Statfs_t, error) {
 	var statfs unix.Statfs_t
 	err := unix.Statfs(cleanPath, &statfs)
 	return statfs, err
+}
+
+// Lstat a path
+func (stdFs StdFilesystem) Lstat(path string) (fs.FileInfo, error) {
+	cleanPath := filepath.Clean(filepath.Join(stdFs.basepath, path))
+	return os.Lstat(cleanPath)
 }

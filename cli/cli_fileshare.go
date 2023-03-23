@@ -194,10 +194,6 @@ func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 		}
 	}
 
-	if !internal.FileExists(path) {
-		return fmt.Errorf(MsgFilesharePathNotFound, path)
-	}
-
 	// disable spinner, we will show message to the user instead
 	c.loaderInterceptor.enabled = false
 	transferID := args.First()
@@ -220,7 +216,7 @@ func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 	}
 
 	if resp.GetError() != nil {
-		if err := getFileshareResponseToError(resp.GetError()); err != nil {
+		if err := getFileshareResponseToError(resp.GetError(), path); err != nil {
 			return formatError(err)
 		}
 	}
@@ -265,7 +261,8 @@ func (c *cmd) FileshareCancel(ctx *cli.Context) error {
 	return nil
 }
 
-func getFileshareResponseToError(resp *pb.Error) error {
+// getFileshareResponseToError converts resp to error. Params are used in case of some error messages.
+func getFileshareResponseToError(resp *pb.Error, params ...any) error {
 	if resp == nil {
 		return errors.New(AccountInternalError)
 	}
@@ -276,7 +273,7 @@ func getFileshareResponseToError(resp *pb.Error) error {
 	case *pb.Error_ServiceError:
 		return fileshareServiceErrorCodeToError(resp.ServiceError)
 	case *pb.Error_FileshareError:
-		return fileshareErrorCodeToError(resp.FileshareError)
+		return fileshareErrorCodeToError(resp.FileshareError, params...)
 	default:
 		return errors.New(AccountInternalError)
 	}
@@ -299,7 +296,7 @@ func fileshareServiceErrorCodeToError(code pb.ServiceErrorCode) error {
 
 // fileshareErrorCodeToError determines the human readable from the given
 // error code
-func fileshareErrorCodeToError(code pb.FileshareErrorCode) error {
+func fileshareErrorCodeToError(code pb.FileshareErrorCode, params ...any) error {
 	switch code {
 	case pb.FileshareErrorCode_LIB_FAILURE:
 		return errors.New(client.ConnectCantConnect)
@@ -333,6 +330,12 @@ func fileshareErrorCodeToError(code pb.FileshareErrorCode) error {
 		return errors.New(MsgTransferNotCreated)
 	case pb.FileshareErrorCode_NOT_ENOUGH_SPACE:
 		return errors.New(MsgNotEnoughSpace)
+	case pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND:
+		return fmt.Errorf(MsgFilesharePathNotFound, params...)
+	case pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK:
+		return fmt.Errorf(MsgFileshareAcceptPathIsASymlink, params...)
+	case pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY:
+		return fmt.Errorf(MsgFileshareAcceptPathIsNotADirectory, params...)
 	default:
 		return errors.New(AccountInternalError)
 	}

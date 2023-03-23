@@ -53,6 +53,11 @@ def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> str:
         transfers = ssh_client.exec_command(f"nordvpn fileshare list")
     outgoing_index = transfers.index("Outgoing")
     transfers = transfers[outgoing_index:] if outgoing else transfers[:outgoing_index]
+    transfer_ids = re.findall("([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})", transfers)
+
+    if len(transfer_ids) == 0:
+        return None
+
     return re.findall("([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})", transfers)[-1]
 
 
@@ -92,3 +97,17 @@ def for_all_files_in_transfer(transfer: str, files: list[str], predicate: Callab
         if file_entry is None or not predicate(file_entry):
             return False
     return True
+
+
+# returns last incoming transfer that has not completed
+def get_new_incoming_transfer():
+    local_transfer_id = get_last_transfer(outgoing=False)
+    if local_transfer_id is None:
+        return None, f"there are no started transfers"
+
+    transfer_status = get_transfer(local_transfer_id)
+    if transfer_status is None:
+        return None, f"could not read transfer {local_transfer_id} status on receiver side after it has been initiated by the sender"
+    if "completed" in transfer_status:
+        return None, f"no new transfers found on receiver side after transfer has been initiated by the sender, last transfer is {local_transfer_id} but its status is completed"
+    return local_transfer_id, ""

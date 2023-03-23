@@ -35,6 +35,9 @@ enum FileshareErrorCode {
 	FILE_NOT_IN_PROGRESS = 14; // Returned when user tries to cancel a file that is not in flight
 	TRANSFER_NOT_CREATED = 15; // When libdrop doesn't return transfer ID, most likely permission issue
 	NOT_ENOUGH_SPACE = 16; // Transfer larger than available hard drive space
+	ACCEPT_DIR_NOT_FOUND = 17;
+	ACCEPT_DIR_IS_A_SYMLINK = 18;
+	ACCEPT_DIR_IS_NOT_A_DIRECTORY = 19;
 }
 
 // Generic error to be used through all responses. If empty then no error occured.

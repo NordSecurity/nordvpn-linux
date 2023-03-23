@@ -102,18 +102,8 @@ def test_accept(accept_directories):
 
     # accept entire transfer
     output = ssh_client.exec_command(f"nordvpn fileshare send --background {address} {nested_dir} {outer_dir}")
-    time.sleep(1)
 
-    def get_new_transfer():
-        local_transfer_id = fileshare.get_last_transfer(outgoing=False)
-        transfer_status = fileshare.get_transfer(local_transfer_id)
-        if transfer_status is None:
-            return None, f"could not read transfer {local_transfer_id} status on receiver side after it has been initiated by the sender"
-        if "completed" in transfer_status:
-            return None, f"no new transfers found on receiver side after transfer has been initiated by the sender, last transfer is {local_transfer_id} but its status is completed"
-        return local_transfer_id, ""
-
-    for local_transfer_id, error_message in poll(get_new_transfer):
+    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):
         if local_transfer_id is not None:
             break
 
@@ -644,23 +634,6 @@ def test_permissions_send_forbidden(peer_name):
 
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
-def test_permissions_meshnet_receive_allowed(peer_name):
-    output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
-    tester_addess = meshnet.get_peer_name(output, peer_name)
-
-    filename = "/tmp/file_allowed"
-    ssh_client.exec_command(f"echo > {filename}")
-    output = ssh_client.exec_command(f"nordvpn fileshare send --background {tester_addess} {filename}")
-    peer_transfer_id = re.findall(fileshare.SEND_NOWAIT_SUCCESS_MSG_PATTERN, output)[0]
-    assert peer_transfer_id is not None
-
-    time.sleep(1)
-
-    local_transfer_id = fileshare.get_last_transfer()
-    assert local_transfer_id is not None
-
-
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_permissions_meshnet_receive_forbidden(peer_name):
     output = ssh_client.exec_command("nordvpn mesh peer list")
     peer_address = meshnet.get_this_device_ipv4(output)
@@ -684,3 +657,73 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     actual_transfer_list = actual_transfer_list[actual_transfer_list.index("Incoming"):].strip()
 
     assert expected_transfer_list == actual_transfer_list
+
+    sh.nordvpn.mesh.peer.fileshare.allow(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+
+
+def test_accept_destination_directory_does_not_exist():
+    output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
+    address = meshnet.get_peer_name(output, meshnet.PeerName.Ip)
+
+    filename = "file"
+
+    ssh_client.exec_command(f"touch {filename}")
+    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {filename}")
+
+    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):
+        if local_transfer_id is not None:
+            break
+
+    assert local_transfer_id is not None, error_message
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        output = sh.nordvpn.fileshare.accept("--background", "--path", "invalid_dir", local_transfer_id).stdout.decode("utf-8")
+        assert "Download directory invalid_dir does not exist. Make sure the directory exists or provide an alternative via --path" in ex
+
+
+def test_accept_destination_directory_symlink():
+    output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
+    address = meshnet.get_peer_name(output, meshnet.PeerName.Ip)
+
+    filename = "file"
+
+    ssh_client.exec_command(f"touch {filename}")
+    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {filename}")
+
+    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):
+        if local_transfer_id is not None:
+            break
+
+    assert local_transfer_id is not None, error_message
+
+    dirpath = "/tmp/a"
+    linkpath = "/tmp/b"
+
+    os.mkdir(dirpath)
+    os.symlink(dirpath, linkpath)
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        output = sh.nordvpn.fileshare.accept("--background", "--path", linkpath, local_transfer_id).stdout.decode("utf-8")
+        assert f"Download directory {linkpath} is a symlink. You can provide provide an alternative via --path" in ex
+
+
+def test_accept_destination_directory_not_a_directory():
+    output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
+    address = meshnet.get_peer_name(output, meshnet.PeerName.Ip)
+
+    filename = "file"
+
+    ssh_client.exec_command(f"touch {filename}")
+    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {filename}")
+
+    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):
+        if local_transfer_id is not None:
+            break
+
+    assert local_transfer_id is not None, error_message
+
+    _, path = tempfile.mkstemp()
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        output = sh.nordvpn.fileshare.accept("--background", "--path", path, local_transfer_id).stdout.decode("utf-8")
+        assert f"Download directory {path} is a symlink. You can provide provide an alternative via --path" in ex
