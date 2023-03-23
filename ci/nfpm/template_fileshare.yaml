@@ -31,7 +31,7 @@ vendor: ${PKG_VENDOR}
 homepage: ${PKG_HOMEPAGE}
 
 # License.
-license: NordVPN License
+license: GPL-3.0
 
 # Changelog YAML file, see: https://github.com/goreleaser/chglog
 changelog: "${CI_PROJECT_DIR}/dist/changelog.yml"
@@ -92,6 +92,14 @@ contents:
       mode: 0644
   - src: ${CI_PROJECT_DIR}/assets/icon.svg
     dst: /usr/share/icons/hicolor/scalable/apps/${NAME}.svg
+    file_info:
+      mode: 0644
+  - src: ${CI_PROJECT_DIR}/LICENSE.md
+    dst: /usr/share/licenses/nordvpn/LICENSE.md
+    file_info:
+      mode: 0644
+  - src: ${CI_PROJECT_DIR}/dist/THIRD-PARTY-NOTICES.md
+    dst: /usr/share/licenses/nordvpn/THIRD-PARTY-NOTICES.md
     file_info:
       mode: 0644
   - src: ${CI_PROJECT_DIR}/dist/data

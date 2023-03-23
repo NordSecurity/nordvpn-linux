@@ -59,3 +59,16 @@ build/data:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/dist/*
+build/licenses:
+  stage: build
+  image: ghcr.io/nordsecurity/nordvpn-linux/depender:1.0.0
+  rules:
+    - !reference [.cond/on-main, rules]
+    - !reference [.cond/on-version-tag, rules]
+    - !reference [.cond/on-merge-request, rules]
+    - !reference [.cond/on-click, rules]
+  script: $CI_PROJECT_DIR/ci/licenses.sh
+  dependencies: []
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/dist/*

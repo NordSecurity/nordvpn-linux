@@ -87,9 +87,20 @@ func (Build) Data() error {
 	return sh.RunWith(env, "ci/data.sh")
 }
 
+// Notices for third party dependencies
+func (Build) Notices() error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	env := map[string]string{"CI_PROJECT_DIR": cwd}
+	return sh.RunWith(env, "ci/licenses.sh")
+}
+
 // Deb package for the host architecture
 func (Build) Deb() error {
 	mg.Deps(Build.Data)
+	mg.Deps(Build.Notices)
 	mg.Deps(Build.Binaries)
 	mg.Deps(Build.Openvpn)
 	env, err := getEnv()
@@ -109,6 +120,7 @@ func (Build) Deb() error {
 // Builds deb package using Docker builder
 func (Build) DebDocker(ctx context.Context) error {
 	mg.Deps(Build.Data)
+	mg.Deps(Build.Notices)
 	mg.Deps(Build.BinariesDocker)
 	mg.Deps(Build.OpenvpnDocker)
 
@@ -276,6 +288,7 @@ func (Build) RustDocker(ctx context.Context) error {
 // Rpm package for the host architecture
 func (Build) Rpm() error {
 	mg.Deps(Build.Data)
+	mg.Deps(Build.Notices)
 	env := map[string]string{
 		"ARCHS":  build.Default.GOARCH,
 		"GOPATH": build.Default.GOPATH,
@@ -286,6 +299,7 @@ func (Build) Rpm() error {
 // Builds rpm package using Docker builder
 func (Build) RpmDocker(ctx context.Context) error {
 	mg.Deps(Build.Data)
+	mg.Deps(Build.Notices)
 	mg.Deps(Build.BinariesDocker)
 	mg.Deps(Build.OpenvpnDocker)
 
