@@ -1,13 +1,11 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -79,39 +77,6 @@ func ReadCredentialsFromTerminal() (string, string, error) {
 	return username, password, err
 }
 
-// ReadCredentialsFromStdIn reads username and password from standard input
-func ReadCredentialsFromStdIn() (string, string, error) {
-	var (
-		username string
-		password string
-	)
-	reader := bufio.NewReader(os.Stdin)
-	username, err := reader.ReadString('\n')
-	if err != nil {
-		if err == io.EOF {
-			return username, password, fmt.Errorf("%s: %s", internal.ErrStdin, "username")
-		}
-		return username, password, internal.ErrUnhandled
-	}
-	password, err = reader.ReadString('\n')
-	username = strings.Trim(username, " ")
-	username = strings.Trim(username, "\n")
-	password = strings.Trim(password, " ")
-	password = strings.Trim(password, "\n")
-	if err != nil {
-		if err == io.EOF {
-			return username, password, fmt.Errorf("%s: %s", internal.ErrStdin, "password")
-		}
-		return username, password, internal.ErrUnhandled
-	}
-
-	if err = checkUsernamePasswordIsEmpty(username, password); err != nil {
-		return username, password, fmt.Errorf("%s: %v", internal.ErrStdin, err)
-	}
-
-	return username, password, err
-}
-
 func ReadPlanFromTerminal() (int, error) {
 	var planID int
 	if !terminal.IsTerminal(0) || !terminal.IsTerminal(1) {
@@ -152,10 +117,4 @@ func ReadPlanFromTerminal() (int, error) {
 		break
 	}
 	return planID, nil
-}
-
-// isStdInAvailable checks whether standard input is not empty
-func isStdInAvailable() bool {
-	info, _ := os.Stdin.Stat()
-	return info.Size() > 0
 }

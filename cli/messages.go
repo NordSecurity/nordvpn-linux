@@ -4,12 +4,11 @@ const (
 	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s %s --help' to see the options."
 	ArgumentParsingError = "The command you entered is not valid. Enter '%s %s --help' to see the options."
 
-	LoginStart               = "Please enter your login details."
-	LoginSuccess             = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
-	LoginAttempt             = "Attempt %d/%d"
-	LoginTooManyAttempts     = "Too many login attempts. Type '%s login' to start over."
-	MsgLoginLegacyDeprecated = "Logging in via ‘--legacy’, ‘--username’, and ‘--password’ flags is deprecated. Use ‘nordvpn login' or ‘nordvpn login --nordaccount’ to log in via browser. Alternatively, you can use ‘nordvpn login --token’ to log in with a generated token."
-	LogoutSuccess            = "You are logged out."
+	LoginStart           = "Please enter your login details."
+	LoginSuccess         = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
+	LoginAttempt         = "Attempt %d/%d"
+	LoginTooManyAttempts = "Too many login attempts. Type '%s login' to start over."
+	LogoutSuccess        = "You are logged out."
 
 	RateNoArgsMessage    = "Type [1–5] to rate your previous connection (1 – poor, 5 – great): "
 	RateNoConnectionMade = "It seems you haven’t connected to VPN yet. Please rate your experience after your first session."

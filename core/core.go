@@ -141,34 +141,6 @@ func (api *DefaultAPI) do(req *http.Request, endpoint string) (*http.Response, e
 	return resp, nil
 }
 
-// Login logs the user in
-func (api *DefaultAPI) Login(username, password string) (*LoginResponse, error) {
-	data, err := json.Marshal(LoginRequest{
-		Username: username,
-		Password: password,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := request.NewRequest(http.MethodPost, api.agent, api.Client.BaseURL, TokensURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data))
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := api.do(req, TokensURL)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var ret *LoginResponse
-	if err = json.NewDecoder(resp.Body).Decode(&ret); err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
 func (api *DefaultAPI) Plans() (*Plans, error) {
 	var ret *Plans
 	req, err := request.NewRequest(http.MethodGet, api.agent, api.Client.BaseURL, PlanURL, "application/json", "", "gzip, deflate", nil)

@@ -325,24 +325,12 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 			Usage:  LoginUsageText,
 			Action: cmd.Login,
 			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:  "username, u",
-					Usage: LoginFlagUsernameUsageText,
-				},
-				&cli.StringFlag{
-					Name:  "password, p",
-					Usage: LoginFlagPasswordUsageText,
-				},
 				&cli.BoolFlag{ // TODO: remove in v4
 					Name: "nordaccount",
 				},
 				&cli.BoolFlag{
 					Name:  "callback",
 					Usage: LoginCallbackUsageText,
-				},
-				&cli.BoolFlag{
-					Name:  "legacy",
-					Usage: LoginFlagLegacyUsageText,
 				},
 				&cli.BoolFlag{
 					Name:  "token",

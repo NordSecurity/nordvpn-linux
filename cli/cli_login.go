@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/url"
 
@@ -19,14 +18,6 @@ const (
 	// LoginUsageText is shown next to login command by nordvpn --help
 	LoginUsageText = "Logs you in"
 
-	// LoginFlagUsernameUsageText is shown next to username flag by nordvpn login --help
-	LoginFlagUsernameUsageText = "Specify a user account"
-
-	// LoginFlagPasswordUsageText is shown next to password flag by nordvpn login --help
-	LoginFlagPasswordUsageText = "Specify the password for the user specified in --username"
-	// LoginFlagLegacyUsageText is shown next to legacy flag by nordvpn login --help
-	LoginFlagLegacyUsageText = "Use legacy login method. Does not support MFA."
-
 	// LoginFlagTokenUsageText is shown next to token flag by nordvpn login --help
 	LoginFlagTokenUsageText = "Use token login method. Does not support MFA." // #nosec
 
@@ -37,24 +28,6 @@ const (
 func (c *cmd) Login(ctx *cli.Context) error {
 	if ctx.IsSet(flagLoginCallback) {
 		return c.oauth2(ctx)
-	}
-
-	if ctx.IsSet(flagUsername) && !ctx.IsSet(flagPassword) || !ctx.IsSet(flagUsername) && ctx.IsSet(flagPassword) {
-		return formatError(argsCountError(ctx))
-	}
-
-	if ctx.IsSet(flagLegacy) || ctx.IsSet(flagUsername) || ctx.IsSet(flagPassword) {
-		resp, err := c.client.IsLoggedIn(context.Background(), &pb.Empty{})
-		if err != nil || resp.GetValue() {
-			return formatError(internal.ErrAlreadyLoggedIn)
-		}
-
-		err = c.loginDefault(ctx)
-		if err != nil {
-			return formatError(err)
-		}
-
-		return nil
 	}
 
 	if ctx.IsSet(flagToken) {
@@ -95,33 +68,6 @@ func (c *cmd) Login(ctx *cli.Context) error {
 	return nil
 }
 
-func (c *cmd) loginDefault(ctx *cli.Context) error {
-	color.Yellow(MsgLoginLegacyDeprecated)
-	username, password := ctx.String(flagUsername), ctx.String(flagPassword)
-	var err error
-	if isStdInAvailable() {
-		username, password, err = ReadCredentialsFromStdIn()
-		if err != nil {
-			return err
-		}
-	}
-	// if flags are not provided, read from terminal
-	if username == "" && password == "" {
-		// show intro message
-		color.Green(LoginStart)
-		err = c.LoginWithTerminal(ctx, MaxLoginAttempts)
-		if err != nil {
-			return formatError(err)
-		}
-		return nil
-	}
-	err = c.LoginWithFlags(ctx, username, password)
-	if err != nil {
-		return formatError(err)
-	}
-	return nil
-}
-
 func (c *cmd) loginWithToken(ctx *cli.Context) error {
 	// nordvpn login --token b50fc06c2bf6331522c1ef5f1d449ca99b818a16ef10253d67b4a4804d9x0xd6
 	token := ctx.Args().First()
@@ -131,45 +77,6 @@ func (c *cmd) loginWithToken(ctx *cli.Context) error {
 
 	resp, err := c.client.LoginWithToken(context.Background(), &pb.LoginWithTokenRequest{
 		Token: token,
-	})
-	if err != nil {
-		return formatError(err)
-	}
-	return LoginRespHandler(ctx, resp)
-}
-
-func (c *cmd) LoginWithTerminal(ctx *cli.Context, attempt int) error {
-	if attempt == 0 {
-		return formatError(fmt.Errorf(LoginTooManyAttempts, ctx.App.Name))
-	} else if attempt != MaxLoginAttempts {
-		color.Yellow(client.LegacyLoginFailure)
-		color.Yellow(LoginAttempt, MaxLoginAttempts-attempt+1, MaxLoginAttempts)
-	}
-
-	username, password, err := ReadCredentialsFromTerminal()
-	if err != nil {
-		return formatError(err)
-	}
-
-	resp, err := c.client.Login(context.Background(), &pb.LoginRequest{
-		Username: username,
-		Password: password,
-	})
-	if err != nil {
-		return formatError(err)
-	}
-
-	switch resp.Type {
-	case internal.CodeUnauthorized:
-		return c.LoginWithTerminal(ctx, attempt-1)
-	}
-	return LoginRespHandler(ctx, resp)
-}
-
-func (c *cmd) LoginWithFlags(ctx *cli.Context, username, password string) error {
-	resp, err := c.client.Login(context.Background(), &pb.LoginRequest{
-		Username: username,
-		Password: password,
 	})
 	if err != nil {
 		return formatError(err)
