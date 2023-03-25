@@ -399,7 +399,7 @@ func inviteErrorCodeToError(
 }
 
 // respondToInviteResponseToError determines whether the response
-// contains a generic service resonse or meshnet invitation respond
+// contains a generic service response or meshnet invitation respond
 // response and returns the according error if any
 func respondToInviteResponseToError(
 	resp *pb.RespondToInviteResponse,

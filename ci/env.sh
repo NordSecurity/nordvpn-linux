@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# CI_COMMIT_TAG variable is predefined if runned by CI/CD. In case you want to build qa or
+# CI_COMMIT_TAG variable is predefined if run by CI/CD. In case you want to build qa or
 # prod builds locally, set these variables accordingly or use release/X.X.X branch for qa build
 # dev and qa builds contain hash in version name
 set -euxo pipefail

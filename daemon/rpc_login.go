@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	// ErrMissingExchangeToken is returned when login was succesful but
+	// ErrMissingExchangeToken is returned when login was successful but
 	// there is not enough data to request the token
 	ErrMissingExchangeToken = errors.New("exchange token not provided")
 )

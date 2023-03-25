@@ -26,7 +26,7 @@ const (
 type RespondToInviteErrorCode int32
 
 const (
-	// UNKNOWN defines that the exact error was nto determined
+	// UNKNOWN defines that the exact error was not determined
 	RespondToInviteErrorCode_UNKNOWN RespondToInviteErrorCode = 0
 	// NO_SUCH_INVITATION defines that the request was not handled
 	// successfully

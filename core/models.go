@@ -18,7 +18,7 @@ const (
 	Unknown ServerTechnology = 0
 	// OpenVPNUDP represents the OpenVPN udp technology
 	OpenVPNUDP ServerTechnology = 3
-	// OpenVPNTCP represents the OpenVpn tcp technolgy
+	// OpenVPNTCP represents the OpenVpn tcp technology
 	OpenVPNTCP ServerTechnology = 5
 	// Socks5 represents the socks 5 technology
 	Socks5 ServerTechnology = 7
@@ -237,7 +237,7 @@ const (
 	// ServerNotObfuscated status returned when server is not obfuscated
 	ServerNotObfuscated
 	// NotAServerName returned when server with such name has not been found
-	// (there is no hostname beggining with given server tag)
+	// (there is no hostname beginning with given server tag)
 	NotAServerName
 )
 

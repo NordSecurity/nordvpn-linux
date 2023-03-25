@@ -119,7 +119,7 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 		em.transfers[event.TransferID] = transfer
 	}
 
-	// Currently libdrop will not clean up the transfer after transfering all of the files, so we have to
+	// Currently libdrop will not clean up the transfer after transferring all of the files, so we have to
 	// cancel it manually after all of the files have finished downloading/uploading. This will generate
 	// a TransferCanceled event, which we don't care about and don't want to have any impact on internal state
 	// If transfer has been finalized(canceled), we return early. We should be able to remove this check and

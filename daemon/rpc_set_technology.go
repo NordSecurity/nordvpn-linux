@@ -33,11 +33,11 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	r.netw.SetVPN(v)
 
 	payload := &pb.Payload{}
-	// payload.Type gets overriden in case of failure
+	// payload.Type gets overridden in case of failure
 	//
 	// Previously it was at the end of the function, which overrode any failures
 	// and user was not given any error messages because of it. Most notably,
-	// internal.CodeSuccessWithoutAC was overriden with generic internal.CodeSuccess
+	// internal.CodeSuccessWithoutAC was overridden with generic internal.CodeSuccess
 	payload.Type = internal.CodeSuccess
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {

@@ -35,7 +35,7 @@ type Manager interface {
 	Reset() error
 }
 
-// Filesystem implements config persistance and retrieval from disk.
+// Filesystem implements config persistence and retrieval from disk.
 //
 // Thread-safe.
 type Filesystem struct {

@@ -10,7 +10,7 @@ import (
 
 // Timezone returns system timezone
 func Timezone() string {
-	// unfortunatelly this works only on systemd systems
+	// unfortunately this works only on systemd systems
 	out, err := exec.Command("timedatectl", "show").CombinedOutput()
 	if err != nil {
 		// used as a fallback on non systemd systems

@@ -67,7 +67,7 @@ func (PeerStatus) EnumDescriptor() ([]byte, []int) {
 	return file_peer_proto_rawDescGZIP(), []int{0}
 }
 
-// UpdatePeerErrorCode defines an error code on updateing a peer within
+// UpdatePeerErrorCode defines an error code on updating a peer within
 // the meshnet
 type UpdatePeerErrorCode int32
 

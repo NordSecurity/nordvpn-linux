@@ -10,7 +10,7 @@ To help with this there are a few things you can do to speed up the process:
 #### Build, Test and Lint Locally
 The local feedback cycle is faster than waiting for the CI. Make sure your changes can be built locally and that unit tests, qa tests and [golangci-lint](https://github.com/golangci/golangci-lint) all pass locally. 
 A green CI is a happy CI.
-In case of qa tests, it is enough to run the suite relavant to your changes, we'll run the entire regression for you and come back with the results after we have look at the PR. You should also keep in mind that tests are executed on a live application and backend, which could result in some flakiness. 
+In case of qa tests, it is enough to run the suite relevant to your changes, we'll run the entire regression for you and come back with the results after we have look at the PR. You should also keep in mind that tests are executed on a live application and backend, which could result in some flakiness.
 Try running the suite a couple of times and let us know if you notice any tests that fail on a consistent basis.
 #### PR Hygiene
 On top of the CI being green, every PR will go through code review, and you can help us speed up the review process by making your PR easier to review. 

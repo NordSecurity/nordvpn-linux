@@ -78,7 +78,7 @@ func (m *NetlinkMonitor) Start(re Reconnector) {
 	go m.run(re)
 }
 
-// run handle incomming netlink update events
+// run handle incoming netlink update events
 // should be run on separate go routine
 func (m *NetlinkMonitor) run(re Reconnector) {
 	for {

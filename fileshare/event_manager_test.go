@@ -272,8 +272,8 @@ func TestTransferProgress(t *testing.T) {
 
 	progressEvent := <-progCh
 	assert.Equal(t, pb.Status_ONGOING, progressEvent.Status)
-	expectedProgess := uint32(float64(transferredBytes) / float64(file1sz+file2sz) * 100)
-	assert.Equal(t, expectedProgess, progressEvent.Transferred)
+	expectedProgress := uint32(float64(transferredBytes) / float64(file1sz+file2sz) * 100)
+	assert.Equal(t, expectedProgress, progressEvent.Transferred)
 
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
@@ -1190,21 +1190,21 @@ func TestTransferFinalization(t *testing.T) {
 			eventManager.EventFunc(file1UploadedEvent)
 			assert.False(t, cancelFuncCalled, "transfer has been finalized(canceled) before it has finished")
 			assert.Equal(t, pb.Status_ONGOING, eventManager.transfers[transferID].Status,
-				"expected transfer status: %s, acctual transfer status: %s",
+				"expected transfer status: %s, actual transfer status: %s",
 				test.finalStatus, eventManager.transfers[transferID].Status)
 
 			file2UploadedEvent := fmt.Sprintf(fileUploadedEventFormat, test.transferFinishedReasons[1], file2, test.fileStatuses[1])
 			eventManager.EventFunc(file2UploadedEvent)
 			assert.False(t, cancelFuncCalled, "transfer has been finalized(canceled) before it has finished")
 			assert.Equal(t, pb.Status_ONGOING, eventManager.transfers[transferID].Status,
-				"expected transfer status: %s, acctual transfer status: %s",
+				"expected transfer status: %s, actual transfer status: %s",
 				test.finalStatus, eventManager.transfers[transferID].Status)
 
 			file3UploadedEvent := fmt.Sprintf(fileUploadedEventFormat, test.transferFinishedReasons[2], file3, test.fileStatuses[2])
 			eventManager.EventFunc(file3UploadedEvent)
 			assert.True(t, cancelFuncCalled, "transfer was not finalized(canceled) after it has finished")
 			assert.Equal(t, test.finalStatus, eventManager.transfers[transferID].Status,
-				"expected transfer status: %s, acctual transfer status: %s",
+				"expected transfer status: %s, actual transfer status: %s",
 				test.finalStatus, eventManager.transfers[transferID].Status)
 
 			cancelFuncCalled = false
@@ -1213,7 +1213,7 @@ func TestTransferFinalization(t *testing.T) {
 
 			assert.False(t, cancelFuncCalled, "transfer has been finalized(canceled) twice")
 			assert.Equal(t, test.finalStatus, eventManager.transfers[transferID].Status,
-				"expected transfer status: %s, acctual transfer status: %s",
+				"expected transfer status: %s, actual transfer status: %s",
 				test.finalStatus, eventManager.transfers[transferID].Status)
 		})
 	}
@@ -1253,6 +1253,6 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 	eventManager.EventFunc(transferCanceledEvent)
 	assert.False(t, cancelFuncCalled, "canceled transfer has been finalized")
 	assert.Equal(t, pb.Status_CANCELED, eventManager.transfers[transferID].Status,
-		"expected transfer status: %s, acctual transfer status: %s",
+		"expected transfer status: %s, actual transfer status: %s",
 		pb.Status_CANCELED, eventManager.transfers[transferID].Status)
 }

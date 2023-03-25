@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Registry structure holds neccessary data to execute API calls
+// Registry structure holds necessary data to execute API calls
 type Registry struct {
 	inner     mesh.Registry
 	publisher events.Publisher[any]

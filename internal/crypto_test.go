@@ -39,7 +39,7 @@ func TestEncrypt(t *testing.T) {
 	for _, item := range tests {
 		got, err := Encrypt([]byte(item.info), item.pass)
 		assert.NoError(t, err)
-		// cyphertext is randomized so cannot test for actual values
+		// ciphertext is randomized so cannot test for actual values
 		assert.NotEmpty(t, got)
 	}
 }

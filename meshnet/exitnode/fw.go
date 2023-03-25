@@ -225,7 +225,7 @@ func resetPeersTraffic(peers []TrafficPeer) error {
 		if peer.Routing && !peer.LocalNetwork {
 			if err := modifyPeerTraffic(peer.IP, "-I", true, true); err != nil {
 				return fmt.Errorf(
-					"adding rule while reseting peers traffic for peer %v: %w",
+					"adding rule while resetting peers traffic for peer %v: %w",
 					peer, err,
 				)
 			}
@@ -241,14 +241,14 @@ func resetPeersTraffic(peers []TrafficPeer) error {
 			if peer.Routing {
 				if err := modifyPeerTraffic(peer.IP, "-I", true, true); err != nil {
 					return fmt.Errorf(
-						"adding rule while reseting peers traffic for peer %v: %w",
+						"adding rule while resetting peers traffic for peer %v: %w",
 						peer, err,
 					)
 				}
 			} else {
 				if err := allowOnlyLocalNetworkAccess(peer.IP, "-I"); err != nil {
 					return fmt.Errorf(
-						"adding rules to access local network while reseting peers traffic %v: %w",
+						"adding rules to access local network while resetting peers traffic %v: %w",
 						peer, err,
 					)
 				}

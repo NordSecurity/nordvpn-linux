@@ -1,5 +1,5 @@
 /*
-Package distro provides information about the current Linux distrobution.
+Package distro provides information about the current Linux distribution.
 */
 package distro
 
@@ -43,7 +43,7 @@ func (o *osRelease) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// ReleaseName of the currently running distrobution.
+// ReleaseName of the currently running distribution.
 func ReleaseName() (string, error) {
 	data, err := os.ReadFile(osReleaseFile)
 	if err != nil {
@@ -58,7 +58,7 @@ func ReleaseName() (string, error) {
 	return release.Name, nil
 }
 
-// ReleasePrettyName of the currently running distrobution.
+// ReleasePrettyName of the currently running distribution.
 func ReleasePrettyName() (string, error) {
 	data, err := os.ReadFile(osReleaseFile)
 	if err != nil {

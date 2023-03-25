@@ -143,7 +143,7 @@ func (c *cmd) FileshareSend(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	// check first response to determine that transfer was started succesfully
+	// check first response to determine that transfer was started successfully
 	resp, err := client.Recv()
 	if err != nil {
 		return formatError(err)

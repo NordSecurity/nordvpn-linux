@@ -464,7 +464,7 @@ func (api *DefaultAPI) NotificationCredentials(token, appUserID string) (Notific
 
 	var resp NotificationCredentialsResponse
 	if err := json.Unmarshal(out, &resp); err != nil {
-		return NotificationCredentialsResponse{}, fmt.Errorf("unmarshaling HTTP response: %w", err)
+		return NotificationCredentialsResponse{}, fmt.Errorf("unmarshalling HTTP response: %w", err)
 	}
 	return resp, nil
 }

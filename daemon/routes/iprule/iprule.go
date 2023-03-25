@@ -364,7 +364,7 @@ func removeFwmarkRule(fwMarkVal uint32, ipv6 bool) error {
 		return fmt.Errorf("fwmark cannot be 0")
 	}
 
-	// 1st clear custom table(-s) refered by fwmark rule(-s)
+	// 1st clear custom table(-s) referred by fwmark rule(-s)
 	cmdStr := "ip"
 	cmdParams := []string{
 		boolToProtoFlag(ipv6),
