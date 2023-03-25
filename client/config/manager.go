@@ -152,7 +152,7 @@ func (m EncryptedManager) Save(c Config) error {
 	}
 	err = configFile.Close()
 	if err != nil {
-		return fmt.Errorf("closing configuration fiel: %w", err)
+		return fmt.Errorf("closing configuration file: %w", err)
 	}
 	return nil
 }

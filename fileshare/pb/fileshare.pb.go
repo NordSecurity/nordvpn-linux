@@ -211,7 +211,7 @@ func (*Empty) Descriptor() ([]byte, []int) {
 	return file_fileshare_proto_rawDescGZIP(), []int{0}
 }
 
-// Generic error to be used through all responses. If empty then no error occured.
+// Generic error to be used through all responses. If empty then no error occurred.
 // If there's no data to be returned then this can be used as a response type,
 // otherwise it should be included as a field in the response.
 // Response handlers should always firstly check whether error is Empty (like Go err != nil check)

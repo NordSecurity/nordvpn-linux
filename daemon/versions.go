@@ -32,7 +32,7 @@ func ParseRpmVersions(data []byte) []string {
 	matches := versionPattern.FindAllString(string(data), -1)
 
 	for i := range matches {
-		// split to ["rel=", realeaseInt, " ver=", versionString, ""]
+		// split to ["rel=", releaseInt, " ver=", versionString, ""]
 		quoteSplit := strings.Split(matches[i], "\"")
 
 		matches[i] = quoteSplit[3] + "-" + quoteSplit[1]

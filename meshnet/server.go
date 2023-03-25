@@ -2170,7 +2170,7 @@ func (s *Server) DenyFileshare(
 	}, nil
 }
 
-// NotifyNewTransfer notifies peer abount new fileshare transfer
+// NotifyNewTransfer notifies peer about new fileshare transfer
 func (s *Server) NotifyNewTransfer(
 	ctx context.Context,
 	req *pb.NewTransferNotification,

@@ -7,7 +7,7 @@ import (
 	norddropgo "github.com/NordSecurity/libdrop/norddrop/ffi/bindings/linux/go"
 )
 
-// toError convertion for drop result type
+// toError conversion for drop result type
 func toError(result norddropgo.Enum_SS_norddrop_result) error {
 	switch result {
 	case norddropgo.NORDDROPRESOK:

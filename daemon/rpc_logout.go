@@ -63,7 +63,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		}
 
 		if err := r.api.Logout(tokenData.Token); err != nil {
-			log.Println(internal.ErrorPrefix, "loging out: ", err)
+			log.Println(internal.ErrorPrefix, "logging out: ", err)
 			switch err {
 			// This means that token is invalid anyway
 			case core.ErrUnauthorized:

@@ -7,7 +7,7 @@ import (
 	teliogo "github.com/NordSecurity/libtelio/ffi/bindings/linux/go"
 )
 
-// toError convertion for libtelio result type
+// toError conversion for libtelio result type
 func toError(result teliogo.Enum_SS_telio_result) error {
 	switch result {
 	case teliogo.TELIORESERROR:

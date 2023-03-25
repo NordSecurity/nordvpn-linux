@@ -78,7 +78,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 		}
 	}
 
-	// This check actually tells whether the vpn subscribtion is still valid
+	// This check actually tells whether the vpn subscription is still valid
 	if IsTokenExpired(data.ServiceExpiry) {
 		if err := r.updateVpnExpirationDate(&data); err != nil {
 			if errors.Is(err, core.ErrUnauthorized) {

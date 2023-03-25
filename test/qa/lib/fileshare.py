@@ -37,7 +37,7 @@ def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
 
     # Read the output character by character, we cannot read it line by line because send prints some
     # messages without the newline at the end and we cannot read it by X characters because before command
-    # is executed app connets to the daemon for non-deterministic ammount of time displaying a spinner
+    # is executed app connets to the daemon for non-deterministic amount of time displaying a spinner
     for character in command:
         buffer += character
         if "Waiting for the peer to accept your transfer..." in buffer:

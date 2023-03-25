@@ -1,4 +1,4 @@
-// Package fork provides fileshare deamon management functionality implmented by implemented by
+// Package fork provides fileshare daemon management functionality implemented by
 // directly starting and stopping the fileshare daemon process.
 package fork
 

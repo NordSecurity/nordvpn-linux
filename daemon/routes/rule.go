@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	defaultCutomRoutingTableID uint = 205
+	defaultCustomRoutingTableID uint = 205
 )
 
-func TableID() uint { return defaultCutomRoutingTableID }
+func TableID() uint { return defaultCustomRoutingTableID }
 
 // PolicyAgent is stateless and is responsible for creating and deleting policy
 // based routes.

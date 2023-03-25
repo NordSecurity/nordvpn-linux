@@ -394,7 +394,7 @@ func (l *Libtelio) StatusMap() (map[string]string, error) {
 
 	var peers []peer
 	if err := json.Unmarshal([]byte(l.lib.GetStatusMap()), &peers); err != nil {
-		return nil, fmt.Errorf("unmarshaling peer list: %w", err)
+		return nil, fmt.Errorf("unmarshalling peer list: %w", err)
 	}
 
 	m := map[string]string{}

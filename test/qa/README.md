@@ -1,5 +1,5 @@
 # QA tests
-Test application by immitating user actions.
+Test application by imitating user actions.
 
 ## Overview
 NordVPN application QA tests are written in Python using these 3rd packages for the following reasons:
@@ -90,7 +90,7 @@ Module is imported by specifying path to file in the following format: `package.
 is a Python file without `.py`.
 
 ## Writing
-Tests eventually fail and it's really hard to debug why if the failures are not reproducable.
+Tests eventually fail and it's really hard to debug why if the failures are not reproducible.
 Most of the time the root cause lies in shared resources between tests, which are not cleaned
 up on failures. To make this easier, 2 classes where introduced: Defer and ErrorDefer.
 - Defer is similar to Go's defer, but it works with blocks as well, not only function frames.

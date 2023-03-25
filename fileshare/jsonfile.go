@@ -32,7 +32,7 @@ func (JsonFile) Load() (map[string]*pb.Transfer, error) {
 
 	var transfers map[string]*pb.Transfer = make(map[string]*pb.Transfer)
 	if err := json.Unmarshal(jsonBytes, &transfers); err != nil {
-		return nil, fmt.Errorf("unmarshaling transfers history: %w", err)
+		return nil, fmt.Errorf("unmarshalling transfers history: %w", err)
 	}
 
 	for _, tr := range transfers {

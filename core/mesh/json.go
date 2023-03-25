@@ -135,7 +135,7 @@ type DNS struct {
 	Hosts Hosts `json:"hosts"`
 }
 
-// Hosts defines mapping beetween hostname an IP address.
+// Hosts defines mapping between hostname an IP address.
 type Hosts map[string]netip.Addr
 
 // UnmarshalJSON customizes json deserialization.

@@ -17,7 +17,7 @@ section: custom
 # Priority.
 priority: optional
 
-# Maintaner.
+# Maintainer.
 maintainer: ${PKG_HOMEPAGE}
 
 # Description.
@@ -100,7 +100,7 @@ contents:
     file_info:
       mode: 0744
 
-# All fields above marked as `overridable` can be overriden for a given package format in this section.
+# All fields above marked as `overridable` can be overridden for a given package format in this section.
 overrides:
   deb:
     # Deb specific scripts.
