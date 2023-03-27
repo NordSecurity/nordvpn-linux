@@ -499,7 +499,9 @@ func (s *Subscriber) sendEvent(contentType, userAgent, requestBody string) int {
 		return errCodeRequestCreationFailed
 	}
 
-	resp, err := request.NewStdHTTP().Do(req)
+	// Moose team requested specific timeout value
+	client := request.NewStdHTTP(func(c *http.Client) { c.Timeout = time.Second * 30 })
+	resp, err := client.Do(req)
 	if err != nil {
 		return errCodeRequestDoFailed
 	}
