@@ -377,6 +377,9 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 	file3 := "file3"
 	mockFs.MapFS[file3] = &fstest.MapFile{}
 
+	emptyDirectory := "empty"
+	mockFs.MapFS[emptyDirectory] = &fstest.MapFile{Mode: fs.ModeDir}
+
 	fileshareTests := []struct {
 		testName             string
 		paths                []string
@@ -418,6 +421,12 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 			paths:                []string{file1, file2, file3, "nofile"},
 			transferSilent:       true,
 			expectedSendResponse: &pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)},
+		},
+		{
+			testName:             "no files",
+			paths:                []string{emptyDirectory},
+			transferSilent:       true,
+			expectedSendResponse: &pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NO_FILES)},
 		},
 	}
 

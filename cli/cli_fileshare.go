@@ -336,6 +336,8 @@ func fileshareErrorCodeToError(code pb.FileshareErrorCode, params ...any) error 
 		return fmt.Errorf(MsgFileshareAcceptPathIsASymlink, params...)
 	case pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY:
 		return fmt.Errorf(MsgFileshareAcceptPathIsNotADirectory, params...)
+	case pb.FileshareErrorCode_NO_FILES:
+		return errors.New(MsgNoFiles)
 	default:
 		return errors.New(AccountInternalError)
 	}

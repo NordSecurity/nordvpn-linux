@@ -220,6 +220,7 @@ Example: nordvpn set meshnet on`
 	MsgFileshareFileInvalidated      = "The transfer of this file is already completed or canceled."
 	MsgFileshareTransferInvalidated  = "This transfer is already completed or canceled."
 	MsgTooManyFiles                  = "Number of files in a transfer cannot exceed 1000. Try archiving the directory."
+	MsgNoFiles                       = "The directory you’re trying to send is empty. Please choose another one."
 	MsgDirectoryToDeep               = "File depth cannot exceed 5 directories. Try archiving the directory."
 	MsgSendingNotAllowed             = "This peer does not allow file transfers from you."
 	MsgFileNotInProgress             = "This file is not in progress"

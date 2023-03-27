@@ -190,6 +190,10 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		if fileCount > TransferFileLimit {
 			return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TOO_MANY_FILES)})
 		}
+
+		if fileCount == 0 {
+			return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NO_FILES)})
+		}
 	}
 
 	peers, err := s.getPeers()
