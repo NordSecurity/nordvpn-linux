@@ -206,8 +206,8 @@ Example: nordvpn set meshnet on`
 	MsgFileshareTransferNotFound          = "Transfer not found."
 	MsgFileshareInvalidPath               = "Invalid path provided: %s"
 	MsgFilesharePathNotFound              = "Download directory %q does not exist. Make sure the directory exists or provide an alternative via --" + flagFilesharePath
-	MsgFileshareAcceptPathIsASymlink      = "Download directory %q is a symlink. You can provide provide an alternative via --" + flagFilesharePath
-	MsgFileshareAcceptPathIsNotADirectory = "%q is not a directory, so it cannot be used as a download destination. You can provide provide an alternative via --" + flagFilesharePath
+	MsgFileshareAcceptPathIsASymlink      = "A download path can’t be a symbolic link. Please provide a directory as a download path to accept the transfer."
+	MsgFileshareAcceptPathIsNotADirectory = "Please provide a directory as a download path to accept the transfer."
 	MsgFileshareInvalidPeer               = "Peer name is invalid."
 	MsgFileshareDisconnectedPeer          = "Peer is disconnected."
 	MsgFileshareFileNotFound              = "File not found."
