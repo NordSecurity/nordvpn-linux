@@ -113,7 +113,7 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetAlreadyEnabled        = "Meshnet is already enabled."
 	MsgMeshnetAlreadyDisabled       = "Meshnet is already disabled."
 	MsgMeshnetNotEnabled            = "Meshnet is not enabled."
-	MsgMeshnetNordlynxMustBeEnabled = "Nordlynx technology must be set to use this feature."
+	MsgMeshnetNordlynxMustBeEnabled = "NordLynx technology must be set to use this feature."
 	MsgMeshnetVersionNotSupported   = "Current application version does not support the meshnet feature."
 	MsgMeshnetUsage                 = "Manages mesh network and access to it. In order to enable the feature, execute `nordvpn set meshnet on`"
 	MsgMeshnetRefreshUsage          = "Refreshes the meshnet in case it was not updated automatically."

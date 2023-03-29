@@ -87,7 +87,7 @@ func (c *cmd) MeshInviteSend(ctx *cli.Context) error {
 		}
 		invites, err := invitesListResponseToInvitesList(resp)
 		if err != nil {
-			return err
+			return formatError(err)
 		}
 		for _, inv := range invites.GetSent() {
 			if inv.Email == email {

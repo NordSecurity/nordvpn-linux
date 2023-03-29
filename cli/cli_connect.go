@@ -29,7 +29,7 @@ const ConnectArgsUsageText = `[country]/[server]/[country_code]/[city]/[group] o
 
 Use this command to connect to NordVPN. Adding no arguments to the command will connect you to the recommended server.
 Provide a [country] argument to connect to a specific country. For example: 'nordvpn connect Australia'
-Provide a [server] argument to connecto to a specific server. For example: 'nordvpn connect jp35'
+Provide a [server] argument to connect to a specific server. For example: 'nordvpn connect jp35'
 Provide a [country_code] argument to connect to a specific country. For example: 'nordvpn connect us'
 Provide a [city] argument to connect to a specific city. For example: 'nordvpn connect Hungary Budapest'
 Provide a [group] argument to connect to a specific servers group. For example: 'nordvpn connect Onion_Over_VPN'

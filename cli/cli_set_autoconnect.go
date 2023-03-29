@@ -30,7 +30,7 @@ Supported values for [enabled]: 1, true, enable, on, enabled
 Example: nordvpn set autoconnect on
 
 Provide a [country] argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled Australia'
-Provide a [server] argument to connecto to a specific server. For example: 'nordvpn set autoconnect enabled jp35'
+Provide a [server] argument to connect to a specific server. For example: 'nordvpn set autoconnect enabled jp35'
 Provide a [country_code] argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled us'
 Provide a [city] argument to connect to a specific city. For example: 'nordvpn set autoconnect enabled Budapest'
 Provide a [group] argument to connect to a specific servers group. For example: 'nordvpn set autoconnect enabled Onion_Over_VPN'`
