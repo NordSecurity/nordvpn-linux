@@ -8,7 +8,13 @@ test/cgo:
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test.sh full
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
   dependencies: []
+  coverage: '/total:\s*\(statements\)\s*(\d+\.\d+)%/'
 test/go:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
