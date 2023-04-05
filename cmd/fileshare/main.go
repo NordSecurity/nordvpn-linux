@@ -12,13 +12,13 @@ import (
 	"os"
 	"strconv"
 
+	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/drop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -68,8 +68,26 @@ func main() {
 
 	// Libdrop init
 
+	daemonClient := daemonpb.NewDaemonClient(grpcConn)
+
+	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
+		Uid: int64(os.Getuid()),
+	})
+
+	var notificationManager *fileshare.NotificationManager
+	if err == nil {
+		if settings.Data.Notify {
+			notificationManager, err = fileshare.NewNotificationManager()
+			if err != nil {
+				log.Println("failed to initialize notification manager: ", err)
+			}
+		}
+	} else {
+		log.Println("failed to determine status notifications setting: ", err)
+	}
+
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
-	eventManager := fileshare.NewEventManager(fileshare.FileshareHistoryImplementation(), meshClient)
+	eventManager := fileshare.NewEventManager(fileshare.FileshareHistoryImplementation(), meshClient, notificationManager)
 	fileshareImplementation := drop.New(
 		eventManager.EventFunc,
 		eventsDbPath,

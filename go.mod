@@ -11,9 +11,11 @@ require (
 	github.com/docker/docker v20.10.16+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
+	github.com/esiqveland/notify v0.11.2
 	github.com/fatih/color v1.15.0
 	github.com/go-co-op/gocron v1.18.1
 	github.com/go-ping/ping v1.1.0
+	github.com/godbus/dbus/v5 v5.1.0
 	github.com/google/uuid v1.3.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/jbowtie/gokogiri v0.0.0-20190301021639-37f655d3078f

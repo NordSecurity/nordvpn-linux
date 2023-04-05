@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"sort"
 	"sync"
 
@@ -37,11 +38,12 @@ type EventManager struct {
 	storage               Storage
 	meshClient            meshpb.MeshnetClient
 	// CancelFunc is called when transfer is completed in order to finalize the transfer
-	CancelFunc func(transferID string) error
+	CancelFunc          func(transferID string) error
+	notificationManager *NotificationManager
 }
 
 // NewEventManager loads transfer state from storage, or creates empty state if loading fails.
-func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient) *EventManager {
+func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient, notificationManager *NotificationManager) *EventManager {
 	loadedTransfers, err := storage.Load()
 	if err != nil {
 		log.Printf("couldn't load transfer history from storage: %s", err)
@@ -53,6 +55,7 @@ func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient) *EventMan
 		transferSubscriptions: map[string]chan TransferProgressInfo{},
 		storage:               storage,
 		meshClient:            meshClient,
+		notificationManager:   notificationManager,
 	}
 }
 
@@ -161,6 +164,10 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 	default:
 		log.Printf("Unknown reason for transfer finished event: %s", event.Reason)
 		return
+	}
+
+	if em.notificationManager != nil {
+		em.notificationManager.Notify(filepath.Join(transfer.Path, event.Data.File), newFileStatus, transfer.Direction)
 	}
 
 	if err := SetFileStatus(transfer.Files, event.Data.File, newFileStatus); err != nil {

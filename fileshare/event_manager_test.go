@@ -15,6 +15,39 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+type MockNotification struct {
+	id      uint32
+	summary string
+	body    string
+	actions []Action
+}
+
+type MockNotifier struct {
+	notifications []MockNotification
+	nextID        uint32
+}
+
+func (mn *MockNotifier) SendNotification(summary string, body string, actions []Action) (uint32, error) {
+	notificationID := mn.nextID
+	mn.notifications = append(mn.notifications, MockNotification{id: notificationID, summary: summary, body: body, actions: actions})
+	mn.nextID++
+	return notificationID, nil
+}
+
+type MockFileOpener struct {
+	openedFiles []string
+}
+
+func (mf *MockFileOpener) OpenFile(path string) {
+	mf.openedFiles = append(mf.openedFiles, path)
+}
+
+func NewMockNotificationManager() NotificationManager {
+	return NotificationManager{
+		downloadedFiles: make(map[uint32]string),
+	}
+}
+
 func TestIncomingTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -27,7 +60,7 @@ func TestIncomingTransfer(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(MockStorage{}, meshClient)
+	eventManager := NewEventManager(MockStorage{}, meshClient, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.EventFunc(fmt.Sprintf(`{
@@ -61,7 +94,7 @@ func TestIncomingTransfer(t *testing.T) {
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	timeNow := time.Now()
 	for i := 10; i > 0; i-- {
 		eventManager.transfers[strconv.Itoa(i)] = &pb.Transfer{
@@ -84,7 +117,7 @@ func TestGetTransfers(t *testing.T) {
 func TestGetTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 	eventManager.transfers["test"] = &pb.Transfer{
 		Id: "test",
@@ -103,7 +136,7 @@ func TestGetTransfer(t *testing.T) {
 func TestOutgoingTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
@@ -143,7 +176,7 @@ func TestInvalidTransferProgress(t *testing.T) {
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	waitGroup := sync.WaitGroup{}
@@ -175,7 +208,7 @@ func TestInvalidTransferProgress(t *testing.T) {
 func TestTransferProgress(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
@@ -386,7 +419,7 @@ func TestAcceptTransfer(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 
 	for _, test := range tests {
-		eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+		eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 		eventManager.transfers[transferID] = &pb.Transfer{
 			Id:        transferID,
 			Direction: pb.Direction_INCOMING,
@@ -416,7 +449,7 @@ func TestAcceptTransfer(t *testing.T) {
 func TestAcceptTransfer_Outgoing(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
@@ -428,7 +461,7 @@ func TestAcceptTransfer_Outgoing(t *testing.T) {
 func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"] = &pb.Transfer{
@@ -446,7 +479,7 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"] = &pb.Transfer{
@@ -479,7 +512,7 @@ func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 func TestSetTransferStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
@@ -494,7 +527,7 @@ func TestSetTransferStatus(t *testing.T) {
 func TestFinishedTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	finishTests := []struct {
@@ -588,7 +621,7 @@ func TestNewTransfer(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	fileID := "file1.xml"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.NewOutgoingTransfer(transferID, "172.20.0.5", fileID)
@@ -728,7 +761,7 @@ func TestCheckTransferStatuses_SingleDirWithFiles(t *testing.T) {
 	file2ID := "file2.xml"
 	path := "/tmp"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.NewOutgoingTransfer(transferID, peer, path)
@@ -820,7 +853,7 @@ func TestCheckTransferStatuses_MultipleInputPaths(t *testing.T) {
 	file2ID := "file2.xml"
 	path := "/tmp"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.NewOutgoingTransfer(transferID, peer, path)
@@ -920,7 +953,7 @@ func TestCheckTransferStatuses_MultilevelDirComplexStructure(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(MockStorage{}, meshClient)
+	eventManager := NewEventManager(MockStorage{}, meshClient, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	eventManager.NewOutgoingTransfer(transferID, peer, path)
@@ -1085,7 +1118,7 @@ func TestTransferRequestPermissionsValidation(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(MockStorage{}, meshClient)
+	eventManager := NewEventManager(MockStorage{}, meshClient, nil)
 	eventManager.CancelFunc = func(transferID string) error { return nil }
 
 	tests := []struct {
@@ -1186,7 +1219,7 @@ func TestTransferFinalization(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+		eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 
 		cancelFuncCalled := false
 		eventManager.CancelFunc = func(transferID string) error {
@@ -1252,7 +1285,7 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 		}
 	}`, transferID)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, nil)
 	cancelFuncCalled := false
 	eventManager.CancelFunc = func(transferID string) error {
 		cancelFuncCalled = true
@@ -1276,4 +1309,157 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 	assert.Equal(t, pb.Status_CANCELED, eventManager.transfers[transferID].Status,
 		"expected transfer status: %s, actual transfer status: %s",
 		pb.Status_CANCELED, eventManager.transfers[transferID].Status)
+}
+
+func TestTransferFinishedNotifications(t *testing.T) {
+	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	fileID := "file_id"
+
+	initializeEventManager := func(direction pb.Direction) (*EventManager, *MockNotifier) {
+		notifier := MockNotifier{
+			notifications: []MockNotification{},
+			nextID:        0,
+		}
+		notificationManager := NewMockNotificationManager()
+		notificationManager.notifier = &notifier
+
+		eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &notificationManager)
+		eventManager.CancelFunc = func(string) error { return nil }
+		eventManager.transfers[transferID] = &pb.Transfer{
+			Id:     transferID,
+			Status: pb.Status_ONGOING,
+			Files: []*pb.File{
+				{Id: fileID, Status: pb.Status_ONGOING},
+			},
+			TotalSize:        1,
+			TotalTransferred: 0,
+			Direction:        direction,
+		}
+
+		return eventManager, &notifier
+	}
+
+	tests := []struct {
+		name            string
+		status          pb.Status
+		direction       pb.Direction
+		reason          string
+		expectedSummary string
+		expectedBody    string
+		expectedActions []Action
+	}{
+		{
+			name:            "download finished success",
+			status:          pb.Status_SUCCESS,
+			direction:       pb.Direction_INCOMING,
+			reason:          "FileDownloaded",
+			expectedSummary: "downloaded",
+			expectedActions: []Action{{"open", "Open"}},
+		},
+		{
+			name:            "download finished failure",
+			status:          pb.Status_TRANSPORT,
+			direction:       pb.Direction_INCOMING,
+			reason:          "FileFailed",
+			expectedSummary: "transport problem",
+			expectedActions: nil,
+		},
+		{
+			name:            "download canceled",
+			status:          pb.Status_CANCELED,
+			direction:       pb.Direction_INCOMING,
+			reason:          "FileCanceled",
+			expectedSummary: "canceled",
+			expectedActions: nil,
+		},
+		{
+			name:            "upload finished success",
+			status:          pb.Status_SUCCESS,
+			direction:       pb.Direction_OUTGOING,
+			reason:          "FileUploaded",
+			expectedSummary: "uploaded",
+			expectedActions: nil,
+		},
+	}
+
+	for _, test := range tests {
+		eventManager, notifier := initializeEventManager(test.direction)
+
+		t.Run(test.name, func(t *testing.T) {
+			eventManager.EventFunc(fmt.Sprintf(`{
+				"type": "TransferFinished",
+				"data": {
+					"transfer": "%s",
+					"reason": "%s",
+					"data": {
+						"file": "%s",
+						"status": %d
+					}
+				}
+			}`, transferID, test.reason, fileID, test.status))
+
+			assert.Equal(t, 1, len(notifier.notifications),
+				"TransferFinished event was received, but EventManager did not send any notifications.")
+
+			notification := notifier.notifications[0]
+
+			assert.Equal(t, test.expectedSummary, notification.summary,
+				"Invalid notification summary, should be \"%s\", but it is \"%s\".", test.expectedSummary, notification.summary)
+			assert.Equal(t, fileID, notification.body,
+				"Notification body should be a filename \"%s\", but it is \"%s\".", fileID, notification.body)
+			assert.Equal(t, test.expectedActions, notification.actions,
+				"Actions associated with notifications are invalid, expected: \n%v, actual: \n%v",
+				test.expectedActions, notification.actions)
+		})
+	}
+}
+
+func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
+	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	fileID := "file_id"
+
+	notifier := MockNotifier{
+		notifications: []MockNotification{},
+		nextID:        0,
+	}
+	opener := MockFileOpener{
+		openedFiles: []string{},
+	}
+	notificationManager := NewMockNotificationManager()
+	notificationManager.notifier = &notifier
+	notificationManager.fileOpener = &opener
+
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &notificationManager)
+	eventManager.CancelFunc = func(string) error { return nil }
+	eventManager.transfers[transferID] = &pb.Transfer{
+		Id:     transferID,
+		Status: pb.Status_ONGOING,
+		Files: []*pb.File{
+			{Id: fileID, Status: pb.Status_ONGOING},
+		},
+		TotalSize:        1,
+		TotalTransferred: 0,
+		Direction:        pb.Direction_INCOMING,
+	}
+
+	eventManager.EventFunc(fmt.Sprintf(`{
+		"type": "TransferFinished",
+		"data": {
+			"transfer": "%s",
+			"reason": "FileDownloaded",
+			"data": {
+				"file": "%s",
+				"status": %d
+			}
+		}
+	}`, transferID, fileID, pb.Status_SUCCESS))
+
+	notification := notifier.notifications[0]
+
+	notificationManager.openFile(notification.id)
+	assert.Equal(t, 1, len(opener.openedFiles), "Open event was emitted, but no files were opened.")
+	assert.Equal(t, fileID, opener.openedFiles[0], "Invalid file \"%s\" opened, should be \"%s\"", opener.openedFiles[0], fileID)
+
+	notificationManager.openFile(notification.id)
+	assert.Equal(t, 1, len(opener.openedFiles), "File was opened but it was already opened once.")
 }
