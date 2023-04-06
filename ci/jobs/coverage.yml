@@ -1,0 +1,45 @@
+include: /ci/jobs/.cond.yml
+
+coverage/integration:
+  stage: coverage
+  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
+  rules:
+    - !reference [.cond/on-main, rules]
+    - !reference [.cond/on-version-tag, rules]
+    - !reference [.cond/on-merge-request, rules]
+  script:
+    - $CI_PROJECT_DIR/ci/qa_test_coverage.sh
+  dependencies: 
+    - test/deb
+    - test/deb-connect1
+    - test/deb-connect2
+    - test/deb-combinations
+    - test/deb-manual
+    - test/deb-autoconnect1
+    - test/deb-autoconnect2
+    - test/deb-meshnet
+    - test/deb-fileshare
+  allow_failure: true
+  coverage: '/Total coverage: (\d+\.\d+)%/'
+coverage/combined:
+  stage: coverage
+  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
+  rules:
+    - !reference [.cond/on-main, rules]
+    - !reference [.cond/on-version-tag, rules]
+    - !reference [.cond/on-merge-request, rules]
+  script:
+    - $CI_PROJECT_DIR/ci/combined_coverage.sh
+  dependencies: 
+    - test/cgo
+    - test/deb
+    - test/deb-connect1
+    - test/deb-connect2
+    - test/deb-combinations
+    - test/deb-manual
+    - test/deb-autoconnect1
+    - test/deb-autoconnect2
+    - test/deb-meshnet
+    - test/deb-fileshare
+  allow_failure: true
+  coverage: '/Total coverage: (\d+\.\d+)%/'

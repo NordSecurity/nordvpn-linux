@@ -4,6 +4,8 @@ pattern="${2}"
 
 set -ux
 
+source "${CI_PROJECT_DIR}"/ci/env.sh
+
 if ! "${CI_PROJECT_DIR}"/ci/install_deb.sh; then
     echo "failed to install deb"
     exit 1
@@ -49,7 +51,18 @@ case "${pattern}" in
         ;;
 esac
 
+
+mkdir -p "${CI_PROJECT_DIR}"/"${COVERDIR}" 
+
+if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
+    sudo sed -i "1a export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"
+fi
+
 python3 -m pytest -v --timeout 180 -rsx -x --timeout-method=thread -o log_cli=true "${args[@]}"
+
+if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
+    sudo sed -i "2d" "/etc/init.d/nordvpn"
+fi
 
 # # To print goroutine profile when debugging:
 # RET=$?

@@ -3,6 +3,7 @@ include:
   - /ci/jobs/build.yml
   - /ci/jobs/package.yml
   - /ci/jobs/test.yml
+  - /ci/jobs/coverage.yml
 
 variables:
   ARCH: "amd64"
@@ -43,6 +44,7 @@ stages:
   - package
   - analyse
   - test
+  - coverage
   - installation_tests
   - upload_packages
   - remove_packages

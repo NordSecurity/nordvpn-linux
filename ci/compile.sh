@@ -73,12 +73,16 @@ if [[ $tags == *"moose"* ]]; then
 	trap revert_moose_patch EXIT
 fi
 
+COVER_FLAG=""
+if [[ "${ENVIRONMENT}" != "prod" ]]; then
+    COVER_FLAG="-cover"
+fi
+
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${CI_PROJECT_DIR}/cmd/${program}"
 	CC="${cross_compiler_map[${ARCH}]}" \
-		go build "${BUILDMODE}" -tags "${tags}" \
+		go build "${COVER_FLAG}" "${BUILDMODE}" -tags "${tags}" \
 		-ldflags "-linkmode=external ${LDFLAGS}" \
 		-o "${CI_PROJECT_DIR}/bin/${ARCH}/${names_map[${program}]}"
 	popd
 done
-

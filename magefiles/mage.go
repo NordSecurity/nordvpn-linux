@@ -448,6 +448,10 @@ func qa(ctx context.Context, testGroup, testPattern string) error {
 	}
 	env["CI_PROJECT_DIR"] = "/opt"
 	env["QA_PEER_ADDRESS"] = "http://qa-peer:8000/exec"
+	env["COVERDIR"] = "covdatafiles"
+
+	dir := env["CI_PROJECT_DIR"] + "/" + env["COVERDIR"]
+	_ = os.RemoveAll(dir)
 
 	_ = RemoveDockerNetwork(context.Background(), "qa") // Needed if job was killed
 	networkID, err := CreateDockerNetwork(ctx, "qa")

@@ -13,6 +13,9 @@ fi
 NAME=nordvpn
 export NAME
 
+COVERDIR="covdatafiles"
+export COVERDIR
+
 HASH=$(git rev-parse --short HEAD)
 export HASH
 

@@ -1,4 +1,5 @@
 from enum import Enum
+import os
 import sh
 import time
 
@@ -123,6 +124,9 @@ PORTS = [
 PORTS_RANGE = [
     "3000:8000",
 ]
+
+# Used for integration test coverage
+os.environ["GOCOVERDIR"] = os.environ["CI_PROJECT_DIR"] + "/" + os.environ["COVERDIR"]
 
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.
 class ErrorDefer:

@@ -1,5 +1,19 @@
 # test.yml defines jobs for testing.
 include: /ci/jobs/.cond.yml
+.test_job_template:
+  stage: test
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  rules:
+    - !reference [.cond/on-main, rules]
+    - !reference [.cond/on-version-tag, rules]
+    - !reference [.cond/on-merge-request, rules]
+  dependencies:
+    - "package/deb: [amd64]"
+  artifacts:
+    when: always
+    paths:
+      - $CI_PROJECT_DIR/dist/logs/daemon.log
+      - $CI_PROJECT_DIR/covdatafiles
 test/cgo:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.1.0
@@ -9,6 +23,8 @@ test/cgo:
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/test.sh full
   artifacts:
+    paths:
+      - $CI_PROJECT_DIR/coverage/unit
     reports:
       coverage_report:
         coverage_format: cobertura
@@ -25,95 +41,29 @@ test/go:
   script: $CI_PROJECT_DIR/ci/test.sh
   dependencies: []
 test/deb:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh $TEST
-  dependencies:
-    - "package/deb: [amd64]"
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/dist/logs/daemon.log
   parallel:
     matrix:
       - TEST: [connect6, dns, dns6, killswitch, login, misc, routing, settings, whitelist]
 test/deb-connect1:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_quick_connect or test_double_quick_connect_only or test_connect_to_absent_server or test_mistype_connect or test_connect_to_invalid_group or test_connect_to_group_flag_standard or test_connect_to_group_flag_additional or test_connect_without_internet_access'
-  dependencies:
-    - "package/deb: [amd64]"
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-connect2:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_to_city or test_connect_to_country or test_connect_to_code_country or test_connect_to_group_standard or test_connect_to_group_additional'
-  dependencies:
-    - "package/deb: [amd64]"
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-combinations:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh combinations $PATTERN
-  dependencies:
-    - "package/deb: [amd64]"
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/dist/logs/daemon.log
   parallel:
     matrix:
       - PATTERN: [test_reconnect_matrix_standard, test_reconnect_matrix_obfuscated, test_connect_country_and_city]
 test/deb-autoconnect1:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_default or test_not_autoconnect or test_autoconnect_to_country'
-  dependencies:
-    - "package/deb: [amd64]"
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-autoconnect2:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_to_city or test_autoconnect_to_random_server_by_name or test_autoconnect_to_standard_group or test_autoconnect_to_additional_group'
-  dependencies:
-    - "package/deb: [amd64]"
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-manual:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
@@ -127,28 +77,18 @@ test/deb-manual:
     when: always
     paths:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
+      - $CI_PROJECT_DIR/covdatafiles
   parallel:
     matrix:
       - TEST: [gateway, firewall, firewall6]
 test/deb-meshnet:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_job_template
   variables:
     QA_PEER_TOKEN: $QA_PEER_TOKEN
   services:
     - name: ghcr.io/nordsecurity/nordvpn-linux/qa-peer:1.0.0
       alias: qa-peer
   script: $CI_PROJECT_DIR/ci/test_deb.sh meshnet
-  dependencies:
-    - "package/deb: [amd64]"
-  artifacts:
-    when: always
-    paths:
-      - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-fileshare:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
@@ -173,6 +113,8 @@ test/deb-fileshare:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
       - $CI_PROJECT_DIR/dist/logs/nordfileshared.log
       - $CI_PROJECT_DIR/dist/logs/cli.log
+      - $CI_PROJECT_DIR/covdatafiles
   needs:
     - "package/deb: [amd64]"
     - "test/deb-meshnet"
+    

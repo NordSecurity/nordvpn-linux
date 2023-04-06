@@ -34,10 +34,13 @@ fi
 
 # SC2046 is disabled so that list of packages is not treated
 # as a single argument for 'go test'
+
+mkdir -p "${CI_PROJECT_DIR}"/coverage/unit
 # shellcheck disable=SC2046
 go test -tags internal -v -race $(go list ./... | grep -v "${excluded_packages}") \
 	-coverprofile "${CI_PROJECT_DIR}"/coverage.txt \
-	-exclude "${excluded_categories}"
+	-exclude "${excluded_categories}" \
+	-args -test.gocoverdir="${CI_PROJECT_DIR}/coverage/unit"
 
 # Display code coverage report
 go tool cover -func="${CI_PROJECT_DIR}"/coverage.txt
