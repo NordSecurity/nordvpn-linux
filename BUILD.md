@@ -37,6 +37,7 @@ Please follow the instructions in the following step for setting up the developm
     1. Might need to rename `protoc-gen-go-grpc` binary to `protoc-gen-go_grpc` to work.
 1. Run `mage` to discover and execute build targets.
     1. To use non-Docker targets please refer to `ci/docker/*/Dockerfile` Dockerfiles for necessary dependencies to be installed.
+    1. Please make sure to create a `.env` file, there is a `.env.sample` file that contains a list of variables that need to be set.
 # Building
 ## Building with mage and docker
 Convenient way for building the application is available using the [mage](https://github.com/magefile/mage#installation)
