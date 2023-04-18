@@ -405,7 +405,7 @@ func (l *Libtelio) StatusMap() (map[string]string, error) {
 }
 
 // openTunnel if not opened already
-func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) error {
+func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
 	if l.tun != nil {
 		return nil
 	}
@@ -442,14 +442,18 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) error {
 		l.isKernelDisabled = true
 	}
 
-	if err := toError(l.lib.SetFwmark(uint(l.fwmark))); err != nil {
-		// TODO: close the tunnel
+	defer func() {
+		if err != nil {
+			l.lib.Stop()
+		}
+	}()
+
+	if err = toError(l.lib.SetFwmark(uint(l.fwmark))); err != nil {
 		return fmt.Errorf("setting fwmark: %w", err)
 	}
 
 	iface, err := net.InterfaceByName(nordlynx.InterfaceName)
 	if err != nil {
-		// TODO: close the tunnel
 		return fmt.Errorf("retrieving the interface: %w", err)
 	}
 
@@ -457,19 +461,16 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) error {
 
 	err = tun.AddAddrs()
 	if err != nil {
-		// TODO: close the tunnel
 		return fmt.Errorf("adding addresses to the interface: %w", err)
 	}
 
 	err = tun.Up()
 	if err != nil {
-		// TODO: close the tunnel
 		return fmt.Errorf("upping the interface: %w", err)
 	}
 
 	err = nordlynx.SetMTU(tun.Interface())
 	if err != nil {
-		// TODO: close the tunnel
 		return fmt.Errorf("setting mtu for the interface: %w", err)
 	}
 
