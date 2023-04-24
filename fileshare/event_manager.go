@@ -59,6 +59,36 @@ func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient, notificat
 	}
 }
 
+func (em *EventManager) AreNotificationsEnabled() bool {
+	return em.notificationManager != nil
+}
+
+func (em *EventManager) EnableNotifications() error {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	if em.notificationManager != nil {
+		return nil
+	}
+
+	notificationManager, err := NewNotificationManager()
+	if err != nil {
+		return err
+	}
+	em.notificationManager = notificationManager
+
+	return nil
+}
+
+func (em *EventManager) DisableNotifications() {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+	if err := em.notificationManager.notifier.Close(); err != nil {
+		log.Println(err)
+	}
+	em.notificationManager = nil
+}
+
 func (em *EventManager) isFileshareFromPeerAllowed(peerIP string) bool {
 	resp, err := em.meshClient.GetPeers(context.Background(), &meshpb.Empty{})
 	if err != nil {

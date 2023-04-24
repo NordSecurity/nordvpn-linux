@@ -92,3 +92,16 @@ message CancelFileRequest {
 	string transfer_id = 1; // ID taken from TransferRequested libdrop event
 	string file_id = 2; // ID taken from TransferRequested libdrop event
 }
+
+message SetNotificationsRequest {
+	bool enable = 1;
+}
+
+enum SetNotificationsStatus {
+	SET_SUCCESS = 0;
+	NOTHING_TO_DO = 1;
+}
+
+message SetNotificationsResponse {
+	SetNotificationsStatus status = 1;
+}

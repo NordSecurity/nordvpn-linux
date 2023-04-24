@@ -34,6 +34,8 @@ type FileshareClient interface {
 	List(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListResponse, error)
 	// Cancel file transfer to another peer
 	CancelFile(ctx context.Context, in *CancelFileRequest, opts ...grpc.CallOption) (*Error, error)
+	// SetNotifications about transfer status changes
+	SetNotifications(ctx context.Context, in *SetNotificationsRequest, opts ...grpc.CallOption) (*SetNotificationsResponse, error)
 }
 
 type fileshareClient struct {
@@ -144,6 +146,15 @@ func (c *fileshareClient) CancelFile(ctx context.Context, in *CancelFileRequest,
 	return out, nil
 }
 
+func (c *fileshareClient) SetNotifications(ctx context.Context, in *SetNotificationsRequest, opts ...grpc.CallOption) (*SetNotificationsResponse, error) {
+	out := new(SetNotificationsResponse)
+	err := c.cc.Invoke(ctx, "/filesharepb.Fileshare/SetNotifications", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileshareServer is the server API for Fileshare service.
 // All implementations must embed UnimplementedFileshareServer
 // for forward compatibility
@@ -160,6 +171,8 @@ type FileshareServer interface {
 	List(context.Context, *Empty) (*ListResponse, error)
 	// Cancel file transfer to another peer
 	CancelFile(context.Context, *CancelFileRequest) (*Error, error)
+	// SetNotifications about transfer status changes
+	SetNotifications(context.Context, *SetNotificationsRequest) (*SetNotificationsResponse, error)
 	mustEmbedUnimplementedFileshareServer()
 }
 
@@ -184,6 +197,9 @@ func (UnimplementedFileshareServer) List(context.Context, *Empty) (*ListResponse
 }
 func (UnimplementedFileshareServer) CancelFile(context.Context, *CancelFileRequest) (*Error, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelFile not implemented")
+}
+func (UnimplementedFileshareServer) SetNotifications(context.Context, *SetNotificationsRequest) (*SetNotificationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetNotifications not implemented")
 }
 func (UnimplementedFileshareServer) mustEmbedUnimplementedFileshareServer() {}
 
@@ -312,6 +328,24 @@ func _Fileshare_CancelFile_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Fileshare_SetNotifications_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetNotificationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileshareServer).SetNotifications(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/filesharepb.Fileshare/SetNotifications",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileshareServer).SetNotifications(ctx, req.(*SetNotificationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Fileshare_ServiceDesc is the grpc.ServiceDesc for Fileshare service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -334,6 +368,10 @@ var Fileshare_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelFile",
 			Handler:    _Fileshare_CancelFile_Handler,
+		},
+		{
+			MethodName: "SetNotifications",
+			Handler:    _Fileshare_SetNotifications_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
