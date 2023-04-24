@@ -8,7 +8,7 @@ require (
 	github.com/NordSecurity/libtelio v0.0.0-20230314103647-87dd2cfc1722
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set v1.8.0
-	github.com/docker/docker v20.10.16+incompatible
+	github.com/docker/docker v23.0.4+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/esiqveland/notify v0.11.2
@@ -73,7 +73,6 @@ require (
 	github.com/quic-go/qtls-go1-20 v0.1.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opencensus.io v0.24.0 // indirect

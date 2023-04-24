@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -112,8 +111,8 @@ func runDocker(
 	if daemonize {
 		go func() {
 			<-ctx.Done()
-			timeout := time.Millisecond * 500
-			err := docker.ContainerStop(context.Background(), resp.ID, &timeout)
+			timeoutSec := 1
+			err := docker.ContainerStop(context.Background(), resp.ID, container.StopOptions{Timeout: &timeoutSec})
 			if err != nil {
 				fmt.Println(err)
 			}
