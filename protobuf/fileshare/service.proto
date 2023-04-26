@@ -19,4 +19,6 @@ service Fileshare {
 	rpc List(Empty) returns (ListResponse);
 	// Cancel file transfer to another peer
 	rpc CancelFile(CancelFileRequest) returns (Error);
+	// SetNotifications about transfer status changes
+	rpc SetNotifications(SetNotificationsRequest) returns (SetNotificationsResponse);
 }

@@ -34,6 +34,10 @@ func (mn *MockNotifier) SendNotification(summary string, body string, actions []
 	return notificationID, nil
 }
 
+func (mn *MockNotifier) Close() error {
+	return nil
+}
+
 type MockFileOpener struct {
 	openedFiles []string
 }

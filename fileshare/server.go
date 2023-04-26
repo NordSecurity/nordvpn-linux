@@ -437,3 +437,19 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 
 	return empty(), nil
 }
+
+func (s *Server) SetNotifications(ctx context.Context, in *pb.SetNotificationsRequest) (*pb.SetNotificationsResponse, error) {
+	if s.eventManager.AreNotificationsEnabled() == in.Enable {
+		return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_NOTHING_TO_DO}, nil
+	}
+
+	if in.Enable {
+		if err := s.eventManager.EnableNotifications(); err != nil {
+			log.Println("Failed to enable notifications: ", err)
+		}
+	} else {
+		s.eventManager.DisableNotifications()
+	}
+
+	return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_SET_SUCCESS}, nil
+}

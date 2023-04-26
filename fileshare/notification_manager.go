@@ -19,6 +19,7 @@ type Action struct {
 // Notifier is responsible for sending notifications to the user
 type Notifier interface {
 	SendNotification(summary string, body string, actions []Action) (uint32, error)
+	Close() error
 }
 
 // DbusNotifier wraps github.com/esiqveland/notify notifier implementation
@@ -44,6 +45,10 @@ func (n DbusNotifier) SendNotification(summary string, body string, actions []Ac
 	}
 
 	return n.notifier.SendNotification(notification)
+}
+
+func (n DbusNotifier) Close() error {
+	return n.notifier.Close()
 }
 
 func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, error) {
@@ -135,6 +140,12 @@ func NewNotificationManager() (*NotificationManager, error) {
 	notificationManager.notifier = notifier
 
 	return &notificationManager, nil
+}
+
+func (nm *NotificationManager) Disable() {
+	if err := nm.notifier.Close(); err != nil {
+		log.Println("Failed to close notifier: ", err)
+	}
 }
 
 func (nm *NotificationManager) openFile(actionID uint32) {
