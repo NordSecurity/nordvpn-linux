@@ -26,16 +26,16 @@ const (
 )
 
 func (c *cmd) Login(ctx *cli.Context) error {
+	resp, err := c.client.IsLoggedIn(context.Background(), &pb.Empty{})
+	if err != nil || resp.GetValue() {
+		return formatError(internal.ErrAlreadyLoggedIn)
+	}
+
 	if ctx.IsSet(flagLoginCallback) {
 		return c.oauth2(ctx)
 	}
 
 	if ctx.IsSet(flagToken) {
-		resp, err := c.client.IsLoggedIn(context.Background(), &pb.Empty{})
-		if err != nil || resp.GetValue() {
-			return formatError(internal.ErrAlreadyLoggedIn)
-		}
-
 		err = c.loginWithToken(ctx)
 		if err != nil {
 			return formatError(err)
