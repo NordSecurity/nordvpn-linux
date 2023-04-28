@@ -33,6 +33,7 @@ declare -A names_map=(
 	[daemon]=nordvpnd
 	[downloader]=downloader
 	[pulp]=pulp
+	[fileshare]=nordfileshared
 )
 
 # shellcheck disable=SC2034
@@ -61,11 +62,6 @@ export CGO_LDFLAGS="-Wl,-z,relro,-z,now"
 
 # In order to enable additional features, provide `FEATURES` environment variable
 tags="${FEATURES:-"telio drop"}"
-
-# Only compile fileshare daemon if feature flag is present
-if [[ $tags == *"drop"* ]]; then 
-	names_map[fileshare]+=nordfileshared
-fi
 
 # Apply moose patch in case compiling with moose
 if [[ $tags == *"moose"* ]]; then 

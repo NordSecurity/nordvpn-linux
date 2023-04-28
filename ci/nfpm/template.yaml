@@ -59,6 +59,23 @@ contents:
     dst: /usr/lib/systemd/system/nordvpnd.service
     file_info:
       mode: 0644
+  - src: ${CI_PROJECT_DIR}/contrib/systemd/user/nordfileshared.socket
+    dst: /usr/lib/systemd/user/nordfileshared.socket
+    file_info:
+      mode: 0644
+  - src: ${CI_PROJECT_DIR}/contrib/systemd/user/nordfileshared.service
+    dst: /usr/lib/systemd/user/nordfileshared.service
+    file_info:
+      mode: 0644
+  # Also install as a system service so it could be run as root
+  - src: ${CI_PROJECT_DIR}/contrib/systemd/user/nordfileshared.socket
+    dst: /usr/lib/systemd/system/nordfileshared.socket
+    file_info:
+      mode: 0644
+  - src: ${CI_PROJECT_DIR}/contrib/systemd/user/nordfileshared.service
+    dst: /usr/lib/systemd/system/nordfileshared.service
+    file_info:
+      mode: 0644
   - src: ${CI_PROJECT_DIR}/contrib/systemd/tmpfiles.d/nordvpn.conf
     dst: /usr/lib/tmpfiles.d/nordvpn.conf
     file_info:
@@ -93,6 +110,8 @@ contents:
     dst: /usr/sbin/nordvpnd
   - src: ${BASEDIR}/usr/bin/nordvpn
     dst: /usr/bin/nordvpn
+  - src: ${BASEDIR}/usr/bin/nordfileshared
+    dst: /usr/bin/nordfileshared
 
   - src: ${CI_PROJECT_DIR}/contrib/initd/nordvpn
     dst: /etc/init.d/nordvpn
