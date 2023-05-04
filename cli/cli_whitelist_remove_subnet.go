@@ -18,7 +18,7 @@ import (
 const WhitelistRemoveSubnetUsageText = "Removes subnet from a whitelist"
 
 // WhitelistRemoveSubnetArgsUsageText is shown by nordvpn whitelist remove subnet --help
-const WhitelistRemoveSubnetArgsUsageText = `[address]
+const WhitelistRemoveSubnetArgsUsageText = `<address>
 
 Use this command to remove subnet from whitelist.
 

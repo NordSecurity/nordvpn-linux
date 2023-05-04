@@ -22,14 +22,14 @@ import (
 const WhitelistRemovePortsUsageText = "Removes port range from a whitelist"
 
 // WhitelistRemovePortsArgsUsageText is shown by nordvpn whitelist remove ports --help
-const WhitelistRemovePortsArgsUsageText = `[port from] [port to] [protocol [protocol]]
+const WhitelistRemovePortsArgsUsageText = `<port_from> <port_to> [protocol <protocol>]
 
 Use this command to remove ports from whitelist.
 
 Example: 'nordvpn whitelist remove ports 3000 8000'
 
 Optionally, protocol can be provided to specify which protocol should be removed from whitelist.
-Supported values for [protocol]: TCP, UDP
+Supported values for <protocol>: TCP, UDP
 
 Example: 'nordvpn whitelist remove ports 3000 8000 protocol TCP'`
 

@@ -18,7 +18,7 @@ import (
 const WhitelistAddSubnetUsageText = "Adds subnet to a whitelist"
 
 // WhitelistAddSubnetArgsUsageText is shown by nordvpn whitelist add subnet --help
-const WhitelistAddSubnetArgsUsageText = `[address]
+const WhitelistAddSubnetArgsUsageText = `<address>
 
 Use this command to whitelist subnet.
 

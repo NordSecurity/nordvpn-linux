@@ -21,14 +21,14 @@ import (
 const SetDNSUsageText = "Sets custom DNS servers"
 
 // SetDNSArgsUsageText is shown by nordvpn set dns --help
-const SetDNSArgsUsageText = `[servers]/[disabled]
+const SetDNSArgsUsageText = `<servers>|<disabled>
 
 Use this command to set DNS servers.
 
-Supported values for [disabled]: 0, false, disable, off, disabled
+Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set dns off
 
-Arguments [servers] is a list of IP addresses separated by space 
+Arguments <servers> is a list of IP addresses separated by space
 Example: nordvpn set dns 0.0.0.0 1.2.3.4
 
 Limits:
