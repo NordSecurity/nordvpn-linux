@@ -212,6 +212,7 @@ enum ConnectErrorCode {
 	PEER_DOES_NOT_ALLOW_ROUTING = 0;
 	ALREADY_CONNECTED = 1;
 	CONNECT_FAILED = 2;
+	PEER_NO_IP = 3;
 }
 
 message ConnectResponse {

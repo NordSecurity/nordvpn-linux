@@ -377,3 +377,129 @@ func TestMeshAPI_Revoke(t *testing.T) {
 		})
 	}
 }
+
+func TestMeshApiUtils_responseToMachinePeers(t *testing.T) {
+	rawPeers := []mesh.MachinePeerResponse{
+		{
+			ID:                        uuid.MustParse("cb5a8446-e404-11ed-b5ea-0242ac120002"),
+			PublicKey:                 "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t=",
+			Hostname:                  "test0-everest.nord",
+			Addresses:                 []netip.Addr{netip.MustParseAddr("192.17.30.5")},
+			OS:                        "linux",
+			Distro:                    "ubuntu",
+			Endpoints:                 []netip.AddrPort{},
+			Email:                     "test@mailto.com",
+			IsLocal:                   true,
+			DoesPeerAllowRouting:      true,
+			DoesPeerAllowInbound:      true,
+			DoesPeerAllowLocalNetwork: true,
+			DoesPeerAllowFileshare:    true,
+			DoesPeerSupportRouting:    true,
+			DoIAllowInbound:           true,
+			DoIAllowRouting:           true,
+			DoIAllowLocalNetwork:      true,
+			DoIAllowFileshare:         true,
+		},
+		{
+			ID:                        uuid.MustParse("a7e4e7d6-e404-11ed-b5ea-0242ac120002"),
+			PublicKey:                 "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp=",
+			Hostname:                  "test0-everest.nord",
+			Addresses:                 []netip.Addr{},
+			OS:                        "linux",
+			Distro:                    "ubuntu",
+			Endpoints:                 []netip.AddrPort{},
+			Email:                     "test@mailto.com",
+			IsLocal:                   false,
+			DoesPeerAllowRouting:      true,
+			DoesPeerAllowInbound:      true,
+			DoesPeerAllowLocalNetwork: true,
+			DoesPeerAllowFileshare:    true,
+			DoesPeerSupportRouting:    true,
+			DoIAllowInbound:           true,
+			DoIAllowRouting:           true,
+			DoIAllowLocalNetwork:      true,
+			DoIAllowFileshare:         true,
+		},
+	}
+
+	expectedPeers := []mesh.MachinePeer{
+		{
+			ID:                        uuid.MustParse("cb5a8446-e404-11ed-b5ea-0242ac120002"),
+			PublicKey:                 "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t=",
+			Hostname:                  "test0-everest.nord",
+			Address:                   netip.MustParseAddr("192.17.30.5"),
+			OS:                        mesh.OperatingSystem{Name: "linux", Distro: "ubuntu"},
+			Endpoints:                 []netip.AddrPort{},
+			Email:                     "test@mailto.com",
+			IsLocal:                   true,
+			DoesPeerAllowRouting:      true,
+			DoesPeerAllowInbound:      true,
+			DoesPeerAllowLocalNetwork: true,
+			DoesPeerAllowFileshare:    true,
+			DoesPeerSupportRouting:    true,
+			DoIAllowInbound:           true,
+			DoIAllowRouting:           true,
+			DoIAllowLocalNetwork:      true,
+			DoIAllowFileshare:         true,
+		},
+		{
+			ID:                        uuid.MustParse("a7e4e7d6-e404-11ed-b5ea-0242ac120002"),
+			PublicKey:                 "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp=",
+			Hostname:                  "test0-everest.nord",
+			Address:                   netip.Addr{},
+			OS:                        mesh.OperatingSystem{Name: "linux", Distro: "ubuntu"},
+			Endpoints:                 []netip.AddrPort{},
+			Email:                     "test@mailto.com",
+			IsLocal:                   false,
+			DoesPeerAllowRouting:      true,
+			DoesPeerAllowInbound:      true,
+			DoesPeerAllowLocalNetwork: true,
+			DoesPeerAllowFileshare:    true,
+			DoesPeerSupportRouting:    true,
+			DoIAllowInbound:           true,
+			DoIAllowRouting:           true,
+			DoIAllowLocalNetwork:      true,
+			DoIAllowFileshare:         true,
+		},
+	}
+
+	peers := peersResponseToMachinePeers(rawPeers)
+
+	assert.Equal(t, expectedPeers, peers)
+}
+
+func TestMeshApiUtils_responseToLocalPeers(t *testing.T) {
+	rawPeers := []mesh.MachinePeerResponse{
+		{
+			ID:        uuid.MustParse("cb5a8446-e404-11ed-b5ea-0242ac120002"),
+			PublicKey: "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t=",
+			Hostname:  "test0-everest.nord",
+			Addresses: []netip.Addr{netip.MustParseAddr("192.17.30.5")},
+		},
+		{
+			ID:        uuid.MustParse("a7e4e7d6-e404-11ed-b5ea-0242ac120002"),
+			PublicKey: "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp=",
+			Hostname:  "test0-everest.nord",
+			Addresses: []netip.Addr{},
+		},
+	}
+
+	expectedPeers := []mesh.Machine{
+		{
+			ID:        uuid.MustParse("cb5a8446-e404-11ed-b5ea-0242ac120002"),
+			PublicKey: "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t=",
+			Hostname:  "test0-everest.nord",
+			Address:   netip.MustParseAddr("192.17.30.5"),
+		},
+		{
+			ID:        uuid.MustParse("a7e4e7d6-e404-11ed-b5ea-0242ac120002"),
+			PublicKey: "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp=",
+			Hostname:  "test0-everest.nord",
+			Address:   netip.Addr{},
+		},
+	}
+
+	peers := peersResponseToLocalPeers(rawPeers)
+
+	assert.Equal(t, peers, expectedPeers)
+}

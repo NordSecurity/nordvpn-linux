@@ -47,10 +47,14 @@ type Machine struct {
 }
 
 func (s Machine) ToProtobuf() *pb.Peer {
+	ip := ""
+	if s.Address.IsValid() {
+		ip = s.Address.String()
+	}
 	return &pb.Peer{
 		Identifier: s.ID.String(),
 		Pubkey:     s.PublicKey,
-		Ip:         s.Address.String(),
+		Ip:         ip,
 		Endpoints:  s.EndpointsString(),
 		Os:         s.OS.Name,
 		Distro:     s.OS.Distro,
@@ -99,11 +103,15 @@ type MachinePeer struct {
 }
 
 func (p MachinePeer) ToProtobuf() *pb.Peer {
+	ip := ""
+	if p.Address.IsValid() {
+		ip = p.Address.String()
+	}
 	return &pb.Peer{
 		Identifier:            p.ID.String(),
 		Pubkey:                p.PublicKey,
 		Endpoints:             p.EndpointsString(),
-		Ip:                    p.Address.String(),
+		Ip:                    ip,
 		Os:                    p.OS.Name,
 		Distro:                p.OS.Distro,
 		Hostname:              p.Hostname,

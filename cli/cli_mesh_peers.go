@@ -1011,7 +1011,7 @@ func connectErrorCodeToError(
 			MsgMeshnetPeerDoesNotAllowRouting,
 			identifier,
 		)
-	case pb.ConnectErrorCode_CONNECT_FAILED:
+	case pb.ConnectErrorCode_CONNECT_FAILED, pb.ConnectErrorCode_PEER_NO_IP:
 		return fmt.Errorf(
 			MsgMeshnetPeerConnectFailed,
 			identifier,

@@ -25,13 +25,15 @@ type Node interface {
 type Server struct {
 	mu             sync.Mutex
 	interfaceNames []string // need to remember on which interface we started
+	runCommandFunc runCommandFunc
 	sysctlSetter   *kernel.SysctlSetter
 }
 
 // NewServer create & initialize new Server
-func NewServer(interfaceNames []string) Node {
+func NewServer(interfaceNames []string, commandFunc runCommandFunc) Node {
 	return &Server{
 		interfaceNames: interfaceNames,
+		runCommandFunc: commandFunc,
 		sysctlSetter: kernel.NewSysctlSetter(
 			ipv4fwdKernelParamName,
 			1,
@@ -50,12 +52,12 @@ func (en *Server) Enable() error {
 	}
 
 	// block traffic from unauthorized peers
-	err := enableFiltering()
+	err := enableFiltering(en.runCommandFunc)
 	if err != nil {
 		return fmt.Errorf("enabling filtering: %w", err)
 	}
 
-	err = enableMasquerading(en.interfaceNames)
+	err = enableMasquerading(en.interfaceNames, en.runCommandFunc)
 	if err != nil {
 		return fmt.Errorf("enabling masquerading: %w", err)
 	}
@@ -70,13 +72,15 @@ func (en *Server) ResetPeers(peers mesh.MachinePeers) error {
 
 	trafficPeers := make([]TrafficPeer, 0, len(peers))
 	for _, peer := range peers {
-		trafficPeers = append(trafficPeers, TrafficPeer{
-			netip.PrefixFrom(peer.Address, peer.Address.BitLen()),
-			peer.DoIAllowRouting,
-			peer.DoIAllowLocalNetwork,
-		})
+		if peer.Address.IsValid() {
+			trafficPeers = append(trafficPeers, TrafficPeer{
+				netip.PrefixFrom(peer.Address, peer.Address.BitLen()),
+				peer.DoIAllowRouting,
+				peer.DoIAllowLocalNetwork,
+			})
+		}
 	}
-	return resetPeersTraffic(trafficPeers)
+	return resetPeersTraffic(trafficPeers, en.runCommandFunc)
 }
 
 // Disable restore current state and disable fwd+msq
@@ -85,12 +89,12 @@ func (en *Server) Disable() error {
 	defer en.mu.Unlock()
 
 	var err error
-	err = clearFiltering()
+	err = clearFiltering(en.runCommandFunc)
 	if err != nil {
 		return fmt.Errorf("clearing filtering: %w", err)
 	}
 
-	err = clearMasquerading(en.interfaceNames)
+	err = clearMasquerading(en.interfaceNames, en.runCommandFunc)
 	if err != nil {
 		return fmt.Errorf("clearing masquerading: %w", err)
 	}

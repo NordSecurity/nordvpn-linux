@@ -62,13 +62,43 @@ type workingIpv6 struct{}
 func (workingIpv6) Block() error   { return nil }
 func (workingIpv6) Unblock() error { return nil }
 
-type workingFirewall struct{}
+type workingFirewall struct {
+	rules map[string]firewall.Rule
+}
 
-func (workingFirewall) Add([]firewall.Rule) error { return nil }
-func (workingFirewall) Delete([]string) error     { return nil }
-func (workingFirewall) Enable() error             { return nil }
-func (workingFirewall) Disable() error            { return nil }
-func (workingFirewall) IsEnabled() bool           { return true }
+func newWorkingFirewall() workingFirewall {
+	return workingFirewall{
+		rules: make(map[string]firewall.Rule),
+	}
+}
+
+func (f *workingFirewall) Add(rules []firewall.Rule) error {
+	if f.rules == nil {
+		return nil
+	}
+
+	for _, rule := range rules {
+		f.rules[rule.Name] = rule
+	}
+
+	return nil
+}
+
+func (f *workingFirewall) Delete(rules []string) error {
+	if f.rules == nil {
+		return nil
+	}
+
+	for _, ruleName := range rules {
+		delete(f.rules, ruleName)
+	}
+
+	return nil
+}
+
+func (workingFirewall) Enable() error   { return nil }
+func (workingFirewall) Disable() error  { return nil }
+func (workingFirewall) IsEnabled() bool { return true }
 
 type failingFirewall struct{}
 
@@ -112,12 +142,29 @@ func (workingRoutingSetup) Enable() error                               { return
 func (workingRoutingSetup) Disable() error                              { return nil }
 func (workingRoutingSetup) IsEnabled() bool                             { return true }
 
-type workingExitNode struct{}
+type workingExitNode struct {
+	enabled bool
+	peers   mesh.MachinePeers
+}
 
-func (workingExitNode) Enable() error                      { return nil }
-func (workingExitNode) ResetPeers(mesh.MachinePeers) error { return nil }
-func (workingExitNode) DisablePeer(netip.Addr) error       { return nil }
-func (workingExitNode) Disable() error                     { return nil }
+func newWorkingExitNode() workingExitNode {
+	return workingExitNode{
+		peers: mesh.MachinePeers{},
+	}
+}
+
+func (e *workingExitNode) Enable() error {
+	e.enabled = true
+	return nil
+}
+
+func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers) error {
+	e.peers = peers
+	return nil
+}
+
+func (*workingExitNode) DisablePeer(netip.Addr) error { return nil }
+func (*workingExitNode) Disable() error               { return nil }
 
 type workingMesh struct{}
 
@@ -130,10 +177,25 @@ func (workingMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
 
-type workingHostSetter struct{}
+type workingHostSetter struct {
+	hosts dns.Hosts
+}
 
-func (workingHostSetter) SetHosts(dns.Hosts) error { return nil }
-func (workingHostSetter) UnsetHosts() error        { return nil }
+func newMockHostSetter() workingHostSetter {
+	return workingHostSetter{
+		hosts: dns.Hosts{},
+	}
+}
+
+func (h *workingHostSetter) SetHosts(hosts dns.Hosts) error {
+	h.hosts = hosts
+	return nil
+}
+
+func (h *workingHostSetter) UnsetHosts() error {
+	h.hosts = dns.Hosts{}
+	return nil
+}
 
 func TestCombined_Start(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -155,7 +217,7 @@ func TestCombined_Start(t *testing.T) {
 			whitelistRouter: workingRouter{},
 			dns:             workingDNS{},
 			vpn:             nil,
-			fw:              workingFirewall{},
+			fw:              &workingFirewall{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errNilVPN,
@@ -166,7 +228,7 @@ func TestCombined_Start(t *testing.T) {
 			whitelistRouter: workingRouter{},
 			dns:             workingDNS{},
 			vpn:             testvpn.Failing{},
-			fw:              workingFirewall{},
+			fw:              &workingFirewall{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errors.ErrOnPurpose,
@@ -188,7 +250,7 @@ func TestCombined_Start(t *testing.T) {
 			whitelistRouter: workingRouter{},
 			dns:             failingDNS{},
 			vpn:             testvpn.WorkingInactive{},
-			fw:              workingFirewall{},
+			fw:              &workingFirewall{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errors.ErrOnPurpose,
@@ -199,7 +261,7 @@ func TestCombined_Start(t *testing.T) {
 			whitelistRouter: workingRouter{},
 			dns:             workingDNS{},
 			vpn:             testvpn.WorkingInactive{},
-			fw:              workingFirewall{},
+			fw:              &workingFirewall{},
 			devices:         failingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errors.ErrOnPurpose,
@@ -210,7 +272,7 @@ func TestCombined_Start(t *testing.T) {
 			whitelistRouter: workingRouter{},
 			dns:             workingDNS{},
 			vpn:             testvpn.Working{},
-			fw:              workingFirewall{},
+			fw:              &workingFirewall{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             nil,
@@ -292,7 +354,7 @@ func TestCombined_Stop(t *testing.T) {
 				workingRouter{},
 				test.dns,
 				&workingIpv6{},
-				workingFirewall{},
+				&workingFirewall{},
 				nil,
 				workingRoutingSetup{},
 				nil,
@@ -393,7 +455,7 @@ func TestCombined_SetDNS(t *testing.T) {
 				workingRouter{},
 				test.dns,
 				&workingIpv6{},
-				workingFirewall{},
+				&workingFirewall{},
 				nil,
 				nil,
 				nil,
@@ -439,7 +501,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				workingRouter{},
 				test.dns,
 				&workingIpv6{},
-				workingFirewall{},
+				&workingFirewall{},
 				nil,
 				nil,
 				nil,
@@ -474,14 +536,14 @@ func TestCombined_ResetWhitelist(t *testing.T) {
 		},
 		{
 			name:    "device listing failure",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			devices: failingDeviceList,
 			err:     errors.ErrOnPurpose,
 			routing: workingRoutingSetup{},
 		},
 		{
 			name:    "success",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			devices: workingDeviceList,
 			routing: workingRoutingSetup{},
 		},
@@ -530,14 +592,14 @@ func TestCombined_BlockTraffic(t *testing.T) {
 		},
 		{
 			name:    "device listing failure",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			devices: failingDeviceList,
 			err:     errors.ErrOnPurpose,
 			routing: workingRoutingSetup{},
 		},
 		{
 			name:    "success",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			devices: workingDeviceList,
 			routing: workingRoutingSetup{},
 		},
@@ -584,7 +646,7 @@ func TestCombined_UnblockTraffic(t *testing.T) {
 		},
 		{
 			name: "success",
-			fw:   workingFirewall{},
+			fw:   &workingFirewall{},
 		},
 	}
 
@@ -633,14 +695,14 @@ func TestCombined_AllowIPv6Traffic(t *testing.T) {
 		},
 		{
 			name:    "device listing failure",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			devices: failingDeviceList,
 			err:     errors.ErrOnPurpose,
 			routing: workingRoutingSetup{},
 		},
 		{
 			name:    "success",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			devices: workingDeviceList,
 			routing: workingRoutingSetup{},
 		},
@@ -687,7 +749,7 @@ func TestCombined_StopAllowedIPv6Traffic(t *testing.T) {
 		},
 		{
 			name: "success",
-			fw:   workingFirewall{},
+			fw:   &workingFirewall{},
 		},
 	}
 
@@ -734,7 +796,7 @@ func TestCombined_SetWhitelist(t *testing.T) {
 			devices: failingDeviceList,
 			routing: workingRoutingSetup{},
 			rt:      workingRouter{},
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			whitelist: config.NewWhitelist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
@@ -745,7 +807,7 @@ func TestCombined_SetWhitelist(t *testing.T) {
 			devices: workingDeviceList,
 			routing: workingRoutingSetup{},
 			rt:      failingRouter{},
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			whitelist: config.NewWhitelist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
@@ -767,7 +829,7 @@ func TestCombined_SetWhitelist(t *testing.T) {
 			devices:   workingDeviceList,
 			routing:   workingRoutingSetup{},
 			rt:        workingRouter{},
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			whitelist: config.NewWhitelist(nil, nil, nil),
 		},
 		{
@@ -775,7 +837,7 @@ func TestCombined_SetWhitelist(t *testing.T) {
 			devices: workingDeviceList,
 			routing: workingRoutingSetup{},
 			rt:      workingRouter{},
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			whitelist: config.NewWhitelist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
@@ -823,13 +885,13 @@ func TestCombined_UnsetWhitelist(t *testing.T) {
 		},
 		{
 			name: "router failure",
-			fw:   workingFirewall{},
+			fw:   &workingFirewall{},
 			rt:   failingRouter{},
 			err:  errors.ErrOnPurpose,
 		},
 		{
 			name: "success",
-			fw:   workingFirewall{},
+			fw:   &workingFirewall{},
 			rt:   workingRouter{},
 		},
 	}
@@ -883,7 +945,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 		},
 		{
 			name:    "router failure",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			rt:      failingRouter{},
 			devices: workingDeviceList,
 			routing: workingRoutingSetup{},
@@ -891,7 +953,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 		},
 		{
 			name:    "device listing failure",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			rt:      workingRouter{},
 			devices: failingDeviceList,
 			routing: workingRoutingSetup{},
@@ -899,7 +961,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 		},
 		{
 			name:    "success",
-			fw:      workingFirewall{},
+			fw:      &workingFirewall{},
 			rt:      workingRouter{},
 			routing: workingRoutingSetup{},
 			devices: workingDeviceList,
@@ -953,13 +1015,13 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 		},
 		{
 			name: "router failure",
-			fw:   workingFirewall{},
+			fw:   &workingFirewall{},
 			rt:   failingRouter{},
 			err:  errors.ErrOnPurpose,
 		},
 		{
 			name: "success",
-			fw:   workingFirewall{},
+			fw:   &workingFirewall{},
 			rt:   workingRouter{},
 		},
 	}
@@ -1002,7 +1064,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 	}{
 		{
 			name:      "a1",
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			rt:        workingRouter{},
 			publicKey: "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
 			address:   "100.100.10.1",
@@ -1010,7 +1072,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 		},
 		{
 			name:      "a2",
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			rt:        workingRouter{},
 			publicKey: "a70ad213-fa09-4ae4-890b-bea12697b9f0",
 			address:   "100.100.10.1",
@@ -1018,7 +1080,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 		},
 		{
 			name:      "a3",
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			rt:        workingRouter{},
 			publicKey: "a2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
@@ -1066,7 +1128,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 	}{
 		{
 			name:      "b1",
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			rt:        workingRouter{},
 			publicKey: "bc30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
 			address:   "100.100.10.1",
@@ -1074,7 +1136,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 		},
 		{
 			name:      "b2",
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			rt:        workingRouter{},
 			publicKey: "b70ad213-fa09-4ae4-890b-bea12697b9f0",
 			address:   "100.100.10.1",
@@ -1082,7 +1144,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 		},
 		{
 			name:      "b3",
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			rt:        workingRouter{},
 			publicKey: "b2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
@@ -1130,7 +1192,7 @@ func TestCombined_SetMesh(t *testing.T) {
 		err       error
 	}{
 		{
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			rt:        workingRouter{},
 			publicKey: "c2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
@@ -1151,10 +1213,10 @@ func TestCombined_SetMesh(t *testing.T) {
 				test.fw,
 				workingDeviceList,
 				workingRoutingSetup{},
-				workingHostSetter{},
+				&workingHostSetter{},
 				workingRouter{},
 				workingRouter{},
-				workingExitNode{},
+				&workingExitNode{},
 				0,
 			)
 			assert.ErrorIs(t, test.err, netw.SetMesh(
@@ -1178,7 +1240,7 @@ func TestCombined_UnSetMesh(t *testing.T) {
 		err       error
 	}{
 		{
-			fw:        workingFirewall{},
+			fw:        &workingFirewall{},
 			rt:        workingRouter{},
 			publicKey: "d2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
@@ -1199,10 +1261,10 @@ func TestCombined_UnSetMesh(t *testing.T) {
 				test.fw,
 				workingDeviceList,
 				workingRoutingSetup{},
-				workingHostSetter{},
+				&workingHostSetter{},
 				workingRouter{},
 				workingRouter{},
-				workingExitNode{},
+				&workingExitNode{},
 				0,
 			)
 			netw.isMeshnetSet = true
@@ -1455,4 +1517,143 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 			assert.EqualErrorf(t, err, expectedErrorMsg, "Error should be: %v, got: %v", expectedErrorMsg, err)
 		})
 	}
+}
+
+func TestCombined_Refresh(t *testing.T) {
+	hostSetter := newMockHostSetter()
+	fw := newWorkingFirewall()
+	exitNode := newWorkingExitNode()
+
+	netw := NewCombined(
+		nil,
+		workingMesh{},
+		workingGateway{},
+		&subs.Subject[string]{},
+		workingRouter{},
+		&workingDNS{},
+		&workingIpv6{},
+		&fw,
+		workingDeviceList,
+		workingRoutingSetup{},
+		&hostSetter,
+		workingRouter{},
+		workingRouter{},
+		&exitNode,
+		0,
+	)
+
+	machineHostName := "test-fuji.nord"
+	machineAddress := netip.MustParseAddr("210.44.137.135")
+	machinePublicKey := "pUuNJ1Tt5M8Y6is6ZoaDjuoUT29ht5c0RHqyz2UhmEt="
+	peer1HostName := "test-everest.nord"
+	peer1Address := netip.MustParseAddr("56.132.8.3")
+	peer1PublicKey := "5AHWT3bNYBNqHfMMCxP9n3lMfnL0qIZiNr1xmEymMYf="
+
+	peers := mesh.MachinePeers{
+		mesh.MachinePeer{
+			Hostname:        peer1HostName,
+			PublicKey:       peer1PublicKey,
+			Address:         peer1Address,
+			DoIAllowInbound: true,
+		},
+		mesh.MachinePeer{
+			Hostname:        "test-altai.nord",
+			PublicKey:       "53sMImgjlgHiuEc51qkzTlzoxneliK3BBmzjUB2K2L9=",
+			Address:         netip.Addr{},
+			DoIAllowInbound: true,
+		},
+	}
+
+	machineMap := mesh.MachineMap{
+		Machine: mesh.Machine{
+			Hostname:  machineHostName,
+			PublicKey: machinePublicKey,
+			Address:   machineAddress,
+		},
+		Peers: peers,
+	}
+
+	netw.Refresh(machineMap)
+
+	assert.Equal(t, 2, len(hostSetter.hosts), "%d DNS hosts were configured, expected 2.", len(hostSetter.hosts))
+
+	expectedMachineDnsHost := dns.Host{
+		IP:         machineAddress,
+		FQDN:       machineHostName,
+		DomainName: "test-fuji",
+	}
+	assert.Equal(t, expectedMachineDnsHost, hostSetter.hosts[0],
+		"DNS host was not configured properly for %s, \nexpected config: \n%v, \nactual config: \n%v",
+		expectedMachineDnsHost, hostSetter.hosts[0],
+	)
+
+	expectedPeer1DnsHost := dns.Host{
+		IP:         peer1Address,
+		FQDN:       peer1HostName,
+		DomainName: "test-everest",
+	}
+
+	assert.Equal(t, expectedPeer1DnsHost, hostSetter.hosts[1],
+		"DNS host was not configured properly for %s, \nexpected config: \n%v, \nactual config: \n%v",
+		expectedPeer1DnsHost, hostSetter.hosts[1])
+
+	assert.Equal(t, 4, len(fw.rules), "%d firewall rules were configured, expected 4", len(fw.rules))
+
+	defaultMeshBlockRuleName := "default-mesh-block"
+
+	expectedDefaultMeshBlockFwRule := firewall.Rule{
+		Name:           defaultMeshBlockRuleName,
+		Direction:      firewall.Inbound,
+		RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
+		Allow:          false,
+	}
+
+	assert.Equal(t, expectedDefaultMeshBlockFwRule, fw.rules[defaultMeshBlockRuleName],
+		"default-mesh-block rule is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
+		expectedDefaultMeshBlockFwRule, fw.rules[defaultMeshBlockRuleName])
+
+	expectedDefaultMeshAllowEstablishedFwRule := firewall.Rule{
+		Name:           "default-mesh-allow-established",
+		Direction:      firewall.Inbound,
+		RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
+		ConnectionStates: []firewall.ConnectionState{
+			firewall.Related,
+			firewall.Established,
+		},
+		Allow: true,
+	}
+
+	assert.Equal(t, expectedDefaultMeshAllowEstablishedFwRule, fw.rules["default-mesh-allow-established"],
+		"default-mesh-allow-established rule is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
+		expectedDefaultMeshAllowEstablishedFwRule, fw.rules["default-mesh-allow-established"])
+
+	machineFwAllowRuleName := fmt.Sprintf("%s-allow-rule-%s", machinePublicKey, machineAddress.String())
+	expectedAllowMachineFwRule := firewall.Rule{
+		Name:           machineFwAllowRuleName,
+		Direction:      firewall.Inbound,
+		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(machineAddress, machineAddress.BitLen())},
+		Allow:          true,
+	}
+
+	assert.Equal(t, expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName],
+		"allow rule for the host machine rule is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
+		expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName])
+
+	peer1FwAllowRuleName := fmt.Sprintf("%s-allow-rule-%s", peer1PublicKey, peer1Address.String())
+	expectedAllowPeer1Rule := firewall.Rule{
+		Name:           peer1FwAllowRuleName,
+		Direction:      firewall.Inbound,
+		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
+		Allow:          true,
+	}
+
+	assert.Equal(t, expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
+		"allow rule for the peer rule is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
+		expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
+	)
+
+	assert.True(t, exitNode.enabled, "Exit node is not enabled after network refresh.")
+	assert.Equal(t, peers, exitNode.peers,
+		"Exit node peers are not configured properly after network refresh: \nexpected:\n%v\nactual:\n%v",
+		peers, exitNode.peers)
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/netip"
-	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -17,9 +16,11 @@ const (
 	filterRuleComment = "nordvpn"
 )
 
-func enableMasquerading(intfNames []string) error {
+type runCommandFunc func(command string, arg ...string) ([]byte, error)
+
+func enableMasquerading(intfNames []string, commandFunc runCommandFunc) error {
 	for _, intfName := range intfNames {
-		if rc, err := checkMasquerading(intfName); rc || err != nil {
+		if rc, err := checkMasquerading(intfName, commandFunc); rc || err != nil {
 			// already set or error happened
 			return err
 		}
@@ -33,7 +34,7 @@ func enableMasquerading(intfNames []string) error {
 			msqRuleComment,
 		)
 		// #nosec G204 -- input is properly sanitized
-		out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+		out, err := commandFunc(cmd, strings.Split(args, " ")...)
 		if err != nil {
 			return fmt.Errorf("iptables adding masquerading rule: %w: %s", err, string(out))
 		}
@@ -41,15 +42,15 @@ func enableMasquerading(intfNames []string) error {
 	return nil
 }
 
-func clearMasquerading(intfNames []string) error {
+func clearMasquerading(intfNames []string, commandFunc runCommandFunc) error {
 	for _, intfName := range intfNames {
 		// remove all rules with comment
 		for {
 			found := false
 			cmd := "iptables"
 			args := "-t nat -L POSTROUTING -v -n --line-numbers"
-			// #nosec G204 -- input is properly sanitized
-			out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+
+			out, err := commandFunc(cmd, strings.Split(args, " ")...)
 			if err != nil {
 				return fmt.Errorf("iptables listing rules: %w: %s", err, string(out))
 			}
@@ -67,7 +68,7 @@ func clearMasquerading(intfNames []string) error {
 					args := "-t nat -D POSTROUTING %s"
 					args = fmt.Sprintf(args, ruleno)
 					// #nosec G204 -- input is properly sanitized
-					out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+					out, err := commandFunc(cmd, strings.Split(args, " ")...)
 					if err != nil {
 						return fmt.Errorf("iptables deleting rule: %w: %s", err, string(out))
 					}
@@ -83,11 +84,11 @@ func clearMasquerading(intfNames []string) error {
 	return nil
 }
 
-func checkMasquerading(intfName string) (bool, error) {
+func checkMasquerading(intfName string, commandFunc runCommandFunc) (bool, error) {
 	cmd := "iptables"
 	args := "-t nat -L POSTROUTING -v -n"
 	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+	out, err := commandFunc(cmd, strings.Split(args, " ")...)
 	if err != nil {
 		return false, fmt.Errorf("iptables listing rules: %w: %s", err, string(out))
 	}
@@ -105,17 +106,17 @@ func checkMasquerading(intfName string) (bool, error) {
 	return false, nil
 }
 
-func checkFilteringRule(cidrIP string) (bool, error) {
-	lineNum, err := checkFilteringRulesLine([]string{cidrIP})
+func checkFilteringRule(cidrIP string, commandFunc runCommandFunc) (bool, error) {
+	lineNum, err := checkFilteringRulesLine([]string{cidrIP}, commandFunc)
 	return lineNum != -1, err
 }
 
 // returns in which line of iptables output the rule is found or -1 if not found
-func checkFilteringRulesLine(cidrIPs []string) (int, error) {
+func checkFilteringRulesLine(cidrIPs []string, commandFunc runCommandFunc) (int, error) {
 	cmd := "iptables"
 	args := "-t filter -L FORWARD -v -n"
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+
+	out, err := commandFunc(cmd, strings.Split(args, " ")...)
 	if err != nil {
 		return -1, fmt.Errorf("iptables listing rules: %w: %s", err, string(out))
 	}
@@ -142,14 +143,14 @@ func ruleContainsAllIPs(line string, cidrIPs []string) bool {
 	return true
 }
 
-func refreshPrivateSubnetsBlock() error {
+func refreshPrivateSubnetsBlock(commandFunc runCommandFunc) error {
 	for _, subnet := range []netip.Prefix{
 		netip.MustParsePrefix("10.0.0.0/8"),
 		netip.MustParsePrefix("172.16.0.0/12"),
 		netip.MustParsePrefix("192.168.0.0/16"),
 		netip.MustParsePrefix("169.254.0.0/16"),
 	} {
-		if err := modifyPeerTraffic(subnet, "-D", false, false); err != nil {
+		if err := modifyPeerTraffic(subnet, "-D", false, false, commandFunc); err != nil {
 			log.Println(internal.WarningPrefix, err)
 		}
 		if err := modifyPeerTraffic(
@@ -157,6 +158,7 @@ func refreshPrivateSubnetsBlock() error {
 			"-I",
 			false,
 			false,
+			commandFunc,
 		); err != nil {
 			return fmt.Errorf(
 				"blocking traffic to '%s': %w",
@@ -168,8 +170,8 @@ func refreshPrivateSubnetsBlock() error {
 	return nil
 }
 
-func enableFiltering() error {
-	if ok, err := checkFilteringRule(meshSrcSubnet); ok || err != nil {
+func enableFiltering(commandFunc runCommandFunc) error {
+	if ok, err := checkFilteringRule(meshSrcSubnet, commandFunc); ok || err != nil {
 		return err
 	}
 	// iptables -t filter -I FORWARD 1 -s 100.64.0.0/10 -j DROP -m comment --comment "<linux-app identifier>"
@@ -182,8 +184,8 @@ func enableFiltering() error {
 			meshSrcSubnet,
 			filterRuleComment,
 		)
-		// #nosec G204 -- input is properly sanitized
-		out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+
+		out, err := commandFunc(cmd, strings.Split(args, " ")...)
 		if err != nil {
 			return fmt.Errorf("iptables inserting rule: %w: %s", err, string(out))
 		}
@@ -194,8 +196,8 @@ func enableFiltering() error {
 		meshSrcSubnet,
 		filterRuleComment,
 	)
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+
+	out, err := commandFunc(cmd, strings.Split(args, " ")...)
 	if err != nil {
 		return fmt.Errorf("iptables inserting rule: %w: %s", err, string(out))
 	}
@@ -209,21 +211,21 @@ type TrafficPeer struct {
 	LocalNetwork bool
 }
 
-func resetPeersTraffic(peers []TrafficPeer) error {
+func resetPeersTraffic(peers []TrafficPeer, commandFunc runCommandFunc) error {
 	for _, peer := range peers {
 		// Ignore errors because they are expected if resetPeersTraffic is called for the very
 		// first time (rules don't exist yet)
-		if err := modifyPeerTraffic(peer.IP, "-D", true, true); err != nil {
+		if err := modifyPeerTraffic(peer.IP, "-D", true, true, commandFunc); err != nil {
 			log.Println(internal.WarningPrefix, err)
 		}
-		if err := allowOnlyLocalNetworkAccess(peer.IP, "-D"); err != nil {
+		if err := allowOnlyLocalNetworkAccess(peer.IP, "-D", commandFunc); err != nil {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}
 
 	for _, peer := range peers {
 		if peer.Routing && !peer.LocalNetwork {
-			if err := modifyPeerTraffic(peer.IP, "-I", true, true); err != nil {
+			if err := modifyPeerTraffic(peer.IP, "-I", true, true, commandFunc); err != nil {
 				return fmt.Errorf(
 					"adding rule while resetting peers traffic for peer %v: %w",
 					peer, err,
@@ -232,21 +234,21 @@ func resetPeersTraffic(peers []TrafficPeer) error {
 		}
 	}
 
-	if err := refreshPrivateSubnetsBlock(); err != nil {
+	if err := refreshPrivateSubnetsBlock(commandFunc); err != nil {
 		return fmt.Errorf("refreshing private subnets block while resetting peers traffic: %w", err)
 	}
 
 	for _, peer := range peers {
 		if peer.LocalNetwork {
 			if peer.Routing {
-				if err := modifyPeerTraffic(peer.IP, "-I", true, true); err != nil {
+				if err := modifyPeerTraffic(peer.IP, "-I", true, true, commandFunc); err != nil {
 					return fmt.Errorf(
 						"adding rule while resetting peers traffic for peer %v: %w",
 						peer, err,
 					)
 				}
 			} else {
-				if err := allowOnlyLocalNetworkAccess(peer.IP, "-I"); err != nil {
+				if err := allowOnlyLocalNetworkAccess(peer.IP, "-I", commandFunc); err != nil {
 					return fmt.Errorf(
 						"adding rules to access local network while resetting peers traffic %v: %w",
 						peer, err,
@@ -259,7 +261,7 @@ func resetPeersTraffic(peers []TrafficPeer) error {
 	return nil
 }
 
-func allowOnlyLocalNetworkAccess(subnet netip.Prefix, flag string) error {
+func allowOnlyLocalNetworkAccess(subnet netip.Prefix, flag string, commandFunc runCommandFunc) error {
 	for _, localSubnet := range []netip.Prefix{
 		netip.MustParsePrefix("10.0.0.0/8"),
 		netip.MustParsePrefix("172.16.0.0/12"),
@@ -275,7 +277,7 @@ func allowOnlyLocalNetworkAccess(subnet netip.Prefix, flag string) error {
 			filterRuleComment,
 		)
 		// #nosec G204 -- input is properly sanitized
-		out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+		out, err := commandFunc(cmd, strings.Split(args, " ")...)
 		if err != nil {
 			return fmt.Errorf("iptables modifying rule: %w: %s", err, string(out))
 		}
@@ -288,6 +290,7 @@ func modifyPeerTraffic(subnet netip.Prefix,
 	flag string,
 	source bool,
 	allow bool,
+	commandFunc runCommandFunc,
 ) error {
 	sourceFlag := fmt.Sprintf("-s %s -d", meshSrcSubnet)
 	if source {
@@ -308,8 +311,8 @@ func modifyPeerTraffic(subnet netip.Prefix,
 		acceptFlag,
 		filterRuleComment,
 	)
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmd, strings.Split(args, " ")...).CombinedOutput()
+
+	out, err := commandFunc(cmd, strings.Split(args, " ")...)
 	if err != nil {
 		return fmt.Errorf("iptables modifying rule: %w: %s", err, string(out))
 	}
@@ -318,10 +321,10 @@ func modifyPeerTraffic(subnet netip.Prefix,
 
 // clearFiltering drops all the rules in the FORWARD chain containing
 // a comment
-func clearFiltering() error {
+func clearFiltering(commandFunc runCommandFunc) error {
 	cmd := "iptables"
-	// #nosec G204 -- input is known before running the program
-	out, err := exec.Command(cmd, "-S").CombinedOutput()
+
+	out, err := commandFunc(cmd, "-S")
 	if err != nil {
 		return fmt.Errorf("listening iptables rules: %w", err)
 	}
@@ -331,8 +334,7 @@ func clearFiltering() error {
 			continue
 		}
 
-		// #nosec G204 -- input is properly sanitized
-		out, err := exec.Command(cmd, strings.Split(strings.ReplaceAll(line, "-A ", "-D "), " ")...).CombinedOutput()
+		out, err := commandFunc(cmd, strings.Split(strings.ReplaceAll(line, "-A ", "-D "), " ")...)
 		if err != nil {
 			return fmt.Errorf(
 				"deieting FORWARD rule %s: %w: %s",

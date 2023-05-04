@@ -3,6 +3,7 @@ package exitnode
 import (
 	"fmt"
 	"net/netip"
+	"os/exec"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
@@ -10,6 +11,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+func commandFunc(command string, arg ...string) ([]byte, error) {
+	return exec.Command(command, arg...).CombinedOutput()
+}
 
 func TestMasquerading(t *testing.T) {
 	category.Set(t, category.Route)
@@ -21,20 +26,20 @@ func TestMasquerading(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, intf.Name)
 
-	err = enableMasquerading(intfNames)
+	err = enableMasquerading(intfNames, commandFunc)
 
 	assert.NoError(t, err)
 
-	got, err := checkMasquerading(intf.Name)
+	got, err := checkMasquerading(intf.Name, commandFunc)
 
 	assert.NoError(t, err)
 	assert.True(t, got)
 
-	err = clearMasquerading(intfNames)
+	err = clearMasquerading(intfNames, commandFunc)
 
 	assert.NoError(t, err)
 
-	got, err = checkMasquerading(intf.Name)
+	got, err = checkMasquerading(intf.Name, commandFunc)
 
 	assert.NoError(t, err)
 	assert.False(t, got)
@@ -43,21 +48,21 @@ func TestMasquerading(t *testing.T) {
 func TestFiltering(t *testing.T) {
 	category.Set(t, category.Route)
 
-	rc, err := checkFilteringRule(meshSrcSubnet)
+	rc, err := checkFilteringRule(meshSrcSubnet, commandFunc)
 	assert.NoError(t, err)
 	assert.False(t, rc)
 
-	err = enableFiltering()
+	err = enableFiltering(commandFunc)
 	assert.NoError(t, err)
 
-	rc, err = checkFilteringRule(meshSrcSubnet)
+	rc, err = checkFilteringRule(meshSrcSubnet, commandFunc)
 	assert.NoError(t, err)
 	assert.True(t, rc)
 
-	err = clearFiltering()
+	err = clearFiltering(commandFunc)
 	assert.NoError(t, err)
 
-	rc, err = checkFilteringRule(meshSrcSubnet)
+	rc, err = checkFilteringRule(meshSrcSubnet, commandFunc)
 	assert.NoError(t, err)
 	assert.False(t, rc)
 
@@ -68,22 +73,22 @@ func TestFiltering(t *testing.T) {
 	assert.NotEmpty(t, intf.Name)
 
 	ip := netip.MustParsePrefix("100.77.1.1/32")
-	err = resetPeersTraffic([]TrafficPeer{{ip, true, false}})
+	err = resetPeersTraffic([]TrafficPeer{{ip, true, false}}, commandFunc)
 	assert.NoError(t, err)
 
-	rc, err = checkFilteringRule(ip.String())
+	rc, err = checkFilteringRule(ip.String(), commandFunc)
 	assert.NoError(t, err)
 	assert.True(t, rc)
 
-	err = clearFiltering()
+	err = clearFiltering(commandFunc)
 	assert.NoError(t, err)
 }
 
 func TestResetPeersTraffic(t *testing.T) {
 	category.Set(t, category.Route)
 
-	defer clearFiltering()
-	err := enableFiltering()
+	defer clearFiltering(commandFunc)
+	err := enableFiltering(commandFunc)
 	assert.NoError(t, err)
 
 	ip1 := netip.MustParsePrefix("100.77.1.1/32")
@@ -193,22 +198,22 @@ func TestResetPeersTraffic(t *testing.T) {
 	}
 
 	ruleExists := func(ip netip.Prefix) bool {
-		exists, err := checkFilteringRule(ip.String())
+		exists, err := checkFilteringRule(ip.String(), commandFunc)
 		assert.NoError(t, err)
 		return exists
 	}
 
 	ruleAbovePrivateSubnetsBlock := func(ip netip.Prefix) bool {
-		line1, err := checkFilteringRulesLine([]string{ip.String()})
+		line1, err := checkFilteringRulesLine([]string{ip.String()}, commandFunc)
 		assert.NoError(t, err)
-		line2, err := checkFilteringRulesLine([]string{meshSrcSubnet})
+		line2, err := checkFilteringRulesLine([]string{meshSrcSubnet}, commandFunc)
 		assert.NoError(t, err)
 		return line1 != -1 && line1 < line2
 	}
 
 	ruleIsLocalOnly := func(ip netip.Prefix) bool {
 		for _, localIP := range []string{"10.0.0.0", "172.16.0.0", "192.168.0.0", "169.254.0.0"} {
-			line, err := checkFilteringRulesLine([]string{ip.String(), localIP})
+			line, err := checkFilteringRulesLine([]string{ip.String(), localIP}, commandFunc)
 			assert.NoError(t, err)
 			if line == -1 {
 				return false
@@ -219,7 +224,7 @@ func TestResetPeersTraffic(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%+v", test.peers), func(t *testing.T) {
-			err = resetPeersTraffic(test.peers)
+			err = resetPeersTraffic(test.peers, commandFunc)
 			assert.NoError(t, err)
 
 			for i, peer := range test.peers {
