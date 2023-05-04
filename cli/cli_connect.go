@@ -52,6 +52,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 
 	// generate server tag from given args
 	serverTag := strings.Join(args.Slice(), " ")
+	serverTag = strings.ToLower(serverTag)
 	serverGroup := ctx.String(flagGroup)
 
 	ch := make(chan os.Signal, 1)
