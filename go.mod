@@ -8,7 +8,7 @@ require (
 	github.com/NordSecurity/libtelio v0.0.0-20230314103647-87dd2cfc1722
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set v1.8.0
-	github.com/docker/docker v23.0.4+incompatible
+	github.com/docker/docker v23.0.5+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/esiqveland/notify v0.11.2
