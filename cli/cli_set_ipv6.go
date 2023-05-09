@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const SetIpv6UsageText = "Enables or disables use of the ipv6."
+const SetIpv6UsageText = "Enables or disables use of the IPv6."
 
 func (c *cmd) SetIpv6(ctx *cli.Context) error {
 	if ctx.NArg() != 1 {

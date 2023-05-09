@@ -40,7 +40,7 @@ func (c *cmd) SetRouting(ctx *cli.Context) error {
 	case internal.CodeNothingToDo:
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Routing", nstrings.GetBoolLabel(flag)))
 	case internal.CodeDependencyError:
-		color.Yellow(fmt.Sprintf(MsgInUse, "Routing", "meshnet"))
+		color.Yellow(fmt.Sprintf(MsgInUse, "Routing", "Meshnet"))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Routing", nstrings.GetBoolLabel(flag)))
 	}

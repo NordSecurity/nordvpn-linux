@@ -87,7 +87,7 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeAutoConnectServerObfuscated:
 		return formatError(errors.New(AutoConnectOnObfuscatedServerObfuscateOff))
 	case internal.CodeNothingToDo:
-		color.Yellow(fmt.Sprintf(MsgAlreadySet, "AutoConnect", nstrings.GetBoolLabel(flag)))
+		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	case internal.CodeExpiredRenewToken:
 		color.Yellow(client.RelogRequest)
 		err = c.Login(ctx)
@@ -98,7 +98,7 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeTokenRenewError:
 		return formatError(errors.New(client.AccountTokenRenewError))
 	case internal.CodeSuccess:
-		color.Green(fmt.Sprintf(MsgSetSuccess, "AutoConnect", nstrings.GetBoolLabel(flag)))
+		color.Green(fmt.Sprintf(MsgSetSuccess, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	}
 	return nil
 }

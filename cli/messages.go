@@ -117,7 +117,7 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetVersionNotSupported   = "Current application version does not support the meshnet feature."
 	MsgMeshnetUsage                 = "Manages mesh network and access to it. In order to enable the feature, execute `nordvpn set meshnet on`"
 	MsgMeshnetRefreshUsage          = "Refreshes the meshnet in case it was not updated automatically."
-	MsgMeshnetPeerUnknown           = "Peer '%s' is unknown.\n"
+	MsgMeshnetPeerUnknown           = "Peer '%s' is unknown."
 
 	// Invites
 	MsgMeshnetInviteUsage = "Displays the list of all sent and received meshnet invitations. " +
