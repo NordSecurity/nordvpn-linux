@@ -79,9 +79,9 @@ COUNTRY_CODES = [
 
 # Used for test parametrization, when the same test has to be run for different cities.
 CITIES = [
-    "Berlin",
+    "Frankfurt",
     "Amsterdam",
-    "Phoenix",
+    "New_York",
     "Paris",
 ]
 

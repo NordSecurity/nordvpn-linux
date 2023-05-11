@@ -215,7 +215,7 @@ def test_connect_to_invalid_group():
 
 
 @pytest.mark.parametrize("country", lib.COUNTRIES)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES) # TODO: Once LVPN-2668 is solved, use lib.TECHNOLOGIES instead
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(20)
 def test_connect_to_country(tech, proto, obfuscated, country):
@@ -237,7 +237,7 @@ def test_connect_to_code_country(tech, proto, obfuscated, country):
 
 
 @pytest.mark.parametrize("city", lib.CITIES)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES) # TODO: Once LVPN-2668 is solved, use lib.TECHNOLOGIES instead
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(20)
 def test_connect_to_city(tech, proto, obfuscated, city):

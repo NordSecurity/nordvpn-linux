@@ -62,7 +62,7 @@ test/deb-connect2:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
-  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_to_city or test_connect_to_country or test_connect_to_country_code or test_connect_to_group_standard or test_connect_to_group_additional'
+  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_to_city or test_connect_to_country or test_connect_to_code_country or test_connect_to_group_standard or test_connect_to_group_additional'
   dependencies:
     - "package/deb: [amd64]"
   artifacts:
