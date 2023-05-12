@@ -35,4 +35,6 @@ RUN wget "http://musl.cc/i686-linux-musl-cross.tgz" -O /tmp/musl.tar.gz \
     && tar xf /tmp/musl.tar.gz -C /usr/lib \
     && ln -s /usr/lib/i686-linux-musl-cross/bin/i686-linux-musl-gcc /usr/bin/i686-linux-musl-gcc
 
+RUN go install github.com/boumenot/gocover-cobertura@latest
+
 CMD ["exec", "$@"]

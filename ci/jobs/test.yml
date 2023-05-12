@@ -2,7 +2,7 @@
 include: /ci/jobs/.cond.yml
 test/cgo:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.1.0
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -17,7 +17,7 @@ test/cgo:
   coverage: '/total:\s*\(statements\)\s*(\d+\.\d+)%/'
 test/go:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.1.0
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]

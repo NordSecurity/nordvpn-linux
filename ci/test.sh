@@ -43,4 +43,4 @@ go test -tags internal -v -race $(go list ./... | grep -v "${excluded_packages}"
 go tool cover -func="${CI_PROJECT_DIR}"/coverage.txt
 
 # "gocover-cobertura" is used for test coverage visualization in the diff view.
-go run github.com/boumenot/gocover-cobertura < "$CI_PROJECT_DIR"/coverage.txt > coverage.xml
+gocover-cobertura < "$CI_PROJECT_DIR"/coverage.txt > coverage.xml
