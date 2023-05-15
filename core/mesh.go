@@ -87,6 +87,42 @@ func NewMeshAPI(
 	}
 }
 
+func peersResponseToMachinePeers(rawPeers []mesh.MachinePeerResponse) []mesh.MachinePeer {
+	peers := make([]mesh.MachinePeer, 0, len(rawPeers))
+	for _, p := range rawPeers {
+		var addr netip.Addr
+		if len(p.Addresses) > 0 {
+			addr = p.Addresses[0]
+		}
+
+		peers = append(peers, mesh.MachinePeer{
+
+			ID:       p.ID,
+			Hostname: p.Hostname,
+			OS: mesh.OperatingSystem{
+				Name:   p.OS,
+				Distro: p.Distro,
+			},
+			PublicKey:                 p.PublicKey,
+			Endpoints:                 p.Endpoints,
+			Address:                   addr,
+			Email:                     p.Email,
+			IsLocal:                   p.IsLocal,
+			DoesPeerAllowRouting:      p.DoesPeerAllowRouting,
+			DoesPeerAllowInbound:      p.DoesPeerAllowInbound,
+			DoesPeerAllowLocalNetwork: p.DoesPeerAllowLocalNetwork,
+			DoesPeerAllowFileshare:    p.DoesPeerAllowFileshare,
+			DoesPeerSupportRouting:    p.DoesPeerSupportRouting,
+			DoIAllowRouting:           p.DoIAllowRouting,
+			DoIAllowInbound:           p.DoIAllowInbound,
+			DoIAllowLocalNetwork:      p.DoIAllowLocalNetwork,
+			DoIAllowFileshare:         p.DoIAllowFileshare,
+		})
+	}
+
+	return peers
+}
+
 // Register peer to the mesh network.
 func (m *MeshAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
 	m.mu.Lock()
@@ -286,6 +322,30 @@ func (m *MeshAPI) Unregister(token string, self uuid.UUID) error {
 	return ExtractError(resp)
 }
 
+func peersResponseToLocalPeers(rawPeers []mesh.MachinePeerResponse) []mesh.Machine {
+	peers := make([]mesh.Machine, 0, len(rawPeers))
+
+	for _, p := range rawPeers {
+		var addr netip.Addr
+		if len(p.Addresses) > 0 {
+			addr = p.Addresses[0]
+		}
+
+		peers = append(peers, mesh.Machine{
+			ID:       p.ID,
+			Hostname: p.Hostname,
+			OS: mesh.OperatingSystem{
+				Name: p.OS, Distro: p.Distro,
+			},
+			PublicKey: p.PublicKey,
+			Endpoints: p.Endpoints,
+			Address:   addr,
+		})
+	}
+
+	return peers
+}
+
 // Local peer list.
 func (m *MeshAPI) Local(token string) (mesh.Machines, error) {
 	m.mu.Lock()
@@ -329,23 +389,7 @@ func (m *MeshAPI) Local(token string) (mesh.Machines, error) {
 		return nil, err
 	}
 
-	peers := make([]mesh.Machine, 0, len(rawPeers))
-	for _, peer := range rawPeers {
-		var addr netip.Addr
-		if len(peer.Addresses) > 0 {
-			addr = peer.Addresses[0]
-		}
-		peers = append(peers, mesh.Machine{
-			ID:       peer.ID,
-			Hostname: peer.Hostname,
-			OS: mesh.OperatingSystem{
-				Name: peer.OS, Distro: peer.Distro,
-			},
-			PublicKey: peer.PublicKey,
-			Endpoints: peer.Endpoints,
-			Address:   addr,
-		})
-	}
+	peers := peersResponseToLocalPeers(rawPeers)
 
 	return peers, nil
 }
@@ -393,22 +437,7 @@ func (m *MeshAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
 		return nil, err
 	}
 
-	peers := []mesh.MachinePeer{}
-	for _, p := range raw.Peers {
-		peers = append(peers, mesh.MachinePeer{
-			ID:                        p.ID,
-			Hostname:                  p.Hostname,
-			PublicKey:                 p.PublicKey,
-			Endpoints:                 p.Endpoints,
-			Address:                   p.Addresses[0],
-			DoesPeerAllowRouting:      p.DoesPeerAllowRouting,
-			DoesPeerAllowInbound:      p.DoesPeerAllowInbound,
-			DoesPeerAllowLocalNetwork: p.DoesPeerAllowLocalNetwork,
-			DoIAllowInbound:           p.DoIAllowInbound,
-			DoIAllowRouting:           p.DoIAllowRouting,
-			DoIAllowLocalNetwork:      p.DoIAllowLocalNetwork,
-		})
-	}
+	peers := peersResponseToMachinePeers(raw.Peers)
 
 	return &mesh.MachineMap{
 		Machine: mesh.Machine{
@@ -468,34 +497,7 @@ func (m *MeshAPI) List(token string, self uuid.UUID) (mesh.MachinePeers, error) 
 		return nil, err
 	}
 
-	peers := make(mesh.MachinePeers, 0, len(rawPeers))
-	for _, raw := range rawPeers {
-		if len(raw.Addresses) < 1 {
-			return nil, errors.New("invalid response")
-		}
-		peers = append(peers, mesh.MachinePeer{
-			ID:       raw.ID,
-			Hostname: raw.Hostname,
-			OS: mesh.OperatingSystem{
-				Name:   raw.OS,
-				Distro: raw.Distro,
-			},
-			PublicKey:                 raw.PublicKey,
-			Endpoints:                 raw.Endpoints,
-			Address:                   raw.Addresses[0],
-			Email:                     raw.Email,
-			IsLocal:                   raw.IsLocal,
-			DoesPeerAllowRouting:      raw.DoesPeerAllowRouting,
-			DoesPeerAllowInbound:      raw.DoesPeerAllowInbound,
-			DoesPeerAllowLocalNetwork: raw.DoesPeerAllowLocalNetwork,
-			DoesPeerAllowFileshare:    raw.DoesPeerAllowFileshare,
-			DoesPeerSupportRouting:    raw.DoesPeerSupportRouting,
-			DoIAllowRouting:           raw.DoIAllowRouting,
-			DoIAllowInbound:           raw.DoIAllowInbound,
-			DoIAllowLocalNetwork:      raw.DoIAllowLocalNetwork,
-			DoIAllowFileshare:         raw.DoIAllowFileshare,
-		})
-	}
+	peers := peersResponseToMachinePeers(rawPeers)
 
 	return peers, nil
 }

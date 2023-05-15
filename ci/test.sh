@@ -18,6 +18,11 @@ excluded_categories="root,link,firewall,route,file"
 if [ "${1:-""}" = "full" ]; then
 	# Apply moose patch in case compiling with moose
 	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+	function revert_moose_patch {
+		git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+	}
+	trap revert_moose_patch EXIT
+
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="root,link"
 
@@ -37,7 +42,5 @@ go test -tags internal -v -race $(go list ./... | grep -v "${excluded_packages}"
 # Display code coverage report
 go tool cover -func="${CI_PROJECT_DIR}"/coverage.txt
 
-if [ "${1:-""}" = "full" ]; then
-	# Revert moose patch
-	git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
-fi
+# "gocover-cobertura" is used for test coverage visualization in the diff view.
+go run github.com/boumenot/gocover-cobertura < "$CI_PROJECT_DIR"/coverage.txt > coverage.xml

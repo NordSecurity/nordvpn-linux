@@ -25,7 +25,7 @@ analyse/binaries:
   stage: analyse
   image: ghcr.io/nordsecurity/nordvpn-linux/scanner:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
   script: $CI_PROJECT_DIR/ci/hardening.sh
   dependencies:
@@ -38,7 +38,7 @@ analyse/correctness:
   stage: analyse
   image: ghcr.io/nordsecurity/nordvpn-linux/linter:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/lint.sh
@@ -47,7 +47,7 @@ analyse/glibc:
   stage: analyse
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   # When linking the application, `fcntl64` picks up oldest possible glibc version and `fcntl`
@@ -63,7 +63,7 @@ analyse/scripts:
   stage: analyse
   image: ghcr.io/nordsecurity/nordvpn-linux/shellcheck:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/shellcheck.sh
@@ -72,7 +72,7 @@ analyse/security:
   stage: analyse
   image: ghcr.io/nordsecurity/nordvpn-linux/scanner:1.0.0
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   script: $CI_PROJECT_DIR/ci/scan.sh
@@ -92,7 +92,7 @@ analyse/supply-chain:
 analyse/security2:
   stage: analyse
   rules:
-    - !reference [.cond/on-master, rules]
+    - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
   variables:

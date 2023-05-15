@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
 
@@ -26,7 +27,7 @@ func (c *cmd) SetNotify(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	resp, err := c.client.SetNotify(context.Background(), &pb.SetNotifyRequest{
+	daemonResp, err := c.client.SetNotify(context.Background(), &pb.SetNotifyRequest{
 		Uid:    int64(os.Getuid()),
 		Notify: flag,
 	})
@@ -34,13 +35,48 @@ func (c *cmd) SetNotify(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	switch resp.Type {
+	printMessage := func() {}
+	defer func() {
+		printMessage()
+	}()
+
+	messageNothingToSet := func() {
+		color.Yellow(fmt.Sprintf(SetNotifyNothingToSet, nstrings.GetBoolLabel(flag)))
+	}
+	messageSuccess := func() {
+		color.Green(fmt.Sprintf(SetNotifySuccess, nstrings.GetBoolLabel(flag)))
+	}
+
+	switch daemonResp.Type {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeNothingToDo:
-		color.Yellow(fmt.Sprintf(SetNotifyNothingToSet, nstrings.GetBoolLabel(flag)))
+		printMessage = messageNothingToSet
 	case internal.CodeSuccess:
-		color.Green(fmt.Sprintf(SetNotifySuccess, nstrings.GetBoolLabel(flag)))
+		printMessage = messageSuccess
 	}
+
+	if c.IsFileshareDaemonReachable(ctx) != nil {
+		return nil
+	}
+
+	fileshareDaemonResp, err := c.fileshareClient.SetNotifications(context.Background(),
+		&filesharepb.SetNotificationsRequest{Enable: flag})
+
+	if err != nil {
+		return formatError(err)
+	}
+
+	// We configure notifications for main and fileshare daemon
+	// if both notifications were configured successfully, report success to the user
+	// if main daemon was already configured but fileshare daemon was not yet configured and vice versa, report success
+	// if both daemons were already configured, report already configured
+	switch fileshareDaemonResp.Status {
+	case filesharepb.SetNotificationsStatus_NOTHING_TO_DO:
+		return nil
+	case filesharepb.SetNotificationsStatus_SET_SUCCESS:
+		printMessage = messageSuccess
+	}
+
 	return nil
 }

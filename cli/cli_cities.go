@@ -17,7 +17,7 @@ import (
 const CitiesUsageText = "Shows a list of cities where servers are available"
 
 // CitiesArgsUsageText is shown by nordvpn cities --help
-const CitiesArgsUsageText = `[country]
+const CitiesArgsUsageText = `<country>
 
 Use this command to show cities where servers are available.
 

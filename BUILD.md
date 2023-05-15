@@ -37,6 +37,7 @@ Please follow the instructions in the following step for setting up the developm
     1. Might need to rename `protoc-gen-go-grpc` binary to `protoc-gen-go_grpc` to work.
 1. Run `mage` to discover and execute build targets.
     1. To use non-Docker targets please refer to `ci/docker/*/Dockerfile` Dockerfiles for necessary dependencies to be installed.
+    1. Please make sure to create a `.env` file, there is a `.env.sample` file that contains a list of variables that need to be set.
 # Building
 ## Building with mage and docker
 Convenient way for building the application is available using the [mage](https://github.com/magefile/mage#installation)
@@ -187,11 +188,11 @@ QA peer is used as a remote peer used in meshnet tests(check out [qa peer README
 Valid account is an account used in login tests. It has to be different than default account.
 * `VALID_LOGIN_USERNAME`
 * `VALID_LOGIN_TOKEN`
-#xpired account is an account whose subscribtion has expired. Used in login tests. Currently the tests are disabled, so this token does not need to be configured.
+#xpired account is an account whose subscription has expired. Used in login tests. Currently the tests are disabled, so this token does not need to be configured.
 * `EXPIRED_LOGIN_USERNAME`
 * `EXPIRED_LOGIN_TOKEN`
 ### Note about meshnet tests
-In case of meshnet tests(`test_meshnet.py`), two nordvpn account might be required(`QA_PEER` and `DEFAULT`). Meshnet functionality does not require a subscribtion, so a secondary free account can be used in this case.
+In case of meshnet tests(`test_meshnet.py`), two nordvpn account might be required(`QA_PEER` and `DEFAULT`). Meshnet functionality does not require a subscription, so a secondary free account can be used in this case.
 ## Running unit tests
 You can run unit tests for a single package as you would run uts for any other go project, for example:
 ```

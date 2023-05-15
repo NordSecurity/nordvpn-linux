@@ -87,7 +87,7 @@ func (c *cmd) MeshInviteSend(ctx *cli.Context) error {
 		}
 		invites, err := invitesListResponseToInvitesList(resp)
 		if err != nil {
-			return err
+			return formatError(err)
 		}
 		for _, inv := range invites.GetSent() {
 			if inv.Email == email {
@@ -328,24 +328,6 @@ func (c *cmd) MeshInviteAutoCompletion(ctx *cli.Context) {
 	}
 }
 
-func (c *cmd) MeshInviteRevokeAutoCompletion(ctx *cli.Context) {
-	resp, err := c.meshClient.GetInvites(
-		context.Background(),
-		&pb.Empty{},
-	)
-	if err != nil {
-		return
-	}
-	invites, err := invitesListResponseToInvitesList(resp)
-	if err != nil {
-		return
-	}
-
-	for _, invite := range invites.Sent {
-		fmt.Println(invite.GetEmail())
-	}
-}
-
 // invitesListResponseToInvitesList determines whether the invites
 // response is an error and returns a human readable form of it. If
 // this is a valid invite list, it returns that.
@@ -417,7 +399,7 @@ func inviteErrorCodeToError(
 }
 
 // respondToInviteResponseToError determines whether the response
-// contains a generic service resonse or meshnet invitation respond
+// contains a generic service response or meshnet invitation respond
 // response and returns the according error if any
 func respondToInviteResponseToError(
 	resp *pb.RespondToInviteResponse,

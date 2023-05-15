@@ -45,18 +45,17 @@ type Config struct {
 	Analytics    TrueField  `json:"analytics"`
 	Mesh         bool       `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
-	MeshPrivateKey   string                    `json:"mesh_private_key"`
-	MeshDevice       *mesh.Machine             `json:"mesh_device"`
-	KillSwitch       bool                      `json:"kill_switch,omitempty"`
-	AutoConnect      bool                      `json:"auto_connect,omitempty"`
-	IPv6             bool                      `json:"ipv6"`
-	Meshnet          meshnet                   `json:"meshnet"`
-	AutoConnectData  AutoConnectData           `json:"auto_connect_data"` // omitempty breaks this
-	UsersData        *UsersData                `json:"users_data,omitempty"`
-	TokensData       map[int64]TokenData       `json:"tokens_data,omitempty"`
-	MachineID        uuid.UUID                 `json:"machine_id,omitempty"`
-	RouteThroughPeer string                    `json:"route_through_peer"`
-	Features         map[Feature]FeatureConfig `json:"features,omitempty"`
+	MeshPrivateKey  string                    `json:"mesh_private_key"`
+	MeshDevice      *mesh.Machine             `json:"mesh_device"`
+	KillSwitch      bool                      `json:"kill_switch,omitempty"`
+	AutoConnect     bool                      `json:"auto_connect,omitempty"`
+	IPv6            bool                      `json:"ipv6"`
+	Meshnet         meshnet                   `json:"meshnet"`
+	AutoConnectData AutoConnectData           `json:"auto_connect_data"` // omitempty breaks this
+	UsersData       *UsersData                `json:"users_data,omitempty"`
+	TokensData      map[int64]TokenData       `json:"tokens_data,omitempty"`
+	MachineID       uuid.UUID                 `json:"machine_id,omitempty"`
+	Features        map[Feature]FeatureConfig `json:"features,omitempty"`
 }
 
 type AutoConnectData struct {

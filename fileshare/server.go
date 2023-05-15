@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/netip"
+	"os"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -189,6 +190,10 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		if fileCount > TransferFileLimit {
 			return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TOO_MANY_FILES)})
 		}
+
+		if fileCount == 0 {
+			return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NO_FILES)})
+		}
 	}
 
 	peers, err := s.getPeers()
@@ -258,7 +263,28 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 		return srv.Send(&pb.StatusResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
-	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files)
+	destinationFileInfo, err := s.filesystem.Lstat(req.DstPath)
+
+	if err != nil {
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND)})
+	}
+
+	if destinationFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK)})
+	}
+
+	if !destinationFileInfo.IsDir() {
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY)})
+	}
+
+	statfs, err := s.filesystem.Statfs(req.DstPath)
+	if err != nil {
+		log.Printf("doing statfs: %s", err)
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
+	}
+
+	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files, statfs.Bavail*uint64(statfs.Bsize))
+
 	switch err {
 	case ErrTransferNotFound:
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND)})
@@ -268,6 +294,8 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ALREADY_ACCEPTED)})
 	case ErrFileNotFound:
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)})
+	case ErrSizeLimitExceeded:
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
 	case nil:
 		break
 	default:
@@ -408,4 +436,20 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 	}
 
 	return empty(), nil
+}
+
+func (s *Server) SetNotifications(ctx context.Context, in *pb.SetNotificationsRequest) (*pb.SetNotificationsResponse, error) {
+	if s.eventManager.AreNotificationsEnabled() == in.Enable {
+		return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_NOTHING_TO_DO}, nil
+	}
+
+	if in.Enable {
+		if err := s.eventManager.EnableNotifications(); err != nil {
+			log.Println("Failed to enable notifications: ", err)
+		}
+	} else {
+		s.eventManager.DisableNotifications()
+	}
+
+	return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_SET_SUCCESS}, nil
 }

@@ -42,7 +42,7 @@ func (c *cmd) SetFirewall(ctx *cli.Context) error {
 	case internal.CodeNothingToDo:
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Firewall", nstrings.GetBoolLabel(flag)))
 	case internal.CodeDependencyError:
-		color.Yellow(fmt.Sprintf(MsgInUse, "Firewall", "killswitch"))
+		color.Yellow(fmt.Sprintf(MsgInUse, "Firewall", "Kill Switch"))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Firewall", nstrings.GetBoolLabel(flag)))
 	}

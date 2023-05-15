@@ -18,10 +18,10 @@ import (
 const SetTechnologyUsageText = "Sets the technology"
 
 // SetTechnologyArgsUsageText is shown by nordvpn set technology --help
-const SetTechnologyArgsUsageText = `[technology]
+const SetTechnologyArgsUsageText = `<technology>
 
 Use this command to set the technology.
-Supported values for [technology]: OpenVPN or NordLynx.
+Supported values for <technology>: OpenVPN or NordLynx.
 
 Example: 'nordvpn set technology OpenVPN'`
 

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
+	"os/exec"
 	"runtime"
 	"strconv"
 
@@ -57,16 +58,14 @@ import (
 
 // Values set when building the application
 var (
-	Salt            = ""
-	Version         = ""
-	Environment     = ""
-	PackageType     = ""
-	Arch            = ""
-	Port            = 6960
-	ConnType        = "unix"
-	ConnURL         = internal.DaemonSocket
-	EventsDomain    = ""
-	EventsSubdomain = ""
+	Salt        = ""
+	Version     = ""
+	Environment = ""
+	PackageType = ""
+	Arch        = ""
+	Port        = 6960
+	ConnType    = "unix"
+	ConnURL     = internal.DaemonSocket
 )
 
 // Environment constants
@@ -155,7 +154,6 @@ func main() {
 	infoSubject := &subs.Subject[string]{}
 	errSubject := &subs.Subject[error]{}
 	httpCalls := &subs.Subject[events.DataRequestAPI]{}
-	domainSubject := &subs.Subject[string]{}
 
 	loggerSubscriber := logger.Subscriber{}
 	if internal.Environment(Environment) == internal.Development {
@@ -367,7 +365,9 @@ func main() {
 		dnsHostSetter,
 		vpnRouter,
 		meshRouter,
-		exitnode.NewServer(ifaceNames),
+		exitnode.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
+			return exec.Command(command, arg...).CombinedOutput()
+		}),
 		cfg.FirewallMark,
 	)
 
@@ -413,7 +413,6 @@ func main() {
 	}
 	daemonEvents.Subscribe(analytics)
 	httpCalls.Subscribe(analytics.NotifyRequestAPI)
-	domainSubject.Subscribe(analytics.NotifyDomain)
 
 	dm := daemon.NewDataManager(
 		daemon.InsightsFilePath,

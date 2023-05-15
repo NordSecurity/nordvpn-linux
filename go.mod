@@ -8,12 +8,14 @@ require (
 	github.com/NordSecurity/libtelio v0.0.0-20230314103647-87dd2cfc1722
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set v1.8.0
-	github.com/docker/docker v20.10.16+incompatible
+	github.com/docker/docker v23.0.5+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
+	github.com/esiqveland/notify v0.11.2
 	github.com/fatih/color v1.15.0
 	github.com/go-co-op/gocron v1.18.1
 	github.com/go-ping/ping v1.1.0
+	github.com/godbus/dbus/v5 v5.1.0
 	github.com/google/uuid v1.3.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/jbowtie/gokogiri v0.0.0-20190301021639-37f655d3078f
@@ -44,6 +46,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
+	github.com/boumenot/gocover-cobertura v1.2.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/libcontainer v2.2.1+incompatible // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
@@ -71,7 +74,6 @@ require (
 	github.com/quic-go/qtls-go1-20 v0.1.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/sirupsen/logrus v1.7.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opencensus.io v0.24.0 // indirect

@@ -74,8 +74,8 @@ pushd "${current_dir}"
   openssl_ldflags=""
   lzo_cflags="-g -O2"
   lzo_ldflags=""
-  openvpn_cflags="-Wall -Wno-unused-parameter -Wno-unused-function -g -O2 -D_FORTIFY_SOURCE=2 -std=c99"
-  openvpn_ldflags="-Wl,-z,relro,-z,now"
+  openvpn_cflags="-Wall -Wno-unused-parameter -Wno-unused-function -g -O2 -D_FORTIFY_SOURCE=2 -std=c99 -fstack-protector"
+  openvpn_ldflags="-Wl,-z,relro,-z,now -Wl,--as-needed"
   compiler="${cross_compiler_map[${ARCH}]}"
   case "${ARCH}" in
     "i386")

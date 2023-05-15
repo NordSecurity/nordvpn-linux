@@ -31,7 +31,6 @@ func (*dummyAnalytics) NotifyDisconnect(events.DataDisconnect) error   { return 
 func (*dummyAnalytics) NotifyLogin(any) error                          { return nil }
 func (*dummyAnalytics) NotifyAccountCheck(core.ServicesResponse) error { return nil }
 func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error   { return nil }
-func (*dummyAnalytics) NotifyDomain(string) error                      { return nil }
 func (*dummyAnalytics) NotifyRate(events.ServerRating) error           { return nil }
 
 func newAnalytics(eventsDbPath string, fs *config.Filesystem,

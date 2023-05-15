@@ -11,7 +11,7 @@ import "peer.proto";
 import "service_response.proto";
 
 // Meshnet defines a service which handles the meshnet
-// functionallity on a single device
+// functionality on a single device
 service Meshnet {
 	// EnableMeshnet enables the meshnet on this device
 	rpc EnableMeshnet(Empty) returns (MeshnetResponse);

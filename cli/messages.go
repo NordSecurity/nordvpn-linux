@@ -4,16 +4,13 @@ const (
 	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s %s --help' to see the options."
 	ArgumentParsingError = "The command you entered is not valid. Enter '%s %s --help' to see the options."
 
-	LoginStart               = "Please enter your login details."
-	LoginSuccess             = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
-	LoginAttempt             = "Attempt %d/%d"
-	LoginTooManyAttempts     = "Too many login attempts. Type '%s login' to start over."
-	LoginCredsTooLong        = "The entered credentials are too long. Please try again."
-	MsgLoginLegacyDeprecated = "Logging in via ‘--legacy’, ‘--username’, and ‘--password’ flags is deprecated. Use ‘nordvpn login' or ‘nordvpn login --nordaccount’ to log in via browser. Alternatively, you can use ‘nordvpn login --token’ to log in with a generated token."
-	LogoutSuccess            = "You are logged out."
+	LoginStart           = "Please enter your login details."
+	LoginSuccess         = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
+	LoginAttempt         = "Attempt %d/%d"
+	LoginTooManyAttempts = "Too many login attempts. Type '%s login' to start over."
+	LogoutSuccess        = "You are logged out."
 
 	RateNoArgsMessage    = "Type [1–5] to rate your previous connection (1 – poor, 5 – great): "
-	RateVPNConnected     = "You are connected to VPN. Please rate your connection quality after disconnecting."
 	RateNoConnectionMade = "It seems you haven’t connected to VPN yet. Please rate your experience after your first session."
 	RateAlreadyRated     = "You have already provided a rating for your active/previous connection."
 	RateSuccess          = "Thank you for your feedback!"
@@ -27,14 +24,14 @@ const (
 	MsgAlreadySet = "%s is already set to '%s'."
 	// MsgInUse is a generic dependency error message template.
 	MsgInUse            = "%s is currently used by %s. Disable it first."
-	MsgSetBoolArgsUsage = `[enabled]/[disabled]
+	MsgSetBoolArgsUsage = `<enabled>|<disabled>
 
 %s
 
-Supported values for [disabled]: 0, false, disable, off, disabled
+Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set %s off
 
-Supported values for [enabled]: 1, true, enable, on, enabled
+Supported values for <enabled>: 1, true, enable, on, enabled
 Example: nordvpn set %s on`
 
 	ObfuscateOnServerNotObfuscated              = "We couldn’t turn on obfuscation because the current auto-connect server doesn’t support it. Set a different server for auto-connect to use obfuscation."
@@ -46,8 +43,6 @@ Example: nordvpn set %s on`
 	SetThreatProtectionLiteDisableDNS = "Disabling DNS."
 
 	SetDefaultsSuccess = "Settings were successfully restored to defaults."
-
-	SetDNSDisableThreatProtectionLite = "Disabling Threat Protection Lite."
 
 	FirewallRequired = "Firewall must be enabled to use '%s'."
 
@@ -84,8 +79,6 @@ Example: nordvpn set %s on`
 	WhitelistPortsRangeError = "Ports %s - %s value is out of range [%s - %s]."
 
 	AccountCreationSuccess = "Account has been successfully created."
-	// AccountLoggedIn is displayed when attempting to register when logged in
-	AccountLoggedIn = "Trying to create a new account? You need to log out first. Or continue using NordVPN with the current account."
 	// AccountInvalidData is displayed when backend returns bad request (400)
 	AccountInvalidData = "Invalid email address or password. Please make sure you're entering a valid email address and your password contains at least 8 characters."
 	// AccountEmailTaken is displayed when backend returns conflict (409)
@@ -94,12 +87,9 @@ Example: nordvpn set %s on`
 	AccountInternalError          = "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support."
 	AccountTokenUnauthorizedError = "There was a problem with your credentials. Please try to log out and log back in again. If the issue persists, please contact our customer support."
 	AccountCantFetchVPNService    = "We were not able to fetch your VPN service data. If the issue persists, please contact our customer support."
-
-	UpdateAvailableMessage  = "A new version of NordVPN is available! Please update the application."
-	MeshnetAvailableMessage = "New feature - Meshnet! Link remote devices in Meshnet to connect to them directly over encrypted private tunnels, and route your traffic through another device. Use the `nordvpn meshnet --help` command to get started. Learn more: https://nordvpn.com/features/meshnet/"
-
-	DisconnectNotConnected     = "You are not connected to NordVPN."
-	DisconnectConnectionRating = "How would you rate your connection quality on a scale from 1 (poor) to 5 (excellent)? Type '%s rate [1-5]'."
+	UpdateAvailableMessage        = "A new version of NordVPN is available! Please update the application."
+	DisconnectNotConnected        = "You are not connected to NordVPN."
+	DisconnectConnectionRating    = "How would you rate your connection quality on a scale from 1 (poor) to 5 (excellent)? Type '%s rate [1-5]'."
 
 	CitiesNotFoundError = "Servers by city are not available for this country."
 
@@ -109,25 +99,25 @@ Example: nordvpn set %s on`
 
 	// Meshnet
 	MsgSetMeshnetUsage     = "Enables or disables meshnet on this device."
-	MsgSetMeshnetArgsUsage = `[enabled]/[disabled]
+	MsgSetMeshnetArgsUsage = `<enabled>|<disabled>
 
 Use this command to enable or disable meshnet.
 
-Supported values for [disabled]: 0, false, disable, off, disabled
+Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set meshnet off
 
-Supported values for [enabled]: 1, true, enable, on, enabled
+Supported values for <enabled>: 1, true, enable, on, enabled
 Example: nordvpn set meshnet on`
 
 	MsgSetMeshnetSuccess            = "Meshnet is set to '%s' successfully."
 	MsgMeshnetAlreadyEnabled        = "Meshnet is already enabled."
 	MsgMeshnetAlreadyDisabled       = "Meshnet is already disabled."
 	MsgMeshnetNotEnabled            = "Meshnet is not enabled."
-	MsgMeshnetNordlynxMustBeEnabled = "Nordlynx technology must be set to use this feature."
+	MsgMeshnetNordlynxMustBeEnabled = "NordLynx technology must be set to use this feature."
 	MsgMeshnetVersionNotSupported   = "Current application version does not support the meshnet feature."
 	MsgMeshnetUsage                 = "Manages mesh network and access to it. In order to enable the feature, execute `nordvpn set meshnet on`"
 	MsgMeshnetRefreshUsage          = "Refreshes the meshnet in case it was not updated automatically."
-	MsgMeshnetPeerUnknown           = "Peer '%s' is unknown.\n"
+	MsgMeshnetPeerUnknown           = "Peer '%s' is unknown."
 
 	// Invites
 	MsgMeshnetInviteUsage = "Displays the list of all sent and received meshnet invitations. " +
@@ -157,7 +147,7 @@ Example: nordvpn set meshnet on`
 	// Peers
 	MsgMeshnetPeerListFilters   = "Filters list of available peers in a meshnet. To apply multiple filters, separate them with a comma. Please note that you will see an empty list if you apply contradictory filters."
 	MsgMeshnetPeerUsage         = "Handles meshnet peer list."
-	MsgMeshnetPeerArgsUsage     = "[public_key|hostname|ip]"
+	MsgMeshnetPeerArgsUsage     = "<public_key>|<hostname>|<ip>"
 	MsgMeshnetPeerListUsage     = "Lists available peers in a meshnet."
 	MsgMeshnetPeerRemoveUsage   = "Removes a peer from a meshnet."
 	MsgMeshnetPeerRemoveSuccess = "Peer '%s' has been removed from the meshnet."
@@ -212,14 +202,16 @@ Example: nordvpn set meshnet on`
 	flagFileshareListIn  = "incoming"
 	flagFileshareListOut = "outgoing"
 
-	MsgFileshareUsage            = "Transfer files of any size between Meshnet peers securely and privately."
-	MsgFileshareTransferNotFound = "Transfer not found."
-	MsgFileshareInvalidPath      = "Invalid path provided: %s"
-	MsgFilesharePathNotFound     = "Download directory %q does not exist. Make sure the directory exists or provide an alternative via --" + flagFilesharePath
-	MsgFileshareInvalidPeer      = "Peer name is invalid."
-	MsgFileshareDisconnectedPeer = "Peer is disconnected."
-	MsgFileshareFileNotFound     = "File not found."
-	MsgFileshareSocketNotFound   = "Enable Meshnet to share files. If Meshnet is already enabled, try disabling and enabling it again."
+	MsgFileshareUsage                     = "Transfer files of any size between Meshnet peers securely and privately."
+	MsgFileshareTransferNotFound          = "Transfer not found."
+	MsgFileshareInvalidPath               = "Invalid path provided: %s"
+	MsgFilesharePathNotFound              = "Download directory %q does not exist. Make sure the directory exists or provide an alternative via --" + flagFilesharePath
+	MsgFileshareAcceptPathIsASymlink      = "A download path can’t be a symbolic link. Please provide a directory as a download path to accept the transfer."
+	MsgFileshareAcceptPathIsNotADirectory = "Please provide a directory as a download path to accept the transfer."
+	MsgFileshareInvalidPeer               = "Peer name is invalid."
+	MsgFileshareDisconnectedPeer          = "Peer is disconnected."
+	MsgFileshareFileNotFound              = "File not found."
+	MsgFileshareSocketNotFound            = "Enable Meshnet to share files. If Meshnet is already enabled, try disabling and enabling it again."
 
 	MsgFileshareAcceptHomeError      = "Cannot determine default download path. Please provide download path explicitly via --" + flagFilesharePath
 	MsgFileshareAcceptAllError       = "Download couldn't start."
@@ -228,12 +220,14 @@ Example: nordvpn set meshnet on`
 	MsgFileshareFileInvalidated      = "The transfer of this file is already completed or canceled."
 	MsgFileshareTransferInvalidated  = "This transfer is already completed or canceled."
 	MsgTooManyFiles                  = "Number of files in a transfer cannot exceed 1000. Try archiving the directory."
+	MsgNoFiles                       = "The directory you’re trying to send is empty. Please choose another one."
 	MsgDirectoryToDeep               = "File depth cannot exceed 5 directories. Try archiving the directory."
 	MsgSendingNotAllowed             = "This peer does not allow file transfers from you."
 	MsgFileNotInProgress             = "This file is not in progress"
+	MsgNotEnoughSpace                = "The transfer can't be accepted because there's not enough storage on your device."
 
 	MsgFileshareSendUsage     = "Send files or directories to a Meshnet peer."
-	MsgFileshareSendArgsUsage = "[peer ip|peer hostname|peer pubkey] [path_1] [path_2]...\n\nTo cancel a transfer in progress, press Ctrl+C"
+	MsgFileshareSendArgsUsage = "<peer_ip>|<peer_hostname>|<peer_pubkey> <path_1> [path_2...]\n\nTo cancel a transfer in progress, press Ctrl+C"
 	MsgFileshareNoWaitUsage   = "Send a file transfer in the background instead of seeing its progress. It allows you to continue using the terminal for other commands while a transfer is in progress."
 	MsgFileshareSendNoWait    = "File transfer %s has started in the background."
 	MsgFileshareAcceptNoWait  = "File transfer has started in the background."
@@ -248,10 +242,10 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareListInUsage     = "Show only incoming transfers."
 	MsgFileshareListOutUsage    = "Show only outgoing transfers."
 	MsgFileshareCancelUsage     = "Cancel a transfer or a single file. To cancel an entire transfer, specify the transfer ID. To cancel a single file, specify the transfer ID and the file ID."
-	MsgFileshareCancelArgsUsage = "[transfer_id] [file_id]"
+	MsgFileshareCancelArgsUsage = "<transfer_id> [file_id]"
 	MsgFileshareCancelSuccess   = "File transfer canceled"
 	MsgFileshareAcceptUsage     = "Accept an incoming file transfer. To download an entire transfer, specify the transfer ID. To download a single file, specify the transfer ID and the file ID."
-	MsgFileshareAcceptArgsUsage = "[transfer_id] [file_id1] [file_id2]...\n\nTo cancel a transfer in progress, press Ctrl+C"
+	MsgFileshareAcceptArgsUsage = "<transfer_id> [file_id1] [file_id2...]\n\nTo cancel a transfer in progress, press Ctrl+C"
 	MsgFileshareAcceptPathUsage = "Specify download path (default: $XDG_DOWNLOAD_DIR or $HOME/Downloads)"
 
 	MsgFileshareProgressOngoing        = "File transfer [%s] progress [%d%%]"

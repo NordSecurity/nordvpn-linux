@@ -214,7 +214,7 @@ func findAndSetFileStatus(file *pb.File, fileID string, status pb.Status) bool {
 		file.Status = status
 		return true
 	}
-	if len(file.Children) > 0 { // dir, check childs
+	if len(file.Children) > 0 { // dir, check children
 		fileFound := false
 		for _, childFile := range file.Children {
 			if findAndSetFileStatus(childFile, fileID, status) {
@@ -243,7 +243,7 @@ func findFile(file *pb.File, fileID string) *pb.File {
 	if file.Id == fileID {
 		return file
 	}
-	if len(file.Children) > 0 { // dir, check childs
+	if len(file.Children) > 0 { // dir, check children
 		for _, childFile := range file.Children {
 			if foundFile := findFile(childFile, fileID); foundFile != nil {
 				return foundFile
@@ -262,7 +262,7 @@ func CountTransferFiles(tr *pb.Transfer) (count uint64) {
 }
 
 func countFiles(file *pb.File) (count uint64) {
-	if len(file.Children) > 0 { // dir, check childs
+	if len(file.Children) > 0 { // dir, check children
 		for _, childFile := range file.Children {
 			count += countFiles(childFile)
 		}
@@ -281,7 +281,7 @@ func countFiles(file *pb.File) (count uint64) {
 //
 //   - if at least one file status is SUCCESS, new transfer status is SUCCESS
 //
-//   - if at least one file status is SUCCESS and at leas one file status is erronous,
+//   - if at least one file status is SUCCESS and at leas one file status is erroneous,
 //     new transfer status is FINISHED_WITH_ERRORS
 func GetNewTransferStatus(files []*pb.File, currentStatus pb.Status) pb.Status {
 	allCanceled := true
@@ -352,7 +352,7 @@ func GetTransferFileStatus(file *pb.File, in bool) (status string) {
 }
 
 func checkAllFilesRequested(file *pb.File) bool {
-	if len(file.Children) > 0 { // dir, check childs
+	if len(file.Children) > 0 { // dir, check children
 		for _, childFile := range file.Children {
 			if !checkAllFilesRequested(childFile) { // one breaks it all
 				return false
@@ -364,7 +364,7 @@ func checkAllFilesRequested(file *pb.File) bool {
 }
 
 func checkAllFilesCanceled(file *pb.File) bool {
-	if len(file.Children) > 0 { // dir, check childs
+	if len(file.Children) > 0 { // dir, check children
 		for _, childFile := range file.Children {
 			if !checkAllFilesCanceled(childFile) { // one breaks it all
 				return false
@@ -376,7 +376,7 @@ func checkAllFilesCanceled(file *pb.File) bool {
 }
 
 func checkAllFilesFinished(file *pb.File) bool {
-	if len(file.Children) > 0 { // dir, check childs
+	if len(file.Children) > 0 { // dir, check children
 		for _, childFile := range file.Children {
 			if !checkAllFilesFinished(childFile) { // one breaks it all
 				return false
@@ -388,7 +388,7 @@ func checkAllFilesFinished(file *pb.File) bool {
 }
 
 func checkFilesHasErrors(file *pb.File) bool {
-	if len(file.Children) > 0 { // dir, check childs
+	if len(file.Children) > 0 { // dir, check children
 		for _, childFile := range file.Children {
 			if checkFilesHasErrors(childFile) { // one breaks it all
 				return true
@@ -415,9 +415,9 @@ func isTransferFinished(tr *pb.Transfer) bool {
 		tr.Status == pb.Status_CANCELED_BY_PEER
 }
 
-// TransferProgessInfo info to report to the user
+// TransferProgressInfo info to report to the user
 type TransferProgressInfo struct {
 	TransferID  string
-	Transferred uint32 // percent of transfered bytes
+	Transferred uint32 // percent of transferred bytes
 	Status      pb.Status
 }

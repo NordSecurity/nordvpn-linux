@@ -15,4 +15,4 @@ name=nordvpn
 baseurl=file:///$REPO_DIR/$(arch)
 enabled=1
 gpgcheck=0" | tee "${REPO_DIR}"/nordvpn.repo 
-"${CI_PROJECT_DIR}"/contrib/scripts/install.sh -n -b "" -k "https://repo.nordvpn.com/gpg/nordvpn_public.asc" -r "${REPO_DIR}/nordvpn.repo"
+"${CI_PROJECT_DIR}"/test/qa/install.sh -n -b "" -k "https://repo.nordvpn.com/gpg/nordvpn_public.asc" -r "${REPO_DIR}/nordvpn.repo"

@@ -4,10 +4,10 @@
 #
 # Don't use extends with rules, since only the last extend will take effect.
 # Use !reference instead in the rules block of the specific job.
-.cond/on-master:
+.cond/on-main:
   rules:
-    # commit was pushed to master
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    # commit was pushed to main
+    - if: '$CI_COMMIT_BRANCH == "main"'
 .cond/on-version-tag:
   rules:
     # version tagged commit was pushed

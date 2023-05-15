@@ -1351,15 +1351,17 @@ func (s *Server) AllowIncoming(
 		}, nil
 	}
 
-	if err := s.netw.AllowIncoming(UniqueAddress{
-		UID: peer.PublicKey, Address: peer.Address,
-	}); err != nil {
-		s.pub.Publish(err.Error())
-		return &pb.AllowIncomingResponse{
-			Response: &pb.AllowIncomingResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
-			},
-		}, nil
+	if peer.Address.IsValid() {
+		if err := s.netw.AllowIncoming(UniqueAddress{
+			UID: peer.PublicKey, Address: peer.Address,
+		}); err != nil {
+			s.pub.Publish(err.Error())
+			return &pb.AllowIncomingResponse{
+				Response: &pb.AllowIncomingResponse_MeshnetErrorCode{
+					MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
+				},
+			}, nil
+		}
 	}
 
 	return &pb.AllowIncomingResponse{
@@ -1458,15 +1460,17 @@ func (s *Server) DenyIncoming(
 		}, nil
 	}
 
-	if err := s.netw.BlockIncoming(UniqueAddress{
-		UID: peer.PublicKey, Address: peer.Address,
-	}); err != nil {
-		s.pub.Publish(err.Error())
-		return &pb.DenyIncomingResponse{
-			Response: &pb.DenyIncomingResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
-			},
-		}, nil
+	if peer.Address.IsValid() {
+		if err := s.netw.BlockIncoming(UniqueAddress{
+			UID: peer.PublicKey, Address: peer.Address,
+		}); err != nil {
+			s.pub.Publish(err.Error())
+			return &pb.DenyIncomingResponse{
+				Response: &pb.DenyIncomingResponse_MeshnetErrorCode{
+					MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
+				},
+			}, nil
+		}
 	}
 
 	return &pb.DenyIncomingResponse{
@@ -2170,7 +2174,7 @@ func (s *Server) DenyFileshare(
 	}, nil
 }
 
-// NotifyNewTransfer notifies peer abount new fileshare transfer
+// NotifyNewTransfer notifies peer about new fileshare transfer
 func (s *Server) NotifyNewTransfer(
 	ctx context.Context,
 	req *pb.NewTransferNotification,
@@ -2375,6 +2379,15 @@ func (s *Server) Connect(
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_ConnectErrorCode{
 				ConnectErrorCode: pb.ConnectErrorCode_PEER_DOES_NOT_ALLOW_ROUTING,
+			},
+		}, nil
+	}
+
+	// offline peers do not have assigned ip address
+	if !peer.Address.IsValid() {
+		return &pb.ConnectResponse{
+			Response: &pb.ConnectResponse_ConnectErrorCode{
+				ConnectErrorCode: pb.ConnectErrorCode_PEER_NO_IP,
 			},
 		}, nil
 	}

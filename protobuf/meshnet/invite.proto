@@ -75,7 +75,7 @@ message RespondToInviteResponse {
 // RespondToInviteErrorCode defines the error of meshnet service
 // response to the invitation response
 enum RespondToInviteErrorCode {
-	// UNKNOWN defines that the exact error was nto determined
+	// UNKNOWN defines that the exact error was not determined
 	UNKNOWN = 0;
 	// NO_SUCH_INVITATION defines that the request was not handled
 	// successfully

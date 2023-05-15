@@ -43,9 +43,13 @@ export PKG_VERSION=${VERSION}
 # shellcheck disable=SC2153
 "${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordvpn-${ARCH}.debug" \
 	"${CI_PROJECT_DIR}/bin/${ARCH}/nordvpn"
+# shellcheck disable=SC2153
+	"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshared-${ARCH}.debug" \
+		"${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared"
 
 mv "${CI_PROJECT_DIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
 mv "${CI_PROJECT_DIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
+mv "${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared" "${BASEDIR}"/usr/bin/nordfileshared
 cd "${CI_PROJECT_DIR}"
 
 # copy zsh autocomplete
@@ -72,19 +76,8 @@ case "$PKG_TO_BUILD" in
 	;;
 esac
 
-# Only include fileshare daemon if it is compiled
-if [[ -f "${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared" ]]; then 
-	# shellcheck disable=SC2153
-	"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshared-${ARCH}.debug" \
-		"${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared"
 
-	mv "${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared" "${BASEDIR}"/usr/bin/nordfileshared
-
-	envsubst <"${CI_PROJECT_DIR}"/ci/nfpm/template_fileshare.yaml >"${BASEDIR}"/packages.yaml
-else
-	envsubst <"${CI_PROJECT_DIR}"/ci/nfpm/template.yaml >"${BASEDIR}"/packages.yaml
-fi
-
+envsubst <"${CI_PROJECT_DIR}"/ci/nfpm/template.yaml >"${BASEDIR}"/packages.yaml
 mkdir -p "${APP_DIR}/${PKG_TO_BUILD}"
 nfpm pkg --packager "${PKG_TO_BUILD}" -f "${BASEDIR}"/packages.yaml
 mv "${CI_PROJECT_DIR}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}"

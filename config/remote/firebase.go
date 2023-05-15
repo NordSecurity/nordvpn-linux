@@ -122,11 +122,3 @@ func (rc *RConfig) GetMinFeatureVersion(featureKey string) (*semver.Version, err
 	}
 	return version, nil
 }
-
-func (rc *RConfig) MinimalVersion() (*semver.Version, error) {
-	minimalVersion, err := rc.GetMinFeatureVersion(minimalVersionKey)
-	if err != nil {
-		return nil, fmt.Errorf("minimal version parsing failed: %w", err)
-	}
-	return minimalVersion, nil
-}

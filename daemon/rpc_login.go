@@ -14,38 +14,12 @@ import (
 )
 
 var (
-	// ErrMissingExchangeToken is returned when login was succesful but
+	// ErrMissingExchangeToken is returned when login was successful but
 	// there is not enough data to request the token
 	ErrMissingExchangeToken = errors.New("exchange token not provided")
 )
 
 type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
-
-// Login the user
-func (r *RPC) Login(ctx context.Context, in *pb.LoginRequest) (*pb.LoginResponse, error) {
-	// login common with custom logic
-	return r.loginCommon(func() (*core.LoginResponse, *pb.LoginResponse, error) {
-		resp, err := r.api.Login(in.GetUsername(), in.GetPassword())
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "logging in:", err)
-			switch {
-			case errors.Is(err, core.ErrBadRequest):
-				return nil, &pb.LoginResponse{
-					Type: internal.CodeBadRequest,
-				}, nil
-			case errors.Is(err, core.ErrUnauthorized):
-				return nil, &pb.LoginResponse{
-					Type: internal.CodeUnauthorized,
-				}, nil
-			default:
-				return nil, &pb.LoginResponse{
-					Type: internal.CodeGatewayError,
-				}, nil
-			}
-		}
-		return resp, nil, nil
-	})
-}
 
 var isTokenValid = regexp.MustCompile(`^[a-f0-9]*$`).MatchString
 

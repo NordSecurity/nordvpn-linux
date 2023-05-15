@@ -20,14 +20,14 @@ import (
 const WhitelistAddPortsUsageText = "Adds port range to a whitelist"
 
 // WhitelistAddPortsArgsUsageText is shown by nordvpn whitelist add ports --help
-const WhitelistAddPortsArgsUsageText = `[port from] [port to] [protocol [protocol]]
+const WhitelistAddPortsArgsUsageText = `<port_from> <port_to> [protocol <protocol>]
 
 Use this command to whitelist the UDP and TCP ports.
 
 Example: 'nordvpn whitelist add ports 3000 8000'
 
 Optionally, protocol can be provided to specify which protocol should be whitelisted.
-Supported values for [protocol]: TCP, UDP
+Supported values for <protocol>: TCP, UDP
 
 Example: 'nordvpn whitelist add ports 3000 8000 protocol TCP'`
 

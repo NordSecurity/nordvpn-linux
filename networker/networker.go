@@ -1157,7 +1157,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	}
 
 	for _, peer := range cfg.Peers {
-		if peer.DoIAllowInbound {
+		if peer.DoIAllowInbound && peer.Address.IsValid() {
 			err = netw.allow(peer.PublicKey, peer.Address)
 			if err != nil {
 				return err
@@ -1326,11 +1326,13 @@ func (netw *Combined) block(publicKey string, address netip.Addr) error {
 func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 	hosts := make(dns.Hosts, 0, len(peers))
 	for _, peer := range peers {
-		hosts = append(hosts, dns.Host{
-			IP:         peer.Address,
-			FQDN:       peer.Hostname,
-			DomainName: strings.TrimSuffix(peer.Hostname, ".nord"),
-		})
+		if peer.Address.IsValid() {
+			hosts = append(hosts, dns.Host{
+				IP:         peer.Address,
+				FQDN:       peer.Hostname,
+				DomainName: strings.TrimSuffix(peer.Hostname, ".nord"),
+			})
+		}
 	}
 	return hosts
 }

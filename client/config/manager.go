@@ -19,13 +19,6 @@ type Manager interface {
 	Load() (Config, error)
 }
 
-const (
-	// UserDataPath defines path where user data is stored
-	UserDataPath = "/.config/nordvpn/"
-	// ConfigFilePath defines config file path
-	ConfigFilePath = UserDataPath + "nordvpn.conf"
-)
-
 // EncryptedManager is an implementation of configuration manager by using encrypted files
 type EncryptedManager struct {
 	filePath string
@@ -159,7 +152,7 @@ func (m EncryptedManager) Save(c Config) error {
 	}
 	err = configFile.Close()
 	if err != nil {
-		return fmt.Errorf("closing configuration fiel: %w", err)
+		return fmt.Errorf("closing configuration file: %w", err)
 	}
 	return nil
 }

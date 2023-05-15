@@ -33,7 +33,6 @@ service Daemon {
   rpc Groups(GroupsRequest) returns (Payload);
   rpc IsLoggedIn(Empty) returns (Bool);
   rpc IsFeatureSupported(FeatureRequest) returns (Bool);
-  rpc Login(LoginRequest) returns (LoginResponse);
   rpc LoginWithToken(LoginWithTokenRequest) returns (LoginResponse);
   rpc LoginOAuth2(Empty) returns (stream String);
   rpc LoginOAuth2Callback(String) returns (Empty);

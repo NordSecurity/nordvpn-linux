@@ -22,7 +22,11 @@ const (
 	defaultMTU    = 1500
 )
 
-var errNoKernelModule = errors.New("interface of type wireguard not supported")
+var (
+	errNoKernelModule            = errors.New("interface of type wireguard not supported")
+	errNoDefaultIpRoute          = errors.New("default gateway not found")
+	errUnrecognizedIpRouteOutput = errors.New("unrecognized output of 'ip route show default'")
+)
 
 // nordlynx client ipv6 address interface id (second portion of the address)
 // nordlynx requires interface id to end with 2
@@ -32,31 +36,42 @@ func interfaceID() [8]byte {
 	return [8]byte{0x0, 0x0, 0x0, 0x11, 0x0, 0x5, 0x0, 0x2}
 }
 
+// getDefaultIpRouteInterface takes output of the `ip route show default` command and returns the
+// interface/device name. If there are multiple default routes in the output, first one will be returned
+func getDefaultIpRouteInterface(ipRouteOutput string) (string, error) {
+	outputRows := strings.Split(ipRouteOutput, "\n")
+
+	if len(outputRows) < 1 || outputRows[0] == "" {
+		return "", errNoDefaultIpRoute
+	}
+
+	outputColumns := strings.Split(strings.Trim(outputRows[0], "\n"), " ")
+
+	if len(outputColumns) < 5 {
+		log.Printf("unexpected output of 'ip route show default': %s, dev value not found", outputRows[0])
+		return "", errUnrecognizedIpRouteOutput
+	}
+
+	return outputColumns[4], nil
+}
+
 // SetMTU for an interface.
 func SetMTU(iface net.Interface) error {
 	var err error
 
 	c1 := exec.Command("ip", "route", "show", "default")
-	c2 := exec.Command("awk", "{print $5}")
-	c2.Stdin, err = c1.StdoutPipe()
+	out, err := c1.Output()
+
+	if err != nil {
+		return fmt.Errorf("ip route show default failed: %s", err)
+	}
+
+	defaultGatewayName, err := getDefaultIpRouteInterface(string(out))
+
 	if err != nil {
 		return err
 	}
 
-	if err := c1.Start(); err != nil {
-		return err
-	}
-
-	out, err := c2.CombinedOutput()
-	if err != nil {
-		return errors.New(strings.Trim(string(out), "\n"))
-	}
-
-	if err := c1.Wait(); err != nil {
-		return err
-	}
-
-	defaultGatewayName := strings.Trim(string(out), "\n")
 	defaultGateway, err := net.InterfaceByName(defaultGatewayName)
 	if err != nil {
 		return err

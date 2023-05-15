@@ -45,7 +45,7 @@ message SetNotifyRequest {
   int64 uid = 2;
   bool notify = 3;
 }
-    
+
 message SetProtocolRequest {
   config.Protocol protocol = 2;
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/netip"
-	"strconv"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -19,7 +18,7 @@ const (
 	Unknown ServerTechnology = 0
 	// OpenVPNUDP represents the OpenVPN udp technology
 	OpenVPNUDP ServerTechnology = 3
-	// OpenVPNTCP represents the OpenVpn tcp technolgy
+	// OpenVPNTCP represents the OpenVpn tcp technology
 	OpenVPNTCP ServerTechnology = 5
 	// Socks5 represents the socks 5 technology
 	Socks5 ServerTechnology = 7
@@ -70,19 +69,6 @@ const (
 	// AfricaMiddleEastIndia represents a Africa, the Middle East and India server group
 	AfricaMiddleEastIndia ServerGroup = 25
 )
-
-// GroupMap maps group titles to IDs
-var GroupMap = map[string]ServerGroup{
-	"double_vpn":                       DoubleVPN,
-	"onion_over_vpn":                   OnionOverVPN,
-	"dedicated_ip":                     DedicatedIP,
-	"standard_vpn_servers":             StandardVPNServers,
-	"p2p":                              P2P,
-	"europe":                           Europe,
-	"the_americas":                     TheAmericas,
-	"asia_pacific":                     AsiaPacific,
-	"africa_the_middle_east_and_india": AfricaMiddleEastIndia,
-}
 
 type ServerBy int
 
@@ -182,10 +168,6 @@ type TokenRenewResponse struct {
 	ExpiresAt  string `json:"expires_at"`
 }
 
-type PingResponse struct {
-	Status string `json:"status"`
-}
-
 type Plans []Plan
 
 type Plan struct {
@@ -255,7 +237,7 @@ const (
 	// ServerNotObfuscated status returned when server is not obfuscated
 	ServerNotObfuscated
 	// NotAServerName returned when server with such name has not been found
-	// (there is no hostname beggining with given server tag)
+	// (there is no hostname beginning with given server tag)
 	NotAServerName
 )
 
@@ -342,14 +324,6 @@ func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Pr
 		}
 		return false
 	}
-}
-
-func (s *Server) GroupsString() string {
-	var groups []string
-	for _, group := range s.Groups {
-		groups = append(groups, strconv.FormatInt(int64(group.ID), 10))
-	}
-	return strings.Join(groups, " ")
 }
 
 func (s *Server) Version() string {

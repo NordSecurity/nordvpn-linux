@@ -78,15 +78,7 @@ func (m *NetlinkMonitor) Start(re Reconnector) {
 	go m.run(re)
 }
 
-// Stop stops handler loop, unsubscribe from netlink
-func (m *NetlinkMonitor) Stop() {
-	if m.doneChan != nil {
-		close(m.doneChan)
-		m.doneChan = nil
-	}
-}
-
-// run handle incomming netlink update events
+// run handle incoming netlink update events
 // should be run on separate go routine
 func (m *NetlinkMonitor) run(re Reconnector) {
 	for {

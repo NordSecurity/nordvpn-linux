@@ -4,8 +4,8 @@
 *.dll
 *.so
 *.dylib
-*.txt
 contrib/manual/*.[0-9]
+*.txt
 
 # Rust
 build/*/target/
@@ -39,7 +39,6 @@ __pycache__
 !.vscode/launch.json
 !.vscode/tasks.json
 contrib/manual/nordvpn.1
-coverage.txt
 
 # Env files
 .env

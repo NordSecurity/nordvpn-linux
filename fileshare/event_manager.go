@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"path/filepath"
 	"sort"
 	"sync"
 
@@ -22,6 +23,7 @@ var (
 	ErrFileNotFound            = errors.New("file not found")
 	ErrTransferAlreadyAccepted = errors.New("can't accept already accepted transfer")
 	ErrTransferAcceptOutgoing  = errors.New("can't accept outgoing transfer")
+	ErrSizeLimitExceeded       = errors.New("provided size limit exceeded")
 )
 
 // EventManager is responsible for libdrop event handling.
@@ -36,11 +38,12 @@ type EventManager struct {
 	storage               Storage
 	meshClient            meshpb.MeshnetClient
 	// CancelFunc is called when transfer is completed in order to finalize the transfer
-	CancelFunc func(transferID string) error
+	CancelFunc          func(transferID string) error
+	notificationManager *NotificationManager
 }
 
 // NewEventManager loads transfer state from storage, or creates empty state if loading fails.
-func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient) *EventManager {
+func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient, notificationManager *NotificationManager) *EventManager {
 	loadedTransfers, err := storage.Load()
 	if err != nil {
 		log.Printf("couldn't load transfer history from storage: %s", err)
@@ -52,7 +55,38 @@ func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient) *EventMan
 		transferSubscriptions: map[string]chan TransferProgressInfo{},
 		storage:               storage,
 		meshClient:            meshClient,
+		notificationManager:   notificationManager,
 	}
+}
+
+func (em *EventManager) AreNotificationsEnabled() bool {
+	return em.notificationManager != nil
+}
+
+func (em *EventManager) EnableNotifications() error {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	if em.notificationManager != nil {
+		return nil
+	}
+
+	notificationManager, err := NewNotificationManager()
+	if err != nil {
+		return err
+	}
+	em.notificationManager = notificationManager
+
+	return nil
+}
+
+func (em *EventManager) DisableNotifications() {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+	if err := em.notificationManager.notifier.Close(); err != nil {
+		log.Println(err)
+	}
+	em.notificationManager = nil
 }
 
 func (em *EventManager) isFileshareFromPeerAllowed(peerIP string) bool {
@@ -119,7 +153,7 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 		em.transfers[event.TransferID] = transfer
 	}
 
-	// Currently libdrop will not clean up the transfer after transfering all of the files, so we have to
+	// Currently libdrop will not clean up the transfer after transferring all of the files, so we have to
 	// cancel it manually after all of the files have finished downloading/uploading. This will generate
 	// a TransferCanceled event, which we don't care about and don't want to have any impact on internal state
 	// If transfer has been finalized(canceled), we return early. We should be able to remove this check and
@@ -137,10 +171,10 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 			}
 		})
 
-		transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-
-		if transfer.Status == pb.Status_CANCELED && event.Data.ByPeer {
+		if event.Data.ByPeer {
 			transfer.Status = pb.Status_CANCELED_BY_PEER
+		} else {
+			transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
 		}
 
 		em.finalizeTransfer(transfer)
@@ -160,6 +194,10 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 	default:
 		log.Printf("Unknown reason for transfer finished event: %s", event.Reason)
 		return
+	}
+
+	if em.notificationManager != nil {
+		em.notificationManager.Notify(filepath.Join(transfer.Path, event.Data.File), newFileStatus, transfer.Direction)
 	}
 
 	if err := SetFileStatus(transfer.Files, event.Data.File, newFileStatus); err != nil {
@@ -236,7 +274,6 @@ func (em *EventManager) EventFunc(eventJSON string) {
 			log.Printf("transfer %s from transferStarted event not found", event.TransferID)
 			return
 		}
-		transfer.Status = pb.Status_ONGOING
 
 		if file := FindTransferFile(transfer, event.FileID); file != nil {
 			transfer.TotalSize += file.Size
@@ -346,7 +383,12 @@ func (em *EventManager) GetTransfer(transferID string) (*pb.Transfer, error) {
 }
 
 // AcceptTransfer changes transfer status to reflect that it is being downloaded
-func (em *EventManager) AcceptTransfer(transferID, path string, fileIDs []string) (*pb.Transfer, error) {
+func (em *EventManager) AcceptTransfer(
+	transferID string,
+	path string,
+	fileIDs []string,
+	sizeLimit uint64,
+) (*pb.Transfer, error) {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
@@ -361,10 +403,24 @@ func (em *EventManager) AcceptTransfer(transferID, path string, fileIDs []string
 		return nil, ErrTransferAlreadyAccepted
 	}
 
+	var files []*pb.File
 	for _, fileID := range fileIDs {
-		if FindTransferFile(transfer, fileID) == nil {
+		file := FindTransferFile(transfer, fileID)
+		if file == nil {
 			return nil, ErrFileNotFound
 		}
+		files = append(files, file)
+	}
+
+	if len(fileIDs) == 0 {
+		files = transfer.Files // All files were accepted
+	}
+	var totalSize uint64
+	ForAllFiles(files, func(f *pb.File) {
+		totalSize += f.Size
+	})
+	if totalSize > sizeLimit {
+		return nil, ErrSizeLimitExceeded
 	}
 
 	transfer.Path = path

@@ -19,10 +19,10 @@ import (
 const SetProtocolUsageText = "Sets the protocol"
 
 // SetProtocolArgsUsageText is shown by nordvpn set protocol --help
-const SetProtocolArgsUsageText = `[protocol]
+const SetProtocolArgsUsageText = `<protocol>
 
 Use this command to set the protocol to TCP or UDP.
-Supported values for [protocol]: TCP, UDP
+Supported values for <protocol>: TCP, UDP
 
 Example: 'nordvpn set protocol TCP'`
 

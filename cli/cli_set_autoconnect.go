@@ -19,21 +19,21 @@ import (
 const SetAutoconnectUsageText = "Enables or disables auto-connect. When enabled, this feature will automatically try to connect to VPN on operating system startup."
 
 // SetAutoConnectArgsUsageText is shown by nordvpn set autoconnect --help
-const SetAutoConnectArgsUsageText = `[enabled]/[disabled] [[country]/[server]/[country_code]/[city]/[group] or [country] [city]]
+const SetAutoConnectArgsUsageText = `<enabled>|<disabled> [<country>|<server>|<country_code>|<city>|<group>|<country> <city>]
 
 Enables or disables auto-connect. When enabled, this feature will automatically try to connect to VPN on operating system startup.
 
-Supported values for [disabled]: 0, false, disable, off, disabled
+Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set autoconnect off
 
-Supported values for [enabled]: 1, true, enable, on, enabled
+Supported values for <enabled>: 1, true, enable, on, enabled
 Example: nordvpn set autoconnect on
 
-Provide a [country] argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled Australia'
-Provide a [server] argument to connecto to a specific server. For example: 'nordvpn set autoconnect enabled jp35'
-Provide a [country_code] argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled us'
-Provide a [city] argument to connect to a specific city. For example: 'nordvpn set autoconnect enabled Budapest'
-Provide a [group] argument to connect to a specific servers group. For example: 'nordvpn set autoconnect enabled Onion_Over_VPN'`
+Provide a <country> argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled Australia'
+Provide a <server> argument to connect to a specific server. For example: 'nordvpn set autoconnect enabled jp35'
+Provide a <country_code> argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled us'
+Provide a <city> argument to connect to a specific city. For example: 'nordvpn set autoconnect enabled Budapest'
+Provide a <group> argument to connect to a specific servers group. For example: 'nordvpn set autoconnect enabled Onion_Over_VPN'`
 
 func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	args := ctx.Args()
@@ -87,7 +87,7 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeAutoConnectServerObfuscated:
 		return formatError(errors.New(AutoConnectOnObfuscatedServerObfuscateOff))
 	case internal.CodeNothingToDo:
-		color.Yellow(fmt.Sprintf(MsgAlreadySet, "AutoConnect", nstrings.GetBoolLabel(flag)))
+		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	case internal.CodeExpiredRenewToken:
 		color.Yellow(client.RelogRequest)
 		err = c.Login(ctx)
@@ -98,7 +98,7 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeTokenRenewError:
 		return formatError(errors.New(client.AccountTokenRenewError))
 	case internal.CodeSuccess:
-		color.Green(fmt.Sprintf(MsgSetSuccess, "AutoConnect", nstrings.GetBoolLabel(flag)))
+		color.Green(fmt.Sprintf(MsgSetSuccess, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	}
 	return nil
 }

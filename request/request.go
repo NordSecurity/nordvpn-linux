@@ -29,11 +29,6 @@ type CompleteRotator interface {
 	Rotate() error
 }
 
-// TODO: move to github.com/NordSecurity/nordvpn-linux/request/rotator
-type DomainSubscriber interface {
-	NotifyDomain(string) error
-}
-
 type HTTPClient struct {
 	client            *http.Client
 	BaseURL           string

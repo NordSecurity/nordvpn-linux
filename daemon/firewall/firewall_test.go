@@ -14,6 +14,13 @@ func TestFirewallService(t *testing.T) {
 	assert.Implements(t, (*Service)(nil), &Firewall{})
 }
 
+// IsEnabled reports firewall status.
+func (fw *Firewall) isEnabled() bool {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+	return fw.enabled
+}
+
 type mockAgent struct {
 	added   int
 	deleted int
@@ -293,7 +300,7 @@ func TestFirewallEnable(t *testing.T) {
 				_, ok := err.(*Error)
 				assert.True(t, ok)
 			}
-			assert.Equal(t, test.expected, fw.IsEnabled())
+			assert.Equal(t, test.expected, fw.isEnabled())
 		})
 	}
 }
@@ -330,7 +337,7 @@ func TestFirewallDisable(t *testing.T) {
 				_, ok := err.(*Error)
 				assert.True(t, ok)
 			}
-			assert.Equal(t, test.expected, fw.IsEnabled())
+			assert.Equal(t, test.expected, fw.isEnabled())
 		})
 	}
 }
@@ -383,31 +390,6 @@ func TestFirewallSwap(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, agent.added, agent.deleted)
 			assert.Equal(t, agent.added, len(test.rules))
-		})
-	}
-}
-
-func TestFirewallIsEnabled(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name    string
-		enabled bool
-	}{
-		{
-			name:    "enabled",
-			enabled: true,
-		},
-		{
-			name:    "disabled",
-			enabled: false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			fw := NewFirewall(&mockAgent{}, &mockAgent{}, &subs.Subject[string]{}, test.enabled)
-			assert.Equal(t, test.enabled, fw.IsEnabled())
 		})
 	}
 }

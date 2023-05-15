@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -40,7 +39,6 @@ type RPC struct {
 	systemInfoFunc  func(string) string
 	networkInfoFunc func() string
 	httpClient      *request.HTTPClient
-	netState        netstate.State
 	events          *Events
 	// factory picks which VPN implementation to use
 	factory          FactoryFunc

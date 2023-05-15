@@ -138,34 +138,6 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 	}
 }
 
-func TestDefaultAPI_Login(t *testing.T) {
-	category.Set(t, category.Integration)
-
-	tests := []testCase{
-		testNewCase(t, http.StatusBadRequest, TokensURL, "legacy_login", ErrBadRequest),
-		testNewCase(t, http.StatusUnauthorized, TokensURL, "legacy_login", ErrUnauthorized),
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(test.handler)
-			defer server.Close()
-
-			api := NewDefaultAPI(
-				"",
-				"",
-				internal.Development,
-				&mockVault{},
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				mockValidator,
-				&subs.Subject[events.DataRequestAPI]{},
-			)
-			_, err := api.Login("", "")
-			assert.ErrorIs(t, err, test.err)
-		})
-	}
-}
-
 func TestDefaultAPI_TokenRenew(t *testing.T) {
 	category.Set(t, category.Integration)
 

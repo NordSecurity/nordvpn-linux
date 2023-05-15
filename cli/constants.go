@@ -1,16 +1,12 @@
 package cli
 
-import "github.com/NordSecurity/nordvpn-linux/internal"
-
 const (
 	// MaxLoginAttempts defines maximal login attempts count
 	MaxLoginAttempts = 3
-	// UserDataPath defines path where user data is stored
-	UserDataPath = "/.config/nordvpn/"
+	// ConfigDirName defines configuration subdirectory name
+	ConfigDirName = "nordvpn/"
 	// ConfigFilePath defines config file path
-	ConfigFilePath = UserDataPath + "nordvpn.conf"
-	// IconPath defines icon file path
-	IconPath = internal.AppDataPath + "icon.svg"
+	ConfigFilePath = ConfigDirName + "nordvpn.conf"
 	// WhitelistProtocol defines whitelist commands argument
 	WhitelistProtocol = "protocol"
 	// WhitelistMinPort defines min port which can be whitelisted

@@ -55,7 +55,7 @@ message UpdatePeerRequest {
 	string identifier = 1;
 }
 
-// UpdatePeerErrorCode defines an error code on updateing a peer within
+// UpdatePeerErrorCode defines an error code on updating a peer within
 // the meshnet
 enum UpdatePeerErrorCode {
 	PEER_NOT_FOUND = 0;
@@ -212,6 +212,7 @@ enum ConnectErrorCode {
 	PEER_DOES_NOT_ALLOW_ROUTING = 0;
 	ALREADY_CONNECTED = 1;
 	CONNECT_FAILED = 2;
+	PEER_NO_IP = 3;
 }
 
 message ConnectResponse {

@@ -10,7 +10,7 @@ source "${CI_PROJECT_DIR}"/ci/archs.sh
 # work with pie executables, its enabled only for development builds.
 branch="${CI_COMMIT_REF_NAME:=$(git describe --contains --all HEAD)}"
 # shellcheck disable=SC2153
-[ "${branch}" != "master" ] && [ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
+[ "${branch}" != "main" ] && [ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
 
 if [[ "${ENVIRONMENT}" == "prod" ]]; then
 	EVENTS_DOMAIN="${EVENTS_PROD_DOMAIN}"
@@ -33,6 +33,7 @@ declare -A names_map=(
 	[daemon]=nordvpnd
 	[downloader]=downloader
 	[pulp]=pulp
+	[fileshare]=nordfileshared
 )
 
 # shellcheck disable=SC2034
@@ -62,14 +63,14 @@ export CGO_LDFLAGS="-Wl,-z,relro,-z,now"
 # In order to enable additional features, provide `FEATURES` environment variable
 tags="${FEATURES:-"telio drop"}"
 
-# Only compile fileshare daemon if feature flag is present
-if [[ $tags == *"drop"* ]]; then 
-	names_map[fileshare]+=nordfileshared
-fi
-
 # Apply moose patch in case compiling with moose
 if [[ $tags == *"moose"* ]]; then 
 	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+	function revert_moose_patch {
+		cd "${CI_PROJECT_DIR}"
+		git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+	}
+	trap revert_moose_patch EXIT
 fi
 
 for program in ${!names_map[*]}; do # looping over keys
@@ -81,7 +82,3 @@ for program in ${!names_map[*]}; do # looping over keys
 	popd
 done
 
-# Revert moose patch
-if [[ $tags == *"moose"* ]]; then 
-	git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
-fi

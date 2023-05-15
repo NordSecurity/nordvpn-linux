@@ -1,7 +1,6 @@
 package rotator
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -28,7 +27,6 @@ func (m *QuicTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			strings.Contains(err.Error(), "no recent network activity") ||
 			strings.Contains(err.Error(), "Timeout exceeded while awaiting headers")) {
 		// connection closed, need to reconnect
-		log.Printf("quic transport needs reconnect, err: %s\n", err.Error())
 		m.inner = m.createFn()
 		resp, err = m.inner.RoundTrip(req)
 	}

@@ -56,7 +56,7 @@ type Setter interface {
 DefaultSetter handleds DNS in this order:
 
 1. If systemd-resolve command is available and systemd-resolved.service is
-runnning, systemd-resolve is used. It replaces /etc/resolv.conf file with
+running, systemd-resolve is used. It replaces /etc/resolv.conf file with
 a generated one.
 
 2. In absence of systemd-resolve, resolvconf command line utility is used, which
@@ -76,7 +76,7 @@ func NewSetter(publisher events.Publisher[string]) *DefaultSetter {
 }
 
 // Set DNS for a given iface if the system supports per interface DNS settings.
-// Also, backup current DNS settings. Backup is not overriden, so its safe to
+// Also, backup current DNS settings. Backup is not overridden, so its safe to
 // call this function multiple times in a row.
 func (d *DefaultSetter) Set(iface string, nameservers []string) error {
 	d.publisher.Publish(

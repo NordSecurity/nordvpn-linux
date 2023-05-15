@@ -48,7 +48,7 @@ func (c *cmd) SetKillSwitch(ctx *cli.Context) error {
 	case internal.CodeNothingToDo:
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Kill Switch", nstrings.GetBoolLabel(flag)))
 	case internal.CodeDependencyError:
-		color.Yellow(fmt.Sprintf(FirewallRequired, "killswitch"))
+		color.Yellow(fmt.Sprintf(FirewallRequired, "Kill Switch"))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Kill Switch", nstrings.GetBoolLabel(flag)))
 	}

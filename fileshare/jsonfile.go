@@ -6,11 +6,14 @@ import (
 	"log"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
+
+const historyFile = "history"
 
 // JsonFile is a implementation of user's fileshare history storage.
 type JsonFile struct{}
@@ -18,16 +21,18 @@ type JsonFile struct{}
 // Load user's history
 func (JsonFile) Load() (map[string]*pb.Transfer, error) {
 	currentUser, _ := user.Current()
-	historyFile := currentUser.HomeDir + internal.UserDataPath + "history"
+	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
+	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
+	historyFilePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath, historyFile)
 
-	jsonBytes, err := os.ReadFile(filepath.Clean(historyFile))
+	jsonBytes, err := os.ReadFile(filepath.Clean(historyFilePath))
 	if err != nil {
 		return nil, fmt.Errorf("loading transfers history file: %w", err)
 	}
 
 	var transfers map[string]*pb.Transfer = make(map[string]*pb.Transfer)
 	if err := json.Unmarshal(jsonBytes, &transfers); err != nil {
-		return nil, fmt.Errorf("unmarshaling transfers history: %w", err)
+		return nil, fmt.Errorf("unmarshalling transfers history: %w", err)
 	}
 
 	for _, tr := range transfers {
@@ -43,9 +48,11 @@ func (JsonFile) Load() (map[string]*pb.Transfer, error) {
 // Save user's history
 func (JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
 	currentUser, _ := user.Current()
-	historyFile := currentUser.HomeDir + internal.UserDataPath + "history"
+	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
+	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
+	historyFilePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath, historyFile)
 
-	if err := internal.EnsureDir(historyFile); err != nil {
+	if err := internal.EnsureDir(historyFilePath); err != nil {
 		return fmt.Errorf("trying to save transfers history: %w", err)
 	}
 
@@ -83,5 +90,5 @@ func (JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
 	}
 
 	// write (overwrite if exists) and close file
-	return os.WriteFile(historyFile, trBytes, internal.PermUserRW)
+	return os.WriteFile(historyFilePath, trBytes, internal.PermUserRW)
 }

@@ -8,16 +8,6 @@ type Field[T any] struct{ value *T }
 // Set the inner value.
 func (f *Field[T]) Set(value T) { f.value = &value }
 
-// Get the inner value.
-func (f Field[T]) Get() T {
-	if f.value != nil {
-		return *f.value
-	}
-
-	var ret T
-	return ret
-}
-
 // MarshalJSON has to be a value receiver or else nil f.value will be marshaled as {}.
 func (f Field[T]) MarshalJSON() ([]byte, error) { return json.Marshal(f.value) }
 
