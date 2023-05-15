@@ -13,8 +13,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
-	"github.com/NordSecurity/nordvpn-linux/slices"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"golang.org/x/exp/slices"
 	"golang.org/x/sys/unix"
 
 	"github.com/stretchr/testify/assert"

@@ -9,14 +9,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
 const (
-	flagFilter            = "filter"
+	flagFilter            = "internal.Filter"
 	externalFilter        = "external"
 	internalFilter        = "internal"
 	PeerListArgsUsageText = `
@@ -44,33 +44,33 @@ func (c *cmd) MeshRefresh(ctx *cli.Context) error {
 }
 
 func filterOnline(peers *pb.PeerList) *pb.PeerList {
-	peers.Local = slices.Filter(peers.Local, func(p *pb.Peer) bool { return p.Status == 1 })
-	peers.External = slices.Filter(peers.External, func(p *pb.Peer) bool { return p.Status == 1 })
+	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.Status == 1 })
+	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.Status == 1 })
 	return peers
 }
 func filterOffline(peers *pb.PeerList) *pb.PeerList {
-	peers.Local = slices.Filter(peers.Local, func(p *pb.Peer) bool { return p.Status == 0 })
-	peers.External = slices.Filter(peers.External, func(p *pb.Peer) bool { return p.Status == 0 })
+	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.Status == 0 })
+	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.Status == 0 })
 	return peers
 }
 func filterAllowsIncomingTraffic(peers *pb.PeerList) *pb.PeerList {
-	peers.Local = slices.Filter(peers.Local, func(p *pb.Peer) bool { return p.IsInboundAllowed })
-	peers.External = slices.Filter(peers.External, func(p *pb.Peer) bool { return p.IsInboundAllowed })
+	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.IsInboundAllowed })
+	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.IsInboundAllowed })
 	return peers
 }
 func filterAllowsRouting(peers *pb.PeerList) *pb.PeerList {
-	peers.Local = slices.Filter(peers.Local, func(p *pb.Peer) bool { return p.IsRoutable })
-	peers.External = slices.Filter(peers.External, func(p *pb.Peer) bool { return p.IsRoutable })
+	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.IsRoutable })
+	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.IsRoutable })
 	return peers
 }
 func filterIncomingTrafficAllowed(peers *pb.PeerList) *pb.PeerList {
-	peers.Local = slices.Filter(peers.Local, func(p *pb.Peer) bool { return p.DoIAllowInbound })
-	peers.External = slices.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowInbound })
+	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.DoIAllowInbound })
+	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowInbound })
 	return peers
 }
 func filterRoutingAllowed(peers *pb.PeerList) *pb.PeerList {
-	peers.Local = slices.Filter(peers.Local, func(p *pb.Peer) bool { return p.DoIAllowRouting })
-	peers.External = slices.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowRouting })
+	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.DoIAllowRouting })
+	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowRouting })
 	return peers
 }
 func filterInternalExternal(peers *pb.PeerList) *pb.PeerList {

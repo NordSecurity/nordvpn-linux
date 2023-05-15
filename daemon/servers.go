@@ -12,7 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
 )
 
 var tag = regexp.MustCompile(`^[a-z]{2}[0-9]{2,4}$`)
@@ -161,7 +161,7 @@ func getSpecificServerRemote(
 		return nil, err
 	}
 
-	filteredServers := slices.Filter(core.Servers{*server}, func(s core.Server) bool {
+	filteredServers := internal.Filter(core.Servers{*server}, func(s core.Server) bool {
 		return core.IsConnectableWithProtocol(tech, protocol)(s) &&
 			(core.IsObfuscated()(s) == obfuscated)
 	})
@@ -228,7 +228,7 @@ func filterServers(
 	group config.ServerGroup,
 	obfuscated bool,
 ) ([]core.Server, error) {
-	ret := slices.Filter(servers, canConnect(tech, protocol, serverTag, group, obfuscated))
+	ret := internal.Filter(servers, canConnect(tech, protocol, serverTag, group, obfuscated))
 	if len(ret) == 0 {
 		log.Println(internal.DebugPrefix, "no servers found for:", tech, protocol, serverTag, group, obfuscated)
 		return nil, internal.ErrServerIsUnavailable

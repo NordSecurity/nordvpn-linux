@@ -3,7 +3,7 @@ package pulp
 import (
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 
 	"golang.org/x/mod/semver"
 )
@@ -71,7 +71,7 @@ func deleteFrom(versions []string, count uint) []string {
 	semver.Sort(uniqueVersions)
 	toKeep := last(uniqueVersions, count)
 
-	toDelete := slices.Filter(versions, func(s string) bool {
+	toDelete := internal.Filter(versions, func(s string) bool {
 		for _, prefix := range toKeep {
 			if strings.HasPrefix(s, prefix) {
 				return false

@@ -32,8 +32,10 @@ type registrationChecker struct{}
 func (registrationChecker) IsRegistered() bool { return true }
 
 type workingNetworker struct {
-	allowedIncoming []UniqueAddress
-	blockedIncoming []UniqueAddress
+	allowedIncoming  []UniqueAddress
+	blockedIncoming  []UniqueAddress
+	allowedFileshare []UniqueAddress
+	blockedFileshare []UniqueAddress
 }
 
 func (workingNetworker) Start(
@@ -49,6 +51,11 @@ func (*workingNetworker) Stop() error                                       { re
 func (*workingNetworker) SetMesh(mesh.MachineMap, netip.Addr, string) error { return nil }
 func (*workingNetworker) UnSetMesh() error                                  { return nil }
 
+func (n *workingNetworker) AllowFileshare(address UniqueAddress) error {
+	n.allowedFileshare = append(n.allowedFileshare, address)
+	return nil
+}
+
 func (n *workingNetworker) AllowIncoming(address UniqueAddress) error {
 	n.allowedIncoming = append(n.allowedIncoming, address)
 	return nil
@@ -56,6 +63,11 @@ func (n *workingNetworker) AllowIncoming(address UniqueAddress) error {
 
 func (n *workingNetworker) BlockIncoming(address UniqueAddress) error {
 	n.blockedIncoming = append(n.blockedIncoming, address)
+	return nil
+}
+
+func (n *workingNetworker) BlockFileshare(address UniqueAddress) error {
+	n.blockedFileshare = append(n.blockedFileshare, address)
 	return nil
 }
 
@@ -578,7 +590,7 @@ func TestServer_Connect(t *testing.T) {
 	}
 }
 
-func Test_AcceptIncoming(t *testing.T) {
+func TestServer_AcceptIncoming(t *testing.T) {
 	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
 	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
 	peerIncomingAlreadyAllowedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
@@ -683,7 +695,7 @@ func Test_AcceptIncoming(t *testing.T) {
 	}
 }
 
-func Test_DenyIncoming(t *testing.T) {
+func TestServer_DenyIncoming(t *testing.T) {
 	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
 	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
 	peerIncomingAlreadyDeniedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
@@ -784,6 +796,216 @@ func Test_DenyIncoming(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedResponse, resp)
 			assert.Equal(t, test.expectedBlockedIPs, networker.blockedIncoming)
+		})
+	}
+}
+
+func TestServer_AllowFileshare(t *testing.T) {
+	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
+	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
+	peerIncomingAlreadyDeniedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+
+	peerValidAddress := netip.MustParseAddr("220.16.61.136")
+	peerIncomingAlreadyDeniedAddress := netip.MustParseAddr("87.169.173.253")
+
+	peerValidPublicKey := "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t="
+	peerIncomingAlreadyDeniedPublicKey := "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp="
+
+	getServer := func() (*Server, *workingNetworker) {
+		registryApi := registryAPI{}
+		registryApi.machinePeers = []mesh.MachinePeer{
+			{
+				ID:                uuid.MustParse(peerValidUuid),
+				DoIAllowFileshare: false,
+				Address:           peerValidAddress,
+				PublicKey:         peerValidPublicKey,
+			},
+			{
+				ID:                uuid.MustParse(peerNoIpUuid),
+				DoIAllowFileshare: false,
+				Address:           netip.Addr{},
+			},
+			{
+				ID:                uuid.MustParse(peerIncomingAlreadyDeniedUuid),
+				DoIAllowFileshare: true,
+				Address:           peerIncomingAlreadyDeniedAddress,
+				PublicKey:         peerIncomingAlreadyDeniedPublicKey,
+			},
+		}
+
+		networker := workingNetworker{}
+		networker.allowedFileshare = []UniqueAddress{}
+
+		server := NewServer(
+			meshRenewChecker{},
+			newMemory(),
+			registrationChecker{},
+			acceptInvitationsAPI{},
+			&networker,
+			&registryApi,
+			dnsGetter{},
+			&subs.Subject[string]{},
+			&subs.Subject[[]string]{},
+			&subs.Subject[bool]{},
+			mock.Fileshare{},
+		)
+		server.EnableMeshnet(context.Background(), &pb.Empty{})
+		return server, &networker
+	}
+
+	tests := []struct {
+		name               string
+		peerUuid           string
+		expectedResponse   *pb.AllowFileshareResponse
+		expectedAllowedIPs []UniqueAddress
+	}{
+		{
+			name:               "allow valid peer",
+			peerUuid:           peerValidUuid,
+			expectedResponse:   &pb.AllowFileshareResponse{Response: &pb.AllowFileshareResponse_Empty{}},
+			expectedAllowedIPs: []UniqueAddress{{UID: peerValidPublicKey, Address: peerValidAddress}},
+		},
+		{
+			name:               "allow fileshare to peer with no ip",
+			peerUuid:           peerNoIpUuid,
+			expectedResponse:   &pb.AllowFileshareResponse{Response: &pb.AllowFileshareResponse_Empty{}},
+			expectedAllowedIPs: []UniqueAddress{},
+		},
+		{
+			name:     "fileshare already denied",
+			peerUuid: peerIncomingAlreadyDeniedUuid,
+			expectedResponse: &pb.AllowFileshareResponse{
+				Response: &pb.AllowFileshareResponse_AllowSendErrorCode{
+					AllowSendErrorCode: pb.AllowFileshareErrorCode_SEND_ALREADY_ALLOWED,
+				},
+			},
+			expectedAllowedIPs: []UniqueAddress{},
+		},
+		{
+			name:     "unknown peer",
+			peerUuid: "invalid",
+			expectedResponse: &pb.AllowFileshareResponse{
+				Response: &pb.AllowFileshareResponse_UpdatePeerErrorCode{
+					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				},
+			},
+			expectedAllowedIPs: []UniqueAddress{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server, networker := getServer()
+			resp, err := server.AllowFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
+
+			assert.Nil(t, err)
+			assert.Equal(t, test.expectedResponse, resp)
+			assert.Equal(t, test.expectedAllowedIPs, networker.allowedFileshare)
+		})
+	}
+}
+
+func TestServer_DenyFileshare(t *testing.T) {
+	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
+	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
+	peerIncomingAlreadyDeniedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+
+	peerValidAddress := netip.MustParseAddr("220.16.61.136")
+	peerIncomingAlreadyDeniedAddress := netip.MustParseAddr("87.169.173.253")
+
+	peerValidPublicKey := "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t="
+	peerIncomingAlreadyDeniedPublicKey := "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp="
+
+	getServer := func() (*Server, *workingNetworker) {
+		registryApi := registryAPI{}
+		registryApi.machinePeers = []mesh.MachinePeer{
+			{
+				ID:                uuid.MustParse(peerValidUuid),
+				DoIAllowFileshare: true,
+				Address:           peerValidAddress,
+				PublicKey:         peerValidPublicKey,
+			},
+			{
+				ID:                uuid.MustParse(peerNoIpUuid),
+				DoIAllowFileshare: true,
+				Address:           netip.Addr{},
+			},
+			{
+				ID:                uuid.MustParse(peerIncomingAlreadyDeniedUuid),
+				DoIAllowFileshare: false,
+				Address:           peerIncomingAlreadyDeniedAddress,
+				PublicKey:         peerIncomingAlreadyDeniedPublicKey,
+			},
+		}
+
+		networker := workingNetworker{}
+		networker.blockedFileshare = []UniqueAddress{}
+
+		server := NewServer(
+			meshRenewChecker{},
+			newMemory(),
+			registrationChecker{},
+			acceptInvitationsAPI{},
+			&networker,
+			&registryApi,
+			dnsGetter{},
+			&subs.Subject[string]{},
+			&subs.Subject[[]string]{},
+			&subs.Subject[bool]{},
+			mock.Fileshare{},
+		)
+		server.EnableMeshnet(context.Background(), &pb.Empty{})
+		return server, &networker
+	}
+
+	tests := []struct {
+		name               string
+		peerUuid           string
+		expectedResponse   *pb.DenyFileshareResponse
+		expectedAllowedIPs []UniqueAddress
+	}{
+		{
+			name:               "deny valid peer",
+			peerUuid:           peerValidUuid,
+			expectedResponse:   &pb.DenyFileshareResponse{Response: &pb.DenyFileshareResponse_Empty{}},
+			expectedAllowedIPs: []UniqueAddress{{UID: peerValidPublicKey, Address: peerValidAddress}},
+		},
+		{
+			name:               "allow fileshare to peer with no ip",
+			peerUuid:           peerNoIpUuid,
+			expectedResponse:   &pb.DenyFileshareResponse{Response: &pb.DenyFileshareResponse_Empty{}},
+			expectedAllowedIPs: []UniqueAddress{},
+		},
+		{
+			name:     "fileshare already denied",
+			peerUuid: peerIncomingAlreadyDeniedUuid,
+			expectedResponse: &pb.DenyFileshareResponse{
+				Response: &pb.DenyFileshareResponse_DenySendErrorCode{
+					DenySendErrorCode: pb.DenyFileshareErrorCode_SEND_ALREADY_DENIED,
+				},
+			},
+			expectedAllowedIPs: []UniqueAddress{},
+		},
+		{
+			name:     "unknown peer",
+			peerUuid: "invalid",
+			expectedResponse: &pb.DenyFileshareResponse{
+				Response: &pb.DenyFileshareResponse_UpdatePeerErrorCode{
+					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				},
+			},
+			expectedAllowedIPs: []UniqueAddress{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server, networker := getServer()
+			resp, err := server.DenyFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
+
+			assert.Nil(t, err)
+			assert.Equal(t, test.expectedResponse, resp)
+			assert.Equal(t, test.expectedAllowedIPs, networker.blockedFileshare)
 		})
 	}
 }

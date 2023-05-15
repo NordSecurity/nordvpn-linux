@@ -10,7 +10,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
 )
 
 // Pre-built values for commonly returned responses to decrease verbosity

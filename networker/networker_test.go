@@ -1273,7 +1273,7 @@ func TestCombined_UnSetMesh(t *testing.T) {
 	}
 }
 
-func TestCombined_allow(t *testing.T) {
+func TestCombined_allowIncoming(t *testing.T) {
 	tests := []struct {
 		name     string
 		ruleName string
@@ -1319,7 +1319,7 @@ func TestCombined_allow(t *testing.T) {
 				nil,
 				0,
 			)
-			netw.allow(test.name, netip.MustParseAddr(test.address))
+			netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.Equal(t, netw.rules[0], test.ruleName)
 		})
 	}
@@ -1371,9 +1371,9 @@ func TestCombined_Block(t *testing.T) {
 				nil,
 				0,
 			)
-			netw.allow(test.name, netip.MustParseAddr(test.address))
+			netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.Equal(t, netw.rules[0], test.ruleName)
-			netw.block(test.name, netip.MustParseAddr(test.address))
+			netw.BlockIncoming(meshnet.UniqueAddress{UID: test.name, Address: netip.MustParseAddr(test.address)})
 			assert.Equal(t, 0, len(netw.rules))
 		})
 	}
@@ -1425,7 +1425,7 @@ func TestCombined_allowGeneratedRule(t *testing.T) {
 				nil,
 				0,
 			)
-			err := netw.allow(test.name, netip.MustParseAddr(test.address))
+			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.Equal(t, nil, err)
 			assert.Equal(t, netw.rules[0], test.ruleName)
 		})
@@ -1468,7 +1468,7 @@ func TestCombined_BlocNonExistingRuleFail(t *testing.T) {
 			)
 			// Should fail to block rule non existing
 			expectedErrorMsg := fmt.Sprintf("Allow rule does not exist for %s", test.ruleName)
-			err := netw.block(test.name, netip.MustParseAddr(test.address))
+			err := netw.BlockIncoming(meshnet.UniqueAddress{UID: test.name, Address: netip.MustParseAddr(test.address)})
 			assert.EqualErrorf(t, err, expectedErrorMsg, "Error should be: %v, got: %v", expectedErrorMsg, err)
 		})
 	}
@@ -1508,12 +1508,12 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 				nil,
 				0,
 			)
-			err := netw.allow(test.name, netip.MustParseAddr(test.address))
+			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.Equal(t, nil, err)
 			assert.Equal(t, netw.rules[0], test.ruleName)
 			// Should fail to add rule second time
 			expectedErrorMsg := fmt.Sprintf("allow rule already exist for %s", test.ruleName)
-			err = netw.allow(test.name, netip.MustParseAddr(test.address))
+			err = netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.EqualErrorf(t, err, expectedErrorMsg, "Error should be: %v, got: %v", expectedErrorMsg, err)
 		})
 	}
@@ -1551,10 +1551,11 @@ func TestCombined_Refresh(t *testing.T) {
 
 	peers := mesh.MachinePeers{
 		mesh.MachinePeer{
-			Hostname:        peer1HostName,
-			PublicKey:       peer1PublicKey,
-			Address:         peer1Address,
-			DoIAllowInbound: true,
+			Hostname:          peer1HostName,
+			PublicKey:         peer1PublicKey,
+			Address:           peer1Address,
+			DoIAllowInbound:   true,
+			DoIAllowFileshare: true,
 		},
 		mesh.MachinePeer{
 			Hostname:        "test-altai.nord",
@@ -1597,7 +1598,7 @@ func TestCombined_Refresh(t *testing.T) {
 		"DNS host was not configured properly for %s, \nexpected config: \n%v, \nactual config: \n%v",
 		expectedPeer1DnsHost, hostSetter.hosts[1])
 
-	assert.Equal(t, 4, len(fw.rules), "%d firewall rules were configured, expected 4", len(fw.rules))
+	assert.Equal(t, 5, len(fw.rules), "%d firewall rules were configured, expected 5", len(fw.rules))
 
 	defaultMeshBlockRuleName := "default-mesh-block"
 
@@ -1624,7 +1625,7 @@ func TestCombined_Refresh(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedDefaultMeshAllowEstablishedFwRule, fw.rules["default-mesh-allow-established"],
-		"default-mesh-allow-established rule is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
+		"default-mesh-allow-established is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
 		expectedDefaultMeshAllowEstablishedFwRule, fw.rules["default-mesh-allow-established"])
 
 	machineFwAllowRuleName := fmt.Sprintf("%s-allow-rule-%s", machinePublicKey, machineAddress.String())
@@ -1636,7 +1637,7 @@ func TestCombined_Refresh(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName],
-		"allow rule for the host machine rule is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
+		"allow rule for the host machine is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
 		expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName])
 
 	peer1FwAllowRuleName := fmt.Sprintf("%s-allow-rule-%s", peer1PublicKey, peer1Address.String())
@@ -1648,8 +1649,24 @@ func TestCombined_Refresh(t *testing.T) {
 	}
 
 	assert.Equal(t, expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
-		"allow rule for the peer rule is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
+		"allow rule for the peer is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
 		expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
+	)
+
+	peer1FwAllowFileshareRuleName := fmt.Sprintf("%s-allow-fileshare-rule-%s", peer1PublicKey, peer1Address.String())
+	expectedAllowFilesharePeer1Rule := firewall.Rule{
+		Name:           peer1FwAllowFileshareRuleName,
+		Direction:      firewall.Inbound,
+		Ports:          []int{49111},
+		Protocols:      []string{"tcp"},
+		PortsDirection: firewall.Destination,
+		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
+		Allow:          true,
+	}
+
+	assert.Equal(t, expectedAllowFilesharePeer1Rule, fw.rules[peer1FwAllowFileshareRuleName],
+		"allow fileshare rule for the peer is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
+		expectedAllowFilesharePeer1Rule, fw.rules[peer1FwAllowFileshareRuleName],
 	)
 
 	assert.True(t, exitNode.enabled, "Exit node is not enabled after network refresh.")

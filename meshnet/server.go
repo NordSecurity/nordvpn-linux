@@ -21,7 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -2021,7 +2021,9 @@ func (s *Server) AllowFileshare(
 		}, nil
 	}
 
-	if peers[index].DoIAllowFileshare {
+	peer := peers[index]
+
+	if peer.DoIAllowFileshare {
 		return &pb.AllowFileshareResponse{
 			Response: &pb.AllowFileshareResponse_AllowSendErrorCode{
 				AllowSendErrorCode: pb.AllowFileshareErrorCode_SEND_ALREADY_ALLOWED,
@@ -2029,12 +2031,12 @@ func (s *Server) AllowFileshare(
 		}, nil
 	}
 
-	peers[index].DoIAllowFileshare = true
+	peer.DoIAllowFileshare = true
 
 	if err := s.updatePeerPermissions(
 		token,
 		cfg.MeshDevice.ID,
-		peers[index],
+		peer,
 	); err != nil {
 		s.pub.Publish(err.Error())
 		return &pb.AllowFileshareResponse{
@@ -2044,13 +2046,15 @@ func (s *Server) AllowFileshare(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peers); err != nil {
-		s.pub.Publish(err.Error())
-		return &pb.AllowFileshareResponse{
-			Response: &pb.AllowFileshareResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
-			},
-		}, nil
+	if peer.Address.IsValid() {
+		if err := s.netw.AllowFileshare(
+			UniqueAddress{UID: peer.PublicKey, Address: peer.Address}); err != nil {
+			return &pb.AllowFileshareResponse{
+				Response: &pb.AllowFileshareResponse_MeshnetErrorCode{
+					MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
+				},
+			}, nil
+		}
 	}
 
 	return &pb.AllowFileshareResponse{
@@ -2137,7 +2141,9 @@ func (s *Server) DenyFileshare(
 		}, nil
 	}
 
-	if !peers[index].DoIAllowFileshare {
+	peer := peers[index]
+
+	if !peer.DoIAllowFileshare {
 		return &pb.DenyFileshareResponse{
 			Response: &pb.DenyFileshareResponse_DenySendErrorCode{
 				DenySendErrorCode: pb.DenyFileshareErrorCode_SEND_ALREADY_DENIED,
@@ -2145,12 +2151,12 @@ func (s *Server) DenyFileshare(
 		}, nil
 	}
 
-	peers[index].DoIAllowFileshare = false
+	peer.DoIAllowFileshare = false
 
 	if err := s.updatePeerPermissions(
 		token,
 		cfg.MeshDevice.ID,
-		peers[index],
+		peer,
 	); err != nil {
 		s.pub.Publish(err.Error())
 		return &pb.DenyFileshareResponse{
@@ -2160,13 +2166,15 @@ func (s *Server) DenyFileshare(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peers); err != nil {
-		s.pub.Publish(err.Error())
-		return &pb.DenyFileshareResponse{
-			Response: &pb.DenyFileshareResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
-			},
-		}, nil
+	if peer.Address.IsValid() {
+		if err := s.netw.BlockFileshare(
+			UniqueAddress{UID: peer.PublicKey, Address: peer.Address}); err != nil {
+			return &pb.DenyFileshareResponse{
+				Response: &pb.DenyFileshareResponse_MeshnetErrorCode{
+					MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
+				},
+			}, nil
+		}
 	}
 
 	return &pb.DenyFileshareResponse{

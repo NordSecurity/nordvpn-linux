@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"github.com/NordSecurity/nordvpn-linux/slices"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"golang.org/x/exp/slices"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -483,6 +483,76 @@ func TestRuleToIPTables(t *testing.T) {
 				"INPUT -s 1.1.1.1/32 --dport 111:111 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -d 1.1.1.1/32 --sport 111:111 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -d 1.1.1.1/32 --dport 111:111 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
+			name: "unblock destination ports rule",
+			rule: firewall.Rule{
+				Name:           "unblock source ports",
+				Direction:      firewall.Inbound,
+				Protocols:      []string{"tcp"},
+				Ports:          []int{111},
+				PortsDirection: firewall.Destination,
+				RemoteNetworks: []netip.Prefix{
+					net1111,
+				},
+				Allow: true,
+			},
+			ipv4TablesRules: []string{
+				"INPUT -s 1.1.1.1/32 -p tcp --dport 111:111 -m comment --comment nordvpn -j ACCEPT",
+			},
+		},
+		{
+			name: "unblock source ports rule",
+			rule: firewall.Rule{
+				Name:           "unblock source ports",
+				Direction:      firewall.Inbound,
+				Protocols:      []string{"tcp"},
+				Ports:          []int{111},
+				PortsDirection: firewall.Source,
+				RemoteNetworks: []netip.Prefix{
+					net1111,
+				},
+				Allow: true,
+			},
+			ipv4TablesRules: []string{
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
+			},
+		},
+		{
+			name: "unblock source ports range rule",
+			rule: firewall.Rule{
+				Name:           "unblock source ports",
+				Direction:      firewall.Inbound,
+				Protocols:      []string{"tcp"},
+				Ports:          []int{111, 112},
+				PortsDirection: firewall.Source,
+				RemoteNetworks: []netip.Prefix{
+					net1111,
+				},
+				Allow: true,
+			},
+			ipv4TablesRules: []string{
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:112 -m comment --comment nordvpn -j ACCEPT",
+			},
+		},
+		{
+			name: "unblock multiple source ports rule",
+			rule: firewall.Rule{
+				Name:           "unblock source ports",
+				Direction:      firewall.Inbound,
+				Protocols:      []string{"tcp"},
+				Ports:          []int{111, 222, 333},
+				PortsDirection: firewall.Source,
+				RemoteNetworks: []netip.Prefix{
+					net1111,
+				},
+				Allow: true,
+			},
+			ipv4TablesRules: []string{
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 222:222 -m comment --comment nordvpn -j ACCEPT",
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 333:333 -m comment --comment nordvpn -j ACCEPT",
 			},
 		},
 	}

@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
 )
 
 // ServerTechnology represents the nordvpn server technology

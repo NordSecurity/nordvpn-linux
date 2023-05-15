@@ -27,7 +27,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
 
 	"github.com/kofalt/go-memoize"
 )
@@ -1152,15 +1152,26 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		return fmt.Errorf("adding default block rule: %w", err)
 	}
 
-	if err = netw.allow(cfg.Machine.PublicKey, cfg.Machine.Address); err != nil {
+	if err = netw.allowIncoming(cfg.Machine.PublicKey, cfg.Machine.Address); err != nil {
 		return fmt.Errorf("allowing to reach self via meshnet: %w", err)
 	}
 
 	for _, peer := range cfg.Peers {
-		if peer.DoIAllowInbound && peer.Address.IsValid() {
-			err = netw.allow(peer.PublicKey, peer.Address)
+		if !peer.Address.IsValid() {
+			continue
+		}
+
+		if peer.DoIAllowInbound {
+			err = netw.allowIncoming(peer.PublicKey, peer.Address)
 			if err != nil {
-				return err
+				return fmt.Errorf("allowing inbound traffic for peer: %w", err)
+			}
+		}
+
+		if peer.DoIAllowFileshare {
+			err = netw.allowFileshare(peer.PublicKey, peer.Address)
+			if err != nil {
+				return fmt.Errorf("allowing fileshare for peer: %w", err)
 			}
 		}
 	}
@@ -1274,10 +1285,10 @@ func (netw *Combined) StatusMap() (map[string]string, error) {
 func (netw *Combined) AllowIncoming(uniqueAddress meshnet.UniqueAddress) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.allow(uniqueAddress.UID, uniqueAddress.Address)
+	return netw.allowIncoming(uniqueAddress.UID, uniqueAddress.Address)
 }
 
-func (netw *Combined) allow(publicKey string, address netip.Addr) error {
+func (netw *Combined) allowIncoming(publicKey string, address netip.Addr) error {
 	ruleName := publicKey + "-allow-rule-" + address.String()
 	rules := []firewall.Rule{{
 		Name:      ruleName,
@@ -1288,13 +1299,48 @@ func (netw *Combined) allow(publicKey string, address netip.Addr) error {
 		Allow: true,
 	}}
 
-	for _, rule := range netw.rules {
-		if rule == ruleName {
-			return fmt.Errorf("allow rule already exist for %s", ruleName)
-		}
+	ruleIndex := slices.Index(netw.rules, ruleName)
+
+	if ruleIndex != -1 {
+		return fmt.Errorf("allow rule already exist for %s", ruleName)
 	}
+
 	if err := netw.fw.Add(rules); err != nil {
-		return err
+		return fmt.Errorf("adding allow-incoming rule to firewall: %w", err)
+	}
+
+	netw.rules = append(netw.rules, ruleName)
+	return nil
+}
+
+func (netw *Combined) AllowFileshare(uniqueAddress meshnet.UniqueAddress) error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+	return netw.allowFileshare(uniqueAddress.UID, uniqueAddress.Address)
+}
+
+func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error {
+	ruleName := publicKey + "-allow-fileshare-rule-" + address.String()
+	rules := []firewall.Rule{{
+		Name:           ruleName,
+		Direction:      firewall.Inbound,
+		Protocols:      []string{"tcp"},
+		Ports:          []int{49111},
+		PortsDirection: firewall.Destination,
+		RemoteNetworks: []netip.Prefix{
+			netip.PrefixFrom(address, address.BitLen()),
+		},
+		Allow: true,
+	}}
+
+	ruleIndex := slices.Index(netw.rules, ruleName)
+
+	if ruleIndex != -1 {
+		return fmt.Errorf("allow rule already exist for %s", ruleName)
+	}
+
+	if err := netw.fw.Add(rules); err != nil {
+		return fmt.Errorf("adding allow-fileshare rule to firewall: %w", err)
 	}
 
 	netw.rules = append(netw.rules, ruleName)
@@ -1305,22 +1351,30 @@ func (netw *Combined) allow(publicKey string, address netip.Addr) error {
 func (netw *Combined) BlockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.block(uniqueAddress.UID, uniqueAddress.Address)
+	ruleName := uniqueAddress.UID + "-allow-rule-" + uniqueAddress.Address.String()
+	return netw.removeRule(ruleName)
 }
 
-func (netw *Combined) block(publicKey string, address netip.Addr) error {
-	ruleName := publicKey + "-allow-rule-" + address.String()
-	for index, rule := range netw.rules {
-		if rule == ruleName {
-			if err := netw.fw.Delete([]string{ruleName}); err != nil {
-				return err
-			}
-			netw.rules = slices.Delete(netw.rules, index, index+1)
-			return nil
-		}
+func (netw *Combined) BlockFileshare(uniqueAddress meshnet.UniqueAddress) error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+	ruleName := uniqueAddress.UID + "-allow-fileshare-rule-" + uniqueAddress.Address.String()
+	return netw.removeRule(ruleName)
+}
+
+func (netw *Combined) removeRule(ruleName string) error {
+	ruleIndex := slices.Index(netw.rules, ruleName)
+
+	if ruleIndex == -1 {
+		return fmt.Errorf("Allow rule does not exist for %s", ruleName)
 	}
 
-	return fmt.Errorf("Allow rule does not exist for %s", ruleName)
+	if err := netw.fw.Delete([]string{ruleName}); err != nil {
+		return err
+	}
+	netw.rules = slices.Delete(netw.rules, ruleIndex, ruleIndex+1)
+
+	return nil
 }
 
 func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {

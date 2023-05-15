@@ -10,7 +10,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
 
 	"github.com/docker/go-units"
 	"github.com/fatih/color"

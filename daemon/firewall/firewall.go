@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
 )
 
 // Firewall is responsible for correctly changing one firewall agent over another.

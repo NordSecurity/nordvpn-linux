@@ -131,6 +131,19 @@ func trimPrefixes(str string, prefixes ...string) string {
 	return str
 }
 
+func portsDirectionToPortsFlag(direction firewall.PortsDirection) []string {
+	switch direction {
+	case firewall.SourceAndDestination:
+		return []string{"--sport", "--dport"}
+	case firewall.Destination:
+		return []string{"--dport"}
+	case firewall.Source:
+		return []string{"--sport"}
+	default:
+		return []string{"--sport", "--dport"}
+	}
+}
+
 // This is here for historical reasons. Please don't judge us
 func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPrefix string) map[string][]string {
 	// fill nil fields with elements of nil values, so each slice has at least one element and at least 1 rule is generated
@@ -148,7 +161,7 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 								for _, target := range toTargetSlice(rule.Allow, input, rule.Marks) {
 									for _, mark := range rule.Marks {
 										if pRange.min != 0 {
-											for _, portFlag := range []string{"--sport", "--dport"} {
+											for _, portFlag := range portsDirectionToPortsFlag(rule.PortsDirection) {
 												newRule := generateIPTablesRule(
 													input, target, iface, remoteNetwork, localNetwork, protocol, pRange,
 													module, stateFlag, rule.ConnectionStates, chainPrefix, portFlag,

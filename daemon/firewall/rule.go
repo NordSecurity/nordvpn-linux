@@ -4,7 +4,16 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/NordSecurity/nordvpn-linux/slices"
+	"golang.org/x/exp/slices"
+)
+
+// PortsDirection represents direction in which ports are open to, source, destination or both
+type PortsDirection int
+
+const (
+	SourceAndDestination PortsDirection = iota
+	Destination
+	Source
 )
 
 // Rule defines a single firewall rule which is applicable for set of addresses, ports and protocols
@@ -19,6 +28,8 @@ type Rule struct {
 
 	// Ports is a list of ports to which rule is applicable
 	Ports []int `json:"ports"`
+	// PortsDirection is a direction that ports are open to
+	PortsDirection PortsDirection
 	// Protocols is a list of protocol string values to which rule is applicable
 	Protocols []string `json:"protocols"`
 	// Direction defines to which packets rule is applicable
