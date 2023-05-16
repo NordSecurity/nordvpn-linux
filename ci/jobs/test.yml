@@ -26,7 +26,7 @@ test/go:
   dependencies: []
 test/deb:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -43,7 +43,7 @@ test/deb:
       - TEST: [connect6, dns, dns6, killswitch, login, misc, routing, settings, whitelist]
 test/deb-connect1:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -57,7 +57,7 @@ test/deb-connect1:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-connect2:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -71,7 +71,7 @@ test/deb-connect2:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-combinations:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -88,7 +88,7 @@ test/deb-combinations:
       - PATTERN: [test_reconnect_matrix_standard, test_reconnect_matrix_obfuscated, test_connect_country_and_city]
 test/deb-autoconnect1:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -102,7 +102,7 @@ test/deb-autoconnect1:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-autoconnect2:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -116,7 +116,7 @@ test/deb-autoconnect2:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-manual:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     # TODO: run automatically after meshnet release
     - !reference [.cond/on-click, rules]
@@ -132,7 +132,7 @@ test/deb-manual:
       - TEST: [gateway, firewall, firewall6]
 test/deb-meshnet:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -151,7 +151,7 @@ test/deb-meshnet:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
 test/deb-fileshare:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.1
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]

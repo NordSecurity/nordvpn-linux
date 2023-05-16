@@ -1,6 +1,6 @@
 attrs==20.3.0
 black==21.9b0
-certifi==2020.12.5
+certifi>=2022.12.07
 chardet==4.0.0
 click==8.0.3
 idna==2.10
@@ -19,7 +19,7 @@ pyls-black==0.4.7
 pyls-isort==0.2.2
 pyls-mypy==0.1.8
 pyparsing==2.4.7
-pytest==6.2.4
+pytest==7.2.0
 pytest-rerunfailures==9.1.1
 pytest-timeout==2.0.1
 python-jsonrpc-server==0.4.0
@@ -34,7 +34,8 @@ toml==0.10.2
 tomli==1.2.2
 types-requests==2.25.11
 typing-extensions==3.10.0.2
-ujson==4.2.0
-urllib3==1.26.2
+ujson==5.4.0
+urllib3==1.26.5
 paramiko==2.12.0
 psutil==5.9.4
+pyshark==0.6
