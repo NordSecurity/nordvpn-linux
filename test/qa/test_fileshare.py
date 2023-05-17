@@ -167,7 +167,14 @@ def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
     time.sleep(1)
 
     local_transfer_id = fileshare.get_last_transfer()
-    peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+    peer_transfer_id = None
+
+    for last_peer_transfer_id, _ in poll(lambda : fileshare.get_new_incoming_transfer(ssh_client), attempts=10):
+        if last_peer_transfer_id is not None:
+            peer_transfer_id = last_peer_transfer_id
+            break
+
+    assert peer_transfer_id is not None, "transfer was not received by peer"
 
     ssh_client.exec_command(f"nordvpn fileshare accept --path /tmp {peer_transfer_id}")
 
