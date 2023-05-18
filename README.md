@@ -5,7 +5,7 @@
 ---
 
 The [NordVPN](https://nordvpn.com/features/) Linux application provides a simple and user-friendly command line interface for accessing all the different features of NordVPN.
-Users can choose from a list of server locations around the world, or let the application automatically select the best server for them. 
+Users can choose from a list of server locations around the world, or let the application automatically select the best server for them.
 They can also customize their connection settings, such as choosing a specific protocol or enabling the kill switch feature.
 
 The application manages:
@@ -39,4 +39,4 @@ For installing an already released version please follow the instructions on our
 Distributions are not supported after their end of life.
 
 This project is licensed under the terms of the [GNU General Public License v3.0](./LICENSE.md) only.
-The registered trademark Linux® is used pursuant to a sublicense from the Linux Foundation, the exclusive licensee of Linus Torvalds, owner of the mark on a world¬wide basis.
+The registered trademark Linux® is used pursuant to a sublicense from the Linux Foundation, the exclusive licensee of Linus Torvalds, owner of the mark on a world-wide basis.
