@@ -48,4 +48,5 @@ var GroupMap = map[string]ServerGroup{
 	"the_americas":                     TheAmericas,
 	"asia_pacific":                     AsiaPacific,
 	"africa_the_middle_east_and_india": AfricaMiddleEastIndia,
+	"obfuscated_servers":               Obfuscated,
 }
