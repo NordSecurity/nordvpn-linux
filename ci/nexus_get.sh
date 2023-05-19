@@ -6,7 +6,7 @@ usage() {
     echo -e "\tnexus_get.sh <arguments> <filepath>"
     echo "Args:"
     echo -e "\t-o output filename"
-    echo -e "\t-r <qa/releases> repository, default release."
+    echo -e "\t-r <qa/release> repository, defaults to release."
     echo -e "\t-v verbose"
     exit 1
 }
@@ -14,13 +14,14 @@ usage() {
 download_file() {
     local filepath=$1
     filename="${OUTPUT_FILE:-$(basename "${filepath}")}"
-    curl "${VERBOSITY}" -f -u "${NEXUS_QA_READ_USER}:${NEXUS_QA_READ_CRED}" "https://${NEXUS_SERVER}/repository/gitlab-${REPOSITORY_TYPE}/${filepath}" -o "${filename}" || { echo "Failed to download file!" ; exit 1 ; }
+    NEXUS_REPOSITORY="ll-gitlab-${REPOSITORY_TYPE}"
+    curl "${VERBOSITY}" -f -u "${NEXUS_CREDENTIALS}" "${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${filepath}" -o "${filename}" || { echo "Failed to download file!" ; exit 1 ; }
 }
 
 [[ "$#" == 0 ]] && usage
 
 VERBOSITY='-s'
-REPOSITORY_TYPE='releases'
+REPOSITORY_TYPE='release'
 
 while [[ $# -gt 0 ]] ; do
     cmd=${1,,}
