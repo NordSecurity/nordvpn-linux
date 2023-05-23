@@ -5,7 +5,8 @@ RUN apt-get update && \
 
 # Separate this because the commands above can be cached 
 COPY dist/app/deb /tmp/deb
-RUN apt-get install -y /tmp/deb/* && \
+RUN apt-get update && \
+    apt-get install -y /tmp/deb/* && \
     rm -rf /tmp/deb && \
     apt-get clean
 
