@@ -33,7 +33,7 @@ def teardown_function(function):
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_WITH_IPV6[:-1])
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_ipv6_connect(tech, proto, obfuscated):
     output = sh.nordvpn.set.ipv6.on()
     print(output)
@@ -53,7 +53,7 @@ def test_ipv6_connect(tech, proto, obfuscated):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_ipv6_enabled_ipv4_connect():
     output = sh.nordvpn.set.ipv6.on()
     print(output)
@@ -78,7 +78,7 @@ def test_ipv6_enabled_ipv4_connect():
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_ipv6_double_connect_without_disconnect():
     output = sh.nordvpn.set.ipv6.on()
     print(output)

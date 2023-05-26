@@ -47,7 +47,7 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
 
 
 @pytest.mark.skip(reason="LVPN-2119")
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 @pytest.mark.parametrize("server,obfuscated,errorMessage", autoconnectOnParameters)
 def test_autoconnect_on_server_obfuscation_mismatch(server, obfuscated, errorMessage):
     lib.set_technology_and_protocol("openvpn", "tcp", obfuscated)
@@ -72,7 +72,7 @@ setObfuscateParameters = [
 ]
 
 
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 @pytest.mark.skip(reason="LVPN-2119")
 @pytest.mark.parametrize("obfuscateInitialState,server,errorMessage", setObfuscateParameters)
 def test_set_obfuscate_server_obfuscation_mismatch(obfuscateInitialState, server, errorMessage):

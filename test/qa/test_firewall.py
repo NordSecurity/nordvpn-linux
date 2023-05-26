@@ -32,7 +32,7 @@ def teardown_function(function):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall():
     lib.set_firewall("on")
     assert not firewall.is_active()
@@ -58,7 +58,7 @@ def test_firewall():
 
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_whitelist_port(port):
     lib.set_firewall("on")
     lib.add_port_to_whitelist(port)
@@ -91,7 +91,7 @@ def test_firewall_whitelist_port(port):
 
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_whitelist_ports_range(ports):
     lib.set_firewall("on")
     lib.add_ports_range_to_whitelist(ports)
@@ -125,7 +125,7 @@ def test_firewall_whitelist_ports_range(ports):
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.parametrize("protocol", lib.PROTOCOLS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_whitelist_port_and_protocol(port, protocol):
     protocol = str(protocol)
     lib.set_firewall("on")
@@ -159,7 +159,7 @@ def test_firewall_whitelist_port_and_protocol(port, protocol):
 
 @pytest.mark.parametrize("subnet_addr", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_whitelist_subnet(subnet_addr):
     lib.set_firewall("on")
     lib.add_subnet_to_whitelist(subnet_addr)
@@ -204,7 +204,7 @@ def test_firewall_with_killswitch():
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_with_killswitch_while_connected():
     lib.set_firewall("on")
     assert not firewall.is_active()

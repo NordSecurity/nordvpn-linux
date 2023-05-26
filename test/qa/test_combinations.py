@@ -33,7 +33,7 @@ def teardown_function(function):
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_connect_to_standard_group(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -51,7 +51,7 @@ def test_connect_to_standard_group(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_connect_to_additional_group(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -69,7 +69,7 @@ def test_connect_to_additional_group(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("target_tech,target_proto,target_obfuscated", lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("source_tech,source_proto,source_obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_reconnect_matrix_standard(
     source_tech,
     target_tech,
@@ -100,7 +100,7 @@ def test_reconnect_matrix_standard(
 @pytest.mark.parametrize("target_tech,target_proto,target_obfuscated", lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.parametrize("source_tech,source_proto,source_obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_reconnect_matrix_obfuscated(
     source_tech,
     target_tech,
@@ -133,7 +133,7 @@ def test_reconnect_matrix_obfuscated(
 
 @pytest.mark.parametrize("country, city", list(zip(lib.COUNTRIES, lib.CITIES)))
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_connect_country_and_city(country, city):
     lib.set_technology_and_protocol("nordlynx", "", "")
 

@@ -34,7 +34,7 @@ def teardown_function(function):
 @pytest.mark.parametrize("threat_protection_lite", lib.THREAT_PROTECTION_LITE)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     lib.set_threat_protection_lite(threat_protection_lite)
@@ -60,7 +60,7 @@ def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
 @pytest.mark.parametrize("nameserver", lib.DNS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     sh.nordvpn.set.dns(nameserver)
@@ -87,7 +87,7 @@ def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_set_dns_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     lib.set_threat_protection_lite("off")

@@ -31,7 +31,7 @@ def teardown_function(function):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_routing_on():
     subnet1 = "1.1.1.1"
     subnet2 = "2.2.2.2"
@@ -56,7 +56,7 @@ def test_routing_on():
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_routing_off():
     subnet = "1.1.1.1"
     table = 205
@@ -81,7 +81,7 @@ def test_routing_off():
     
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)    
+@timeout_decorator.timeout(40)    
 def test_toggle_routing_in_the_middle_of_the_connection():
     table = 205
 

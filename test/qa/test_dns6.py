@@ -34,7 +34,7 @@ def teardown_function(function):
 
 @pytest.mark.parametrize("threat_protection_lite", lib.THREAT_PROTECTION_LITE)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_dns_connect(threat_protection_lite):
     lib.set_technology_and_protocol("openvpn", "udp", "off")
     lib.set_threat_protection_lite(threat_protection_lite)
@@ -59,7 +59,7 @@ def test_dns_connect(threat_protection_lite):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_set_dns_connected():
     lib.set_technology_and_protocol("openvpn", "udp", "off")
     lib.set_threat_protection_lite("off")

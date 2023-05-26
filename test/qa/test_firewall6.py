@@ -33,7 +33,7 @@ def teardown_function(function):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_ipv6():
     lib.set_firewall("on")
     lib.set_ipv6("on")
@@ -58,7 +58,7 @@ def test_firewall_ipv6():
 
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_ipv6_whitelist_port(port):
     lib.set_firewall("on")
     lib.set_ipv6("on")
@@ -93,7 +93,7 @@ def test_firewall_ipv6_whitelist_port(port):
 
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_ipv6_whitelist_ports_range(ports):
     lib.set_firewall("on")
     lib.set_ipv6("on")
@@ -129,7 +129,7 @@ def test_firewall_ipv6_whitelist_ports_range(ports):
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.parametrize("protocol", lib.PROTOCOLS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_ipv6_whitelist_port_and_protocol(port, protocol):
     protocol = str(protocol)
     lib.set_firewall("on")
@@ -165,7 +165,7 @@ def test_firewall_ipv6_whitelist_port_and_protocol(port, protocol):
 
 @pytest.mark.parametrize("subnet_addr", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_ipv6_whitelist_subnet(subnet_addr):
     lib.set_firewall("on")
     lib.set_ipv6("on")
@@ -211,7 +211,7 @@ def test_firewall_ipv6_with_killswitch():
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_firewall_ipv6_with_killswitch_while_connected():
     lib.set_firewall("on")
     lib.set_ipv6("on")

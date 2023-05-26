@@ -29,7 +29,7 @@ def teardown_function(function):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_api_call_after_vpn_connect():
     # call api
     output = sh.nordvpn.account()

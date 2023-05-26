@@ -100,7 +100,7 @@ def start():
     else:
         sh.sudo.ip.link.set.dev.eth0.up()
         cmd = sh.sudo.ip.route.add.default.via.bake("172.17.0.1")
-        cmd.dev.eth0()
+        cmd.dev.eth0.onlink()
 
     logging.log("starting network")
     while not daemon.is_running():

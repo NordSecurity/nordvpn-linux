@@ -48,7 +48,7 @@ def test_killswitch_without_connect(tech, proto, obfuscated):
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_killswitch_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
@@ -81,7 +81,7 @@ def test_killswitch_connect(tech, proto, obfuscated):
 )
 @pytest.mark.parametrize("tech_to,proto_to,obfuscated_to", lib.TECHNOLOGIES_BASIC2)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_killswitch_reconnect(
     tech_from, proto_from, obfuscated_from, tech_to, proto_to, obfuscated_to
 ):

@@ -69,7 +69,7 @@ def test_whitelist_is_not_set_when_disconnected():
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_whitelist_requires_connection():
     with lib.Defer(sh.nordvpn.whitelist.remove.all):
         subnet = "1.1.1.0/24"

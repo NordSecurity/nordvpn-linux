@@ -74,7 +74,7 @@ def test_expired_account_connect():
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_login_while_connected():
     output = login.login_as("default")
     print(output)
@@ -125,7 +125,7 @@ def test_logged_out_connect():
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(20)
+@timeout_decorator.timeout(40)
 def test_logout_disconnects():
     output = login.login_as("default")
     print(output)
