@@ -225,6 +225,7 @@ Example: nordvpn set meshnet on`
 	MsgSendingNotAllowed             = "This peer does not allow file transfers from you."
 	MsgFileNotInProgress             = "This file is not in progress"
 	MsgNotEnoughSpace                = "The transfer can't be accepted because there's not enough storage on your device."
+	MsgNoPermissions                 = "You don’t have write permissions for the download directory %s. To receive the file transfer, choose another download directory using the --" + flagFilesharePath + " parameter."
 
 	MsgFileshareSendUsage     = "Send files or directories to a Meshnet peer."
 	MsgFileshareSendArgsUsage = "<peer_ip>|<peer_hostname>|<peer_pubkey> <path_1> [path_2...]\n\nTo cancel a transfer in progress, press Ctrl+C"

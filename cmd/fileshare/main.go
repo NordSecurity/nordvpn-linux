@@ -106,7 +106,7 @@ func main() {
 	}
 
 	// Fileshare gRPC server init
-	fileshareServer := fileshare.NewServer(fileshareImplementation, eventManager, meshClient, fileshare.NewStdFilesystem("/"))
+	fileshareServer := fileshare.NewServer(fileshareImplementation, eventManager, meshClient, fileshare.NewStdFilesystem("/"), fileshare.StdOsInfo{})
 	grpcServer := grpc.NewServer()
 	pb.RegisterFileshareServer(grpcServer, fileshareServer)
 

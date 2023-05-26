@@ -3,10 +3,14 @@ package fileshare
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"log"
 	"net/netip"
 	"os"
+	"os/user"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -38,6 +42,7 @@ type Server struct {
 	eventManager *EventManager
 	meshClient   meshpb.MeshnetClient
 	filesystem   Filesystem
+	osInfo       OsInfo
 }
 
 // NewServer is a default constructor for a fileshare server
@@ -46,12 +51,14 @@ func NewServer(
 	eventManager *EventManager,
 	meshClient meshpb.MeshnetClient,
 	filesystem Filesystem,
+	osInfo OsInfo,
 ) *Server {
 	return &Server{
 		fileshare:    fileshare,
 		eventManager: eventManager,
 		meshClient:   meshClient,
 		filesystem:   filesystem,
+		osInfo:       osInfo,
 	}
 }
 
@@ -256,6 +263,39 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 	return s.startTransferStatusStream(srv, transferID)
 }
 
+func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool {
+	var ownerUID int
+	var ownerGID int
+	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
+		ownerUID = int(stat.Uid)
+		ownerGID = int(stat.Gid)
+	} else {
+		return false
+	}
+
+	uid, err := strconv.Atoi(user.Uid)
+
+	if err != nil {
+		log.Printf("Failed to convert uid %s to int: %s", user.Uid, err)
+		return false
+	}
+
+	isOwner := uid == ownerUID
+
+	if isOwner {
+		return fileInfo.Mode().Perm()&os.FileMode(0200) != 0
+	}
+
+	ownerGIDStr := strconv.Itoa(ownerGID)
+	gidIndex := slices.Index(gids, ownerGIDStr)
+	isGroup := gidIndex != -1
+	if isGroup {
+		return fileInfo.Mode().Perm()&os.FileMode(0020) != 0
+	}
+
+	return fileInfo.Mode().Perm()&os.FileMode(0002) != 0
+}
+
 // Accept rpc
 func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) error {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
@@ -281,6 +321,28 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 	if err != nil {
 		log.Printf("doing statfs: %s", err)
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
+	}
+
+	fileInfo, err := s.filesystem.Stat(req.DstPath)
+	if err != nil {
+		log.Printf("doing stat: %s", err)
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.ServiceErrorCode_INTERNAL_FAILURE))})
+	}
+
+	userInfo, err := s.osInfo.CurrentUser()
+	if err != nil {
+		log.Printf("getting user info: %s", err)
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.ServiceErrorCode_INTERNAL_FAILURE))})
+	}
+
+	userGroups, err := s.osInfo.GetGroupIds(userInfo)
+	if err != nil {
+		log.Printf("getting user groups: %s", err)
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.ServiceErrorCode_INTERNAL_FAILURE))})
+	}
+
+	if !isFileWriteable(fileInfo, userInfo, userGroups) {
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS))})
 	}
 
 	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files, statfs.Bavail*uint64(statfs.Bsize))

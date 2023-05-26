@@ -39,6 +39,7 @@ enum FileshareErrorCode {
 	ACCEPT_DIR_IS_A_SYMLINK = 18;
 	ACCEPT_DIR_IS_NOT_A_DIRECTORY = 19;
 	NO_FILES = 20;
+	ACCEPT_DIR_NO_PERMISSIONS = 21;
 }
 
 // Generic error to be used through all responses. If empty then no error occurred.
