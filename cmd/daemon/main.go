@@ -454,7 +454,7 @@ func main() {
 		netw,
 		meshAPIex,
 		threatProtectionLiteServers,
-		debugSubject,
+		errSubject,
 		meshnetEvents.PeerUpdate,
 		daemonEvents.Settings.Meshnet,
 		fileshareImplementation,

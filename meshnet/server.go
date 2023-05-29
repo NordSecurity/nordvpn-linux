@@ -42,7 +42,7 @@ type Server struct {
 	netw               Networker
 	reg                mesh.Registry
 	nameservers        dns.Getter
-	pub                events.Publisher[string]
+	pub                events.Publisher[error]
 	subjectPeerUpdate  events.Publisher[[]string]
 	subjectMeshSetting events.Publisher[bool]
 	lastPeers          string
@@ -61,7 +61,7 @@ func NewServer(
 	netw Networker,
 	reg mesh.Registry,
 	nameservers dns.Getter,
-	pub events.Publisher[string],
+	pub events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
 	subjectMeshSetting events.PublishSubcriber[bool],
 	fileshare Fileshare,
@@ -102,7 +102,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -123,7 +123,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.MeshnetResponse{
 					Response: &pb.MeshnetResponse_ServiceError{
 						ServiceError: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -136,7 +136,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 				},
 			}, nil
 		}
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_API_FAILURE,
@@ -149,7 +149,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		cfg.MeshDevice.Address,
 		string(cfg.MeshPrivateKey[:]),
 	); err != nil {
-		s.pub.Publish("setting mesh: " + err.Error())
+		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		if errors.Is(err, ErrTunnelClosed) {
 			return &pb.MeshnetResponse{
 				Response: &pb.MeshnetResponse_MeshnetError{
@@ -169,11 +169,11 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	var ucred unix.Ucred
 	peer, ok := peer.FromContext(ctx)
 	if !ok || peer.AuthInfo == nil {
-		s.pub.Publish("unable to retrieve AuthInfo from gRPC context")
+		s.pub.Publish(fmt.Errorf("unable to retrieve AuthInfo from gRPC context"))
 	} else {
 		ucred, err = internal.StringToUcred(peer.AuthInfo.AuthType())
 		if err != nil {
-			s.pub.Publish("error while parsing AuthType: " + err.Error())
+			s.pub.Publish(fmt.Errorf("error while parsing AuthType: %w", err))
 		}
 	}
 
@@ -183,7 +183,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		c.Meshnet.EnabledByGID = ucred.Gid
 		return c
 	}); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -199,10 +199,10 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	// for Meshnet usage.
 	if ucred.Pid != 0 {
 		if err = s.fileshare.Enable(ucred.Uid, ucred.Gid); err != nil {
-			s.pub.Publish("enabling fileshare: " + err.Error())
+			s.pub.Publish(fmt.Errorf("enabling fileshare: %w", err))
 		}
 	} else {
-		s.pub.Publish("ucred not set - skipping enabling fileshare")
+		s.pub.Publish(fmt.Errorf("ucred not set - skipping enabling fileshare"))
 	}
 
 	return &pb.MeshnetResponse{
@@ -222,7 +222,7 @@ func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.ServiceBoolResponse,
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.ServiceBoolResponse{
 			Response: &pb.ServiceBoolResponse_ErrorCode{
 				ErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -269,7 +269,7 @@ func (s *Server) StartMeshnet() error {
 		cfg.MeshDevice.Address,
 		string(cfg.MeshPrivateKey[:]),
 	); err != nil {
-		s.pub.Publish("setting mesh: " + err.Error())
+		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		return fmt.Errorf("setting the meshnet up: %w", err)
 	}
 
@@ -301,26 +301,26 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 	}
 
 	if err := s.fileshare.Disable(cfg.Meshnet.EnabledByUID, cfg.Meshnet.EnabledByGID); err != nil {
-		s.pub.Publish("disabling fileshare: " + err.Error())
+		s.pub.Publish(fmt.Errorf("disabling fileshare: %w", err))
 	}
 
 	// stop networker only if mesh peer connected before
 	if s.isPeerConnected {
 		if err := s.netw.Stop(); err != nil {
-			s.pub.Publish("disconnecting: " + err.Error())
+			s.pub.Publish(fmt.Errorf("disconnecting: %w", err))
 		}
 		s.isPeerConnected = false
 	}
 
 	if err := s.netw.UnSetMesh(); err != nil {
-		s.pub.Publish("unsetting mesh: " + err.Error())
+		s.pub.Publish(fmt.Errorf("unsetting mesh: %w", err))
 	}
 
 	if err := s.cm.SaveWith(func(c config.Config) config.Config {
 		c.Mesh = false
 		return c
 	}); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -346,7 +346,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -375,7 +375,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.MeshnetResponse{
 					Response: &pb.MeshnetResponse_ServiceError{
 						ServiceError: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -388,7 +388,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 				},
 			}, nil
 		}
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_API_FAILURE,
@@ -397,7 +397,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 	}
 
 	if err := s.netw.Refresh(*resp); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_API_FAILURE,
@@ -433,7 +433,7 @@ func (s *Server) Invite(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.InviteResponse{
 			Response: &pb.InviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -460,7 +460,7 @@ func (s *Server) Invite(
 		req.GetAllowFileshare(),
 	)
 	if err != nil {
-		s.pub.Publish("sending invitation: " + err.Error())
+		s.pub.Publish(fmt.Errorf("sending invitation: %w", err))
 		if errors.Is(err, core.ErrTooManyRequests) {
 			return &pb.InviteResponse{
 				Response: &pb.InviteResponse_InviteResponseErrorCode{
@@ -498,7 +498,7 @@ func (s *Server) Invite(
 		}
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.InviteResponse{
 					Response: &pb.InviteResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -546,7 +546,7 @@ func (s *Server) AcceptInvite(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -567,7 +567,7 @@ func (s *Server) AcceptInvite(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.RespondToInviteResponse{
 					Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -580,7 +580,7 @@ func (s *Server) AcceptInvite(
 				},
 			}, nil
 		}
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -609,7 +609,7 @@ func (s *Server) AcceptInvite(
 		req.GetAllowFileshare(),
 	)
 	if err != nil {
-		s.pub.Publish("accepting invitation: " + err.Error())
+		s.pub.Publish(fmt.Errorf("accepting invitation: %w", err))
 		if errors.Is(err, core.ErrMaximumDeviceCount) {
 			return &pb.RespondToInviteResponse{
 				Response: &pb.RespondToInviteResponse_RespondToInviteErrorCode{
@@ -626,7 +626,7 @@ func (s *Server) AcceptInvite(
 
 	resp, err := s.reg.Map(tokenData.Token, cfg.MeshDevice.ID)
 	if err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -635,7 +635,7 @@ func (s *Server) AcceptInvite(
 	}
 
 	if err := s.netw.Refresh(*resp); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
@@ -671,7 +671,7 @@ func (s *Server) DenyInvite(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -692,7 +692,7 @@ func (s *Server) DenyInvite(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.RespondToInviteResponse{
 					Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -705,7 +705,7 @@ func (s *Server) DenyInvite(
 				},
 			}, nil
 		}
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -726,7 +726,7 @@ func (s *Server) DenyInvite(
 
 	err = s.invitationAPI.Reject(tokenData.Token, cfg.MeshDevice.ID, received[index].ID)
 	if err != nil {
-		s.pub.Publish("denying invitation: " + err.Error())
+		s.pub.Publish(fmt.Errorf("denying invitation: %w", err))
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -762,7 +762,7 @@ func (s *Server) RevokeInvite(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -783,7 +783,7 @@ func (s *Server) RevokeInvite(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.RespondToInviteResponse{
 					Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -796,7 +796,7 @@ func (s *Server) RevokeInvite(
 				},
 			}, nil
 		}
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -817,7 +817,7 @@ func (s *Server) RevokeInvite(
 
 	err = s.invitationAPI.Revoke(tokenData.Token, cfg.MeshDevice.ID, sent[index].ID)
 	if err != nil {
-		s.pub.Publish("revoking invitation: " + err.Error())
+		s.pub.Publish(fmt.Errorf("revoking invitation: %w", err))
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -850,7 +850,7 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.GetInvitesResponse{
 			Response: &pb.GetInvitesResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -871,7 +871,7 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.GetInvitesResponse{
 					Response: &pb.GetInvitesResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -884,7 +884,7 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 				},
 			}, nil
 		}
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.GetInvitesResponse{
 			Response: &pb.GetInvitesResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -899,7 +899,7 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 
 	resp, err = s.invitationAPI.Sent(tokenData.Token, cfg.MeshDevice.ID)
 	if err != nil {
-		s.pub.Publish("listing invitations: " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing invitations: %w", err))
 		return &pb.GetInvitesResponse{
 			Response: &pb.GetInvitesResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -943,7 +943,7 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.GetPeersResponse{
 			Response: &pb.GetPeersResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -967,7 +967,7 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 		if err != nil {
 			if errors.Is(err, core.ErrUnauthorized) {
 				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-					s.pub.Publish(err.Error())
+					s.pub.Publish(err)
 					return &pb.GetPeersResponse{
 						Response: &pb.GetPeersResponse_ServiceErrorCode{
 							ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -980,7 +980,7 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 					},
 				}, nil
 			}
-			s.pub.Publish("listing local peers (@GetPeers): " + err.Error())
+			s.pub.Publish(fmt.Errorf("listing local peers (@GetPeers): %w", err))
 
 			// Mesh could get disabled (when self is removed)
 			//  - check it and report it to the user properly.
@@ -1008,7 +1008,7 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 		if err != nil {
 			if errors.Is(err, core.ErrUnauthorized) {
 				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-					s.pub.Publish(err.Error())
+					s.pub.Publish(err)
 					return &pb.GetPeersResponse{
 						Response: &pb.GetPeersResponse_ServiceErrorCode{
 							ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1021,7 +1021,7 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 					},
 				}, nil
 			}
-			s.pub.Publish("listing peers (@GetPeers): " + err.Error())
+			s.pub.Publish(fmt.Errorf("listing peers (@GetPeers): %w", err))
 
 			// Mesh could get disabled (when self is removed)
 			//  - check it and report it to the user properly.
@@ -1087,7 +1087,7 @@ func (s *Server) RemovePeer(
 	if !s.mc.IsRegistered() {
 		var cfg config.Config
 		if err := s.cm.Load(&cfg); err != nil {
-			s.pub.Publish(err.Error())
+			s.pub.Publish(err)
 			return &pb.RemovePeerResponse{
 				Response: &pb.RemovePeerResponse_ServiceErrorCode{
 					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1100,7 +1100,7 @@ func (s *Server) RemovePeer(
 		if err != nil {
 			if errors.Is(err, core.ErrUnauthorized) {
 				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-					s.pub.Publish(err.Error())
+					s.pub.Publish(err)
 					return &pb.RemovePeerResponse{
 						Response: &pb.RemovePeerResponse_ServiceErrorCode{
 							ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1113,7 +1113,7 @@ func (s *Server) RemovePeer(
 					},
 				}, nil
 			}
-			s.pub.Publish("listing local peers (@RemovePeer): " + err.Error())
+			s.pub.Publish(fmt.Errorf("listing local peers (@RemovePeer): %w", err))
 
 			// Mesh could get disabled (when self is removed)
 			//  - check it and report it to the user properly.
@@ -1144,7 +1144,7 @@ func (s *Server) RemovePeer(
 		}
 
 		if err := s.reg.Unregister(token, resp[index].ID); err != nil {
-			s.pub.Publish("removing peer: " + err.Error())
+			s.pub.Publish(fmt.Errorf("removing peer: %w", err))
 			return &pb.RemovePeerResponse{
 				Response: &pb.RemovePeerResponse_ServiceErrorCode{
 					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1159,7 +1159,7 @@ func (s *Server) RemovePeer(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.RemovePeerResponse{
 			Response: &pb.RemovePeerResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1172,7 +1172,7 @@ func (s *Server) RemovePeer(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.RemovePeerResponse{
 					Response: &pb.RemovePeerResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1185,7 +1185,7 @@ func (s *Server) RemovePeer(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@RemovePeer): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@RemovePeer): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -1218,7 +1218,7 @@ func (s *Server) RemovePeer(
 	peer := resp[index]
 	if peer.IsLocal {
 		if err := s.reg.Unregister(token, peer.ID); err != nil {
-			s.pub.Publish("removing peer: " + err.Error())
+			s.pub.Publish(fmt.Errorf("removing peer: %w", err))
 			return &pb.RemovePeerResponse{
 				Response: &pb.RemovePeerResponse_ServiceErrorCode{
 					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1227,7 +1227,7 @@ func (s *Server) RemovePeer(
 		}
 	} else {
 		if err := s.reg.Unpair(token, cfg.MeshDevice.ID, peer.ID); err != nil {
-			s.pub.Publish("removing peer: " + err.Error())
+			s.pub.Publish(fmt.Errorf("removing peer: %w", err))
 			return &pb.RemovePeerResponse{
 				Response: &pb.RemovePeerResponse_ServiceErrorCode{
 					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1276,7 +1276,7 @@ func (s *Server) AllowIncoming(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowIncomingResponse{
 			Response: &pb.AllowIncomingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1289,7 +1289,7 @@ func (s *Server) AllowIncoming(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.AllowIncomingResponse{
 					Response: &pb.AllowIncomingResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1302,7 +1302,7 @@ func (s *Server) AllowIncoming(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@AllowIncoming): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@AllowIncoming): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -1343,7 +1343,7 @@ func (s *Server) AllowIncoming(
 
 	peer.DoIAllowInbound = true
 	if err := s.updatePeerPermissions(token, cfg.MeshDevice.ID, peer); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowIncomingResponse{
 			Response: &pb.AllowIncomingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1355,7 +1355,7 @@ func (s *Server) AllowIncoming(
 		if err := s.netw.AllowIncoming(UniqueAddress{
 			UID: peer.PublicKey, Address: peer.Address,
 		}); err != nil {
-			s.pub.Publish(err.Error())
+			s.pub.Publish(err)
 			return &pb.AllowIncomingResponse{
 				Response: &pb.AllowIncomingResponse_MeshnetErrorCode{
 					MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
@@ -1392,7 +1392,7 @@ func (s *Server) DenyIncoming(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyIncomingResponse{
 			Response: &pb.DenyIncomingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1405,7 +1405,7 @@ func (s *Server) DenyIncoming(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.DenyIncomingResponse{
 					Response: &pb.DenyIncomingResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1418,7 +1418,7 @@ func (s *Server) DenyIncoming(
 				},
 			}, nil
 		}
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyIncomingResponse{
 			Response: &pb.DenyIncomingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1452,7 +1452,7 @@ func (s *Server) DenyIncoming(
 		cfg.MeshDevice.ID,
 		peer,
 	); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyIncomingResponse{
 			Response: &pb.DenyIncomingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1464,7 +1464,7 @@ func (s *Server) DenyIncoming(
 		if err := s.netw.BlockIncoming(UniqueAddress{
 			UID: peer.PublicKey, Address: peer.Address,
 		}); err != nil {
-			s.pub.Publish(err.Error())
+			s.pub.Publish(err)
 			return &pb.DenyIncomingResponse{
 				Response: &pb.DenyIncomingResponse_MeshnetErrorCode{
 					MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
@@ -1501,7 +1501,7 @@ func (s *Server) AllowRouting(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowRoutingResponse{
 			Response: &pb.AllowRoutingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1514,7 +1514,7 @@ func (s *Server) AllowRouting(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.AllowRoutingResponse{
 					Response: &pb.AllowRoutingResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1527,7 +1527,7 @@ func (s *Server) AllowRouting(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@AllowRouting): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@AllowRouting): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -1572,7 +1572,7 @@ func (s *Server) AllowRouting(
 		cfg.MeshDevice.ID,
 		peers[index],
 	); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowRoutingResponse{
 			Response: &pb.AllowRoutingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1581,7 +1581,7 @@ func (s *Server) AllowRouting(
 	}
 
 	if err := s.netw.ResetRouting(peers); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowRoutingResponse{
 			Response: &pb.AllowRoutingResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
@@ -1617,7 +1617,7 @@ func (s *Server) DenyRouting(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyRoutingResponse{
 			Response: &pb.DenyRoutingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1630,7 +1630,7 @@ func (s *Server) DenyRouting(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.DenyRoutingResponse{
 					Response: &pb.DenyRoutingResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1643,7 +1643,7 @@ func (s *Server) DenyRouting(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@DenyRouting): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@DenyRouting): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -1688,7 +1688,7 @@ func (s *Server) DenyRouting(
 		cfg.MeshDevice.ID,
 		peers[index],
 	); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyRoutingResponse{
 			Response: &pb.DenyRoutingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1697,7 +1697,7 @@ func (s *Server) DenyRouting(
 	}
 
 	if err := s.netw.ResetRouting(peers); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyRoutingResponse{
 			Response: &pb.DenyRoutingResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
@@ -1733,7 +1733,7 @@ func (s *Server) AllowLocalNetwork(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowLocalNetworkResponse{
 			Response: &pb.AllowLocalNetworkResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1746,7 +1746,7 @@ func (s *Server) AllowLocalNetwork(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.AllowLocalNetworkResponse{
 					Response: &pb.AllowLocalNetworkResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1759,7 +1759,7 @@ func (s *Server) AllowLocalNetwork(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@AllowLocalNetwork): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@AllowLocalNetwork): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -1804,7 +1804,7 @@ func (s *Server) AllowLocalNetwork(
 		cfg.MeshDevice.ID,
 		peers[index],
 	); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowLocalNetworkResponse{
 			Response: &pb.AllowLocalNetworkResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1813,7 +1813,7 @@ func (s *Server) AllowLocalNetwork(
 	}
 
 	if err := s.netw.ResetRouting(peers); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowLocalNetworkResponse{
 			Response: &pb.AllowLocalNetworkResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
@@ -1849,7 +1849,7 @@ func (s *Server) DenyLocalNetwork(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyLocalNetworkResponse{
 			Response: &pb.DenyLocalNetworkResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1862,7 +1862,7 @@ func (s *Server) DenyLocalNetwork(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.DenyLocalNetworkResponse{
 					Response: &pb.DenyLocalNetworkResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1875,7 +1875,7 @@ func (s *Server) DenyLocalNetwork(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@DenyLocalNetwork): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@DenyLocalNetwork): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -1920,7 +1920,7 @@ func (s *Server) DenyLocalNetwork(
 		cfg.MeshDevice.ID,
 		peers[index],
 	); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyLocalNetworkResponse{
 			Response: &pb.DenyLocalNetworkResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -1929,7 +1929,7 @@ func (s *Server) DenyLocalNetwork(
 	}
 
 	if err := s.netw.ResetRouting(peers); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyLocalNetworkResponse{
 			Response: &pb.DenyLocalNetworkResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
@@ -1965,7 +1965,7 @@ func (s *Server) AllowFileshare(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowFileshareResponse{
 			Response: &pb.AllowFileshareResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1978,7 +1978,7 @@ func (s *Server) AllowFileshare(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.AllowFileshareResponse{
 					Response: &pb.AllowFileshareResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -1991,7 +1991,7 @@ func (s *Server) AllowFileshare(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@AllowFileshare): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@AllowFileshare): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -2038,7 +2038,7 @@ func (s *Server) AllowFileshare(
 		cfg.MeshDevice.ID,
 		peer,
 	); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.AllowFileshareResponse{
 			Response: &pb.AllowFileshareResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -2085,7 +2085,7 @@ func (s *Server) DenyFileshare(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyFileshareResponse{
 			Response: &pb.DenyFileshareResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -2098,7 +2098,7 @@ func (s *Server) DenyFileshare(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.DenyFileshareResponse{
 					Response: &pb.DenyFileshareResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -2111,7 +2111,7 @@ func (s *Server) DenyFileshare(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@DenyFileshare): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@DenyFileshare): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -2158,7 +2158,7 @@ func (s *Server) DenyFileshare(
 		cfg.MeshDevice.ID,
 		peer,
 	); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.DenyFileshareResponse{
 			Response: &pb.DenyFileshareResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -2212,7 +2212,7 @@ func (s *Server) NotifyNewTransfer(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.NotifyNewTransferResponse{
 			Response: &pb.NotifyNewTransferResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -2225,7 +2225,7 @@ func (s *Server) NotifyNewTransfer(
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				s.pub.Publish(err.Error())
+				s.pub.Publish(err)
 				return &pb.NotifyNewTransferResponse{
 					Response: &pb.NotifyNewTransferResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -2238,7 +2238,7 @@ func (s *Server) NotifyNewTransfer(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@DenyLocalNetwork): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@DenyLocalNetwork): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -2275,7 +2275,7 @@ func (s *Server) NotifyNewTransfer(
 		req.FileName,
 		int(req.FileCount),
 	); err != nil {
-		s.pub.Publish("notifying peer about new transfer: " + err.Error())
+		s.pub.Publish(fmt.Errorf("notifying peer about new transfer: %w", err))
 		return &pb.NotifyNewTransferResponse{
 			Response: &pb.NotifyNewTransferResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
@@ -2311,7 +2311,7 @@ func (s *Server) Connect(
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		s.pub.Publish(err.Error())
+		s.pub.Publish(err)
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
@@ -2352,7 +2352,7 @@ func (s *Server) Connect(
 				},
 			}, nil
 		}
-		s.pub.Publish("listing peers (@Connect): " + err.Error())
+		s.pub.Publish(fmt.Errorf("listing peers (@Connect): %w", err))
 
 		// Mesh could get disabled (when self is removed)
 		//  - check it and report it to the user properly.
@@ -2430,7 +2430,7 @@ func (s *Server) Connect(
 				},
 			}, nil
 		}
-		s.pub.Publish("starting networker: " + err.Error())
+		s.pub.Publish(fmt.Errorf("starting networker: %w", err))
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_ConnectErrorCode{
 				ConnectErrorCode: pb.ConnectErrorCode_CONNECT_FAILED,
