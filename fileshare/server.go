@@ -484,7 +484,7 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 		return fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND), nil
 	}
 
-	if file.Status == pb.Status_CANCELED {
+	if file.Status == pb.Status_CANCELED || file.Status == pb.Status_SUCCESS {
 		return fileshareError(pb.FileshareErrorCode_FILE_INVALIDATED), nil
 	}
 
