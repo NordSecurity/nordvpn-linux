@@ -43,7 +43,7 @@ type EventManager struct {
 }
 
 // NewEventManager loads transfer state from storage, or creates empty state if loading fails.
-func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient, notificationManager *NotificationManager) *EventManager {
+func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient) *EventManager {
 	loadedTransfers, err := storage.Load()
 	if err != nil {
 		log.Printf("couldn't load transfer history from storage: %s", err)
@@ -55,7 +55,6 @@ func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient, notificat
 		transferSubscriptions: map[string]chan TransferProgressInfo{},
 		storage:               storage,
 		meshClient:            meshClient,
-		notificationManager:   notificationManager,
 	}
 }
 
@@ -63,7 +62,7 @@ func (em *EventManager) AreNotificationsEnabled() bool {
 	return em.notificationManager != nil
 }
 
-func (em *EventManager) EnableNotifications() error {
+func (em *EventManager) EnableNotifications(fileshare Fileshare) error {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
@@ -71,7 +70,7 @@ func (em *EventManager) EnableNotifications() error {
 		return nil
 	}
 
-	notificationManager, err := NewNotificationManager()
+	notificationManager, err := NewNotificationManager(fileshare, em)
 	if err != nil {
 		return err
 	}
@@ -89,11 +88,10 @@ func (em *EventManager) DisableNotifications() {
 	em.notificationManager = nil
 }
 
-func (em *EventManager) isFileshareFromPeerAllowed(peerIP string) bool {
+func (em *EventManager) getPeerByIP(peerIP string) (*meshpb.Peer, error) {
 	resp, err := em.meshClient.GetPeers(context.Background(), &meshpb.Empty{})
 	if err != nil {
-		log.Printf("failed to get peers when validating permissions: %s", err)
-		return false
+		return nil, err
 	}
 
 	switch resp := resp.Response.(type) {
@@ -105,24 +103,16 @@ func (em *EventManager) isFileshareFromPeerAllowed(peerIP string) bool {
 		})
 
 		if peerIndex == -1 {
-			log.Printf("unknown peer %s found when validating permissions", peerIP)
-			return false
+			return nil, fmt.Errorf("peer %s not found", peerIP)
 		}
 
-		if !peers[peerIndex].DoIAllowFileshare {
-			return false
-		}
-
-		return true
+		return peers[peerIndex], nil
 	case *meshpb.GetPeersResponse_ServiceErrorCode:
-		log.Printf("GetPeers failed, service error: %s", meshpb.ServiceErrorCode_name[int32(resp.ServiceErrorCode)])
-		return false
+		return nil, fmt.Errorf("service error: %s", meshpb.ServiceErrorCode_name[int32(resp.ServiceErrorCode)])
 	case *meshpb.GetPeersResponse_MeshnetErrorCode:
-		log.Printf("GetPeers failed, meshnet error: %s", meshpb.ServiceErrorCode_name[int32(resp.MeshnetErrorCode)])
-		return false
+		return nil, fmt.Errorf("meshnet error: %s", meshpb.ServiceErrorCode_name[int32(resp.MeshnetErrorCode)])
 	default:
-		log.Printf("GetPeers failed, unknown error")
-		return false
+		return nil, fmt.Errorf("unknown error")
 	}
 }
 
@@ -197,7 +187,11 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 	}
 
 	if em.notificationManager != nil {
-		em.notificationManager.Notify(filepath.Join(transfer.Path, event.Data.File), newFileStatus, transfer.Direction)
+		em.notificationManager.NotifyFile(
+			filepath.Join(transfer.Path, event.Data.File),
+			transfer.Direction,
+			newFileStatus,
+		)
 	}
 
 	if err := SetFileStatus(transfer.Files, event.Data.File, newFileStatus); err != nil {
@@ -238,10 +232,20 @@ func (em *EventManager) EventFunc(eventJSON string) {
 			log.Printf("unmarshalling drop event: %s", err)
 			return
 		}
-		if em.isFileshareFromPeerAllowed(event.Peer) {
+
+		peer, err := em.getPeerByIP(event.Peer)
+		if err != nil {
+			log.Println("failed to retrieve peer requesting transfer: ", err.Error())
+			return
+		}
+		if peer.DoIAllowFileshare {
 			em.transfers[event.TransferID] = NewIncomingTransfer(event.TransferID, event.Peer, event.Files)
 			if err := em.storage.Save(em.transfers); err != nil {
 				log.Printf("writing file transfer history: %s", err)
+			}
+
+			if em.notificationManager != nil {
+				em.notificationManager.NotifyNewTransfer(event.TransferID, peer.Hostname)
 			}
 		}
 	case requestQueued:

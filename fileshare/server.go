@@ -506,7 +506,7 @@ func (s *Server) SetNotifications(ctx context.Context, in *pb.SetNotificationsRe
 	}
 
 	if in.Enable {
-		if err := s.eventManager.EnableNotifications(); err != nil {
+		if err := s.eventManager.EnableNotifications(s.fileshare); err != nil {
 			log.Println("Failed to enable notifications: ", err)
 		}
 	} else {

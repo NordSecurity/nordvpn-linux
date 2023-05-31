@@ -70,30 +70,30 @@ func main() {
 
 	daemonClient := daemonpb.NewDaemonClient(grpcConn)
 
-	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
-		Uid: int64(os.Getuid()),
-	})
-
-	var notificationManager *fileshare.NotificationManager
-	if err == nil {
-		if settings.Data.Notify {
-			notificationManager, err = fileshare.NewNotificationManager()
-			if err != nil {
-				log.Println("failed to initialize notification manager: ", err)
-			}
-		}
-	} else {
-		log.Println("failed to determine status notifications setting: ", err)
-	}
-
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
-	eventManager := fileshare.NewEventManager(fileshare.FileshareHistoryImplementation(), meshClient, notificationManager)
+	eventManager := fileshare.NewEventManager(fileshare.FileshareHistoryImplementation(), meshClient)
+
 	fileshareImplementation := drop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
 		internal.IsProdEnv(Environment),
 	)
 	eventManager.CancelFunc = fileshareImplementation.Cancel
+
+	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
+		Uid: int64(os.Getuid()),
+	})
+
+	if err == nil {
+		if settings.Data.Notify {
+			err = eventManager.EnableNotifications(fileshareImplementation)
+			if err != nil {
+				log.Println("failed to enable notifications: ", err)
+			}
+		}
+	} else {
+		log.Println("failed to determine status notifications setting: ", err)
+	}
 
 	meshnetIP, err := firstAddressByInterfaceName(nordlynx.InterfaceName)
 	if err != nil {
