@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	flagFilter            = "internal.Filter"
+	flagFilter            = "filter"
 	externalFilter        = "external"
 	internalFilter        = "internal"
 	PeerListArgsUsageText = `
