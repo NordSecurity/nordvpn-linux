@@ -47,9 +47,9 @@ export PKG_VERSION=${VERSION}
 	"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshared-${ARCH}.debug" \
 		"${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared"
 
-mv "${CI_PROJECT_DIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
-mv "${CI_PROJECT_DIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
-mv "${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared" "${BASEDIR}"/usr/bin/nordfileshared
+cp "${CI_PROJECT_DIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
+cp "${CI_PROJECT_DIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
+cp "${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared" "${BASEDIR}"/usr/bin/nordfileshared
 cd "${CI_PROJECT_DIR}"
 
 # copy zsh autocomplete

@@ -37,4 +37,13 @@ RUN wget "http://musl.cc/i686-linux-musl-cross.tgz" -O /tmp/musl.tar.gz \
 
 RUN go install github.com/boumenot/gocover-cobertura@latest
 
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} builder && useradd -l -m -u ${USER_ID} -g builder -G nordvpn builder && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+RUN chown -R builder:builder /go/pkg/mod
+
+USER builder
+
 CMD ["exec", "$@"]
