@@ -3,8 +3,11 @@ package remote
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -85,18 +88,26 @@ func (rc *RConfig) fetchRemoteConfig() error {
 	return nil
 }
 
-// FindRemoteConfigValue provides value of requested key from remote config
-func (rc *RConfig) FindRemoteConfigValue(cfgKey string) (string, error) {
+func (rc *RConfig) fetchRemoteConfigIfTime() error {
 	if time.Now().After(rc.lastUpdate.Add(rc.updatePeriod)) {
 		rc.lastUpdate = time.Now()
 		err := rc.fetchRemoteConfig()
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
 
 	if rc.config == nil {
-		return "", fmt.Errorf("no remote config value")
+		return fmt.Errorf("no remote config value")
+	}
+
+	return nil
+}
+
+// GetValue provides value of requested key from remote config
+func (rc *RConfig) GetValue(cfgKey string) (string, error) {
+	if err := rc.fetchRemoteConfigIfTime(); err != nil {
+		return "", err
 	}
 
 	configParam := rc.config.Parameters
@@ -108,17 +119,85 @@ func (rc *RConfig) FindRemoteConfigValue(cfgKey string) (string, error) {
 	return "", fmt.Errorf("key %s does not exist in remote config", cfgKey)
 }
 
-func (rc *RConfig) GetMinFeatureVersion(featureKey string) (*semver.Version, error) {
-	stringVersion, err := rc.FindRemoteConfigValue(featureKey)
-	if err != nil {
-		return nil, fmt.Errorf("could not find value in remote config, %s", err)
+func stringToSemVersion(stringVersion, prefix string) (*semver.Version, error) {
+	// removing test suffix if any
+	stringVersion = strings.TrimSuffix(stringVersion, "_test")
+	// removing predefined prefix
+	stringVersion = strings.TrimPrefix(stringVersion, prefix)
+	// if version development, remove extra suffix
+	if strings.Contains(stringVersion, "+") {
+		stringVersion = strings.Split(stringVersion, "+")[0]
 	}
 	// if version has v added, remove it.
-	var version *semver.Version
 	stringVersion = strings.Replace(stringVersion, "v", "", 1)
-	version, err = semver.NewVersion(stringVersion)
-	if err != nil {
-		return nil, fmt.Errorf("could not create new semver version from remote config value, %w", err)
+	// in remote config field name dots are not allowed, using underscores instead,
+	// need to replace here
+	stringVersion = strings.ReplaceAll(stringVersion, "_", ".")
+	return semver.NewVersion(stringVersion)
+}
+
+// GetTelioConfig try to find remote config field for app version
+// and load json block from that field
+func (rc *RConfig) GetTelioConfig(stringVersion string) (string, error) {
+	cfg := ""
+
+	if err := rc.fetchRemoteConfigIfTime(); err != nil {
+		return cfg, err
 	}
-	return version, nil
+
+	appVersion, err := stringToSemVersion(stringVersion, "")
+	if err != nil {
+		return cfg, err
+	}
+
+	// build descending ordered version list
+	orderedFields := []*fieldVersion{}
+	for key := range rc.config.Parameters {
+		if strings.HasPrefix(key, RcTelioConfigFieldPrefix) {
+			ver, err := stringToSemVersion(key, RcTelioConfigFieldPrefix)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			orderedFields = insertFieldVersion(orderedFields, &fieldVersion{ver, key})
+		}
+	}
+
+	// find exact version match or first older/lower version
+	versionField, err := findVersionField(orderedFields, appVersion)
+	if err != nil {
+		return cfg, err
+	}
+	log.Println("remote config version field:", versionField)
+
+	jsonString, err := rc.GetValue(versionField)
+	if err != nil {
+		return cfg, err
+	}
+
+	return jsonString, nil
+}
+
+type fieldVersion struct {
+	version   *semver.Version
+	fieldName string
+}
+
+func insertFieldVersion(sourceArray []*fieldVersion, s *fieldVersion) []*fieldVersion {
+	// build list descending order by sem version
+	i := sort.Search(len(sourceArray), func(i int) bool { return sourceArray[i].version.Compare(*s.version) <= 0 })
+	sourceArray = append(sourceArray, nil)
+	copy(sourceArray[i+1:], sourceArray[i:])
+	sourceArray[i] = s
+	return sourceArray
+}
+
+func findVersionField(sourceArray []*fieldVersion, appVersion *semver.Version) (string, error) {
+	for _, item := range sourceArray {
+		// looking for exact or older version
+		if appVersion.Compare(*item.version) >= 0 {
+			return item.fieldName, nil
+		}
+	}
+	return "", errors.New("version field not found in remote config")
 }

@@ -2,8 +2,6 @@
 package config
 
 import (
-	"time"
-
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -29,7 +27,6 @@ func newConfig() *Config {
 		MachineID:  internal.MachineID(),
 		UsersData:  &UsersData{Notify: users},
 		TokensData: map[int64]TokenData{},
-		Features:   map[Feature]FeatureConfig{},
 	}
 }
 
@@ -45,17 +42,16 @@ type Config struct {
 	Analytics    TrueField  `json:"analytics"`
 	Mesh         bool       `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
-	MeshPrivateKey  string                    `json:"mesh_private_key"`
-	MeshDevice      *mesh.Machine             `json:"mesh_device"`
-	KillSwitch      bool                      `json:"kill_switch,omitempty"`
-	AutoConnect     bool                      `json:"auto_connect,omitempty"`
-	IPv6            bool                      `json:"ipv6"`
-	Meshnet         meshnet                   `json:"meshnet"`
-	AutoConnectData AutoConnectData           `json:"auto_connect_data"` // omitempty breaks this
-	UsersData       *UsersData                `json:"users_data,omitempty"`
-	TokensData      map[int64]TokenData       `json:"tokens_data,omitempty"`
-	MachineID       uuid.UUID                 `json:"machine_id,omitempty"`
-	Features        map[Feature]FeatureConfig `json:"features,omitempty"`
+	MeshPrivateKey  string              `json:"mesh_private_key"`
+	MeshDevice      *mesh.Machine       `json:"mesh_device"`
+	KillSwitch      bool                `json:"kill_switch,omitempty"`
+	AutoConnect     bool                `json:"auto_connect,omitempty"`
+	IPv6            bool                `json:"ipv6"`
+	Meshnet         meshnet             `json:"meshnet"`
+	AutoConnectData AutoConnectData     `json:"auto_connect_data"` // omitempty breaks this
+	UsersData       *UsersData          `json:"users_data,omitempty"`
+	TokensData      map[int64]TokenData `json:"tokens_data,omitempty"`
+	MachineID       uuid.UUID           `json:"machine_id,omitempty"`
 }
 
 type AutoConnectData struct {
@@ -90,11 +86,6 @@ type NCData struct {
 type meshnet struct {
 	EnabledByUID uint32 `json:"enabled_by_uid"` // Linux user which enabled meshnet
 	EnabledByGID uint32 `json:"enabled_by_gid"` // Group of Linux user which enabled meshnet
-}
-
-type FeatureConfig struct {
-	IsSupported bool      `json:"is_supported"`
-	LastUpdate  time.Time `json:"last_update"`
 }
 
 func (d *NCData) IsUserIDEmpty() bool {

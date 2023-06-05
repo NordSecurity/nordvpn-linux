@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio"
@@ -13,8 +14,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 )
 
-func getVpnFactory(eventsDbPath string, fwmark uint32, enableNATTraversal, enableLana bool) daemon.FactoryFunc {
-	var telio = libtelio.New(Environment == "prod", eventsDbPath, fwmark, enableNATTraversal, enableLana)
+func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
+	telioCfg remote.RemoteConfigGetter, deviceID, appVersion string) daemon.FactoryFunc {
+	var telio = libtelio.New(!envIsDev, eventsDbPath, fwmark, telioCfg, deviceID, appVersion)
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {
 		case config.Technology_NORDLYNX:

@@ -13,14 +13,14 @@ var (
 )
 
 func newAnalytics(eventsDbPath string, fs *config.Filesystem,
-	ver, salt, env string) *moose.Subscriber {
+	ver, env, id string) *moose.Subscriber {
 	return &moose.Subscriber{
 		EventsDbPath: eventsDbPath,
 		Config:       fs,
 		Version:      ver,
-		Salt:         salt,
 		Environment:  env,
 		Domain:       EventsDomain,
 		Subdomain:    EventsSubdomain,
+		DeviceID:     id,
 	}
 }

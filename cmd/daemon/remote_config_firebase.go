@@ -8,6 +8,6 @@ import (
 
 var FirebaseToken = ""
 
-func versionGetterImplementation() remote.SupportedVersionGetter {
+func remoteConfigGetterImplementation() remote.RemoteConfigGetter {
 	return remote.NewRConfig(remote.UpdatePeriod, FirebaseToken)
 }

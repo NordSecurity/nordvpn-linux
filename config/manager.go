@@ -143,10 +143,6 @@ func (f *Filesystem) load(c *Config) error {
 		c.TokensData = map[int64]TokenData{}
 	}
 
-	if c.Features == nil {
-		c.Features = map[Feature]FeatureConfig{}
-	}
-
 	if c.MachineID == [16]byte{} {
 		c.MachineID = internal.MachineID()
 	}

@@ -49,7 +49,6 @@ type RPC struct {
 	publisher        events.Publisher[string]
 	nameservers      dns.Getter
 	ncClient         nc.NotificationClient
-	supportChecker   SupportChecker
 	analytics        events.Analytics
 	fileshare        meshnet.Fileshare
 	pb.UnimplementedDaemonServer
@@ -76,7 +75,6 @@ func NewRPC(
 	publisher events.Publisher[string],
 	nameservers dns.Getter,
 	ncClient nc.NotificationClient,
-	supportChecker SupportChecker,
 	analytics events.Analytics,
 	fileshare meshnet.Fileshare,
 ) *RPC {
@@ -103,7 +101,6 @@ func NewRPC(
 		publisher:        publisher,
 		nameservers:      nameservers,
 		ncClient:         ncClient,
-		supportChecker:   supportChecker,
 		analytics:        analytics,
 		fileshare:        fileshare,
 	}

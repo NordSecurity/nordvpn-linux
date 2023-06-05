@@ -199,7 +199,6 @@ func TestRpcConnect(t *testing.T) {
 				&subs.Subject[string]{},
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
-				NewMockSupportChecker(),
 				&mockAnalytics{},
 				mock.Fileshare{},
 			)
@@ -279,7 +278,6 @@ func TestRpcReconnect(t *testing.T) {
 		&subs.Subject[string]{},
 		mockNameservers([]string{"1.1.1.1"}),
 		nil,
-		NewMockSupportChecker(),
 		&mockAnalytics{},
 		mock.Fileshare{},
 	)

@@ -31,7 +31,6 @@ type DaemonClient interface {
 	FrontendCountries(ctx context.Context, in *CountriesRequest, opts ...grpc.CallOption) (*CountriesResponse, error)
 	Groups(ctx context.Context, in *GroupsRequest, opts ...grpc.CallOption) (*Payload, error)
 	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error)
-	IsFeatureSupported(ctx context.Context, in *FeatureRequest, opts ...grpc.CallOption) (*Bool, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	LoginOAuth2(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_LoginOAuth2Client, error)
 	LoginOAuth2Callback(ctx context.Context, in *String, opts ...grpc.CallOption) (*Empty, error)
@@ -190,15 +189,6 @@ func (c *daemonClient) Groups(ctx context.Context, in *GroupsRequest, opts ...gr
 func (c *daemonClient) IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error) {
 	out := new(Bool)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/IsLoggedIn", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) IsFeatureSupported(ctx context.Context, in *FeatureRequest, opts ...grpc.CallOption) (*Bool, error) {
-	out := new(Bool)
-	err := c.cc.Invoke(ctx, "/pb.Daemon/IsFeatureSupported", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -484,7 +474,6 @@ type DaemonServer interface {
 	FrontendCountries(context.Context, *CountriesRequest) (*CountriesResponse, error)
 	Groups(context.Context, *GroupsRequest) (*Payload, error)
 	IsLoggedIn(context.Context, *Empty) (*Bool, error)
-	IsFeatureSupported(context.Context, *FeatureRequest) (*Bool, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
 	LoginOAuth2(*Empty, Daemon_LoginOAuth2Server) error
 	LoginOAuth2Callback(context.Context, *String) (*Empty, error)
@@ -545,9 +534,6 @@ func (UnimplementedDaemonServer) Groups(context.Context, *GroupsRequest) (*Paylo
 }
 func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*Bool, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsLoggedIn not implemented")
-}
-func (UnimplementedDaemonServer) IsFeatureSupported(context.Context, *FeatureRequest) (*Bool, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IsFeatureSupported not implemented")
 }
 func (UnimplementedDaemonServer) LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginWithToken not implemented")
@@ -807,24 +793,6 @@ func _Daemon_IsLoggedIn_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).IsLoggedIn(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_IsFeatureSupported_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(FeatureRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).IsFeatureSupported(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.Daemon/IsFeatureSupported",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).IsFeatureSupported(ctx, req.(*FeatureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1352,10 +1320,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsLoggedIn",
 			Handler:    _Daemon_IsLoggedIn_Handler,
-		},
-		{
-			MethodName: "IsFeatureSupported",
-			Handler:    _Daemon_IsFeatureSupported_Handler,
 		},
 		{
 			MethodName: "LoginWithToken",

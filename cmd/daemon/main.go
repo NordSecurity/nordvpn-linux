@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"log"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -251,31 +251,6 @@ func main() {
 	dnsSetter := dns.NewSetter(infoSubject)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
-	versionGetter := versionGetterImplementation()
-
-	var supportChecker daemon.SupportChecker = daemon.NewMockSupportChecker()
-	var meshnetDisabledSubject *subs.Subject[any]
-	if internal.IsProdEnv(Environment) {
-		apiChecker, err := daemon.NewAPISupportChecker(
-			fsystem, Version, versionGetter, defaultAPI, remote.UpdatePeriod)
-		if err != nil {
-			log.Fatalf("can't create support checker: %s", err)
-		}
-
-		meshnetDisabledSubject = apiChecker.GetFeatureDisabledSubs()[config.Feature_MESHNET]
-		supportChecker = apiChecker
-	}
-
-	natTraversalSupported, err := supportChecker.IsSupported(config.Feature_NAT_TRAVERSAL)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking if NAT Traversal is supported: %s", err)
-	}
-
-	telioAnalyticsSupported, err := supportChecker.IsSupported(config.Feature_TELIO_ANALYTICS)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking if Telio analytics is supported: %s", err)
-	}
-
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
 	// TODO: remove once this is fixed: https://github.com/ziglang/zig/issues/11878
 	// P.S. this issue does not happen with Zig 0.10.0, but it requires Go 1.19+
@@ -304,10 +279,13 @@ func main() {
 		}
 	}
 
+	// obfuscated machineID
+	deviceID := fmt.Sprintf("%x", sha256.Sum256([]byte(cfg.MachineID.String()+Salt)))
+
+	remoteConfigGetter := remoteConfigGetterImplementation()
+
 	vpnFactory := getVpnFactory(eventsDbPath, cfg.FirewallMark,
-		internal.IsDevEnv(Environment) || natTraversalSupported,
-		internal.IsDevEnv(Environment) || telioAnalyticsSupported,
-	)
+		internal.IsDevEnv(Environment), remoteConfigGetter, deviceID, Version)
 
 	vpn, err := vpnFactory(cfg.Technology)
 	if err != nil {
@@ -397,15 +375,12 @@ func main() {
 		fileshareImplementation,
 	)
 	meshnetEvents.SelfRemoved.Subscribe(meshUnsetter.NotifyDisabled)
-	if meshnetDisabledSubject != nil {
-		meshnetDisabledSubject.Subscribe(meshUnsetter.NotifyDisabled)
-	}
 
 	authChecker := auth.NewRenewingChecker(fsystem, defaultAPI)
 	endpointResolver := network.NewDefaultResolverChain(fw)
 	notificationClient := nc.NewClient(debugSubject, meshnetEvents.PeerUpdate)
 
-	analytics := newAnalytics(eventsDbPath, fsystem, Version, Salt, Environment)
+	analytics := newAnalytics(eventsDbPath, fsystem, Version, Environment, deviceID)
 	if cfg.Analytics.Get() {
 		if err := analytics.Enable(); err != nil {
 			log.Println(internal.WarningPrefix, err)
@@ -442,7 +417,6 @@ func main() {
 		debugSubject,
 		threatProtectionLiteServers,
 		notificationClient,
-		supportChecker,
 		analytics,
 		fileshareImplementation,
 	)

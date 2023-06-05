@@ -163,24 +163,3 @@ func TestConfigDefaultValues(t *testing.T) {
 		})
 	}
 }
-
-func TestFeaturesMapIsInitialized(t *testing.T) {
-	category.Set(t, category.File)
-
-	salt, ok := os.LookupEnv("SALT")
-	assert.True(t, ok)
-	fs := NewFilesystem("testdata/settings.dat", "testdata/install.dat", salt)
-	var cfg Config
-	err := fs.Load(&cfg)
-	assert.NoError(t, err)
-	assert.NotNil(t, cfg.Features)
-
-	configLocation := "testdata/config"
-	vaultLocation := "testdata/vault"
-	fs = NewFilesystem(configLocation, vaultLocation, "")
-	defer os.Remove(configLocation)
-	defer os.Remove(vaultLocation)
-	err = fs.Load(&cfg)
-	assert.NoError(t, err)
-	assert.NotNil(t, cfg.Features)
-}

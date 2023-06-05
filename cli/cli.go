@@ -467,11 +467,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 		cmd.client = pb.NewDaemonClient(conn)
 		cmd.meshClient = meshpb.NewMeshnetClient(conn)
 		cmd.fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
-
-		cmd.fileshare = cmd.IsFeatureSupported(context.Background(), config.Feature_FILESHARE)
-		if cmd.fileshare {
-			app.Commands = append(app.Commands, fileshareCommand(cmd))
-		}
+		app.Commands = append(app.Commands, fileshareCommand(cmd))
 	}
 
 	app.Commands = addLoaderToActions(cmd, pingErr, app.Commands, daemonURL, lastAppError)
@@ -761,7 +757,6 @@ type cmd struct {
 	configManager     cconfig.Manager
 	config            cconfig.Config
 	loaderInterceptor *LoaderInterceptor
-	fileshare         bool
 }
 
 func newCommander(environment internal.Environment, configManager cconfig.Manager, config cconfig.Config) *cmd {

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	teliogo "github.com/NordSecurity/libtelio/ffi/bindings/linux/go"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -89,9 +90,12 @@ type Libtelio struct {
 var defaultIP = netip.MustParseAddr("10.5.0.2")
 
 type telioFeatures struct {
-	Lana  *lanaConfig  `json:"lana,omitempty"`
-	Paths *pathsConfig `json:"paths,omitempty"`
-	Nurse *nurseConfig `json:"nurse,omitempty"`
+	Lana      *lanaConfig      `json:"lana,omitempty"`
+	Nurse     *nurseConfig     `json:"nurse,omitempty"`
+	Direct    *directConfig    `json:"direct,omitempty"`
+	Derp      *derpConfig      `json:"derp,omitempty"`
+	Wireguard *wireguardConfig `json:"wireguard,omitempty"`
+	ExitDns   string           `json:"exit-dns,omitempty"`
 }
 
 type lanaConfig struct {
@@ -99,46 +103,85 @@ type lanaConfig struct {
 	Prod      bool   `json:"prod"`
 }
 
-type pathsConfig struct {
-	Priority []string `json:"priority,omitempty"`
-	Force    string   `json:"force,omitempty"`
+type directConfig struct {
+	EndpointIntervalSecs int      `json:"endpoint_interval_secs,omitempty"`
+	Providers            []string `json:"providers,omitempty"`
 }
 
 type nurseConfig struct {
-	Fingerprint string `json:"fingerprint"`
+	Fingerprint       string     `json:"fingerprint"`
+	HeartbeatInterval int        `json:"heartbeat_interval,omitempty"`
+	Qos               *qosConfig `json:"qos,omitempty"`
 }
 
-func New(prod bool, eventPath string, fwmark uint32, enableNATTraversal, enableLana bool) *Libtelio {
+type qosConfig struct {
+	RttInterval int      `json:"rtt_interval,omitempty"`
+	RttTries    int      `json:"rtt_tries,omitempty"`
+	RttTypes    []string `json:"rtt_types,omitempty"`
+	Buckets     int      `json:"buckets,omitempty"`
+}
+
+type derpConfig struct {
+	TcpKeepalive  int `json:"tcp_keepalive,omitempty"`
+	DerpKeepalive int `json:"derp_keepalive,omitempty"`
+}
+
+type wireguardConfig struct {
+	PersistentKeepAlive *persistentKeepAliveConfig `json:"persistent_keepalive,omitempty"`
+}
+
+type persistentKeepAliveConfig struct {
+	Proxying int `json:"proxying,omitempty"`
+	Direct   int `json:"direct,omitempty"`
+	Vpn      int `json:"vpn,omitempty"`
+	Stun     int `json:"stun,omitempty"`
+}
+
+func newTelioFeatures() *telioFeatures {
+	return &telioFeatures{
+		Lana: &lanaConfig{},
+		Nurse: &nurseConfig{
+			Qos: &qosConfig{},
+		},
+		Direct: &directConfig{},
+		Derp:   &derpConfig{},
+		Wireguard: &wireguardConfig{
+			PersistentKeepAlive: &persistentKeepAliveConfig{},
+		},
+	}
+}
+
+func handleTelioConfig(eventPath, deviceID, version string, prod bool, remoteConfig remote.RemoteConfigGetter) ([]byte, error) {
+	telioConfig := newTelioFeatures()
+	cfgString, err := remoteConfig.GetTelioConfig(version)
+	if err != nil {
+		log.Printf("getting telio remote config json string: %s\n", err)
+	} else {
+		err := json.Unmarshal([]byte(cfgString), &telioConfig)
+		if err != nil {
+			log.Printf("unmarshaling telio remote config json string: %s\n", err)
+			telioConfig = newTelioFeatures()
+		}
+	}
+	telioConfig.Lana.EventPath = eventPath
+	telioConfig.Lana.Prod = prod
+	telioConfig.Nurse.Fingerprint = deviceID
+	return json.Marshal(telioConfig)
+}
+
+func New(prod bool, eventPath string, fwmark uint32,
+	telioCfg remote.RemoteConfigGetter, deviceID, appVersion string) *Libtelio {
 	events := make(chan state)
 	logLevel := teliogo.TELIOLOGTRACE
 	if prod {
 		logLevel = teliogo.TELIOLOGERROR
 	}
 
-	var featuresCfg telioFeatures
-	if enableLana {
-		featuresCfg.Lana = &lanaConfig{
-			EventPath: eventPath,
-			Prod:      prod,
-		}
-	}
-	if enableNATTraversal {
-		featuresCfg.Paths = &pathsConfig{
-			Priority: []string{"udp-hole-punch", "relay"},
-		}
-	} else {
-		featuresCfg.Paths = &pathsConfig{
-			Priority: []string{"relay"},
-			Force:    "relay",
-		}
-	}
-	featuresCfg.Nurse = &nurseConfig{
-		Fingerprint: "fingerprint_test",
-	}
-	cfg, err := json.Marshal(featuresCfg)
+	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, telioCfg)
 	if err != nil {
 		cfg = []byte("{}")
 	}
+	log.Println("libtelio final config:", string(cfg))
 
 	return &Libtelio{
 		lib: teliogo.NewTelio(

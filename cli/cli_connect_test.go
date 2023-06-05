@@ -46,7 +46,7 @@ func (c mockDaemonClient) Groups(ctx context.Context, in *pb.GroupsRequest, opts
 
 func TestConnectAutoComplete(t *testing.T) {
 	category.Set(t, category.Unit)
-	c := cmd{mockDaemonClient{}, nil, nil, "", nil, config.Config{}, nil, false}
+	c := cmd{mockDaemonClient{}, nil, nil, "", nil, config.Config{}, nil}
 	tests := []struct {
 		name     string
 		expected []string

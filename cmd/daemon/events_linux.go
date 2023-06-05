@@ -34,6 +34,6 @@ func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error   { return 
 func (*dummyAnalytics) NotifyRate(events.ServerRating) error           { return nil }
 
 func newAnalytics(eventsDbPath string, fs *config.Filesystem,
-	version, salt, env string) *dummyAnalytics {
+	version, env, id string) *dummyAnalytics {
 	return &dummyAnalytics{}
 }

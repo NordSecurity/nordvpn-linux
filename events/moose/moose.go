@@ -11,7 +11,6 @@ package moose
 // #cgo LDFLAGS: -ldl -lm
 import "C"
 import (
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"net/http"
@@ -51,9 +50,9 @@ type Subscriber struct {
 	Config        config.Manager
 	Version       string
 	Environment   string
-	Salt          string
 	Domain        string
 	Subdomain     string
+	DeviceID      string
 	currentDomain string
 	enabled       bool
 	mux           sync.RWMutex
@@ -116,8 +115,6 @@ func (s *Subscriber) mooseInit() error {
 		return fmt.Errorf("initializing event domain: %w", err)
 	}
 
-	deviceID := fmt.Sprintf("%x", sha256.Sum256([]byte(cfg.MachineID.String()+s.Salt)))
-
 	if err := s.response(moose.Init(
 		s.EventsDbPath,
 		"linux-app",
@@ -152,7 +149,7 @@ func (s *Subscriber) mooseInit() error {
 	if err := s.response(moose.Set_context_device_os(distroVersion)); err != nil {
 		return fmt.Errorf("setting moose device os: %w", err)
 	}
-	if err := s.response(moose.Set_context_device_fp(deviceID)); err != nil {
+	if err := s.response(moose.Set_context_device_fp(s.DeviceID)); err != nil {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
 	var deviceT moose.Enum_SS_NordvpnappDeviceType
