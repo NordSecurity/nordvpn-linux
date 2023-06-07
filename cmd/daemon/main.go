@@ -72,6 +72,10 @@ var (
 const (
 	EnvKeyPath = "PATH"
 	EnvValPath = ":/bin:/sbin:/usr/bin:/usr/sbin"
+	// EnvIgnoreHeaderValidation can only be used in `dev` builds. Setting this to `1` makes
+	// API client to ignore X-headers. This makes setting up MITM proxies up possible. This
+	// should not be used for regular usage.
+	EnvIgnoreHeaderValidation = "IGNORE_HEADER_VALIDATION"
 )
 
 func init() {
@@ -216,13 +220,20 @@ func main() {
 	transportRotator := rotator.NewTransportRotator(httpClientWithRotator, transports)
 	httpClientWithRotator.CompleteRotator = transportRotator
 
+	validatorFunc := response.ValidateResponseHeaders
+	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
+		validatorFunc = func(headers http.Header, body []byte, vault response.PKVault) error {
+			return nil
+		}
+	}
+
 	defaultAPI := core.NewDefaultAPI(
 		Version,
 		userAgent,
 		internal.Environment(Environment),
 		pkVault,
 		httpClientWithRotator,
-		response.ValidateResponseHeaders,
+		validatorFunc,
 		httpCalls,
 	)
 	repoAPI := daemon.NewRepoAPI(
