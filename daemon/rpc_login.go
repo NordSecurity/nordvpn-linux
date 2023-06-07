@@ -34,8 +34,14 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 	return r.loginCommon(func() (*core.LoginResponse, *pb.LoginResponse, error) {
 		if in.GetToken() != "" {
 			return &core.LoginResponse{
-				Token:     in.GetToken(),
-				ExpiresAt: time.Now().AddDate(0, 1, 0).Format(internal.ServerDateFormat),
+				Token: in.GetToken(),
+				// Setting a very big expiration date here as real expiration date
+				// is unknown just from the token, and there is no way to check for
+				// it. In case token is used but expired, automatic logout will
+				// happen. See: auth/auth.go
+				// Note: bigger year cannot be used as time.Parse cannot parse year
+				// longer than 4 digits as of Go 1.21
+				ExpiresAt: time.Date(9999, time.December, 31, 0, 0, 0, 0, time.UTC).Format(internal.ServerDateFormat),
 			}, nil, nil
 		}
 		return nil, &pb.LoginResponse{
