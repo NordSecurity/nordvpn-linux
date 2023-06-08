@@ -329,7 +329,7 @@ func (nm *NotificationManager) AcceptTransfer(actionID uint32) {
 		return
 	}
 
-	for _, file := range transfer.Files {
+	for _, file := range GetAllTransferFiles(transfer) {
 		if err = nm.fileshare.Accept(transferID, nm.defaultDownloadDir, file.Id); err != nil {
 			nm.sendGenericNotification(acceptFileFailedNotificationSummary, file.Id)
 		}
