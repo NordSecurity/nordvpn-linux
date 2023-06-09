@@ -73,6 +73,11 @@ func filterRoutingAllowed(peers *pb.PeerList) *pb.PeerList {
 	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowRouting })
 	return peers
 }
+func filterSendingFilesAllowed(peers *pb.PeerList) *pb.PeerList {
+	peers.Local = internal.Filter(peers.Local, func(p *pb.Peer) bool { return p.DoIAllowFileshare })
+	peers.External = internal.Filter(peers.External, func(p *pb.Peer) bool { return p.DoIAllowFileshare })
+	return peers
+}
 func filterInternalExternal(peers *pb.PeerList) *pb.PeerList {
 	return peers
 }
@@ -86,6 +91,7 @@ var availableFilters map[string]func(*pb.PeerList) *pb.PeerList = map[string]fun
 	"routing-allowed":          filterRoutingAllowed,
 	"internal":                 filterInternalExternal,
 	"external":                 filterInternalExternal,
+	"allows-sending-files":     filterSendingFilesAllowed,
 }
 
 // MeshPeerList queries the peer list from the meshnet service, and

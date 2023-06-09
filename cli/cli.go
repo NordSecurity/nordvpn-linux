@@ -496,6 +496,7 @@ func fileshareAcceptCommand(c *cmd) *cli.Command {
 				Usage: MsgFileshareNoWaitUsage,
 			},
 		},
+		BashComplete: c.FileshareAutoCompleteTransfersAccept,
 	}
 }
 
@@ -516,6 +517,7 @@ func fileshareCommand(c *cmd) *cli.Command {
 						Usage: MsgFileshareNoWaitUsage,
 					},
 				},
+				BashComplete: c.FileshareAutoCompletePeers,
 			},
 			fileshareAcceptCommand(c),
 			{
@@ -535,10 +537,11 @@ func fileshareCommand(c *cmd) *cli.Command {
 				},
 			},
 			{
-				Name:      FileshareCancelName,
-				Action:    c.FileshareCancel,
-				Usage:     MsgFileshareCancelUsage,
-				ArgsUsage: MsgFileshareCancelArgsUsage,
+				Name:         FileshareCancelName,
+				Action:       c.FileshareCancel,
+				Usage:        MsgFileshareCancelUsage,
+				ArgsUsage:    MsgFileshareCancelArgsUsage,
+				BashComplete: c.FileshareAutoCompleteTransfersCancel,
 			},
 		},
 	}

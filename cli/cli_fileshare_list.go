@@ -47,6 +47,29 @@ func (c *cmd) FileshareList(ctx *cli.Context) error {
 	return nil
 }
 
+func (c *cmd) FileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Direction) {
+	resp, err := c.fileshareClient.List(context.Background(), &pb.Empty{})
+	if err != nil {
+		return
+	}
+	if err := getFileshareResponseToError(resp.GetError()); err != nil {
+		return
+	}
+	transfers := resp.GetTransfers()
+	for _, transfer := range transfers {
+		if transfer.GetDirection() == direction && transfer.GetStatus() == pb.Status_REQUESTED {
+			fmt.Println(transfer.GetId())
+		}
+	}
+}
+func (c *cmd) FileshareAutoCompleteTransfersAccept(ctx *cli.Context) {
+	c.FileshareAutoCompleteTransfers(ctx, pb.Direction_INCOMING)
+}
+
+func (c *cmd) FileshareAutoCompleteTransfersCancel(ctx *cli.Context) {
+	c.FileshareAutoCompleteTransfers(ctx, pb.Direction_OUTGOING)
+}
+
 func transferToOutputString(transfer *pb.Transfer) string {
 	var builder strings.Builder
 	const (

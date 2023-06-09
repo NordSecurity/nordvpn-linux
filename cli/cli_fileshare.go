@@ -10,12 +10,14 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	mpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -163,6 +165,45 @@ func (c *cmd) FileshareSend(ctx *cli.Context) error {
 	fmt.Printf("\r%s", MsgFileshareWaitAccept)
 
 	return statusLoop(c.fileshareClient, client, resp.TransferId)
+}
+
+var cache sync.Map
+
+func (c *cmd) GetCachedPeers(ctx context.Context) (*mpb.GetPeersResponse, error) {
+	cacheKey := "GetPeers"
+	if cachedResponse, ok := cache.Load(cacheKey); ok {
+		return cachedResponse.(*mpb.GetPeersResponse), nil
+	}
+
+	resp, err := c.meshClient.GetPeers(ctx, &mpb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	cache.Store(cacheKey, resp)
+	return resp, nil
+}
+
+func (c *cmd) FileshareAutoCompletePeers(ctx *cli.Context) {
+	resp, err := c.GetCachedPeers(context.Background())
+	if err != nil {
+		return
+	}
+
+	peers, err := getPeersResponseToPeerList(resp)
+	if err != nil {
+		return
+	}
+
+	peers.Local = internal.Filter(peers.Local, func(p *mpb.Peer) bool { return p.DoIAllowFileshare })
+	peers.External = internal.Filter(peers.External, func(p *mpb.Peer) bool { return p.DoIAllowFileshare })
+
+	for _, peer := range peers.Local {
+		fmt.Println(peer.GetHostname())
+	}
+	for _, peer := range peers.External {
+		fmt.Println(peer.GetHostname())
+	}
 }
 
 // FileshareAccept rpc
