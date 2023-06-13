@@ -37,7 +37,6 @@ Please follow the instructions in the following step for setting up the developm
     1. Might need to rename `protoc-gen-go-grpc` binary to `protoc-gen-go_grpc` to work.
 1. Run `mage` to discover and execute build targets.
     1. To use non-Docker targets please refer to `ci/docker/*/Dockerfile` Dockerfiles for necessary dependencies to be installed.
-    1. Please make sure to create a `.env` file, there is a `.env.sample` file that contains a list of variables that need to be set.
 # Building
 ## Building with mage and docker
 Convenient way for building the application is available using the [mage](https://github.com/magefile/mage#installation)
@@ -229,6 +228,11 @@ docker build -t <registry>/<image>[:tag] ci/docker/<image>
 The pushing can be done with:
 ```sh
 docker push <registry>/<image>[:tag]
+```
+### Idempotent docker builds
+By default, mage targets will always pull docker images from the registry. If bellow entry is present in `.env` file, images will be pulled only if they are not present on the host system:
+```
+IDEMPOTENT_DOCKER=1
 ```
 # Linting
 We run [golangci-lint](https://github.com/golangci/golangci-lint) for our changes. You can find our linter setting in [.golangci-lint.yml](.golangci-lint.yml).

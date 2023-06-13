@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	"golang.org/x/exp/slices"
 )
 
 type DockerSettings struct {
@@ -65,10 +66,27 @@ func runDocker(
 	}
 	defer docker.Close()
 
-	fmt.Printf("pulling docker image %s\n", image)
-	if err := pullDocker(ctx, docker, env, image); err != nil {
-		return err
+	pullImage := true
+	if idempotent, ok := env["IDEMPOTENT_DOCKER"]; ok && idempotent == "1" {
+		list, err := docker.ImageList(context.Background(), types.ImageListOptions{})
+		if err != nil {
+			return err
+		}
+
+		imageIndex := slices.IndexFunc(list, func(imageSummary types.ImageSummary) bool {
+			tagIndex := slices.Index(imageSummary.RepoTags, image)
+			return tagIndex != -1
+		})
+		pullImage = imageIndex == -1
 	}
+
+	if pullImage {
+		fmt.Printf("pulling docker image %s\n", image)
+		if err := pullDocker(ctx, docker, env, image); err != nil {
+			return err
+		}
+	}
+
 	name := getNameFromImage(image)
 	fmt.Printf("creating %s docker container\n", name)
 
@@ -121,7 +139,7 @@ func runDocker(
 	}
 
 	fmt.Printf("waiting for %s docker container to finish\n", name)
-	statusCh, errCh := docker.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	statusCh, errCh := docker.ContainerWait(ctx, resp.ID, container.WaitConditionRemoved)
 	attach, err := docker.ContainerAttach(ctx, resp.ID, types.ContainerAttachOptions{
 		Stream: true,
 		Stdin:  true,

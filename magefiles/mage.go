@@ -6,6 +6,7 @@ import (
 	"go/build"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -430,9 +431,16 @@ func (Test) QADocker(ctx context.Context, testGroup, testPattern string) error {
 	return qa(ctx, testGroup, testPattern)
 }
 
-// Run QA tests in Docker container (arguments: {testGroup} {testPattern})
+// Run QA tests in Docker container, builds the package locally and skips the build if it is already
+// present in the package directory (arguments: {testGroup} {testPattern})
 func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(Build.Deb)
+	const debPath string = "dist/app/deb/nordvpn_*_amd64.deb"
+	matches, err := filepath.Glob(debPath)
+
+	if len(matches) == 0 || err != nil {
+		mg.Deps(Build.Deb)
+	}
+
 	return qa(ctx, testGroup, testPattern)
 }
 
