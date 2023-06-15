@@ -1,13 +1,17 @@
+import ipaddress
 from lib import (
     daemon,
     info,
     logging,
     login,
+    network,
 )
 import lib
 import pytest
 import sh
+import socket
 import timeout_decorator
+import socket
 
 
 def setup_module(module):
@@ -88,3 +92,24 @@ def test_whitelist_requires_connection():
 
         assert subnet not in sh.ip.route.show.table(205)
         assert f"port {port}" not in sh.sudo.iptables("-S")
+
+
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_whitelist_subnet():
+    ip_provider = "icanhazip.com"
+    my_ip = sh.curl(ip_provider)
+
+    assert lib.is_connect_successful(sh.nordvpn.connect())
+    with lib.Defer(sh.nordvpn.disconnect):
+        my_vpn_ip = sh.curl(ip_provider)
+        assert my_vpn_ip != my_ip
+
+        _, _, ip_provider_addresses = socket.gethostbyname_ex(ip_provider)
+        for ip in ip_provider_addresses:
+            sh.nordvpn.whitelist.add.subnet(f"{ip}/32")
+        with lib.Defer(sh.nordvpn.whitelist.remove.all):
+            my_vpn_ip_after_whitelist = sh.curl(ip_provider)
+            assert my_vpn_ip_after_whitelist == my_ip
+            
+

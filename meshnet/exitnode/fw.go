@@ -326,7 +326,7 @@ func clearFiltering(commandFunc runCommandFunc) error {
 
 	out, err := commandFunc(cmd, "-S")
 	if err != nil {
-		return fmt.Errorf("listening iptables rules: %w", err)
+		return fmt.Errorf("listing iptables rules: %w", err)
 	}
 	for _, line := range strings.Split(string(out), "\n") {
 		if !strings.Contains(line, "FORWARD") ||
@@ -337,7 +337,7 @@ func clearFiltering(commandFunc runCommandFunc) error {
 		out, err := commandFunc(cmd, strings.Split(strings.ReplaceAll(line, "-A ", "-D "), " ")...)
 		if err != nil {
 			return fmt.Errorf(
-				"deieting FORWARD rule %s: %w: %s",
+				"deleting FORWARD rule %s: %w: %s",
 				line, err, string(out))
 		}
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/whitelist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -113,6 +114,7 @@ type Combined struct {
 	dnsSetter          dns.Setter
 	ipv6               ipv6.Blocker
 	fw                 firewall.Service
+	whitelistRouting   whitelist.Routing
 	devices            device.ListFunc
 	policyRouter       routes.PolicyService
 	dnsHostSetter      dns.HostnameSetter
@@ -149,6 +151,7 @@ func NewCombined(
 	dnsSetter dns.Setter,
 	ipv6 ipv6.Blocker,
 	fw firewall.Service,
+	whitelist whitelist.Routing,
 	devices device.ListFunc,
 	policyRouter routes.PolicyService,
 	dnsHostSetter dns.HostnameSetter,
@@ -158,22 +161,23 @@ func NewCombined(
 	fwmark uint32,
 ) *Combined {
 	return &Combined{
-		vpnet:           vpnet,
-		mesh:            mesh,
-		gateway:         gateway,
-		publisher:       publisher,
-		whitelistRouter: whitelistRouter,
-		dnsSetter:       dnsSetter,
-		ipv6:            ipv6,
-		fw:              fw,
-		devices:         devices,
-		policyRouter:    policyRouter,
-		dnsHostSetter:   dnsHostSetter,
-		router:          router,
-		peerRouter:      peerRouter,
-		exitNode:        exitNode,
-		rules:           []string{},
-		fwmark:          fwmark,
+		vpnet:            vpnet,
+		mesh:             mesh,
+		gateway:          gateway,
+		publisher:        publisher,
+		whitelistRouter:  whitelistRouter,
+		dnsSetter:        dnsSetter,
+		ipv6:             ipv6,
+		fw:               fw,
+		whitelistRouting: whitelist,
+		devices:          devices,
+		policyRouter:     policyRouter,
+		dnsHostSetter:    dnsHostSetter,
+		router:           router,
+		peerRouter:       peerRouter,
+		exitNode:         exitNode,
+		rules:            []string{},
+		fwmark:           fwmark,
 	}
 }
 
@@ -847,6 +851,9 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 			Direction:      firewall.TwoWay,
 			Allow:          true,
 		})
+		if err := netw.whitelistRouting.EnableSubnets(subnets, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
+			return fmt.Errorf("enabling whitelist routing: %w", err)
+		}
 	}
 
 	for _, pair := range []struct {
@@ -872,6 +879,9 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 				Ports:      ports,
 				Allow:      true,
 			})
+			if err := netw.whitelistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
+				return fmt.Errorf("enabling whitelist routing: %w", err)
+			}
 		}
 	}
 
@@ -904,6 +914,11 @@ func (netw *Combined) unsetWhitelist() error {
 			return err
 		}
 	}
+
+	if err := netw.whitelistRouting.Disable(); err != nil {
+		return fmt.Errorf("disabling whitelist routing: %w", err)
+	}
+
 	return nil
 }
 

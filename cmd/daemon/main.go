@@ -24,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/whitelist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
@@ -342,6 +343,9 @@ func main() {
 		dnsSetter,
 		ipv6.NewIpv6(),
 		fw,
+		whitelist.NewWhitelistRouting(func(command string, arg ...string) ([]byte, error) {
+			return exec.Command(command, arg...).CombinedOutput()
+		}),
 		device.ListPhysical,
 		routes.NewPolicyRouter(
 			&norule.Facade{},

@@ -2,6 +2,8 @@ from lib import daemon, info, logging, login, meshnet, ssh
 import lib
 import sh
 import requests
+import pytest
+import timeout_decorator
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -43,11 +45,12 @@ def teardown_function(function):
 
 
 def test_meshnet_connect():
-    meshnet.add_peer(ssh_client)
-    # Ideally peer update should happen through Notification Center, but that doesn't work often
-    sh.nordvpn.meshnet.peer.refresh()
-    assert meshnet.is_peer_reachable(ssh_client)
-    meshnet.remove_all_peers()
+    with lib.Defer(meshnet.remove_all_peers):
+        meshnet.add_peer(ssh_client)
+        # Ideally peer update should happen through Notification Center, but that doesn't work often
+        sh.nordvpn.meshnet.peer.refresh()
+        assert meshnet.is_peer_reachable(ssh_client)
+    
 
 
 def test_mesh_removed_machine_by_other():
@@ -85,3 +88,31 @@ def test_mesh_removed_machine_by_other():
         assert "Meshnet is not enabled." in str(e)
 
     sh.nordvpn.set.meshnet.on() # enable back on for other tests
+
+
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+# This doesn't directly test meshnet, but it uses it
+def test_whitelist_incoming_connection():
+    with lib.Defer(meshnet.remove_all_peers):
+        meshnet.add_peer(ssh_client)
+        # Ideally peer update should happen through Notification Center, but that doesn't work often
+        sh.nordvpn.meshnet.peer.refresh()
+        my_ip = ssh_client.exec_command("echo $SSH_CLIENT").split()[0]
+
+        peer_hostname = meshnet.get_this_device(ssh_client.exec_command("nordvpn mesh peer list"))
+        # Initiate ssh connection via mesh because we are going to lose the main connection
+        ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
+        ssh_client_mesh.connect()
+        with lib.Defer(ssh_client_mesh.disconnect):
+            ssh_client_mesh.exec_command("nordvpn c")
+            with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn d")):
+                # We should not have direct connection anymore after connecting to VPN
+                with pytest.raises(sh.ErrorReturnCode_1) as ex:
+                    assert "icmp_seq=" not in sh.ping("-c", "1", "qa-peer")
+
+                    ssh_client_mesh.exec_command(f"nordvpn whitelist add subnet {my_ip}/32")
+                    with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn whitelist remove all")):
+                        # Direct connection should work again after whitelisting
+                        assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
+

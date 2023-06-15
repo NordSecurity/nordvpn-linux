@@ -55,6 +55,7 @@ func main() {
 		nil,
 		nil,
 		nil,
+		nil,
 		0,
 	)
 	daemon.JobInsights(dm, api, netw, true)()

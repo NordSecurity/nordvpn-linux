@@ -11,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/whitelist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -99,6 +100,12 @@ func (f *workingFirewall) Delete(rules []string) error {
 func (workingFirewall) Enable() error   { return nil }
 func (workingFirewall) Disable() error  { return nil }
 func (workingFirewall) IsEnabled() bool { return true }
+
+type workingWhitelistRouting struct{}
+
+func (workingWhitelistRouting) EnablePorts([]int, string, string) error    { return nil }
+func (workingWhitelistRouting) EnableSubnets([]netip.Prefix, string) error { return nil }
+func (workingWhitelistRouting) Disable() error                             { return nil }
 
 type failingFirewall struct{}
 
@@ -207,6 +214,7 @@ func TestCombined_Start(t *testing.T) {
 		dns             dns.Setter
 		vpn             vpn.VPN
 		fw              firewall.Service
+		whitelist       whitelist.Routing
 		devices         device.ListFunc
 		routing         routes.PolicyService
 		err             error
@@ -218,6 +226,7 @@ func TestCombined_Start(t *testing.T) {
 			dns:             workingDNS{},
 			vpn:             nil,
 			fw:              &workingFirewall{},
+			whitelist:       &workingWhitelistRouting{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errNilVPN,
@@ -229,6 +238,7 @@ func TestCombined_Start(t *testing.T) {
 			dns:             workingDNS{},
 			vpn:             testvpn.Failing{},
 			fw:              &workingFirewall{},
+			whitelist:       &workingWhitelistRouting{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errors.ErrOnPurpose,
@@ -240,6 +250,7 @@ func TestCombined_Start(t *testing.T) {
 			dns:             workingDNS{},
 			vpn:             testvpn.WorkingInactive{},
 			fw:              failingFirewall{},
+			whitelist:       &workingWhitelistRouting{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errors.ErrOnPurpose,
@@ -251,6 +262,7 @@ func TestCombined_Start(t *testing.T) {
 			dns:             failingDNS{},
 			vpn:             testvpn.WorkingInactive{},
 			fw:              &workingFirewall{},
+			whitelist:       &workingWhitelistRouting{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errors.ErrOnPurpose,
@@ -262,6 +274,7 @@ func TestCombined_Start(t *testing.T) {
 			dns:             workingDNS{},
 			vpn:             testvpn.WorkingInactive{},
 			fw:              &workingFirewall{},
+			whitelist:       &workingWhitelistRouting{},
 			devices:         failingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             errors.ErrOnPurpose,
@@ -273,6 +286,7 @@ func TestCombined_Start(t *testing.T) {
 			dns:             workingDNS{},
 			vpn:             testvpn.Working{},
 			fw:              &workingFirewall{},
+			whitelist:       &workingWhitelistRouting{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
 			err:             nil,
@@ -290,6 +304,7 @@ func TestCombined_Start(t *testing.T) {
 				test.dns,
 				&workingIpv6{},
 				test.fw,
+				test.whitelist,
 				test.devices,
 				test.routing,
 				nil,
@@ -356,6 +371,7 @@ func TestCombined_Stop(t *testing.T) {
 				&workingIpv6{},
 				&workingFirewall{},
 				nil,
+				nil,
 				workingRoutingSetup{},
 				nil,
 				workingRouter{},
@@ -399,7 +415,7 @@ func TestCombined_TransferRates(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// Test does not rely on any of the values provided via constructor
 			// so it's fine to pass nils to all of them.
-			netw := NewCombined(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0)
+			netw := NewCombined(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0)
 			// injecting VPN implementation without calling netw.Start
 			netw.vpnet = test.vpn
 			connStus, err := netw.ConnectionStatus()
@@ -462,6 +478,7 @@ func TestCombined_SetDNS(t *testing.T) {
 				nil,
 				nil,
 				nil,
+				nil,
 				0,
 			)
 			netw.vpnet = testvpn.Working{}
@@ -508,6 +525,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				nil,
 				nil,
 				nil,
+				nil,
 				0,
 			)
 			netw.vpnet = testvpn.Working{}
@@ -521,31 +539,35 @@ func TestCombined_ResetWhitelist(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name    string
-		fw      firewall.Service
-		devices device.ListFunc
-		routing routes.PolicyService
-		err     error
+		name      string
+		fw        firewall.Service
+		whitelist whitelist.Routing
+		devices   device.ListFunc
+		routing   routes.PolicyService
+		err       error
 	}{
 		{
-			name:    "firewall failure",
-			fw:      failingFirewall{},
-			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
-			err:     errors.ErrOnPurpose,
+			name:      "firewall failure",
+			fw:        failingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			devices:   workingDeviceList,
+			routing:   workingRoutingSetup{},
+			err:       errors.ErrOnPurpose,
 		},
 		{
-			name:    "device listing failure",
-			fw:      &workingFirewall{},
-			devices: failingDeviceList,
-			err:     errors.ErrOnPurpose,
-			routing: workingRoutingSetup{},
+			name:      "device listing failure",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			devices:   failingDeviceList,
+			err:       errors.ErrOnPurpose,
+			routing:   workingRoutingSetup{},
 		},
 		{
-			name:    "success",
-			fw:      &workingFirewall{},
-			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
+			name:      "success",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			devices:   workingDeviceList,
+			routing:   workingRoutingSetup{},
 		},
 	}
 
@@ -560,6 +582,7 @@ func TestCombined_ResetWhitelist(t *testing.T) {
 				workingDNS{},
 				workingIpv6{},
 				test.fw,
+				test.whitelist,
 				test.devices,
 				test.routing,
 				nil,
@@ -618,6 +641,7 @@ func TestCombined_BlockTraffic(t *testing.T) {
 				nil,
 				nil,
 				test.fw,
+				nil,
 				test.devices,
 				test.routing,
 				nil,
@@ -663,6 +687,7 @@ func TestCombined_UnblockTraffic(t *testing.T) {
 				nil,
 				nil,
 				test.fw,
+				nil,
 				nil,
 				nil,
 				nil,
@@ -721,6 +746,7 @@ func TestCombined_AllowIPv6Traffic(t *testing.T) {
 				nil,
 				nil,
 				test.fw,
+				nil,
 				test.devices,
 				test.routing,
 				nil,
@@ -772,6 +798,7 @@ func TestCombined_StopAllowedIPv6Traffic(t *testing.T) {
 				nil,
 				nil,
 				nil,
+				nil,
 				0,
 			)
 			assert.ErrorIs(t, netw.stopAllowedIPv6Traffic(), test.err)
@@ -783,61 +810,67 @@ func TestCombined_SetWhitelist(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name      string
-		devices   device.ListFunc
-		routing   routes.PolicyService
-		rt        routes.Service
-		fw        firewall.Service
-		whitelist config.Whitelist
-		err       error
+		name             string
+		devices          device.ListFunc
+		routing          routes.PolicyService
+		rt               routes.Service
+		fw               firewall.Service
+		whitelistRouting whitelist.Routing
+		whitelist        config.Whitelist
+		err              error
 	}{
 		{
-			name:    "device listing failure",
-			devices: failingDeviceList,
-			routing: workingRoutingSetup{},
-			rt:      workingRouter{},
-			fw:      &workingFirewall{},
+			name:             "device listing failure",
+			devices:          failingDeviceList,
+			routing:          workingRoutingSetup{},
+			rt:               workingRouter{},
+			fw:               &workingFirewall{},
+			whitelistRouting: workingWhitelistRouting{},
 			whitelist: config.NewWhitelist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
 			err: errors.ErrOnPurpose,
 		},
 		{
-			name:    "router failure",
-			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
-			rt:      failingRouter{},
-			fw:      &workingFirewall{},
+			name:             "router failure",
+			devices:          workingDeviceList,
+			routing:          workingRoutingSetup{},
+			rt:               failingRouter{},
+			fw:               &workingFirewall{},
+			whitelistRouting: workingWhitelistRouting{},
 			whitelist: config.NewWhitelist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
 			err: errors.ErrOnPurpose,
 		},
 		{
-			name:    "firewall failure",
-			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
-			rt:      workingRouter{},
-			fw:      failingFirewall{},
+			name:             "firewall failure",
+			devices:          workingDeviceList,
+			routing:          workingRoutingSetup{},
+			rt:               workingRouter{},
+			fw:               failingFirewall{},
+			whitelistRouting: workingWhitelistRouting{},
 			whitelist: config.NewWhitelist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
 			err: errors.ErrOnPurpose,
 		},
 		{
-			name:      "invalid whitelist",
-			devices:   workingDeviceList,
-			routing:   workingRoutingSetup{},
-			rt:        workingRouter{},
-			fw:        &workingFirewall{},
-			whitelist: config.NewWhitelist(nil, nil, nil),
+			name:             "invalid whitelist",
+			devices:          workingDeviceList,
+			routing:          workingRoutingSetup{},
+			rt:               workingRouter{},
+			fw:               &workingFirewall{},
+			whitelistRouting: &workingWhitelistRouting{},
+			whitelist:        config.NewWhitelist(nil, nil, nil),
 		},
 		{
-			name:    "success",
-			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
-			rt:      workingRouter{},
-			fw:      &workingFirewall{},
+			name:             "success",
+			devices:          workingDeviceList,
+			routing:          workingRoutingSetup{},
+			rt:               workingRouter{},
+			fw:               &workingFirewall{},
+			whitelistRouting: workingWhitelistRouting{},
 			whitelist: config.NewWhitelist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
@@ -855,6 +888,7 @@ func TestCombined_SetWhitelist(t *testing.T) {
 				&workingDNS{},
 				&workingIpv6{},
 				test.fw,
+				test.whitelistRouting,
 				test.devices,
 				test.routing,
 				nil,
@@ -872,27 +906,31 @@ func TestCombined_UnsetWhitelist(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name string
-		fw   firewall.Service
-		rt   routes.Service
-		err  error
+		name      string
+		fw        firewall.Service
+		whitelist whitelist.Routing
+		rt        routes.Service
+		err       error
 	}{
 		{
-			name: "firewall failure",
-			fw:   failingFirewall{},
-			rt:   workingRouter{},
-			err:  errors.ErrOnPurpose,
+			name:      "firewall failure",
+			fw:        failingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        workingRouter{},
+			err:       errors.ErrOnPurpose,
 		},
 		{
-			name: "router failure",
-			fw:   &workingFirewall{},
-			rt:   failingRouter{},
-			err:  errors.ErrOnPurpose,
+			name:      "router failure",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        failingRouter{},
+			err:       errors.ErrOnPurpose,
 		},
 		{
-			name: "success",
-			fw:   &workingFirewall{},
-			rt:   workingRouter{},
+			name:      "success",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        workingRouter{},
 		},
 	}
 
@@ -907,6 +945,7 @@ func TestCombined_UnsetWhitelist(t *testing.T) {
 				&workingDNS{},
 				&workingIpv6{},
 				test.fw,
+				test.whitelist,
 				workingDeviceList,
 				workingRoutingSetup{},
 				nil,
@@ -928,43 +967,48 @@ func TestCombined_SetNetwork(t *testing.T) {
 	TCPPorts := []int64{220, 35}
 
 	tests := []struct {
-		name    string
-		fw      firewall.Service
-		rt      routes.Service
-		devices device.ListFunc
-		routing routes.PolicyService
-		err     error
+		name      string
+		fw        firewall.Service
+		whitelist whitelist.Routing
+		rt        routes.Service
+		devices   device.ListFunc
+		routing   routes.PolicyService
+		err       error
 	}{
 		{
-			name:    "firewall failure",
-			fw:      failingFirewall{},
-			rt:      workingRouter{},
-			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
-			err:     errors.ErrOnPurpose,
+			name:      "firewall failure",
+			fw:        failingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        workingRouter{},
+			devices:   workingDeviceList,
+			routing:   workingRoutingSetup{},
+			err:       errors.ErrOnPurpose,
 		},
 		{
-			name:    "router failure",
-			fw:      &workingFirewall{},
-			rt:      failingRouter{},
-			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
-			err:     errors.ErrOnPurpose,
+			name:      "router failure",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        failingRouter{},
+			devices:   workingDeviceList,
+			routing:   workingRoutingSetup{},
+			err:       errors.ErrOnPurpose,
 		},
 		{
-			name:    "device listing failure",
-			fw:      &workingFirewall{},
-			rt:      workingRouter{},
-			devices: failingDeviceList,
-			routing: workingRoutingSetup{},
-			err:     errors.ErrOnPurpose,
+			name:      "device listing failure",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        workingRouter{},
+			devices:   failingDeviceList,
+			routing:   workingRoutingSetup{},
+			err:       errors.ErrOnPurpose,
 		},
 		{
-			name:    "success",
-			fw:      &workingFirewall{},
-			rt:      workingRouter{},
-			routing: workingRoutingSetup{},
-			devices: workingDeviceList,
+			name:      "success",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        workingRouter{},
+			routing:   workingRoutingSetup{},
+			devices:   workingDeviceList,
 		},
 	}
 
@@ -979,6 +1023,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 				&workingDNS{},
 				&workingIpv6{},
 				test.fw,
+				test.whitelist,
 				test.devices,
 				test.routing,
 				nil,
@@ -1002,27 +1047,31 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name string
-		fw   firewall.Service
-		rt   routes.Service
-		err  error
+		name      string
+		fw        firewall.Service
+		whitelist whitelist.Routing
+		rt        routes.Service
+		err       error
 	}{
 		{
-			name: "firewall failure",
-			fw:   failingFirewall{},
-			rt:   workingRouter{},
-			err:  errors.ErrOnPurpose,
+			name:      "firewall failure",
+			fw:        failingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        workingRouter{},
+			err:       errors.ErrOnPurpose,
 		},
 		{
-			name: "router failure",
-			fw:   &workingFirewall{},
-			rt:   failingRouter{},
-			err:  errors.ErrOnPurpose,
+			name:      "router failure",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        failingRouter{},
+			err:       errors.ErrOnPurpose,
 		},
 		{
-			name: "success",
-			fw:   &workingFirewall{},
-			rt:   workingRouter{},
+			name:      "success",
+			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
+			rt:        workingRouter{},
 		},
 	}
 
@@ -1037,6 +1086,7 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 				&workingDNS{},
 				&workingIpv6{},
 				test.fw,
+				test.whitelist,
 				workingDeviceList,
 				workingRoutingSetup{},
 				nil,
@@ -1056,6 +1106,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 	tests := []struct {
 		name      string
 		fw        firewall.Service
+		whitelist whitelist.Routing
 		rt        routes.Service
 		publicKey string
 		address   string
@@ -1065,6 +1116,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 		{
 			name:      "a1",
 			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
 			rt:        workingRouter{},
 			publicKey: "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
 			address:   "100.100.10.1",
@@ -1073,6 +1125,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 		{
 			name:      "a2",
 			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
 			rt:        workingRouter{},
 			publicKey: "a70ad213-fa09-4ae4-890b-bea12697b9f0",
 			address:   "100.100.10.1",
@@ -1081,6 +1134,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 		{
 			name:      "a3",
 			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
 			rt:        workingRouter{},
 			publicKey: "a2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
@@ -1099,6 +1153,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 				&workingDNS{},
 				&workingIpv6{},
 				test.fw,
+				test.whitelist,
 				workingDeviceList,
 				workingRoutingSetup{},
 				nil,
@@ -1120,6 +1175,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 	tests := []struct {
 		name      string
 		fw        firewall.Service
+		whitelist whitelist.Routing
 		rt        routes.Service
 		publicKey string
 		address   string
@@ -1129,6 +1185,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 		{
 			name:      "b1",
 			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
 			rt:        workingRouter{},
 			publicKey: "bc30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
 			address:   "100.100.10.1",
@@ -1137,6 +1194,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 		{
 			name:      "b2",
 			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
 			rt:        workingRouter{},
 			publicKey: "b70ad213-fa09-4ae4-890b-bea12697b9f0",
 			address:   "100.100.10.1",
@@ -1145,6 +1203,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 		{
 			name:      "b3",
 			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
 			rt:        workingRouter{},
 			publicKey: "b2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
@@ -1163,6 +1222,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 				&workingDNS{},
 				&workingIpv6{},
 				test.fw,
+				test.whitelist,
 				workingDeviceList,
 				workingRoutingSetup{},
 				nil,
@@ -1185,6 +1245,7 @@ func TestCombined_SetMesh(t *testing.T) {
 
 	tests := []struct {
 		fw        firewall.Service
+		whitelist whitelist.Routing
 		rt        routes.Service
 		publicKey string
 		address   string
@@ -1193,6 +1254,7 @@ func TestCombined_SetMesh(t *testing.T) {
 	}{
 		{
 			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
 			rt:        workingRouter{},
 			publicKey: "c2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
@@ -1211,6 +1273,7 @@ func TestCombined_SetMesh(t *testing.T) {
 				&workingDNS{},
 				&workingIpv6{},
 				test.fw,
+				test.whitelist,
 				workingDeviceList,
 				workingRoutingSetup{},
 				&workingHostSetter{},
@@ -1233,6 +1296,7 @@ func TestCombined_UnSetMesh(t *testing.T) {
 
 	tests := []struct {
 		fw        firewall.Service
+		whitelist whitelist.Routing
 		rt        routes.Service
 		publicKey string
 		address   string
@@ -1241,6 +1305,7 @@ func TestCombined_UnSetMesh(t *testing.T) {
 	}{
 		{
 			fw:        &workingFirewall{},
+			whitelist: workingWhitelistRouting{},
 			rt:        workingRouter{},
 			publicKey: "d2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
@@ -1259,6 +1324,7 @@ func TestCombined_UnSetMesh(t *testing.T) {
 				&workingDNS{},
 				&workingIpv6{},
 				test.fw,
+				test.whitelist,
 				workingDeviceList,
 				workingRoutingSetup{},
 				&workingHostSetter{},
@@ -1317,6 +1383,7 @@ func TestCombined_allowIncoming(t *testing.T) {
 				nil,
 				nil,
 				nil,
+				nil,
 				0,
 			)
 			netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
@@ -1363,6 +1430,7 @@ func TestCombined_Block(t *testing.T) {
 				nil,
 				nil,
 				test.fw,
+				nil,
 				nil,
 				nil,
 				nil,
@@ -1423,6 +1491,7 @@ func TestCombined_allowGeneratedRule(t *testing.T) {
 				nil,
 				nil,
 				nil,
+				nil,
 				0,
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
@@ -1458,6 +1527,7 @@ func TestCombined_BlocNonExistingRuleFail(t *testing.T) {
 				nil,
 				nil,
 				test.fw,
+				nil,
 				nil,
 				nil,
 				nil,
@@ -1506,6 +1576,7 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 				nil,
 				nil,
 				nil,
+				nil,
 				0,
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
@@ -1533,6 +1604,7 @@ func TestCombined_Refresh(t *testing.T) {
 		&workingDNS{},
 		&workingIpv6{},
 		&fw,
+		nil,
 		workingDeviceList,
 		workingRoutingSetup{},
 		&hostSetter,
