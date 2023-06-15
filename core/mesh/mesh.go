@@ -22,6 +22,7 @@ type Registry interface {
 		doIAllowRouting bool,
 		doIAllowLocalNetwork bool,
 		doIAllowFileshare bool,
+		alwaysAcceptFiles bool,
 	) error
 	// Unregister Peer from the mesh network.
 	Unregister(token string, self uuid.UUID) error

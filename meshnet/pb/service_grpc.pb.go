@@ -67,6 +67,10 @@ type MeshnetClient interface {
 	AllowFileshare(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*AllowFileshareResponse, error)
 	// DenyFileshare denies a peer to send files to this device
 	DenyFileshare(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*DenyFileshareResponse, error)
+	// EnableAutomaticFileshare from peer
+	EnableAutomaticFileshare(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*EnableAutomaticFileshareResponse, error)
+	// DisableAutomaticFileshare from peer
+	DisableAutomaticFileshare(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*DisableAutomaticFileshareResponse, error)
 	Connect(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*ConnectResponse, error)
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer
@@ -252,6 +256,24 @@ func (c *meshnetClient) DenyFileshare(ctx context.Context, in *UpdatePeerRequest
 	return out, nil
 }
 
+func (c *meshnetClient) EnableAutomaticFileshare(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*EnableAutomaticFileshareResponse, error) {
+	out := new(EnableAutomaticFileshareResponse)
+	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/EnableAutomaticFileshare", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *meshnetClient) DisableAutomaticFileshare(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*DisableAutomaticFileshareResponse, error) {
+	out := new(DisableAutomaticFileshareResponse)
+	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/DisableAutomaticFileshare", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *meshnetClient) Connect(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*ConnectResponse, error) {
 	out := new(ConnectResponse)
 	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/Connect", in, out, opts...)
@@ -319,6 +341,10 @@ type MeshnetServer interface {
 	AllowFileshare(context.Context, *UpdatePeerRequest) (*AllowFileshareResponse, error)
 	// DenyFileshare denies a peer to send files to this device
 	DenyFileshare(context.Context, *UpdatePeerRequest) (*DenyFileshareResponse, error)
+	// EnableAutomaticFileshare from peer
+	EnableAutomaticFileshare(context.Context, *UpdatePeerRequest) (*EnableAutomaticFileshareResponse, error)
+	// DisableAutomaticFileshare from peer
+	DisableAutomaticFileshare(context.Context, *UpdatePeerRequest) (*DisableAutomaticFileshareResponse, error)
 	Connect(context.Context, *UpdatePeerRequest) (*ConnectResponse, error)
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer
@@ -386,6 +412,12 @@ func (UnimplementedMeshnetServer) AllowFileshare(context.Context, *UpdatePeerReq
 }
 func (UnimplementedMeshnetServer) DenyFileshare(context.Context, *UpdatePeerRequest) (*DenyFileshareResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DenyFileshare not implemented")
+}
+func (UnimplementedMeshnetServer) EnableAutomaticFileshare(context.Context, *UpdatePeerRequest) (*EnableAutomaticFileshareResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnableAutomaticFileshare not implemented")
+}
+func (UnimplementedMeshnetServer) DisableAutomaticFileshare(context.Context, *UpdatePeerRequest) (*DisableAutomaticFileshareResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisableAutomaticFileshare not implemented")
 }
 func (UnimplementedMeshnetServer) Connect(context.Context, *UpdatePeerRequest) (*ConnectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Connect not implemented")
@@ -748,6 +780,42 @@ func _Meshnet_DenyFileshare_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Meshnet_EnableAutomaticFileshare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MeshnetServer).EnableAutomaticFileshare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/meshpb.Meshnet/EnableAutomaticFileshare",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MeshnetServer).EnableAutomaticFileshare(ctx, req.(*UpdatePeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Meshnet_DisableAutomaticFileshare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MeshnetServer).DisableAutomaticFileshare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/meshpb.Meshnet/DisableAutomaticFileshare",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MeshnetServer).DisableAutomaticFileshare(ctx, req.(*UpdatePeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Meshnet_Connect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdatePeerRequest)
 	if err := dec(in); err != nil {
@@ -866,6 +934,14 @@ var Meshnet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DenyFileshare",
 			Handler:    _Meshnet_DenyFileshare_Handler,
+		},
+		{
+			MethodName: "EnableAutomaticFileshare",
+			Handler:    _Meshnet_EnableAutomaticFileshare_Handler,
+		},
+		{
+			MethodName: "DisableAutomaticFileshare",
+			Handler:    _Meshnet_DisableAutomaticFileshare_Handler,
 		},
 		{
 			MethodName: "Connect",

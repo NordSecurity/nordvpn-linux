@@ -111,6 +111,7 @@ func TestMeshAPI_Configure(t *testing.T) {
 				false,
 				false,
 				false,
+				false,
 			)
 			assert.ErrorIs(t, err, test.err)
 		})

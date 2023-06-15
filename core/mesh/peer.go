@@ -100,6 +100,7 @@ type MachinePeer struct {
 	// DoIAllowLocalNetwork access when routing through me?
 	DoIAllowLocalNetwork bool
 	DoIAllowFileshare    bool
+	AlwaysAcceptFiles    bool
 }
 
 func (p MachinePeer) ToProtobuf() *pb.Peer {
@@ -124,6 +125,7 @@ func (p MachinePeer) ToProtobuf() *pb.Peer {
 		DoIAllowRouting:       p.DoIAllowRouting,
 		DoIAllowLocalNetwork:  p.DoIAllowLocalNetwork,
 		DoIAllowFileshare:     p.DoIAllowFileshare,
+		AlwaysAcceptFiles:     p.AlwaysAcceptFiles,
 	}
 }
 

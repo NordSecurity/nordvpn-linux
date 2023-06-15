@@ -181,6 +181,7 @@ func peerToOutputString(peer *pb.Peer) string {
 		{Key: "Allows Routing", Value: nstrings.GetBoolLabel(peer.IsRoutable)},
 		{Key: "Allows Local Network Access", Value: nstrings.GetBoolLabel(peer.IsLocalNetworkAllowed)},
 		{Key: "Allows Sending Files", Value: nstrings.GetBoolLabel(peer.IsFileshareAllowed)},
+		{Key: "Accept fileshare automatically", Value: nstrings.GetBoolLabel(peer.AlwaysAcceptFiles)},
 	}
 	return titledKeyvalListToColoredString(keyval{
 		Key: "Hostname", Value: peer.Hostname,
@@ -428,6 +429,64 @@ func (c *cmd) MeshPeerDenyFileshare(ctx *cli.Context) error {
 	}
 
 	color.Green(MsgMeshnetPeerFileshareDenySuccess, peer.Hostname)
+	return nil
+}
+
+// MeshPeerEnableAutomaticFileshare sends the enable request to meshnet service
+func (c *cmd) MeshPeerEnableAutomaticFileshare(ctx *cli.Context) error {
+	peer, err := c.retrievePeerFromArgs(ctx)
+	if err != nil {
+		return formatError(err)
+	}
+
+	resp, err := c.meshClient.EnableAutomaticFileshare(
+		context.Background(),
+		&pb.UpdatePeerRequest{
+			Identifier: peer.Identifier,
+		},
+	)
+
+	if err != nil {
+		return errors.New(AccountInternalError)
+	}
+
+	if err := enableAutomaticFileshareResponseToError(
+		resp,
+		peer.Hostname,
+	); err != nil {
+		return err
+	}
+
+	color.Green(MsgMeshnetPeerAutomaticFileshareEnableSuccess, peer.Hostname)
+	return nil
+}
+
+// MeshPeerDisableAutomaticFileshare sends the enable request to meshnet service
+func (c *cmd) MeshPeerDisableAutomaticFileshare(ctx *cli.Context) error {
+	peer, err := c.retrievePeerFromArgs(ctx)
+	if err != nil {
+		return formatError(err)
+	}
+
+	resp, err := c.meshClient.DisableAutomaticFileshare(
+		context.Background(),
+		&pb.UpdatePeerRequest{
+			Identifier: peer.Identifier,
+		},
+	)
+
+	if err != nil {
+		return errors.New(AccountInternalError)
+	}
+
+	if err := disableAutomaticFileshareResponseToError(
+		resp,
+		peer.Hostname,
+	); err != nil {
+		return err
+	}
+
+	color.Green(MsgMeshnetPeerAutomaticFileshareDisableSuccess, peer.Hostname)
 	return nil
 }
 
@@ -790,6 +849,64 @@ func denyFileshareResponseToError(
 	}
 }
 
+// enableAutomaticFileshareResponseToError determines whether the allow send response is an error and returns a
+// human readable form of it. Otherwise, returns nil
+func enableAutomaticFileshareResponseToError(
+	resp *pb.EnableAutomaticFileshareResponse,
+	identifier string,
+) error {
+	if resp == nil {
+		return errors.New(AccountInternalError)
+	}
+	switch resp := resp.Response.(type) {
+	case *pb.EnableAutomaticFileshareResponse_Empty:
+		return nil
+	case *pb.EnableAutomaticFileshareResponse_ServiceErrorCode:
+		return serviceErrorCodeToError(resp.ServiceErrorCode)
+	case *pb.EnableAutomaticFileshareResponse_UpdatePeerErrorCode:
+		return updatePeerErrorCodeToError(
+			resp.UpdatePeerErrorCode,
+			identifier,
+		)
+	case *pb.EnableAutomaticFileshareResponse_EnableAutomaticFileshareErrorCode:
+		return enableAutomaticFileshareFileshareErrorCodeToError(
+			resp.EnableAutomaticFileshareErrorCode,
+			identifier,
+		)
+	default:
+		return errors.New(AccountInternalError)
+	}
+}
+
+// disableAutomaticFileshareResponseToError determines whether the allow send response is an error and returns a
+// human readable form of it. Otherwise, returns nil
+func disableAutomaticFileshareResponseToError(
+	resp *pb.DisableAutomaticFileshareResponse,
+	identifier string,
+) error {
+	if resp == nil {
+		return errors.New(AccountInternalError)
+	}
+	switch resp := resp.Response.(type) {
+	case *pb.DisableAutomaticFileshareResponse_Empty:
+		return nil
+	case *pb.DisableAutomaticFileshareResponse_ServiceErrorCode:
+		return serviceErrorCodeToError(resp.ServiceErrorCode)
+	case *pb.DisableAutomaticFileshareResponse_UpdatePeerErrorCode:
+		return updatePeerErrorCodeToError(
+			resp.UpdatePeerErrorCode,
+			identifier,
+		)
+	case *pb.DisableAutomaticFileshareResponse_DisableAutomaticFileshareErrorCode:
+		return disableAutomaticFileshareFileshareErrorCodeToError(
+			resp.DisableAutomaticFileshareErrorCode,
+			identifier,
+		)
+	default:
+		return errors.New(AccountInternalError)
+	}
+}
+
 // removePeerResponseToError determines whether the remove peer
 // response is an error and returns a human readable form of it.
 // Otherwise, returns nil
@@ -988,6 +1105,38 @@ func denyFileshareErrorCodeToError(
 	case pb.DenyFileshareErrorCode_SEND_ALREADY_DENIED:
 		return fmt.Errorf(
 			MsgMeshnetPeerFileshareAlreadyDenied,
+			identifier,
+		)
+	default:
+		return errors.New(AccountInternalError)
+	}
+}
+
+// enableAutomaticFileshareFileshareErrorCodeToError converts allow filesahre error code to a human readable error
+func enableAutomaticFileshareFileshareErrorCodeToError(
+	code pb.EnableAutomaticFileshareErrorCode,
+	identifier string,
+) error {
+	switch code {
+	case pb.EnableAutomaticFileshareErrorCode_AUTOMATIC_FILESHARE_ALREADY_ENABLED:
+		return fmt.Errorf(
+			MsgMeshnetPeerAutomaticFileshareAlreadyEnabled,
+			identifier,
+		)
+	default:
+		return errors.New(AccountInternalError)
+	}
+}
+
+// disableAutomaticFileshareFileshareErrorCodeToError converts allow filesahre error code to a human readable error
+func disableAutomaticFileshareFileshareErrorCodeToError(
+	code pb.DisableAutomaticFileshareErrorCode,
+	identifier string,
+) error {
+	switch code {
+	case pb.DisableAutomaticFileshareErrorCode_AUTOMATIC_FILESHARE_ALREADY_DISABLED:
+		return fmt.Errorf(
+			MsgMeshnetPeerAutomaticFileshareAlreadyDisabled,
 			identifier,
 		)
 	default:

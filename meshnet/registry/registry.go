@@ -48,8 +48,9 @@ func (r *Registry) Configure(
 	doIAllowRouting bool,
 	doIAllowLocalNetwork bool,
 	doIAllowSend bool,
+	alwaysAcceptFiles bool,
 ) error {
-	return r.inner.Configure(token, id, peerID, doIAllowInbound, doIAllowRouting, doIAllowLocalNetwork, doIAllowSend)
+	return r.inner.Configure(token, id, peerID, doIAllowInbound, doIAllowRouting, doIAllowLocalNetwork, doIAllowSend, alwaysAcceptFiles)
 }
 
 // Unregister Peer from the mesh network.

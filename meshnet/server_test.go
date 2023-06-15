@@ -79,7 +79,8 @@ func (*workingNetworker) StatusMap() (map[string]string, error) {
 }
 
 type memory struct {
-	cfg *config.Config
+	cfg     *config.Config
+	saveErr error
 }
 
 func newMemory() *memory {
@@ -87,6 +88,10 @@ func newMemory() *memory {
 }
 
 func (m *memory) SaveWith(fn config.SaveFunc) error {
+	if m.saveErr != nil {
+		return m.saveErr
+	}
+
 	if m.cfg == nil {
 		m.cfg = &config.Config{}
 	}
@@ -159,16 +164,26 @@ func (acceptInvitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error
 type registryAPI struct {
 	localPeers   mesh.Machines
 	machinePeers mesh.MachinePeers
+	listErr      error
+	configureErr error
 }
 
 func (registryAPI) Register(string, mesh.Machine) (*mesh.Machine, error) {
 	return &mesh.Machine{}, nil
 }
 
-func (*registryAPI) Update(string, uuid.UUID, []netip.AddrPort) error                     { return nil }
-func (*registryAPI) Configure(string, uuid.UUID, uuid.UUID, bool, bool, bool, bool) error { return nil }
-func (*registryAPI) Unregister(string, uuid.UUID) error                                   { return nil }
+func (*registryAPI) Update(string, uuid.UUID, []netip.AddrPort) error { return nil }
+
+func (r *registryAPI) Configure(string, uuid.UUID, uuid.UUID, bool, bool, bool, bool, bool) error {
+	return r.configureErr
+}
+
+func (*registryAPI) Unregister(string, uuid.UUID) error { return nil }
+
 func (r *registryAPI) List(string, uuid.UUID) (mesh.MachinePeers, error) {
+	if r.listErr != nil {
+		return nil, r.listErr
+	}
 	return r.machinePeers, nil
 }
 
@@ -199,6 +214,47 @@ type failingFileshare struct{ Fileshare }
 
 func (failingFileshare) Enable(uint32, uint32) error  { return fmt.Errorf("error") }
 func (failingFileshare) Disable(uint32, uint32) error { return fmt.Errorf("error") }
+
+func newMockedServer(
+	t *testing.T,
+	listErr error,
+	saveConfigErr error,
+	configureErr error,
+	isMeshOn bool,
+	peers []mesh.MachinePeer) (*Server, *workingNetworker) {
+	t.Helper()
+
+	registryApi := registryAPI{}
+	registryApi.machinePeers = peers
+	registryApi.listErr = listErr
+	registryApi.configureErr = configureErr
+
+	networker := workingNetworker{}
+	networker.allowedFileshare = []UniqueAddress{}
+
+	configManager := newMemory()
+	configManager.saveErr = saveConfigErr
+
+	server := NewServer(
+		meshRenewChecker{},
+		configManager,
+		registrationChecker{},
+		acceptInvitationsAPI{},
+		&networker,
+		&registryApi,
+		dnsGetter{},
+		&subs.Subject[error]{},
+		&subs.Subject[[]string]{},
+		&subs.Subject[bool]{},
+		mock.Fileshare{},
+	)
+
+	if isMeshOn {
+		server.EnableMeshnet(context.Background(), &pb.Empty{})
+	}
+
+	return server, &networker
+}
 
 func TestServer_EnableMeshnet(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -1006,6 +1062,256 @@ func TestServer_DenyFileshare(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedResponse, resp)
 			assert.Equal(t, test.expectedAllowedIPs, networker.blockedFileshare)
+		})
+	}
+}
+
+func TestServer_EnableAutomaticFileshare(t *testing.T) {
+	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
+	peerAleradyEnabledUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+
+	peers := []mesh.MachinePeer{
+		{
+			ID:                uuid.MustParse(peerValidUuid),
+			DoIAllowFileshare: false,
+		},
+		{
+			ID:                uuid.MustParse(peerAleradyEnabledUuid),
+			DoIAllowFileshare: true,
+			AlwaysAcceptFiles: true,
+		},
+	}
+
+	tests := []struct {
+		name             string
+		peerUuid         string
+		listErr          error
+		configureErr     error
+		saveConfigErr    error
+		isMeshOn         bool
+		expectedResponse *pb.EnableAutomaticFileshareResponse
+	}{
+		{
+			name:             "enable for valid peer",
+			peerUuid:         peerValidUuid,
+			isMeshOn:         true,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{Response: &pb.EnableAutomaticFileshareResponse_Empty{}},
+		},
+		{
+			name:     "automatic fileshare already enabled",
+			peerUuid: peerAleradyEnabledUuid,
+			isMeshOn: true,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_EnableAutomaticFileshareErrorCode{
+					EnableAutomaticFileshareErrorCode: pb.EnableAutomaticFileshareErrorCode_AUTOMATIC_FILESHARE_ALREADY_ENABLED,
+				},
+			},
+		},
+		{
+			name:     "unknown peer",
+			peerUuid: "invalid",
+			isMeshOn: true,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_UpdatePeerErrorCode{
+					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				},
+			},
+		},
+		{
+			name:     "not authorized to list peers",
+			peerUuid: peerValidUuid,
+			listErr:  core.ErrUnauthorized,
+			isMeshOn: true,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				},
+			},
+		},
+		{
+			name:     "meshnet is not on",
+			peerUuid: peerValidUuid,
+			listErr:  fmt.Errorf("generic error"),
+			isMeshOn: false,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_MeshnetErrorCode{
+					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+				},
+			},
+		},
+		{
+			name:     "unknown error",
+			peerUuid: peerValidUuid,
+			listErr:  fmt.Errorf("generic error"),
+			isMeshOn: true,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				},
+			},
+		},
+		{
+			name:          "failed to save config",
+			peerUuid:      peerValidUuid,
+			listErr:       core.ErrUnauthorized,
+			saveConfigErr: fmt.Errorf("generic error"),
+			isMeshOn:      true,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+				},
+			},
+		},
+		{
+			name:         "failed to configure peer",
+			peerUuid:     peerValidUuid,
+			configureErr: fmt.Errorf("generic error"),
+			isMeshOn:     true,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server, _ := newMockedServer(t,
+				test.listErr,
+				test.saveConfigErr,
+				test.configureErr,
+				test.isMeshOn,
+				peers)
+			resp, err := server.EnableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
+
+			assert.Nil(t, err)
+			assert.Equal(t, test.expectedResponse, resp)
+		})
+	}
+}
+
+func TestServer_DisableAutomaticFileshare(t *testing.T) {
+	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
+	peerAleradyDisabledUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+
+	peers := []mesh.MachinePeer{
+		{
+			ID:                uuid.MustParse(peerValidUuid),
+			DoIAllowFileshare: false,
+			AlwaysAcceptFiles: true,
+		},
+		{
+			ID:                uuid.MustParse(peerAleradyDisabledUuid),
+			DoIAllowFileshare: true,
+		},
+	}
+
+	tests := []struct {
+		name             string
+		peerUuid         string
+		isMeshOn         bool
+		listErr          error
+		saveConfigErr    error
+		configureErr     error
+		expectedResponse *pb.DisableAutomaticFileshareResponse
+	}{
+		{
+			name:             "enable for valid peer",
+			peerUuid:         peerValidUuid,
+			isMeshOn:         true,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{Response: &pb.DisableAutomaticFileshareResponse_Empty{}},
+		},
+		{
+			name:     "automatic fileshare already enabled",
+			peerUuid: peerAleradyDisabledUuid,
+			isMeshOn: true,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_DisableAutomaticFileshareErrorCode{
+					DisableAutomaticFileshareErrorCode: pb.DisableAutomaticFileshareErrorCode_AUTOMATIC_FILESHARE_ALREADY_DISABLED,
+				},
+			},
+		},
+		{
+			name:     "unknown peer",
+			peerUuid: "invalid",
+			isMeshOn: true,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_UpdatePeerErrorCode{
+					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				},
+			},
+		},
+		{
+			name:     "not authorized to list peers",
+			peerUuid: peerValidUuid,
+			listErr:  core.ErrUnauthorized,
+			isMeshOn: true,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				},
+			},
+		},
+		{
+			name:     "meshnet is not on",
+			peerUuid: peerValidUuid,
+			listErr:  fmt.Errorf("generic error"),
+			isMeshOn: false,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_MeshnetErrorCode{
+					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+				},
+			},
+		},
+		{
+			name:     "unknown error",
+			peerUuid: peerValidUuid,
+			listErr:  fmt.Errorf("generic error"),
+			isMeshOn: true,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				},
+			},
+		},
+		{
+			name:          "failed to save config",
+			peerUuid:      peerAleradyDisabledUuid,
+			listErr:       core.ErrUnauthorized,
+			saveConfigErr: fmt.Errorf("generic error"),
+			isMeshOn:      true,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+				},
+			},
+		},
+		{
+			name:         "failed to configure peer",
+			peerUuid:     peerValidUuid,
+			configureErr: fmt.Errorf("generic error"),
+			isMeshOn:     true,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server, _ := newMockedServer(t,
+				test.listErr,
+				test.saveConfigErr,
+				test.configureErr,
+				test.isMeshOn,
+				peers)
+			resp, err := server.DisableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
+
+			assert.Nil(t, err)
+			assert.Equal(t, test.expectedResponse, resp)
 		})
 	}
 }

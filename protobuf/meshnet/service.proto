@@ -58,6 +58,10 @@ service Meshnet {
 	rpc AllowFileshare(UpdatePeerRequest) returns (AllowFileshareResponse);
 	// DenyFileshare denies a peer to send files to this device
 	rpc DenyFileshare(UpdatePeerRequest) returns (DenyFileshareResponse);
+	// EnableAutomaticFileshare from peer
+	rpc EnableAutomaticFileshare(UpdatePeerRequest) returns (EnableAutomaticFileshareResponse);
+	// DisableAutomaticFileshare from peer
+	rpc DisableAutomaticFileshare(UpdatePeerRequest) returns (DisableAutomaticFileshareResponse);
 	rpc Connect(UpdatePeerRequest) returns (ConnectResponse);
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer

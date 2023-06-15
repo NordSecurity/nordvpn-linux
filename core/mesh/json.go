@@ -70,6 +70,7 @@ type MachinePeerResponse struct {
 	DoIAllowRouting      bool `json:"allow_peer_traffic_routing"`
 	DoIAllowLocalNetwork bool `json:"allow_peer_local_network_access"`
 	DoIAllowFileshare    bool `json:"allow_peer_send_files"`
+	AlwaysAcceptFiles    bool `json:"always_accept_files"`
 }
 
 type MachineMapResponse struct {
@@ -97,6 +98,7 @@ type PeerUpdateRequest struct {
 	DoIAllowRouting      bool `json:"allow_peer_traffic_routing"`
 	DoIAllowLocalNetwork bool `json:"allow_peer_local_network_access"`
 	DoIAllowFileshare    bool `json:"allow_peer_send_files"`
+	AllwaysAcceptFiles   bool `json:"always_accept_files"`
 }
 
 // Invitation to/from other user.

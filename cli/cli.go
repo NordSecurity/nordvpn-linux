@@ -661,6 +661,26 @@ func meshnetCommand(c *cmd) *cli.Command {
 						},
 					},
 					{
+						Name:  "auto-accept",
+						Usage: MsgMeshnetPeerAutomaticFileshareUsage,
+						Subcommands: []*cli.Command{
+							{
+								Name:         "enable",
+								Usage:        MsgMeshnetPeerAutomaticFileshareAllowUsage,
+								ArgsUsage:    MsgMeshnetPeerArgsUsage,
+								Action:       c.MeshPeerEnableAutomaticFileshare,
+								BashComplete: c.MeshPeerAutoComplete,
+							},
+							{
+								Name:         "disable",
+								Usage:        MsgMeshnetPeerAutomaticFileshareDenyUsage,
+								ArgsUsage:    MsgMeshnetPeerArgsUsage,
+								Action:       c.MeshPeerDisableAutomaticFileshare,
+								BashComplete: c.MeshPeerAutoComplete,
+							},
+						},
+					},
+					{
 						Name:         "connect",
 						Action:       c.MeshPeerConnect,
 						Usage:        MsgMeshnetPeerConnectUsage,

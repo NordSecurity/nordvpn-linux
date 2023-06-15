@@ -42,6 +42,7 @@ message Peer {
 	bool do_i_allow_routing = 13;
 	bool do_i_allow_local_network = 16;
 	bool do_i_allow_fileshare = 18;
+	bool always_accept_files = 19;
 	PeerStatus status = 14;
 }
 
@@ -115,6 +116,15 @@ enum AllowFileshareErrorCode {
 enum DenyFileshareErrorCode {
 	SEND_ALREADY_DENIED = 0;
 }
+
+enum EnableAutomaticFileshareErrorCode {
+	AUTOMATIC_FILESHARE_ALREADY_ENABLED = 0;
+}
+
+enum DisableAutomaticFileshareErrorCode {
+	AUTOMATIC_FILESHARE_ALREADY_DISABLED = 0;
+}
+
 
 // AllowRoutingResponse defines a response for allow routing request
 message AllowRoutingResponse {
@@ -203,6 +213,28 @@ message DenyFileshareResponse {
 		Empty empty = 1;
 		UpdatePeerErrorCode update_peer_error_code = 2;
 		DenyFileshareErrorCode deny_send_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// AllowSendFileResponse defines a response for allow send file request
+message EnableAutomaticFileshareResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		EnableAutomaticFileshareErrorCode enable_automatic_fileshare_error_code = 3;
+		ServiceErrorCode service_error_code = 4;
+		MeshnetErrorCode meshnet_error_code = 5;
+	}
+}
+
+// DenySendFileResponse defines a response for deny send file request
+message DisableAutomaticFileshareResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		DisableAutomaticFileshareErrorCode disable_automatic_fileshare_error_code = 3;
 		ServiceErrorCode service_error_code = 4;
 		MeshnetErrorCode meshnet_error_code = 5;
 	}

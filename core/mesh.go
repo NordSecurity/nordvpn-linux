@@ -117,6 +117,7 @@ func peersResponseToMachinePeers(rawPeers []mesh.MachinePeerResponse) []mesh.Mac
 			DoIAllowInbound:           p.DoIAllowInbound,
 			DoIAllowLocalNetwork:      p.DoIAllowLocalNetwork,
 			DoIAllowFileshare:         p.DoIAllowFileshare,
+			AlwaysAcceptFiles:         p.AlwaysAcceptFiles,
 		})
 	}
 
@@ -252,6 +253,7 @@ func (m *MeshAPI) Configure(
 	doIAllowRouting bool,
 	doIAllowLocalNetwork bool,
 	doIAllowFileshare bool,
+	alwaysAcceptfiles bool,
 ) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -261,6 +263,7 @@ func (m *MeshAPI) Configure(
 		DoIAllowRouting:      doIAllowRouting,
 		DoIAllowLocalNetwork: doIAllowLocalNetwork,
 		DoIAllowFileshare:    doIAllowFileshare,
+		AllwaysAcceptFiles:   alwaysAcceptfiles,
 	})
 	if err != nil {
 		return err

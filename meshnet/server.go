@@ -1250,6 +1250,7 @@ func (s *Server) updatePeerPermissions(token string, deviceID uuid.UUID, peer me
 		peer.DoIAllowRouting,
 		peer.DoIAllowLocalNetwork,
 		peer.DoIAllowFileshare,
+		peer.AlwaysAcceptFiles,
 	)
 }
 
@@ -2179,6 +2180,224 @@ func (s *Server) DenyFileshare(
 
 	return &pb.DenyFileshareResponse{
 		Response: &pb.DenyFileshareResponse_Empty{},
+	}, nil
+}
+
+// AllowFileshare requests from the peer
+func (s *Server) EnableAutomaticFileshare(
+	ctx context.Context,
+	req *pb.UpdatePeerRequest,
+) (*pb.EnableAutomaticFileshareResponse, error) {
+	if !s.ac.IsLoggedIn() {
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistered() {
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
+			},
+		}, nil
+	}
+
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		s.pub.Publish(err)
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
+	if err != nil {
+		if errors.Is(err, core.ErrUnauthorized) {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				s.pub.Publish(err)
+				return &pb.EnableAutomaticFileshareResponse{
+					Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+					},
+				}, nil
+			}
+			return &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				},
+			}, nil
+		}
+		s.pub.Publish(fmt.Errorf("listing peers (@AllowFileshare): " + err.Error()))
+
+		// Mesh could get disabled (when self is removed)
+		//  - check it and report it to the user properly.
+		if !s.isMeshOn() {
+			return &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_MeshnetErrorCode{
+					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+				},
+			}, nil
+		}
+
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	index := slices.IndexFunc(peers, func(p mesh.MachinePeer) bool {
+		return p.ID.String() == req.GetIdentifier()
+	})
+	if index == -1 {
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_UpdatePeerErrorCode{
+				UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+			},
+		}, nil
+	}
+
+	peer := peers[index]
+
+	if peer.AlwaysAcceptFiles {
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_EnableAutomaticFileshareErrorCode{
+				EnableAutomaticFileshareErrorCode: pb.EnableAutomaticFileshareErrorCode_AUTOMATIC_FILESHARE_ALREADY_ENABLED,
+			},
+		}, nil
+	}
+
+	peer.AlwaysAcceptFiles = true
+
+	if err := s.updatePeerPermissions(
+		token,
+		cfg.MeshDevice.ID,
+		peer,
+	); err != nil {
+		s.pub.Publish(err)
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	return &pb.EnableAutomaticFileshareResponse{
+		Response: &pb.EnableAutomaticFileshareResponse_Empty{},
+	}, nil
+}
+
+// DisableAutomaticFileshare requests from the peer
+func (s *Server) DisableAutomaticFileshare(
+	ctx context.Context,
+	req *pb.UpdatePeerRequest,
+) (*pb.DisableAutomaticFileshareResponse, error) {
+	if !s.ac.IsLoggedIn() {
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistered() {
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
+			},
+		}, nil
+	}
+
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		s.pub.Publish(err)
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
+	if err != nil {
+		if errors.Is(err, core.ErrUnauthorized) {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				s.pub.Publish(err)
+				return &pb.DisableAutomaticFileshareResponse{
+					Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+					},
+				}, nil
+			}
+			return &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				},
+			}, nil
+		}
+		s.pub.Publish(fmt.Errorf("listing peers (@AllowFileshare): " + err.Error()))
+
+		// Mesh could get disabled (when self is removed)
+		//  - check it and report it to the user properly.
+		if !s.isMeshOn() {
+			return &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_MeshnetErrorCode{
+					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+				},
+			}, nil
+		}
+
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	index := slices.IndexFunc(peers, func(p mesh.MachinePeer) bool {
+		return p.ID.String() == req.GetIdentifier()
+	})
+	if index == -1 {
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_UpdatePeerErrorCode{
+				UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+			},
+		}, nil
+	}
+
+	peer := peers[index]
+
+	if !peer.AlwaysAcceptFiles {
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_DisableAutomaticFileshareErrorCode{
+				DisableAutomaticFileshareErrorCode: pb.DisableAutomaticFileshareErrorCode_AUTOMATIC_FILESHARE_ALREADY_DISABLED,
+			},
+		}, nil
+	}
+
+	peer.AlwaysAcceptFiles = false
+
+	if err := s.updatePeerPermissions(
+		token,
+		cfg.MeshDevice.ID,
+		peer,
+	); err != nil {
+		s.pub.Publish(err)
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	return &pb.DisableAutomaticFileshareResponse{
+		Response: &pb.DisableAutomaticFileshareResponse_Empty{},
 	}, nil
 }
 

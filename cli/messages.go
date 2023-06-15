@@ -184,6 +184,14 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetPeerFileshareAllowSuccess   = "Fileshare for '%s' has been allowed."
 	MsgMeshnetPeerFileshareDenySuccess    = "Fileshare for '%s' has been denied."
 
+	MsgMeshnetPeerAutomaticFileshareUsage           = "Always accept transfers from a specific peer. We won’t ask you to approve each transfer – files will start downloading automatically."
+	MsgMeshnetPeerAutomaticFileshareAllowUsage      = "Enables automatic fileshare from device."
+	MsgMeshnetPeerAutomaticFileshareDenyUsage       = "Denies automatic fileshare from device."
+	MsgMeshnetPeerAutomaticFileshareAlreadyEnabled  = "Automatic fileshare for '%s' is already allowed."
+	MsgMeshnetPeerAutomaticFileshareAlreadyDisabled = "Automatic fileshare for '%s' is already denied."
+	MsgMeshnetPeerAutomaticFileshareEnableSuccess   = "Automatic fileshare for '%s' has been allowed."
+	MsgMeshnetPeerAutomaticFileshareDisableSuccess  = "Automatic fileshare for '%s' has been denied."
+
 	MsgMeshnetPeerConnectUsage        = "Treats a peer as a VPN server and connects to it if the peer has allowed traffic routing."
 	MsgMeshnetPeerConnectSuccess      = "You are connected to meshnet exit node '%s'."
 	MsgMeshnetPeerDoesNotAllowRouting = "Meshnet peer '%s' does not allow traffic routing."
