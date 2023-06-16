@@ -86,7 +86,7 @@ test/deb-meshnet:
   variables:
     QA_PEER_TOKEN: $QA_PEER_TOKEN
   services:
-    - name: ghcr.io/nordsecurity/nordvpn-linux/qa-peer:1.0.0
+    - name: ghcr.io/nordsecurity/nordvpn-linux/qa-peer:1.0.2
       alias: qa-peer
   script: $CI_PROJECT_DIR/ci/test_deb.sh meshnet
 test/deb-fileshare:
@@ -99,7 +99,7 @@ test/deb-fileshare:
   variables:
     QA_PEER_TOKEN: $QA_PEER_TOKEN
   services:
-    - name: ghcr.io/nordsecurity/nordvpn-linux/qa-peer:1.0.0
+    - name: ghcr.io/nordsecurity/nordvpn-linux/qa-peer:1.0.2
       alias: qa-peer
   script: $CI_PROJECT_DIR/ci/test_deb.sh fileshare
   after_script:

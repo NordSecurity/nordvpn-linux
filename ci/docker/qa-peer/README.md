@@ -14,3 +14,6 @@ Thankfully, when the service container is started there's always some healthchec
 
 ## Usage
 `docker run --cap-add=NET_ADMIN -it --rm --name=qa-peer ghcr.io/nordsecurity/nordvpn-linux/qa-peer`
+
+## Building
+`docker build -t ghcr.io/nordsecurity/nordvpn-linux/qa-peer:<tag> -f ci/docker/qa-peer/Dockerfile .`

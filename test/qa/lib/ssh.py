@@ -1,6 +1,4 @@
 import paramiko
-import pathlib
-import os
 
 class Ssh:
     def __init__(self, hostname: str, username: str, password: str):
@@ -20,7 +18,7 @@ class Ssh:
         return stdout.read().decode()
 
     # Sends file in the provided path to the ssh peer
-    # path and remote_path MUST be different, otherwise an empty file will be uploaded (fails to read local file for some reason) 
+    # path and remote_path MUST be different, otherwise an empty file will be uploaded (fails to read local file for some reason)
     def send_file(self, path: str, remote_path: str):
         with self.client.open_sftp() as sftp:
             sftp.put(path, remote_path)

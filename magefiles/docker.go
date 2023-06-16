@@ -17,14 +17,15 @@ import (
 )
 
 type DockerSettings struct {
-	Privileged bool
-	Daemonize  bool // Container is run in background, output is not available then
-	Network    string
+	Privileged        bool
+	Daemonize         bool               // Container is run in background, output is not available then
+	DaemonizeStopChan chan<- interface{} // Value will be sent on this channel when daemonized docker container is stopped
+	Network           string
 }
 
 func RunDocker(ctx context.Context, env map[string]string, image string, cmd []string) error {
 	settings := DockerSettings{}
-	return runDocker(ctx, env, image, cmd, settings.Privileged, settings.Daemonize, settings.Network)
+	return runDocker(ctx, env, image, cmd, settings.Privileged, settings.Daemonize, nil, settings.Network)
 }
 
 func RunDockerWithSettings(
@@ -34,7 +35,7 @@ func RunDockerWithSettings(
 	cmd []string,
 	settings DockerSettings,
 ) error {
-	return runDocker(ctx, env, image, cmd, settings.Privileged, settings.Daemonize, settings.Network)
+	return runDocker(ctx, env, image, cmd, settings.Privileged, settings.Daemonize, settings.DaemonizeStopChan, settings.Network)
 }
 
 // BuildDocker image with project root as context
@@ -57,6 +58,7 @@ func runDocker(
 	cmd []string,
 	isPrivileged bool,
 	daemonize bool,
+	containerStoppedChan chan<- interface{},
 	network string,
 ) error {
 	fmt.Println("creating docker client")
@@ -131,6 +133,9 @@ func runDocker(
 			<-ctx.Done()
 			timeoutSec := 1
 			err := docker.ContainerStop(context.Background(), resp.ID, container.StopOptions{Timeout: &timeoutSec})
+			if containerStoppedChan != nil {
+				containerStoppedChan <- true
+			}
 			if err != nil {
 				fmt.Println(err)
 			}

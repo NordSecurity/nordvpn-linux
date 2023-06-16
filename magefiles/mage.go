@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -22,8 +21,8 @@ const (
 	imagePackager          = registryPrefix + "packager:1.0.1"
 	imageProtobufGenerator = registryPrefix + "generator:1.0.1"
 	imageScanner           = registryPrefix + "scanner:1.0.0"
-	imageTester            = registryPrefix + "tester:1.0.0"
-	imageQAPeer            = registryPrefix + "qa-peer:1.0.1"
+	imageTester            = registryPrefix + "tester:1.0.2"
+	imageQAPeer            = registryPrefix + "qa-peer:1.0.2"
 	imageLinter            = registryPrefix + "linter:1.0.0"
 	imageRuster            = registryPrefix + "ruster:1.0.1"
 )
@@ -462,10 +461,12 @@ func qa(ctx context.Context, testGroup, testPattern string) error {
 		return fmt.Errorf("%w (while creating network)", err)
 	}
 
+	containerStoppedChan := make(chan interface{})
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
 		cancel()
-		time.Sleep(time.Second) // For container to close
+		<-containerStoppedChan
 		err = RemoveDockerNetwork(context.Background(), networkID)
 		if err != nil {
 			fmt.Println(err)
@@ -475,7 +476,7 @@ func qa(ctx context.Context, testGroup, testPattern string) error {
 	err = RunDockerWithSettings(ctx, env,
 		imageQAPeer,
 		[]string{},
-		DockerSettings{Privileged: true, Daemonize: true, Network: networkID},
+		DockerSettings{Privileged: true, Daemonize: true, Network: networkID, DaemonizeStopChan: containerStoppedChan},
 	)
 	if err != nil {
 		return fmt.Errorf("%w (while starting qa-peer)", err)

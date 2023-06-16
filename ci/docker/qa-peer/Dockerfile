@@ -5,7 +5,7 @@ LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-li
 EXPOSE 22
 
 RUN apt-get update && \
-    apt-get install -y openssh-server && \
+    apt-get install -y openssh-server sudo && \
     echo "root:root" | chpasswd && \
     echo PermitRootLogin yes >> /etc/ssh/sshd_config && \
     mkdir /run/sshd
@@ -17,4 +17,6 @@ RUN groupadd -g ${GROUP_ID} qapeer && useradd -l -m -u ${USER_ID} -g qapeer qape
 
 USER qapeer
 
-CMD [ "/usr/sbin/sshd", "-D" ]
+COPY ci/docker/qa-peer/entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT [ "/entrypoint.sh" ]

@@ -57,12 +57,12 @@ def install_peer(ssh_client: ssh.Ssh):
     project_root = os.environ["CI_PROJECT_DIR"]
     deb_path = glob.glob(f'{project_root}/dist/app/deb/*amd64.deb')[0]
     ssh_client.send_file(deb_path, '/tmp/nordvpn.deb')
-    ssh_client.exec_command('apt install -y /tmp/nordvpn.deb')
+    ssh_client.exec_command('sudo apt install -y /tmp/nordvpn.deb')
 
 
 def uninstall_peer(ssh_client: ssh.Ssh):
     """uninstalls nordvpn in peer"""
-    ssh_client.exec_command('apt remove -y nordvpn')
+    ssh_client.exec_command('sudo apt remove -y nordvpn')
 
 
 def start():
@@ -78,7 +78,8 @@ def start():
 
 def start_peer(ssh_client: ssh.Ssh):
     """starts daemon in peer and blocks until it is actually started"""
-    ssh_client.exec_command("/etc/init.d/nordvpn start")
+    ssh_client.exec_command("sudo /etc/init.d/nordvpn start")
+    time.sleep(1)
     while not is_peer_running(ssh_client):
         time.sleep(1)
 
@@ -95,7 +96,7 @@ def stop():
 
 def stop_peer(ssh_client: ssh.Ssh):
     """stops the daemon in peer and blocks until it is actually stopped"""
-    ssh_client.exec_command("/etc/init.d/nordvpn stop")
+    ssh_client.exec_command("sudo /etc/init.d/nordvpn stop")
     while is_peer_running(ssh_client):
         time.sleep(1)
 
