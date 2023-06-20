@@ -6,8 +6,10 @@ import (
 	"math"
 	"net/netip"
 	"os"
+	"os/user"
 	"strconv"
 	"sync"
+	"syscall"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -21,92 +23,91 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type MockNotification struct {
+type mockNotification struct {
 	id      uint32
 	summary string
 	body    string
 	actions []Action
 }
 
-type MockNotifier struct {
-	notifications []MockNotification
+type mockNotifier struct {
+	notifications []mockNotification
 	nextID        uint32
 }
 
-func (mn *MockNotifier) SendNotification(summary string, body string, actions []Action) (uint32, error) {
+func (mn *mockNotifier) SendNotification(summary string, body string, actions []Action) (uint32, error) {
 	notificationID := mn.nextID
-	mn.notifications = append(mn.notifications, MockNotification{id: notificationID, summary: summary, body: body, actions: actions})
+	mn.notifications = append(mn.notifications, mockNotification{id: notificationID, summary: summary, body: body, actions: actions})
 	mn.nextID++
 	return notificationID, nil
 }
 
-func (mn *MockNotifier) Close() error {
+func (mn *mockNotifier) Close() error {
 	return nil
 }
 
-func (mn *MockNotifier) getLastNotification() MockNotification {
+func (mn *mockNotifier) getLastNotification() mockNotification {
 	return mn.notifications[len(mn.notifications)-1]
 }
 
-func NewMockNotificationManager() NotificationManager {
+func NewMockNotificationManager(osInfo *mockEventManagerOsInfo) NotificationManager {
 	return NotificationManager{
-		downloadedFiles: make(map[uint32]string),
-		transfers:       make(map[uint32]string),
+		notifications: newNotificationStorage(),
 	}
 }
 
-type mockFilesystemNotifications struct {
+type mockEventManagerFilesystem struct {
 	fstest.MapFS
 	freeSpace uint64
 }
 
-func (mf mockFilesystemNotifications) Lstat(path string) (fs.FileInfo, error) {
+func (mf mockEventManagerFilesystem) Lstat(path string) (fs.FileInfo, error) {
 	fileInfo, err := mf.MapFS.Stat(path)
 	return fileInfo, err
 }
 
-func (mf mockFilesystemNotifications) Statfs(path string) (unix.Statfs_t, error) {
+func (mf mockEventManagerFilesystem) Statfs(path string) (unix.Statfs_t, error) {
 	return unix.Statfs_t{Bavail: mf.freeSpace, Bsize: 1}, nil
 }
 
-type MockEventManagerFileshare struct {
+type mockEventManagerFileshare struct {
 	canceledTransferIDs []string
 	acceptedTransferIDS []string
 }
 
 // Enable starts service listening at provided address
-func (*MockEventManagerFileshare) Enable(listenAddress netip.Addr) error {
+func (*mockEventManagerFileshare) Enable(listenAddress netip.Addr) error {
 	return nil
 }
 
 // Disable tears down fileshare service
-func (*MockEventManagerFileshare) Disable() error {
+func (*mockEventManagerFileshare) Disable() error {
 	return nil
 }
 
 // Send sends the provided file or dir to provided peer and returns transfer ID
-func (*MockEventManagerFileshare) Send(peer netip.Addr, paths []string) (string, error) {
+func (*mockEventManagerFileshare) Send(peer netip.Addr, paths []string) (string, error) {
 	return "", nil
 }
 
 // Accept accepts provided files from provided request and starts download process
-func (mfs *MockEventManagerFileshare) Accept(transferID, dstPath string, fileID string) error {
+func (mfs *mockEventManagerFileshare) Accept(transferID, dstPath string, fileID string) error {
 	mfs.acceptedTransferIDS = append(mfs.acceptedTransferIDS, transferID)
 	return nil
 }
 
 // Cancel file transfer by ID.
-func (mfs *MockEventManagerFileshare) Cancel(transferID string) error {
+func (mfs *mockEventManagerFileshare) Cancel(transferID string) error {
 	mfs.canceledTransferIDs = append(mfs.canceledTransferIDs, transferID)
 	return nil
 }
 
 // CancelFile id in a transfer
-func (*MockEventManagerFileshare) CancelFile(transferID string, fileID string) error {
+func (*mockEventManagerFileshare) CancelFile(transferID string, fileID string) error {
 	return nil
 }
 
-func (mfs *MockEventManagerFileshare) getLastAcceptedTransferID() string {
+func (mfs *mockEventManagerFileshare) getLastAcceptedTransferID() string {
 	length := len(mfs.acceptedTransferIDS)
 	if length == 0 {
 		return ""
@@ -115,13 +116,87 @@ func (mfs *MockEventManagerFileshare) getLastAcceptedTransferID() string {
 	return mfs.acceptedTransferIDS[length-1]
 }
 
-func (mfs *MockEventManagerFileshare) getLastCanceledTransferID() string {
+func (mfs *mockEventManagerFileshare) getLastCanceledTransferID() string {
 	length := len(mfs.canceledTransferIDs)
 	if length == 0 {
 		return ""
 	}
 
 	return mfs.canceledTransferIDs[length-1]
+}
+
+type mockEventManagerOsInfo struct {
+	currentUser user.User
+	groupIds    map[string][]string
+}
+
+func (mOS *mockEventManagerOsInfo) CurrentUser() (*user.User, error) {
+	return &mOS.currentUser, nil
+}
+
+func (mOS *mockEventManagerOsInfo) GetGroupIds(userInfo *user.User) ([]string, error) {
+	return mOS.groupIds[userInfo.Uid], nil
+}
+
+type mockFileshare struct{}
+
+func (mfs *mockFileshare) Enable(listenAddress netip.Addr) error { return nil }
+
+func (mfs *mockFileshare) Disable() error { return nil }
+
+func (mfs *mockFileshare) Send(peer netip.Addr, paths []string) (string, error) { return "", nil }
+
+func (mfs *mockFileshare) Accept(transferID, dstPath string, fileID string) error { return nil }
+
+func (mfs *mockFileshare) Cancel(transferID string) error { return nil }
+
+func (mfs *mockFileshare) CancelFile(transferID string, fileID string) error { return nil }
+
+type mockSystemEnvironment struct {
+	mockEventManagerOsInfo
+	mockEventManagerFilesystem
+	destinationDirectory string
+	currentUserUID       uint32
+	currentUserGID       uint32
+}
+
+func newMockSystemEnvironment(t *testing.T) mockSystemEnvironment {
+	t.Helper()
+
+	currentUserUID := uint32(1000)
+	currentUSerUIDString := strconv.Itoa(int(currentUserUID))
+	currentUserGID := uint32(1000)
+	currentUserGIDString := strconv.Itoa(int(currentUserGID))
+
+	stat_t := &syscall.Stat_t{
+		Uid: currentUserUID,
+		Gid: currentUserGID,
+	}
+
+	destinationDirectoryFilename := "tmp"
+	directories := fstest.MapFS{
+		destinationDirectoryFilename: &fstest.MapFile{Mode: os.ModeDir | 0777, Sys: stat_t},
+	}
+
+	osInfo := mockEventManagerOsInfo{
+		currentUser: user.User{Uid: currentUSerUIDString},
+		groupIds: map[string][]string{
+			currentUSerUIDString: {currentUserGIDString},
+		},
+	}
+
+	filesystem := mockEventManagerFilesystem{
+		freeSpace: math.MaxUint64,
+		MapFS:     directories,
+	}
+
+	return mockSystemEnvironment{
+		mockEventManagerOsInfo:     osInfo,
+		mockEventManagerFilesystem: filesystem,
+		destinationDirectory:       destinationDirectoryFilename,
+		currentUserUID:             currentUserUID,
+		currentUserGID:             currentUserGID,
+	}
 }
 
 func TestIncomingTransfer(t *testing.T) {
@@ -136,9 +211,9 @@ func TestIncomingTransfer(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(MockStorage{}, meshClient)
+	eventManager := NewEventManager(MockStorage{}, meshClient, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.EventFunc(fmt.Sprintf(`{
 		"type": "RequestReceived",
@@ -171,7 +246,7 @@ func TestIncomingTransfer(t *testing.T) {
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	timeNow := time.Now()
 	for i := 10; i > 0; i-- {
@@ -195,9 +270,9 @@ func TestGetTransfers(t *testing.T) {
 func TestGetTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	eventManager.transfers["test"] = &pb.Transfer{
 		Id: "test",
 	}
@@ -215,9 +290,9 @@ func TestGetTransfer(t *testing.T) {
 func TestOutgoingTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
 
@@ -256,9 +331,9 @@ func TestInvalidTransferProgress(t *testing.T) {
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
@@ -289,9 +364,9 @@ func TestInvalidTransferProgress(t *testing.T) {
 func TestTransferProgress(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	peer := "12.12.12.12"
@@ -446,7 +521,8 @@ func TestAcceptTransfer(t *testing.T) {
 		expectedErr    error
 		expectedStatus pb.Status
 		files          []string
-		sizeLimit      uint64
+		// number of available blocks of size 1
+		sizeLimit uint64
 	}{
 		{
 			testName:       "accept transfer success",
@@ -500,8 +576,16 @@ func TestAcceptTransfer(t *testing.T) {
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 
+	mockSystemEnvironment := newMockSystemEnvironment(t)
+
 	for _, test := range tests {
-		eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+		mockSystemEnvironment.mockEventManagerFilesystem.freeSpace = test.sizeLimit
+
+		eventManager := NewEventManager(MockStorage{},
+			mockMeshClient{},
+			&mockSystemEnvironment.mockEventManagerOsInfo,
+			&mockSystemEnvironment.mockEventManagerFilesystem,
+			"")
 		eventManager.notificationManager = nil
 		eventManager.transfers[transferID] = &pb.Transfer{
 			Id:        transferID,
@@ -514,16 +598,16 @@ func TestAcceptTransfer(t *testing.T) {
 				{Id: "test/file_C", Size: 3},
 			},
 		}
-		eventManager.CancelFunc = func(transferID string) error { return nil }
+		eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 		t.Run(test.testName, func(t *testing.T) {
-			transfer, err := eventManager.AcceptTransfer(test.transfer, "/tmp", test.files, test.sizeLimit)
+			transfer, err := eventManager.AcceptTransfer(test.transfer, mockSystemEnvironment.destinationDirectory, test.files)
 
 			assert.Equal(t, test.expectedErr, err)
 			assert.Equal(t, test.expectedStatus, eventManager.transfers[transferID].Status)
 
 			if transfer != nil {
-				assert.Equal(t, "/tmp", transfer.Path)
+				assert.Equal(t, mockSystemEnvironment.destinationDirectory, transfer.Path)
 			}
 		})
 	}
@@ -532,22 +616,34 @@ func TestAcceptTransfer(t *testing.T) {
 func TestAcceptTransfer_Outgoing(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	mockSystemEnvironment := newMockSystemEnvironment(t)
+
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockSystemEnvironment.mockEventManagerOsInfo,
+		&mockSystemEnvironment.mockEventManagerFilesystem,
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
 
-	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
+	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
 	assert.Equal(t, ErrTransferAcceptOutgoing, err)
 }
 
 func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	mockSystemEnvironment := newMockSystemEnvironment(t)
+
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockSystemEnvironment.mockEventManagerOsInfo,
+		&mockSystemEnvironment.mockEventManagerFilesystem,
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"] = &pb.Transfer{
 		Id:        "c13c619c-c70b-49b8-9396-72de88155c43",
@@ -555,18 +651,24 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 		Status:    pb.Status_REQUESTED,
 	}
 
-	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
+	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
 	assert.NoError(t, err)
-	_, err = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
+	_, err = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
 	assert.Equal(t, ErrTransferAlreadyAccepted, err)
 }
 
 func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	mockSystemEnvironment := newMockSystemEnvironment(t)
+
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockSystemEnvironment.mockEventManagerOsInfo,
+		&mockSystemEnvironment.mockEventManagerFilesystem,
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"] = &pb.Transfer{
 		Id:        "c13c619c-c70b-49b8-9396-72de88155c43",
@@ -578,11 +680,11 @@ func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(2)
 	go func() {
-		_, err1 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
+		_, err1 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
 		waitGroup.Done()
 	}()
 	go func() {
-		_, err2 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "", []string{}, 999)
+		_, err2 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
 		waitGroup.Done()
 	}()
 	waitGroup.Wait()
@@ -598,9 +700,13 @@ func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 func TestSetTransferStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
 
@@ -614,9 +720,13 @@ func TestSetTransferStatus(t *testing.T) {
 func TestFinishedTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	finishTests := []struct {
 		testName       string
@@ -709,9 +819,13 @@ func TestNewTransfer(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	fileID := "file1.xml"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.NewOutgoingTransfer(transferID, "172.20.0.5", fileID)
 
@@ -850,9 +964,13 @@ func TestCheckTransferStatuses_SingleDirWithFiles(t *testing.T) {
 	file2ID := "file2.xml"
 	path := "/tmp"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.NewOutgoingTransfer(transferID, peer, path)
 
@@ -943,9 +1061,13 @@ func TestCheckTransferStatuses_MultipleInputPaths(t *testing.T) {
 	file2ID := "file2.xml"
 	path := "/tmp"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.NewOutgoingTransfer(transferID, peer, path)
 
@@ -1044,9 +1166,13 @@ func TestCheckTransferStatuses_MultilevelDirComplexStructure(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(MockStorage{}, meshClient)
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	eventManager.NewOutgoingTransfer(transferID, peer, path)
 
@@ -1210,9 +1336,13 @@ func TestTransferRequestPermissionsValidation(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(MockStorage{}, meshClient)
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = nil
-	eventManager.CancelFunc = func(transferID string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	tests := []struct {
 		testName string
@@ -1312,14 +1442,14 @@ func TestTransferFinalization(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+		eventManager := NewEventManager(MockStorage{},
+			mockMeshClient{},
+			&mockEventManagerOsInfo{},
+			&mockEventManagerFilesystem{},
+			"")
 		eventManager.notificationManager = nil
-
-		cancelFuncCalled := false
-		eventManager.CancelFunc = func(transferID string) error {
-			cancelFuncCalled = true
-			return nil
-		}
+		mockFileshare := mockEventManagerFileshare{}
+		eventManager.SetFileshare(&mockFileshare)
 
 		eventManager.transfers[transferID] = &pb.Transfer{
 			Id:     transferID,
@@ -1336,27 +1466,28 @@ func TestTransferFinalization(t *testing.T) {
 		t.Run(test.testName, func(t *testing.T) {
 			file1UploadedEvent := fmt.Sprintf(fileUploadedEventFormat, test.transferFinishedReasons[0], file1, test.fileStatuses[0])
 			eventManager.EventFunc(file1UploadedEvent)
-			assert.False(t, cancelFuncCalled, "Transfer has been finalized(canceled) before it has finished")
+
+			assert.Empty(t, mockFileshare.canceledTransferIDs, "Transfer has been finalized(canceled) before it has finished")
 			assert.Equal(t, pb.Status_ONGOING, eventManager.transfers[transferID].Status,
 				"Invalid transfer status.")
 
 			file2UploadedEvent := fmt.Sprintf(fileUploadedEventFormat, test.transferFinishedReasons[1], file2, test.fileStatuses[1])
 			eventManager.EventFunc(file2UploadedEvent)
-			assert.False(t, cancelFuncCalled, "Transfer has been finalized(canceled) before it has finished")
+
+			assert.Empty(t, mockFileshare.canceledTransferIDs, "Transfer has been finalized(canceled) before it has finished")
 			assert.Equal(t, pb.Status_ONGOING, eventManager.transfers[transferID].Status,
 				"Invalid transfer status")
 
 			file3UploadedEvent := fmt.Sprintf(fileUploadedEventFormat, test.transferFinishedReasons[2], file3, test.fileStatuses[2])
 			eventManager.EventFunc(file3UploadedEvent)
-			assert.True(t, cancelFuncCalled, "Transfer was not finalized(canceled) after it has finished")
+
+			assert.Equal(t, transferID, mockFileshare.getLastCanceledTransferID(), "Transfer was not finalized(canceled) after it has finished")
 			assert.Equal(t, test.finalStatus, eventManager.transfers[transferID].Status,
 				"Invalid transfer status")
 
-			cancelFuncCalled = false
-
 			eventManager.EventFunc(transferCanceledEvent)
 
-			assert.False(t, cancelFuncCalled, "Transfer has been finalized(canceled) twice")
+			assert.Equal(t, len(mockFileshare.canceledTransferIDs), 1, "Transfer has been finalized(canceled) twice")
 			assert.Equal(t, test.finalStatus, eventManager.transfers[transferID].Status,
 				"Invalid transfer status")
 		})
@@ -1375,13 +1506,14 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 		}
 	}`, transferID)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = nil
-	cancelFuncCalled := false
-	eventManager.CancelFunc = func(transferID string) error {
-		cancelFuncCalled = true
-		return nil
-	}
+	mockFileshare := mockEventManagerFileshare{}
+	eventManager.SetFileshare(&mockFileshare)
 
 	eventManager.transfers[transferID] = &pb.Transfer{
 		Id:     transferID,
@@ -1396,7 +1528,7 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 	}
 
 	eventManager.EventFunc(transferCanceledEvent)
-	assert.False(t, cancelFuncCalled, "Canceled transfer has been finalized")
+	assert.Empty(t, mockFileshare.canceledTransferIDs, "Canceled transfer has been finalized")
 	assert.Equal(t, pb.Status_CANCELED, eventManager.transfers[transferID].Status,
 		"Invalid transfer status")
 }
@@ -1405,17 +1537,21 @@ func TestTransferFinishedNotifications(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	fileID := "file_id"
 
-	initializeEventManager := func(direction pb.Direction) (*EventManager, *MockNotifier) {
-		notifier := MockNotifier{
-			notifications: []MockNotification{},
+	initializeEventManager := func(direction pb.Direction) (*EventManager, *mockNotifier) {
+		notifier := mockNotifier{
+			notifications: []mockNotification{},
 			nextID:        0,
 		}
-		notificationManager := NewMockNotificationManager()
+		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
 		notificationManager.notifier = &notifier
 
-		eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+		eventManager := NewEventManager(MockStorage{},
+			mockMeshClient{},
+			&mockEventManagerOsInfo{},
+			&mockEventManagerFilesystem{},
+			"")
 		eventManager.notificationManager = &notificationManager
-		eventManager.CancelFunc = func(string) error { return nil }
+		eventManager.SetFileshare(&mockFileshare{})
 		eventManager.transfers[transferID] = &pb.Transfer{
 			Id:     transferID,
 			Status: pb.Status_ONGOING,
@@ -1508,8 +1644,8 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	fileID := "file_id"
 
-	notifier := MockNotifier{
-		notifications: []MockNotification{},
+	notifier := mockNotifier{
+		notifications: []mockNotification{},
 		nextID:        0,
 	}
 
@@ -1518,13 +1654,17 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		openedFiles = append(openedFiles, filename)
 	}
 
-	notificationManager := NewMockNotificationManager()
+	notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
 	notificationManager.notifier = &notifier
 	notificationManager.openFileFunc = openFileFunc
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = &notificationManager
-	eventManager.CancelFunc = func(string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	eventManager.transfers[transferID] = &pb.Transfer{
 		Id:     transferID,
 		Status: pb.Status_ONGOING,
@@ -1559,8 +1699,8 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 }
 
 func TestTransferRequestNotification(t *testing.T) {
-	notifier := MockNotifier{
-		notifications: []MockNotification{},
+	notifier := mockNotifier{
+		notifications: []mockNotification{},
 		nextID:        0,
 	}
 
@@ -1569,13 +1709,17 @@ func TestTransferRequestNotification(t *testing.T) {
 		openedFiles = append(openedFiles, filename)
 	}
 
-	notificationManager := NewMockNotificationManager()
+	notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
 	notificationManager.notifier = &notifier
 	notificationManager.openFileFunc = openFileFunc
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockEventManagerOsInfo{},
+		&mockEventManagerFilesystem{},
+		"")
 	eventManager.notificationManager = &notificationManager
-	eventManager.CancelFunc = func(string) error { return nil }
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 	peer := "172.20.0.5"
 	hostname := "peer.nord"
@@ -1640,35 +1784,54 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 	type testEnv struct {
 		notificationManager *NotificationManager
 		eventManager        *EventManager
-		notifier            *MockNotifier
-		fileshare           *MockEventManagerFileshare
+		notifier            *mockNotifier
+		fileshare           *mockEventManagerFileshare
 	}
 
 	setup := func(
 		destinationDirectory string, freeSpace uint64) testEnv {
+		currentUserUID := uint32(1000)
+		currentUSerUIDString := strconv.Itoa(int(currentUserUID))
+		currentUserGID := uint32(1000)
+		currentUserGIDString := strconv.Itoa(int(currentUserGID))
+
+		stat_t := &syscall.Stat_t{
+			Uid: currentUserUID,
+			Gid: currentUserGID,
+		}
 		directories := fstest.MapFS{
-			"directory": &fstest.MapFile{Mode: os.ModeDir},
-			"symlink":   &fstest.MapFile{Mode: os.ModeSymlink},
-			"file":      &fstest.MapFile{},
+			"directory": &fstest.MapFile{Mode: os.ModeDir | 0777, Sys: stat_t},
+			"symlink":   &fstest.MapFile{Mode: os.ModeSymlink | 0777, Sys: stat_t},
+			"file":      &fstest.MapFile{Mode: 0777, Sys: stat_t},
 		}
 
-		filesystem := mockFilesystemNotifications{
+		filesystem := mockEventManagerFilesystem{
 			MapFS:     directories,
 			freeSpace: freeSpace,
 		}
 
-		notifier := MockNotifier{
-			notifications: []MockNotification{},
+		notifier := mockNotifier{
+			notifications: []mockNotification{},
 			nextID:        uint32(pendingTransferNotificationID),
 		}
 
-		notificationManager := NewMockNotificationManager()
-		notificationManager.notifier = &notifier
-		notificationManager.filesystem = filesystem
+		osInfo := mockEventManagerOsInfo{
+			currentUser: user.User{Uid: currentUSerUIDString},
+			groupIds: map[string][]string{
+				currentUSerUIDString: {currentUserGIDString},
+			},
+		}
 
-		eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+		notificationManager := NewMockNotificationManager(&osInfo)
+		notificationManager.notifier = &notifier
+
+		eventManager := NewEventManager(MockStorage{},
+			mockMeshClient{},
+			&osInfo,
+			&filesystem,
+			"")
 		eventManager.notificationManager = &notificationManager
-		eventManager.CancelFunc = func(string) error { return nil }
+		eventManager.SetFileshare(&mockEventManagerFileshare{})
 		eventManager.transfers[pendingTransferID] = &pb.Transfer{
 			Status:    pb.Status_REQUESTED,
 			Direction: pb.Direction_INCOMING,
@@ -1699,13 +1862,13 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 			},
 		}
 
-		fileshare := &MockEventManagerFileshare{}
+		fileshare := &mockEventManagerFileshare{}
 
 		notificationManager.eventManager = eventManager
 		notificationManager.fileshare = fileshare
 		notificationManager.defaultDownloadDir = destinationDirectory
 
-		notificationManager.transfers = map[uint32]string{
+		notificationManager.notifications.transfers = map[uint32]string{
 			pendingTransferNotificationID:  pendingTransferID,
 			transferFinishedNotificationID: transferFinishedID,
 		}
@@ -1828,32 +1991,28 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	transferNotificationID := uint32(0)
 
-	directories := fstest.MapFS{
-		"directory": &fstest.MapFile{Mode: os.ModeDir},
-	}
+	mockOsEnvironment := newMockSystemEnvironment(t)
 
-	filesystem := mockFilesystemNotifications{
-		MapFS:     directories,
-		freeSpace: math.MaxUint64,
-	}
-
-	notifier := MockNotifier{
-		notifications: []MockNotification{},
+	notifier := mockNotifier{
+		notifications: []mockNotification{},
 		nextID:        uint32(transferNotificationID),
 	}
 
-	notificationManager := NewMockNotificationManager()
+	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
 	notificationManager.notifier = &notifier
-	notificationManager.filesystem = filesystem
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockOsEnvironment.mockEventManagerOsInfo,
+		&mockOsEnvironment.mockEventManagerFilesystem,
+		mockOsEnvironment.destinationDirectory)
 	eventManager.notificationManager = &notificationManager
 
 	notificationManager.eventManager = eventManager
-	notificationManager.fileshare = &MockEventManagerFileshare{}
-	notificationManager.defaultDownloadDir = "directory"
+	notificationManager.fileshare = &mockEventManagerFileshare{}
+	notificationManager.defaultDownloadDir = mockOsEnvironment.destinationDirectory
 
-	notificationManager.transfers = map[uint32]string{
+	notificationManager.notifications.transfers = map[uint32]string{
 		transferNotificationID: transferID,
 	}
 
@@ -1893,25 +2052,29 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 	invalidTransferID := "022cb1eb-invalid-ba3050493c17"
 	invalidTransferNotificationID := uint32(3)
 
-	setup := func() (*NotificationManager, *MockEventManagerFileshare, *MockNotifier) {
-		notifier := MockNotifier{
-			notifications: []MockNotification{},
+	setup := func() (*NotificationManager, *mockEventManagerFileshare, *mockNotifier) {
+		notifier := mockNotifier{
+			notifications: []mockNotification{},
 			nextID:        uint32(pendingTransferNotificationID),
 		}
 
-		notificationManager := NewMockNotificationManager()
-		notificationManager.transfers[pendingTransferNotificationID] = pendingTransferID
-		notificationManager.transfers[transferAlreadyCanceledNotificationID] = transferAlreadyCanceledID
-		notificationManager.transfers[transferFinishedNotificationID] = transferFinishedID
-		notificationManager.transfers[invalidTransferNotificationID] = invalidTransferID
+		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
+		notificationManager.notifications.transfers[pendingTransferNotificationID] = pendingTransferID
+		notificationManager.notifications.transfers[transferAlreadyCanceledNotificationID] = transferAlreadyCanceledID
+		notificationManager.notifications.transfers[transferFinishedNotificationID] = transferFinishedID
+		notificationManager.notifications.transfers[invalidTransferNotificationID] = invalidTransferID
 		notificationManager.notifier = &notifier
 
-		eventManager := NewEventManager(MockStorage{}, mockMeshClient{})
+		eventManager := NewEventManager(MockStorage{},
+			mockMeshClient{},
+			&mockEventManagerOsInfo{},
+			&mockEventManagerFilesystem{},
+			"")
 		eventManager.notificationManager = &notificationManager
-		eventManager.CancelFunc = func(string) error { return nil }
+		eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 		notificationManager.eventManager = eventManager
-		fileshare := MockEventManagerFileshare{}
+		fileshare := mockEventManagerFileshare{}
 		notificationManager.fileshare = &fileshare
 
 		eventManager.meshClient = mockMeshClient{externalPeers: []*meshpb.Peer{
@@ -1987,5 +2150,145 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 				"Unexpected actions found in error notification: \n%v",
 				errorNotification.actions)
 		})
+	}
+}
+
+func TestAutoaccept(t *testing.T) {
+	mockOsEnvironment := newMockSystemEnvironment(t)
+
+	symlinkDirectoryName := "symlink"
+	mockOsEnvironment.MapFS[symlinkDirectoryName] =
+		&fstest.MapFile{Mode: os.ModeSymlink | 0777,
+			Sys: &syscall.Stat_t{
+				Uid: mockOsEnvironment.currentUserUID,
+				Gid: mockOsEnvironment.currentUserGID,
+			}}
+
+	fileDirectoryName := "not_dir"
+	mockOsEnvironment.MapFS[fileDirectoryName] =
+		&fstest.MapFile{Mode: 0777,
+			Sys: &syscall.Stat_t{
+				Uid: mockOsEnvironment.currentUserUID,
+				Gid: mockOsEnvironment.currentUserGID,
+			}}
+
+	notifier := mockNotifier{
+		notifications: []mockNotification{},
+		nextID:        0,
+	}
+
+	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
+	notificationManager.notifier = &notifier
+
+	eventManager := NewEventManager(MockStorage{},
+		mockMeshClient{},
+		&mockOsEnvironment.mockEventManagerOsInfo,
+		&mockOsEnvironment.mockEventManagerFilesystem,
+		mockOsEnvironment.destinationDirectory)
+	eventManager.notificationManager = &notificationManager
+
+	notificationManager.eventManager = eventManager
+	notificationManager.defaultDownloadDir = mockOsEnvironment.destinationDirectory
+
+	notificationManager.notifications.transfers = map[uint32]string{}
+
+	peerAutacceptIP := "172.20.0.5"
+	peerAutoacceptHostname := "internal.peer1.nord"
+
+	eventManager.meshClient = mockMeshClient{externalPeers: []*meshpb.Peer{
+		{
+			Ip:                peerAutacceptIP,
+			Hostname:          peerAutoacceptHostname,
+			DoIAllowFileshare: true,
+			AlwaysAcceptFiles: true,
+		},
+	}}
+
+	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	event := fmt.Sprintf(`{
+		"type": "RequestReceived",
+		"data": {
+			"peer": "%s",
+			"transfer": "%s",
+			"files": [
+			  {
+				"id": "testfile",
+				"size": 1048576
+			  }
+			]
+		}
+	}`, peerAutacceptIP, transferID)
+
+	tests := []struct {
+		name                        string
+		defaultDownloadDirectory    string
+		acceptedTransferID          string
+		expectedNotificationSummary string
+		expectedNotificationBody    string
+	}{
+		{
+			name:                        "autoaccept ok",
+			defaultDownloadDirectory:    mockOsEnvironment.destinationDirectory,
+			acceptedTransferID:          transferID,
+			expectedNotificationSummary: notifyNewAutoacceptTransfer,
+			expectedNotificationBody:    fmt.Sprintf(notifyNewTransferBody, transferID, peerAutoacceptHostname),
+		},
+		{
+			name:                        "autoaccept dir is a symlink",
+			defaultDownloadDirectory:    symlinkDirectoryName,
+			acceptedTransferID:          "",
+			expectedNotificationSummary: notifyAutoacceptFailed,
+			expectedNotificationBody: fmt.Sprintf(
+				"%s\n%s",
+				downloadDirIsASymlinkError,
+				fmt.Sprintf(notifyNewTransferBody, transferID, peerAutoacceptHostname)),
+		},
+		{
+			name:                        "autoaccept dir is not a directory",
+			defaultDownloadDirectory:    fileDirectoryName,
+			acceptedTransferID:          "",
+			expectedNotificationSummary: notifyAutoacceptFailed,
+			expectedNotificationBody: fmt.Sprintf(
+				"%s\n%s",
+				downloadDirIsNotADirError,
+				fmt.Sprintf(notifyNewTransferBody, transferID, peerAutoacceptHostname)),
+		},
+		{
+			name:                        "autoaccept dir not found",
+			defaultDownloadDirectory:    "not-found",
+			acceptedTransferID:          "",
+			expectedNotificationSummary: notifyAutoacceptFailed,
+			expectedNotificationBody: fmt.Sprintf(
+				"%s\n%s",
+				downloadDirNotFoundError,
+				fmt.Sprintf(notifyNewTransferBody, transferID, peerAutoacceptHostname)),
+		},
+	}
+
+	for _, test := range tests {
+		mockFileshare := mockEventManagerFileshare{}
+
+		eventManager.fileshare = &mockFileshare
+		eventManager.defaultDownloadDir = test.defaultDownloadDirectory
+		eventManager.EventFunc(event)
+
+		if test.acceptedTransferID != "" {
+			assert.NotEmpty(t, mockFileshare.acceptedTransferIDS,
+				"Incoming transfer was not accepted")
+			assert.Equal(t, transferID, mockFileshare.getLastAcceptedTransferID(),
+				"Invalid transfer was accepted")
+		} else {
+			assert.Empty(t, mockFileshare.acceptedTransferIDS,
+				"Unexpected incoming transfer was accepted")
+		}
+
+		notification := notifier.getLastNotification()
+		assert.Equal(t, test.expectedNotificationSummary, notification.summary,
+			"Invalid notification summary")
+
+		assert.Equal(t, test.expectedNotificationBody, notification.body, "Invalid notification body")
+
+		assert.Empty(t, notification.actions,
+			"Unexpected actions found in autoaccepted transfer notification")
 	}
 }

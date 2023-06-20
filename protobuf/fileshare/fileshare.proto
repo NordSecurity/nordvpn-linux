@@ -101,6 +101,7 @@ message SetNotificationsRequest {
 enum SetNotificationsStatus {
 	SET_SUCCESS = 0;
 	NOTHING_TO_DO = 1;
+	SET_FAILURE = 2;
 }
 
 message SetNotificationsResponse {

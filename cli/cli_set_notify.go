@@ -76,6 +76,10 @@ func (c *cmd) SetNotify(ctx *cli.Context) error {
 		return nil
 	case filesharepb.SetNotificationsStatus_SET_SUCCESS:
 		printMessage = messageSuccess
+	case filesharepb.SetNotificationsStatus_SET_FAILURE:
+		printMessage = func() {
+			color.Red(internal.UnhandledMessage)
+		}
 	}
 
 	return nil

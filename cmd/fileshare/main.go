@@ -67,19 +67,27 @@ func main() {
 	}
 
 	// Libdrop init
+	defaultDownloadDirectory, err := fileshare.GetDefaultDownloadDirectory()
+	if err != nil {
+		log.Println("failed to find default download directory: ", err.Error())
+	}
 
-	daemonClient := daemonpb.NewDaemonClient(grpcConn)
+	eventManager := fileshare.NewEventManager(
+		fileshare.FileshareHistoryImplementation(),
+		meshClient,
+		fileshare.StdOsInfo{},
+		fileshare.NewStdFilesystem("/"),
+		defaultDownloadDirectory)
 
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
-	eventManager := fileshare.NewEventManager(fileshare.FileshareHistoryImplementation(), meshClient)
-
 	fileshareImplementation := drop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
 		internal.IsProdEnv(Environment),
 	)
-	eventManager.CancelFunc = fileshareImplementation.Cancel
+	eventManager.SetFileshare(fileshareImplementation)
 
+	daemonClient := daemonpb.NewDaemonClient(grpcConn)
 	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
 		Uid: int64(os.Getuid()),
 	})

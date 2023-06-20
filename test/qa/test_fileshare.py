@@ -9,6 +9,7 @@ import os
 import psutil
 import subprocess
 import shutil
+import pwd
 
 import logging as logger
 
@@ -17,11 +18,17 @@ ssh_client = ssh.Ssh("qa-peer", "root", "root")
 workdir = "/tmp"
 testFiles = ["testing_fileshare_0.txt", "testing_fileshare_1.txt", "testing_fileshare_2.txt", "testing_fileshare_3.txt"]
 
+default_download_directory = "/home/qa/Downloads"
 
 def setup_module(module):
     daemon.start()
     login.login_as("default")
     lib.set_technology_and_protocol("nordlynx", "", "")
+
+    # temporary hack for autoaccept tests, we create a default download directory
+    # will be remove once default download directory setting is implemented
+    os.system(f"sudo mkdir -m 0777 {default_download_directory}")
+
     sh.nordvpn.set.meshnet.on()
     # Ensure clean starting state
     meshnet.remove_all_peers()
@@ -734,3 +741,34 @@ def test_accept_destination_directory_not_a_directory():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         output = sh.nordvpn.fileshare.accept("--background", "--path", path, local_transfer_id).stdout.decode("utf-8")
         assert f"Download directory {path} is a symlink. You can provide provide an alternative via --path" in ex
+
+
+def test_autoaccept():
+    output = ssh_client.exec_command("nordvpn mesh peer list")
+    peer_name = meshnet.get_peer_name(output, meshnet.PeerName.Ip)
+    output = subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name])
+    # subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name])
+
+    time.sleep(10)
+
+    output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
+    host_address = meshnet.get_peer_name(output, meshnet.PeerName.Ip)
+
+    filename = "autoaccepted"
+    peer_file_path = f"/home/qapeer/{filename}"
+    ssh_client.exec_command(f"echo > {peer_file_path}")
+    output = ssh_client.exec_command(f"nordvpn fileshare send --background {host_address} {peer_file_path}")
+
+    def check_if_file_received():
+        last_transfer_id = fileshare.get_last_transfer(outgoing=False)
+        transfer = sh.nordvpn.fileshare.list(last_transfer_id).stdout.decode("utf-8")
+        transfer_lines = transfer.split("\n")
+        file_entry = fileshare.find_file_in_transfer(filename, transfer_lines)
+        return file_entry is not None and "downloaded" in file_entry
+
+    for file_received in poll(check_if_file_received, attempts=10):
+        if file_received is True:
+            break
+
+    assert file_received
+    assert os.path.isfile(f"{default_download_directory}/{filename}")

@@ -5,10 +5,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
+	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"sync"
+	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -19,11 +24,17 @@ import (
 
 // Handleable errors
 var (
-	ErrTransferNotFound        = errors.New("transfer not found")
-	ErrFileNotFound            = errors.New("file not found")
-	ErrTransferAlreadyAccepted = errors.New("can't accept already accepted transfer")
-	ErrTransferAcceptOutgoing  = errors.New("can't accept outgoing transfer")
-	ErrSizeLimitExceeded       = errors.New("provided size limit exceeded")
+	ErrTransferNotFound               = errors.New("transfer not found")
+	ErrFileNotFound                   = errors.New("file not found")
+	ErrTransferAlreadyAccepted        = errors.New("can't accept already accepted transfer")
+	ErrTransferAcceptOutgoing         = errors.New("can't accept outgoing transfer")
+	ErrSizeLimitExceeded              = errors.New("provided size limit exceeded")
+	ErrAcceptDirNotFound              = errors.New("accept directory not found")
+	ErrAcceptDirIsASymlink            = errors.New("accept directory is a symlink")
+	ErrAcceptDirIsNotADirectory       = errors.New("accept directory is not a directory")
+	ErrNoPermissionsToAcceptDirectory = errors.New("no permissions to accept directory")
+	ErrNotificationsAlreadyEnabled    = errors.New("notifications already enabled")
+	ErrNotificationsAlreadyDisabled   = errors.New("notifications already disabled")
 )
 
 // EventManager is responsible for libdrop event handling.
@@ -37,13 +48,19 @@ type EventManager struct {
 	transferSubscriptions map[string]chan TransferProgressInfo
 	storage               Storage
 	meshClient            meshpb.MeshnetClient
-	// CancelFunc is called when transfer is completed in order to finalize the transfer
-	CancelFunc          func(transferID string) error
-	notificationManager *NotificationManager
+	fileshare             Fileshare
+	osInfo                OsInfo
+	filesystem            Filesystem
+	notificationManager   *NotificationManager
+	defaultDownloadDir    string
 }
 
 // NewEventManager loads transfer state from storage, or creates empty state if loading fails.
-func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient) *EventManager {
+func NewEventManager(storage Storage,
+	meshClient meshpb.MeshnetClient,
+	osInfo OsInfo,
+	filesystem Filesystem,
+	defaultDownloadDir string) *EventManager {
 	loadedTransfers, err := storage.Load()
 	if err != nil {
 		log.Printf("couldn't load transfer history from storage: %s", err)
@@ -55,11 +72,17 @@ func NewEventManager(storage Storage, meshClient meshpb.MeshnetClient) *EventMan
 		transferSubscriptions: map[string]chan TransferProgressInfo{},
 		storage:               storage,
 		meshClient:            meshClient,
+		osInfo:                osInfo,
+		filesystem:            filesystem,
+		defaultDownloadDir:    defaultDownloadDir,
 	}
 }
 
-func (em *EventManager) AreNotificationsEnabled() bool {
-	return em.notificationManager != nil
+func (em *EventManager) SetFileshare(fileshare Fileshare) {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	em.fileshare = fileshare
 }
 
 func (em *EventManager) EnableNotifications(fileshare Fileshare) error {
@@ -67,7 +90,7 @@ func (em *EventManager) EnableNotifications(fileshare Fileshare) error {
 	defer em.mutex.Unlock()
 
 	if em.notificationManager != nil {
-		return nil
+		return ErrNotificationsAlreadyEnabled
 	}
 
 	notificationManager, err := NewNotificationManager(fileshare, em)
@@ -79,13 +102,20 @@ func (em *EventManager) EnableNotifications(fileshare Fileshare) error {
 	return nil
 }
 
-func (em *EventManager) DisableNotifications() {
+func (em *EventManager) DisableNotifications() error {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
+
+	if em.notificationManager == nil {
+		return ErrNotificationsAlreadyDisabled
+	}
+
 	if err := em.notificationManager.notifier.Close(); err != nil {
-		log.Println(err)
+		return fmt.Errorf("failed to disable notifier: %s", err)
 	}
 	em.notificationManager = nil
+
+	return nil
 }
 
 func (em *EventManager) getPeerByIP(peerIP string) (*meshpb.Peer, error) {
@@ -203,10 +233,68 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 	if isTransferFinished(transfer) {
 		em.finalizeTransfer(transfer)
 		if transfer.Direction == pb.Direction_INCOMING {
-			if err := em.CancelFunc(event.TransferID); err != nil {
+			if err := em.fileshare.Cancel(event.TransferID); err != nil {
 				log.Printf("failed to finalize transfer %s: %s", event.TransferID, err)
 			}
 		}
+	}
+}
+
+func (em *EventManager) handleRequestReceivedEvent(eventJson json.RawMessage) {
+	var event requestReceivedEvent
+	err := json.Unmarshal(eventJson, &event)
+	if err != nil {
+		log.Printf("unmarshalling drop event: %s", err)
+		return
+	}
+
+	peer, err := em.getPeerByIP(event.Peer)
+	if err != nil {
+		log.Println("failed to retrieve peer requesting transfer: ", err.Error())
+		return
+	}
+	if !peer.DoIAllowFileshare {
+		return
+	}
+
+	em.transfers[event.TransferID] = NewIncomingTransfer(event.TransferID, event.Peer, event.Files)
+	if err := em.storage.Save(em.transfers); err != nil {
+		log.Printf("writing file transfer history: %s", err)
+		return
+	}
+
+	if !peer.AlwaysAcceptFiles {
+		if em.notificationManager != nil {
+			em.notificationManager.NotifyNewTransfer(event.TransferID, peer.Hostname)
+		}
+		return
+	}
+
+	// default download directory not set
+	if em.defaultDownloadDir == "" {
+		return
+	}
+
+	transfer, err := em.acceptTransfer(event.TransferID, em.defaultDownloadDir, []string{})
+
+	if err != nil {
+		log.Println("failed to autoaccept transfer: ", err.Error())
+		if em.notificationManager != nil {
+			em.notificationManager.NotifyAutoacceptFailed(event.TransferID, peer.Hostname, err)
+		}
+		return
+	}
+
+	for _, file := range GetAllTransferFiles(transfer) {
+		err = em.fileshare.Accept(event.TransferID, em.defaultDownloadDir, file.Id)
+	}
+
+	if err != nil {
+		log.Println("failed to autoaccept all files: ", err)
+	}
+
+	if em.notificationManager != nil {
+		em.notificationManager.NotifyNewAutoacceptTransfer(event.TransferID, peer.Hostname)
 	}
 }
 
@@ -225,29 +313,7 @@ func (em *EventManager) EventFunc(eventJSON string) {
 
 	switch genericEvent.Type {
 	case requestReceived:
-		// receiving peer got event
-		var event requestReceivedEvent
-		err := json.Unmarshal(genericEvent.Data, &event)
-		if err != nil {
-			log.Printf("unmarshalling drop event: %s", err)
-			return
-		}
-
-		peer, err := em.getPeerByIP(event.Peer)
-		if err != nil {
-			log.Println("failed to retrieve peer requesting transfer: ", err.Error())
-			return
-		}
-		if peer.DoIAllowFileshare {
-			em.transfers[event.TransferID] = NewIncomingTransfer(event.TransferID, event.Peer, event.Files)
-			if err := em.storage.Save(em.transfers); err != nil {
-				log.Printf("writing file transfer history: %s", err)
-			}
-
-			if em.notificationManager != nil {
-				em.notificationManager.NotifyNewTransfer(event.TransferID, peer.Hostname)
-			}
-		}
+		em.handleRequestReceivedEvent(genericEvent.Data)
 	case requestQueued:
 		// sending peer got event
 		// libdrop emits this event later, so, before that eventManager.NewOutgoingTransfer(...) has to be invoked
@@ -390,11 +456,79 @@ func (em *EventManager) GetTransfer(transferID string) (*pb.Transfer, error) {
 func (em *EventManager) AcceptTransfer(
 	transferID string,
 	path string,
-	fileIDs []string,
-	sizeLimit uint64,
-) (*pb.Transfer, error) {
+	fileIDs []string) (*pb.Transfer, error) {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
+
+	return em.acceptTransfer(transferID, path, fileIDs)
+}
+
+func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool {
+	var ownerUID int
+	var ownerGID int
+	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
+		ownerUID = int(stat.Uid)
+		ownerGID = int(stat.Gid)
+	} else {
+		return false
+	}
+
+	uid, err := strconv.Atoi(user.Uid)
+
+	if err != nil {
+		log.Printf("Failed to convert uid %s to int: %s", user.Uid, err)
+		return false
+	}
+
+	isOwner := uid == ownerUID
+
+	if isOwner {
+		return fileInfo.Mode().Perm()&os.FileMode(0200) != 0
+	}
+
+	ownerGIDStr := strconv.Itoa(ownerGID)
+	gidIndex := slices.Index(gids, ownerGIDStr)
+	isGroup := gidIndex != -1
+	if isGroup {
+		return fileInfo.Mode().Perm()&os.FileMode(0020) != 0
+	}
+
+	return fileInfo.Mode().Perm()&os.FileMode(0002) != 0
+}
+
+// acceptTransfer changes transfer status to reflect that it is being downloaded, not thread safe
+func (em *EventManager) acceptTransfer(transferID string,
+	path string,
+	fileIDs []string) (*pb.Transfer, error) {
+	fileInfo, err := em.filesystem.Lstat(path)
+
+	if err != nil {
+		return nil, ErrAcceptDirNotFound
+	}
+
+	if fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+		return nil, ErrAcceptDirIsASymlink
+	}
+
+	if !fileInfo.IsDir() {
+		return nil, ErrAcceptDirIsNotADirectory
+	}
+
+	userInfo, err := em.osInfo.CurrentUser()
+	if err != nil {
+		log.Printf("getting user info: %s", err)
+		return nil, ErrNoPermissionsToAcceptDirectory
+	}
+
+	userGroups, err := em.osInfo.GetGroupIds(userInfo)
+	if err != nil {
+		log.Printf("getting user groups: %s", err)
+		return nil, ErrNoPermissionsToAcceptDirectory
+	}
+
+	if !isFileWriteable(fileInfo, userInfo, userGroups) {
+		return nil, ErrNoPermissionsToAcceptDirectory
+	}
 
 	transfer, ok := em.transfers[transferID]
 	if !ok {
@@ -423,7 +557,14 @@ func (em *EventManager) AcceptTransfer(
 	ForAllFiles(files, func(f *pb.File) {
 		totalSize += f.Size
 	})
-	if totalSize > sizeLimit {
+
+	statfs, err := em.filesystem.Statfs(path)
+	if err != nil {
+		log.Printf("doing statfs: %s", err)
+		return nil, ErrSizeLimitExceeded
+	}
+
+	if totalSize > statfs.Bavail*uint64(statfs.Bsize) {
 		return nil, ErrSizeLimitExceeded
 	}
 

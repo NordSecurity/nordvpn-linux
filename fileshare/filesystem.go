@@ -1,8 +1,11 @@
 package fileshare
 
 import (
+	"fmt"
 	"io/fs"
+	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 
 	"golang.org/x/sys/unix"
@@ -58,4 +61,21 @@ func (stdFs StdFilesystem) Statfs(path string) (unix.Statfs_t, error) {
 func (stdFs StdFilesystem) Lstat(path string) (fs.FileInfo, error) {
 	cleanPath := filepath.Clean(filepath.Join(stdFs.basepath, path))
 	return os.Lstat(cleanPath)
+}
+
+// GetDefaultDownloadDirectory returns users Downloads directory or an error if it doesn't exist
+func GetDefaultDownloadDirectory() (string, error) {
+	username, err := user.Current()
+	log.Println(username.Name)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to obtain username: %s", err.Error())
+	}
+
+	path := filepath.Join(username.HomeDir, "Downloads")
+	if _, err = os.Stat(path); err != nil {
+		return "", fmt.Errorf("user downloads directory not found: %s", err.Error())
+	}
+
+	return path, nil
 }

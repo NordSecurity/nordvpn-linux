@@ -3,14 +3,9 @@ package fileshare
 import (
 	"context"
 	"errors"
-	"io/fs"
 	"log"
 	"net/netip"
-	"os"
-	"os/user"
-	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -263,39 +258,6 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 	return s.startTransferStatusStream(srv, transferID)
 }
 
-func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool {
-	var ownerUID int
-	var ownerGID int
-	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
-		ownerUID = int(stat.Uid)
-		ownerGID = int(stat.Gid)
-	} else {
-		return false
-	}
-
-	uid, err := strconv.Atoi(user.Uid)
-
-	if err != nil {
-		log.Printf("Failed to convert uid %s to int: %s", user.Uid, err)
-		return false
-	}
-
-	isOwner := uid == ownerUID
-
-	if isOwner {
-		return fileInfo.Mode().Perm()&os.FileMode(0200) != 0
-	}
-
-	ownerGIDStr := strconv.Itoa(ownerGID)
-	gidIndex := slices.Index(gids, ownerGIDStr)
-	isGroup := gidIndex != -1
-	if isGroup {
-		return fileInfo.Mode().Perm()&os.FileMode(0020) != 0
-	}
-
-	return fileInfo.Mode().Perm()&os.FileMode(0002) != 0
-}
-
 // Accept rpc
 func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) error {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
@@ -303,49 +265,7 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 		return srv.Send(&pb.StatusResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
-	destinationFileInfo, err := s.filesystem.Lstat(req.DstPath)
-
-	if err != nil {
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND)})
-	}
-
-	if destinationFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK)})
-	}
-
-	if !destinationFileInfo.IsDir() {
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY)})
-	}
-
-	statfs, err := s.filesystem.Statfs(req.DstPath)
-	if err != nil {
-		log.Printf("doing statfs: %s", err)
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
-	}
-
-	fileInfo, err := s.filesystem.Stat(req.DstPath)
-	if err != nil {
-		log.Printf("doing stat: %s", err)
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.ServiceErrorCode_INTERNAL_FAILURE))})
-	}
-
-	userInfo, err := s.osInfo.CurrentUser()
-	if err != nil {
-		log.Printf("getting user info: %s", err)
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.ServiceErrorCode_INTERNAL_FAILURE))})
-	}
-
-	userGroups, err := s.osInfo.GetGroupIds(userInfo)
-	if err != nil {
-		log.Printf("getting user groups: %s", err)
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.ServiceErrorCode_INTERNAL_FAILURE))})
-	}
-
-	if !isFileWriteable(fileInfo, userInfo, userGroups) {
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS))})
-	}
-
-	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files, statfs.Bavail*uint64(statfs.Bsize))
+	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files)
 
 	switch err {
 	case ErrTransferNotFound:
@@ -358,6 +278,14 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)})
 	case ErrSizeLimitExceeded:
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
+	case ErrAcceptDirNotFound:
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND)})
+	case ErrAcceptDirIsASymlink:
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK)})
+	case ErrAcceptDirIsNotADirectory:
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY)})
+	case ErrNoPermissionsToAcceptDirectory:
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS))})
 	case nil:
 		break
 	default:
@@ -501,17 +429,23 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 }
 
 func (s *Server) SetNotifications(ctx context.Context, in *pb.SetNotificationsRequest) (*pb.SetNotificationsResponse, error) {
-	if s.eventManager.AreNotificationsEnabled() == in.Enable {
-		return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_NOTHING_TO_DO}, nil
-	}
-
 	if in.Enable {
-		if err := s.eventManager.EnableNotifications(s.fileshare); err != nil {
-			log.Println("Failed to enable notifications: ", err)
+		switch s.eventManager.EnableNotifications(s.fileshare) {
+		case ErrNotificationsAlreadyEnabled:
+			return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_NOTHING_TO_DO}, nil
+		case nil:
+			return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_SET_SUCCESS}, nil
+		default:
+			return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_SET_FAILURE}, nil
 		}
 	} else {
-		s.eventManager.DisableNotifications()
+		switch s.eventManager.DisableNotifications() {
+		case ErrNotificationsAlreadyDisabled:
+			return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_NOTHING_TO_DO}, nil
+		case nil:
+			return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_SET_SUCCESS}, nil
+		default:
+			return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_SET_FAILURE}, nil
+		}
 	}
-
-	return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_SET_SUCCESS}, nil
 }

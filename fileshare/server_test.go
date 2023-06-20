@@ -504,6 +504,12 @@ func TestAccept(t *testing.T) {
 		Uid: 2000,
 		Gid: currentUserGID,
 	}
+
+	mockOsInfo := mockOsInfo{
+		currentUser: user,
+		groupIds:    uidToGids,
+	}
+
 	directoryGroupWriteName := "group_write"
 	mockFs.MapFS[directoryGroupWriteName] = &fstest.MapFile{Mode: os.ModeDir | 0220, Sys: statCurrentUserGroupOwner}
 
@@ -659,16 +665,15 @@ func TestAccept(t *testing.T) {
 		}
 		eventManager := EventManager{transfers: map[string]*pb.Transfer{
 			transferID: &transfer,
-		}}
+		},
+			filesystem: &mockFs,
+			osInfo:     &mockOsInfo}
 		server := NewServer(
 			&mockServerFileshare{},
 			&eventManager,
 			mockMeshClient{isEnabled: true},
 			mockFs,
-			&mockOsInfo{
-				currentUser: user,
-				groupIds:    uidToGids,
-			})
+			&mockOsInfo)
 
 		t.Run(test.testName, func(t *testing.T) {
 			err := server.Accept(
@@ -757,6 +762,11 @@ func TestAcceptDirectory(t *testing.T) {
 		currentUserUIDStr: {currentUserGIDStr},
 	}
 
+	mockOsInfo := mockOsInfo{
+		currentUser: user,
+		groupIds:    uidToGids,
+	}
+
 	tests := []struct {
 		testName              string
 		fileIDs               []string
@@ -833,7 +843,9 @@ func TestAcceptDirectory(t *testing.T) {
 		transfer.Status = pb.Status_REQUESTED
 		eventManager := EventManager{transfers: map[string]*pb.Transfer{
 			transferID: &transfer,
-		}}
+		},
+			filesystem: &mockFs,
+			osInfo:     &mockOsInfo}
 
 		fileshare := &mockServerFileshare{
 			acceptedFiles:          []string{},
@@ -848,10 +860,7 @@ func TestAcceptDirectory(t *testing.T) {
 			&eventManager,
 			mockMeshClient{isEnabled: true},
 			mockFs,
-			&mockOsInfo{
-				currentUser: user,
-				groupIds:    uidToGids,
-			},
+			&mockOsInfo,
 		)
 
 		acceptServer := &mockAcceptServer{serverError: nil}

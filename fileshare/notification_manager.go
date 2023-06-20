@@ -3,9 +3,7 @@ package fileshare
 import (
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -21,14 +19,17 @@ const (
 	transferAcceptAction = "Accept"
 	transferCancelAction = "Cancel"
 
-	notifyNewTransferSummary = "New transfer request"
-	notifyNewTransferBody    = "Transfer ID: %s\nFrom: %s"
+	notifyNewTransferSummary    = "New transfer request"
+	notifyNewTransferBody       = "Transfer ID: %s\nFrom: %s"
+	notifyNewAutoacceptTransfer = "New transfer accepted automatically"
+	notifyAutoacceptFailed      = "Failed to autoaccept transfer"
 
 	acceptFailedNotificationSummary     = "Failed to accept transfer"
 	acceptFileFailedNotificationSummary = "Failed to download file"
 	downloadDirNotFoundError            = "Default download directory not found"
 	downloadDirIsASymlinkError          = "Default download directory is a symlink"
 	downloadDirIsNotADirError           = "Default download directory is a symlink"
+	downloadDirNoPermissions            = "No write permissions to default download directory"
 	notEnoughSpaceOnDeviceError         = "Not enough space on the device"
 	transferAleradyAccepted             = "Transfer has been already acceptd"
 	acceptErrorGeneric                  = "Failed to accept transfer, try command line, and if the issue repeats, contact our customer support"
@@ -52,11 +53,15 @@ type Notifier interface {
 
 // DbusNotifier wraps github.com/esiqveland/notify notifier implementation
 type DbusNotifier struct {
+	mu       sync.Mutex
 	notifier notify.Notifier
 }
 
-// SendNotification sends notification via dbus
-func (n DbusNotifier) SendNotification(summary string, body string, actions []Action) (uint32, error) {
+// SendNotification sends notification via dbus. Thread safe.
+func (n *DbusNotifier) SendNotification(summary string, body string, actions []Action) (uint32, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	notifyActions := []notify.Action{}
 
 	for _, action := range actions {
@@ -75,7 +80,11 @@ func (n DbusNotifier) SendNotification(summary string, body string, actions []Ac
 	return n.notifier.SendNotification(notification)
 }
 
-func (n DbusNotifier) Close() error {
+// Close dbus connection. Thread safe.
+func (n *DbusNotifier) Close() error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	return n.notifier.Close()
 }
 
@@ -143,15 +152,69 @@ func openFileXdg(path string) {
 	}
 }
 
-// NotificationManager is responsible for creating gui pop-up notifications for changes in transfer file status
-type NotificationManager struct {
+type notificationsStorage struct {
 	// maps Open action id to file path for downloaded files
 	downloadedFiles map[uint32]string
 	// maps Accept action id to transfer id for incoming transfers
-	transfers          map[uint32]string
-	stateMutex         sync.Mutex
+	transfers map[uint32]string
+	mu        sync.Mutex
+}
+
+func newNotificationStorage() notificationsStorage {
+	return notificationsStorage{
+		downloadedFiles: make(map[uint32]string),
+		transfers:       make(map[uint32]string),
+	}
+}
+
+// AddTransferNotification, thread safe
+func (ns *notificationsStorage) AddTransferNotification(notificationID uint32, transferID string) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	ns.transfers[notificationID] = transferID
+}
+
+// GetAndDeleteTransferNotification, returns transfer id associated with give notification id and
+// removes it from the storage. Second return value denotes if given notification id was found in
+// the storage. Thread safe.
+func (ns *notificationsStorage) GetAndDeleteTransferNotification(notificationID uint32) (string, bool) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	transferID, ok := ns.transfers[notificationID]
+
+	delete(ns.transfers, notificationID)
+
+	return transferID, ok
+}
+
+// AddFileNotification, thread safe
+func (ns *notificationsStorage) AddFileNotification(notificationID uint32, file string) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	ns.downloadedFiles[notificationID] = file
+}
+
+// GetAndDeleteFileNotification, returns filename associated with given notification id and removes it
+// from the storage. Second return value denotes if given notification id was found in the storage.
+// Thread safe.
+func (ns *notificationsStorage) GetAndDeleteFileNotification(notificationID uint32) (string, bool) {
+	ns.mu.Lock()
+	defer ns.mu.Unlock()
+
+	file, ok := ns.downloadedFiles[notificationID]
+
+	delete(ns.downloadedFiles, notificationID)
+
+	return file, ok
+}
+
+// NotificationManager is responsible for creating gui pop-up notifications for changes in transfer file status
+type NotificationManager struct {
+	notifications      notificationsStorage
 	notifier           Notifier
-	filesystem         Filesystem
 	eventManager       *EventManager
 	fileshare          Fileshare
 	openFileFunc       func(string)
@@ -160,22 +223,14 @@ type NotificationManager struct {
 
 // NewNotificationManager creates a new notification
 func NewNotificationManager(fileshare Fileshare, eventManager *EventManager) (*NotificationManager, error) {
-	defaultDownloadDir := ""
-	home, err := os.UserHomeDir()
-	if err == nil {
-		defaultDownloadDir = filepath.Join(home, "Downloads")
-		if _, err = os.Stat(defaultDownloadDir); err != nil {
-			log.Println("Failed to determine default download dir: ", err)
-			defaultDownloadDir = ""
-		}
-	} else {
-		log.Println("Failed to determine default download dir: ", err)
+	defaultDownloadDir, err := GetDefaultDownloadDirectory()
+
+	if err != nil {
+		log.Println("Failed to find default download directory: ", err.Error())
 	}
 
 	notificationManager := NotificationManager{
-		downloadedFiles:    make(map[uint32]string),
-		transfers:          make(map[uint32]string),
-		filesystem:         StdFilesystem{},
+		notifications:      newNotificationStorage(),
 		fileshare:          fileshare,
 		openFileFunc:       openFileXdg,
 		defaultDownloadDir: defaultDownloadDir,
@@ -193,22 +248,35 @@ func NewNotificationManager(fileshare Fileshare, eventManager *EventManager) (*N
 }
 
 func (nm *NotificationManager) Disable() {
-	nm.stateMutex.Lock()
-	defer nm.stateMutex.Unlock()
-
 	if err := nm.notifier.Close(); err != nil {
 		log.Println("Failed to close notifier: ", err)
 	}
 }
 
-// OpenFile associated with actionID
-func (nm *NotificationManager) OpenFile(actionID uint32) {
-	nm.stateMutex.Lock()
-	defer nm.stateMutex.Unlock()
-
-	if filename, ok := nm.downloadedFiles[actionID]; ok {
+// OpenFile associated with notificationID
+func (nm *NotificationManager) OpenFile(notificationID uint32) {
+	if filename, ok := nm.notifications.GetAndDeleteFileNotification(notificationID); ok {
 		nm.openFileFunc(filename)
-		delete(nm.downloadedFiles, actionID)
+	}
+}
+
+func destinationDirectoryErrorToNotificationBody(err error) string {
+	switch err {
+	case ErrSizeLimitExceeded:
+		return notEnoughSpaceOnDeviceError
+	case ErrTransferAlreadyAccepted:
+		return transferAleradyAccepted
+	case ErrAcceptDirNotFound:
+		return downloadDirNotFoundError
+	case ErrAcceptDirIsASymlink:
+		return downloadDirIsASymlinkError
+	case ErrAcceptDirIsNotADirectory:
+		return downloadDirIsNotADirError
+	case ErrNoPermissionsToAcceptDirectory:
+		return downloadDirNoPermissions
+	default:
+		log.Println("Unknown error: ", err.Error())
+		return acceptErrorGeneric
 	}
 }
 
@@ -237,15 +305,12 @@ func fileStatusToNotificationSummary(direction pb.Direction, status pb.Status) s
 // NotifyFile creates a pop-up gui notification, in case of incoming files, filename should be a full path
 // (download path + filename), so that it can be opened by the user.
 func (nm *NotificationManager) NotifyFile(filename string, direction pb.Direction, status pb.Status) {
-	nm.stateMutex.Lock()
-	defer nm.stateMutex.Unlock()
-
 	summary := fileStatusToNotificationSummary(direction, status)
 
 	if direction == pb.Direction_INCOMING && status == pb.Status_SUCCESS {
 		if notificationID, err :=
 			nm.notifier.SendNotification(summary, filename, []Action{{actionKeyOpenFile, "Open"}}); err == nil {
-			nm.downloadedFiles[notificationID] = filename
+			nm.notifications.AddFileNotification(notificationID, filename)
 		} else {
 			log.Printf("failed to send notification for file %s: %s", filename, err)
 		}
@@ -265,67 +330,21 @@ func (nm *NotificationManager) sendGenericNotification(summary string, body stri
 	}
 }
 
-// AcceptTransfer associated with actionID, generates notifications on failure
-func (nm *NotificationManager) AcceptTransfer(actionID uint32) {
-	nm.stateMutex.Lock()
-	defer nm.stateMutex.Unlock()
+// AcceptTransfer associated with notificationID, generates notifications on failure
+func (nm *NotificationManager) AcceptTransfer(notificationID uint32) {
+	transferID, ok := nm.notifications.GetAndDeleteTransferNotification(notificationID)
 
-	transferID, ok := nm.transfers[actionID]
 	if !ok {
-		log.Println("Failed to accept transfer from notification manager, actionID not found")
-		return
-	}
-
-	delete(nm.transfers, actionID)
-
-	destinationFileInfo, err := nm.filesystem.Lstat(nm.defaultDownloadDir)
-
-	if err != nil {
-		log.Println("Failed to lstat a file: ", err)
-		nm.sendGenericNotification(acceptFailedNotificationSummary,
-			downloadDirNotFoundError)
-		return
-	}
-
-	if destinationFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
-		log.Println("Default accept destination is a symlink")
-		nm.sendGenericNotification(acceptFailedNotificationSummary,
-			downloadDirIsASymlinkError)
-		return
-	}
-
-	if !destinationFileInfo.IsDir() {
-		log.Println("Default accept destination is not a directory")
-		nm.sendGenericNotification(acceptFailedNotificationSummary,
-			downloadDirIsNotADirError)
-		return
-	}
-
-	statfs, err := nm.filesystem.Statfs(nm.defaultDownloadDir)
-	if err != nil {
-		log.Println("doing statfs: ", err)
-		nm.sendGenericNotification(acceptFailedNotificationSummary,
-			notEnoughSpaceOnDeviceError)
 		return
 	}
 
 	transfer, err := nm.eventManager.AcceptTransfer(transferID,
 		nm.defaultDownloadDir,
-		[]string{},
-		statfs.Bavail*uint64(statfs.Bsize))
+		[]string{})
 
-	switch err {
-	case ErrTransferAlreadyAccepted:
-		nm.sendGenericNotification(acceptFailedNotificationSummary, transferAleradyAccepted)
-		return
-	case ErrSizeLimitExceeded:
-		nm.sendGenericNotification(acceptFailedNotificationSummary, notEnoughSpaceOnDeviceError)
-		return
-	case nil:
-		break
-	default:
-		log.Println("Unexpected error when accepting transfer from notification manager: ", err)
-		nm.sendGenericNotification(acceptFailedNotificationSummary, acceptErrorGeneric)
+	if err != nil {
+		notificationSummary := destinationDirectoryErrorToNotificationBody(err)
+		nm.sendGenericNotification(acceptFailedNotificationSummary, notificationSummary)
 		return
 	}
 
@@ -340,18 +359,13 @@ func (nm *NotificationManager) AcceptTransfer(actionID uint32) {
 	}
 }
 
-// CancelTransfer associated with actionID, generates error notifiacation on failure
-func (nm *NotificationManager) CancelTransfer(actionID uint32) {
-	nm.stateMutex.Lock()
-	defer nm.stateMutex.Unlock()
+// CancelTransfer associated with notificationID, generates error notifiacation on failure
+func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
+	transferID, ok := nm.notifications.GetAndDeleteTransferNotification(notificationID)
 
-	transferID, ok := nm.transfers[actionID]
 	if !ok {
-		log.Println("Failed to cancel transfer from notification manager, actionID not found")
 		return
 	}
-
-	delete(nm.transfers, actionID)
 
 	transfer, err := nm.eventManager.GetTransfer(transferID)
 
@@ -374,12 +388,9 @@ func (nm *NotificationManager) CancelTransfer(actionID uint32) {
 
 // NotifyTransfer creates a pop-up gui notification
 func (nm *NotificationManager) NotifyNewTransfer(transferID string, peer string) {
-	nm.stateMutex.Lock()
-	defer nm.stateMutex.Unlock()
-
 	body := fmt.Sprintf(notifyNewTransferBody, transferID, peer)
 
-	actionID, err := nm.notifier.SendNotification(
+	notificationID, err := nm.notifier.SendNotification(
 		notifyNewTransferSummary,
 		body,
 		[]Action{
@@ -390,14 +401,26 @@ func (nm *NotificationManager) NotifyNewTransfer(transferID string, peer string)
 		log.Println("failed to send notification for new transfer: ", err)
 	}
 
-	nm.transfers[actionID] = transferID
+	nm.notifications.AddTransferNotification(notificationID, transferID)
 }
 
-// CloseNotification cleans up any data associated with actionID
-func (nm *NotificationManager) CloseNotification(actoionID uint32) {
-	nm.stateMutex.Lock()
-	defer nm.stateMutex.Unlock()
+// NotifyNewAutoacceptTransfer creates a pop-up gui notification
+func (nm *NotificationManager) NotifyNewAutoacceptTransfer(transferID string, peer string) {
+	body := fmt.Sprintf(notifyNewTransferBody, transferID, peer)
 
-	delete(nm.downloadedFiles, actoionID)
-	delete(nm.transfers, actoionID)
+	nm.sendGenericNotification(notifyNewAutoacceptTransfer, body)
+}
+
+// NotifyAutoacceptFailed creates a pop-up gui notification
+func (nm *NotificationManager) NotifyAutoacceptFailed(transferID string, peer string, reason error) {
+	transferInfo := fmt.Sprintf(notifyNewTransferBody, transferID, peer)
+	body := fmt.Sprintf("%s\n%s", destinationDirectoryErrorToNotificationBody(reason), transferInfo)
+
+	nm.sendGenericNotification(notifyAutoacceptFailed, body)
+}
+
+// CloseNotification cleans up any data associated with notificationID
+func (nm *NotificationManager) CloseNotification(notificationID uint32) {
+	nm.notifications.GetAndDeleteFileNotification(notificationID)
+	nm.notifications.GetAndDeleteTransferNotification(notificationID)
 }
