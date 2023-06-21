@@ -32,6 +32,7 @@ func NewEvents(
 	login events.PublishSubcriber[any],
 	accountCheck events.PublishSubcriber[core.ServicesResponse],
 	rate events.PublishSubcriber[events.ServerRating],
+	heartBeat events.PublishSubcriber[int],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -56,6 +57,7 @@ func NewEvents(
 			Login:        login,
 			AccountCheck: accountCheck,
 			Rate:         rate,
+			HeartBeat:    heartBeat,
 		},
 	}
 }
@@ -127,6 +129,7 @@ type ServicePublisher interface {
 	NotifyLogin(any) error
 	NotifyAccountCheck(core.ServicesResponse) error
 	NotifyRate(events.ServerRating) error
+	NotifyHeartBeat(int) error
 }
 
 type ServiceEvents struct {
@@ -135,6 +138,7 @@ type ServiceEvents struct {
 	Login        events.PublishSubcriber[any]
 	AccountCheck events.PublishSubcriber[core.ServicesResponse]
 	Rate         events.PublishSubcriber[events.ServerRating]
+	HeartBeat    events.PublishSubcriber[int]
 }
 
 func (s *ServiceEvents) Subscribe(to ServicePublisher) {
@@ -143,6 +147,7 @@ func (s *ServiceEvents) Subscribe(to ServicePublisher) {
 	s.Login.Subscribe(to.NotifyLogin)
 	s.AccountCheck.Subscribe(to.NotifyAccountCheck)
 	s.Rate.Subscribe(to.NotifyRate)
+	s.HeartBeat.Subscribe(to.NotifyHeartBeat)
 }
 
 func (s *SettingsEvents) Publish(cfg config.Config) {

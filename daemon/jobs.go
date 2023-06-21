@@ -41,6 +41,11 @@ func (r *RPC) StartJobs() {
 	if _, err := r.scheduler.Every(3).Hours().Do(JobVersionCheck(r.dm, r.repo)); err != nil {
 		log.Println(internal.WarningPrefix, "job version", err)
 	}
+
+	if _, err := r.scheduler.Every(1).Day().Do(JobHeartBeat(1*24*60 /*minutes*/, r.events)); err != nil {
+		log.Println(internal.WarningPrefix, "job heart beat", err)
+	}
+
 	r.scheduler.RunAll()
 	r.scheduler.StartBlocking()
 }

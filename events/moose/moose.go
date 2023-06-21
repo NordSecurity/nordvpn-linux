@@ -229,6 +229,10 @@ func (s *Subscriber) NotifyRate(data events.ServerRating) error {
 	))
 }
 
+func (s *Subscriber) NotifyHeartBeat(timePeriodMinutes int) error {
+	return s.response(moose.Send_serviceQuality_status_heartbeat(timePeriodMinutes))
+}
+
 func (s *Subscriber) NotifyNotify(bool) error { return nil }
 
 func (s *Subscriber) NotifyMeshnet(data bool) error {

@@ -37,6 +37,7 @@ func TestNewDaemonSubjects(t *testing.T) {
 		&subs.Subject[any]{},
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.ServerRating]{},
+		&subs.Subject[int]{},
 	))
 	assert.True(t, valid)
 }
@@ -64,6 +65,7 @@ func TestDaemonSubjectsSubscribe(t *testing.T) {
 		&subs.Subject[any]{},
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.ServerRating]{},
+		&subs.Subject[int]{},
 	)
 	subjects.Subscribe(&mockDaemonSubscriber{})
 	_, min := isValid(subjects)
@@ -91,6 +93,7 @@ func (mockDaemonSubscriber) NotifyIpv6(bool) error                          { re
 func (mockDaemonSubscriber) NotifyDefaults(any) error                       { return nil }
 func (mockDaemonSubscriber) NotifyMeshnet(bool) error                       { return nil }
 func (mockDaemonSubscriber) NotifyRate(events.ServerRating) error           { return nil }
+func (mockDaemonSubscriber) NotifyHeartBeat(int) error                      { return nil }
 
 // isValid returns true if given val is not nil. In case val is struct,
 // it checks if any of exported fields are not nil

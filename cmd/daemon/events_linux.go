@@ -32,6 +32,7 @@ func (*dummyAnalytics) NotifyLogin(any) error                          { return 
 func (*dummyAnalytics) NotifyAccountCheck(core.ServicesResponse) error { return nil }
 func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error   { return nil }
 func (*dummyAnalytics) NotifyRate(events.ServerRating) error           { return nil }
+func (*dummyAnalytics) NotifyHeartBeat(int) error                      { return nil }
 
 func newAnalytics(eventsDbPath string, fs *config.Filesystem,
 	version, env, id string) *dummyAnalytics {
