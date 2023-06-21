@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 set -euox
 
 source "${CI_PROJECT_DIR}"/ci/env.sh
