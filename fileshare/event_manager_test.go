@@ -1949,7 +1949,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 			transferID:                transferFinishedID,
 			freeSpace:                 math.MaxUint64,
 			expectedTransferStatus:    pb.Status_SUCCESS,
-			expectedErrorNotification: transferAleradyAccepted,
+			expectedErrorNotification: transferInvalidated,
 		},
 	}
 
@@ -2030,7 +2030,7 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 	errorNotification := notifier.getLastNotification()
 	assert.Equal(t, acceptFailedNotificationSummary, errorNotification.summary,
 		"Error notification has invalid summary.")
-	assert.Equal(t, acceptErrorGeneric, errorNotification.body,
+	assert.Equal(t, genericError, errorNotification.body,
 		"Error notification has invalid body.")
 	assert.Equal(t, 0, len(errorNotification.actions),
 		"Unexpected actions found in error notification: \n%v",
@@ -2107,19 +2107,19 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 			name:                      "transfer already canceled",
 			notificationID:            transferAlreadyCanceledNotificationID,
 			transferID:                transferAlreadyCanceledID,
-			expectedErrorNotification: transferNotCancelableError,
+			expectedErrorNotification: transferInvalidated,
 		},
 		{
 			name:                      "transfer finished",
 			notificationID:            transferFinishedNotificationID,
 			transferID:                transferAlreadyCanceledID,
-			expectedErrorNotification: transferNotCancelableError,
+			expectedErrorNotification: transferInvalidated,
 		},
 		{
 			name:                      "transfer does not exist",
 			notificationID:            invalidTransferNotificationID,
 			transferID:                invalidTransferID,
-			expectedErrorNotification: cancelErrorGeneric,
+			expectedErrorNotification: genericError,
 		},
 	}
 

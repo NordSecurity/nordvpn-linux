@@ -17,26 +17,25 @@ const (
 	actionKeyCancelTransfer = "cancel-transfer"
 
 	transferAcceptAction = "Accept"
-	transferCancelAction = "Cancel"
+	transferCancelAction = "Decline"
 
-	notifyNewTransferSummary    = "New transfer request"
+	notifyNewTransferSummary    = "New file transfer!"
 	notifyNewTransferBody       = "Transfer ID: %s\nFrom: %s"
 	notifyNewAutoacceptTransfer = "New transfer accepted automatically"
 	notifyAutoacceptFailed      = "Failed to autoaccept transfer"
 
 	acceptFailedNotificationSummary     = "Failed to accept transfer"
 	acceptFileFailedNotificationSummary = "Failed to download file"
-	downloadDirNotFoundError            = "Default download directory not found"
-	downloadDirIsASymlinkError          = "Default download directory is a symlink"
-	downloadDirIsNotADirError           = "Default download directory is a symlink"
-	downloadDirNoPermissions            = "No write permissions to default download directory"
-	notEnoughSpaceOnDeviceError         = "Not enough space on the device"
-	transferAleradyAccepted             = "Transfer has been already acceptd"
-	acceptErrorGeneric                  = "Failed to accept transfer, try command line, and if the issue repeats, contact our customer support"
+	downloadDirNotFoundError            = "The download directory doesn't exist."
+	downloadDirIsASymlinkError          = "The download path can’t be a symbolic link."
+	downloadDirIsNotADirError           = "The download path must be a directory."
+	downloadDirNoPermissions            = "You don’t have write permissions for the download directory."
+	notEnoughSpaceOnDeviceError         = "There’s not enough storage on your device."
 
-	cancelFailedNotificationSummary = "Failed to cancel transfer"
-	transferNotCancelableError      = "Transfer is already canceled or accepted"
-	cancelErrorGeneric              = "Failed to cancel transfer, try command line, and if the issue repeats, contact our customer support"
+	cancelFailedNotificationSummary = "Failed to decline transfer"
+
+	transferInvalidated = "You’ve already accepted or declined this transfer."
+	genericError        = "Something went wrong."
 )
 
 // Action represents an action available to the user when notification is displayed
@@ -265,7 +264,7 @@ func destinationDirectoryErrorToNotificationBody(err error) string {
 	case ErrSizeLimitExceeded:
 		return notEnoughSpaceOnDeviceError
 	case ErrTransferAlreadyAccepted:
-		return transferAleradyAccepted
+		return transferInvalidated
 	case ErrAcceptDirNotFound:
 		return downloadDirNotFoundError
 	case ErrAcceptDirIsASymlink:
@@ -276,7 +275,7 @@ func destinationDirectoryErrorToNotificationBody(err error) string {
 		return downloadDirNoPermissions
 	default:
 		log.Println("Unknown error: ", err.Error())
-		return acceptErrorGeneric
+		return genericError
 	}
 }
 
@@ -371,12 +370,12 @@ func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
 
 	if err != nil {
 		log.Println("Failed to cancel transfer from notification manager: ", err)
-		nm.sendGenericNotification(cancelFailedNotificationSummary, cancelErrorGeneric)
+		nm.sendGenericNotification(cancelFailedNotificationSummary, genericError)
 		return
 	}
 
 	if transfer.Status != pb.Status_ONGOING && transfer.Status != pb.Status_REQUESTED {
-		nm.sendGenericNotification(cancelFailedNotificationSummary, transferNotCancelableError)
+		nm.sendGenericNotification(cancelFailedNotificationSummary, transferInvalidated)
 		return
 	}
 
