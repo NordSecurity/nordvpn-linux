@@ -10,7 +10,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"syscall"
 
@@ -167,42 +166,39 @@ func (c *cmd) FileshareSend(ctx *cli.Context) error {
 	return statusLoop(c.fileshareClient, client, resp.TransferId)
 }
 
-var cache sync.Map
-
-func (c *cmd) GetCachedPeers(ctx context.Context) (*mpb.GetPeersResponse, error) {
-	cacheKey := "GetPeers"
-	if cachedResponse, ok := cache.Load(cacheKey); ok {
-		return cachedResponse.(*mpb.GetPeersResponse), nil
-	}
-
-	resp, err := c.meshClient.GetPeers(ctx, &mpb.Empty{})
-	if err != nil {
-		return nil, err
-	}
-
-	cache.Store(cacheKey, resp)
-	return resp, nil
-}
-
+// FileshareAutoCompletePeers implements bash autocompletion for peer hostnames
 func (c *cmd) FileshareAutoCompletePeers(ctx *cli.Context) {
-	resp, err := c.GetCachedPeers(context.Background())
+	if ctx.NArg() > 0 {
+		return // Peer is the first argument so autocomplete only that one
+	}
+
+	resp, err := c.meshClient.GetPeers(context.Background(), &mpb.Empty{})
 	if err != nil {
+		fmt.Println("no_online_peers")
 		return
 	}
 
 	peers, err := getPeersResponseToPeerList(resp)
 	if err != nil {
+		fmt.Println("no_online_peers")
 		return
 	}
 
-	peers.Local = internal.Filter(peers.Local, func(p *mpb.Peer) bool { return p.DoIAllowFileshare })
-	peers.External = internal.Filter(peers.External, func(p *mpb.Peer) bool { return p.DoIAllowFileshare })
+	peers.Local = internal.Filter(peers.Local, func(p *mpb.Peer) bool {
+		return p.DoIAllowFileshare && p.Status == mpb.PeerStatus_CONNECTED
+	})
+	peers.External = internal.Filter(peers.External, func(p *mpb.Peer) bool {
+		return p.DoIAllowFileshare && p.Status == mpb.PeerStatus_CONNECTED
+	})
 
 	for _, peer := range peers.Local {
 		fmt.Println(peer.GetHostname())
 	}
 	for _, peer := range peers.External {
 		fmt.Println(peer.GetHostname())
+	}
+	if len(peers.External) == 0 && len(peers.Local) == 0 {
+		fmt.Println("no_online_peers")
 	}
 }
 

@@ -772,3 +772,50 @@ def test_autoaccept():
 
     assert file_received
     assert os.path.isfile(f"{default_download_directory}/{filename}")
+
+
+def test_peers_autocomplete():
+    peer_hostname = meshnet.get_this_device(ssh_client.exec_command("nordvpn mesh peer list"))
+    output = sh.nordvpn.fileshare.send("--generate-bash-completion")
+    assert peer_hostname in output
+    output = sh.nordvpn.fileshare.send(peer_hostname, "--generate-bash-completion")
+    assert peer_hostname not in output # Only first argument should be autocompleted
+
+
+def test_transfers_autocomplete():
+    output = ssh_client.exec_command("nordvpn mesh peer list")
+    peer_address = meshnet.get_peer_name(output, meshnet.PeerName.Ip)
+    workdir = fileshare.create_directory(2)
+    fileshare.start_transfer(peer_address, *workdir.paths)
+
+    time.sleep(1)
+    peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+
+    print(ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}"))
+
+    # Path should use default autocomplete
+    output = ssh_client.exec_command("nordvpn fileshare accept --path --generate-bash-completion")
+    assert peer_transfer_id not in output 
+
+    # Autocomplete transfers
+    output = ssh_client.exec_command("nordvpn fileshare accept --path /tmp --generate-bash-completion")
+    assert peer_transfer_id in output
+    output = ssh_client.exec_command("nordvpn fileshare cancel --generate-bash-completion")
+    assert peer_transfer_id in output
+    output = ssh_client.exec_command("nordvpn fileshare list --generate-bash-completion")
+    assert peer_transfer_id in output
+
+    # Autocomplete transfer files
+    output = ssh_client.exec_command(f"nordvpn fileshare accept --path /tmp {peer_transfer_id} --generate-bash-completion")
+    assert workdir.filenames[0] in output 
+    assert workdir.filenames[1] in output
+
+    ssh_client.exec_command(f"nordvpn fileshare accept --path /tmp {peer_transfer_id}")
+
+    # When transfer is finished it should only be autocompleted in 'list' command
+    output = ssh_client.exec_command("nordvpn fileshare accept --generate-bash-completion")
+    assert peer_transfer_id not in output
+    output = ssh_client.exec_command("nordvpn fileshare cancel --generate-bash-completion")
+    assert peer_transfer_id not in output
+    output = ssh_client.exec_command("nordvpn fileshare list --generate-bash-completion")
+    assert peer_transfer_id in output

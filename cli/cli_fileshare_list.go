@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"text/tabwriter"
 
@@ -47,27 +48,66 @@ func (c *cmd) FileshareList(ctx *cli.Context) error {
 	return nil
 }
 
-func (c *cmd) FileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Direction) {
+// Autocompletes first argument as transfer id and following arguments as files from selected transfer
+func (c *cmd) fileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Direction, statusFilter func(pb.Status) bool) {
+	// Use default autocomplete for path argument
+	// -2 because the last arg is always '--generate-bash-completion'
+	if len(os.Args) >= 2 && os.Args[len(os.Args)-2] == "--"+flagFilesharePath {
+		return
+	}
+
 	resp, err := c.fileshareClient.List(context.Background(), &pb.Empty{})
-	if err != nil {
+	if err != nil || getFileshareResponseToError(resp.GetError()) != nil {
+		fmt.Println("no_transfers_found")
 		return
 	}
-	if err := getFileshareResponseToError(resp.GetError()); err != nil {
-		return
-	}
-	transfers := resp.GetTransfers()
-	for _, transfer := range transfers {
-		if transfer.GetDirection() == direction && transfer.GetStatus() == pb.Status_REQUESTED {
-			fmt.Println(transfer.GetId())
+
+	if ctx.NArg() == 0 {
+		// Autocomplete transfer id
+		var atLeastOneTransfer bool
+		for _, transfer := range resp.GetTransfers() {
+			if (transfer.GetDirection() == direction || direction == pb.Direction_UNKNOWN_DIRECTION) &&
+				statusFilter(transfer.Status) {
+				fmt.Println(transfer.GetId())
+				atLeastOneTransfer = true
+			}
 		}
+		if !atLeastOneTransfer {
+			fmt.Println("no_transfers_found")
+		}
+	} else {
+		// Autocomplete transfer files
+		for _, transfer := range resp.GetTransfers() {
+			if transfer.Id == ctx.Args().First() {
+				fileshare.ForAllFiles(transfer.Files, func(f *pb.File) {
+					fmt.Println(f.Id)
+				})
+				return
+			}
+		}
+		fmt.Println("transfer_not_found")
 	}
-}
-func (c *cmd) FileshareAutoCompleteTransfersAccept(ctx *cli.Context) {
-	c.FileshareAutoCompleteTransfers(ctx, pb.Direction_INCOMING)
 }
 
+// FileshareAutoCompleteTransfersList does transfer id and files autocompletion for `fileshare list`
+func (c *cmd) FileshareAutoCompleteTransfersList(ctx *cli.Context) {
+	c.fileshareAutoCompleteTransfers(ctx, pb.Direction_UNKNOWN_DIRECTION, func(s pb.Status) bool {
+		return true
+	})
+}
+
+// FileshareAutoCompleteTransfersAccept does transfer id and files autocompletion for `fileshare accept`
+func (c *cmd) FileshareAutoCompleteTransfersAccept(ctx *cli.Context) {
+	c.fileshareAutoCompleteTransfers(ctx, pb.Direction_INCOMING, func(s pb.Status) bool {
+		return s == pb.Status_REQUESTED
+	})
+}
+
+// FileshareAutoCompleteTransfersCancel does transfer id and files autocompletion for `fileshare cancel`
 func (c *cmd) FileshareAutoCompleteTransfersCancel(ctx *cli.Context) {
-	c.FileshareAutoCompleteTransfers(ctx, pb.Direction_OUTGOING)
+	c.fileshareAutoCompleteTransfers(ctx, pb.Direction_UNKNOWN_DIRECTION, func(s pb.Status) bool {
+		return s == pb.Status_REQUESTED || s == pb.Status_ONGOING
+	})
 }
 
 func transferToOutputString(transfer *pb.Transfer) string {

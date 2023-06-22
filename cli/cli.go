@@ -480,26 +480,6 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 	return app, nil
 }
 
-func fileshareAcceptCommand(c *cmd) *cli.Command {
-	return &cli.Command{
-		Name:      FileshareAcceptName,
-		Action:    c.FileshareAccept,
-		Usage:     MsgFileshareAcceptUsage,
-		ArgsUsage: MsgFileshareAcceptArgsUsage,
-		Flags: []cli.Flag{
-			&cli.StringFlag{
-				Name:  flagFilesharePath,
-				Usage: MsgFileshareAcceptPathUsage,
-			},
-			&cli.BoolFlag{
-				Name:  flagFileshareNoWait,
-				Usage: MsgFileshareNoWaitUsage,
-			},
-		},
-		BashComplete: c.FileshareAutoCompleteTransfersAccept,
-	}
-}
-
 func fileshareCommand(c *cmd) *cli.Command {
 	return &cli.Command{
 		Name:   FileshareName,
@@ -519,7 +499,23 @@ func fileshareCommand(c *cmd) *cli.Command {
 				},
 				BashComplete: c.FileshareAutoCompletePeers,
 			},
-			fileshareAcceptCommand(c),
+			{
+				Name:      FileshareAcceptName,
+				Action:    c.FileshareAccept,
+				Usage:     MsgFileshareAcceptUsage,
+				ArgsUsage: MsgFileshareAcceptArgsUsage,
+				Flags: []cli.Flag{
+					&cli.PathFlag{
+						Name:  flagFilesharePath,
+						Usage: MsgFileshareAcceptPathUsage,
+					},
+					&cli.BoolFlag{
+						Name:  flagFileshareNoWait,
+						Usage: MsgFileshareNoWaitUsage,
+					},
+				},
+				BashComplete: c.FileshareAutoCompleteTransfersAccept,
+			},
 			{
 				Name:      FileshareListName,
 				Action:    c.FileshareList,
@@ -535,6 +531,7 @@ func fileshareCommand(c *cmd) *cli.Command {
 						Usage: MsgFileshareListOutUsage,
 					},
 				},
+				BashComplete: c.FileshareAutoCompleteTransfersList,
 			},
 			{
 				Name:         FileshareCancelName,

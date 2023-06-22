@@ -5,11 +5,11 @@ set -eu
 
 # Wait until nordvpn actually starts
 set +e
-for i in {1..5} 
+for i in {1..10} 
 do
     sleep 1
     nordvpn status > /dev/null 2>&1 && break
-    if [[ $i == 5 ]] 
+    if [[ $i == 10 ]] 
     then
         cat /var/log/nordvpn/daemon.log
         echo "Cannot start NordVPN daemon"
