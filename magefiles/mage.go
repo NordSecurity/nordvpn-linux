@@ -97,10 +97,9 @@ func (Build) Notices() error {
 	return sh.RunWith(env, "ci/licenses.sh")
 }
 
-// Deb package for the host architecture
-func (Build) Deb() error {
+func buildDeb(buildFlags string) error {
 	mg.Deps(Build.Data)
-	mg.Deps(Build.Binaries)
+	mg.Deps(mg.F(buildBinaries, buildFlags))
 	mg.Deps(Build.Openvpn)
 	env, err := getEnv()
 	if err != nil {
@@ -116,12 +115,15 @@ func (Build) Deb() error {
 	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", "deb")
 }
 
-// Builds deb package using Docker builder
-func (Build) DebDocker(ctx context.Context) error {
-	mg.Deps(Build.Data)
-	mg.Deps(Build.BinariesDocker)
-	mg.Deps(Build.OpenvpnDocker)
+// Deb package for the host architecture
+func (Build) Deb() error {
+	return buildDeb("")
+}
 
+func buildDebDocker(ctx context.Context, buildFlags string) error {
+	mg.Deps(Build.Data)
+	mg.Deps(mg.F(buildBinariesDocker, buildFlags))
+	mg.Deps(Build.OpenvpnDocker)
 	env, err := getEnv()
 	if err != nil {
 		return err
@@ -146,8 +148,12 @@ func (Build) DebDocker(ctx context.Context) error {
 	)
 }
 
-// Binaries from cmd/* for the host architecture
-func (Build) Binaries() error {
+// Builds deb package using Docker builder
+func (Build) DebDocker(ctx context.Context) error {
+	return buildDebDocker(ctx, "")
+}
+
+func buildBinaries(buildFlags string) error {
 	mg.Deps(Download)
 
 	cwd, err := os.Getwd()
@@ -174,12 +180,17 @@ func (Build) Binaries() error {
 	env["PACKAGE"] = "source"
 	env["VERSION"] = git.versionTag
 	env["ENVIRONMENT"] = "dev"
+	env["BUILD_FLAGS"] = buildFlags
 
 	return sh.RunWith(env, "ci/compile.sh")
 }
 
-// Builds all binaries using Docker builder
-func (Build) BinariesDocker(ctx context.Context) error {
+// Binaries from cmd/* for the host architecture
+func (Build) Binaries() error {
+	return buildBinaries("")
+}
+
+func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 	mg.Deps(Download)
 
 	env, err := getEnv()
@@ -201,6 +212,7 @@ func (Build) BinariesDocker(ctx context.Context) error {
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = "source"
 	env["VERSION"] = git.versionTag
+	env["BUILD_FLAGS"] = buildFlags
 
 	return RunDocker(
 		ctx,
@@ -208,6 +220,11 @@ func (Build) BinariesDocker(ctx context.Context) error {
 		imageBuilder,
 		[]string{"ci/compile.sh"},
 	)
+}
+
+// Builds all binaries using Docker builder
+func (Build) BinariesDocker(ctx context.Context) error {
+	return buildBinariesDocker(ctx, "")
 }
 
 // Openvpn binaries for the host architecture
@@ -426,7 +443,7 @@ func (Test) Hardening(ctx context.Context) error {
 
 // Run QA tests in Docker container (arguments: {testGroup} {testPattern})
 func (Test) QADocker(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(Build.DebDocker)
+	mg.Deps(mg.F(buildDebDocker, "-cover"))
 	return qa(ctx, testGroup, testPattern)
 }
 
@@ -437,7 +454,7 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 	matches, err := filepath.Glob(debPath)
 
 	if len(matches) == 0 || err != nil {
-		mg.Deps(Build.Deb)
+		mg.Deps(mg.F(buildDeb, "-cover"))
 	}
 
 	return qa(ctx, testGroup, testPattern)

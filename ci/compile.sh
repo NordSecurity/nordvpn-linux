@@ -64,7 +64,7 @@ export CGO_LDFLAGS="-Wl,-z,relro,-z,now"
 tags="${FEATURES:-"telio drop"}"
 
 # Apply moose patch in case compiling with moose
-if [[ $tags == *"moose"* ]]; then 
+if [[ $tags == *"moose"* ]]; then
 	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
 	function revert_moose_patch {
 		cd "${CI_PROJECT_DIR}"
@@ -73,15 +73,10 @@ if [[ $tags == *"moose"* ]]; then
 	trap revert_moose_patch EXIT
 fi
 
-COVER_FLAG=""
-if [[ "${ENVIRONMENT}" != "prod" ]]; then
-    COVER_FLAG="-cover"
-fi
-
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${CI_PROJECT_DIR}/cmd/${program}"
 	CC="${cross_compiler_map[${ARCH}]}" \
-		go build "${COVER_FLAG}" "${BUILDMODE}" -tags "${tags}" \
+		go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} "${BUILDMODE}" -tags "${tags}" \
 		-ldflags "-linkmode=external ${LDFLAGS}" \
 		-o "${CI_PROJECT_DIR}/bin/${ARCH}/${names_map[${program}]}"
 	popd
