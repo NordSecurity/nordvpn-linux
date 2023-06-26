@@ -48,10 +48,10 @@ func (failingRouter) Enable(uint) error      { return errors.ErrOnPurpose }
 func (failingRouter) Disable() error         { return errors.ErrOnPurpose }
 func (failingRouter) IsEnabled() bool        { return false }
 
-type workingDNS struct{}
+type workingDNS struct{ setDNS []string }
 
-func (workingDNS) Set(string, []string) error { return nil }
-func (workingDNS) Unset(string) error         { return nil }
+func (w *workingDNS) Set(_ string, dns []string) error { w.setDNS = dns; return nil }
+func (w *workingDNS) Unset(string) error               { w.setDNS = nil; return nil }
 
 type failingDNS struct{}
 
@@ -67,8 +67,8 @@ type workingFirewall struct {
 	rules map[string]firewall.Rule
 }
 
-func newWorkingFirewall() workingFirewall {
-	return workingFirewall{
+func newWorkingFirewall() *workingFirewall {
+	return &workingFirewall{
 		rules: make(map[string]firewall.Rule),
 	}
 }
@@ -154,8 +154,8 @@ type workingExitNode struct {
 	peers   mesh.MachinePeers
 }
 
-func newWorkingExitNode() workingExitNode {
-	return workingExitNode{
+func newWorkingExitNode() *workingExitNode {
+	return &workingExitNode{
 		peers: mesh.MachinePeers{},
 	}
 }
@@ -188,8 +188,8 @@ type workingHostSetter struct {
 	hosts dns.Hosts
 }
 
-func newMockHostSetter() workingHostSetter {
-	return workingHostSetter{
+func newMockHostSetter() *workingHostSetter {
+	return &workingHostSetter{
 		hosts: dns.Hosts{},
 	}
 }
@@ -223,7 +223,7 @@ func TestCombined_Start(t *testing.T) {
 			name:            "nil vpn",
 			gateway:         workingGateway{},
 			whitelistRouter: workingRouter{},
-			dns:             workingDNS{},
+			dns:             &workingDNS{},
 			vpn:             nil,
 			fw:              &workingFirewall{},
 			whitelist:       &workingWhitelistRouting{},
@@ -235,7 +235,7 @@ func TestCombined_Start(t *testing.T) {
 			name:            "vpn start failure",
 			gateway:         workingGateway{},
 			whitelistRouter: workingRouter{},
-			dns:             workingDNS{},
+			dns:             &workingDNS{},
 			vpn:             testvpn.Failing{},
 			fw:              &workingFirewall{},
 			whitelist:       &workingWhitelistRouting{},
@@ -247,7 +247,7 @@ func TestCombined_Start(t *testing.T) {
 			name:            "firewall failure",
 			gateway:         workingGateway{},
 			whitelistRouter: workingRouter{},
-			dns:             workingDNS{},
+			dns:             &workingDNS{},
 			vpn:             testvpn.WorkingInactive{},
 			fw:              failingFirewall{},
 			whitelist:       &workingWhitelistRouting{},
@@ -271,7 +271,7 @@ func TestCombined_Start(t *testing.T) {
 			name:            "device listing failure",
 			gateway:         workingGateway{},
 			whitelistRouter: workingRouter{},
-			dns:             workingDNS{},
+			dns:             &workingDNS{},
 			vpn:             testvpn.WorkingInactive{},
 			fw:              &workingFirewall{},
 			whitelist:       &workingWhitelistRouting{},
@@ -283,7 +283,7 @@ func TestCombined_Start(t *testing.T) {
 			name:            "successful start",
 			gateway:         workingGateway{},
 			whitelistRouter: workingRouter{},
-			dns:             workingDNS{},
+			dns:             &workingDNS{},
 			vpn:             testvpn.Working{},
 			fw:              &workingFirewall{},
 			whitelist:       &workingWhitelistRouting{},
@@ -336,7 +336,7 @@ func TestCombined_Stop(t *testing.T) {
 		{
 			name: "nil vpn",
 			vpn:  nil,
-			dns:  workingDNS{},
+			dns:  &workingDNS{},
 			err:  errNilVPN,
 		},
 		{
@@ -348,13 +348,13 @@ func TestCombined_Stop(t *testing.T) {
 		{
 			name: "vpn stop failure",
 			vpn:  testvpn.Failing{},
-			dns:  workingDNS{},
+			dns:  &workingDNS{},
 			err:  errors.ErrOnPurpose,
 		},
 		{
 			name: "successful stop",
 			vpn:  testvpn.Working{},
-			dns:  workingDNS{},
+			dns:  &workingDNS{},
 			err:  nil,
 		},
 	}
@@ -437,19 +437,19 @@ func TestCombined_SetDNS(t *testing.T) {
 	}{
 		{
 			name:        "empty nameservers",
-			dns:         workingDNS{},
+			dns:         &workingDNS{},
 			nameservers: []string{},
 			hasError:    false,
 		},
 		{
 			name:        "nil nameservers",
-			dns:         workingDNS{},
+			dns:         &workingDNS{},
 			nameservers: nil,
 			hasError:    false,
 		},
 		{
 			name:        "two nameservers",
-			dns:         workingDNS{},
+			dns:         &workingDNS{},
 			nameservers: []string{"103.86.96.100", "103.86.99.100"},
 			hasError:    false,
 		},
@@ -503,7 +503,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 		},
 		{
 			name:     "success unset",
-			dns:      workingDNS{},
+			dns:      &workingDNS{},
 			hasError: false,
 		},
 	}
@@ -579,7 +579,7 @@ func TestCombined_ResetWhitelist(t *testing.T) {
 				workingGateway{},
 				&subs.Subject[string]{},
 				workingRouter{},
-				workingDNS{},
+				&workingDNS{},
 				workingIpv6{},
 				test.fw,
 				test.whitelist,
@@ -1603,14 +1603,14 @@ func TestCombined_Refresh(t *testing.T) {
 		workingRouter{},
 		&workingDNS{},
 		&workingIpv6{},
-		&fw,
+		fw,
 		nil,
 		workingDeviceList,
 		workingRoutingSetup{},
-		&hostSetter,
+		hostSetter,
 		workingRouter{},
 		workingRouter{},
-		&exitNode,
+		exitNode,
 		0,
 	)
 
@@ -1745,4 +1745,38 @@ func TestCombined_Refresh(t *testing.T) {
 	assert.Equal(t, peers, exitNode.peers,
 		"Exit node peers are not configured properly after network refresh: \nexpected:\n%v\nactual:\n%v",
 		peers, exitNode.peers)
+}
+
+func TestDnsAfterVPNRefresh(t *testing.T) {
+	dns := &workingDNS{}
+	netw := NewCombined(
+		testvpn.Working{},
+		nil,
+		nil,
+		&subs.Subject[string]{},
+		workingRouter{},
+		dns,
+		&workingIpv6{},
+		newWorkingFirewall(),
+		workingWhitelistRouting{},
+		workingDeviceList,
+		workingRoutingSetup{},
+		nil,
+		workingRouter{},
+		nil,
+		nil,
+		0,
+	)
+
+	err := netw.start(vpn.Credentials{}, vpn.ServerData{}, config.Whitelist{}, config.DNS{"1.1.1.1"})
+	assert.NoError(t, err)
+	assert.Equal(t, "1.1.1.1", dns.setDNS[0])
+
+	err = netw.SetDNS([]string{"2.2.2.2"})
+	assert.NoError(t, err)
+	assert.Equal(t, "2.2.2.2", dns.setDNS[0])
+
+	err = netw.refreshVPN()
+	assert.NoError(t, err)
+	assert.Equal(t, "2.2.2.2", dns.setDNS[0])
 }

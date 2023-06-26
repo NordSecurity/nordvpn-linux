@@ -498,6 +498,8 @@ func (netw *Combined) SetDNS(nameservers []string) error {
 	if !netw.isConnectedToVPN() {
 		return nil
 	}
+
+	netw.lastNameservers = nameservers
 	return netw.setDNS(nameservers)
 }
 

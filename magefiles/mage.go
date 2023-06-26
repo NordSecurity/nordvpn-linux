@@ -604,7 +604,12 @@ func (Run) Docker() error {
 
 // DockerFast builds and runs nordvpn app in Docker container
 func (Run) DockerFast() error {
-	mg.Deps(Build.Deb)
+	const debPath string = "dist/app/deb/nordvpn_*_amd64.deb"
+	matches, err := filepath.Glob(debPath)
+	if len(matches) == 0 || err != nil {
+		mg.Deps(Build.Deb)
+	}
+
 	return docker()
 }
 
