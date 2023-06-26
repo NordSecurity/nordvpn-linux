@@ -188,7 +188,7 @@ func peerToOutputString(peer *pb.Peer) string {
 		{Key: "Allows Routing", Value: nstrings.GetBoolLabel(peer.IsRoutable)},
 		{Key: "Allows Local Network Access", Value: nstrings.GetBoolLabel(peer.IsLocalNetworkAllowed)},
 		{Key: "Allows Sending Files", Value: nstrings.GetBoolLabel(peer.IsFileshareAllowed)},
-		{Key: "Accept fileshare automatically", Value: nstrings.GetBoolLabel(peer.AlwaysAcceptFiles)},
+		{Key: "Accept Fileshare Automatically", Value: nstrings.GetBoolLabel(peer.AlwaysAcceptFiles)},
 	}
 	return titledKeyvalListToColoredString(keyval{
 		Key: "Hostname", Value: peer.Hostname,
