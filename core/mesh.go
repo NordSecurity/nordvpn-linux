@@ -191,13 +191,18 @@ func (m *MeshAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, erro
 		return nil, errors.New("invalid response")
 	}
 
+	var addr netip.Addr
+	if len(raw.Addresses) > 0 {
+		addr = raw.Addresses[0]
+	}
+
 	return &mesh.Machine{
 		ID:        raw.Identifier,
 		Hostname:  raw.Hostname,
 		OS:        peer.OS,
 		PublicKey: peer.PublicKey,
 		Endpoints: raw.Endpoints,
-		Address:   raw.Addresses[0],
+		Address:   addr,
 	}, nil
 }
 
@@ -442,13 +447,18 @@ func (m *MeshAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
 
 	peers := peersResponseToMachinePeers(raw.Peers)
 
+	var addr netip.Addr
+	if len(raw.Addresses) > 0 {
+		addr = raw.Addresses[0]
+	}
+
 	return &mesh.MachineMap{
 		Machine: mesh.Machine{
 			ID:        raw.ID,
 			Hostname:  raw.Hostname,
 			PublicKey: raw.PublicKey,
 			Endpoints: raw.Endpoints,
-			Address:   raw.Addresses[0],
+			Address:   addr,
 		},
 		Hosts: raw.DNS.Hosts,
 		Peers: peers,
