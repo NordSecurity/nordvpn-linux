@@ -89,6 +89,10 @@ func (Build) Data() error {
 
 // Notices for third party dependencies
 func (Build) Notices() error {
+	if internal.FileExists("dist/THIRD-PARTY-NOTICES.md") {
+		return nil
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -97,10 +101,12 @@ func (Build) Notices() error {
 	return sh.RunWith(env, "ci/licenses.sh")
 }
 
-func buildDeb(buildFlags string) error {
+func buildPackage(packageType string, buildFlags string) error {
 	mg.Deps(Build.Data)
 	mg.Deps(mg.F(buildBinaries, buildFlags))
 	mg.Deps(Build.Openvpn)
+	mg.Deps(Build.Notices)
+
 	env, err := getEnv()
 	if err != nil {
 		return err
@@ -112,18 +118,25 @@ func buildDeb(buildFlags string) error {
 		return err
 	}
 	env["CI_PROJECT_DIR"] = cwd
-	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", "deb")
+	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", packageType)
 }
 
 // Deb package for the host architecture
 func (Build) Deb() error {
-	return buildDeb("")
+	return buildPackage("deb", "")
 }
 
-func buildDebDocker(ctx context.Context, buildFlags string) error {
+// Rpm package for the host architecture
+func (Build) Rpm() error {
+	return buildPackage("rpm", "")
+}
+
+func buildPackageDocker(ctx context.Context, packageType string, buildFlags string) error {
 	mg.Deps(Build.Data)
 	mg.Deps(mg.F(buildBinariesDocker, buildFlags))
 	mg.Deps(Build.OpenvpnDocker)
+	mg.Deps(Build.Notices)
+
 	env, err := getEnv()
 	if err != nil {
 		return err
@@ -144,13 +157,18 @@ func buildDebDocker(ctx context.Context, buildFlags string) error {
 		ctx,
 		env,
 		imagePackager,
-		[]string{"ci/nfpm/build_packages_resources.sh", "deb"},
+		[]string{"ci/nfpm/build_packages_resources.sh", packageType},
 	)
 }
 
-// Builds deb package using Docker builder
+// DebDocker package using Docker builder
 func (Build) DebDocker(ctx context.Context) error {
-	return buildDebDocker(ctx, "")
+	return buildPackageDocker(ctx, "deb", "")
+}
+
+// RpmDocker package using Docker builder
+func (Build) RpmDocker(ctx context.Context) error {
+	return buildPackageDocker(ctx, "rpm", "")
 }
 
 func buildBinaries(buildFlags string) error {
@@ -299,48 +317,6 @@ func (Build) RustDocker(ctx context.Context) error {
 	return nil
 }
 
-// Rpm package for the host architecture
-func (Build) Rpm() error {
-	mg.Deps(Build.Data)
-	env := map[string]string{
-		"ARCHS":  build.Default.GOARCH,
-		"GOPATH": build.Default.GOPATH,
-	}
-	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", "rpm")
-}
-
-// Builds rpm package using Docker builder
-func (Build) RpmDocker(ctx context.Context) error {
-	mg.Deps(Build.Data)
-	mg.Deps(Build.BinariesDocker)
-	mg.Deps(Build.OpenvpnDocker)
-
-	env, err := getEnv()
-	if err != nil {
-		return err
-	}
-
-	git, err := getGitInfo()
-	if err != nil {
-		return err
-	}
-
-	env["ARCH"] = build.Default.GOARCH
-	env["ARCHS"] = build.Default.GOARCH
-	env["CI_PROJECT_DIR"] = "/opt"
-	env["ENVIRONMENT"] = "dev"
-	env["GOPATH"] = build.Default.GOPATH
-	env["HASH"] = git.commitHash
-	env["PACKAGE"] = "source"
-	env["VERSION"] = git.versionTag
-	return RunDocker(
-		ctx,
-		env,
-		imagePackager,
-		[]string{"ci/nfpm/build_packages_resources.sh", "rpm"},
-	)
-}
-
 // Generate Protobuf from protobuf/* definitions using Docker builder
 func (Generate) ProtobufDocker(ctx context.Context) error {
 	mg.Deps(Download)
@@ -443,7 +419,7 @@ func (Test) Hardening(ctx context.Context) error {
 
 // Run QA tests in Docker container (arguments: {testGroup} {testPattern})
 func (Test) QADocker(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildDebDocker, "-cover"))
+	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
 	return qa(ctx, testGroup, testPattern)
 }
 
@@ -454,7 +430,7 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 	matches, err := filepath.Glob(debPath)
 
 	if len(matches) == 0 || err != nil {
-		mg.Deps(mg.F(buildDeb, "-cover"))
+		mg.Deps(mg.F(buildPackage, "deb", "-cover"))
 	}
 
 	return qa(ctx, testGroup, testPattern)
