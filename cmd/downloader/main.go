@@ -35,9 +35,8 @@ func main() {
 		"",
 		"",
 		internal.Environment(""),
-		response.NewFilePKVault(dataPath),
 		clientEx,
-		response.ValidateResponseHeaders,
+		response.NewNordValidator(response.NewFilePKVault(dataPath)),
 		&subs.Subject[events.DataRequestAPI]{},
 	)
 	netw := networker.NewCombined(

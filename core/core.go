@@ -46,13 +46,12 @@ type ServersAPI interface {
 }
 
 type DefaultAPI struct {
-	version       string
-	agent         string
-	environment   internal.Environment
-	pkVault       response.PKVault
-	Client        *request.HTTPClient
-	validatorFunc response.ValidatorFunc
-	publisher     events.Publisher[events.DataRequestAPI]
+	version     string
+	agent       string
+	environment internal.Environment
+	Client      *request.HTTPClient
+	validator   response.Validator
+	publisher   events.Publisher[events.DataRequestAPI]
 	sync.Mutex
 }
 
@@ -60,19 +59,17 @@ func NewDefaultAPI(
 	version string,
 	agent string,
 	environment internal.Environment,
-	pkVault response.PKVault,
 	client *request.HTTPClient,
-	validatorFunc response.ValidatorFunc,
+	validator response.Validator,
 	publisher events.Publisher[events.DataRequestAPI],
 ) *DefaultAPI {
 	return &DefaultAPI{
-		version:       version,
-		agent:         agent,
-		environment:   environment,
-		pkVault:       pkVault,
-		Client:        client,
-		validatorFunc: validatorFunc,
-		publisher:     publisher,
+		version:     version,
+		agent:       agent,
+		environment: environment,
+		Client:      client,
+		validator:   validator,
+		publisher:   publisher,
 	}
 }
 
@@ -121,7 +118,7 @@ func (api *DefaultAPI) do(req *http.Request, endpoint string) (*http.Response, e
 	defer resp.Body.Close()
 
 	resp.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-	if err := api.validatorFunc(resp.Header, body, api.pkVault); err != nil {
+	if err := api.validator.Validate(resp.Header, body); err != nil {
 		return nil, fmt.Errorf("validating headers: %w", err)
 	}
 

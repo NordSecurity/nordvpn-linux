@@ -13,11 +13,27 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// ValidatorFunc validates headers.
-type ValidatorFunc func(headers http.Header, body []byte, vault PKVault) error
+type Validator interface {
+	// Validate validates headers.
+	Validate(headers http.Header, body []byte) error
+}
 
-// ValidateResponseHeaders validates that the response came from actual NordVPN API
-func ValidateResponseHeaders(headers http.Header, body []byte, vault PKVault) error {
+type NordValidator struct {
+	vault PKVault
+}
+
+type MockValidator struct{}
+
+func (MockValidator) Validate(http.Header, []byte) error { return nil }
+
+func NewNordValidator(vault PKVault) *NordValidator {
+	return &NordValidator{
+		vault: vault,
+	}
+}
+
+// Validate validates that the response came from actual NordVPN API
+func (v *NordValidator) Validate(headers http.Header, body []byte) error {
 	xDigest := headers.Get("X-Digest")
 	xAuthorization := headers.Get("X-Authorization")
 	xAcceptBefore := headers.Get("X-Accept-Before")
@@ -64,7 +80,7 @@ func ValidateResponseHeaders(headers http.Header, body []byte, vault PKVault) er
 	}
 
 	// Verify X-Signature
-	publicKey, err := vault.Get(keyVal["key-id"])
+	publicKey, err := v.vault.Get(keyVal["key-id"])
 	if err != nil {
 		return fmt.Errorf("retrieving public key from vault: %w", err)
 	}

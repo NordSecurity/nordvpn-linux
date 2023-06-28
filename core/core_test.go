@@ -16,7 +16,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/ssh"
 )
 
 type testCase struct {
@@ -49,30 +48,6 @@ func testNewCase(t *testing.T, httpStatus int, url, fixture string, err error) t
 	}
 
 	return testCase{name: http.StatusText(httpStatus), handler: handler, err: err}
-}
-
-type mockVault struct{}
-
-func (mockVault) Get(string) (ssh.PublicKey, error) {
-	return &mockKey{}, nil
-}
-
-type mockKey struct{}
-
-func (mockKey) Type() string {
-	return ""
-}
-
-func (mockKey) Marshal() []byte {
-	return []byte{}
-}
-
-func (mockKey) Verify([]byte, *ssh.Signature) error {
-	return nil
-}
-
-func mockValidator(http.Header, []byte, response.PKVault) error {
-	return nil
 }
 
 func TestCreateUser(t *testing.T) {
@@ -127,9 +102,8 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 				"",
 				"",
 				internal.Development,
-				&mockVault{},
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				mockValidator,
+				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, err := api.CurrentUser("refresh me")
@@ -157,9 +131,8 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 				"",
 				"",
 				internal.Development,
-				&mockVault{},
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				mockValidator,
+				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, err := api.TokenRenew("refresh me")
@@ -185,9 +158,8 @@ func TestDefaultAPI_Servers(t *testing.T) {
 				"",
 				"",
 				internal.Development,
-				&mockVault{},
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				mockValidator,
+				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, _, err := api.Servers()
@@ -213,9 +185,8 @@ func TestDefaultAPI_Services(t *testing.T) {
 				"",
 				"",
 				internal.Development,
-				&mockVault{},
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				mockValidator,
+				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, err := api.Services("refresh me")
@@ -241,9 +212,8 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 				"",
 				"",
 				internal.Development,
-				&mockVault{},
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				mockValidator,
+				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, err := api.ServiceCredentials("refresh me")

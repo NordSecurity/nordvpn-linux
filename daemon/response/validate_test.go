@@ -120,7 +120,7 @@ func validHeaders(data []byte) http.Header {
 	return headers
 }
 
-func TestValidateResponseHeaders(t *testing.T) {
+func TestNordValidator_Validate(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	data := []byte(`"foo": "bar"`)
@@ -147,7 +147,8 @@ func TestValidateResponseHeaders(t *testing.T) {
 		{headers: setHeader(validHeaders(data), "X-Signature", "invalid"), error: true},
 	}
 	for _, test := range tests {
-		err := ValidateResponseHeaders(test.headers, []byte(data), response.PKVault{PublicKey: publicKey})
+		validator := NewNordValidator(response.PKVault{PublicKey: publicKey})
+		err := validator.Validate(test.headers, []byte(data))
 		assert.True(t, test.error == (err != nil), err)
 	}
 }

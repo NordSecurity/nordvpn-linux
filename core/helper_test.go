@@ -11,13 +11,13 @@ import (
 	"strconv"
 	"testing"
 
-	desponse "github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/keypair"
-	"github.com/NordSecurity/nordvpn-linux/test/response"
+	testresponse "github.com/NordSecurity/nordvpn-linux/test/response"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -91,7 +91,7 @@ func (api mockAPI) invalidHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func setHeaders(w http.ResponseWriter, data []byte) {
-	headers, err := response.GenerateValidHeaders(privateKey, data)
+	headers, err := testresponse.GenerateValidHeaders(privateKey, data)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -146,9 +146,8 @@ func testNewDefaultAPI(port int) *DefaultAPI {
 		"",
 		"",
 		internal.Development,
-		response.PKVault{PublicKey: publicKey},
 		request.NewHTTPClient(&http.Client{}, localServerPath(port), nil, nil),
-		desponse.ValidateResponseHeaders,
+		response.MockValidator{},
 		&subs.Subject[events.DataRequestAPI]{},
 	)
 }

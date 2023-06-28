@@ -23,7 +23,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/ssh"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -41,12 +40,6 @@ type mockNameservers []string
 
 func (m mockNameservers) Get(bool, bool) []string {
 	return m
-}
-
-type mockVault struct{}
-
-func (mockVault) Get(string) (ssh.PublicKey, error) {
-	return nil, nil
 }
 
 type mockAuthenticationAPI struct{}
@@ -152,9 +145,8 @@ func TestRpcConnect(t *testing.T) {
 				"1.0.0",
 				"",
 				internal.Development,
-				&mockVault{},
 				&request.HTTPClient{},
-				response.ValidateResponseHeaders,
+				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
 			)
 			rpc := NewRPC(
@@ -232,9 +224,8 @@ func TestRpcReconnect(t *testing.T) {
 		"1.0.0",
 		"",
 		internal.Development,
-		&mockVault{},
 		&request.HTTPClient{},
-		response.ValidateResponseHeaders,
+		response.MockValidator{},
 		&subs.Subject[events.DataRequestAPI]{},
 	)
 	rpc := NewRPC(

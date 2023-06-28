@@ -222,20 +222,17 @@ func main() {
 	transportRotator := rotator.NewTransportRotator(httpClientWithRotator, transports)
 	httpClientWithRotator.CompleteRotator = transportRotator
 
-	validatorFunc := response.ValidateResponseHeaders
+	var validator response.Validator = response.NewNordValidator(pkVault)
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
-		validatorFunc = func(headers http.Header, body []byte, vault response.PKVault) error {
-			return nil
-		}
+		validator = response.MockValidator{}
 	}
 
 	defaultAPI := core.NewDefaultAPI(
 		Version,
 		userAgent,
 		internal.Environment(Environment),
-		pkVault,
 		httpClientWithRotator,
-		validatorFunc,
+		validator,
 		httpCalls,
 	)
 	repoAPI := daemon.NewRepoAPI(
