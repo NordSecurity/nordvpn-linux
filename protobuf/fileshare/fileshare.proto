@@ -91,7 +91,7 @@ message ListResponse {
 
 message CancelFileRequest {
 	string transfer_id = 1; // ID taken from TransferRequested libdrop event
-	string file_id = 2; // ID taken from TransferRequested libdrop event
+	string file_path = 2; // Relative path, must match path in TransferRequested event
 }
 
 message SetNotificationsRequest {

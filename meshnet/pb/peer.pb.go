@@ -2491,6 +2491,87 @@ func (*ConnectResponse_ServiceErrorCode) isConnectResponse_Response() {}
 
 func (*ConnectResponse_MeshnetErrorCode) isConnectResponse_Response() {}
 
+type PrivateKeyResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to Response:
+	//
+	//	*PrivateKeyResponse_PrivateKey
+	//	*PrivateKeyResponse_ServiceErrorCode
+	Response isPrivateKeyResponse_Response `protobuf_oneof:"response"`
+}
+
+func (x *PrivateKeyResponse) Reset() {
+	*x = PrivateKeyResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_peer_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *PrivateKeyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PrivateKeyResponse) ProtoMessage() {}
+
+func (x *PrivateKeyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_peer_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PrivateKeyResponse.ProtoReflect.Descriptor instead.
+func (*PrivateKeyResponse) Descriptor() ([]byte, []int) {
+	return file_peer_proto_rawDescGZIP(), []int{16}
+}
+
+func (m *PrivateKeyResponse) GetResponse() isPrivateKeyResponse_Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (x *PrivateKeyResponse) GetPrivateKey() string {
+	if x, ok := x.GetResponse().(*PrivateKeyResponse_PrivateKey); ok {
+		return x.PrivateKey
+	}
+	return ""
+}
+
+func (x *PrivateKeyResponse) GetServiceErrorCode() ServiceErrorCode {
+	if x, ok := x.GetResponse().(*PrivateKeyResponse_ServiceErrorCode); ok {
+		return x.ServiceErrorCode
+	}
+	return ServiceErrorCode_NOT_LOGGED_IN
+}
+
+type isPrivateKeyResponse_Response interface {
+	isPrivateKeyResponse_Response()
+}
+
+type PrivateKeyResponse_PrivateKey struct {
+	PrivateKey string `protobuf:"bytes,1,opt,name=private_key,json=privateKey,proto3,oneof"`
+}
+
+type PrivateKeyResponse_ServiceErrorCode struct {
+	ServiceErrorCode ServiceErrorCode `protobuf:"varint,2,opt,name=service_error_code,json=serviceErrorCode,proto3,enum=meshpb.ServiceErrorCode,oneof"`
+}
+
+func (*PrivateKeyResponse_PrivateKey) isPrivateKeyResponse_Response() {}
+
+func (*PrivateKeyResponse_ServiceErrorCode) isPrivateKeyResponse_Response() {}
+
 var File_peer_proto protoreflect.FileDescriptor
 
 var file_peer_proto_rawDesc = []byte{
@@ -2866,6 +2947,15 @@ var file_peer_proto_rawDesc = []byte{
 	0x65, 0x73, 0x68, 0x70, 0x62, 0x2e, 0x4d, 0x65, 0x73, 0x68, 0x6e, 0x65, 0x74, 0x45, 0x72, 0x72,
 	0x6f, 0x72, 0x43, 0x6f, 0x64, 0x65, 0x48, 0x00, 0x52, 0x10, 0x6d, 0x65, 0x73, 0x68, 0x6e, 0x65,
 	0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x43, 0x6f, 0x64, 0x65, 0x42, 0x0a, 0x0a, 0x08, 0x72, 0x65,
+	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x8d, 0x01, 0x0a, 0x12, 0x50, 0x72, 0x69, 0x76, 0x61,
+	0x74, 0x65, 0x4b, 0x65, 0x79, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x21, 0x0a,
+	0x0b, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x48, 0x00, 0x52, 0x0a, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x4b, 0x65, 0x79,
+	0x12, 0x48, 0x0a, 0x12, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x5f, 0x65, 0x72, 0x72, 0x6f,
+	0x72, 0x5f, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x18, 0x2e, 0x6d,
+	0x65, 0x73, 0x68, 0x70, 0x62, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x45, 0x72, 0x72,
+	0x6f, 0x72, 0x43, 0x6f, 0x64, 0x65, 0x48, 0x00, 0x52, 0x10, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x43, 0x6f, 0x64, 0x65, 0x42, 0x0a, 0x0a, 0x08, 0x72, 0x65,
 	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2a, 0x2d, 0x0a, 0x0a, 0x50, 0x65, 0x65, 0x72, 0x53, 0x74,
 	0x61, 0x74, 0x75, 0x73, 0x12, 0x10, 0x0a, 0x0c, 0x44, 0x49, 0x53, 0x43, 0x4f, 0x4e, 0x4e, 0x45,
 	0x43, 0x54, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0d, 0x0a, 0x09, 0x43, 0x4f, 0x4e, 0x4e, 0x45, 0x43,
@@ -2936,7 +3026,7 @@ func file_peer_proto_rawDescGZIP() []byte {
 }
 
 var file_peer_proto_enumTypes = make([]protoimpl.EnumInfo, 13)
-var file_peer_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_peer_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_peer_proto_goTypes = []interface{}{
 	(PeerStatus)(0),                           // 0: meshpb.PeerStatus
 	(UpdatePeerErrorCode)(0),                  // 1: meshpb.UpdatePeerErrorCode
@@ -2967,82 +3057,84 @@ var file_peer_proto_goTypes = []interface{}{
 	(*EnableAutomaticFileshareResponse)(nil),  // 26: meshpb.EnableAutomaticFileshareResponse
 	(*DisableAutomaticFileshareResponse)(nil), // 27: meshpb.DisableAutomaticFileshareResponse
 	(*ConnectResponse)(nil),                   // 28: meshpb.ConnectResponse
-	(ServiceErrorCode)(0),                     // 29: meshpb.ServiceErrorCode
-	(MeshnetErrorCode)(0),                     // 30: meshpb.MeshnetErrorCode
-	(*Empty)(nil),                             // 31: meshpb.Empty
+	(*PrivateKeyResponse)(nil),                // 29: meshpb.PrivateKeyResponse
+	(ServiceErrorCode)(0),                     // 30: meshpb.ServiceErrorCode
+	(MeshnetErrorCode)(0),                     // 31: meshpb.MeshnetErrorCode
+	(*Empty)(nil),                             // 32: meshpb.Empty
 }
 var file_peer_proto_depIdxs = []int32{
 	14, // 0: meshpb.GetPeersResponse.peers:type_name -> meshpb.PeerList
-	29, // 1: meshpb.GetPeersResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 2: meshpb.GetPeersResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	30, // 1: meshpb.GetPeersResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 2: meshpb.GetPeersResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
 	15, // 3: meshpb.PeerList.self:type_name -> meshpb.Peer
 	15, // 4: meshpb.PeerList.local:type_name -> meshpb.Peer
 	15, // 5: meshpb.PeerList.external:type_name -> meshpb.Peer
 	0,  // 6: meshpb.Peer.status:type_name -> meshpb.PeerStatus
-	31, // 7: meshpb.RemovePeerResponse.empty:type_name -> meshpb.Empty
+	32, // 7: meshpb.RemovePeerResponse.empty:type_name -> meshpb.Empty
 	1,  // 8: meshpb.RemovePeerResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
-	29, // 9: meshpb.RemovePeerResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 10: meshpb.RemovePeerResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 11: meshpb.AllowRoutingResponse.empty:type_name -> meshpb.Empty
+	30, // 9: meshpb.RemovePeerResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 10: meshpb.RemovePeerResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 11: meshpb.AllowRoutingResponse.empty:type_name -> meshpb.Empty
 	1,  // 12: meshpb.AllowRoutingResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	2,  // 13: meshpb.AllowRoutingResponse.allow_routing_error_code:type_name -> meshpb.AllowRoutingErrorCode
-	29, // 14: meshpb.AllowRoutingResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 15: meshpb.AllowRoutingResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 16: meshpb.DenyRoutingResponse.empty:type_name -> meshpb.Empty
+	30, // 14: meshpb.AllowRoutingResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 15: meshpb.AllowRoutingResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 16: meshpb.DenyRoutingResponse.empty:type_name -> meshpb.Empty
 	1,  // 17: meshpb.DenyRoutingResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	3,  // 18: meshpb.DenyRoutingResponse.deny_routing_error_code:type_name -> meshpb.DenyRoutingErrorCode
-	29, // 19: meshpb.DenyRoutingResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 20: meshpb.DenyRoutingResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 21: meshpb.AllowIncomingResponse.empty:type_name -> meshpb.Empty
+	30, // 19: meshpb.DenyRoutingResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 20: meshpb.DenyRoutingResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 21: meshpb.AllowIncomingResponse.empty:type_name -> meshpb.Empty
 	1,  // 22: meshpb.AllowIncomingResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	4,  // 23: meshpb.AllowIncomingResponse.allow_incoming_error_code:type_name -> meshpb.AllowIncomingErrorCode
-	29, // 24: meshpb.AllowIncomingResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 25: meshpb.AllowIncomingResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 26: meshpb.DenyIncomingResponse.empty:type_name -> meshpb.Empty
+	30, // 24: meshpb.AllowIncomingResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 25: meshpb.AllowIncomingResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 26: meshpb.DenyIncomingResponse.empty:type_name -> meshpb.Empty
 	1,  // 27: meshpb.DenyIncomingResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	5,  // 28: meshpb.DenyIncomingResponse.deny_incoming_error_code:type_name -> meshpb.DenyIncomingErrorCode
-	29, // 29: meshpb.DenyIncomingResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 30: meshpb.DenyIncomingResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 31: meshpb.AllowLocalNetworkResponse.empty:type_name -> meshpb.Empty
+	30, // 29: meshpb.DenyIncomingResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 30: meshpb.DenyIncomingResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 31: meshpb.AllowLocalNetworkResponse.empty:type_name -> meshpb.Empty
 	1,  // 32: meshpb.AllowLocalNetworkResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	6,  // 33: meshpb.AllowLocalNetworkResponse.allow_local_network_error_code:type_name -> meshpb.AllowLocalNetworkErrorCode
-	29, // 34: meshpb.AllowLocalNetworkResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 35: meshpb.AllowLocalNetworkResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 36: meshpb.DenyLocalNetworkResponse.empty:type_name -> meshpb.Empty
+	30, // 34: meshpb.AllowLocalNetworkResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 35: meshpb.AllowLocalNetworkResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 36: meshpb.DenyLocalNetworkResponse.empty:type_name -> meshpb.Empty
 	1,  // 37: meshpb.DenyLocalNetworkResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	7,  // 38: meshpb.DenyLocalNetworkResponse.deny_local_network_error_code:type_name -> meshpb.DenyLocalNetworkErrorCode
-	29, // 39: meshpb.DenyLocalNetworkResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 40: meshpb.DenyLocalNetworkResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 41: meshpb.AllowFileshareResponse.empty:type_name -> meshpb.Empty
+	30, // 39: meshpb.DenyLocalNetworkResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 40: meshpb.DenyLocalNetworkResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 41: meshpb.AllowFileshareResponse.empty:type_name -> meshpb.Empty
 	1,  // 42: meshpb.AllowFileshareResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	8,  // 43: meshpb.AllowFileshareResponse.allow_send_error_code:type_name -> meshpb.AllowFileshareErrorCode
-	29, // 44: meshpb.AllowFileshareResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 45: meshpb.AllowFileshareResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 46: meshpb.DenyFileshareResponse.empty:type_name -> meshpb.Empty
+	30, // 44: meshpb.AllowFileshareResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 45: meshpb.AllowFileshareResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 46: meshpb.DenyFileshareResponse.empty:type_name -> meshpb.Empty
 	1,  // 47: meshpb.DenyFileshareResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	9,  // 48: meshpb.DenyFileshareResponse.deny_send_error_code:type_name -> meshpb.DenyFileshareErrorCode
-	29, // 49: meshpb.DenyFileshareResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 50: meshpb.DenyFileshareResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 51: meshpb.EnableAutomaticFileshareResponse.empty:type_name -> meshpb.Empty
+	30, // 49: meshpb.DenyFileshareResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 50: meshpb.DenyFileshareResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 51: meshpb.EnableAutomaticFileshareResponse.empty:type_name -> meshpb.Empty
 	1,  // 52: meshpb.EnableAutomaticFileshareResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	10, // 53: meshpb.EnableAutomaticFileshareResponse.enable_automatic_fileshare_error_code:type_name -> meshpb.EnableAutomaticFileshareErrorCode
-	29, // 54: meshpb.EnableAutomaticFileshareResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 55: meshpb.EnableAutomaticFileshareResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 56: meshpb.DisableAutomaticFileshareResponse.empty:type_name -> meshpb.Empty
+	30, // 54: meshpb.EnableAutomaticFileshareResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 55: meshpb.EnableAutomaticFileshareResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 56: meshpb.DisableAutomaticFileshareResponse.empty:type_name -> meshpb.Empty
 	1,  // 57: meshpb.DisableAutomaticFileshareResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	11, // 58: meshpb.DisableAutomaticFileshareResponse.disable_automatic_fileshare_error_code:type_name -> meshpb.DisableAutomaticFileshareErrorCode
-	29, // 59: meshpb.DisableAutomaticFileshareResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 60: meshpb.DisableAutomaticFileshareResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	31, // 61: meshpb.ConnectResponse.empty:type_name -> meshpb.Empty
+	30, // 59: meshpb.DisableAutomaticFileshareResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 60: meshpb.DisableAutomaticFileshareResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	32, // 61: meshpb.ConnectResponse.empty:type_name -> meshpb.Empty
 	1,  // 62: meshpb.ConnectResponse.update_peer_error_code:type_name -> meshpb.UpdatePeerErrorCode
 	12, // 63: meshpb.ConnectResponse.connect_error_code:type_name -> meshpb.ConnectErrorCode
-	29, // 64: meshpb.ConnectResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
-	30, // 65: meshpb.ConnectResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
-	66, // [66:66] is the sub-list for method output_type
-	66, // [66:66] is the sub-list for method input_type
-	66, // [66:66] is the sub-list for extension type_name
-	66, // [66:66] is the sub-list for extension extendee
-	0,  // [0:66] is the sub-list for field type_name
+	30, // 64: meshpb.ConnectResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	31, // 65: meshpb.ConnectResponse.meshnet_error_code:type_name -> meshpb.MeshnetErrorCode
+	30, // 66: meshpb.PrivateKeyResponse.service_error_code:type_name -> meshpb.ServiceErrorCode
+	67, // [67:67] is the sub-list for method output_type
+	67, // [67:67] is the sub-list for method input_type
+	67, // [67:67] is the sub-list for extension type_name
+	67, // [67:67] is the sub-list for extension extendee
+	0,  // [0:67] is the sub-list for field type_name
 }
 
 func init() { file_peer_proto_init() }
@@ -3245,6 +3337,18 @@ func file_peer_proto_init() {
 				return nil
 			}
 		}
+		file_peer_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*PrivateKeyResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_peer_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*GetPeersResponse_Peers)(nil),
@@ -3334,13 +3438,17 @@ func file_peer_proto_init() {
 		(*ConnectResponse_ServiceErrorCode)(nil),
 		(*ConnectResponse_MeshnetErrorCode)(nil),
 	}
+	file_peer_proto_msgTypes[16].OneofWrappers = []interface{}{
+		(*PrivateKeyResponse_PrivateKey)(nil),
+		(*PrivateKeyResponse_ServiceErrorCode)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_peer_proto_rawDesc,
 			NumEnums:      13,
-			NumMessages:   16,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

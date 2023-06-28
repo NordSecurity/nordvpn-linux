@@ -64,8 +64,11 @@ export CGO_LDFLAGS="-Wl,-z,relro,-z,now"
 tags="${FEATURES:-"telio drop"}"
 
 # Apply moose patch in case compiling with moose
-if [[ $tags == *"moose"* ]]; then
-	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+if [[ $tags == *"moose"* ]]; then 
+	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff || \
+		# If applying fails try reverting and applying again 
+		(git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff && \
+		git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff)
 	function revert_moose_patch {
 		cd "${CI_PROJECT_DIR}"
 		git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff

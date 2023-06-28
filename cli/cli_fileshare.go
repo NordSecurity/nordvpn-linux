@@ -280,7 +280,7 @@ func (c *cmd) FileshareCancel(ctx *cli.Context) error {
 	case 1:
 		resp, err = c.fileshareClient.Cancel(context.Background(), &pb.CancelRequest{TransferId: args.Get(0)})
 	case 2:
-		resp, err = c.fileshareClient.CancelFile(context.Background(), &pb.CancelFileRequest{TransferId: args.Get(0), FileId: args.Get(1)})
+		resp, err = c.fileshareClient.CancelFile(context.Background(), &pb.CancelFileRequest{TransferId: args.Get(0), FilePath: args.Get(1)})
 	default:
 		return formatError(argsCountError(ctx))
 	}

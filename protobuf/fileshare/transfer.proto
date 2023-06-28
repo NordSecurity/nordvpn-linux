@@ -18,23 +18,33 @@ enum Status {
 	CANCELED = 1;
 	BAD_PATH = 2;
 	BAD_FILE = 3;
-	TRANSPORT = 4;
-	BAD_STATUS = 5;
+	TRANSPORT = 4; // unused
+	BAD_STATUS = 5; // unused
 	SERVICE_STOP = 6;
 	BAD_TRANSFER = 7;
 	BAD_TRANSFER_STATE = 8;
 	BAD_FILE_ID = 9;
-	BAD_SYSTEM_TIME = 10;
-	TRUNCATED_FILE = 11;
-	EVENT_SEND = 12;
-	BAD_UUID = 13;
-	CHANNEL_CLOSED = 14;
+	BAD_SYSTEM_TIME = 10; // unused
+	TRUNCATED_FILE = 11; // unused
+	EVENT_SEND = 12; // unused
+	BAD_UUID = 13; // unused
+	CHANNEL_CLOSED = 14; // unused
 	IO = 15;
-	DATA_SEND = 16;
+	DATA_SEND = 16; // unused
 	DIRECTORY_NOT_EXPECTED = 17;
-	EMPTY_TRANSFER = 18;
-	TRANSFER_CLOSED_BY_PEER = 19;
+	EMPTY_TRANSFER = 18; // unused
+	TRANSFER_CLOSED_BY_PEER = 19; // unused
 	TRANSFER_LIMITS_EXCEEDED = 20;
+	MISMATCHED_SIZE = 21;
+	UNEXPECTED_DATA = 22;
+	INVALID_ARGUMENT = 23; // unused
+	TRANSFER_TIMEOUT = 24;
+	WS_SERVER = 25;
+	WS_CLIENT = 26;
+	// UNUSED = 27;
+	FILE_MODIFIED = 28;
+	FILENAME_TOO_LONG = 29;
+	AUTHENTICATION_FAILED = 30;
 	// Internally defined statuses for unfinished transfers
 	REQUESTED = 100;
 	ONGOING = 101;
@@ -62,8 +72,10 @@ message Transfer {
 
 message File {
 	string id = 1;
+	string path = 6;
 	uint64 size = 2;
 	uint64 transferred = 3;
 	Status status = 4; // Received from the events for specific set of files
-	map<string, File> children = 5;
+	// Not used anymore, file lists should always be flat, kept for history file compatibility
+	map<string, File> children = 5; 
 }

@@ -1,7 +1,6 @@
 package fileshare
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -118,34 +117,6 @@ func (em *EventManager) DisableNotifications() error {
 	return nil
 }
 
-func (em *EventManager) getPeerByIP(peerIP string) (*meshpb.Peer, error) {
-	resp, err := em.meshClient.GetPeers(context.Background(), &meshpb.Empty{})
-	if err != nil {
-		return nil, err
-	}
-
-	switch resp := resp.Response.(type) {
-	case *meshpb.GetPeersResponse_Peers:
-		peers := resp.Peers.External
-		peers = append(peers, resp.Peers.Local...)
-		peerIndex := slices.IndexFunc(peers, func(peer *meshpb.Peer) bool {
-			return peer.Ip == peerIP
-		})
-
-		if peerIndex == -1 {
-			return nil, fmt.Errorf("peer %s not found", peerIP)
-		}
-
-		return peers[peerIndex], nil
-	case *meshpb.GetPeersResponse_ServiceErrorCode:
-		return nil, fmt.Errorf("service error: %s", meshpb.ServiceErrorCode_name[int32(resp.ServiceErrorCode)])
-	case *meshpb.GetPeersResponse_MeshnetErrorCode:
-		return nil, fmt.Errorf("meshnet error: %s", meshpb.ServiceErrorCode_name[int32(resp.MeshnetErrorCode)])
-	default:
-		return nil, fmt.Errorf("unknown error")
-	}
-}
-
 func (em *EventManager) finalizeTransfer(transfer *pb.Transfer) {
 	if progressCh, ok := em.transferSubscriptions[transfer.Id]; ok {
 		progressCh <- TransferProgressInfo{
@@ -216,9 +187,10 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 		return
 	}
 
-	if em.notificationManager != nil {
+	file := FindTransferFileByID(transfer, event.Data.File)
+	if em.notificationManager != nil && file != nil {
 		em.notificationManager.NotifyFile(
-			filepath.Join(transfer.Path, event.Data.File),
+			filepath.Join(transfer.Path, file.Path),
 			transfer.Direction,
 			newFileStatus,
 		)
@@ -248,7 +220,7 @@ func (em *EventManager) handleRequestReceivedEvent(eventJson json.RawMessage) {
 		return
 	}
 
-	peer, err := em.getPeerByIP(event.Peer)
+	peer, err := getPeerByIP(em.meshClient, event.Peer)
 	if err != nil {
 		log.Println("failed to retrieve peer requesting transfer: ", err.Error())
 		return
@@ -285,7 +257,7 @@ func (em *EventManager) handleRequestReceivedEvent(eventJson json.RawMessage) {
 		return
 	}
 
-	for _, file := range GetAllTransferFiles(transfer) {
+	for _, file := range transfer.Files {
 		err = em.fileshare.Accept(event.TransferID, em.defaultDownloadDir, file.Id)
 	}
 
@@ -328,7 +300,10 @@ func (em *EventManager) EventFunc(eventJSON string) {
 			log.Printf("transfer %s from requestQueued event not found", event.TransferID)
 			return
 		}
-		SetTransferFiles(transfer, event.Files)
+		transfer.Files = event.Files
+		for _, file := range transfer.Files {
+			file.Status = pb.Status_REQUESTED
+		}
 		if err := em.storage.Save(em.transfers); err != nil {
 			log.Printf("writing file transfer history: %s", err)
 		}
@@ -345,7 +320,7 @@ func (em *EventManager) EventFunc(eventJSON string) {
 			return
 		}
 
-		if file := FindTransferFile(transfer, event.FileID); file != nil {
+		if file := FindTransferFileByID(transfer, event.FileID); file != nil {
 			transfer.TotalSize += file.Size
 		} else {
 			log.Printf("can't find file from transferStarted event in transfer %s", transfer.Id)
@@ -368,7 +343,7 @@ func (em *EventManager) EventFunc(eventJSON string) {
 			return
 		}
 		// mark corresponding file progress in transfer data structure
-		if file := FindTransferFile(transfer, event.FileID); file != nil {
+		if file := FindTransferFileByID(transfer, event.FileID); file != nil {
 			transfer.Status = pb.Status_ONGOING
 			file.Status = pb.Status_ONGOING
 			transfer.TotalTransferred += event.Transferred - file.Transferred // add only delta
@@ -456,11 +431,12 @@ func (em *EventManager) GetTransfer(transferID string) (*pb.Transfer, error) {
 func (em *EventManager) AcceptTransfer(
 	transferID string,
 	path string,
-	fileIDs []string) (*pb.Transfer, error) {
+	filePaths []string,
+) (*pb.Transfer, error) {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
-	return em.acceptTransfer(transferID, path, fileIDs)
+	return em.acceptTransfer(transferID, path, filePaths)
 }
 
 func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool {
@@ -497,9 +473,11 @@ func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool 
 }
 
 // acceptTransfer changes transfer status to reflect that it is being downloaded, not thread safe
-func (em *EventManager) acceptTransfer(transferID string,
+func (em *EventManager) acceptTransfer(
+	transferID string,
 	path string,
-	fileIDs []string) (*pb.Transfer, error) {
+	filePaths []string,
+) (*pb.Transfer, error) {
 	fileInfo, err := em.filesystem.Lstat(path)
 
 	if err != nil {
@@ -542,17 +520,18 @@ func (em *EventManager) acceptTransfer(transferID string,
 	}
 
 	var files []*pb.File
-	for _, fileID := range fileIDs {
-		file := FindTransferFile(transfer, fileID)
-		if file == nil {
-			return nil, ErrFileNotFound
+	if len(filePaths) == 0 {
+		files = transfer.Files // All files were accepted
+	} else {
+		for _, filePath := range filePaths {
+			acceptedFiles := GetTransferFilesByPathPrefix(transfer, filePath)
+			if acceptedFiles == nil {
+				return nil, ErrFileNotFound
+			}
+			files = append(files, acceptedFiles...)
 		}
-		files = append(files, file)
 	}
 
-	if len(fileIDs) == 0 {
-		files = transfer.Files // All files were accepted
-	}
 	var totalSize uint64
 	ForAllFiles(files, func(f *pb.File) {
 		totalSize += f.Size

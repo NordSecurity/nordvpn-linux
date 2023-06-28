@@ -80,7 +80,7 @@ func (c *cmd) fileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Dire
 		for _, transfer := range resp.GetTransfers() {
 			if transfer.Id == ctx.Args().First() {
 				fileshare.ForAllFiles(transfer.Files, func(f *pb.File) {
-					fmt.Println(f.Id)
+					fmt.Println(f.Path)
 				})
 				return
 			}
@@ -124,14 +124,14 @@ func transferToOutputString(transfer *pb.Transfer) string {
 
 	builder.WriteString(headingCol.Sprintf("File list:\n"))
 	fmt.Fprintf(tableWriter, "file\tsize\tstatus\t\n")
-	for _, file := range fileshare.GetAllTransferFiles(transfer) {
+	for _, file := range transfer.Files {
 		progress := ""
 		if file.Status == pb.Status_ONGOING && file.Size > 0 {
 			progress = " " + fmt.Sprintf("%d%%",
 				uint16(float64(file.Transferred)/float64(file.Size)*100))
 		}
 		fmt.Fprintf(tableWriter, "%s\t%s\t%s%s\t\n",
-			file.GetId(),
+			file.GetPath(),
 			units.HumanSize(float64(file.GetSize())),
 			fileshare.GetTransferFileStatus(file, transfer.Direction == pb.Direction_INCOMING),
 			progress,
@@ -181,7 +181,7 @@ func buildTransferTable(writer *tabwriter.Writer, transfers []*pb.Transfer, dire
 			continue
 		}
 
-		fileCount := fileshare.CountTransferFiles(transfer)
+		fileCount := len(transfer.Files)
 		fileSize := calcTransferSize(transfer.Files)
 
 		progress := ""
@@ -209,7 +209,7 @@ func calcTransferProgressPercent(tr *pb.Transfer) string {
 	progress := uint16(0)
 	transferred := uint64(0)
 	totalSize := uint64(0)
-	for _, file := range fileshare.GetAllTransferFiles(tr) {
+	for _, file := range tr.Files {
 		if file.Status != pb.Status_CANCELED {
 			transferred += file.Transferred
 			totalSize += file.Size

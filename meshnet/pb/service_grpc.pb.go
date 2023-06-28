@@ -75,6 +75,8 @@ type MeshnetClient interface {
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer
 	NotifyNewTransfer(ctx context.Context, in *NewTransferNotification, opts ...grpc.CallOption) (*NotifyNewTransferResponse, error)
+	// GetPrivateKey is used to send self private key over to fileshare daemon
+	GetPrivateKey(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PrivateKeyResponse, error)
 }
 
 type meshnetClient struct {
@@ -292,6 +294,15 @@ func (c *meshnetClient) NotifyNewTransfer(ctx context.Context, in *NewTransferNo
 	return out, nil
 }
 
+func (c *meshnetClient) GetPrivateKey(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PrivateKeyResponse, error) {
+	out := new(PrivateKeyResponse)
+	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/GetPrivateKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MeshnetServer is the server API for Meshnet service.
 // All implementations must embed UnimplementedMeshnetServer
 // for forward compatibility
@@ -349,6 +360,8 @@ type MeshnetServer interface {
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer
 	NotifyNewTransfer(context.Context, *NewTransferNotification) (*NotifyNewTransferResponse, error)
+	// GetPrivateKey is used to send self private key over to fileshare daemon
+	GetPrivateKey(context.Context, *Empty) (*PrivateKeyResponse, error)
 	mustEmbedUnimplementedMeshnetServer()
 }
 
@@ -424,6 +437,9 @@ func (UnimplementedMeshnetServer) Connect(context.Context, *UpdatePeerRequest) (
 }
 func (UnimplementedMeshnetServer) NotifyNewTransfer(context.Context, *NewTransferNotification) (*NotifyNewTransferResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyNewTransfer not implemented")
+}
+func (UnimplementedMeshnetServer) GetPrivateKey(context.Context, *Empty) (*PrivateKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPrivateKey not implemented")
 }
 func (UnimplementedMeshnetServer) mustEmbedUnimplementedMeshnetServer() {}
 
@@ -852,6 +868,24 @@ func _Meshnet_NotifyNewTransfer_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Meshnet_GetPrivateKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MeshnetServer).GetPrivateKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/meshpb.Meshnet/GetPrivateKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MeshnetServer).GetPrivateKey(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Meshnet_ServiceDesc is the grpc.ServiceDesc for Meshnet service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -950,6 +984,10 @@ var Meshnet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "NotifyNewTransfer",
 			Handler:    _Meshnet_NotifyNewTransfer_Handler,
+		},
+		{
+			MethodName: "GetPrivateKey",
+			Handler:    _Meshnet_GetPrivateKey_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

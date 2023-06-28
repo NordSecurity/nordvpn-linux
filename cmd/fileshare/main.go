@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
@@ -10,6 +11,8 @@ import (
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"net/netip"
 	"os"
+	"os/user"
+	"path"
 	"strconv"
 
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -56,6 +59,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't connect to daemon: %s", err)
 	}
+	daemonClient := daemonpb.NewDaemonClient(grpcConn)
 	meshClient := meshpb.NewMeshnetClient(grpcConn)
 
 	resp, err := meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
@@ -72,35 +76,52 @@ func main() {
 		log.Println("failed to find default download directory: ", err.Error())
 	}
 
+	currentUser, err := user.Current()
+	if err != nil {
+		log.Fatalf("can't retrieve current user info: %s", err)
+	}
+	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
+	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
+	storagePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
+
 	eventManager := fileshare.NewEventManager(
-		fileshare.FileshareHistoryImplementation(),
+		fileshare.FileshareHistoryImplementation(storagePath),
 		meshClient,
 		fileshare.StdOsInfo{},
 		fileshare.NewStdFilesystem("/"),
 		defaultDownloadDirectory)
+
+	privKeyResponse, err := meshClient.GetPrivateKey(context.Background(), &meshpb.Empty{})
+	if err != nil || privKeyResponse.GetPrivateKey() == "" {
+		log.Fatalf("can't retrieve mesh private key: %v; service error %v", err, privKeyResponse.GetServiceErrorCode())
+	}
+	meshPrivKey, err := base64.StdEncoding.DecodeString(privKeyResponse.GetPrivateKey())
+	if err != nil || len(meshPrivKey) != 32 {
+		log.Fatalf("can't decode mesh private key: %v", err)
+	}
 
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
 	fileshareImplementation := drop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
 		internal.IsProdEnv(Environment),
+		fileshare.NewPubkeyProvider(meshClient).PubkeyFunc,
+		string(meshPrivKey),
+		storagePath,
 	)
 	eventManager.SetFileshare(fileshareImplementation)
 
-	daemonClient := daemonpb.NewDaemonClient(grpcConn)
 	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
 		Uid: int64(os.Getuid()),
 	})
-
-	if err == nil {
-		if settings.Data.Notify {
-			err = eventManager.EnableNotifications(fileshareImplementation)
-			if err != nil {
-				log.Println("failed to enable notifications: ", err)
-			}
+	if err != nil {
+		log.Printf("retrieving daemon settings: %s", err)
+	}
+	if settings != nil && settings.Data.Notify {
+		err = eventManager.EnableNotifications(fileshareImplementation)
+		if err != nil {
+			log.Println("failed to enable notifications: ", err)
 		}
-	} else {
-		log.Println("failed to determine status notifications setting: ", err)
 	}
 
 	meshnetIP, err := firstAddressByInterfaceName(nordlynx.InterfaceName)

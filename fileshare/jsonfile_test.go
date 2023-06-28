@@ -27,10 +27,11 @@ func TestSimpleSaveLoad(t *testing.T) {
 		}
 	}
 
-	jsonFile := JsonFile{}
+	storagePath := t.TempDir()
+	jsonFile := NewJsonFile(storagePath)
 	assert.NoError(t, jsonFile.Save(transfers))
 
-	loadedJsonFile := JsonFile{}
+	loadedJsonFile := NewJsonFile(storagePath)
 	loadedTransfers, err := loadedJsonFile.Load()
 	assert.NoError(t, err)
 	assert.NotNil(t, loadedTransfers)
@@ -59,10 +60,11 @@ func TestLargeSaveLoad(t *testing.T) {
 
 	fmt.Printf("transfers count before: %d\n", len(transfers))
 
-	jsonFile := JsonFile{}
+	storagePath := t.TempDir()
+	jsonFile := NewJsonFile(storagePath)
 	assert.NoError(t, jsonFile.Save(transfers))
 
-	loadedJsonFile := JsonFile{}
+	loadedJsonFile := NewJsonFile(storagePath)
 	loadedTransfers, err := loadedJsonFile.Load()
 	assert.NoError(t, err)
 	assert.NotNil(t, loadedTransfers)
@@ -88,10 +90,11 @@ func TestNormalSaveLoad(t *testing.T) {
 
 	fmt.Printf("transfers count before: %d\n", len(transfers))
 
-	jsonFile := JsonFile{}
+	storagePath := t.TempDir()
+	jsonFile := NewJsonFile(storagePath)
 	assert.NoError(t, jsonFile.Save(transfers))
 
-	loadedJsonFile := JsonFile{}
+	loadedJsonFile := NewJsonFile(storagePath)
 	loadedTransfers, err := loadedJsonFile.Load()
 	assert.NoError(t, err)
 	assert.NotNil(t, loadedTransfers)
@@ -102,6 +105,71 @@ func TestNormalSaveLoad(t *testing.T) {
 }
 
 func makeTransfer(transferID string, dirLevels, fileCount int, makeBigNames bool) *pb.Transfer {
+	nameSize := 10
+	if makeBigNames {
+		nameSize = 200
+	}
+
+	var files []*pb.File
+	for i := 0; i < fileCount; i++ {
+		filePath := fmt.Sprintf("%s-%d", strings.Repeat("A", nameSize), i)
+		files = append(files, &pb.File{
+			Id:     fmt.Sprintf("%s-%d", "asdf845sad84fsadf485sa5d487", i),
+			Path:   filePath,
+			Size:   10,
+			Status: pb.Status_REQUESTED,
+		})
+	}
+
+	transfer := &pb.Transfer{
+		Id:    transferID,
+		Files: files,
+	}
+
+	return transfer
+}
+
+func TestCompatibilityLoad(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	category.Set(t, category.Unit)
+
+	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+
+	transfers := make(map[string]*pb.Transfer)
+
+	const transfersCount = 50
+
+	for i := range [transfersCount]byte{} {
+		transferID = fmt.Sprintf("%s-%d", transferID, i)
+		transfers[transferID] = makeLegacyTransfer(transferID, 2, 5, false)
+	}
+
+	fmt.Printf("transfers count before: %d\n", len(transfers))
+
+	storagePath := t.TempDir()
+	jsonFile := NewJsonFile(storagePath)
+	assert.NoError(t, jsonFile.Save(transfers))
+
+	loadedJsonFile := NewJsonFile(storagePath)
+	loadedTransfers, err := loadedJsonFile.Load()
+	assert.NoError(t, err)
+	assert.NotNil(t, loadedTransfers)
+
+	fmt.Printf("transfers count after load: %d\n", len(loadedTransfers))
+
+	assert.GreaterOrEqual(t, transfersCount, len(loadedTransfers))
+
+	for _, transfer := range loadedTransfers {
+		assert.Equal(t, 5, len(transfer.Files))
+		for _, file := range transfer.Files {
+			assert.Equal(t, 0, len(file.Children))
+			assert.Equal(t, 2, strings.Count(file.Path, "/")) // ensure that all files are files and not dirs
+		}
+	}
+}
+
+func makeLegacyTransfer(transferID string, dirLevels, fileCount int, makeBigNames bool) *pb.Transfer {
 	var crrDir, topDir *pb.File
 	nameSize := 10
 	if makeBigNames {
@@ -115,6 +183,7 @@ func makeTransfer(transferID string, dirLevels, fileCount int, makeBigNames bool
 				Id:       dirName,
 				Size:     uint64(0),
 				Children: map[string]*pb.File{},
+				Status:   pb.Status_REQUESTED,
 			}
 			topDir = crrDir
 		} else {
@@ -122,6 +191,7 @@ func makeTransfer(transferID string, dirLevels, fileCount int, makeBigNames bool
 				Id:       dirName,
 				Size:     uint64(0),
 				Children: map[string]*pb.File{},
+				Status:   pb.Status_REQUESTED,
 			}
 			crrDir = crrDir.Children[dirName]
 		}
@@ -140,7 +210,31 @@ func makeTransfer(transferID string, dirLevels, fileCount int, makeBigNames bool
 		Files: []*pb.File{topDir},
 	}
 
-	SetTransferFiles(transfer, []*pb.File{topDir})
+	setTransferFiles(transfer, []*pb.File{topDir})
 
 	return transfer
+}
+
+// Old utility functions copied over to construct a legacy transfer
+func setTransferFiles(tr *pb.Transfer, files []*pb.File) {
+	tr.Files = files
+	setTransferAllFilePath(tr)
+}
+
+func setTransferAllFilePath(tr *pb.Transfer) {
+	for _, file := range tr.Files {
+		setAllFilePath(file, "")
+	}
+}
+
+func setAllFilePath(file *pb.File, path string) {
+	if path != "" {
+		path += "/"
+	}
+	file.Id = path + file.Id
+	if len(file.Children) > 0 {
+		for _, childFile := range file.Children {
+			setAllFilePath(childFile, file.Id)
+		}
+	}
 }

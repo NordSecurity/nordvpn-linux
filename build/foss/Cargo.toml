@@ -7,5 +7,5 @@ edition = "2021"
 crate-type = ["staticlib"]
 
 [dependencies]
-norddrop = { git = "https://github.com/NordSecurity/libdrop", tag = "v1.0.0" }
-telio = { git = "https://github.com/NordSecurity/libtelio", tag= "v4.0.2" }
+norddrop = { git = "https://github.com/NordSecurity/libdrop", tag = "v3.1.1" }
+telio = { git = "https://github.com/NordSecurity/libtelio", tag= "v4.0.3" }

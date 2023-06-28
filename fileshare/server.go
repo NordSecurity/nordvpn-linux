@@ -296,11 +296,11 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 	transferStarted := false
 	// if user has given command to accept only one (or some) file in whole transfer
 	// given files should be accepted, but other files has to be canceled for whole transfer to get processed at once
-	for _, file := range GetAllTransferFiles(transfer) {
+	for _, file := range transfer.Files {
 		isAccepted := len(req.Files) == 0 || slices.ContainsFunc(req.Files,
-			func(acceptedFileId string) bool {
+			func(acceptedFilePath string) bool {
 				// user can provide a directory name in order to accept multiple files, so we use HasPrefix instead of comparing ids directly
-				return strings.HasPrefix(file.Id, acceptedFileId)
+				return strings.HasPrefix(file.Path, acceptedFilePath)
 			})
 
 		if isAccepted {
@@ -406,7 +406,7 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 		return fileshareError(pb.FileshareErrorCode_LIB_FAILURE), nil
 	}
 
-	file := FindTransferFile(transfer, req.FileId)
+	file := FindTransferFileByPath(transfer, req.FilePath)
 
 	if file == nil {
 		return fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND), nil
@@ -420,7 +420,7 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 		return fileshareError(pb.FileshareErrorCode_FILE_NOT_IN_PROGRESS), nil
 	}
 
-	if err := s.fileshare.CancelFile(req.TransferId, req.FileId); err != nil {
+	if err := s.fileshare.CancelFile(req.TransferId, file.Id); err != nil {
 		log.Printf("failed to cancel file in transfer %s: %s", req.TransferId, err)
 		return fileshareError(pb.FileshareErrorCode_LIB_FAILURE), nil
 	}

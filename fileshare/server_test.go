@@ -51,23 +51,7 @@ func findFileInList(t *testing.T, id string, files []*pb.File) *pb.File {
 	t.Helper()
 
 	for _, file := range files {
-		if file := findFileInTree(t, id, file); file != nil {
-			return file
-		}
-	}
-
-	return nil
-}
-
-func findFileInTree(t *testing.T, id string, tree *pb.File) *pb.File {
-	t.Helper()
-
-	if tree.Id == id {
-		return tree
-	}
-
-	for _, child := range tree.Children {
-		if file := findFileInTree(t, id, child); file != nil {
+		if file.Id == id {
 			return file
 		}
 	}
@@ -127,12 +111,12 @@ func (m *mockAcceptServer) Send(resp *pb.StatusResponse) error {
 
 type mockSendServer struct {
 	pb.Fileshare_SendServer
-	response        pb.StatusResponse
+	response        *pb.StatusResponse
 	sendReturnValue error
 }
 
 func (m *mockSendServer) Send(resp *pb.StatusResponse) error {
-	m.response = *resp //nolint:govet
+	m.response = resp
 	return m.sendReturnValue
 }
 
@@ -333,7 +317,7 @@ func TestSend(t *testing.T) {
 	for _, test := range fileshareTests {
 		mockMeshClient := mockMeshClient{
 			isEnabled:     true,
-			loacalPeers:   localPeers,
+			localPeers:    localPeers,
 			externalPeers: externalPeers,
 		}
 
@@ -341,7 +325,7 @@ func TestSend(t *testing.T) {
 		server := NewServer(
 			&mockFileshare,
 			&EventManager{transfers: make(map[string]*pb.Transfer)},
-			mockMeshClient,
+			&mockMeshClient,
 			mockFs,
 			&mockOsInfo{},
 		)
@@ -450,7 +434,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 		server := NewServer(
 			&mockServerFileshare{},
 			&EventManager{transfers: make(map[string]*pb.Transfer)},
-			mockMeshClient{isEnabled: true},
+			&mockMeshClient{isEnabled: true},
 			mockFs,
 			&mockOsInfo{},
 		)
@@ -462,7 +446,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 				&pb.SendRequest{Peer: "100.96.115.182", Paths: test.paths, Silent: test.transferSilent},
 				&sendServer)
 			assert.Equal(t, nil, err)
-			assert.Equal(t, test.expectedSendResponse, &sendServer.response)
+			assert.Equal(t, test.expectedSendResponse, sendServer.response)
 		})
 	}
 }
@@ -470,7 +454,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 func TestAccept(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fileID := "test_a.txt"
+	filePath := "test_a.txt"
 	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
 
 	mockFs := newMockFilesystem()
@@ -530,7 +514,7 @@ func TestAccept(t *testing.T) {
 	fileshareTests := []struct {
 		testName          string
 		transferID        string
-		fileID            string
+		filePath          string
 		acceptPath        string
 		transferDirection pb.Direction
 		transferStatus    pb.Status
@@ -540,7 +524,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "transfer successfully accepted",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -548,7 +532,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "server error",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -557,7 +541,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "non-existing transfer",
 			transferID:        "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -566,7 +550,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "outgoing transfer",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_OUTGOING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -575,7 +559,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "ongoing transfer",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_ONGOING,
@@ -584,7 +568,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "non-existing file",
 			transferID:        transferID,
-			fileID:            "some_file.txt",
+			filePath:          "some_file.txt",
 			acceptPath:        acceptDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -593,7 +577,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "accept directory does not exist",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        "dddd",
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -602,7 +586,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "symlink accept directory",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        acceptSymlinkName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -611,7 +595,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "accept directory is not a directory",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        acceptNotDirName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -620,7 +604,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "user belongs to destination directory owner group",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        directoryGroupWriteName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -628,7 +612,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "destination directory has write permissions for other users",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        directoryOtherWriteName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -636,7 +620,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "user has no write permissions to destination directory",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        directoryNoPermissionsName,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -645,7 +629,7 @@ func TestAccept(t *testing.T) {
 		{
 			testName:          "user belongs to owner group, owner group has no write permissions",
 			transferID:        transferID,
-			fileID:            fileID,
+			filePath:          filePath,
 			acceptPath:        directoryGroupNoWrite,
 			transferDirection: pb.Direction_INCOMING,
 			transferStatus:    pb.Status_REQUESTED,
@@ -660,7 +644,7 @@ func TestAccept(t *testing.T) {
 			Direction: test.transferDirection,
 			Status:    test.transferStatus,
 			Files: []*pb.File{{
-				Id: fileID,
+				Path: filePath,
 			}},
 		}
 		eventManager := EventManager{transfers: map[string]*pb.Transfer{
@@ -671,13 +655,13 @@ func TestAccept(t *testing.T) {
 		server := NewServer(
 			&mockServerFileshare{},
 			&eventManager,
-			mockMeshClient{isEnabled: true},
+			&mockMeshClient{isEnabled: true},
 			mockFs,
 			&mockOsInfo)
 
 		t.Run(test.testName, func(t *testing.T) {
 			err := server.Accept(
-				&pb.AcceptRequest{TransferId: test.transferID, DstPath: test.acceptPath, Silent: true, Files: []string{test.fileID}},
+				&pb.AcceptRequest{TransferId: test.transferID, DstPath: test.acceptPath, Silent: true, Files: []string{test.filePath}},
 				acceptServer)
 			assert.ErrorIs(t, err, test.serverError)
 			assert.Equal(t, test.respError, acceptServer.response.Error)
@@ -694,44 +678,36 @@ func TestAcceptDirectory(t *testing.T) {
 	// 	└── b
 	// outer/
 	// └── c
+	// └── d
 
-	nestedDirectoryID := "nested"
-	innerDirectoryID := "nested/inner"
-	outerDirectoryID := "outer"
-
-	file0ID := "nested/a"
-	file1ID := "nested/inner/b"
-	file2ID := "outer/c"
-	file3ID := "outer/d"
+	nestedFilePath := "nested/a"
+	nestedFileID := "nestedFileID"
+	nestedInnerFilePath := "nested/inner/b"
+	nestedInnerFileID := "nestedInnerFileID"
+	outerFile1Path := "outer/c"
+	outerFile1ID := "outerFile1ID"
+	outerFile2Path := "outer/d"
+	outerFile2ID := "outerFile2ID"
 
 	file0 := pb.File{
-		Id:   file0ID,
+		Path: nestedFilePath,
+		Id:   nestedFileID,
 		Size: uint64(10),
 	}
 	file1 := pb.File{
-		Id:   file1ID,
+		Path: nestedInnerFilePath,
+		Id:   nestedInnerFileID,
 		Size: uint64(10),
 	}
 	file2 := pb.File{
-		Id:   file2ID,
+		Path: outerFile1Path,
+		Id:   outerFile1ID,
 		Size: uint64(10),
 	}
 	file3 := pb.File{
-		Id:   file3ID,
+		Path: outerFile2Path,
+		Id:   outerFile2ID,
 		Size: uint64(10),
-	}
-
-	innerDirectory := pb.File{
-		Id:       innerDirectoryID,
-		Children: map[string]*pb.File{file1ID: &file0},
-	}
-	nestedDirectory := pb.File{
-		Id:       nestedDirectoryID,
-		Children: map[string]*pb.File{file1ID: &file1, innerDirectoryID: &innerDirectory},
-	}
-	outerDirectory := pb.File{
-		Id:       outerDirectoryID,
-		Children: map[string]*pb.File{file1ID: &file2, file3ID: &file3},
 	}
 
 	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
@@ -739,7 +715,7 @@ func TestAcceptDirectory(t *testing.T) {
 		Id:        transferID,
 		Direction: pb.Direction_INCOMING,
 		Status:    pb.Status_REQUESTED,
-		Files:     []*pb.File{&nestedDirectory, &outerDirectory},
+		Files:     []*pb.File{&file0, &file1, &file2, &file3},
 	}
 
 	currentUserUID := uint32(1000)
@@ -769,7 +745,7 @@ func TestAcceptDirectory(t *testing.T) {
 
 	tests := []struct {
 		testName              string
-		fileIDs               []string
+		filePaths             []string
 		expectedAcceptedFiles []string
 		expectedCanceledFiles []string
 		firstFileErr          error
@@ -778,63 +754,63 @@ func TestAcceptDirectory(t *testing.T) {
 	}{
 		{
 			testName:              "accept nested directory",
-			fileIDs:               []string{"nested"},
-			expectedAcceptedFiles: []string{"nested/a", "nested/inner/b"},
-			expectedCanceledFiles: []string{"outer/c", "outer/d"},
+			filePaths:             []string{"nested"},
+			expectedAcceptedFiles: []string{nestedFileID, nestedInnerFileID},
+			expectedCanceledFiles: []string{outerFile1ID, outerFile2ID},
 		},
 		{
 			testName:              "accept outer directory",
-			fileIDs:               []string{"outer"},
-			expectedAcceptedFiles: []string{"outer/c", "outer/d"},
-			expectedCanceledFiles: []string{"nested/a", "nested/inner/b"},
+			filePaths:             []string{"outer"},
+			expectedAcceptedFiles: []string{outerFile1ID, outerFile2ID},
+			expectedCanceledFiles: []string{nestedFileID, nestedInnerFileID},
 		},
 		{
 			testName:              "accept both directories",
-			fileIDs:               []string{"outer", "nested"},
-			expectedAcceptedFiles: []string{"outer/c", "outer/d", "nested/a", "nested/inner/b"},
+			filePaths:             []string{"outer", "nested"},
+			expectedAcceptedFiles: []string{outerFile1ID, outerFile2ID, nestedFileID, nestedInnerFileID},
 			expectedCanceledFiles: []string{},
 		},
 		{
 			testName:              "accept only nested inner",
-			fileIDs:               []string{"nested/inner"},
-			expectedAcceptedFiles: []string{"nested/inner/b"},
-			expectedCanceledFiles: []string{"outer/c", "outer/d", "nested/a"},
+			filePaths:             []string{"nested/inner"},
+			expectedAcceptedFiles: []string{nestedInnerFileID},
+			expectedCanceledFiles: []string{outerFile1ID, outerFile2ID, nestedFileID},
 		},
 		{
 			testName:              "accept single file",
-			fileIDs:               []string{"outer/c"},
-			expectedAcceptedFiles: []string{"outer/c"},
-			expectedCanceledFiles: []string{"outer/d", "nested/a", "nested/inner/b"},
+			filePaths:             []string{"outer/c"},
+			expectedAcceptedFiles: []string{outerFile1ID},
+			expectedCanceledFiles: []string{outerFile2ID, nestedFileID, nestedInnerFileID},
 		},
 		{
 			testName:              "accept single file error",
-			fileIDs:               []string{"outer/c"},
-			expectedAcceptedFiles: []string{"outer/c"},
-			expectedCanceledFiles: []string{"outer/d", "nested/a", "nested/inner/b"},
+			filePaths:             []string{"outer/c"},
+			expectedAcceptedFiles: []string{outerFile1ID},
+			expectedCanceledFiles: []string{outerFile2ID, nestedFileID, nestedInnerFileID},
 			firstFileErr:          errors.New("broken file"),
 			respErr:               fileshareError(pb.FileshareErrorCode_ACCEPT_ALL_FILES_FAILED),
 		},
 		{
 			testName:              "accept partial file error",
-			fileIDs:               []string{"outer/c", "nested/a"},
-			expectedAcceptedFiles: []string{"outer/c", "nested/a"},
-			expectedCanceledFiles: []string{"outer/d", "nested/inner/b"},
+			filePaths:             []string{"outer/c", "nested/a"},
+			expectedAcceptedFiles: []string{outerFile1ID, nestedFileID},
+			expectedCanceledFiles: []string{outerFile2ID, nestedInnerFileID},
 			firstFileErr:          errors.New("broken file"),
 			// No error expected because transfer starts with some files
 		},
 		{
 			testName:              "not enough space",
-			fileIDs:               []string{"outer", "nested"},
-			expectedAcceptedFiles: []string{"outer/c", "outer/d", "nested/a", "nested/inner/b"},
+			filePaths:             []string{"outer", "nested"},
+			expectedAcceptedFiles: []string{outerFile1ID, outerFile2ID, nestedFileID, nestedInnerFileID},
 			expectedCanceledFiles: []string{},
 			filesystemSpace:       35,
 			respErr:               fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE),
 		},
 		{
 			testName:              "enough space",
-			fileIDs:               []string{"outer", "nested/a"},
-			expectedAcceptedFiles: []string{"outer/c", "outer/d", "nested/a"},
-			expectedCanceledFiles: []string{"nested/inner/b"},
+			filePaths:             []string{"outer", "nested/a"},
+			expectedAcceptedFiles: []string{outerFile1ID, outerFile2ID, nestedFileID},
+			expectedCanceledFiles: []string{nestedInnerFileID},
 			filesystemSpace:       35,
 		},
 	}
@@ -858,7 +834,7 @@ func TestAcceptDirectory(t *testing.T) {
 		server := NewServer(
 			fileshare,
 			&eventManager,
-			mockMeshClient{isEnabled: true},
+			&mockMeshClient{isEnabled: true},
 			mockFs,
 			&mockOsInfo,
 		)
@@ -867,7 +843,7 @@ func TestAcceptDirectory(t *testing.T) {
 
 		t.Run(test.testName, func(t *testing.T) {
 			err := server.Accept(
-				&pb.AcceptRequest{TransferId: transferID, DstPath: "tmp", Silent: true, Files: test.fileIDs},
+				&pb.AcceptRequest{TransferId: transferID, DstPath: "tmp", Silent: true, Files: test.filePaths},
 				acceptServer)
 			assert.Equal(t, err, nil)
 			if test.respErr != nil {
@@ -887,9 +863,11 @@ func TestAcceptDirectory(t *testing.T) {
 func TestCancel(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fileID := "norddrop_tests/test_a.txt"
+	filePath := "norddrop_tests/test_a.txt"
+	fileID := "file ID"
 	file := pb.File{
-		Id: fileID,
+		Path: filePath,
+		Id:   fileID,
 	}
 
 	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
@@ -903,7 +881,7 @@ func TestCancel(t *testing.T) {
 		isMeshEnabled  bool
 		cancelError    error
 		transferID     string
-		fileID         string
+		filePath       string
 		transferStatus pb.Status
 		response       *pb.Error
 	}{
@@ -917,7 +895,7 @@ func TestCancel(t *testing.T) {
 			isMeshEnabled: true,
 			cancelError:   nil,
 			transferID:    "b537743c-a328-4a3e-b2ec",
-			fileID:        "",
+			filePath:      "",
 			response:      fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND),
 		},
 		{
@@ -925,7 +903,7 @@ func TestCancel(t *testing.T) {
 			isMeshEnabled:  true,
 			cancelError:    nil,
 			transferID:     transferID,
-			fileID:         "norddrop_tests/test.txt",
+			filePath:       "norddrop_tests/test.txt",
 			transferStatus: pb.Status_ONGOING,
 			response:       fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND),
 		},
@@ -934,7 +912,7 @@ func TestCancel(t *testing.T) {
 			isMeshEnabled:  true,
 			cancelError:    errors.New("generic error"),
 			transferID:     transferID,
-			fileID:         fileID,
+			filePath:       filePath,
 			transferStatus: pb.Status_ONGOING,
 			response:       fileshareError(pb.FileshareErrorCode_LIB_FAILURE),
 		},
@@ -943,7 +921,7 @@ func TestCancel(t *testing.T) {
 			isMeshEnabled:  true,
 			cancelError:    nil,
 			transferID:     transferID,
-			fileID:         fileID,
+			filePath:       filePath,
 			transferStatus: pb.Status_CANCELED,
 			response:       fileshareError(pb.FileshareErrorCode_FILE_INVALIDATED),
 		},
@@ -952,7 +930,7 @@ func TestCancel(t *testing.T) {
 			isMeshEnabled:  true,
 			cancelError:    nil,
 			transferID:     transferID,
-			fileID:         fileID,
+			filePath:       filePath,
 			transferStatus: pb.Status_ONGOING,
 			response:       empty(),
 		},
@@ -966,14 +944,14 @@ func TestCancel(t *testing.T) {
 		server := NewServer(
 			&mockServerFileshare{cancelReturnValue: test.cancelError},
 			&eventManager,
-			mockMeshClient{isEnabled: test.isMeshEnabled},
+			&mockMeshClient{isEnabled: test.isMeshEnabled},
 			newMockFilesystem(),
 			&mockOsInfo{},
 		)
 		eventManager.transfers[transferID].Files[0].Status = test.transferStatus
 
 		t.Run(test.testName, func(t *testing.T) {
-			resp, err := server.CancelFile(context.Background(), &pb.CancelFileRequest{TransferId: test.transferID, FileId: test.fileID})
+			resp, err := server.CancelFile(context.Background(), &pb.CancelFileRequest{TransferId: test.transferID, FilePath: test.filePath})
 			assert.NoError(t, err)
 			assert.Equal(t, test.response, resp)
 		})

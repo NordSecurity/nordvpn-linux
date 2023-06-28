@@ -2,7 +2,7 @@ diff --git a/go.mod b/go.mod
 index 25f066ce..fee14c21 100644
 --- a/go.mod
 +++ b/go.mod
-@@ -2,6 +2,11 @@ module github.com/NordSecurity/nordvpn-linux
+@@ -2,4 +2,9 @@ module github.com/NordSecurity/nordvpn-linux
  
  go 1.20
  
@@ -12,8 +12,6 @@ index 25f066ce..fee14c21 100644
 +)
 +
  require (
- 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
- 	github.com/NordSecurity/libdrop v1.0.0
 @@ -37,6 +42,8 @@ require (
  	google.golang.org/grpc v1.53.0
  	google.golang.org/protobuf v1.29.1

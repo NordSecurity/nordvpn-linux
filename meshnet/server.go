@@ -2662,3 +2662,30 @@ func (s *Server) Connect(
 		Response: &pb.ConnectResponse_Empty{},
 	}, nil
 }
+
+// GetPrivateKey returns self private key
+func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKeyResponse, error) {
+	if !s.ac.IsLoggedIn() {
+		return &pb.PrivateKeyResponse{
+			Response: &pb.PrivateKeyResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+			},
+		}, nil
+	}
+
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		s.pub.Publish(err)
+		return &pb.PrivateKeyResponse{
+			Response: &pb.PrivateKeyResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	return &pb.PrivateKeyResponse{
+		Response: &pb.PrivateKeyResponse_PrivateKey{
+			PrivateKey: cfg.MeshPrivateKey,
+		},
+	}, nil
+}

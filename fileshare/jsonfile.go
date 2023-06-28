@@ -5,26 +5,28 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/user"
 	"path"
 	"path/filepath"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"golang.org/x/exp/maps"
 )
 
 const historyFile = "history"
 
 // JsonFile is a implementation of user's fileshare history storage.
-type JsonFile struct{}
+type JsonFile struct {
+	storagePath string
+}
+
+func NewJsonFile(storagePath string) JsonFile {
+	return JsonFile{storagePath: storagePath}
+}
 
 // Load user's history
-func (JsonFile) Load() (map[string]*pb.Transfer, error) {
-	currentUser, _ := user.Current()
-	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
-	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
-	historyFilePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath, historyFile)
-
+func (jf JsonFile) Load() (map[string]*pb.Transfer, error) {
+	historyFilePath := path.Join(jf.storagePath, historyFile)
 	jsonBytes, err := os.ReadFile(filepath.Clean(historyFilePath))
 	if err != nil {
 		return nil, fmt.Errorf("loading transfers history file: %w", err)
@@ -36,6 +38,7 @@ func (JsonFile) Load() (map[string]*pb.Transfer, error) {
 	}
 
 	for _, tr := range transfers {
+		tr.Files = flatten(tr.Files)
 		if tr.Status == pb.Status_REQUESTED || tr.Status == pb.Status_ONGOING {
 			tr.Status = pb.Status_INTERRUPTED
 			SetTransferAllFileStatus(tr, pb.Status_INTERRUPTED)
@@ -45,13 +48,26 @@ func (JsonFile) Load() (map[string]*pb.Transfer, error) {
 	return transfers, nil
 }
 
-// Save user's history
-func (JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
-	currentUser, _ := user.Current()
-	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
-	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
-	historyFilePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath, historyFile)
+// Previously libdrop returned file trees as a tree, but now it returns a flat file list.
+// For the users that upgrade nordvpn this converts old format to the new.
+func flatten(files []*pb.File) []*pb.File {
+	var flatFiles []*pb.File
+	for _, file := range files {
+		if len(file.Children) > 0 {
+			flatFiles = append(flatFiles, flatten(maps.Values(file.Children))...)
+		} else {
+			if file.Path == "" {
+				file.Path = file.Id
+			}
+			flatFiles = append(flatFiles, file)
+		}
+	}
+	return flatFiles
+}
 
+// Save user's history
+func (jf JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
+	historyFilePath := path.Join(jf.storagePath, historyFile)
 	if err := internal.EnsureDir(historyFilePath); err != nil {
 		return fmt.Errorf("trying to save transfers history: %w", err)
 	}

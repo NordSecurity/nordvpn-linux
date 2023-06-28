@@ -256,3 +256,10 @@ message ConnectResponse {
 		MeshnetErrorCode meshnet_error_code = 5;
 	}
 }
+
+message PrivateKeyResponse {
+	oneof response {
+		string private_key = 1;
+		ServiceErrorCode service_error_code = 2;
+	}
+}

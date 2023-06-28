@@ -211,7 +211,7 @@ func TestIncomingTransfer(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(MockStorage{}, meshClient, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(MockStorage{}, &meshClient, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -246,7 +246,7 @@ func TestIncomingTransfer(t *testing.T) {
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(MockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	timeNow := time.Now()
 	for i := 10; i > 0; i-- {
@@ -270,7 +270,7 @@ func TestGetTransfers(t *testing.T) {
 func TestGetTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(MockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	eventManager.transfers["test"] = &pb.Transfer{
@@ -290,7 +290,7 @@ func TestGetTransfer(t *testing.T) {
 func TestOutgoingTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(MockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -331,7 +331,7 @@ func TestInvalidTransferProgress(t *testing.T) {
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(MockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -364,7 +364,7 @@ func TestInvalidTransferProgress(t *testing.T) {
 func TestTransferProgress(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(MockStorage{}, mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(MockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -373,11 +373,13 @@ func TestTransferProgress(t *testing.T) {
 	path := "/tmp"
 	fileCnt := 3
 	file1 := "testfile-small"
+	file1ID := "file1ID"
 	file1sz := 100
 	file2 := "testfile-big"
+	file2ID := "file2ID"
 	file2sz := 1000
-	level2 := "level2"
 	file3 := "file3.txt"
+	file3ID := "file3ID"
 	file3sz := 1000
 
 	eventManager.NewOutgoingTransfer(transferID, peer, path)
@@ -391,27 +393,22 @@ func TestTransferProgress(t *testing.T) {
 				"files": [
 				{
 					"id": "%s",
-					"size": %d,
-					"children": {}
+					"path": "%s",
+					"size": %d
 				},
 				{
 					"id": "%s",
-					"size": %d,
-					"children": {}
+					"path": "%s",
+					"size": %d
 				},
 				{
 					"id": "%s",
-					"children": {
-						"%s": {
-							"id": "%s",
-							"size": %d,
-							"children": {}
-						}
-					}
+					"path": "%s",
+					"size": %d
 				}
 				]
 			}
-		}`, peer, transferID, file1, file1sz, file2, file2sz, level2, file3, file3, file3sz))
+		}`, peer, transferID, file1ID, file1, file1sz, file2ID, file2, file2sz, file3ID, file3, file3sz))
 
 	transfer, ok := eventManager.transfers[transferID]
 	assert.True(t, ok)
@@ -432,7 +429,7 @@ func TestTransferProgress(t *testing.T) {
 			"transfer": "%s",
 			"file": "%s"
 		}
-		}`, transferID, file1))
+		}`, transferID, file1ID))
 
 	assert.EqualValues(t, transfer.TotalSize, file1sz)
 
@@ -443,7 +440,7 @@ func TestTransferProgress(t *testing.T) {
 			"transfer": "%s",
 			"file": "%s"
 		}
-		}`, transferID, file2))
+		}`, transferID, file2ID))
 
 	assert.EqualValues(t, transfer.TotalSize, file1sz+file2sz)
 
@@ -457,7 +454,7 @@ func TestTransferProgress(t *testing.T) {
 				"file": "%s",
 				"transfered": %d
 			}
-			}`, transferID, file1, transferredBytes))
+			}`, transferID, file1ID, transferredBytes))
 	}()
 
 	progressEvent := <-progCh
@@ -478,7 +475,7 @@ func TestTransferProgress(t *testing.T) {
 							"file": "%s"
 					}
 				}
-				}`, transferID, file1))
+				}`, transferID, file1ID))
 		eventManager.EventFunc(
 			fmt.Sprintf(`{
 				"type": "TransferFinished",
@@ -489,7 +486,7 @@ func TestTransferProgress(t *testing.T) {
 							"file": "%s"
 					}
 				}
-				}`, transferID, file2))
+				}`, transferID, file2ID))
 		eventManager.EventFunc(
 			fmt.Sprintf(`{
 				"type": "TransferFinished",
@@ -500,7 +497,7 @@ func TestTransferProgress(t *testing.T) {
 						"file": "%s"
 					}
 				}
-				}`, transferID, level2+"/"+file3))
+				}`, transferID, file3ID))
 		waitGroup.Done()
 	}()
 
@@ -582,7 +579,7 @@ func TestAcceptTransfer(t *testing.T) {
 		mockSystemEnvironment.mockEventManagerFilesystem.freeSpace = test.sizeLimit
 
 		eventManager := NewEventManager(MockStorage{},
-			mockMeshClient{},
+			&mockMeshClient{},
 			&mockSystemEnvironment.mockEventManagerOsInfo,
 			&mockSystemEnvironment.mockEventManagerFilesystem,
 			"")
@@ -593,9 +590,9 @@ func TestAcceptTransfer(t *testing.T) {
 			Status:    pb.Status_REQUESTED,
 			Path:      "/test",
 			Files: []*pb.File{
-				{Id: "test/file_A", Size: 1},
-				{Id: "test/file_B", Size: 2},
-				{Id: "test/file_C", Size: 3},
+				{Path: "test/file_A", Id: "fileA", Size: 1},
+				{Path: "test/file_B", Id: "fileB", Size: 2},
+				{Path: "test/file_C", Id: "fileC", Size: 3},
 			},
 		}
 		eventManager.SetFileshare(&mockEventManagerFileshare{})
@@ -619,7 +616,7 @@ func TestAcceptTransfer_Outgoing(t *testing.T) {
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
 		"")
@@ -638,7 +635,7 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
 		"")
@@ -663,7 +660,7 @@ func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
 		"")
@@ -701,7 +698,7 @@ func TestSetTransferStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -721,7 +718,7 @@ func TestFinishedTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -820,7 +817,7 @@ func TestNewTransfer(t *testing.T) {
 	fileID := "file1.xml"
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -959,13 +956,14 @@ func TestCheckTransferStatuses_SingleDirWithFiles(t *testing.T) {
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	peer := "2.2.2.2"
-	dirID := "tst3"
-	file1ID := "file1.xml"
-	file2ID := "file2.xml"
+	file1Path := "tst3/file1.xml"
+	file1ID := "file1"
+	file2Path := "tst3/file2.xml"
+	file2ID := "file2"
 	path := "/tmp"
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -982,33 +980,23 @@ func TestCheckTransferStatuses_SingleDirWithFiles(t *testing.T) {
 					"files": [
 						{
 							"id": "%s",
-							"size": 0,
-							"children": {
-								"%s": {
-									"id": "%s",
-									"size": 10,
-									"children": {}
-								},
-								"%s": {
-									"id": "%s",
-									"size": 20,
-									"children": {}
-								}
-							}
+							"path": "%s",
+							"size": 10
+						},
+						{
+							"id": "%s",
+							"path": "%s",
+							"size": 20
 						}
 					]
 				}
-		}`, transferID, dirID, file1ID, file1ID, file2ID, file2ID))
+		}`, transferID, file1ID, file1Path, file2ID, file2Path))
 
 	transfer, ok := eventManager.transfers[transferID]
 	assert.Equal(t, true, ok)
-	assert.Equal(t, uint64(2), CountTransferFiles(transfer))
+	assert.Equal(t, 2, len(transfer.Files))
 	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
 	assert.Equal(t, uint64(0), transfer.TotalSize) // Size is being appended when downloads for files start
-
-	// TODO: this has to be changed after libdrop fix
-	file1ID = dirID + "/" + file1ID
-	file2ID = dirID + "/" + file2ID
 
 	// init transfer
 	transfer.Status = pb.Status_REQUESTED
@@ -1062,7 +1050,7 @@ func TestCheckTransferStatuses_MultipleInputPaths(t *testing.T) {
 	path := "/tmp"
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -1094,7 +1082,6 @@ func TestCheckTransferStatuses_MultipleInputPaths(t *testing.T) {
 	transfer, ok := eventManager.transfers[transferID]
 	assert.Equal(t, true, ok)
 	assert.Equal(t, 2, len(transfer.Files))
-	assert.Equal(t, 0, len(transfer.Files[0].Children))
 	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
 	assert.Equal(t, uint64(0), transfer.TotalSize) // Size is being appended when downloads for files start
 
@@ -1144,8 +1131,10 @@ func TestCheckTransferStatuses_MultilevelDirComplexStructure(t *testing.T) {
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	peer := "2.2.2.2"
-	file1ID := "file1.xml"
-	file2ID := "file2.xml"
+	file1ID := "file1"
+	file1Path := "file1.xml"
+	file2ID := "file2"
+	file2Path := "file2.xml"
 	path := "/tmp"
 	topLevelID := "multilevel"
 	level1ID := "level1"
@@ -1158,6 +1147,13 @@ func TestCheckTransferStatuses_MultilevelDirComplexStructure(t *testing.T) {
 	level3File1ID := "level3-file1.txt"
 	level3File2ID := "level3-file2.txt"
 
+	level1File1Path := topLevelID + "/" + level1ID + "/" + level1File1ID
+	level1File2Path := topLevelID + "/" + level1ID + "/" + level1File2ID
+	level2File1Path := topLevelID + "/" + level1ID + "/" + level2ID + "/" + level2File1ID
+	level2File2Path := topLevelID + "/" + level1ID + "/" + level2ID + "/" + level2File2ID
+	level3File1Path := topLevelID + "/" + level1ID + "/" + level2ID + "/" + level3ID + "/" + level3File1ID
+	level3File2Path := topLevelID + "/" + level1ID + "/" + level2ID + "/" + level3ID + "/" + level3File2ID
+
 	meshClient := mockMeshClient{}
 	meshClient.externalPeers = []*meshpb.Peer{
 		{
@@ -1167,7 +1163,7 @@ func TestCheckTransferStatuses_MultilevelDirComplexStructure(t *testing.T) {
 	}
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -1184,94 +1180,60 @@ func TestCheckTransferStatuses_MultilevelDirComplexStructure(t *testing.T) {
 					"files": [
 						{
 							"id": "%s",
-							"size": 1,
-							"children": {}
+							"path": "%s",
+							"size": 1
 						},
 						{
 							"id": "%s",
-							"size": 1,
-							"children": {}
+							"path": "%s",
+							"size": 1
 						},
 						{
 							"id": "%s",
-							"size": 0,
-							"children": {
-								"%s": {
-									"id": "%s",
-									"size": 0,
-									"children": {
-										"%s": {
-											"id": "%s",
-											"size": 1,
-											"children": {}
-										},
-										"%s": {
-											"id": "%s",
-											"size": 1,
-											"children": {}
-										},
-										"%s": {
-											"id": "%s",
-											"size": 0,
-											"children": {
-												"%s": {
-													"id": "%s",
-													"size": 1,
-													"children": {}
-												},
-												"%s": {
-													"id": "%s",
-													"size": 1,
-													"children": {}
-												},
-												"%s": {
-													"id": "%s",
-													"size": 0,
-													"children": {
-														"%s": {
-															"id": "%s",
-															"size": 1,
-															"children": {}
-														},
-														"%s": {
-															"id": "%s",
-															"size": 1,
-															"children": {}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
+							"path": "%s",
+							"size": 1
+						},
+						{
+							"id": "%s",
+							"path": "%s",
+							"size": 1
+						},
+						{
+							"id": "%s",
+							"path": "%s",
+							"size": 1
+						},
+						{
+							"id": "%s",
+							"path": "%s",
+							"size": 1
+						},
+						{
+							"id": "%s",
+							"path": "%s",
+							"size": 1
+						},
+						{
+							"id": "%s",
+							"path": "%s",
+							"size": 1
 						}
 					]
 				}
-		}`, transferID, file1ID, file2ID, topLevelID,
-			level1ID, level1ID, level1File1ID, level1File1ID, level1File2ID, level1File2ID,
-			level2ID, level2ID, level2File1ID, level2File1ID, level2File2ID, level2File2ID,
-			level3ID, level3ID, level3File1ID, level3File1ID, level3File2ID, level3File2ID))
+		}`, transferID, file1ID, file1Path, file2ID, file2Path,
+			level1File1ID, level1File1Path, level1File2ID, level1File2Path,
+			level2File1ID, level2File1Path, level2File2ID, level2File2Path,
+			level3File1ID, level3File1Path, level3File2ID, level3File2Path))
 
 	transfer, ok := eventManager.transfers[transferID]
 	assert.Equal(t, true, ok)
-	assert.Equal(t, 3, len(transfer.Files))
-	assert.Equal(t, 0, len(transfer.Files[0].Children))
-	assert.Equal(t, 1, len(transfer.Files[2].Children))
+	assert.Equal(t, 8, len(transfer.Files))
 	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
 	assert.Equal(t, uint64(0), transfer.TotalSize) // Size is being appended when downloads for files start
 
 	// init transfer
 	transfer.Status = pb.Status_REQUESTED
 	SetTransferAllFileStatus(transfer, pb.Status_REQUESTED)
-
-	// TODO: this has to be changed after libdrop fix
-	level1File1ID = topLevelID + "/" + level1ID + "/" + level1File1ID
-	level1File2ID = topLevelID + "/" + level1ID + "/" + level1File2ID
-	level2File1ID = topLevelID + "/" + level1ID + "/" + level2ID + "/" + level2File1ID
-	level2File2ID = topLevelID + "/" + level1ID + "/" + level2ID + "/" + level2File2ID
-	level3File1ID = topLevelID + "/" + level1ID + "/" + level2ID + "/" + level3ID + "/" + level3File1ID
-	level3File2ID = topLevelID + "/" + level1ID + "/" + level2ID + "/" + level3ID + "/" + level3File2ID
 
 	// check canceled
 	SetFileStatus(transfer.Files, file1ID, pb.Status_CANCELED)
@@ -1337,7 +1299,7 @@ func TestTransferRequestPermissionsValidation(t *testing.T) {
 	}
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -1443,7 +1405,7 @@ func TestTransferFinalization(t *testing.T) {
 
 	for _, test := range tests {
 		eventManager := NewEventManager(MockStorage{},
-			mockMeshClient{},
+			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
 			"")
@@ -1507,7 +1469,7 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 	}`, transferID)
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -1536,6 +1498,7 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 func TestTransferFinishedNotifications(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	fileID := "file_id"
+	filePath := "file_path"
 
 	initializeEventManager := func(direction pb.Direction) (*EventManager, *mockNotifier) {
 		notifier := mockNotifier{
@@ -1546,7 +1509,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		notificationManager.notifier = &notifier
 
 		eventManager := NewEventManager(MockStorage{},
-			mockMeshClient{},
+			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
 			"")
@@ -1556,7 +1519,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 			Id:     transferID,
 			Status: pb.Status_ONGOING,
 			Files: []*pb.File{
-				{Id: fileID, Status: pb.Status_ONGOING},
+				{Id: fileID, Path: filePath, Status: pb.Status_ONGOING},
 			},
 			TotalSize:        1,
 			TotalTransferred: 0,
@@ -1632,7 +1595,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 
 			assert.Equal(t, test.expectedSummary, notification.summary,
 				"Invalid notification summary")
-			assert.Equal(t, fileID, notification.body,
+			assert.Equal(t, filePath, notification.body,
 				"Notification body should be a filename")
 			assert.Equal(t, test.expectedActions, notification.actions,
 				"Actions associated with notifications are invalid.")
@@ -1643,6 +1606,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	fileID := "file_id"
+	filePath := "file_path"
 
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
@@ -1659,7 +1623,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	notificationManager.openFileFunc = openFileFunc
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -1669,7 +1633,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		Id:     transferID,
 		Status: pb.Status_ONGOING,
 		Files: []*pb.File{
-			{Id: fileID, Status: pb.Status_ONGOING},
+			{Id: fileID, Path: filePath, Status: pb.Status_ONGOING},
 		},
 		TotalSize:        1,
 		TotalTransferred: 0,
@@ -1692,7 +1656,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 
 	notificationManager.OpenFile(notification.id)
 	assert.Equal(t, 1, len(openedFiles), "Open event was emitted, but no files were opened.")
-	assert.Equal(t, fileID, openedFiles[0], "Invalid file opened.")
+	assert.Equal(t, filePath, openedFiles[0], "Invalid file opened.")
 
 	notificationManager.OpenFile(notification.id)
 	assert.Equal(t, 1, len(openedFiles), "File was opened but it was already opened once.")
@@ -1714,7 +1678,7 @@ func TestTransferRequestNotification(t *testing.T) {
 	notificationManager.openFileFunc = openFileFunc
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
@@ -1723,7 +1687,7 @@ func TestTransferRequestNotification(t *testing.T) {
 
 	peer := "172.20.0.5"
 	hostname := "peer.nord"
-	eventManager.meshClient = mockMeshClient{externalPeers: []*meshpb.Peer{
+	eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 		{
 			Ip:                peer,
 			Hostname:          hostname,
@@ -1826,7 +1790,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		notificationManager.notifier = &notifier
 
 		eventManager := NewEventManager(MockStorage{},
-			mockMeshClient{},
+			&mockMeshClient{},
 			&osInfo,
 			&filesystem,
 			"")
@@ -1873,7 +1837,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 			transferFinishedNotificationID: transferFinishedID,
 		}
 
-		eventManager.meshClient = mockMeshClient{externalPeers: []*meshpb.Peer{
+		eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 			{
 				Ip:                peer,
 				DoIAllowFileshare: true,
@@ -2002,7 +1966,7 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 	notificationManager.notifier = &notifier
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
 		mockOsEnvironment.destinationDirectory)
@@ -2016,7 +1980,7 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 		transferNotificationID: transferID,
 	}
 
-	eventManager.meshClient = mockMeshClient{externalPeers: []*meshpb.Peer{
+	eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 		{
 			Ip:                peer,
 			DoIAllowFileshare: true,
@@ -2066,7 +2030,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 		notificationManager.notifier = &notifier
 
 		eventManager := NewEventManager(MockStorage{},
-			mockMeshClient{},
+			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
 			"")
@@ -2077,7 +2041,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 		fileshare := mockEventManagerFileshare{}
 		notificationManager.fileshare = &fileshare
 
-		eventManager.meshClient = mockMeshClient{externalPeers: []*meshpb.Peer{
+		eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 			{
 				Ip:                peer,
 				DoIAllowFileshare: true,
@@ -2181,7 +2145,7 @@ func TestAutoaccept(t *testing.T) {
 	notificationManager.notifier = &notifier
 
 	eventManager := NewEventManager(MockStorage{},
-		mockMeshClient{},
+		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
 		mockOsEnvironment.destinationDirectory)
@@ -2195,7 +2159,7 @@ func TestAutoaccept(t *testing.T) {
 	peerAutacceptIP := "172.20.0.5"
 	peerAutoacceptHostname := "internal.peer1.nord"
 
-	eventManager.meshClient = mockMeshClient{externalPeers: []*meshpb.Peer{
+	eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 		{
 			Ip:                peerAutacceptIP,
 			Hostname:          peerAutoacceptHostname,

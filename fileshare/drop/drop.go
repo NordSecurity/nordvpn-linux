@@ -18,6 +18,7 @@ import (
 type Fileshare struct {
 	norddrop     norddropgo.Norddrop
 	eventsDbPath string
+	storagePath  string
 	isProd       bool
 	mutex        sync.Mutex
 }
@@ -43,14 +44,22 @@ func logCB(level int, message string) {
 }
 
 // New initializes norddrop library.
-func New(eventFunc func(string), eventsDbPath string, isProd bool) *Fileshare {
+func New(
+	eventFunc func(string),
+	eventsDbPath string,
+	isProd bool,
+	pubkeyFunc func(string) []byte,
+	privKey string,
+	storagePath string,
+) *Fileshare {
 	logLevel := norddropgo.NORDDROPLOGTRACE
 	if isProd {
 		logLevel = norddropgo.NORDDROPLOGERROR
 	}
 	return &Fileshare{
-		norddrop:     norddropgo.NewNorddrop(eventFunc, logLevel, logCB),
+		norddrop:     norddropgo.NewNorddrop(eventFunc, logLevel, logCB, pubkeyFunc, privKey),
 		eventsDbPath: eventsDbPath,
+		storagePath:  storagePath,
 		isProd:       isProd,
 	}
 }
@@ -60,7 +69,7 @@ func (f *Fileshare) Enable(listenAddr netip.Addr) (err error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	if err = f.start(listenAddr, f.eventsDbPath, f.isProd); err != nil {
+	if err = f.start(listenAddr, f.eventsDbPath, f.isProd, f.storagePath); err != nil {
 		return fmt.Errorf("starting drop: %w", err)
 	}
 
@@ -74,9 +83,15 @@ type libdropStartConfig struct {
 	TransferIdleLifetimeMs uint64 `json:"transfer_idle_lifetime_ms"`
 	MooseEventPath         string `json:"moose_event_path"`
 	IsProd                 bool   `json:"moose_prod"`
+	StoragePath            string `json:"storage_path"`
 }
 
-func (f *Fileshare) start(listenAddr netip.Addr, eventsDbPath string, isProd bool) error {
+func (f *Fileshare) start(
+	listenAddr netip.Addr,
+	eventsDbPath string,
+	isProd bool,
+	storagePath string,
+) error {
 	configJSON, err := json.Marshal(libdropStartConfig{
 		DirDepthLimit:          fileshare.DirDepthLimit,
 		TransferFileLimit:      fileshare.TransferFileLimit,
@@ -84,6 +99,7 @@ func (f *Fileshare) start(listenAddr netip.Addr, eventsDbPath string, isProd boo
 		TransferIdleLifetimeMs: fileshare.TransferIdleLifetimeMs,
 		MooseEventPath:         eventsDbPath,
 		IsProd:                 isProd,
+		StoragePath:            storagePath,
 	})
 	if err != nil {
 		return fmt.Errorf("marshalling libdrop config: %w", err)

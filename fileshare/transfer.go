@@ -2,6 +2,7 @@ package fileshare
 
 import (
 	"fmt"
+	"strings"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -52,6 +53,15 @@ var (
 		pb.Status_EMPTY_TRANSFER:           "empty transfer",
 		pb.Status_TRANSFER_CLOSED_BY_PEER:  "transfer closed by peer",
 		pb.Status_TRANSFER_LIMITS_EXCEEDED: "limits exceeded",
+		pb.Status_MISMATCHED_SIZE:          "file was changed",
+		pb.Status_UNEXPECTED_DATA:          "file was changed",
+		pb.Status_INVALID_ARGUMENT:         "internal error",
+		pb.Status_TRANSFER_TIMEOUT:         "transfer timeout",
+		pb.Status_WS_SERVER:                "waiting for peer to come online",
+		pb.Status_WS_CLIENT:                "waiting for peer to come online",
+		pb.Status_FILE_MODIFIED:            "file was changed",
+		pb.Status_FILENAME_TOO_LONG:        "filename too long",
+		pb.Status_AUTHENTICATION_FAILED:    "authentication failed",
 	}
 	IncomingFileStatus = map[pb.Status]string{
 		pb.Status_SUCCESS:              "downloaded",
@@ -95,9 +105,12 @@ func NewIncomingTransfer(id, peer string, files []*pb.File) *pb.Transfer {
 		Direction: pb.Direction_INCOMING,
 		Status:    pb.Status_REQUESTED,
 		Created:   timestamppb.Now(),
+		Files:     files,
 		Finalized: false,
 	}
-	SetTransferFiles(tr, files)
+	for _, file := range tr.Files {
+		file.Status = pb.Status_REQUESTED
+	}
 	return tr
 }
 
@@ -115,161 +128,59 @@ func GetTransferStatus(tr *pb.Transfer) string {
 	return "-"
 }
 
-// SetTransferFiles set files to transfer and initialize status
-func SetTransferFiles(tr *pb.Transfer, files []*pb.File) {
-	tr.Files = files
-	SetTransferAllFileStatus(tr, pb.Status_REQUESTED)
-	setTransferAllFilePath(tr) // TODO: will be not needed when libdrop fix
-}
-
 // SetTransferAllFileStatus reset all files to status
 func SetTransferAllFileStatus(tr *pb.Transfer, status pb.Status) {
 	for _, file := range tr.Files {
-		setAllFileStatus(file, status)
+		file.Status = status
 	}
 }
 
 // ForAllFiles executes op for all files in files
 func ForAllFiles(files []*pb.File, op func(*pb.File)) {
-	for _, fileTree := range files {
-		forAllFilesInTree(fileTree, op)
+	for _, file := range files {
+		op(file)
 	}
-}
-
-func forAllFilesInTree(file *pb.File, op func(*pb.File)) {
-	op(file)
-	if len(file.Children) > 0 {
-		for _, childFile := range file.Children {
-			forAllFilesInTree(childFile, op)
-		}
-	}
-}
-
-func setAllFileStatus(file *pb.File, status pb.Status) {
-	file.Status = status
-	if len(file.Children) > 0 {
-		for _, childFile := range file.Children {
-			setAllFileStatus(childFile, status)
-		}
-	}
-}
-
-// setAllFilePath prepend file path to file id
-// TODO: will be not needed when libdrop fix
-func setTransferAllFilePath(tr *pb.Transfer) {
-	for _, file := range tr.Files {
-		setAllFilePath(file, "")
-	}
-}
-
-func setAllFilePath(file *pb.File, path string) {
-	if path != "" {
-		path += "/"
-	}
-	file.Id = path + file.Id
-	if len(file.Children) > 0 {
-		for _, childFile := range file.Children {
-			setAllFilePath(childFile, file.Id)
-		}
-	}
-}
-
-// GetAllTransferFiles get all files in flat list
-func GetAllTransferFiles(tr *pb.Transfer) (allFiles []*pb.File) {
-	for _, file := range tr.Files {
-		allFiles = append(allFiles, getFileFiles(file)...)
-	}
-	return
-}
-
-func getFileFiles(file *pb.File) (allFiles []*pb.File) {
-	if len(file.Children) > 0 {
-		for _, childFile := range file.Children {
-			allFiles = append(allFiles, getFileFiles(childFile)...)
-		}
-		return
-	}
-	return []*pb.File{file}
 }
 
 // SetFileStatus finds file with fileID in files and updates its status
 func SetFileStatus(files []*pb.File, fileID string, status pb.Status) error {
-	fileFound := false
 	for _, file := range files {
-		if findAndSetFileStatus(file, fileID, status) {
-			fileFound = true
-			break
+		if file.Id == fileID {
+			file.Status = status
+			return nil
 		}
 	}
-
-	if !fileFound {
-		return fmt.Errorf("status %s reported for nonexistent file", status.String())
-	}
-
-	return nil
+	return fmt.Errorf("status %s reported for nonexistent file", status.String())
 }
 
-func findAndSetFileStatus(file *pb.File, fileID string, status pb.Status) bool {
-	if file.Id == fileID {
-		file.Status = status
-		return true
-	}
-	if len(file.Children) > 0 { // dir, check children
-		fileFound := false
-		for _, childFile := range file.Children {
-			if findAndSetFileStatus(childFile, fileID, status) {
-				fileFound = true
-				break
-			}
-		}
-		return fileFound
-	}
-	return false
+func FindTransferFileByID(tr *pb.Transfer, fileID string) *pb.File {
+	predicate := func(f *pb.File) bool { return f.Id == fileID }
+	return findTransferFile(tr, predicate)
 }
 
-// FindTransferFile find file in a tree
-func FindTransferFile(tr *pb.Transfer, fileID string) *pb.File {
-	if fileID != "" {
-		for _, file := range tr.Files {
-			if foundFile := findFile(file, fileID); foundFile != nil {
-				return foundFile
-			}
-		}
-	}
-	return nil
+func FindTransferFileByPath(tr *pb.Transfer, filePath string) *pb.File {
+	predicate := func(f *pb.File) bool { return f.Path == filePath }
+	return findTransferFile(tr, predicate)
 }
 
-func findFile(file *pb.File, fileID string) *pb.File {
-	if file.Id == fileID {
-		return file
-	}
-	if len(file.Children) > 0 { // dir, check children
-		for _, childFile := range file.Children {
-			if foundFile := findFile(childFile, fileID); foundFile != nil {
-				return foundFile
-			}
-		}
-	}
-	return nil
-}
-
-// CountTransferFiles count files in a tree
-func CountTransferFiles(tr *pb.Transfer) (count uint64) {
+func findTransferFile(tr *pb.Transfer, predicate func(*pb.File) bool) *pb.File {
 	for _, file := range tr.Files {
-		count += countFiles(file)
+		if predicate(file) {
+			return file
+		}
 	}
-	return
+	return nil
 }
 
-func countFiles(file *pb.File) (count uint64) {
-	if len(file.Children) > 0 { // dir, check children
-		for _, childFile := range file.Children {
-			count += countFiles(childFile)
+// Gets all files with the given path prefix (returns all children of directory)
+func GetTransferFilesByPathPrefix(tr *pb.Transfer, filePath string) []*pb.File {
+	var files []*pb.File
+	for _, file := range tr.Files {
+		if strings.HasPrefix(file.Path, filePath) {
+			files = append(files, file)
 		}
-	} else {
-		return 1
 	}
-	return count
+	return files
 }
 
 // GetNewTransferStatus returns new transfer status based on files
@@ -288,13 +199,13 @@ func GetNewTransferStatus(files []*pb.File, currentStatus pb.Status) pb.Status {
 	allFinished := true
 	hasNoErrors := true
 	for _, file := range files {
-		if allCanceled && !checkAllFilesCanceled(file) {
+		if allCanceled && file.Status != pb.Status_CANCELED {
 			allCanceled = false
 		}
-		if allFinished && !checkAllFilesFinished(file) {
+		if allFinished && !isFileCompleted(file.Status) {
 			allFinished = false
 		}
-		if hasNoErrors && checkFilesHasErrors(file) {
+		if hasNoErrors && checkFileHasErrors(file) {
 			hasNoErrors = false
 		}
 	}
@@ -312,90 +223,24 @@ func GetNewTransferStatus(files []*pb.File, currentStatus pb.Status) pb.Status {
 	return currentStatus
 }
 
-// getFileStatus find out status if children are
-func getFileStatus(file *pb.File) (status pb.Status) {
-	if len(file.Children) > 0 {
-		if checkAllFilesCanceled(file) {
-			return pb.Status_CANCELED
-		}
-		allFinished := checkAllFilesFinished(file)
-		if allFinished && checkFilesHasErrors(file) {
-			return pb.Status_FINISHED_WITH_ERRORS
-		}
-		if allFinished {
-			return pb.Status_SUCCESS
-		}
-		if checkAllFilesRequested(file) {
-			return pb.Status_REQUESTED
-		}
-		return pb.Status_ONGOING
-	}
-	return file.GetStatus()
-}
-
 // GetTransferFileStatus file status to human readable string
 func GetTransferFileStatus(file *pb.File, in bool) (status string) {
-	fileStatus := getFileStatus(file)
 	if in {
-		if status, ok := IncomingFileStatus[fileStatus]; ok {
+		if status, ok := IncomingFileStatus[file.GetStatus()]; ok {
 			return status
 		}
 	} else {
-		if status, ok := OutgoingFileStatus[fileStatus]; ok {
+		if status, ok := OutgoingFileStatus[file.GetStatus()]; ok {
 			return status
 		}
 	}
-	if status, ok := FileStatus[fileStatus]; ok {
+	if status, ok := FileStatus[file.GetStatus()]; ok {
 		return status
 	}
 	return "-"
 }
 
-func checkAllFilesRequested(file *pb.File) bool {
-	if len(file.Children) > 0 { // dir, check children
-		for _, childFile := range file.Children {
-			if !checkAllFilesRequested(childFile) { // one breaks it all
-				return false
-			}
-		}
-		return true
-	}
-	return file.Status == pb.Status_REQUESTED
-}
-
-func checkAllFilesCanceled(file *pb.File) bool {
-	if len(file.Children) > 0 { // dir, check children
-		for _, childFile := range file.Children {
-			if !checkAllFilesCanceled(childFile) { // one breaks it all
-				return false
-			}
-		}
-		return true
-	}
-	return file.Status == pb.Status_CANCELED
-}
-
-func checkAllFilesFinished(file *pb.File) bool {
-	if len(file.Children) > 0 { // dir, check children
-		for _, childFile := range file.Children {
-			if !checkAllFilesFinished(childFile) { // one breaks it all
-				return false
-			}
-		}
-		return true
-	}
-	return isFileCompleted(file.Status)
-}
-
-func checkFilesHasErrors(file *pb.File) bool {
-	if len(file.Children) > 0 { // dir, check children
-		for _, childFile := range file.Children {
-			if checkFilesHasErrors(childFile) { // one breaks it all
-				return true
-			}
-		}
-		return false
-	}
+func checkFileHasErrors(file *pb.File) bool {
 	return file.Status != pb.Status_SUCCESS &&
 		file.Status != pb.Status_REQUESTED &&
 		file.Status != pb.Status_CANCELED &&

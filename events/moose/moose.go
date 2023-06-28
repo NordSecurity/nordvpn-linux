@@ -32,8 +32,8 @@ import (
 )
 
 const (
-	mooseVersion                 = "0.27.0"
-	workerVersion                = "0.21.0"
+	mooseVersion                 = "0.29.1"
+	workerVersion                = "5.2.0"
 	eventEncoding                = "application/json"
 	eventEndpoint                = "/app-events"
 	errCodeEventSendSuccess      = 0
@@ -101,15 +101,6 @@ func (s *Subscriber) mooseInit() error {
 		deviceType = "desktop"
 	}
 
-	var isProd bool
-	timeBetweenEvents, _ := time.ParseDuration("100ms")
-	timeBetweenBatchesOfEvents, _ := time.ParseDuration("1s")
-	if internal.IsProdEnv(s.Environment) {
-		isProd = true
-		timeBetweenEvents, _ = time.ParseDuration("2s")
-		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
-	}
-
 	err := s.updateEventDomain()
 	if err != nil {
 		return fmt.Errorf("initializing event domain: %w", err)
@@ -120,7 +111,7 @@ func (s *Subscriber) mooseInit() error {
 		"linux-app",
 		s.Version,
 		mooseVersion,
-		isProd,
+		internal.IsProdEnv(s.Environment),
 		initCallback,
 		errorCallback,
 	)); err != nil {
@@ -129,12 +120,25 @@ func (s *Subscriber) mooseInit() error {
 		}
 	}
 
+	timeBetweenEvents, _ := time.ParseDuration("100ms")
+	timeBetweenBatchesOfEvents, _ := time.ParseDuration("1s")
+	if internal.IsProdEnv(s.Environment) {
+		timeBetweenEvents, _ = time.ParseDuration("2s")
+		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
+	}
+	sendEvents := true
+	var batchSize uint = 20
+	compressRequest := true
+
 	if err := s.response(worker.Start(
 		s.EventsDbPath,
 		workerVersion,
+		s.currentDomain,
 		uint64(timeBetweenEvents.Milliseconds()),
 		uint64(timeBetweenBatchesOfEvents.Milliseconds()),
-		s.sendEvent,
+		sendEvents,
+		batchSize,
+		compressRequest,
 	)); err != nil {
 		return fmt.Errorf("starting worker: %w", err)
 	}

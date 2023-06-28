@@ -2,6 +2,6 @@
 
 package fileshare
 
-func FileshareHistoryImplementation() Storage {
-	return JsonFile{}
+func FileshareHistoryImplementation(storagePath string) Storage {
+	return NewJsonFile(storagePath)
 }

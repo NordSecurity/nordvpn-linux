@@ -2,6 +2,6 @@
 
 package fileshare
 
-func FileshareHistoryImplementation() Storage {
+func FileshareHistoryImplementation(_ string) Storage {
 	return MockStorage{}
 }

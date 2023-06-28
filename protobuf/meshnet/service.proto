@@ -66,4 +66,6 @@ service Meshnet {
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer
 	rpc NotifyNewTransfer(NewTransferNotification) returns (NotifyNewTransferResponse);
+	// GetPrivateKey is used to send self private key over to fileshare daemon
+	rpc GetPrivateKey(Empty) returns (PrivateKeyResponse);
 }
