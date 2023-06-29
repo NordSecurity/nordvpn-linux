@@ -116,6 +116,7 @@ func (workingNetworker) UnSetMesh() error      { return nil }
 func (workingNetworker) SetDNS([]string) error { return nil }
 func (workingNetworker) UnsetDNS() error       { return nil }
 func (workingNetworker) IsVPNActive() bool     { return true }
+func (workingNetworker) IsMeshnetActive() bool { return true }
 func (workingNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
 	return networker.ConnectionStatus{}, nil
 }
@@ -156,6 +157,7 @@ func (failingNetworker) UnSetMesh() error      { return errOnPurpose }
 func (failingNetworker) SetDNS([]string) error { return errOnPurpose }
 func (failingNetworker) UnsetDNS() error       { return errOnPurpose }
 func (failingNetworker) IsVPNActive() bool     { return false }
+func (failingNetworker) IsMeshnetActive() bool { return false }
 func (failingNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
 	return networker.ConnectionStatus{}, nil
 }

@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -9,9 +10,11 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -137,19 +140,19 @@ func (mockFailingServersAPI) Servers() (core.Servers, http.Header, error) {
 }
 
 func (mockFailingServersAPI) RecommendedServers(core.ServersFilter, float64, float64) (core.Servers, http.Header, error) {
-	return nil, nil, nil
+	return nil, nil, fmt.Errorf("500")
 }
 
 func (mockFailingServersAPI) Server(int64) (*core.Server, error) {
-	return nil, nil
+	return nil, fmt.Errorf("500")
 }
 
 func (mockFailingServersAPI) ServersCountries() (core.Countries, http.Header, error) {
-	return nil, nil, nil
+	return nil, nil, fmt.Errorf("500")
 }
 
 func (mockFailingServersAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {
-	return nil, nil
+	return nil, fmt.Errorf("500")
 }
 
 type mockConfigManager struct {
@@ -170,6 +173,8 @@ func newMockConfigManager() *mockConfigManager {
 			1337: {
 				OpenVPNUsername: "bad",
 				OpenVPNPassword: "actor",
+				TokenExpiry:     time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat),
+				ServiceExpiry:   time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat),
 			},
 		},
 		AutoConnectData: config.AutoConnectData{
@@ -177,6 +182,10 @@ func newMockConfigManager() *mockConfigManager {
 			Protocol: config.Protocol_UDP,
 		},
 		Technology: config.Technology_OPENVPN,
+		Mesh:       true,
+		MeshDevice: &mesh.Machine{
+			ID: uuid.New(),
+		},
 	}}
 }
 
@@ -197,12 +206,30 @@ func (m *mockConfigManager) Load(c *config.Config) error {
 	c.TokensData = m.c.TokensData
 	c.MachineID = m.c.MachineID
 	c.Meshnet = m.c.Meshnet
+	c.Mesh = m.c.Mesh
+	c.MeshDevice = m.c.MeshDevice
+	c.MeshPrivateKey = m.c.MeshPrivateKey
 	return nil
 }
 
 func (m *mockConfigManager) Reset() error {
 	*m = *newMockConfigManager()
 	return nil
+}
+
+type failingConfigManager struct {
+}
+
+func (failingConfigManager) SaveWith(f config.SaveFunc) error {
+	return errors.New("failed")
+}
+
+func (failingConfigManager) Load(c *config.Config) error {
+	return errors.New("failed")
+}
+
+func (failingConfigManager) Reset() error {
+	return errors.New("failed")
 }
 
 // TestJobServers and its sub-tests check if the servers list gets populated properly

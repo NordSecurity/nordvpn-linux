@@ -3,6 +3,7 @@ package nc
 import (
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -45,7 +46,7 @@ func TestExponentialBackoff(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			backoff := exponentialBackoff(test.tries).Seconds()
+			backoff := network.ExponentialBackoff(test.tries).Seconds()
 			assert.InDelta(t, test.average, backoff, test.delta)
 		})
 	}

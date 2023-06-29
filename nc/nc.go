@@ -8,11 +8,11 @@ package nc
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/network"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -138,27 +138,6 @@ func (c *Client) Start(endpoint string, clientID string, username string, passwo
 	return nil
 }
 
-func exponentialBackoff(tries int) time.Duration {
-	var minSecs, maxSecs int
-	switch {
-	case tries < 3:
-		minSecs = 5
-		maxSecs = 10
-	case tries < 10:
-		minSecs = 10
-		maxSecs = 60
-	case tries < 20:
-		minSecs = 60
-		maxSecs = 300
-	default:
-		minSecs = 300
-		maxSecs = 600
-	}
-
-	// #nosec G404 -- not used for cryptographic purposes
-	return time.Duration(rand.Intn(maxSecs-minSecs+1)+minSecs) * time.Second
-}
-
 func (c *Client) start(client mqtt.Client) error {
 	if token := client.Connect(); token.WaitTimeout(timeout) && token.Error() != nil {
 		return fmt.Errorf("connecting to notification centre: %w", token.Error())
@@ -175,7 +154,7 @@ func (c *Client) startWithExponentialBackoff(client mqtt.Client) error {
 		if err = c.start(client); err == nil {
 			break
 		}
-		<-time.After(exponentialBackoff(tries))
+		<-time.After(network.ExponentialBackoff(tries))
 	}
 	return err
 }

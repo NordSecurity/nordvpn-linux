@@ -2,7 +2,6 @@
 package main
 
 import (
-	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -494,7 +493,10 @@ func main() {
 	go rpc.StartJobs()
 	go meshService.StartJobs()
 	rpc.StartKillSwitch()
-	go rpc.StartAutoConnect()
+
+	if cfg.AutoConnect {
+		go rpc.StartAutoConnect(network.ExponentialBackoff)
+	}
 
 	monitor, err := netstate.NewNetlinkMonitor([]string{openvpn.InterfaceName, nordlynx.InterfaceName})
 	if err != nil {
@@ -506,12 +508,9 @@ func main() {
 		go daemon.StartNotificationCenter(defaultAPI, notificationClient, fsystem)
 	}
 
-	go func() {
-		if err := meshService.StartMeshnet(); err != nil && cfg.Mesh {
-			log.Println("starting meshnet:", err)
-			_, _ = meshService.DisableMeshnet(context.Background(), &meshpb.Empty{})
-		}
-	}()
+	if cfg.Mesh {
+		go rpc.StartAutoMeshnet(meshService, network.ExponentialBackoff)
+	}
 
 	// Graceful stop
 
