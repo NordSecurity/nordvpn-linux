@@ -8,6 +8,8 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strconv"
+	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -29,6 +31,12 @@ var (
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+}
+
+// clearFormatting removes all formatting escape sequences from input
+func clearFormatting(input string) string {
+	escapedString := strconv.Quote(input)
+	return strings.Trim(escapedString, "\"")
 }
 
 func main() {
@@ -76,7 +84,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := cmd.Run(os.Args); err != nil {
+	args := []string{}
+	for _, arg := range os.Args {
+		args = append(args, clearFormatting(arg))
+	}
+
+	if err := cmd.Run(args); err != nil {
 		color.Red(err.Error())
 		os.Exit(1)
 	}
