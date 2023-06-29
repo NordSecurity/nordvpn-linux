@@ -84,6 +84,7 @@ func (Build) Data() error {
 		return err
 	}
 	env := map[string]string{"CI_PROJECT_DIR": cwd}
+	env["GOPATH"] = build.Default.GOPATH
 	return sh.RunWith(env, "ci/data.sh")
 }
 

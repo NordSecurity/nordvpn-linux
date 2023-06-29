@@ -22,6 +22,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// AutocompleteFilepaths prints special value telling the autocomplete script to use default bash completion
+func (c *cmd) AutocompleteFilepaths(ctx *cli.Context) {
+	fmt.Println("nordvpn_autocomplete_filepaths")
+}
+
 type transferStatusClient interface {
 	Recv() (*pb.StatusResponse, error)
 }
@@ -169,18 +174,17 @@ func (c *cmd) FileshareSend(ctx *cli.Context) error {
 // FileshareAutoCompletePeers implements bash autocompletion for peer hostnames
 func (c *cmd) FileshareAutoCompletePeers(ctx *cli.Context) {
 	if ctx.NArg() > 0 {
-		return // Peer is the first argument so autocomplete only that one
+		c.AutocompleteFilepaths(ctx)
+		return
 	}
 
 	resp, err := c.meshClient.GetPeers(context.Background(), &mpb.Empty{})
 	if err != nil {
-		fmt.Println("no_online_peers")
 		return
 	}
 
 	peers, err := getPeersResponseToPeerList(resp)
 	if err != nil {
-		fmt.Println("no_online_peers")
 		return
 	}
 
@@ -196,9 +200,6 @@ func (c *cmd) FileshareAutoCompletePeers(ctx *cli.Context) {
 	}
 	for _, peer := range peers.External {
 		fmt.Println(peer.GetHostname())
-	}
-	if len(peers.External) == 0 && len(peers.Local) == 0 {
-		fmt.Println("no_online_peers")
 	}
 }
 

@@ -1,0 +1,28 @@
+# Generated with git diff --no-index dist/autocomplete/zsh_autocomplete dist/autocomplete/zsh_autocomplete_nordvpn > contrib/patches/zsh_autocomplete.diff
+diff --git a/dist/autocomplete/zsh_autocomplete b/dist/autocomplete/zsh_autocomplete
+index b519666f..00618811 100644
+--- a/dist/autocomplete/zsh_autocomplete
++++ b/dist/autocomplete/zsh_autocomplete
+@@ -1,4 +1,4 @@
+-#compdef $PROG
++#compdef nordvpn
+ 
+ _cli_zsh_autocomplete() {
+   local -a opts
+@@ -10,11 +10,12 @@ _cli_zsh_autocomplete() {
+     opts=("${(@f)$(${words[@]:0:#words[@]-1} --generate-bash-completion)}")
+   fi
+ 
+-  if [[ "${opts[1]}" != "" ]]; then
+-    _describe 'values' opts
++  # Special value hardcoded in cli_fileshare.go to indicate that filepath completions are wanted
++  if [[ "${opts[1]}" == "nordvpn_autocomplete_filepaths" ]]; then
++      _files
+   else
+-    _files
++    _describe 'values' opts
+   fi
+ }
+ 
+-compdef _cli_zsh_autocomplete $PROG
++compdef _cli_zsh_autocomplete nordvpn

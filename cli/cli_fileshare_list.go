@@ -53,27 +53,22 @@ func (c *cmd) fileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Dire
 	// Use default autocomplete for path argument
 	// -2 because the last arg is always '--generate-bash-completion'
 	if len(os.Args) >= 2 && os.Args[len(os.Args)-2] == "--"+flagFilesharePath {
+		c.AutocompleteFilepaths(ctx)
 		return
 	}
 
 	resp, err := c.fileshareClient.List(context.Background(), &pb.Empty{})
 	if err != nil || getFileshareResponseToError(resp.GetError()) != nil {
-		fmt.Println("no_transfers_found")
 		return
 	}
 
 	if ctx.NArg() == 0 {
 		// Autocomplete transfer id
-		var atLeastOneTransfer bool
 		for _, transfer := range resp.GetTransfers() {
 			if (transfer.GetDirection() == direction || direction == pb.Direction_UNKNOWN_DIRECTION) &&
 				statusFilter(transfer.Status) {
 				fmt.Println(transfer.GetId())
-				atLeastOneTransfer = true
 			}
-		}
-		if !atLeastOneTransfer {
-			fmt.Println("no_transfers_found")
 		}
 	} else {
 		// Autocomplete transfer files
@@ -82,10 +77,8 @@ func (c *cmd) fileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Dire
 				fileshare.ForAllFiles(transfer.Files, func(f *pb.File) {
 					fmt.Println(f.Path)
 				})
-				return
 			}
 		}
-		fmt.Println("transfer_not_found")
 	}
 }
 

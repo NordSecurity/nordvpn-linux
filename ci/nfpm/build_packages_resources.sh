@@ -52,14 +52,6 @@ cp "${CI_PROJECT_DIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
 cp "${CI_PROJECT_DIR}/bin/${ARCH}/nordfileshared" "${BASEDIR}"/usr/bin/nordfileshared
 cd "${CI_PROJECT_DIR}"
 
-# copy zsh autocomplete
-go mod download # TODO: move to build/data
-cp -r "${GOPATH}"/pkg/mod/github.com/urfave/cli/v2@v2.25.0/autocomplete/zsh_autocomplete \
-	"${BASEDIR}"/_nordvpn_auto_complete
-
-# replace $PROG for nordvpn
-sed -i 's/$PROG/nordvpn/g' "${BASEDIR}"/_nordvpn_auto_complete
-
 # pack
 case "$PKG_TO_BUILD" in
 "deb")
