@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"sort"
 	"strings"
 
@@ -57,13 +56,6 @@ func (c *cmd) SetDNS(ctx *cli.Context) error {
 		if args.Len() > 3 {
 			return formatError(argsParseError(ctx))
 		}
-		// check validity
-		for _, arg := range args.Slice() {
-			if ip := net.ParseIP(arg); ip == nil {
-				// TODO: use multierror when Go 1.20 comes out
-				return formatError(argsParseError(ctx))
-			}
-		}
 		// check equality
 		argsSlice := args.Slice()
 		sort.Strings(c.config.DNS)
@@ -86,12 +78,14 @@ func (c *cmd) SetDNS(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	switch resp.Type {
-	case internal.CodeConfigError:
+	switch resp.Code {
+	case pb.SetDNSResponseCode_CONFIG_ERROR:
 		return formatError(ErrConfig)
-	case internal.CodeFailure, internal.CodeVPNMisconfig:
+	case pb.SetDNSResponseCode_FAILURE:
 		return formatError(internal.ErrUnhandled)
-	case internal.CodeSuccess:
+	case pb.SetDNSResponseCode_INVALID_DNS_ADDRESS:
+		return fmt.Errorf(SetDNSInvalidAddress)
+	case pb.SetDNSResponseCode_OK:
 		c.config.DNS = dns
 		if c.config.ThreatProtectionLite {
 			color.Yellow(SetThreatProtectionLiteDisableDNS)

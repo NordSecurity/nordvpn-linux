@@ -42,7 +42,7 @@ service Daemon {
   rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
   rpc SetThreatProtectionLite(SetThreatProtectionLiteRequest) returns (Payload);
   rpc SetDefaults(Empty) returns (Payload);
-  rpc SetDNS(SetDNSRequest) returns (Payload);
+  rpc SetDNS(SetDNSRequest) returns (SetDNSResponse);
   rpc SetFirewall(SetGenericRequest) returns (Payload);
   rpc SetFirewallMark(SetUint32Request) returns (Payload);
   rpc SetRouting(SetGenericRequest) returns (Payload);

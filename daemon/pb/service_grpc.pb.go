@@ -42,7 +42,7 @@ type DaemonClient interface {
 	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetDefaults(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
-	SetDNS(ctx context.Context, in *SetDNSRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetDNS(ctx context.Context, in *SetDNSRequest, opts ...grpc.CallOption) (*SetDNSResponse, error)
 	SetFirewall(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetFirewallMark(ctx context.Context, in *SetUint32Request, opts ...grpc.CallOption) (*Payload, error)
 	SetRouting(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -317,8 +317,8 @@ func (c *daemonClient) SetDefaults(ctx context.Context, in *Empty, opts ...grpc.
 	return out, nil
 }
 
-func (c *daemonClient) SetDNS(ctx context.Context, in *SetDNSRequest, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) SetDNS(ctx context.Context, in *SetDNSRequest, opts ...grpc.CallOption) (*SetDNSResponse, error) {
+	out := new(SetDNSResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/SetDNS", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -485,7 +485,7 @@ type DaemonServer interface {
 	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
 	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*Payload, error)
 	SetDefaults(context.Context, *Empty) (*Payload, error)
-	SetDNS(context.Context, *SetDNSRequest) (*Payload, error)
+	SetDNS(context.Context, *SetDNSRequest) (*SetDNSResponse, error)
 	SetFirewall(context.Context, *SetGenericRequest) (*Payload, error)
 	SetFirewallMark(context.Context, *SetUint32Request) (*Payload, error)
 	SetRouting(context.Context, *SetGenericRequest) (*Payload, error)
@@ -568,7 +568,7 @@ func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetTh
 func (UnimplementedDaemonServer) SetDefaults(context.Context, *Empty) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetDefaults not implemented")
 }
-func (UnimplementedDaemonServer) SetDNS(context.Context, *SetDNSRequest) (*Payload, error) {
+func (UnimplementedDaemonServer) SetDNS(context.Context, *SetDNSRequest) (*SetDNSResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetDNS not implemented")
 }
 func (UnimplementedDaemonServer) SetFirewall(context.Context, *SetGenericRequest) (*Payload, error) {
