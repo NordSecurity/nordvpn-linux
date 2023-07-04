@@ -161,13 +161,11 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 				f.Status = pb.Status_CANCELED
 			}
 		})
-
 		if event.Data.ByPeer {
 			transfer.Status = pb.Status_CANCELED_BY_PEER
 		} else {
-			transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
+			transfer.Status = pb.Status_CANCELED
 		}
-
 		em.finalizeTransfer(transfer)
 		return
 	case transferFailed:
