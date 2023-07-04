@@ -19,19 +19,23 @@ type mockRotator struct {
 	url string
 }
 
-func (m *mockRotator) Rotate() error {
-	return ErrNothingMoreToRotate
+func (m *mockRotator) Rotate() (MetaTransport, error) {
+	return MetaTransport{}, ErrNothingMoreToRotate
 }
 
-func (mockRotator) Restart() {}
+func (mockRotator) Restart() MetaTransport {
+	return MetaTransport{}
+}
 
 type failingRotator struct{}
 
-func (failingRotator) Rotate() error {
-	return errors.New("failing rotator")
+func (failingRotator) Rotate() (MetaTransport, error) {
+	return MetaTransport{}, errors.New("failing rotator")
 }
 
-func (m *failingRotator) Restart() {}
+func (m *failingRotator) Restart() MetaTransport {
+	return MetaTransport{}
+}
 
 func TestHTTPClient_DoRequest(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -50,7 +54,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 		Client  *http.Client
 		BaseURL string
 		Path    string
-		CompleteRotator
+		Rotator
 	}
 	tests := []struct {
 		name     string
@@ -61,9 +65,9 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 		{
 			name: "right url with nil rotator",
 			fields: fields{
-				Client:          testServer.Client(),
-				BaseURL:         testServer.URL,
-				CompleteRotator: nil,
+				Client:  testServer.Client(),
+				BaseURL: testServer.URL,
+				Rotator: nil,
 			},
 			expected: []byte("Success!"),
 			hasError: false,
@@ -71,9 +75,9 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 		{
 			name: "right url with rotator",
 			fields: fields{
-				Client:          testServer.Client(),
-				BaseURL:         testServer.URL,
-				CompleteRotator: &mockRotator{url: testServer.URL},
+				Client:  testServer.Client(),
+				BaseURL: testServer.URL,
+				Rotator: &mockRotator{url: testServer.URL},
 			},
 			expected: []byte("Success!"),
 			hasError: false,
@@ -81,10 +85,10 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 		{
 			name: "right url with rotator and wrong server response",
 			fields: fields{
-				Client:          testServer.Client(),
-				BaseURL:         testServer.URL,
-				Path:            "/wrong",
-				CompleteRotator: &mockRotator{url: testServer.URL},
+				Client:  testServer.Client(),
+				BaseURL: testServer.URL,
+				Path:    "/wrong",
+				Rotator: &mockRotator{url: testServer.URL},
 			},
 			expected: []byte{},
 			hasError: false,
@@ -92,9 +96,9 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 		{
 			name: "right url with wrong rotator",
 			fields: fields{
-				Client:          testServer.Client(),
-				BaseURL:         testServer.URL,
-				CompleteRotator: &mockRotator{url: "this_is_not_a_url"},
+				Client:  testServer.Client(),
+				BaseURL: testServer.URL,
+				Rotator: &mockRotator{url: "this_is_not_a_url"},
 			},
 			expected: []byte("Success!"),
 			hasError: false,
@@ -102,9 +106,9 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 		{
 			name: "right url with failing rotator",
 			fields: fields{
-				Client:          testServer.Client(),
-				BaseURL:         testServer.URL,
-				CompleteRotator: &failingRotator{},
+				Client:  testServer.Client(),
+				BaseURL: testServer.URL,
+				Rotator: &failingRotator{},
 			},
 			expected: []byte("Success!"),
 			hasError: false,
@@ -112,7 +116,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := NewHTTPClient(test.fields.Client, test.fields.BaseURL, &subs.Subject[string]{}, test.fields.CompleteRotator)
+			c := NewHTTPClient(test.fields.Client, test.fields.BaseURL, &subs.Subject[string]{}, test.fields.Rotator)
 			req, _ := http.NewRequest(http.MethodGet, test.fields.BaseURL+test.fields.Path, nil)
 			got, err := c.DoRequest(req)
 			if test.hasError {

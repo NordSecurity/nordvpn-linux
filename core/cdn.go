@@ -12,7 +12,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/request"
-	"github.com/NordSecurity/nordvpn-linux/request/rotator"
 )
 
 // CDN provides methods to interact with Nord's Content Delivery Network
@@ -23,7 +22,6 @@ type CDN interface {
 
 type CDNAPI struct {
 	agent     string
-	pkVault   response.PKVault
 	client    *request.HTTPClient
 	validator response.Validator
 	sync.Mutex
@@ -37,16 +35,14 @@ type CDNAPIResponse struct {
 func NewCDNAPI(
 	base string,
 	agent string,
-	pkVault response.PKVault,
 	client *http.Client,
+	validator response.Validator,
 ) *CDNAPI {
 	hCli := request.NewHTTPClient(client, base, nil, nil)
-	transportRotator := rotator.NewTransportRotator(hCli, nil)
-	hCli.CompleteRotator = transportRotator
 	return &CDNAPI{
-		agent:   agent,
-		pkVault: pkVault,
-		client:  hCli,
+		agent:     agent,
+		client:    hCli,
+		validator: validator,
 	}
 }
 

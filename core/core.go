@@ -16,7 +16,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/request"
 )
 
@@ -46,30 +45,24 @@ type ServersAPI interface {
 }
 
 type DefaultAPI struct {
-	version     string
-	agent       string
-	environment internal.Environment
-	Client      *request.HTTPClient
-	validator   response.Validator
-	publisher   events.Publisher[events.DataRequestAPI]
+	agent     string
+	Client    *request.HTTPClient
+	validator response.Validator
+	publisher events.Publisher[events.DataRequestAPI]
 	sync.Mutex
 }
 
 func NewDefaultAPI(
-	version string,
 	agent string,
-	environment internal.Environment,
 	client *request.HTTPClient,
 	validator response.Validator,
 	publisher events.Publisher[events.DataRequestAPI],
 ) *DefaultAPI {
 	return &DefaultAPI{
-		version:     version,
-		agent:       agent,
-		environment: environment,
-		Client:      client,
-		validator:   validator,
-		publisher:   publisher,
+		agent:     agent,
+		Client:    client,
+		validator: validator,
+		publisher: publisher,
 	}
 }
 

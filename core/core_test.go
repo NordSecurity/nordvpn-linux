@@ -11,7 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
@@ -100,8 +99,6 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				"",
-				internal.Development,
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
 				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
@@ -129,8 +126,6 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				"",
-				internal.Development,
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
 				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
@@ -156,8 +151,6 @@ func TestDefaultAPI_Servers(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				"",
-				internal.Development,
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
 				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
@@ -183,8 +176,6 @@ func TestDefaultAPI_Services(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				"",
-				internal.Development,
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
 				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
@@ -210,8 +201,6 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				"",
-				internal.Development,
 				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
 				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},

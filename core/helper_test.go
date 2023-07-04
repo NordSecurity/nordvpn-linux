@@ -144,8 +144,6 @@ func CheckServer(listener net.Listener, attempts int) {
 func testNewDefaultAPI(port int) *DefaultAPI {
 	return NewDefaultAPI(
 		"",
-		"",
-		internal.Development,
 		request.NewHTTPClient(&http.Client{}, localServerPath(port), nil, nil),
 		response.MockValidator{},
 		&subs.Subject[events.DataRequestAPI]{},

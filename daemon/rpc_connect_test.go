@@ -142,9 +142,7 @@ func TestRpcConnect(t *testing.T) {
 			cm.c.TokensData[cm.c.AutoConnectData.ID] = tokenData
 			dm := testNewDataManager()
 			api := core.NewDefaultAPI(
-				"1.0.0",
 				"",
-				internal.Development,
 				&request.HTTPClient{},
 				response.MockValidator{},
 				&subs.Subject[events.DataRequestAPI]{},
@@ -221,9 +219,7 @@ func TestRpcReconnect(t *testing.T) {
 	cm.c.TokensData[cm.c.AutoConnectData.ID] = tokenData
 	dm := testNewDataManager()
 	api := core.NewDefaultAPI(
-		"1.0.0",
 		"",
-		internal.Development,
 		&request.HTTPClient{},
 		response.MockValidator{},
 		&subs.Subject[events.DataRequestAPI]{},

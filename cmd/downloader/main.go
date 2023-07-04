@@ -11,7 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/request"
 )
@@ -33,8 +32,6 @@ func main() {
 	clientEx := request.NewHTTPClient(client, daemon.BaseURL, nil, nil)
 	api := core.NewDefaultAPI(
 		"",
-		"",
-		internal.Environment(""),
 		clientEx,
 		response.NewNordValidator(response.NewFilePKVault(dataPath)),
 		&subs.Subject[events.DataRequestAPI]{},

@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type transportA struct{}
@@ -28,15 +28,12 @@ func (transportB) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 func (transportB) NotifyConnect(events.DataConnect) error { return nil }
 
-func TestTransportRotator_Rotate(t *testing.T) {
+func TestRotator_Rotate(t *testing.T) {
 	category.Set(t, category.Unit)
-
-	bURL, _ := url.Parse("www.example.com")
 
 	type fields struct {
 		client     *http.Client
 		transports []request.MetaTransport
-		baseURL    *url.URL
 	}
 	tests := []struct {
 		name     string
@@ -49,7 +46,6 @@ func TestTransportRotator_Rotate(t *testing.T) {
 			fields: fields{
 				client:     &http.Client{Transport: transportA{}},
 				transports: []request.MetaTransport{},
-				baseURL:    bURL,
 			},
 			expected: nil,
 			hasError: true,
@@ -59,7 +55,6 @@ func TestTransportRotator_Rotate(t *testing.T) {
 			fields: fields{
 				client:     &http.Client{Transport: transportA{}},
 				transports: nil,
-				baseURL:    bURL,
 			},
 			expected: nil,
 			hasError: true,
@@ -69,7 +64,6 @@ func TestTransportRotator_Rotate(t *testing.T) {
 			fields: fields{
 				client:     &http.Client{Transport: transportA{}},
 				transports: []request.MetaTransport{{Transport: transportA{}}, {Transport: transportB{}}},
-				baseURL:    bURL,
 			},
 			expected: nil,
 			hasError: true,
@@ -79,7 +73,6 @@ func TestTransportRotator_Rotate(t *testing.T) {
 			fields: fields{
 				client:     &http.Client{Transport: transportA{}},
 				transports: []request.MetaTransport{{Transport: transportA{}}, {Transport: transportB{}}},
-				baseURL:    bURL,
 			},
 			expected: nil,
 			hasError: true,
@@ -89,7 +82,6 @@ func TestTransportRotator_Rotate(t *testing.T) {
 			fields: fields{
 				client:     &http.Client{Transport: transportA{}},
 				transports: []request.MetaTransport{{Transport: transportA{}}},
-				baseURL:    bURL,
 			},
 			expected: nil,
 			hasError: true,
@@ -99,7 +91,6 @@ func TestTransportRotator_Rotate(t *testing.T) {
 			fields: fields{
 				client:     &http.Client{Transport: transportA{}},
 				transports: []request.MetaTransport{{Transport: transportA{}}},
-				baseURL:    bURL,
 			},
 			expected: nil,
 			hasError: true,
@@ -115,7 +106,6 @@ func TestTransportRotator_Rotate(t *testing.T) {
 					{Transport: transportA{}},
 					{Transport: transportB{}},
 				},
-				baseURL: bURL,
 			},
 			expected: nil,
 			hasError: true,
@@ -131,7 +121,6 @@ func TestTransportRotator_Rotate(t *testing.T) {
 					{Transport: transportA{}},
 					{Transport: transportB{}},
 				},
-				baseURL: bURL,
 			},
 			expected: nil,
 			hasError: true,
@@ -139,21 +128,23 @@ func TestTransportRotator_Rotate(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := request.NewHTTPClient(test.fields.client, test.fields.baseURL.String(), &subs.Subject[string]{}, nil)
-			r := NewTransportRotator(c, test.fields.transports)
-			c.CompleteRotator = r
-			for i := 1; i < len(r.transports); i++ {
-				err := r.Rotate()
-				assert.Equal(t, c.SelectedTransport, r.transports[i])
+			r, err := NewRotator(test.fields.transports)
+			if err != nil {
+				assert.Equal(t, test.hasError, err != nil, "expected: %t, actual: %s", test.hasError, err)
+				return
+			}
+			for i := 1; i < len(r.elements); i++ {
+				transport, err := r.Rotate()
+				assert.Equal(t, r.elements[i], transport)
 				assert.NoError(t, err)
 			}
-			err := r.Rotate()
+			_, err = r.Rotate()
 			assert.Equal(t, test.hasError, err != nil, "expected: %t, actual: %s", test.hasError, err)
 		})
 	}
 }
 
-func TestTransportRotator_Restart(t *testing.T) {
+func TestRotator_Restart(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	type fields struct {
@@ -245,12 +236,15 @@ func TestTransportRotator_Restart(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := request.NewHTTPClient(test.fields.client, "", &subs.Subject[string]{}, nil)
-			r := NewTransportRotator(c, test.fields.transports)
-			c.CompleteRotator = r
+			r, err := NewRotator(test.fields.transports)
+			if err != nil {
+				assert.True(t, test.hasError)
+				return
+			}
+			require.NoError(t, err)
 			if !test.hasError {
 				r.Restart()
-				assert.Equal(t, test.fields.transports[0], r.transports[0])
+				assert.Equal(t, test.fields.transports[0], r.elements[0])
 			}
 		})
 	}

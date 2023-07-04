@@ -24,21 +24,21 @@ type BasicAuth struct {
 	Password string
 }
 
-type CompleteRotator interface {
-	Restart()
-	Rotate() error
+type Rotator interface {
+	Restart() MetaTransport
+	Rotate() (MetaTransport, error)
 }
 
 type HTTPClient struct {
-	client            *http.Client
-	BaseURL           string
-	LastResponseTime  time.Duration
-	h3reviveTime      time.Duration
-	lastH3okTime      time.Time
-	publisher         events.Publisher[string]
-	lastOKTransport   MetaTransport
-	SelectedTransport MetaTransport
-	CompleteRotator
+	client           *http.Client
+	BaseURL          string
+	LastResponseTime time.Duration
+	h3reviveTime     time.Duration
+	lastH3okTime     time.Time
+	publisher        events.Publisher[string]
+	lastOKTransport  MetaTransport
+	currentTransport MetaTransport
+	rotator          Rotator
 	sync.Mutex
 }
 
@@ -53,23 +53,7 @@ type RoundTripperEx interface {
 type MetaTransport struct {
 	Transport RoundTripperEx
 	Name      string
-	isH3      bool
-	create    func() RoundTripperEx
-}
-
-func NewH1Transport(fn func() RoundTripperEx) MetaTransport {
-	return MetaTransport{
-		Transport: fn(),
-		create:    fn,
-	}
-}
-
-func NewH3Transport(fn func() RoundTripperEx) MetaTransport {
-	return MetaTransport{
-		Transport: fn(),
-		isH3:      true,
-		create:    fn,
-	}
+	IsH3      bool
 }
 
 func (t MetaTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -80,20 +64,20 @@ func NewHTTPClient(
 	client *http.Client,
 	baseURL string,
 	publisher events.Publisher[string],
-	rotator CompleteRotator,
+	rotator Rotator,
 ) *HTTPClient {
 	return &HTTPClient{
-		client:          client,
-		BaseURL:         baseURL,
-		publisher:       publisher,
-		CompleteRotator: rotator,
-		lastH3okTime:    time.Now(),
-		h3reviveTime:    1 * time.Minute, // Provisional time for testing
+		client:       client,
+		BaseURL:      baseURL,
+		publisher:    publisher,
+		rotator:      rotator,
+		lastH3okTime: time.Now(),
+		h3reviveTime: 1 * time.Minute, // Provisional time for testing
 	}
 }
 
 func (c *HTTPClient) SetTransport(transport MetaTransport) {
-	c.SelectedTransport = transport
+	c.currentTransport = transport
 }
 
 // NewRequest builds an unauthenticated request.
@@ -172,16 +156,20 @@ func (c *HTTPClient) DoRequest(req *http.Request) (*http.Response, error) {
 	// If it is not the 1st time after App has started, it checks if the HTTP/3 transport should be revived
 	if c.lastOKTransport.Transport != nil {
 		transport := c.lastOKTransport
-		if !transport.isH3 && (time.Now()).After(c.lastH3okTime.Add(c.h3reviveTime)) {
-			c.CompleteRotator.Restart()
+		if !transport.IsH3 && (time.Now()).After(c.lastH3okTime.Add(c.h3reviveTime)) {
+			c.rotator.Restart()
 		}
 	}
-	for resp, cliErr = c.do(req); cliErr != nil && c.CompleteRotator != nil; resp, cliErr = c.do(req) {
+	for resp, cliErr = c.do(req); cliErr != nil && c.rotator != nil; resp, cliErr = c.do(req) {
 		log.Println(cliErr)
-		err := c.CompleteRotator.Rotate()
+		if c.rotator != nil {
+			break
+		}
+		nextTransport, err := c.rotator.Rotate()
 		if errors.Is(err, ErrNothingMoreToRotate) {
 			break
 		}
+		c.currentTransport = nextTransport
 		if err != nil {
 			return nil, fmt.Errorf("rotating: %w", err)
 		}
@@ -189,8 +177,8 @@ func (c *HTTPClient) DoRequest(req *http.Request) (*http.Response, error) {
 	if cliErr != nil {
 		return nil, fmt.Errorf("doing http request: %w", cliErr)
 	}
-	c.lastOKTransport = c.SelectedTransport
-	if c.SelectedTransport.isH3 {
+	c.lastOKTransport = c.currentTransport
+	if c.currentTransport.IsH3 {
 		c.lastH3okTime = time.Now()
 	}
 	return resp, nil
@@ -202,8 +190,8 @@ func (c *HTTPClient) do(req *http.Request) (*http.Response, error) {
 	}
 	c.setRequestTransferProtocol(req)
 	tmpCli := *c.client
-	if c.SelectedTransport.Transport != nil && c.SelectedTransport.Transport != c.client.Transport {
-		tmpCli.Transport = c.SelectedTransport
+	if c.currentTransport.Transport != nil && c.currentTransport.Transport != c.client.Transport {
+		tmpCli.Transport = c.currentTransport
 	}
 	startTime := time.Now()
 	resp, err := tmpCli.Do(req)
@@ -218,7 +206,7 @@ type transferProtocol struct {
 }
 
 func (c *HTTPClient) setRequestTransferProtocol(req *http.Request) {
-	transferProto := transportToProtocol(c.SelectedTransport)
+	transferProto := transportToProtocol(c.currentTransport)
 	req.Proto = transferProto.proto
 	req.ProtoMajor = transferProto.major
 	req.ProtoMinor = transferProto.minor
@@ -227,7 +215,7 @@ func (c *HTTPClient) setRequestTransferProtocol(req *http.Request) {
 func transportToProtocol(transport MetaTransport) transferProtocol {
 	var transferProto transferProtocol
 
-	if transport.isH3 {
+	if transport.IsH3 {
 		transferProto.proto = "HTTP/3"
 		transferProto.major = 3
 		transferProto.minor = 0

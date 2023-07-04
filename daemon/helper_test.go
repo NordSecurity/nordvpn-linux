@@ -215,8 +215,8 @@ func testNewCDNAPI() *core.CDNAPI {
 	return core.NewCDNAPI(
 		localServerPath(GeneralInfo),
 		"",
-		response.PKVault{PublicKey: publicKey},
 		http.DefaultClient,
+		nil,
 	)
 }
 

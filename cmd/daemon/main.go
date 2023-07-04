@@ -191,14 +191,19 @@ func main() {
 	// API
 
 	pkVault := response.NewFilePKVault(internal.DatFilesPath)
+	var validator response.Validator = response.NewNordValidator(pkVault)
+	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
+		validator = response.MockValidator{}
+	}
+
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
 	// simple standard http client with dialer wrapped inside
 	httpClientSimple := request.NewStdHTTP()
 	cdnAPI := core.NewCDNAPI(
 		core.CDNURL,
 		userAgent,
-		pkVault,
 		httpClientSimple,
+		validator,
 	)
 
 	var threatProtectionLiteServers *dns.NameServers
@@ -217,20 +222,15 @@ func main() {
 		daemonEvents.Service.Connect.Subscribe(item.Transport.NotifyConnect)
 	}
 
-	// http client with transport rotator
-	httpClientWithRotator := request.NewHTTPClient(httpClientSimple, daemon.BaseURL, debugSubject, nil)
-	transportRotator := rotator.NewTransportRotator(httpClientWithRotator, transports)
-	httpClientWithRotator.CompleteRotator = transportRotator
-
-	var validator response.Validator = response.NewNordValidator(pkVault)
-	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
-		validator = response.MockValidator{}
+	transportRotator, err := rotator.NewRotator(transports)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "error creating transport rotator:", err)
 	}
+	// http client with transport rotator
+	httpClientWithRotator := request.NewHTTPClient(httpClientSimple, daemon.BaseURL, debugSubject, transportRotator)
 
 	defaultAPI := core.NewDefaultAPI(
-		Version,
 		userAgent,
-		internal.Environment(Environment),
 		httpClientWithRotator,
 		validator,
 		httpCalls,

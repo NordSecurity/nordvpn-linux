@@ -100,6 +100,7 @@ func createTimedOutTransports(resolver network.DNSResolver, fwmark uint32) []req
 	return []request.MetaTransport{
 		{
 			Transport: rotator.NewQuicTransport(createH3Transport),
+			IsH3:      true,
 			Name:      "quic-http-transport",
 		},
 		{
