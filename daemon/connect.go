@@ -2,7 +2,10 @@ package daemon
 
 import (
 	"io/ioutil"
+	"log"
+	"net/netip"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -62,6 +65,39 @@ func getSystemInfo(version string) string {
 	return builder.String()
 }
 
+// maskIPRouteOutput changes any non-local ip address in the output to ***
+func maskIPRouteOutput(output string) string {
+	expIPv4 := regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
+	expIPv6 := regexp.MustCompile(`(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}` +
+		`|([0-9a-fA-F]{1,4}:){1,7}:` +
+		`|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}` +
+		`|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}` +
+		`|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}` +
+		`|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}` +
+		`|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}` +
+		`|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})` +
+		`|:((:[0-9a-fA-F]{1,4}){1,7}|:)` +
+		`|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}` +
+		`|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])` +
+		`|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))`)
+
+	ips := expIPv4.FindAllString(output, -1)
+	ips = append(ips, expIPv6.FindAllString(output, -1)...)
+	for _, ip := range ips {
+		parsed, err := netip.ParseAddr(ip)
+		if err != nil {
+			log.Printf("Failed to parse ip address %s for masking: %v", ip, err)
+			continue
+		}
+
+		if !parsed.IsLinkLocalMulticast() && !parsed.IsLinkLocalUnicast() && !parsed.IsLoopback() && !parsed.IsPrivate() {
+			output = strings.Replace(output, ip, "***", -1)
+		}
+	}
+
+	return output
+}
+
 func getNetworkInfo() string {
 	builder := strings.Builder{}
 	for _, arg := range []string{"4", "6"} {
@@ -70,7 +106,8 @@ func getNetworkInfo() string {
 		if err != nil {
 			continue
 		}
-		builder.WriteString("Routes for ipv" + arg + ":\n" + string(out) + "\n")
+		builder.WriteString("Routes for ipv" + arg + ":\n")
+		builder.WriteString((string(out)))
 
 		// #nosec G204 -- arg values are known before even running the program
 		out, err = exec.Command("ip", "-"+arg, "rule").CombinedOutput()

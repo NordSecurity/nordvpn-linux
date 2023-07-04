@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/netip"
 	"os/exec"
+	"regexp"
 	"sync"
 	"time"
 
@@ -39,9 +40,14 @@ type event struct {
 
 type eventFn func(string)
 
+func maskPublicKey(event string) string {
+	expr := regexp.MustCompile(`"public_key":"(.*)"`)
+	return expr.ReplaceAllString(event, `"public_key":"***"`)
+}
+
 func eventCallback(states chan<- state) eventFn {
 	return func(s string) {
-		log.Println(internal.InfoPrefix, s)
+		log.Println(internal.InfoPrefix + maskPublicKey(s))
 		var e event
 		if err := json.Unmarshal([]byte(s), &e); err != nil {
 			return
