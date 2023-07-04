@@ -24,22 +24,20 @@ type BasicAuth struct {
 	Password string
 }
 
-type Rotator interface {
+type CompleteRotator interface {
 	Restart() MetaTransport
 	Rotate() (MetaTransport, error)
 }
 
 type HTTPClient struct {
 	client           *http.Client
-	BaseURL          string
-	LastResponseTime time.Duration
+	publisher        events.Publisher[events.DataRequestAPI]
 	h3reviveTime     time.Duration
 	lastH3okTime     time.Time
-	publisher        events.Publisher[string]
 	lastOKTransport  MetaTransport
 	currentTransport MetaTransport
-	rotator          Rotator
-	sync.Mutex
+	rotator          CompleteRotator
+	mu               sync.Mutex
 }
 
 type RoundTripperEx interface {
@@ -62,22 +60,21 @@ func (t MetaTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func NewHTTPClient(
 	client *http.Client,
-	baseURL string,
-	publisher events.Publisher[string],
-	rotator Rotator,
+	rotator CompleteRotator,
+	publisher events.Publisher[events.DataRequestAPI],
 ) *HTTPClient {
-	return &HTTPClient{
-		client:       client,
-		BaseURL:      baseURL,
-		publisher:    publisher,
-		rotator:      rotator,
-		lastH3okTime: time.Now(),
-		h3reviveTime: 1 * time.Minute, // Provisional time for testing
+	currentTransport := MetaTransport{}
+	if rotator != nil {
+		currentTransport = rotator.Restart()
 	}
-}
-
-func (c *HTTPClient) SetTransport(transport MetaTransport) {
-	c.currentTransport = transport
+	return &HTTPClient{
+		client:           client,
+		rotator:          rotator,
+		lastH3okTime:     time.Now(),
+		h3reviveTime:     1 * time.Minute, // Provisional time for testing
+		publisher:        publisher,
+		currentTransport: currentTransport,
+	}
 }
 
 // NewRequest builds an unauthenticated request.
@@ -147,8 +144,8 @@ func NewRequestWithBearerToken(
 // 3. If it keeps failing, it rotates to the last available transport, the default one.
 // Throughout this process, if the h3 timer runs out, the transport is reset to h3 and the process starts again.
 func (c *HTTPClient) DoRequest(req *http.Request) (*http.Response, error) {
-	c.Lock()
-	defer c.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 
 	var resp *http.Response
 	var cliErr error
@@ -156,13 +153,13 @@ func (c *HTTPClient) DoRequest(req *http.Request) (*http.Response, error) {
 	// If it is not the 1st time after App has started, it checks if the HTTP/3 transport should be revived
 	if c.lastOKTransport.Transport != nil {
 		transport := c.lastOKTransport
-		if !transport.IsH3 && (time.Now()).After(c.lastH3okTime.Add(c.h3reviveTime)) {
-			c.rotator.Restart()
+		if !transport.IsH3 && (time.Now()).After(c.lastH3okTime.Add(c.h3reviveTime)) && c.rotator != nil {
+			c.currentTransport = c.rotator.Restart()
 		}
 	}
 	for resp, cliErr = c.do(req); cliErr != nil && c.rotator != nil; resp, cliErr = c.do(req) {
 		log.Println(cliErr)
-		if c.rotator != nil {
+		if c.rotator == nil {
 			break
 		}
 		nextTransport, err := c.rotator.Rotate()
@@ -185,9 +182,6 @@ func (c *HTTPClient) DoRequest(req *http.Request) (*http.Response, error) {
 }
 
 func (c *HTTPClient) do(req *http.Request) (*http.Response, error) {
-	if c.publisher != nil {
-		c.publisher.Publish(fmt.Sprintf("URL: %s\n", c.BaseURL))
-	}
 	c.setRequestTransferProtocol(req)
 	tmpCli := *c.client
 	if c.currentTransport.Transport != nil && c.currentTransport.Transport != c.client.Transport {
@@ -195,7 +189,14 @@ func (c *HTTPClient) do(req *http.Request) (*http.Response, error) {
 	}
 	startTime := time.Now()
 	resp, err := tmpCli.Do(req)
-	c.LastResponseTime = time.Since(startTime)
+	if c.publisher != nil {
+		c.publisher.Publish(events.DataRequestAPI{
+			Request:  req,
+			Response: resp,
+			Error:    err,
+			Duration: time.Since(startTime),
+		})
+	}
 	return resp, err
 }
 

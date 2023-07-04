@@ -12,8 +12,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/keypair"
@@ -144,8 +142,8 @@ func CheckServer(listener net.Listener, attempts int) {
 func testNewDefaultAPI(port int) *DefaultAPI {
 	return NewDefaultAPI(
 		"",
-		request.NewHTTPClient(&http.Client{}, localServerPath(port), nil, nil),
+		localServerPath(port),
+		request.NewHTTPClient(&http.Client{}, nil, nil),
 		response.MockValidator{},
-		&subs.Subject[events.DataRequestAPI]{},
 	)
 }

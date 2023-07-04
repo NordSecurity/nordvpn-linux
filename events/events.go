@@ -2,6 +2,7 @@
 package events
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -85,18 +86,12 @@ type DataDisconnect struct {
 }
 
 type DataRequestAPI struct {
-	Endpoint         string
-	Hostname         string
-	DNSResolution    time.Duration
-	EventDuration    time.Duration
-	IsSuccessful     bool
-	RequestLimits    string
-	RequestOffset    string
-	RequestFields    string
-	RequestFilters   string
-	ResponseCode     int
-	ResponseSummary  string
-	TransferProtocol string
+	// Note: Never use `Request.Body`, use `Request.GetBody` instead
+	Request *http.Request
+	// Note: In case you read `Response.Body`, make sure it is set to what it was before
+	Response *http.Response
+	Duration time.Duration
+	Error    error
 }
 
 // Analytics analytics handling engine interface

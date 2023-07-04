@@ -15,6 +15,7 @@ import (
 )
 
 type RepoAPI struct {
+	baseURL     string
 	version     string
 	env         internal.Environment
 	packageType string
@@ -29,19 +30,20 @@ type RepoAPIResponse struct {
 }
 
 func NewRepoAPI(
-	base string,
+	baseURL string,
 	version string,
 	env internal.Environment,
 	packageType,
 	arch string,
-	client *http.Client,
+	client *request.HTTPClient,
 ) *RepoAPI {
 	return &RepoAPI{
+		baseURL:     baseURL,
 		version:     version,
 		env:         env,
 		packageType: packageType,
 		arch:        arch,
-		client:      request.NewHTTPClient(client, base, nil, nil),
+		client:      client,
 	}
 }
 
@@ -106,7 +108,7 @@ func (api *RepoAPI) RpmFileList() ([]byte, error) {
 }
 
 func (api *RepoAPI) request(path string) (*RepoAPIResponse, error) {
-	req, err := request.NewRequest(http.MethodGet, fmt.Sprintf("NordApp Linux %s %s", api.version, api.packageType), api.client.BaseURL, path, "", "", "gzip, deflate", nil)
+	req, err := request.NewRequest(http.MethodGet, fmt.Sprintf("NordApp Linux %s %s", api.version, api.packageType), api.baseURL, path, "", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, err
 	}

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
@@ -32,9 +32,12 @@ func TestMeshAPI_Register(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			_, err := api.Register("bearer", mesh.Machine{
 				ID:        uuid.New(),
 				PublicKey: uuid.New().String(),
@@ -66,9 +69,12 @@ func TestMeshAPI_Update(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			err := api.Update(
 				"bearer",
 				id,
@@ -100,9 +106,12 @@ func TestMeshAPI_Configure(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			err := api.Configure(
 				"bearer",
 				id,
@@ -136,9 +145,12 @@ func TestMeshAPI_Unregister(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			err := api.Unregister("bearer", id)
 			assert.ErrorIs(t, err, test.err)
 		})
@@ -163,9 +175,12 @@ func TestMeshAPI_List(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			_, err := api.List("bearer", id)
 			assert.ErrorIs(t, err, test.err)
 		})
@@ -193,9 +208,12 @@ func TestMeshAPI_Unpair(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			err := api.Unpair("bearer", myID, otherID)
 			assert.ErrorIs(t, err, test.err)
 		})
@@ -223,9 +241,12 @@ func TestMeshAPI_Invite(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			err := api.Invite("bearer", id, "elite@hacker.nord", false, false, false, false)
 			assert.ErrorIs(t, err, test.err)
 		})
@@ -250,9 +271,12 @@ func TestMeshAPI_Received(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			_, err := api.Received("bearer", id)
 			assert.ErrorIs(t, err, test.err)
 		})
@@ -277,9 +301,12 @@ func TestMeshAPI_Sent(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			_, err := api.Sent("bearer", id)
 			assert.ErrorIs(t, err, test.err)
 		})
@@ -306,9 +333,12 @@ func TestMeshAPI_Accept(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			err := api.Accept(
 				"bearer",
 				id,
@@ -342,9 +372,12 @@ func TestMeshAPI_Reject(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			err := api.Reject("bearer", id, invitationID)
 			assert.ErrorIs(t, err, test.err)
 		})
@@ -370,9 +403,12 @@ func TestMeshAPI_Revoke(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewMeshAPI(server.URL, "",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
-				nil, &subs.Subject[string]{})
+			api := NewDefaultAPI(
+				"",
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
+				response.MockValidator{},
+			)
 			err := api.Revoke("bearer", id, invitationID)
 			assert.ErrorIs(t, err, test.err)
 		})

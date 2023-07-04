@@ -452,30 +452,38 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 }
 
 func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
-	fn, err := pickNotifier(data.Endpoint)
+	if data.Request == nil {
+		return fmt.Errorf("request nil")
+	}
+	responseCode := 0
+	if data.Response != nil {
+		responseCode = data.Response.StatusCode
+	}
+
+	fn, err := pickNotifier(data.Request.URL.Path)
 	if err != nil {
 		return err
 	}
 
 	var eventStatus moose.Enum_SS_NordvpnappEventStatus
-	if data.IsSuccessful {
+	if data.Error != nil {
 		eventStatus = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusSuccess)
 	} else {
 		eventStatus = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusFailureDueToRuntimeException)
 	}
 	return s.response(fn(
-		data.Hostname,
-		int(data.DNSResolution.Milliseconds()),
-		int(data.EventDuration.Milliseconds()),
+		data.Request.URL.Host,
+		0,
+		int(data.Duration.Milliseconds()),
 		eventStatus,
 		moose.Enum_SS_NordvpnappEventTrigger(moose.EventTriggerApp),
-		data.RequestLimits,
-		data.RequestOffset,
-		data.RequestFields,
-		data.RequestFilters,
-		data.ResponseCode,
-		data.ResponseSummary,
-		data.TransferProtocol,
+		"",
+		"",
+		"",
+		"",
+		responseCode,
+		"",
+		data.Request.Proto,
 	))
 }
 

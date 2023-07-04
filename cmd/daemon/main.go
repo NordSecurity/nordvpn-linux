@@ -159,7 +159,7 @@ func main() {
 	debugSubject := &subs.Subject[string]{}
 	infoSubject := &subs.Subject[string]{}
 	errSubject := &subs.Subject[error]{}
-	httpCalls := &subs.Subject[events.DataRequestAPI]{}
+	httpCallsSubject := &subs.Subject[events.DataRequestAPI]{}
 
 	loggerSubscriber := logger.Subscriber{}
 	if internal.Environment(Environment) == internal.Development {
@@ -199,10 +199,11 @@ func main() {
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
 	// simple standard http client with dialer wrapped inside
 	httpClientSimple := request.NewStdHTTP()
+	httpClientNoRotator := request.NewHTTPClient(httpClientSimple, nil, httpCallsSubject)
 	cdnAPI := core.NewCDNAPI(
-		core.CDNURL,
 		userAgent,
-		httpClientSimple,
+		core.CDNURL,
+		httpClientNoRotator,
 		validator,
 	)
 
@@ -221,42 +222,32 @@ func main() {
 	for _, item := range transports {
 		daemonEvents.Service.Connect.Subscribe(item.Transport.NotifyConnect)
 	}
-
+	// http client with transport rotator
 	transportRotator, err := rotator.NewRotator(transports)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "error creating transport rotator:", err)
 	}
-	// http client with transport rotator
-	httpClientWithRotator := request.NewHTTPClient(httpClientSimple, daemon.BaseURL, debugSubject, transportRotator)
 
+	httpClientWithRotator := request.NewHTTPClient(httpClientSimple, transportRotator, httpCallsSubject)
 	defaultAPI := core.NewDefaultAPI(
 		userAgent,
+		daemon.BaseURL,
 		httpClientWithRotator,
 		validator,
-		httpCalls,
 	)
+	meshAPIex := registry.NewRegistry(
+		defaultAPI,
+		meshnetEvents.SelfRemoved,
+	)
+
 	repoAPI := daemon.NewRepoAPI(
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),
 		PackageType,
 		Arch,
-		httpClientSimple,
+		httpClientNoRotator,
 	)
-	meshAPI := core.NewMeshAPI(
-		daemon.BaseURL,
-		userAgent,
-		httpClientWithRotator,
-		pkVault,
-		debugSubject,
-	)
-	meshAPIex := registry.NewRegistry(
-		meshAPI,
-		meshnetEvents.SelfRemoved,
-	)
-
-	// Networker
-
 	gwret := routes.IPGatewayRetriever{}
 	dnsSetter := dns.NewSetter(infoSubject)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
@@ -292,8 +283,23 @@ func main() {
 	// obfuscated machineID
 	deviceID := fmt.Sprintf("%x", sha256.Sum256([]byte(cfg.MachineID.String()+Salt)))
 
+	analytics := newAnalytics(eventsDbPath, fsystem, Version, Environment, deviceID)
+	if cfg.Analytics.Get() {
+		if err := analytics.Enable(); err != nil {
+			log.Println(internal.WarningPrefix, err)
+		}
+	}
+	daemonEvents.Subscribe(analytics)
+	apiLogFn := loggerSubscriber.NotifyRequestAPI
+	if internal.IsDevEnv(Environment) {
+		apiLogFn = loggerSubscriber.NotifyRequestAPIVerbose
+	}
+	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
+	httpCallsSubject.Subscribe(apiLogFn)
+
 	remoteConfigGetter := remoteConfigGetterImplementation()
 
+	// Networker
 	vpnFactory := getVpnFactory(eventsDbPath, cfg.FirewallMark,
 		internal.IsDevEnv(Environment), remoteConfigGetter, deviceID, Version)
 
@@ -363,7 +369,6 @@ func main() {
 	)
 
 	// RPC Servers
-
 	fileshareImplementation := fileshareImplementation()
 
 	keygen, err := keygenImplementation(vpnFactory)
@@ -393,15 +398,6 @@ func main() {
 	endpointResolver := network.NewDefaultResolverChain(fw)
 	notificationClient := nc.NewClient(debugSubject, meshnetEvents.PeerUpdate)
 
-	analytics := newAnalytics(eventsDbPath, fsystem, Version, Environment, deviceID)
-	if cfg.Analytics.Get() {
-		if err := analytics.Enable(); err != nil {
-			log.Println(internal.WarningPrefix, err)
-		}
-	}
-	daemonEvents.Subscribe(analytics)
-	httpCalls.Subscribe(analytics.NotifyRequestAPI)
-
 	dm := daemon.NewDataManager(
 		daemon.InsightsFilePath,
 		daemon.ServersDataFilePath,
@@ -419,7 +415,7 @@ func main() {
 		defaultAPI,
 		cdnAPI,
 		repoAPI,
-		core.NewOAuth2(httpClientWithRotator),
+		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
 		Version,
 		fw,
 		defaultAPI.Client,
@@ -437,7 +433,7 @@ func main() {
 		authChecker,
 		fsystem,
 		meshnetChecker,
-		meshAPI,
+		defaultAPI,
 		netw,
 		meshAPIex,
 		threatProtectionLiteServers,

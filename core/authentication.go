@@ -21,7 +21,8 @@ type Authentication interface {
 }
 
 type OAuth2 struct {
-	client *request.HTTPClient
+	baseURL string
+	client  *request.HTTPClient
 	// challenge is used to login
 	challenge string
 	// verifier is used to retrieve the token
@@ -31,15 +32,18 @@ type OAuth2 struct {
 	sync.Mutex
 }
 
-func NewOAuth2(client *request.HTTPClient) *OAuth2 {
-	return &OAuth2{client: client}
+func NewOAuth2(client *request.HTTPClient, baseURL string) *OAuth2 {
+	return &OAuth2{
+		baseURL: baseURL,
+		client:  client,
+	}
 }
 
 func (o *OAuth2) Login() (string, error) {
 	o.Lock()
 	defer o.Unlock()
 
-	path, err := url.Parse(o.client.BaseURL + urlOAuth2Login)
+	path, err := url.Parse(o.baseURL + urlOAuth2Login)
 	if err != nil {
 		return "", err
 	}
@@ -93,7 +97,7 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 	o.Lock()
 	defer o.Unlock()
 
-	path, err := url.Parse(o.client.BaseURL + urlOAuth2Token)
+	path, err := url.Parse(o.baseURL + urlOAuth2Token)
 	if err != nil {
 		return nil, err
 	}

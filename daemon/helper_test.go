@@ -15,6 +15,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/keypair"
 	"github.com/NordSecurity/nordvpn-linux/test/response"
 
@@ -213,9 +214,9 @@ func testNewDataManager() *DataManager {
 // ready for use in tests CDNAPI
 func testNewCDNAPI() *core.CDNAPI {
 	return core.NewCDNAPI(
-		localServerPath(GeneralInfo),
 		"",
-		http.DefaultClient,
+		localServerPath(GeneralInfo),
+		request.NewHTTPClient(http.DefaultClient, nil, nil),
 		nil,
 	)
 }
@@ -229,6 +230,6 @@ func testNewRepoAPI() *RepoAPI {
 		"",
 		"",
 		"",
-		http.DefaultClient,
+		request.NewHTTPClient(http.DefaultClient, nil, nil),
 	)
 }

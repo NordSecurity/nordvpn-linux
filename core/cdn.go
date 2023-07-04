@@ -22,6 +22,7 @@ type CDN interface {
 
 type CDNAPI struct {
 	agent     string
+	baseURL   string
 	client    *request.HTTPClient
 	validator response.Validator
 	sync.Mutex
@@ -33,21 +34,21 @@ type CDNAPIResponse struct {
 }
 
 func NewCDNAPI(
-	base string,
 	agent string,
-	client *http.Client,
+	baseURL string,
+	client *request.HTTPClient,
 	validator response.Validator,
 ) *CDNAPI {
-	hCli := request.NewHTTPClient(client, base, nil, nil)
 	return &CDNAPI{
+		baseURL:   baseURL,
 		agent:     agent,
-		client:    hCli,
+		client:    client,
 		validator: validator,
 	}
 }
 
 func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
-	req, err := request.NewRequest(method, api.agent, api.client.BaseURL, path, "", "", "gzip, deflate", nil)
+	req, err := request.NewRequest(method, api.agent, api.baseURL, path, "", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
 				return nil, fmt.Errorf("some of mandatory response headers do not exist")
 			}
 		} else {
-			if err := api.validator.Validate(resp.Header, body); err != nil {
+			if err = api.validator.Validate(resp.Header, body); err != nil {
 				return nil, fmt.Errorf("cdn api: %w", err)
 			}
 		}

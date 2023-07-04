@@ -9,8 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/request"
 )
@@ -29,12 +27,12 @@ func main() {
 	cm := config.NewFilesystem(config.SettingsDataFilePath, config.InstallFilePath, Salt)
 	dm := daemon.NewDataManager(dataPath+InsightsFilename, dataPath+ServersFilename, dataPath+countriesFilename, "")
 	client := request.NewStdHTTP()
-	clientEx := request.NewHTTPClient(client, daemon.BaseURL, nil, nil)
+	clientEx := request.NewHTTPClient(client, nil, nil)
 	api := core.NewDefaultAPI(
 		"",
+		daemon.BaseURL,
 		clientEx,
 		response.NewNordValidator(response.NewFilePKVault(dataPath)),
-		&subs.Subject[events.DataRequestAPI]{},
 	)
 	netw := networker.NewCombined(
 		nil,

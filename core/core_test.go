@@ -9,8 +9,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
@@ -99,9 +97,9 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
 				response.MockValidator{},
-				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, err := api.CurrentUser("refresh me")
 			assert.ErrorIs(t, err, test.err)
@@ -126,9 +124,9 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
 				response.MockValidator{},
-				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, err := api.TokenRenew("refresh me")
 			assert.True(t, errors.Is(err, test.err))
@@ -151,9 +149,9 @@ func TestDefaultAPI_Servers(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
 				response.MockValidator{},
-				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, _, err := api.Servers()
 			assert.True(t, errors.Is(err, test.err))
@@ -176,9 +174,9 @@ func TestDefaultAPI_Services(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
 				response.MockValidator{},
-				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, err := api.Services("refresh me")
 			assert.True(t, errors.Is(err, test.err))
@@ -201,9 +199,9 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 
 			api := NewDefaultAPI(
 				"",
-				request.NewHTTPClient(&http.Client{}, server.URL, nil, nil),
+				server.URL,
+				request.NewHTTPClient(&http.Client{}, nil, nil),
 				response.MockValidator{},
-				&subs.Subject[events.DataRequestAPI]{},
 			)
 			_, err := api.ServiceCredentials("refresh me")
 			assert.True(t, errors.Is(err, test.err))

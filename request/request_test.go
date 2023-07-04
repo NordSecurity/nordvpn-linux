@@ -9,7 +9,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -54,7 +53,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 		Client  *http.Client
 		BaseURL string
 		Path    string
-		Rotator
+		rotator CompleteRotator
 	}
 	tests := []struct {
 		name     string
@@ -67,7 +66,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 			fields: fields{
 				Client:  testServer.Client(),
 				BaseURL: testServer.URL,
-				Rotator: nil,
+				rotator: nil,
 			},
 			expected: []byte("Success!"),
 			hasError: false,
@@ -77,7 +76,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 			fields: fields{
 				Client:  testServer.Client(),
 				BaseURL: testServer.URL,
-				Rotator: &mockRotator{url: testServer.URL},
+				rotator: &mockRotator{url: testServer.URL},
 			},
 			expected: []byte("Success!"),
 			hasError: false,
@@ -88,7 +87,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 				Client:  testServer.Client(),
 				BaseURL: testServer.URL,
 				Path:    "/wrong",
-				Rotator: &mockRotator{url: testServer.URL},
+				rotator: &mockRotator{url: testServer.URL},
 			},
 			expected: []byte{},
 			hasError: false,
@@ -98,7 +97,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 			fields: fields{
 				Client:  testServer.Client(),
 				BaseURL: testServer.URL,
-				Rotator: &mockRotator{url: "this_is_not_a_url"},
+				rotator: &mockRotator{url: "this_is_not_a_url"},
 			},
 			expected: []byte("Success!"),
 			hasError: false,
@@ -108,7 +107,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 			fields: fields{
 				Client:  testServer.Client(),
 				BaseURL: testServer.URL,
-				Rotator: &failingRotator{},
+				rotator: &failingRotator{},
 			},
 			expected: []byte("Success!"),
 			hasError: false,
@@ -116,7 +115,7 @@ func TestHTTPClient_DoRequest(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			c := NewHTTPClient(test.fields.Client, test.fields.BaseURL, &subs.Subject[string]{}, test.fields.Rotator)
+			c := NewHTTPClient(test.fields.Client, test.fields.rotator, nil)
 			req, _ := http.NewRequest(http.MethodGet, test.fields.BaseURL+test.fields.Path, nil)
 			got, err := c.DoRequest(req)
 			if test.hasError {

@@ -143,9 +143,9 @@ func TestRpcConnect(t *testing.T) {
 			dm := testNewDataManager()
 			api := core.NewDefaultAPI(
 				"",
+				"",
 				&request.HTTPClient{},
 				response.MockValidator{},
-				&subs.Subject[events.DataRequestAPI]{},
 			)
 			rpc := NewRPC(
 				internal.Development,
@@ -160,7 +160,7 @@ func TestRpcConnect(t *testing.T) {
 				&mockAuthenticationAPI{},
 				"1.0.0",
 				test.fw,
-				request.NewHTTPClient(http.DefaultClient, "", nil, nil),
+				request.NewHTTPClient(http.DefaultClient, nil, nil),
 				NewEvents(
 					&subs.Subject[bool]{},
 					&subs.Subject[bool]{},
@@ -220,9 +220,9 @@ func TestRpcReconnect(t *testing.T) {
 	dm := testNewDataManager()
 	api := core.NewDefaultAPI(
 		"",
+		"",
 		&request.HTTPClient{},
 		response.MockValidator{},
-		&subs.Subject[events.DataRequestAPI]{},
 	)
 	rpc := NewRPC(
 		internal.Development,
@@ -237,7 +237,7 @@ func TestRpcReconnect(t *testing.T) {
 		&mockAuthenticationAPI{},
 		"1.0.0",
 		&workingFirewall{},
-		request.NewHTTPClient(http.DefaultClient, "", nil, nil),
+		request.NewHTTPClient(http.DefaultClient, nil, nil),
 		NewEvents(
 			&subs.Subject[bool]{},
 			&subs.Subject[bool]{},
