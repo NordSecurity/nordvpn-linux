@@ -131,3 +131,23 @@ func TestH1Transport_RoundTrip(t *testing.T) {
 		})
 	}
 }
+
+func Test_validateHttpTransportsString(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		value         string
+		expectedValue []string
+	}{
+		{value: "http1", expectedValue: []string{"http1"}},
+		{value: "AAhttp1", expectedValue: validTransportTypes},
+		{value: "http1AA", expectedValue: validTransportTypes},
+		{value: "http3,http1", expectedValue: []string{"http3", "http1"}},
+		{value: "http2,http1", expectedValue: []string{"http1"}},
+	}
+	for _, test := range tests {
+		t.Run(test.value, func(t *testing.T) {
+			assert.Equal(t, test.expectedValue, validateHTTPTransportsString(test.value))
+		})
+	}
+}

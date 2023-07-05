@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"runtime"
 	"strconv"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -223,21 +222,8 @@ func main() {
 	if err := kernel.SetParameter(netCoreRmemMaxKey, netCodeRmemMaxValue); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}
-	h3ReTransport := request.NewQuicTransport(createH3Transport)
-	h1ReTransport := request.NewHTTPReTransport(createH1Transport(resolver, cfg.FirewallMark))
-	daemonEvents.Service.Connect.Subscribe(h3ReTransport.NotifyConnect)
-	daemonEvents.Service.Connect.Subscribe(h1ReTransport.NotifyConnect)
-	h3Transport := request.NewPublishingRoundTripper(
-		h3ReTransport,
-		httpCallsSubject,
-	)
-	h1Transport := request.NewPublishingRoundTripper(
-		h1ReTransport,
-		httpCallsSubject,
-	)
-	rotatingTransport := request.NewRotatingRoundTripper(h1Transport, h3Transport, time.Minute)
 	httpClientWithRotator := request.NewStdHTTP()
-	httpClientWithRotator.Transport = rotatingTransport
+	httpClientWithRotator.Transport = createTimedOutTransport(resolver, cfg.FirewallMark, httpCallsSubject, daemonEvents.Service.Connect)
 
 	defaultAPI := core.NewDefaultAPI(
 		userAgent,
