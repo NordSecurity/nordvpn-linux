@@ -387,6 +387,7 @@ func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
 	if transfer.Status != pb.Status_ONGOING && transfer.Status != pb.Status_REQUESTED {
 		if transfer.Status == pb.Status_CANCELED_BY_PEER {
 			nm.sendGenericNotification(transferCanceledByPeerNotificationBody, transferCanceledByPeerNotificationBody)
+			return
 		}
 		nm.sendGenericNotification(cancelFailedNotificationSummary, transferInvalidated)
 		return
