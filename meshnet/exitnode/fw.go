@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/netip"
-	"runtime/debug"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -302,11 +301,6 @@ func modifyPeerTraffic(subnet netip.Prefix,
 		acceptFlag = "ACCEPT"
 	}
 
-	if subnet.String() == "192.168.0.0/16" && !allow && flag == "-I" {
-		log.Println("============BACKTRACE==============")
-		debug.PrintStack()
-	}
-
 	// iptables -t filter -I FORWARD -s 100.64.0.159 -j ACCEPT -m comment --comment "<linux-app identifier>"
 	cmd := "iptables"
 	args := fmt.Sprintf(
@@ -317,8 +311,6 @@ func modifyPeerTraffic(subnet netip.Prefix,
 		acceptFlag,
 		filterRuleComment,
 	)
-
-	log.Printf("modiyfPeerTraffic %s %s", cmd, args)
 
 	out, err := commandFunc(cmd, strings.Split(args, " ")...)
 	if err != nil {
