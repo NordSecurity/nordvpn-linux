@@ -41,6 +41,7 @@ Example: nordvpn set %s on`
 	SetAutoConnectForceOff                      = "auto-connect was turned off because the setting change is incompatible with current auto-connect options. If you wish to continue using auto-connect, please enable it again."
 
 	SetThreatProtectionLiteDisableDNS = "Disabling DNS."
+	SetThreatProtectionLiteAlreadySet = "Threat Protection Lite already set to %s."
 
 	SetDefaultsSuccess = "Settings were successfully restored to defaults."
 
@@ -54,7 +55,10 @@ Example: nordvpn set %s on`
 
 	SetTechnologyDepsError = "Missing %s kernel module or configuration utility."
 
-	SetDNSInvalidAddress = "The provided ip address is invalid."
+	SetDNSDisableThreatProtectionLite = "Disabling Threat Protection Lite."
+	SetDNSInvalidAddress              = "The provided ip address is invalid."
+	SetDNSTooManyValues               = "More than 3 DNS addresses provided."
+	SetDNSAlreadySet                  = "DNS is already set to %s"
 
 	WhitelistAddPortExistsError = "Port %s (%s) is already whitelisted."
 	WhitelistAddPortSuccess     = "Port %s (%s) is whitelisted successfully."

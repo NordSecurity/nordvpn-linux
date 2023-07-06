@@ -19,16 +19,18 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 	return &pb.SettingsResponse{
 		Type: internal.CodeSuccess,
 		Data: &pb.Settings{
-			Technology:  cfg.Technology,
-			Firewall:    cfg.Firewall,
-			Fwmark:      cfg.FirewallMark,
-			Routing:     cfg.Routing.Get(),
-			Analytics:   cfg.Analytics.Get(),
-			KillSwitch:  cfg.KillSwitch,
-			AutoConnect: cfg.AutoConnect,
-			Ipv6:        cfg.IPv6,
-			Notify:      cfg.UsersData.Notify[in.GetUid()],
-			Meshnet:     cfg.Mesh,
+			Technology:           cfg.Technology,
+			Firewall:             cfg.Firewall,
+			Fwmark:               cfg.FirewallMark,
+			Routing:              cfg.Routing.Get(),
+			Analytics:            cfg.Analytics.Get(),
+			KillSwitch:           cfg.KillSwitch,
+			AutoConnect:          cfg.AutoConnect,
+			Ipv6:                 cfg.IPv6,
+			Notify:               cfg.UsersData.Notify[in.GetUid()],
+			Meshnet:              cfg.Mesh,
+			Dns:                  cfg.AutoConnectData.DNS,
+			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 		},
 	}, nil
 }

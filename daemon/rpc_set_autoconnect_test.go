@@ -40,8 +40,8 @@ func TestAutoconnectObfuscateInteraction(t *testing.T) {
 
 	mockConfigManager := mockAutoconnectConfigManager{}
 
-	eventPublished := false
-	mockEvents := Events{Settings: &SettingsEvents{Autoconnect: mockPublisherSubcriber{eventPublished: &eventPublished}}}
+	mockPublisherSubscriber := mockPublisherSubcriber{}
+	mockEvents := Events{Settings: &SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
 
 	obfuscatedTechnologies := core.Technologies{
 		core.Technology{
@@ -88,8 +88,8 @@ func TestAutoconnectObfuscateInteraction(t *testing.T) {
 			assert.Equal(t, &pb.Payload{
 				Type: test.returnCode,
 			}, resp)
-			assert.Equal(t, test.eventPublished, eventPublished)
-			eventPublished = false
+			assert.Equal(t, test.eventPublished, mockPublisherSubscriber.eventPublished)
+			mockPublisherSubscriber.eventPublished = false
 		})
 	}
 }

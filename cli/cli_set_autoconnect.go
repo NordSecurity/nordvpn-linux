@@ -56,12 +56,10 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	}
 
 	resp, err := c.client.SetAutoConnect(context.Background(), &pb.SetAutoconnectRequest{
-		ServerTag:            serverTag,
-		Protocol:             c.config.Protocol,
-		Obfuscate:            c.config.Obfuscate,
-		ThreatProtectionLite: c.config.ThreatProtectionLite,
-		AutoConnect:          flag,
-		Dns:                  c.config.DNS,
+		ServerTag:   serverTag,
+		Protocol:    c.config.Protocol,
+		Obfuscate:   c.config.Obfuscate,
+		AutoConnect: flag,
 		Whitelist: &pb.Whitelist{
 			Ports: &pb.Ports{
 				Udp: client.SetToInt64s(c.config.Whitelist.Ports.UDP),

@@ -9,21 +9,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 
 	"github.com/stretchr/testify/assert"
 )
-
-type mockPublisherSubcriber struct {
-	eventPublished *bool
-}
-
-func (mp mockPublisherSubcriber) Publish(message bool) {
-	*mp.eventPublished = true
-}
-func (mockPublisherSubcriber) Subscribe(handler events.Handler[bool]) {}
 
 type mockObfuscateConfigManager struct {
 	c config.Config
@@ -78,8 +68,8 @@ func (mockObfuscateNetworker) LastServerName() string               { return "" 
 func TestSetObfuscate(t *testing.T) {
 	mockConfigManager := mockObfuscateConfigManager{c: config.Config{AutoConnect: false}}
 
-	eventPublished := false
-	mockEvents := Events{Settings: &SettingsEvents{Obfuscate: mockPublisherSubcriber{eventPublished: &eventPublished}}}
+	mockPublisherSubscriber := mockPublisherSubcriber{}
+	mockEvents := Events{Settings: &SettingsEvents{Obfuscate: &mockPublisherSubscriber}}
 
 	obfuscatedTechnologies := core.Technologies{
 		core.Technology{
@@ -200,8 +190,8 @@ func TestSetObfuscate(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Equal(t, test.payload, resp)
-			assert.Equal(t, test.eventPublished, eventPublished)
-			eventPublished = false
+			assert.Equal(t, test.eventPublished, mockPublisherSubscriber.eventPublished)
+			mockPublisherSubscriber.eventPublished = false
 		})
 	}
 }

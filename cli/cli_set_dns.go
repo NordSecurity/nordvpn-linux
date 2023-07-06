@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/exp/slices"
 )
 
 // SetDNSUsageText is shown next to dns command by nordvpn set --help
@@ -36,6 +34,38 @@ Limits:
 Notes:
   Setting DNS disables ThreatProtectionLite`
 
+func setDNSCommonErrorCodeToError(code pb.SetErrorCode, args ...any) error {
+	switch code {
+	case pb.SetErrorCode_FAILURE:
+		return formatError(internal.ErrUnhandled)
+	case pb.SetErrorCode_CONFIG_ERROR:
+		return formatError(ErrConfig)
+	case pb.SetErrorCode_ALREADY_SET:
+		return formatError(
+			errors.New(color.YellowString(fmt.Sprintf(SetDNSAlreadySet, args...))))
+	}
+	return nil
+}
+
+func handleSetDNSStatus(code pb.SetDNSStatus, dns []string) error {
+	switch code {
+	case pb.SetDNSStatus_INVALID_DNS_ADDRESS:
+		return fmt.Errorf(SetDNSInvalidAddress)
+	case pb.SetDNSStatus_TOO_MANY_VALUES:
+		return fmt.Errorf(SetDNSTooManyValues)
+	case pb.SetDNSStatus_DNS_CONFIGURED_TPL_RESET:
+		color.Yellow(SetDNSDisableThreatProtectionLite)
+		fallthrough
+	case pb.SetDNSStatus_DNS_CONFIGURED:
+		if dns == nil {
+			color.Green(fmt.Sprintf(MsgSetSuccess, "DNS", nstrings.GetBoolLabel(false)))
+		} else {
+			color.Green(fmt.Sprintf(MsgSetSuccess, "DNS", strings.Join(dns, ", ")))
+		}
+	}
+	return nil
+}
+
 func (c *cmd) SetDNS(ctx *cli.Context) error {
 	args := ctx.Args()
 
@@ -45,61 +75,28 @@ func (c *cmd) SetDNS(ctx *cli.Context) error {
 
 	// check if first arg is false
 	var dns []string
-	var threatProtectionLite bool
 	if args.Len() == 1 && nstrings.CanParseFalseFromString(args.First()) {
-		if len(c.config.DNS) == 0 {
-			return formatError(errors.New(color.YellowString(fmt.Sprintf(MsgAlreadySet, "DNS", nstrings.GetBoolLabel(false)))))
-		}
 		dns = nil
 	} else {
-		// cannot set more than three dns
-		if args.Len() > 3 {
-			return formatError(argsParseError(ctx))
-		}
-		// check equality
-		argsSlice := args.Slice()
-		sort.Strings(c.config.DNS)
-		sort.Strings(argsSlice)
-		if slices.Equal(c.config.DNS, argsSlice) {
-			color.Yellow(fmt.Sprintf(MsgAlreadySet, "DNS", strings.Join(argsSlice, ", ")))
-			return nil
-		}
-		dns = argsSlice
-		if c.config.ThreatProtectionLite {
-			threatProtectionLite = false
-		}
+		dns = args.Slice()
 	}
 
 	resp, err := c.client.SetDNS(context.Background(), &pb.SetDNSRequest{
-		Dns:                  dns,
-		ThreatProtectionLite: threatProtectionLite,
+		Dns: dns,
 	})
 	if err != nil {
 		return formatError(err)
 	}
 
-	switch resp.Code {
-	case pb.SetDNSResponseCode_CONFIG_ERROR:
-		return formatError(ErrConfig)
-	case pb.SetDNSResponseCode_FAILURE:
-		return formatError(internal.ErrUnhandled)
-	case pb.SetDNSResponseCode_INVALID_DNS_ADDRESS:
-		return fmt.Errorf(SetDNSInvalidAddress)
-	case pb.SetDNSResponseCode_OK:
-		c.config.DNS = dns
-		if c.config.ThreatProtectionLite {
-			color.Yellow(SetThreatProtectionLiteDisableDNS)
-			c.config.ThreatProtectionLite = threatProtectionLite
-		}
-		err = c.configManager.Save(c.config)
-		if err != nil {
-			return formatError(ErrConfig)
-		}
-		if len(c.config.DNS) == 0 {
-			color.Green(fmt.Sprintf(MsgSetSuccess, "DNS", nstrings.GetBoolLabel(false)))
+	switch resp.Response.(type) {
+	case *pb.SetDNSResponse_ErrorCode:
+		if dns == nil {
+			return setDNSCommonErrorCodeToError(resp.GetErrorCode(), nstrings.GetBoolLabel(false))
 		} else {
-			color.Green(fmt.Sprintf(MsgSetSuccess, "DNS", strings.Join(c.config.DNS, ", ")))
+			return setDNSCommonErrorCodeToError(resp.GetErrorCode(), strings.Join(dns, ", "))
 		}
+	case *pb.SetDNSResponse_SetDnsStatus:
+		return handleSetDNSStatus(resp.GetSetDnsStatus(), dns)
 	}
 	return nil
 }

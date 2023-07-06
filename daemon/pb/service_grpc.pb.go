@@ -40,7 +40,7 @@ type DaemonClient interface {
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error)
 	SetDefaults(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	SetDNS(ctx context.Context, in *SetDNSRequest, opts ...grpc.CallOption) (*SetDNSResponse, error)
 	SetFirewall(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -299,8 +299,8 @@ func (c *daemonClient) SetAutoConnect(ctx context.Context, in *SetAutoconnectReq
 	return out, nil
 }
 
-func (c *daemonClient) SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error) {
+	out := new(SetThreatProtectionLiteResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/SetThreatProtectionLite", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -483,7 +483,7 @@ type DaemonServer interface {
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
 	Register(context.Context, *RegisterRequest) (*Payload, error)
 	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
-	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*Payload, error)
+	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error)
 	SetDefaults(context.Context, *Empty) (*Payload, error)
 	SetDNS(context.Context, *SetDNSRequest) (*SetDNSResponse, error)
 	SetFirewall(context.Context, *SetGenericRequest) (*Payload, error)
@@ -562,7 +562,7 @@ func (UnimplementedDaemonServer) Register(context.Context, *RegisterRequest) (*P
 func (UnimplementedDaemonServer) SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAutoConnect not implemented")
 }
-func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*Payload, error) {
+func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetThreatProtectionLite not implemented")
 }
 func (UnimplementedDaemonServer) SetDefaults(context.Context, *Empty) (*Payload, error) {

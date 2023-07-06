@@ -29,6 +29,19 @@ Example: nordvpn set threatprotectionlite on
 Notes:
   Setting ThreatProtectionLite disables user defined DNS servers`
 
+func setTPLErrorCodeToError(code pb.SetErrorCode, args ...any) error {
+	switch code {
+	case pb.SetErrorCode_FAILURE:
+		return formatError(internal.ErrUnhandled)
+	case pb.SetErrorCode_CONFIG_ERROR:
+		return formatError(ErrConfig)
+	case pb.SetErrorCode_ALREADY_SET:
+		color.Yellow(fmt.Sprintf(SetThreatProtectionLiteAlreadySet, args...))
+		return nil
+	}
+	return nil
+}
+
 func (c *cmd) SetThreatProtectionLite(ctx *cli.Context) error {
 	if ctx.NArg() != 1 {
 		return formatError(argsCountError(ctx))
@@ -39,38 +52,22 @@ func (c *cmd) SetThreatProtectionLite(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if c.config.ThreatProtectionLite == flag {
-		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Threat Protection Lite", nstrings.GetBoolLabel(flag)))
-		return nil
-	}
-
-	var dns = c.config.DNS
-	if flag && len(c.config.DNS) > 0 {
-		dns = nil
-	}
-
 	resp, err := c.client.SetThreatProtectionLite(
 		context.Background(),
 		&pb.SetThreatProtectionLiteRequest{
 			ThreatProtectionLite: flag,
-			Dns:                  dns,
 		})
 	if err != nil {
 		return formatError(err)
 	}
 
-	switch resp.Type {
-	case internal.CodeConfigError:
-		return formatError(ErrConfig)
-	case internal.CodeFailure, internal.CodeVPNMisconfig:
-		return formatError(internal.ErrUnhandled)
-	case internal.CodeSuccess:
-		c.config.ThreatProtectionLite = flag
-		if flag && len(c.config.DNS) > 0 {
+	switch resp.Response.(type) {
+	case *pb.SetThreatProtectionLiteResponse_ErrorCode:
+		return setTPLErrorCodeToError(resp.GetErrorCode(), nstrings.GetBoolLabel(flag))
+	case *pb.SetThreatProtectionLiteResponse_SetThreatProtectionLiteStatus:
+		if resp.GetSetThreatProtectionLiteStatus() == pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET {
 			color.Yellow(SetThreatProtectionLiteDisableDNS)
-			c.config.DNS = dns
 		}
-		err = c.configManager.Save(c.config)
 		if err != nil {
 			return formatError(ErrConfig)
 		}

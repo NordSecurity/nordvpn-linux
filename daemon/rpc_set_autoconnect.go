@@ -53,9 +53,9 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				ID:                   cfg.AutoConnectData.ID,
 				ServerTag:            in.GetServerTag(),
 				Protocol:             in.GetProtocol(),
-				ThreatProtectionLite: in.GetThreatProtectionLite(),
+				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 				Obfuscate:            in.GetObfuscate(),
-				DNS:                  in.GetDns(),
+				DNS:                  cfg.AutoConnectData.DNS,
 				Whitelist: config.NewWhitelist(
 					in.GetWhitelist().GetPorts().GetTcp(),
 					in.GetWhitelist().GetPorts().GetUdp(),

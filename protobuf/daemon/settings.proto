@@ -26,4 +26,6 @@ message Settings {
   bool routing = 8;
   uint32 fwmark = 9;
   bool analytics = 10;
+  repeated string dns = 11;
+  bool threat_protection_lite = 12;
 }

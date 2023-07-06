@@ -9,11 +9,8 @@ import (
 type Config struct {
 	Technology config.Technology `json:"technology,omitempty"`
 	Protocol   config.Protocol   `json:"protocol,omitempty"`
-	// TODO: rename json key when v4 comes out.
-	ThreatProtectionLite bool      `json:"cybersec,omitempty"`
-	Obfuscate            bool      `json:"obfuscate,omitempty"`
-	DNS                  []string  `json:"dns,omitempty"`
-	Whitelist            Whitelist `json:"whitelist,omitempty"`
+	Obfuscate  bool              `json:"obfuscate,omitempty"`
+	Whitelist  Whitelist         `json:"whitelist,omitempty"`
 }
 
 // NewConfig creates new config object

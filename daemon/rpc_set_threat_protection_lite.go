@@ -12,39 +12,50 @@ import (
 func (r *RPC) SetThreatProtectionLite(
 	ctx context.Context,
 	in *pb.SetThreatProtectionLiteRequest,
-) (*pb.Payload, error) {
+) (*pb.SetThreatProtectionLiteResponse, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	var nameservers []string
-	if in.GetDns() != nil {
-		nameservers = in.GetDns()
-	} else {
-		nameservers = r.nameservers.Get(in.GetThreatProtectionLite(), cfg.IPv6)
+	threatProtectionLite := in.GetThreatProtectionLite()
+
+	if cfg.AutoConnectData.ThreatProtectionLite == threatProtectionLite {
+		return &pb.SetThreatProtectionLiteResponse{
+			Response: &pb.SetThreatProtectionLiteResponse_ErrorCode{ErrorCode: pb.SetErrorCode_ALREADY_SET},
+		}, nil
 	}
+
+	nameservers := r.nameservers.Get(threatProtectionLite, cfg.IPv6)
 
 	if err := r.netw.SetDNS(nameservers); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return &pb.Payload{
-			Type: internal.CodeFailure,
+		return &pb.SetThreatProtectionLiteResponse{
+			Response: &pb.SetThreatProtectionLiteResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 		}, nil
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
-		c.AutoConnectData.ThreatProtectionLite = in.GetThreatProtectionLite()
-		c.AutoConnectData.DNS = in.GetDns()
+		c.AutoConnectData.ThreatProtectionLite = threatProtectionLite
+		c.AutoConnectData.DNS = nil
 		return c
 	}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return &pb.Payload{
-			Type: internal.CodeConfigError,
+		return &pb.SetThreatProtectionLiteResponse{
+			Response: &pb.SetThreatProtectionLiteResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 		}, nil
 	}
 	r.events.Settings.ThreatProtectionLite.Publish(in.GetThreatProtectionLite())
 
-	return &pb.Payload{
-		Type: internal.CodeSuccess,
+	if cfg.AutoConnectData.DNS != nil && threatProtectionLite {
+		return &pb.SetThreatProtectionLiteResponse{
+			Response: &pb.SetThreatProtectionLiteResponse_SetThreatProtectionLiteStatus{
+				SetThreatProtectionLiteStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET},
+		}, nil
+	}
+
+	return &pb.SetThreatProtectionLiteResponse{
+		Response: &pb.SetThreatProtectionLiteResponse_SetThreatProtectionLiteStatus{
+			SetThreatProtectionLiteStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED},
 	}, nil
 }

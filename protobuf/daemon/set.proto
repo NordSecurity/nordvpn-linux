@@ -8,14 +8,18 @@ import "common.proto";
 import "config/protocol.proto";
 import "config/technology.proto";
 
+enum SetErrorCode {
+  FAILURE = 0;
+  CONFIG_ERROR = 1;
+  ALREADY_SET = 2;
+}
+
 message SetAutoconnectRequest {
-  string server_tag = 4;
-  config.Protocol protocol = 5;
-  bool threat_protection_lite = 7;
-  bool obfuscate = 8;
-  bool auto_connect = 9;
-  repeated string dns = 10;
-  Whitelist whitelist = 11;
+  string server_tag = 1;
+  config.Protocol protocol = 2;
+  bool obfuscate = 3;
+  bool auto_connect = 4;
+  Whitelist whitelist = 5;
 }
 
 message SetGenericRequest {
@@ -27,8 +31,19 @@ message SetUint32Request {
 }
 
 message SetThreatProtectionLiteRequest {
-  bool threat_protection_lite = 2;
-  repeated string dns = 3;
+  bool threat_protection_lite = 1;
+}
+
+enum SetThreatProtectionLiteStatus {
+  TPL_CONFIGURED = 0;
+  TPL_CONFIGURED_DNS_RESET = 1;
+}
+
+message SetThreatProtectionLiteResponse {
+  oneof response {
+    SetErrorCode error_code = 1;
+    SetThreatProtectionLiteStatus set_threat_protection_lite_status = 2;
+  }
 }
 
 message SetDNSRequest {
@@ -36,15 +51,18 @@ message SetDNSRequest {
   bool threat_protection_lite = 3;
 }
 
-enum SetDNSResponseCode {
-  OK = 0;
-  FAILURE = 1;
-  CONFIG_ERROR = 2;
-  INVALID_DNS_ADDRESS = 3;
+enum SetDNSStatus {
+  DNS_CONFIGURED = 0;
+  DNS_CONFIGURED_TPL_RESET = 1;
+  INVALID_DNS_ADDRESS = 2;
+  TOO_MANY_VALUES = 3;
 }
 
 message SetDNSResponse {
-  SetDNSResponseCode code = 1;
+  oneof response {
+    SetErrorCode error_code = 2;
+    SetDNSStatus set_dns_status = 3;
+  }
 }
 
 message SetKillSwitchRequest {

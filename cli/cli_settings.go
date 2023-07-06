@@ -54,7 +54,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(resp.Data.GetRouting()))
 	fmt.Printf("Analytics: %+v\n", nstrings.GetBoolLabel(resp.Data.GetAnalytics()))
 	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(resp.Data.GetKillSwitch()))
-	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(c.config.ThreatProtectionLite))
+	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(resp.Data.ThreatProtectionLite))
 	if resp.Data.Technology == config.Technology_OPENVPN {
 		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(c.config.Obfuscate))
 	}
@@ -62,10 +62,10 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(resp.Data.AutoConnect))
 	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(resp.Data.Ipv6))
 	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(resp.Data.Meshnet))
-	if len(c.config.DNS) == 0 {
+	if len(resp.Data.Dns) == 0 {
 		fmt.Printf("DNS: %+v\n", nstrings.GetBoolLabel(false))
 	} else {
-		fmt.Printf("DNS: %+v\n", strings.Join(c.config.DNS, ", "))
+		fmt.Printf("DNS: %+v\n", strings.Join(resp.Data.Dns, ", "))
 	}
 
 	displayWhitelist(&c.config.Whitelist)
