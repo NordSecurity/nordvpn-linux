@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -98,7 +97,7 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 			api := NewDefaultAPI(
 				"",
 				server.URL,
-				request.NewHTTPClient(&http.Client{}, nil, nil),
+				http.DefaultClient,
 				response.MockValidator{},
 			)
 			_, err := api.CurrentUser("refresh me")
@@ -125,7 +124,7 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 			api := NewDefaultAPI(
 				"",
 				server.URL,
-				request.NewHTTPClient(&http.Client{}, nil, nil),
+				http.DefaultClient,
 				response.MockValidator{},
 			)
 			_, err := api.TokenRenew("refresh me")
@@ -150,7 +149,7 @@ func TestDefaultAPI_Servers(t *testing.T) {
 			api := NewDefaultAPI(
 				"",
 				server.URL,
-				request.NewHTTPClient(&http.Client{}, nil, nil),
+				http.DefaultClient,
 				response.MockValidator{},
 			)
 			_, _, err := api.Servers()
@@ -175,7 +174,7 @@ func TestDefaultAPI_Services(t *testing.T) {
 			api := NewDefaultAPI(
 				"",
 				server.URL,
-				request.NewHTTPClient(&http.Client{}, nil, nil),
+				http.DefaultClient,
 				response.MockValidator{},
 			)
 			_, err := api.Services("refresh me")
@@ -200,7 +199,7 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 			api := NewDefaultAPI(
 				"",
 				server.URL,
-				request.NewHTTPClient(&http.Client{}, nil, nil),
+				http.DefaultClient,
 				response.MockValidator{},
 			)
 			_, err := api.ServiceCredentials("refresh me")

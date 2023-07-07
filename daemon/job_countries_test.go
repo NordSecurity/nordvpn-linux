@@ -8,15 +8,12 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
 )
 
 type mockCountriesAPI struct{}
-
-func (mockCountriesAPI) SetTransport(request.MetaTransport) {}
 
 func (mockCountriesAPI) Servers() (core.Servers, http.Header, error) {
 	return nil, nil, nil
@@ -48,8 +45,6 @@ func (mockCountriesAPI) ServersTechnologiesConfigurations(string, int64, core.Se
 }
 
 type mockFailingCountriesAPI struct{}
-
-func (mockFailingCountriesAPI) SetTransport(request.MetaTransport) {}
 
 func (mockFailingCountriesAPI) Servers() (core.Servers, http.Header, error) {
 	return nil, nil, nil

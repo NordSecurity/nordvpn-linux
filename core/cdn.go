@@ -23,7 +23,7 @@ type CDN interface {
 type CDNAPI struct {
 	agent     string
 	baseURL   string
-	client    *request.HTTPClient
+	client    *http.Client
 	validator response.Validator
 	sync.Mutex
 }
@@ -36,7 +36,7 @@ type CDNAPIResponse struct {
 func NewCDNAPI(
 	agent string,
 	baseURL string,
-	client *request.HTTPClient,
+	client *http.Client,
 	validator response.Validator,
 ) *CDNAPI {
 	return &CDNAPI{
@@ -53,7 +53,7 @@ func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
 		return nil, err
 	}
 	api.Lock()
-	resp, err := api.client.DoRequest(req)
+	resp, err := api.client.Do(req)
 	api.Unlock()
 	if err != nil {
 		return nil, err

@@ -27,11 +27,10 @@ func main() {
 	cm := config.NewFilesystem(config.SettingsDataFilePath, config.InstallFilePath, Salt)
 	dm := daemon.NewDataManager(dataPath+InsightsFilename, dataPath+ServersFilename, dataPath+countriesFilename, "")
 	client := request.NewStdHTTP()
-	clientEx := request.NewHTTPClient(client, nil, nil)
 	api := core.NewDefaultAPI(
 		"",
 		daemon.BaseURL,
-		clientEx,
+		client,
 		response.NewNordValidator(response.NewFilePKVault(dataPath)),
 	)
 	netw := networker.NewCombined(

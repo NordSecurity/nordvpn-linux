@@ -17,7 +17,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
-	"github.com/NordSecurity/nordvpn-linux/request"
 
 	"github.com/go-co-op/gocron"
 )
@@ -38,7 +37,6 @@ type RPC struct {
 	version         string
 	systemInfoFunc  func(string) string
 	networkInfoFunc func() string
-	httpClient      *request.HTTPClient
 	events          *Events
 	// factory picks which VPN implementation to use
 	factory          FactoryFunc
@@ -67,7 +65,6 @@ func NewRPC(
 	authentication core.Authentication,
 	version string,
 	fw firewall.Service,
-	httpClient *request.HTTPClient,
 	events *Events,
 	factory FactoryFunc,
 	endpointResolver network.EndpointResolver,
@@ -92,7 +89,6 @@ func NewRPC(
 		version:          version,
 		systemInfoFunc:   getSystemInfo,
 		networkInfoFunc:  getNetworkInfo,
-		httpClient:       httpClient,
 		factory:          factory,
 		events:           events,
 		endpointResolver: endpointResolver,

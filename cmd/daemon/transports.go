@@ -11,11 +11,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/kernel"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/request"
-	"github.com/NordSecurity/nordvpn-linux/request/rotator"
 
 	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/sys/unix"
@@ -84,28 +81,6 @@ func createH3Transport() http.RoundTripper {
 		// #nosec G402 -- minimum tls version is controlled by the standard library
 		TLSClientConfig: &tls.Config{
 			RootCAs: pool,
-		},
-	}
-}
-
-// createTimedOutTransports provides transports to APIs' client
-func createTimedOutTransports(resolver network.DNSResolver, fwmark uint32) []request.MetaTransport {
-	// For quic-go need to increase receive buffer size
-	// This command will increase the maximum receive buffer size to roughly 2.5 MB
-	// see: https://github.com/quic-go/quic-go/wiki/UDP-Receive-Buffer-Size
-	if err := kernel.SetParameter(netCoreRmemMaxKey, netCodeRmemMaxValue); err != nil {
-		log.Println(internal.WarningPrefix, err)
-	}
-
-	return []request.MetaTransport{
-		{
-			Transport: rotator.NewQuicTransport(createH3Transport),
-			IsH3:      true,
-			Name:      "quic-http-transport",
-		},
-		{
-			Transport: request.NewHTTPReTransport(createH1Transport(resolver, fwmark)),
-			Name:      "std-http-transport",
 		},
 	}
 }

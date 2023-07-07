@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-
-	"github.com/NordSecurity/nordvpn-linux/request"
 )
 
 // Authentication is responsible for verifying user's identity.
@@ -22,7 +20,7 @@ type Authentication interface {
 
 type OAuth2 struct {
 	baseURL string
-	client  *request.HTTPClient
+	client  *http.Client
 	// challenge is used to login
 	challenge string
 	// verifier is used to retrieve the token
@@ -32,7 +30,7 @@ type OAuth2 struct {
 	sync.Mutex
 }
 
-func NewOAuth2(client *request.HTTPClient, baseURL string) *OAuth2 {
+func NewOAuth2(client *http.Client, baseURL string) *OAuth2 {
 	return &OAuth2{
 		baseURL: baseURL,
 		client:  client,
@@ -66,7 +64,7 @@ func (o *OAuth2) Login() (string, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := o.client.DoRequest(req)
+	resp, err := o.client.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -114,7 +112,7 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := o.client.DoRequest(req)
+	resp, err := o.client.Do(req)
 	if err != nil {
 		return nil, err
 	}

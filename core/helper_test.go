@@ -13,7 +13,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/keypair"
 	testresponse "github.com/NordSecurity/nordvpn-linux/test/response"
 
@@ -143,7 +142,7 @@ func testNewDefaultAPI(port int) *DefaultAPI {
 	return NewDefaultAPI(
 		"",
 		localServerPath(port),
-		request.NewHTTPClient(&http.Client{}, nil, nil),
+		http.DefaultClient,
 		response.MockValidator{},
 	)
 }

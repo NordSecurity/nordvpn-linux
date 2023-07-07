@@ -10,15 +10,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
 )
 
 type mockServersAPI struct{}
-
-func (mockServersAPI) SetTransport(request.MetaTransport) {}
 
 func (mockServersAPI) Servers() (core.Servers, http.Header, error) {
 	return core.Servers{
@@ -129,8 +126,6 @@ func (mockServersAPI) ServersTechnologiesConfigurations(string, int64, core.Serv
 }
 
 type mockFailingServersAPI struct{}
-
-func (mockFailingServersAPI) SetTransport(request.MetaTransport) {}
 
 func (mockFailingServersAPI) Servers() (core.Servers, http.Header, error) {
 	return nil, nil, fmt.Errorf("500")

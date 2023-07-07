@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -57,8 +56,7 @@ func TestOAuth2_Login(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			client := request.NewHTTPClient(http.DefaultClient, nil, nil)
-			api := NewOAuth2(client, server.URL)
+			api := NewOAuth2(http.DefaultClient, server.URL)
 			url, err := api.Login()
 			assert.Equal(t, test.hasError, err != nil)
 			if test.hasError {
@@ -125,8 +123,7 @@ func TestOAuth2_Token(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			client := request.NewHTTPClient(http.DefaultClient, nil, nil)
-			api := NewOAuth2(client, server.URL)
+			api := NewOAuth2(http.DefaultClient, server.URL)
 			resp, err := api.Token("exchange")
 			assert.Equal(t, test.hasError, err != nil)
 			if test.hasError {

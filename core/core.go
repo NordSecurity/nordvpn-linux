@@ -46,7 +46,7 @@ type ServersAPI interface {
 type DefaultAPI struct {
 	agent     string
 	baseURL   string
-	Client    *request.HTTPClient
+	client    *http.Client
 	validator response.Validator
 	mu        sync.Mutex
 }
@@ -54,13 +54,13 @@ type DefaultAPI struct {
 func NewDefaultAPI(
 	agent string,
 	baseURL string,
-	client *request.HTTPClient,
+	client *http.Client,
 	validator response.Validator,
 ) *DefaultAPI {
 	return &DefaultAPI{
 		agent:     agent,
 		baseURL:   baseURL,
-		Client:    client,
+		client:    client,
 		validator: validator,
 	}
 }
@@ -82,7 +82,7 @@ func (api *DefaultAPI) request(path, method string, data []byte, auth *request.B
 
 // do request regardless of the authentication.
 func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
-	resp, err := api.Client.DoRequest(req)
+	resp, err := api.client.Do(req)
 
 	// Transport of the request is already up to date
 

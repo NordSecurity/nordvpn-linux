@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -43,6 +44,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
+	"github.com/NordSecurity/nordvpn-linux/kernel"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/fork"
@@ -52,7 +54,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/request"
-	"github.com/NordSecurity/nordvpn-linux/request/rotator"
 
 	"google.golang.org/grpc"
 )
@@ -199,11 +200,10 @@ func main() {
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
 	// simple standard http client with dialer wrapped inside
 	httpClientSimple := request.NewStdHTTP()
-	httpClientNoRotator := request.NewHTTPClient(httpClientSimple, nil, httpCallsSubject)
 	cdnAPI := core.NewCDNAPI(
 		userAgent,
 		core.CDNURL,
-		httpClientNoRotator,
+		httpClientSimple,
 		validator,
 	)
 
@@ -217,18 +217,26 @@ func main() {
 	}
 
 	resolver := network.NewResolver(fw, threatProtectionLiteServers)
-	transports := createTimedOutTransports(resolver, cfg.FirewallMark)
-	// subscribe to Connect event for transport(s) to recreate/reconnect
-	for _, item := range transports {
-		daemonEvents.Service.Connect.Subscribe(item.Transport.NotifyConnect)
-	}
-	// http client with transport rotator
-	transportRotator, err := rotator.NewRotator(transports)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "error creating transport rotator:", err)
-	}
 
-	httpClientWithRotator := request.NewHTTPClient(httpClientSimple, transportRotator, httpCallsSubject)
+	if err := kernel.SetParameter(netCoreRmemMaxKey, netCodeRmemMaxValue); err != nil {
+		log.Println(internal.WarningPrefix, err)
+	}
+	h3ReTransport := request.NewQuicTransport(createH3Transport)
+	h1ReTransport := request.NewHTTPReTransport(createH1Transport(resolver, cfg.FirewallMark))
+	daemonEvents.Service.Connect.Subscribe(h3ReTransport.NotifyConnect)
+	daemonEvents.Service.Connect.Subscribe(h1ReTransport.NotifyConnect)
+	h3Transport := request.NewPublishingRoundTripper(
+		h3ReTransport,
+		httpCallsSubject,
+	)
+	h1Transport := request.NewPublishingRoundTripper(
+		h1ReTransport,
+		httpCallsSubject,
+	)
+	rotatingTransport := request.NewRotatingRoundTripper(h1Transport, h3Transport, time.Minute)
+	httpClientWithRotator := request.NewStdHTTP()
+	httpClientWithRotator.Transport = rotatingTransport
+
 	defaultAPI := core.NewDefaultAPI(
 		userAgent,
 		daemon.BaseURL,
@@ -246,7 +254,7 @@ func main() {
 		internal.Environment(Environment),
 		PackageType,
 		Arch,
-		httpClientNoRotator,
+		httpClientSimple,
 	)
 	gwret := routes.IPGatewayRetriever{}
 	dnsSetter := dns.NewSetter(infoSubject)
@@ -418,7 +426,6 @@ func main() {
 		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
 		Version,
 		fw,
-		defaultAPI.Client,
 		daemonEvents,
 		vpnFactory,
 		&endpointResolver,

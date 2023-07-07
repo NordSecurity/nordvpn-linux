@@ -1,4 +1,4 @@
-package rotator
+package request
 
 import (
 	"net/http"
@@ -21,6 +21,9 @@ func NewQuicTransport(fn func() http.RoundTripper) *QuicTransport {
 }
 
 func (m *QuicTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.ProtoMajor = 3
+	req.ProtoMinor = 0
+	req.Proto = "HTTP/3"
 	resp, err := m.inner.RoundTrip(req)
 	if err != nil &&
 		(strings.Contains(err.Error(), "Application error 0x100") ||

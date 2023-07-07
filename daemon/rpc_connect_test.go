@@ -19,7 +19,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/mock"
 	"github.com/NordSecurity/nordvpn-linux/networker"
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -59,8 +58,6 @@ type validCredentialsAPI struct {
 func (validCredentialsAPI) NotificationCredentials(token, appUserID string) (core.NotificationCredentialsResponse, error) {
 	return core.NotificationCredentialsResponse{}, nil
 }
-
-func (validCredentialsAPI) SetTransport(request.MetaTransport) {}
 
 func (validCredentialsAPI) ServiceCredentials(string) (*core.CredentialsResponse, error) {
 	return &core.CredentialsResponse{
@@ -144,7 +141,7 @@ func TestRpcConnect(t *testing.T) {
 			api := core.NewDefaultAPI(
 				"",
 				"",
-				&request.HTTPClient{},
+				http.DefaultClient,
 				response.MockValidator{},
 			)
 			rpc := NewRPC(
@@ -160,7 +157,6 @@ func TestRpcConnect(t *testing.T) {
 				&mockAuthenticationAPI{},
 				"1.0.0",
 				test.fw,
-				request.NewHTTPClient(http.DefaultClient, nil, nil),
 				NewEvents(
 					&subs.Subject[bool]{},
 					&subs.Subject[bool]{},
@@ -221,7 +217,7 @@ func TestRpcReconnect(t *testing.T) {
 	api := core.NewDefaultAPI(
 		"",
 		"",
-		&request.HTTPClient{},
+		http.DefaultClient,
 		response.MockValidator{},
 	)
 	rpc := NewRPC(
@@ -237,7 +233,6 @@ func TestRpcReconnect(t *testing.T) {
 		&mockAuthenticationAPI{},
 		"1.0.0",
 		&workingFirewall{},
-		request.NewHTTPClient(http.DefaultClient, nil, nil),
 		NewEvents(
 			&subs.Subject[bool]{},
 			&subs.Subject[bool]{},
