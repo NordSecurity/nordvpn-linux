@@ -106,8 +106,9 @@ func getNetworkInfo() string {
 		if err != nil {
 			continue
 		}
+		maskedOutput := maskIPRouteOutput(string(out))
 		builder.WriteString("Routes for ipv" + arg + ":\n")
-		builder.WriteString((string(out)))
+		builder.WriteString(maskedOutput)
 
 		// #nosec G204 -- arg values are known before even running the program
 		out, err = exec.Command("ip", "-"+arg, "rule").CombinedOutput()
