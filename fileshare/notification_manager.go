@@ -34,8 +34,8 @@ const (
 
 	cancelFailedNotificationSummary = "Failed to decline transfer"
 
-	transferCanceledByPeerNotificationSenderSummary = "Transfer no longer exists"
-	transferCanceledByPeerNotificationBody          = "The sender has canceled this transfer."
+	transferCanceledByPeerNotificationSummary = "Transfer no longer exists"
+	transferCanceledByPeerNotificationBody    = "The sender has canceled this transfer."
 
 	transferInvalidated = "You’ve already accepted or declined this transfer."
 	genericError        = "Something went wrong."
@@ -348,7 +348,7 @@ func (nm *NotificationManager) AcceptTransfer(notificationID uint32) {
 
 	notificationSummary := acceptFailedNotificationSummary
 	if err == ErrTransferCanceledByPeer {
-		notificationSummary = transferCanceledByPeerNotificationSenderSummary
+		notificationSummary = transferCanceledByPeerNotificationSummary
 	}
 
 	if err != nil {
@@ -386,7 +386,7 @@ func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
 
 	if transfer.Status != pb.Status_ONGOING && transfer.Status != pb.Status_REQUESTED {
 		if transfer.Status == pb.Status_CANCELED_BY_PEER {
-			nm.sendGenericNotification(transferCanceledByPeerNotificationBody, transferCanceledByPeerNotificationBody)
+			nm.sendGenericNotification(transferCanceledByPeerNotificationSummary, transferCanceledByPeerNotificationBody)
 			return
 		}
 		nm.sendGenericNotification(cancelFailedNotificationSummary, transferInvalidated)
