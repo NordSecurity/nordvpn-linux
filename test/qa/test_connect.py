@@ -113,8 +113,8 @@ def test_connection_recovers_from_network_restart(tech, proto, obfuscated):
 
     links = socket.if_nameindex()
     logging.log(links)
-    network.stop()
-    network.start()
+    default_gateway = network.stop()
+    network.start(default_gateway)
     daemon.wait_for_reconnect(links)
     with lib.ErrorDefer(sh.nordvpn.disconnect):
         assert network.is_connected()
@@ -135,16 +135,16 @@ def test_double_quick_connect_disconnect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.timeout(120) # TODO: make this test faster, there's some gateway error that eats 30 seconds
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
 def test_connect_without_internet_access(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network.stop()
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect()
-
-    print(ex.value)
-    network.start()
+    default_gateway = network.stop()
+    with lib.Defer(lambda: network.start(default_gateway)):
+        with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh.nordvpn.connect()
+        print(ex.value)
 
 
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)

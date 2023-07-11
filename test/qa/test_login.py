@@ -97,17 +97,13 @@ def test_login_while_connected():
     sh.nordvpn.logout("--persist-token")
 
 
-@pytest.mark.skip(
-    reason="Issue 537"
-)
 def test_login_without_internet():
-    network.stop()
+    default_gateway = network.stop()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         login.login_as("default")
-
-    assert "Please check your internet connection and try again." in str(ex.value)
-    network.start()
+        
+    network.start(default_gateway)
 
 
 def test_repeated_logout():

@@ -94,13 +94,14 @@ def is_disconnected(retry=5) -> bool:
 
 
 # start the networking and wait for completion
-def start():
+def start(default_gateway: str):
+    '''Must pass default_gateway returned from stop()'''
     if daemon.is_init_systemd():
         sh.sudo.nmcli.networking.on()
     else:
         sh.sudo.ip.link.set.dev.eth0.up()
-        cmd = sh.sudo.ip.route.add.default.via.bake("172.17.0.1")
-        cmd.dev.eth0.onlink()
+        cmd = sh.sudo.ip.route.add.default.via.bake(default_gateway)
+        cmd.dev.eth0()
 
     logging.log("starting network")
     while not daemon.is_running():
@@ -109,7 +110,13 @@ def start():
 
 
 # stop the networking and wait for completion
-def stop():
+def stop() -> str:
+    '''Returns default_gateway to be used when starting network again'''
+    for line in sh.ip.route().split('\n'):
+        if line.startswith('default'):
+            default_gateway = line.split()[2]
+    assert default_gateway is not None
+
     if daemon.is_init_systemd():
         sh.sudo.nmcli.networking.off()
     else:
@@ -118,6 +125,7 @@ def stop():
     logging.log("stopping network")
     assert network.is_not_available()
     logging.log(info.collect())
+    return default_gateway
 
 
 # block url by domain
