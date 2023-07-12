@@ -41,8 +41,7 @@ func setDNSCommonErrorCodeToError(code pb.SetErrorCode, args ...any) error {
 	case pb.SetErrorCode_CONFIG_ERROR:
 		return formatError(ErrConfig)
 	case pb.SetErrorCode_ALREADY_SET:
-		return formatError(
-			errors.New(color.YellowString(fmt.Sprintf(SetDNSAlreadySet, args...))))
+		return errors.New(color.YellowString(fmt.Sprintf(SetDNSAlreadySet, args...)))
 	}
 	return nil
 }

@@ -56,9 +56,9 @@ Example: nordvpn set %s on`
 	SetTechnologyDepsError = "Missing %s kernel module or configuration utility."
 
 	SetDNSDisableThreatProtectionLite = "Disabling Threat Protection Lite."
-	SetDNSInvalidAddress              = "The provided ip address is invalid."
+	SetDNSInvalidAddress              = "The provided IP address is invalid."
 	SetDNSTooManyValues               = "More than 3 DNS addresses provided."
-	SetDNSAlreadySet                  = "DNS is already set to %s"
+	SetDNSAlreadySet                  = "DNS is already set to %s."
 
 	WhitelistAddPortExistsError = "Port %s (%s) is already whitelisted."
 	WhitelistAddPortSuccess     = "Port %s (%s) is whitelisted successfully."
