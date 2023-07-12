@@ -113,7 +113,7 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 	defer resp.Body.Close()
 
 	resp.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-	if err := api.validator.Validate(resp.Header, body); err != nil {
+	if err := api.validator.Validate(resp.StatusCode, resp.Header, body); err != nil {
 		return nil, fmt.Errorf("validating headers: %w", err)
 	}
 

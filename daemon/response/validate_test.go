@@ -122,33 +122,38 @@ func validHeaders(data []byte) http.Header {
 
 func TestNordValidator_Validate(t *testing.T) {
 	category.Set(t, category.Unit)
-
-	data := []byte(`"foo": "bar"`)
+	sampleData := []byte(`"foo": "bar"`)
 	tests := []struct {
 		headers http.Header
+		data    []byte
+		code    int
 		error   bool
 	}{
-		{headers: validHeaders(data), error: false},
-		{headers: nil, error: true},
-		{headers: setHeader(validHeaders(data), "X-Authorization", ""), error: true},
-		{headers: setHeader(validHeaders(data), "X-Accept-Before", ""), error: true},
-		{headers: setHeader(validHeaders(data), "X-Digest", ""), error: true},
-		{headers: setHeader(validHeaders(data), "X-Signature", ""), error: true},
-		{headers: setHeader(validHeaders(data), "X-Authorization", "invalid_format"), error: true},
-		{headers: setHeader(validHeaders(data), "X-Authorization", `algorithm="sha256"`), error: true},
-		{headers: setHeader(validHeaders(data), "X-Authorization", `algorithm="rsa-invalid"`), error: true},
-		{headers: setHeader(validHeaders(data), "X-Authorization", `algorithm="invalid-sha256"`), error: true},
-		{headers: setHeader(validHeaders(data), "X-Digest", "invalid"), error: true},
-		{headers: setHeader(validHeaders(data), "X-Accept-Before", "invalid"), error: true},
-		{headers: setHeader(validHeaders(data),
+		{code: 200, data: sampleData, headers: validHeaders(sampleData), error: false},
+		{code: 429, data: sampleData, headers: validHeaders(sampleData), error: false},
+		{code: 404, data: sampleData, headers: validHeaders([]byte{}), error: false},
+		{code: 200, data: sampleData, headers: nil, error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Authorization", ""), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Accept-Before", ""), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Digest", ""), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Signature", ""), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Authorization", "invalid_format"), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Authorization", `algorithm="sha256"`), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Authorization", `algorithm="rsa-invalid"`), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Authorization", `algorithm="invalid-sha256"`), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Digest", "invalid"), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Accept-Before", "invalid"), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData),
 			"X-Accept-Before", strconv.FormatInt(time.Now().Add(-time.Second).Unix(), 10)), error: true},
-		{headers: setHeader(validHeaders(data), "X-Authorization", `algorithm="rsa-sha256",key-id="invalid"`),
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Authorization", `algorithm="rsa-sha256",key-id="invalid"`),
 			error: true},
-		{headers: setHeader(validHeaders(data), "X-Signature", "invalid"), error: true},
+		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Signature", "invalid"), error: true},
 	}
-	for _, test := range tests {
-		validator := NewNordValidator(response.PKVault{PublicKey: publicKey})
-		err := validator.Validate(test.headers, []byte(data))
-		assert.True(t, test.error == (err != nil), err)
+	for i, test := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			validator := NewNordValidator(response.PKVault{PublicKey: publicKey})
+			err := validator.Validate(test.code, test.headers, test.data)
+			assert.True(t, test.error == (err != nil), err)
+		})
 	}
 }

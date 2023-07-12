@@ -88,7 +88,7 @@ func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
 				return nil, fmt.Errorf("some of mandatory response headers do not exist")
 			}
 		} else {
-			if err = api.validator.Validate(resp.Header, body); err != nil {
+			if err = api.validator.Validate(resp.StatusCode, resp.Header, body); err != nil {
 				return nil, fmt.Errorf("cdn api: %w", err)
 			}
 		}

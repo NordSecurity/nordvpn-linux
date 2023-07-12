@@ -15,7 +15,7 @@ import (
 
 type Validator interface {
 	// Validate validates headers.
-	Validate(headers http.Header, body []byte) error
+	Validate(code int, headers http.Header, body []byte) error
 }
 
 type NordValidator struct {
@@ -24,7 +24,7 @@ type NordValidator struct {
 
 type MockValidator struct{}
 
-func (MockValidator) Validate(http.Header, []byte) error { return nil }
+func (MockValidator) Validate(int, http.Header, []byte) error { return nil }
 
 func NewNordValidator(vault PKVault) *NordValidator {
 	return &NordValidator{
@@ -33,7 +33,7 @@ func NewNordValidator(vault PKVault) *NordValidator {
 }
 
 // Validate validates that the response came from actual NordVPN API
-func (v *NordValidator) Validate(headers http.Header, body []byte) error {
+func (v *NordValidator) Validate(code int, headers http.Header, body []byte) error {
 	xDigest := headers.Get("X-Digest")
 	xAuthorization := headers.Get("X-Authorization")
 	xAcceptBefore := headers.Get("X-Accept-Before")
@@ -65,6 +65,11 @@ func (v *NordValidator) Validate(headers http.Header, body []byte) error {
 		return fmt.Errorf("unknown signature algorithm name %s", algo)
 	}
 
+	// In case of an error, uses a checksum of empty repsonse even though actual body contains
+	// an error message
+	if code < 200 || code >= 300 && code != 429 {
+		body = []byte{}
+	}
 	// Get expected digest value and check if it matches the X-Digest
 	if xDigest != string(hashFunc(body)) {
 		return fmt.Errorf("X-Digest value does not match the checksum of response body")
