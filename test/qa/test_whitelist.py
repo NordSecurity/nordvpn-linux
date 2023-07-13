@@ -17,6 +17,11 @@ import socket
 def setup_module(module):
     daemon.start()
     login.login_as("default")
+    # Add a random route and delete it to create routing table
+    # Otherwise exceptions happen in tests
+    cmd = sh.sudo.ip.route.add.default.via.bake("127.0.0.1")
+    cmd.table("205")
+    sh.sudo.ip.route.delete.default.table("205")
 
 
 def teardown_module(module):
