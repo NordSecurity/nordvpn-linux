@@ -5,6 +5,7 @@ package pb;
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 import "config/technology.proto";
+import "config/protocol.proto";
 
 message SettingsRequest {
   int64 uid = 1;
@@ -28,4 +29,5 @@ message Settings {
   bool analytics = 10;
   repeated string dns = 11;
   bool threat_protection_lite = 12;
+  config.Protocol protocol = 14;
 }

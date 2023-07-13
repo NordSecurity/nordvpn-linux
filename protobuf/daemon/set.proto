@@ -16,7 +16,6 @@ enum SetErrorCode {
 
 message SetAutoconnectRequest {
   string server_tag = 1;
-  config.Protocol protocol = 2;
   bool obfuscate = 3;
   bool auto_connect = 4;
   Whitelist whitelist = 5;
@@ -77,6 +76,19 @@ message SetNotifyRequest {
 
 message SetProtocolRequest {
   config.Protocol protocol = 2;
+}
+
+enum SetProtocolStatus {
+  PROTOCOL_CONFIGURED = 0;
+  PROTOCOL_CONFIGURED_VPN_ON = 1;
+  INVALID_TECHNOLOGY = 2;
+}
+
+message SetProtocolResponse {
+  oneof response {
+    SetErrorCode error_code = 1;
+    SetProtocolStatus set_protocol_status = 2;
+  }
 }
 
 message SetTechnologyRequest {

@@ -2,9 +2,8 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -26,12 +25,34 @@ Supported values for <protocol>: TCP, UDP
 
 Example: 'nordvpn set protocol TCP'`
 
+func setProtocolCommonErrorCodeToError(code pb.SetErrorCode, args ...any) error {
+	switch code {
+	case pb.SetErrorCode_FAILURE:
+		return formatError(internal.ErrUnhandled)
+	case pb.SetErrorCode_CONFIG_ERROR:
+		return formatError(ErrConfig)
+	case pb.SetErrorCode_ALREADY_SET:
+		return formatError(
+			errors.New(color.YellowString(fmt.Sprintf(SetProtocolAlreadySet, args...))))
+	}
+	return nil
+}
+
+func handleSetProtocolStatus(code pb.SetProtocolStatus, protocol config.Protocol) error {
+	switch code {
+	case pb.SetProtocolStatus_INVALID_TECHNOLOGY:
+		return fmt.Errorf(SetProtocolUnavailable)
+	case pb.SetProtocolStatus_PROTOCOL_CONFIGURED_VPN_ON:
+		color.Yellow(SetReconnect)
+		fallthrough
+	case pb.SetProtocolStatus_PROTOCOL_CONFIGURED:
+		color.Green(fmt.Sprintf(MsgSetSuccess, "Protocol", protocol.String()))
+	}
+	return nil
+}
+
 // SetProtocol
 func (c *cmd) SetProtocol(ctx *cli.Context) error {
-	if err := c.BeforeSetProtocol(ctx); err != nil {
-		return formatError(err)
-	}
-
 	switch ctx.NArg() {
 	case 0:
 		return formatError(argsCountError(ctx))
@@ -51,11 +72,6 @@ func (c *cmd) SetProtocol(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if c.config.Protocol == proto {
-		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Protocol", proto.String()))
-		return nil
-	}
-
 	resp, err := c.client.SetProtocol(context.Background(), &pb.SetProtocolRequest{
 		Protocol: proto,
 	})
@@ -63,45 +79,11 @@ func (c *cmd) SetProtocol(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	switch resp.Type {
-	case internal.CodeConfigError:
-		return formatError(ErrConfig)
-	case internal.CodeSuccess:
-		c.config.Protocol = proto
-		err = c.configManager.Save(c.config)
-		if err != nil {
-			return formatError(ErrConfig)
-		}
-		color.Green(fmt.Sprintf(MsgSetSuccess, "Protocol", proto.String()))
-		flag, _ := strconv.ParseBool(resp.Data[0])
-		if flag {
-			color.Yellow(SetReconnect)
-		}
-	}
-	return nil
-}
-
-func (c *cmd) BeforeSetProtocol(ctx *cli.Context) error {
-	resp, err := c.client.Settings(context.Background(), &pb.SettingsRequest{Uid: int64(os.Getuid())})
-	if err != nil {
-		return formatError(err)
-	}
-
-	switch resp.Type {
-	case internal.CodeConfigError:
-		return ErrConfig
-	case internal.CodeSuccessWithoutAC:
-		// must be right before CodeSuccess
-		color.Yellow(SetAutoConnectForceOff)
-		fallthrough
-	case internal.CodeSuccess:
-		break
-	default:
-		return internal.ErrUnhandled
-	}
-
-	if resp.Data.Technology != config.Technology_OPENVPN {
-		return fmt.Errorf(SetProtocolUnavailable)
+	switch resp.Response.(type) {
+	case *pb.SetProtocolResponse_ErrorCode:
+		return setProtocolCommonErrorCodeToError(resp.GetErrorCode(), proto.String())
+	case *pb.SetProtocolResponse_SetProtocolStatus:
+		return handleSetProtocolStatus(resp.GetSetProtocolStatus(), proto)
 	}
 	return nil
 }

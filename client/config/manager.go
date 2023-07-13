@@ -168,9 +168,6 @@ func (c *Config) setDefaultsIfEmpty() *Config {
 	if c.Whitelist.Ports.TCP == nil {
 		c.Whitelist.Ports.TCP = mapset.NewSet()
 	}
-	if c.Protocol == config.Protocol_UNKNOWN_PROTOCOL {
-		c.Protocol = config.Protocol_UDP
-	}
 	if c.Technology == config.Technology_UNKNOWN_TECHNOLOGY {
 		c.Technology = config.Technology_NORDLYNX
 	}

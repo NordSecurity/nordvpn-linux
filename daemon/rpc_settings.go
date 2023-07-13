@@ -31,6 +31,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 			Meshnet:              cfg.Mesh,
 			Dns:                  cfg.AutoConnectData.DNS,
 			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+			Protocol:             cfg.AutoConnectData.Protocol,
 		},
 	}, nil
 }

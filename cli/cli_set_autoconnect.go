@@ -57,7 +57,6 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 
 	resp, err := c.client.SetAutoConnect(context.Background(), &pb.SetAutoconnectRequest{
 		ServerTag:   serverTag,
-		Protocol:    c.config.Protocol,
 		Obfuscate:   c.config.Obfuscate,
 		AutoConnect: flag,
 		Whitelist: &pb.Whitelist{
@@ -120,12 +119,10 @@ func (c *cmd) SetAutoConnectAutoComplete(ctx *cli.Context) {
 				switch len(args) {
 				case 1:
 					return c.client.Countries(context.Background(), &pb.CountriesRequest{
-						Protocol:  c.config.Protocol,
 						Obfuscate: c.config.Obfuscate,
 					})
 				case 2:
 					return c.client.Cities(context.Background(), &pb.CitiesRequest{
-						Protocol:  c.config.Protocol,
 						Obfuscate: c.config.Obfuscate,
 						Country:   args[1],
 					})

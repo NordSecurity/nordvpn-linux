@@ -50,7 +50,7 @@ type DaemonClient interface {
 	SetKillSwitch(ctx context.Context, in *SetKillSwitchRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error)
 	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetWhitelist(ctx context.Context, in *SetWhitelistRequest, opts ...grpc.CallOption) (*Payload, error)
 	Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error)
@@ -389,8 +389,8 @@ func (c *daemonClient) SetObfuscate(ctx context.Context, in *SetGenericRequest, 
 	return out, nil
 }
 
-func (c *daemonClient) SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error) {
+	out := new(SetProtocolResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/SetProtocol", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -493,7 +493,7 @@ type DaemonServer interface {
 	SetKillSwitch(context.Context, *SetKillSwitchRequest) (*Payload, error)
 	SetNotify(context.Context, *SetNotifyRequest) (*Payload, error)
 	SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error)
-	SetProtocol(context.Context, *SetProtocolRequest) (*Payload, error)
+	SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error)
 	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
 	SetWhitelist(context.Context, *SetWhitelistRequest) (*Payload, error)
 	Settings(context.Context, *SettingsRequest) (*SettingsResponse, error)
@@ -592,7 +592,7 @@ func (UnimplementedDaemonServer) SetNotify(context.Context, *SetNotifyRequest) (
 func (UnimplementedDaemonServer) SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetObfuscate not implemented")
 }
-func (UnimplementedDaemonServer) SetProtocol(context.Context, *SetProtocolRequest) (*Payload, error) {
+func (UnimplementedDaemonServer) SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetProtocol not implemented")
 }
 func (UnimplementedDaemonServer) SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error) {

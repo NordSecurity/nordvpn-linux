@@ -11,21 +11,31 @@ type mockConfigManagerCommon struct {
 	dns                  []string
 	threatProtectionLite bool
 	ipv6                 bool
+	protocol             config.Protocol
+	technology           config.Technology
 	saveConfigErr        error
 }
 
 func (m *mockConfigManagerCommon) SaveWith(f config.SaveFunc) error {
+	if m.saveConfigErr != nil {
+		return m.saveConfigErr
+	}
+
 	var conf config.Config
 	conf = f(conf)
 	m.dns = conf.AutoConnectData.DNS
 	m.threatProtectionLite = conf.AutoConnectData.ThreatProtectionLite
-	return m.saveConfigErr
+	m.protocol = conf.AutoConnectData.Protocol
+	m.technology = conf.Technology
+	return nil
 }
 
 func (m *mockConfigManagerCommon) Load(c *config.Config) error {
 	c.AutoConnectData.DNS = m.dns
 	c.AutoConnectData.ThreatProtectionLite = m.threatProtectionLite
 	c.IPv6 = m.ipv6
+	c.AutoConnectData.Protocol = m.protocol
+	c.Technology = m.technology
 	return nil
 }
 
@@ -36,6 +46,7 @@ func (*mockConfigManagerCommon) Reset() error {
 type mockNetworker struct {
 	dns       []string
 	setDNSErr error
+	vpnActive bool
 }
 
 func (mockNetworker) Start(
@@ -54,8 +65,12 @@ func (mn *mockNetworker) SetDNS(nameservers []string) error {
 	return mn.setDNSErr
 }
 
-func (*mockNetworker) UnsetDNS() error   { return nil }
-func (*mockNetworker) IsVPNActive() bool { return true }
+func (*mockNetworker) UnsetDNS() error { return nil }
+
+func (mn *mockNetworker) IsVPNActive() bool {
+	return mn.vpnActive
+}
+
 func (*mockNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
 	return networker.ConnectionStatus{}, nil
 }

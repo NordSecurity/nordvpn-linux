@@ -17,7 +17,6 @@ const CountriesUsageText = "Shows a list of countries where servers are availabl
 
 func (c *cmd) Countries(ctx *cli.Context) error {
 	resp, err := c.client.Countries(context.Background(), &pb.CountriesRequest{
-		Protocol:  c.config.Protocol,
 		Obfuscate: c.config.Obfuscate,
 	})
 	if err != nil {

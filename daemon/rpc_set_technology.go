@@ -40,8 +40,14 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	// internal.CodeSuccessWithoutAC was overridden with generic internal.CodeSuccess
 	payload.Type = internal.CodeSuccess
 
+	protocol := cfg.AutoConnectData.Protocol
+	if in.GetTechnology() == config.Technology_NORDLYNX {
+		protocol = config.Protocol_UDP
+	}
+
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.Technology = in.GetTechnology()
+		c.AutoConnectData.Protocol = protocol
 		return c
 	}); err != nil {
 		log.Println(internal.ErrorPrefix, err)

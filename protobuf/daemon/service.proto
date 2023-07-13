@@ -50,7 +50,7 @@ service Daemon {
   rpc SetKillSwitch(SetKillSwitchRequest) returns (Payload);
   rpc SetNotify(SetNotifyRequest) returns (Payload);
   rpc SetObfuscate(SetGenericRequest) returns (Payload);
-  rpc SetProtocol(SetProtocolRequest) returns (Payload);
+  rpc SetProtocol(SetProtocolRequest) returns (SetProtocolResponse);
   rpc SetTechnology(SetTechnologyRequest) returns (Payload);
   rpc SetWhitelist(SetWhitelistRequest) returns (Payload);
   rpc Settings(SettingsRequest) returns (SettingsResponse);

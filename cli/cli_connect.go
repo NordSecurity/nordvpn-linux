@@ -130,7 +130,6 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 	args := ctx.Args()
 	if args.Len() == 0 {
 		resp, err := c.client.Groups(context.Background(), &pb.GroupsRequest{
-			Protocol:  c.config.Protocol,
 			Obfuscate: c.config.Obfuscate,
 		})
 		if err != nil {
@@ -141,7 +140,6 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 			log.Println(err)
 		}
 		resp, err = c.client.Countries(context.Background(), &pb.CountriesRequest{
-			Protocol:  c.config.Protocol,
 			Obfuscate: c.config.Obfuscate,
 		})
 		if err != nil {
@@ -154,7 +152,6 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 		fmt.Println(countryList + " " + groupList)
 	} else if args.Len() == 1 {
 		resp, err := c.client.Cities(context.Background(), &pb.CitiesRequest{
-			Protocol:  c.config.Protocol,
 			Obfuscate: c.config.Obfuscate,
 			Country:   ctx.Args().First(),
 		})

@@ -7,7 +7,6 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 import "config/protocol.proto";
 
 message CitiesRequest {
-  config.Protocol protocol = 1;
-  bool obfuscate = 2;
-  string country = 3;
+  bool obfuscate = 1;
+  string country = 2;
 }

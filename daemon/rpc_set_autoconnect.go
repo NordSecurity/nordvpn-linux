@@ -52,7 +52,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			c.AutoConnectData = config.AutoConnectData{
 				ID:                   cfg.AutoConnectData.ID,
 				ServerTag:            in.GetServerTag(),
-				Protocol:             in.GetProtocol(),
+				Protocol:             cfg.AutoConnectData.Protocol,
 				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 				Obfuscate:            in.GetObfuscate(),
 				DNS:                  cfg.AutoConnectData.DNS,

@@ -47,7 +47,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 
 	fmt.Printf("Technology: %s\n", resp.Data.GetTechnology())
 	if resp.Data.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Protocol: %s\n", c.config.Protocol)
+		fmt.Printf("Protocol: %s\n", resp.Data.GetProtocol())
 	}
 	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(resp.Data.GetFirewall()))
 	fmt.Printf("Firewall Mark: 0x%x\n", resp.Data.GetFwmark())

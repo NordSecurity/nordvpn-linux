@@ -17,7 +17,6 @@ const GroupsUsageText = "Shows a list of available server groups"
 
 func (c *cmd) Groups(ctx *cli.Context) error {
 	resp, err := c.client.Groups(context.Background(), &pb.GroupsRequest{
-		Protocol:  c.config.Protocol,
 		Obfuscate: c.config.Obfuscate,
 	})
 	if err != nil {

@@ -7,8 +7,7 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 import "config/protocol.proto";
 
 message CountriesRequest {
-  config.Protocol protocol = 1;
-  bool obfuscate = 2;
+  bool obfuscate = 1;
 }
 
 message CountriesResponse {

@@ -8,7 +8,6 @@ import (
 // Config defines NordVPN application configuration
 type Config struct {
 	Technology config.Technology `json:"technology,omitempty"`
-	Protocol   config.Protocol   `json:"protocol,omitempty"`
 	Obfuscate  bool              `json:"obfuscate,omitempty"`
 	Whitelist  Whitelist         `json:"whitelist,omitempty"`
 }

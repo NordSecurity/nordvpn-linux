@@ -51,7 +51,9 @@ Example: nordvpn set %s on`
 	SetNotifyNothingToSet = "Notifications are already set to '%s'."
 
 	SetObfuscateUnavailable = "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation."
-	SetProtocolUnavailable  = "Protocol setting is not available when the set technology is not OpenVPN"
+
+	SetProtocolUnavailable = "Protocol setting is not available when the set technology is not OpenVPN"
+	SetProtocolAlreadySet  = "Protocol is already set to %s"
 
 	SetTechnologyDepsError = "Missing %s kernel module or configuration utility."
 

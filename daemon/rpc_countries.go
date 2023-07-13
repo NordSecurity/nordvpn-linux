@@ -2,8 +2,10 @@ package daemon
 
 import (
 	"context"
+	"log"
 	"sort"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -71,8 +73,13 @@ var countryCodeMap = map[string]string{
 
 // Countries provides country command and country autocompletion.
 func (r *RPC) Countries(ctx context.Context, in *pb.CountriesRequest) (*pb.Payload, error) {
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+	}
+
 	var countryNames []string
-	for country := range r.dm.GetAppData().CountryNames[in.GetObfuscate()][in.GetProtocol()].Iter() {
+	for country := range r.dm.GetAppData().CountryNames[in.GetObfuscate()][cfg.AutoConnectData.Protocol].Iter() {
 		countryNames = append(countryNames, country.(string))
 	}
 	sort.Strings(countryNames)
@@ -83,7 +90,12 @@ func (r *RPC) Countries(ctx context.Context, in *pb.CountriesRequest) (*pb.Paylo
 }
 
 func (r *RPC) FrontendCountries(ctx context.Context, in *pb.CountriesRequest) (*pb.CountriesResponse, error) {
-	countries := r.dm.GetAppData().CountryNames[in.GetObfuscate()][in.GetProtocol()]
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+	}
+
+	countries := r.dm.GetAppData().CountryNames[in.GetObfuscate()][cfg.AutoConnectData.Protocol]
 	var resp []*pb.Country
 	for countryName := range countries.Iter() {
 		country := &pb.Country{Name: countryName.(string)}
