@@ -2,7 +2,7 @@
 include: /ci/jobs/.cond.yml
 .test_job_template:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.4
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -66,7 +66,7 @@ test/deb-autoconnect2:
   script: $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_to_city or test_autoconnect_to_random_server_by_name or test_autoconnect_to_standard_group or test_autoconnect_to_additional_group'
 test/deb-manual:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.4
   rules:
     # TODO: run automatically after meshnet release
     - !reference [.cond/on-click, rules]
@@ -91,7 +91,7 @@ test/deb-meshnet:
   script: $CI_PROJECT_DIR/ci/test_deb.sh meshnet
 test/deb-fileshare:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.4
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]

@@ -20,7 +20,7 @@ pyls-isort==0.2.2
 pyls-mypy==0.1.8
 pyparsing==2.4.7
 pytest==7.2.0
-pytest-rerunfailures==9.1.1
+pytest-rerunfailures==10.2.0
 pytest-timeout==2.0.1
 python-jsonrpc-server==0.4.0
 python-language-server==0.36.2
