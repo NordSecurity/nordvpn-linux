@@ -3,10 +3,9 @@
 package main
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/meshnet"
-	"github.com/NordSecurity/nordvpn-linux/meshnet/mock"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 )
 
-func fileshareImplementation() meshnet.Fileshare {
-	return mock.Fileshare{}
+func fileshareImplementation() service.Fileshare {
+	return service.MockFileshare{}
 }

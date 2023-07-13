@@ -1,4 +1,5 @@
-package meshnet
+// Package service provides structures to start fileshare service (nordfileshared)
+package service
 
 // Fileshare service management
 type Fileshare interface {

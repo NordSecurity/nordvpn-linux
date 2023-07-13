@@ -1,6 +1,4 @@
-// Package fork provides fileshare daemon management functionality implemented by
-// directly starting and stopping the fileshare daemon process.
-package fork
+package service
 
 import (
 	"errors"
@@ -21,14 +19,14 @@ import (
 // ErrNotStarted when disabling fileshare
 var ErrNotStarted = errors.New("fileshare wasn't started")
 
-// Fileshare manages fileshare service through exec.Command
-type Fileshare struct {
+// ForkFileshare manages fileshare service through exec.Command
+type ForkFileshare struct {
 	cmd     *exec.Cmd
 	logFile io.Closer
 }
 
 // Enable starts fileshare process
-func (f *Fileshare) Enable(uid, gid uint32) (err error) {
+func (f *ForkFileshare) Enable(uid, gid uint32) (err error) {
 	// Set up log file
 	fileFlags := os.O_APPEND | os.O_WRONLY | os.O_CREATE
 	logFilePath := internal.GetFilesharedLogPath(strconv.Itoa(int(uid)))
@@ -87,13 +85,13 @@ func (f *Fileshare) Enable(uid, gid uint32) (err error) {
 }
 
 // Disable terminates fileshare process
-func (f *Fileshare) Disable(uid, gid uint32) error {
+func (f *ForkFileshare) Disable(uid, gid uint32) error {
 	// Since this is not a service, disabling is the same as stopping
 	return f.Stop(uid, gid)
 }
 
 // Stop teminates fileshare process
-func (f *Fileshare) Stop(uid, _ uint32) error {
+func (f *ForkFileshare) Stop(uid, _ uint32) error {
 	if f.cmd == nil || f.cmd.Process == nil || f.logFile == nil {
 		return ErrNotStarted
 	}

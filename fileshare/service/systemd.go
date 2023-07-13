@@ -1,5 +1,4 @@
-// Package systemd provides fileshare process management implemented with systemd.
-package systemd
+package service
 
 import (
 	"fmt"
@@ -10,20 +9,21 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// Fileshare manages fileshare service through systemctl
-type Fileshare struct{}
+// SystemdFileshare manages fileshare service through systemctl
+type SystemdFileshare struct{}
 
 // Enable and start fileshare service
-func (Fileshare) Enable(uid, _ uint32) error {
+func (*SystemdFileshare) Enable(uid, _ uint32) error {
 	return systemdFileshare(uid, "enable")
 }
 
 // Disable and stop fileshare service
-func (Fileshare) Disable(uid, _ uint32) error {
+func (*SystemdFileshare) Disable(uid, _ uint32) error {
 	return systemdFileshare(uid, "disable")
 }
 
-func (Fileshare) Stop(uid, _ uint32) error {
+// Stop without disabling
+func (*SystemdFileshare) Stop(uid, _ uint32) error {
 	return systemdFileshare(uid, "stop")
 }
 
