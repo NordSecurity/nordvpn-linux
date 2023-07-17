@@ -1,4 +1,4 @@
-#### NordVPN for Linux
+### NordVPN for Linux
 
 ![icon](./assets/icon.svg)
 
