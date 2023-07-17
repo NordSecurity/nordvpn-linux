@@ -29,5 +29,6 @@ message Settings {
   bool analytics = 10;
   repeated string dns = 11;
   bool threat_protection_lite = 12;
-  config.Protocol protocol = 14;
+  config.Protocol protocol = 13;
+  bool lan_discovery = 14;
 }

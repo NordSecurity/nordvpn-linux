@@ -62,6 +62,9 @@ Example: nordvpn set %s on`
 	SetDNSTooManyValues               = "More than 3 DNS addresses provided."
 	SetDNSAlreadySet                  = "DNS is already set to %s."
 
+	SetLANDiscoveryUsage          = "Access printers, TVs, and other devices on your local network while connected to a VPN."
+	SetLANDiscoveryAlreadyEnabled = "LAN discovery is already set to %s"
+
 	WhitelistAddPortExistsError = "Port %s (%s) is already whitelisted."
 	WhitelistAddPortSuccess     = "Port %s (%s) is whitelisted successfully."
 

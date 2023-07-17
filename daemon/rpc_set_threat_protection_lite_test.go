@@ -5,11 +5,16 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSetThreatProtectionLite_Success(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	dns := []string{"0.0.0.0", "8.8.8.8", "1.1.1.1"}
 
 	tests := []struct {
@@ -70,18 +75,30 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			configManager := mockConfigManagerCommon{
-				threatProtectionLite: test.currentTpl,
-				dns:                  test.currentDNS,
-				ipv6:                 test.ipv6,
-			}
+			uuid, _ := uuid.NewUUID()
+			filesystem := newFilesystemMock(t)
+			configManager := config.NewFilesystemConfigManager(
+				"/location", "/vault", "",
+				&machineIDGetterMock{machineID: uuid},
+				&filesystem)
+
+			configManager.SaveWith(func(c config.Config) config.Config {
+				c.AutoConnectData = config.AutoConnectData{
+					ThreatProtectionLite: test.currentTpl,
+					DNS:                  test.currentDNS,
+				}
+				c.IPv6 = test.ipv6
+
+				return c
+			})
+
 			networker := mockNetworker{}
 			dnsGetter := mockDNSGetter{}
 			tplPublisher := &mockPublisherSubcriber{}
 			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
 
 			rpc := RPC{
-				cm:          &configManager,
+				cm:          configManager,
 				netw:        &networker,
 				nameservers: &dnsGetter,
 				events:      &Events{Settings: &publisher},
@@ -100,7 +117,11 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 				test.expectedStatus,
 				"Invalid response from RPC.")
 			assert.Equal(t, test.expectedDNS, networker.dns, "Invalid nameservers were configured.")
-			assert.Equal(t, test.desiredTpl, configManager.threatProtectionLite,
+
+			var config config.Config
+			configManager.Load(&config)
+
+			assert.Equal(t, test.desiredTpl, config.AutoConnectData.ThreatProtectionLite,
 				"Threat protection lite was not saved in the config.")
 			assert.Equal(t, true, tplPublisher.eventPublished, "TPL set event was not published.")
 		})
@@ -108,12 +129,14 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 }
 
 func TestSetThreatProtectionLite_Error(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		testName         string
 		desiredTpl       bool
 		currentTpl       bool
 		setDnsErr        error
-		saveConfigErr    error
+		writeConfigErr   error
 		expectedResponse *pb.SetThreatProtectionLiteResponse
 	}{
 		{
@@ -141,9 +164,9 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 			},
 		},
 		{
-			testName:      "save config error",
-			desiredTpl:    true,
-			saveConfigErr: fmt.Errorf("Failed to save config"),
+			testName:       "save config error",
+			desiredTpl:     true,
+			writeConfigErr: fmt.Errorf("Failed to save config"),
 			expectedResponse: &pb.SetThreatProtectionLiteResponse{
 				Response: &pb.SetThreatProtectionLiteResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 			},
@@ -152,11 +175,23 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			configManager := mockConfigManagerCommon{
-				threatProtectionLite: test.currentTpl,
-				dns:                  defaultNameserversV4,
-				saveConfigErr:        test.saveConfigErr,
-			}
+			uuid, _ := uuid.NewUUID()
+			filesystem := newFilesystemMock(t)
+			filesystem.WriteErr = test.writeConfigErr
+			configManager := config.NewFilesystemConfigManager(
+				"/location", "/vault", "",
+				&machineIDGetterMock{machineID: uuid},
+				&filesystem)
+
+			configManager.SaveWith(func(c config.Config) config.Config {
+				c.AutoConnectData = config.AutoConnectData{
+					ThreatProtectionLite: test.currentTpl,
+					DNS:                  defaultNameserversV4,
+				}
+
+				return c
+			})
+
 			networker := mockNetworker{
 				setDNSErr: test.setDnsErr,
 			}
@@ -165,7 +200,7 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
 
 			rpc := RPC{
-				cm:          &configManager,
+				cm:          configManager,
 				netw:        &networker,
 				nameservers: &dnsGetter,
 				events:      &Events{Settings: &publisher},

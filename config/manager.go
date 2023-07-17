@@ -5,12 +5,15 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"errors"
+	"io/fs"
+	"log"
 	"math/rand"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/google/uuid"
 )
 
 const (
@@ -35,29 +38,77 @@ type Manager interface {
 	Reset() error
 }
 
-// Filesystem implements config persistence and retrieval from disk.
-//
-// Thread-safe.
-type Filesystem struct {
-	location string
-	vault    string
-	salt     string
-	mu       sync.Mutex
+type FilesystemHandle interface {
+	FileExists(string) bool
+	CreateFile(string, fs.FileMode) error
+	ReadFile(string) ([]byte, error)
+	WriteFile(string, []byte, fs.FileMode) error
 }
 
-// NewFilesystem is constructed from a given location and salt.
-func NewFilesystem(location, vault, salt string) *Filesystem {
-	return &Filesystem{
-		location: location,
-		vault:    vault,
-		salt:     salt,
+type StdFilesystemHandle struct {
+}
+
+func (StdFilesystemHandle) FileExists(location string) bool {
+	return internal.FileExists(location)
+}
+
+func (StdFilesystemHandle) CreateFile(location string, mode fs.FileMode) error {
+	file, err := internal.FileCreate(location, mode)
+	if closeErr := file.Close(); closeErr != nil {
+		log.Printf("Failed to close file: %v", closeErr)
+	}
+	return err
+}
+
+func (StdFilesystemHandle) ReadFile(location string) ([]byte, error) {
+	// #nosec G304 -- no input comes from the user
+	return os.ReadFile(location)
+}
+
+func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileMode) error {
+	return os.WriteFile(location, data, mode)
+}
+
+type MachineIDGetter interface {
+	GetMachineID() uuid.UUID
+}
+
+type LinuxMachineIDGetter struct {
+}
+
+func (LinuxMachineIDGetter) GetMachineID() uuid.UUID {
+	return internal.MachineID()
+}
+
+// FilesystemConfigManager implements config persistence and retrieval from disk.
+//
+// Thread-safe.
+type FilesystemConfigManager struct {
+	location        string
+	vault           string
+	salt            string
+	machineIDGetter MachineIDGetter
+	fsHandle        FilesystemHandle
+	mu              sync.Mutex
+}
+
+// NewFilesystemConfigManager is constructed from a given location and salt.
+func NewFilesystemConfigManager(location, vault, salt string,
+	machineIDGetter MachineIDGetter,
+	fsHandle FilesystemHandle) *FilesystemConfigManager {
+	return &FilesystemConfigManager{
+		location:        location,
+		vault:           vault,
+		salt:            salt,
+		machineIDGetter: machineIDGetter,
+		fsHandle:        fsHandle,
 	}
 }
 
 // SaveWith modifications provided by fn.
 //
 // Thread-safe.
-func (f *Filesystem) SaveWith(fn SaveFunc) error {
+func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -70,8 +121,8 @@ func (f *Filesystem) SaveWith(fn SaveFunc) error {
 	return f.save(c)
 }
 
-func (f *Filesystem) save(c Config) error {
-	pass, err := getPassphrase(f.vault, f.salt)
+func (f *FilesystemConfigManager) save(c Config) error {
+	pass, err := f.getPassphrase()
 	if err != nil {
 		return err
 	}
@@ -85,13 +136,14 @@ func (f *Filesystem) save(c Config) error {
 	if err != nil {
 		return err
 	}
-	return save(encrypted, f.location)
+
+	return f.fsHandle.WriteFile(f.location, encrypted, internal.PermUserRW)
 }
 
 // Reset config values to defaults.
 //
 // Thread-safe.
-func (f *Filesystem) Reset() error {
+func (f *FilesystemConfigManager) Reset() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.save(*newConfig())
@@ -100,27 +152,36 @@ func (f *Filesystem) Reset() error {
 // Load encrypted config from the filesystem.
 //
 // Thread-safe.
-func (f *Filesystem) Load(c *Config) error {
+func (f *FilesystemConfigManager) Load(c *Config) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	return f.load(c)
 }
 
-func (f *Filesystem) load(c *Config) error {
-	if !internal.FileExists(f.location) {
+func (f *FilesystemConfigManager) load(c *Config) error {
+	if !f.fsHandle.FileExists(f.location) {
 		// reasigning value behind the pointer
 		*c = *newConfig()
 		return nil
 	}
 
-	pass, err := getPassphrase(f.vault, f.salt)
+	pass, err := f.getPassphrase()
 	if err != nil {
 		return err
 	}
 
-	data, err := load(f.location)
-	if err != nil {
-		return err
+	var data []byte
+
+	if f.fsHandle.FileExists(f.location) {
+		// #nosec G304 -- no input comes from the user
+		data, err = f.fsHandle.ReadFile(f.location)
+		if err != nil {
+			return err
+		}
+	} else {
+		if err := f.fsHandle.CreateFile(f.location, internal.PermUserRW); err != nil {
+			return err
+		}
 	}
 
 	decrypted, err := internal.Decrypt(data, pass)
@@ -144,60 +205,21 @@ func (f *Filesystem) load(c *Config) error {
 	}
 
 	if c.MachineID == [16]byte{} {
-		c.MachineID = internal.MachineID()
+		c.MachineID = f.machineIDGetter.GetMachineID()
 	}
 	return nil
 }
 
-// save data to given location on disk
-func save(data []byte, location string) error {
-	if internal.FileExists(location) {
-		return os.WriteFile(location, data, internal.PermUserRW)
-	}
-
-	file, err := internal.FileCreate(location, internal.PermUserRW)
-	if err != nil {
-		return err
-	}
-
-	_, err = file.Write(data)
-	if err != nil {
-		// https://www.joeshaw.org/dont-defer-close-on-writable-files/
-		// #nosec G104 -- errors.Join would be useful here
-		file.Close()
-		return err
-	}
-	return file.Close()
-}
-
-// load data from given location on disk
-func load(location string) ([]byte, error) {
-	if internal.FileExists(location) {
-		// #nosec G304 -- no input comes from the user
-		return os.ReadFile(location)
-	}
-
-	file, err := internal.FileCreate(location, internal.PermUserRW)
-	if err != nil {
-		return nil, err
-	}
-	// https://www.joeshaw.org/dont-defer-close-on-writable-files/
-	// #nosec G307 -- no writes are made
-	defer file.Close()
-
-	return []byte{}, nil
-}
-
 // getPassphrase for accessing the data
-func getPassphrase(vault string, salt string) (string, error) {
-	key, err := loadKey(vault, salt)
+func (f *FilesystemConfigManager) getPassphrase() (string, error) {
+	key, err := f.loadKey()
 	if err != nil {
 		if errors.Is(err, errNoInstallFile) {
-			err = newKey(vault, salt)
+			err = f.newKey()
 			if err != nil {
 				return "", err
 			}
-			key, err = loadKey(vault, salt)
+			key, err = f.loadKey()
 			if err != nil {
 				return "", err
 			}
@@ -209,8 +231,8 @@ func getPassphrase(vault string, salt string) (string, error) {
 }
 
 // newKey used for decryption
-func newKey(vault string, salt string) error {
-	cipher, err := internal.Encrypt(generateKey(), salt)
+func (f *FilesystemConfigManager) newKey() error {
+	cipher, err := internal.Encrypt(generateKey(), f.salt)
 	if err != nil {
 		return err
 	}
@@ -221,7 +243,7 @@ func newKey(vault string, salt string) error {
 		return err
 	}
 
-	err = internal.FileWrite(vault, buffer.Bytes(), internal.PermUserRW)
+	err = f.fsHandle.WriteFile(f.vault, buffer.Bytes(), internal.PermUserRW)
 	if err != nil {
 		return err
 	}
@@ -242,11 +264,11 @@ func generateKey() []byte {
 }
 
 // loadKey for decryption from disk
-func loadKey(vault string, salt string) ([]byte, error) {
-	if !internal.FileExists(vault) {
+func (f *FilesystemConfigManager) loadKey() ([]byte, error) {
+	if !f.fsHandle.FileExists(f.vault) {
 		return nil, errNoInstallFile
 	}
-	content, err := internal.FileRead(vault)
+	content, err := f.fsHandle.ReadFile(f.vault)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +281,7 @@ func loadKey(vault string, salt string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	plain, err := internal.Decrypt(cipher, salt)
+	plain, err := internal.Decrypt(cipher, f.salt)
 	if err != nil {
 		return nil, err
 	}

@@ -255,6 +255,18 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Action:       cmd.MeshSet,
 				BashComplete: cmd.SetBoolAutocomplete,
 			},
+			{
+				Name:  "lan-discovery",
+				Usage: SetLANDiscoveryUsage,
+				ArgsUsage: fmt.Sprintf(
+					MsgSetBoolArgsUsage,
+					SetLANDiscoveryUsage,
+					"lan-discovery",
+					"lan-discovery",
+				),
+				Action:       cmd.SetLANDiscovery,
+				BashComplete: cmd.SetBoolAutocomplete,
+			},
 		},
 	}
 

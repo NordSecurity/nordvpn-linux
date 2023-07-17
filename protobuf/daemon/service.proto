@@ -53,6 +53,7 @@ service Daemon {
   rpc SetProtocol(SetProtocolRequest) returns (SetProtocolResponse);
   rpc SetTechnology(SetTechnologyRequest) returns (Payload);
   rpc SetWhitelist(SetWhitelistRequest) returns (Payload);
+  rpc SetLANDiscovery(SetLANDiscoveryRequest) returns (SetLANDiscoveryResponse);
   rpc Settings(SettingsRequest) returns (SettingsResponse);
   rpc SettingsProtocols(Empty) returns (Payload);
   rpc SettingsTechnologies(Empty) returns (Payload);

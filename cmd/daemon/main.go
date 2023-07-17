@@ -115,10 +115,12 @@ func main() {
 
 	// Config
 
-	fsystem := config.NewFilesystem(
+	fsystem := config.NewFilesystemConfigManager(
 		config.SettingsDataFilePath,
 		config.InstallFilePath,
 		Salt,
+		config.LinuxMachineIDGetter{},
+		config.StdFilesystemHandle{},
 	)
 	var cfg config.Config
 	if err := fsystem.Load(&cfg); err != nil {

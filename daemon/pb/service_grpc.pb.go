@@ -53,6 +53,7 @@ type DaemonClient interface {
 	SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error)
 	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetWhitelist(ctx context.Context, in *SetWhitelistRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error)
 	Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error)
 	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
@@ -416,6 +417,15 @@ func (c *daemonClient) SetWhitelist(ctx context.Context, in *SetWhitelistRequest
 	return out, nil
 }
 
+func (c *daemonClient) SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error) {
+	out := new(SetLANDiscoveryResponse)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/SetLANDiscovery", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *daemonClient) Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error) {
 	out := new(SettingsResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Settings", in, out, opts...)
@@ -496,6 +506,7 @@ type DaemonServer interface {
 	SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error)
 	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
 	SetWhitelist(context.Context, *SetWhitelistRequest) (*Payload, error)
+	SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error)
 	Settings(context.Context, *SettingsRequest) (*SettingsResponse, error)
 	SettingsProtocols(context.Context, *Empty) (*Payload, error)
 	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
@@ -600,6 +611,9 @@ func (UnimplementedDaemonServer) SetTechnology(context.Context, *SetTechnologyRe
 }
 func (UnimplementedDaemonServer) SetWhitelist(context.Context, *SetWhitelistRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetWhitelist not implemented")
+}
+func (UnimplementedDaemonServer) SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetLANDiscovery not implemented")
 }
 func (UnimplementedDaemonServer) Settings(context.Context, *SettingsRequest) (*SettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Settings not implemented")
@@ -1196,6 +1210,24 @@ func _Daemon_SetWhitelist_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_SetLANDiscovery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetLANDiscoveryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetLANDiscovery(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/SetLANDiscovery",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetLANDiscovery(ctx, req.(*SetLANDiscoveryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Daemon_Settings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SettingsRequest)
 	if err := dec(in); err != nil {
@@ -1404,6 +1436,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetWhitelist",
 			Handler:    _Daemon_SetWhitelist_Handler,
+		},
+		{
+			MethodName: "SetLANDiscovery",
+			Handler:    _Daemon_SetLANDiscovery_Handler,
 		},
 		{
 			MethodName: "Settings",

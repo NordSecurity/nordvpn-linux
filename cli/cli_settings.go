@@ -67,6 +67,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	} else {
 		fmt.Printf("DNS: %+v\n", strings.Join(resp.Data.Dns, ", "))
 	}
+	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(resp.Data.LanDiscovery))
 
 	displayWhitelist(&c.config.Whitelist)
 	return nil

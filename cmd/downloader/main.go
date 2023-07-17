@@ -24,7 +24,7 @@ var Salt = ""
 // Downloader is responsible for downloading servers.dat and configs.dat files for .deb and .rpm packages
 func main() {
 	dataPath := os.Args[1]
-	cm := config.NewFilesystem(config.SettingsDataFilePath, config.InstallFilePath, Salt)
+	cm := config.NewFilesystemConfigManager(config.SettingsDataFilePath, config.InstallFilePath, Salt, config.LinuxMachineIDGetter{}, config.StdFilesystemHandle{})
 	dm := daemon.NewDataManager(dataPath+InsightsFilename, dataPath+ServersFilename, dataPath+countriesFilename, "")
 	client := request.NewStdHTTP()
 	api := core.NewDefaultAPI(

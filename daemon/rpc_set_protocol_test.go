@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,9 +59,19 @@ func TestSetProtocol_Success(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			configManager := mockConfigManagerCommon{
-				protocol: test.currentProtocol,
-			}
+			uuid, _ := uuid.NewUUID()
+			filesystem := newFilesystemMock(t)
+			configManager := config.NewFilesystemConfigManager(
+				"/location", "/vault", "",
+				&machineIDGetterMock{machineID: uuid},
+				&filesystem)
+
+			configManager.SaveWith(func(c config.Config) config.Config {
+				c.AutoConnectData.Protocol = test.currentProtocol
+				c.Technology = config.Technology_OPENVPN
+				return c
+			})
+
 			protocolPublisher := &mockProtocolPublisherSubcriber{}
 			publisher := SettingsEvents{Protocol: protocolPublisher}
 			networker := mockNetworker{
@@ -68,7 +79,7 @@ func TestSetProtocol_Success(t *testing.T) {
 			}
 
 			rpc := RPC{
-				cm:     &configManager,
+				cm:     configManager,
 				events: &Events{Settings: &publisher},
 				netw:   &networker,
 			}
@@ -81,7 +92,11 @@ func TestSetProtocol_Success(t *testing.T) {
 			assert.IsType(t, resp.Response, &pb.SetProtocolResponse_SetProtocolStatus{})
 			assert.Equal(t, test.expectedStatus, resp.GetSetProtocolStatus(),
 				"Invalid status received in RPC response.")
-			assert.Equal(t, test.desiredProtocol, configManager.protocol,
+
+			var cfg config.Config
+			configManager.Load(&cfg)
+
+			assert.Equal(t, test.desiredProtocol, cfg.AutoConnectData.Protocol,
 				"Invalid status saved in configuration.")
 			assert.Equal(t, true, protocolPublisher.eventPublished,
 				"Protocol event was not published after success.")
@@ -94,7 +109,7 @@ func TestSetProtocol_Error(t *testing.T) {
 		name              string
 		currentTechnology config.Technology
 		currentProtocol   config.Protocol
-		saveConfigErr     error
+		writeConfigErr    error
 		desiredProtocol   config.Protocol
 		expectedResponse  *pb.SetProtocolResponse
 	}{
@@ -124,7 +139,7 @@ func TestSetProtocol_Error(t *testing.T) {
 			name:              "set protocol config error",
 			currentTechnology: config.Technology_OPENVPN,
 			currentProtocol:   config.Protocol_UDP,
-			saveConfigErr:     fmt.Errorf("Failed to save config"),
+			writeConfigErr:    fmt.Errorf("Failed to save config"),
 			desiredProtocol:   config.Protocol_TCP,
 			expectedResponse: &pb.SetProtocolResponse{
 				Response: &pb.SetProtocolResponse_ErrorCode{
@@ -136,17 +151,27 @@ func TestSetProtocol_Error(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			configManager := mockConfigManagerCommon{
-				technology:    test.currentTechnology,
-				protocol:      test.currentProtocol,
-				saveConfigErr: test.saveConfigErr,
-			}
+			uuid, _ := uuid.NewUUID()
+			filesystem := newFilesystemMock(t)
+			configManager := config.NewFilesystemConfigManager(
+				"/location", "/vault", "",
+				&machineIDGetterMock{machineID: uuid},
+				&filesystem)
+
+			configManager.SaveWith(func(c config.Config) config.Config {
+				c.AutoConnectData.Protocol = test.currentProtocol
+				c.Technology = test.currentTechnology
+				return c
+			})
+
+			filesystem.WriteErr = test.writeConfigErr
+
 			protocolPublisher := &mockProtocolPublisherSubcriber{}
 			publisher := SettingsEvents{Protocol: protocolPublisher}
 			networker := mockNetworker{}
 
 			rpc := RPC{
-				cm:     &configManager,
+				cm:     configManager,
 				events: &Events{Settings: &publisher},
 				netw:   &networker,
 			}
@@ -158,7 +183,11 @@ func TestSetProtocol_Error(t *testing.T) {
 			assert.Nil(t, err, "RPC ended with error.")
 			assert.Equal(t, test.expectedResponse, resp,
 				"Invalid RPC response.")
-			assert.Equal(t, test.currentProtocol, configManager.protocol,
+
+			var cfg config.Config
+			configManager.Load(&cfg)
+
+			assert.Equal(t, test.currentProtocol, cfg.AutoConnectData.Protocol,
 				"Invalid status saved in configuration.")
 			assert.Equal(t, false, protocolPublisher.eventPublished,
 				"Protocol event was published after failure.")

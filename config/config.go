@@ -52,6 +52,7 @@ type Config struct {
 	UsersData       *UsersData          `json:"users_data,omitempty"`
 	TokensData      map[int64]TokenData `json:"tokens_data,omitempty"`
 	MachineID       uuid.UUID           `json:"machine_id,omitempty"`
+	LanDiscovery    bool                `json:"lan_discovery"`
 }
 
 type AutoConnectData struct {

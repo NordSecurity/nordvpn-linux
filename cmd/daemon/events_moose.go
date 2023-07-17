@@ -12,7 +12,7 @@ var (
 	EventsSubdomain = ""
 )
 
-func newAnalytics(eventsDbPath string, fs *config.Filesystem,
+func newAnalytics(eventsDbPath string, fs *config.FilesystemConfigManager,
 	ver, env, id string) *moose.Subscriber {
 	return &moose.Subscriber{
 		EventsDbPath: eventsDbPath,

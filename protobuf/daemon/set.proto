@@ -98,3 +98,19 @@ message SetTechnologyRequest {
 message SetWhitelistRequest {
   Whitelist whitelist = 2;
 }
+
+message SetLANDiscoveryRequest {
+  bool enabled = 1;
+}
+
+enum SetLANDiscoveryStatus {
+  DISCOVERY_CONFIGURED = 0;
+  DISCOVERY_CONFIGURED_MESH_PERMISSIONS_RESET = 1;
+}
+
+message SetLANDiscoveryResponse {
+  oneof response {
+    SetErrorCode error_code = 1;
+    SetLANDiscoveryStatus set_lan_discovery_status = 2;
+  }
+}

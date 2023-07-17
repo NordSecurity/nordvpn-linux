@@ -6,15 +6,18 @@ import (
 	"net/netip"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/network"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-var dnsMock []string = []string{"0.0.0.0", "8.8.8.8", "1.1.1.1"}
-var currentDNSMock []string = []string{"131.244.140.126", "194.182.108.28", "124.83.117.225"}
-var dnsV6Mock []string = []string{
+var dnsMock config.DNS = config.DNS{"0.0.0.0", "8.8.8.8", "1.1.1.1"}
+var currentDNSMock config.DNS = config.DNS{"131.244.140.126", "194.182.108.28", "124.83.117.225"}
+var dnsV6Mock config.DNS = config.DNS{
 	"93c2:2773:ef6c:6a9b:9d92:1349:bd4e:c11d",
 	"9198:0c8e:0d72:6081:9c47:b378:916c:8d5c",
 	"4aac:965f:f4fc:ae1d:2213:92e6:c6aa:3fcf"}
@@ -29,12 +32,14 @@ func (mp *mockPublisherSubscriberDNS) Publish(message events.DataDNS) {
 func (*mockPublisherSubscriberDNS) Subscribe(handler events.Handler[events.DataDNS]) {}
 
 func TestSetDNS_Success(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name                string
-		requestedDNS        []string
-		currentDNS          []string
-		expectedDNS         []string
-		expectedDNSInConfig []string
+		requestedDNS        config.DNS
+		currentDNS          config.DNS
+		expectedDNS         config.DNS
+		expectedDNSInConfig config.DNS
 		tpl                 bool
 		ipv6                bool
 		expectedTPL         bool
@@ -123,10 +128,23 @@ func TestSetDNS_Success(t *testing.T) {
 				netip.MustParseAddr("cfa2:f822:e7fb:20a6:d4c0:b9fd:2901:95f0"),
 			}
 
-			configManager := mockConfigManagerCommon{
-				dns:                  test.currentDNS,
-				threatProtectionLite: test.tpl,
-				ipv6:                 test.ipv6}
+			uuid, _ := uuid.NewUUID()
+			filesystem := newFilesystemMock(t)
+			configManager := config.NewFilesystemConfigManager(
+				"/location", "/vault", "",
+				&machineIDGetterMock{machineID: uuid},
+				&filesystem)
+
+			configManager.SaveWith(func(c config.Config) config.Config {
+				c.AutoConnectData = config.AutoConnectData{
+					DNS:                  test.currentDNS,
+					ThreatProtectionLite: test.tpl,
+				}
+				c.IPv6 = test.ipv6
+
+				return c
+			})
+
 			networker := mockNetworker{}
 			publisher := mockPublisherSubscriberDNS{}
 			dnsGetter := mockDNSGetter{}
@@ -139,7 +157,7 @@ func TestSetDNS_Success(t *testing.T) {
 			}
 
 			rpc := RPC{
-				cm:          &configManager,
+				cm:          configManager,
 				netw:        &networker,
 				nameservers: &dnsGetter,
 				events:      &Events{Settings: &SettingsEvents{DNS: &publisher}},
@@ -153,27 +171,32 @@ func TestSetDNS_Success(t *testing.T) {
 			assert.IsType(t, &pb.SetDNSResponse{Response: &pb.SetDNSResponse_SetDnsStatus{}}, resp,
 				"Non-empty response received, empty response indicates success")
 
-			assert.Equal(t, test.expectedDNS, networker.dns, "Invalid DNS was configured.")
-			assert.Equal(t, test.expectedDNSInConfig, configManager.dns,
+			assert.Equal(t, test.expectedDNS, config.DNS(networker.dns), "Invalid DNS was configured.")
+
+			var cfg config.Config
+			configManager.Load(&cfg)
+			assert.Equal(t, test.expectedDNSInConfig, cfg.AutoConnectData.DNS,
 				"Invalid DNS was saved in the configuration.")
-			assert.Equal(t, test.expectedTPL, configManager.threatProtectionLite,
+			assert.Equal(t, test.expectedTPL, cfg.AutoConnectData.ThreatProtectionLite,
 				"Threat protection lite was not properly configured after enabling DNS.")
 		})
 	}
 }
 
 func TestSetDNS_Errors(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name             string
-		requestedDNS     []string
-		currentDNS       []string
+		requestedDNS     config.DNS
+		currentDNS       config.DNS
 		setDNSErr        error
-		saveConfigErr    error
+		writeConfigErr   error
 		expectedResponse *pb.SetDNSResponse
 	}{
 		{
 			name:         "too many nameservers",
-			requestedDNS: []string{"0.0.0.0", "8.8.8.8", "1.1.1.1", "1.2.3.4"},
+			requestedDNS: config.DNS{"0.0.0.0", "8.8.8.8", "1.1.1.1", "1.2.3.4"},
 			expectedResponse: &pb.SetDNSResponse{
 				Response: &pb.SetDNSResponse_SetDnsStatus{SetDnsStatus: pb.SetDNSStatus_TOO_MANY_VALUES},
 			},
@@ -188,7 +211,7 @@ func TestSetDNS_Errors(t *testing.T) {
 		},
 		{
 			name:         "invalid address",
-			requestedDNS: []string{"aaasd"},
+			requestedDNS: config.DNS{"aaasd"},
 			expectedResponse: &pb.SetDNSResponse{
 				Response: &pb.SetDNSResponse_SetDnsStatus{SetDnsStatus: pb.SetDNSStatus_INVALID_DNS_ADDRESS},
 			},
@@ -202,9 +225,9 @@ func TestSetDNS_Errors(t *testing.T) {
 			},
 		},
 		{
-			name:          "config error",
-			requestedDNS:  dnsMock,
-			saveConfigErr: fmt.Errorf("failed to save config"),
+			name:           "config error",
+			requestedDNS:   dnsMock,
+			writeConfigErr: fmt.Errorf("failed to save config"),
 			expectedResponse: &pb.SetDNSResponse{
 				Response: &pb.SetDNSResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 			},
@@ -213,15 +236,28 @@ func TestSetDNS_Errors(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			configManager := mockConfigManagerCommon{
-				dns:           test.currentDNS,
-				saveConfigErr: test.saveConfigErr}
+			uuid, _ := uuid.NewUUID()
+			filesystem := newFilesystemMock(t)
+			filesystem.WriteErr = test.writeConfigErr
+			configManager := config.NewFilesystemConfigManager(
+				"/location", "/vault", "",
+				&machineIDGetterMock{machineID: uuid},
+				&filesystem)
+
+			configManager.SaveWith(func(c config.Config) config.Config {
+				c.AutoConnectData = config.AutoConnectData{
+					DNS: test.currentDNS,
+				}
+
+				return c
+			})
+
 			networker := mockNetworker{setDNSErr: test.setDNSErr}
 			publisher := mockPublisherSubscriberDNS{}
 			dnsGetter := mockDNSGetter{}
 
 			rpc := RPC{
-				cm:          &configManager,
+				cm:          configManager,
 				netw:        &networker,
 				nameservers: &dnsGetter,
 				events:      &Events{Settings: &SettingsEvents{DNS: &publisher}},

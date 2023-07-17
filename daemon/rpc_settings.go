@@ -32,6 +32,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 			Dns:                  cfg.AutoConnectData.DNS,
 			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 			Protocol:             cfg.AutoConnectData.Protocol,
+			LanDiscovery:         cfg.LanDiscovery,
 		},
 	}, nil
 }

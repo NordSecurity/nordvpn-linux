@@ -54,7 +54,7 @@ func TestFilesystem(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			configLocation := "testdata/config"
 			vaultLocation := "testdata/vault"
-			fs := NewFilesystem("testdata/config", "testdata/vault", "")
+			fs := NewFilesystemConfigManager("testdata/config", "testdata/vault", "", LinuxMachineIDGetter{}, StdFilesystemHandle{})
 			defer os.Remove(configLocation)
 			defer os.Remove(vaultLocation)
 
@@ -101,7 +101,7 @@ func TestConfigIsBackwardsCompatible(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.settingsFile, func(t *testing.T) {
-			fs := NewFilesystem(test.settingsFile, test.installFile, salt)
+			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, LinuxMachineIDGetter{}, StdFilesystemHandle{})
 			var cfg Config
 			err := fs.Load(&cfg)
 			require.NoError(t, err)
@@ -148,7 +148,7 @@ func TestConfigDefaultValues(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.settingsFile, func(t *testing.T) {
-			fs := NewFilesystem(test.settingsFile, test.installFile, salt)
+			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, LinuxMachineIDGetter{}, StdFilesystemHandle{})
 			var cfg Config
 			err := fs.Load(&cfg)
 			require.NoError(t, err)
