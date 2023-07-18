@@ -39,7 +39,7 @@ func logLevelToPrefix(level norddropgo.Enum_SS_norddrop_log_level) string {
 func logCB(level int, message string) {
 	log.Println(
 		logLevelToPrefix(norddropgo.Enum_SS_norddrop_log_level(level)),
-		"DROP: "+message,
+		"DROP("+norddropgo.NorddropVersion()+"): "+message,
 	)
 }
 
@@ -68,6 +68,8 @@ func New(
 func (f *Fileshare) Enable(listenAddr netip.Addr) (err error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
+
+	log.Println(internal.InfoPrefix, "libdrop version:", norddropgo.NorddropVersion())
 
 	if err = f.start(listenAddr, f.eventsDbPath, f.isProd, f.storagePath); err != nil {
 		return fmt.Errorf("starting drop: %w", err)
