@@ -406,7 +406,7 @@ func main() {
 
 	authChecker := auth.NewRenewingChecker(fsystem, defaultAPI)
 	endpointResolver := network.NewDefaultResolverChain(fw)
-	notificationClient := nc.NewClient(debugSubject, meshnetEvents.PeerUpdate)
+	notificationClient := nc.NewClient(infoSubject, errSubject, meshnetEvents.PeerUpdate)
 
 	dm := daemon.NewDataManager(
 		daemon.InsightsFilePath,

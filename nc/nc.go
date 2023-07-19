@@ -6,13 +6,14 @@ mechanisms to ensure message delivery.
 package nc
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/network"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -102,16 +103,26 @@ type NotificationClient interface {
 
 // Client is a client for Notification center
 type Client struct {
-	client            mqtt.Client
-	subjectDebug      events.Publisher[string]
+	client mqtt.Client // nil if not started or stopped, always check for nil before using
+	// MQTT Docs say that reusing client after doing Disconnect can lead to panics.
+	// Since we are doing connect manually with our exponential backoff, we are in risk of those panics.
+	// That's why this mutex must be locked everytime client is used.
+	clientMutex       sync.Mutex
+	subjectInfo       events.Publisher[string]
+	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
-	sync.Mutex
+	cancelConnecting  context.CancelFunc // Used to stop connecting attempts if we are already stopping
 }
 
 // NewClient is a constructor for a NC client
-func NewClient(subjectDebug events.Publisher[string], subjectPeerUpdate events.Publisher[[]string]) *Client {
+func NewClient(
+	subjectInfo events.Publisher[string],
+	subjectErr events.Publisher[error],
+	subjectPeerUpdate events.Publisher[[]string],
+) *Client {
 	return &Client{
-		subjectDebug:      subjectDebug,
+		subjectInfo:       subjectInfo,
+		subjectErr:        subjectErr,
 		subjectPeerUpdate: subjectPeerUpdate,
 	}
 }
@@ -129,124 +140,145 @@ func (c *Client) Start(endpoint string, clientID string, username string, passwo
 	opts.SetClientID(clientID)
 	opts.SetOnConnectHandler(c.onConnect)
 	opts.SetConnectionLostHandler(c.onConnectionLost)
-	client := mqtt.NewClient(opts)
 
-	if err := c.startWithExponentialBackoff(client); err != nil {
+	if err := c.newClient(opts); err != nil {
 		return err
 	}
-	c.subjectDebug.Publish(fmt.Sprintf("%s Client has started", logPrefix))
+	c.subjectInfo.Publish(fmt.Sprintf("%s Client has started", logPrefix))
+
+	var ctx context.Context
+	ctx, c.cancelConnecting = context.WithCancel(context.Background())
+	c.connectWithBackoff(ctx, network.ExponentialBackoff)
 	return nil
 }
 
-func exponentialBackoff(tries int) time.Duration {
-	var minSecs, maxSecs int
-	switch {
-	case tries < 3:
-		minSecs = 5
-		maxSecs = 10
-	case tries < 10:
-		minSecs = 10
-		maxSecs = 60
-	case tries < 20:
-		minSecs = 60
-		maxSecs = 300
-	default:
-		minSecs = 300
-		maxSecs = 600
+func (c *Client) newClient(opts *mqtt.ClientOptions) error {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	if c.client != nil {
+		return fmt.Errorf("already started")
 	}
 
-	// #nosec G404 -- not used for cryptographic purposes
-	return time.Duration(rand.Intn(maxSecs-minSecs+1)+minSecs) * time.Second
-}
-
-func (c *Client) start(client mqtt.Client) error {
-	if token := client.Connect(); token.WaitTimeout(timeout) && token.Error() != nil {
-		return fmt.Errorf("connecting to notification centre: %w", token.Error())
-	}
-	c.Lock()
-	c.client = client
-	c.Unlock()
+	c.client = mqtt.NewClient(opts)
 	return nil
 }
 
-func (c *Client) startWithExponentialBackoff(client mqtt.Client) error {
-	var err error
-	for tries := 0; !client.IsConnected(); tries++ {
-		if err = c.start(client); err == nil {
+func (c *Client) connectWithBackoff(ctx context.Context, backoff func(int) time.Duration) {
+	for tries := 0; ; tries++ {
+		err := c.connect()
+		if err == nil {
 			break
 		}
-		<-time.After(exponentialBackoff(tries))
+		if tries == 0 {
+			// Don't spam the logs, only print the first time
+			c.subjectErr.Publish(fmt.Errorf("%s failed to connect: %w", logPrefix, err))
+		}
+
+		select {
+		case <-ctx.Done():
+			break
+		case <-time.After(backoff(tries)):
+		}
 	}
-	return err
+}
+
+func (c *Client) connect() error {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	if c.client == nil {
+		// Can only happen if Client is Stopped while trying to connect, so exit silently
+		return nil
+	}
+
+	token := c.client.Connect()
+	if !token.WaitTimeout(timeout) {
+		return fmt.Errorf("connect timeout")
+	}
+	if token.Error() == nil {
+		c.subjectInfo.Publish(logPrefix + " Connected")
+	}
+	return token.Error()
 }
 
 // Stop unsubscribes the topics and drops a connection with the NC server
 func (c *Client) Stop() error {
-	c.Lock()
-	defer c.Unlock()
-
-	if c.client != nil {
-		token := c.client.Unsubscribe(unsubscriptions...)
-		if token.WaitTimeout(timeout) && token.Error() != nil {
-			return fmt.Errorf(`unsubscribing to %v topics: %w`, unsubscriptions, token.Error())
-		}
-		c.client.Disconnect(0)
-		c.subjectDebug.Publish("[NC] Client has stopped")
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	if c.client == nil {
+		return fmt.Errorf("already stopped")
 	}
+
+	c.cancelConnecting()
+	token := c.client.Unsubscribe(unsubscriptions...)
+	if token.WaitTimeout(timeout) && token.Error() != nil {
+		c.subjectErr.Publish(fmt.Errorf("%s unsubscribing to topics: %w", logPrefix, token.Error()))
+	}
+	c.client.Disconnect(0)
+	c.client = nil
+	c.subjectInfo.Publish(logPrefix + " Client has stopped")
+
 	return nil
 }
 
-func (c *Client) onConnect(client mqtt.Client) {
-	token := client.SubscribeMultiple(subscriptions, nil)
+func (c *Client) onConnect(mqtt.Client) {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	if c.client == nil {
+		return
+	}
+
+	token := c.client.SubscribeMultiple(subscriptions, nil)
 	if token.WaitTimeout(timeout) && token.Error() != nil {
-		c.subjectDebug.Publish(
-			fmt.Sprintf("subscribing to %v topics: %s", unsubscriptions, token.Error()),
+		c.subjectErr.Publish(
+			fmt.Errorf(logPrefix+" subscribing to %v topics: %s", unsubscriptions, token.Error()),
 		)
 	}
 }
 
-func (c *Client) onConnectionLost(client mqtt.Client, err error) {
-	c.subjectDebug.Publish(fmt.Sprintf("%s connection lost: %s", logPrefix, err.Error()))
-	if err := c.startWithExponentialBackoff(client); err != nil {
-		c.subjectDebug.Publish(fmt.Sprintf("%s reconnecting: %s", logPrefix, err.Error()))
-	} else {
-		c.subjectDebug.Publish(fmt.Sprintf("%s reconnected", logPrefix))
-	}
+func (c *Client) onConnectionLost(_ mqtt.Client, err error) {
+	c.subjectErr.Publish(fmt.Errorf("%s connection lost: %s", logPrefix, err.Error()))
+	var ctx context.Context
+	ctx, c.cancelConnecting = context.WithCancel(context.Background())
+	c.connectWithBackoff(ctx, network.ExponentialBackoff)
 }
 
-func (c *Client) receiveMessage(client mqtt.Client, msg mqtt.Message) {
+func (c *Client) receiveMessage(_ mqtt.Client, msg mqtt.Message) {
+	c.clientMutex.Lock()
+	defer c.clientMutex.Unlock()
+	if c.client == nil {
+		return
+	}
+
 	var payload RecPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
-		c.subjectDebug.Publish(
-			fmt.Sprintf("%s parsing message payload: %s", logPrefix, err),
-		)
+		c.subjectErr.Publish(fmt.Errorf("%s parsing message payload: %s", logPrefix, err))
 		return
 	}
 
 	metadata := payload.Message.Data.Metadata
 	if opts := c.client.OptionsReader(); metadata.TargetUID != opts.ClientID() {
-		c.subjectDebug.Publish(
-			fmt.Sprintf("%s attempted to publish message to incorrect recipient", logPrefix),
+		c.subjectErr.Publish(
+			fmt.Errorf("%s attempted to publish message to incorrect recipient", logPrefix),
 		)
 		return
 	}
 
 	if metadata.Acked {
-		c.subjectDebug.Publish(
-			fmt.Sprintf("%s message was already published successfully", logPrefix),
+		c.subjectErr.Publish(
+			fmt.Errorf("%s message was already published successfully", logPrefix),
 		)
 		return
 	}
 
 	if err := c.sendDeliveryConfirmation(metadata.MessageID); err != nil {
-		c.subjectDebug.Publish(
-			fmt.Sprintf("%s Delivery confirmation: %v", logPrefix, err),
+		c.subjectErr.Publish(
+			fmt.Errorf("%s Delivery confirmation: %v", logPrefix, err),
 		)
 	}
 
 	if err := c.sendAcknowledgement(metadata.MessageID, trackTypeProcessed, ""); err != nil {
-		c.subjectDebug.Publish(
-			fmt.Sprintf("%s Acknowledgement: %v", logPrefix, err),
+		c.subjectErr.Publish(
+			fmt.Errorf("%s Acknowledgement: %v", logPrefix, err),
 		)
 	}
 

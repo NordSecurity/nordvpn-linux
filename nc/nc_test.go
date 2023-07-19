@@ -1,52 +1,114 @@
 package nc
 
 import (
+	"context"
+	"math/rand"
+	"sync"
 	"testing"
+	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExponentialBackoff(t *testing.T) {
+type mockMqttClient struct {
+	mqtt.Client
+	stopped        bool
+	connectSuccess bool
+}
+
+type mockMqttToken struct {
+	mqtt.Token
+	success bool
+	err     error
+}
+
+func (m *mockMqttToken) WaitTimeout(time.Duration) bool {
+	return m.success
+}
+
+func (m *mockMqttToken) Error() error {
+	return m.err
+}
+
+func (m *mockMqttClient) Connect() mqtt.Token {
+	m.stopped = false
+	return &mockMqttToken{success: m.connectSuccess}
+}
+
+func (m *mockMqttClient) Unsubscribe(topics ...string) mqtt.Token {
+	return &mockMqttToken{success: true}
+}
+
+func (m *mockMqttClient) Disconnect(uint) { m.stopped = true }
+
+func TestRaceConditions(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	tests := []struct {
-		name    string
-		tries   int
-		average int
-		delta   float64
-	}{
-		{
-			name:    "try once",
-			tries:   1,
-			average: (10 + 5) / 2,
-			delta:   (10 - 5 + 1) / 2,
-		},
-		{
-			name:    "try a few times",
-			tries:   7,
-			average: (60 + 10) / 2,
-			delta:   (60 - 10 + 1) / 2,
-		},
-		{
-			name:    "try a dozen times",
-			tries:   12,
-			average: (300 + 60) / 2,
-			delta:   (300 - 60 + 1) / 2,
-		},
-		{
-			name:    "try a lot",
-			tries:   50,
-			average: (600 + 300) / 2,
-			delta:   (600 - 300 + 1) / 2,
-		},
-	}
+	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
+	mockClient := &mockMqttClient{}
+	client.client = mockClient
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			backoff := exponentialBackoff(test.tries).Seconds()
-			assert.InDelta(t, test.average, backoff, test.delta)
-		})
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	client.cancelConnecting = cancel
+	waitgroup := sync.WaitGroup{}
+	waitgroup.Add(2)
+	go func() {
+		client.connectWithBackoff(ctx, func(int) time.Duration { return time.Nanosecond })
+		waitgroup.Done()
+	}()
+	go func() {
+		// Introducing randomness to so that various scenarios of start/stop timing would be tested
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
+		_ = client.Stop() // Not checking for error because stop might happen before connect
+		waitgroup.Done()
+	}()
+	waitgroup.Wait()
+
+	assert.True(t, mockClient.stopped)
+}
+
+func TestConnectionRetrying(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
+	mockClient := &mockMqttClient{}
+	client.client = mockClient
+
+	client.connectWithBackoff(context.Background(), func(r int) time.Duration {
+		if r == 3 {
+			mockClient.connectSuccess = true
+		}
+		return time.Nanosecond
+	})
+	assert.False(t, mockClient.stopped)
+}
+
+func TestStopsTryingToConnectWhenStopped(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
+	mockClient := &mockMqttClient{}
+	client.client = mockClient
+
+	ctx, cancel := context.WithCancel(context.Background())
+	client.cancelConnecting = cancel
+	waitgroup := sync.WaitGroup{}
+	waitgroup.Add(2)
+	go func() {
+		client.connectWithBackoff(ctx, func(int) time.Duration { return time.Second })
+		waitgroup.Done()
+	}()
+	go func() {
+		err := client.Stop()
+		assert.NoError(t, err)
+		waitgroup.Done()
+	}()
+	start := time.Now()
+	waitgroup.Wait()
+
+	assert.True(t, mockClient.stopped)
+	assert.Less(t, time.Since(start), time.Second)
 }
