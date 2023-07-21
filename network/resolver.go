@@ -38,9 +38,9 @@ func (r *Resolver) ResolveWithNameservers(domain string, nameservers []netip.Add
 	r.Lock()
 	defer r.Unlock()
 
-	err := whitelistIP(r.fw, "allow_dns", nameservers...)
+	err := allowlistIP(r.fw, "allow_dns", nameservers...)
 	if err != nil {
-		return nil, fmt.Errorf("whitelisting DNS IP addresses %+v: %w", nameservers, err)
+		return nil, fmt.Errorf("allowlisting DNS IP addresses %+v: %w", nameservers, err)
 	}
 	defer r.fw.Delete([]string{"allow_dns"}) // ignore error here
 	// get the addresses from DNS
@@ -57,7 +57,7 @@ func (r *Resolver) ResolveWithNameservers(domain string, nameservers []netip.Add
 	return ipAddrs, nil
 }
 
-func whitelistIP(fw firewall.Service, name string, ips ...netip.Addr) error {
+func allowlistIP(fw firewall.Service, name string, ips ...netip.Addr) error {
 	ifaces, err := device.ListPhysical()
 	if err != nil {
 		return fmt.Errorf("listing physical interfaces: %w", err)
@@ -115,7 +115,7 @@ func NewPingConnectionChecker(fw firewall.Service) PingConnectionChecker {
 }
 
 func (c PingConnectionChecker) Resolve(endpointIP netip.Addr) ([]netip.Addr, error) {
-	if err := whitelistIP(c.fw, "allow_ping", endpointIP); err != nil {
+	if err := allowlistIP(c.fw, "allow_ping", endpointIP); err != nil {
 		return nil, err
 	}
 	defer c.fw.Delete([]string{"allow_ping"})

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 )
 
-// NewWhitelist ready to use
-func NewWhitelist(udpPorts []int64, tcpPorts []int64, subnets []string) Whitelist {
+// NewAllowlist ready to use
+func NewAllowlist(udpPorts []int64, tcpPorts []int64, subnets []string) Allowlist {
 	udp := map[int64]bool{}
 	for _, port := range udpPorts {
 		udp[port] = true
@@ -21,7 +21,7 @@ func NewWhitelist(udpPorts []int64, tcpPorts []int64, subnets []string) Whitelis
 		subs[sub] = true
 	}
 
-	return Whitelist{
+	return Allowlist{
 		Ports: Ports{
 			UDP: udp,
 			TCP: tcp,
@@ -30,8 +30,8 @@ func NewWhitelist(udpPorts []int64, tcpPorts []int64, subnets []string) Whitelis
 	}
 }
 
-// Whitelist is a collection of ports and subnets
-type Whitelist struct {
+// Allowlist is a collection of ports and subnets
+type Allowlist struct {
 	Ports   Ports   `json:"ports"`
 	Subnets Subnets `json:"subnets"`
 }

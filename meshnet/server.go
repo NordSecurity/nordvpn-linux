@@ -2640,7 +2640,7 @@ func (s *Server) Connect(
 			Protocol:          config.Protocol_UDP,
 			NordLynxPublicKey: peer.PublicKey,
 		},
-		cfg.AutoConnectData.Whitelist,
+		cfg.AutoConnectData.Allowlist,
 		nameservers,
 	); err != nil {
 		if strings.Contains(err.Error(), "already started") {

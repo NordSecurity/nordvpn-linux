@@ -94,9 +94,9 @@ Shows current settings\&.
 Shows connection status\&.
 .RE
 .PP
-\fBwhitelist\fR
+\fBallowlist\fR
 .RS 4
-Adds or removes an option from a whitelist\&.
+Adds or removes an option from a allowlist\&.
 .RE
 .PP
 \fBhelp, h\fR
@@ -223,38 +223,38 @@ $ \fBnordvpn set technology OpenVPN\fR
 .fi
 .RE
 .PP
-\fBExample \&16. Whitelist port\fR
+\fBExample \&16. Allowlist port\fR
 .RS 4
 .nf
-$ \fBnordvpn whitelist add port 22\fR
-$ \fBnordvpn whitelist add port 23 protocol UDP\fR
-$ \fBnordvpn whitelist remove port 23\fR
-$ \fBnordvpn whitelist remove port 22 protocol TCP\fR
+$ \fBnordvpn allowlist add port 22\fR
+$ \fBnordvpn allowlist add port 23 protocol UDP\fR
+$ \fBnordvpn allowlist remove port 23\fR
+$ \fBnordvpn allowlist remove port 22 protocol TCP\fR
 .fi
 .RE
 .PP
-\fBExample \&17. Whitelist ports\fR
+\fBExample \&17. Allowlist ports\fR
 .RS 4
 .nf
-$ \fBnordvpn whitelist add ports 3000 5000\fR
-$ \fBnordvpn whitelist add ports 3000 5000 protocol UDP\fR
-$ \fBnordvpn whitelist remove port 3000 5000\fR
-$ \fBnordvpn whitelist remove port 3000 5000 protocol TCP\fR
+$ \fBnordvpn allowlist add ports 3000 5000\fR
+$ \fBnordvpn allowlist add ports 3000 5000 protocol UDP\fR
+$ \fBnordvpn allowlist remove port 3000 5000\fR
+$ \fBnordvpn allowlist remove port 3000 5000 protocol TCP\fR
 .fi
 .RE
 .PP
-\fBExample \&18. Whitelist subnet\fR
+\fBExample \&18. Allowlist subnet\fR
 .RS 4
 .nf
-$ \fBnordvpn whitelist add subnet 192.168.0.0/16\fR
-$ \fBnordvpn whitelist remove subnet 192.168.0.0/16\fR
+$ \fBnordvpn allowlist add subnet 192.168.0.0/16\fR
+$ \fBnordvpn allowlist remove subnet 192.168.0.0/16\fR
 .fi
 .RE
 .PP
-\fBExample \&19. Whitelist ports and subnets removal\fR
+\fBExample \&19. Allowlist ports and subnets removal\fR
 .RS 4
 .nf
-$ \fBnordvpn whitelist remove all\fR
+$ \fBnordvpn allowlist remove all\fR
 .fi
 .RE
 .PP

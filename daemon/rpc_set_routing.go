@@ -12,7 +12,7 @@ import (
 // SetRouting controls whether routing should be used by the app or not.
 //
 // This setting impacts the usage of these features:
-// - Whitelist
+// - Allowlist
 // - Connect
 // - Meshnet
 func (r *RPC) SetRouting(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {

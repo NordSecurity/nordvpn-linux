@@ -17,7 +17,7 @@ func NewEvents(
 	dns events.PublishSubcriber[events.DataDNS],
 	tplite events.PublishSubcriber[bool],
 	protocol events.PublishSubcriber[config.Protocol],
-	whitelist events.PublishSubcriber[events.DataWhitelist],
+	allowlist events.PublishSubcriber[events.DataAllowlist],
 	technology events.PublishSubcriber[config.Technology],
 	obfuscate events.PublishSubcriber[bool],
 	firewall events.PublishSubcriber[bool],
@@ -41,7 +41,7 @@ func NewEvents(
 			DNS:                  dns,
 			ThreatProtectionLite: tplite,
 			Protocol:             protocol,
-			Whitelist:            whitelist,
+			Allowlist:            allowlist,
 			Technology:           technology,
 			Obfuscate:            obfuscate,
 			Firewall:             firewall,
@@ -78,7 +78,7 @@ type SettingsPublisher interface {
 	NotifyDNS(events.DataDNS) error
 	NotifyThreatProtectionLite(bool) error
 	NotifyProtocol(config.Protocol) error
-	NotifyWhitelist(events.DataWhitelist) error
+	NotifyAllowlist(events.DataAllowlist) error
 	NotifyTechnology(config.Technology) error
 	NotifyObfuscate(bool) error
 	NotifyFirewall(bool) error
@@ -95,7 +95,7 @@ type SettingsEvents struct {
 	DNS                  events.PublishSubcriber[events.DataDNS]
 	ThreatProtectionLite events.PublishSubcriber[bool]
 	Protocol             events.PublishSubcriber[config.Protocol]
-	Whitelist            events.PublishSubcriber[events.DataWhitelist]
+	Allowlist            events.PublishSubcriber[events.DataAllowlist]
 	Technology           events.PublishSubcriber[config.Technology]
 	Obfuscate            events.PublishSubcriber[bool]
 	Firewall             events.PublishSubcriber[bool]
@@ -112,7 +112,7 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.DNS.Subscribe(to.NotifyDNS)
 	s.ThreatProtectionLite.Subscribe(to.NotifyThreatProtectionLite)
 	s.Protocol.Subscribe(to.NotifyProtocol)
-	s.Whitelist.Subscribe(to.NotifyWhitelist)
+	s.Allowlist.Subscribe(to.NotifyAllowlist)
 	s.Technology.Subscribe(to.NotifyTechnology)
 	s.Obfuscate.Subscribe(to.NotifyObfuscate)
 	s.Firewall.Subscribe(to.NotifyFirewall)
@@ -158,10 +158,10 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.DNS.Publish(events.DataDNS{Enabled: len(cfg.AutoConnectData.DNS) != 0, Ips: cfg.AutoConnectData.DNS})
 	s.ThreatProtectionLite.Publish(cfg.AutoConnectData.ThreatProtectionLite)
 	s.Protocol.Publish(cfg.AutoConnectData.Protocol)
-	s.Whitelist.Publish(events.DataWhitelist{
-		TCPPorts: len(cfg.AutoConnectData.Whitelist.Ports.TCP),
-		UDPPorts: len(cfg.AutoConnectData.Whitelist.Ports.UDP),
-		Subnets:  len(cfg.AutoConnectData.Whitelist.Subnets),
+	s.Allowlist.Publish(events.DataAllowlist{
+		TCPPorts: len(cfg.AutoConnectData.Allowlist.Ports.TCP),
+		UDPPorts: len(cfg.AutoConnectData.Allowlist.Ports.UDP),
+		Subnets:  len(cfg.AutoConnectData.Allowlist.Subnets),
 	})
 	s.Meshnet.Publish(cfg.Mesh)
 	s.Ipv6.Publish(cfg.IPv6)

@@ -22,7 +22,7 @@ func TestNewDaemonSubjects(t *testing.T) {
 		&subs.Subject[events.DataDNS]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[config.Protocol]{},
-		&subs.Subject[events.DataWhitelist]{},
+		&subs.Subject[events.DataAllowlist]{},
 		&subs.Subject[config.Technology]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
@@ -50,7 +50,7 @@ func TestDaemonSubjectsSubscribe(t *testing.T) {
 		&subs.Subject[events.DataDNS]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[config.Protocol]{},
-		&subs.Subject[events.DataWhitelist]{},
+		&subs.Subject[events.DataAllowlist]{},
 		&subs.Subject[config.Technology]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
@@ -79,7 +79,7 @@ func (mockDaemonSubscriber) NotifyAutoconnect(bool) error                   { re
 func (mockDaemonSubscriber) NotifyDNS(events.DataDNS) error                 { return nil }
 func (mockDaemonSubscriber) NotifyThreatProtectionLite(bool) error          { return nil }
 func (mockDaemonSubscriber) NotifyProtocol(config.Protocol) error           { return nil }
-func (mockDaemonSubscriber) NotifyWhitelist(events.DataWhitelist) error     { return nil }
+func (mockDaemonSubscriber) NotifyAllowlist(events.DataAllowlist) error     { return nil }
 func (mockDaemonSubscriber) NotifyTechnology(config.Technology) error       { return nil }
 func (mockDaemonSubscriber) NotifyConnect(events.DataConnect) error         { return nil }
 func (mockDaemonSubscriber) NotifyDisconnect(events.DataDisconnect) error   { return nil }

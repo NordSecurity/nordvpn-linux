@@ -59,10 +59,10 @@ def test_firewall_ipv6():
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_whitelist_port(port):
+def test_firewall_ipv6_allowlist_port(port):
     lib.set_firewall("on")
     lib.set_ipv6("on")
-    lib.add_port_to_whitelist(port)
+    lib.add_port_to_allowlist(port)
     assert not firewall.is_active(port)
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
@@ -77,7 +77,7 @@ def test_firewall_ipv6_whitelist_port(port):
 
     assert not firewall.is_active(port)
 
-    with lib.ErrorDefer(lib.flush_whitelist):
+    with lib.ErrorDefer(lib.flush_allowlist):
         with lib.ErrorDefer(sh.nordvpn.disconnect):
             assert network.is_connected()
 
@@ -88,16 +88,16 @@ def test_firewall_ipv6_whitelist_port(port):
     assert network.is_disconnected()
 
     assert not firewall.is_active(port)
-    lib.flush_whitelist()
+    lib.flush_allowlist()
 
 
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_whitelist_ports_range(ports):
+def test_firewall_ipv6_allowlist_ports_range(ports):
     lib.set_firewall("on")
     lib.set_ipv6("on")
-    lib.add_ports_range_to_whitelist(ports)
+    lib.add_ports_range_to_allowlist(ports)
     assert not firewall.is_active(ports)
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
@@ -112,7 +112,7 @@ def test_firewall_ipv6_whitelist_ports_range(ports):
 
     assert not firewall.is_active(ports)
 
-    with lib.ErrorDefer(lib.flush_whitelist):
+    with lib.ErrorDefer(lib.flush_allowlist):
         with lib.ErrorDefer(sh.nordvpn.disconnect):
             assert network.is_connected()
 
@@ -123,18 +123,18 @@ def test_firewall_ipv6_whitelist_ports_range(ports):
     assert network.is_disconnected()
 
     assert not firewall.is_active(ports)
-    lib.flush_whitelist()
+    lib.flush_allowlist()
 
 
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.parametrize("protocol", lib.PROTOCOLS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_whitelist_port_and_protocol(port, protocol):
+def test_firewall_ipv6_allowlist_port_and_protocol(port, protocol):
     protocol = str(protocol)
     lib.set_firewall("on")
     lib.set_ipv6("on")
-    lib.add_port_and_protocol_to_whitelist(port, protocol)
+    lib.add_port_and_protocol_to_allowlist(port, protocol)
     assert not firewall.is_active(port, protocol)
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
@@ -149,7 +149,7 @@ def test_firewall_ipv6_whitelist_port_and_protocol(port, protocol):
 
     assert not firewall.is_active(port, protocol)
 
-    with lib.ErrorDefer(lib.flush_whitelist):
+    with lib.ErrorDefer(lib.flush_allowlist):
         with lib.ErrorDefer(sh.nordvpn.disconnect):
             assert network.is_connected()
 
@@ -160,16 +160,16 @@ def test_firewall_ipv6_whitelist_port_and_protocol(port, protocol):
     assert network.is_disconnected()
 
     assert not firewall.is_active(port, protocol)
-    lib.flush_whitelist()
+    lib.flush_allowlist()
 
 
 @pytest.mark.parametrize("subnet_addr", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_whitelist_subnet(subnet_addr):
+def test_firewall_ipv6_allowlist_subnet(subnet_addr):
     lib.set_firewall("on")
     lib.set_ipv6("on")
-    lib.add_subnet_to_whitelist(subnet_addr)
+    lib.add_subnet_to_allowlist(subnet_addr)
     assert not firewall.is_active("", "", subnet_addr)
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
@@ -184,7 +184,7 @@ def test_firewall_ipv6_whitelist_subnet(subnet_addr):
 
     assert not firewall.is_active("", "", subnet_addr)
 
-    with lib.ErrorDefer(lib.flush_whitelist):
+    with lib.ErrorDefer(lib.flush_allowlist):
         with lib.ErrorDefer(sh.nordvpn.disconnect):
             assert network.is_connected()
 
@@ -195,7 +195,7 @@ def test_firewall_ipv6_whitelist_subnet(subnet_addr):
     assert network.is_disconnected()
 
     assert not firewall.is_active("", "", subnet_addr)
-    lib.flush_whitelist()
+    lib.flush_allowlist()
 
 
 def test_firewall_ipv6_with_killswitch():

@@ -41,7 +41,7 @@ type workingNetworker struct {
 func (workingNetworker) Start(
 	vpn.Credentials,
 	vpn.ServerData,
-	config.Whitelist,
+	config.Allowlist,
 	config.DNS,
 ) error {
 	return nil

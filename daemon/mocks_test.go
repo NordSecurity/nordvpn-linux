@@ -13,7 +13,7 @@ import (
 
 type mockNetworker struct {
 	dns               []string
-	whitelist         config.Whitelist
+	allowlist         config.Allowlist
 	vpnActive         bool
 	setDNSErr         error
 	setWhitelistErr   error
@@ -23,7 +23,7 @@ type mockNetworker struct {
 func (mockNetworker) Start(
 	vpn.Credentials,
 	vpn.ServerData,
-	config.Whitelist,
+	config.Allowlist,
 	config.DNS,
 ) error {
 	return nil
@@ -45,33 +45,34 @@ func (mn *mockNetworker) IsVPNActive() bool {
 func (*mockNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
 	return networker.ConnectionStatus{}, nil
 }
+
 func (*mockNetworker) EnableFirewall() error  { return nil }
 func (*mockNetworker) DisableFirewall() error { return nil }
 func (*mockNetworker) EnableRouting()         {}
 func (*mockNetworker) DisableRouting()        {}
 
-func (mn *mockNetworker) SetWhitelist(whitelist config.Whitelist) error {
+func (mn *mockNetworker) SetAllowlist(allowlist config.Allowlist) error {
 	if mn.setWhitelistErr != nil {
 		return mn.setWhitelistErr
 	}
 
-	mn.whitelist = whitelist
+	mn.allowlist = allowlist
 	return nil
 }
 
-func (mn *mockNetworker) UnsetWhitelist() error {
+func (mn *mockNetworker) UnsetAllowlist() error {
 	if mn.unsetWhitelistErr != nil {
 		return mn.unsetWhitelistErr
 	}
 
-	mn.whitelist.Ports.TCP = make(config.PortSet)
-	mn.whitelist.Ports.UDP = make(config.PortSet)
-	mn.whitelist.Subnets = make(config.Subnets)
+	mn.allowlist.Ports.TCP = make(config.PortSet)
+	mn.allowlist.Ports.UDP = make(config.PortSet)
+	mn.allowlist.Subnets = make(config.Subnets)
 	return nil
 }
 
 func (*mockNetworker) IsNetworkSet() bool                   { return false }
-func (*mockNetworker) SetKillSwitch(config.Whitelist) error { return nil }
+func (*mockNetworker) SetKillSwitch(config.Allowlist) error { return nil }
 func (*mockNetworker) UnsetKillSwitch() error               { return nil }
 func (*mockNetworker) PermitIPv6() error                    { return nil }
 func (*mockNetworker) DenyIPv6() error                      { return nil }

@@ -18,7 +18,7 @@ message SetAutoconnectRequest {
   string server_tag = 1;
   bool obfuscate = 3;
   bool auto_connect = 4;
-  Whitelist whitelist = 5;
+  Allowlist allowlist = 5;
 }
 
 message SetGenericRequest {
@@ -66,7 +66,7 @@ message SetDNSResponse {
 
 message SetKillSwitchRequest {
   bool kill_switch = 2;
-  Whitelist whitelist = 3;
+  Allowlist allowlist = 3;
 }
 
 message SetNotifyRequest {
@@ -95,8 +95,8 @@ message SetTechnologyRequest {
   config.Technology technology = 2;
 }
 
-message SetWhitelistRequest {
-  Whitelist whitelist = 2;
+message SetAllowlistRequest {
+  Allowlist allowlist = 2;
 }
 
 message SetLANDiscoveryRequest {

@@ -160,7 +160,7 @@ func (x *Payload) GetData() []string {
 	return nil
 }
 
-type Whitelist struct {
+type Allowlist struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -169,8 +169,8 @@ type Whitelist struct {
 	Subnets []string `protobuf:"bytes,2,rep,name=subnets,proto3" json:"subnets,omitempty"`
 }
 
-func (x *Whitelist) Reset() {
-	*x = Whitelist{}
+func (x *Allowlist) Reset() {
+	*x = Allowlist{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_common_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -178,13 +178,13 @@ func (x *Whitelist) Reset() {
 	}
 }
 
-func (x *Whitelist) String() string {
+func (x *Allowlist) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Whitelist) ProtoMessage() {}
+func (*Allowlist) ProtoMessage() {}
 
-func (x *Whitelist) ProtoReflect() protoreflect.Message {
+func (x *Allowlist) ProtoReflect() protoreflect.Message {
 	mi := &file_common_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -196,19 +196,19 @@ func (x *Whitelist) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Whitelist.ProtoReflect.Descriptor instead.
-func (*Whitelist) Descriptor() ([]byte, []int) {
+// Deprecated: Use Allowlist.ProtoReflect.Descriptor instead.
+func (*Allowlist) Descriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *Whitelist) GetPorts() *Ports {
+func (x *Allowlist) GetPorts() *Ports {
 	if x != nil {
 		return x.Ports
 	}
 	return nil
 }
 
-func (x *Whitelist) GetSubnets() []string {
+func (x *Allowlist) GetSubnets() []string {
 	if x != nil {
 		return x.Subnets
 	}
@@ -280,7 +280,7 @@ var file_common_proto_rawDesc = []byte{
 	0x6c, 0x6f, 0x61, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x03, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61,
 	0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x46, 0x0a, 0x09,
-	0x57, 0x68, 0x69, 0x74, 0x65, 0x6c, 0x69, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x05, 0x70, 0x6f, 0x72,
+	0x41, 0x6c, 0x6c, 0x6f, 0x77, 0x6c, 0x69, 0x73, 0x74, 0x12, 0x1f, 0x0a, 0x05, 0x70, 0x6f, 0x72,
 	0x74, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e, 0x70, 0x62, 0x2e, 0x50, 0x6f,
 	0x72, 0x74, 0x73, 0x52, 0x05, 0x70, 0x6f, 0x72, 0x74, 0x73, 0x12, 0x18, 0x0a, 0x07, 0x73, 0x75,
 	0x62, 0x6e, 0x65, 0x74, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x07, 0x73, 0x75, 0x62,
@@ -310,11 +310,11 @@ var file_common_proto_goTypes = []interface{}{
 	(*Empty)(nil),     // 0: pb.Empty
 	(*Bool)(nil),      // 1: pb.Bool
 	(*Payload)(nil),   // 2: pb.Payload
-	(*Whitelist)(nil), // 3: pb.Whitelist
+	(*Allowlist)(nil), // 3: pb.Allowlist
 	(*Ports)(nil),     // 4: pb.Ports
 }
 var file_common_proto_depIdxs = []int32{
-	4, // 0: pb.Whitelist.ports:type_name -> pb.Ports
+	4, // 0: pb.Allowlist.ports:type_name -> pb.Ports
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -365,7 +365,7 @@ func file_common_proto_init() {
 			}
 		}
 		file_common_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Whitelist); i {
+			switch v := v.(*Allowlist); i {
 			case 0:
 				return &v.state
 			case 1:

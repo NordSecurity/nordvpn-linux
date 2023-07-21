@@ -106,7 +106,7 @@ type workingNetworker struct{}
 func (workingNetworker) Start(
 	vpn.Credentials,
 	vpn.ServerData,
-	config.Whitelist,
+	config.Allowlist,
 	config.DNS,
 ) error {
 	return nil
@@ -126,10 +126,10 @@ func (workingNetworker) EnableRouting()                       {}
 func (workingNetworker) DisableRouting()                      {}
 func (workingNetworker) PermitIPv6() error                    { return nil }
 func (workingNetworker) DenyIPv6() error                      { return nil }
-func (workingNetworker) SetWhitelist(config.Whitelist) error  { return nil }
-func (workingNetworker) UnsetWhitelist() error                { return nil }
+func (workingNetworker) SetAllowlist(config.Allowlist) error  { return nil }
+func (workingNetworker) UnsetAllowlist() error                { return nil }
 func (workingNetworker) IsNetworkSet() bool                   { return false }
-func (workingNetworker) SetKillSwitch(config.Whitelist) error { return nil }
+func (workingNetworker) SetKillSwitch(config.Allowlist) error { return nil }
 func (workingNetworker) UnsetKillSwitch() error               { return nil }
 func (workingNetworker) Connect(netip.Addr, string) error     { return nil }
 func (workingNetworker) Disconnect() error                    { return nil }
@@ -146,7 +146,7 @@ type failingNetworker struct{}
 func (failingNetworker) Start(
 	vpn.Credentials,
 	vpn.ServerData,
-	config.Whitelist,
+	config.Allowlist,
 	config.DNS,
 ) error {
 	return errOnPurpose
@@ -166,10 +166,10 @@ func (failingNetworker) EnableRouting()                       {}
 func (failingNetworker) DisableRouting()                      {}
 func (failingNetworker) PermitIPv6() error                    { return errOnPurpose }
 func (failingNetworker) DenyIPv6() error                      { return errOnPurpose }
-func (failingNetworker) SetWhitelist(config.Whitelist) error  { return errOnPurpose }
-func (failingNetworker) UnsetWhitelist() error                { return errOnPurpose }
+func (failingNetworker) SetAllowlist(config.Allowlist) error  { return errOnPurpose }
+func (failingNetworker) UnsetAllowlist() error                { return errOnPurpose }
 func (failingNetworker) IsNetworkSet() bool                   { return false }
-func (failingNetworker) SetKillSwitch(config.Whitelist) error { return errOnPurpose }
+func (failingNetworker) SetKillSwitch(config.Allowlist) error { return errOnPurpose }
 func (failingNetworker) UnsetKillSwitch() error               { return errOnPurpose }
 func (failingNetworker) Connect(netip.Addr, string) error     { return errOnPurpose }
 func (failingNetworker) Disconnect() error                    { return errOnPurpose }
@@ -186,7 +186,7 @@ func TestConnect(t *testing.T) {
 		name        string
 		netw        networker.Networker
 		fw          firewall.Service
-		whitelist   config.Whitelist
+		allowlist   config.Allowlist
 		router      routes.Agent
 		gateway     routes.GatewayRetriever
 		nameservers []string
@@ -196,7 +196,7 @@ func TestConnect(t *testing.T) {
 			name:      "successful connect",
 			netw:      workingNetworker{},
 			fw:        &workingFirewall{},
-			whitelist: config.NewWhitelist(nil, nil, nil),
+			allowlist: config.NewAllowlist(nil, nil, nil),
 			router:    &workingRouter{},
 			gateway:   newGatewayMock(netip.Addr{}),
 			expected:  ConnectEvent{Code: internal.CodeConnected},
@@ -226,7 +226,7 @@ func TestConnect(t *testing.T) {
 				channel,
 				vpn.Credentials{},
 				vpn.ServerData{},
-				test.whitelist,
+				test.allowlist,
 				test.nameservers,
 				test.netw,
 			)

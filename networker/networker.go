@@ -20,7 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/whitelist"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -77,7 +77,7 @@ type Networker interface {
 	Start(
 		vpn.Credentials,
 		vpn.ServerData,
-		config.Whitelist,
+		config.Allowlist,
 		config.DNS,
 	) error
 	Stop() error      // stop vpn
@@ -90,10 +90,10 @@ type Networker interface {
 	DisableFirewall() error
 	EnableRouting()
 	DisableRouting()
-	SetWhitelist(config.Whitelist) error
-	UnsetWhitelist() error
+	SetAllowlist(config.Allowlist) error
+	UnsetAllowlist() error
 	IsNetworkSet() bool
-	SetKillSwitch(config.Whitelist) error
+	SetKillSwitch(config.Allowlist) error
 	UnsetKillSwitch() error
 	PermitIPv6() error
 	DenyIPv6() error
@@ -110,11 +110,11 @@ type Combined struct {
 	mesh               meshnet.Mesh
 	gateway            routes.GatewayRetriever
 	publisher          events.Publisher[string]
-	whitelistRouter    routes.Service
+	allowlistRouter    routes.Service
 	dnsSetter          dns.Setter
 	ipv6               ipv6.Blocker
 	fw                 firewall.Service
-	whitelistRouting   whitelist.Routing
+	allowlistRouting   allowlist.Routing
 	devices            device.ListFunc
 	policyRouter       routes.PolicyService
 	dnsHostSetter      dns.HostnameSetter
@@ -129,7 +129,7 @@ type Combined struct {
 	rules              []string // firewall rule names
 	nextVPN            vpn.VPN
 	cfg                mesh.MachineMap
-	whitelist          config.Whitelist
+	allowlist          config.Allowlist
 	lastServer         vpn.ServerData
 	lastCreds          vpn.Credentials
 	startTime          *time.Time
@@ -147,11 +147,11 @@ func NewCombined(
 	mesh meshnet.Mesh,
 	gateway routes.GatewayRetriever,
 	publisher events.Publisher[string],
-	whitelistRouter routes.Service,
+	allowlistRouter routes.Service,
 	dnsSetter dns.Setter,
 	ipv6 ipv6.Blocker,
 	fw firewall.Service,
-	whitelist whitelist.Routing,
+	allowlist allowlist.Routing,
 	devices device.ListFunc,
 	policyRouter routes.PolicyService,
 	dnsHostSetter dns.HostnameSetter,
@@ -165,11 +165,11 @@ func NewCombined(
 		mesh:             mesh,
 		gateway:          gateway,
 		publisher:        publisher,
-		whitelistRouter:  whitelistRouter,
+		allowlistRouter:  allowlistRouter,
 		dnsSetter:        dnsSetter,
 		ipv6:             ipv6,
 		fw:               fw,
-		whitelistRouting: whitelist,
+		allowlistRouting: allowlist,
 		devices:          devices,
 		policyRouter:     policyRouter,
 		dnsHostSetter:    dnsHostSetter,
@@ -185,7 +185,7 @@ func NewCombined(
 func (netw *Combined) Start(
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
-	whitelist config.Whitelist,
+	allowlist config.Allowlist,
 	nameservers config.DNS,
 ) (err error) {
 	netw.mu.Lock()
@@ -193,7 +193,7 @@ func (netw *Combined) Start(
 	if netw.isConnectedToVPN() {
 		return netw.restart(creds, serverData, nameservers)
 	}
-	return netw.start(creds, serverData, whitelist, nameservers)
+	return netw.start(creds, serverData, allowlist, nameservers)
 }
 
 // failureRecover what's possible if vpn start fails
@@ -229,7 +229,7 @@ func failureRecover(netw *Combined) {
 func (netw *Combined) start(
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
-	whitelist config.Whitelist,
+	allowlist config.Allowlist,
 	nameservers config.DNS,
 ) (err error) {
 	if netw.isVpnSet {
@@ -272,13 +272,13 @@ func (netw *Combined) start(
 	netw.publisher.Publish("starting network configuration")
 	// if KillSwitch is turned on, connection is already dropped
 	if !netw.isNetworkSet && !netw.isKillSwitchSet {
-		err = netw.setNetwork(whitelist)
+		err = netw.setNetwork(allowlist)
 		if err != nil {
 			return err
 		}
 	}
 
-	if err = netw.resetWhitelist(); err != nil {
+	if err = netw.resetAllowlist(); err != nil {
 		return err
 	}
 
@@ -619,7 +619,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 
 	err = netw.fw.Add([]firewall.Rule{
 		{
-			Name:        "vpn_whitelist_icmp6_errors",
+			Name:        "vpn_allowlist_icmp6_errors",
 			Interfaces:  ifaces,
 			Protocols:   []string{"ipv6-icmp"},
 			Direction:   firewall.TwoWay,
@@ -628,7 +628,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Icmpv6Types: []int{1, 2, 3, 4, 128, 129},
 		},
 		{
-			Name:        "vpn_whitelist_icmp6_address",
+			Name:        "vpn_allowlist_icmp6_address",
 			Interfaces:  ifaces,
 			Protocols:   []string{"ipv6-icmp"},
 			Direction:   firewall.TwoWay,
@@ -638,7 +638,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			HopLimit:    255,
 		},
 		{
-			Name:       "vpn_whitelist_icmp6_multicast",
+			Name:       "vpn_allowlist_icmp6_multicast",
 			Interfaces: ifaces,
 			LocalNetworks: []netip.Prefix{
 				netip.PrefixFrom(netip.AddrFrom16(
@@ -652,7 +652,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Icmpv6Types: []int{130, 131, 132, 143, 151, 152, 153},
 		},
 		{
-			Name:       "vpn_whitelist_dhcp6_in",
+			Name:       "vpn_allowlist_dhcp6_in",
 			Interfaces: ifaces,
 			LocalNetworks: []netip.Prefix{
 				netip.PrefixFrom(netip.AddrFrom16(
@@ -666,7 +666,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Ipv6Only:         true,
 		},
 		{
-			Name:       "vpn_whitelist_dhcp6_out",
+			Name:       "vpn_allowlist_dhcp6_out",
 			Interfaces: ifaces,
 			LocalNetworks: []netip.Prefix{
 				netip.PrefixFrom(netip.AddrFrom16(
@@ -689,11 +689,11 @@ func (netw *Combined) allowIPv6Traffic() error {
 
 func (netw *Combined) stopAllowedIPv6Traffic() error {
 	err := netw.fw.Delete([]string{
-		"vpn_whitelist_icmp6_errors",
-		"vpn_whitelist_icmp6_address",
-		"vpn_whitelist_icmp6_multicast",
-		"vpn_whitelist_dhcp6_in",
-		"vpn_whitelist_dhcp6_out",
+		"vpn_allowlist_icmp6_errors",
+		"vpn_allowlist_icmp6_address",
+		"vpn_allowlist_icmp6_multicast",
+		"vpn_allowlist_dhcp6_in",
+		"vpn_allowlist_dhcp6_out",
 	})
 
 	if err != nil {
@@ -703,21 +703,21 @@ func (netw *Combined) stopAllowedIPv6Traffic() error {
 	return nil
 }
 
-func (netw *Combined) resetWhitelist() error {
+func (netw *Combined) resetAllowlist() error {
 	// this is done in order to maintain the order of the firewall
 	// rules
-	if err := netw.unsetWhitelist(); err != nil {
-		return fmt.Errorf("unsetting whitelist: %w", err)
+	if err := netw.unsetAllowlist(); err != nil {
+		return fmt.Errorf("unsetting allowlist: %w", err)
 	}
 
-	if err := netw.setWhitelist(netw.whitelist); err != nil {
-		return fmt.Errorf("re-setting whitelist: %w", err)
+	if err := netw.setAllowlist(netw.allowlist); err != nil {
+		return fmt.Errorf("re-setting allowlist: %w", err)
 	}
 	return nil
 }
 
 // EnableFirewall activates the firewall and applies the rules
-// according to the user's settings. (killswitch, whitelist)
+// according to the user's settings. (killswitch, allowlist)
 func (netw *Combined) EnableFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
@@ -747,7 +747,7 @@ func (netw *Combined) EnableRouting() {
 	}
 
 	tableID := netw.policyRouter.TableID()
-	if err := netw.whitelistRouter.Enable(tableID); err != nil {
+	if err := netw.allowlistRouter.Enable(tableID); err != nil {
 		log.Println(internal.WarningPrefix)
 	}
 
@@ -763,7 +763,7 @@ func (netw *Combined) EnableRouting() {
 func (netw *Combined) DisableRouting() {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	if err := netw.whitelistRouter.Disable(); err != nil {
+	if err := netw.allowlistRouter.Disable(); err != nil {
 		log.Println(internal.WarningPrefix)
 	}
 
@@ -780,13 +780,13 @@ func (netw *Combined) DisableRouting() {
 	}
 }
 
-func (netw *Combined) SetWhitelist(whitelist config.Whitelist) error {
+func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.setWhitelist(whitelist)
+	return netw.setAllowlist(allowlist)
 }
 
-func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
+func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	ifaces, err := netw.devices()
 	if err != nil {
 		return err
@@ -801,7 +801,7 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 		defaultInterface net.Interface
 	}
 
-	for cidr := range whitelist.Subnets {
+	for cidr := range allowlist.Subnets {
 		subnet, err := netip.ParsePrefix(cidr)
 		if err != nil {
 			// TODO: after Go 1.20, rewrite using error joining
@@ -823,7 +823,7 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 		if err != nil {
 			// if gateway does not exist, we still honour users choice
 			subnets = append(subnets, subnet)
-			log.Println(internal.WarningPrefix, "whitelisting routes gateway not found for", subnet.String(), err)
+			log.Println(internal.WarningPrefix, "allowlisting routes gateway not found for", subnet.String(), err)
 			continue
 		}
 
@@ -834,9 +834,9 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 			TableID: netw.policyRouter.TableID(),
 		}
 
-		err = netw.whitelistRouter.Add(route)
+		err = netw.allowlistRouter.Add(route)
 		if errors.Is(err, routes.ErrRouteToOtherDestinationExists) {
-			log.Println(internal.WarningPrefix, "route(s) for whitelisted subnet(s) via non-default gateway already exist in the system")
+			log.Println(internal.WarningPrefix, "route(s) for allowlisted subnet(s) via non-default gateway already exist in the system")
 		}
 		if err != nil {
 			// TODO: after Go 1.20, rewrite using error joining
@@ -847,14 +847,14 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 	}
 	if subnets != nil {
 		rules = append(rules, firewall.Rule{
-			Name:           "whitelist_subnets",
+			Name:           "allowlist_subnets",
 			Interfaces:     ifaces,
 			RemoteNetworks: subnets,
 			Direction:      firewall.TwoWay,
 			Allow:          true,
 		})
-		if err := netw.whitelistRouting.EnableSubnets(subnets, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
-			return fmt.Errorf("enabling whitelist routing: %w", err)
+		if err := netw.allowlistRouting.EnableSubnets(subnets, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
+			return fmt.Errorf("enabling allowlist routing: %w", err)
 		}
 	}
 
@@ -862,8 +862,8 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 		name  string
 		ports map[int64]bool
 	}{
-		{name: "tcp", ports: whitelist.Ports.TCP},
-		{name: "udp", ports: whitelist.Ports.UDP},
+		{name: "tcp", ports: allowlist.Ports.TCP},
+		{name: "udp", ports: allowlist.Ports.UDP},
 	} {
 		var ports []int
 		for port := range pair.ports {
@@ -874,15 +874,15 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 		}
 		if ports != nil {
 			rules = append(rules, firewall.Rule{
-				Name:       "whitelist_ports_" + pair.name,
+				Name:       "allowlist_ports_" + pair.name,
 				Interfaces: ifaces,
 				Protocols:  []string{pair.name},
 				Direction:  firewall.TwoWay,
 				Ports:      ports,
 				Allow:      true,
 			})
-			if err := netw.whitelistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
-				return fmt.Errorf("enabling whitelist routing: %w", err)
+			if err := netw.allowlistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
+				return fmt.Errorf("enabling allowlist routing: %w", err)
 			}
 		}
 	}
@@ -890,25 +890,25 @@ func (netw *Combined) setWhitelist(whitelist config.Whitelist) error {
 	if err := netw.fw.Add(rules); err != nil {
 		return err
 	}
-	netw.whitelist = whitelist
+	netw.allowlist = allowlist
 	return nil
 }
 
-func (netw *Combined) UnsetWhitelist() error {
+func (netw *Combined) UnsetAllowlist() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.unsetWhitelist()
+	return netw.unsetAllowlist()
 }
 
-func (netw *Combined) unsetWhitelist() error {
-	if err := netw.whitelistRouter.Flush(); err != nil {
-		return fmt.Errorf("flushing the whitelist router: %w", err)
+func (netw *Combined) unsetAllowlist() error {
+	if err := netw.allowlistRouter.Flush(); err != nil {
+		return fmt.Errorf("flushing the allowlist router: %w", err)
 	}
 
 	for _, rule := range []string{
-		"whitelist_subnets",
-		"whitelist_ports_tcp",
-		"whitelist_ports_udp",
+		"allowlist_subnets",
+		"allowlist_ports_tcp",
+		"allowlist_ports_udp",
 	} {
 		err := netw.fw.Delete([]string{rule})
 		if err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
@@ -917,8 +917,8 @@ func (netw *Combined) unsetWhitelist() error {
 		}
 	}
 
-	if err := netw.whitelistRouting.Disable(); err != nil {
-		return fmt.Errorf("disabling whitelist routing: %w", err)
+	if err := netw.allowlistRouting.Disable(); err != nil {
+		return fmt.Errorf("disabling allowlist routing: %w", err)
 	}
 
 	return nil
@@ -930,7 +930,7 @@ func (netw *Combined) IsNetworkSet() bool {
 	return netw.isNetworkSet
 }
 
-func (netw *Combined) setNetwork(whitelist config.Whitelist) error {
+func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 	err := netw.blockTraffic()
 	if err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
 		return err
@@ -943,7 +943,7 @@ func (netw *Combined) setNetwork(whitelist config.Whitelist) error {
 
 	if err := netw.fw.Add([]firewall.Rule{
 		{
-			Name:       "api_whitelist",
+			Name:       "api_allowlist",
 			Interfaces: ifaces,
 			Direction:  firewall.TwoWay,
 			Marks:      []uint32{netw.fwmark},
@@ -953,7 +953,7 @@ func (netw *Combined) setNetwork(whitelist config.Whitelist) error {
 		return err
 	}
 
-	if err := netw.setWhitelist(whitelist); err != nil {
+	if err := netw.setAllowlist(allowlist); err != nil {
 		return err
 	}
 
@@ -962,7 +962,7 @@ func (netw *Combined) setNetwork(whitelist config.Whitelist) error {
 }
 
 func (netw *Combined) unsetNetwork() error {
-	if err := netw.fw.Delete([]string{"api_whitelist"}); err != nil {
+	if err := netw.fw.Delete([]string{"api_allowlist"}); err != nil {
 		return err
 	}
 
@@ -971,7 +971,7 @@ func (netw *Combined) unsetNetwork() error {
 		return err
 	}
 
-	if err := netw.unsetWhitelist(); err != nil {
+	if err := netw.unsetAllowlist(); err != nil {
 		return err
 	}
 
@@ -979,15 +979,15 @@ func (netw *Combined) unsetNetwork() error {
 	return nil
 }
 
-func (netw *Combined) SetKillSwitch(whitelist config.Whitelist) error {
+func (netw *Combined) SetKillSwitch(allowlist config.Allowlist) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.setKillSwitch(whitelist)
+	return netw.setKillSwitch(allowlist)
 }
 
-func (netw *Combined) setKillSwitch(whitelist config.Whitelist) error {
+func (netw *Combined) setKillSwitch(allowlist config.Allowlist) error {
 	if !netw.isNetworkSet {
-		if err := netw.setNetwork(whitelist); err != nil {
+		if err := netw.setNetwork(allowlist); err != nil {
 			return err
 		}
 	}

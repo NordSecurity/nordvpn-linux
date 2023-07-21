@@ -215,38 +215,38 @@ def set_killswitch(killswitch):
         print("WARNING:", ex)
 
 
-def add_port_to_whitelist(port):
+def add_port_to_allowlist(port):
     try:
-        print(sh.nordvpn.whitelist.add.port(port))
+        print(sh.nordvpn.allowlist.add.port(port))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
-def add_ports_range_to_whitelist(ports):
+def add_ports_range_to_allowlist(ports):
     port_range = ports.split(":")
     try:
-        print(sh.nordvpn.whitelist.add.ports(port_range[0], port_range[1]))
+        print(sh.nordvpn.allowlist.add.ports(port_range[0], port_range[1]))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
-def add_port_and_protocol_to_whitelist(port, protocol):
+def add_port_and_protocol_to_allowlist(port, protocol):
     try:
-        print(sh.nordvpn.whitelist.add.port(port, "protocol", protocol))
+        print(sh.nordvpn.allowlist.add.port(port, "protocol", protocol))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
-def add_subnet_to_whitelist(subnet_addr):
+def add_subnet_to_allowlist(subnet_addr):
     try:
-        print(sh.nordvpn.whitelist.add.subnet(subnet_addr))
+        print(sh.nordvpn.allowlist.add.subnet(subnet_addr))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
-def flush_whitelist():
+def flush_allowlist():
     try:
-        print(sh.nordvpn.whitelist.remove.all())
+        print(sh.nordvpn.allowlist.remove.all())
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 

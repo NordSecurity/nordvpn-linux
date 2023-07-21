@@ -23,7 +23,7 @@ func Connect(
 	events chan ConnectEvent,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
-	whitelist config.Whitelist,
+	allowlist config.Allowlist,
 	nameservers []string,
 	netw networker.Networker,
 ) {
@@ -34,7 +34,7 @@ func Connect(
 	err := netw.Start(
 		creds,
 		serverData,
-		whitelist,
+		allowlist,
 		nameservers,
 	)
 	switch err {

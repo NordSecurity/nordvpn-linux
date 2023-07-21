@@ -119,16 +119,16 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 		OpenVPNVersion:    server.Version(),
 	}
 
-	whitelist := cfg.AutoConnectData.Whitelist
+	allowlist := cfg.AutoConnectData.Allowlist
 	if cfg.LanDiscovery {
-		whitelist = addLANPermissions(whitelist)
+		allowlist = addLANPermissions(allowlist)
 	}
 
 	go Connect(
 		eventCh,
 		creds,
 		serverData,
-		whitelist,
+		allowlist,
 		cfg.AutoConnectData.DNS.Or(
 			r.nameservers.Get(cfg.AutoConnectData.ThreatProtectionLite, server.SupportsIPv6()),
 		),

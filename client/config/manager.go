@@ -159,14 +159,14 @@ func (m EncryptedManager) Save(c Config) error {
 
 // setDefaultsIfEmpty sets default values
 func (c *Config) setDefaultsIfEmpty() *Config {
-	if c.Whitelist.Subnets == nil {
-		c.Whitelist.Subnets = mapset.NewSet()
+	if c.Allowlist.Subnets == nil {
+		c.Allowlist.Subnets = mapset.NewSet()
 	}
-	if c.Whitelist.Ports.UDP == nil {
-		c.Whitelist.Ports.UDP = mapset.NewSet()
+	if c.Allowlist.Ports.UDP == nil {
+		c.Allowlist.Ports.UDP = mapset.NewSet()
 	}
-	if c.Whitelist.Ports.TCP == nil {
-		c.Whitelist.Ports.TCP = mapset.NewSet()
+	if c.Allowlist.Ports.TCP == nil {
+		c.Allowlist.Ports.TCP = mapset.NewSet()
 	}
 	if c.Technology == config.Technology_UNKNOWN_TECHNOLOGY {
 		c.Technology = config.Technology_NORDLYNX

@@ -1,5 +1,5 @@
-// Package whitelist implements whitelist routing.
-package whitelist
+// Package allowlist implements allowlist routing.
+package allowlist
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	RuleComment = "nordvpn_whitelist"
+	RuleComment = "nordvpn_allowlist"
 	iptablesCmd = "iptables"
 )
 
@@ -25,40 +25,40 @@ type IPTables struct {
 	runCommandFunc runCommandFunc
 }
 
-// NewWhitelistRouting is a default constructor for Whitelist Routing
-func NewWhitelistRouting(commandFunc runCommandFunc) *IPTables {
+// NewAllowlistRouting is a default constructor for Allowlist Routing
+func NewAllowlistRouting(commandFunc runCommandFunc) *IPTables {
 	return &IPTables{
 		runCommandFunc: commandFunc,
 	}
 }
 
-// Adds whitelist routing rules for ports
+// Adds allowlist routing rules for ports
 func (ipt *IPTables) EnablePorts(ports []int, protocol string, mark string) error {
 	for _, port := range ports {
 		err := routePortsToIPTables(ipt.runCommandFunc, fmt.Sprintf("%d", port), protocol, mark)
 		if err != nil {
-			return fmt.Errorf("enabling whitelisting for subnets: %w", err)
+			return fmt.Errorf("enabling allowlist for subnets: %w", err)
 		}
 	}
 	return nil
 }
 
-// Adds whitelist routing rules for subnets
+// Adds allowlist routing rules for subnets
 func (ipt *IPTables) EnableSubnets(subnets []netip.Prefix, mark string) error {
 	for _, subnet := range subnets {
 		err := routeSubnetsToIPTables(ipt.runCommandFunc, subnet.String(), mark)
 		if err != nil {
-			return fmt.Errorf("enabling whitelisting for subnets: %w", err)
+			return fmt.Errorf("enabling allowlisting for subnets: %w", err)
 		}
 	}
 	return nil
 }
 
-// Deletes whitelist routing rules
+// Deletes allowlist routing rules
 func (ipt *IPTables) Disable() error {
 	err := clearRouting(ipt.runCommandFunc)
 	if err != nil {
-		return fmt.Errorf("clearing whitelisting: %w", err)
+		return fmt.Errorf("clearing allowlisting: %w", err)
 	}
 	return nil
 }
@@ -68,7 +68,7 @@ func routeSubnetsToIPTables(commandFunc runCommandFunc, subnet string, mark stri
 		// already set or error happened
 		return err
 	}
-	// iptables -t mangle -I PREROUTING -s 192.168.99.0/24 -j MARK --set-mark 0xe1f1 -m comment --comment "whitelist"
+	// iptables -t mangle -I PREROUTING -s 192.168.99.0/24 -j MARK --set-mark 0xe1f1 -m comment --comment "allowlist"
 	args := fmt.Sprintf(
 		"-t mangle -I PREROUTING -s %s -j MARK --set-mark %s -m comment --comment %s",
 		subnet,
@@ -81,7 +81,7 @@ func routeSubnetsToIPTables(commandFunc runCommandFunc, subnet string, mark stri
 		return fmt.Errorf("iptables inserting rule: %w: %s", err, string(out))
 	}
 
-	// iptables -t mangle -I OUTPUT -d 192.168.99.0/24 -j MARK --set-mark 0xe1f1 -m comment --comment "whitelist"
+	// iptables -t mangle -I OUTPUT -d 192.168.99.0/24 -j MARK --set-mark 0xe1f1 -m comment --comment "allowlist"
 	args = fmt.Sprintf(
 		"-t mangle -I OUTPUT -d %s -j MARK --set-mark %s -m comment --comment %s",
 		subnet,

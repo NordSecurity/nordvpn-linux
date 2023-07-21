@@ -72,7 +72,7 @@ Each category name is made by stripping `test_` and `.py` from the file name:
 * firewall6 - tests ip6tables rules.
 * login - tests login scenarios.
 * misc - tests socket permissions and domain rotations.
-* whitelist - tests iptables and routing rules.
+* allowlist - tests iptables and routing rules.
 
 ## Lib
 Each Python file is treated as a module and directory with `__init__.py` in it is treated as a package

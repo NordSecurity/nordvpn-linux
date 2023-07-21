@@ -13,7 +13,7 @@ import sh
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
 
-# Rules for whitelisted subnet
+# Rules for allowlisted subnet
 # -A INPUT -s {subnet_ip} -i {iface} -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
@@ -23,7 +23,7 @@ import sh
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
 
-# Rules for whitelisted port
+# Rules for allowlisted port
 # -A INPUT -i {iface} -p udp -m udp --dport {port} -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -p udp -m udp --sport {port} -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -p tcp -m tcp --dport {port} -m comment --comment nordvpn -j ACCEPT
@@ -39,7 +39,7 @@ import sh
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
 
-# Rules for whitelisted ports range
+# Rules for allowlisted ports range
 # -A INPUT -i {iface} -p udp -m udp --dport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -p udp -m udp --sport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -p tcp -m tcp --dport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
@@ -55,7 +55,7 @@ import sh
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
 
-# Rules for whitelisted port and protocol
+# Rules for allowlisted port and protocol
 # -A INPUT -i {iface} -p {protocol} -m {protocol} --dport {port} -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
@@ -67,7 +67,7 @@ import sh
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
 
-# Rules for whitelisted ports range and protocol
+# Rules for allowlisted ports range and protocol
 # -A INPUT -i {iface} -p {protocol} -m {protocol} --sport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT

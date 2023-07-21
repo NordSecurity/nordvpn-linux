@@ -273,7 +273,7 @@ func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
 	return s.response(moose.Set_context_application_config_userPreferences_protocol_value(protocol))
 }
 
-func (s *Subscriber) NotifyWhitelist(data events.DataWhitelist) error {
+func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	enabled := data.UDPPorts != 0 || data.TCPPorts != 0 || data.Subnets != 0
 	if err := s.response(moose.Set_context_application_config_userPreferences_splitTunnelingEnabled_meta(fmt.Sprintf(`{"udp_ports":%d,"tcp_ports:%d,"subnets":%d}`, data.UDPPorts, data.TCPPorts, data.Subnets))); err != nil {
 		return err

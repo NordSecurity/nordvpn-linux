@@ -28,12 +28,12 @@ func (c *cmd) SetKillSwitch(ctx *cli.Context) error {
 
 	resp, err := c.client.SetKillSwitch(context.Background(), &pb.SetKillSwitchRequest{
 		KillSwitch: flag,
-		Whitelist: &pb.Whitelist{
+		Allowlist: &pb.Allowlist{
 			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(c.config.Whitelist.Ports.UDP),
-				Tcp: client.SetToInt64s(c.config.Whitelist.Ports.TCP),
+				Udp: client.SetToInt64s(c.config.Allowlist.Ports.UDP),
+				Tcp: client.SetToInt64s(c.config.Allowlist.Ports.TCP),
 			},
-			Subnets: internal.SetToStrings(c.config.Whitelist.Subnets),
+			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
 		},
 	})
 	if err != nil {

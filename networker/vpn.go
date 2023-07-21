@@ -29,7 +29,7 @@ func (netw *Combined) refreshVPN() error {
 
 	if started {
 		if !killswitch {
-			if err := netw.setKillSwitch(netw.whitelist); err != nil {
+			if err := netw.setKillSwitch(netw.allowlist); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
 			}
 		}
@@ -61,7 +61,7 @@ func (netw *Combined) refreshVPN() error {
 		if err := netw.start(
 			netw.lastCreds,
 			netw.lastServer,
-			netw.whitelist,
+			netw.allowlist,
 			netw.lastNameservers,
 		); err != nil {
 			return fmt.Errorf("starting networker: %w", err)

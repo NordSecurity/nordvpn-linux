@@ -130,7 +130,7 @@ func (l *DaemonSettingsSubscriber) NotifyDNS(data events.DataDNS) error {
 	return nil
 }
 
-func (l *DaemonSettingsSubscriber) NotifyWhitelist(data events.DataWhitelist) error {
+func (l *DaemonSettingsSubscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	return nil
 }
 

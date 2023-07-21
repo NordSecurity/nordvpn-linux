@@ -34,15 +34,15 @@ func TestFilesystem(t *testing.T) {
 			},
 		},
 		{
-			name: "whitelist is saved",
+			name: "allowlist is saved",
 			f: func(c Config) Config {
-				c.AutoConnectData.Whitelist.Ports.TCP = map[int64]bool{
+				c.AutoConnectData.Allowlist.Ports.TCP = map[int64]bool{
 					443: true,
 				}
-				c.AutoConnectData.Whitelist.Ports.UDP = map[int64]bool{
+				c.AutoConnectData.Allowlist.Ports.UDP = map[int64]bool{
 					53: true,
 				}
-				c.AutoConnectData.Whitelist.Subnets = map[string]bool{
+				c.AutoConnectData.Allowlist.Subnets = map[string]bool{
 					"1.1.1.1/32": true,
 				}
 				return c

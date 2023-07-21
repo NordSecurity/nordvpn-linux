@@ -16,24 +16,24 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// WhitelistAddPortUsageText is shown next to port command by nordvpn whitelist add --help
-const WhitelistAddPortUsageText = "Adds port to a whitelist"
+// AllowlistAddPortUsageText is shown next to port command by nordvpn allowlist add --help
+const AllowlistAddPortUsageText = "Adds port to the allowlist"
 
-// WhitelistAddPortArgsUsageText is shown on nordvpn whitelist add port --help
-const WhitelistAddPortArgsUsageText = `<port> [protocol <protocol>]
+// AllowlistAddPortArgsUsageText is shown on nordvpn allowlist add port --help
+const AllowlistAddPortArgsUsageText = `<port> [protocol <protocol>]
 
-Use this command to whitelist the UDP and TCP port.
+Use this command to allowlist the UDP and TCP port.
 
-Example: 'nordvpn whitelist add port 22'
+Example: 'nordvpn allowlist add port 22'
 
-Optionally, protocol can be provided to specify which protocol should be whitelisted.
+Optionally, protocol can be provided to specify which protocol should be allowlisted.
 Supported values for <protocol>: TCP, UDP
 
-Example: 'nordvpn whitelist add port 22 protocol TCP'`
+Example: 'nordvpn allowlist add port 22 protocol TCP'`
 
-func (c *cmd) WhitelistAddPort(ctx *cli.Context) error {
+func (c *cmd) AllowlistAddPort(ctx *cli.Context) error {
 	args := ctx.Args()
-	if !(args.Len() == 1 || (args.Len() == 3 && args.Get(1) == WhitelistProtocol)) {
+	if !(args.Len() == 1 || (args.Len() == 3 && args.Get(1) == AllowlistProtocol)) {
 		return formatError(argsCountError(ctx))
 	}
 
@@ -44,8 +44,8 @@ func (c *cmd) WhitelistAddPort(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if !(WhitelistMinPort <= port && port <= WhitelistMaxPort) {
-		return formatError(fmt.Errorf(WhitelistPortRangeError, portString, strconv.Itoa(WhitelistMinPort), strconv.Itoa(WhitelistMaxPort)))
+	if !(AllowlistMinPort <= port && port <= AllowlistMaxPort) {
+		return formatError(fmt.Errorf(AllowlistPortRangeError, portString, strconv.Itoa(AllowlistMinPort), strconv.Itoa(AllowlistMaxPort)))
 	}
 
 	var (
@@ -72,18 +72,18 @@ func (c *cmd) WhitelistAddPort(ctx *cli.Context) error {
 	}
 
 	if !success {
-		return formatError(fmt.Errorf(WhitelistAddPortExistsError, data...))
+		return formatError(fmt.Errorf(AllowlistAddPortExistsError, data...))
 	}
 
-	UDPSet = c.config.Whitelist.Ports.UDP.Union(UDPSet)
-	TCPSet = c.config.Whitelist.Ports.TCP.Union(TCPSet)
-	resp, err := c.client.SetWhitelist(context.Background(), &pb.SetWhitelistRequest{
-		Whitelist: &pb.Whitelist{
+	UDPSet = c.config.Allowlist.Ports.UDP.Union(UDPSet)
+	TCPSet = c.config.Allowlist.Ports.TCP.Union(TCPSet)
+	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+		Allowlist: &pb.Allowlist{
 			Ports: &pb.Ports{
 				Udp: client.SetToInt64s(UDPSet),
 				Tcp: client.SetToInt64s(TCPSet),
 			},
-			Subnets: internal.SetToStrings(c.config.Whitelist.Subnets),
+			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
 		},
 	})
 	if err != nil {
@@ -94,22 +94,22 @@ func (c *cmd) WhitelistAddPort(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure:
-		return formatError(fmt.Errorf(WhitelistAddPortExistsError, data...))
+		return formatError(fmt.Errorf(AllowlistAddPortExistsError, data...))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodeSuccess:
-		c.config.Whitelist.Ports.UDP = UDPSet
-		c.config.Whitelist.Ports.TCP = TCPSet
+		c.config.Allowlist.Ports.UDP = UDPSet
+		c.config.Allowlist.Ports.TCP = TCPSet
 		err = c.configManager.Save(c.config)
 		if err != nil {
 			return formatError(ErrConfig)
 		}
-		color.Green(fmt.Sprintf(WhitelistAddPortSuccess, data...))
+		color.Green(fmt.Sprintf(AllowlistAddPortSuccess, data...))
 	}
 	return nil
 }
 
-func (c *cmd) WhitelistAddPortAutoComplete(ctx *cli.Context) {
+func (c *cmd) AllowlistAddPortAutoComplete(ctx *cli.Context) {
 	switch ctx.NArg() {
 	case 1:
 		// show one word for completion

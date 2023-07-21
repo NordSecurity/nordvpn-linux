@@ -56,10 +56,10 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 				Obfuscate:            in.GetObfuscate(),
 				DNS:                  cfg.AutoConnectData.DNS,
-				Whitelist: config.NewWhitelist(
-					in.GetWhitelist().GetPorts().GetTcp(),
-					in.GetWhitelist().GetPorts().GetUdp(),
-					in.GetWhitelist().GetSubnets(),
+				Allowlist: config.NewAllowlist(
+					in.GetAllowlist().GetPorts().GetTcp(),
+					in.GetAllowlist().GetPorts().GetUdp(),
+					in.GetAllowlist().GetSubnets(),
 				),
 			}
 			return c

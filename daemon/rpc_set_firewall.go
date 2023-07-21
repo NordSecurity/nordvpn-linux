@@ -13,7 +13,7 @@ import (
 //
 // This setting impacts the usage of these features:
 // - Killswitch (impacts only next enabling)
-// - Whitelist
+// - Allowlist
 // - Connect (impacts only connections, disconnect still works with the old setting)
 func (r *RPC) SetFirewall(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {
 	var cfg config.Config

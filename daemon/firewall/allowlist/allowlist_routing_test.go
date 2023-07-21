@@ -1,4 +1,4 @@
-package whitelist
+package allowlist
 
 import (
 	"fmt"
@@ -133,7 +133,7 @@ func TestIPTables_EnablePorts(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wh := NewWhitelistRouting(tt.args.commandFunc)
+			wh := NewAllowlistRouting(tt.args.commandFunc)
 			if err := wh.EnablePorts(tt.args.ports, tt.args.protocol, tt.args.mark); (err != nil) != tt.wantErr {
 				t.Errorf("Error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -173,7 +173,7 @@ func TestIPTables_EnableSubnets(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wh := NewWhitelistRouting(tt.args.commandFunc)
+			wh := NewAllowlistRouting(tt.args.commandFunc)
 			if err := wh.EnableSubnets(tt.args.subnets, tt.args.mark); (err != nil) != tt.wantErr {
 				t.Errorf("Error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -187,13 +187,13 @@ func TestIPTables_Disable(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "Delete whitelist routing rules",
+			name:    "Delete allowlist routing rules",
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wh := NewWhitelistRouting(workingCommandFunc)
+			wh := NewAllowlistRouting(workingCommandFunc)
 			if err := wh.Disable(); (err != nil) != tt.wantErr {
 				t.Errorf("Error = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -63,7 +63,7 @@ type AutoConnectData struct {
 	ThreatProtectionLite bool      `json:"cybersec,omitempty"`
 	Obfuscate            bool      `json:"obfuscate,omitempty"`
 	DNS                  DNS       `json:"dns,omitempty"`
-	Whitelist            Whitelist `json:"whitelist,omitempty"`
+	Allowlist            Allowlist `json:"whitelist,omitempty"`
 }
 
 type DNS []string

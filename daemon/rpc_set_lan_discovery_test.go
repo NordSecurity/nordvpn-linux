@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func getEmptyWhitelist(t *testing.T) config.Whitelist {
+func getEmptyAllowlist(t *testing.T) config.Allowlist {
 	t.Helper()
 
-	return config.Whitelist{
+	return config.Allowlist{
 		Ports: config.Ports{
 			TCP: make(config.PortSet),
 			UDP: make(config.PortSet),
@@ -24,7 +24,7 @@ func getEmptyWhitelist(t *testing.T) config.Whitelist {
 	}
 }
 
-func addLANToWhitelist(t *testing.T, whitelist config.Whitelist) config.Whitelist {
+func addLANToWhitelist(t *testing.T, whitelist config.Allowlist) config.Allowlist {
 	t.Helper()
 
 	whitelist.Subnets["10.0.0.0/8"] = true
@@ -38,7 +38,7 @@ func addLANToWhitelist(t *testing.T, whitelist config.Whitelist) config.Whitelis
 func TestSetLANDiscovery_Success(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	whitelistLAN := config.Whitelist{
+	whitelistLAN := config.Allowlist{
 		Subnets: map[string]bool{
 			"10.0.0.0/8":     true,
 			"172.16.0.0/12":  true,
@@ -47,7 +47,7 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 		},
 	}
 
-	whitelist := getEmptyWhitelist(t)
+	whitelist := getEmptyAllowlist(t)
 	whitelist.Subnets["207.240.205.230/24"] = true
 	whitelist.Subnets["18.198.160.194/12"] = true
 	whitelist.Ports.TCP[2000] = true
@@ -61,27 +61,27 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 		enabled           bool
 		currentEnabled    bool
 		expectedStatus    pb.SetLANDiscoveryStatus
-		currentWhitelist  config.Whitelist
-		expectedWhitelist config.Whitelist
+		currentWhitelist  config.Allowlist
+		expectedWhitelist config.Allowlist
 		// LAN subnets should not be included in configuration when added as a part of LAN discovery
-		expectedConfigWhitelist config.Whitelist
+		expectedConfigWhitelist config.Allowlist
 	}{
 		{
 			name:                    "enable success",
 			enabled:                 true,
 			expectedStatus:          pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED,
-			currentWhitelist:        getEmptyWhitelist(t),
+			currentWhitelist:        getEmptyAllowlist(t),
 			expectedWhitelist:       whitelistLAN,
-			expectedConfigWhitelist: getEmptyWhitelist(t),
+			expectedConfigWhitelist: getEmptyAllowlist(t),
 		},
 		{
 			name:                    "disable success",
 			enabled:                 false,
 			currentEnabled:          true,
 			expectedStatus:          pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED,
-			currentWhitelist:        getEmptyWhitelist(t),
-			expectedWhitelist:       config.Whitelist{},
-			expectedConfigWhitelist: getEmptyWhitelist(t),
+			currentWhitelist:        getEmptyAllowlist(t),
+			expectedWhitelist:       config.Allowlist{},
+			expectedConfigWhitelist: getEmptyAllowlist(t),
 		},
 		{
 			name:                    "enable, preexisiting whitelist",
@@ -113,12 +113,12 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.LanDiscovery = test.currentEnabled
-				c.AutoConnectData.Whitelist = test.currentWhitelist
+				c.AutoConnectData.Allowlist = test.currentWhitelist
 				return c
 			})
 
 			networker := mockNetworker{
-				whitelist: test.currentWhitelist,
+				allowlist: test.currentWhitelist,
 			}
 
 			rpc := RPC{
@@ -138,7 +138,7 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 				"Invalid status returned in SetLANDiscovery response.")
 			assert.Equal(t, test.enabled, cfg.LanDiscovery,
 				"LAN discovery was not enabled in config.")
-			assert.Equal(t, test.expectedConfigWhitelist, cfg.AutoConnectData.Whitelist,
+			assert.Equal(t, test.expectedConfigWhitelist, cfg.AutoConnectData.Allowlist,
 				"Invalid whitelist saved in the config.")
 		})
 	}
@@ -199,12 +199,12 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.LanDiscovery = test.currentEnabled
-				c.AutoConnectData.Whitelist = getEmptyWhitelist(t)
+				c.AutoConnectData.Allowlist = getEmptyAllowlist(t)
 				return c
 			})
 
 			networker := mockNetworker{
-				whitelist:         getEmptyWhitelist(t),
+				allowlist:         getEmptyAllowlist(t),
 				setWhitelistErr:   test.setWhitelistErr,
 				unsetWhitelistErr: test.unsetWhitelistErr,
 				vpnActive:         true,

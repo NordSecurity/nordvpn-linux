@@ -18,25 +18,25 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// WhitelistRemovePortsUsageText is shown next to ports command by nordvpn whitelist remove --help
-const WhitelistRemovePortsUsageText = "Removes port range from a whitelist"
+// AllowlistRemovePortsUsageText is shown next to ports command by nordvpn allowlist remove --help
+const AllowlistRemovePortsUsageText = "Removes port range from the allowlist"
 
-// WhitelistRemovePortsArgsUsageText is shown by nordvpn whitelist remove ports --help
-const WhitelistRemovePortsArgsUsageText = `<port_from> <port_to> [protocol <protocol>]
+// AllowlistRemovePortsArgsUsageText is shown by nordvpn allowlist remove ports --help
+const AllowlistRemovePortsArgsUsageText = `<port_from> <port_to> [protocol <protocol>]
 
-Use this command to remove ports from whitelist.
+Use this command to remove ports from the allowlist.
 
-Example: 'nordvpn whitelist remove ports 3000 8000'
+Example: 'nordvpn allowlist remove ports 3000 8000'
 
-Optionally, protocol can be provided to specify which protocol should be removed from whitelist.
+Optionally, protocol can be provided to specify which protocol should be removed from the allowlist.
 Supported values for <protocol>: TCP, UDP
 
-Example: 'nordvpn whitelist remove ports 3000 8000 protocol TCP'`
+Example: 'nordvpn allowlist remove ports 3000 8000 protocol TCP'`
 
-func (c *cmd) WhitelistRemovePorts(ctx *cli.Context) error {
+func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 	args := ctx.Args()
 
-	if !(args.Len() == 2 || (args.Len() == 4 && args.Get(2) == WhitelistProtocol)) {
+	if !(args.Len() == 2 || (args.Len() == 4 && args.Get(2) == AllowlistProtocol)) {
 		return formatError(argsCountError(ctx))
 	}
 
@@ -56,15 +56,15 @@ func (c *cmd) WhitelistRemovePorts(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if !(WhitelistMinPort <= startPort && startPort <= WhitelistMaxPort && WhitelistMinPort <= endPort && endPort <= WhitelistMaxPort) {
-		return formatError(fmt.Errorf(WhitelistPortsRangeError, args.First(), args.Get(1), strconv.Itoa(WhitelistMinPort), strconv.Itoa(WhitelistMaxPort)))
+	if !(AllowlistMinPort <= startPort && startPort <= AllowlistMaxPort && AllowlistMinPort <= endPort && endPort <= AllowlistMaxPort) {
+		return formatError(fmt.Errorf(AllowlistPortsRangeError, args.First(), args.Get(1), strconv.Itoa(AllowlistMinPort), strconv.Itoa(AllowlistMaxPort)))
 	}
 
 	var (
 		data    = []interface{}{args.First(), args.Get(1)}
 		success bool
-		UDPSet  = mapset.NewSetFromSlice(c.config.Whitelist.Ports.UDP.ToSlice())
-		TCPSet  = mapset.NewSetFromSlice(c.config.Whitelist.Ports.TCP.ToSlice())
+		UDPSet  = mapset.NewSetFromSlice(c.config.Allowlist.Ports.UDP.ToSlice())
+		TCPSet  = mapset.NewSetFromSlice(c.config.Allowlist.Ports.TCP.ToSlice())
 	)
 	if args.Len() == 2 {
 		for port := startPort; port <= endPort; port++ {
@@ -102,16 +102,16 @@ func (c *cmd) WhitelistRemovePorts(ctx *cli.Context) error {
 	}
 
 	if !success {
-		return formatError(fmt.Errorf(WhitelistRemovePortsExistsError, data...))
+		return formatError(fmt.Errorf(AllowlistRemovePortsExistsError, data...))
 	}
 
-	resp, err := c.client.SetWhitelist(context.Background(), &pb.SetWhitelistRequest{
-		Whitelist: &pb.Whitelist{
+	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+		Allowlist: &pb.Allowlist{
 			Ports: &pb.Ports{
 				Udp: client.SetToInt64s(UDPSet),
 				Tcp: client.SetToInt64s(TCPSet),
 			},
-			Subnets: internal.SetToStrings(c.config.Whitelist.Subnets),
+			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
 		},
 	})
 	if err != nil {
@@ -122,25 +122,25 @@ func (c *cmd) WhitelistRemovePorts(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure:
-		return formatError(fmt.Errorf(WhitelistRemovePortsExistsError, data...))
+		return formatError(fmt.Errorf(AllowlistRemovePortsExistsError, data...))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodeSuccess:
-		c.config.Whitelist.Ports.UDP = UDPSet
-		c.config.Whitelist.Ports.TCP = TCPSet
+		c.config.Allowlist.Ports.UDP = UDPSet
+		c.config.Allowlist.Ports.TCP = TCPSet
 		err = c.configManager.Save(c.config)
 		if err != nil {
 			return formatError(ErrConfig)
 		}
-		color.Green(fmt.Sprintf(WhitelistRemovePortsSuccess, data...))
+		color.Green(fmt.Sprintf(AllowlistRemovePortsSuccess, data...))
 	}
 	return nil
 }
 
-func (c *cmd) WhitelistRemovePortsAutoComplete(ctx *cli.Context) {
+func (c *cmd) AllowlistRemovePortsAutoComplete(ctx *cli.Context) {
 	switch ctx.NArg() {
 	case 0:
-		ports := client.InterfacesToInt64s(c.config.Whitelist.Ports.UDP.Union(c.config.Whitelist.Ports.TCP).ToSlice())
+		ports := client.InterfacesToInt64s(c.config.Allowlist.Ports.UDP.Union(c.config.Allowlist.Ports.TCP).ToSlice())
 		sort.Slice(ports, func(i, j int) bool {
 			return client.InterfaceToInt64(ports[i]) < client.InterfaceToInt64(ports[j])
 		})
@@ -152,7 +152,7 @@ func (c *cmd) WhitelistRemovePortsAutoComplete(ctx *cli.Context) {
 		if err != nil {
 			return
 		}
-		ports := client.InterfacesToInt64s(c.config.Whitelist.Ports.UDP.Union(c.config.Whitelist.Ports.TCP).ToSlice())
+		ports := client.InterfacesToInt64s(c.config.Allowlist.Ports.UDP.Union(c.config.Allowlist.Ports.TCP).ToSlice())
 		sort.Slice(ports, func(i, j int) bool {
 			return client.InterfaceToInt64(ports[i]) < client.InterfaceToInt64(ports[j])
 		})
@@ -164,10 +164,10 @@ func (c *cmd) WhitelistRemovePortsAutoComplete(ctx *cli.Context) {
 	case 2:
 		fmt.Println(stringProtocol)
 	case 3:
-		if c.config.Whitelist.Ports.UDP.Contains(json.Number(ctx.Args().First())) {
+		if c.config.Allowlist.Ports.UDP.Contains(json.Number(ctx.Args().First())) {
 			fmt.Println(config.Protocol_UDP.String())
 		}
-		if c.config.Whitelist.Ports.TCP.Contains(json.Number(ctx.Args().First())) {
+		if c.config.Allowlist.Ports.TCP.Contains(json.Number(ctx.Args().First())) {
 			fmt.Println(config.Protocol_TCP.String())
 		}
 	default:

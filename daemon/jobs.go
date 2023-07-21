@@ -59,7 +59,7 @@ func (r *RPC) StartKillSwitch() {
 	}
 
 	if cfg.KillSwitch {
-		if err := r.netw.SetKillSwitch(cfg.AutoConnectData.Whitelist); err != nil {
+		if err := r.netw.SetKillSwitch(cfg.AutoConnectData.Allowlist); err != nil {
 			log.Println(internal.ErrorPrefix, "starting killswitch:", err)
 			return
 		}
@@ -113,17 +113,17 @@ func (r *RPC) StartAutoConnect() {
 	}
 
 	udp := []int64{}
-	for port := range cfg.AutoConnectData.Whitelist.Ports.UDP {
+	for port := range cfg.AutoConnectData.Allowlist.Ports.UDP {
 		udp = append(udp, port)
 	}
 
 	tcp := []int64{}
-	for port := range cfg.AutoConnectData.Whitelist.Ports.TCP {
+	for port := range cfg.AutoConnectData.Allowlist.Ports.TCP {
 		tcp = append(tcp, port)
 	}
 
 	subnets := []string{}
-	for subnet := range cfg.AutoConnectData.Whitelist.Subnets {
+	for subnet := range cfg.AutoConnectData.Allowlist.Subnets {
 		subnets = append(subnets, subnet)
 	}
 

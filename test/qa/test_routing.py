@@ -36,12 +36,12 @@ def test_routing_on():
     subnet1 = "1.1.1.1"
     subnet2 = "2.2.2.2"
     subnet3 = "3.3.3.3"
-    lib.add_subnet_to_whitelist(f"{subnet1}/32")
-    lib.add_subnet_to_whitelist(f"{subnet2}/32")
-    lib.add_subnet_to_whitelist(f"{subnet3}/32")
+    lib.add_subnet_to_allowlist(f"{subnet1}/32")
+    lib.add_subnet_to_allowlist(f"{subnet2}/32")
+    lib.add_subnet_to_allowlist(f"{subnet3}/32")
     table = 205
 
-    with lib.ErrorDefer(sh.nordvpn.whitelist.remove.all):
+    with lib.ErrorDefer(sh.nordvpn.allowlist.remove.all):
         with lib.ErrorDefer(sh.nordvpn.disconnect):
             output = sh.nordvpn.connect()
             assert lib.is_connect_successful(output)
@@ -60,10 +60,10 @@ def test_routing_on():
 def test_routing_off():
     subnet = "1.1.1.1"
     table = 205
-    lib.add_subnet_to_whitelist(f"{subnet}/32")
+    lib.add_subnet_to_allowlist(f"{subnet}/32")
     lib.set_routing("off")
 
-    with lib.ErrorDefer(sh.nordvpn.whitelist.remove.all):
+    with lib.ErrorDefer(sh.nordvpn.allowlist.remove.all):
         with lib.ErrorDefer(sh.nordvpn.set.routing.on):
             with lib.ErrorDefer(sh.nordvpn.disconnect):
                 print(sh.nordvpn.connect())
@@ -77,7 +77,7 @@ def test_routing_off():
 
     print(sh.nordvpn.disconnect())
     lib.set_routing("on")
-    lib.flush_whitelist()
+    lib.flush_allowlist()
     
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)

@@ -69,47 +69,47 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(resp.Data.LanDiscovery))
 
-	displayWhitelist(&c.config.Whitelist)
+	displayAllowlist(&c.config.Allowlist)
 	return nil
 }
 
-func displayWhitelist(whitelist *cconfig.Whitelist) {
-	if whitelist != nil {
-		udpPorts := whitelist.Ports.UDP.ToSlice()
-		tcpPorts := whitelist.Ports.TCP.ToSlice()
+func displayAllowlist(allowlist *cconfig.Allowlist) {
+	if allowlist != nil {
+		udpPorts := allowlist.Ports.UDP.ToSlice()
+		tcpPorts := allowlist.Ports.TCP.ToSlice()
 		if len(udpPorts)+len(tcpPorts) > 0 {
-			allPorts := whitelist.Ports.UDP.Union(whitelist.Ports.TCP).ToSlice()
+			allPorts := allowlist.Ports.UDP.Union(allowlist.Ports.TCP).ToSlice()
 			sort.Slice(allPorts, func(i, j int) bool {
 				return client.InterfaceToInt64(allPorts[i]) < client.InterfaceToInt64(allPorts[j])
 			})
-			whitelistedRanges := make([]PortRange, 0)
+			allowlistedRanges := make([]PortRange, 0)
 			for _, port := range allPorts {
 				//find current iteration's protocols
 				var protos []string
-				if whitelist.Ports.UDP.Contains(port) {
+				if allowlist.Ports.UDP.Contains(port) {
 					protos = append(protos, "UDP")
 				}
-				if whitelist.Ports.TCP.Contains(port) {
+				if allowlist.Ports.TCP.Contains(port) {
 					protos = append(protos, "TCP")
 				}
 
 				var lastProtos []string
 				var lastEndPort int64
-				if len(whitelistedRanges) > 0 {
-					last := whitelistedRanges[len(whitelistedRanges)-1]
+				if len(allowlistedRanges) > 0 {
+					last := allowlistedRanges[len(allowlistedRanges)-1]
 					lastProtos = last.protocols
 					lastEndPort = last.end
 				}
-				//check if the range whitelist range continues or should we be starting a new one
+				//check if the range allowlist range continues or should we be starting a new one
 				if !slices.Equal(protos, lastProtos) || client.InterfaceToInt64(port)-lastEndPort > 1 {
-					whitelistedRanges = append(whitelistedRanges, PortRange{start: client.InterfaceToInt64(port), protocols: protos})
+					allowlistedRanges = append(allowlistedRanges, PortRange{start: client.InterfaceToInt64(port), protocols: protos})
 				}
 				//populate the range
-				whitelistedRanges[len(whitelistedRanges)-1].end = client.InterfaceToInt64(port)
+				allowlistedRanges[len(allowlistedRanges)-1].end = client.InterfaceToInt64(port)
 			}
-			fmt.Printf("Whitelisted ports:\n")
+			fmt.Printf("Allowlisted ports:\n")
 			maxLength := len(strconv.FormatInt(client.InterfaceToInt64(allPorts[len(allPorts)-1]), 10))
-			for _, wlRange := range whitelistedRanges {
+			for _, wlRange := range allowlistedRanges {
 				protoString := strings.Join(wlRange.protocols, "|")
 				if wlRange.start == wlRange.end {
 					fmt.Printf("  %*d (%s)\n", maxLength*2+3, wlRange.start, protoString)
@@ -118,9 +118,9 @@ func displayWhitelist(whitelist *cconfig.Whitelist) {
 				}
 			}
 		}
-		subnets := whitelist.Subnets.ToSlice()
+		subnets := allowlist.Subnets.ToSlice()
 		if len(subnets) > 0 {
-			fmt.Printf("Whitelisted subnets:\n")
+			fmt.Printf("Allowlisted subnets:\n")
 			for _, subnet := range subnets {
 				fmt.Printf("\t%s\n", subnet)
 			}

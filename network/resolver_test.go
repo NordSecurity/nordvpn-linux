@@ -22,7 +22,7 @@ type failingAgent struct{}
 func (failingAgent) Add(firewall.Rule) error    { return errors.ErrOnPurpose }
 func (failingAgent) Delete(firewall.Rule) error { return errors.ErrOnPurpose }
 
-func TestWhitelistIP(t *testing.T) {
+func TestAllowlistIP(t *testing.T) {
 	category.Set(t, category.Route)
 
 	tests := []struct {
@@ -113,7 +113,7 @@ func TestWhitelistIP(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			fw := firewall.NewFirewall(test.agent, test.agent, &subs.Subject[string]{}, true)
 			fw.Add(test.rules)
-			err := whitelistIP(fw, test.name, test.ips...)
+			err := allowlistIP(fw, test.name, test.ips...)
 			if test.hasError {
 				assert.Error(t, err)
 			} else {

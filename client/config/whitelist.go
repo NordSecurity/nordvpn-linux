@@ -7,7 +7,7 @@ import (
 	mapset "github.com/deckarep/golang-set"
 )
 
-type Whitelist struct {
+type Allowlist struct {
 	Ports   Ports      `json:"ports"`
 	Subnets mapset.Set `json:"subnets"`
 }
@@ -17,7 +17,7 @@ type Ports struct {
 	TCP mapset.Set `json:"tcp"`
 }
 
-func (w *Whitelist) UnmarshalJSON(b []byte) error {
+func (w *Allowlist) UnmarshalJSON(b []byte) error {
 	var i struct {
 		Ports   Ports
 		Subnets []interface{}

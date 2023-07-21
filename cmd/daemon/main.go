@@ -22,9 +22,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/whitelist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
@@ -137,7 +137,7 @@ func main() {
 		&subs.Subject[events.DataDNS]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[config.Protocol]{},
-		&subs.Subject[events.DataWhitelist]{},
+		&subs.Subject[events.DataAllowlist]{},
 		&subs.Subject[config.Technology]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
@@ -318,7 +318,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	whitelistRouter := routes.NewRouter(
+	allowlistRouter := routes.NewRouter(
 		&norouter.Facade{},
 		&iprouter.Router{},
 		cfg.Routing.Get(),
@@ -339,11 +339,11 @@ func main() {
 		mesh,
 		gwret,
 		infoSubject,
-		whitelistRouter,
+		allowlistRouter,
 		dnsSetter,
 		ipv6.NewIpv6(),
 		fw,
-		whitelist.NewWhitelistRouting(func(command string, arg ...string) ([]byte, error) {
+		allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
 			return exec.Command(command, arg...).CombinedOutput()
 		}),
 		device.ListPhysical,

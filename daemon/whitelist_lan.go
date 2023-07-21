@@ -3,7 +3,7 @@ package daemon
 import "github.com/NordSecurity/nordvpn-linux/config"
 
 // addLANPermissions adds or removes LANs to the whitelist
-func addLANPermissions(whitelist config.Whitelist) config.Whitelist {
+func addLANPermissions(whitelist config.Allowlist) config.Allowlist {
 	localNetworks := []string{
 		"10.0.0.0/8",
 		"172.16.0.0/12",

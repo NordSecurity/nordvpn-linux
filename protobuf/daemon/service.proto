@@ -52,8 +52,8 @@ service Daemon {
   rpc SetObfuscate(SetGenericRequest) returns (Payload);
   rpc SetProtocol(SetProtocolRequest) returns (SetProtocolResponse);
   rpc SetTechnology(SetTechnologyRequest) returns (Payload);
-  rpc SetWhitelist(SetWhitelistRequest) returns (Payload);
   rpc SetLANDiscovery(SetLANDiscoveryRequest) returns (SetLANDiscoveryResponse);
+  rpc SetAllowlist(SetAllowlistRequest) returns (Payload);
   rpc Settings(SettingsRequest) returns (SettingsResponse);
   rpc SettingsProtocols(Empty) returns (Payload);
   rpc SettingsTechnologies(Empty) returns (Payload);

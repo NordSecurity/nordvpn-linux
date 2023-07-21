@@ -7,12 +7,12 @@ const (
 	ConfigDirName = "nordvpn/"
 	// ConfigFilePath defines config file path
 	ConfigFilePath = ConfigDirName + "nordvpn.conf"
-	// WhitelistProtocol defines whitelist commands argument
-	WhitelistProtocol = "protocol"
-	// WhitelistMinPort defines min port which can be whitelisted
-	WhitelistMinPort = 1
-	// WhitelistMaxPort defines max port which can be whitelisted
-	WhitelistMaxPort = 65535
+	// AllowlistProtocol defines allowlist commands argument
+	AllowlistProtocol = "protocol"
+	// AllowlistMinPort defines min port which can be allowlisted
+	AllowlistMinPort = 1
+	// AllowlistMaxPort defines max port which can be allowlisted
+	AllowlistMaxPort = 65535
 )
 
 const (

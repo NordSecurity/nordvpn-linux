@@ -45,7 +45,7 @@ test/deb:
   script: $CI_PROJECT_DIR/ci/test_deb.sh $TEST
   parallel:
     matrix:
-      - TEST: [connect6, dns, dns6, killswitch, login, misc, routing, settings, whitelist]
+      - TEST: [connect6, dns, dns6, killswitch, login, misc, routing, settings, allowlist]
 test/deb-connect1:
   extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_quick_connect or test_double_quick_connect_only or test_connect_to_absent_server or test_mistype_connect or test_connect_to_invalid_group or test_connect_to_group_flag_standard or test_connect_to_group_flag_additional or test_connect_without_internet_access'

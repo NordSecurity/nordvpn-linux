@@ -28,7 +28,7 @@ type PublishSubcriber[T any] interface {
 	Subscriber[T]
 }
 
-type DataWhitelist struct {
+type DataAllowlist struct {
 	Subnets  int
 	TCPPorts int
 	UDPPorts int

@@ -15,7 +15,7 @@ message Payload {
   repeated string data = 2;
 }
 
-message Whitelist {
+message Allowlist {
   Ports ports = 1;
   repeated string subnets = 2;
 }

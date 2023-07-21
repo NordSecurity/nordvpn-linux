@@ -14,20 +14,20 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// WhitelistAddSubnetUsageText is shown next to subnet command by nordvpn whitelist add --help
-const WhitelistAddSubnetUsageText = "Adds subnet to a whitelist"
+// AllowlistAddSubnetUsageText is shown next to subnet command by nordvpn allowlist add --help
+const AllowlistAddSubnetUsageText = "Adds subnet to the allowlist"
 
-// WhitelistAddSubnetArgsUsageText is shown by nordvpn whitelist add subnet --help
-const WhitelistAddSubnetArgsUsageText = `<address>
+// AllowlistAddSubnetArgsUsageText is shown by nordvpn allowlist add subnet --help
+const AllowlistAddSubnetArgsUsageText = `<address>
 
-Use this command to whitelist subnet.
+Use this command to allowlist subnet.
 
-Example: 'nordvpn whitelist add subnet 192.168.1.1/24'
+Example: 'nordvpn allowlist add subnet 192.168.1.1/24'
 
 Notes:
   Address should be in CIDR notation`
 
-func (c *cmd) WhitelistAddSubnet(ctx *cli.Context) error {
+func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 	args := ctx.Args()
 
 	if args.Len() != 1 {
@@ -41,15 +41,15 @@ func (c *cmd) WhitelistAddSubnet(ctx *cli.Context) error {
 
 	var subnets = mapset.NewSet()
 	if !subnets.Add(subnet.String()) {
-		return formatError(fmt.Errorf(WhitelistAddSubnetExistsError, subnet.String()))
+		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet.String()))
 	}
 
-	subnets = c.config.Whitelist.Subnets.Union(subnets)
-	resp, err := c.client.SetWhitelist(context.Background(), &pb.SetWhitelistRequest{
-		Whitelist: &pb.Whitelist{
+	subnets = c.config.Allowlist.Subnets.Union(subnets)
+	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+		Allowlist: &pb.Allowlist{
 			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(c.config.Whitelist.Ports.UDP),
-				Tcp: client.SetToInt64s(c.config.Whitelist.Ports.TCP),
+				Udp: client.SetToInt64s(c.config.Allowlist.Ports.UDP),
+				Tcp: client.SetToInt64s(c.config.Allowlist.Ports.TCP),
 			},
 			Subnets: internal.SetToStrings(subnets),
 		},
@@ -62,18 +62,18 @@ func (c *cmd) WhitelistAddSubnet(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure:
-		return formatError(fmt.Errorf(WhitelistAddSubnetExistsError, subnet))
+		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodeSuccess:
-		c.config.Whitelist.Subnets = subnets
+		c.config.Allowlist.Subnets = subnets
 		err = c.configManager.Save(c.config)
 		if err != nil {
 			return formatError(ErrConfig)
 		}
-		color.Green(fmt.Sprintf(WhitelistAddSubnetSuccess, subnet))
+		color.Green(fmt.Sprintf(AllowlistAddSubnetSuccess, subnet))
 	}
 	return nil
 }
 
-func (c *cmd) WhitelistAddSubnetAutoComplete(ctx *cli.Context) {}
+func (c *cmd) AllowlistAddSubnetAutoComplete(ctx *cli.Context) {}

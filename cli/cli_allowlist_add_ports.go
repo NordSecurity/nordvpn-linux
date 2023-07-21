@@ -16,24 +16,24 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// WhitelistAddPortsUsageText is show next to ports command by nordvpn whitelist add --help
-const WhitelistAddPortsUsageText = "Adds port range to a whitelist"
+// AllowlistAddPortsUsageText is show next to ports command by nordvpn allowlist add --help
+const AllowlistAddPortsUsageText = "Adds port range to the allowlist"
 
-// WhitelistAddPortsArgsUsageText is shown by nordvpn whitelist add ports --help
-const WhitelistAddPortsArgsUsageText = `<port_from> <port_to> [protocol <protocol>]
+// AllowlistAddPortsArgsUsageText is shown by nordvpn allowlist add ports --help
+const AllowlistAddPortsArgsUsageText = `<port_from> <port_to> [protocol <protocol>]
 
-Use this command to whitelist the UDP and TCP ports.
+Use this command to allowlist the UDP and TCP ports.
 
-Example: 'nordvpn whitelist add ports 3000 8000'
+Example: 'nordvpn allowlist add ports 3000 8000'
 
-Optionally, protocol can be provided to specify which protocol should be whitelisted.
+Optionally, protocol can be provided to specify which protocol should be allowlisted.
 Supported values for <protocol>: TCP, UDP
 
-Example: 'nordvpn whitelist add ports 3000 8000 protocol TCP'`
+Example: 'nordvpn allowlist add ports 3000 8000 protocol TCP'`
 
-func (c *cmd) WhitelistAddPorts(ctx *cli.Context) error {
+func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 	args := ctx.Args()
-	if !(args.Len() == 2 || (args.Len() == 4 && args.Get(2) == WhitelistProtocol)) {
+	if !(args.Len() == 2 || (args.Len() == 4 && args.Get(2) == AllowlistProtocol)) {
 		return formatError(argsCountError(ctx))
 	}
 
@@ -51,8 +51,8 @@ func (c *cmd) WhitelistAddPorts(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if !(WhitelistMinPort <= startPort && startPort <= WhitelistMaxPort && WhitelistMinPort <= endPort && endPort <= WhitelistMaxPort) {
-		return formatError(fmt.Errorf(WhitelistPortsRangeError, args.First(), args.Get(1), strconv.Itoa(WhitelistMinPort), strconv.Itoa(WhitelistMaxPort)))
+	if !(AllowlistMinPort <= startPort && startPort <= AllowlistMaxPort && AllowlistMinPort <= endPort && endPort <= AllowlistMaxPort) {
+		return formatError(fmt.Errorf(AllowlistPortsRangeError, args.First(), args.Get(1), strconv.Itoa(AllowlistMinPort), strconv.Itoa(AllowlistMaxPort)))
 	}
 
 	var (
@@ -88,18 +88,18 @@ func (c *cmd) WhitelistAddPorts(ctx *cli.Context) error {
 	}
 
 	if !success {
-		return formatError(fmt.Errorf(WhitelistAddPortsExistsError, data...))
+		return formatError(fmt.Errorf(AllowlistAddPortsExistsError, data...))
 	}
 
-	UDPSet = c.config.Whitelist.Ports.UDP.Union(UDPSet)
-	TCPSet = c.config.Whitelist.Ports.TCP.Union(TCPSet)
-	resp, err := c.client.SetWhitelist(context.Background(), &pb.SetWhitelistRequest{
-		Whitelist: &pb.Whitelist{
+	UDPSet = c.config.Allowlist.Ports.UDP.Union(UDPSet)
+	TCPSet = c.config.Allowlist.Ports.TCP.Union(TCPSet)
+	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+		Allowlist: &pb.Allowlist{
 			Ports: &pb.Ports{
 				Udp: client.SetToInt64s(UDPSet),
 				Tcp: client.SetToInt64s(TCPSet),
 			},
-			Subnets: internal.SetToStrings(c.config.Whitelist.Subnets),
+			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
 		},
 	})
 	if err != nil {
@@ -110,22 +110,22 @@ func (c *cmd) WhitelistAddPorts(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure:
-		return formatError(fmt.Errorf(WhitelistAddPortsExistsError, data...))
+		return formatError(fmt.Errorf(AllowlistAddPortsExistsError, data...))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodeSuccess:
-		c.config.Whitelist.Ports.UDP = UDPSet
-		c.config.Whitelist.Ports.TCP = TCPSet
+		c.config.Allowlist.Ports.UDP = UDPSet
+		c.config.Allowlist.Ports.TCP = TCPSet
 		err = c.configManager.Save(c.config)
 		if err != nil {
 			return formatError(ErrConfig)
 		}
-		color.Green(fmt.Sprintf(WhitelistAddPortsSuccess, data...))
+		color.Green(fmt.Sprintf(AllowlistAddPortsSuccess, data...))
 	}
 	return nil
 }
 
-func (c *cmd) WhitelistAddPortsAutoComplete(ctx *cli.Context) {
+func (c *cmd) AllowlistAddPortsAutoComplete(ctx *cli.Context) {
 	switch ctx.NArg() {
 	case 2:
 		// show one word for completion

@@ -25,13 +25,13 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 			}}, nil
 	}
 
-	whitelist := cfg.AutoConnectData.Whitelist
+	whitelist := cfg.AutoConnectData.Allowlist
 	if in.GetEnabled() {
-		whitelist = addLANPermissions(cfg.AutoConnectData.Whitelist)
+		whitelist = addLANPermissions(cfg.AutoConnectData.Allowlist)
 	}
 
 	if r.netw.IsVPNActive() || cfg.KillSwitch {
-		if err := r.netw.UnsetWhitelist(); err != nil {
+		if err := r.netw.UnsetAllowlist(); err != nil {
 			log.Printf("Failed to unset whitelist: %v", err)
 			return &pb.SetLANDiscoveryResponse{
 				Response: &pb.SetLANDiscoveryResponse_ErrorCode{
@@ -40,7 +40,7 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 			}, nil
 		}
 
-		if err := r.netw.SetWhitelist(whitelist); err != nil {
+		if err := r.netw.SetAllowlist(whitelist); err != nil {
 			log.Printf("Failed to set whitelist: %v", err)
 			return &pb.SetLANDiscoveryResponse{
 				Response: &pb.SetLANDiscoveryResponse_ErrorCode{

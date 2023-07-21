@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Technology config.Technology `json:"technology,omitempty"`
 	Obfuscate  bool              `json:"obfuscate,omitempty"`
-	Whitelist  Whitelist         `json:"whitelist,omitempty"`
+	Allowlist  Allowlist         `json:"whitelist,omitempty"`
 }
 
 // NewConfig creates new config object

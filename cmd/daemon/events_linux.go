@@ -17,7 +17,7 @@ func (*dummyAnalytics) NotifyAutoconnect(bool) error                   { return 
 func (*dummyAnalytics) NotifyDNS(events.DataDNS) error                 { return nil }
 func (*dummyAnalytics) NotifyThreatProtectionLite(bool) error          { return nil }
 func (*dummyAnalytics) NotifyProtocol(config.Protocol) error           { return nil }
-func (*dummyAnalytics) NotifyWhitelist(events.DataWhitelist) error     { return nil }
+func (*dummyAnalytics) NotifyAllowlist(events.DataAllowlist) error     { return nil }
 func (*dummyAnalytics) NotifyTechnology(config.Technology) error       { return nil }
 func (*dummyAnalytics) NotifyObfuscate(bool) error                     { return nil }
 func (*dummyAnalytics) NotifyFirewall(bool) error                      { return nil }

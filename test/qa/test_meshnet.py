@@ -93,7 +93,7 @@ def test_mesh_removed_machine_by_other():
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 # This doesn't directly test meshnet, but it uses it
-def test_whitelist_incoming_connection():
+def test_allowlist_incoming_connection():
     with lib.Defer(meshnet.remove_all_peers):
         meshnet.add_peer(ssh_client)
         # Ideally peer update should happen through Notification Center, but that doesn't work often
@@ -111,8 +111,8 @@ def test_whitelist_incoming_connection():
                 with pytest.raises(sh.ErrorReturnCode_1) as ex:
                     assert "icmp_seq=" not in sh.ping("-c", "1", "qa-peer")
 
-                    ssh_client_mesh.exec_command(f"nordvpn whitelist add subnet {my_ip}/32")
-                    with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn whitelist remove all")):
-                        # Direct connection should work again after whitelisting
+                    ssh_client_mesh.exec_command(f"nordvpn allowlist add subnet {my_ip}/32")
+                    with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn allowlist remove all")):
+                        # Direct connection should work again after allowlisting
                         assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
 

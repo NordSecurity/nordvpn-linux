@@ -65,29 +65,29 @@ Example: nordvpn set %s on`
 	SetLANDiscoveryUsage          = "Access printers, TVs, and other devices on your local network while connected to a VPN."
 	SetLANDiscoveryAlreadyEnabled = "LAN discovery is already set to %s"
 
-	WhitelistAddPortExistsError = "Port %s (%s) is already whitelisted."
-	WhitelistAddPortSuccess     = "Port %s (%s) is whitelisted successfully."
+	AllowlistAddPortExistsError = "Port %s (%s) is already allowlisted."
+	AllowlistAddPortSuccess     = "Port %s (%s) is allowlisted successfully."
 
-	WhitelistAddPortsExistsError = "Ports %s - %s (%s) are already whitelisted."
-	WhitelistAddPortsSuccess     = "Ports %s - %s (%s) are whitelisted successfully."
+	AllowlistAddPortsExistsError = "Ports %s - %s (%s) are already allowlisted."
+	AllowlistAddPortsSuccess     = "Ports %s - %s (%s) are allowlisted successfully."
 
-	WhitelistAddSubnetExistsError = "Subnet %s is already whitelisted."
-	WhitelistAddSubnetSuccess     = "Subnet %s is whitelisted successfully."
+	AllowlistAddSubnetExistsError = "Subnet %s is already allowlisted."
+	AllowlistAddSubnetSuccess     = "Subnet %s is allowlisted successfully."
 
-	WhitelistRemovePortExistsError = "Port %s (%s) is not whitelisted."
-	WhitelistRemovePortSuccess     = "Port %s (%s) is removed from the whitelist successfully."
+	AllowlistRemovePortExistsError = "Port %s (%s) is not allowlisted."
+	AllowlistRemovePortSuccess     = "Port %s (%s) is removed from the allowlist successfully."
 
-	WhitelistRemovePortsExistsError = "Ports %s - %s (%s) are not whitelisted."
-	WhitelistRemovePortsSuccess     = "Ports %s - %s (%s) are removed from the whitelist successfully."
+	AllowlistRemovePortsExistsError = "Ports %s - %s (%s) are not allowlisted."
+	AllowlistRemovePortsSuccess     = "Ports %s - %s (%s) are removed from the allowlist successfully."
 
-	WhitelistRemoveSubnetExistsError = "Subnet %s is not whitelisted."
-	WhitelistRemoveSubnetSuccess     = "Subnet %s is removed from a whitelist successfully."
+	AllowlistRemoveSubnetExistsError = "Subnet %s is not allowlisted."
+	AllowlistRemoveSubnetSuccess     = "Subnet %s is removed from the allowlist successfully."
 
-	WhitelistRemoveAllError   = "Whitelist elements could not be removed."
-	WhitelistRemoveAllSuccess = "All ports and subnets have been removed from the whitelist successfully."
+	AllowlistRemoveAllError   = "Allowlist elements could not be removed."
+	AllowlistRemoveAllSuccess = "All ports and subnets have been removed from the allowlist successfully."
 
-	WhitelistPortRangeError  = "Port %s value is out of range [%s - %s]."
-	WhitelistPortsRangeError = "Ports %s - %s value is out of range [%s - %s]."
+	AllowlistPortRangeError  = "Port %s value is out of range [%s - %s]."
+	AllowlistPortsRangeError = "Ports %s - %s value is out of range [%s - %s]."
 
 	AccountCreationSuccess = "Account has been successfully created."
 	// AccountInvalidData is displayed when backend returns bad request (400)

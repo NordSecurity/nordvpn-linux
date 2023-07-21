@@ -52,8 +52,8 @@ type DaemonClient interface {
 	SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error)
 	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetWhitelist(ctx context.Context, in *SetWhitelistRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error)
+	SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
 	Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error)
 	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
@@ -408,18 +408,18 @@ func (c *daemonClient) SetTechnology(ctx context.Context, in *SetTechnologyReque
 	return out, nil
 }
 
-func (c *daemonClient) SetWhitelist(ctx context.Context, in *SetWhitelistRequest, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, "/pb.Daemon/SetWhitelist", in, out, opts...)
+func (c *daemonClient) SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error) {
+	out := new(SetLANDiscoveryResponse)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/SetLANDiscovery", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *daemonClient) SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error) {
-	out := new(SetLANDiscoveryResponse)
-	err := c.cc.Invoke(ctx, "/pb.Daemon/SetLANDiscovery", in, out, opts...)
+func (c *daemonClient) SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/SetAllowlist", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -505,8 +505,8 @@ type DaemonServer interface {
 	SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error)
 	SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error)
 	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
-	SetWhitelist(context.Context, *SetWhitelistRequest) (*Payload, error)
 	SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error)
+	SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
 	Settings(context.Context, *SettingsRequest) (*SettingsResponse, error)
 	SettingsProtocols(context.Context, *Empty) (*Payload, error)
 	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
@@ -609,11 +609,11 @@ func (UnimplementedDaemonServer) SetProtocol(context.Context, *SetProtocolReques
 func (UnimplementedDaemonServer) SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetTechnology not implemented")
 }
-func (UnimplementedDaemonServer) SetWhitelist(context.Context, *SetWhitelistRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetWhitelist not implemented")
-}
 func (UnimplementedDaemonServer) SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetLANDiscovery not implemented")
+}
+func (UnimplementedDaemonServer) SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAllowlist not implemented")
 }
 func (UnimplementedDaemonServer) Settings(context.Context, *SettingsRequest) (*SettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Settings not implemented")
@@ -1192,24 +1192,6 @@ func _Daemon_SetTechnology_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetWhitelist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetWhitelistRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetWhitelist(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.Daemon/SetWhitelist",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetWhitelist(ctx, req.(*SetWhitelistRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Daemon_SetLANDiscovery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetLANDiscoveryRequest)
 	if err := dec(in); err != nil {
@@ -1224,6 +1206,24 @@ func _Daemon_SetLANDiscovery_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).SetLANDiscovery(ctx, req.(*SetLANDiscoveryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetAllowlist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAllowlistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetAllowlist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/SetAllowlist",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetAllowlist(ctx, req.(*SetAllowlistRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1434,12 +1434,12 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_SetTechnology_Handler,
 		},
 		{
-			MethodName: "SetWhitelist",
-			Handler:    _Daemon_SetWhitelist_Handler,
-		},
-		{
 			MethodName: "SetLANDiscovery",
 			Handler:    _Daemon_SetLANDiscovery_Handler,
+		},
+		{
+			MethodName: "SetAllowlist",
+			Handler:    _Daemon_SetAllowlist_Handler,
 		},
 		{
 			MethodName: "Settings",
