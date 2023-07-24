@@ -362,6 +362,7 @@ func main() {
 			return exec.Command(command, arg...).CombinedOutput()
 		}),
 		cfg.FirewallMark,
+		cfg.LanDiscovery,
 	)
 
 	// RPC Servers
@@ -423,6 +424,7 @@ func main() {
 		notificationClient,
 		analytics,
 		fileshareImplementation,
+		meshAPIex,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,

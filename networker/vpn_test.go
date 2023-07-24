@@ -80,6 +80,7 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			// injecting VPN implementation without calling netw.Start
 			netw.vpnet = test.vpn

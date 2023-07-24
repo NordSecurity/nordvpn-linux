@@ -30,6 +30,17 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 		whitelist = addLANPermissions(cfg.AutoConnectData.Allowlist)
 	}
 
+	if cfg.Mesh {
+		token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+		if peers, err := r.meshRegistry.List(token, cfg.MeshDevice.ID); err == nil {
+			r.netw.SetLanDiscoveryAndResetMesh(in.Enabled, peers)
+		} else {
+			log.Printf("Failed to fetch peers from the API when setting LAN discovery: %v", err)
+		}
+	} else {
+		r.netw.SetLanDiscovery(in.Enabled)
+	}
+
 	if r.netw.IsVPNActive() || cfg.KillSwitch {
 		if err := r.netw.UnsetAllowlist(); err != nil {
 			log.Printf("Failed to unset whitelist: %v", err)

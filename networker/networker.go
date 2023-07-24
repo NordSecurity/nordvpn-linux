@@ -99,6 +99,8 @@ type Networker interface {
 	DenyIPv6() error
 	SetVPN(vpn.VPN)
 	LastServerName() string
+	SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers)
+	SetLanDiscovery(bool)
 }
 
 // Combined configures networking for VPN connections.
@@ -138,6 +140,7 @@ type Combined struct {
 	ipv6Enabled        bool
 	fwmark             uint32
 	mu                 sync.Mutex
+	lanDiscovery       bool
 }
 
 // NewCombined returns a ready made version of
@@ -159,6 +162,7 @@ func NewCombined(
 	peerRouter routes.Service,
 	exitNode exitnode.Node,
 	fwmark uint32,
+	lanDiscovery bool,
 ) *Combined {
 	return &Combined{
 		vpnet:            vpnet,
@@ -178,6 +182,7 @@ func NewCombined(
 		exitNode:         exitNode,
 		rules:            []string{},
 		fwmark:           fwmark,
+		lanDiscovery:     lanDiscovery,
 	}
 }
 
@@ -1193,7 +1198,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		}
 	}
 
-	err = netw.exitNode.ResetPeers(cfg.Peers)
+	err = netw.exitNode.ResetPeers(cfg.Peers, netw.lanDiscovery)
 	if err != nil {
 		return err
 	}
@@ -1409,7 +1414,7 @@ func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 }
 
 func (netw *Combined) ResetRouting(peers mesh.MachinePeers) error {
-	return netw.exitNode.ResetPeers(peers)
+	return netw.exitNode.ResetPeers(peers, netw.lanDiscovery)
 }
 
 func (netw *Combined) defaultMeshBlock() error {
@@ -1443,4 +1448,23 @@ func (netw *Combined) defaultMeshBlock() error {
 	netw.rules = append(netw.rules, defaultMeshBlock)
 	netw.rules = append(netw.rules, defaultMeshAllowEstablished)
 	return nil
+}
+
+func (netw *Combined) SetLanDiscoveryAndResetMesh(enabled bool, peers mesh.MachinePeers) {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+
+	netw.lanDiscovery = enabled
+	if err := netw.exitNode.ResetPeers(peers, netw.lanDiscovery); err != nil {
+		log.Println(internal.ErrorPrefix,
+			"failed to reset peers firewall rules fter enabling lan discovery: ",
+			err)
+	}
+}
+
+func (netw *Combined) SetLanDiscovery(enabled bool) {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+
+	netw.lanDiscovery = enabled
 }

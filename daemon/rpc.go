@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -49,6 +50,7 @@ type RPC struct {
 	ncClient         nc.NotificationClient
 	analytics        events.Analytics
 	fileshare        service.Fileshare
+	meshRegistry     mesh.Registry
 	pb.UnimplementedDaemonServer
 }
 
@@ -74,6 +76,7 @@ func NewRPC(
 	ncClient nc.NotificationClient,
 	analytics events.Analytics,
 	fileshare service.Fileshare,
+	meshRegistry mesh.Registry,
 ) *RPC {
 	return &RPC{
 		environment:      environment,
@@ -99,5 +102,6 @@ func NewRPC(
 		ncClient:         ncClient,
 		analytics:        analytics,
 		fileshare:        fileshare,
+		meshRegistry:     meshRegistry,
 	}
 }

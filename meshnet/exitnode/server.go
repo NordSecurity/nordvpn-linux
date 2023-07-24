@@ -17,7 +17,7 @@ const (
 // Node is exit node server side interface
 type Node interface {
 	Enable() error
-	ResetPeers(mesh.MachinePeers) error
+	ResetPeers(mesh.MachinePeers, bool) error
 	Disable() error
 }
 
@@ -66,7 +66,7 @@ func (en *Server) Enable() error {
 }
 
 // EnablePeer enables masquerading for peer
-func (en *Server) ResetPeers(peers mesh.MachinePeers) error {
+func (en *Server) ResetPeers(peers mesh.MachinePeers, lanDiscovery bool) error {
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
@@ -76,7 +76,7 @@ func (en *Server) ResetPeers(peers mesh.MachinePeers) error {
 			trafficPeers = append(trafficPeers, TrafficPeer{
 				netip.PrefixFrom(peer.Address, peer.Address.BitLen()),
 				peer.DoIAllowRouting,
-				peer.DoIAllowLocalNetwork,
+				peer.DoIAllowLocalNetwork && lanDiscovery,
 			})
 		}
 	}

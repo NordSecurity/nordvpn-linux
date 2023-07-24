@@ -188,6 +188,7 @@ func TestRpcConnect(t *testing.T) {
 				nil,
 				&mockAnalytics{},
 				service.MockFileshare{},
+				&RegistryMock{},
 			)
 			err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
 			assert.NoError(t, err)
@@ -264,6 +265,7 @@ func TestRpcReconnect(t *testing.T) {
 		nil,
 		&mockAnalytics{},
 		service.MockFileshare{},
+		&RegistryMock{},
 	)
 	err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
 	assert.NoError(t, err)

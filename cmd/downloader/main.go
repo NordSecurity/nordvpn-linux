@@ -50,6 +50,7 @@ func main() {
 		nil,
 		nil,
 		0,
+		false,
 	)
 	daemon.JobInsights(dm, api, netw, true)()
 	if err := daemon.JobCountries(dm, api)(); err != nil {

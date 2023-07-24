@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -51,19 +52,21 @@ func (mockObfuscateNetworker) IsVPNActive() bool                 { return true }
 func (mockObfuscateNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
 	return networker.ConnectionStatus{}, nil
 }
-func (mockObfuscateNetworker) EnableFirewall() error                { return nil }
-func (mockObfuscateNetworker) DisableFirewall() error               { return nil }
-func (mockObfuscateNetworker) EnableRouting()                       {}
-func (mockObfuscateNetworker) DisableRouting()                      {}
-func (mockObfuscateNetworker) SetAllowlist(config.Allowlist) error  { return nil }
-func (mockObfuscateNetworker) UnsetAllowlist() error                { return nil }
-func (mockObfuscateNetworker) IsNetworkSet() bool                   { return false }
-func (mockObfuscateNetworker) SetKillSwitch(config.Allowlist) error { return nil }
-func (mockObfuscateNetworker) UnsetKillSwitch() error               { return nil }
-func (mockObfuscateNetworker) PermitIPv6() error                    { return nil }
-func (mockObfuscateNetworker) DenyIPv6() error                      { return nil }
-func (mockObfuscateNetworker) SetVPN(vpn.VPN)                       {}
-func (mockObfuscateNetworker) LastServerName() string               { return "" }
+func (mockObfuscateNetworker) EnableFirewall() error                               { return nil }
+func (mockObfuscateNetworker) DisableFirewall() error                              { return nil }
+func (mockObfuscateNetworker) EnableRouting()                                      {}
+func (mockObfuscateNetworker) DisableRouting()                                     {}
+func (mockObfuscateNetworker) SetAllowlist(config.Allowlist) error                 { return nil }
+func (mockObfuscateNetworker) UnsetAllowlist() error                               { return nil }
+func (mockObfuscateNetworker) IsNetworkSet() bool                                  { return false }
+func (mockObfuscateNetworker) SetKillSwitch(config.Allowlist) error                { return nil }
+func (mockObfuscateNetworker) UnsetKillSwitch() error                              { return nil }
+func (mockObfuscateNetworker) PermitIPv6() error                                   { return nil }
+func (mockObfuscateNetworker) DenyIPv6() error                                     { return nil }
+func (mockObfuscateNetworker) SetVPN(vpn.VPN)                                      {}
+func (mockObfuscateNetworker) LastServerName() string                              { return "" }
+func (mockObfuscateNetworker) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
+func (mockObfuscateNetworker) SetLanDiscovery(bool)                                {}
 
 func TestSetObfuscate(t *testing.T) {
 	mockConfigManager := mockObfuscateConfigManager{c: config.Config{AutoConnect: false}}

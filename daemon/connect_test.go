@@ -120,24 +120,26 @@ func (workingNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
 	return networker.ConnectionStatus{}, nil
 }
 
-func (workingNetworker) EnableFirewall() error                { return nil }
-func (workingNetworker) DisableFirewall() error               { return nil }
-func (workingNetworker) EnableRouting()                       {}
-func (workingNetworker) DisableRouting()                      {}
-func (workingNetworker) PermitIPv6() error                    { return nil }
-func (workingNetworker) DenyIPv6() error                      { return nil }
-func (workingNetworker) SetAllowlist(config.Allowlist) error  { return nil }
-func (workingNetworker) UnsetAllowlist() error                { return nil }
-func (workingNetworker) IsNetworkSet() bool                   { return false }
-func (workingNetworker) SetKillSwitch(config.Allowlist) error { return nil }
-func (workingNetworker) UnsetKillSwitch() error               { return nil }
-func (workingNetworker) Connect(netip.Addr, string) error     { return nil }
-func (workingNetworker) Disconnect() error                    { return nil }
-func (workingNetworker) Refresh(mesh.MachineMap) error        { return nil }
-func (workingNetworker) Allow(mesh.Machine) error             { return nil }
-func (workingNetworker) Block(mesh.Machine) error             { return nil }
-func (workingNetworker) SetVPN(vpn.VPN)                       {}
-func (workingNetworker) LastServerName() string               { return "" }
+func (workingNetworker) EnableFirewall() error                               { return nil }
+func (workingNetworker) DisableFirewall() error                              { return nil }
+func (workingNetworker) EnableRouting()                                      {}
+func (workingNetworker) DisableRouting()                                     {}
+func (workingNetworker) PermitIPv6() error                                   { return nil }
+func (workingNetworker) DenyIPv6() error                                     { return nil }
+func (workingNetworker) SetAllowlist(config.Allowlist) error                 { return nil }
+func (workingNetworker) UnsetAllowlist() error                               { return nil }
+func (workingNetworker) IsNetworkSet() bool                                  { return false }
+func (workingNetworker) SetKillSwitch(config.Allowlist) error                { return nil }
+func (workingNetworker) UnsetKillSwitch() error                              { return nil }
+func (workingNetworker) Connect(netip.Addr, string) error                    { return nil }
+func (workingNetworker) Disconnect() error                                   { return nil }
+func (workingNetworker) Refresh(mesh.MachineMap) error                       { return nil }
+func (workingNetworker) Allow(mesh.Machine) error                            { return nil }
+func (workingNetworker) Block(mesh.Machine) error                            { return nil }
+func (workingNetworker) SetVPN(vpn.VPN)                                      {}
+func (workingNetworker) LastServerName() string                              { return "" }
+func (workingNetworker) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
+func (workingNetworker) SetLanDiscovery(bool)                                {}
 
 type UniqueAddress struct{}
 
@@ -160,24 +162,26 @@ func (failingNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
 	return networker.ConnectionStatus{}, nil
 }
 
-func (failingNetworker) EnableFirewall() error                { return errOnPurpose }
-func (failingNetworker) DisableFirewall() error               { return errOnPurpose }
-func (failingNetworker) EnableRouting()                       {}
-func (failingNetworker) DisableRouting()                      {}
-func (failingNetworker) PermitIPv6() error                    { return errOnPurpose }
-func (failingNetworker) DenyIPv6() error                      { return errOnPurpose }
-func (failingNetworker) SetAllowlist(config.Allowlist) error  { return errOnPurpose }
-func (failingNetworker) UnsetAllowlist() error                { return errOnPurpose }
-func (failingNetworker) IsNetworkSet() bool                   { return false }
-func (failingNetworker) SetKillSwitch(config.Allowlist) error { return errOnPurpose }
-func (failingNetworker) UnsetKillSwitch() error               { return errOnPurpose }
-func (failingNetworker) Connect(netip.Addr, string) error     { return errOnPurpose }
-func (failingNetworker) Disconnect() error                    { return errOnPurpose }
-func (failingNetworker) Refresh(mesh.MachineMap) error        { return errOnPurpose }
-func (failingNetworker) Allow(mesh.Machine) error             { return errOnPurpose }
-func (failingNetworker) Block(mesh.Machine) error             { return errOnPurpose }
-func (failingNetworker) SetVPN(vpn.VPN)                       {}
-func (failingNetworker) LastServerName() string               { return "" }
+func (failingNetworker) EnableFirewall() error                               { return errOnPurpose }
+func (failingNetworker) DisableFirewall() error                              { return errOnPurpose }
+func (failingNetworker) EnableRouting()                                      {}
+func (failingNetworker) DisableRouting()                                     {}
+func (failingNetworker) PermitIPv6() error                                   { return errOnPurpose }
+func (failingNetworker) DenyIPv6() error                                     { return errOnPurpose }
+func (failingNetworker) SetAllowlist(config.Allowlist) error                 { return errOnPurpose }
+func (failingNetworker) UnsetAllowlist() error                               { return errOnPurpose }
+func (failingNetworker) IsNetworkSet() bool                                  { return false }
+func (failingNetworker) SetKillSwitch(config.Allowlist) error                { return errOnPurpose }
+func (failingNetworker) UnsetKillSwitch() error                              { return errOnPurpose }
+func (failingNetworker) Connect(netip.Addr, string) error                    { return errOnPurpose }
+func (failingNetworker) Disconnect() error                                   { return errOnPurpose }
+func (failingNetworker) Refresh(mesh.MachineMap) error                       { return errOnPurpose }
+func (failingNetworker) Allow(mesh.Machine) error                            { return errOnPurpose }
+func (failingNetworker) Block(mesh.Machine) error                            { return errOnPurpose }
+func (failingNetworker) SetVPN(vpn.VPN)                                      {}
+func (failingNetworker) LastServerName() string                              { return "" }
+func (failingNetworker) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
+func (failingNetworker) SetLanDiscovery(bool)                                {}
 
 func TestConnect(t *testing.T) {
 	category.Set(t, category.Route)

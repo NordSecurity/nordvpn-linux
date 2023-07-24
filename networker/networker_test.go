@@ -165,7 +165,7 @@ func (e *workingExitNode) Enable() error {
 	return nil
 }
 
-func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers) error {
+func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lanDiscovery bool) error {
 	e.peers = peers
 	return nil
 }
@@ -312,6 +312,7 @@ func TestCombined_Start(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			err := netw.Start(
 				vpn.Credentials{},
@@ -378,6 +379,7 @@ func TestCombined_Stop(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			netw.vpnet = test.vpn
 			err := netw.stop()
@@ -415,7 +417,7 @@ func TestCombined_TransferRates(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// Test does not rely on any of the values provided via constructor
 			// so it's fine to pass nils to all of them.
-			netw := NewCombined(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0)
+			netw := NewCombined(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, false)
 			// injecting VPN implementation without calling netw.Start
 			netw.vpnet = test.vpn
 			connStus, err := netw.ConnectionStatus()
@@ -480,6 +482,7 @@ func TestCombined_SetDNS(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			netw.vpnet = testvpn.Working{}
 			err := netw.setDNS(test.nameservers)
@@ -527,6 +530,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			netw.vpnet = testvpn.Working{}
 			err := netw.unsetDNS()
@@ -590,6 +594,7 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			assert.ErrorIs(t, netw.resetAllowlist(), test.err)
 		})
@@ -649,6 +654,7 @@ func TestCombined_BlockTraffic(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			assert.ErrorIs(t, netw.blockTraffic(), test.err)
 		})
@@ -695,6 +701,7 @@ func TestCombined_UnblockTraffic(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			assert.ErrorIs(t, netw.unblockTraffic(), test.err)
 		})
@@ -754,6 +761,7 @@ func TestCombined_AllowIPv6Traffic(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			assert.ErrorIs(t, netw.allowIPv6Traffic(), test.err)
 		})
@@ -800,6 +808,7 @@ func TestCombined_StopAllowedIPv6Traffic(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			assert.ErrorIs(t, netw.stopAllowedIPv6Traffic(), test.err)
 		})
@@ -896,6 +905,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			assert.ErrorIs(t, netw.setAllowlist(test.allowlist), test.err)
 		})
@@ -953,6 +963,7 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			err := netw.unsetAllowlist()
 			assert.ErrorIs(t, err, test.err)
@@ -1031,6 +1042,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			err := netw.setNetwork(
 				config.NewAllowlist(
@@ -1094,6 +1106,7 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			assert.ErrorIs(t, netw.unsetNetwork(), test.err)
 		})
@@ -1161,6 +1174,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			uniqueAddress := meshnet.UniqueAddress{UID: test.publicKey, Address: netip.MustParseAddr(test.address)}
 			err := netw.AllowIncoming(uniqueAddress)
@@ -1230,6 +1244,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			uniqueAddress := meshnet.UniqueAddress{UID: test.publicKey, Address: netip.MustParseAddr(test.address)}
 			err := netw.AllowIncoming(uniqueAddress)
@@ -1281,6 +1296,7 @@ func TestCombined_SetMesh(t *testing.T) {
 				workingRouter{},
 				&workingExitNode{},
 				0,
+				false,
 			)
 			assert.ErrorIs(t, test.err, netw.SetMesh(
 				mesh.MachineMap{},
@@ -1332,6 +1348,7 @@ func TestCombined_UnSetMesh(t *testing.T) {
 				workingRouter{},
 				&workingExitNode{},
 				0,
+				false,
 			)
 			netw.isMeshnetSet = true
 			assert.ErrorIs(t, test.err, netw.UnSetMesh())
@@ -1385,6 +1402,7 @@ func TestCombined_allowIncoming(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.Equal(t, netw.rules[0], test.ruleName)
@@ -1438,6 +1456,7 @@ func TestCombined_Block(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.Equal(t, netw.rules[0], test.ruleName)
@@ -1493,6 +1512,7 @@ func TestCombined_allowGeneratedRule(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.Equal(t, nil, err)
@@ -1535,6 +1555,7 @@ func TestCombined_BlocNonExistingRuleFail(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			// Should fail to block rule non existing
 			expectedErrorMsg := fmt.Sprintf("Allow rule does not exist for %s", test.ruleName)
@@ -1578,6 +1599,7 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 				nil,
 				nil,
 				0,
+				false,
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
 			assert.Equal(t, nil, err)
@@ -1612,6 +1634,7 @@ func TestCombined_Refresh(t *testing.T) {
 		workingRouter{},
 		exitNode,
 		0,
+		false,
 	)
 
 	machineHostName := "test-fuji.nord"
@@ -1766,6 +1789,7 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 		nil,
 		nil,
 		0,
+		false,
 	)
 
 	err := netw.start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, config.DNS{"1.1.1.1"})
