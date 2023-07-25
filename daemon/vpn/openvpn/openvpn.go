@@ -201,6 +201,8 @@ func (ovpn *OpenVPN) stop() error {
 		}
 	}
 
+	ovpn.Lock()
+	defer ovpn.Unlock()
 	ovpn.manager = nil
 	ovpn.tun = nil
 	ovpn.active = false
