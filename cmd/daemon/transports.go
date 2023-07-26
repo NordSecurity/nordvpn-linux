@@ -79,7 +79,7 @@ func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 	}
 }
 
-func createH3Transport() http.RoundTripper {
+func createH3Transport() *http3.RoundTripper {
 	pool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatal(err)
