@@ -131,7 +131,12 @@ func TestNordValidator_Validate(t *testing.T) {
 	}{
 		{code: 200, data: sampleData, headers: validHeaders(sampleData), error: false},
 		{code: 429, data: sampleData, headers: validHeaders(sampleData), error: false},
+		// Errors are OK with empty body
 		{code: 404, data: sampleData, headers: validHeaders([]byte{}), error: false},
+		// Success responses are NOT OK with empty body
+		{code: 200, data: sampleData, headers: validHeaders([]byte{}), error: true},
+		// Errors are also OK with valid actual data
+		{code: 404, data: sampleData, headers: validHeaders(sampleData), error: false},
 		{code: 200, data: sampleData, headers: nil, error: true},
 		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Authorization", ""), error: true},
 		{code: 200, data: sampleData, headers: setHeader(validHeaders(sampleData), "X-Accept-Before", ""), error: true},

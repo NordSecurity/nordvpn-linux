@@ -65,13 +65,10 @@ func (v *NordValidator) Validate(code int, headers http.Header, body []byte) err
 		return fmt.Errorf("unknown signature algorithm name %s", algo)
 	}
 
-	// In case of an error, uses a checksum of empty repsonse even though actual body contains
-	// an error message
-	if code < 200 || code >= 300 && code != 429 {
-		body = []byte{}
-	}
 	// Get expected digest value and check if it matches the X-Digest
-	if xDigest != string(hashFunc(body)) {
+	// For some errors backend uses a checksum of empty response even though actual body exists
+	if xDigest != string(hashFunc(body)) &&
+		(code >= 200 && code < 300 || xDigest != string(hashFunc([]byte{}))) {
 		return fmt.Errorf("X-Digest value does not match the checksum of response body")
 	}
 
