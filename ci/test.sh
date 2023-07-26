@@ -1,8 +1,6 @@
 #!/bin/bash
 set -euo
 
-source "${CI_PROJECT_DIR}"/ci/env.sh
-
 # Excluded packages are directly related to C packages, therefore they
 # complicate the compilation process. It is fine to exclude them for
 # testing/development purposes.
@@ -11,11 +9,13 @@ source "${CI_PROJECT_DIR}"/ci/env.sh
 excluded_packages="moose\|cmd\/daemon\|telio\|daemon\/vpn\/openvpn"
 excluded_packages=$excluded_packages"\|meshnet\/mesh\/nordlynx\|fileshare\/drop"
 excluded_packages=$excluded_packages"\|events\/moose"
-excluded_categories="root,link,firewall,route,file"
+excluded_categories="root,link,firewall,route,file,integration"
 
 # In case 'full' was specified, do not exclude anything and run
 # everything
 if [ "${1:-""}" = "full" ]; then
+	source "${CI_PROJECT_DIR}"/ci/env.sh
+
 	# Apply moose patch in case compiling with moose
 	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
 	function revert_moose_patch {
@@ -45,5 +45,7 @@ go test -tags internal -v -race $(go list ./... | grep -v "${excluded_packages}"
 # Display code coverage report
 go tool cover -func="${CI_PROJECT_DIR}"/coverage.txt
 
-# "gocover-cobertura" is used for test coverage visualization in the diff view.
-gocover-cobertura < "$CI_PROJECT_DIR"/coverage.txt > coverage.xml
+if [ "${1:-""}" = "full" ]; then
+	# "gocover-cobertura" is used for test coverage visualization in the diff view.
+	gocover-cobertura < "$CI_PROJECT_DIR"/coverage.txt > coverage.xml
+fi

@@ -34,15 +34,6 @@ analyse/binaries:
   parallel:
     matrix:
       - ARCH: [i386, amd64, armel, armhf, aarch64]
-analyse/correctness:
-  stage: analyse
-  image: ghcr.io/nordsecurity/nordvpn-linux/linter:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
-  script: $CI_PROJECT_DIR/ci/lint.sh
-  dependencies: []
 analyse/glibc:
   stage: analyse
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
@@ -59,24 +50,6 @@ analyse/glibc:
   parallel:
     matrix:
       - ARCH: [i386, amd64, armel, armhf, aarch64]
-analyse/scripts:
-  stage: analyse
-  image: ghcr.io/nordsecurity/nordvpn-linux/shellcheck:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
-  script: $CI_PROJECT_DIR/ci/shellcheck.sh
-  dependencies: []
-analyse/security:
-  stage: analyse
-  image: ghcr.io/nordsecurity/nordvpn-linux/scanner:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
-  script: $CI_PROJECT_DIR/ci/scan.sh
-  dependencies: []
 analyse/supply-chain:
   stage: analyse
   image: ghcr.io/nordsecurity/nordvpn-linux/blackduck:1.0.0

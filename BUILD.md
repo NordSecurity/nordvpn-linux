@@ -35,6 +35,7 @@ Please follow the instructions in the following step for setting up the developm
     Virtual machine mounts `dist/app` directory from the host at `/vagrant`.
 1. (optional) Install [protoc](https://grpc.io/docs/languages/go/quickstart/#prerequisites) to be able to compile protobuf files.
     1. Might need to rename `protoc-gen-go-grpc` binary to `protoc-gen-go_grpc` to work.
+1. (optional) Install Act to run Github jobs locally https://github.com/nektos/act
 1. Run `mage` to discover and execute build targets.
     1. To use non-Docker targets please refer to `ci/docker/*/Dockerfile` Dockerfiles for necessary dependencies to be installed.
 # Building
@@ -216,12 +217,10 @@ Released packages of Linux App can be found in https://repo.nordvpn.com/deb and 
 The following images can be built:
 - builder
 - packager
-- linter
 - scanner
 - tester
 - uploader
 - notifier
-- shellcheck
 - qa-peer
 
 Images are stored in `ghcr.io/nordsecurity/nordvpn-linux` registry.

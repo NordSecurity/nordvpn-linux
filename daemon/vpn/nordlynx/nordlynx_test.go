@@ -12,6 +12,8 @@ import (
 )
 
 func TestGetDefaultIpRouteInterface(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		testName              string
 		ipRoutes              string
@@ -56,6 +58,8 @@ func TestGetDefaultIpRouteInterface(t *testing.T) {
 }
 
 func TestGetDefaultIpRouteInterfaceFromCommandOutput(t *testing.T) {
+	category.Set(t, category.Route)
+
 	out, _ := exec.Command("ip", "route", "show", "default").Output()
 	outString := string(out)
 

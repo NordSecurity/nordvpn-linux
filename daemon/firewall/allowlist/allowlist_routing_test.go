@@ -99,6 +99,8 @@ func Test_getCleanupIPTablesRules(t *testing.T) {
 }
 
 func TestIPTables_EnablePorts(t *testing.T) {
+	category.Set(t, category.Route)
+
 	type args struct {
 		ports       []int
 		protocol    string
@@ -142,6 +144,8 @@ func TestIPTables_EnablePorts(t *testing.T) {
 }
 
 func TestIPTables_EnableSubnets(t *testing.T) {
+	category.Set(t, category.Route)
+
 	type args struct {
 		subnets     []netip.Prefix
 		commandFunc runCommandFunc
@@ -182,6 +186,8 @@ func TestIPTables_EnableSubnets(t *testing.T) {
 }
 
 func TestIPTables_Disable(t *testing.T) {
+	category.Set(t, category.Route)
+
 	tests := []struct {
 		name    string
 		wantErr bool

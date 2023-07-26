@@ -23,7 +23,6 @@ const (
 	imageScanner           = registryPrefix + "scanner:1.0.0"
 	imageTester            = registryPrefix + "tester:1.1.1"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.2"
-	imageLinter            = registryPrefix + "linter:1.0.0"
 	imageRuster            = registryPrefix + "ruster:1.0.1"
 )
 
@@ -382,23 +381,7 @@ func (Test) CgoDocker(ctx context.Context) error {
 // Gosec run security scan on the host
 func (Test) Gosec() error {
 	mg.Deps(Install.Gosec)
-	return sh.RunV("ci/scan.sh")
-}
-
-// GosecDocker run security scan inside of docker container
-func (Test) GosecDocker(ctx context.Context) error {
-	env, err := getEnv()
-	if err != nil {
-		return err
-	}
-	env["CI_PROJECT_DIR"] = "/opt"
-
-	return RunDocker(
-		ctx,
-		env,
-		imageScanner,
-		[]string{"ci/scan.sh"},
-	)
+	return sh.Run("gosec", "-quiet", "-exclude-dir=third-party", "./...")
 }
 
 // Hardening test ELF binaries
@@ -485,40 +468,7 @@ func qa(ctx context.Context, testGroup, testPattern string) error {
 
 // Performs linter check against Go codebase
 func (Test) Lint() error {
-	mg.Deps(Download)
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	env := map[string]string{
-		"CI_PROJECT_DIR": cwd,
-		"ENVIRONMENT":    "dev",
-		"ARCH":           build.Default.GOARCH,
-	}
-	return sh.RunWithV(env, "ci/lint.sh")
-}
-
-// Performs linter check against Go codebase in Docker container
-func (Test) LintDocker(ctx context.Context) error {
-	mg.Deps(Download)
-
-	env, err := getEnv()
-	if err != nil {
-		return err
-	}
-
-	env["ARCH"] = build.Default.GOARCH
-	env["ENVIRONMENT"] = "dev"
-	env["CI_PROJECT_DIR"] = "/opt"
-
-	return RunDocker(
-		ctx,
-		env,
-		imageLinter,
-		[]string{"ci/lint.sh"},
-	)
+	return sh.Run("golangci-lint", "run", "-v", "--config=.golangci-lint.yml")
 }
 
 // Binaries to their respective locations and restart
