@@ -11,7 +11,7 @@ type RotatingRoundTripper struct {
 	roundTripperH3     http.RoundTripper
 	isCurrentH3        *atomic.Bool
 	lastH3AttemptMilli *atomic.Int64
-	h3ReviveTime       *atomic.Int64
+	h3ReviveTime       time.Duration
 }
 
 func NewRotatingRoundTripper(
@@ -19,19 +19,17 @@ func NewRotatingRoundTripper(
 	roundTripperH3 http.RoundTripper,
 	h3ReviveTime time.Duration,
 ) *RotatingRoundTripper {
-	t := atomic.Int64{}
-	t.Store(int64(h3ReviveTime))
 	return &RotatingRoundTripper{
 		roundTripperH1:     roundTripperH1,
 		roundTripperH3:     roundTripperH3,
-		h3ReviveTime:       &t,
+		h3ReviveTime:       h3ReviveTime,
 		lastH3AttemptMilli: &atomic.Int64{},
 		isCurrentH3:        &atomic.Bool{},
 	}
 }
 
 func (rt *RotatingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	if !rt.isCurrentH3.Load() && time.Now().After(time.UnixMilli(rt.lastH3AttemptMilli.Load())) {
+	if !rt.isCurrentH3.Load() && time.Now().After(time.UnixMilli(rt.lastH3AttemptMilli.Load()).Add(rt.h3ReviveTime)) {
 		now := time.Now()
 		rt.lastH3AttemptMilli.Store(int64(now.UnixMilli()))
 		rt.isCurrentH3.Store(true)
