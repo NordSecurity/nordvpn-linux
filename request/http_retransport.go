@@ -20,6 +20,11 @@ func NewHTTPReTransport(fn func() http.RoundTripper) *HTTPReTransport {
 }
 
 func (m *HTTPReTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Note: This assumes that it is using HTTP/1.1 In order to use it with other transport,
+	// migrate Proto modifications to inner transport.
+	req.ProtoMajor = 1
+	req.ProtoMinor = 1
+	req.Proto = "HTTP/1.1"
 	return m.inner.RoundTrip(req)
 }
 

@@ -167,6 +167,12 @@ func main() {
 	if internal.Environment(Environment) == internal.Development {
 		debugSubject.Subscribe(loggerSubscriber.NotifyMessage)
 	}
+	apiLogFn := loggerSubscriber.NotifyRequestAPI
+	if internal.IsDevEnv(Environment) {
+		apiLogFn = loggerSubscriber.NotifyRequestAPIVerbose
+	}
+
+	httpCallsSubject.Subscribe(apiLogFn)
 	infoSubject.Subscribe(loggerSubscriber.NotifyInfo)
 	errSubject.Subscribe(loggerSubscriber.NotifyError)
 
@@ -201,6 +207,7 @@ func main() {
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
 	// simple standard http client with dialer wrapped inside
 	httpClientSimple := request.NewStdHTTP()
+	httpClientSimple.Transport = request.NewPublishingRoundTripper(httpClientSimple.Transport, httpCallsSubject)
 	cdnAPI := core.NewCDNAPI(
 		userAgent,
 		core.CDNURL,
@@ -286,12 +293,7 @@ func main() {
 		}
 	}
 	daemonEvents.Subscribe(analytics)
-	apiLogFn := loggerSubscriber.NotifyRequestAPI
-	if internal.IsDevEnv(Environment) {
-		apiLogFn = loggerSubscriber.NotifyRequestAPIVerbose
-	}
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
-	httpCallsSubject.Subscribe(apiLogFn)
 
 	remoteConfigGetter := remoteConfigGetterImplementation()
 

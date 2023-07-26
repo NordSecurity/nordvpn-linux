@@ -95,6 +95,9 @@ func createH3Transport() http.RoundTripper {
 var validTransportTypes = []string{"http1", "http3"}
 
 func validateHTTPTransportsString(val string) []string {
+	if val == "" {
+		return validTransportTypes
+	}
 	finalVal := []string{}
 	val = strings.ToLower(val)
 	for _, item := range strings.Split(val, ",") {

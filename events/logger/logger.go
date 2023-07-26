@@ -92,7 +92,7 @@ func dataRequestAPIToString(
 			data.Response.Proto,
 			data.Response.StatusCode,
 			data.Response.Header,
-			string(reqBody),
+			string(respBody),
 		))
 	}
 
