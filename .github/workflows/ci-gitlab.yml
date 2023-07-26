@@ -1,17 +1,19 @@
 name: Trigger GitLab pipeline
 on:
   pull_request_target:
-    branches: [dev, main, github-ci-setup]
     types: [labeled]
   push:
-    branches: [dev, main, github-ci-setup]
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
 permissions: {}
 jobs:
   trigger-gitlab-pipeline:
     runs-on: [self-hosted, nordvpn-linux]
-    if: ${{ github.event_name == 'push' || (github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'gitlab')) }}
+    if: |
+      github.event_name == 'push' ||
+      (
+        github.event_name == 'pull_request_target' &&
+        github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name &&
+        github.event.label.name == 'gitlab'
+      )
     steps:
       - uses: NordSecurity/trigger-gitlab-pipeline@v1
         with:

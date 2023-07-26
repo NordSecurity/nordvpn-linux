@@ -47,14 +47,6 @@ test/cgo:
         path: coverage.xml
   dependencies: []
   coverage: '/total:\s*\(statements\)\s*(\d+\.\d+)%/'
-
-test/go:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.1.0
-  extends: .test_not_ran_with_latte
-  script: $CI_PROJECT_DIR/ci/test.sh
-  dependencies: []
-
 test/deb:
   extends: 
     - .test_job_template
