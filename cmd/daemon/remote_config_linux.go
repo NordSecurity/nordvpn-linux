@@ -13,7 +13,7 @@ func (mockVersionGetter) GetValue(key string) (string, error) {
 }
 
 func (mockVersionGetter) GetTelioConfig(string) (string, error) {
-	return "", nil
+	return "{}", nil
 }
 
 func remoteConfigGetterImplementation() remote.RemoteConfigGetter {
