@@ -26,6 +26,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func GetTestCombined() *Combined {
+	return NewCombined(
+		&testvpn.Working{},
+		&workingMesh{},
+		workingGateway{},
+		&subs.Subject[string]{},
+		workingRouter{},
+		&workingDNS{},
+		&workingIpv6{},
+		newWorkingFirewall(),
+		workingAllowlistRouting{},
+		workingDeviceList,
+		workingRoutingSetup{},
+		&workingHostSetter{},
+		workingRouter{},
+		workingRouter{},
+		&workingExitNode{},
+		0,
+		false,
+	)
+}
+
 type workingGateway struct{}
 
 func (w workingGateway) Default(bool) (netip.Addr, net.Interface, error) {
@@ -173,14 +195,16 @@ func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lanDiscovery bool)
 func (*workingExitNode) DisablePeer(netip.Addr) error { return nil }
 func (*workingExitNode) Disable() error               { return nil }
 
-type workingMesh struct{}
+type workingMesh struct {
+	enableErr error
+}
 
-func (workingMesh) Enable(netip.Addr, string) error { return nil }
-func (workingMesh) Disable() error                  { return nil }
-func (workingMesh) IsActive() bool                  { return false }
-func (workingMesh) Refresh(mesh.MachineMap) error   { return nil }
-func (workingMesh) Tun() tunnel.T                   { return testtunnel.Working{} }
-func (workingMesh) StatusMap() (map[string]string, error) {
+func (w *workingMesh) Enable(netip.Addr, string) error { return w.enableErr }
+func (*workingMesh) Disable() error                    { return nil }
+func (*workingMesh) IsActive() bool                    { return false }
+func (*workingMesh) Refresh(mesh.MachineMap) error     { return nil }
+func (*workingMesh) Tun() tunnel.T                     { return testtunnel.Working{} }
+func (*workingMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
 
@@ -284,7 +308,7 @@ func TestCombined_Start(t *testing.T) {
 			gateway:         workingGateway{},
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
-			vpn:             testvpn.Working{},
+			vpn:             &testvpn.Working{},
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
@@ -342,7 +366,7 @@ func TestCombined_Stop(t *testing.T) {
 		},
 		{
 			name: "unset dns failure",
-			vpn:  testvpn.Working{},
+			vpn:  &testvpn.Working{},
 			dns:  failingDNS{},
 			err:  errors.ErrOnPurpose,
 		},
@@ -354,7 +378,7 @@ func TestCombined_Stop(t *testing.T) {
 		},
 		{
 			name: "successful stop",
-			vpn:  testvpn.Working{},
+			vpn:  &testvpn.Working{},
 			dns:  &workingDNS{},
 			err:  nil,
 		},
@@ -484,7 +508,7 @@ func TestCombined_SetDNS(t *testing.T) {
 				0,
 				false,
 			)
-			netw.vpnet = testvpn.Working{}
+			netw.vpnet = &testvpn.Working{}
 			err := netw.setDNS(test.nameservers)
 			assert.Equal(t, test.hasError, err != nil)
 		})
@@ -532,7 +556,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				0,
 				false,
 			)
-			netw.vpnet = testvpn.Working{}
+			netw.vpnet = &testvpn.Working{}
 			err := netw.unsetDNS()
 			assert.Equal(t, test.hasError, err != nil)
 		})
@@ -1281,7 +1305,7 @@ func TestCombined_SetMesh(t *testing.T) {
 		t.Run(test.publicKey, func(t *testing.T) {
 			netw := NewCombined(
 				nil,
-				workingMesh{},
+				&workingMesh{},
 				workingGateway{},
 				&subs.Subject[string]{},
 				test.rt,
@@ -1333,7 +1357,7 @@ func TestCombined_UnSetMesh(t *testing.T) {
 		t.Run(test.publicKey, func(t *testing.T) {
 			netw := NewCombined(
 				nil,
-				workingMesh{},
+				&workingMesh{},
 				workingGateway{},
 				&subs.Subject[string]{},
 				test.rt,
@@ -1619,7 +1643,7 @@ func TestCombined_Refresh(t *testing.T) {
 
 	netw := NewCombined(
 		nil,
-		workingMesh{},
+		&workingMesh{},
 		workingGateway{},
 		&subs.Subject[string]{},
 		workingRouter{},
@@ -1773,7 +1797,7 @@ func TestCombined_Refresh(t *testing.T) {
 func TestDnsAfterVPNRefresh(t *testing.T) {
 	dns := &workingDNS{}
 	netw := NewCombined(
-		testvpn.Working{},
+		&testvpn.Working{},
 		nil,
 		nil,
 		&subs.Subject[string]{},

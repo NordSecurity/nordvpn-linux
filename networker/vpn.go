@@ -1,6 +1,7 @@
 package networker
 
 import (
+	"errors"
 	"fmt"
 	"net/netip"
 )
@@ -21,56 +22,63 @@ func (netw *Combined) IsVPNActive() bool {
 // therefore, full tunnel must be re-created
 //
 // Thread unsafe.
-func (netw *Combined) refreshVPN() error {
-	meshnetSet := netw.isMeshnetSet
+func (netw *Combined) refreshVPN() (err error) {
 	started := netw.isVpnSet
-	killswitch := netw.isKillSwitchSet
 	var ip netip.Addr
+	var vpnErr, meshErr error
+	defer func() { err = errors.Join(vpnErr, meshErr) }()
 
 	if started {
-		if !killswitch {
+		if !netw.isKillSwitchSet {
 			if err := netw.setKillSwitch(netw.allowlist); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
 			}
+			defer func() {
+				if vpnErr != nil {
+					// Keep iptables rules to not expose user after background connect failure
+					netw.isKillSwitchSet = false
+				} else {
+					vpnErr = netw.unsetKillSwitch()
+				}
+			}()
 		}
 
 		if netw.vpnet.Tun() != nil && len(netw.vpnet.Tun().IPs()) > 0 {
 			ip = netw.vpnet.Tun().IPs()[0]
 		}
 
-		if err := netw.stop(); err != nil {
-			return fmt.Errorf("stopping networker: %w", err)
+		if vpnErr = netw.stop(); vpnErr != nil {
+			vpnErr = fmt.Errorf("stopping networker: %w", vpnErr)
+			return
 		}
 	}
 
-	if meshnetSet {
+	if netw.isMeshnetSet {
 		if netw.mesh.Tun() != nil && len(netw.mesh.Tun().IPs()) > 0 {
 			ip = netw.mesh.Tun().IPs()[0]
 		}
 
-		if err := netw.unSetMesh(); err != nil {
-			return fmt.Errorf("stopping meshnet: %w", err)
-		}
-
-		if err := netw.setMesh(netw.cfg, ip, netw.lastPrivateKey); err != nil {
-			return fmt.Errorf("starting meshnet: %w", err)
+		// Don't return on mesh errors yet, still have to try to start VPN
+		meshErr = netw.unSetMesh()
+		if meshErr != nil {
+			meshErr = fmt.Errorf("unsetting mesh: %w", meshErr)
+		} else {
+			meshErr = netw.setMesh(netw.cfg, ip, netw.lastPrivateKey)
+			if meshErr != nil {
+				meshErr = fmt.Errorf("setting mesh: %w", meshErr)
+			}
 		}
 	}
 
 	if started {
-		if err := netw.start(
+		if vpnErr = netw.start(
 			netw.lastCreds,
 			netw.lastServer,
 			netw.allowlist,
 			netw.lastNameservers,
-		); err != nil {
-			return fmt.Errorf("starting networker: %w", err)
-		}
-	}
-
-	if !killswitch {
-		if err := netw.unsetKillSwitch(); err != nil {
-			return fmt.Errorf("unsetting killswitch: %w", err)
+		); vpnErr != nil {
+			vpnErr = fmt.Errorf("starting networker: %w", vpnErr)
+			return
 		}
 	}
 

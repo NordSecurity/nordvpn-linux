@@ -8,13 +8,19 @@ import (
 )
 
 // Working stub of a github.com/NordSecurity/nordvpn-linux/daemon/vpn.VPN interface.
-type Working struct{}
+type Working struct {
+	isActive bool
+	StartErr error
+}
 
-func (Working) Start(vpn.Credentials, vpn.ServerData) error { return nil }
-func (Working) Stop() error                                 { return nil }
-func (Working) State() vpn.State                            { return vpn.ConnectedState }
-func (Working) IsActive() bool                              { return true }
-func (Working) Tun() tunnel.T                               { return testtunnel.Working{} }
+func (w *Working) Start(vpn.Credentials, vpn.ServerData) error {
+	w.isActive = w.StartErr == nil
+	return w.StartErr
+}
+func (w *Working) Stop() error    { w.isActive = false; return nil }
+func (*Working) State() vpn.State { return vpn.ConnectedState }
+func (w *Working) IsActive() bool { return w.isActive }
+func (*Working) Tun() tunnel.T    { return testtunnel.Working{} }
 
 type WorkingInactive struct{}
 

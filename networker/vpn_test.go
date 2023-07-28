@@ -1,10 +1,16 @@
 package networker
 
 import (
+	"fmt"
+	"net/netip"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	testtunnel "github.com/NordSecurity/nordvpn-linux/test/tunnel"
+	testvpn "github.com/NordSecurity/nordvpn-linux/test/vpn"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 
 	"github.com/stretchr/testify/assert"
@@ -87,4 +93,54 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 			assert.Equal(t, test.expected, netw.IsVPNActive())
 		})
 	}
+}
+
+func TestRefreshVPN_NotConnected(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	combined := GetTestCombined()
+	err := combined.refreshVPN()
+	assert.NoError(t, err)
+
+	assert.False(t, combined.isConnectedToVPN())
+	assert.False(t, combined.isMeshnetSet)
+}
+
+func TestRefreshVPN_MeshnetFailure(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	combined := GetTestCombined()
+	assert.NoError(t, combined.setMesh(mesh.MachineMap{}, netip.IPv4Unspecified(), ""))
+	assert.NoError(t, combined.start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, config.DNS{}))
+
+	assert.True(t, combined.isConnectedToVPN())
+	assert.True(t, combined.isMeshnetSet)
+
+	combined.mesh.(*workingMesh).enableErr = fmt.Errorf("test error")
+	err := combined.refreshVPN()
+	assert.Error(t, err)
+
+	assert.True(t, combined.isConnectedToVPN())
+	assert.False(t, combined.isMeshnetSet)
+}
+
+func TestRefreshVPN_VPNFailure(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	combined := GetTestCombined()
+	assert.Empty(t, combined.fw.(*workingFirewall).rules)
+	assert.NoError(t, combined.setMesh(mesh.MachineMap{}, netip.IPv4Unspecified(), ""))
+	assert.NoError(t, combined.start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, config.DNS{}))
+	assert.NotEmpty(t, combined.fw.(*workingFirewall).rules)
+
+	assert.True(t, combined.isConnectedToVPN())
+	assert.True(t, combined.isMeshnetSet)
+
+	combined.vpnet.(*testvpn.Working).StartErr = fmt.Errorf("test error")
+	err := combined.refreshVPN()
+	assert.Error(t, err)
+
+	assert.False(t, combined.isConnectedToVPN())
+	assert.True(t, combined.isMeshnetSet)
+	assert.NotEmpty(t, combined.fw.(*workingFirewall).rules) // We want to keep rules to avoid leaking
 }

@@ -3,17 +3,16 @@ package exitnode
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/netip"
 	"strings"
-
-	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 const (
 	meshSrcSubnet     = "100.64.0.0/10"
 	msqRuleComment    = "nordvpn"
 	filterRuleComment = "nordvpn"
+	// Used to ignore errors about missing rules when that is expected
+	missingRuleMessage = "Bad rule (does a matching rule exist in that chain?)"
 )
 
 type runCommandFunc func(command string, arg ...string) ([]byte, error)
@@ -150,8 +149,9 @@ func refreshPrivateSubnetsBlock(commandFunc runCommandFunc) error {
 		netip.MustParsePrefix("192.168.0.0/16"),
 		netip.MustParsePrefix("169.254.0.0/16"),
 	} {
-		if err := modifyPeerTraffic(subnet, "-D", false, false, commandFunc); err != nil {
-			log.Println(internal.WarningPrefix, err)
+		err := modifyPeerTraffic(subnet, "-D", false, false, commandFunc)
+		if err != nil && !strings.Contains(err.Error(), missingRuleMessage) {
+			return fmt.Errorf("deleting private subnets block: %w", err)
 		}
 		if err := modifyPeerTraffic(
 			subnet,
@@ -213,13 +213,13 @@ type TrafficPeer struct {
 
 func resetPeersTraffic(peers []TrafficPeer, commandFunc runCommandFunc) error {
 	for _, peer := range peers {
-		// Ignore errors because they are expected if resetPeersTraffic is called for the very
-		// first time (rules don't exist yet)
-		if err := modifyPeerTraffic(peer.IP, "-D", true, true, commandFunc); err != nil {
-			log.Println(internal.WarningPrefix, err)
+		err := modifyPeerTraffic(peer.IP, "-D", true, true, commandFunc)
+		if err != nil && !strings.Contains(err.Error(), missingRuleMessage) {
+			return fmt.Errorf("deleting peer traffic rule: %w", err)
 		}
-		if err := allowOnlyLocalNetworkAccess(peer.IP, "-D", commandFunc); err != nil {
-			log.Println(internal.WarningPrefix, err)
+		err = allowOnlyLocalNetworkAccess(peer.IP, "-D", commandFunc)
+		if err != nil && !strings.Contains(err.Error(), missingRuleMessage) {
+			return fmt.Errorf("deleting local network access rule: %w", err)
 		}
 	}
 
