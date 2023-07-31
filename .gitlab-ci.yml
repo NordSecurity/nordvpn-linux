@@ -114,9 +114,6 @@ upload_deb:
   script: $CI_PROJECT_DIR/ci/upload.sh deb
   dependencies:
     - package/deb
-  parallel:
-    matrix:
-      - ARCH: [i386, amd64, armel, armhf, aarch64]
 
 # Remove DEB package from DEB repository (Prod builds only)
 remove_deb:
@@ -156,9 +153,6 @@ upload_rpm:
   script: $CI_PROJECT_DIR/ci/upload.sh rpm
   dependencies:
     - package/rpm
-  parallel:
-    matrix:
-      - ARCH: [i386, amd64, armel, armhf, aarch64]
 
 # Remove RPM package from RPM repository (Prod builds only)
 remove_rpm:
