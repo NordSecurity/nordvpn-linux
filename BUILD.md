@@ -50,7 +50,7 @@ mage build:binaries
 mage build:binariesDocker
 ```
 ## Building parts of the application manually
-Bellow steps can be used to build the app without mage and build scripts.
+Below steps can be used to build the app without mage and build scripts.
 ### Dependencies
 #### Compile time
 - Go 1.20+
@@ -230,7 +230,7 @@ The pushing can be done with:
 docker push <registry>/<image>[:tag]
 ```
 ### Idempotent docker builds
-By default, mage targets will always pull docker images from the registry. If bellow entry is present in `.env` file, images will be pulled only if they are not present on the host system:
+By default, mage targets will always pull docker images from the registry. If below entry is present in `.env` file, images will be pulled only if they are not present on the host system:
 ```
 IDEMPOTENT_DOCKER=1
 ```
