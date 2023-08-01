@@ -7,6 +7,7 @@ package/deb:
   image: ghcr.io/nordsecurity/nordvpn-linux/packager:1.0.0
   rules:
     - !reference [.cond/on-main, rules]
+    - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
     - !reference [.cond/on-click, rules]
   script: $CI_PROJECT_DIR/ci/nfpm/build_packages_resources.sh deb

@@ -104,14 +104,16 @@ opensuse_installer:
 
 # Uploads DEB package to DEB repository (Prod builds only)
 upload_deb:
-  image: ghcr.io/nordsecurity/nordvpn-linux/uploader:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/uploader:1.0.1
   before_script:
     - ${CI_PROJECT_DIR}/ci/packages.sh
     - source ${CI_PROJECT_DIR}/ci/env.sh
   stage: upload_packages
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
-  script: $CI_PROJECT_DIR/ci/upload.sh deb
+  script: 
+    - curl $DISCOVER_IP_URL
+    - $CI_PROJECT_DIR/ci/upload.sh deb
   dependencies:
     - package/deb-candidate
 
@@ -124,33 +126,39 @@ remove_deb:
   stage: remove_packages
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
-  script: $CI_PROJECT_DIR/ci/remove.sh deb
+  script: 
+    - curl $DISCOVER_IP_URL
+    - $CI_PROJECT_DIR/ci/remove.sh deb
   dependencies:
     - upload_deb
 
 # Publish changes to DEB repository (Prod builds only)
 publish_deb:
-  image: ghcr.io/nordsecurity/nordvpn-linux/uploader:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/uploader:1.0.1
   before_script:
     - ${CI_PROJECT_DIR}/ci/packages.sh
     - source ${CI_PROJECT_DIR}/ci/env.sh
   stage: publish_packages
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
-  script: $CI_PROJECT_DIR/ci/publish.sh deb
+  script: 
+    - curl $DISCOVER_IP_URL
+    - $CI_PROJECT_DIR/ci/publish.sh deb
   dependencies:
     - remove_deb
 
 # Uploads RPM package to RPM repository (Prod builds only)
 upload_rpm:
-  image: ghcr.io/nordsecurity/nordvpn-linux/uploader:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/uploader:1.0.1
   before_script:
     - ${CI_PROJECT_DIR}/ci/packages.sh
     - source ${CI_PROJECT_DIR}/ci/env.sh
   stage: upload_packages
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
-  script: $CI_PROJECT_DIR/ci/upload.sh rpm
+  script: 
+    - curl $DISCOVER_IP_URL
+    - $CI_PROJECT_DIR/ci/upload.sh rpm
   dependencies:
     - package/rpm-candidate
 
@@ -163,20 +171,24 @@ remove_rpm:
   stage: remove_packages
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
-  script: $CI_PROJECT_DIR/ci/remove.sh rpm
+  script: 
+    - curl $DISCOVER_IP_URL
+    - $CI_PROJECT_DIR/ci/remove.sh rpm
   dependencies:
     - upload_rpm
 
 # Publish changes to RPM repository (Prod builds only)
 publish_rpm:
-  image: ghcr.io/nordsecurity/nordvpn-linux/uploader:1.0.0
+  image: ghcr.io/nordsecurity/nordvpn-linux/uploader:1.0.1
   before_script:
     - ${CI_PROJECT_DIR}/ci/packages.sh
     - source ${CI_PROJECT_DIR}/ci/env.sh
   stage: publish_packages
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
-  script: $CI_PROJECT_DIR/ci/publish.sh rpm
+  script: 
+    - curl $DISCOVER_IP_URL
+    - $CI_PROJECT_DIR/ci/publish.sh rpm
   dependencies:
     - remove_rpm
 
