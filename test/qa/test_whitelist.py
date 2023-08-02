@@ -17,11 +17,6 @@ import socket
 def setup_module(module):
     daemon.start()
     login.login_as("default")
-    # Add a random route and delete it to create routing table
-    # Otherwise exceptions happen in tests
-    cmd = sh.sudo.ip.route.add.default.via.bake("127.0.0.1")
-    cmd.table("205")
-    sh.sudo.ip.route.delete.default.table("205")
 
 
 def teardown_module(module):
@@ -42,21 +37,11 @@ def teardown_function(function):
 # Issue 400
 @pytest.mark.parametrize("subnet_addr", lib.SUBNETS)
 def test_whitelist_does_not_create_new_routes_when_adding_deleting_subnets(subnet_addr):
-    try: # ip fails/panics if routing table was not created before
-        output_before_add = sh.ip.route.show.table(205)
-    except:
-        output_before_add = ""
+    output_before_add = sh.ip.route.show.table(205)
     sh.nordvpn.whitelist.add.subnet(subnet_addr)
-    try:
-        output_after_add = sh.ip.route.show.table(205)
-    except:
-        output_after_add = ""
+    output_after_add = sh.ip.route.show.table(205)
     sh.nordvpn.whitelist.remove.subnet(subnet_addr)
-    try:
-        output_after_delete = sh.ip.route.show.table(205)
-    except:
-        output_after_delete = ""
-    
+    output_after_delete = sh.ip.route.show.table(205)
 
     assert output_before_add == output_after_add
     assert output_after_add == output_after_delete
@@ -64,20 +49,11 @@ def test_whitelist_does_not_create_new_routes_when_adding_deleting_subnets(subne
 
 @pytest.mark.parametrize("port", lib.PORTS)
 def test_whitelist_does_not_create_new_routes_when_adding_deleting_ports(port):
-    try:
-        output_before_add = sh.ip.route.show.table(205)
-    except:
-        output_before_add = ""
+    output_before_add = sh.ip.route.show.table(205)
     sh.nordvpn.whitelist.add.port(port)
-    try:
-        output_after_add = sh.ip.route.show.table(205)
-    except:
-        output_after_add = ""
+    output_after_add = sh.ip.route.show.table(205)
     sh.nordvpn.whitelist.remove.port(port)
-    try:
-        output_after_delete = sh.ip.route.show.table(205)
-    except:
-        output_after_delete = ""
+    output_after_delete = sh.ip.route.show.table(205)
 
     assert output_before_add == output_after_add
     assert output_after_add == output_after_delete
@@ -86,17 +62,9 @@ def test_whitelist_does_not_create_new_routes_when_adding_deleting_ports(port):
 def test_whitelist_is_not_set_when_disconnected():
     with lib.Defer(sh.nordvpn.whitelist.remove.all):
         subnet = "1.1.1.0/24"
-        try:
-            output = sh.ip.route.show.table(205)
-        except:
-            output = ""
-        assert subnet not in output
+        assert subnet not in sh.ip.route.show.table(205)
         lib.add_subnet_to_whitelist(subnet)
-        try:
-            output = sh.ip.route.show.table(205)
-        except:
-            output = ""
-        assert subnet not in output
+        assert subnet not in sh.ip.route.show.table(205)
 
         port = 22
         assert f"port {port}" not in sh.sudo.iptables("-S")
