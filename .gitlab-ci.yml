@@ -16,7 +16,7 @@ variables:
 
 default:
   tags:
-    - mountain-gitlab-runner
+    - mountaininfra-gitlab-runner-prod-aws-us
 
 .before-script:
   before_script:
