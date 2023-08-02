@@ -37,11 +37,21 @@ def teardown_function(function):
 # Issue 400
 @pytest.mark.parametrize("subnet_addr", lib.SUBNETS)
 def test_whitelist_does_not_create_new_routes_when_adding_deleting_subnets(subnet_addr):
-    output_before_add = sh.ip.route.show.table(205)
+    try: # ip fails/panics if routing table was not created before
+        output_before_add = sh.ip.route.show.table(205)
+    except:
+        output_before_add = ""
     sh.nordvpn.whitelist.add.subnet(subnet_addr)
-    output_after_add = sh.ip.route.show.table(205)
+    try:
+        output_after_add = sh.ip.route.show.table(205)
+    except:
+        output_after_add = ""
     sh.nordvpn.whitelist.remove.subnet(subnet_addr)
-    output_after_delete = sh.ip.route.show.table(205)
+    try:
+        output_after_delete = sh.ip.route.show.table(205)
+    except:
+        output_after_delete = ""
+    
 
     assert output_before_add == output_after_add
     assert output_after_add == output_after_delete
@@ -49,11 +59,20 @@ def test_whitelist_does_not_create_new_routes_when_adding_deleting_subnets(subne
 
 @pytest.mark.parametrize("port", lib.PORTS)
 def test_whitelist_does_not_create_new_routes_when_adding_deleting_ports(port):
-    output_before_add = sh.ip.route.show.table(205)
+    try:
+        output_before_add = sh.ip.route.show.table(205)
+    except:
+        output_before_add = ""
     sh.nordvpn.whitelist.add.port(port)
-    output_after_add = sh.ip.route.show.table(205)
+    try:
+        output_after_add = sh.ip.route.show.table(205)
+    except:
+        output_after_add = ""
     sh.nordvpn.whitelist.remove.port(port)
-    output_after_delete = sh.ip.route.show.table(205)
+    try:
+        output_after_delete = sh.ip.route.show.table(205)
+    except:
+        output_after_delete = ""
 
     assert output_before_add == output_after_add
     assert output_after_add == output_after_delete
@@ -62,9 +81,17 @@ def test_whitelist_does_not_create_new_routes_when_adding_deleting_ports(port):
 def test_whitelist_is_not_set_when_disconnected():
     with lib.Defer(sh.nordvpn.whitelist.remove.all):
         subnet = "1.1.1.0/24"
-        assert subnet not in sh.ip.route.show.table(205)
+        try:
+            output = sh.ip.route.show.table(205)
+        except:
+            output = ""
+        assert subnet not in output
         lib.add_subnet_to_whitelist(subnet)
-        assert subnet not in sh.ip.route.show.table(205)
+        try:
+            output = sh.ip.route.show.table(205)
+        except:
+            output = ""
+        assert subnet not in output
 
         port = 22
         assert f"port {port}" not in sh.sudo.iptables("-S")
