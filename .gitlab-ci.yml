@@ -16,8 +16,7 @@ variables:
 
 default:
   tags:
-    - linux
-    - infra-docker
+    - mountain-gitlab-runner
 
 .before-script:
   before_script:
