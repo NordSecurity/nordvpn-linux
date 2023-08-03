@@ -49,6 +49,7 @@ func (mockObfuscateNetworker) UnSetMesh() error                  { return nil }
 func (mockObfuscateNetworker) SetDNS(nameservers []string) error { return nil }
 func (mockObfuscateNetworker) UnsetDNS() error                   { return nil }
 func (mockObfuscateNetworker) IsVPNActive() bool                 { return true }
+func (mockObfuscateNetworker) IsMeshnetActive() bool             { return true }
 func (mockObfuscateNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
 	return networker.ConnectionStatus{}, nil
 }

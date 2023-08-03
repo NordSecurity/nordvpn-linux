@@ -187,7 +187,7 @@ func New(prod bool, eventPath string, fwmark uint32,
 	if err != nil {
 		cfg = []byte("{}")
 	}
-	log.Println("libtelio final config:", string(cfg))
+	log.Println(internal.InfoPrefix, "libtelio final config:", string(cfg))
 
 	return &Libtelio{
 		lib: teliogo.NewTelio(
@@ -196,7 +196,7 @@ func New(prod bool, eventPath string, fwmark uint32,
 			logLevel, func(i int, s string) {
 				log.Println(
 					logLevelToPrefix(teliogo.Enum_SS_telio_log_level(i)),
-					"TELIO: "+s,
+					"TELIO("+teliogo.TelioGetVersionTag()+"): "+s,
 				)
 			}),
 		events: events,
@@ -230,6 +230,8 @@ func (l *Libtelio) Start(
 ) (err error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+
+	log.Println(internal.InfoPrefix, "libtelio version:", teliogo.TelioGetVersionTag())
 
 	if err = l.openTunnel(defaultIP, creds.NordLynxPrivateKey); err != nil {
 		return fmt.Errorf("opening the tunnel: %w", err)

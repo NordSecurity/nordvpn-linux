@@ -1483,7 +1483,7 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 		Files: []*pb.File{
 			{Id: "file1", Status: pb.Status_ONGOING},
 			{Id: "file2", Status: pb.Status_ONGOING},
-			{Id: "file3", Status: pb.Status_ONGOING}},
+			{Id: "file3", Status: pb.Status_SUCCESS}},
 		TotalSize:        3,
 		TotalTransferred: 0,
 		Direction:        pb.Direction_INCOMING,

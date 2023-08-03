@@ -80,9 +80,9 @@ contents:
     dst: /usr/lib/tmpfiles.d/nordvpn.conf
     file_info:
       mode: 0600
-  - src: ${GOPATH}/pkg/mod/github.com/urfave/cli/v2@v2.25.0/autocomplete/bash_autocomplete
+  - src: ${CI_PROJECT_DIR}/dist/autocomplete/bash_autocomplete
     dst: /usr/share/bash-completion/completions/nordvpn
-  - src: ${BASEDIR}/_nordvpn_auto_complete
+  - src: ${CI_PROJECT_DIR}/dist/autocomplete/zsh_autocomplete
     dst: /usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete
   - src: ${CI_PROJECT_DIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn
     dst: /var/lib/${NAME}/openvpn

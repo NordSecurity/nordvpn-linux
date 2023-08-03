@@ -76,6 +76,7 @@ func (mn *mockNetworker) UnsetAllowlist() error {
 }
 
 func (*mockNetworker) IsNetworkSet() bool                   { return false }
+func (*mockNetworker) IsMeshnetActive() bool                { return false }
 func (*mockNetworker) SetKillSwitch(config.Allowlist) error { return nil }
 func (*mockNetworker) UnsetKillSwitch() error               { return nil }
 func (*mockNetworker) PermitIPv6() error                    { return nil }

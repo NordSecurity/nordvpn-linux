@@ -21,6 +21,7 @@ build/binaries-candidate:
   stage: build
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
   rules:
+    - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-click, rules]
   variables:
     ENVIRONMENT: prod

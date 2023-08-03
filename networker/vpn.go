@@ -16,6 +16,16 @@ func (netw *Combined) IsVPNActive() bool {
 	return netw.isConnectedToVPN()
 }
 
+// IsMeshnetActive returns true when meshnet was activated.
+// Otherwise false is returned.
+//
+// Thread safe.
+func (netw *Combined) IsMeshnetActive() bool {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+	return netw.isMeshnetSet
+}
+
 // refreshVPN fully re-creates the VPN tunnel but keeps the firewall
 // rules
 // This is needed since libtelio's NotifyNetworkChange does not well

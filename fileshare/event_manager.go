@@ -34,6 +34,7 @@ var (
 	ErrNoPermissionsToAcceptDirectory = errors.New("no permissions to accept directory")
 	ErrNotificationsAlreadyEnabled    = errors.New("notifications already enabled")
 	ErrNotificationsAlreadyDisabled   = errors.New("notifications already disabled")
+	ErrTransferCanceledByPeer         = errors.New("transfer has been canceled by peer")
 )
 
 // EventManager is responsible for libdrop event handling.
@@ -161,13 +162,11 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 				f.Status = pb.Status_CANCELED
 			}
 		})
-
 		if event.Data.ByPeer {
 			transfer.Status = pb.Status_CANCELED_BY_PEER
 		} else {
-			transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
+			transfer.Status = pb.Status_CANCELED
 		}
-
 		em.finalizeTransfer(transfer)
 		return
 	case transferFailed:
@@ -514,6 +513,9 @@ func (em *EventManager) acceptTransfer(
 	}
 	if transfer.Direction != pb.Direction_INCOMING {
 		return nil, ErrTransferAcceptOutgoing
+	}
+	if transfer.Status == pb.Status_CANCELED_BY_PEER {
+		return nil, ErrTransferCanceledByPeer
 	}
 	if transfer.Status != pb.Status_REQUESTED {
 		return nil, ErrTransferAlreadyAccepted

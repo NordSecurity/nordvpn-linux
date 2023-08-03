@@ -43,3 +43,13 @@ sed "s/{DATE}/${TODAY}/; s/{VERSION}/${VERSION}/" < "${CI_PROJECT_DIR}"/contrib/
 # copy manual pages
 gzip "${CI_PROJECT_DIR}"/dist/"${NAME}".1
 
+# patch autocomplete scripts
+mkdir -p "${CI_PROJECT_DIR}"/dist/autocomplete
+go mod download github.com/urfave/cli/v2
+cp "${GOPATH}"/pkg/mod/github.com/urfave/cli/v2@v2.25.0/autocomplete/bash_autocomplete \
+	"${CI_PROJECT_DIR}"/dist/autocomplete/bash_autocomplete
+cp "${GOPATH}"/pkg/mod/github.com/urfave/cli/v2@v2.25.0/autocomplete/zsh_autocomplete \
+	"${CI_PROJECT_DIR}"/dist/autocomplete/zsh_autocomplete
+git apply contrib/patches/bash_autocomplete.diff
+git apply contrib/patches/zsh_autocomplete.diff
+

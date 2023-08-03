@@ -4,7 +4,7 @@ LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-li
 
 RUN apt-get update --allow-releaseinfo-change && \
     apt upgrade -y && apt-get install -y \
-    git python-m2crypto python-pip libssh-dev python-rpm
+    git python-m2crypto python-pip libssh-dev python-rpm curl
 
 RUN mkdir -p /build \
     /etc/pulp/admin/conf.d \

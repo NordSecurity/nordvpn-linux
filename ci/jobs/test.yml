@@ -21,7 +21,12 @@ test/cgo:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
-  script: $CI_PROJECT_DIR/ci/test.sh full
+  script: 
+    - echo "is ipv6 enabled?"
+    - sysctl net.ipv6.conf.all.disable_ipv6
+    - echo "enable ipv6 (it is needed for transport_test)"
+    - sysctl net.ipv6.conf.all.disable_ipv6=0
+    - $CI_PROJECT_DIR/ci/test.sh full
   artifacts:
     paths:
       - $CI_PROJECT_DIR/coverage/unit
@@ -42,7 +47,12 @@ test/go:
   dependencies: []
 test/deb:
   extends: .test_job_template
-  script: $CI_PROJECT_DIR/ci/test_deb.sh $TEST
+  script: 
+    - echo "is ipv6 enabled?"
+    - sysctl net.ipv6.conf.all.disable_ipv6
+    - echo "enable ipv6"
+    - sudo sysctl net.ipv6.conf.all.disable_ipv6=0
+    - $CI_PROJECT_DIR/ci/test_deb.sh $TEST
   parallel:
     matrix:
       - TEST: [connect6, dns, dns6, killswitch, login, misc, routing, settings, allowlist]

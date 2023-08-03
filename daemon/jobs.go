@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet"
 
 	"google.golang.org/grpc/metadata"
 )
@@ -101,41 +103,73 @@ func (a *autoconnectServer) Send(data *pb.Payload) error {
 	return nil
 }
 
-func (r *RPC) StartAutoConnect() {
-	var cfg config.Config
-	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
-		return
-	}
+type GetTimeoutFunc func(tries int) time.Duration
 
-	if !cfg.AutoConnect {
-		return
-	}
+func connectErrorCheck(err error) bool {
+	return err == nil ||
+		errors.Is(err, internal.ErrNotLoggedIn)
+}
 
-	udp := []int64{}
-	for port := range cfg.AutoConnectData.Allowlist.Ports.UDP {
-		udp = append(udp, port)
-	}
+// StartAutoConnect connect to VPN server if autoconnect is enabled
+func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
+	tries := 1
+	for {
+		if r.netw.IsVPNActive() {
+			log.Println(internal.InfoPrefix, "auto-connect success (already connected)")
+			return nil
+		}
 
-	tcp := []int64{}
-	for port := range cfg.AutoConnectData.Allowlist.Ports.TCP {
-		tcp = append(tcp, port)
-	}
+		var cfg config.Config
+		err := r.cm.Load(&cfg)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "auto-connect failed with error:", err)
+			return err
+		}
 
-	subnets := []string{}
-	for subnet := range cfg.AutoConnectData.Allowlist.Subnets {
-		subnets = append(subnets, subnet)
+		server := autoconnectServer{}
+		err = r.Connect(&pb.ConnectRequest{ServerTag: cfg.AutoConnectData.ServerTag}, &server)
+		if connectErrorCheck(err) && server.err == nil {
+			log.Println(internal.InfoPrefix, "auto-connect success")
+			return nil
+		}
+		log.Println(internal.ErrorPrefix, "err1:", server.err, "| err2:", err)
+		tryAfterDuration := timeoutFn(tries)
+		tries++
+		log.Println(internal.WarningPrefix, "will retry(", tries, ") auto-connect after:", tryAfterDuration)
+		<-time.After(tryAfterDuration)
 	}
+}
 
-	server := autoconnectServer{}
-	if err := r.Connect(&pb.ConnectRequest{
-		ServerTag: cfg.AutoConnectData.ServerTag,
-	}, &server); err != nil {
-		log.Println(internal.ErrorPrefix, err)
-	}
+func meshErrorCheck(err error) bool {
+	return err == nil ||
+		errors.Is(err, meshnet.ErrNotLoggedIn) ||
+		errors.Is(err, meshnet.ErrConfigLoad) ||
+		errors.Is(err, meshnet.ErrMeshnetNotEnabled)
+}
 
-	if server.err != nil {
-		log.Println(internal.ErrorPrefix, server.err)
+// StartAutoMeshnet enable meshnet if it was enabled before
+func (r *RPC) StartAutoMeshnet(meshService *meshnet.Server, timeoutFn GetTimeoutFunc) error {
+	tries := 1
+	for {
+		if r.netw.IsMeshnetActive() {
+			log.Println(internal.InfoPrefix, "auto-enable mesh success (already enabled)")
+			return nil
+		}
+
+		err := meshService.StartMeshnet()
+		if meshErrorCheck(err) {
+			if err != nil {
+				log.Println(internal.ErrorPrefix, "auto-enable mesh failed with error:", err)
+				return err
+			} else {
+				log.Println(internal.InfoPrefix, "auto-enable mesh success")
+				return nil
+			}
+		}
+		log.Println(internal.ErrorPrefix, "err1:", err)
+		tryAfterDuration := timeoutFn(tries)
+		tries++
+		log.Println(internal.WarningPrefix, "will retry(", tries, ") enable mesh after:", tryAfterDuration)
+		<-time.After(tryAfterDuration)
 	}
-	return
 }

@@ -236,22 +236,30 @@ func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.ServiceBoolResponse,
 	}, nil
 }
 
+var (
+	ErrNotLoggedIn         = fmt.Errorf("not logged in")
+	ErrConfigLoad          = fmt.Errorf("problem loading config")
+	ErrMeshnetNotEnabled   = fmt.Errorf("meshnet not enabled")
+	ErrDeviceNotRegistered = fmt.Errorf("not registered")
+)
+
 func (s *Server) StartMeshnet() error {
 	if !s.ac.IsLoggedIn() {
-		return fmt.Errorf("not logged in")
+		return ErrNotLoggedIn
 	}
 
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
-		return fmt.Errorf("loading config: %w", err)
+		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
+		return ErrConfigLoad
 	}
 
 	if !cfg.Mesh {
-		return fmt.Errorf("meshnet not enabled")
+		return ErrMeshnetNotEnabled
 	}
 
 	if !s.mc.IsRegistered() {
-		return fmt.Errorf("not registered")
+		return ErrDeviceNotRegistered
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token

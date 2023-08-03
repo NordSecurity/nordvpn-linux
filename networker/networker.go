@@ -85,6 +85,7 @@ type Networker interface {
 	SetDNS(nameservers []string) error
 	UnsetDNS() error
 	IsVPNActive() bool
+	IsMeshnetActive() bool
 	ConnectionStatus() (ConnectionStatus, error)
 	EnableFirewall() error
 	DisableFirewall() error

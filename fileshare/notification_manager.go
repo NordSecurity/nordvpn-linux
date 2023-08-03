@@ -34,6 +34,9 @@ const (
 
 	cancelFailedNotificationSummary = "Failed to decline transfer"
 
+	transferCanceledByPeerNotificationSummary = "Transfer no longer exists"
+	transferCanceledByPeerNotificationBody    = "The sender has canceled this transfer."
+
 	transferInvalidated = "You’ve already accepted or declined this transfer."
 	genericError        = "Something went wrong."
 )
@@ -259,7 +262,7 @@ func (nm *NotificationManager) OpenFile(notificationID uint32) {
 	}
 }
 
-func destinationDirectoryErrorToNotificationBody(err error) string {
+func acceptErrorToNotificationBody(err error) string {
 	switch err {
 	case ErrSizeLimitExceeded:
 		return notEnoughSpaceOnDeviceError
@@ -273,6 +276,8 @@ func destinationDirectoryErrorToNotificationBody(err error) string {
 		return downloadDirIsNotADirError
 	case ErrNoPermissionsToAcceptDirectory:
 		return downloadDirNoPermissions
+	case ErrTransferCanceledByPeer:
+		return transferCanceledByPeerNotificationBody
 	default:
 		log.Println("Unknown error: ", err.Error())
 		return genericError
@@ -341,9 +346,14 @@ func (nm *NotificationManager) AcceptTransfer(notificationID uint32) {
 		nm.defaultDownloadDir,
 		[]string{})
 
+	notificationSummary := acceptFailedNotificationSummary
+	if err == ErrTransferCanceledByPeer {
+		notificationSummary = transferCanceledByPeerNotificationSummary
+	}
+
 	if err != nil {
-		notificationSummary := destinationDirectoryErrorToNotificationBody(err)
-		nm.sendGenericNotification(acceptFailedNotificationSummary, notificationSummary)
+		notificationBody := acceptErrorToNotificationBody(err)
+		nm.sendGenericNotification(notificationSummary, notificationBody)
 		return
 	}
 
@@ -375,6 +385,10 @@ func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
 	}
 
 	if transfer.Status != pb.Status_ONGOING && transfer.Status != pb.Status_REQUESTED {
+		if transfer.Status == pb.Status_CANCELED_BY_PEER {
+			nm.sendGenericNotification(transferCanceledByPeerNotificationSummary, transferCanceledByPeerNotificationBody)
+			return
+		}
 		nm.sendGenericNotification(cancelFailedNotificationSummary, transferInvalidated)
 		return
 	}
@@ -413,7 +427,7 @@ func (nm *NotificationManager) NotifyNewAutoacceptTransfer(transferID string, pe
 // NotifyAutoacceptFailed creates a pop-up gui notification
 func (nm *NotificationManager) NotifyAutoacceptFailed(transferID string, peer string, reason error) {
 	transferInfo := fmt.Sprintf(notifyNewTransferBody, transferID, peer)
-	body := fmt.Sprintf("%s\n%s", destinationDirectoryErrorToNotificationBody(reason), transferInfo)
+	body := fmt.Sprintf("%s\n%s", acceptErrorToNotificationBody(reason), transferInfo)
 
 	nm.sendGenericNotification(notifyAutoacceptFailed, body)
 }

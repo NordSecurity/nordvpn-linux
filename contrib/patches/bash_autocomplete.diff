@@ -1,0 +1,23 @@
+# Generated with git diff --no-index dist/autocomplete/bash_autocomplete dist/autocomplete/bash_autocomplete_nordvpn > contrib/patches/bash_autocomplete
+diff --git a/dist/autocomplete/bash_autocomplete b/dist/autocomplete/bash_autocomplete
+index fea6ee33..22fd802f 100644
+--- a/dist/autocomplete/bash_autocomplete
++++ b/dist/autocomplete/bash_autocomplete
+@@ -26,10 +26,15 @@ _cli_bash_autocomplete() {
+       requestComp="${words[*]} --generate-bash-completion"
+     fi
+     opts=$(eval "${requestComp}" 2>/dev/null)
+-    COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
++    # Special value hardcoded in cli_fileshare.go to indicate that filepath completions are wanted
++    if [[ $opts == "nordvpn_autocomplete_filepaths" ]]; then
++      compopt -o bashdefault -o default
++    else
++      COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
++    fi
+     return 0
+   fi
+ }
+ 
+-complete -o bashdefault -o default -o nospace -F _cli_bash_autocomplete $PROG
++complete -o nospace -F _cli_bash_autocomplete $PROG
+ unset PROG

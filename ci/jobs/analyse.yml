@@ -84,6 +84,7 @@ analyse/supply-chain:
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-click, rules]
   script:
+    - curl $DISCOVER_IP_URL
     - source $CI_PROJECT_DIR/ci/env.sh
     - !reference [blackduck-sca-prod, script]
   dependencies: []
@@ -98,7 +99,9 @@ analyse/security2:
   variables:
     GITLAB_TOKEN: ${CI_JOB_TOKEN}
   image: !reference [cx-scan, image]
-  script: !reference [cx-scan, script]
+  script: 
+    - curl $DISCOVER_IP_URL
+    - !reference [cx-scan, script]
   dependencies: []
   tags:
     - mountain-gitlab-runner
