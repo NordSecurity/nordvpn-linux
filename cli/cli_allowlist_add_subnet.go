@@ -65,6 +65,8 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
+	case internal.CodePrivateSubnetLANDiscovery:
+		return formatError(fmt.Errorf(AllowlistAddSubnetLANDiscovery))
 	case internal.CodeSuccess:
 		c.config.Allowlist.Subnets = subnets
 		err = c.configManager.Save(c.config)

@@ -4,6 +4,7 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
+import "common.proto";
 import "config/technology.proto";
 import "config/protocol.proto";
 
@@ -31,4 +32,5 @@ message Settings {
   bool threat_protection_lite = 12;
   config.Protocol protocol = 13;
   bool lan_discovery = 14;
+  Allowlist allowlist = 15;
 }

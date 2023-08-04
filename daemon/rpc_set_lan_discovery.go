@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"log"
+	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -25,10 +26,9 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 			}}, nil
 	}
 
+	subnets := cfg.AutoConnectData.Allowlist.Subnets
 	whitelist := cfg.AutoConnectData.Allowlist
-	if in.GetEnabled() {
-		whitelist = addLANPermissions(cfg.AutoConnectData.Allowlist)
-	}
+	status := pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED
 
 	if cfg.Mesh {
 		token := cfg.TokensData[cfg.AutoConnectData.ID].Token
@@ -39,6 +39,23 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 		}
 	} else {
 		r.netw.SetLanDiscovery(in.Enabled)
+	}
+
+	if in.GetEnabled() {
+		// Make a new list of allowlist of subnets based on the old allowlist, filter all of the
+		// private networks as they will be allowed by lan-discovery.
+		subnets = make(config.Subnets)
+		for subnet := range cfg.AutoConnectData.Allowlist.Subnets {
+			if prefix, err := netip.ParsePrefix(subnet); err != nil {
+				log.Println("Failed to parse subnet: ", err)
+			} else if !prefix.Addr().IsPrivate() {
+				subnets[subnet] = true
+			} else {
+				status = pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED_ALLOWLIST_RESET
+			}
+		}
+
+		whitelist = addLANPermissions(cfg.AutoConnectData.Allowlist)
 	}
 
 	if r.netw.IsVPNActive() || cfg.KillSwitch {
@@ -63,6 +80,7 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.LanDiscovery = in.GetEnabled()
+		c.AutoConnectData.Allowlist.Subnets = subnets
 		return c
 	}); err != nil {
 		return &pb.SetLANDiscoveryResponse{
@@ -73,5 +91,5 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 
 	return &pb.SetLANDiscoveryResponse{
 		Response: &pb.SetLANDiscoveryResponse_SetLanDiscoveryStatus{
-			SetLanDiscoveryStatus: pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED}}, nil
+			SetLanDiscoveryStatus: status}}, nil
 }

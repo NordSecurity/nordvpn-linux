@@ -63,7 +63,8 @@ Example: nordvpn set %s on`
 	SetDNSAlreadySet                  = "DNS is already set to %s."
 
 	SetLANDiscoveryUsage          = "Access printers, TVs, and other devices on your local network while connected to a VPN."
-	SetLANDiscoveryAlreadyEnabled = "LAN discovery is already set to %s"
+	SetLANDiscoveryAlreadyEnabled = "LAN discovery is already set to %s."
+	SetLANDiscoveryAllowlistReset = "Just a little heads-up: Enabling local network discovery will remove your private subnets from the allowlist."
 
 	AllowlistAddPortExistsError = "Port %s (%s) is already allowlisted."
 	AllowlistAddPortSuccess     = "Port %s (%s) is allowlisted successfully."
@@ -71,8 +72,9 @@ Example: nordvpn set %s on`
 	AllowlistAddPortsExistsError = "Ports %s - %s (%s) are already allowlisted."
 	AllowlistAddPortsSuccess     = "Ports %s - %s (%s) are allowlisted successfully."
 
-	AllowlistAddSubnetExistsError = "Subnet %s is already allowlisted."
-	AllowlistAddSubnetSuccess     = "Subnet %s is allowlisted successfully."
+	AllowlistAddSubnetExistsError  = "Subnet %s is already allowlisted."
+	AllowlistAddSubnetSuccess      = "Subnet %s is allowlisted successfully."
+	AllowlistAddSubnetLANDiscovery = "Allowlisting a private subnet is not available while local network discovery is enabled."
 
 	AllowlistRemovePortExistsError = "Port %s (%s) is not allowlisted."
 	AllowlistRemovePortSuccess     = "Port %s (%s) is removed from the allowlist successfully."

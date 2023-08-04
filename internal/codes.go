@@ -48,4 +48,5 @@ const (
 	CodeAutoConnectServerNotObfuscated int64 = 3037
 	CodeAutoConnectServerObfuscated    int64 = 3038
 	CodeTokenInvalid                   int64 = 3039
+	CodePrivateSubnetLANDiscovery      int64 = 3040
 )

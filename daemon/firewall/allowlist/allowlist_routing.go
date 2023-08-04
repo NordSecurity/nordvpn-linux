@@ -70,7 +70,7 @@ func routeSubnetsToIPTables(commandFunc runCommandFunc, subnet string, mark stri
 	}
 	// iptables -t mangle -I PREROUTING -s 192.168.99.0/24 -j MARK --set-mark 0xe1f1 -m comment --comment "allowlist"
 	args := fmt.Sprintf(
-		"-t mangle -I PREROUTING -s %s -j MARK --set-mark %s -m comment --comment %s",
+		"-t mangle -I PREROUTING -s %s -j MARK -m conntrack --set-mark %s --ctstate NEW -m comment --comment %s",
 		subnet,
 		mark,
 		RuleComment,

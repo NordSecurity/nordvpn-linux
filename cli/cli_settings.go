@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
-	cconfig "github.com/NordSecurity/nordvpn-linux/client/config"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -69,16 +68,16 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(resp.Data.LanDiscovery))
 
-	displayAllowlist(&c.config.Allowlist)
+	displayAllowlist(resp.Data.Allowlist)
 	return nil
 }
 
-func displayAllowlist(allowlist *cconfig.Allowlist) {
+func displayAllowlist(allowlist *pb.Allowlist) {
 	if allowlist != nil {
-		udpPorts := allowlist.Ports.UDP.ToSlice()
-		tcpPorts := allowlist.Ports.TCP.ToSlice()
+		udpPorts := allowlist.GetPorts().GetUdp()
+		tcpPorts := allowlist.GetPorts().GetTcp()
 		if len(udpPorts)+len(tcpPorts) > 0 {
-			allPorts := allowlist.Ports.UDP.Union(allowlist.Ports.TCP).ToSlice()
+			allPorts := append(udpPorts, tcpPorts...)
 			sort.Slice(allPorts, func(i, j int) bool {
 				return client.InterfaceToInt64(allPorts[i]) < client.InterfaceToInt64(allPorts[j])
 			})
@@ -86,10 +85,10 @@ func displayAllowlist(allowlist *cconfig.Allowlist) {
 			for _, port := range allPorts {
 				//find current iteration's protocols
 				var protos []string
-				if allowlist.Ports.UDP.Contains(port) {
+				if index := slices.Index(udpPorts, port); index != -1 {
 					protos = append(protos, "UDP")
 				}
-				if allowlist.Ports.TCP.Contains(port) {
+				if index := slices.Index(tcpPorts, port); index != -1 {
 					protos = append(protos, "TCP")
 				}
 
@@ -118,7 +117,7 @@ func displayAllowlist(allowlist *cconfig.Allowlist) {
 				}
 			}
 		}
-		subnets := allowlist.Subnets.ToSlice()
+		subnets := allowlist.GetSubnets()
 		if len(subnets) > 0 {
 			fmt.Printf("Allowlisted subnets:\n")
 			for _, subnet := range subnets {

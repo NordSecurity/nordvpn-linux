@@ -25,21 +25,21 @@ func getEmptyAllowlist(t *testing.T) config.Allowlist {
 	}
 }
 
-func addLANToWhitelist(t *testing.T, whitelist config.Allowlist) config.Allowlist {
+func addLANToAllowlist(t *testing.T, allowlist config.Allowlist) config.Allowlist {
 	t.Helper()
 
-	whitelist.Subnets["10.0.0.0/8"] = true
-	whitelist.Subnets["172.16.0.0/12"] = true
-	whitelist.Subnets["192.168.0.0/16"] = true
-	whitelist.Subnets["169.254.0.0/16"] = true
+	allowlist.Subnets["10.0.0.0/8"] = true
+	allowlist.Subnets["172.16.0.0/12"] = true
+	allowlist.Subnets["192.168.0.0/16"] = true
+	allowlist.Subnets["169.254.0.0/16"] = true
 
-	return whitelist
+	return allowlist
 }
 
 func TestSetLANDiscovery_Success(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	whitelistLAN := config.Allowlist{
+	allowlistLAN := config.Allowlist{
 		Subnets: map[string]bool{
 			"10.0.0.0/8":     true,
 			"172.16.0.0/12":  true,
@@ -48,58 +48,49 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 		},
 	}
 
-	whitelist := getEmptyAllowlist(t)
-	whitelist.Subnets["207.240.205.230/24"] = true
-	whitelist.Subnets["18.198.160.194/12"] = true
-	whitelist.Ports.TCP[2000] = true
-	whitelist.Ports.UDP[3000] = true
-
-	whitelistWithLAN := whitelist
-	whitelistWithLAN.Subnets["10.0.0.0/8"] = true
+	getAllowlist := func() config.Allowlist {
+		allowlist := getEmptyAllowlist(t)
+		allowlist.Subnets["207.240.205.230/24"] = true
+		allowlist.Subnets["18.198.160.194/12"] = true
+		allowlist.Ports.TCP[2000] = true
+		allowlist.Ports.UDP[3000] = true
+		return allowlist
+	}
 
 	tests := []struct {
 		name              string
 		enabled           bool
 		currentEnabled    bool
 		expectedStatus    pb.SetLANDiscoveryStatus
-		currentWhitelist  config.Allowlist
-		expectedWhitelist config.Allowlist
+		currentAllowlist  config.Allowlist
+		expectedAllowlist config.Allowlist
 		// LAN subnets should not be included in configuration when added as a part of LAN discovery
-		expectedConfigWhitelist config.Allowlist
+		expectedConfigAllowlist config.Allowlist
 	}{
 		{
 			name:                    "enable success",
 			enabled:                 true,
 			expectedStatus:          pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED,
-			currentWhitelist:        getEmptyAllowlist(t),
-			expectedWhitelist:       whitelistLAN,
-			expectedConfigWhitelist: getEmptyAllowlist(t),
+			currentAllowlist:        getEmptyAllowlist(t),
+			expectedAllowlist:       allowlistLAN,
+			expectedConfigAllowlist: getEmptyAllowlist(t),
 		},
 		{
 			name:                    "disable success",
 			enabled:                 false,
 			currentEnabled:          true,
 			expectedStatus:          pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED,
-			currentWhitelist:        getEmptyAllowlist(t),
-			expectedWhitelist:       config.Allowlist{},
-			expectedConfigWhitelist: getEmptyAllowlist(t),
+			currentAllowlist:        getEmptyAllowlist(t),
+			expectedAllowlist:       config.Allowlist{},
+			expectedConfigAllowlist: getEmptyAllowlist(t),
 		},
 		{
-			name:                    "enable, preexisiting whitelist",
+			name:                    "enable preexisiting allowlist",
 			enabled:                 true,
 			expectedStatus:          pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED,
-			currentWhitelist:        whitelist,
-			expectedWhitelist:       addLANToWhitelist(t, whitelist),
-			expectedConfigWhitelist: addLANToWhitelist(t, whitelist),
-		},
-		{
-			name:                    "disable, preexisiting whitelist contains LAN, LAN is not removed",
-			enabled:                 false,
-			currentEnabled:          true,
-			expectedStatus:          pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED,
-			currentWhitelist:        whitelistWithLAN,
-			expectedWhitelist:       whitelistWithLAN,
-			expectedConfigWhitelist: whitelistWithLAN,
+			currentAllowlist:        getAllowlist(),
+			expectedAllowlist:       addLANToAllowlist(t, getAllowlist()),
+			expectedConfigAllowlist: getAllowlist(),
 		},
 	}
 
@@ -114,12 +105,12 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.LanDiscovery = test.currentEnabled
-				c.AutoConnectData.Allowlist = test.currentWhitelist
+				c.AutoConnectData.Allowlist = test.currentAllowlist
 				return c
 			})
 
 			networker := mockNetworker{
-				allowlist: test.currentWhitelist,
+				allowlist: test.currentAllowlist,
 			}
 
 			rpc := RPC{
@@ -140,8 +131,8 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 				"Invalid status returned in SetLANDiscovery response.")
 			assert.Equal(t, test.enabled, cfg.LanDiscovery,
 				"LAN discovery was not enabled in config.")
-			assert.Equal(t, test.expectedConfigWhitelist, cfg.AutoConnectData.Allowlist,
-				"Invalid whitelist saved in the config.")
+			assert.Equal(t, test.expectedConfigAllowlist, cfg.AutoConnectData.Allowlist,
+				"Invalid allowlist saved in the config.")
 			assert.Equal(t, test.enabled, networker.lanDiscovery)
 		})
 	}
@@ -155,8 +146,8 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 		enabled           bool
 		currentEnabled    bool
 		expectedEnabled   bool
-		unsetWhitelistErr error
-		setWhitelistErr   error
+		unsetAllowlistErr error
+		setAllowlistErr   error
 		expectedError     pb.SetErrorCode
 	}{
 		{
@@ -174,19 +165,19 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 			expectedError:   pb.SetErrorCode_ALREADY_SET,
 		},
 		{
-			name:            "set whitelist error",
+			name:            "set allowlist error",
 			enabled:         true,
 			currentEnabled:  false,
 			expectedEnabled: false,
-			setWhitelistErr: fmt.Errorf("failed to set whitelist"),
+			setAllowlistErr: fmt.Errorf("failed to set allowlist"),
 			expectedError:   pb.SetErrorCode_FAILURE,
 		},
 		{
-			name:              "unset whitelist error",
+			name:              "unset allowlist error",
 			enabled:           true,
 			currentEnabled:    false,
 			expectedEnabled:   false,
-			unsetWhitelistErr: fmt.Errorf("failed to unset whitelist"),
+			unsetAllowlistErr: fmt.Errorf("failed to unset allowlist"),
 			expectedError:     pb.SetErrorCode_FAILURE,
 		},
 	}
@@ -208,8 +199,8 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 
 			networker := mockNetworker{
 				allowlist:         getEmptyAllowlist(t),
-				setWhitelistErr:   test.setWhitelistErr,
-				unsetWhitelistErr: test.unsetWhitelistErr,
+				setAllowlistErr:   test.setAllowlistErr,
+				unsetAllowlistErr: test.unsetAllowlistErr,
 				vpnActive:         true,
 			}
 

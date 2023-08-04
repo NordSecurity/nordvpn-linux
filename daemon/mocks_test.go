@@ -20,8 +20,8 @@ type mockNetworker struct {
 	lanDiscovery      bool
 	meshPeers         mesh.MachinePeers
 	setDNSErr         error
-	setWhitelistErr   error
-	unsetWhitelistErr error
+	setAllowlistErr   error
+	unsetAllowlistErr error
 }
 
 func (mockNetworker) Start(
@@ -56,8 +56,8 @@ func (*mockNetworker) EnableRouting()         {}
 func (*mockNetworker) DisableRouting()        {}
 
 func (mn *mockNetworker) SetAllowlist(allowlist config.Allowlist) error {
-	if mn.setWhitelistErr != nil {
-		return mn.setWhitelistErr
+	if mn.setAllowlistErr != nil {
+		return mn.setAllowlistErr
 	}
 
 	mn.allowlist = allowlist
@@ -65,8 +65,8 @@ func (mn *mockNetworker) SetAllowlist(allowlist config.Allowlist) error {
 }
 
 func (mn *mockNetworker) UnsetAllowlist() error {
-	if mn.unsetWhitelistErr != nil {
-		return mn.unsetWhitelistErr
+	if mn.unsetAllowlistErr != nil {
+		return mn.unsetAllowlistErr
 	}
 
 	mn.allowlist.Ports.TCP = make(config.PortSet)

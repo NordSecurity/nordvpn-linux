@@ -32,6 +32,10 @@ func (r *RPC) SetKillSwitch(ctx context.Context, in *pb.SetKillSwitchRequest) (*
 			in.GetAllowlist().GetSubnets(),
 		)
 
+		if cfg.LanDiscovery {
+			allowlist = addLANPermissions(allowlist)
+		}
+
 		if err := r.netw.SetKillSwitch(allowlist); err != nil {
 			log.Println(internal.ErrorPrefix, "enabling killswitch:", err)
 			return &pb.Payload{

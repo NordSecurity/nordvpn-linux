@@ -16,6 +16,19 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 		log.Println(internal.ErrorPrefix, err)
 	}
 
+	ports := pb.Ports{}
+	for port := range cfg.AutoConnectData.Allowlist.Ports.TCP {
+		ports.Tcp = append(ports.Tcp, port)
+	}
+	for port := range cfg.AutoConnectData.Allowlist.Ports.UDP {
+		ports.Udp = append(ports.Udp, port)
+	}
+
+	subnets := []string{}
+	for subnet := range cfg.AutoConnectData.Allowlist.Subnets {
+		subnets = append(subnets, subnet)
+	}
+
 	return &pb.SettingsResponse{
 		Type: internal.CodeSuccess,
 		Data: &pb.Settings{
@@ -33,6 +46,10 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 			Protocol:             cfg.AutoConnectData.Protocol,
 			LanDiscovery:         cfg.LanDiscovery,
+			Allowlist: &pb.Allowlist{
+				Ports:   &ports,
+				Subnets: subnets,
+			},
 		},
 	}, nil
 }
