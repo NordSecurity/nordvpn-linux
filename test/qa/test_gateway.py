@@ -6,7 +6,6 @@ from lib import (
     network,
 )
 import lib
-import logging
 import sh
 import pytest
 import timeout_decorator
@@ -42,8 +41,8 @@ def test_default_gateway_is_detected():
     # Get IP address and interface name of your current default gateway
     output = sh.ip.route.show("default")
     _, _, ip_addr, _, iface = output.split(None, 5)
-    logging.debug(ip_addr)
-    logging.debug(iface)
+    logging.log(ip_addr)
+    logging.log(iface)
 
     # Add IP address to a bridge interface, but make sure that the IP is in the same network as default gateway's IP
     sh.sudo.ip.addr.add.dev.br0(ip_addr)
@@ -58,7 +57,7 @@ def test_default_gateway_is_detected():
     sh.sudo.ip.route.change.default.dev.br0()
 
     output = sh.bridge.link()
-    logging.debug(output)
+    logging.log(output)
 
     # Commands to undo the previous work and return the routing tables to their original state
     # Remove the interface from the bridge

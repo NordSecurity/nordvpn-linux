@@ -82,29 +82,30 @@ import sh
 # ToDo: Add missing IPv6 rules (icmp6 & dhcp6)
 def _get_firewall_rules(killswitch, server_ip, iface, port="", protocol="", subnet=""):
     if killswitch == True and server_ip == "":
-        return """-A INPUT -i {face} -m comment comment nordvpn -j DROP
--A OUTPUT -o {face} -m comment comment nordvpn -j DROP""".format(
+        return """-A INPUT -i {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A INPUT -i {face} -m comment --comment nordvpn -j DROP
+-A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+-A OUTPUT -o {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A OUTPUT -o {face} -m comment --comment nordvpn -j DROP""".format(
             face=iface
         )
 
     if port == "" and protocol == "" and subnet == "":
-        return """-A INPUT -i {face} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
--A INPUT -i {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+        return """-A INPUT -i {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 -A INPUT -i {face} -m comment --comment nordvpn -j DROP
--A OUTPUT -o {face} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
--A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+-A OUTPUT -o {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 -A OUTPUT -o {face} -m comment --comment nordvpn -j DROP""".format(
             ip=server_ip, face=iface
         )
 
     if port == "" and protocol == "":
         return """-A INPUT -s {subnet_addr} -i {face} -m comment --comment nordvpn -j ACCEPT
--A INPUT -i {face} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
--A INPUT -i {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A INPUT -i {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 -A INPUT -i {face} -m comment --comment nordvpn -j DROP
 -A OUTPUT -d {subnet_addr} -o {face} -m comment --comment nordvpn -j ACCEPT
--A OUTPUT -o {face} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
--A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+-A OUTPUT -o {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 -A OUTPUT -o {face} -m comment --comment nordvpn -j DROP""".format(
             ip=server_ip, face=iface, subnet_addr=subnet
         )
@@ -114,28 +115,26 @@ def _get_firewall_rules(killswitch, server_ip, iface, port="", protocol="", subn
 -A INPUT -i {face} -p udp -m udp --sport {p} -m comment --comment nordvpn -j ACCEPT
 -A INPUT -i {face} -p tcp -m tcp --dport {p} -m comment --comment nordvpn -j ACCEPT
 -A INPUT -i {face} -p tcp -m tcp --sport {p} -m comment --comment nordvpn -j ACCEPT
--A INPUT -i {face} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
--A INPUT -i {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A INPUT -i {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 -A INPUT -i {face} -m comment --comment nordvpn -j DROP
 -A OUTPUT -o {face} -p udp -m udp --dport {p} -m comment --comment nordvpn -j ACCEPT
 -A OUTPUT -o {face} -p udp -m udp --sport {p} -m comment --comment nordvpn -j ACCEPT
 -A OUTPUT -o {face} -p tcp -m tcp --dport {p} -m comment --comment nordvpn -j ACCEPT
 -A OUTPUT -o {face} -p tcp -m tcp --sport {p} -m comment --comment nordvpn -j ACCEPT
--A OUTPUT -o {face} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
--A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+-A OUTPUT -o {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 -A OUTPUT -o {face} -m comment --comment nordvpn -j DROP""".format(
             ip=server_ip, face=iface, p=port
         )
 
     return """-A INPUT -i {face} -p {proto} -m {proto} --dport {p} -m comment --comment nordvpn -j ACCEPT
 -A INPUT -i {face} -p {proto} -m {proto} --sport {p} -m comment --comment nordvpn -j ACCEPT
--A INPUT -i {face} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
--A INPUT -i {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A INPUT -i {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 -A INPUT -i {face} -m comment --comment nordvpn -j DROP
 -A OUTPUT -o {face} -p {proto} -m {proto} --dport {p} -m comment --comment nordvpn -j ACCEPT
 -A OUTPUT -o {face} -p {proto} -m {proto} --sport {p} -m comment --comment nordvpn -j ACCEPT
--A OUTPUT -o {face} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
--A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+-A OUTPUT -o {face} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+-A OUTPUT -o {face} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 -A OUTPUT -o {face} -m comment --comment nordvpn -j DROP""".format(
         ip=server_ip, face=iface, p=port, proto=protocol.lower()
     )
@@ -150,7 +149,7 @@ def is_active(port="", protocol="", subnet=""):
     try:
         # Get VPN server's IP address
         status = sh.grep(sh.nordvpn.status(), "IP")
-        _, _, server_ip = status.split(None, 3)
+        _, server_ip = status.split(None, 2)
     except sh.ErrorReturnCode:
         server_ip = ""
     print("Default gateway:", iface, "Server's IP:  ", server_ip)
@@ -164,7 +163,6 @@ def is_active(port="", protocol="", subnet=""):
     print("Current rules:\n", current_rules)
 
     print(sh.nordvpn.settings())
-
     return rules in current_rules
 
 
@@ -174,9 +172,6 @@ def is_empty() -> bool:
 
 
 def _get_iptables_rules():
-    if daemon.is_ipv6_on():
-        print("Using ip6tables")
-        return sh.sudo.ip6tables("-S")
-
+    # TODO: add full ipv6 support, separate task #LVPN-3684
     print("Using iptables")
     return sh.sudo.iptables("-S")

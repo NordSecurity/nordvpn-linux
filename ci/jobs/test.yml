@@ -1,6 +1,9 @@
 # test.yml defines jobs for testing.
 include: /ci/jobs/.cond.yml
 .test_job_template:
+  tags:
+    - linux
+    - infra-docker
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.4
   rules:
@@ -74,6 +77,17 @@ test/deb-autoconnect1:
 test/deb-autoconnect2:
   extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_to_city or test_autoconnect_to_random_server_by_name or test_autoconnect_to_standard_group or test_autoconnect_to_additional_group'
+test/deb-firewall:
+  extends: .test_job_template
+  script: $CI_PROJECT_DIR/ci/test_deb.sh firewall
+test/deb-firewall6:
+  extends: .test_job_template
+  script:
+    - echo "is ipv6 enabled?"
+    - sysctl net.ipv6.conf.all.disable_ipv6
+    - echo "enable ipv6"
+    - sudo sysctl net.ipv6.conf.all.disable_ipv6=0
+    - $CI_PROJECT_DIR/ci/test_deb.sh firewall6
 test/deb-manual:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.4
@@ -90,7 +104,7 @@ test/deb-manual:
       - $CI_PROJECT_DIR/covdatafiles
   parallel:
     matrix:
-      - TEST: [gateway, firewall, firewall6]
+      - TEST: [gateway]
 test/deb-meshnet:
   extends: .test_job_template
   variables:

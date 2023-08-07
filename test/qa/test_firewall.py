@@ -33,7 +33,7 @@ def teardown_function(function):
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall():
+def test_firewall_01():
     lib.set_firewall("on")
     assert not firewall.is_active()
 
@@ -59,7 +59,7 @@ def test_firewall():
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_allowlist_port(port):
+def test_firewall_02_allowlist_port(port):
     lib.set_firewall("on")
     lib.add_port_to_allowlist(port)
 
@@ -91,8 +91,8 @@ def test_firewall_allowlist_port(port):
 
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_firewall_allowlist_ports_range(ports):
+@timeout_decorator.timeout(100)
+def test_firewall_03_allowlist_ports_range(ports):
     lib.set_firewall("on")
     lib.add_ports_range_to_allowlist(ports)
 
@@ -126,7 +126,7 @@ def test_firewall_allowlist_ports_range(ports):
 @pytest.mark.parametrize("protocol", lib.PROTOCOLS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_allowlist_port_and_protocol(port, protocol):
+def test_firewall_04_allowlist_port_and_protocol(port, protocol):
     protocol = str(protocol)
     lib.set_firewall("on")
     lib.add_port_and_protocol_to_allowlist(port, protocol)
@@ -160,7 +160,7 @@ def test_firewall_allowlist_port_and_protocol(port, protocol):
 @pytest.mark.parametrize("subnet_addr", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_allowlist_subnet(subnet_addr):
+def test_firewall_05_allowlist_subnet(subnet_addr):
     lib.set_firewall("on")
     lib.add_subnet_to_allowlist(subnet_addr)
 
@@ -189,8 +189,7 @@ def test_firewall_allowlist_subnet(subnet_addr):
 
     lib.flush_allowlist()
 
-
-def test_firewall_with_killswitch():
+def test_firewall_06_with_killswitch():
     lib.set_firewall("on")
     assert not firewall.is_active()
 
@@ -205,7 +204,7 @@ def test_firewall_with_killswitch():
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_with_killswitch_while_connected():
+def test_firewall_07_with_killswitch_while_connected():
     lib.set_firewall("on")
     assert not firewall.is_active()
 

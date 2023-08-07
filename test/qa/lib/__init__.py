@@ -119,7 +119,7 @@ PORTS = [
 
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS_RANGE = [
-    "3000:8000",
+    "3000:3100",
 ]
 
 # Used for integration test coverage

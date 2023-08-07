@@ -14,7 +14,8 @@ coverage/integration:
     - test/deb-connect1
     - test/deb-connect2
     - test/deb-combinations
-    - test/deb-manual
+    - test/deb-firewall
+    - test/deb-firewall6
     - test/deb-autoconnect1
     - test/deb-autoconnect2
     - test/deb-meshnet
@@ -36,7 +37,8 @@ coverage/combined:
     - test/deb-connect1
     - test/deb-connect2
     - test/deb-combinations
-    - test/deb-manual
+    - test/deb-firewall
+    - test/deb-firewall6
     - test/deb-autoconnect1
     - test/deb-autoconnect2
     - test/deb-meshnet
