@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	testdevice "github.com/NordSecurity/nordvpn-linux/test/device"
 	"github.com/NordSecurity/nordvpn-linux/test/errors"
@@ -189,6 +190,10 @@ func (e *workingExitNode) Enable() error {
 
 func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lanDiscovery bool) error {
 	e.peers = peers
+	return nil
+}
+
+func (e *workingExitNode) SetMasquerade(exitnode.MasqueradeSetter) error {
 	return nil
 }
 

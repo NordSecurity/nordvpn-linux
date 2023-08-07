@@ -359,9 +359,7 @@ func main() {
 		dnsHostSetter,
 		vpnRouter,
 		meshRouter,
-		exitnode.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
-			return exec.Command(command, arg...).CombinedOutput()
-		}),
+		exitnode.NewServer(ifaceNames, exitnode.GetMasqueradeSetter(cfg.Technology), exitnode.RunCommandFuncExec),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
 	)

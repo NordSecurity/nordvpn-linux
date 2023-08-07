@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"net/netip"
+	"os/exec"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/config"
 )
 
 const (
@@ -13,9 +16,98 @@ const (
 	filterRuleComment = "nordvpn"
 	// Used to ignore errors about missing rules when that is expected
 	missingRuleMessage = "Bad rule (does a matching rule exist in that chain?)"
+	ovpnInterfaceName  = "nordtun"
 )
 
-type runCommandFunc func(command string, arg ...string) ([]byte, error)
+type runCommandFunc func(command string, args ...string) ([]byte, error)
+
+func RunCommandFuncExec(command string, args ...string) ([]byte, error) {
+	return exec.Command(command, args...).CombinedOutput()
+}
+
+type MasqueradeSetter interface {
+	EnableMasquerading(intfNames []string) error
+	ClearMasquerading(intfNames []string) error
+}
+
+func GetMasqueradeSetter(technology config.Technology) MasqueradeSetter {
+	var masqueradeSetter MasqueradeSetter
+	if technology == config.Technology_OPENVPN {
+		masqueradeSetter = NewOpenVPNMasqueradeSetter()
+	} else {
+		masqueradeSetter = NewNordlynxMasqueradeSetter()
+	}
+
+	return masqueradeSetter
+}
+
+type NordlynxMasqueradeSetter struct {
+	cmdFunc runCommandFunc
+}
+
+func NewNordlynxMasqueradeSetter() *NordlynxMasqueradeSetter {
+	return &NordlynxMasqueradeSetter{
+		cmdFunc: RunCommandFuncExec,
+	}
+}
+
+func (nm *NordlynxMasqueradeSetter) EnableMasquerading(intfNames []string) error {
+	if err := enableMasquerading(intfNames, nm.cmdFunc); err != nil {
+		return fmt.Errorf("enabling Nordlynx masquerading: %w", err)
+	}
+
+	return nil
+}
+
+func (nm *NordlynxMasqueradeSetter) ClearMasquerading(intfNames []string) error {
+	if err := clearMasquerading(intfNames, nm.cmdFunc); err != nil {
+		return fmt.Errorf("clearing Nordlynx masquerading: %w", err)
+	}
+
+	return nil
+}
+
+type OpenVPNMasqueradeSetter struct {
+	cmdFunc runCommandFunc
+}
+
+func NewOpenVPNMasqueradeSetter() *OpenVPNMasqueradeSetter {
+	return &OpenVPNMasqueradeSetter{
+		cmdFunc: RunCommandFuncExec,
+	}
+}
+
+func (om *OpenVPNMasqueradeSetter) EnableMasquerading(intfNames []string) error {
+	// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o nordtun -j MASQUERADE -m comment --comment "nordvpn"
+	cmd := "iptables"
+	if output, err := om.cmdFunc(cmd, "-t", "nat", "-A", "POSTROUTING", "-s", meshSrcSubnet, "-o",
+		ovpnInterfaceName, "-j", "MASQUERADE", "-m", "comment", "--comment",
+		msqRuleComment); err != nil {
+		return fmt.Errorf("enabling OpenVPN masquerading: %w: %s", err, string(output))
+	}
+
+	if err := enableMasquerading(intfNames, om.cmdFunc); err != nil {
+		return fmt.Errorf("enabling OpenVPN masquerading: %w", err)
+	}
+
+	return nil
+}
+
+func (om *OpenVPNMasqueradeSetter) ClearMasquerading(intfNames []string) error {
+	// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o nordtun -j MASQUERADE -m comment --comment "nordvpn"
+	cmd := "iptables"
+	if output, err := om.cmdFunc(cmd, "-t", "nat", "-D", "POSTROUTING", "-s", meshSrcSubnet, "-o",
+		ovpnInterfaceName, "-j", "MASQUERADE", "-m", "comment", "--comment",
+		msqRuleComment); err != nil {
+		return fmt.Errorf("clearing OpenVPN masquerading: %w: %s", err, string(output))
+	}
+
+	if err := clearMasquerading(intfNames, om.cmdFunc); err != nil {
+		return fmt.Errorf("clearing OpenVPN masquerading: %w", err)
+	}
+
+	return nil
+}
 
 func enableMasquerading(intfNames []string, commandFunc runCommandFunc) error {
 	for _, intfName := range intfNames {
@@ -24,7 +116,7 @@ func enableMasquerading(intfNames []string, commandFunc runCommandFunc) error {
 			return err
 		}
 
-		// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o eth0 -j MASQUERADE -m comment --comment "exitnode"
+		// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o eth0 -j MASQUERADE -m comment --comment "nordvpn"
 		cmd := "iptables"
 		args := fmt.Sprintf(
 			"-t nat -A POSTROUTING -s %s -o %s -j MASQUERADE -m comment --comment %s",

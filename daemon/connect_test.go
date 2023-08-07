@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
@@ -137,7 +138,7 @@ func (workingNetworker) Disconnect() error                                   { r
 func (workingNetworker) Refresh(mesh.MachineMap) error                       { return nil }
 func (workingNetworker) Allow(mesh.Machine) error                            { return nil }
 func (workingNetworker) Block(mesh.Machine) error                            { return nil }
-func (workingNetworker) SetVPN(vpn.VPN)                                      {}
+func (workingNetworker) SetVPN(vpn.VPN, exitnode.MasqueradeSetter)           {}
 func (workingNetworker) LastServerName() string                              { return "" }
 func (workingNetworker) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
 func (workingNetworker) SetLanDiscovery(bool)                                {}
@@ -180,7 +181,7 @@ func (failingNetworker) Disconnect() error                                   { r
 func (failingNetworker) Refresh(mesh.MachineMap) error                       { return errOnPurpose }
 func (failingNetworker) Allow(mesh.Machine) error                            { return errOnPurpose }
 func (failingNetworker) Block(mesh.Machine) error                            { return errOnPurpose }
-func (failingNetworker) SetVPN(vpn.VPN)                                      {}
+func (failingNetworker) SetVPN(vpn.VPN, exitnode.MasqueradeSetter)           {}
 func (failingNetworker) LastServerName() string                              { return "" }
 func (failingNetworker) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
 func (failingNetworker) SetLanDiscovery(bool)                                {}

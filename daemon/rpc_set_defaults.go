@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 )
 
 func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error) {
@@ -48,7 +49,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error
 			Type: internal.CodeConfigError,
 		}, nil
 	}
-	r.netw.SetVPN(v)
+	r.netw.SetVPN(v, exitnode.GetMasqueradeSetter(cfg.Technology))
 
 	r.events.Settings.Defaults.Publish(nil)
 	if err := r.ncClient.Stop(); err != nil {

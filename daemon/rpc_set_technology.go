@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 )
 
 func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*pb.Payload, error) {
@@ -30,7 +31,8 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 			Type: internal.CodeConfigError,
 		}, nil
 	}
-	r.netw.SetVPN(v)
+
+	r.netw.SetVPN(v, exitnode.GetMasqueradeSetter(in.GetTechnology()))
 
 	payload := &pb.Payload{}
 	// payload.Type gets overridden in case of failure

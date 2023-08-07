@@ -18,6 +18,7 @@ const (
 type Node interface {
 	Enable() error
 	ResetPeers(mesh.MachinePeers, bool) error
+	SetMasquerade(MasqueradeSetter) error
 	Disable() error
 }
 
@@ -26,13 +27,15 @@ type Server struct {
 	mu             sync.Mutex
 	interfaceNames []string // need to remember on which interface we started
 	runCommandFunc runCommandFunc
-	sysctlSetter   *kernel.SysctlSetter
+	sysctlSetter   kernel.SysctlSetter
+	masquerade     MasqueradeSetter
 }
 
 // NewServer create & initialize new Server
-func NewServer(interfaceNames []string, commandFunc runCommandFunc) Node {
+func NewServer(interfaceNames []string, masquerade MasqueradeSetter, commandFunc runCommandFunc) Node {
 	return &Server{
 		interfaceNames: interfaceNames,
+		masquerade:     masquerade,
 		runCommandFunc: commandFunc,
 		sysctlSetter: kernel.NewSysctlSetter(
 			ipv4fwdKernelParamName,
@@ -57,7 +60,7 @@ func (en *Server) Enable() error {
 		return fmt.Errorf("enabling filtering: %w", err)
 	}
 
-	err = enableMasquerading(en.interfaceNames, en.runCommandFunc)
+	err = en.masquerade.EnableMasquerading(en.interfaceNames)
 	if err != nil {
 		return fmt.Errorf("enabling masquerading: %w", err)
 	}
@@ -83,6 +86,20 @@ func (en *Server) ResetPeers(peers mesh.MachinePeers, lanDiscovery bool) error {
 	return resetPeersTraffic(trafficPeers, en.runCommandFunc)
 }
 
+func (en *Server) SetMasquerade(masquerade MasqueradeSetter) error {
+	if err := en.masquerade.ClearMasquerading(en.interfaceNames); err != nil {
+		return fmt.Errorf("setting masquerading, clearing old masquerade: %w", err)
+	}
+
+	en.masquerade = masquerade
+
+	if err := en.masquerade.EnableMasquerading(en.interfaceNames); err != nil {
+		return fmt.Errorf("setting masquerading, enabling new masquerade: %w", err)
+	}
+
+	return nil
+}
+
 // Disable restore current state and disable fwd+msq
 func (en *Server) Disable() error {
 	en.mu.Lock()
@@ -94,7 +111,7 @@ func (en *Server) Disable() error {
 		return fmt.Errorf("clearing filtering: %w", err)
 	}
 
-	err = clearMasquerading(en.interfaceNames, en.runCommandFunc)
+	err = en.masquerade.ClearMasquerading(en.interfaceNames)
 	if err != nil {
 		return fmt.Errorf("clearing masquerading: %w", err)
 	}

@@ -17,6 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/google/uuid"
@@ -72,7 +73,7 @@ func (n *customNetworker) Disconnect() error                                    
 func (n *customNetworker) Refresh(mesh.MachineMap) error                                     { return nil }
 func (n *customNetworker) Allow(mesh.Machine) error                                          { return nil }
 func (n *customNetworker) Block(mesh.Machine) error                                          { return nil }
-func (n *customNetworker) SetVPN(vpn.VPN)                                                    {}
+func (n *customNetworker) SetVPN(vpn.VPN, exitnode.MasqueradeSetter)                         {}
 func (n *customNetworker) LastServerName() string                                            { return "" }
 func (n *customNetworker) SetAllowlist(allowlist config.Allowlist) error                     { return nil }
 func (n *customNetworker) UnsetAllowlist() error                                             { return nil }

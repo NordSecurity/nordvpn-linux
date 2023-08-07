@@ -11,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func (mockObfuscateNetworker) SetKillSwitch(config.Allowlist) error             
 func (mockObfuscateNetworker) UnsetKillSwitch() error                              { return nil }
 func (mockObfuscateNetworker) PermitIPv6() error                                   { return nil }
 func (mockObfuscateNetworker) DenyIPv6() error                                     { return nil }
-func (mockObfuscateNetworker) SetVPN(vpn.VPN)                                      {}
+func (mockObfuscateNetworker) SetVPN(vpn.VPN, exitnode.MasqueradeSetter)           {}
 func (mockObfuscateNetworker) LastServerName() string                              { return "" }
 func (mockObfuscateNetworker) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
 func (mockObfuscateNetworker) SetLanDiscovery(bool)                                {}

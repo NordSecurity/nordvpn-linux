@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/google/uuid"
 )
@@ -75,14 +76,14 @@ func (mn *mockNetworker) UnsetAllowlist() error {
 	return nil
 }
 
-func (*mockNetworker) IsNetworkSet() bool                   { return false }
-func (*mockNetworker) IsMeshnetActive() bool                { return false }
-func (*mockNetworker) SetKillSwitch(config.Allowlist) error { return nil }
-func (*mockNetworker) UnsetKillSwitch() error               { return nil }
-func (*mockNetworker) PermitIPv6() error                    { return nil }
-func (*mockNetworker) DenyIPv6() error                      { return nil }
-func (*mockNetworker) SetVPN(vpn.VPN)                       {}
-func (*mockNetworker) LastServerName() string               { return "" }
+func (*mockNetworker) IsNetworkSet() bool                        { return false }
+func (*mockNetworker) IsMeshnetActive() bool                     { return false }
+func (*mockNetworker) SetKillSwitch(config.Allowlist) error      { return nil }
+func (*mockNetworker) UnsetKillSwitch() error                    { return nil }
+func (*mockNetworker) PermitIPv6() error                         { return nil }
+func (*mockNetworker) DenyIPv6() error                           { return nil }
+func (*mockNetworker) SetVPN(vpn.VPN, exitnode.MasqueradeSetter) {}
+func (*mockNetworker) LastServerName() string                    { return "" }
 
 func (mn *mockNetworker) SetLanDiscoveryAndResetMesh(enabled bool, peers mesh.MachinePeers) {
 	mn.meshPeers = peers

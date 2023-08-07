@@ -98,7 +98,7 @@ type Networker interface {
 	UnsetKillSwitch() error
 	PermitIPv6() error
 	DenyIPv6() error
-	SetVPN(vpn.VPN)
+	SetVPN(vpn.VPN, exitnode.MasqueradeSetter)
 	LastServerName() string
 	SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers)
 	SetLanDiscovery(bool)
@@ -131,6 +131,7 @@ type Combined struct {
 	isMeshnetSet       bool
 	rules              []string // firewall rule names
 	nextVPN            vpn.VPN
+	nextMasquerade     exitnode.MasqueradeSetter
 	cfg                mesh.MachineMap
 	allowlist          config.Allowlist
 	lastServer         vpn.ServerData
@@ -451,6 +452,11 @@ func (netw *Combined) switchToNextVpn() {
 	if netw.nextVPN != nil {
 		netw.vpnet = netw.nextVPN
 		netw.nextVPN = nil
+	}
+
+	if netw.nextMasquerade != nil {
+		netw.exitNode.SetMasquerade(netw.nextMasquerade)
+		netw.nextMasquerade = nil
 	}
 }
 
@@ -1018,11 +1024,13 @@ func (netw *Combined) unsetKillSwitch() error {
 	return nil
 }
 
-func (netw *Combined) SetVPN(v vpn.VPN) {
+func (netw *Combined) SetVPN(v vpn.VPN, m exitnode.MasqueradeSetter) {
 	if !netw.vpnet.IsActive() {
 		netw.vpnet = v
+		netw.exitNode.SetMasquerade(m)
 	} else {
 		netw.nextVPN = v
+		netw.nextMasquerade = m
 	}
 }
 
