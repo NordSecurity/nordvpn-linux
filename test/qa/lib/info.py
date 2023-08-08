@@ -8,7 +8,9 @@ def collect():
     rounting_info = sh.sudo.ip.route()
     firewall_info = sh.sudo.iptables("-S")
     nameserver_info = sh.sudo.cat("/etc/resolv.conf")
-    processes = sh.ps("-ef")
+
+    # without `ww` we cannot see full process lines, as it is cut off early
+    processes = sh.ps("-ef", "ww")
 
     return "\n".join(
         [

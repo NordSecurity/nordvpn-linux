@@ -15,6 +15,10 @@ RUN apt-get update \
     && apt-get install -y python3 python3-pip \
     # install python packages for tests
     && python3 -m pip install -r /tmp/requirements.txt \
+    # install thsark
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tshark \
+    # make sure, that Docker does not hang during installation, when we get TUI screen
+    yes yes | DEBIAN_FRONTEND=teletype dpkg-reconfigure wireshark-common \
     # cleanup
     && apt-get clean
 
@@ -22,6 +26,7 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 
 RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} qa && useradd -l -m -u ${USER_ID} -g qa -G nordvpn qa && echo "qa ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+RUN usermod -a -G wireshark qa
 
 USER qa
 

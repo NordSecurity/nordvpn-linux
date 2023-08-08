@@ -8,8 +8,11 @@ from lib import (
 )
 import lib
 import pytest
+import queue
 import sh
 import socket
+import threading
+import time
 import timeout_decorator
 
 
@@ -32,11 +35,65 @@ def teardown_function(function):
     logging.log()
 
 
+def capture_traffic() -> int:
+    """
+    Captures traffic that goes to VPN server 
+    :return: int - returns count of captured packets
+    """
+
+    # Collect information needed for tshark filter
+    server_ip = daemon.get_server_ip()
+    protocol = daemon.get_current_connection_protocol()
+    obfuscated = daemon.get_is_obfuscated()
+
+    # Choose traffic filter according to information collected above
+    if protocol == "nordlynx":
+        traffic_filter = "(udp port 51820) and (ip dst {})".format(server_ip)
+    elif protocol == "udp" and not obfuscated:
+        traffic_filter = "(udp port 1194) and (ip dst {})".format(server_ip)
+    elif protocol == "tcp" and not obfuscated:
+        traffic_filter = "(tcp port 443) and (ip dst {})".format(server_ip)
+    elif protocol == "udp" and obfuscated:
+        traffic_filter = "udp and (port not 1194) and (ip dst {})".format(server_ip)
+    elif protocol == "tcp" and obfuscated:
+        traffic_filter = "tcp and (port not 443) and (ip dst {})".format(server_ip)
+
+    # Actual capture
+    # If 2 packets were already captured, do not wait for 3 seconds
+    # Show compact output about packets
+    tshark_result = sh.tshark("-i", "any", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "-a", "duration:3", "-a", "packets:2", "-f", traffic_filter)
+
+    packets = tshark_result.replace("\t", " -> ")
+    packets = tshark_result.split("\n")
+
+    logging.log("PACKETS_CAPTURED: " + str(packets))
+
+    # If no packets were captured, `packets` value should be 0
+    return len(packets) - 1
+
+
 def connect_base_test(group=[], name="", hostname=""):
     output = sh.nordvpn.connect(group)
     print(output)
+
+    # Start capturing packets
+    packet_capture_thread_queue = queue.Queue()
+    packet_capture_thread_lambda = lambda: packet_capture_thread_queue.put(capture_traffic())
+    packet_capture_thread = threading.Thread(target=packet_capture_thread_lambda)
+    packet_capture_thread.start()
+
+    # We need to make sure, that packets are being sent out only after
+    # tshark starts, and not earlier, so we wait for one second.
+    time.sleep(1)
     assert lib.is_connect_successful(output, name, hostname)
+
+    # Following function creates atleast two ICMP packets
     assert network.is_connected()
+
+    packet_capture_thread.join()
+    packet_capture_thread_result = packet_capture_thread_queue.get()
+
+    assert packet_capture_thread_result >= 2
 
 
 def disconnect_base_test():
@@ -225,14 +282,14 @@ def test_connect_to_country(tech, proto, obfuscated, country):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("country", lib.COUNTRY_CODES)
+@pytest.mark.parametrize("country_code", lib.COUNTRY_CODES)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_connect_to_code_country(tech, proto, obfuscated, country):
+def test_connect_to_code_country(tech, proto, obfuscated, country_code):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(country)
+    connect_base_test(country_code)
     disconnect_base_test()
 
 

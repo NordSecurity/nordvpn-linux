@@ -151,3 +151,21 @@ def is_peer_running(ssh_client: ssh.Ssh) -> bool:
         return False
     else:
         return True
+
+
+def get_server_ip():
+    return sh.nordvpn.status().split('\n')[2].replace('IP: ', '')
+
+
+def get_current_connection_protocol():
+    current_protocol = sh.nordvpn("settings").split('\n')[1]
+
+    if "UDP" in current_protocol:
+        return "udp"
+    elif "TCP" in current_protocol:
+        return "tcp"
+    else:
+        return "nordlynx"
+
+def get_is_obfuscated():
+    return "enabled" in sh.nordvpn("settings").split('\n')[8]

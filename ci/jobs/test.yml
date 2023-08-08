@@ -5,7 +5,7 @@ include: /ci/jobs/.cond.yml
     - linux
     - infra-docker
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.4
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.0
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
@@ -61,10 +61,10 @@ test/deb:
       - TEST: [connect6, dns, dns6, killswitch, login, misc, routing, settings, allowlist]
 test/deb-connect1:
   extends: .test_job_template
-  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_quick_connect or test_double_quick_connect_only or test_connect_to_absent_server or test_mistype_connect or test_connect_to_invalid_group or test_connect_to_group_flag_standard or test_connect_to_group_flag_additional or test_connect_without_internet_access'
+  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_quick_connect or test_double_quick_connect_only or test_connect_to_absent_server or test_mistype_connect or test_connect_to_invalid_group or test_connect_to_group_flag_standard or test_connect_to_group_flag_additional or test_connect_without_internet_access or test_connect_to_city or test_connect_to_code_country'
 test/deb-connect2:
   extends: .test_job_template
-  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_to_city or test_connect_to_country or test_connect_to_code_country or test_connect_to_group_standard or test_connect_to_group_additional'
+  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_to_country or test_connect_to_group_standard or test_connect_to_group_additional'
 test/deb-combinations:
   extends: .test_job_template
   script: $CI_PROJECT_DIR/ci/test_deb.sh combinations $PATTERN
@@ -90,7 +90,7 @@ test/deb-firewall6:
     - $CI_PROJECT_DIR/ci/test_deb.sh firewall6
 test/deb-manual:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.4
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.0
   rules:
     # TODO: run automatically after meshnet release
     - !reference [.cond/on-click, rules]
@@ -115,7 +115,7 @@ test/deb-meshnet:
   script: $CI_PROJECT_DIR/ci/test_deb.sh meshnet
 test/deb-fileshare:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.0.4
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.0
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
