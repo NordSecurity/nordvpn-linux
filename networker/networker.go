@@ -1420,7 +1420,6 @@ func (netw *Combined) ResetRouting(peers mesh.MachinePeers) error {
 
 func (netw *Combined) defaultMeshBlock() error {
 	defaultMeshBlock := "default-mesh-block"
-	defaultMeshAllowEstablished := "default-mesh-allow-established"
 	if err := netw.fw.Add([]firewall.Rule{
 		// Block all the inbound traffic for the meshnet peers
 		{
@@ -1429,25 +1428,10 @@ func (netw *Combined) defaultMeshBlock() error {
 			RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
 			Allow:          false,
 		},
-		// Allow inbound traffic for the existing connections
-		// E. g. this device is making some calls to another
-		// peer. In such case it should be able to receive
-		// the response.
-		{
-			Name:           defaultMeshAllowEstablished,
-			Direction:      firewall.Inbound,
-			RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-			ConnectionStates: []firewall.ConnectionState{
-				firewall.Related,
-				firewall.Established,
-			},
-			Allow: true,
-		},
 	}); err != nil {
 		return err
 	}
 	netw.rules = append(netw.rules, defaultMeshBlock)
-	netw.rules = append(netw.rules, defaultMeshAllowEstablished)
 	return nil
 }
 
