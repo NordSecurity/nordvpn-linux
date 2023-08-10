@@ -1,0 +1,184 @@
+variables:
+  LATTE_DB_VERSION: v1.0.1
+  USER: qa
+  PROXY_URL: $PROXY_URL
+
+include: /ci/jobs/.cond.yml
+
+.job-template:
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.1
+  variables:
+    REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
+    LATTE: '1'
+  rules:
+    - !reference [.cond/on-merge-request, rules]
+  dependencies:
+    - "package/deb: [amd64]"
+  before_script:
+    - git clone --branch v1.0.0 https://gitlab-ci-token:${CI_JOB_TOKEN}@$PROXY_URL $CI_PROJECT_DIR/3rd-party/proxy
+    - cd $CI_PROJECT_DIR/3rd-party/proxy
+    - ./proxy.sh -i
+  after_script:
+    - cp /opt/proxy/databases/_test.db $CI_PROJECT_DIR/dist/recorded.db
+    - cp /opt/proxy/_dump/proxylogs.log $CI_PROJECT_DIR/proxylogs.log
+  artifacts:
+    when: always
+    paths:
+      - $CI_PROJECT_DIR/dist/recorded.db
+      - $CI_PROJECT_DIR/dist/logs/daemon.log
+      - $CI_PROJECT_DIR/covdatafiles
+      - $CI_PROJECT_DIR/proxylogs.log
+      
+.record-job-template:
+  stage: latte-record
+  extends: .job-template
+  rules:
+    - !reference [.cond/proxy-record, rules]
+  
+
+.replay-job-template:
+  stage: latte-replay
+  extends: .job-template
+  needs:
+    - "latte/download-db"
+    - "package/deb: [amd64]"
+  dependencies:
+    - "latte/download-db"
+    - "package/deb: [amd64]"
+  
+
+.setup-proxy-record:
+  script:
+    - $CI_PROJECT_DIR/ci/setup_proxy.sh --record
+    - cd $CI_PROJECT_DIR
+    
+.setup-proxy-replay:
+  script:
+    - $CI_PROJECT_DIR/ci/setup_proxy.sh --replay
+    - cd $CI_PROJECT_DIR
+
+.copy-record:
+  script:
+    - sudo cp $CI_PROJECT_DIR/dist/recorded.db /opt/proxy/databases/_test.db
+    - sudo chown -R mitmproxyuser:mitmproxyuser /opt/proxy/databases/_test.db
+
+.copy-replay:
+  script:
+    - cp $CI_PROJECT_DIR/dist/latte.db /opt/proxy/databases/_test.db
+
+.enable_ipv6:
+  script:
+    - echo "enable ipv6 (it is needed for transport_test)"
+    - sudo sysctl net.ipv6.conf.all.disable_ipv6=0
+
+latte/download-db:
+  stage: latte-replay
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.1
+  rules:
+    - !reference [.cond/on-merge-request, rules]
+  script:
+    - mkdir $CI_PROJECT_DIR/dist
+    - | 
+      python3 $CI_PROJECT_DIR/ci/remote_gitlab_package.py \
+          download \
+          --package-name=LATTE_DB \
+          --project=$CI_PROJECT_ID \
+          --file=latte.db \
+          --version=$LATTE_DB_VERSION \
+          --output=$CI_PROJECT_DIR/dist/latte.db
+  dependencies: []
+  artifacts:
+    when: always
+    paths:
+      - $CI_PROJECT_DIR/dist/latte.db
+
+latte/deb-replay:
+  extends: .replay-job-template
+  script:
+    - !reference [.enable_ipv6, script]
+    - !reference [.copy-replay, script]
+    - !reference [.setup-proxy-replay, script]
+    - $CI_PROJECT_DIR/ci/test_deb.sh $TEST
+  parallel:
+    matrix:
+      - TEST: [connect6, dns, dns6, login, misc, routing, settings]
+
+latte/deb-autoconnect1-replay:
+  extends: .replay-job-template
+  script:
+    - !reference [.copy-replay, script]
+    - !reference [.setup-proxy-replay, script]
+    - $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_default or test_not_autoconnect or test_autoconnect_to_country'
+
+latte/deb-autoconnect2-replay:
+  extends: .replay-job-template
+  script:
+    - !reference [.copy-replay, script]
+    - !reference [.setup-proxy-replay, script]
+    - $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_to_city or test_autoconnect_to_random_server_by_name or test_autoconnect_to_standard_group or test_autoconnect_to_additional_group'
+
+latte/deb-combinations-replay:
+  extends: .replay-job-template
+  script:
+    - !reference [.copy-replay, script]
+    - !reference [.setup-proxy-replay, script]
+    - $CI_PROJECT_DIR/ci/test_deb.sh combinations $PATTERN
+  parallel:
+    matrix:
+      - PATTERN: [test_reconnect_matrix_standard, test_reconnect_matrix_obfuscated, test_connect_country_and_city]
+
+latte/deb-connect1-replay:
+  extends: .replay-job-template
+  script:
+    - !reference [.copy-replay, script]
+    - !reference [.setup-proxy-replay, script]
+    - $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_quick_connect or test_double_quick_connect_only or test_connect_to_absent_server or test_mistype_connect or test_connect_to_invalid_group or test_connect_to_group_flag_standard or test_connect_to_group_flag_additional or test_connect_without_internet_access'
+
+latte/deb-connect2-replay:
+  extends: .replay-job-template
+  script:
+    - !reference [.copy-replay, script]
+    - !reference [.setup-proxy-replay, script]
+    - $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_to_city or test_connect_to_country or test_connect_to_code_country or test_connect_to_group_standard or test_connect_to_group_additional'
+
+latte/deb-autoconnect-record:
+  extends: .record-job-template
+  script:
+    - !reference [.setup-proxy-record, script]
+    - $CI_PROJECT_DIR/ci/test_deb.sh autoconnect
+  dependencies:  
+    - "package/deb: [amd64]"
+  needs:  
+    - "package/deb: [amd64]"
+
+latte/deb-misc-record:
+  extends: .record-job-template
+  dependencies:  
+    - "latte/deb-autoconnect-record"
+    - "package/deb: [amd64]"
+  needs:  
+    - "latte/deb-autoconnect-record"
+    - "package/deb: [amd64]"
+  script:
+    - !reference [.copy-record, script]
+    - !reference [.setup-proxy-record, script]
+    - $CI_PROJECT_DIR/ci/test_deb.sh misc
+
+latte/upload-db:
+  stage: latte-record
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.1
+  rules:
+    - !reference [.cond/proxy-record, rules]
+  dependencies:
+    - "latte/deb-misc-record"
+  needs:  
+    - "latte/deb-misc-record"
+  script:
+    - mv $CI_PROJECT_DIR/dist/recorded.db $CI_PROJECT_DIR/dist/latte.db
+    - | 
+      python3 $CI_PROJECT_DIR/ci/remote_gitlab_package.py \
+          upload \
+          --package-name=LATTE_DB \
+          --project=$CI_PROJECT_ID \
+          --file=$CI_PROJECT_DIR/dist/latte.db \
+          --version=$LATTE_DB_VERSION 

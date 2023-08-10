@@ -99,9 +99,7 @@ analyse/security2:
   variables:
     GITLAB_TOKEN: ${CI_JOB_TOKEN}
   image: !reference [cx-scan, image]
-  script: 
-    - curl $DISCOVER_IP_URL
-    - !reference [cx-scan, script]
+  script: !reference [cx-scan, script]
   dependencies: []
   tags:
     - mountain-gitlab-runner

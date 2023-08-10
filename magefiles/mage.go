@@ -21,7 +21,7 @@ const (
 	imagePackager          = registryPrefix + "packager:1.0.1"
 	imageProtobufGenerator = registryPrefix + "generator:1.0.1"
 	imageScanner           = registryPrefix + "scanner:1.0.0"
-	imageTester            = registryPrefix + "tester:1.1.0"
+	imageTester            = registryPrefix + "tester:1.1.1"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.2"
 	imageLinter            = registryPrefix + "linter:1.0.0"
 	imageRuster            = registryPrefix + "ruster:1.0.1"

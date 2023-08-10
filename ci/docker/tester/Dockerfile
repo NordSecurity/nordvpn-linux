@@ -16,18 +16,21 @@ RUN apt-get update \
     # install python packages for tests
     && python3 -m pip install -r /tmp/requirements.txt \
     # install thsark
-    DEBIAN_FRONTEND=noninteractive apt-get install -y tshark \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y tshark \
     # make sure, that Docker does not hang during installation, when we get TUI screen
-    yes yes | DEBIAN_FRONTEND=teletype dpkg-reconfigure wireshark-common \
+    && yes yes | DEBIAN_FRONTEND=teletype dpkg-reconfigure wireshark-common \
     # cleanup
     && apt-get clean
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
+# yq is used by LATTE proxy
+RUN curl -L -o /usr/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 \
+    && chmod +x /usr/bin/yq 
+
 RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} qa && useradd -l -m -u ${USER_ID} -g qa -G nordvpn qa && echo "qa ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 RUN usermod -a -G wireshark qa
 
 USER qa
-
 CMD ["exec", "$@"]

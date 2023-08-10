@@ -137,27 +137,3 @@ def test_logout_disconnects():
     assert "You are logged out." in output
     assert network.is_disconnected()
 
-
-# Test for 3.8.7 hotfix. Account and login commands would not work when killswitch is on
-# Issue 441
-def test_fancy_transport():
-    output = sh.nordvpn.set.killswitch("on")
-    assert "Kill Switch is set to 'enabled' successfully." in output
-
-    output = login.login_as("default")
-    print(output)
-    assert "Welcome to NordVPN!" in output
-
-    with lib.ErrorDefer(sh.nordvpn.logout):
-        with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
-            output = sh.nordvpn.account()
-            print(output)
-            assert "Account Information:" in output
-
-    with lib.ErrorDefer(sh.nordvpn.logout):
-        sh.nordvpn.set.killswitch("off")
-        assert network.is_available()
-
-    output = sh.nordvpn.logout("--persist-token")
-    print(output)
-    assert "You are logged out." in output

@@ -1,15 +1,23 @@
 # test.yml defines jobs for testing.
 include: /ci/jobs/.cond.yml
+
+.test_ran_with_latte:
+  rules:
+    - !reference [.cond/on-main, rules]
+    - !reference [.cond/on-version-tag, rules]
+
+.test_not_ran_with_latte:
+  rules:
+    - !reference [.cond/on-main, rules]
+    - !reference [.cond/on-version-tag, rules]
+    - !reference [.cond/on-merge-request, rules]
+
 .test_job_template:
   tags:
     - linux
     - infra-docker
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.1
   dependencies:
     - "package/deb: [amd64]"
   artifacts:
@@ -17,18 +25,18 @@ include: /ci/jobs/.cond.yml
     paths:
       - $CI_PROJECT_DIR/dist/logs/daemon.log
       - $CI_PROJECT_DIR/covdatafiles
+  
+.enable_ipv6_test:
+  script:
+    - echo "enable ipv6 (it is needed for transport_test)"
+    - sysctl net.ipv6.conf.all.disable_ipv6=0
+
 test/cgo:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.1.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_not_ran_with_latte
   script: 
-    - echo "is ipv6 enabled?"
-    - sysctl net.ipv6.conf.all.disable_ipv6
-    - echo "enable ipv6 (it is needed for transport_test)"
-    - sysctl net.ipv6.conf.all.disable_ipv6=0
+    - !reference [.enable_ipv6_test, script]
     - $CI_PROJECT_DIR/ci/test.sh full
   artifacts:
     paths:
@@ -39,43 +47,66 @@ test/cgo:
         path: coverage.xml
   dependencies: []
   coverage: '/total:\s*\(statements\)\s*(\d+\.\d+)%/'
+
 test/go:
   stage: test
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.1.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  extends: .test_not_ran_with_latte
   script: $CI_PROJECT_DIR/ci/test.sh
   dependencies: []
+
 test/deb:
-  extends: .test_job_template
-  script: 
-    - echo "is ipv6 enabled?"
-    - sysctl net.ipv6.conf.all.disable_ipv6
-    - echo "enable ipv6"
-    - sudo sysctl net.ipv6.conf.all.disable_ipv6=0
+  extends: 
+    - .test_job_template
+    - .test_ran_with_latte
+  script:
+    - !reference [.enable_ipv6_test, script]
     - $CI_PROJECT_DIR/ci/test_deb.sh $TEST
   parallel:
     matrix:
-      - TEST: [connect6, dns, dns6, killswitch, login, misc, routing, settings, allowlist]
+      - TEST: [connect6, dns, dns6, login, misc, routing, settings]
+
+test/deb-non-latte:
+  extends: 
+    - .test_job_template
+    - .test_not_ran_with_latte
+  script:
+    - $CI_PROJECT_DIR/ci/test_deb.sh $TEST
+  parallel:
+    matrix:
+      - TEST: [killswitch, allowlist]
+
 test/deb-connect1:
-  extends: .test_job_template
-  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_quick_connect or test_double_quick_connect_only or test_connect_to_absent_server or test_mistype_connect or test_connect_to_invalid_group or test_connect_to_group_flag_standard or test_connect_to_group_flag_additional or test_connect_without_internet_access or test_connect_to_city or test_connect_to_code_country'
+  extends: 
+    - .test_job_template
+    - .test_ran_with_latte
+  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_quick_connect or test_double_quick_connect_only or test_connect_to_absent_server or test_mistype_connect or test_connect_to_invalid_group or test_connect_to_group_flag_standard or test_connect_to_group_flag_additional or test_connect_without_internet_access'
+
 test/deb-connect2:
-  extends: .test_job_template
-  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_to_country or test_connect_to_group_standard or test_connect_to_group_additional'
+  extends: 
+    - .test_job_template
+    - .test_ran_with_latte
+  script: $CI_PROJECT_DIR/ci/test_deb.sh connect 'test_connect_to_random_server_by_name or test_connection_recovers_from_network_restart or test_double_quick_connect_disconnect or test_connect_to_city or test_connect_to_country or test_connect_to_code_country or test_connect_to_group_standard or test_connect_to_group_additional'
+
 test/deb-combinations:
-  extends: .test_job_template
+  extends: 
+    - .test_job_template
+    - .test_ran_with_latte
   script: $CI_PROJECT_DIR/ci/test_deb.sh combinations $PATTERN
   parallel:
     matrix:
       - PATTERN: [test_reconnect_matrix_standard, test_reconnect_matrix_obfuscated, test_connect_country_and_city]
+
 test/deb-autoconnect1:
-  extends: .test_job_template
+  extends: 
+    - .test_job_template
+    - .test_ran_with_latte
   script: $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_default or test_not_autoconnect or test_autoconnect_to_country'
+
 test/deb-autoconnect2:
-  extends: .test_job_template
+  extends: 
+    - .test_job_template
+    - .test_ran_with_latte
   script: $CI_PROJECT_DIR/ci/test_deb.sh autoconnect 'test_autoconnect_to_city or test_autoconnect_to_random_server_by_name or test_autoconnect_to_standard_group or test_autoconnect_to_additional_group'
 test/deb-firewall:
   extends: .test_job_template
@@ -88,12 +119,15 @@ test/deb-firewall6:
     - echo "enable ipv6"
     - sudo sysctl net.ipv6.conf.all.disable_ipv6=0
     - $CI_PROJECT_DIR/ci/test_deb.sh firewall6
+
 test/deb-manual:
-  stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.0
   rules:
-    # TODO: run automatically after meshnet release
     - !reference [.cond/on-click, rules]
+    - !reference [.cond/on-main, rules]
+    - !reference [.cond/on-version-tag, rules]
+    - !reference [.cond/on-merge-request, rules]
+  stage: test
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.1
   script: $CI_PROJECT_DIR/ci/test_deb.sh $TEST
   dependencies:
     - "package/deb: [amd64]"
@@ -104,22 +138,24 @@ test/deb-manual:
       - $CI_PROJECT_DIR/covdatafiles
   parallel:
     matrix:
-      - TEST: [gateway]
+      - TEST: [gateway, firewall, firewall6]
+
 test/deb-meshnet:
-  extends: .test_job_template
+  extends: 
+    - .test_job_template
+    - .test_not_ran_with_latte
   variables:
     QA_PEER_TOKEN: $QA_PEER_TOKEN
   services:
     - name: ghcr.io/nordsecurity/nordvpn-linux/qa-peer:1.0.2
       alias: qa-peer
   script: $CI_PROJECT_DIR/ci/test_deb.sh meshnet
+
 test/deb-fileshare:
   stage: test
-  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+  image: ghcr.io/nordsecurity/nordvpn-linux/tester:1.1.1
+  extends: 
+    - .test_not_ran_with_latte
   variables:
     QA_PEER_TOKEN: $QA_PEER_TOKEN
   services:
@@ -141,4 +177,3 @@ test/deb-fileshare:
   needs:
     - "package/deb: [amd64]"
     - "test/deb-meshnet"
-    

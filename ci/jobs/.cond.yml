@@ -16,6 +16,10 @@
   rules:
     # merge request was created with at least one commit or a commit was pushed
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+.cond/proxy-record:
+  rules:
+    # manual pipeline was created to record proxy-replay DB
+    - if: $RECORD == '1'
 .cond/on-click:
   rules:
     # catch all if for basic and merge request pipelines

@@ -7,6 +7,7 @@ build/binaries:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
+    - !reference [.cond/proxy-record, rules]
   variables:
     BUILD_FLAGS: -cover
   script: $CI_PROJECT_DIR/ci/compile.sh
@@ -40,7 +41,7 @@ build/openvpn:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
-    - !reference [.cond/on-click, rules]
+    - !reference [.cond/proxy-record, rules]
   script: $CI_PROJECT_DIR/build/openvpn/build.sh
   dependencies: []
   artifacts:
@@ -56,7 +57,7 @@ build/data:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
-    - !reference [.cond/on-click, rules]
+    - !reference [.cond/proxy-record, rules]
   script: $CI_PROJECT_DIR/ci/data.sh
   dependencies: []
   artifacts:
@@ -69,7 +70,7 @@ build/licenses:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
     - !reference [.cond/on-merge-request, rules]
-    - !reference [.cond/on-click, rules]
+    - !reference [.cond/proxy-record, rules]
   script: $CI_PROJECT_DIR/ci/licenses.sh
   dependencies: []
   artifacts:

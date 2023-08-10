@@ -4,6 +4,7 @@ include:
   - /ci/jobs/package.yml
   - /ci/jobs/test.yml
   - /ci/jobs/coverage.yml
+  - /ci/jobs/latte.yml
 
 variables:
   ARCH: "amd64"
@@ -43,6 +44,8 @@ stages:
   - package
   - analyse
   - test
+  - latte-record
+  - latte-replay
   - coverage
   - installation_tests
   - upload_packages

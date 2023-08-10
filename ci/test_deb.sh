@@ -58,7 +58,17 @@ if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d
     sudo sed -i "1a export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"
 fi
 
-python3 -m pytest -v --timeout 180 -rsx -x --timeout-method=thread -o log_cli=true "${args[@]}"
+if [[ -n ${LATTE:-} ]]; then
+    if ! sudo grep -q "export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"
+    fi
+
+    if ! sudo grep -q "export HTTP_TRANSPORTS=http1" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export HTTP_TRANSPORTS=http1" "/etc/init.d/nordvpn"
+    fi
+fi
+
+python3 -m pytest -v --timeout 180 -x -rsx --timeout-method=thread -o log_cli=true "${args[@]}"
 
 if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
     sudo sed -i "2d" "/etc/init.d/nordvpn"

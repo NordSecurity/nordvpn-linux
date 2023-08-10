@@ -1,12 +1,17 @@
 include: /ci/jobs/.cond.yml
 
-coverage/integration:
-  stage: coverage
-  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
+.latte-rules:
+  rules:
+    - !reference [.cond/on-merge-request, rules]
+
+.no-latte-rules:  
   rules:
     - !reference [.cond/on-main, rules]
     - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
+
+.coverage/integration:
+  stage: coverage
+  image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
   script:
     - $CI_PROJECT_DIR/ci/qa_test_coverage.sh
   dependencies: 
@@ -22,13 +27,30 @@ coverage/integration:
     - test/deb-fileshare
   allow_failure: true
   coverage: '/Total coverage: (\d+\.\d+)%/'
-coverage/combined:
+
+coverage/integration-latte:
+  extends: 
+    - .coverage/integration
+    - .latte-rules
+  dependencies:
+    - latte/deb-replay
+    - latte/deb-connect1-replay
+    - latte/deb-connect2-replay
+    - latte/deb-combinations-replay
+    - test/deb-manual
+    - latte/deb-autoconnect1-replay
+    - latte/deb-autoconnect2-replay
+    - test/deb-meshnet
+    - test/deb-fileshare
+
+coverage/integration-regular:
+  extends: 
+    - .coverage/integration
+    - .no-latte-rules
+
+.coverage/combined:
   stage: coverage
   image: ghcr.io/nordsecurity/nordvpn-linux/builder:1.0.0
-  rules:
-    - !reference [.cond/on-main, rules]
-    - !reference [.cond/on-version-tag, rules]
-    - !reference [.cond/on-merge-request, rules]
   script:
     - $CI_PROJECT_DIR/ci/combined_coverage.sh
   dependencies: 
@@ -45,3 +67,23 @@ coverage/combined:
     - test/deb-fileshare
   allow_failure: true
   coverage: '/Total coverage: (\d+\.\d+)%/'
+
+coverage/combined-latte:
+  extends: 
+    - .coverage/combined
+    - .latte-rules
+  dependencies:
+    - latte/deb-replay
+    - latte/deb-connect1-replay
+    - latte/deb-connect2-replay
+    - latte/deb-combinations-replay
+    - test/deb-manual
+    - latte/deb-autoconnect1-replay
+    - latte/deb-autoconnect2-replay
+    - test/deb-meshnet
+    - test/deb-fileshare
+
+coverage/combined-regular:
+  extends: 
+    - .coverage/combined
+    - .no-latte-rules
