@@ -3,8 +3,6 @@ set -euox
 
 source "${CI_PROJECT_DIR}"/ci/env.sh
 
-git submodule update --init
-
 mkdir -p "${CI_PROJECT_DIR}"/dist/data
 cp "${CI_PROJECT_DIR}"/contrib/rsa/* "${CI_PROJECT_DIR}"/dist/data/
 
