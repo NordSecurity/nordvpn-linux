@@ -90,7 +90,7 @@ CITIES = [
 #
 # curl api.nordvpn.com/v1/servers\?limit=6000 -L | jq '[.[] | select((.ips | length) > 1)] | map(.hostname |= rtrimstr(".nordvpn.com")) | map(.hostname)'
 IPV6_SERVERS = [
-    "uk1876",
+    "us9591", "us9592"
 ]
 
 
