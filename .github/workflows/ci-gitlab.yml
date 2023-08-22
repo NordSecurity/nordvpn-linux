@@ -3,6 +3,10 @@ on:
   pull_request_target:
     types: [labeled]
   push:
+    branches-ignore: 
+      - 'main'
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
 permissions: {}
 jobs:
   trigger-gitlab-pipeline:
