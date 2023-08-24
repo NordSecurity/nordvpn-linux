@@ -2,6 +2,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -53,6 +55,8 @@ type Config struct {
 	TokensData      map[int64]TokenData `json:"tokens_data,omitempty"`
 	MachineID       uuid.UUID           `json:"machine_id,omitempty"`
 	LanDiscovery    bool                `json:"lan_discovery"`
+	RemoteConfig    string              `json:"remote_config,omitempty"`
+	RCLastUpdate    time.Time           `json:"rc_last_update,omitempty"`
 }
 
 type AutoConnectData struct {
