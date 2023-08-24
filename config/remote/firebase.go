@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/coreos/go-semver/semver"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -23,6 +24,11 @@ const (
 	minimalVersionKey = "min_version"
 	remoteConfigScope = "https://www.googleapis.com/auth/firebase.remoteconfig"
 )
+
+// RemoteConfigService interface
+type RemoteConfigService interface {
+	FetchRemoteConfig() ([]byte, error)
+}
 
 type ServiceAccount struct {
 	Type                    string `json:"type"`
@@ -38,63 +44,54 @@ type ServiceAccount struct {
 }
 
 type RConfig struct {
-	updatePeriod time.Duration
-	lastUpdate   time.Time
-	config       *firebaseremoteconfig.RemoteConfig
-	serviceToken string
+	updatePeriod  time.Duration
+	config        *firebaseremoteconfig.RemoteConfig
+	remoteService RemoteConfigService
+	configManager config.Manager
 }
 
 // NewRConfig creates instance of remote config
-func NewRConfig(updatePeriod time.Duration, serviceToken string) *RConfig {
+func NewRConfig(updatePeriod time.Duration, rs RemoteConfigService, cm config.Manager) *RConfig {
 	return &RConfig{
-		updatePeriod: updatePeriod,
-		serviceToken: serviceToken,
+		updatePeriod:  updatePeriod,
+		config:        &firebaseremoteconfig.RemoteConfig{},
+		remoteService: rs,
+		configManager: cm,
 	}
-}
-
-func (rc *RConfig) fetchRemoteConfig() error {
-	var serviceAccount ServiceAccount
-	err := json.Unmarshal([]byte(rc.serviceToken), &serviceAccount)
-	if err != nil {
-		return fmt.Errorf("could not load service account data, %w", err)
-	}
-
-	// Add context timeout for no net situation
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), firebaseTimeout)
-	timeoutCtx = context.WithValue(timeoutCtx, oauth2.HTTPClient, &http.Client{Timeout: firebaseTimeout})
-	defer cancel()
-
-	creds, err := google.CredentialsFromJSON(timeoutCtx, []byte(rc.serviceToken), remoteConfigScope)
-	if err != nil {
-		return fmt.Errorf("could not load credentials, %w", err)
-	}
-	firebaseremoteconfigService, err := firebaseremoteconfig.NewService(timeoutCtx, option.WithCredentials(creds))
-	if err != nil {
-		return fmt.Errorf("could not create new firebase service, %w", err)
-	}
-
-	// Get project remote config
-	fireBaseRemoteConfigCall := firebaseremoteconfigService.Projects.GetRemoteConfig("projects/" + serviceAccount.ProjectID).Context(timeoutCtx)
-
-	remoteConfig, err := fireBaseRemoteConfigCall.Do()
-	if err != nil || remoteConfig == nil {
-		return fmt.Errorf("could not execute firebase remote config call, %w", err)
-	}
-	if remoteConfig.ServerResponse.HTTPStatusCode != http.StatusOK {
-		return fmt.Errorf("invalid remote config server HTTP response: %d", remoteConfig.ServerResponse.HTTPStatusCode)
-	}
-
-	rc.config = remoteConfig
-	return nil
 }
 
 func (rc *RConfig) fetchRemoteConfigIfTime() error {
-	if time.Now().After(rc.lastUpdate.Add(rc.updatePeriod)) {
-		rc.lastUpdate = time.Now()
-		err := rc.fetchRemoteConfig()
+	var cfg config.Config
+	if err := rc.configManager.Load(&cfg); err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+
+	if time.Now().After(cfg.RCLastUpdate.Add(rc.updatePeriod)) {
+		remoteConfigValue, err := rc.remoteService.FetchRemoteConfig()
 		if err != nil {
 			return err
 		}
+		err = json.Unmarshal(remoteConfigValue, rc.config)
+		if err != nil {
+			return err
+		}
+		if err := rc.configManager.SaveWith(func(c config.Config) config.Config {
+			s, err := json.Marshal(rc.config)
+			if err == nil {
+				c.RemoteConfig = string(s)
+				c.RCLastUpdate = time.Now()
+			}
+			return c
+		}); err != nil {
+			return err
+		}
+		if err := rc.configManager.Load(&cfg); err != nil {
+			return fmt.Errorf("reloading config: %w", err)
+		}
+	}
+
+	if err := json.Unmarshal([]byte(cfg.RemoteConfig), rc.config); err != nil {
+		return fmt.Errorf("parsing remote config from JSON: %w", err)
 	}
 
 	if rc.config == nil {
@@ -200,4 +197,53 @@ func findVersionField(sourceArray []*fieldVersion, appVersion *semver.Version) (
 		}
 	}
 	return "", errors.New("version field not found in remote config")
+}
+
+// FirebaseService is RemoteService implementation for Firebase
+type FirebaseService struct {
+	serviceToken string
+}
+
+func NewFirebaseService(st string) *FirebaseService {
+	return &FirebaseService{st}
+}
+
+func (fs *FirebaseService) FetchRemoteConfig() ([]byte, error) {
+	var serviceAccount ServiceAccount
+	err := json.Unmarshal([]byte(fs.serviceToken), &serviceAccount)
+	if err != nil {
+		return nil, fmt.Errorf("could not load service account data, %w", err)
+	}
+
+	// Add context timeout for no net situation
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), firebaseTimeout)
+	timeoutCtx = context.WithValue(timeoutCtx, oauth2.HTTPClient, &http.Client{Timeout: firebaseTimeout})
+	defer cancel()
+
+	creds, err := google.CredentialsFromJSON(timeoutCtx, []byte(fs.serviceToken), remoteConfigScope)
+	if err != nil {
+		return nil, fmt.Errorf("could not load credentials, %w", err)
+	}
+	firebaseremoteconfigService, err := firebaseremoteconfig.NewService(timeoutCtx, option.WithCredentials(creds))
+	if err != nil {
+		return nil, fmt.Errorf("could not create new firebase service, %w", err)
+	}
+
+	// Get project remote config
+	fireBaseRemoteConfigCall := firebaseremoteconfigService.Projects.GetRemoteConfig("projects/" + serviceAccount.ProjectID).Context(timeoutCtx)
+
+	remoteConfig, err := fireBaseRemoteConfigCall.Do()
+	if err != nil || remoteConfig == nil {
+		return nil, fmt.Errorf("could not execute firebase remote config call, %w", err)
+	}
+	if remoteConfig.ServerResponse.HTTPStatusCode != http.StatusOK {
+		return nil, fmt.Errorf("invalid remote config server HTTP response: %d", remoteConfig.ServerResponse.HTTPStatusCode)
+	}
+
+	s, err := json.Marshal(*remoteConfig)
+	if err != nil {
+		return nil, fmt.Errorf("could not load credentials, %w", err)
+	}
+
+	return s, nil
 }

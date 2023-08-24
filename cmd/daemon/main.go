@@ -294,7 +294,7 @@ func main() {
 	daemonEvents.Subscribe(analytics)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
 
-	remoteConfigGetter := remoteConfigGetterImplementation()
+	remoteConfigGetter := remoteConfigGetterImplementation(fsystem)
 
 	// Networker
 	vpnFactory := getVpnFactory(eventsDbPath, cfg.FirewallMark,

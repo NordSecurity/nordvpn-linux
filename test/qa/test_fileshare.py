@@ -54,6 +54,10 @@ def setup_module(module):
 
 def teardown_module(module):
     dest_logs_path = f"{os.environ['CI_PROJECT_DIR']}/dist/logs"
+    # Presere other peer log
+    output = ssh_client.exec_command(f"cat /var/log/nordvpn/daemon.log")
+    with open(f"{dest_logs_path}/other-peer-daemon.log", "w") as f:
+        f.write(output)
     shutil.copy("/home/qa/.config/nordvpn/nordfileshared.log", dest_logs_path)
     ssh_client.exec_command("nordvpn set mesh off")
     ssh_client.exec_command("nordvpn logout --persist-token")
@@ -85,6 +89,15 @@ def test_accept(accept_directories):
     output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
     address = meshnet.get_peer_name(output, meshnet.PeerName.Ip)
 
+    # Check peer list on both ends
+    logging.log(data="------------------11----------------------------------")
+    logging.log(data=output)
+    logging.log(data="------------------------------------------------------")
+    output = ssh_client.exec_command("nordvpn mesh peer list")
+    logging.log(data="------------------11r---------------------------------")
+    logging.log(data=output)
+    logging.log(data="------------------------------------------------------")
+
     # .
     # ├── nested
     # │   ├── file
@@ -106,6 +119,16 @@ def test_accept(accept_directories):
     ssh_client.exec_command(f"echo > {outer_dir}/{filename}")
 
     transfer_files = [f"{nested_dir}/{filename}", f"{nested_dir}/{inner_dir}/{filename}", f"{outer_dir}/{filename}"]
+
+    # Check peer list on both ends
+    output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
+    logging.log(data="------------------22----------------------------------")
+    logging.log(data=output)
+    logging.log(data="------------------------------------------------------")
+    output = ssh_client.exec_command("nordvpn mesh peer list")
+    logging.log(data="------------------22r---------------------------------")
+    logging.log(data=output)
+    logging.log(data="------------------------------------------------------")
 
     # accept entire transfer
     output = ssh_client.exec_command(f"nordvpn fileshare send --background {address} {nested_dir} {outer_dir}")

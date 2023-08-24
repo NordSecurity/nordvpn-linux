@@ -3,6 +3,7 @@
 package main
 
 import (
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 )
 
@@ -16,6 +17,6 @@ func (mockVersionGetter) GetTelioConfig(string) (string, error) {
 	return "{}", nil
 }
 
-func remoteConfigGetterImplementation() remote.RemoteConfigGetter {
+func remoteConfigGetterImplementation(_ config.Manager) remote.RemoteConfigGetter {
 	return mockVersionGetter{}
 }
