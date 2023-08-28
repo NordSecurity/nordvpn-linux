@@ -6,8 +6,8 @@ import (
 	"net/netip"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 )
 
@@ -19,21 +19,24 @@ const (
 type Node interface {
 	Enable() error
 	ResetPeers(mesh.MachinePeers, bool) error
+	ResetFirewall(lanAvailable bool) error
 	Disable() error
+	SetAllowlist(config config.Allowlist, lanAvailable bool) error
 }
 
 // Server struct for server side
 type Server struct {
-	mu             sync.Mutex
-	interfaceNames []string // need to remember on which interface we started
-	runCommandFunc runCommandFunc
-	sysctlSetter   *kernel.SysctlSetter
+	mu               sync.Mutex
+	interfaceNames   []string // need to remember on which interface we started
+	runCommandFunc   runCommandFunc
+	sysctlSetter     *kernel.SysctlSetter
+	peers            mesh.MachinePeers
+	allowlistManager allowlistManager
+	enabled          bool
 }
 
 // NewServer create & initialize new Server
-func NewServer(interfaceNames []string, commandFunc runCommandFunc) *Server {
-	// To allow peer routing when connected to OpenVPN as well
-	interfaceNames = append(interfaceNames, openvpn.InterfaceName)
+func NewServer(interfaceNames []string, commandFunc runCommandFunc, allowlist config.Allowlist) Node {
 	return &Server{
 		interfaceNames: interfaceNames,
 		runCommandFunc: commandFunc,
@@ -42,6 +45,7 @@ func NewServer(interfaceNames []string, commandFunc runCommandFunc) *Server {
 			1,
 			0,
 		),
+		allowlistManager: newAllowlist(commandFunc, allowlist),
 	}
 }
 
@@ -65,25 +69,58 @@ func (en *Server) Enable() error {
 		return fmt.Errorf("enabling masquerading: %w", err)
 	}
 
+	en.enabled = true
+
 	return nil
 }
 
-// EnablePeer enables masquerading for peer
-func (en *Server) ResetPeers(peers mesh.MachinePeers, lanDiscovery bool) error {
+// ResetFirewall resets peer rules when peers don't change
+func (en *Server) ResetFirewall(lanAvailable bool) error {
+	if !en.enabled {
+		return nil
+	}
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
-	trafficPeers := make([]TrafficPeer, 0, len(peers))
-	for _, peer := range peers {
+	return en.resetPeers(lanAvailable)
+}
+
+// EnablePeer enables masquerading for peer
+func (en *Server) ResetPeers(peers mesh.MachinePeers, lanAvailable bool) error {
+	en.mu.Lock()
+	defer en.mu.Unlock()
+
+	en.peers = peers
+	return en.resetPeers(lanAvailable)
+}
+
+func (en *Server) resetPeers(lanAvailable bool) error {
+	trafficPeers := make([]TrafficPeer, 0, len(en.peers))
+	for _, peer := range en.peers {
 		if peer.Address.IsValid() {
 			trafficPeers = append(trafficPeers, TrafficPeer{
 				netip.PrefixFrom(peer.Address, peer.Address.BitLen()),
 				peer.DoIAllowRouting,
-				peer.DoIAllowLocalNetwork && lanDiscovery,
+				peer.DoIAllowLocalNetwork && lanAvailable,
 			})
 		}
 	}
-	return resetPeersTraffic(trafficPeers, en.runCommandFunc)
+
+	if err := resetPeersTraffic(trafficPeers, en.runCommandFunc); err != nil {
+		return err
+	}
+
+	if err := en.allowlistManager.disableAllowlist(); err != nil {
+		return err
+	}
+	// If exit node doesn't have full access to its own LAN, we need to ensure access to
+	// allowlisted destinations
+	if !lanAvailable {
+		en.allowlistManager.setPeers(en.peers)
+		return en.allowlistManager.enableAllowlist()
+	}
+
+	return nil
 }
 
 // Disable restore current state and disable fwd+msq
@@ -107,6 +144,25 @@ func (en *Server) Disable() error {
 			"unsetting the forwarding value: %w",
 			err,
 		)
+	}
+
+	en.enabled = false
+
+	return nil
+}
+
+func (en *Server) SetAllowlist(allowlist config.Allowlist, lanAvailable bool) error {
+	en.mu.Lock()
+	defer en.mu.Unlock()
+
+	if err := en.allowlistManager.disableAllowlist(); err != nil {
+		return err
+	}
+
+	en.allowlistManager.setAllowlist(allowlist)
+
+	if en.enabled && !lanAvailable {
+		return en.allowlistManager.enableAllowlist()
 	}
 
 	return nil
