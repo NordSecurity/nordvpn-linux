@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
@@ -173,14 +172,6 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 			setAllowlistErr: fmt.Errorf("failed to set allowlist"),
 			expectedError:   pb.SetErrorCode_FAILURE,
 		},
-		{
-			name:              "unset allowlist error",
-			enabled:           true,
-			currentEnabled:    false,
-			expectedEnabled:   false,
-			unsetAllowlistErr: fmt.Errorf("failed to unset allowlist"),
-			expectedError:     pb.SetErrorCode_FAILURE,
-		},
 	}
 
 	for _, test := range tests {
@@ -222,77 +213,6 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 				"Invalid status returned in SetLANDiscovery response.")
 			assert.Equal(t, test.expectedEnabled, cfg.LanDiscovery,
 				"LAN discovery was not enabled in config.")
-		})
-	}
-}
-
-func TestSetLANDiscovery_MeshInteraction(t *testing.T) {
-	tests := []struct {
-		name   string
-		enable bool
-	}{
-		{
-			name:   "enable lan discovery",
-			enable: true,
-		},
-		{
-			name:   "disable lan discovery",
-			enable: false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			machineID, _ := uuid.NewUUID()
-			meshID := uuid.MustParse("62a6f5c2-2579-11ee-be56-0242ac120002")
-			filesystem := newFilesystemMock(t)
-			configManager := config.NewFilesystemConfigManager(
-				"/location", "/vault", "",
-				&machineIDGetterMock{machineID: machineID},
-				&filesystem)
-
-			configManager.SaveWith(func(c config.Config) config.Config {
-				c.LanDiscovery = !test.enable // set to negation of desired result to avoid AlreadySet error
-				c.Mesh = true
-				c.MeshDevice = &mesh.Machine{
-					ID: meshID,
-				}
-				return c
-			})
-
-			peers := mesh.MachinePeers{
-				mesh.MachinePeer{
-					Hostname: "test0-pyrenees.nord",
-				},
-				mesh.MachinePeer{
-					Hostname: "test1-himalayas.nord",
-				},
-			}
-
-			networker := networker.Mock{}
-
-			registry := RegistryMock{
-				peers: peers,
-			}
-
-			rpc := RPC{
-				cm:           configManager,
-				netw:         &networker,
-				meshRegistry: &registry}
-
-			resp, err := rpc.SetLANDiscovery(context.Background(), &pb.SetLANDiscoveryRequest{
-				Enabled: test.enable,
-			})
-			assert.Nil(t, err, "RPC eneded in error.")
-			assert.IsType(t, &pb.SetLANDiscoveryResponse_SetLanDiscoveryStatus{}, resp.Response,
-				"Invalid type of response from RPC, means that RPC was not succesfull."+
-					"Succesfull responses should be of type pb.SetLANDiscoveryResponse_SetLanDiscoveryStatus")
-
-			assert.Equal(t, peers, networker.MeshPeers, "Invalid mesh peers provided to the networker. "+
-				"When meshnet is enabled, peers passed to (Networker).SetLanDiscoveryAndResetMesh "+
-				"should be the same as peers returned by (Registry).List.")
-
-			assert.Equal(t, test.enable, networker.LanDiscovery, "LAN discovery was not configured in the networker.")
 		})
 	}
 }

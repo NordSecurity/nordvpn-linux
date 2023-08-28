@@ -1,6 +1,7 @@
 package allowlist
 
 import (
+	"errors"
 	"fmt"
 	"net/netip"
 	"os/exec"
@@ -24,6 +25,19 @@ func workingCommandFunc(command string, arg ...string) ([]byte, error) {
 func failingCommandFunc(command string, arg ...string) ([]byte, error) {
 	return nil, fmt.Errorf("failing command func")
 }
+
+type MockCmd struct {
+	called bool
+}
+
+func (m MockCmd) onlyOnceCommandFunc(string, ...string) ([]byte, error) {
+	if m.called {
+		return nil, errors.New("already called")
+	}
+	m.called = true
+	return []byte("ok"), nil
+}
+
 func TestIPTables_routingSubnets(t *testing.T) {
 	category.Set(t, category.Route)
 
@@ -131,6 +145,16 @@ func TestIPTables_EnablePorts(t *testing.T) {
 				commandFunc: failingCommandFunc,
 			},
 			wantErr: true,
+		},
+		{
+			name: "Multiple port routing",
+			args: args{
+				ports:       []int{33, 34, 35, 36, 37, 38, 39},
+				protocol:    "tcp",
+				mark:        "0x123",
+				commandFunc: MockCmd{}.onlyOnceCommandFunc,
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
