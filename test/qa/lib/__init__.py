@@ -18,6 +18,13 @@ OBFUSCATED_TECHNOLOGIES = [
     ("openvpn", "tcp", "on"),
 ]
 
+# Used for test parametrization, when the tested functionality does not work with obfuscated.
+OVPN_STANDARD_TECHNOLOGIES = [
+    # technology, protocol, obfuscation,
+    ("openvpn", "udp", "off"),
+    ("openvpn", "tcp", "off"),
+]
+
 # Used for test parametrization, when the same test has to be run for all technologies.
 TECHNOLOGIES = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES
 
@@ -48,6 +55,7 @@ DNS = ["1.1.1.1"]
 
 # Used for test parametrization, when the same test has to be run for obfuscated technologies.
 STANDARD_GROUPS = [
+    "Africa_The_Middle_East_And_India",
     "Asia_Pacific",
     "The_Americas",
     "Europe",
@@ -55,8 +63,20 @@ STANDARD_GROUPS = [
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 ADDITIONAL_GROUPS = [
+    #"Double_VPN", # TODO: LVPN-3699
+    "Onion_Over_VPN",
     "Standard_VPN_Servers",
     "P2P",
+]
+
+# Used for test parametrization, when the tested functionality only works with non-obfuscated OPENVPN.
+OVPN_GROUPS = [
+    "Dedicated_IP"
+]
+
+# Used for test parametrization, when the tested functionality only works with obfuscated OPENVPN.
+OVPN_OBFUSCATED_GROUPS = [
+    "Obfuscated_Servers"
 ]
 
 # Used for test parametrization, when the same test has to be run for different groups.
