@@ -172,8 +172,9 @@ func (workingRoutingSetup) Disable() error                              { return
 func (workingRoutingSetup) IsEnabled() bool                             { return true }
 
 type workingExitNode struct {
-	enabled bool
-	peers   mesh.MachinePeers
+	enabled      bool
+	peers        mesh.MachinePeers
+	LanAvailable bool
 }
 
 func newWorkingExitNode() *workingExitNode {
@@ -187,13 +188,19 @@ func (e *workingExitNode) Enable() error {
 	return nil
 }
 
-func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lanDiscovery bool) error {
+func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lan bool) error {
 	e.peers = peers
+	e.LanAvailable = lan
 	return nil
 }
 
 func (*workingExitNode) DisablePeer(netip.Addr) error { return nil }
 func (*workingExitNode) Disable() error               { return nil }
+func (e *workingExitNode) SetAllowlist(_ config.Allowlist, lan bool) error {
+	e.LanAvailable = lan
+	return nil
+}
+func (e *workingExitNode) ResetFirewall(lan bool) error { e.LanAvailable = lan; return nil }
 
 type workingMesh struct {
 	enableErr error
@@ -334,7 +341,7 @@ func TestCombined_Start(t *testing.T) {
 				nil,
 				workingRouter{},
 				nil,
-				nil,
+				&workingExitNode{},
 				0,
 				false,
 			)
@@ -395,13 +402,13 @@ func TestCombined_Stop(t *testing.T) {
 				test.dns,
 				&workingIpv6{},
 				&workingFirewall{},
-				nil,
+				workingAllowlistRouting{},
 				nil,
 				workingRoutingSetup{},
 				nil,
 				workingRouter{},
 				nil,
-				nil,
+				&workingExitNode{},
 				0,
 				false,
 			)
@@ -1064,7 +1071,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
+				&workingExitNode{},
 				0,
 				false,
 			)
@@ -1128,7 +1135,7 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
+				&workingExitNode{},
 				0,
 				false,
 			)
@@ -1811,7 +1818,7 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 		nil,
 		workingRouter{},
 		nil,
-		nil,
+		&workingExitNode{},
 		0,
 		false,
 	)
@@ -1827,4 +1834,140 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 	err = netw.refreshVPN()
 	assert.NoError(t, err)
 	assert.Equal(t, "2.2.2.2", dns.setDNS[0])
+}
+
+func TestExitNodeLanAvailability(t *testing.T) {
+	tests := []struct {
+		name         string
+		actions      func(*Combined)
+		lanAvailable bool
+	}{
+		{
+			name:         "no actions",
+			actions:      func(c *Combined) { _ = c.ResetRouting(nil) },
+			lanAvailable: true,
+		},
+		{
+			name:         "killswitch enabled",
+			actions:      func(c *Combined) { _ = c.setKillSwitch(config.Allowlist{}) },
+			lanAvailable: false,
+		},
+		{
+			name:         "VPN enabled",
+			actions:      func(c *Combined) { _ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil) },
+			lanAvailable: false,
+		},
+		{
+			name:         "LAN discovery enabled",
+			actions:      func(c *Combined) { c.SetLanDiscovery(true) },
+			lanAvailable: true,
+		},
+		{
+			name:         "LAN discovery disabled",
+			actions:      func(c *Combined) { c.SetLanDiscovery(false) },
+			lanAvailable: true,
+		},
+		{
+			name:         "killswitch then lan discovery",
+			actions:      func(c *Combined) { _ = c.setKillSwitch(config.Allowlist{}); c.SetLanDiscovery(true) },
+			lanAvailable: true,
+		},
+		{
+			name:         "lan discovery then killswitch",
+			actions:      func(c *Combined) { c.SetLanDiscovery(true); _ = c.setKillSwitch(config.Allowlist{}) },
+			lanAvailable: true,
+		},
+		{
+			name: "vpn then lan discovery",
+			actions: func(c *Combined) {
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				c.SetLanDiscovery(true)
+			},
+			lanAvailable: true,
+		},
+		{
+			name: "lan discovery then vpn",
+			actions: func(c *Combined) {
+				c.SetLanDiscovery(true)
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+			},
+			lanAvailable: true,
+		},
+		{
+			name: "lan discovery then killswitch then lan discovery off",
+			actions: func(c *Combined) {
+				c.SetLanDiscovery(true)
+				_ = c.setKillSwitch(config.Allowlist{})
+				c.SetLanDiscovery(false)
+			},
+			lanAvailable: false,
+		},
+		{
+			name: "lan discovery then vpn then lan discovery off",
+			actions: func(c *Combined) {
+				c.SetLanDiscovery(true)
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				c.SetLanDiscovery(false)
+			},
+			lanAvailable: false,
+		},
+		{
+			name: "vpn then killswitch",
+			actions: func(c *Combined) {
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				_ = c.setKillSwitch(config.Allowlist{})
+			},
+			lanAvailable: false,
+		},
+		{
+			name: "vpn then killswitch then lan discovery",
+			actions: func(c *Combined) {
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				_ = c.setKillSwitch(config.Allowlist{})
+				c.SetLanDiscovery(true)
+			},
+			lanAvailable: true,
+		},
+		{
+			name: "vpn then killswitch then lan discovery then killswitch off",
+			actions: func(c *Combined) {
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				_ = c.setKillSwitch(config.Allowlist{})
+				c.SetLanDiscovery(true)
+				_ = c.unsetKillSwitch()
+			},
+			lanAvailable: true,
+		},
+		{
+			name: "vpn then killswitch then lan discovery then killswitch off then lan discovery off",
+			actions: func(c *Combined) {
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				_ = c.setKillSwitch(config.Allowlist{})
+				c.SetLanDiscovery(true)
+				_ = c.unsetKillSwitch()
+				c.SetLanDiscovery(false)
+			},
+			lanAvailable: false,
+		},
+		{
+			name: "vpn then killswitch then lan discovery then killswitch off then lan discovery off then vpn off",
+			actions: func(c *Combined) {
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				_ = c.setKillSwitch(config.Allowlist{})
+				c.SetLanDiscovery(true)
+				_ = c.unsetKillSwitch()
+				c.SetLanDiscovery(false)
+				_ = c.Stop()
+			},
+			lanAvailable: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			combined := GetTestCombined()
+			test.actions(combined)
+			assert.Equal(t, test.lanAvailable, combined.exitNode.(*workingExitNode).LanAvailable)
+		})
+	}
 }

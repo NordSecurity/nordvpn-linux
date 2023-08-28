@@ -11,12 +11,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// containsPrivateNetwork returns true if subnets contains a private network not conainted in oldWhitelist
+// containsPrivateNetwork returns true if subnets contains a private network
 func containsPrivateNetwork(subnets []string) bool {
 	for _, subnet := range subnets {
 		if net, err := netip.ParsePrefix(subnet); err != nil {
 			log.Println("Failed to parse subnet: ", err)
-		} else if net.Addr().IsPrivate() {
+		} else if net.Addr().IsPrivate() || net.Addr().IsLinkLocalUnicast() {
 			return true
 		}
 	}
@@ -43,27 +43,18 @@ func (r *RPC) SetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*pb
 		}, nil
 	}
 
-	if r.netw.IsVPNActive() || cfg.KillSwitch {
-		if err := r.netw.UnsetAllowlist(); err != nil {
-			log.Println(internal.ErrorPrefix, err)
-			return &pb.Payload{
-				Type: internal.CodeFailure,
-			}, nil
-		}
+	// If LAN discovery is enabled, we want to append LANs to the new allowlist and modify the
+	// firewall. We do not want to add LANs to the configuration, so we have to create a copy.
+	firewallAllowlist := allowlist
+	if cfg.LanDiscovery {
+		firewallAllowlist = addLANPermissions(firewallAllowlist)
+	}
 
-		// If LAN discovery is enabled, we want to append LANs to the new allowlist and modify the
-		// firewall. We do not want to add LANs to the configuration, so we have to create a copy.
-		firewallAllowlist := allowlist
-		if cfg.LanDiscovery {
-			firewallAllowlist = addLANPermissions(firewallAllowlist)
-		}
-
-		if err := r.netw.SetAllowlist(firewallAllowlist); err != nil {
-			log.Println(internal.ErrorPrefix, err)
-			return &pb.Payload{
-				Type: internal.CodeFailure,
-			}, nil
-		}
+	if err := r.netw.SetAllowlist(firewallAllowlist); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return &pb.Payload{
+			Type: internal.CodeFailure,
+		}, nil
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
