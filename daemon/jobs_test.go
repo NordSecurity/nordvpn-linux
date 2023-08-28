@@ -62,8 +62,6 @@ func (n *customNetworker) EnableRouting()                                       
 func (n *customNetworker) DisableRouting()                                                   {}
 func (n *customNetworker) PermitIPv6() error                                                 { return nil }
 func (n *customNetworker) DenyIPv6() error                                                   { return nil }
-func (n *customNetworker) SetWhitelist(config.Allowlist) error                               { return nil }
-func (n *customNetworker) UnsetWhitelist() error                                             { return nil }
 func (n *customNetworker) IsNetworkSet() bool                                                { return false }
 func (n *customNetworker) SetKillSwitch(config.Allowlist) error                              { return nil }
 func (n *customNetworker) UnsetKillSwitch() error                                            { return nil }

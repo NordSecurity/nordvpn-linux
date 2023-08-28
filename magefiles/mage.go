@@ -367,7 +367,6 @@ func (Test) CgoDocker(ctx context.Context) error {
 	env["ARCH"] = build.Default.GOARCH
 	env["CI_PROJECT_DIR"] = "/opt"
 	env["ENVIRONMENT"] = "dev"
-	env["GOPATH"] = build.Default.GOPATH
 
 	return RunDockerWithSettings(
 		ctx,
