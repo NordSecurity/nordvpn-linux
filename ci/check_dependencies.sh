@@ -25,6 +25,6 @@ popd
 LIBNORD_ID="6385"
 
 if [[ "${FEATURES}" == *internal* ]]; then
-	"${CI_PROJECT_DIR}"/ci/download_from_remote.sh -r qa \
-		-n libnord.a -d nord -i "${LIBNORD_ID}" -v "${LIBNORD_VERSION}" ${ARCH:+-a ${ARCH}}
+	"${CI_PROJECT_DIR}"/ci/download_from_remote.sh \
+		-O nord -p "${LIBNORD_ID}" -v "${LIBNORD_VERSION}" ${ARCH:+-a ${ARCH}} libnord.a
 fi
