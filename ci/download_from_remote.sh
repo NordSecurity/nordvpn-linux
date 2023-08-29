@@ -6,20 +6,18 @@ source "${CI_PROJECT_DIR}"/ci/archs.sh
 
 usage() {
     echo "Usage:"
-    echo -e "\ndownload_from_remote.sh <download_repository_id> <version> <arch> <extension>"
+    echo -e "\ndownload_from_remote.sh <download_repository_id> <version> <arch>"
     echo "Args:"
     echo -e "\t-a binary architecture"
     echo -e "\t-i repository ID to download"
     echo -e "\t-d download directory name"
     echo -e "\t-r <qa/releases> repository, default release."
     echo -e "\t-v binary version to download"
-    echo -e "\t-x binary extension"
     exit 1
 }
 
 REPOSITORY_TYPE='releases'
 REPOSITORY_NAME=''
-FILE_EXTENSION=''
 DIR_NAME=''
 ARCHS=''
 
@@ -61,12 +59,6 @@ while [[ $# -gt 0 ]] ; do
             [[ -z $1 ]] && { echo "No binary architecture is provided!" ; exit 1 ; }
             shift
             ;;
-        -x)
-            shift
-            FILE_EXTENSION=${1,,}
-            [[ -z $1 ]] && { echo "No file extension is provided!" ; exit 1 ; }
-            shift
-            ;;
         -h | --help)
             usage
             ;;
@@ -89,7 +81,7 @@ for arch in ${ARCHS} ; do
     arch_dir="${DOWNLOAD_DIR}/${output_arch}"
     output_dir="${arch_dir}/${BINARY_VERSION}"
     latest_dir="${arch_dir}/latest"
-    output_file="${output_dir}/${REPOSITORY_NAME}${FILE_EXTENSION}"
+    output_file="${output_dir}/${REPOSITORY_NAME}"
     mkdir -p "${output_dir}"
     # Create a symlink so that path to the newest binary could be used statically (e.g. in IDEs)
     # Symlink is relative so it would work in Docker containers as well
@@ -97,7 +89,7 @@ for arch in ${ARCHS} ; do
     [[ -e "${output_file}" ]] && continue
     echo "Downloading ${REPOSITORY_NAME}-${arch} ${BINARY_VERSION}..."
     "${CI_PROJECT_DIR}"/ci/nexus_get.sh -r "${REPOSITORY_TYPE}" -o "${output_file}" \
-        "${REPOSITORY_ID}/${BINARY_VERSION}/${arch}/${REPOSITORY_NAME}${FILE_EXTENSION}"
+        "${REPOSITORY_ID}/${BINARY_VERSION}/${arch}/${REPOSITORY_NAME}"
 
 done
 
