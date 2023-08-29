@@ -6,12 +6,11 @@ source "${CI_PROJECT_DIR}"/ci/archs.sh
 
 usage() {
     echo "Usage:"
-    echo -e "\ndownload_from_remote.sh <download_repository_id> <version> <os> <arch> <extension>"
+    echo -e "\ndownload_from_remote.sh <download_repository_id> <version> <arch> <extension>"
     echo "Args:"
     echo -e "\t-a binary architecture"
     echo -e "\t-i repository ID to download"
     echo -e "\t-d download directory name"
-    echo -e "\t-o operating system"
     echo -e "\t-r <qa/releases> repository, default release."
     echo -e "\t-v binary version to download"
     echo -e "\t-x binary extension"
@@ -62,12 +61,6 @@ while [[ $# -gt 0 ]] ; do
             [[ -z $1 ]] && { echo "No binary architecture is provided!" ; exit 1 ; }
             shift
             ;;
-        -o)
-            shift
-            OS=${1,,}
-            [[ -z $1 ]] && { echo "No operating system is provided!" ; exit 1 ; }
-            shift
-            ;;
         -x)
             shift
             FILE_EXTENSION=${1,,}
@@ -104,7 +97,7 @@ for arch in ${ARCHS} ; do
     [[ -e "${output_file}" ]] && continue
     echo "Downloading ${REPOSITORY_NAME}-${arch} ${BINARY_VERSION}..."
     "${CI_PROJECT_DIR}"/ci/nexus_get.sh -r "${REPOSITORY_TYPE}" -o "${output_file}" \
-        "${REPOSITORY_ID}/${BINARY_VERSION}/${OS}/${arch}/${REPOSITORY_NAME}${FILE_EXTENSION}"
+        "${REPOSITORY_ID}/${BINARY_VERSION}/${arch}/${REPOSITORY_NAME}${FILE_EXTENSION}"
 
 done
 
