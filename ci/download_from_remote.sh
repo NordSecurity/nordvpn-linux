@@ -6,10 +6,9 @@ source "${CI_PROJECT_DIR}"/ci/archs.sh
 
 usage() {
     echo "Usage:"
-    echo -e "\ndownload_from_remote.sh <credentials_repository_id> <download_repository_id> <version> <os> <arch> <extension>"
+    echo -e "\ndownload_from_remote.sh <download_repository_id> <version> <os> <arch> <extension>"
     echo "Args:"
     echo -e "\t-a binary architecture"
-    echo -e "\t-c repository ID to get credentials from"
     echo -e "\t-i repository ID to download"
     echo -e "\t-d download directory name"
     echo -e "\t-o operating system"
@@ -17,26 +16,6 @@ usage() {
     echo -e "\t-v binary version to download"
     echo -e "\t-x binary extension"
     exit 1
-}
-
-get_credentials() {
-    if [[ -n ${CI_PERSONAL_TOKEN} ]] ; then
-        export STORAGE_SERVER=${STORAGE_SERVER:-"$(curl -s --header "PRIVATE-TOKEN: ${CI_PERSONAL_TOKEN}" "https://${GOPRIVATE}/api/v4/projects/${PROJECT_ID}/repository/files/data%2FSTORAGE_SERVER/raw?ref=master")"}
-
-        case "$REPOSITORY_TYPE" in
-            releases)
-                export RELEASE_READ_USER=${RELEASE_READ_USER:-"$(curl -s --header "PRIVATE-TOKEN: ${CI_PERSONAL_TOKEN}" "https://${GOPRIVATE}/api/v4/projects/${PROJECT_ID}/repository/files/data%2FRELEASE_READ_USER/raw?ref=master")"}
-                export RELEASE_READ_CRED=${RELEASE_READ_CRED:-"$(curl -s --header "PRIVATE-TOKEN: ${CI_PERSONAL_TOKEN}" "https://${GOPRIVATE}/api/v4/projects/${PROJECT_ID}/repository/files/data%2FRELEASE_READ_CRED/raw?ref=master")"}
-                ;;
-            qa)
-                export QA_READ_USER=${QA_READ_USER:-"$(curl -s --header "PRIVATE-TOKEN: ${CI_PERSONAL_TOKEN}" "https://${GOPRIVATE}/api/v4/projects/${PROJECT_ID}/repository/files/data%2FQA_READ_USER/raw?ref=master")"}
-                export QA_READ_CRED=${QA_READ_CRED:-"$(curl -s --header "PRIVATE-TOKEN: ${CI_PERSONAL_TOKEN}" "https://${GOPRIVATE}/api/v4/projects/${PROJECT_ID}/repository/files/data%2FQA_READ_CRED/raw?ref=master")"}
-                ;;
-            *)
-                echo "The repository type indicated is wrong!" ; exit 1
-                ;;
-        esac
-    fi
 }
 
 REPOSITORY_TYPE='releases'
@@ -48,12 +27,6 @@ ARCHS=''
 while [[ $# -gt 0 ]] ; do
     cmd=${1,,}
     case "$cmd" in
-        -c)
-            shift
-            PROJECT_ID="$1"
-            [[ -z $1 ]] && { echo "No repository ID to obtain credentials is provided!" ; exit 1 ; }
-            shift
-            ;;
         -r)
             shift
             REPOSITORY_TYPE="$1"
@@ -109,8 +82,6 @@ while [[ $# -gt 0 ]] ; do
             ;;
     esac
 done
-
-get_credentials
 
 if [[ -n "${DIR_NAME}" ]]; then
     DOWNLOAD_DIR="${CI_PROJECT_DIR}/bin/deps/${DIR_NAME}"

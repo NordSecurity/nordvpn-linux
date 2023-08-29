@@ -23,9 +23,8 @@ pushd "${OPENVPN_PATCHES_DIR}"
 popd
 
 LIBNORD_ID="6385"
-NEXUS_ID="4226"
 
 if [[ "${FEATURES}" == *internal* ]]; then
-	"${CI_PROJECT_DIR}"/ci/download_from_remote.sh -c "${NEXUS_ID}" -r qa \
+	"${CI_PROJECT_DIR}"/ci/download_from_remote.sh -r qa \
 		-n libnord.a -d nord -i "${LIBNORD_ID}" -v "${LIBNORD_VERSION}" ${ARCH:+-a ${ARCH}}
 fi
