@@ -6,7 +6,6 @@ RUN apt-get update -y \
     && apt-get -y install devscripts \
     && apt-get -y install curl \
     && curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s v2.13.0 \
-    && apt-get -y remove curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
