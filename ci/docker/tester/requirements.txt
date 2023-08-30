@@ -14,7 +14,7 @@ parso==0.7.1
 pathspec==0.9.0
 platformdirs==2.4.0
 pluggy==0.13.1
-py==1.10.0
+py==1.11.0
 pyls-black==0.4.7
 pyls-isort==0.2.2
 pyls-mypy==0.1.8
