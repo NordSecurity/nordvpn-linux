@@ -143,6 +143,6 @@ func testNewDefaultAPI(port int) *DefaultAPI {
 		"",
 		localServerPath(port),
 		http.DefaultClient,
-		response.MockValidator{},
+		response.NoopValidator{},
 	)
 }

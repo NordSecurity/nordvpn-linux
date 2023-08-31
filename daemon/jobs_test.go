@@ -128,7 +128,7 @@ func TestStartAutoConnect(t *testing.T) {
 				"1.0.0",
 				"",
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 
 			netw := &customNetworker{}
@@ -178,7 +178,7 @@ func TestStartAutoConnect(t *testing.T) {
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
 				&mockAnalytics{},
-				service.MockFileshare{},
+				service.NoopFileshare{},
 				&RegistryMock{},
 			)
 
@@ -362,7 +362,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				"1.0.0",
 				"",
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 
 			rpc := NewRPC(
@@ -410,7 +410,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
 				&mockAnalytics{},
-				service.MockFileshare{},
+				service.NoopFileshare{},
 				&RegistryMock{},
 			)
 
@@ -425,7 +425,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&subs.Subject[error]{},
 				nil,
 				&subs.Subject[bool]{},
-				service.MockFileshare{},
+				service.NoopFileshare{},
 			)
 
 			err := rpc.StartAutoMeshnet(meshService, mockTimeout)

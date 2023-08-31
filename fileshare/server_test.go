@@ -18,6 +18,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sys/unix"
+	"google.golang.org/grpc"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -163,6 +164,42 @@ func (mOS *mockOsInfo) CurrentUser() (*user.User, error) {
 
 func (mOS *mockOsInfo) GetGroupIds(userInfo *user.User) ([]string, error) {
 	return mOS.groupIds[userInfo.Uid], nil
+}
+
+type mockMeshClient struct {
+	meshpb.MeshnetClient
+	isEnabled      bool
+	localPeers     []*meshpb.Peer
+	externalPeers  []*meshpb.Peer
+	selfPeer       *meshpb.Peer
+	getPeersCalled bool
+}
+
+// IsEnabled mock implementation
+func (m *mockMeshClient) IsEnabled(ctx context.Context, in *meshpb.Empty, opts ...grpc.CallOption) (*meshpb.ServiceBoolResponse, error) {
+	return &meshpb.ServiceBoolResponse{Response: &meshpb.ServiceBoolResponse_Value{Value: m.isEnabled}}, nil
+}
+
+// GetPeers mock implementation
+func (m *mockMeshClient) GetPeers(ctx context.Context, in *meshpb.Empty, opts ...grpc.CallOption) (*meshpb.GetPeersResponse, error) {
+	response := &meshpb.GetPeersResponse{
+		Response: &meshpb.GetPeersResponse_Peers{
+			Peers: &meshpb.PeerList{
+				Local:    m.localPeers,
+				External: m.externalPeers,
+				Self:     m.selfPeer,
+			},
+		},
+	}
+	m.getPeersCalled = true
+	return response, nil
+}
+
+// NotifyNewTransfer mock implementation
+func (m *mockMeshClient) NotifyNewTransfer(ctx context.Context, in *meshpb.NewTransferNotification, opts ...grpc.CallOption) (*meshpb.NotifyNewTransferResponse, error) {
+	return &meshpb.NotifyNewTransferResponse{
+		Response: &meshpb.NotifyNewTransferResponse_Empty{},
+	}, nil
 }
 
 func TestSend(t *testing.T) {

@@ -142,7 +142,7 @@ func TestRpcConnect(t *testing.T) {
 				"",
 				"",
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			rpc := NewRPC(
 				internal.Development,
@@ -187,7 +187,7 @@ func TestRpcConnect(t *testing.T) {
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
 				&mockAnalytics{},
-				service.MockFileshare{},
+				service.NoopFileshare{},
 				&RegistryMock{},
 			)
 			err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
@@ -219,7 +219,7 @@ func TestRpcReconnect(t *testing.T) {
 		"",
 		"",
 		http.DefaultClient,
-		response.MockValidator{},
+		response.NoopValidator{},
 	)
 	rpc := NewRPC(
 		internal.Development,
@@ -264,7 +264,7 @@ func TestRpcReconnect(t *testing.T) {
 		mockNameservers([]string{"1.1.1.1"}),
 		nil,
 		&mockAnalytics{},
-		service.MockFileshare{},
+		service.NoopFileshare{},
 		&RegistryMock{},
 	)
 	err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
