@@ -36,10 +36,9 @@ Possible exceptions:
 Because the project uses many external dependencies, the usage of mocks in tests is wide spread. 
 
 * The mock of interface A used for testing can be defined in one of two places:
-  * In a_test.go file in the same package.
-  * In /test/mock/a.go file if the mock is exported.
-* Generally the mock should always firstly be created in the same package. If there's a mock defined in another package that you need, then please move it to mock package. Noops used in the app itself must not be modified for testing purposes, a separate testing mock must be created instead.
-
+  * In `*_test.go` file in a package that depends on the interface.
+  * In `/test/mock/a.go` file (or `/test/mock/a/a.go` if there are circular dependency issues) if the mock is exported.
+* Generally if the interface is big then it's better to export the mock so that it could be reused.
 
 ### Other guidelines
 

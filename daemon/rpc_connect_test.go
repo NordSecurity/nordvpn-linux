@@ -20,6 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
@@ -115,7 +116,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &workingVPN{}, nil
 			},
-			netw:      workingNetworker{},
+			netw:      &testnetworker.Mock{},
 			retriever: newGatewayMock(netip.Addr{}),
 			fw:        &workingFirewall{},
 		},
@@ -124,7 +125,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &failingVPN{}, nil
 			},
-			netw:      failingNetworker{},
+			netw:      testnetworker.Failing{},
 			retriever: newGatewayMock(netip.Addr{}),
 			fw:        &workingFirewall{},
 		},
@@ -259,7 +260,7 @@ func TestRpcReconnect(t *testing.T) {
 		),
 		factory,
 		newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
-		workingNetworker{},
+		&testnetworker.Mock{},
 		&subs.Subject[string]{},
 		mockNameservers([]string{"1.1.1.1"}),
 		nil,
@@ -270,11 +271,11 @@ func TestRpcReconnect(t *testing.T) {
 	err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
 	assert.NoError(t, err)
 
-	rpc.netw = failingNetworker{} // second connect has to fail
+	rpc.netw = testnetworker.Failing{} // second connect has to fail
 	err = rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
 	assert.NoError(t, err)
 
-	rpc.netw = workingNetworker{}
+	rpc.netw = &testnetworker.Mock{}
 	err = rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
 	assert.NoError(t, err)
 }

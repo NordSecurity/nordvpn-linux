@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -109,8 +110,8 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 				return c
 			})
 
-			networker := mockNetworker{
-				allowlist: test.currentAllowlist,
+			networker := networker.Mock{
+				Allowlist: test.currentAllowlist,
 			}
 
 			rpc := RPC{
@@ -133,7 +134,7 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 				"LAN discovery was not enabled in config.")
 			assert.Equal(t, test.expectedConfigAllowlist, cfg.AutoConnectData.Allowlist,
 				"Invalid allowlist saved in the config.")
-			assert.Equal(t, test.enabled, networker.lanDiscovery)
+			assert.Equal(t, test.enabled, networker.LanDiscovery)
 		})
 	}
 }
@@ -197,11 +198,11 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 				return c
 			})
 
-			networker := mockNetworker{
-				allowlist:         getEmptyAllowlist(t),
-				setAllowlistErr:   test.setAllowlistErr,
-				unsetAllowlistErr: test.unsetAllowlistErr,
-				vpnActive:         true,
+			networker := networker.Mock{
+				Allowlist:         getEmptyAllowlist(t),
+				SetAllowlistErr:   test.setAllowlistErr,
+				UnsetAllowlistErr: test.unsetAllowlistErr,
+				VpnActive:         true,
 			}
 
 			rpc := RPC{
@@ -268,7 +269,7 @@ func TestSetLANDiscovery_MeshInteraction(t *testing.T) {
 				},
 			}
 
-			networker := mockNetworker{}
+			networker := networker.Mock{}
 
 			registry := RegistryMock{
 				peers: peers,
@@ -287,11 +288,11 @@ func TestSetLANDiscovery_MeshInteraction(t *testing.T) {
 				"Invalid type of response from RPC, means that RPC was not succesfull."+
 					"Succesfull responses should be of type pb.SetLANDiscoveryResponse_SetLanDiscoveryStatus")
 
-			assert.Equal(t, peers, networker.meshPeers, "Invalid mesh peers provided to the networker. "+
+			assert.Equal(t, peers, networker.MeshPeers, "Invalid mesh peers provided to the networker. "+
 				"When meshnet is enabled, peers passed to (Networker).SetLanDiscoveryAndResetMesh "+
 				"should be the same as peers returned by (Registry).List.")
 
-			assert.Equal(t, test.enable, networker.lanDiscovery, "LAN discovery was not configured in the networker.")
+			assert.Equal(t, test.enable, networker.LanDiscovery, "LAN discovery was not configured in the networker.")
 		})
 	}
 }
