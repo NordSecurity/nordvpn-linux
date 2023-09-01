@@ -7,7 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/NordSecurity/nordvpn-linux/test/errors"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -19,8 +19,8 @@ func (workingAgent) Delete(firewall.Rule) error { return nil }
 
 type failingAgent struct{}
 
-func (failingAgent) Add(firewall.Rule) error    { return errors.ErrOnPurpose }
-func (failingAgent) Delete(firewall.Rule) error { return errors.ErrOnPurpose }
+func (failingAgent) Add(firewall.Rule) error    { return mock.ErrOnPurpose }
+func (failingAgent) Delete(firewall.Rule) error { return mock.ErrOnPurpose }
 
 func TestAllowlistIP(t *testing.T) {
 	category.Set(t, category.Route)
