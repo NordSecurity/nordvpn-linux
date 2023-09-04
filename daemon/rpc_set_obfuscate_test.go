@@ -56,7 +56,7 @@ func TestSetObfuscate(t *testing.T) {
 	r := RPC{
 		cm:     &mockConfigManager,
 		events: &mockEvents,
-		netw:   &mockN.Mock{},
+		netw:   &mockN.Mock{VpnActive: true, MeshActive: true},
 		dm:     &dm,
 	}
 

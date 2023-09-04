@@ -16,6 +16,7 @@ type Mock struct {
 	Dns               []string
 	Allowlist         config.Allowlist
 	VpnActive         bool
+	MeshActive        bool
 	ConnectRetries    int
 	LanDiscovery      bool
 	MeshPeers         mesh.MachinePeers
@@ -80,7 +81,7 @@ func (m *Mock) UnsetAllowlist() error {
 func (*Mock) IsNetworkSet() bool { return false }
 func (m *Mock) IsMeshnetActive() bool {
 	m.MeshnetRetries++
-	return m.MeshnetRetries > 5
+	return m.MeshActive || m.MeshnetRetries > 5
 }
 func (*Mock) SetKillSwitch(config.Allowlist) error { return nil }
 func (*Mock) UnsetKillSwitch() error               { return nil }

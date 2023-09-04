@@ -3,5 +3,5 @@
 package fileshare
 
 func FileshareHistoryImplementation(_ string) Storage {
-	return MockStorage{}
+	return NoopStorage{}
 }
