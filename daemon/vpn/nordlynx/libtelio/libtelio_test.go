@@ -97,39 +97,100 @@ func TestEventCallback_DoesntBlock(t *testing.T) {
 func Test_TelioDefaultConfig(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	expectedCfg := `
-	{
-		"lana": {
-			"event_path": "",
-			"prod": false
-		},
-		"nurse": {
-			"fingerprint": "",
-			"qos": {}
-		},
-		"direct": {},
-		"derp": {},
-		"wireguard": {
-			"persistent_keepalive": {}
-		}
-	}
-	`
-
-	telioCfg := newTelioFeatures()
+	telioCfg := &telioFeatures{}
 	jsn, err := json.Marshal(telioCfg)
 	if err != nil {
 		fmt.Println(err)
 	} else {
 		fmt.Println(string(jsn))
 	}
-	var j1, j2 interface{}
+	var intf interface{}
+	err = json.Unmarshal(jsn, &intf)
+
+	assert.NoError(t, err)
+}
+
+func Test_TelioConfig(t *testing.T) {
+	category.Set(t, category.Integration)
+
+	expectedCfg := telioRemoteTestConfig
+
+	deviceID := "11111"
+	appVersion := "3.16.3"
+	eventPath := "/var/data.db"
+	prod := true
+
+	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfig}
+
+	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, &remoteConfigGetter)
+
+	assert.NoError(t, err)
+
+	var j1, j2 telioFeatures
 	err1 := json.Unmarshal([]byte(expectedCfg), &j1)
-	err2 := json.Unmarshal(jsn, &j2)
+	err2 := json.Unmarshal(cfg, &j2)
 
 	assert.NoError(t, err1)
 	assert.NoError(t, err2)
 
 	assert.True(t, reflect.DeepEqual(j1, j2))
+}
+
+func Test_TelioConfigLanaDisabled(t *testing.T) {
+	category.Set(t, category.Integration)
+
+	expectedCfg := telioRemoteTestConfigLanaDisabled
+
+	deviceID := "11111"
+	appVersion := "3.16.3"
+	eventPath := "/var/data.db"
+	prod := true
+
+	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfigLanaDisabled}
+
+	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, &remoteConfigGetter)
+
+	assert.NoError(t, err)
+
+	var j1, j2 telioFeatures
+	err1 := json.Unmarshal([]byte(expectedCfg), &j1)
+	err2 := json.Unmarshal(cfg, &j2)
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+
+	assert.Nil(t, j2.Lana)
+	assert.Nil(t, j2.Nurse)
+}
+
+func Test_TelioConfigAllDisabled(t *testing.T) {
+	category.Set(t, category.Integration)
+
+	expectedCfg := telioRemoteTestConfigAllDisabled
+
+	deviceID := "11111"
+	appVersion := "3.16.3"
+	eventPath := "/var/data.db"
+	prod := true
+
+	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfigAllDisabled}
+
+	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, &remoteConfigGetter)
+
+	assert.NoError(t, err)
+
+	var j1, j2 telioFeatures
+	err1 := json.Unmarshal([]byte(expectedCfg), &j1)
+	err2 := json.Unmarshal(cfg, &j2)
+
+	assert.NoError(t, err1)
+	assert.NoError(t, err2)
+
+	assert.Nil(t, j2.Lana)
+	assert.Nil(t, j2.Nurse)
+	assert.Nil(t, j2.Derp)
+	assert.Nil(t, j2.Direct)
+	assert.Nil(t, j2.Wireguard)
 }
 
 const telioRemoteTestConfig string = `
@@ -172,41 +233,59 @@ const telioRemoteTestConfig string = `
 	"exit-dns": "1.1.1.1"
 }
 `
+const telioRemoteTestConfigLanaDisabled string = `
+{
+	"nurse": {
+		"fingerprint": "11111",
+		"heartbeat_interval": 3600,
+		"qos": {
+			"rtt_interval": 300,
+			"rtt_tries": 3,
+			"rtt_types": [
+				"Ping"
+			],
+			"buckets": 5
+		}
+	},
+	"direct": {
+		"endpoint_interval_secs": 20,
+		"providers": [
+			"local",
+			"stun"
+		]
+	},
+	"derp": {
+		"tcp_keepalive": 15,
+		"derp_keepalive": 60
+	},
+	"wireguard": {
+		"persistent_keepalive": {
+			"proxying": 25,
+			"direct": 5,
+			"vpn": 25,
+			"stun": 50
+		}
+	},
+	"exit-dns": "1.1.1.1"
+}
+`
 
-type mockVersionGetter struct{}
+const telioRemoteTestConfigAllDisabled string = `
+{
+	"exit-dns": "1.1.1.1"
+}
+`
 
-func (mockVersionGetter) GetValue(key string) (string, error) {
+type mockVersionGetter struct {
+	remoteConfig string
+}
+
+func (m *mockVersionGetter) GetValue(key string) (string, error) {
 	return "", nil
 }
 
-func (mockVersionGetter) GetTelioConfig(string) (string, error) {
-	return telioRemoteTestConfig, nil
-}
-
-func Test_TelioConfig(t *testing.T) {
-	category.Set(t, category.Integration)
-
-	expectedCfg := telioRemoteTestConfig
-
-	deviceID := "11111"
-	appVersion := "3.16.3"
-	eventPath := "/var/data.db"
-	prod := true
-
-	remoteConfigGetter := mockVersionGetter{}
-
-	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, remoteConfigGetter)
-
-	assert.NoError(t, err)
-
-	var j1, j2 interface{}
-	err1 := json.Unmarshal([]byte(expectedCfg), &j1)
-	err2 := json.Unmarshal(cfg, &j2)
-
-	assert.NoError(t, err1)
-	assert.NoError(t, err2)
-
-	assert.True(t, reflect.DeepEqual(j1, j2))
+func (m *mockVersionGetter) GetTelioConfig(string) (string, error) {
+	return m.remoteConfig, nil
 }
 
 func Test_maskPublicKey(t *testing.T) {
