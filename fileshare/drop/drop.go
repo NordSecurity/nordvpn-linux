@@ -186,7 +186,7 @@ func (f *Fileshare) CancelFile(transferID string, fileID string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	res := f.norddrop.CancelFile(transferID, fileID)
+	res := f.norddrop.RejectFile(transferID, fileID)
 	if err := toError(res); err != nil {
 		return err
 	}
