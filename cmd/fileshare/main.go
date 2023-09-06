@@ -85,11 +85,13 @@ func main() {
 	storagePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
 
 	eventManager := fileshare.NewEventManager(
+		internal.IsProdEnv(Environment),
 		fileshare.FileshareHistoryImplementation(storagePath),
 		meshClient,
 		fileshare.StdOsInfo{},
 		fileshare.NewStdFilesystem("/"),
-		defaultDownloadDirectory)
+		defaultDownloadDirectory,
+	)
 
 	privKeyResponse, err := meshClient.GetPrivateKey(context.Background(), &meshpb.Empty{})
 	if err != nil || privKeyResponse.GetPrivateKey() == "" {
