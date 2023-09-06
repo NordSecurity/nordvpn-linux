@@ -208,3 +208,53 @@ func Test_TelioConfig(t *testing.T) {
 
 	assert.True(t, reflect.DeepEqual(j1, j2))
 }
+
+func Test_maskPublicKey(t *testing.T) {
+	eventText := "{" +
+		"\"type\":\"node\"," +
+		"\"body\": {" +
+		" \"identifier\":\"1dd9e096-f420-4afa-bb19-62286a370dc9\"," +
+		" \"public_key\":\"m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe=\"," +
+		" \"state\":\"connected\"," +
+		" \"is_exit\": false," +
+		" \"is_vpn\": false," +
+		" \"ip_addresses\": [" +
+		"	\"248.146.217.126\"" +
+		"  ]," +
+		" \"allowed_ips\": [" +
+		"	\"248.146.217.126/32\"" +
+		"  ]," +
+		" \"endpoint\":\"65.97.11.97:53434\"," +
+		" \"hostname\":\"host-andes.nord\"," +
+		" \"allow_incoming_connections\": true," +
+		" \"allow_peer_send_files\": true," +
+		" \"path\":\"direct\"" +
+		"}" +
+		"}"
+
+	expectedMaskedEventText := "{" +
+		"\"type\":\"node\"," +
+		"\"body\": {" +
+		" \"identifier\":\"1dd9e096-f420-4afa-bb19-62286a370dc9\"," +
+		" \"public_key\":\"***\"," +
+		" \"state\":\"connected\"," +
+		" \"is_exit\": false," +
+		" \"is_vpn\": false," +
+		" \"ip_addresses\": [" +
+		"	\"248.146.217.126\"" +
+		"  ]," +
+		" \"allowed_ips\": [" +
+		"	\"248.146.217.126/32\"" +
+		"  ]," +
+		" \"endpoint\":\"65.97.11.97:53434\"," +
+		" \"hostname\":\"host-andes.nord\"," +
+		" \"allow_incoming_connections\": true," +
+		" \"allow_peer_send_files\": true," +
+		" \"path\":\"direct\"" +
+		"}" +
+		"}"
+
+	maskedEventText := maskPublicKey(eventText)
+
+	assert.Equal(t, expectedMaskedEventText, maskedEventText)
+}
