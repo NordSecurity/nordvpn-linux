@@ -41,7 +41,7 @@ type event struct {
 type eventFn func(string)
 
 func maskPublicKey(event string) string {
-	expr := regexp.MustCompile(`"public_key":"(.*)"`)
+	expr := regexp.MustCompile(`"public_key":"(.*?)"`)
 	return expr.ReplaceAllString(event, `"public_key":"***"`)
 }
 
