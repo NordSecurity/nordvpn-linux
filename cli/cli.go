@@ -110,6 +110,9 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 		Name:   "complete",
 		Hidden: true,
 	}
+	// Capitalize to be uniform with usage text of all other commands
+	cli.HelpFlag.(*cli.BoolFlag).Usage = "Show help"
+	cli.VersionFlag.(*cli.BoolFlag).Usage = "Print the version"
 
 	setCommand := cli.Command{
 		Name:    "set",
