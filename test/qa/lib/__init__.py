@@ -143,7 +143,7 @@ PORTS_RANGE = [
 ]
 
 # Used for integration test coverage
-os.environ["GOCOVERDIR"] = os.environ["CI_PROJECT_DIR"] + "/" + os.environ["COVERDIR"]
+os.environ["GOCOVERDIR"] = os.environ["WORKDIR"] + "/" + os.environ["COVERDIR"]
 
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.
 class ErrorDefer:

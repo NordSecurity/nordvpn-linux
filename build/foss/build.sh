@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euox
 
-source "${CI_PROJECT_DIR}/ci/archs.sh"
-source "${CI_PROJECT_DIR}/ci/env.sh"
+source "${WORKDIR}/ci/archs.sh"
+source "${WORKDIR}/ci/env.sh"
 
 declare -A targets=(
   [amd64]=x86_64-unknown-linux-gnu
@@ -12,11 +12,11 @@ declare -A targets=(
   [armel]=arm-unknown-linux-gnueabi
 )
 
-pushd "${CI_PROJECT_DIR}/build/foss"
+pushd "${WORKDIR}/build/foss"
 for arch in "${ARCHS[@]}"; do
   target="${targets[$arch]}"
   cargo build --target "${target}" --release
-  mkdir -p "${CI_PROJECT_DIR}/bin/deps/foss/${arch}"
-  ln -frs "${CI_PROJECT_DIR}/build/foss/target/${target}/release" "${CI_PROJECT_DIR}/bin/deps/foss/${arch}/latest"
+  mkdir -p "${WORKDIR}/bin/deps/foss/${arch}"
+  ln -frs "${WORKDIR}/build/foss/target/${target}/release" "${WORKDIR}/bin/deps/foss/${arch}/latest"
 done
 popd

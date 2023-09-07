@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euox
 
-source "${CI_PROJECT_DIR}"/ci/env.sh
+source "${WORKDIR}"/ci/env.sh
 
 APT_GET="$(which apt-get 2> /dev/null)"
 
@@ -11,20 +11,20 @@ if [[ -x "$APT_GET" ]]; then
 fi
 
 # clean build dir
-rm -rf "${CI_PROJECT_DIR}"/dist/repo/rpm
+rm -rf "${WORKDIR}"/dist/repo/rpm
 
-BASEDIR=${CI_PROJECT_DIR}/dist/repo/rpm/${NAME}_${VERSION}_all
-RPMBUILD=${CI_PROJECT_DIR}/dist/repo/rpm/RPMBUILD
+BASEDIR=${WORKDIR}/dist/repo/rpm/${NAME}_${VERSION}_all
+RPMBUILD=${WORKDIR}/dist/repo/rpm/RPMBUILD
 
 mkdir -p "${RPMBUILD}"/{BUILD,RPMS,SOURCES,SPECS}
 
 # copy repo file
-cp "${CI_PROJECT_DIR}"/contrib/repo/sources/rpm/sources."${ENVIRONMENT}" "${RPMBUILD}"/SOURCES/nordvpn.repo
+cp "${WORKDIR}"/contrib/repo/sources/rpm/sources."${ENVIRONMENT}" "${RPMBUILD}"/SOURCES/nordvpn.repo
 # fetch key
 wget -qO - https://repo.nordvpn.com/gpg/nordvpn_public.asc > "${RPMBUILD}"/SOURCES/RPM-GPG-KEY-NordVPN
 
 # load the templates
-POST=$(cat "${CI_PROJECT_DIR}"/contrib/repo/scriptlets/rpm/post)
+POST=$(cat "${WORKDIR}"/contrib/repo/scriptlets/rpm/post)
 cat <<EOF > "${RPMBUILD}"/SPECS/nordvpn-release_"${VERSION}"_all.spec
 %define _topdir ${RPMBUILD}
 Name:      ${NAME}
@@ -69,5 +69,5 @@ EOF
 rpmbuild -bb --rmsource --buildroot "${RPMBUILD}"/BUILDROOT "${RPMBUILD}/SPECS/${NAME}_${VERSION}_all.spec"
 
  # move build to base dir
-mv "${RPMBUILD}/RPMS/noarch/${NAME}-${VERSION}.noarch.rpm" "${CI_PROJECT_DIR}"/dist/repo/rpm
+mv "${RPMBUILD}/RPMS/noarch/${NAME}-${VERSION}.noarch.rpm" "${WORKDIR}"/dist/repo/rpm
 rm -rf "${BASEDIR}" "${RPMBUILD}"

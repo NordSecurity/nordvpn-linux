@@ -2,7 +2,7 @@
 # Download is idempotent and will not redownload if the file already exists
 set -eo
 
-source "${CI_PROJECT_DIR}"/ci/archs.sh
+source "${WORKDIR}"/ci/archs.sh
 
 usage() {
     echo "Usage:"
@@ -113,9 +113,9 @@ done
 get_credentials
 
 if [[ -n "${DIR_NAME}" ]]; then
-    DOWNLOAD_DIR="${CI_PROJECT_DIR}/bin/deps/${DIR_NAME}"
+    DOWNLOAD_DIR="${WORKDIR}/bin/deps/${DIR_NAME}"
 else
-    DOWNLOAD_DIR="${CI_PROJECT_DIR}/bin/deps/${REPOSITORY_NAME}"
+    DOWNLOAD_DIR="${WORKDIR}/bin/deps/${REPOSITORY_NAME}"
 fi
 
 mkdir -p "${DOWNLOAD_DIR}"
@@ -132,7 +132,7 @@ for arch in ${ARCHS} ; do
     ln -fsnr "${output_dir}" "${latest_dir}" 
     [[ -e "${output_file}" ]] && continue
     echo "Downloading ${REPOSITORY_NAME}-${arch} ${BINARY_VERSION}..."
-    "${CI_PROJECT_DIR}"/ci/nexus_get.sh -r "${REPOSITORY_TYPE}" -o "${output_file}" \
+    "${WORKDIR}"/ci/nexus_get.sh -r "${REPOSITORY_TYPE}" -o "${output_file}" \
         "${REPOSITORY_ID}/${BINARY_VERSION}/${OS}/${arch}/${REPOSITORY_NAME}${FILE_EXTENSION}"
 
 done

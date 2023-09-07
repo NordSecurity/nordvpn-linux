@@ -33,8 +33,8 @@ case "$STATUSCODE" in
         "$APT_GET" -y install
     fi
 
-    if [[ ! -f ${CI_PROJECT_DIR}/dist/repo/rpm/${FILENAME} ]]; then
-        echo "$CI_PROJECT_DIR/dist/repo/rpm/$FILENAME not found"
+    if [[ ! -f ${WORKDIR}/dist/repo/rpm/${FILENAME} ]]; then
+        echo "$WORKDIR/dist/repo/rpm/$FILENAME not found"
         exit 1
     fi
     pulp-admin rpm repo uploads rpm --repo-id="${REPOSITORY}"-noarch --file="${FILENAME}"

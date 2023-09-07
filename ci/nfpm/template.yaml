@@ -34,7 +34,7 @@ homepage: ${PKG_HOMEPAGE}
 license: GPL-3.0
 
 # Changelog YAML file, see: https://github.com/goreleaser/chglog
-changelog: "${CI_PROJECT_DIR}/dist/changelog.yml"
+changelog: "${WORKDIR}/dist/changelog.yml"
 
 # Disables globbing for files, config_files, etc.
 disable_globbing: true
@@ -51,60 +51,60 @@ depends:
 
 # Basic file that applies to all packagers
 contents:
-  - src: ${CI_PROJECT_DIR}/contrib/systemd/system/nordvpnd.socket
+  - src: ${WORKDIR}/contrib/systemd/system/nordvpnd.socket
     dst: /usr/lib/systemd/system/nordvpnd.socket
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/contrib/systemd/system/nordvpnd.service
+  - src: ${WORKDIR}/contrib/systemd/system/nordvpnd.service
     dst: /usr/lib/systemd/system/nordvpnd.service
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/contrib/systemd/user/nordfileshared.socket
+  - src: ${WORKDIR}/contrib/systemd/user/nordfileshared.socket
     dst: /usr/lib/systemd/user/nordfileshared.socket
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/contrib/systemd/user/nordfileshared.service
+  - src: ${WORKDIR}/contrib/systemd/user/nordfileshared.service
     dst: /usr/lib/systemd/user/nordfileshared.service
     file_info:
       mode: 0644
   # Also install as a system service so it could be run as root
-  - src: ${CI_PROJECT_DIR}/contrib/systemd/user/nordfileshared.socket
+  - src: ${WORKDIR}/contrib/systemd/user/nordfileshared.socket
     dst: /usr/lib/systemd/system/nordfileshared.socket
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/contrib/systemd/user/nordfileshared.service
+  - src: ${WORKDIR}/contrib/systemd/user/nordfileshared.service
     dst: /usr/lib/systemd/system/nordfileshared.service
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/contrib/systemd/tmpfiles.d/nordvpn.conf
+  - src: ${WORKDIR}/contrib/systemd/tmpfiles.d/nordvpn.conf
     dst: /usr/lib/tmpfiles.d/nordvpn.conf
     file_info:
       mode: 0600
-  - src: ${CI_PROJECT_DIR}/dist/autocomplete/bash_autocomplete
+  - src: ${WORKDIR}/dist/autocomplete/bash_autocomplete
     dst: /usr/share/bash-completion/completions/nordvpn
-  - src: ${CI_PROJECT_DIR}/dist/autocomplete/zsh_autocomplete
+  - src: ${WORKDIR}/dist/autocomplete/zsh_autocomplete
     dst: /usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete
-  - src: ${CI_PROJECT_DIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn
+  - src: ${WORKDIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn
     dst: /var/lib/${NAME}/openvpn
-  - src: ${CI_PROJECT_DIR}/contrib/desktop/nordvpn.desktop
+  - src: ${WORKDIR}/contrib/desktop/nordvpn.desktop
     dst: /usr/share/applications/nordvpn.desktop
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/assets/icon.svg
+  - src: ${WORKDIR}/assets/icon.svg
     dst: /usr/share/icons/hicolor/scalable/apps/${NAME}.svg
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/LICENSE.md
+  - src: ${WORKDIR}/LICENSE.md
     dst: /usr/share/licenses/nordvpn/LICENSE.md
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/dist/THIRD-PARTY-NOTICES.md
+  - src: ${WORKDIR}/dist/THIRD-PARTY-NOTICES.md
     dst: /usr/share/licenses/nordvpn/THIRD-PARTY-NOTICES.md
     file_info:
       mode: 0644
-  - src: ${CI_PROJECT_DIR}/dist/data
+  - src: ${WORKDIR}/dist/data
     dst: /var/lib/${NAME}/data
-  - src: ${CI_PROJECT_DIR}/dist/${NAME}.1.gz
+  - src: ${WORKDIR}/dist/${NAME}.1.gz
     dst: /usr/share/man/man1/${NAME}.1.gz
   - src: ${BASEDIR}/usr/sbin/nordvpnd
     dst: /usr/sbin/nordvpnd
@@ -113,7 +113,7 @@ contents:
   - src: ${BASEDIR}/usr/bin/nordfileshared
     dst: /usr/bin/nordfileshared
 
-  - src: ${CI_PROJECT_DIR}/contrib/initd/nordvpn
+  - src: ${WORKDIR}/contrib/initd/nordvpn
     dst: /etc/init.d/nordvpn
     packager: deb
     file_info:
@@ -124,9 +124,9 @@ overrides:
   deb:
     # Deb specific scripts.
     scripts:
-      postinstall: ${CI_PROJECT_DIR}/contrib/scriptlets/deb/postinst
-      preremove: ${CI_PROJECT_DIR}/contrib/scriptlets/deb/prerm
-      postremove: ${CI_PROJECT_DIR}/contrib/scriptlets/deb/postrm
+      postinstall: ${WORKDIR}/contrib/scriptlets/deb/postinst
+      preremove: ${WORKDIR}/contrib/scriptlets/deb/prerm
+      postremove: ${WORKDIR}/contrib/scriptlets/deb/postrm
   rpm:
     depends:
       - iptables
@@ -138,10 +138,10 @@ overrides:
       - zlib
     # RPM specific scripts.
     scripts:
-      postinstall: ${CI_PROJECT_DIR}/contrib/scriptlets/rpm/post
-      preremove: ${CI_PROJECT_DIR}/contrib/scriptlets/rpm/preun
-      postremove: ${CI_PROJECT_DIR}/contrib/scriptlets/rpm/postun
+      postinstall: ${WORKDIR}/contrib/scriptlets/rpm/post
+      preremove: ${WORKDIR}/contrib/scriptlets/rpm/preun
+      postremove: ${WORKDIR}/contrib/scriptlets/rpm/postun
 
 rpm:
   scripts:
-    posttrans: ${CI_PROJECT_DIR}/contrib/scriptlets/rpm/posttrans
+    posttrans: ${WORKDIR}/contrib/scriptlets/rpm/posttrans

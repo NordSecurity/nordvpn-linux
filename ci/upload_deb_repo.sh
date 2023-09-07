@@ -33,8 +33,8 @@ case "$STATUSCODE" in
         "$APT_GET" -y install
     fi
 
-    if [[ ! -f ${CI_PROJECT_DIR}/dist/repo/deb/${FILENAME} ]]; then
-        echo "$CI_PROJECT_DIR/dist/repo/deb/$FILENAME not found"
+    if [[ ! -f ${WORKDIR}/dist/repo/deb/${FILENAME} ]]; then
+        echo "$WORKDIR/dist/repo/deb/$FILENAME not found"
         exit 1
     fi
     pulp-admin deb repo uploads deb --repo-id="${REPOSITORY}" --file="${FILENAME}"
