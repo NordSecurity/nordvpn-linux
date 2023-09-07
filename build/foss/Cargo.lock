@@ -66,6 +66,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "attohttpc"
+version = "0.16.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdb8867f378f33f78a811a8eb9bf108ad99430d7aad43315dd9319c827ef6247"
+dependencies = [
+ "http",
+ "log",
+ "url",
+ "wildmatch",
+]
+
+[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -510,6 +522,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
 
 [[package]]
+name = "debug_panic"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9377eb110cece2e9431deb8d7d2ec8c116510b896741f9f2bf02b352147aa2a6"
+
+[[package]]
 name = "derive_builder"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -665,9 +683,9 @@ checksum = "c34f04666d835ff5d62e058c3995147c06f42fe86ff053337632bca83e42702d"
 
 [[package]]
 name = "enum-as-inner"
-version = "0.4.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21cdad81446a7f7dc43f6a77409efeb9733d2fa65553efef6018ef257c959b73"
+checksum = "c9720bba047d567ffc8a3cba48bf19126600e249ab7f128e9233e6376976a116"
 dependencies = [
  "heck",
  "proc-macro2 1.0.57",
@@ -677,35 +695,22 @@ dependencies = [
 
 [[package]]
 name = "enum-map"
-version = "1.1.1"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e893a7ba6116821058dec84a6fb14fb2a97cd8ce5fd0f85d5a4e760ecd7329d9"
+checksum = "988f0d17a0fa38291e5f41f71ea8d46a5d5497b9054d5a759fae2cbb819f2356"
 dependencies = [
  "enum-map-derive",
 ]
 
 [[package]]
 name = "enum-map-derive"
-version = "0.6.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84278eae0af6e34ff6c1db44c11634a694aafac559ff3080e4db4e4ac35907aa"
+checksum = "2a4da76b3b6116d758c7ba93f7ec6a35d2e2cf24feda76c6e38a375f4d5c59f2"
 dependencies = [
  "proc-macro2 1.0.57",
  "quote 1.0.27",
  "syn 1.0.107",
-]
-
-[[package]]
-name = "env_logger"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b2cf0344971ee6c64c31be0d530793fba457d322dfec2810c453d0ef228f9c3"
-dependencies = [
- "atty",
- "humantime",
- "log",
- "regex",
- "termcolor",
 ]
 
 [[package]]
@@ -1078,12 +1083,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
-name = "humantime"
-version = "2.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
-
-[[package]]
 name = "hyper"
 version = "0.14.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1132,6 +1131,19 @@ checksum = "cbc0fa01ffc752e9dbc72818cdb072cd028b86be5e09dd04c5a643704fe101a9"
 dependencies = [
  "libc",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "igd"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "556b5a75cd4adb7c4ea21c64af1c48cefb2ce7d43dc4352c720a1fe47c21f355"
+dependencies = [
+ "attohttpc",
+ "log",
+ "rand",
+ "url",
+ "xmltree",
 ]
 
 [[package]]
@@ -1357,6 +1369,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2dffe52ecf27772e601905b7522cb4ef790d2cc203488bbd0e2fe85fcb74566d"
 
 [[package]]
+name = "memoffset"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5de893c32cde5f383baa4c04c5d6dbdd735cfd4a794b0debdb2bb1b421da5ff4"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
 name = "mime"
 version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1432,6 +1453,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77a5d83df9f36fe23f0c3648c6bbb8b0298bb5f1939c8f2704431371f4b84d43"
 dependencies = [
  "smallvec",
+]
+
+[[package]]
+name = "nix"
+version = "0.26.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "598beaf3cc6fdd9a5dfb1630c2800c7acd31df7aaf0f565796fba2b53ca1af1b"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "libc",
+ "memoffset",
+ "pin-utils",
 ]
 
 [[package]]
@@ -1979,15 +2013,14 @@ checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
 name = "rustls"
-version = "0.19.1"
+version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35edb675feee39aec9c99fa5ff985081995a06d594114ae14cbe797ad7b7a6d7"
+checksum = "cd8d6c9f025a446bc4d18ad9632e69aec8f287aa84499ee335599fabd20c3fd8"
 dependencies = [
- "base64 0.13.0",
  "log",
  "ring",
+ "rustls-webpki",
  "sct",
- "webpki",
 ]
 
 [[package]]
@@ -1997,6 +2030,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d194b56d58803a43635bdc398cd17e383d6f71f9182b9a192c127ca42494a59b"
 dependencies = [
  "base64 0.21.2",
+]
+
+[[package]]
+name = "rustls-webpki"
+version = "0.101.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d93931baf2d282fff8d3a532bbfd7653f734643161b87e3e01e59a04439bf0d"
+dependencies = [
+ "ring",
+ "untrusted",
 ]
 
 [[package]]
@@ -2043,9 +2086,9 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "sct"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b362b83898e0e69f38515b82ee15aa80636befe47c3b6d3d89a911e78fc228ce"
+checksum = "d53dcdb7c9f8158937a7981b48accfd39a43af418591a5d008c7b22b5e1b7ca4"
 dependencies = [
  "ring",
  "untrusted",
@@ -2464,13 +2507,14 @@ checksum = "b4e17d8598067a8c134af59cd33c1c263470e089924a11ab61cf61690919fe3b"
 
 [[package]]
 name = "telio"
-version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+version = "4.0.8"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.13.0",
  "cc",
+ "cfg-if",
  "crypto_box",
  "ffi_helpers",
  "futures",
@@ -2501,15 +2545,17 @@ dependencies = [
  "telio-wg",
  "thiserror",
  "tokio",
+ "tracing",
  "uuid",
  "wasm-bindgen",
  "winapi 0.3.9",
+ "winres",
 ]
 
 [[package]]
 name = "telio-crypto"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "base64 0.13.0",
  "crypto_box",
@@ -2525,7 +2571,7 @@ dependencies = [
 [[package]]
 name = "telio-dns"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -2549,9 +2595,8 @@ dependencies = [
 [[package]]
 name = "telio-firewall"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
- "ipnetwork",
  "log",
  "lru_time_cache",
  "pnet_packet 0.28.0",
@@ -2562,7 +2607,7 @@ dependencies = [
 [[package]]
 name = "telio-lana"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "anyhow",
  "log",
@@ -2576,7 +2621,7 @@ dependencies = [
 [[package]]
 name = "telio-model"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "ipnetwork",
  "itertools",
@@ -2589,13 +2634,12 @@ dependencies = [
  "strum_macros",
  "telio-crypto",
  "telio-utils",
- "telio-wg",
 ]
 
 [[package]]
 name = "telio-nat-detect"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "log",
  "nat-detect",
@@ -2605,7 +2649,7 @@ dependencies = [
 [[package]]
 name = "telio-nurse"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "async-trait",
  "bitflags",
@@ -2638,9 +2682,10 @@ dependencies = [
 [[package]]
 name = "telio-proto"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "bytes",
+ "log",
  "protobuf",
  "protobuf-codegen-pure",
  "strum",
@@ -2652,7 +2697,7 @@ dependencies = [
 [[package]]
 name = "telio-proxy"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "async-trait",
  "crypto_box",
@@ -2672,7 +2717,7 @@ dependencies = [
 [[package]]
 name = "telio-relay"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2685,6 +2730,7 @@ dependencies = [
  "num_enum",
  "rand",
  "rand_core 0.6.3",
+ "rustls-pemfile",
  "serde",
  "static_assertions",
  "strum",
@@ -2700,19 +2746,20 @@ dependencies = [
  "tokio-stream",
  "tokio-util",
  "url",
- "webpki",
  "webpki-roots",
 ]
 
 [[package]]
 name = "telio-sockets"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "boringtun",
+ "debug_panic",
  "futures",
  "libc",
  "log",
+ "nix",
  "parking_lot 0.12.1",
  "socket2 0.4.9",
  "system-configuration",
@@ -2726,7 +2773,7 @@ dependencies = [
 [[package]]
 name = "telio-task"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "async-trait",
  "futures",
@@ -2739,7 +2786,7 @@ dependencies = [
 [[package]]
 name = "telio-traversal"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "async-trait",
  "base64 0.13.0",
@@ -2750,13 +2797,14 @@ dependencies = [
  "http",
  "httparse",
  "if-addrs",
+ "igd",
  "ipnet",
  "lazy_static",
  "log",
+ "parking_lot 0.12.1",
  "rand",
  "rupnp",
  "sm",
- "ssdp-client",
  "strum",
  "stun_codec",
  "surge-ping",
@@ -2774,7 +2822,7 @@ dependencies = [
 [[package]]
 name = "telio-utils"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "futures",
  "log",
@@ -2783,12 +2831,13 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
 name = "telio-wg"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "async-trait",
  "boringtun",
@@ -2806,6 +2855,7 @@ dependencies = [
  "slog",
  "slog-stdlog",
  "telio-crypto",
+ "telio-model",
  "telio-sockets",
  "telio-task",
  "telio-utils",
@@ -2946,13 +2996,12 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.22.0"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc6844de72e57df1980054b38be3a9f4702aba4858be64dd700181a8a6d0e1b6"
+checksum = "c28327cf380ac148141087fbfb9de9d7bd4e84ab5d2c28fbc911d753de8a7081"
 dependencies = [
  "rustls",
  "tokio",
- "webpki",
 ]
 
 [[package]]
@@ -3105,27 +3154,27 @@ dependencies = [
 
 [[package]]
 name = "trust-dns-client"
-version = "0.21.2"
-source = "git+https://github.com/NordSecurity/trust-dns.git?tag=v1.0.0#fe423f88f82a43d5b0345fe51b779d77dbf72a4f"
+version = "0.22.0"
+source = "git+https://github.com/NordSecurity/trust-dns.git?tag=v2.0.0#0be935bf9cda610f096eaa74fc5adb4f3f171297"
 dependencies = [
  "cfg-if",
  "data-encoding",
  "futures-channel",
  "futures-util",
  "lazy_static",
- "log",
  "radix_trie",
  "rand",
  "thiserror",
  "time",
  "tokio",
+ "tracing",
  "trust-dns-proto",
 ]
 
 [[package]]
 name = "trust-dns-proto"
-version = "0.21.2"
-source = "git+https://github.com/NordSecurity/trust-dns.git?tag=v1.0.0#fe423f88f82a43d5b0345fe51b779d77dbf72a4f"
+version = "0.22.0"
+source = "git+https://github.com/NordSecurity/trust-dns.git?tag=v2.0.0#0be935bf9cda610f096eaa74fc5adb4f3f171297"
 dependencies = [
  "async-trait",
  "cfg-if",
@@ -3137,26 +3186,25 @@ dependencies = [
  "idna",
  "ipnet",
  "lazy_static",
- "log",
  "rand",
  "serde",
  "smallvec",
  "thiserror",
  "tinyvec",
  "tokio",
+ "tracing",
  "url",
 ]
 
 [[package]]
 name = "trust-dns-resolver"
-version = "0.21.2"
-source = "git+https://github.com/NordSecurity/trust-dns.git?tag=v1.0.0#fe423f88f82a43d5b0345fe51b779d77dbf72a4f"
+version = "0.22.0"
+source = "git+https://github.com/NordSecurity/trust-dns.git?tag=v2.0.0#0be935bf9cda610f096eaa74fc5adb4f3f171297"
 dependencies = [
  "cfg-if",
  "futures-util",
  "ipconfig",
  "lazy_static",
- "log",
  "lru-cache",
  "parking_lot 0.12.1",
  "resolv-conf",
@@ -3164,27 +3212,27 @@ dependencies = [
  "smallvec",
  "thiserror",
  "tokio",
+ "tracing",
  "trust-dns-proto",
 ]
 
 [[package]]
 name = "trust-dns-server"
-version = "0.21.2"
-source = "git+https://github.com/NordSecurity/trust-dns.git?tag=v1.0.0#fe423f88f82a43d5b0345fe51b779d77dbf72a4f"
+version = "0.22.1"
+source = "git+https://github.com/NordSecurity/trust-dns.git?tag=v2.0.0#0be935bf9cda610f096eaa74fc5adb4f3f171297"
 dependencies = [
  "async-trait",
  "bytes",
  "cfg-if",
  "enum-as-inner",
- "env_logger",
  "futures-executor",
  "futures-util",
- "log",
  "serde",
  "thiserror",
  "time",
  "tokio",
  "toml 0.5.9",
+ "tracing",
  "trust-dns-client",
  "trust-dns-proto",
  "trust-dns-resolver",
@@ -3456,28 +3504,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "webpki"
-version = "0.21.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8e38c0608262c46d4a56202ebabdeb094cef7e560ca7a226c6bf055188aa4ea"
-dependencies = [
- "ring",
- "untrusted",
-]
-
-[[package]]
 name = "webpki-roots"
-version = "0.21.1"
+version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aabe153544e473b775453675851ecc86863d2a81d786d741f6b76778f2a48940"
-dependencies = [
- "webpki",
-]
+checksum = "14247bb57be4f377dfb94c72830b8ce8fc6beac03cf4bf7b9732eadd414123fc"
 
 [[package]]
 name = "wg-go-rust-wrapper"
 version = "1.0.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.3#63810c6e677826564134b0542c39a232bc2491ab"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.0.8#56f663fb7e086ee96218c0ce6fd17edaade70590"
 dependencies = [
  "cc",
  "libc",
@@ -3494,6 +3529,12 @@ name = "widestring"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17882f045410753661207383517a6f62ec3dbeb6a4ed2acce01f0728238d1983"
+
+[[package]]
+name = "wildmatch"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f44b95f62d34113cf558c93511ac93027e03e9c29a60dd0fd70e6e025c7270a"
 
 [[package]]
 name = "winapi"
@@ -3703,6 +3744,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "winres"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b68db261ef59e9e52806f688020631e987592bd83619edccda9c47d42cde4f6c"
+dependencies = [
+ "toml 0.5.9",
+]
+
+[[package]]
 name = "winresource"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3765,10 +3815,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "xml-rs"
+version = "0.8.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1eee6bf5926be7cf998d7381a9a23d833fd493f6a8034658a9505a4dc4b20444"
+
+[[package]]
 name = "xmlparser"
 version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4d25c75bf9ea12c4040a97f829154768bbbce366287e2dc044af160cd79a13fd"
+
+[[package]]
+name = "xmltree"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7d8a75eaf6557bb84a65ace8609883db44a29951042ada9b393151532e41fcb"
+dependencies = [
+ "xml-rs",
+]
 
 [[package]]
 name = "xsalsa20poly1305"
