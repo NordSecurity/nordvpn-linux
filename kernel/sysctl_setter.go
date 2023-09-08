@@ -2,7 +2,12 @@ package kernel
 
 import "fmt"
 
-type SysctlSetter struct {
+type SysctlSetter interface {
+	Set() error
+	Unset() error
+}
+
+type SysctlSetterImpl struct {
 	paramName     string
 	desiredValue  int
 	unwantedValue int
@@ -13,8 +18,8 @@ func NewSysctlSetter(
 	paramName string,
 	desiredValue int,
 	unwantedValue int,
-) *SysctlSetter {
-	return &SysctlSetter{
+) *SysctlSetterImpl {
+	return &SysctlSetterImpl{
 		paramName:     paramName,
 		desiredValue:  desiredValue,
 		unwantedValue: unwantedValue,
@@ -22,7 +27,7 @@ func NewSysctlSetter(
 	}
 }
 
-func (s *SysctlSetter) Set() error {
+func (s *SysctlSetterImpl) Set() error {
 	values, err := Parameter(s.paramName)
 	if err != nil {
 		return fmt.Errorf(
@@ -46,7 +51,7 @@ func (s *SysctlSetter) Set() error {
 	return nil
 }
 
-func (s *SysctlSetter) Unset() error {
+func (s *SysctlSetterImpl) Unset() error {
 	if s.changed {
 		err := SetParameter(s.paramName, s.unwantedValue)
 		if err != nil {
