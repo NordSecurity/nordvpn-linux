@@ -361,7 +361,12 @@ func main() {
 		meshRouter,
 		exitnode.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
 			return exec.Command(command, arg...).CombinedOutput()
-		}, cfg.AutoConnectData.Allowlist),
+		}, cfg.AutoConnectData.Allowlist,
+			kernel.NewSysctlSetter(
+				exitnode.Ipv4fwdKernelParamName,
+				1,
+				0,
+			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
 	)
