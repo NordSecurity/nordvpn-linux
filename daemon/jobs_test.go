@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"errors"
 	"net/http"
 	"net/netip"
 	"testing"
@@ -82,6 +83,9 @@ func (n *customNetworker) SetLanDiscoveryAndResetMesh(enabled bool, peers mesh.M
 type failingLoginChecker struct{}
 
 func (failingLoginChecker) IsLoggedIn() bool { return false }
+func (failingLoginChecker) IsVPNExpired() (bool, error) {
+	return true, errors.New("IsVPNExpired error")
+}
 
 func TestStartAutoConnect(t *testing.T) {
 	category.Set(t, category.Unit)

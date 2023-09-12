@@ -1,12 +1,13 @@
 package daemon
 
 import (
-	"context"
+	"errors"
 	"net/http"
 	"net/netip"
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
@@ -22,18 +23,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/metadata"
 )
 
-type mockRPCServer struct{}
+type mockRPCServer struct {
+	pb.Daemon_ConnectServer
+	msg *pb.Payload
+}
 
-func (mockRPCServer) SetHeader(metadata.MD) error  { return nil }
-func (mockRPCServer) SendHeader(metadata.MD) error { return nil }
-func (mockRPCServer) SetTrailer(metadata.MD)       {}
-func (mockRPCServer) Context() context.Context     { return nil }
-func (mockRPCServer) SendMsg(m interface{}) error  { return nil }
-func (mockRPCServer) RecvMsg(m interface{}) error  { return nil }
-func (mockRPCServer) Send(*pb.Payload) error       { return nil }
+func (m *mockRPCServer) Send(p *pb.Payload) error { m.msg = p; return nil }
 
 type mockNameservers []string
 
@@ -90,9 +87,13 @@ func (validCredentialsAPI) CurrentUser(string) (*core.CurrentUserResponse, error
 	return nil, nil
 }
 
-type workingLoginChecker struct{}
+type workingLoginChecker struct {
+	isVPNExpired bool
+	vpnErr       error
+}
 
-func (workingLoginChecker) IsLoggedIn() bool { return true }
+func (*workingLoginChecker) IsLoggedIn() bool              { return true }
+func (c *workingLoginChecker) IsVPNExpired() (bool, error) { return c.isVPNExpired, c.vpnErr }
 
 type mockAnalytics struct{}
 
@@ -109,6 +110,8 @@ func TestRpcConnect(t *testing.T) {
 		netw      networker.Networker
 		retriever routes.GatewayRetriever
 		fw        firewall.Service
+		checker   auth.Checker
+		resp      int64
 	}{
 		{
 			name: "successfull connect",
@@ -118,6 +121,8 @@ func TestRpcConnect(t *testing.T) {
 			netw:      workingNetworker{},
 			retriever: newGatewayMock(netip.Addr{}),
 			fw:        &workingFirewall{},
+			checker:   &workingLoginChecker{},
+			resp:      internal.CodeConnected,
 		},
 		{
 			name: "failed connect",
@@ -127,6 +132,30 @@ func TestRpcConnect(t *testing.T) {
 			netw:      failingNetworker{},
 			retriever: newGatewayMock(netip.Addr{}),
 			fw:        &workingFirewall{},
+			checker:   &workingLoginChecker{},
+			resp:      internal.CodeFailure,
+		},
+		{
+			name: "VPN expired",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &workingVPN{}, nil
+			},
+			netw:      workingNetworker{},
+			retriever: newGatewayMock(netip.Addr{}),
+			fw:        &workingFirewall{},
+			checker:   &workingLoginChecker{isVPNExpired: true},
+			resp:      internal.CodeAccountExpired,
+		},
+		{
+			name: "VPN expiration check fails",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &workingVPN{}, nil
+			},
+			netw:      workingNetworker{},
+			retriever: newGatewayMock(netip.Addr{}),
+			fw:        &workingFirewall{},
+			checker:   &workingLoginChecker{vpnErr: errors.New("test error")},
+			resp:      internal.CodeTokenRenewError,
 		},
 	}
 
@@ -146,7 +175,7 @@ func TestRpcConnect(t *testing.T) {
 			)
 			rpc := NewRPC(
 				internal.Development,
-				workingLoginChecker{},
+				test.checker,
 				cm,
 				dm,
 				api,
@@ -190,8 +219,10 @@ func TestRpcConnect(t *testing.T) {
 				service.MockFileshare{},
 				&RegistryMock{},
 			)
-			err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
+			server := &mockRPCServer{}
+			err := rpc.Connect(&pb.ConnectRequest{}, server)
 			assert.NoError(t, err)
+			assert.Equal(t, server.msg.Type, test.resp)
 		})
 	}
 }
@@ -223,7 +254,7 @@ func TestRpcReconnect(t *testing.T) {
 	)
 	rpc := NewRPC(
 		internal.Development,
-		workingLoginChecker{},
+		&workingLoginChecker{},
 		cm,
 		dm,
 		api,

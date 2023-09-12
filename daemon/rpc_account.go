@@ -18,6 +18,18 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		return nil, internal.ErrNotLoggedIn
 	}
 
+	accountInfo := &pb.AccountResponse{}
+
+	vpnExpired, err := r.ac.IsVPNExpired()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
+		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+	} else if vpnExpired {
+		accountInfo.Type = internal.CodeNoVPNService
+	} else {
+		accountInfo.Type = internal.CodeSuccess
+	}
+
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		return &pb.AccountResponse{
@@ -26,16 +38,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 	}
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
-
-	accountInfo := &pb.AccountResponse{
-		ExpiresAt: tokenData.ServiceExpiry,
-	}
-
-	if auth.IsTokenExpired(tokenData.ServiceExpiry) {
-		accountInfo.Type = internal.CodeNoVPNService
-	} else {
-		accountInfo.Type = internal.CodeSuccess
-	}
+	accountInfo.ExpiresAt = tokenData.ServiceExpiry
 
 	currentUser, err := r.credentialsAPI.CurrentUser(tokenData.Token)
 	if err != nil {
@@ -43,11 +46,13 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				return nil, err
+				return &pb.AccountResponse{
+					Type: internal.CodeConfigError,
+				}, nil
 			}
 			return nil, internal.ErrNotLoggedIn
 		}
-		return nil, err
+		return nil, internal.ErrUnhandled
 	}
 
 	accountInfo.Email = currentUser.Email
@@ -59,5 +64,5 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		core.ServicesResponse{},
 	)
 
-	return accountInfo, err
+	return accountInfo, nil
 }

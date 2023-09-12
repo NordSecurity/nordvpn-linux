@@ -5,6 +5,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 type Checker interface {
 	// IsLoggedIn returns true when the user is logged in.
 	IsLoggedIn() bool
+	// IsVPNExpired is used to check whether the user is allowed to use VPN
+	IsVPNExpired() (bool, error)
 }
 
 // RenewingChecker does both authentication checks and renewals in case of expiration.
@@ -53,6 +56,29 @@ func (r *RenewingChecker) IsLoggedIn() bool {
 	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0 && isLoggedIn
 }
 
+// IsVPNExpired is used to check whether the user is allowed to use VPN
+func (r *RenewingChecker) IsVPNExpired() (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		return true, fmt.Errorf("loading config: %w", err)
+	}
+
+	data := cfg.TokensData[cfg.AutoConnectData.ID]
+	if IsTokenExpired(data.ServiceExpiry) {
+		if err := r.updateVpnExpirationDate(&data); err != nil {
+			return true, fmt.Errorf("updating service expiry token: %w", err)
+		}
+		if err := r.cm.SaveWith(saveVpnExpirationDate(cfg.AutoConnectData.ID, data)); err != nil {
+			return true, fmt.Errorf("saving config: %w", err)
+		}
+	}
+
+	return IsTokenExpired(data.ServiceExpiry), nil
+}
+
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	// We are renewing token if it is expired because we need to make some API calls later
 	if IsTokenExpired(data.TokenExpiry) {
@@ -78,18 +104,6 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 		}
 	}
 
-	// This check actually tells whether the vpn subscription is still valid
-	if IsTokenExpired(data.ServiceExpiry) {
-		if err := r.updateVpnExpirationDate(&data); err != nil {
-			if errors.Is(err, core.ErrUnauthorized) {
-				return r.cm.SaveWith(Logout(uid))
-			}
-		}
-		if err := r.cm.SaveWith(saveVpnExpirationDate(uid, data)); err != nil {
-			return err
-		}
-	}
-
 	if data.NordLynxPrivateKey == "" ||
 		data.OpenVPNUsername == "" || data.OpenVPNPassword == "" {
 		if err := r.renewVpnCredentials(&data); err != nil {
@@ -99,6 +113,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 			return err
 		}
 	}
+
 	return nil
 }
 
