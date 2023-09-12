@@ -8,7 +8,7 @@ const (
 	ProtocolErrorMessage   = "protocol: failed to parse %s"
 	TechnologyErrorMessage = "technology: failed to parse %s"
 
-	DaemonConnRefusedErrorMessage = "Whoops! Cannot reach System Daemon."
+	DaemonConnRefusedErrorMessage = "Cannot reach System Daemon."
 
 	ServerUnavailableErrorMessage = "The specified server is not available at the moment or does not support your connection settings."
 	TagNonexistentErrorMessage    = "The specified server does not exist."
@@ -26,5 +26,5 @@ const (
 	InfoPrefix    = "[Info]"
 
 	// UnhandledMessage represents the default message for unhandled errors
-	UnhandledMessage = "Whoops! Something went wrong. Please try again. If the problem persists, contact our customer support."
+	UnhandledMessage = "Something went wrong. Please try again. If the problem persists, contact our customer support."
 )
