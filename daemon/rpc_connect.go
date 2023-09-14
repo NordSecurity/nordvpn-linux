@@ -25,14 +25,17 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 		log.Printf("PRE_CONNECT system info:\n%s\n%s\n", r.systemInfoFunc(r.version), r.networkInfoFunc())
 	}
 
+	vpnExpired, err := r.ac.IsVPNExpired()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
+		return srv.Send(&pb.Payload{Type: internal.CodeTokenRenewError})
+	} else if vpnExpired {
+		return srv.Send(&pb.Payload{Type: internal.CodeAccountExpired})
+	}
+
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-	}
-
-	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
-	if auth.IsTokenExpired(tokenData.ServiceExpiry) {
-		return srv.Send(&pb.Payload{Type: internal.CodeAccountExpired})
 	}
 
 	insights := r.dm.GetInsightsData().Insights
@@ -99,6 +102,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 
 	eventCh := make(chan ConnectEvent)
 
+	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	creds := vpn.Credentials{
 		OpenVPNUsername:    tokenData.OpenVPNUsername,
 		OpenVPNPassword:    tokenData.OpenVPNPassword,
