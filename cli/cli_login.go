@@ -19,10 +19,10 @@ const (
 	LoginUsageText = "Logs you in"
 
 	// LoginFlagTokenUsageText is shown next to token flag by nordvpn login --help
-	LoginFlagTokenUsageText = "Use token login method. Does not support MFA." // #nosec
+	LoginFlagTokenUsageText = "Use token login method. Token can be generated in Nord Account page. Does not support MFA. Note, that tokens are invalidated upon logout, for more info see \"nordvpn logout --help\"" // #nosec
 
 	// LoginCallbackUsageText is shown next to callback flag by nordvpn login --help
-	LoginCallbackUsageText = "Usually used by the browser to finish Nord Account login flow. Also useful in headless setups."
+	LoginCallbackUsageText = "Can be used to finish Nord Account login flow manually if browser fails to open the app. Pass the URL of the page after successful login enclosed in quotation marks as an argument when using this option."
 )
 
 func (c *cmd) Login(ctx *cli.Context) error {
