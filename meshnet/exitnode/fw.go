@@ -8,9 +8,13 @@ import (
 )
 
 const (
-	meshSrcSubnet     = "100.64.0.0/10"
-	msqRuleComment    = "nordvpn"
-	filterRuleComment = "nordvpn"
+	meshSrcSubnet  = "100.64.0.0/10"
+	msqRuleComment = "nordvpn"
+	// Used for exitnode rules that should remain in the firewall for the entire runtime
+	filterRuleComment = "nordvpn-exitnode-permanent"
+	// Used for exitnode rules that are removed and re-added in resetPeersTraffic, on changes in
+	// meshnet state
+	transientFilterRuleComment = "nordvpn-exitnode-transient"
 	// Used to ignore errors about missing rules when that is expected
 	missingRuleMessage = "Bad rule (does a matching rule exist in that chain?)"
 )
@@ -82,8 +86,9 @@ func checkFilteringRulesLine(cidrIPs []string, commandFunc runCommandFunc) (int,
 			continue
 		}
 		// check for ip (single ip e.g. 100.64.0.50 or subnet 100.64.0.0/10) and comment in rule
-		if ruleContainsAllIPs(string(line), cidrIPs) &&
-			strings.Contains(string(line), filterRuleComment) {
+		isNordvpnExitnodeRule := strings.Contains(string(line), filterRuleComment) ||
+			strings.Contains(string(line), transientFilterRuleComment)
+		if ruleContainsAllIPs(string(line), cidrIPs) && isNordvpnExitnodeRule {
 			return lineNum, nil
 		}
 	}
@@ -168,20 +173,35 @@ type TrafficPeer struct {
 	LocalNetwork bool
 }
 
+func clearExitnodeForwardRules(commandFunc runCommandFunc) error {
+	output, err := commandFunc("iptables", "-S", "FORWARD")
+	if err != nil {
+		return fmt.Errorf("listing iptables: %w", err)
+	}
+
+	rules := strings.Split(string(output), "\n")
+	for _, rule := range rules {
+		if !strings.Contains(rule, transientFilterRuleComment) {
+			continue
+		}
+
+		deleteCommand := strings.Replace(rule, "-A", "-D", -1)
+
+		if _, err := commandFunc("iptables", strings.Split(deleteCommand, " ")...); err != nil {
+			return fmt.Errorf("deleting iptables rule: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc runCommandFunc) error {
 	if err := clearMasquerading(commandFunc); err != nil {
 		return fmt.Errorf("clearing masquerade rules: %w", err)
 	}
 
-	for _, peer := range peers {
-		err := modifyPeerTraffic(peer.IP, "-D", true, true, commandFunc)
-		if err != nil && !strings.Contains(err.Error(), missingRuleMessage) {
-			return fmt.Errorf("deleting peer traffic rule: %w", err)
-		}
-		err = allowOnlyLocalNetworkAccess(peer.IP, "-D", commandFunc)
-		if err != nil && !strings.Contains(err.Error(), missingRuleMessage) {
-			return fmt.Errorf("deleting local network access rule: %w", err)
-		}
+	if err := clearExitnodeForwardRules(commandFunc); err != nil {
+		return fmt.Errorf("clearing exitnode forward rules: %w", err)
 	}
 
 	for _, peer := range peers {
@@ -243,7 +263,7 @@ func allowOnlyLocalNetworkAccess(subnet netip.Prefix, flag string, commandFunc r
 			flag,
 			subnet.String(),
 			localSubnet.String(),
-			filterRuleComment,
+			transientFilterRuleComment,
 		)
 		// #nosec G204 -- input is properly sanitized
 		out, err := commandFunc(cmd, strings.Split(args, " ")...)
@@ -278,7 +298,7 @@ func modifyPeerTraffic(subnet netip.Prefix,
 		sourceFlag,
 		subnet.String(),
 		acceptFlag,
-		filterRuleComment,
+		transientFilterRuleComment,
 	)
 
 	out, err := commandFunc(cmd, strings.Split(args, " ")...)
@@ -298,8 +318,10 @@ func clearFiltering(commandFunc runCommandFunc) error {
 		return fmt.Errorf("listing iptables rules: %w", err)
 	}
 	for _, line := range strings.Split(string(out), "\n") {
+		isFilterRule := strings.Contains(line, fmt.Sprintf("--comment %s", filterRuleComment))
+		isTransientFilterRule := strings.Contains(line, fmt.Sprintf("--comment %s", transientFilterRuleComment))
 		if !strings.Contains(line, "FORWARD") ||
-			!strings.Contains(line, fmt.Sprintf("--comment %s", filterRuleComment)) {
+			!(isFilterRule || isTransientFilterRule) {
 			continue
 		}
 
