@@ -67,7 +67,7 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 	}
 
 	data := cfg.TokensData[cfg.AutoConnectData.ID]
-	if IsTokenExpired(data.ServiceExpiry) {
+	if isTokenExpired(data.ServiceExpiry) {
 		if err := r.updateVpnExpirationDate(&data); err != nil {
 			return true, fmt.Errorf("updating service expiry token: %w", err)
 		}
@@ -76,12 +76,12 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 		}
 	}
 
-	return IsTokenExpired(data.ServiceExpiry), nil
+	return isTokenExpired(data.ServiceExpiry), nil
 }
 
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	// We are renewing token if it is expired because we need to make some API calls later
-	if IsTokenExpired(data.TokenExpiry) {
+	if isTokenExpired(data.TokenExpiry) {
 		if err := r.renewLoginToken(&data); err != nil {
 			if errors.Is(err, core.ErrUnauthorized) ||
 				errors.Is(err, core.ErrNotFound) ||
@@ -216,8 +216,8 @@ func Logout(user int64) config.SaveFunc {
 	}
 }
 
-// IsTokenExpired reports whether the token is expired or not.
-func IsTokenExpired(expiryTime string) bool {
+// isTokenExpired reports whether the token is expired or not.
+func isTokenExpired(expiryTime string) bool {
 	if expiryTime == "" {
 		return true
 	}

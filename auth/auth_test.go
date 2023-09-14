@@ -37,7 +37,7 @@ func TestIsTokenExpired(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		got := IsTokenExpired(tt.input)
+		got := isTokenExpired(tt.input)
 		assert.Equal(t, tt.expected, got)
 	}
 }
