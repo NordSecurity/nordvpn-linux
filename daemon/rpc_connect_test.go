@@ -141,7 +141,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &workingVPN{}, nil
 			},
-			netw:      workingNetworker{},
+			netw:      &testnetworker.Mock{},
 			retriever: newGatewayMock(netip.Addr{}),
 			fw:        &workingFirewall{},
 			checker:   &workingLoginChecker{isVPNExpired: true},
@@ -152,7 +152,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &workingVPN{}, nil
 			},
-			netw:      workingNetworker{},
+			netw:      &testnetworker.Mock{},
 			retriever: newGatewayMock(netip.Addr{}),
 			fw:        &workingFirewall{},
 			checker:   &workingLoginChecker{vpnErr: errors.New("test error")},
