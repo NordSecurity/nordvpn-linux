@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -14,7 +13,6 @@ import (
 
 // LogoutUsageText is shown next to logout command by nordvpn --help
 const (
-	LogoutUsageText  = "Logs you out"
 	flagPersistToken = "persist-token"
 )
 
@@ -29,9 +27,14 @@ func (c *cmd) Logout(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	if payload.Type != internal.CodeSuccess {
+	switch payload.Type {
+	case internal.CodeSuccess:
+		color.Green(LogoutSuccess)
+		return nil
+	case internal.CodeTokenInvalidated:
+		color.Green(LogoutTokenSuccess)
+		return nil
+	default:
 		return formatError(errors.New(CheckYourInternetConnMessage))
 	}
-	color.Green(fmt.Sprintf(LogoutSuccess))
-	return nil
 }

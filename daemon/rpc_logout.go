@@ -94,7 +94,10 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 	}
 	r.publisher.Publish("user logged out")
 
-	return &pb.Payload{
-		Type: internal.CodeSuccess,
-	}, nil
+	// RenewToken being empty means user logged in using Access Token
+	if !in.GetPersistToken() && tokenData.RenewToken == "" {
+		return &pb.Payload{Type: internal.CodeTokenInvalidated}, nil
+	} else {
+		return &pb.Payload{Type: internal.CodeSuccess}, nil
+	}
 }
