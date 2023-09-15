@@ -52,13 +52,13 @@ func TestMeshUnsetter_unsetMesh(t *testing.T) {
 		{
 			name:      "no fail",
 			netw:      okUnsetter{},
-			fileshare: service.MockFileshare{},
+			fileshare: service.NoopFileshare{},
 		},
 		{
 			name: "meshnet unset fails but config " +
 				"is still updated",
 			netw:      failingUnsetter{},
-			fileshare: service.MockFileshare{},
+			fileshare: service.NoopFileshare{},
 		},
 		{
 			name:      "fileshare disable fails but config is still updated",

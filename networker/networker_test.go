@@ -17,10 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	testdevice "github.com/NordSecurity/nordvpn-linux/test/device"
-	"github.com/NordSecurity/nordvpn-linux/test/errors"
-	testtunnel "github.com/NordSecurity/nordvpn-linux/test/tunnel"
-	testvpn "github.com/NordSecurity/nordvpn-linux/test/vpn"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 
 	"github.com/stretchr/testify/assert"
@@ -28,7 +25,7 @@ import (
 
 func GetTestCombined() *Combined {
 	return NewCombined(
-		&testvpn.Working{},
+		&mock.WorkingVPN{},
 		&workingMesh{},
 		workingGateway{},
 		&subs.Subject[string]{},
@@ -51,7 +48,7 @@ func GetTestCombined() *Combined {
 type workingGateway struct{}
 
 func (w workingGateway) Default(bool) (netip.Addr, net.Interface, error) {
-	return netip.MustParseAddr("1.1.1.1"), testdevice.En0Interface, nil
+	return netip.MustParseAddr("1.1.1.1"), mock.En0Interface, nil
 }
 
 type workingRouter struct{}
@@ -64,10 +61,10 @@ func (workingRouter) IsEnabled() bool        { return true }
 
 type failingRouter struct{}
 
-func (failingRouter) Add(routes.Route) error { return errors.ErrOnPurpose }
-func (failingRouter) Flush() error           { return errors.ErrOnPurpose }
-func (failingRouter) Enable(uint) error      { return errors.ErrOnPurpose }
-func (failingRouter) Disable() error         { return errors.ErrOnPurpose }
+func (failingRouter) Add(routes.Route) error { return mock.ErrOnPurpose }
+func (failingRouter) Flush() error           { return mock.ErrOnPurpose }
+func (failingRouter) Enable(uint) error      { return mock.ErrOnPurpose }
+func (failingRouter) Disable() error         { return mock.ErrOnPurpose }
 func (failingRouter) IsEnabled() bool        { return false }
 
 type workingDNS struct{ setDNS []string }
@@ -77,8 +74,8 @@ func (w *workingDNS) Unset(string) error               { w.setDNS = nil; return 
 
 type failingDNS struct{}
 
-func (failingDNS) Set(string, []string) error { return errors.ErrOnPurpose }
-func (failingDNS) Unset(string) error         { return errors.ErrOnPurpose }
+func (failingDNS) Set(string, []string) error { return mock.ErrOnPurpose }
+func (failingDNS) Unset(string) error         { return mock.ErrOnPurpose }
 
 type workingIpv6 struct{}
 
@@ -131,10 +128,10 @@ func (workingAllowlistRouting) Disable() error                             { ret
 
 type failingFirewall struct{}
 
-func (failingFirewall) Add([]firewall.Rule) error { return errors.ErrOnPurpose }
-func (failingFirewall) Delete([]string) error     { return errors.ErrOnPurpose }
-func (failingFirewall) Enable() error             { return errors.ErrOnPurpose }
-func (failingFirewall) Disable() error            { return errors.ErrOnPurpose }
+func (failingFirewall) Add([]firewall.Rule) error { return mock.ErrOnPurpose }
+func (failingFirewall) Delete([]string) error     { return mock.ErrOnPurpose }
+func (failingFirewall) Enable() error             { return mock.ErrOnPurpose }
+func (failingFirewall) Disable() error            { return mock.ErrOnPurpose }
 func (failingFirewall) IsEnabled() bool           { return false }
 
 type meshnetterFirewall struct{}
@@ -157,10 +154,10 @@ func (meshnetterFirewall) Disable() error        { return nil }
 func (meshnetterFirewall) IsEnabled() bool       { return true }
 
 func workingDeviceList() ([]net.Interface, error) {
-	return []net.Interface{testdevice.En0Interface}, nil
+	return []net.Interface{mock.En0Interface}, nil
 }
 
-func failingDeviceList() ([]net.Interface, error) { return nil, errors.ErrOnPurpose }
+func failingDeviceList() ([]net.Interface, error) { return nil, mock.ErrOnPurpose }
 
 type workingRoutingSetup struct{}
 
@@ -203,7 +200,7 @@ func (w *workingMesh) Enable(netip.Addr, string) error { return w.enableErr }
 func (*workingMesh) Disable() error                    { return nil }
 func (*workingMesh) IsActive() bool                    { return false }
 func (*workingMesh) Refresh(mesh.MachineMap) error     { return nil }
-func (*workingMesh) Tun() tunnel.T                     { return testtunnel.Working{} }
+func (*workingMesh) Tun() tunnel.T                     { return mock.WorkingT{} }
 func (*workingMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
@@ -260,55 +257,55 @@ func TestCombined_Start(t *testing.T) {
 			gateway:         workingGateway{},
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
-			vpn:             testvpn.Failing{},
+			vpn:             mock.FailingVPN{},
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
-			err:             errors.ErrOnPurpose,
+			err:             mock.ErrOnPurpose,
 		},
 		{
 			name:            "firewall failure",
 			gateway:         workingGateway{},
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
-			vpn:             testvpn.WorkingInactive{},
+			vpn:             mock.WorkingInactiveVPN{},
 			fw:              failingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
-			err:             errors.ErrOnPurpose,
+			err:             mock.ErrOnPurpose,
 		},
 		{
 			name:            "dns failure",
 			gateway:         workingGateway{},
 			allowlistRouter: workingRouter{},
 			dns:             failingDNS{},
-			vpn:             testvpn.WorkingInactive{},
+			vpn:             mock.WorkingInactiveVPN{},
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
 			routing:         workingRoutingSetup{},
-			err:             errors.ErrOnPurpose,
+			err:             mock.ErrOnPurpose,
 		},
 		{
 			name:            "device listing failure",
 			gateway:         workingGateway{},
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
-			vpn:             testvpn.WorkingInactive{},
+			vpn:             mock.WorkingInactiveVPN{},
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         failingDeviceList,
 			routing:         workingRoutingSetup{},
-			err:             errors.ErrOnPurpose,
+			err:             mock.ErrOnPurpose,
 		},
 		{
 			name:            "successful start",
 			gateway:         workingGateway{},
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
-			vpn:             &testvpn.Working{},
+			vpn:             &mock.WorkingVPN{},
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
@@ -366,19 +363,19 @@ func TestCombined_Stop(t *testing.T) {
 		},
 		{
 			name: "unset dns failure",
-			vpn:  &testvpn.Working{},
+			vpn:  &mock.WorkingVPN{},
 			dns:  failingDNS{},
-			err:  errors.ErrOnPurpose,
+			err:  mock.ErrOnPurpose,
 		},
 		{
 			name: "vpn stop failure",
-			vpn:  testvpn.Failing{},
+			vpn:  mock.FailingVPN{},
 			dns:  &workingDNS{},
-			err:  errors.ErrOnPurpose,
+			err:  mock.ErrOnPurpose,
 		},
 		{
 			name: "successful stop",
-			vpn:  &testvpn.Working{},
+			vpn:  &mock.WorkingVPN{},
 			dns:  &workingDNS{},
 			err:  nil,
 		},
@@ -508,7 +505,7 @@ func TestCombined_SetDNS(t *testing.T) {
 				0,
 				false,
 			)
-			netw.vpnet = &testvpn.Working{}
+			netw.vpnet = &mock.WorkingVPN{}
 			err := netw.setDNS(test.nameservers)
 			assert.Equal(t, test.hasError, err != nil)
 		})
@@ -556,7 +553,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				0,
 				false,
 			)
-			netw.vpnet = &testvpn.Working{}
+			netw.vpnet = &mock.WorkingVPN{}
 			err := netw.unsetDNS()
 			assert.Equal(t, test.hasError, err != nil)
 		})
@@ -580,14 +577,14 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 			allowlist: workingAllowlistRouting{},
 			devices:   workingDeviceList,
 			routing:   workingRoutingSetup{},
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "device listing failure",
 			fw:        &workingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			devices:   failingDeviceList,
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 			routing:   workingRoutingSetup{},
 		},
 		{
@@ -639,14 +636,14 @@ func TestCombined_BlockTraffic(t *testing.T) {
 			name:    "firewall failure",
 			fw:      failingFirewall{},
 			devices: workingDeviceList,
-			err:     errors.ErrOnPurpose,
+			err:     mock.ErrOnPurpose,
 			routing: workingRoutingSetup{},
 		},
 		{
 			name:    "device listing failure",
 			fw:      &workingFirewall{},
 			devices: failingDeviceList,
-			err:     errors.ErrOnPurpose,
+			err:     mock.ErrOnPurpose,
 			routing: workingRoutingSetup{},
 		},
 		{
@@ -696,7 +693,7 @@ func TestCombined_UnblockTraffic(t *testing.T) {
 		{
 			name: "firewall failure",
 			fw:   failingFirewall{},
-			err:  errors.ErrOnPurpose,
+			err:  mock.ErrOnPurpose,
 		},
 		{
 			name: "success",
@@ -746,14 +743,14 @@ func TestCombined_AllowIPv6Traffic(t *testing.T) {
 			name:    "firewall failure",
 			fw:      failingFirewall{},
 			devices: workingDeviceList,
-			err:     errors.ErrOnPurpose,
+			err:     mock.ErrOnPurpose,
 			routing: workingRoutingSetup{},
 		},
 		{
 			name:    "device listing failure",
 			fw:      &workingFirewall{},
 			devices: failingDeviceList,
-			err:     errors.ErrOnPurpose,
+			err:     mock.ErrOnPurpose,
 			routing: workingRoutingSetup{},
 		},
 		{
@@ -803,7 +800,7 @@ func TestCombined_StopAllowedIPv6Traffic(t *testing.T) {
 		{
 			name: "firewall failure",
 			fw:   failingFirewall{},
-			err:  errors.ErrOnPurpose,
+			err:  mock.ErrOnPurpose,
 		},
 		{
 			name: "success",
@@ -862,7 +859,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 			allowlist: config.NewAllowlist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
-			err: errors.ErrOnPurpose,
+			err: mock.ErrOnPurpose,
 		},
 		{
 			name:             "router failure",
@@ -874,7 +871,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 			allowlist: config.NewAllowlist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
-			err: errors.ErrOnPurpose,
+			err: mock.ErrOnPurpose,
 		},
 		{
 			name:             "firewall failure",
@@ -886,7 +883,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 			allowlist: config.NewAllowlist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
-			err: errors.ErrOnPurpose,
+			err: mock.ErrOnPurpose,
 		},
 		{
 			name:             "invalid allowlist",
@@ -951,14 +948,14 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 			fw:        failingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			rt:        workingRouter{},
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "router failure",
 			fw:        &workingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			rt:        failingRouter{},
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "success",
@@ -1017,7 +1014,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 			rt:        workingRouter{},
 			devices:   workingDeviceList,
 			routing:   workingRoutingSetup{},
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "router failure",
@@ -1026,7 +1023,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 			rt:        failingRouter{},
 			devices:   workingDeviceList,
 			routing:   workingRoutingSetup{},
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "device listing failure",
@@ -1035,7 +1032,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 			rt:        workingRouter{},
 			devices:   failingDeviceList,
 			routing:   workingRoutingSetup{},
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "success",
@@ -1094,14 +1091,14 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 			fw:        failingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			rt:        workingRouter{},
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "router failure",
 			fw:        &workingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			rt:        failingRouter{},
-			err:       errors.ErrOnPurpose,
+			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "success",
@@ -1797,7 +1794,7 @@ func TestCombined_Refresh(t *testing.T) {
 func TestDnsAfterVPNRefresh(t *testing.T) {
 	dns := &workingDNS{}
 	netw := NewCombined(
-		&testvpn.Working{},
+		&mock.WorkingVPN{},
 		nil,
 		nil,
 		&subs.Subject[string]{},

@@ -11,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -145,7 +146,7 @@ func TestSetDNS_Success(t *testing.T) {
 				return c
 			})
 
-			networker := mockNetworker{}
+			networker := networker.Mock{}
 			publisher := mockPublisherSubscriberDNS{}
 			dnsGetter := mockDNSGetter{}
 
@@ -171,7 +172,7 @@ func TestSetDNS_Success(t *testing.T) {
 			assert.IsType(t, &pb.SetDNSResponse{Response: &pb.SetDNSResponse_SetDnsStatus{}}, resp,
 				"Non-empty response received, empty response indicates success")
 
-			assert.Equal(t, test.expectedDNS, config.DNS(networker.dns), "Invalid DNS was configured.")
+			assert.Equal(t, test.expectedDNS, config.DNS(networker.Dns), "Invalid DNS was configured.")
 
 			var cfg config.Config
 			configManager.Load(&cfg)
@@ -252,7 +253,7 @@ func TestSetDNS_Errors(t *testing.T) {
 				return c
 			})
 
-			networker := mockNetworker{setDNSErr: test.setDNSErr}
+			networker := networker.Mock{SetDNSErr: test.setDNSErr}
 			publisher := mockPublisherSubscriberDNS{}
 			dnsGetter := mockDNSGetter{}
 

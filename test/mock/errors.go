@@ -1,5 +1,5 @@
 // Package errors provides errors for use in tests.
-package errors
+package mock
 
 import "errors"
 

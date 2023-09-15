@@ -13,8 +13,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/test/keypair"
-	testresponse "github.com/NordSecurity/nordvpn-linux/test/response"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -54,7 +53,7 @@ func TestMain(m *testing.M) {
 	}
 
 	var err error
-	privateKey, publicKey, err = keypair.GenerateKeyPair()
+	privateKey, publicKey, err = mock.GenerateKeyPair()
 	if err != nil {
 		log.Fatalf("error on generating RSA key pair: %+v", err)
 	}
@@ -88,7 +87,7 @@ func (api mockAPI) invalidHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func setHeaders(w http.ResponseWriter, data []byte) {
-	headers, err := testresponse.GenerateValidHeaders(privateKey, data)
+	headers, err := mock.GenerateValidHeaders(privateKey, data)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -143,6 +142,6 @@ func testNewDefaultAPI(port int) *DefaultAPI {
 		"",
 		localServerPath(port),
 		http.DefaultClient,
-		response.MockValidator{},
+		response.NoopValidator{},
 	)
 }

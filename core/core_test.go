@@ -98,7 +98,7 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, err := api.CurrentUser("refresh me")
 			assert.ErrorIs(t, err, test.err)
@@ -125,7 +125,7 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, err := api.TokenRenew("refresh me")
 			assert.True(t, errors.Is(err, test.err))
@@ -150,7 +150,7 @@ func TestDefaultAPI_Servers(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, _, err := api.Servers()
 			assert.True(t, errors.Is(err, test.err))
@@ -175,7 +175,7 @@ func TestDefaultAPI_Services(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, err := api.Services("refresh me")
 			assert.True(t, errors.Is(err, test.err))
@@ -200,7 +200,7 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, err := api.ServiceCredentials("refresh me")
 			assert.True(t, errors.Is(err, test.err))

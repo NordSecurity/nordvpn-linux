@@ -20,6 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,58 +28,6 @@ import (
 func mockTimeout(tries int) time.Duration {
 	return time.Duration(time.Millisecond)
 }
-
-type customNetworker struct {
-	connectRetries int
-	meshnetRetries int
-}
-
-func (n *customNetworker) Start(
-	vpn.Credentials,
-	vpn.ServerData,
-	config.Allowlist,
-	config.DNS,
-) error {
-	return nil
-}
-func (n *customNetworker) Stop() error           { return nil }
-func (n *customNetworker) UnSetMesh() error      { return nil }
-func (n *customNetworker) SetDNS([]string) error { return nil }
-func (n *customNetworker) UnsetDNS() error       { return nil }
-func (n *customNetworker) IsVPNActive() bool {
-	n.connectRetries++
-	return n.connectRetries > 5
-}
-func (n *customNetworker) IsMeshnetActive() bool {
-	n.meshnetRetries++
-	return n.meshnetRetries > 5
-}
-func (n *customNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
-	return networker.ConnectionStatus{}, nil
-}
-
-func (n *customNetworker) EnableFirewall() error                                             { return nil }
-func (n *customNetworker) DisableFirewall() error                                            { return nil }
-func (n *customNetworker) EnableRouting()                                                    {}
-func (n *customNetworker) DisableRouting()                                                   {}
-func (n *customNetworker) PermitIPv6() error                                                 { return nil }
-func (n *customNetworker) DenyIPv6() error                                                   { return nil }
-func (n *customNetworker) SetWhitelist(config.Allowlist) error                               { return nil }
-func (n *customNetworker) UnsetWhitelist() error                                             { return nil }
-func (n *customNetworker) IsNetworkSet() bool                                                { return false }
-func (n *customNetworker) SetKillSwitch(config.Allowlist) error                              { return nil }
-func (n *customNetworker) UnsetKillSwitch() error                                            { return nil }
-func (n *customNetworker) Connect(netip.Addr, string) error                                  { return nil }
-func (n *customNetworker) Disconnect() error                                                 { return nil }
-func (n *customNetworker) Refresh(mesh.MachineMap) error                                     { return nil }
-func (n *customNetworker) Allow(mesh.Machine) error                                          { return nil }
-func (n *customNetworker) Block(mesh.Machine) error                                          { return nil }
-func (n *customNetworker) SetVPN(vpn.VPN)                                                    {}
-func (n *customNetworker) LastServerName() string                                            { return "" }
-func (n *customNetworker) SetAllowlist(allowlist config.Allowlist) error                     { return nil }
-func (n *customNetworker) UnsetAllowlist() error                                             { return nil }
-func (n *customNetworker) SetLanDiscovery(enabled bool)                                      {}
-func (n *customNetworker) SetLanDiscoveryAndResetMesh(enabled bool, peers mesh.MachinePeers) {}
 
 type failingLoginChecker struct{}
 
@@ -103,7 +52,7 @@ func TestStartAutoConnect(t *testing.T) {
 			cfg:         newMockConfigManager(),
 			authChecker: &failingLoginChecker{},
 			serversAPI:  &mockServersAPI{},
-			netw:        workingNetworker{},
+			netw:        &testnetworker.Mock{},
 			expectError: false,
 		},
 		{
@@ -111,7 +60,7 @@ func TestStartAutoConnect(t *testing.T) {
 			cfg:         &failingConfigManager{},
 			authChecker: &workingLoginChecker{},
 			serversAPI:  &mockServersAPI{},
-			netw:        failingNetworker{},
+			netw:        testnetworker.Failing{},
 			expectError: true,
 		},
 		{
@@ -119,7 +68,7 @@ func TestStartAutoConnect(t *testing.T) {
 			cfg:         newMockConfigManager(),
 			authChecker: &workingLoginChecker{},
 			serversAPI:  &mockFailingServersAPI{},
-			netw:        &customNetworker{},
+			netw:        &testnetworker.Mock{},
 			expectError: false,
 		},
 	}
@@ -132,10 +81,10 @@ func TestStartAutoConnect(t *testing.T) {
 				"1.0.0",
 				"",
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 
-			netw := &customNetworker{}
+			netw := &testnetworker.Mock{}
 
 			rpc := NewRPC(
 				internal.Development,
@@ -182,7 +131,7 @@ func TestStartAutoConnect(t *testing.T) {
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
 				&mockAnalytics{},
-				service.MockFileshare{},
+				service.NoopFileshare{},
 				&RegistryMock{},
 			)
 
@@ -327,7 +276,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 			cfg:         newMockConfigManager(),
 			authChecker: &failingLoginChecker{},
 			serversAPI:  &mockServersAPI{},
-			netw:        &customNetworker{},
+			netw:        &testnetworker.Mock{},
 			expectError: true,
 		},
 		{
@@ -335,7 +284,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 			cfg:         &failingConfigManager{},
 			authChecker: &workingLoginChecker{},
 			serversAPI:  &mockServersAPI{},
-			netw:        &customNetworker{},
+			netw:        &testnetworker.Mock{},
 			expectError: true,
 		},
 		{
@@ -343,7 +292,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 			cfg:         newMockConfigManager(),
 			authChecker: &workingLoginChecker{},
 			serversAPI:  &mockFailingServersAPI{},
-			netw:        &customNetworker{},
+			netw:        &testnetworker.Mock{},
 			expectError: false,
 		},
 		{
@@ -355,7 +304,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 			}(),
 			authChecker: &workingLoginChecker{},
 			serversAPI:  &mockFailingServersAPI{},
-			netw:        &customNetworker{},
+			netw:        &testnetworker.Mock{},
 			expectError: true,
 		},
 	}
@@ -366,7 +315,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				"1.0.0",
 				"",
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 
 			rpc := NewRPC(
@@ -414,7 +363,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
 				&mockAnalytics{},
-				service.MockFileshare{},
+				service.NoopFileshare{},
 				&RegistryMock{},
 			)
 
@@ -429,7 +378,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&subs.Subject[error]{},
 				nil,
 				&subs.Subject[bool]{},
-				service.MockFileshare{},
+				service.NoopFileshare{},
 			)
 
 			err := rpc.StartAutoMeshnet(meshService, mockTimeout)

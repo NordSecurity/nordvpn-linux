@@ -22,9 +22,9 @@ type NordValidator struct {
 	vault PKVault
 }
 
-type MockValidator struct{}
+type NoopValidator struct{}
 
-func (MockValidator) Validate(int, http.Header, []byte) error { return nil }
+func (NoopValidator) Validate(int, http.Header, []byte) error { return nil }
 
 func NewNordValidator(vault PKVault) *NordValidator {
 	return &NordValidator{

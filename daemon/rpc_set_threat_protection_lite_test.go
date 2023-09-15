@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -92,7 +93,7 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 				return c
 			})
 
-			networker := mockNetworker{}
+			networker := networker.Mock{}
 			dnsGetter := mockDNSGetter{}
 			tplPublisher := &mockPublisherSubcriber{}
 			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
@@ -116,7 +117,7 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 				resp.GetSetThreatProtectionLiteStatus(),
 				test.expectedStatus,
 				"Invalid response from RPC.")
-			assert.Equal(t, test.expectedDNS, networker.dns, "Invalid nameservers were configured.")
+			assert.Equal(t, test.expectedDNS, networker.Dns, "Invalid nameservers were configured.")
 
 			var config config.Config
 			configManager.Load(&config)
@@ -192,8 +193,8 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 				return c
 			})
 
-			networker := mockNetworker{
-				setDNSErr: test.setDnsErr,
+			networker := networker.Mock{
+				SetDNSErr: test.setDnsErr,
 			}
 			dnsGetter := mockDNSGetter{}
 			tplPublisher := &mockPublisherSubcriber{}
