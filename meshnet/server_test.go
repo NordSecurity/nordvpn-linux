@@ -25,7 +25,8 @@ import (
 
 type meshRenewChecker struct{}
 
-func (meshRenewChecker) IsLoggedIn() bool { return true }
+func (meshRenewChecker) IsLoggedIn() bool            { return true }
+func (meshRenewChecker) IsVPNExpired() (bool, error) { return false, nil }
 
 type registrationChecker struct{}
 

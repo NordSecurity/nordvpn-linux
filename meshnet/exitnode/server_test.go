@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,6 +19,11 @@ func (c *CommandExecutorMock) Execute(command string, arg ...string) ([]byte, er
 	cmd := command + " " + args
 	c.executedCommands = append(c.executedCommands, cmd)
 	return []byte{}, nil
+}
+
+func TestNewServer_AddsOpenVPN(t *testing.T) {
+	server := NewServer(nil, nil)
+	assert.Contains(t, server.interfaceNames, openvpn.InterfaceName)
 }
 
 func TestResetPeers(t *testing.T) {

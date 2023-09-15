@@ -110,6 +110,9 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 		Name:   "complete",
 		Hidden: true,
 	}
+	// Capitalize to be uniform with usage text of all other commands
+	cli.HelpFlag.(*cli.BoolFlag).Usage = "Show help"
+	cli.VersionFlag.(*cli.BoolFlag).Usage = "Print the version"
 
 	setCommand := cli.Command{
 		Name:    "set",
@@ -893,7 +896,9 @@ func (c *cmd) action(err error, f func(*cli.Context) error, daemonURL string, la
 				color.Red(formatError(internal.ErrDaemonConnectionRefused).Error())
 				os.Exit(1)
 			case internal.ErrSocketNotFound:
-				return formatError(internal.ErrSocketNotFound)
+				color.Red(formatError(internal.ErrSocketNotFound).Error())
+				color.Red("The NordVPN background service isn't running. Execute the \"systemctl enable --now nordvpnd\" command with root privileges to start the background service. If you're using NordVPN in an environment without systemd (a container, for example), use the \"/etc/init.d/nordvpn start\" command.")
+				os.Exit(1)
 			default:
 				log.Println(internal.ErrorPrefix, err)
 				color.Red(internal.UnhandledMessage)

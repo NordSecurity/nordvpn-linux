@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 )
 
@@ -30,7 +31,9 @@ type Server struct {
 }
 
 // NewServer create & initialize new Server
-func NewServer(interfaceNames []string, commandFunc runCommandFunc) Node {
+func NewServer(interfaceNames []string, commandFunc runCommandFunc) *Server {
+	// To allow peer routing when connected to OpenVPN as well
+	interfaceNames = append(interfaceNames, openvpn.InterfaceName)
 	return &Server{
 		interfaceNames: interfaceNames,
 		runCommandFunc: commandFunc,
