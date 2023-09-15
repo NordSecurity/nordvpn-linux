@@ -11,7 +11,7 @@ const (
 	AccountTokenRenewError = "We were not able to fetch your account data. Please check your internet connection and try again. If the issue persists, please contact our customer support."
 	ConnectStart           = "Connecting to %v (%v)"
 	ConnectTimeoutError    = "It's not you, it's us. We're having trouble reaching our servers. If the issue persists, please contact our customer support."
-	ConnectCantConnectTo   = "We couldn't connect you to '%s'. Please try again. If the problem persists, contact our customer support."
+	ConnectCantConnectTo   = "We couldn't connect you to '%s'. Please check your internet connection and try connecting to the VPN again. If the problem persists, contact our customer support."
 	ConnectCantConnect     = "The VPN connection has failed. Please check your internet connection and try connecting to the VPN again. If the issue persists, contact our customer support."
 	ConnectConnected       = "You are already connected to NordVPN."
 	RelogRequest           = "For security purposes, please log in again."
