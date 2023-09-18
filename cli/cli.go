@@ -367,7 +367,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 			Flags: []cli.Flag{&cli.BoolFlag{
 				Name:  flagPersistToken,
-				Usage: PersistTokenUsageTest,
+				Usage: PersistTokenUsageText,
 			}},
 		},
 		{

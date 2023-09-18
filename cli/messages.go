@@ -11,7 +11,7 @@ const (
 	LogoutSuccess         = "You are logged out."
 	LogoutTokenSuccess    = "You have been logged out. To keep your account secure, we've revoked your current access token. If you want to reuse your next access token despite the potential risks, use the --" + flagPersistToken + " option when logging out."
 	LogoutUsageText       = "Logs you out"
-	PersistTokenUsageTest = "Keep your current access token valid after logging out."
+	PersistTokenUsageText = "Keep your current access token valid after logging out."
 
 	RateNoArgsMessage    = "Type [1–5] to rate your previous connection (1 – poor, 5 – great): "
 	RateNoConnectionMade = "It seems you haven’t connected to VPN yet. Please rate your experience after your first session."
