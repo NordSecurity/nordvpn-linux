@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/netip"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
 )
 
 const (
@@ -34,8 +36,12 @@ func NewAllowlistRouting(commandFunc runCommandFunc) *IPTables {
 
 // Adds allowlist routing rules for ports
 func (ipt *IPTables) EnablePorts(ports []int, protocol string, mark string) error {
-	for _, port := range ports {
-		err := routePortsToIPTables(ipt.runCommandFunc, fmt.Sprintf("%d", port), protocol, mark)
+	for _, portRange := range iptables.PortsToPortRanges(ports) {
+		destination := fmt.Sprintf("%d:%d", portRange.Min, portRange.Max)
+		if portRange.Min == portRange.Max {
+			destination = fmt.Sprintf("%d", portRange.Min)
+		}
+		err := routePortsToIPTables(ipt.runCommandFunc, destination, protocol, mark)
 		if err != nil {
 			return fmt.Errorf("enabling allowlist for subnets: %w", err)
 		}

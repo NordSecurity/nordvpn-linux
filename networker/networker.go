@@ -91,8 +91,7 @@ type Networker interface {
 	DisableFirewall() error
 	EnableRouting()
 	DisableRouting()
-	SetAllowlist(config.Allowlist) error
-	UnsetAllowlist() error
+	SetAllowlist(allowlist config.Allowlist) error
 	IsNetworkSet() bool
 	SetKillSwitch(config.Allowlist) error
 	UnsetKillSwitch() error
@@ -100,7 +99,6 @@ type Networker interface {
 	DenyIPv6() error
 	SetVPN(vpn.VPN)
 	LastServerName() string
-	SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers)
 	SetLanDiscovery(bool)
 }
 
@@ -277,7 +275,7 @@ func (netw *Combined) start(
 
 	netw.publisher.Publish("starting network configuration")
 	// if KillSwitch is turned on, connection is already dropped
-	if !netw.isNetworkSet && !netw.isKillSwitchSet {
+	if !netw.isNetworkSet {
 		err = netw.setNetwork(allowlist)
 		if err != nil {
 			return err
@@ -789,7 +787,19 @@ func (netw *Combined) DisableRouting() {
 func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.setAllowlist(allowlist)
+
+	if netw.isNetworkSet {
+		if err := netw.unsetAllowlist(); err != nil {
+			return err
+		}
+
+		if err := netw.setAllowlist(allowlist); err != nil {
+			return err
+		}
+	}
+
+	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
+	return netw.exitNode.SetAllowlist(allowlist, lanAvailable)
 }
 
 func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
@@ -815,7 +825,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		}
 
 		// for private network we add only firewall exception
-		if subnet.Addr().IsPrivate() {
+		if subnet.Addr().IsPrivate() || subnet.Addr().IsLinkLocalUnicast() {
 			subnets = append(subnets, subnet)
 			continue
 		}
@@ -900,12 +910,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	return nil
 }
 
-func (netw *Combined) UnsetAllowlist() error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	return netw.unsetAllowlist()
-}
-
 func (netw *Combined) unsetAllowlist() error {
 	if err := netw.allowlistRouter.Flush(); err != nil {
 		return fmt.Errorf("flushing the allowlist router: %w", err)
@@ -963,6 +967,12 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 		return err
 	}
 
+	if err := netw.exitNode.ResetFirewall(netw.lanDiscovery); err != nil {
+		log.Println(internal.ErrorPrefix,
+			"failed to reset peers firewall rules after enabling killswitch: ",
+			err)
+	}
+
 	netw.isNetworkSet = true
 	return nil
 }
@@ -979,6 +989,13 @@ func (netw *Combined) unsetNetwork() error {
 
 	if err := netw.unsetAllowlist(); err != nil {
 		return err
+	}
+
+	// Passing true because LAN is always available when network is unset
+	if err := netw.exitNode.ResetFirewall(true); err != nil {
+		log.Println(internal.ErrorPrefix,
+			"failed to reset peers firewall rules after enabling killswitch: ",
+			err)
 	}
 
 	netw.isNetworkSet = false
@@ -1199,7 +1216,8 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		}
 	}
 
-	err = netw.exitNode.ResetPeers(cfg.Peers, netw.lanDiscovery)
+	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
+	err = netw.exitNode.ResetPeers(cfg.Peers, lanAvailable)
 	if err != nil {
 		return err
 	}
@@ -1415,7 +1433,8 @@ func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 }
 
 func (netw *Combined) ResetRouting(peers mesh.MachinePeers) error {
-	return netw.exitNode.ResetPeers(peers, netw.lanDiscovery)
+	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
+	return netw.exitNode.ResetPeers(peers, lanAvailable)
 }
 
 func (netw *Combined) defaultMeshBlock() error {
@@ -1451,21 +1470,16 @@ func (netw *Combined) defaultMeshBlock() error {
 	return nil
 }
 
-func (netw *Combined) SetLanDiscoveryAndResetMesh(enabled bool, peers mesh.MachinePeers) {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-
-	netw.lanDiscovery = enabled
-	if err := netw.exitNode.ResetPeers(peers, netw.lanDiscovery); err != nil {
-		log.Println(internal.ErrorPrefix,
-			"failed to reset peers firewall rules fter enabling lan discovery: ",
-			err)
-	}
-}
-
 func (netw *Combined) SetLanDiscovery(enabled bool) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
 	netw.lanDiscovery = enabled
+
+	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
+	if err := netw.exitNode.ResetFirewall(lanAvailable); err != nil {
+		log.Println(internal.ErrorPrefix,
+			"failed to reset peers firewall rules after enabling lan discovery: ",
+			err)
+	}
 }
