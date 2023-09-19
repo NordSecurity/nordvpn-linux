@@ -28,7 +28,7 @@ type RPC struct {
 	ac              auth.Checker
 	cm              config.Manager
 	dm              *DataManager
-	api             *core.DefaultAPI
+	api             core.CombinedAPI
 	serversAPI      core.ServersAPI
 	credentialsAPI  core.CredentialsAPI
 	cdn             core.CDN

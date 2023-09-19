@@ -2,13 +2,11 @@ package daemon
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -23,6 +21,13 @@ type mockNC struct {
 
 func (mockNC) Stop() error { return nil }
 
+type mockApi struct {
+	core.CombinedAPI
+}
+
+func (mockApi) DeleteToken(token string) error { return nil }
+func (mockApi) Logout(token string) error      { return nil }
+
 func TestLogout_Token(t *testing.T) {
 	rpc := RPC{
 		ac:        &workingLoginChecker{},
@@ -31,7 +36,7 @@ func TestLogout_Token(t *testing.T) {
 		netw:      &networker.Mock{},
 		ncClient:  mockNC{},
 		publisher: &subs.Subject[string]{},
-		api:       core.NewDefaultAPI("", "", http.DefaultClient, response.NoopValidator{}),
+		api:       mockApi{},
 	}
 
 	tests := []struct {
@@ -67,16 +72,18 @@ func TestLogout_Token(t *testing.T) {
 			err := rpc.cm.SaveWith(func(c config.Config) config.Config {
 				tokenData := c.TokensData[c.AutoConnectData.ID]
 				if test.loggedInWithToken {
-					tokenData.RenewToken = "1234"
-				} else {
 					tokenData.RenewToken = ""
+				} else {
+					tokenData.RenewToken = "1234"
 				}
+				tokenData.Token = "1234"
 				c.TokensData[c.AutoConnectData.ID] = tokenData
 				return c
 			})
 			assert.NoError(t, err)
-			rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: test.persistToken})
+			resp, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: test.persistToken})
+			assert.NoError(t, err)
+			assert.Equal(t, test.result, resp.Type)
 		})
 	}
-
 }
