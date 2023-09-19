@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/netip"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -50,7 +51,7 @@ func TestGenerateIPTablesRule(t *testing.T) {
 		port        PortRange
 		module      string
 		stateFlag   string
-		states      []firewall.ConnectionState
+		states      firewall.ConnectionStates
 		chainPrefix string
 		portFlag    string
 		rule        string
@@ -64,57 +65,62 @@ func TestGenerateIPTablesRule(t *testing.T) {
 	}{
 		{
 			input: false, target: drop, iface: "", remoteNet: "", protocol: "",
-			port: PortRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "",
+			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
 			rule: "OUTPUT -m comment --comment nordvpn -j DROP",
 		}, {
 			input: true, target: accept, iface: "", remoteNet: "", protocol: "",
-			port: PortRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "",
+			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
 			rule: "INPUT -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: false, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j DROP",
 		}, {
 			input: false, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j DROP",
 		}, {
 			input: false, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: false, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
-			port: PortRange{555, 555}, module: "udp", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
+			port: PortRange{555, 555}, module: "udp", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --sport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
-			port: PortRange{555, 555}, module: "udp", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
+			port: PortRange{555, 555}, module: "udp", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
-			states: []firewall.ConnectionState{firewall.Established, firewall.Related}, chainPrefix: "", portFlag: "--sport",
+			states: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}}, chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --sport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
-			states: []firewall.ConnectionState{firewall.Established, firewall.Related}, chainPrefix: "", portFlag: "--dport",
+			states: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}}, chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment nordvpn -j ACCEPT",
 		}, {
+			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
+			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
+			states: firewall.ConnectionStates{SrcAddr: netip.MustParseAddr("2.2.2.2"), States: []firewall.ConnectionState{firewall.Established, firewall.Related}}, chainPrefix: "", portFlag: "--dport",
+			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED --ctorigsrc 2.2.2.2 -m comment --comment nordvpn -j ACCEPT",
+		}, {
 			input: false, target: drop, iface: "", remoteNet: "", protocol: "",
-			port: PortRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "PRIMITIVE_",
+			port: PortRange{0, 0}, module: "", stateFlag: "", states: firewall.ConnectionStates{}, chainPrefix: "PRIMITIVE_",
 			rule: "PRIMITIVE_OUTPUT -m comment --comment nordvpn -j DROP",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "2606:4700:4700::1111/128",
@@ -152,8 +158,8 @@ func TestGenerateIPTablesRule(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.rule, func(t *testing.T) {
+	for i, tt := range tests {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			var remoteNetwork netip.Prefix
 			if tt.remoteNet != "" {
 				netw, err := netip.ParsePrefix(tt.remoteNet)

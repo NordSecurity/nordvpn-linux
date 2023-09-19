@@ -66,7 +66,7 @@ func (ipt *IPTables) Add(rule firewall.Rule) error {
 }
 
 func (ipt *IPTables) getStateModule(rule firewall.Rule) (module string, flag string) {
-	if rule.ConnectionStates != nil {
+	if rule.ConnectionStates.States != nil {
 		module = ipt.stateModule
 		flag = ipt.stateFlag
 	}
@@ -300,7 +300,7 @@ func generateIPTablesRule(
 	portRange PortRange,
 	module string,
 	stateFlag string,
-	states []firewall.ConnectionState,
+	states firewall.ConnectionStates,
 	chainPrefix string,
 	portFlag string,
 	icmpv6Type int,
@@ -353,12 +353,15 @@ func generateIPTablesRule(
 	if module != "" {
 		rule += " -m " + module
 	}
-	if stateFlag != "" && states != nil {
+	if stateFlag != "" && states.States != nil {
 		var statesStr []string
-		for _, state := range states {
+		for _, state := range states.States {
 			statesStr = append(statesStr, connectionStateToString(state))
 		}
 		rule += " " + stateFlag + " " + strings.Join(statesStr, ",")
+		if states.SrcAddr.IsValid() && !states.SrcAddr.IsUnspecified() {
+			rule += fmt.Sprintf(" --ctorigsrc %s", states.SrcAddr.String())
+		}
 	}
 
 	if icmpv6Type > 0 {
