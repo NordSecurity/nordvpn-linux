@@ -17,18 +17,13 @@ const (
 
 type runCommandFunc func(command string, arg ...string) ([]byte, error)
 
-func enableMasquerading(intfNames []string, commandFunc runCommandFunc) error {
+func enableMasquerading(peerAddress string, intfNames []string, commandFunc runCommandFunc) error {
 	for _, intfName := range intfNames {
-		if rc, err := checkMasquerading(intfName, commandFunc); rc || err != nil {
-			// already set or error happened
-			return err
-		}
-
 		// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o eth0 -j MASQUERADE -m comment --comment "exitnode"
 		cmd := "iptables"
 		args := fmt.Sprintf(
 			"-t nat -A POSTROUTING -s %s -o %s -j MASQUERADE -m comment --comment %s",
-			meshSrcSubnet,
+			peerAddress,
 			intfName,
 			msqRuleComment,
 		)
@@ -41,70 +36,32 @@ func enableMasquerading(intfNames []string, commandFunc runCommandFunc) error {
 	return nil
 }
 
-func clearMasquerading(intfNames []string, commandFunc runCommandFunc) error {
-	for _, intfName := range intfNames {
-		// remove all rules with comment
-		for {
-			found := false
-			cmd := "iptables"
-			args := "-t nat -L POSTROUTING -v -n --line-numbers"
-
-			out, err := commandFunc(cmd, strings.Split(args, " ")...)
-			if err != nil {
-				return fmt.Errorf("iptables listing rules: %w: %s", err, string(out))
-			}
-			// parse cmd output line-by-line
-			for _, line := range bytes.Split(out, []byte{'\n'}) {
-				if len(line) == 0 {
-					continue
-				}
-				// check for comment and interface name in rule
-				if strings.Contains(string(line), msqRuleComment) &&
-					strings.Contains(string(line), intfName) {
-					lineParts := strings.Fields(string(line[:]))
-					ruleno := lineParts[0]
-					cmd := "iptables"
-					args := "-t nat -D POSTROUTING %s"
-					args = fmt.Sprintf(args, ruleno)
-					// #nosec G204 -- input is properly sanitized
-					out, err := commandFunc(cmd, strings.Split(args, " ")...)
-					if err != nil {
-						return fmt.Errorf("iptables deleting rule: %w: %s", err, string(out))
-					}
-					found = true
-					break
-				}
-			}
-			if !found { // repeat until not found
-				break
-			}
-		}
-	}
-	return nil
-}
-
-func checkMasquerading(intfName string, commandFunc runCommandFunc) (bool, error) {
+func clearMasquerading(commandFunc runCommandFunc) error {
 	cmd := "iptables"
-	args := "-t nat -L POSTROUTING -v -n"
-	// #nosec G204 -- input is properly sanitized
+	args := "-t nat -S POSTROUTING"
 	out, err := commandFunc(cmd, strings.Split(args, " ")...)
+
 	if err != nil {
-		return false, fmt.Errorf("iptables listing rules: %w: %s", err, string(out))
+		return fmt.Errorf("iptables listing rules: %w: %s", err, string(out))
 	}
-	// parse cmd output line-by-line
+
 	for _, line := range bytes.Split(out, []byte{'\n'}) {
-		if len(line) == 0 {
+		lineString := string(line)
+		if !strings.Contains(lineString, msqRuleComment) {
 			continue
 		}
-		// check for comment, ip and interface name in rule
-		if strings.Contains(string(line), msqRuleComment) &&
-			strings.Contains(string(line), intfName) {
-			return true, nil
+
+		args := strings.Split(strings.ReplaceAll(lineString, "-A", "-D"), " ")
+		args = append([]string{"-t", "nat"}, args...)
+		_, err := commandFunc(cmd, args...)
+
+		if err != nil {
+			return fmt.Errorf("iptables deleting rule: %w: %s", err, lineString)
 		}
 	}
-	return false, nil
-}
 
+	return nil
+}
 func checkFilteringRule(cidrIP string, commandFunc runCommandFunc) (bool, error) {
 	lineNum, err := checkFilteringRulesLine([]string{cidrIP}, commandFunc)
 	return lineNum != -1, err
@@ -211,7 +168,11 @@ type TrafficPeer struct {
 	LocalNetwork bool
 }
 
-func resetPeersTraffic(peers []TrafficPeer, commandFunc runCommandFunc) error {
+func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc runCommandFunc) error {
+	if err := clearMasquerading(commandFunc); err != nil {
+		return fmt.Errorf("clearing masquerade rules: %w", err)
+	}
+
 	for _, peer := range peers {
 		err := modifyPeerTraffic(peer.IP, "-D", true, true, commandFunc)
 		if err != nil && !strings.Contains(err.Error(), missingRuleMessage) {
@@ -254,6 +215,14 @@ func resetPeersTraffic(peers []TrafficPeer, commandFunc runCommandFunc) error {
 						peer, err,
 					)
 				}
+			}
+		}
+	}
+
+	for _, peer := range peers {
+		if peer.Routing {
+			if err := enableMasquerading(peer.IP.String(), interfaceNames, commandFunc); err != nil {
+				return fmt.Errorf("enabling masquerading for peer: %w", err)
 			}
 		}
 	}

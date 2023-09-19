@@ -44,6 +44,43 @@ type Test mg.Namespace
 // View is used for viewing information about the project.
 type View mg.Namespace
 
+// installHookIfNordsec installs git-secrets hook if git user belongs to Nord Security.
+func installHookIfNordsec() error {
+	output, err := exec.Command("git", "config", "--get", "user.email").CombinedOutput()
+	if err != nil {
+		if werr, ok := err.(*exec.ExitError); ok {
+			// Exit code 1 is returned when user.email is not configured. In this case we want to
+			// skip the validation in order to allow users to build without configuring git environment.
+			if werr.ExitCode() != 1 {
+				return fmt.Errorf("getting user.email from git config: %w", err)
+			}
+		} else {
+			return fmt.Errorf("unknown error when getting user.email from git config: %w", err)
+		}
+
+		fmt.Println("Warning: git user.email is not configured.")
+	}
+
+	if !strings.Contains(string(output), "nordsec") {
+		return nil
+	}
+
+	output, err = exec.Command("git", "secrets", "--list").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("fetching git-secrets providers: %w", err)
+	}
+
+	if strings.Index(string(output), "llt-secrets") == -1 {
+		return fmt.Errorf("Secret provider was not configured.")
+	}
+
+	if _, err := exec.Command("git", "secrets", "--install", "--force").CombinedOutput(); err != nil {
+		return fmt.Errorf("installing git-secrets hook: %w", err)
+	}
+
+	return nil
+}
+
 // Coverage for pure Go
 func (View) Coverage() error {
 	return sh.Run("go", "tool", "cover", "-html=coverage.txt")
@@ -172,6 +209,10 @@ func (Build) RpmDocker(ctx context.Context) error {
 }
 
 func buildBinaries(buildFlags string) error {
+	if err := installHookIfNordsec(); err != nil {
+		return err
+	}
+
 	mg.Deps(Download)
 
 	cwd, err := os.Getwd()
@@ -209,8 +250,11 @@ func (Build) Binaries() error {
 }
 
 func buildBinariesDocker(ctx context.Context, buildFlags string) error {
-	mg.Deps(Download)
+	if err := installHookIfNordsec(); err != nil {
+		return err
+	}
 
+	mg.Deps(Download)
 	env, err := getEnv()
 	if err != nil {
 		return err

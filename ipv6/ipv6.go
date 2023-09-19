@@ -14,7 +14,7 @@ type Blocker interface {
 }
 
 type Ipv6 struct {
-	sysctlSetter *kernel.SysctlSetter
+	sysctlSetter *kernel.SysctlSetterImpl
 	sync.Mutex
 }
 
