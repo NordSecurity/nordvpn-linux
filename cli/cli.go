@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/term"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -33,8 +35,8 @@ Website: https://nordvpn.com
 Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}
 
 Commands:{{range .VisibleCategories}}{{if .Name}}
-   {{.Name}}:{{end}}{{range .VisibleCommands}}
-     {{join .Names ", "}}{{"\t"}}{{.Usage}}{{end}}{{end}}{{end}}
+   {{.Name}}:{{end}}{{ $cv := offsetCommands .VisibleCommands 7}}{{range .VisibleCommands}}
+     {{$s := join .Names ", "}}{{$s}}{{ $sp := subtract $cv (offset $s 5) }}{{ indent $sp ""}}{{wrap .Usage $cv}}{{end}}{{end}}{{end}}
 {{if .VisibleFlags}}
 Global options:
    {{range $index, $option := .VisibleFlags}}{{if $index}}
@@ -71,8 +73,8 @@ const SubcommandHelpTemplate = `Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{
 {{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}
 
 Commands:{{range .VisibleCategories}}{{if .Name}}
-   {{.Name}}:{{end}}{{range .VisibleCommands}}
-     {{join .Names ", "}}{{"\t"}}{{.Usage}}{{end}}
+   {{.Name}}:{{end}}{{ $cv := offsetCommands .VisibleCommands 7}}{{range .VisibleCommands}}
+     {{$s := join .Names ", "}}{{$s}}{{ $sp := subtract $cv (offset $s 5) }}{{ indent $sp ""}}{{wrap .Usage $cv}}{{end}}
 {{end}}{{if .VisibleFlags}}
 Options:
    {{range .VisibleFlags}}{{.}}
@@ -104,6 +106,13 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.SubcommandHelpTemplate = SubcommandHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
+	// Configure line wrapping for command descriptions
+	width, _, err := term.GetSize(int(os.Stdout.Fd()))
+	cli.HelpPrinter = func(w io.Writer, templ string, data interface{}) {
+		funcMap := map[string]interface{}{"wrapAt": func() int { return width }}
+		cli.HelpPrinterCustom(w, templ, data, funcMap)
+	}
+
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Printf("NordVPN Version %s\n", c.App.Version)
 	}
@@ -525,9 +534,10 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 
 func fileshareCommand(c *cmd) *cli.Command {
 	return &cli.Command{
-		Name:   FileshareName,
-		Usage:  MsgFileshareUsage,
-		Before: c.IsFileshareDaemonReachable,
+		Name:        FileshareName,
+		Usage:       MsgFileshareUsage,
+		Description: MsgFileshareUsage + "\n" + MsgFileshareDescription,
+		Before:      c.IsFileshareDaemonReachable,
 		Subcommands: []*cli.Command{
 			{
 				Name:        FileshareSendName,
@@ -597,8 +607,9 @@ func meshnetCommand(c *cmd) *cli.Command {
 		Usage:   MsgMeshnetUsage,
 		Subcommands: []*cli.Command{
 			{
-				Name:  "peer",
-				Usage: MsgMeshnetPeerUsage,
+				Name:        "peer",
+				Usage:       MsgMeshnetPeerUsage,
+				Description: MsgMeshnetPeerDescription,
 				Subcommands: []*cli.Command{
 					{
 						Name:   "list",
@@ -627,28 +638,9 @@ func meshnetCommand(c *cmd) *cli.Command {
 						Action: c.MeshRefresh,
 					},
 					{
-						Name:  "routing",
-						Usage: MsgMeshnetPeerRoutingUsage,
-						Subcommands: []*cli.Command{
-							{
-								Name:         "allow",
-								Usage:        MsgMeshnetPeerRoutingAllowUsage,
-								ArgsUsage:    MsgMeshnetPeerArgsUsage,
-								Action:       c.MeshPeerAllowRouting,
-								BashComplete: c.MeshPeerAutoComplete,
-							},
-							{
-								Name:         "deny",
-								Usage:        MsgMeshnetPeerRoutingDenyUsage,
-								ArgsUsage:    MsgMeshnetPeerArgsUsage,
-								Action:       c.MeshPeerDenyRouting,
-								BashComplete: c.MeshPeerAutoComplete,
-							},
-						},
-					},
-					{
-						Name:  "incoming",
-						Usage: MsgMeshnetPeerIncomingUsage,
+						Name:        "incoming",
+						Usage:       MsgMeshnetPeerIncomingUsage,
+						Description: MsgMeshnetPeerIncomingUsage + "\n" + MsgMeshnetPeerIncomingDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -667,8 +659,30 @@ func meshnetCommand(c *cmd) *cli.Command {
 						},
 					},
 					{
-						Name:  "local",
-						Usage: MsgMeshnetPeerLocalNetworkUsage,
+						Name:        "routing",
+						Usage:       MsgMeshnetPeerRoutingUsage,
+						Description: MsgMeshnetPeerRoutingUsage + "\n" + MsgMeshnetPeerRoutingDescription,
+						Subcommands: []*cli.Command{
+							{
+								Name:         "allow",
+								Usage:        MsgMeshnetPeerRoutingAllowUsage,
+								ArgsUsage:    MsgMeshnetPeerArgsUsage,
+								Action:       c.MeshPeerAllowRouting,
+								BashComplete: c.MeshPeerAutoComplete,
+							},
+							{
+								Name:         "deny",
+								Usage:        MsgMeshnetPeerRoutingDenyUsage,
+								ArgsUsage:    MsgMeshnetPeerArgsUsage,
+								Action:       c.MeshPeerDenyRouting,
+								BashComplete: c.MeshPeerAutoComplete,
+							},
+						},
+					},
+					{
+						Name:        "local",
+						Usage:       MsgMeshnetPeerLocalNetworkUsage,
+						Description: MsgMeshnetPeerLocalNetworkUsage + "\n" + MsgMeshnetPeerLocalNetworkDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -687,8 +701,9 @@ func meshnetCommand(c *cmd) *cli.Command {
 						},
 					},
 					{
-						Name:  "fileshare",
-						Usage: MsgMeshnetPeerFileshareUsage,
+						Name:        "fileshare",
+						Usage:       MsgMeshnetPeerFileshareUsage,
+						Description: MsgMeshnetPeerFileshareUsage + "\n" + MsgMeshnetPeerFileshareDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -736,10 +751,10 @@ func meshnetCommand(c *cmd) *cli.Command {
 				},
 			},
 			{
-				Name:      "invite",
-				Aliases:   []string{"inv"},
-				Usage:     MsgMeshnetInviteUsage,
-				ArgsUsage: MsgMeshnetInviteArgsUsage,
+				Name:        "invite",
+				Aliases:     []string{"inv"},
+				Usage:       MsgMeshnetInviteUsage,
+				Description: MsgMeshnetInviteUsage + "\n" + MsgMeshnetInviteDescription,
 				Subcommands: []*cli.Command{
 					{
 						Name:   "list",

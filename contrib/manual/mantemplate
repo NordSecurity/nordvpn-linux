@@ -21,52 +21,55 @@
 .\" -----------------------------------------------------------------
 .SH "NAME"
 nordvpn \- command-line interface of the NordVPN service
+
 .SH "SYNOPSIS"
 \fInordvpn\fR <command> [arguments]
 .sp
+
 .SH "DESCRIPTION"
 .sp
 The NordVPN app for Linux protects your sensitive data with military-grade encryption, so that whatever you do online stays secure and private\&. More than 5000 servers worldwide\&. No logs of your online activity\&. Secure up to 6 devices with a single account\&. Access online content securely, with no restrictions\&.
+
 .SH "COMMANDS"
 .PP
 \fBaccount\fR
 .RS 4
-Shows account information\&.
+Shows account information
 .RE
 .PP
 \fBcities\fR
 .RS 4
-Shows a list of cities where servers are available\&.
+Shows a list of cities where servers are available
 .RE
 .PP
 \fBconnect, c\fR
 .RS 4
-Connects you to VPN\&.
+Connects you to VPN
 .RE
 .PP
 \fBcountries\fR
 .RS 4
-Shows a list of countries where servers are available\&.
+Shows a list of countries where servers are available
 .RE
 .PP
 \fBdisconnect, d\fR
 .RS 4
-Disconnects you from VPN\&.
+Disconnects you from VPN
 .RE
 .PP
 \fBgroups\fR
 .RS 4
-Shows a list of available server groups\&.
+Shows a list of available server groups
 .RE
 .PP
 \fBlogin\fR
 .RS 4
-Logs you in\&.
+Logs you in
 .RE
 .PP
 \fBlogout\fR
 .RS 4
-Logs you out\&.
+Logs you out
 .RE
 .PP
 \fBrate\fR
@@ -81,43 +84,56 @@ Registers a new user account
 .PP
 \fBset, s\fR
 .RS 4
-Sets a configuration option\&.
+Sets a configuration option
 .RE
 .PP
 \fBsettings\fR
 .RS 4
-Shows current settings\&.
+Shows current settings
 .RE
 .PP
 \fBstatus\fR
 .RS 4
-Shows connection status\&.
+Shows connection status
 .RE
 .PP
-\fBallowlist\fR
+\fBversion\fR
 .RS 4
-Adds or removes an option from a allowlist\&.
+Shows the app version
+.RE
+.PP
+\fBallowlist, whitelist\fR
+.RS 4
+Adds or removes an option from a allowlist
+.RE
+.PP
+\fBmeshnet, mesh\fR
+.RS 4
+Securely connect to your remote devices
+.RE
+.PP
+\fBfileshare\fR
+.RS 4
+Transfer files of any size between Meshnet peers securely and privately
 .RE
 .PP
 \fBhelp, h\fR
 .RS 4
-Display syntax for the given operation\&. If no operation was supplied, then the general syntax is shown\&.
-.RE
-\fBversion\fR
-.RS 4
-Display version and exit\&.
-.RE
+Shows a list of commands or help for one command
+.REq
+
 .SH "OPTIONS"
 .PP
 \fB--help, -h\fR
 .RS 4
-Display syntax for the given operation\&. If no operation was supplied, then the general syntax is shown\&.
+Show help
 .RE
 .PP
 \fB--version, -v\fR
 .RS 4
-Display version and exit\&.
+Print the version
 .RE
+
 .SH "EXAMPLES"
 .PP
 \fBExample \&1. Connect to a recommended server\fR
@@ -265,9 +281,261 @@ $ \fBnordvpn set dns off\fR
 $ \fBnordvpn set dns 0.0.0.0 1.2.3.4\fR
 .fi
 .RE
+
+.SH "MESHNET"
+.P
+NordVPN's Meshnet is a type of virtual network that allows multiple devices to 
+connect and communicate with one another directly, even when they are located in 
+different parts of the world. Meshnet makes it possible for people to access resources 
+and services on each other's devices, both for personal and business purposes.
+.P
+When using Meshnet, the following benefits are available:
+.RS 4
+.IP \(bu 2
+You do not need to configure firewall rules or set up port forwarding to establish a connection with a remote device.
+.IP \(bu 2
+The need for access to an office or other network VPN is eliminated.
+.IP \(bu 2
+The limitations of CGNAT are bypassed by creating a direct connection between your device and a remote PC, which can be accessed through its Meshnet IP.
+.RE
+
+.SH "USING MESHNET"
+.P
+To turn on Meshnet on your device type the following command and press \fBEnter\fR:
+.P
+.RS 4
+$ \fBnordvpn set meshnet on\fR
+.RE
+.P
+You should now see a message confirming that you've enabled Meshnet.
+.P
+When connected to Meshnet, your device is assigned a unique Nord name and a Meshnet IP address, both of which you can use to access the device from other linked devices. Nord names are unique, automatically assigned host names for all devices in Meshnet. This feature allows more convenient device access because you don't have to memorize each device's Meshnet IP address. The format is \fI<username>-<mountain>.nord\fR, where \fI<username>\fR is the username of your Nord Account email address and \fI<mountain>\fR is the name of a mountain or mountain range. For example, \fIsecret.raccoon-andes.nord\fR.
+.P
+You can add devices to your Meshnet in two ways, depending on whether the device is your own or belongs to another NordVPN user. To add your own devices to your Meshnet, just install the NordVPN app on the devices you want to connect, log in with your account, and enable Meshnet. They will connect automatically. Meshnet allows you to add up to 10 devices that use the same NordVPN account. To add a device owned by another NordVPN user, send an invitation through the NordVPN app specifying their email address. As soon as they accept the invitation in their NordVPN app, their device becomes part of your Meshnet.
+.P
+To view a list of your Meshnet devices, run the following command:
+.P
+.RS 4
+$ \fBnordvpn meshnet peer list\fR
+.RE
+.P
+If you want to unlink your device from Meshnet, enter the following command, where \fI<device>\fR is the device's Nord name or Meshnet IP address:
+.P
+.RS 4
+$ \fBnordvpn meshnet peer remove <device>\fR
+.RE
+.P
+To link your personal device back, restart Meshnet on the unlinked device. To find your peer's Nord name faster, start typing the name and press Tab. The system will auto-complete the name based on matching peers.
+
+.SH "LINKING DEVICES IN MESHNET"
+.P
+To add an external device to your Meshnet, initiate the process by sending an invitation to the owner of the device. Here are the steps to follow:
+.IP 1. 4
+Enter the following command, where \fI<email>\fR is the email address of the NordVPN user you're inviting to have access to your Meshnet:
+.P
+.RS 8
+$ \fBnordvpn meshnet invite send <email>\fR
+.RE
+.IP 2. 4
+Grant or deny the permissions requested for the user's device by pressing Y or N, respectively, one at a time. Repeat until you see a message confirming that you've successfully sent your invitation.
+.IP 3. 4
+The other user will receive your invitation in their NordVPN app. If the user has NordVPN installed on multiple devices, they need to accept the invitation on each device individually.
+.P
+Once the device owner accepts the invitation, your devices will be linked. Ensure that the invitation is sent to a user you know and trust. The invitation remains active even after the other user accepts it so that they have time to accept the same invitation on each of their devices. If not canceled sooner, invitations expire within 72 hours from the time of sending.
+.P
+To accept an invitation on a Linux device:
+.IP 1. 4
+Enter the following command, where \fI<email>\fR is the inviter's email address:
+.P
+.RS 8
+$ \fBnordvpn meshnet invite accept <email>\fR
+.RE
+.IP 2. 4
+Grant or deny the permissions requested for the inviter's device by pressing Y or N, respectively, one at a time. Repeat until you see a message confirming that you've successfully accepted their invitation.
+.P
+To view a list of sent and received invitations, type:
+.P
+.RS 4
+$ \fBnordvpn meshnet invite list\fR
+.RE
+
+.SH "MESHNET PERMISSIONS"
+.P
+Meshnet permissions control the access granted to other devices within your network. You can choose who can connect to your device, send you files, route their internet traffic through your device, and access your local resources. These permissions help protect the security and privacy of your network resources and data by limiting the potential for unauthorized access.
+.P
+The \fBremote access\fR permission determines if a Meshnet peer can access your device using the Meshnet IP or Nord name. By default, remote access is granted for all devices, but you can adjust it in the Meshnet permission menu. 
+.P
+When remote access is enabled your device accepts incoming connections from a Meshnet peer. The connections can be initiated from the same local network or from the outside. When remote access is disabled your device does not accept connections from a Meshnet peer. If a connection is attempted (for example, using the ping command), it will fail because the recipient will not receive it. Having the remote access permission disabled prevents the peer from accessing any shared folders or services on your device. 
+.P
+The \fBtraffic routing\fR feature allows you to route internet traffic through compatible devices on your Meshnet. Traffic routing is only possible through Meshnet devices running on Windows, Linux and MacOS.
+.P
+When the traffic routing permission is enabled, your Meshnet peers are allowed to route their internet traffic through your device. In essence, your device can act as a VPN server for your fellow user. Caution - use traffic routing only with trusted devices to avoid potential misuse, as your browsing activity can be monitored on the device you are routing through. With the traffic routing permission disabled, the peer cannot route their internet traffic through your device.
+.P
+The \fBlocal network\fR permission works in tandem with traffic routing.Its function is to either permit or deny access to your local network devices while a Meshnet peer is routing traffic through your device. Local network access is a supplementary feature to traffic routing, and as such, traffic routing must be enabled to make use of the LAN permission.
+.P
+With the local network permission enabled, your Meshnet peer can route their internet traffic through your device and interact with all of the devices that are located in the same local area network. The devices can vary from a router to a home server or network-attached-storage (NAS). Caution - enable local network permission only for trusted devices to ensure home network and device security. Untrusted entities may cause severe damage if granted full access to your LAN devices. When the local network permission is disabled, the Meshnet peer cannot access devices on your LAN. Traffic routing remains functional unless otherwise configured, but it only alters the Meshnet peer's public IP address. Should the peer attempt to connect to a local IP address, the connection will default to their LAN instead of yours.
+.P
+The \fBfile sharing\fR permission allows you to send and receive files between your Meshnet peers via the NordVPN app. By default, file sharing is allowed for all devices in your Meshnet. For instructions on how to share files, see \fBMESHNET FILE SHARING\fR
+.P
+When you enable file sharing for a specific Meshnet peer, you can start receiving files from that device. You can also choose whether to automatically accept file transfers from this sender without receiving a transfer request by using \fBauto-accept\fR permission. If you disable the file sharing permission for one of your Meshnet peers, you will not receive any files from that device. However, unless the peer disables file sharing for you, you can still send files to the peer's device.
+.P
+To manage permissions, proceed with the following instructions:
+.IP 1. 4
+Run the following command to list your Meshnet peers:
+.P
+.RS 8
+$ \fBnordvpn meshnet peer list\fR
+.RE
+.IP 2. 4
+Note the Nord name of the peer you want to alter permissions for. The output also shows current permission settings. 
+.IP 3. 4
+To either allow or disable the permission, use one of the following commands, replacing \fI<Permission>\fR with one of \fI[incoming|routing|local|fileshare|auto-accept]\fR and replacing \fI<NordName>\fR with the peer's Nord name or Meshnet IP:
+.P
+.RS 8
+.nf
+$ \fBnordvpn meshnet peer <Permission> allow <NordName>\fR
+$ \fBnordvpn meshnet peer <Permission> deny <NordName>\fR
+.fi
+.RE
+
+.SH "MESHNET ROUTING"
+.P
+The traffic routing feature of Meshnet gives you the ability to route all of your internet traffic via a compatible peer device. When you initiate a connection to the peer device, it is established using NordLynx technology. The usage of this VPN protocol results in a fast, safe, and encrypted connection between the peer devices.
+.P
+When routing traffic, you get assigned the public IP address of the host device and connect to the internet using it instead of your standard IP address. The host device acts as a VPN server. Traffic routing is available even when the host device is connected to a VPN server. In such cases, instead of the IP address given by the internet service provider (ISP), you will be assigned the IP address of the VPN server to which the host is connected. Additionally, traffic routing can be chained between several devices. This means that you can route traffic through a peer device that is already routing traffic through another device. When routing traffic, the connection tunnel automatically uses the following NordVPN DNS addresses: \fI103.86.96.100\fR and \fI103.86.99.100\fR.
+.P
+Even though traffic routing opens a multitude of opportunities, it is vital to be aware of the potential situations that could arise while using this feature. When using traffic routing, be cautious that:
+.RS 4
+.IP \(bu 2
+A client device is assigned your public IP address, which potentially could lead to illegal activities being performed under your IP.
+.IP \(bu 2
+A client device, with the local network permissions enabled, could access other devices on your LAN and make unauthorized changes.
+.IP \(bu 2
+A host device could monitor your network activity, such as DNS queries.
+.RE
+.P
+To start using traffic routing, make sure that the device you want to route traffic through meets the following criteria:
+.RS 4
+.IP \(bu 2
+The NordVPN app is running, and the Meshnet feature is enabled in the app.
+.IP \(bu 2
+The device is connected to your Meshnet.
+.IP \(bu 2
+The traffic routing permission is granted for your client device.
+.RE
+.P
+To start routing traffic on Linux, follow these steps:
+.IP 1. 4
+Run the following command to list your Meshnet peers:
+.P
+.RS 8
+$ \fBnordvpn meshnet peer list\fR
+.RE
+.IP 2. 4
+Note the Nord name of the host device you want to route traffic through.
+.IP 3. 4
+Run the following command, replacing \fI<device>\fR with the device's Nord name or Meshnet IP.
+.P
+.RS 8
+$ \fBnordvpn meshnet peer connect <device>\fR
+.RE
+.IP 4. 4
+You can check the connection status by using this command:
+.P
+.RS 8
+$ \fBnordvpn status\fR
+.RE
+.IP 5. 4
+To stop traffic routing, run one of the following commands in the terminal:
+.P
+.RS 8
+.nf
+$ \fBnordvpn disconnect\fR
+$ \fBnordvpn d\fR
+.fi
+.RE
+
+.SH "MESHNET FILE SHARING"
+.P
+When transferring files over Meshnet, you don't need to worry about the security of your private data. An encrypted connection protects the files you send and download from unwanted access. Additionally, a peer-to-peer mechanism that underlies Meshnet's file sharing feature enables you to share files with each other directly without the need for a centralized server. This ensures the anonymity of sent data, which cannot be viewed by anyone but you and the intended recipients.
+.P
+\fBNote: most values (device Nord Name, transfer ID, file name) in the following examples can be entered faster using auto-completion. Simply press TAB and the app will suggest valid options for you.
+.P
+Before you begin, make sure that the device you want to share files with meets the following criteria:
+.IP \(bu 2
+The NordVPN app is running, and the Meshnet feature is enabled in the app.
+.IP \(bu 2
+The device is connected to your Meshnet.
+.P
+You can initiate a file transfer from the NordVPN app by completing these steps:
+.IP 1. 4
+Enter the \fInordvpn meshnet peer list\fR command and copy the Nord name or Meshnet IP address of the device you want to share your files with.
+.IP 2. 4
+Type the nordvpn fileshare send command, followed by your peer device's Nord name or Meshnet IP address and the path to the file you want to transfer, as shown:
+.P
+.RS 8
+$ \fBnordvpn fileshare send <peer> </path/to/your/file>\fR
+.RE
+.IP 3. 4
+Add more files to the transfer if needed. You can drag files from the file explorer to the terminal to paste the path. File directories can also be sent.
+.IP 4. 4
+The file transfer begins as soon as the recipient accepts your download request on their device.
+.P
+Note, that you can only send files to the devices that have the file sharing permission enabled for your device. To display the history of transfers sent from your device, along with their ID, size, status, and other relevant details, use \fInordvpn fileshare list --outgoing\fR. The transfers in the list are arranged in chronological order, with the oldest transfers appearing first.
+.P
+To receive files shared from another linked device, follow these steps:
+.IP 1. 4
+Have your Meshnet peer send the files.
+.IP 2. 4
+Enter the \fInordvpn fileshare list --incoming\fR command.
+.IP 3. 4
+Copy the ID of the file transfer request you want to accept.
+.IP 4. 4
+Type \fInordvpn fileshare accept\fR followed by the file transfer ID from the previous step, as shown:
+.P
+.RS 8
+$ \fBnordvpn fileshare accept <id>\fR
+.RE
+.P
+Alternatively transfers can be accepted via notifications, which can be enabled using \fInordvpn set notify on\fR. You can find the files shared with you by checking your computer's default download folder location, which is typically the Downloads folder. 
+.P
+If you want to download only specific files from the transfer, provide the names of the files you choose to accept:
+.RS 4
+$ \fBnordvpn fileshare accept <id> <file1> <file2>...\fR
+.RE
+.P
+To display the list of files in a particular transfer directory, enter the \fInordvpn fileshare list\fR command followed by the transfer ID:
+.RS 4
+$ \fBnordvpn fileshare list <id>\fR
+.RE
+.P
+You can enable automatic transfer acceptance from a specific peer. To do this, run the following command, replacing \fI<device>\fR with the peer's Nord name or Meshnet IP:
+.RS 4
+$ \fBnordvpn meshnet peer auto-accept enable <device>\fR
+.RE
+.P
+If you want to specify the location on your system where downloaded files will be saved, use the --path command option followed by the desired location and the transfer ID:
+.RS 4
+$ \fBnordvpn fileshare accept --path </path/to/directory> <id>\fR
+.RE
+.P
+If you need to cancel a transfer while it is still in progress, there are two ways to do it: 
+.IP \(bu 2
+Using \fBCtrl + C\fR
+.IP \(bu 2
+Using the \fIcancel\fR command. The cancel command is typically used when the transfer is running in the background (\fI--background\fR option) or when you are canceling from a different terminal session. To cancel a file transfer, enter the following, replacing \fI<id>\fR with the ID of the transfer you want to cancel.
+.P
+.RS 8
+.nf
+$ \fBnordvpn fileshare cancel <id>\fR
+$ \fBnordvpn fileshare cancel <id> <file>\fR
+.fi
+.RE
+
 .SH "BUGS"
 .sp
 Our QA team did their best in hunting bugs before the release\&. But if it happens that we missed something, please report to support@nordvpn.com\&.
+
 .SH "NOTES"
 .sp
 .PP
