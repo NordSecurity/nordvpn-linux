@@ -7,5 +7,5 @@ import (
 )
 
 func fileshareImplementation() service.Fileshare {
-	return service.MockFileshare{}
+	return service.NoopFileshare{}
 }

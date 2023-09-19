@@ -9,8 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	testtunnel "github.com/NordSecurity/nordvpn-linux/test/tunnel"
-	testvpn "github.com/NordSecurity/nordvpn-linux/test/vpn"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 
 	"github.com/stretchr/testify/assert"
@@ -26,7 +25,7 @@ func (activeVPN) Start(
 }
 func (activeVPN) State() vpn.State { return vpn.UnknownState }
 func (activeVPN) Stop() error      { return nil }
-func (activeVPN) Tun() tunnel.T    { return testtunnel.Working{} }
+func (activeVPN) Tun() tunnel.T    { return mock.WorkingT{} }
 func (activeVPN) IsActive() bool   { return true }
 
 type inactiveVPN struct{}
@@ -136,7 +135,7 @@ func TestRefreshVPN_VPNFailure(t *testing.T) {
 	assert.True(t, combined.isConnectedToVPN())
 	assert.True(t, combined.isMeshnetSet)
 
-	combined.vpnet.(*testvpn.Working).StartErr = fmt.Errorf("test error")
+	combined.vpnet.(*mock.WorkingVPN).StartErr = fmt.Errorf("test error")
 	err := combined.refreshVPN()
 	assert.Error(t, err)
 

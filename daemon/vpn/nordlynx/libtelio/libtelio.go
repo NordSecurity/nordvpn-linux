@@ -41,7 +41,7 @@ type event struct {
 type eventFn func(string)
 
 func maskPublicKey(event string) string {
-	expr := regexp.MustCompile(`"public_key":"(.*)"`)
+	expr := regexp.MustCompile(`"public_key":"(.*?)"`)
 	return expr.ReplaceAllString(event, `"public_key":"***"`)
 }
 
@@ -143,35 +143,26 @@ type persistentKeepAliveConfig struct {
 	Stun     int `json:"stun,omitempty"`
 }
 
-func newTelioFeatures() *telioFeatures {
-	return &telioFeatures{
-		Lana: &lanaConfig{},
-		Nurse: &nurseConfig{
-			Qos: &qosConfig{},
-		},
-		Direct: &directConfig{},
-		Derp:   &derpConfig{},
-		Wireguard: &wireguardConfig{
-			PersistentKeepAlive: &persistentKeepAliveConfig{},
-		},
-	}
-}
-
 func handleTelioConfig(eventPath, deviceID, version string, prod bool, remoteConfig remote.RemoteConfigGetter) ([]byte, error) {
-	telioConfig := newTelioFeatures()
+	telioConfig := &telioFeatures{}
 	cfgString, err := remoteConfig.GetTelioConfig(version)
 	if err != nil {
-		log.Printf("getting telio remote config json string: %s\n", err)
+		return nil, fmt.Errorf("getting telio remote config json string: %s\n", err)
 	} else {
 		err := json.Unmarshal([]byte(cfgString), &telioConfig)
 		if err != nil {
-			log.Printf("unmarshaling telio remote config json string: %s\n", err)
-			telioConfig = newTelioFeatures()
+			return nil, fmt.Errorf("unmarshaling telio remote config json string: %s\n", err)
 		}
 	}
-	telioConfig.Lana.EventPath = eventPath
-	telioConfig.Lana.Prod = prod
-	telioConfig.Nurse.Fingerprint = deviceID
+	if telioConfig.Lana != nil {
+		telioConfig.Lana.EventPath = eventPath
+		telioConfig.Lana.Prod = prod
+		if telioConfig.Nurse != nil { // nurse depends on lana
+			telioConfig.Nurse.Fingerprint = deviceID
+		}
+	} else {
+		telioConfig.Nurse = nil
+	}
 	return json.Marshal(telioConfig)
 }
 

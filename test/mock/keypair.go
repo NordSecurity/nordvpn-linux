@@ -1,4 +1,4 @@
-package keypair
+package mock
 
 import (
 	"crypto/rand"

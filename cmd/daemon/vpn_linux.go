@@ -33,26 +33,26 @@ func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
 	}
 }
 
-// mockMesh is a mock implementation of meshnet. It is used when telio
+// noopMesh is a noop implementation of meshnet. It is used when telio
 // is not available and should be used only for development purposes
-type mockMesh bool
+type noopMesh bool
 
-func (mockMesh) Enable(netip.Addr, string) error { return nil }
-func (mockMesh) Disable() error                  { return nil }
-func (mockMesh) IsActive() bool                  { return false }
-func (mockMesh) Refresh(cesh.MachineMap) error   { return nil }
-func (mockMesh) Tun() tunnel.T                   { return &tunnel.Tunnel{} }
-func (mockMesh) StatusMap() (map[string]string, error) {
+func (noopMesh) Enable(netip.Addr, string) error { return nil }
+func (noopMesh) Disable() error                  { return nil }
+func (noopMesh) IsActive() bool                  { return false }
+func (noopMesh) Refresh(cesh.MachineMap) error   { return nil }
+func (noopMesh) Tun() tunnel.T                   { return &tunnel.Tunnel{} }
+func (noopMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
 
 func meshnetImplementation(fn daemon.FactoryFunc) (meshnet.Mesh, error) {
-	return mockMesh(true), nil
+	return noopMesh(true), nil
 }
 
-type mockKeygen bool
+type noopKeygen bool
 
-func (mockKeygen) Private() string      { return "" }
-func (mockKeygen) Public(string) string { return "" }
+func (noopKeygen) Private() string      { return "" }
+func (noopKeygen) Public(string) string { return "" }
 
-func keygenImplementation(daemon.FactoryFunc) (mockKeygen, error) { return mockKeygen(true), nil }
+func keygenImplementation(daemon.FactoryFunc) (noopKeygen, error) { return noopKeygen(true), nil }

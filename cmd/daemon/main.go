@@ -200,7 +200,7 @@ func main() {
 	pkVault := response.NewFilePKVault(internal.DatFilesPath)
 	var validator response.Validator = response.NewNordValidator(pkVault)
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
-		validator = response.MockValidator{}
+		validator = response.NoopValidator{}
 	}
 
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
@@ -361,7 +361,7 @@ func main() {
 		meshRouter,
 		exitnode.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
 			return exec.Command(command, arg...).CombinedOutput()
-		}),
+		}, cfg.AutoConnectData.Allowlist),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
 	)

@@ -7,16 +7,16 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 )
 
-type mockVersionGetter struct{}
+type noopVersionGetter struct{}
 
-func (mockVersionGetter) GetValue(key string) (string, error) {
+func (noopVersionGetter) GetValue(key string) (string, error) {
 	return "", nil
 }
 
-func (mockVersionGetter) GetTelioConfig(string) (string, error) {
+func (noopVersionGetter) GetTelioConfig(string) (string, error) {
 	return "{}", nil
 }
 
 func remoteConfigGetterImplementation(_ config.Manager) remote.RemoteConfigGetter {
-	return mockVersionGetter{}
+	return noopVersionGetter{}
 }

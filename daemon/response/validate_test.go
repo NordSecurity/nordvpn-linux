@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/NordSecurity/nordvpn-linux/test/keypair"
-	"github.com/NordSecurity/nordvpn-linux/test/response"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ssh"
@@ -21,7 +20,7 @@ var publicKey ssh.PublicKey
 
 func TestMain(m *testing.M) {
 	var err error
-	privateKey, publicKey, err = keypair.GenerateKeyPair()
+	privateKey, publicKey, err = mock.GenerateKeyPair()
 	if err != nil {
 		log.Fatalf("error on test main: %+v", err)
 	}
@@ -113,7 +112,7 @@ func setHeader(headers http.Header, key string, value string) http.Header {
 }
 
 func validHeaders(data []byte) http.Header {
-	headers, err := response.GenerateValidHeaders(privateKey, data)
+	headers, err := mock.GenerateValidHeaders(privateKey, data)
 	if err != nil {
 		log.Fatalf("error on generating headers: %+v", err)
 	}
@@ -156,7 +155,7 @@ func TestNordValidator_Validate(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			validator := NewNordValidator(response.PKVault{PublicKey: publicKey})
+			validator := NewNordValidator(mock.PKVault{PublicKey: publicKey})
 			err := validator.Validate(test.code, test.headers, test.data)
 			assert.True(t, test.error == (err != nil), err)
 		})

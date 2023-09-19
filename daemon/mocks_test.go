@@ -7,91 +7,9 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/google/uuid"
 )
-
-type mockNetworker struct {
-	dns               []string
-	allowlist         config.Allowlist
-	vpnActive         bool
-	lanDiscovery      bool
-	meshPeers         mesh.MachinePeers
-	setDNSErr         error
-	setAllowlistErr   error
-	unsetAllowlistErr error
-}
-
-func (mockNetworker) Start(
-	vpn.Credentials,
-	vpn.ServerData,
-	config.Allowlist,
-	config.DNS,
-) error {
-	return nil
-}
-func (*mockNetworker) Stop() error      { return nil }
-func (*mockNetworker) UnSetMesh() error { return nil }
-
-func (mn *mockNetworker) SetDNS(nameservers []string) error {
-	mn.dns = nameservers
-	return mn.setDNSErr
-}
-
-func (*mockNetworker) UnsetDNS() error { return nil }
-
-func (mn *mockNetworker) IsVPNActive() bool {
-	return mn.vpnActive
-}
-
-func (*mockNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
-	return networker.ConnectionStatus{}, nil
-}
-
-func (*mockNetworker) EnableFirewall() error  { return nil }
-func (*mockNetworker) DisableFirewall() error { return nil }
-func (*mockNetworker) EnableRouting()         {}
-func (*mockNetworker) DisableRouting()        {}
-
-func (mn *mockNetworker) SetAllowlist(allowlist config.Allowlist) error {
-	if mn.setAllowlistErr != nil {
-		return mn.setAllowlistErr
-	}
-
-	mn.allowlist = allowlist
-	return nil
-}
-
-func (mn *mockNetworker) UnsetAllowlist() error {
-	if mn.unsetAllowlistErr != nil {
-		return mn.unsetAllowlistErr
-	}
-
-	mn.allowlist.Ports.TCP = make(config.PortSet)
-	mn.allowlist.Ports.UDP = make(config.PortSet)
-	mn.allowlist.Subnets = make(config.Subnets)
-	return nil
-}
-
-func (*mockNetworker) IsNetworkSet() bool                   { return false }
-func (*mockNetworker) IsMeshnetActive() bool                { return false }
-func (*mockNetworker) SetKillSwitch(config.Allowlist) error { return nil }
-func (*mockNetworker) UnsetKillSwitch() error               { return nil }
-func (*mockNetworker) PermitIPv6() error                    { return nil }
-func (*mockNetworker) DenyIPv6() error                      { return nil }
-func (*mockNetworker) SetVPN(vpn.VPN)                       {}
-func (*mockNetworker) LastServerName() string               { return "" }
-
-func (mn *mockNetworker) SetLanDiscoveryAndResetMesh(enabled bool, peers mesh.MachinePeers) {
-	mn.meshPeers = peers
-	mn.lanDiscovery = enabled
-}
-
-func (mn *mockNetworker) SetLanDiscovery(enabled bool) {
-	mn.lanDiscovery = enabled
-}
 
 var tplNameserversV4 config.DNS = []string{
 	"103.86.96.96",

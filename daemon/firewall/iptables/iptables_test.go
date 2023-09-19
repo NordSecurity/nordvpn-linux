@@ -47,7 +47,7 @@ func TestGenerateIPTablesRule(t *testing.T) {
 		remoteNet   string
 		localNet    string
 		protocol    string
-		port        portRange
+		port        PortRange
 		module      string
 		stateFlag   string
 		states      []firewall.ConnectionState
@@ -64,57 +64,57 @@ func TestGenerateIPTablesRule(t *testing.T) {
 	}{
 		{
 			input: false, target: drop, iface: "", remoteNet: "", protocol: "",
-			port: portRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "",
+			port: PortRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "",
 			rule: "OUTPUT -m comment --comment nordvpn -j DROP",
 		}, {
 			input: true, target: accept, iface: "", remoteNet: "", protocol: "",
-			port: portRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "",
+			port: PortRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "",
 			rule: "INPUT -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: false, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: portRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j DROP",
 		}, {
 			input: false, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: portRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j DROP",
 		}, {
 			input: false, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: portRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: false, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: portRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: portRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
-			port: portRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
+			port: PortRange{555, 555}, module: "", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
-			port: portRange{555, 555}, module: "udp", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
+			port: PortRange{555, 555}, module: "udp", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --sport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
-			port: portRange{555, 555}, module: "udp", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
+			port: PortRange{555, 555}, module: "udp", stateFlag: "", states: nil, chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
-			port: portRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
+			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
 			states: []firewall.ConnectionState{firewall.Established, firewall.Related}, chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --sport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
-			port: portRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
+			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
 			states: []firewall.ConnectionState{firewall.Established, firewall.Related}, chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: false, target: drop, iface: "", remoteNet: "", protocol: "",
-			port: portRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "PRIMITIVE_",
+			port: PortRange{0, 0}, module: "", stateFlag: "", states: nil, chainPrefix: "PRIMITIVE_",
 			rule: "PRIMITIVE_OUTPUT -m comment --comment nordvpn -j DROP",
 		}, {
 			input: true, target: accept, iface: "lo", remoteNet: "2606:4700:4700::1111/128",
@@ -637,17 +637,17 @@ func TestPortsToRanges(t *testing.T) {
 	tests := []struct {
 		name   string
 		ports  []int
-		ranges []portRange
+		ranges []PortRange
 	}{
 		{name: "empoty slice", ports: nil, ranges: nil},
-		{name: "single port", ports: []int{1}, ranges: []portRange{{min: 1, max: 1}}},
-		{name: "single range", ports: []int{1, 2}, ranges: []portRange{{min: 1, max: 2}}},
-		{name: "unsorted range", ports: []int{2, 1, 3}, ranges: []portRange{{min: 1, max: 3}}},
-		{name: "multiple ports multiple ranges", ports: []int{1, 3}, ranges: []portRange{{min: 1, max: 1}, {min: 3, max: 3}}},
+		{name: "single port", ports: []int{1}, ranges: []PortRange{{Min: 1, Max: 1}}},
+		{name: "single range", ports: []int{1, 2}, ranges: []PortRange{{Min: 1, Max: 2}}},
+		{name: "unsorted range", ports: []int{2, 1, 3}, ranges: []PortRange{{Min: 1, Max: 3}}},
+		{name: "multiple ports multiple ranges", ports: []int{1, 3}, ranges: []PortRange{{Min: 1, Max: 1}, {Min: 3, Max: 3}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ranges := portsToPortRanges(tt.ports)
+			ranges := PortsToPortRanges(tt.ports)
 			assert.Equal(t, tt.ranges, ranges)
 		})
 	}
