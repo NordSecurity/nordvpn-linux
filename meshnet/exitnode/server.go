@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ipv4fwdKernelParamName = "net.ipv4.ip_forward"
+	Ipv4fwdKernelParamName = "net.ipv4.ip_forward"
 )
 
 // Node is exit node server side interface
@@ -29,22 +29,18 @@ type Server struct {
 	mu               sync.Mutex
 	interfaceNames   []string // need to remember on which interface we started
 	runCommandFunc   runCommandFunc
-	sysctlSetter     *kernel.SysctlSetter
+	sysctlSetter     kernel.SysctlSetter
 	peers            mesh.MachinePeers
 	allowlistManager allowlistManager
 	enabled          bool
 }
 
 // NewServer create & initialize new Server
-func NewServer(interfaceNames []string, commandFunc runCommandFunc, allowlist config.Allowlist) Node {
+func NewServer(interfaceNames []string, commandFunc runCommandFunc, allowlist config.Allowlist, sysctlSetter kernel.SysctlSetter) *Server {
 	return &Server{
-		interfaceNames: interfaceNames,
-		runCommandFunc: commandFunc,
-		sysctlSetter: kernel.NewSysctlSetter(
-			ipv4fwdKernelParamName,
-			1,
-			0,
-		),
+		interfaceNames:   interfaceNames,
+		runCommandFunc:   commandFunc,
+		sysctlSetter:     sysctlSetter,
 		allowlistManager: newAllowlist(commandFunc, allowlist),
 	}
 }
@@ -64,13 +60,7 @@ func (en *Server) Enable() error {
 		return fmt.Errorf("enabling filtering: %w", err)
 	}
 
-	err = enableMasquerading(en.interfaceNames, en.runCommandFunc)
-	if err != nil {
-		return fmt.Errorf("enabling masquerading: %w", err)
-	}
-
 	en.enabled = true
-
 	return nil
 }
 
@@ -106,7 +96,7 @@ func (en *Server) resetPeers(lanAvailable bool) error {
 		}
 	}
 
-	if err := resetPeersTraffic(trafficPeers, en.runCommandFunc); err != nil {
+	if err := resetPeersTraffic(trafficPeers, en.interfaceNames, en.runCommandFunc); err != nil {
 		return err
 	}
 
@@ -134,7 +124,7 @@ func (en *Server) Disable() error {
 		return fmt.Errorf("clearing filtering: %w", err)
 	}
 
-	err = clearMasquerading(en.interfaceNames, en.runCommandFunc)
+	err = clearMasquerading(en.runCommandFunc)
 	if err != nil {
 		return fmt.Errorf("clearing masquerading: %w", err)
 	}

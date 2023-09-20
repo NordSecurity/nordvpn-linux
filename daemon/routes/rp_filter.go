@@ -18,7 +18,7 @@ type RPFilterManager interface {
 }
 
 type SysctlRPFilterManager struct {
-	setter *kernel.SysctlSetter
+	setter *kernel.SysctlSetterImpl
 }
 
 func NewSysctlRPFilterManager() *SysctlRPFilterManager {

@@ -16,35 +16,6 @@ func commandFunc(command string, arg ...string) ([]byte, error) {
 	return exec.Command(command, arg...).CombinedOutput()
 }
 
-func TestMasquerading(t *testing.T) {
-	category.Set(t, category.Route)
-
-	var gwret = routes.IPGatewayRetriever{}
-	_, intf, err := gwret.Default(false)
-	intfNames := []string{intf.Name}
-
-	assert.NoError(t, err)
-	assert.NotEmpty(t, intf.Name)
-
-	err = enableMasquerading(intfNames, commandFunc)
-
-	assert.NoError(t, err)
-
-	got, err := checkMasquerading(intf.Name, commandFunc)
-
-	assert.NoError(t, err)
-	assert.True(t, got)
-
-	err = clearMasquerading(intfNames, commandFunc)
-
-	assert.NoError(t, err)
-
-	got, err = checkMasquerading(intf.Name, commandFunc)
-
-	assert.NoError(t, err)
-	assert.False(t, got)
-}
-
 func TestFiltering(t *testing.T) {
 	category.Set(t, category.Route)
 
@@ -73,7 +44,9 @@ func TestFiltering(t *testing.T) {
 	assert.NotEmpty(t, intf.Name)
 
 	ip := netip.MustParsePrefix("100.77.1.1/32")
-	err = resetPeersTraffic([]TrafficPeer{{ip, true, false}}, commandFunc)
+
+	interfaceNames := []string{"eth0"}
+	err = resetPeersTraffic([]TrafficPeer{{ip, true, false}}, interfaceNames, commandFunc)
 	assert.NoError(t, err)
 
 	rc, err = checkFilteringRule(ip.String(), commandFunc)
@@ -222,9 +195,11 @@ func TestResetPeersTraffic(t *testing.T) {
 		return true
 	}
 
+	interfaceNames := []string{"eth0"}
+
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%+v", test.peers), func(t *testing.T) {
-			err = resetPeersTraffic(test.peers, commandFunc)
+			err = resetPeersTraffic(test.peers, interfaceNames, commandFunc)
 			assert.NoError(t, err)
 
 			for i, peer := range test.peers {

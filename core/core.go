@@ -43,6 +43,16 @@ type ServersAPI interface {
 	ServersCountries() (Countries, http.Header, error)
 }
 
+type CombinedAPI interface {
+	CredentialsAPI
+	InsightsAPI
+	ServersAPI
+	Base() string
+	Plans() (*Plans, error)
+	Logout(token string) error
+	CreateUser(email, password string) (*UserCreateResponse, error)
+}
+
 type DefaultAPI struct {
 	agent     string
 	baseURL   string
