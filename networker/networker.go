@@ -1188,7 +1188,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	netw.cfg = cfg
 
 	var err error
-	if err = netw.defaultMeshBlock(); err != nil {
+	if err = netw.defaultMeshBlock(cfg.Machine.Address); err != nil {
 		return fmt.Errorf("adding default block rule: %w", err)
 	}
 
@@ -1437,7 +1437,7 @@ func (netw *Combined) ResetRouting(peers mesh.MachinePeers) error {
 	return netw.exitNode.ResetPeers(peers, lanAvailable)
 }
 
-func (netw *Combined) defaultMeshBlock() error {
+func (netw *Combined) defaultMeshBlock(ip netip.Addr) error {
 	defaultMeshBlock := "default-mesh-block"
 	defaultMeshAllowEstablished := "default-mesh-allow-established"
 	if err := netw.fw.Add([]firewall.Rule{
@@ -1456,9 +1456,12 @@ func (netw *Combined) defaultMeshBlock() error {
 			Name:           defaultMeshAllowEstablished,
 			Direction:      firewall.Inbound,
 			RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-			ConnectionStates: []firewall.ConnectionState{
-				firewall.Related,
-				firewall.Established,
+			ConnectionStates: firewall.ConnectionStates{
+				SrcAddr: ip,
+				States: []firewall.ConnectionState{
+					firewall.Related,
+					firewall.Established,
+				},
 			},
 			Allow: true,
 		},

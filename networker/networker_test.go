@@ -1740,9 +1740,12 @@ func TestCombined_Refresh(t *testing.T) {
 		Name:           "default-mesh-allow-established",
 		Direction:      firewall.Inbound,
 		RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-		ConnectionStates: []firewall.ConnectionState{
-			firewall.Related,
-			firewall.Established,
+		ConnectionStates: firewall.ConnectionStates{
+			SrcAddr: machineAddress,
+			States: []firewall.ConnectionState{
+				firewall.Related,
+				firewall.Established,
+			},
 		},
 		Allow: true,
 	}
