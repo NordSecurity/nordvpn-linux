@@ -300,6 +300,10 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 }
 
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
+	if data.IsMeshnetPeer {
+		return nil
+	}
+
 	s.connectedAt = time.Now()
 	dnsResolutionTime := int(data.DNSResolutionTime.Milliseconds())
 	var threatProtection moose.Enum_SS_NordvpnappOptBool

@@ -46,6 +46,7 @@ type Server struct {
 	pub                events.Publisher[error]
 	subjectPeerUpdate  events.Publisher[[]string]
 	subjectMeshSetting events.Publisher[bool]
+	subjectConnect     events.Publisher[events.DataConnect]
 	lastPeers          string
 	isPeerConnected    bool
 	fileshare          service.Fileshare
@@ -65,6 +66,7 @@ func NewServer(
 	pub events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
 	subjectMeshSetting events.PublishSubcriber[bool],
+	subjectConnect events.Publisher[events.DataConnect],
 	fileshare service.Fileshare,
 ) *Server {
 	return &Server{
@@ -78,6 +80,7 @@ func NewServer(
 		pub:                pub,
 		subjectPeerUpdate:  subjectPeerUpdate,
 		subjectMeshSetting: subjectMeshSetting,
+		subjectConnect:     subjectConnect,
 		fileshare:          fileshare,
 		scheduler:          gocron.NewScheduler(time.UTC),
 	}
@@ -2666,6 +2669,9 @@ func (s *Server) Connect(
 		}, nil
 	}
 	s.isPeerConnected = true
+	s.subjectConnect.Publish(events.DataConnect{
+		IsMeshnetPeer: true,
+	})
 
 	return &pb.ConnectResponse{
 		Response: &pb.ConnectResponse_Empty{},
