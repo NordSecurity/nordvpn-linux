@@ -378,6 +378,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&subs.Subject[error]{},
 				nil,
 				&subs.Subject[bool]{},
+				&subs.Subject[events.DataConnect]{},
 				service.NoopFileshare{},
 			)
 
