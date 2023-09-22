@@ -443,6 +443,7 @@ func main() {
 		errSubject,
 		meshnetEvents.PeerUpdate,
 		daemonEvents.Settings.Meshnet,
+		daemonEvents.Service.Connect,
 		fileshareImplementation,
 	)
 
