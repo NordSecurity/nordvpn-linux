@@ -338,12 +338,11 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 		{
 			Name:        "login",
 			Usage:       LoginUsageText,
-			Description: "By default this command redirects to login via Nord Account page. After finishing logging in the browser the app is ready to be used. Other login methods are available as options.",
-			Action:      cmd.Login,
+			Description: LoginDescription,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{ // TODO: remove in v4
 					Name:  "nordaccount",
-					Usage: "This option does nothing and is kept for backwards compatibility.",
+					Usage: LoginNordAccountUsageText,
 				},
 				&cli.BoolFlag{
 					Name:  "callback",
