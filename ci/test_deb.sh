@@ -74,9 +74,9 @@ if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d
     sudo sed -i "2d" "/etc/init.d/nordvpn"
 fi
 
-# # To print goroutine profile when debugging:
-# RET=$?
-# if [ $RET != 0 ]; then
-#     curl http://localhost:6960/debug/pprof/goroutine?debug=1
-# fi
-# exit $RET
+# To print goroutine profile when debugging:
+RET=$?
+if [ $RET != 0 ]; then
+    curl http://localhost:6960/debug/pprof/goroutine?debug=1
+fi
+exit $RET
