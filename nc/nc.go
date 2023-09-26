@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -202,21 +203,28 @@ func (c *Client) connect() error {
 
 // Stop unsubscribes the topics and drops a connection with the NC server
 func (c *Client) Stop() error {
+	log.Printf("1")
 	c.clientMutex.Lock()
 	defer c.clientMutex.Unlock()
+	log.Printf("2")
 	if c.client == nil {
 		return fmt.Errorf("already stopped")
 	}
 
+	log.Printf("3")
 	c.cancelConnecting()
+	log.Printf("4")
 	token := c.client.Unsubscribe(unsubscriptions...)
+	log.Printf("5")
 	if token.WaitTimeout(timeout) && token.Error() != nil {
 		c.subjectErr.Publish(fmt.Errorf("%s unsubscribing to topics: %w", logPrefix, token.Error()))
 	}
+	log.Printf("6")
 	c.client.Disconnect(0)
 	c.client = nil
 	c.subjectInfo.Publish(logPrefix + " Client has stopped")
 
+	log.Printf("7")
 	return nil
 }
 
