@@ -16,6 +16,35 @@ const (
 	Source
 )
 
+// ConnectionState defines a state of a connection
+type ConnectionState int
+
+const (
+	// Established means that packet is associated with a connection
+	Established ConnectionState = iota
+	// Related means that packet creates a new connection, but it is related with the existing one
+	Related
+	// New means that packet creates a new connection
+	New
+)
+
+// Direction defines a direction of packages to which rule is applicable
+type Direction int
+
+const (
+	// Inbound defines that rule is applicable for incoming packets
+	Inbound Direction = iota
+	// Outbound defines that rule is applicable for outgoing packets
+	Outbound
+	// TwoWay defines that rule is applicable for both incoming and outgoing packets
+	TwoWay
+)
+
+type ConnectionStates struct {
+	SrcAddr netip.Addr
+	States  []ConnectionState
+}
+
 // Rule defines a single firewall rule which is applicable for set of addresses, ports and protocols
 type Rule struct {
 	// Name of the firewall rule
@@ -35,7 +64,7 @@ type Rule struct {
 	// Direction defines to which packets rule is applicable
 	Direction Direction `json:"direction"`
 	// ConnectionStates defines to which connection states rule is applicable
-	ConnectionStates []ConnectionState `json:"connection_states"`
+	ConnectionStates ConnectionStates `json:"connection_states"`
 	// Marks defines that packets marked with any of the marks are
 	// affected by the firewall rule
 	Marks []uint32

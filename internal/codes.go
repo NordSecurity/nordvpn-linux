@@ -12,10 +12,11 @@ const (
 	CodeSuccessWithoutAC int64 = 1007
 
 	// Warning
-	CodeNothingToDo   int64 = 2000
-	CodeVPNRunning    int64 = 2002
-	CodeVPNNotRunning int64 = 2003
-	CodeUFWDisabled   int64 = 2004
+	CodeNothingToDo      int64 = 2000
+	CodeVPNRunning       int64 = 2002
+	CodeVPNNotRunning    int64 = 2003
+	CodeUFWDisabled      int64 = 2004
+	CodeTokenInvalidated int64 = 2005
 
 	// Error
 	CodeFailure      int64 = 3000

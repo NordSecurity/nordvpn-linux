@@ -28,9 +28,9 @@ const (
 // ruleTarget specifies what can be passed as an argument to `-j`
 type ruleTarget string
 
-type portRange struct {
-	min int
-	max int
+type PortRange struct {
+	Min int
+	Max int
 }
 
 // @TODO upgrade to netfilter library. for now we use both ipv4, ipv6 because we disable ipv6
@@ -66,7 +66,7 @@ func (ipt *IPTables) Add(rule firewall.Rule) error {
 }
 
 func (ipt *IPTables) getStateModule(rule firewall.Rule) (module string, flag string) {
-	if rule.ConnectionStates != nil {
+	if rule.ConnectionStates.States != nil {
 		module = ipt.stateModule
 		flag = ipt.stateFlag
 	}
@@ -154,13 +154,13 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 	for _, iface := range rule.Interfaces {
 		for _, remoteNetwork := range rule.RemoteNetworks {
 			for _, localNetwork := range rule.LocalNetworks {
-				for _, pRange := range portsToPortRanges(rule.Ports) {
+				for _, pRange := range PortsToPortRanges(rule.Ports) {
 					for _, protocol := range rule.Protocols {
 						for _, input := range toInputSlice(rule.Direction) {
 							for _, icmpv6Type := range defaultIcmpv6(rule.Icmpv6Types) {
 								for _, target := range toTargetSlice(rule.Allow, input, rule.Marks) {
 									for _, mark := range rule.Marks {
-										if pRange.min != 0 {
+										if pRange.Min != 0 {
 											for _, portFlag := range portsDirectionToPortsFlag(rule.PortsDirection) {
 												newRule := generateIPTablesRule(
 													input, target, iface, remoteNetwork, localNetwork, protocol, pRange,
@@ -213,22 +213,23 @@ func defaultIcmpv6(icmp6Types []int) []int {
 	return []int{0}
 }
 
-func portsToPortRanges(ports []int) []portRange {
+// PortsToPortRanges groups ports into ranges
+func PortsToPortRanges(ports []int) []PortRange {
 	if len(ports) == 0 {
 		return nil
 	}
 	sort.Ints(ports)
 
-	var ranges []portRange
+	var ranges []PortRange
 	pPort := ports[0]
-	r := portRange{min: pPort, max: pPort}
+	r := PortRange{Min: pPort, Max: pPort}
 	for i, port := range ports[1:] {
 		if port == ports[i]+1 {
-			r.max = port
+			r.Max = port
 			continue
 		}
 		ranges = append(ranges, r)
-		r = portRange{min: port, max: port}
+		r = PortRange{Min: port, Max: port}
 	}
 	return append(ranges, r)
 }
@@ -296,10 +297,10 @@ func generateIPTablesRule(
 	remoteNetwork netip.Prefix,
 	localNetwork netip.Prefix,
 	protocol string,
-	portRange portRange,
+	portRange PortRange,
 	module string,
 	stateFlag string,
-	states []firewall.ConnectionState,
+	states firewall.ConnectionStates,
 	chainPrefix string,
 	portFlag string,
 	icmpv6Type int,
@@ -338,8 +339,8 @@ func generateIPTablesRule(
 			rule += fmt.Sprintf(" -m connmark --mark %#x", mark)
 		}
 	}
-	if portRange.min != 0 && portFlag != "" {
-		rule += fmt.Sprintf(" %s %d:%d", portFlag, portRange.min, portRange.max)
+	if portRange.Min != 0 && portFlag != "" {
+		rule += fmt.Sprintf(" %s %d:%d", portFlag, portRange.Min, portRange.Max)
 	} else {
 		if len(sports) > 0 {
 			rule += fmt.Sprintf(" %s %s", "--sport", strings.Join(internal.IntsToStrings(sports), ","))
@@ -352,12 +353,15 @@ func generateIPTablesRule(
 	if module != "" {
 		rule += " -m " + module
 	}
-	if stateFlag != "" && states != nil {
+	if stateFlag != "" && states.States != nil {
 		var statesStr []string
-		for _, state := range states {
+		for _, state := range states.States {
 			statesStr = append(statesStr, connectionStateToString(state))
 		}
 		rule += " " + stateFlag + " " + strings.Join(statesStr, ",")
+		if states.SrcAddr.IsValid() && !states.SrcAddr.IsUnspecified() {
+			rule += fmt.Sprintf(" --ctorigsrc %s", states.SrcAddr.String())
+		}
 	}
 
 	if icmpv6Type > 0 {

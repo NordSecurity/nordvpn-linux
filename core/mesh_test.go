@@ -35,7 +35,7 @@ func TestMeshAPI_Register(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, err := api.Register("bearer", mesh.Machine{
 				ID:        uuid.New(),
@@ -72,7 +72,7 @@ func TestMeshAPI_Update(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			err := api.Update(
 				"bearer",
@@ -109,7 +109,7 @@ func TestMeshAPI_Configure(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			err := api.Configure(
 				"bearer",
@@ -148,7 +148,7 @@ func TestMeshAPI_Unregister(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			err := api.Unregister("bearer", id)
 			assert.ErrorIs(t, err, test.err)
@@ -178,7 +178,7 @@ func TestMeshAPI_List(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, err := api.List("bearer", id)
 			assert.ErrorIs(t, err, test.err)
@@ -211,7 +211,7 @@ func TestMeshAPI_Unpair(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			err := api.Unpair("bearer", myID, otherID)
 			assert.ErrorIs(t, err, test.err)
@@ -244,7 +244,7 @@ func TestMeshAPI_Invite(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			err := api.Invite("bearer", id, "elite@hacker.nord", false, false, false, false)
 			assert.ErrorIs(t, err, test.err)
@@ -274,7 +274,7 @@ func TestMeshAPI_Received(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, err := api.Received("bearer", id)
 			assert.ErrorIs(t, err, test.err)
@@ -304,7 +304,7 @@ func TestMeshAPI_Sent(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			_, err := api.Sent("bearer", id)
 			assert.ErrorIs(t, err, test.err)
@@ -336,7 +336,7 @@ func TestMeshAPI_Accept(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			err := api.Accept(
 				"bearer",
@@ -375,7 +375,7 @@ func TestMeshAPI_Reject(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			err := api.Reject("bearer", id, invitationID)
 			assert.ErrorIs(t, err, test.err)
@@ -406,7 +406,7 @@ func TestMeshAPI_Revoke(t *testing.T) {
 				"",
 				server.URL,
 				http.DefaultClient,
-				response.MockValidator{},
+				response.NoopValidator{},
 			)
 			err := api.Revoke("bearer", id, invitationID)
 			assert.ErrorIs(t, err, test.err)

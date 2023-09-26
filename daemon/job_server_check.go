@@ -8,7 +8,7 @@ import (
 // JobServerCheck marks servers as offline if connection to them drops
 func JobServerCheck(
 	dm *DataManager,
-	api *core.DefaultAPI,
+	api core.CombinedAPI,
 	netw networker.Networker,
 	server core.Server,
 ) func() {

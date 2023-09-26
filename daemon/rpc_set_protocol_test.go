@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -74,8 +75,8 @@ func TestSetProtocol_Success(t *testing.T) {
 
 			protocolPublisher := &mockProtocolPublisherSubcriber{}
 			publisher := SettingsEvents{Protocol: protocolPublisher}
-			networker := mockNetworker{
-				vpnActive: test.vpnActive,
+			networker := networker.Mock{
+				VpnActive: test.vpnActive,
 			}
 
 			rpc := RPC{
@@ -168,7 +169,7 @@ func TestSetProtocol_Error(t *testing.T) {
 
 			protocolPublisher := &mockProtocolPublisherSubcriber{}
 			publisher := SettingsEvents{Protocol: protocolPublisher}
-			networker := mockNetworker{}
+			networker := networker.Mock{}
 
 			rpc := RPC{
 				cm:     configManager,

@@ -286,7 +286,7 @@ def is_connect_unsuccessful(exception):
         in str(exception.value)
         or "You cannot connect to a group and set the group option at the same time."
         in str(exception.value)
-        or "Whoops! Something went wrong. Please try again. If the problem persists, contact our customer support."
+        or "Something went wrong. Please try again. If the problem persists, contact our customer support."
         in str(exception.value)
         or "The specified group does not exist."
         in str(exception.value)

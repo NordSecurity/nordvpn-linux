@@ -13,7 +13,7 @@ const (
 	RepoURL = "https://repo.nordvpn.com"
 
 	// IconPath defines icon file path
-	IconPath = internal.AppDataPath + "icon.svg"
+	IconPath = "/usr/share/icons/hicolor/scalable/apps/nordvpn.svg"
 
 	// ServersDataFilePath defines path to servers data file
 	ServersDataFilePath = internal.DatFilesPath + "servers.dat"

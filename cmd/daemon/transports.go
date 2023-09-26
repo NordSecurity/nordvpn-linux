@@ -19,6 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/request"
 
+	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sys/unix"
@@ -84,8 +85,12 @@ func createH3Transport() *http3.RoundTripper {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// #nosec G402 -- minimum tls version is controlled by the standard library
 	return &http3.RoundTripper{
-		// #nosec G402 -- minimum tls version is controlled by the standard library
+		QuicConfig: &quic.Config{
+			MaxIdleTimeout: request.TransportTimeout,
+		},
 		TLSClientConfig: &tls.Config{
 			RootCAs: pool,
 		},

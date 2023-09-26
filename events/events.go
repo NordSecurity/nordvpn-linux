@@ -56,6 +56,7 @@ const (
 )
 
 type DataConnect struct {
+	IsMeshnetPeer              bool
 	APIHostname                string
 	Auto                       bool
 	ThreatProtectionLite       bool

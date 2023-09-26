@@ -7,13 +7,13 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 
 	"github.com/stretchr/testify/assert"
@@ -101,89 +101,7 @@ func (failingVPN) State() vpn.State { return vpn.ExitedState }
 func (failingVPN) IsActive() bool   { return false }
 func (failingVPN) Tun() tunnel.T    { return failingTunnel{} }
 
-type workingNetworker struct{}
-
-func (workingNetworker) Start(
-	vpn.Credentials,
-	vpn.ServerData,
-	config.Allowlist,
-	config.DNS,
-) error {
-	return nil
-}
-func (workingNetworker) Stop() error           { return nil }
-func (workingNetworker) UnSetMesh() error      { return nil }
-func (workingNetworker) SetDNS([]string) error { return nil }
-func (workingNetworker) UnsetDNS() error       { return nil }
-func (workingNetworker) IsVPNActive() bool     { return true }
-func (workingNetworker) IsMeshnetActive() bool { return true }
-func (workingNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
-	return networker.ConnectionStatus{}, nil
-}
-
-func (workingNetworker) EnableFirewall() error                               { return nil }
-func (workingNetworker) DisableFirewall() error                              { return nil }
-func (workingNetworker) EnableRouting()                                      {}
-func (workingNetworker) DisableRouting()                                     {}
-func (workingNetworker) PermitIPv6() error                                   { return nil }
-func (workingNetworker) DenyIPv6() error                                     { return nil }
-func (workingNetworker) SetAllowlist(config.Allowlist) error                 { return nil }
-func (workingNetworker) UnsetAllowlist() error                               { return nil }
-func (workingNetworker) IsNetworkSet() bool                                  { return false }
-func (workingNetworker) SetKillSwitch(config.Allowlist) error                { return nil }
-func (workingNetworker) UnsetKillSwitch() error                              { return nil }
-func (workingNetworker) Connect(netip.Addr, string) error                    { return nil }
-func (workingNetworker) Disconnect() error                                   { return nil }
-func (workingNetworker) Refresh(mesh.MachineMap) error                       { return nil }
-func (workingNetworker) Allow(mesh.Machine) error                            { return nil }
-func (workingNetworker) Block(mesh.Machine) error                            { return nil }
-func (workingNetworker) SetVPN(vpn.VPN)                                      {}
-func (workingNetworker) LastServerName() string                              { return "" }
-func (workingNetworker) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
-func (workingNetworker) SetLanDiscovery(bool)                                {}
-
 type UniqueAddress struct{}
-
-type failingNetworker struct{}
-
-func (failingNetworker) Start(
-	vpn.Credentials,
-	vpn.ServerData,
-	config.Allowlist,
-	config.DNS,
-) error {
-	return errOnPurpose
-}
-func (failingNetworker) Stop() error           { return errOnPurpose }
-func (failingNetworker) UnSetMesh() error      { return errOnPurpose }
-func (failingNetworker) SetDNS([]string) error { return errOnPurpose }
-func (failingNetworker) UnsetDNS() error       { return errOnPurpose }
-func (failingNetworker) IsVPNActive() bool     { return false }
-func (failingNetworker) IsMeshnetActive() bool { return false }
-func (failingNetworker) ConnectionStatus() (networker.ConnectionStatus, error) {
-	return networker.ConnectionStatus{}, nil
-}
-
-func (failingNetworker) EnableFirewall() error                               { return errOnPurpose }
-func (failingNetworker) DisableFirewall() error                              { return errOnPurpose }
-func (failingNetworker) EnableRouting()                                      {}
-func (failingNetworker) DisableRouting()                                     {}
-func (failingNetworker) PermitIPv6() error                                   { return errOnPurpose }
-func (failingNetworker) DenyIPv6() error                                     { return errOnPurpose }
-func (failingNetworker) SetAllowlist(config.Allowlist) error                 { return errOnPurpose }
-func (failingNetworker) UnsetAllowlist() error                               { return errOnPurpose }
-func (failingNetworker) IsNetworkSet() bool                                  { return false }
-func (failingNetworker) SetKillSwitch(config.Allowlist) error                { return errOnPurpose }
-func (failingNetworker) UnsetKillSwitch() error                              { return errOnPurpose }
-func (failingNetworker) Connect(netip.Addr, string) error                    { return errOnPurpose }
-func (failingNetworker) Disconnect() error                                   { return errOnPurpose }
-func (failingNetworker) Refresh(mesh.MachineMap) error                       { return errOnPurpose }
-func (failingNetworker) Allow(mesh.Machine) error                            { return errOnPurpose }
-func (failingNetworker) Block(mesh.Machine) error                            { return errOnPurpose }
-func (failingNetworker) SetVPN(vpn.VPN)                                      {}
-func (failingNetworker) LastServerName() string                              { return "" }
-func (failingNetworker) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
-func (failingNetworker) SetLanDiscovery(bool)                                {}
 
 func TestConnect(t *testing.T) {
 	category.Set(t, category.Route)
@@ -200,7 +118,7 @@ func TestConnect(t *testing.T) {
 	}{
 		{
 			name:      "successful connect",
-			netw:      workingNetworker{},
+			netw:      &testnetworker.Mock{},
 			fw:        &workingFirewall{},
 			allowlist: config.NewAllowlist(nil, nil, nil),
 			router:    &workingRouter{},
@@ -209,7 +127,7 @@ func TestConnect(t *testing.T) {
 		},
 		{
 			name:     "successful reconnect",
-			netw:     workingNetworker{},
+			netw:     &testnetworker.Mock{},
 			fw:       &workingFirewall{},
 			router:   &workingRouter{},
 			gateway:  newGatewayMock(netip.Addr{}),
@@ -217,7 +135,7 @@ func TestConnect(t *testing.T) {
 		},
 		{
 			name:     "failed connect",
-			netw:     failingNetworker{},
+			netw:     testnetworker.Failing{},
 			fw:       &workingFirewall{},
 			router:   &workingRouter{},
 			gateway:  newGatewayMock(netip.Addr{}),

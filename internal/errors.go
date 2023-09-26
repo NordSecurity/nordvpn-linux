@@ -6,8 +6,8 @@ import (
 
 var (
 	ErrDaemonConnectionRefused = errors.New(DaemonConnRefusedErrorMessage)
-	ErrSocketAccessDenied      = errors.New("Whoops! Permission denied accessing " + DaemonSocket)
-	ErrSocketNotFound          = errors.New("Whoops! " + DaemonSocket + " not found")
+	ErrSocketAccessDenied      = errors.New("Permission denied accessing " + DaemonSocket)
+	ErrSocketNotFound          = errors.New(DaemonSocket + " not found")
 	ErrUnhandled               = errors.New(UnhandledMessage)
 	ErrGateway                 = errors.New("can't find gateway")
 	ErrStdin                   = errors.New("Stdin: missing argument")

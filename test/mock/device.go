@@ -1,4 +1,4 @@
-package device
+package mock
 
 import "net"
 
