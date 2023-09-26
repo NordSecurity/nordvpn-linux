@@ -339,6 +339,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 			Name:        "login",
 			Usage:       LoginUsageText,
 			Description: LoginDescription,
+			Action:      cmd.Login,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{ // TODO: remove in v4
 					Name:  "nordaccount",
