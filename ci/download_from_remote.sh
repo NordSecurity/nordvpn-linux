@@ -2,7 +2,7 @@
 # Download is idempotent and will not redownload if the file already exists
 set -eox
 
-source "${CI_PROJECT_DIR}"/ci/archs.sh
+source "${WORKDIR}"/ci/archs.sh
 
 usage() {
     echo "Usage:"
@@ -58,9 +58,9 @@ while [[ $# -gt 0 ]] ; do
 done
 
 if [[ -n "${DIR_NAME}" ]]; then
-    DOWNLOAD_DIR="${CI_PROJECT_DIR}/bin/deps/${DIR_NAME}"
+    DOWNLOAD_DIR="${WORKDIR}/bin/deps/${DIR_NAME}"
 else
-    DOWNLOAD_DIR="${CI_PROJECT_DIR}/bin/deps"
+    DOWNLOAD_DIR="${WORKDIR}/bin/deps"
 fi
 
 mkdir -p "${DOWNLOAD_DIR}"

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-source "${CI_PROJECT_DIR}"/ci/env.sh
+source "${WORKDIR}"/ci/env.sh
 
-"${CI_PROJECT_DIR}"/ci/check_dependencies.sh
+"${WORKDIR}"/ci/check_dependencies.sh
 
 CORES=$(nproc)
 
-current_dir="${CI_PROJECT_DIR}/build/openvpn"
+current_dir="${WORKDIR}/build/openvpn"
 sources="${current_dir}/src"
 tarballs="${current_dir}/tarballs"
-output_dir="${CI_PROJECT_DIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}"
+output_dir="${WORKDIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}"
 
 patch_sources() {
   mkdir -p "${sources}"

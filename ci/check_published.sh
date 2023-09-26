@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo
 
-source "${CI_PROJECT_DIR}/ci/archs.sh"
+source "${WORKDIR}/ci/archs.sh"
 
 EXIT_CODE=0
 

@@ -53,7 +53,7 @@ def setup_module(module):
 
 
 def teardown_module(module):
-    dest_logs_path = f"{os.environ['CI_PROJECT_DIR']}/dist/logs"
+    dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
     # Presere other peer log
     output = ssh_client.exec_command(f"cat /var/log/nordvpn/daemon.log")
     with open(f"{dest_logs_path}/other-peer-daemon.log", "w") as f:

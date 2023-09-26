@@ -9,5 +9,5 @@ if [[ ! $(sudo ip6tables -S) ]]; then
     sudo modprobe ip6table_filter
 fi
 
-find "${CI_PROJECT_DIR}"/dist/app/deb -type f -name "*amd64.deb" \
+find "${WORKDIR}"/dist/app/deb -type f -name "*amd64.deb" \
 	-exec sudo apt install -y "{}" +

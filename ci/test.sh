@@ -14,12 +14,12 @@ excluded_categories="root,link,firewall,route,file,integration"
 # In case 'full' was specified, do not exclude anything and run
 # everything
 if [ "${1:-""}" = "full" ]; then
-	source "${CI_PROJECT_DIR}"/ci/env.sh
+	source "${WORKDIR}"/ci/env.sh
 
 	# Apply moose patch in case compiling with moose
-	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+	git apply "${WORKDIR}"/contrib/patches/add_moose.diff
 	function revert_moose_patch {
-		git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+		git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff
 	}
 	trap revert_moose_patch EXIT
 
@@ -27,7 +27,7 @@ if [ "${1:-""}" = "full" ]; then
 	excluded_categories="root,link"
 
 	# check for the C dependencies existence
-	"${CI_PROJECT_DIR}"/ci/check_dependencies.sh
+	"${WORKDIR}"/ci/check_dependencies.sh
 fi
 
 # Execute tests in all the packages except the excluded ones
@@ -35,17 +35,17 @@ fi
 # SC2046 is disabled so that list of packages is not treated
 # as a single argument for 'go test'
 
-mkdir -p "${CI_PROJECT_DIR}"/coverage/unit
+mkdir -p "${WORKDIR}"/coverage/unit
 # shellcheck disable=SC2046
 go test -tags internal -v -race $(go list ./... | grep -v "${excluded_packages}") \
-	-coverprofile "${CI_PROJECT_DIR}"/coverage.txt \
+	-coverprofile "${WORKDIR}"/coverage.txt \
 	-exclude "${excluded_categories}" \
-	-args -test.gocoverdir="${CI_PROJECT_DIR}/coverage/unit"
+	-args -test.gocoverdir="${WORKDIR}/coverage/unit"
 
 # Display code coverage report
-go tool cover -func="${CI_PROJECT_DIR}"/coverage.txt
+go tool cover -func="${WORKDIR}"/coverage.txt
 
 if [ "${1:-""}" = "full" ]; then
 	# "gocover-cobertura" is used for test coverage visualization in the diff view.
-	gocover-cobertura < "$CI_PROJECT_DIR"/coverage.txt > coverage.xml
+	gocover-cobertura < "$WORKDIR"/coverage.txt > coverage.xml
 fi

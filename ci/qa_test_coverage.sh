@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo
 
-source "${CI_PROJECT_DIR}"/ci/env.sh
+source "${WORKDIR}"/ci/env.sh
 
 go tool covdata percent -i="${COVERDIR}" 
 go tool covdata textfmt -i="${COVERDIR}" -o coverage.txt
