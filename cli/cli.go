@@ -336,12 +336,14 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 		},
 		{
-			Name:   "login",
-			Usage:  LoginUsageText,
-			Action: cmd.Login,
+			Name:        "login",
+			Usage:       LoginUsageText,
+			Description: LoginDescription,
+			Action:      cmd.Login,
 			Flags: []cli.Flag{
 				&cli.BoolFlag{ // TODO: remove in v4
-					Name: "nordaccount",
+					Name:  "nordaccount",
+					Usage: LoginNordAccountUsageText,
 				},
 				&cli.BoolFlag{
 					Name:  "callback",
