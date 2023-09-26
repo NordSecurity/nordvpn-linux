@@ -2,9 +2,9 @@
 set -euox
 
 # clean build dir
-rm -rf "${CI_PROJECT_DIR}"/dist/repo/deb
+rm -rf "${WORKDIR}"/dist/repo/deb
 
-BASEDIR=${CI_PROJECT_DIR}/dist/repo/deb/${NAME}_${VERSION}_all
+BASEDIR=${WORKDIR}/dist/repo/deb/${NAME}_${VERSION}_all
 
 mkdir -p "${BASEDIR}"/{etc,DEBIAN}
 mkdir -p "${BASEDIR}"/etc/apt/{sources.list.d,trusted.gpg.d}
@@ -15,7 +15,7 @@ cat <<EOF > "${BASEDIR}"/DEBIAN/conffiles
 EOF
 
 # copy repo file
-cp "${CI_PROJECT_DIR}"/contrib/repo/sources/deb/sources."${ENVIRONMENT}" "${BASEDIR}"/etc/apt/sources.list.d/nordvpn.list
+cp "${WORKDIR}"/contrib/repo/sources/deb/sources."${ENVIRONMENT}" "${BASEDIR}"/etc/apt/sources.list.d/nordvpn.list
 # fetch key
 wget -qO - https://repo.nordvpn.com/gpg/nordvpn_public.asc | gpg --dearmor > "${BASEDIR}"/etc/apt/trusted.gpg.d/nordvpn-keyring.gpg
 

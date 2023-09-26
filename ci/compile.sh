@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euox
 
-source "${CI_PROJECT_DIR}"/ci/env.sh
-source "${CI_PROJECT_DIR}"/ci/archs.sh
+source "${WORKDIR}"/ci/env.sh
+source "${WORKDIR}"/ci/archs.sh
 
-"${CI_PROJECT_DIR}"/ci/check_dependencies.sh
+"${WORKDIR}"/ci/check_dependencies.sh
 
 # Since race detector has huge performance price and it works only on amd64 and does not
 # work with pie executables, its enabled only for development builds.
@@ -65,22 +65,22 @@ tags="${FEATURES:-"telio drop"}"
 
 # Apply moose patch in case compiling with moose
 if [[ $tags == *"moose"* ]]; then 
-	git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff || \
+	git apply "${WORKDIR}"/contrib/patches/add_moose.diff || \
 		# If applying fails try reverting and applying again 
-		(git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff && \
-		git apply "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff)
+		(git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff && \
+		git apply "${WORKDIR}"/contrib/patches/add_moose.diff)
 	function revert_moose_patch {
-		cd "${CI_PROJECT_DIR}"
-		git apply -R "${CI_PROJECT_DIR}"/contrib/patches/add_moose.diff
+		cd "${WORKDIR}"
+		git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff
 	}
 	trap revert_moose_patch EXIT
 fi
 
 for program in ${!names_map[*]}; do # looping over keys
-	pushd "${CI_PROJECT_DIR}/cmd/${program}"
+	pushd "${WORKDIR}/cmd/${program}"
 	CC="${cross_compiler_map[${ARCH}]}" \
 		go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} "${BUILDMODE}" -tags "${tags}" \
 		-ldflags "-linkmode=external ${LDFLAGS}" \
-		-o "${CI_PROJECT_DIR}/bin/${ARCH}/${names_map[${program}]}"
+		-o "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}"
 	popd
 done
