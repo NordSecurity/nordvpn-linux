@@ -68,11 +68,7 @@ if [[ -n ${LATTE:-} ]]; then
     fi
 fi
 
-python3 -m pytest -v --timeout 180 -x -rsx --timeout-method=thread -o log_cli=true "${args[@]}"
-
-if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
-    sudo sed -i "2d" "/etc/init.d/nordvpn"
-fi
+python3 -m pytest -v --timeout 180 -x -rsx -o log_cli=true "${args[@]}"
 
 # To print goroutine profile when debugging:
 RET=$?
@@ -80,3 +76,7 @@ if [ $RET != 0 ]; then
     curl http://localhost:6960/debug/pprof/goroutine?debug=1
 fi
 exit $RET
+
+if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
+    sudo sed -i "2d" "/etc/init.d/nordvpn"
+fi
