@@ -68,7 +68,7 @@ if [[ -n ${LATTE:-} ]]; then
     fi
 fi
 
-python3 -m pytest -v --timeout 180 -x -rsx -o log_cli=true "${args[@]}"
+python3 -m pytest -v --timeout 180 -x -rsx --timeout-method=thread -o log_cli=true "${args[@]}"
 
 # To print goroutine profile when debugging:
 RET=$?
