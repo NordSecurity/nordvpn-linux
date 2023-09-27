@@ -18,16 +18,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// ConnectUsageText is shown next to account command by nordvpn --help
-const ConnectUsageText = "Connects you to VPN"
-
-// ConnectFlagGroupUsageText is shown next to group flag by nordvpn connect --help
-const ConnectFlagGroupUsageText = "Specify a server group to connect to"
-
-// ConnectArgsUsageText is shown by nordvpn connect --help
-const ConnectArgsUsageText = `[<country>|<server>|<country_code>|<city>|<group>|<country> <city>]
-
-Use this command to connect to NordVPN. Adding no arguments to the command will connect you to the recommended server.
+// Connect command display strings
+const (
+	ConnectUsageText          = "Connects you to VPN"
+	ConnectFlagGroupUsageText = "Specify a server group to connect to"
+	ConnectArgsUsageText      = "[<country>|<server>|<country_code>|<city>|<group>|<country> <city>]"
+	ConnectDescription        = `Use this command to connect to NordVPN. Adding no arguments to the command will connect you to the recommended server.
 Provide a <country> argument to connect to a specific country. For example: 'nordvpn connect Australia'
 Provide a <server> argument to connect to a specific server. For example: 'nordvpn connect jp35'
 Provide a <country_code> argument to connect to a specific country. For example: 'nordvpn connect us'
@@ -35,6 +31,7 @@ Provide a <city> argument to connect to a specific city. For example: 'nordvpn c
 Provide a <group> argument to connect to a specific servers group. For example: 'nordvpn connect Onion_Over_VPN'
 
 Press the Tab key to see auto-suggestions for countries and cities.`
+)
 
 func (c *cmd) Connect(ctx *cli.Context) error {
 	args := ctx.Args()
