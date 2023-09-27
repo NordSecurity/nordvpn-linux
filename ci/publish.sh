@@ -3,8 +3,8 @@ set -euxo
 
 PACKAGE=${1}
 
-source "${CI_PROJECT_DIR}"/ci/archs.sh
-source "${CI_PROJECT_DIR}"/ci/repository_name.sh "${PACKAGE}"
+source "${WORKDIR}"/ci/archs.sh
+source "${WORKDIR}"/ci/repository_name.sh "${PACKAGE}"
 
 echo "Publishing repo"
 case "${PACKAGE}" in

@@ -3,7 +3,7 @@ import os
 import sh
 
 # log file location
-FILE = f"{os.environ['CI_PROJECT_DIR']}/dist/logs/daemon.log"
+FILE = f"{os.environ['WORKDIR']}/dist/logs/daemon.log"
 
 
 def log(data=None):

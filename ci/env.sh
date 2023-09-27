@@ -7,7 +7,7 @@ set -euxo pipefail
 # if inside of docker container on CI || if inside of docker container on the host
 if grep docker /proc/self/cgroup || [ "$(< /proc/self/cgroup)" == "0::/" ]; then
   # required for docker mounts to work correctly with mage targets
-  git config --global --add safe.directory "${CI_PROJECT_DIR}"
+  git config --global --add safe.directory "${WORKDIR}"
 fi
 
 NAME=nordvpn

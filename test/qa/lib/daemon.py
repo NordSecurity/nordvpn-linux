@@ -10,7 +10,7 @@ from typing import List, Tuple
 
 
 def _rewrite_log_path():
-    project_root = os.environ["CI_PROJECT_DIR"].replace("/", "\/")
+    project_root = os.environ["WORKDIR"].replace("/", "\/")
     pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\/dist\/logs\/daemon.log/"
     sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
 
@@ -54,7 +54,7 @@ def is_ipv6_on():
 
 def install_peer(ssh_client: ssh.Ssh):
     """installs nordvpn in peer"""
-    project_root = os.environ["CI_PROJECT_DIR"]
+    project_root = os.environ["WORKDIR"]
     deb_path = glob.glob(f'{project_root}/dist/app/deb/*amd64.deb')[0]
     ssh_client.send_file(deb_path, '/tmp/nordvpn.deb')
     ssh_client.exec_command('sudo apt install -y /tmp/nordvpn.deb')

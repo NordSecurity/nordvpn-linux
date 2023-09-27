@@ -3,13 +3,13 @@ set -euxo
 
 PACKAGE="${1}"
 
-source "${CI_PROJECT_DIR}"/ci/archs.sh
-source "${CI_PROJECT_DIR}"/ci/repository_name.sh "${PACKAGE}"
-"${CI_PROJECT_DIR}"/ci/pulp_ca_certificate.sh
+source "${WORKDIR}"/ci/archs.sh
+source "${WORKDIR}"/ci/repository_name.sh "${PACKAGE}"
+"${WORKDIR}"/ci/pulp_ca_certificate.sh
 
 case "${PACKAGE}" in
     "deb")
-        go run "${CI_PROJECT_DIR}"/cmd/pulp/main.go \
+        go run "${WORKDIR}"/cmd/pulp/main.go \
             --hostname "https://${PULP_HOST}" \
             --username "${PULP_USER}" \
             --password "${PULP_PASS}" \
@@ -20,7 +20,7 @@ case "${PACKAGE}" in
         ;;
     "rpm")
         for arch in "${ARCHS[@]}"; do
-            go run "${CI_PROJECT_DIR}"/cmd/pulp/main.go \
+            go run "${WORKDIR}"/cmd/pulp/main.go \
                 --hostname "https://${PULP_HOST}" \
                 --username "${PULP_USER}" \
                 --password "${PULP_PASS}" \

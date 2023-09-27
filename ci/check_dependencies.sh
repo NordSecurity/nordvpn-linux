@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-source "${CI_PROJECT_DIR}/ci/env.sh"
+source "${WORKDIR}/ci/env.sh"
 
-OPENVPN_TARBALL_DIR="${CI_PROJECT_DIR}/build/openvpn/tarballs"
+OPENVPN_TARBALL_DIR="${WORKDIR}/build/openvpn/tarballs"
 OPENVPN_URL="https://github.com/Tunnelblick/Tunnelblick/raw/${TUNNELBLICK_VERSION}/third_party/sources"
 mkdir -p "${OPENVPN_TARBALL_DIR}"
 pushd "${OPENVPN_TARBALL_DIR}"
@@ -12,7 +12,7 @@ pushd "${OPENVPN_TARBALL_DIR}"
 	wget --quiet -nc "${OPENVPN_URL}/openvpn/openvpn-${OPENVPN_VERSION}/openvpn-${OPENVPN_VERSION}.tar.gz"
 popd
 
-OPENVPN_PATCHES_DIR="${CI_PROJECT_DIR}/build/openvpn/patches"
+OPENVPN_PATCHES_DIR="${WORKDIR}/build/openvpn/patches"
 mkdir -p "${OPENVPN_PATCHES_DIR}"
 pushd "${OPENVPN_PATCHES_DIR}"
 	wget --quiet -nc "${OPENVPN_URL}/openvpn/openvpn-${OPENVPN_VERSION}/patches/02-tunnelblick-openvpn_xorpatch-a.diff"
@@ -25,6 +25,6 @@ popd
 LIBNORD_ID="6385"
 
 if [[ "${FEATURES}" == *internal* ]]; then
-	"${CI_PROJECT_DIR}"/ci/download_from_remote.sh \
+	"${WORKDIR}"/ci/download_from_remote.sh \
 		-O nord -p "${LIBNORD_ID}" -v "${LIBNORD_VERSION}" ${ARCH:+-a ${ARCH}} libnord.a
 fi
