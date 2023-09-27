@@ -14,15 +14,13 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// Login descriptions
 const (
-	// LoginUsageText is shown next to login command by nordvpn --help
-	LoginUsageText = "Logs you in"
-
-	// LoginFlagTokenUsageText is shown next to token flag by nordvpn login --help
-	LoginFlagTokenUsageText = "Use token login method. Does not support MFA." // #nosec
-
-	// LoginCallbackUsageText is shown next to callback flag by nordvpn login --help
-	LoginCallbackUsageText = "Usually used by the browser to finish Nord Account login flow. Also useful in headless setups."
+	LoginUsageText            = "Logs you in"
+	LoginDescription          = "Log in to NordVPN by using the default method. We'll take you to your browser for login and then bring you back to the app. Other login methods are available as options."
+	LoginNordAccountUsageText = "This option is no longer available."
+	LoginFlagTokenUsageText   = "Log in to NordVPN by using a token generated in your Nord Account. This login option doesn't support multi-factor authentication. Tokens are revoked at logout. Use \"nordvpn logout --help\" for more info." // #nosec
+	LoginCallbackUsageText    = "Complete the login manually if your browser fails to open the app. After you successfully log in on your browser, copy the link of the \"Continue\" button and paste it enclosed in quotation marks as an argument for this option."
 )
 
 func (c *cmd) Login(ctx *cli.Context) error {
