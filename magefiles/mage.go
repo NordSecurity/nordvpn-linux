@@ -105,7 +105,7 @@ func Download() error {
 	}
 
 	env["ARCH"] = build.Default.GOARCH
-	env["CI_PROJECT_DIR"] = cwd
+	env["WORKDIR"] = cwd
 	return sh.RunWith(env, "ci/check_dependencies.sh")
 }
 
@@ -119,7 +119,7 @@ func (Build) Data() error {
 	if err != nil {
 		return err
 	}
-	env := map[string]string{"CI_PROJECT_DIR": cwd}
+	env := map[string]string{"WORKDIR": cwd}
 	env["GOPATH"] = build.Default.GOPATH
 	return sh.RunWith(env, "ci/data.sh")
 }
@@ -134,7 +134,7 @@ func (Build) Notices() error {
 	if err != nil {
 		return err
 	}
-	env := map[string]string{"CI_PROJECT_DIR": cwd}
+	env := map[string]string{"WORKDIR": cwd}
 	return sh.RunWith(env, "ci/licenses.sh")
 }
 
@@ -154,7 +154,7 @@ func buildPackage(packageType string, buildFlags string) error {
 	if err != nil {
 		return err
 	}
-	env["CI_PROJECT_DIR"] = cwd
+	env["WORKDIR"] = cwd
 	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", packageType)
 }
 
@@ -185,7 +185,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	}
 
 	env["ARCH"] = build.Default.GOARCH
-	env["CI_PROJECT_DIR"] = "/opt"
+	env["WORKDIR"] = "/opt"
 	env["ENVIRONMENT"] = "dev"
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = "source"
@@ -234,7 +234,7 @@ func buildBinaries(buildFlags string) error {
 		return err
 	}
 	env["ARCH"] = build.Default.GOARCH
-	env["CI_PROJECT_DIR"] = cwd
+	env["WORKDIR"] = cwd
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = "source"
 	env["VERSION"] = git.versionTag
@@ -269,7 +269,7 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		return err
 	}
 	env["ARCH"] = build.Default.GOARCH
-	env["CI_PROJECT_DIR"] = "/opt"
+	env["WORKDIR"] = "/opt"
 	env["ENVIRONMENT"] = "dev"
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = "source"
@@ -303,7 +303,7 @@ func (Build) Openvpn(ctx context.Context) error {
 	}
 
 	env["ARCH"] = "amd64"
-	env["CI_PROJECT_DIR"] = cwd
+	env["WORKDIR"] = cwd
 
 	return sh.RunWith(env, "build/openvpn/build.sh")
 }
@@ -318,7 +318,7 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 	}
 
 	env["ARCH"] = "amd64"
-	env["CI_PROJECT_DIR"] = "/opt"
+	env["WORKDIR"] = "/opt"
 	return RunDocker(
 		ctx,
 		env,
@@ -334,8 +334,8 @@ func (Build) Rust(ctx context.Context) error {
 		return err
 	}
 	env := map[string]string{
-		"ARCHS":          build.Default.GOARCH,
-		"CI_PROJECT_DIR": cwd,
+		"ARCHS":   build.Default.GOARCH,
+		"WORKDIR": cwd,
 	}
 	return sh.RunWith(env, "build/foss/build.sh")
 }
@@ -348,7 +348,7 @@ func (Build) RustDocker(ctx context.Context) error {
 	}
 
 	env["ARCHS"] = "amd64"
-	env["CI_PROJECT_DIR"] = "/opt"
+	env["WORKDIR"] = "/opt"
 	if err := RunDocker(
 		ctx,
 		env,
@@ -393,7 +393,7 @@ func (Test) Go() error {
 	if err != nil {
 		return err
 	}
-	env["CI_PROJECT_DIR"] = cwd
+	env["WORKDIR"] = cwd
 
 	return sh.RunWithV(env, "ci/test.sh")
 }
@@ -409,7 +409,7 @@ func (Test) CgoDocker(ctx context.Context) error {
 		return err
 	}
 	env["ARCH"] = build.Default.GOARCH
-	env["CI_PROJECT_DIR"] = "/opt"
+	env["WORKDIR"] = "/opt"
 	env["ENVIRONMENT"] = "dev"
 
 	return RunDockerWithSettings(
@@ -434,7 +434,7 @@ func (Test) Hardening(ctx context.Context) error {
 		return err
 	}
 	env["ARCH"] = build.Default.GOARCH
-	env["CI_PROJECT_DIR"] = "/opt"
+	env["WORKDIR"] = "/opt"
 
 	return RunDocker(
 		ctx,
@@ -468,11 +468,11 @@ func qa(ctx context.Context, testGroup, testPattern string) error {
 	if err != nil {
 		return err
 	}
-	env["CI_PROJECT_DIR"] = "/opt"
+	env["WORKDIR"] = "/opt"
 	env["QA_PEER_ADDRESS"] = "http://qa-peer:8000/exec"
 	env["COVERDIR"] = "covdatafiles"
 
-	dir := env["CI_PROJECT_DIR"] + "/" + env["COVERDIR"]
+	dir := env["WORKDIR"] + "/" + env["COVERDIR"]
 	_ = os.RemoveAll(dir)
 
 	_ = RemoveDockerNetwork(context.Background(), "qa") // Needed if job was killed

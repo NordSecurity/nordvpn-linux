@@ -2,9 +2,9 @@
 set -euxo
 
 PACKAGE="${1}"
-FILES=$(find "${CI_PROJECT_DIR}"/dist/app/"${PACKAGE}" -type f -name "*.${PACKAGE}")
+FILES=$(find "${WORKDIR}"/dist/app/"${PACKAGE}" -type f -name "*.${PACKAGE}")
 
-source "${CI_PROJECT_DIR}"/ci/repository_name.sh "${PACKAGE}"
+source "${WORKDIR}"/ci/repository_name.sh "${PACKAGE}"
 
 case "${PACKAGE}" in
     "deb")

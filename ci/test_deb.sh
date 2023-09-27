@@ -4,9 +4,9 @@ pattern="${2}"
 
 set -ux
 
-source "${CI_PROJECT_DIR}"/ci/env.sh
+source "${WORKDIR}"/ci/env.sh
 
-if ! "${CI_PROJECT_DIR}"/ci/install_deb.sh; then
+if ! "${WORKDIR}"/ci/install_deb.sh; then
     echo "failed to install deb"
     exit 1
 fi
@@ -29,9 +29,9 @@ sudo ip link del wg0diagnose
 echo "~~~~~~~~~~~~~~"
 
 
-mkdir -p "${CI_PROJECT_DIR}"/dist/logs
+mkdir -p "${WORKDIR}"/dist/logs
 
-cd "${CI_PROJECT_DIR}"/test/qa || exit
+cd "${WORKDIR}"/test/qa || exit
 
 args=()
 
@@ -52,10 +52,10 @@ case "${pattern}" in
 esac
 
 
-mkdir -p "${CI_PROJECT_DIR}"/"${COVERDIR}" 
+mkdir -p "${WORKDIR}"/"${COVERDIR}" 
 
-if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
-    sudo sed -i "1a export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"
+if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
+    sudo sed -i "1a export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"
 fi
 
 if [[ -n ${LATTE:-} ]]; then
@@ -77,6 +77,6 @@ if [ $RET != 0 ]; then
 fi
 exit $RET
 
-if ! sudo grep -q "export GOCOVERDIR=${CI_PROJECT_DIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
+if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
     sudo sed -i "2d" "/etc/init.d/nordvpn"
 fi
