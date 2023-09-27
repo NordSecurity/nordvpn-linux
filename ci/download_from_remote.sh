@@ -78,7 +78,7 @@ for arch in ${ARCHS} ; do
     [[ -e "${output_file}" ]] && continue
     echo "Downloading ${arch}/${PACKAGE_VERSION}/${FILE}..."
     curl \
-        -f \
+        -fL \
         -o "$output_file" \
         -u "${NVPN_LINUX_GL_DEPS_CREDS}" \
         "${CI_API_V4_URL}/projects/${PROJECT_ID}/packages/generic/${arch}/${PACKAGE_VERSION}/${FILE}"
