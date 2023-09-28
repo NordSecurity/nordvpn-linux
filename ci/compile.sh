@@ -8,9 +8,8 @@ source "${WORKDIR}"/ci/archs.sh
 
 # Since race detector has huge performance price and it works only on amd64 and does not
 # work with pie executables, its enabled only for development builds.
-branch="${CI_COMMIT_REF_NAME:=$(git describe --git-dir="${WORKDIR}" --contains --all HEAD)}"
 # shellcheck disable=SC2153
-[ "${branch}" != "main" ] && [ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
+[ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
 
 if [[ "${ENVIRONMENT}" == "prod" ]]; then
 	EVENTS_DOMAIN="${EVENTS_PROD_DOMAIN}"
