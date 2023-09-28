@@ -46,8 +46,9 @@ Our customer support works 24/7 so if you have any questions or issues, drop us 
 `
 
 // CommandHelpTemplate is the template we use to show help
-const CommandHelpTemplate = `{{.HelpName}}
-Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}{{end}}
+const CommandHelpTemplate = `Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}{{end}}
+
+{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}
 {{if .VisibleFlags}}
 Options:
    {{range .VisibleFlags}}{{.}}
@@ -55,8 +56,9 @@ Options:
 `
 
 // CommandWithoutArgsHelpTemplate is the template we use to show help
-const CommandWithoutArgsHelpTemplate = `{{.HelpName}}
-Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{end}}{{end}}
+const CommandWithoutArgsHelpTemplate = `Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}}{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}{{end}}{{end}}
+
+{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}
 {{if .VisibleFlags}}
 Options:
    {{range .VisibleFlags}}{{.}}
@@ -64,10 +66,9 @@ Options:
 `
 
 // SubcommandHelpTemplate is the template we use to show subcommand help
-const SubcommandHelpTemplate = `
-{{.HelpName}} - {{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}
+const SubcommandHelpTemplate = `Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}{{end}}
 
-Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} command{{if .VisibleFlags}} [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}{{end}}
+{{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}
 
 Commands:{{range .VisibleCategories}}{{if .Name}}
    {{.Name}}:{{end}}{{range .VisibleCommands}}
@@ -309,6 +310,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 			Action:       cmd.Connect,
 			BashComplete: cmd.ConnectAutoComplete,
 			ArgsUsage:    ConnectArgsUsageText,
+			Description:  ConnectDescription,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:  "group, g",
