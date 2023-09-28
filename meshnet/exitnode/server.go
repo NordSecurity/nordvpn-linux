@@ -136,6 +136,10 @@ func (en *Server) Disable() error {
 		)
 	}
 
+	if err := en.allowlistManager.disableAllowlist(); err != nil {
+		return fmt.Errorf("disabling allowlist: %w", err)
+	}
+
 	en.enabled = false
 
 	return nil

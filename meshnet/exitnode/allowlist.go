@@ -13,6 +13,10 @@ import (
 
 type operation bool
 
+const (
+	meshAllowlistRuleComment = "nordvpn-exitnode-allowlist"
+)
+
 // Used when adding or removing rules from firewall
 var (
 	REMOVE operation = false
@@ -115,7 +119,7 @@ func allowlistRuleToFirewall(
 			"-m",
 			"comment",
 			"--comment",
-			filterRuleComment,
+			meshAllowlistRuleComment,
 		}
 
 		if portType == "" {
