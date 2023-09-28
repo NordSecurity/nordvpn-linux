@@ -869,9 +869,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			Direction:      firewall.TwoWay,
 			Allow:          true,
 		})
-		if err := netw.allowlistRouting.EnableSubnets(subnets, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
-			return fmt.Errorf("enabling allowlist routing: %w", err)
-		}
 	}
 
 	for _, pair := range []struct {
