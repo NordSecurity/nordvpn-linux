@@ -3,7 +3,6 @@ package allowlist
 import (
 	"errors"
 	"fmt"
-	"net/netip"
 	"os/exec"
 	"testing"
 
@@ -36,23 +35,6 @@ func (m MockCmd) onlyOnceCommandFunc(string, ...string) ([]byte, error) {
 	}
 	m.called = true
 	return []byte("ok"), nil
-}
-
-func TestIPTables_routingSubnets(t *testing.T) {
-	category.Set(t, category.Route)
-
-	err := routeSubnetsToIPTables(workingCommandFunc, subnet, mark)
-
-	assert.NoError(t, err)
-
-	got, err := checkRouting(workingCommandFunc, subnet, mark)
-
-	assert.NoError(t, err)
-	assert.True(t, got)
-
-	err = clearRouting(workingCommandFunc)
-
-	assert.NoError(t, err)
 }
 
 func TestIPTables_routingPorts(t *testing.T) {
@@ -161,48 +143,6 @@ func TestIPTables_EnablePorts(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			wh := NewAllowlistRouting(tt.args.commandFunc)
 			if err := wh.EnablePorts(tt.args.ports, tt.args.protocol, tt.args.mark); (err != nil) != tt.wantErr {
-				t.Errorf("Error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestIPTables_EnableSubnets(t *testing.T) {
-	category.Set(t, category.Route)
-
-	type args struct {
-		subnets     []netip.Prefix
-		commandFunc runCommandFunc
-		mark        string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "Add subnet routing",
-			args: args{
-				subnets:     []netip.Prefix{netip.MustParsePrefix("1.1.1.1/32")},
-				mark:        "0x123",
-				commandFunc: workingCommandFunc,
-			},
-			wantErr: false,
-		},
-		{
-			name: "Failing subnet routing",
-			args: args{
-				subnets:     []netip.Prefix{netip.MustParsePrefix("1.1.1.1/32")},
-				mark:        "0x123",
-				commandFunc: failingCommandFunc,
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			wh := NewAllowlistRouting(tt.args.commandFunc)
-			if err := wh.EnableSubnets(tt.args.subnets, tt.args.mark); (err != nil) != tt.wantErr {
 				t.Errorf("Error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

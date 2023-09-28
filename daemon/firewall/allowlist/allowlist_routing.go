@@ -4,7 +4,6 @@ package allowlist
 import (
 	"bytes"
 	"fmt"
-	"net/netip"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
@@ -17,7 +16,6 @@ const (
 
 type Routing interface {
 	EnablePorts(ports []int, protocol string, mark string) error
-	EnableSubnets(subnets []netip.Prefix, mark string) error
 	Disable() error
 }
 
@@ -49,55 +47,11 @@ func (ipt *IPTables) EnablePorts(ports []int, protocol string, mark string) erro
 	return nil
 }
 
-// Adds allowlist routing rules for subnets
-func (ipt *IPTables) EnableSubnets(subnets []netip.Prefix, mark string) error {
-	for _, subnet := range subnets {
-		err := routeSubnetsToIPTables(ipt.runCommandFunc, subnet.String(), mark)
-		if err != nil {
-			return fmt.Errorf("enabling allowlisting for subnets: %w", err)
-		}
-	}
-	return nil
-}
-
 // Deletes allowlist routing rules
 func (ipt *IPTables) Disable() error {
 	err := clearRouting(ipt.runCommandFunc)
 	if err != nil {
 		return fmt.Errorf("clearing allowlisting: %w", err)
-	}
-	return nil
-}
-
-func routeSubnetsToIPTables(commandFunc runCommandFunc, subnet string, mark string) error {
-	if rc, err := checkRouting(commandFunc, subnet, mark); rc || err != nil {
-		// already set or error happened
-		return err
-	}
-	// iptables -t mangle -I PREROUTING -s 192.168.99.0/24 -j MARK --set-mark 0xe1f1 -m comment --comment "allowlist"
-	args := fmt.Sprintf(
-		"-t mangle -I PREROUTING -s %s -j MARK -m conntrack --set-mark %s --ctstate NEW -m comment --comment %s",
-		subnet,
-		mark,
-		RuleComment,
-	)
-	// #nosec G204 -- input is properly sanitized
-	out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
-	if err != nil {
-		return fmt.Errorf("iptables inserting rule: %w: %s", err, string(out))
-	}
-
-	// iptables -t mangle -I OUTPUT -d 192.168.99.0/24 -j MARK --set-mark 0xe1f1 -m comment --comment "allowlist"
-	args = fmt.Sprintf(
-		"-t mangle -I OUTPUT -d %s -j MARK --set-mark %s -m comment --comment %s",
-		subnet,
-		mark,
-		RuleComment,
-	)
-	// #nosec G204 -- input is properly sanitized
-	out, err = commandFunc(iptablesCmd, strings.Split(args, " ")...)
-	if err != nil {
-		return fmt.Errorf("iptables inserting rule: %w: %s", err, string(out))
 	}
 	return nil
 }
