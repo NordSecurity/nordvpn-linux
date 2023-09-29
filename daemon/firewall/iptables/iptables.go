@@ -312,10 +312,12 @@ func generateIPTablesRule(
 ) string {
 	chain := "OUTPUT"
 	remoteAddrFlag := "-d"
+	localAddrFlag := "-s"
 	ifaceFlag := "-o"
 	if input {
 		chain = "INPUT"
 		remoteAddrFlag = "-s"
+		localAddrFlag = "-d"
 		ifaceFlag = "-i"
 	}
 
@@ -327,7 +329,7 @@ func generateIPTablesRule(
 		rule += " " + remoteAddrFlag + " " + remoteNetwork.String()
 	}
 	if localNetwork != (netip.Prefix{}) {
-		rule += " -s " + localNetwork.String()
+		rule += " " + localAddrFlag + " " + localNetwork.String()
 	}
 	if protocol != "" {
 		rule += " -p " + protocol

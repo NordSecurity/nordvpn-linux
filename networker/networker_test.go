@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -18,6 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 
 	"github.com/stretchr/testify/assert"
@@ -1145,41 +1147,55 @@ func TestCombined_AllowIncoming(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name      string
-		fw        firewall.Service
-		allowlist allowlist.Routing
-		rt        routes.Service
-		publicKey string
-		address   string
-		ruleName  string
-		err       error
+		name       string
+		fw         firewall.Service
+		allowlist  allowlist.Routing
+		rt         routes.Service
+		publicKey  string
+		address    string
+		ruleName   string
+		lanAllowed bool
+		err        error
 	}{
 		{
-			name:      "a1",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
-			publicKey: "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
-			address:   "100.100.10.1",
-			ruleName:  "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
+			name:       "a1",
+			fw:         &workingFirewall{},
+			allowlist:  workingAllowlistRouting{},
+			rt:         workingRouter{},
+			publicKey:  "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
+			address:    "100.100.10.1",
+			ruleName:   "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
+			lanAllowed: true,
 		},
 		{
-			name:      "a2",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
-			publicKey: "a70ad213-fa09-4ae4-890b-bea12697b9f0",
-			address:   "100.100.10.1",
-			ruleName:  "a70ad213-fa09-4ae4-890b-bea12697b9f0-allow-rule-100.100.10.1",
+			name:       "a2",
+			fw:         &workingFirewall{},
+			allowlist:  workingAllowlistRouting{},
+			rt:         workingRouter{},
+			publicKey:  "a70ad213-fa09-4ae4-890b-bea12697b9f0",
+			address:    "100.100.10.1",
+			ruleName:   "a70ad213-fa09-4ae4-890b-bea12697b9f0-allow-rule-100.100.10.1",
+			lanAllowed: true,
 		},
 		{
-			name:      "a3",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
-			publicKey: "a2513324-7bac-4dcc-b059-e12df48d7418",
-			address:   "100.100.10.1",
-			ruleName:  "a2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
+			name:       "a3",
+			fw:         &workingFirewall{},
+			allowlist:  workingAllowlistRouting{},
+			rt:         workingRouter{},
+			publicKey:  "a2513324-7bac-4dcc-b059-e12df48d7418",
+			address:    "100.100.10.1",
+			ruleName:   "a2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
+			lanAllowed: true,
+		},
+		{
+			name:       "lan not allowed",
+			fw:         &workingFirewall{},
+			allowlist:  workingAllowlistRouting{},
+			rt:         workingRouter{},
+			publicKey:  "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
+			address:    "100.100.10.1",
+			ruleName:   "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
+			lanAllowed: false,
 		},
 	}
 
@@ -1205,7 +1221,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 				false,
 			)
 			uniqueAddress := meshnet.UniqueAddress{UID: test.publicKey, Address: netip.MustParseAddr(test.address)}
-			err := netw.AllowIncoming(uniqueAddress)
+			err := netw.AllowIncoming(uniqueAddress, test.lanAllowed)
 			assert.Equal(t, nil, err)
 		})
 	}
@@ -1275,7 +1291,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 				false,
 			)
 			uniqueAddress := meshnet.UniqueAddress{UID: test.publicKey, Address: netip.MustParseAddr(test.address)}
-			err := netw.AllowIncoming(uniqueAddress)
+			err := netw.AllowIncoming(uniqueAddress, true)
 			assert.Equal(t, nil, err)
 			err = netw.BlockIncoming(uniqueAddress)
 			assert.Equal(t, nil, err)
@@ -1386,33 +1402,42 @@ func TestCombined_UnSetMesh(t *testing.T) {
 
 func TestCombined_allowIncoming(t *testing.T) {
 	tests := []struct {
-		name     string
-		ruleName string
-		address  string
-		fw       firewall.Service
+		name               string
+		ruleName           string
+		lanAllowedRuleName string
+		address            string
+		lanAllowed         bool
 	}{
 		{
-			name:     "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
-			address:  "100.100.10.1",
-			ruleName: "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
+			name:       "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
+			address:    "100.100.10.1",
+			ruleName:   "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
+			lanAllowed: true,
 		},
 		{
-			name:     "a70ad213-fa09-4ae4-890b-bea12697b9f0",
-			address:  "100.100.10.1",
-			ruleName: "a70ad213-fa09-4ae4-890b-bea12697b9f0-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
+			name:       "a70ad213-fa09-4ae4-890b-bea12697b9f0",
+			address:    "100.100.10.1",
+			ruleName:   "a70ad213-fa09-4ae4-890b-bea12697b9f0-allow-rule-100.100.10.1",
+			lanAllowed: true,
 		},
 		{
-			name:     "a2513324-7bac-4dcc-b059-e12df48d7418",
-			address:  "100.100.10.1",
-			ruleName: "a2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
+			name:       "a2513324-7bac-4dcc-b059-e12df48d7418",
+			address:    "100.100.10.1",
+			ruleName:   "a2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
+			lanAllowed: true,
+		},
+		{
+			name:               "1f391849-f94b-4826-a5ce-acb6e8a4e432",
+			address:            "100.100.10.1",
+			ruleName:           "1f391849-f94b-4826-a5ce-acb6e8a4e432-allow-rule-100.100.10.1",
+			lanAllowedRuleName: "1f391849-f94b-4826-a5ce-acb6e8a4e432-block-lan-rule-100.100.10.1",
+			lanAllowed:         false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			mockFirewall := testfirewall.NewMockFirewall()
 			netw := NewCombined(
 				nil,
 				nil,
@@ -1421,7 +1446,7 @@ func TestCombined_allowIncoming(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				test.fw,
+				&mockFirewall,
 				nil,
 				nil,
 				nil,
@@ -1432,8 +1457,24 @@ func TestCombined_allowIncoming(t *testing.T) {
 				0,
 				false,
 			)
-			netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
-			assert.Equal(t, netw.rules[0], test.ruleName)
+			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), test.lanAllowed)
+
+			assert.Nil(t, err)
+			if !test.lanAllowed {
+				assert.Equal(t, test.lanAllowedRuleName, netw.rules[0])
+				assert.Equal(t, test.ruleName, netw.rules[1])
+
+				assert.Equal(t, test.lanAllowedRuleName, mockFirewall.Rules[1].Name)
+				assert.Equal(t, firewall.Inbound, mockFirewall.Rules[1].Direction)
+
+				assert.Equal(t, test.ruleName, mockFirewall.Rules[0].Name)
+				assert.Equal(t, firewall.Inbound, mockFirewall.Rules[0].Direction)
+			} else {
+				assert.Equal(t, test.ruleName, netw.rules[0])
+
+				assert.Equal(t, test.ruleName, mockFirewall.Rules[0].Name)
+				assert.Equal(t, firewall.Inbound, mockFirewall.Rules[0].Direction)
+			}
 		})
 	}
 }
@@ -1486,9 +1527,12 @@ func TestCombined_Block(t *testing.T) {
 				0,
 				false,
 			)
-			netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
+			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), true)
+			assert.Nil(t, err)
 			assert.Equal(t, netw.rules[0], test.ruleName)
-			netw.BlockIncoming(meshnet.UniqueAddress{UID: test.name, Address: netip.MustParseAddr(test.address)})
+
+			err = netw.BlockIncoming(meshnet.UniqueAddress{UID: test.name, Address: netip.MustParseAddr(test.address)})
+			assert.Nil(t, err)
 			assert.Equal(t, 0, len(netw.rules))
 		})
 	}
@@ -1542,7 +1586,7 @@ func TestCombined_allowGeneratedRule(t *testing.T) {
 				0,
 				false,
 			)
-			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
+			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), true)
 			assert.Equal(t, nil, err)
 			assert.Equal(t, netw.rules[0], test.ruleName)
 		})
@@ -1586,7 +1630,7 @@ func TestCombined_BlocNonExistingRuleFail(t *testing.T) {
 				false,
 			)
 			// Should fail to block rule non existing
-			expectedErrorMsg := fmt.Sprintf("Allow rule does not exist for %s", test.ruleName)
+			expectedErrorMsg := fmt.Sprintf("allow rule does not exist for %s", test.ruleName)
 			err := netw.BlockIncoming(meshnet.UniqueAddress{UID: test.name, Address: netip.MustParseAddr(test.address)})
 			assert.EqualErrorf(t, err, expectedErrorMsg, "Error should be: %v, got: %v", expectedErrorMsg, err)
 		})
@@ -1595,21 +1639,23 @@ func TestCombined_BlocNonExistingRuleFail(t *testing.T) {
 
 func TestCombined_allowExistingRuleFail(t *testing.T) {
 	tests := []struct {
-		name     string
-		ruleName string
-		address  string
-		fw       firewall.Service
+		name          string
+		allowRuleName string
+		expectedRules []string
+		address       string
 	}{
 		{
-			name:     "ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
-			address:  "100.100.10.1",
-			ruleName: "ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
+			name:          "ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
+			address:       "100.100.10.1",
+			allowRuleName: "ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
+			expectedRules: []string{"ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-block-lan-rule-100.100.10.1", "ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1"},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			mockFirewall := testfirewall.NewMockFirewall()
+
 			netw := NewCombined(
 				nil,
 				nil,
@@ -1618,7 +1664,7 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				test.fw,
+				&mockFirewall,
 				nil,
 				nil,
 				nil,
@@ -1629,12 +1675,12 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 				0,
 				false,
 			)
-			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
+			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), false)
 			assert.Equal(t, nil, err)
-			assert.Equal(t, netw.rules[0], test.ruleName)
+			assert.Equal(t, netw.rules, test.expectedRules)
 			// Should fail to add rule second time
-			expectedErrorMsg := fmt.Sprintf("allow rule already exist for %s", test.ruleName)
-			err = netw.allowIncoming(test.name, netip.MustParseAddr(test.address))
+			expectedErrorMsg := fmt.Sprintf("allow rule already exist for %s", test.allowRuleName)
+			err = netw.allowIncoming(test.name, netip.MustParseAddr(test.address), false)
 			assert.EqualErrorf(t, err, expectedErrorMsg, "Error should be: %v, got: %v", expectedErrorMsg, err)
 		})
 	}
@@ -1721,7 +1767,14 @@ func TestCombined_Refresh(t *testing.T) {
 		"DNS host was not configured properly for %s, \nexpected config: \n%v, \nactual config: \n%v",
 		expectedPeer1DnsHost, hostSetter.hosts[1])
 
-	assert.Equal(t, 5, len(fw.rules), "%d firewall rules were configured, expected 5", len(fw.rules))
+	// transform rules to rule names for printing in case of assertion failure
+	ruleNames := []string{}
+	for _, rule := range fw.rules {
+		ruleNames = append(ruleNames, rule.Name)
+	}
+	assert.Equal(t, 6, len(fw.rules), "%d firewall rules were configured, expected 5, rules content: \n%s",
+		len(fw.rules),
+		strings.Join(ruleNames, "\n"))
 
 	defaultMeshBlockRuleName := "default-mesh-block"
 
@@ -1844,7 +1897,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 	}{
 		{
 			name:         "no actions",
-			actions:      func(c *Combined) { _ = c.ResetRouting(nil) },
+			actions:      func(c *Combined) { _ = c.ResetRouting(mesh.MachinePeer{}, nil) },
 			lanAvailable: true,
 		},
 		{
@@ -1968,6 +2021,224 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			combined := GetTestCombined()
 			test.actions(combined)
 			assert.Equal(t, test.lanAvailable, combined.exitNode.(*workingExitNode).LanAvailable)
+		})
+	}
+}
+
+func rulesToString(t *testing.T, rules []firewall.Rule) string {
+	t.Helper()
+
+	ruleNames := []string{}
+	for _, rule := range rules {
+		ruleNames = append(ruleNames, rule.Name)
+	}
+
+	return strings.Join(ruleNames, "\n")
+}
+
+func TestResetRouting(t *testing.T) {
+	peer1Address := netip.MustParseAddr("163.190.101.26")
+	peer1PublicKey := "hCRTygV0hU6AtYrHuEvjOXd0UCobDd48hDJFkOMSmC="
+
+	peer2Address := netip.MustParseAddr("190.53.114.47")
+	peer2PublicKey := "IiENMnpmmS4VWdXgCDoytzZozV8d4z5bu103nMrJen="
+
+	peer3Address := netip.MustParseAddr("144.79.247.102")
+	peer3PublicKey := "2oob1sS0p8v4G6jxOoDZjq5lmaHfAm2d5CJPRMLKxw="
+
+	peer4Address := netip.MustParseAddr("121.92.239.59")
+	peer4PublicKey := "Ha3dzBMzdsrw3pEB3UuJE7NxlcCGZYopqrBN8HSqGK="
+
+	peer5Address := netip.MustParseAddr("36.166.227.80")
+	peer5PublicKey := "0oaqVJEXsgAZooshXxHClE3nmTB2O6wVRFfEZy5Yjp="
+
+	peers := mesh.MachinePeers{
+		{
+			Hostname:             "peer-1",
+			Address:              peer1Address,
+			PublicKey:            peer1PublicKey,
+			DoIAllowInbound:      true,
+			DoIAllowRouting:      false,
+			DoIAllowLocalNetwork: false,
+		},
+		{
+			Hostname:             "peer-2",
+			Address:              peer2Address,
+			PublicKey:            peer2PublicKey,
+			DoIAllowInbound:      true,
+			DoIAllowRouting:      true,
+			DoIAllowLocalNetwork: false,
+		},
+		{
+			Hostname:             "peer-3",
+			Address:              peer3Address,
+			PublicKey:            peer3PublicKey,
+			DoIAllowInbound:      true,
+			DoIAllowRouting:      false,
+			DoIAllowLocalNetwork: true,
+		},
+		{
+			Hostname:             "peer-4",
+			Address:              peer4Address,
+			PublicKey:            peer4PublicKey,
+			DoIAllowInbound:      false,
+			DoIAllowRouting:      true,
+			DoIAllowLocalNetwork: true,
+		},
+		{
+			Hostname:             "peer-5",
+			Address:              peer5Address,
+			PublicKey:            peer5PublicKey,
+			DoIAllowInbound:      true,
+			DoIAllowRouting:      true,
+			DoIAllowLocalNetwork: true,
+		},
+	}
+
+	tests := []struct {
+		name           string
+		changedPeerIdx int
+		expectedRules  []firewall.Rule
+	}{
+		{
+			name:           "no routing/no lan",
+			changedPeerIdx: 0,
+			expectedRules: []firewall.Rule{
+				{
+					Name:      peer1PublicKey + allowIncomingRule + peer1Address.String(),
+					Direction: firewall.Inbound,
+					RemoteNetworks: []netip.Prefix{
+						netip.PrefixFrom(peer1Address, peer1Address.BitLen()),
+					},
+					Allow: true,
+				},
+				{
+					Name:      peer1PublicKey + blockLanRule + peer1Address.String(),
+					Direction: firewall.Inbound,
+					LocalNetworks: []netip.Prefix{
+						netip.MustParsePrefix("10.0.0.0/8"),
+						netip.MustParsePrefix("172.16.0.0/12"),
+						netip.MustParsePrefix("192.168.0.0/16"),
+						netip.MustParsePrefix("169.254.0.0/16"),
+					},
+					RemoteNetworks: []netip.Prefix{
+						netip.PrefixFrom(peer1Address, peer1Address.BitLen()),
+					},
+					Allow: false,
+				},
+			},
+		},
+		{
+			name:           "no lan",
+			changedPeerIdx: 1,
+			expectedRules: []firewall.Rule{
+				{
+					Name:      peer2PublicKey + allowIncomingRule + peer2Address.String(),
+					Direction: firewall.Inbound,
+					RemoteNetworks: []netip.Prefix{
+						netip.PrefixFrom(peer2Address, peer2Address.BitLen()),
+					},
+					Allow: true,
+				},
+				{
+					Name:      peer2PublicKey + blockLanRule + peer2Address.String(),
+					Direction: firewall.Inbound,
+					LocalNetworks: []netip.Prefix{
+						netip.MustParsePrefix("10.0.0.0/8"),
+						netip.MustParsePrefix("172.16.0.0/12"),
+						netip.MustParsePrefix("192.168.0.0/16"),
+						netip.MustParsePrefix("169.254.0.0/16"),
+					},
+					RemoteNetworks: []netip.Prefix{
+						netip.PrefixFrom(peer2Address, peer2Address.BitLen()),
+					},
+					Allow: false,
+				},
+			},
+		},
+		{
+			name:           "no routing",
+			changedPeerIdx: 2,
+			expectedRules: []firewall.Rule{
+				{
+					Name:      peer3PublicKey + allowIncomingRule + peer3Address.String(),
+					Direction: firewall.Inbound,
+					RemoteNetworks: []netip.Prefix{
+						netip.PrefixFrom(peer3Address, peer3Address.BitLen()),
+					},
+					Allow: true,
+				},
+				{
+					Name:      peer3PublicKey + blockLanRule + peer3Address.String(),
+					Direction: firewall.Inbound,
+					LocalNetworks: []netip.Prefix{
+						netip.MustParsePrefix("10.0.0.0/8"),
+						netip.MustParsePrefix("172.16.0.0/12"),
+						netip.MustParsePrefix("192.168.0.0/16"),
+						netip.MustParsePrefix("169.254.0.0/16"),
+					},
+					RemoteNetworks: []netip.Prefix{
+						netip.PrefixFrom(peer3Address, peer3Address.BitLen()),
+					},
+					Allow: false,
+				},
+			},
+		},
+		{
+			name:           "no inbound",
+			changedPeerIdx: 3,
+			expectedRules:  []firewall.Rule{},
+		},
+		{
+			name:           "no routing",
+			changedPeerIdx: 4,
+			expectedRules: []firewall.Rule{
+				{
+					Name:      peer5PublicKey + allowIncomingRule + peer5Address.String(),
+					Direction: firewall.Inbound,
+					RemoteNetworks: []netip.Prefix{
+						netip.PrefixFrom(peer5Address, peer5Address.BitLen()),
+					},
+					Allow: true,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockFirewall := testfirewall.NewMockFirewall()
+			exitNode := newWorkingExitNode()
+
+			netw := NewCombined(
+				nil,
+				nil,
+				nil,
+				&subs.Subject[string]{},
+				nil,
+				nil,
+				nil,
+				&mockFirewall,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				exitNode,
+				0,
+				false,
+			)
+
+			err := netw.ResetRouting(peers[test.changedPeerIdx], peers)
+
+			assert.NoError(t, err)
+
+			// transform expected and acutall rules for printing
+
+			assert.Equal(t, test.expectedRules, mockFirewall.Rules, "Invalid rules configured, \nEXPECTED:\n%s\nGOT:\n%s",
+				rulesToString(t, test.expectedRules), rulesToString(t, mockFirewall.Rules))
+			assert.Equal(t, peers, exitNode.peers)
 		})
 	}
 }

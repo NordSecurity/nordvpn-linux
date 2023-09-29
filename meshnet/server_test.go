@@ -33,11 +33,17 @@ type registrationChecker struct{}
 
 func (registrationChecker) IsRegistered() bool { return true }
 
+type allowedIncoming struct {
+	address    UniqueAddress
+	lanAllowed bool
+}
+
 type workingNetworker struct {
-	allowedIncoming  []UniqueAddress
+	allowedIncoming  []allowedIncoming
 	blockedIncoming  []UniqueAddress
 	allowedFileshare []UniqueAddress
 	blockedFileshare []UniqueAddress
+	resetPeers       []string
 }
 
 func (workingNetworker) Start(
@@ -58,8 +64,12 @@ func (n *workingNetworker) AllowFileshare(address UniqueAddress) error {
 	return nil
 }
 
-func (n *workingNetworker) AllowIncoming(address UniqueAddress) error {
-	n.allowedIncoming = append(n.allowedIncoming, address)
+func (n *workingNetworker) AllowIncoming(address UniqueAddress, lanAllowed bool) error {
+	n.allowedIncoming = append(n.allowedIncoming, allowedIncoming{
+		address:    address,
+		lanAllowed: lanAllowed,
+	})
+
 	return nil
 }
 
@@ -73,9 +83,14 @@ func (n *workingNetworker) BlockFileshare(address UniqueAddress) error {
 	return nil
 }
 
-func (*workingNetworker) ResetRouting(mesh.MachinePeers) error { return nil }
-func (*workingNetworker) BlockRouting(UniqueAddress) error     { return nil }
-func (*workingNetworker) Refresh(mesh.MachineMap) error        { return nil }
+func (n *workingNetworker) ResetRouting(changedPeer mesh.MachinePeer, peer mesh.MachinePeers) error {
+	n.resetPeers = append(n.resetPeers, changedPeer.PublicKey)
+
+	return nil
+}
+
+func (*workingNetworker) BlockRouting(UniqueAddress) error { return nil }
+func (*workingNetworker) Refresh(mesh.MachineMap) error    { return nil }
 func (*workingNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
@@ -659,12 +674,21 @@ func TestServer_AcceptIncoming(t *testing.T) {
 	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
 	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
 	peerIncomingAlreadyAllowedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	peerNoRoutingUuid := "8c9f1e11-4b67-4ba4-a2df-4308757f2d59"
+	peerNoLANUuid := "06d3c1ba-997c-4b2c-9d61-0d718becdd89"
+	peerLANAndRoutingUuid := "7505abad-527f-442f-b17a-820451ff8e8a"
 
 	peerValidAddress := netip.MustParseAddr("220.16.61.136")
 	peerIncomingAlreadyAllowedAddress := netip.MustParseAddr("87.169.173.253")
+	peerNoRoutingAddress := netip.MustParseAddr("54.1.218.8")
+	peerNoLANAddress := netip.MustParseAddr("18.203.48.39")
+	peerLANAndRoutingAddress := netip.MustParseAddr("249.205.110.178")
 
 	peerValidPublicKey := "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t="
 	peerIncomingAlreadyAllowedPublicKey := "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp="
+	peerNoRoutingPublicKey := "ubQBAfx1VXCI2yXqx5oqmcoc5wpBuRxvXRfXXC8qeR="
+	peerNoLANAddressPublicKey := "OwJTUXZmqOvXtiC8viXIlezSGe5uEZjTkhVWPyNSnA="
+	peerLANAndRoutingPublicKey := "SNoKCfCdi6OKHGI1dRM8QCLwuUMZ5Q2oltlYsLG1kA="
 
 	getServer := func() (*Server, *workingNetworker) {
 		registryApi := registryAPI{}
@@ -686,10 +710,42 @@ func TestServer_AcceptIncoming(t *testing.T) {
 				Address:         peerIncomingAlreadyAllowedAddress,
 				PublicKey:       peerIncomingAlreadyAllowedPublicKey,
 			},
+			{
+				ID:                   uuid.MustParse(peerNoRoutingUuid),
+				DoIAllowInbound:      false,
+				DoIAllowLocalNetwork: true,
+				DoIAllowRouting:      false,
+				Address:              peerNoRoutingAddress,
+				PublicKey:            peerNoRoutingPublicKey,
+			},
+			{
+				ID:                   uuid.MustParse(peerNoRoutingUuid),
+				DoIAllowInbound:      false,
+				DoIAllowLocalNetwork: true,
+				DoIAllowRouting:      false,
+				Address:              peerNoRoutingAddress,
+				PublicKey:            peerNoRoutingPublicKey,
+			},
+			{
+				ID:                   uuid.MustParse(peerNoLANUuid),
+				DoIAllowInbound:      false,
+				DoIAllowLocalNetwork: false,
+				DoIAllowRouting:      true,
+				Address:              peerNoLANAddress,
+				PublicKey:            peerNoLANAddressPublicKey,
+			},
+			{
+				ID:                   uuid.MustParse(peerLANAndRoutingUuid),
+				DoIAllowInbound:      false,
+				DoIAllowLocalNetwork: true,
+				DoIAllowRouting:      true,
+				Address:              peerLANAndRoutingAddress,
+				PublicKey:            peerLANAndRoutingPublicKey,
+			},
 		}
 
 		networker := workingNetworker{}
-		networker.allowedIncoming = []UniqueAddress{}
+		networker.allowedIncoming = []allowedIncoming{}
 
 		server := NewServer(
 			meshRenewChecker{},
@@ -713,19 +769,19 @@ func TestServer_AcceptIncoming(t *testing.T) {
 		name               string
 		peerUuid           string
 		expectedResponse   *pb.AllowIncomingResponse
-		expectedAllowedIPs []UniqueAddress
+		expectedAllowedIPs []allowedIncoming
 	}{
 		{
 			name:               "allow valid peer",
 			peerUuid:           peerValidUuid,
 			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
-			expectedAllowedIPs: []UniqueAddress{{UID: peerValidPublicKey, Address: peerValidAddress}},
+			expectedAllowedIPs: []allowedIncoming{{address: UniqueAddress{UID: peerValidPublicKey, Address: peerValidAddress}, lanAllowed: false}},
 		},
 		{
 			name:               "allow peer with no ip",
 			peerUuid:           peerNoIpUuid,
 			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
-			expectedAllowedIPs: []UniqueAddress{},
+			expectedAllowedIPs: []allowedIncoming{},
 		},
 		{
 			name:     "peer traffic routing already allowed",
@@ -735,7 +791,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 					AllowIncomingErrorCode: pb.AllowIncomingErrorCode_INCOMING_ALREADY_ALLOWED,
 				},
 			},
-			expectedAllowedIPs: []UniqueAddress{},
+			expectedAllowedIPs: []allowedIncoming{},
 		},
 		{
 			name:     "unknown peer",
@@ -745,7 +801,25 @@ func TestServer_AcceptIncoming(t *testing.T) {
 					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
 				},
 			},
-			expectedAllowedIPs: []UniqueAddress{},
+			expectedAllowedIPs: []allowedIncoming{},
+		},
+		{
+			name:               "allow peer no routing",
+			peerUuid:           peerNoRoutingUuid,
+			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
+			expectedAllowedIPs: []allowedIncoming{{address: UniqueAddress{UID: peerNoRoutingPublicKey, Address: peerNoRoutingAddress}, lanAllowed: false}},
+		},
+		{
+			name:               "allow peer no lan",
+			peerUuid:           peerNoLANUuid,
+			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
+			expectedAllowedIPs: []allowedIncoming{{address: UniqueAddress{UID: peerNoLANAddressPublicKey, Address: peerNoLANAddress}, lanAllowed: false}},
+		},
+		{
+			name:               "allow peer routing and lan",
+			peerUuid:           peerLANAndRoutingUuid,
+			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
+			expectedAllowedIPs: []allowedIncoming{{address: UniqueAddress{UID: peerLANAndRoutingPublicKey, Address: peerLANAndRoutingAddress}, lanAllowed: true}},
 		},
 	}
 
@@ -756,7 +830,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedResponse, resp)
-			assert.Equal(t, test.expectedAllowedIPs, networker.allowedIncoming)
+			assert.Equal(t, test.expectedAllowedIPs, networker.allowedIncoming, "Invalid addresses were allowed.")
 		})
 	}
 }

@@ -234,3 +234,37 @@ def test_firewall_07_with_killswitch_while_connected():
     assert network.is_disconnected()
 
     assert not firewall.is_active()
+
+
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_firewall_exitnode():
+    lib.set_firewall("on")
+    assert not firewall.is_active()
+
+    lib.set_killswitch("on")
+
+    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+        assert firewall.is_active()
+
+    output = sh.nordvpn.connect()
+
+    print(output)
+    assert lib.is_connect_successful(output)
+    assert firewall.is_active()
+
+    with lib.ErrorDefer(sh.nordvpn.disconnect):
+        assert network.is_connected()
+
+    lib.set_killswitch("off")
+    assert firewall.is_active()
+
+    with lib.ErrorDefer(sh.nordvpn.disconnect):
+        assert network.is_connected()
+
+    output = sh.nordvpn.disconnect()
+    print(output)
+    assert lib.is_disconnect_successful(output)
+    assert network.is_disconnected()
+
+    assert not firewall.is_active()

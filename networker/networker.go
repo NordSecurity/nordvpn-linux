@@ -46,6 +46,15 @@ var (
 	defaultMeshSubnet   = netip.MustParsePrefix("100.64.0.0/10")
 )
 
+const (
+	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
+	// for allowing the incomig connections
+	allowIncomingRule = "-allow-rule-"
+	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
+	// for blocking incoming connections into local networks
+	blockLanRule = "-block-lan-rule-"
+)
+
 // ConnectionStatus of a currently active connection
 type ConnectionStatus struct {
 	// State of the vpn. OpenVPN specific.
@@ -1189,7 +1198,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		return fmt.Errorf("adding default block rule: %w", err)
 	}
 
-	if err = netw.allowIncoming(cfg.Machine.PublicKey, cfg.Machine.Address); err != nil {
+	if err = netw.allowIncoming(cfg.Machine.PublicKey, cfg.Machine.Address, true); err != nil {
 		return fmt.Errorf("allowing to reach self via meshnet: %w", err)
 	}
 
@@ -1198,8 +1207,10 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 			continue
 		}
 
+		lanAllowed := peer.DoIAllowRouting && peer.DoIAllowLocalNetwork
+
 		if peer.DoIAllowInbound {
-			err = netw.allowIncoming(peer.PublicKey, peer.Address)
+			err = netw.allowIncoming(peer.PublicKey, peer.Address, lanAllowed)
 			if err != nil {
 				return fmt.Errorf("allowing inbound traffic for peer: %w", err)
 			}
@@ -1320,27 +1331,51 @@ func (netw *Combined) StatusMap() (map[string]string, error) {
 }
 
 // AllowIncoming traffic from the uniqueAddress.
-func (netw *Combined) AllowIncoming(uniqueAddress meshnet.UniqueAddress) error {
+func (netw *Combined) AllowIncoming(uniqueAddress meshnet.UniqueAddress, lanAllowed bool) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.allowIncoming(uniqueAddress.UID, uniqueAddress.Address)
+	return netw.allowIncoming(uniqueAddress.UID, uniqueAddress.Address, lanAllowed)
 }
 
-func (netw *Combined) allowIncoming(publicKey string, address netip.Addr) error {
-	ruleName := publicKey + "-allow-rule-" + address.String()
-	rules := []firewall.Rule{{
+func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAllowed bool) error {
+	rules := []firewall.Rule{}
+
+	ruleName := publicKey + allowIncomingRule + address.String()
+	rule := firewall.Rule{
 		Name:      ruleName,
 		Direction: firewall.Inbound,
 		RemoteNetworks: []netip.Prefix{
 			netip.PrefixFrom(address, address.BitLen()),
 		},
 		Allow: true,
-	}}
+	}
+	rules = append(rules, rule)
 
 	ruleIndex := slices.Index(netw.rules, ruleName)
 
 	if ruleIndex != -1 {
 		return fmt.Errorf("allow rule already exist for %s", ruleName)
+	}
+
+	if !lanAllowed {
+		ruleName := publicKey + blockLanRule + address.String()
+		rule := firewall.Rule{
+			Name:      ruleName,
+			Direction: firewall.Inbound,
+			LocalNetworks: []netip.Prefix{
+				netip.MustParsePrefix("10.0.0.0/8"),
+				netip.MustParsePrefix("172.16.0.0/12"),
+				netip.MustParsePrefix("192.168.0.0/16"),
+				netip.MustParsePrefix("169.254.0.0/16"),
+			},
+			RemoteNetworks: []netip.Prefix{
+				netip.PrefixFrom(address, address.BitLen()),
+			},
+			Allow: false,
+		}
+
+		rules = append(rules, rule)
+		netw.rules = append(netw.rules, ruleName)
 	}
 
 	if err := netw.fw.Add(rules); err != nil {
@@ -1389,7 +1424,19 @@ func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error
 func (netw *Combined) BlockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	ruleName := uniqueAddress.UID + "-allow-rule-" + uniqueAddress.Address.String()
+
+	return netw.blockIncoming(uniqueAddress)
+}
+
+func (netw *Combined) blockIncoming(uniqueAddress meshnet.UniqueAddress) error {
+	lanRuleName := uniqueAddress.UID + blockLanRule + uniqueAddress.Address.String()
+	if slices.Index(netw.rules, lanRuleName) != -1 {
+		if err := netw.removeRule(lanRuleName); err != nil {
+			return err
+		}
+	}
+
+	ruleName := uniqueAddress.UID + allowIncomingRule + uniqueAddress.Address.String()
 	return netw.removeRule(ruleName)
 }
 
@@ -1404,7 +1451,7 @@ func (netw *Combined) removeRule(ruleName string) error {
 	ruleIndex := slices.Index(netw.rules, ruleName)
 
 	if ruleIndex == -1 {
-		return fmt.Errorf("Allow rule does not exist for %s", ruleName)
+		return fmt.Errorf("allow rule does not exist for %s", ruleName)
 	}
 
 	if err := netw.fw.Delete([]string{ruleName}); err != nil {
@@ -1429,9 +1476,38 @@ func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 	return hosts
 }
 
-func (netw *Combined) ResetRouting(peers mesh.MachinePeers) error {
+func (netw *Combined) refreshIncoming(peer mesh.MachinePeer) error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+
+	if !peer.DoIAllowInbound {
+		return nil
+	}
+
+	address := meshnet.UniqueAddress{
+		UID: peer.PublicKey, Address: peer.Address,
+	}
+
+	if slices.Index(netw.rules, peer.PublicKey+allowIncomingRule+peer.Address.String()) != -1 {
+		if err := netw.blockIncoming(address); err != nil {
+			return fmt.Errorf("blocking incoming traffic: %w", err)
+		}
+	}
+
+	if err := netw.allowIncoming(address.UID, address.Address, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
+		return fmt.Errorf("allowing incoming traffic: %w", err)
+	}
+
+	return nil
+}
+
+func (netw *Combined) ResetRouting(peer mesh.MachinePeer, peers mesh.MachinePeers) error {
 	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	return netw.exitNode.ResetPeers(peers, lanAvailable)
+	if err := netw.exitNode.ResetPeers(peers, lanAvailable); err != nil {
+		return err
+	}
+
+	return netw.refreshIncoming(peer)
 }
 
 func (netw *Combined) defaultMeshBlock(ip netip.Addr) error {
