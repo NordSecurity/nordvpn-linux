@@ -15,13 +15,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// SetAutoconnectUsageText is shown next to autoconnect command by nordvpn set --help
-const SetAutoconnectUsageText = "Enables or disables auto-connect. When enabled, this feature will automatically try to connect to VPN on operating system startup."
-
-// SetAutoConnectArgsUsageText is shown by nordvpn set autoconnect --help
-const SetAutoConnectArgsUsageText = `<enabled>|<disabled> [<country>|<server>|<country_code>|<city>|<group>|<country> <city>]
-
-Enables or disables auto-connect. When enabled, this feature will automatically try to connect to VPN on operating system startup.
+// Set autoconnect help text
+const (
+	SetAutoconnectUsageText     = "Enables or disables auto-connect. When enabled, this feature will automatically try to connect to VPN on operating system startup."
+	SetAutoConnectArgsUsageText = `<enabled>|<disabled> [<country>|<server>|<country_code>|<city>|<group>|<country> <city>]`
+	SetAutoConnectDescription   = `Enables or disables auto-connect. When enabled, this feature will automatically try to connect to VPN on operating system startup.
 
 Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set autoconnect off
@@ -34,6 +32,7 @@ Provide a <server> argument to connect to a specific server. For example: 'nordv
 Provide a <country_code> argument to connect to a specific country. For example: 'nordvpn set autoconnect enabled us'
 Provide a <city> argument to connect to a specific city. For example: 'nordvpn set autoconnect enabled Budapest'
 Provide a <group> argument to connect to a specific servers group. For example: 'nordvpn set autoconnect enabled Onion_Over_VPN'`
+)
 
 func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	args := ctx.Args()

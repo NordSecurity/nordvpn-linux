@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/term"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -33,8 +35,8 @@ Website: https://nordvpn.com
 Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}
 
 Commands:{{range .VisibleCategories}}{{if .Name}}
-   {{.Name}}:{{end}}{{range .VisibleCommands}}
-     {{join .Names ", "}}{{"\t"}}{{.Usage}}{{end}}{{end}}{{end}}
+   {{.Name}}:{{end}}{{ $cv := offsetCommands .VisibleCommands 7}}{{range .VisibleCommands}}
+     {{$s := join .Names ", "}}{{$s}}{{ $sp := subtract $cv (offset $s 5) }}{{ indent $sp ""}}{{wrap .Usage $cv}}{{end}}{{end}}{{end}}
 {{if .VisibleFlags}}
 Global options:
    {{range $index, $option := .VisibleFlags}}{{if $index}}
@@ -71,8 +73,8 @@ const SubcommandHelpTemplate = `Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{
 {{if .Description}}{{.Description}}{{else}}{{.Usage}}{{end}}
 
 Commands:{{range .VisibleCategories}}{{if .Name}}
-   {{.Name}}:{{end}}{{range .VisibleCommands}}
-     {{join .Names ", "}}{{"\t"}}{{.Usage}}{{end}}
+   {{.Name}}:{{end}}{{ $cv := offsetCommands .VisibleCommands 7}}{{range .VisibleCommands}}
+     {{$s := join .Names ", "}}{{$s}}{{ $sp := subtract $cv (offset $s 5) }}{{ indent $sp ""}}{{wrap .Usage $cv}}{{end}}
 {{end}}{{if .VisibleFlags}}
 Options:
    {{range .VisibleFlags}}{{.}}
@@ -104,6 +106,13 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.SubcommandHelpTemplate = SubcommandHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
+	// Configure line wrapping for command descriptions
+	width, _, err := term.GetSize(int(os.Stdout.Fd()))
+	cli.HelpPrinter = func(w io.Writer, templ string, data interface{}) {
+		funcMap := map[string]interface{}{"wrapAt": func() int { return width }}
+		cli.HelpPrinterCustom(w, templ, data, funcMap)
+	}
+
 	cli.VersionPrinter = func(c *cli.Context) {
 		fmt.Printf("NordVPN Version %s\n", c.App.Version)
 	}
@@ -126,6 +135,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Action:       cmd.SetAutoConnect,
 				BashComplete: cmd.SetAutoConnectAutoComplete,
 				ArgsUsage:    SetAutoConnectArgsUsageText,
+				Description:  SetAutoConnectDescription,
 			},
 			{
 				Name:         "threatprotectionlite",
@@ -134,6 +144,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Action:       cmd.SetThreatProtectionLite,
 				BashComplete: cmd.SetBoolAutocomplete,
 				ArgsUsage:    SetThreatProtectionLiteArgsUsageText,
+				Description:  SetThreatProtectionLiteDescription,
 			},
 			{
 				Name:   "defaults",
@@ -141,17 +152,19 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Action: cmd.SetDefaults,
 			},
 			{
-				Name:      "dns",
-				Usage:     SetDNSUsageText,
-				Action:    cmd.SetDNS,
-				ArgsUsage: SetDNSArgsUsageText,
+				Name:        "dns",
+				Usage:       SetDNSUsageText,
+				Action:      cmd.SetDNS,
+				ArgsUsage:   SetDNSArgsUsageText,
+				Description: SetDNSDescription,
 			},
 			{
-				Name:   "firewall",
-				Usage:  SetFirewallUsageText,
-				Action: cmd.SetFirewall,
-				ArgsUsage: fmt.Sprintf(
-					MsgSetBoolArgsUsage,
+				Name:      "firewall",
+				Usage:     SetFirewallUsageText,
+				Action:    cmd.SetFirewall,
+				ArgsUsage: MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
 					SetFirewallUsageText,
 					"firewall",
 					"firewall",
@@ -164,11 +177,12 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Action: cmd.SetFirewallMark,
 			},
 			{
-				Name:   "ipv6",
-				Usage:  SetIpv6UsageText,
-				Action: cmd.SetIpv6,
-				ArgsUsage: fmt.Sprintf(
-					MsgSetBoolArgsUsage,
+				Name:      "ipv6",
+				Usage:     SetIpv6UsageText,
+				Action:    cmd.SetIpv6,
+				ArgsUsage: MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
 					SetIpv6UsageText,
 					"ipv6",
 					"ipv6",
@@ -176,11 +190,12 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				BashComplete: cmd.SetBoolAutocomplete,
 			},
 			{
-				Name:   "routing",
-				Usage:  SetRoutingUsageText,
-				Action: cmd.SetRouting,
-				ArgsUsage: fmt.Sprintf(
-					MsgSetBoolArgsUsage,
+				Name:      "routing",
+				Usage:     SetRoutingUsageText,
+				Action:    cmd.SetRouting,
+				ArgsUsage: MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
 					SetRoutingUsageText,
 					"routing",
 					"routing",
@@ -188,11 +203,12 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				BashComplete: cmd.SetBoolAutocomplete,
 			},
 			{
-				Name:   "analytics",
-				Usage:  SetAnalyticsUsageText,
-				Action: cmd.SetAnalytics,
-				ArgsUsage: fmt.Sprintf(
-					MsgSetBoolArgsUsage,
+				Name:      "analytics",
+				Usage:     SetAnalyticsUsageText,
+				Action:    cmd.SetAnalytics,
+				ArgsUsage: MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
 					SetAnalyticsUsageText,
 					"analytics",
 					"analytics",
@@ -204,8 +220,9 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Usage:        SetKillSwitchUsageText,
 				Action:       cmd.SetKillSwitch,
 				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage: fmt.Sprintf(
-					MsgSetBoolArgsUsage,
+				ArgsUsage:    MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
 					SetKillSwitchUsageText,
 					"killswitch",
 					"killswitch",
@@ -216,8 +233,9 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Usage:        SetNotifyUsageText,
 				Action:       cmd.SetNotify,
 				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage: fmt.Sprintf(
-					MsgSetBoolArgsUsage,
+				ArgsUsage:    MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
 					SetNotifyUsageText,
 					"notify",
 					"notify",
@@ -228,8 +246,9 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Usage:        SetObfuscateUsageText,
 				Action:       cmd.SetObfuscate,
 				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage: fmt.Sprintf(
-					MsgSetBoolArgsUsage,
+				ArgsUsage:    MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
 					SetObfuscateUsageText,
 					"obfuscate",
 					"obfuscate",
@@ -242,6 +261,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Action:       cmd.SetProtocol,
 				BashComplete: cmd.SetProtocolAutoComplete,
 				ArgsUsage:    SetProtocolArgsUsageText,
+				Description:  SetProtocolDescription,
 				Hidden:       cmd.Except(config.Technology_OPENVPN),
 			},
 			{
@@ -250,20 +270,23 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 				Action:       cmd.SetTechnology,
 				BashComplete: cmd.SetTechnologyAutoComplete,
 				ArgsUsage:    SetTechnologyArgsUsageText,
+				Description:  SetTechnologyDescription,
 			},
 			{
 				Name:         "meshnet",
 				Aliases:      []string{"mesh"},
 				Usage:        MsgSetMeshnetUsage,
 				ArgsUsage:    MsgSetMeshnetArgsUsage,
+				Description:  MsgSetMeshnetDescription,
 				Action:       cmd.MeshSet,
 				BashComplete: cmd.SetBoolAutocomplete,
 			},
 			{
-				Name:  "lan-discovery",
-				Usage: SetLANDiscoveryUsage,
-				ArgsUsage: fmt.Sprintf(
-					MsgSetBoolArgsUsage,
+				Name:      "lan-discovery",
+				Usage:     SetLANDiscoveryUsage,
+				ArgsUsage: MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
 					SetLANDiscoveryUsage,
 					"lan-discovery",
 					"lan-discovery",
@@ -302,6 +325,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 			Action:       cmd.Cities,
 			BashComplete: cmd.CitiesAutoComplete,
 			ArgsUsage:    CitiesArgsUsageText,
+			Description:  CitiesDescription,
 		},
 		{
 			Name:         "connect",
@@ -385,6 +409,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 			Action:       cmd.Rate,
 			BashComplete: cmd.RateAutoComplete,
 			ArgsUsage:    RateArgsUsageText,
+			Description:  RateDescription,
 		},
 		{
 			Name:   "register",
@@ -428,6 +453,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 							Action:       cmd.AllowlistAddPort,
 							BashComplete: cmd.AllowlistAddPortAutoComplete,
 							ArgsUsage:    AllowlistAddPortArgsUsageText,
+							Description:  AllowlistAddPortDescription,
 						},
 						{
 							Name:         "ports",
@@ -435,6 +461,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 							Action:       cmd.AllowlistAddPorts,
 							BashComplete: cmd.AllowlistAddPortsAutoComplete,
 							ArgsUsage:    AllowlistAddPortsArgsUsageText,
+							Description:  AllowlistAddPortsDescription,
 						},
 						{
 							Name:         "subnet",
@@ -442,6 +469,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 							Action:       cmd.AllowlistAddSubnet,
 							BashComplete: cmd.AllowlistAddSubnetAutoComplete,
 							ArgsUsage:    AllowlistAddSubnetArgsUsageText,
+							Description:  AllowlistAddSubnetDescription,
 						},
 					},
 				},
@@ -461,6 +489,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 							Action:       cmd.AllowlistRemovePort,
 							BashComplete: cmd.AllowlistRemovePortAutoComplete,
 							ArgsUsage:    AllowlistRemovePortArgsUsageText,
+							Description:  AllowlistRemovePortArgsDescription,
 						},
 						{
 							Name:         "ports",
@@ -468,6 +497,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 							Action:       cmd.AllowlistRemovePorts,
 							BashComplete: cmd.AllowlistRemovePortsAutoComplete,
 							ArgsUsage:    AllowlistRemovePortsArgsUsageText,
+							Description:  AllowlistRemovePortsArgsDescription,
 						},
 						{
 							Name:         "subnet",
@@ -475,6 +505,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 							Action:       cmd.AllowlistRemoveSubnet,
 							BashComplete: cmd.AllowlistRemoveSubnetAutoComplete,
 							ArgsUsage:    AllowlistRemoveSubnetArgsUsageText,
+							Description:  AllowlistRemoveSubnetArgsDescription,
 						},
 					},
 				},
@@ -503,15 +534,17 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 
 func fileshareCommand(c *cmd) *cli.Command {
 	return &cli.Command{
-		Name:   FileshareName,
-		Usage:  MsgFileshareUsage,
-		Before: c.IsFileshareDaemonReachable,
+		Name:        FileshareName,
+		Usage:       MsgFileshareUsage,
+		Description: MsgFileshareDescription,
+		Before:      c.IsFileshareDaemonReachable,
 		Subcommands: []*cli.Command{
 			{
-				Name:      FileshareSendName,
-				Action:    c.FileshareSend,
-				Usage:     MsgFileshareSendUsage,
-				ArgsUsage: MsgFileshareSendArgsUsage,
+				Name:        FileshareSendName,
+				Action:      c.FileshareSend,
+				Usage:       MsgFileshareSendUsage,
+				ArgsUsage:   MsgFileshareSendArgsUsage,
+				Description: MsgFileshareSendDescription,
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:  flagFileshareNoWait,
@@ -521,10 +554,11 @@ func fileshareCommand(c *cmd) *cli.Command {
 				BashComplete: c.FileshareAutoCompletePeers,
 			},
 			{
-				Name:      FileshareAcceptName,
-				Action:    c.FileshareAccept,
-				Usage:     MsgFileshareAcceptUsage,
-				ArgsUsage: MsgFileshareAcceptArgsUsage,
+				Name:        FileshareAcceptName,
+				Action:      c.FileshareAccept,
+				Usage:       MsgFileshareAcceptUsage,
+				ArgsUsage:   MsgFileshareAcceptArgsUsage,
+				Description: MsgFileshareAcceptDescription,
 				Flags: []cli.Flag{
 					&cli.PathFlag{
 						Name:  flagFilesharePath,
@@ -538,10 +572,11 @@ func fileshareCommand(c *cmd) *cli.Command {
 				BashComplete: c.FileshareAutoCompleteTransfersAccept,
 			},
 			{
-				Name:      FileshareListName,
-				Action:    c.FileshareList,
-				Usage:     MsgFileshareListUsage,
-				ArgsUsage: MsgFileshareListArgsUsage,
+				Name:        FileshareListName,
+				Action:      c.FileshareList,
+				Usage:       MsgFileshareListUsage,
+				ArgsUsage:   MsgFileshareListArgsUsage,
+				Description: MsgFileshareListDescription,
 				Flags: []cli.Flag{
 					&cli.BoolFlag{
 						Name:  flagFileshareListIn,
@@ -572,8 +607,9 @@ func meshnetCommand(c *cmd) *cli.Command {
 		Usage:   MsgMeshnetUsage,
 		Subcommands: []*cli.Command{
 			{
-				Name:  "peer",
-				Usage: MsgMeshnetPeerUsage,
+				Name:        "peer",
+				Usage:       MsgMeshnetPeerUsage,
+				Description: MsgMeshnetPeerDescription,
 				Subcommands: []*cli.Command{
 					{
 						Name:   "list",
@@ -586,7 +622,7 @@ func meshnetCommand(c *cmd) *cli.Command {
 								Aliases: []string{"f"},
 							},
 						},
-						ArgsUsage:    PeerListArgsUsageText,
+						Description:  PeerListDescription,
 						BashComplete: c.FiltersAutoComplete,
 					},
 					{
@@ -602,28 +638,9 @@ func meshnetCommand(c *cmd) *cli.Command {
 						Action: c.MeshRefresh,
 					},
 					{
-						Name:  "routing",
-						Usage: MsgMeshnetPeerRoutingUsage,
-						Subcommands: []*cli.Command{
-							{
-								Name:         "allow",
-								Usage:        MsgMeshnetPeerRoutingAllowUsage,
-								ArgsUsage:    MsgMeshnetPeerArgsUsage,
-								Action:       c.MeshPeerAllowRouting,
-								BashComplete: c.MeshPeerAutoComplete,
-							},
-							{
-								Name:         "deny",
-								Usage:        MsgMeshnetPeerRoutingDenyUsage,
-								ArgsUsage:    MsgMeshnetPeerArgsUsage,
-								Action:       c.MeshPeerDenyRouting,
-								BashComplete: c.MeshPeerAutoComplete,
-							},
-						},
-					},
-					{
-						Name:  "incoming",
-						Usage: MsgMeshnetPeerIncomingUsage,
+						Name:        "incoming",
+						Usage:       MsgMeshnetPeerIncomingUsage,
+						Description: MsgMeshnetPeerIncomingDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -642,8 +659,30 @@ func meshnetCommand(c *cmd) *cli.Command {
 						},
 					},
 					{
-						Name:  "local",
-						Usage: MsgMeshnetPeerLocalNetworkUsage,
+						Name:        "routing",
+						Usage:       MsgMeshnetPeerRoutingUsage,
+						Description: MsgMeshnetPeerRoutingDescription,
+						Subcommands: []*cli.Command{
+							{
+								Name:         "allow",
+								Usage:        MsgMeshnetPeerRoutingAllowUsage,
+								ArgsUsage:    MsgMeshnetPeerArgsUsage,
+								Action:       c.MeshPeerAllowRouting,
+								BashComplete: c.MeshPeerAutoComplete,
+							},
+							{
+								Name:         "deny",
+								Usage:        MsgMeshnetPeerRoutingDenyUsage,
+								ArgsUsage:    MsgMeshnetPeerArgsUsage,
+								Action:       c.MeshPeerDenyRouting,
+								BashComplete: c.MeshPeerAutoComplete,
+							},
+						},
+					},
+					{
+						Name:        "local",
+						Usage:       MsgMeshnetPeerLocalNetworkUsage,
+						Description: MsgMeshnetPeerLocalNetworkDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -662,8 +701,9 @@ func meshnetCommand(c *cmd) *cli.Command {
 						},
 					},
 					{
-						Name:  "fileshare",
-						Usage: MsgMeshnetPeerFileshareUsage,
+						Name:        "fileshare",
+						Usage:       MsgMeshnetPeerFileshareUsage,
+						Description: MsgMeshnetPeerFileshareDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -711,10 +751,10 @@ func meshnetCommand(c *cmd) *cli.Command {
 				},
 			},
 			{
-				Name:      "invite",
-				Aliases:   []string{"inv"},
-				Usage:     MsgMeshnetInviteUsage,
-				ArgsUsage: MsgMeshnetInviteArgsUsage,
+				Name:        "invite",
+				Aliases:     []string{"inv"},
+				Usage:       MsgMeshnetInviteUsage,
+				Description: MsgMeshnetInviteDescription,
 				Subcommands: []*cli.Command{
 					{
 						Name:   "list",
