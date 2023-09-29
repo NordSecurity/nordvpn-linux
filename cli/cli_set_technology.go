@@ -14,16 +14,15 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// SetTechnologyUsageText is shown next to technology command by nordvpn set --help
-const SetTechnologyUsageText = "Sets the technology"
+// Set technology help text
+const (
+	SetTechnologyUsageText     = "Sets the technology"
+	SetTechnologyArgsUsageText = `<technology>`
+	SetTechnologyDescription   = `Use this command to set the technology.
+Supported values for <technology>: OPENVPN or NORDLYNX.
 
-// SetTechnologyArgsUsageText is shown by nordvpn set technology --help
-const SetTechnologyArgsUsageText = `<technology>
-
-Use this command to set the technology.
-Supported values for <technology>: OpenVPN or NordLynx.
-
-Example: 'nordvpn set technology OpenVPN'`
+Example: 'nordvpn set technology OPENVPN'`
+)
 
 func (c *cmd) SetTechnology(ctx *cli.Context) error {
 	args := ctx.Args()

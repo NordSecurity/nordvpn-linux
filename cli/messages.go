@@ -26,10 +26,9 @@ const (
 	// MsgAlreadySet is a generic noop message template.
 	MsgAlreadySet = "%s is already set to '%s'."
 	// MsgInUse is a generic dependency error message template.
-	MsgInUse            = "%s is currently used by %s. Disable it first."
-	MsgSetBoolArgsUsage = `<enabled>|<disabled>
-
-%s
+	MsgInUse              = "%s is currently used by %s. Disable it first."
+	MsgSetBoolArgsUsage   = `<enabled>|<disabled>`
+	MsgSetBoolDescription = `%s
 
 Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set %s off
@@ -114,10 +113,9 @@ Example: nordvpn set %s on`
 	NoSuchCommand                = "Command '%s' doesn't exist."
 
 	// Meshnet
-	MsgSetMeshnetUsage     = "Enables or disables meshnet on this device."
-	MsgSetMeshnetArgsUsage = `<enabled>|<disabled>
-
-Use this command to enable or disable meshnet.
+	MsgSetMeshnetUsage       = "Enables or disables meshnet on this device."
+	MsgSetMeshnetArgsUsage   = `<enabled>|<disabled>`
+	MsgSetMeshnetDescription = `Use this command to enable or disable meshnet.
 
 Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set meshnet off
@@ -252,27 +250,28 @@ Example: nordvpn set meshnet on`
 	MsgNotEnoughSpace                = "The transfer can't be accepted because there's not enough storage on your device."
 	MsgNoPermissions                 = "You don’t have write permissions for the download directory %s. To receive the file transfer, choose another download directory using the --" + flagFilesharePath + " parameter."
 
-	MsgFileshareSendUsage     = "Send files or directories to a Meshnet peer."
-	MsgFileshareSendArgsUsage = "<peer_ip>|<peer_hostname>|<peer_pubkey> <path_1> [path_2...]\n\nTo cancel a transfer in progress, press Ctrl+C"
-	MsgFileshareNoWaitUsage   = "Send a file transfer in the background instead of seeing its progress. It allows you to continue using the terminal for other commands while a transfer is in progress."
-	MsgFileshareSendNoWait    = "File transfer %s has started in the background."
-	MsgFileshareAcceptNoWait  = "File transfer has started in the background."
-	MsgFileshareWaitAccept    = "Waiting for the peer to accept your transfer..."
-	MsgTransferNotCreated     = "Can’t send the files. Please check if you have the \"read\" permission for the files you want to send."
+	MsgFileshareSendUsage       = "Send files or directories to a Meshnet peer."
+	MsgFileshareSendArgsUsage   = "<peer_ip>|<peer_hostname>|<peer_pubkey> <path_1> [path_2...]"
+	MsgFileshareSendDescription = MsgFileshareSendUsage + "\n\nTo cancel a transfer in progress, press Ctrl+C"
+	MsgFileshareNoWaitUsage     = "Send a file transfer in the background instead of seeing its progress. It allows you to continue using the terminal for other commands while a transfer is in progress."
+	MsgFileshareSendNoWait      = "File transfer %s has started in the background."
+	MsgFileshareAcceptNoWait    = "File transfer has started in the background."
+	MsgFileshareWaitAccept      = "Waiting for the peer to accept your transfer..."
+	MsgTransferNotCreated       = "Can’t send the files. Please check if you have the \"read\" permission for the files you want to send."
 
-	MsgFileshareListUsage     = "Lists transfers. If transfer ID is provided, lists files in the transfer."
-	MsgFileshareListArgsUsage = `[transfer_id]
-
-Adding no arguments to the command will list transfers.
+	MsgFileshareListUsage       = "Lists transfers. If transfer ID is provided, lists files in the transfer."
+	MsgFileshareListArgsUsage   = `[transfer_id]`
+	MsgFileshareListDescription = `Adding no arguments to the command will list transfers.
 Provide a [transfer_id] argument to list files in the specified transfer.`
-	MsgFileshareListInUsage     = "Show only incoming transfers."
-	MsgFileshareListOutUsage    = "Show only outgoing transfers."
-	MsgFileshareCancelUsage     = "Cancel a transfer or a single file. To cancel an entire transfer, specify the transfer ID. To cancel a single file, specify the transfer ID and the file ID."
-	MsgFileshareCancelArgsUsage = "<transfer_id> [file_id]"
-	MsgFileshareCancelSuccess   = "File transfer canceled"
-	MsgFileshareAcceptUsage     = "Accept an incoming file transfer. To download an entire transfer, specify the transfer ID. To download a single file, specify the transfer ID and the file ID."
-	MsgFileshareAcceptArgsUsage = "<transfer_id> [file_id1] [file_id2...]\n\nTo cancel a transfer in progress, press Ctrl+C"
-	MsgFileshareAcceptPathUsage = "Specify download path (default: $XDG_DOWNLOAD_DIR or $HOME/Downloads)"
+	MsgFileshareListInUsage       = "Show only incoming transfers."
+	MsgFileshareListOutUsage      = "Show only outgoing transfers."
+	MsgFileshareCancelUsage       = "Cancel a transfer or a single file. To cancel an entire transfer, specify the transfer ID. To cancel a single file, specify the transfer ID and the file ID."
+	MsgFileshareCancelArgsUsage   = "<transfer_id> [file_id]"
+	MsgFileshareCancelSuccess     = "File transfer canceled"
+	MsgFileshareAcceptUsage       = "Accept an incoming file transfer. To download an entire transfer, specify the transfer ID. To download a single file, specify the transfer ID and the file ID."
+	MsgFileshareAcceptArgsUsage   = "<transfer_id> [file_id1] [file_id2...]"
+	MsgFileshareAcceptDescription = MsgFileshareAcceptUsage + "\n\nTo cancel a transfer in progress, press Ctrl+C"
+	MsgFileshareAcceptPathUsage   = "Specify download path (default: $XDG_DOWNLOAD_DIR or $HOME/Downloads)"
 
 	MsgFileshareProgressOngoing        = "File transfer [%s] progress [%d%%]"
 	MsgFileshareProgressFinished       = "File transfer [%s] completed.      " // Need extra spaces to cover the progress message
