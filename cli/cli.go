@@ -536,7 +536,7 @@ func fileshareCommand(c *cmd) *cli.Command {
 	return &cli.Command{
 		Name:        FileshareName,
 		Usage:       MsgFileshareUsage,
-		Description: MsgFileshareUsage + "\n" + MsgFileshareDescription,
+		Description: MsgFileshareDescription,
 		Before:      c.IsFileshareDaemonReachable,
 		Subcommands: []*cli.Command{
 			{
@@ -640,7 +640,7 @@ func meshnetCommand(c *cmd) *cli.Command {
 					{
 						Name:        "incoming",
 						Usage:       MsgMeshnetPeerIncomingUsage,
-						Description: MsgMeshnetPeerIncomingUsage + "\n" + MsgMeshnetPeerIncomingDescription,
+						Description: MsgMeshnetPeerIncomingDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -661,7 +661,7 @@ func meshnetCommand(c *cmd) *cli.Command {
 					{
 						Name:        "routing",
 						Usage:       MsgMeshnetPeerRoutingUsage,
-						Description: MsgMeshnetPeerRoutingUsage + "\n" + MsgMeshnetPeerRoutingDescription,
+						Description: MsgMeshnetPeerRoutingDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -682,7 +682,7 @@ func meshnetCommand(c *cmd) *cli.Command {
 					{
 						Name:        "local",
 						Usage:       MsgMeshnetPeerLocalNetworkUsage,
-						Description: MsgMeshnetPeerLocalNetworkUsage + "\n" + MsgMeshnetPeerLocalNetworkDescription,
+						Description: MsgMeshnetPeerLocalNetworkDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -703,7 +703,7 @@ func meshnetCommand(c *cmd) *cli.Command {
 					{
 						Name:        "fileshare",
 						Usage:       MsgMeshnetPeerFileshareUsage,
-						Description: MsgMeshnetPeerFileshareUsage + "\n" + MsgMeshnetPeerFileshareDescription,
+						Description: MsgMeshnetPeerFileshareDescription,
 						Subcommands: []*cli.Command{
 							{
 								Name:         "allow",
@@ -754,7 +754,7 @@ func meshnetCommand(c *cmd) *cli.Command {
 				Name:        "invite",
 				Aliases:     []string{"inv"},
 				Usage:       MsgMeshnetInviteUsage,
-				Description: MsgMeshnetInviteUsage + "\n" + MsgMeshnetInviteDescription,
+				Description: MsgMeshnetInviteDescription,
 				Subcommands: []*cli.Command{
 					{
 						Name:   "list",

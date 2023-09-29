@@ -109,7 +109,7 @@ Adds or removes an option from a allowlist
 .PP
 \fBmeshnet, mesh\fR
 .RS 4
-Securely connect to your remote devices
+Meshnet is a way to safely access other devices, no matter where in the world they are. Once set up, Meshnet functions just like a secure local area network (LAN) — it connects devices directly. It also allows securely sending files to other devices. Use the "nordvpn set meshnet on" command to enable Meshnet. Learn more: https://meshnet.nordvpn.com/
 .RE
 .PP
 \fBfileshare\fR
@@ -371,7 +371,7 @@ The \fBtraffic routing\fR feature allows you to route internet traffic through c
 .P
 When the traffic routing permission is enabled, your Meshnet peers are allowed to route their internet traffic through your device. In essence, your device can act as a VPN server for your fellow user. Caution - use traffic routing only with trusted devices to avoid potential misuse, as your browsing activity can be monitored on the device you are routing through. With the traffic routing permission disabled, the peer cannot route their internet traffic through your device.
 .P
-The \fBlocal network\fR permission works in tandem with traffic routing.Its function is to either permit or deny access to your local network devices while a Meshnet peer is routing traffic through your device. Local network access is a supplementary feature to traffic routing, and as such, traffic routing must be enabled to make use of the LAN permission.
+The \fBlocal network\fR permission works in tandem with traffic routing. Its function is to either permit or deny access to your local network devices while a Meshnet peer is routing traffic through your device. Local network access is a supplementary feature to traffic routing, and as such, traffic routing must be enabled to make use of the LAN permission.
 .P
 With the local network permission enabled, your Meshnet peer can route their internet traffic through your device and interact with all of the devices that are located in the same local area network. The devices can vary from a router to a home server or network-attached-storage (NAS). Caution - enable local network permission only for trusted devices to ensure home network and device security. Untrusted entities may cause severe damage if granted full access to your LAN devices. When the local network permission is disabled, the Meshnet peer cannot access devices on your LAN. Traffic routing remains functional unless otherwise configured, but it only alters the Meshnet peer's public IP address. Should the peer attempt to connect to a local IP address, the connection will default to their LAN instead of yours.
 .P
@@ -459,7 +459,7 @@ $ \fBnordvpn d\fR
 .P
 When transferring files over Meshnet, you don't need to worry about the security of your private data. An encrypted connection protects the files you send and download from unwanted access. Additionally, a peer-to-peer mechanism that underlies Meshnet's file sharing feature enables you to share files with each other directly without the need for a centralized server. This ensures the anonymity of sent data, which cannot be viewed by anyone but you and the intended recipients.
 .P
-\fBNote: most values (device Nord Name, transfer ID, file name) in the following examples can be entered faster using auto-completion. Simply press TAB and the app will suggest valid options for you.
+\fBNote: most values (device Nord Name, transfer ID, file name) in the following examples can be entered faster using auto-completion. Simply press Tab and the app will suggest valid options for you.
 .P
 Before you begin, make sure that the device you want to share files with meets the following criteria:
 .IP \(bu 2
