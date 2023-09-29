@@ -1367,7 +1367,7 @@ func (s *Server) AllowIncoming(
 	if peer.Address.IsValid() {
 		if err := s.netw.AllowIncoming(UniqueAddress{
 			UID: peer.PublicKey, Address: peer.Address,
-		}); err != nil {
+		}, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
 			s.pub.Publish(err)
 			return &pb.AllowIncomingResponse{
 				Response: &pb.AllowIncomingResponse_MeshnetErrorCode{
@@ -1593,7 +1593,7 @@ func (s *Server) AllowRouting(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peers); err != nil {
+	if err := s.netw.ResetRouting(peers[index], peers); err != nil {
 		s.pub.Publish(err)
 		return &pb.AllowRoutingResponse{
 			Response: &pb.AllowRoutingResponse_MeshnetErrorCode{
@@ -1709,7 +1709,7 @@ func (s *Server) DenyRouting(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peers); err != nil {
+	if err := s.netw.ResetRouting(peers[index], peers); err != nil {
 		s.pub.Publish(err)
 		return &pb.DenyRoutingResponse{
 			Response: &pb.DenyRoutingResponse_MeshnetErrorCode{
@@ -1825,7 +1825,7 @@ func (s *Server) AllowLocalNetwork(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peers); err != nil {
+	if err := s.netw.ResetRouting(peers[index], peers); err != nil {
 		s.pub.Publish(err)
 		return &pb.AllowLocalNetworkResponse{
 			Response: &pb.AllowLocalNetworkResponse_MeshnetErrorCode{
@@ -1941,7 +1941,7 @@ func (s *Server) DenyLocalNetwork(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peers); err != nil {
+	if err := s.netw.ResetRouting(peers[index], peers); err != nil {
 		s.pub.Publish(err)
 		return &pb.DenyLocalNetworkResponse{
 			Response: &pb.DenyLocalNetworkResponse_MeshnetErrorCode{

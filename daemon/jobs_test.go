@@ -238,7 +238,7 @@ func (n *meshNetworker) AllowFileshare(address meshnet.UniqueAddress) error {
 	return nil
 }
 
-func (n *meshNetworker) AllowIncoming(address meshnet.UniqueAddress) error {
+func (n *meshNetworker) AllowIncoming(address meshnet.UniqueAddress, lanAllowed bool) error {
 	n.allowedIncoming = append(n.allowedIncoming, address)
 	return nil
 }
@@ -253,9 +253,9 @@ func (n *meshNetworker) BlockFileshare(address meshnet.UniqueAddress) error {
 	return nil
 }
 
-func (*meshNetworker) ResetRouting(mesh.MachinePeers) error     { return nil }
-func (*meshNetworker) BlockRouting(meshnet.UniqueAddress) error { return nil }
-func (*meshNetworker) Refresh(mesh.MachineMap) error            { return nil }
+func (*meshNetworker) ResetRouting(mesh.MachinePeer, mesh.MachinePeers) error { return nil }
+func (*meshNetworker) BlockRouting(meshnet.UniqueAddress) error               { return nil }
+func (*meshNetworker) Refresh(mesh.MachineMap) error                          { return nil }
 func (*meshNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }

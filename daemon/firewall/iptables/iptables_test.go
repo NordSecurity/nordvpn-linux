@@ -141,7 +141,7 @@ func TestGenerateIPTablesRule(t *testing.T) {
 			dports:   []int{546, 547},
 			rule:     "OUTPUT -o lo -s ::1/128 -p udp --sport 570 --dport 546,547 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", localNet: "::1/128",
+			input: true, target: accept, iface: "lo", remoteNet: "::1/128",
 			rule: "INPUT -i lo -s ::1/128 -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			input: false, target: accept, iface: "lo", localNet: "::1/128",

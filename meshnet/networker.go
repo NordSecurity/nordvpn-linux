@@ -21,7 +21,7 @@ type Networker interface {
 	UnSetMesh() error
 	// AllowIncoming creates an allowing fw rule for the given
 	// address
-	AllowIncoming(UniqueAddress) error
+	AllowIncoming(address UniqueAddress, lanAllowed bool) error
 	// BlockIncoming creates a blocking fw rule for the given
 	// address
 	BlockIncoming(UniqueAddress) error
@@ -30,8 +30,9 @@ type Networker interface {
 	//BlockFileshare removes a rule enabling fileshare port for the given address if it exists
 	BlockFileshare(UniqueAddress) error
 	// ResetRouting is used when there are routing setting changes,
-	// except when routing is denied - then BlockRouting must be used
-	ResetRouting(mesh.MachinePeers) error
+	// except when routing is denied - then BlockRouting must be used. changedPeer is the peer whose routing settings
+	// changed, peers is the map of all the machine peers(including the changed peer).
+	ResetRouting(changedPeer mesh.MachinePeer, peers mesh.MachinePeers) error
 	StatusMap() (map[string]string, error)
 	Start(
 		vpn.Credentials,
