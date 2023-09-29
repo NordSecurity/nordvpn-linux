@@ -12,13 +12,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// SetThreatProtectionLiteUsageText is shown next to threatprotectionlite command by nordvpn set --help
-const SetThreatProtectionLiteUsageText = "Enables or disables ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/features/threat-protection/."
-
-// SetThreatProtectionLiteArgsUsageText is shown by nordvpn set threatprotectionlite --help
-const SetThreatProtectionLiteArgsUsageText = `<enabled>|<disabled>
-
-Use this command to enable or disable ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/lt/features/threat-protection/
+// Set Threat Protection Lite help text
+const (
+	SetThreatProtectionLiteUsageText     = "Enables or disables ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/features/threat-protection/."
+	SetThreatProtectionLiteArgsUsageText = `<enabled>|<disabled>`
+	SetThreatProtectionLiteDescription   = `Use this command to enable or disable ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/lt/features/threat-protection/
 
 Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set threatprotectionlite off
@@ -28,6 +26,7 @@ Example: nordvpn set threatprotectionlite on
 
 Notes:
   Setting ThreatProtectionLite disables user defined DNS servers`
+)
 
 func setTPLErrorCodeToError(code pb.SetErrorCode, args ...any) error {
 	switch code {

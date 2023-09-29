@@ -17,12 +17,10 @@ import (
 )
 
 const (
-	flagFilter            = "filter"
-	externalFilter        = "external"
-	internalFilter        = "internal"
-	PeerListArgsUsageText = `
-
-Press the Tab key to see auto-suggestions for filters.`
+	flagFilter          = "filter"
+	externalFilter      = "external"
+	internalFilter      = "internal"
+	PeerListDescription = "Press the Tab key to see auto-suggestions for filters."
 )
 
 type keyval struct {

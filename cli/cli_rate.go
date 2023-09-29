@@ -16,18 +16,17 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// RateUsageText is shown next to rate command by nordvpn --help
-const RateUsageText = "Rates your last connection quality (1-5)"
-
-// RateArgsUsageText is shown by nordvpn rate --help
-const RateArgsUsageText = `[1-5]
-
-Use this command to rate the connection quality of your previous session via scale of 1 (poor) through 5 (great).
+// Rate help text
+const (
+	RateUsageText     = "Rates your last connection quality (1-5)"
+	RateArgsUsageText = `[1-5]`
+	RateDescription   = `Use this command to rate the connection quality of your previous session via scale of 1 (poor) through 5 (great).
 
 Example: nordvpn rate 5
 
 Notes:
   You can only rate a single connection once.`
+)
 
 func (c *cmd) Rate(ctx *cli.Context) error {
 	var ratingInput string

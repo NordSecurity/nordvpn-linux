@@ -14,13 +14,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// SetDNSUsageText is shown next to dns command by nordvpn set --help
-const SetDNSUsageText = "Sets custom DNS servers"
-
-// SetDNSArgsUsageText is shown by nordvpn set dns --help
-const SetDNSArgsUsageText = `<servers>|<disabled>
-
-Use this command to set DNS servers.
+// Set DNS help text
+const (
+	SetDNSUsageText     = "Sets custom DNS servers"
+	SetDNSArgsUsageText = `<servers>|<disabled>`
+	SetDNSDescription   = `Use this command to set DNS servers.
 
 Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set dns off
@@ -33,6 +31,7 @@ Limits:
 
 Notes:
   Setting DNS disables ThreatProtectionLite`
+)
 
 func setDNSCommonErrorCodeToError(code pb.SetErrorCode, args ...any) error {
 	switch code {

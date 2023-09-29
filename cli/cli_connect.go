@@ -18,7 +18,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Connect command display strings
+// Connect help text
 const (
 	ConnectUsageText          = "Connects you to VPN"
 	ConnectFlagGroupUsageText = "Specify a server group to connect to"

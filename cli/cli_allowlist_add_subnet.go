@@ -14,18 +14,17 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// AllowlistAddSubnetUsageText is shown next to subnet command by nordvpn allowlist add --help
-const AllowlistAddSubnetUsageText = "Adds subnet to the allowlist"
-
-// AllowlistAddSubnetArgsUsageText is shown by nordvpn allowlist add subnet --help
-const AllowlistAddSubnetArgsUsageText = `<address>
-
-Use this command to allowlist subnet.
+// Allowlist add subnet help text
+const (
+	AllowlistAddSubnetUsageText     = "Adds subnet to the allowlist"
+	AllowlistAddSubnetArgsUsageText = `<address>`
+	AllowlistAddSubnetDescription   = `Use this command to allowlist subnet.
 
 Example: 'nordvpn allowlist add subnet 192.168.1.1/24'
 
 Notes:
   Address should be in CIDR notation`
+)
 
 func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 	args := ctx.Args()

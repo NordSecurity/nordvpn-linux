@@ -14,15 +14,14 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// AllowlistRemoveSubnetUsageText text is shown next to subnet command by nordvpn allowlist remove --help
-const AllowlistRemoveSubnetUsageText = "Removes subnet from the allowlist"
-
-// AllowlistRemoveSubnetArgsUsageText is shown by nordvpn allowlist remove subnet --help
-const AllowlistRemoveSubnetArgsUsageText = `<address>
-
-Use this command to remove subnet from the allowlist.
+// Allowlist remove subnet help text
+const (
+	AllowlistRemoveSubnetUsageText       = "Removes subnet from the allowlist"
+	AllowlistRemoveSubnetArgsUsageText   = `<address>`
+	AllowlistRemoveSubnetArgsDescription = `Use this command to remove subnet from the allowlist.
 
 Example: 'nordvpn allowlist remove subnet 192.168.1.1/24'`
+)
 
 func (c *cmd) AllowlistRemoveSubnet(ctx *cli.Context) error {
 	args := ctx.Args()

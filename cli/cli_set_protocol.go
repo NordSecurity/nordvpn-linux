@@ -14,16 +14,15 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// SetProtocolUsageText is shown next to protocol command by nordvpn set --help
-const SetProtocolUsageText = "Sets the protocol"
-
-// SetProtocolArgsUsageText is shown by nordvpn set protocol --help
-const SetProtocolArgsUsageText = `<protocol>
-
-Use this command to set the protocol to TCP or UDP.
+// Set protocol help text
+const (
+	SetProtocolUsageText     = "Sets the protocol"
+	SetProtocolArgsUsageText = `<protocol>`
+	SetProtocolDescription   = `Use this command to set the protocol to TCP or UDP.
 Supported values for <protocol>: TCP, UDP
 
 Example: 'nordvpn set protocol TCP'`
+)
 
 func setProtocolCommonErrorCodeToError(code pb.SetErrorCode, args ...any) error {
 	switch code {

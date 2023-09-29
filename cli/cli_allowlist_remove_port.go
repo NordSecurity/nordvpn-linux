@@ -16,13 +16,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// AllowlistRemovePortUsageText is shown next to port command by nordvpn allowlist remove --help
-const AllowlistRemovePortUsageText = "Removes port from the allowlist"
-
-// AllowlistDeletePort is shown by nordvpn allowlist remove port --help
-const AllowlistRemovePortArgsUsageText = `<port> [protocol <protocol>]
-
-Use this command to remove a port from the allowlist.
+// Allowlist remove port help text
+const (
+	AllowlistRemovePortUsageText       = "Removes port from the allowlist"
+	AllowlistRemovePortArgsUsageText   = `<port> [protocol <protocol>]`
+	AllowlistRemovePortArgsDescription = `Use this command to remove a port from the allowlist.
 
 Example: 'nordvpn allowlist remove port 22'
 
@@ -30,6 +28,7 @@ Optionally, protocol can be provided to specify which protocol should be removed
 Supported values for <protocol>: TCP, UDP
 
 Example: 'nordvpn allowlist remove port 22 protocol TCP'`
+)
 
 func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 	args := ctx.Args()

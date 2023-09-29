@@ -16,13 +16,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// AllowlistAddPortsUsageText is show next to ports command by nordvpn allowlist add --help
-const AllowlistAddPortsUsageText = "Adds port range to the allowlist"
-
-// AllowlistAddPortsArgsUsageText is shown by nordvpn allowlist add ports --help
-const AllowlistAddPortsArgsUsageText = `<port_from> <port_to> [protocol <protocol>]
-
-Use this command to allowlist the UDP and TCP ports.
+// Allowlist add ports help text
+const (
+	AllowlistAddPortsUsageText     = "Adds port range to the allowlist"
+	AllowlistAddPortsArgsUsageText = `<port_from> <port_to> [protocol <protocol>]`
+	AllowlistAddPortsDescription   = `Use this command to allowlist the UDP and TCP ports.
 
 Example: 'nordvpn allowlist add ports 3000 8000'
 
@@ -30,6 +28,7 @@ Optionally, protocol can be provided to specify which protocol should be allowli
 Supported values for <protocol>: TCP, UDP
 
 Example: 'nordvpn allowlist add ports 3000 8000 protocol TCP'`
+)
 
 func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 	args := ctx.Args()
