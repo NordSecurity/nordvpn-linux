@@ -31,6 +31,7 @@ func (Mock) Start(
 	vpn.ServerData,
 	config.Allowlist,
 	config.DNS,
+	bool,
 ) error {
 	return nil
 }
@@ -106,6 +107,7 @@ func (Failing) Start(
 	vpn.ServerData,
 	config.Allowlist,
 	config.DNS,
+	bool,
 ) error {
 	return mock.ErrOnPurpose
 }

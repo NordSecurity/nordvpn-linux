@@ -88,6 +88,7 @@ type Networker interface {
 		vpn.ServerData,
 		config.Allowlist,
 		config.DNS,
+		bool, // in case mesh peer connect - route to remote peer's LAN or not
 	) error
 	Stop() error      // stop vpn
 	UnSetMesh() error // stop meshnet
@@ -149,6 +150,11 @@ type Combined struct {
 	fwmark             uint32
 	mu                 sync.Mutex
 	lanDiscovery       bool
+	// need to memorize route to remote LAN state set on mesh peer connect
+	// according how remote peer has set its permission, for later when
+	// doing mesh refresh which may happen in background e.g. when network
+	// change event happens
+	enableLocalTraffic bool
 }
 
 // NewCombined returns a ready made version of
@@ -173,24 +179,25 @@ func NewCombined(
 	lanDiscovery bool,
 ) *Combined {
 	return &Combined{
-		vpnet:            vpnet,
-		mesh:             mesh,
-		gateway:          gateway,
-		publisher:        publisher,
-		allowlistRouter:  allowlistRouter,
-		dnsSetter:        dnsSetter,
-		ipv6:             ipv6,
-		fw:               fw,
-		allowlistRouting: allowlist,
-		devices:          devices,
-		policyRouter:     policyRouter,
-		dnsHostSetter:    dnsHostSetter,
-		router:           router,
-		peerRouter:       peerRouter,
-		exitNode:         exitNode,
-		rules:            []string{},
-		fwmark:           fwmark,
-		lanDiscovery:     lanDiscovery,
+		vpnet:              vpnet,
+		mesh:               mesh,
+		gateway:            gateway,
+		publisher:          publisher,
+		allowlistRouter:    allowlistRouter,
+		dnsSetter:          dnsSetter,
+		ipv6:               ipv6,
+		fw:                 fw,
+		allowlistRouting:   allowlist,
+		devices:            devices,
+		policyRouter:       policyRouter,
+		dnsHostSetter:      dnsHostSetter,
+		router:             router,
+		peerRouter:         peerRouter,
+		exitNode:           exitNode,
+		rules:              []string{},
+		fwmark:             fwmark,
+		lanDiscovery:       lanDiscovery,
+		enableLocalTraffic: true,
 	}
 }
 
@@ -200,9 +207,11 @@ func (netw *Combined) Start(
 	serverData vpn.ServerData,
 	allowlist config.Allowlist,
 	nameservers config.DNS,
+	enableLocalTraffic bool,
 ) (err error) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
 		return netw.restart(creds, serverData, nameservers)
 	}
@@ -270,16 +279,15 @@ func (netw *Combined) start(
 		return err
 	}
 
-	if !netw.isMeshnetSet {
-		netw.publisher.Publish("Setting the routing rules up")
-		err = netw.policyRouter.SetupRoutingRules(
-			netw.vpnet.Tun().Interface(),
-			serverData.IP.Is6(),
-		)
+	netw.publisher.Publish("Setting the routing rules up")
 
-		if err != nil {
-			return err
-		}
+	// if routing rules were set - they will be adjusted as needed
+	if err = netw.policyRouter.SetupRoutingRules(
+		netw.vpnet.Tun().Interface(),
+		serverData.IP.Is6(),
+		netw.enableLocalTraffic,
+	); err != nil {
+		return err
 	}
 
 	netw.publisher.Publish("starting network configuration")
@@ -429,6 +437,15 @@ func (netw *Combined) stop() error {
 	if !netw.isMeshnetSet {
 		if err := netw.policyRouter.CleanupRouting(); err != nil {
 			log.Println(internal.WarningPrefix, err)
+		}
+	} else {
+		// if routing rules were set - they will be adjusted as needed
+		if err = netw.policyRouter.SetupRoutingRules(
+			netw.vpnet.Tun().Interface(),
+			false,
+			true, // by default, enableLocalTraffic=true
+		); err != nil {
+			return fmt.Errorf("netw stop, adjusting routing rules: %w", err)
 		}
 	}
 
@@ -1134,18 +1151,17 @@ func (netw *Combined) setMesh(
 		}
 	}
 
-	if !netw.isVpnSet {
-		if err = netw.policyRouter.SetupRoutingRules(
-			netw.mesh.Tun().Interface(),
-			false,
-		); err != nil {
-			return fmt.Errorf(
-				"setting routing rules: %w",
-				err,
-			)
-		}
-		routingRulesSet = true
+	if err = netw.policyRouter.SetupRoutingRules(
+		netw.mesh.Tun().Interface(),
+		false,
+		netw.enableLocalTraffic,
+	); err != nil {
+		return fmt.Errorf(
+			"setting routing rules: %w",
+			err,
+		)
 	}
+	routingRulesSet = true
 
 	// add routes for new peers and remove for the old ones
 	netw.publisher.Publish("adding mesh route")
@@ -1222,6 +1238,10 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 				return fmt.Errorf("allowing fileshare for peer: %w", err)
 			}
 		}
+
+		//TODO (LVPN-4031): detect which peer we are connected (if connected)
+		// to and check if maybe allowLocalAccess permission has changed and
+		// if so, change routing to route to local LAN
 	}
 
 	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
@@ -1257,6 +1277,10 @@ func (netw *Combined) defaultMeshUnBlock() error {
 func (netw *Combined) UnSetMesh() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+	// clear this flag only when user turns mesh off, cannot do that in internal func
+	// because it is used during refresh, and during refresh we need to know what
+	// was set before i.e. during mesh peer connect
+	netw.enableLocalTraffic = true
 	return netw.unSetMesh()
 }
 

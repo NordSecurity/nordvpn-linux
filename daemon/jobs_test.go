@@ -225,6 +225,7 @@ func (meshNetworker) Start(
 	vpn.ServerData,
 	config.Allowlist,
 	config.DNS,
+	bool,
 ) error {
 	return nil
 }

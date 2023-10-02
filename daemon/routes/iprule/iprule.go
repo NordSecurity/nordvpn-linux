@@ -28,10 +28,11 @@ func NewRouter(rpFilterManager routes.RPFilterManager, fwmark uint32) *Router {
 	return &Router{rpFilterManager: rpFilterManager, fwmark: fwmark}
 }
 
-// SetupRoutingRules setup policy based routing rules
+// SetupRoutingRules setup or adjust policy based routing rules
 func (r *Router) SetupRoutingRules(
 	vpnInterface net.Interface,
 	ipv6Enabled bool,
+	enableLocal bool,
 ) (err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -62,37 +63,64 @@ func (r *Router) SetupRoutingRules(
 	}()
 
 	for _, ipv6 := range ipv6EnabledList {
-		fwMarkRuleID, err := calculateRulePriority(ipv6)
-		if err != nil {
-			return err
-		}
-		routingTableID, err := calculateCustomTableID(ipv6)
-		if err != nil {
-			return err
-		}
-		r.tableID = routingTableID
-		if err = addFwmarkRule(
-			r.fwmark,
-			fwMarkRuleID,
-			routingTableID,
-			ipv6,
-		); err != nil {
-			return err
-		}
-
-		otherRuleID, err := calculateRulePriority(ipv6)
+		fwmarkRulePresent, err := checkFwmarkRule(r.fwmark, ipv6)
 		if err != nil {
 			return err
 		}
 
-		if err = addSuppressprefixLengthRule(
-			otherRuleID,
-			ipv6,
-		); err != nil {
-			return err
+		if !fwmarkRulePresent {
+			fwMarkRuleID, err := calculateRulePriority(ipv6)
+			if err != nil {
+				return err
+			}
+			routingTableID, err := calculateCustomTableID(ipv6)
+			if err != nil {
+				return err
+			}
+			r.tableID = routingTableID
+			if err = addFwmarkRule(
+				r.fwmark,
+				fwMarkRuleID,
+				routingTableID,
+				ipv6,
+			); err != nil {
+				return err
+			}
+		}
+
+		// PeerA (LAN-a 192.168.1.x) connects to PeerB (LAN-b 192.168.1.x)
+		// if PeerB allows its LAN access when used as Exit node
+		// then PeerB LAN access is the priority over PeerA LAN
+		if enableLocal {
+			if err := enableLocalTraffic(ipv6); err != nil {
+				return err
+			}
+		} else {
+			if err := removeSuppressprefixLengthRule(ipv6); err != nil {
+				// in case of cleanup - do not propagate error if rule does not exist
+				log.Println(internal.WarningPrefix, err)
+			}
 		}
 	}
 
+	return nil
+}
+
+func enableLocalTraffic(ipv6Enabled bool) error {
+	rulePresent, err := checkSuppressprefixLengthRule(ipv6Enabled)
+	if err != nil {
+		return err
+	}
+	if rulePresent {
+		return nil
+	}
+	ruleID, err := calculateRulePriority(ipv6Enabled)
+	if err != nil {
+		return nil
+	}
+	if err = addSuppressprefixLengthRule(ruleID, ipv6Enabled); err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -51,6 +51,7 @@ func (workingNetworker) Start(
 	vpn.ServerData,
 	config.Allowlist,
 	config.DNS,
+	bool,
 ) error {
 	return nil
 }

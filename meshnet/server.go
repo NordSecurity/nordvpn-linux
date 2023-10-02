@@ -2653,6 +2653,7 @@ func (s *Server) Connect(
 		},
 		cfg.AutoConnectData.Allowlist,
 		nameservers,
+		!peer.DoesPeerAllowLocalNetwork, // enableLocalTraffic if target peer does not permit its LAN access
 	); err != nil {
 		if strings.Contains(err.Error(), "already started") {
 			return &pb.ConnectResponse{
