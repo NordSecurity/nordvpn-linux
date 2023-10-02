@@ -36,6 +36,7 @@ func Connect(
 		serverData,
 		allowlist,
 		nameservers,
+		false, // here vpn connect, no need route to remote peer's LAN
 	)
 	switch err {
 	case vpn.ErrVPNAIsAlreadyStarted:

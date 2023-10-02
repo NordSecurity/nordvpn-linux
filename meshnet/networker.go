@@ -39,6 +39,7 @@ type Networker interface {
 		vpn.ServerData,
 		config.Allowlist,
 		config.DNS,
+		bool, // enableLocalTraffic
 	) error
 	Stop() error
 }

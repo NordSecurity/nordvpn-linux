@@ -37,7 +37,7 @@ func GetTestCombined() *Combined {
 		newWorkingFirewall(),
 		workingAllowlistRouting{},
 		workingDeviceList,
-		workingRoutingSetup{},
+		&workingRoutingSetup{},
 		&workingHostSetter{},
 		workingRouter{},
 		workingRouter{},
@@ -161,14 +161,19 @@ func workingDeviceList() ([]net.Interface, error) {
 
 func failingDeviceList() ([]net.Interface, error) { return nil, mock.ErrOnPurpose }
 
-type workingRoutingSetup struct{}
+type workingRoutingSetup struct {
+	EnableLocalTraffic bool
+}
 
-func (workingRoutingSetup) SetupRoutingRules(net.Interface, bool) error { return nil }
-func (workingRoutingSetup) CleanupRouting() error                       { return nil }
-func (workingRoutingSetup) TableID() uint                               { return 0 }
-func (workingRoutingSetup) Enable() error                               { return nil }
-func (workingRoutingSetup) Disable() error                              { return nil }
-func (workingRoutingSetup) IsEnabled() bool                             { return true }
+func (r *workingRoutingSetup) SetupRoutingRules(_ net.Interface, _ bool, enableLan bool) error {
+	r.EnableLocalTraffic = enableLan
+	return nil
+}
+func (*workingRoutingSetup) CleanupRouting() error { return nil }
+func (*workingRoutingSetup) TableID() uint         { return 0 }
+func (*workingRoutingSetup) Enable() error         { return nil }
+func (*workingRoutingSetup) Disable() error        { return nil }
+func (*workingRoutingSetup) IsEnabled() bool       { return true }
 
 type workingExitNode struct {
 	enabled      bool
@@ -258,7 +263,7 @@ func TestCombined_Start(t *testing.T) {
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
-			routing:         workingRoutingSetup{},
+			routing:         &workingRoutingSetup{},
 			err:             errNilVPN,
 		},
 		{
@@ -270,7 +275,7 @@ func TestCombined_Start(t *testing.T) {
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
-			routing:         workingRoutingSetup{},
+			routing:         &workingRoutingSetup{},
 			err:             mock.ErrOnPurpose,
 		},
 		{
@@ -282,7 +287,7 @@ func TestCombined_Start(t *testing.T) {
 			fw:              failingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
-			routing:         workingRoutingSetup{},
+			routing:         &workingRoutingSetup{},
 			err:             mock.ErrOnPurpose,
 		},
 		{
@@ -294,7 +299,7 @@ func TestCombined_Start(t *testing.T) {
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
-			routing:         workingRoutingSetup{},
+			routing:         &workingRoutingSetup{},
 			err:             mock.ErrOnPurpose,
 		},
 		{
@@ -306,7 +311,7 @@ func TestCombined_Start(t *testing.T) {
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         failingDeviceList,
-			routing:         workingRoutingSetup{},
+			routing:         &workingRoutingSetup{},
 			err:             mock.ErrOnPurpose,
 		},
 		{
@@ -318,7 +323,19 @@ func TestCombined_Start(t *testing.T) {
 			fw:              &workingFirewall{},
 			allowlist:       &workingAllowlistRouting{},
 			devices:         workingDeviceList,
-			routing:         workingRoutingSetup{},
+			routing:         &workingRoutingSetup{},
+			err:             nil,
+		},
+		{
+			name:            "restart",
+			gateway:         workingGateway{},
+			allowlistRouter: workingRouter{},
+			dns:             &workingDNS{},
+			vpn:             &mock.ActiveVPN{},
+			fw:              &workingFirewall{},
+			allowlist:       &workingAllowlistRouting{},
+			devices:         workingDeviceList,
+			routing:         &workingRoutingSetup{},
 			err:             nil,
 		},
 	}
@@ -349,6 +366,7 @@ func TestCombined_Start(t *testing.T) {
 				vpn.ServerData{},
 				config.NewAllowlist(nil, nil, nil),
 				[]string{"1.1.1.1"},
+				true,
 			)
 			assert.ErrorIs(t, err, test.err, test.name)
 		})
@@ -403,7 +421,7 @@ func TestCombined_Stop(t *testing.T) {
 				&workingFirewall{},
 				workingAllowlistRouting{},
 				nil,
-				workingRoutingSetup{},
+				&workingRoutingSetup{},
 				nil,
 				workingRouter{},
 				nil,
@@ -544,7 +562,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			netw := NewCombined(
-				nil,
+				&mock.ActiveVPN{},
 				nil,
 				workingGateway{},
 				&subs.Subject[string]{},
@@ -562,8 +580,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				0,
 				false,
 			)
-			netw.vpnet = &mock.WorkingVPN{}
-			err := netw.unsetDNS()
+			err := netw.UnsetDNS()
 			assert.Equal(t, test.hasError, err != nil)
 		})
 	}
@@ -585,7 +602,7 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 			fw:        failingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			devices:   workingDeviceList,
-			routing:   workingRoutingSetup{},
+			routing:   &workingRoutingSetup{},
 			err:       mock.ErrOnPurpose,
 		},
 		{
@@ -594,14 +611,14 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 			allowlist: workingAllowlistRouting{},
 			devices:   failingDeviceList,
 			err:       mock.ErrOnPurpose,
-			routing:   workingRoutingSetup{},
+			routing:   &workingRoutingSetup{},
 		},
 		{
 			name:      "success",
 			fw:        &workingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			devices:   workingDeviceList,
-			routing:   workingRoutingSetup{},
+			routing:   &workingRoutingSetup{},
 		},
 	}
 
@@ -646,20 +663,20 @@ func TestCombined_BlockTraffic(t *testing.T) {
 			fw:      failingFirewall{},
 			devices: workingDeviceList,
 			err:     mock.ErrOnPurpose,
-			routing: workingRoutingSetup{},
+			routing: &workingRoutingSetup{},
 		},
 		{
 			name:    "device listing failure",
 			fw:      &workingFirewall{},
 			devices: failingDeviceList,
 			err:     mock.ErrOnPurpose,
-			routing: workingRoutingSetup{},
+			routing: &workingRoutingSetup{},
 		},
 		{
 			name:    "success",
 			fw:      &workingFirewall{},
 			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
+			routing: &workingRoutingSetup{},
 		},
 	}
 
@@ -753,20 +770,20 @@ func TestCombined_AllowIPv6Traffic(t *testing.T) {
 			fw:      failingFirewall{},
 			devices: workingDeviceList,
 			err:     mock.ErrOnPurpose,
-			routing: workingRoutingSetup{},
+			routing: &workingRoutingSetup{},
 		},
 		{
 			name:    "device listing failure",
 			fw:      &workingFirewall{},
 			devices: failingDeviceList,
 			err:     mock.ErrOnPurpose,
-			routing: workingRoutingSetup{},
+			routing: &workingRoutingSetup{},
 		},
 		{
 			name:    "success",
 			fw:      &workingFirewall{},
 			devices: workingDeviceList,
-			routing: workingRoutingSetup{},
+			routing: &workingRoutingSetup{},
 		},
 	}
 
@@ -861,7 +878,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 		{
 			name:             "device listing failure",
 			devices:          failingDeviceList,
-			routing:          workingRoutingSetup{},
+			routing:          &workingRoutingSetup{},
 			rt:               workingRouter{},
 			fw:               &workingFirewall{},
 			allowlistRouting: workingAllowlistRouting{},
@@ -873,7 +890,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 		{
 			name:             "router failure",
 			devices:          workingDeviceList,
-			routing:          workingRoutingSetup{},
+			routing:          &workingRoutingSetup{},
 			rt:               failingRouter{},
 			fw:               &workingFirewall{},
 			allowlistRouting: workingAllowlistRouting{},
@@ -885,7 +902,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 		{
 			name:             "firewall failure",
 			devices:          workingDeviceList,
-			routing:          workingRoutingSetup{},
+			routing:          &workingRoutingSetup{},
 			rt:               workingRouter{},
 			fw:               failingFirewall{},
 			allowlistRouting: workingAllowlistRouting{},
@@ -897,7 +914,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 		{
 			name:             "invalid allowlist",
 			devices:          workingDeviceList,
-			routing:          workingRoutingSetup{},
+			routing:          &workingRoutingSetup{},
 			rt:               workingRouter{},
 			fw:               &workingFirewall{},
 			allowlistRouting: &workingAllowlistRouting{},
@@ -906,7 +923,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 		{
 			name:             "success",
 			devices:          workingDeviceList,
-			routing:          workingRoutingSetup{},
+			routing:          &workingRoutingSetup{},
 			rt:               workingRouter{},
 			fw:               &workingFirewall{},
 			allowlistRouting: workingAllowlistRouting{},
@@ -987,7 +1004,7 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
-				workingRoutingSetup{},
+				&workingRoutingSetup{},
 				nil,
 				nil,
 				nil,
@@ -1022,7 +1039,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 			allowlist: workingAllowlistRouting{},
 			rt:        workingRouter{},
 			devices:   workingDeviceList,
-			routing:   workingRoutingSetup{},
+			routing:   &workingRoutingSetup{},
 			err:       mock.ErrOnPurpose,
 		},
 		{
@@ -1031,7 +1048,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 			allowlist: workingAllowlistRouting{},
 			rt:        failingRouter{},
 			devices:   workingDeviceList,
-			routing:   workingRoutingSetup{},
+			routing:   &workingRoutingSetup{},
 			err:       mock.ErrOnPurpose,
 		},
 		{
@@ -1040,7 +1057,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 			allowlist: workingAllowlistRouting{},
 			rt:        workingRouter{},
 			devices:   failingDeviceList,
-			routing:   workingRoutingSetup{},
+			routing:   &workingRoutingSetup{},
 			err:       mock.ErrOnPurpose,
 		},
 		{
@@ -1048,7 +1065,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 			fw:        &workingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			rt:        workingRouter{},
-			routing:   workingRoutingSetup{},
+			routing:   &workingRoutingSetup{},
 			devices:   workingDeviceList,
 		},
 	}
@@ -1074,6 +1091,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 				0,
 				false,
 			)
+			assert.False(t, netw.IsNetworkSet())
 			err := netw.setNetwork(
 				config.NewAllowlist(
 					UDPPorts,
@@ -1130,7 +1148,7 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
-				workingRoutingSetup{},
+				&workingRoutingSetup{},
 				nil,
 				nil,
 				nil,
@@ -1212,7 +1230,7 @@ func TestCombined_AllowIncoming(t *testing.T) {
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
-				workingRoutingSetup{},
+				&workingRoutingSetup{},
 				nil,
 				nil,
 				nil,
@@ -1282,7 +1300,7 @@ func TestCombined_BlockIncoming(t *testing.T) {
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
-				workingRoutingSetup{},
+				&workingRoutingSetup{},
 				nil,
 				nil,
 				nil,
@@ -1334,7 +1352,7 @@ func TestCombined_SetMesh(t *testing.T) {
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
-				workingRoutingSetup{},
+				&workingRoutingSetup{},
 				&workingHostSetter{},
 				workingRouter{},
 				workingRouter{},
@@ -1386,7 +1404,7 @@ func TestCombined_UnSetMesh(t *testing.T) {
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
-				workingRoutingSetup{},
+				&workingRoutingSetup{},
 				&workingHostSetter{},
 				workingRouter{},
 				workingRouter{},
@@ -1396,6 +1414,76 @@ func TestCombined_UnSetMesh(t *testing.T) {
 			)
 			netw.isMeshnetSet = true
 			assert.ErrorIs(t, test.err, netw.UnSetMesh())
+		})
+	}
+}
+
+func TestCombined_Reconnect(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// on refresh keep `enableLocalTraffic` value;
+	// on UnsetMesh get default value `true`
+
+	router := &workingRoutingSetup{}
+	fw := &workingFirewall{}
+
+	tests := []struct {
+		name      string
+		enableLan bool
+		router    routes.PolicyService
+		publicKey string
+		address   string
+		ruleName  string
+		err       error
+	}{
+		{
+			name:      "enable local traffic",
+			enableLan: true,
+		},
+		{
+			name:      "disable local traffic",
+			enableLan: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			netw := NewCombined(
+				nil,
+				&workingMesh{},
+				workingGateway{},
+				&subs.Subject[string]{},
+				nil,
+				&workingDNS{},
+				&workingIpv6{},
+				fw,
+				nil,
+				workingDeviceList,
+				router,
+				&workingHostSetter{},
+				workingRouter{},
+				workingRouter{},
+				&workingExitNode{},
+				0,
+				false,
+			)
+			// activate meshnet
+			assert.ErrorIs(t, test.err, netw.SetMesh(
+				mesh.MachineMap{},
+				netip.Addr{},
+				"",
+			))
+			// connect to exit node
+			_ = netw.Start(
+				vpn.Credentials{},
+				vpn.ServerData{},
+				config.NewAllowlist(nil, nil, nil),
+				[]string{"1.1.1.1"},
+				test.enableLan,
+			)
+			// simulate network change event and refreshVPN
+			netw.Reconnect(true)
+			assert.Equal(t, test.enableLan, router.EnableLocalTraffic)
 		})
 	}
 }
@@ -1702,7 +1790,7 @@ func TestCombined_Refresh(t *testing.T) {
 		fw,
 		nil,
 		workingDeviceList,
-		workingRoutingSetup{},
+		&workingRoutingSetup{},
 		hostSetter,
 		workingRouter{},
 		workingRouter{},
@@ -1867,7 +1955,7 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 		newWorkingFirewall(),
 		workingAllowlistRouting{},
 		workingDeviceList,
-		workingRoutingSetup{},
+		&workingRoutingSetup{},
 		nil,
 		workingRouter{},
 		nil,
@@ -1902,12 +1990,12 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		},
 		{
 			name:         "killswitch enabled",
-			actions:      func(c *Combined) { _ = c.setKillSwitch(config.Allowlist{}) },
+			actions:      func(c *Combined) { _ = c.SetKillSwitch(config.Allowlist{}) },
 			lanAvailable: false,
 		},
 		{
 			name:         "VPN enabled",
-			actions:      func(c *Combined) { _ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil) },
+			actions:      func(c *Combined) { _ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true) },
 			lanAvailable: false,
 		},
 		{
@@ -1922,18 +2010,18 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		},
 		{
 			name:         "killswitch then lan discovery",
-			actions:      func(c *Combined) { _ = c.setKillSwitch(config.Allowlist{}); c.SetLanDiscovery(true) },
+			actions:      func(c *Combined) { _ = c.SetKillSwitch(config.Allowlist{}); c.SetLanDiscovery(true) },
 			lanAvailable: true,
 		},
 		{
 			name:         "lan discovery then killswitch",
-			actions:      func(c *Combined) { c.SetLanDiscovery(true); _ = c.setKillSwitch(config.Allowlist{}) },
+			actions:      func(c *Combined) { c.SetLanDiscovery(true); _ = c.SetKillSwitch(config.Allowlist{}) },
 			lanAvailable: true,
 		},
 		{
 			name: "vpn then lan discovery",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
 				c.SetLanDiscovery(true)
 			},
 			lanAvailable: true,
@@ -1942,7 +2030,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			name: "lan discovery then vpn",
 			actions: func(c *Combined) {
 				c.SetLanDiscovery(true)
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
 			},
 			lanAvailable: true,
 		},
@@ -1950,7 +2038,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			name: "lan discovery then killswitch then lan discovery off",
 			actions: func(c *Combined) {
 				c.SetLanDiscovery(true)
-				_ = c.setKillSwitch(config.Allowlist{})
+				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(false)
 			},
 			lanAvailable: false,
@@ -1959,7 +2047,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			name: "lan discovery then vpn then lan discovery off",
 			actions: func(c *Combined) {
 				c.SetLanDiscovery(true)
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
 				c.SetLanDiscovery(false)
 			},
 			lanAvailable: false,
@@ -1967,16 +2055,16 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then killswitch",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
-				_ = c.setKillSwitch(config.Allowlist{})
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.SetKillSwitch(config.Allowlist{})
 			},
 			lanAvailable: false,
 		},
 		{
 			name: "vpn then killswitch then lan discovery",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
-				_ = c.setKillSwitch(config.Allowlist{})
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
 			},
 			lanAvailable: true,
@@ -1984,20 +2072,20 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then killswitch then lan discovery then killswitch off",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
-				_ = c.setKillSwitch(config.Allowlist{})
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
-				_ = c.unsetKillSwitch()
+				_ = c.UnsetKillSwitch()
 			},
 			lanAvailable: true,
 		},
 		{
 			name: "vpn then killswitch then lan discovery then killswitch off then lan discovery off",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
-				_ = c.setKillSwitch(config.Allowlist{})
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
-				_ = c.unsetKillSwitch()
+				_ = c.UnsetKillSwitch()
 				c.SetLanDiscovery(false)
 			},
 			lanAvailable: false,
@@ -2005,10 +2093,10 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then killswitch then lan discovery then killswitch off then lan discovery off then vpn off",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil)
-				_ = c.setKillSwitch(config.Allowlist{})
+				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
-				_ = c.unsetKillSwitch()
+				_ = c.UnsetKillSwitch()
 				c.SetLanDiscovery(false)
 				_ = c.Stop()
 			},
