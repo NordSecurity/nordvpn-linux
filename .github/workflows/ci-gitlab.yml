@@ -10,8 +10,8 @@ on:
 permissions: {}
 jobs:
   print-labels:
-  steps:
-    - run: echo ${ github.event.label.name }
+    steps:
+      - run: echo ${ github.event.label.name }
   trigger-gitlab-pipeline:
     runs-on: [self-hosted, nordvpn-linux]
     if: |
