@@ -25,3 +25,7 @@ jobs:
           project-id: ${{ secrets.PROJECT_ID }}
           ref: ${{ secrets.REF }}
           token: ${{ secrets.TOKEN }}
+jobs:
+  print-labels:
+  steps:
+    - run: echo ${ github.event.label.name }
