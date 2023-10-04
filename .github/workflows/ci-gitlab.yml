@@ -9,6 +9,9 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
 permissions: {}
 jobs:
+  print-labels:
+  steps:
+    - run: echo ${ github.event.label.name }
   trigger-gitlab-pipeline:
     runs-on: [self-hosted, nordvpn-linux]
     if: |
@@ -25,7 +28,3 @@ jobs:
           project-id: ${{ secrets.PROJECT_ID }}
           ref: ${{ secrets.REF }}
           token: ${{ secrets.TOKEN }}
-jobs:
-  print-labels:
-  steps:
-    - run: echo ${ github.event.label.name }
