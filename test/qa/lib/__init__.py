@@ -50,9 +50,6 @@ IPV6 = [
     "off",
 ]
 
-# Used for test parametrization, when the same test has to be run for different values of custom dns.
-DNS = ["1.1.1.1"]
-
 # Used for test parametrization, when the same test has to be run for obfuscated technologies.
 STANDARD_GROUPS = [
     "Africa_The_Middle_East_And_India",
@@ -200,6 +197,13 @@ def set_technology_and_protocol(tech, proto, obfuscation):
 def set_threat_protection_lite(dns):
     try:
         print(sh.nordvpn.set.cybersec(dns))
+    except sh.ErrorReturnCode_1 as ex:
+        print("WARNING:", ex)
+
+
+def set_dns(dns):
+    try:
+        print(sh.nordvpn.set.dns(dns))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 

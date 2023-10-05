@@ -4,7 +4,7 @@ from lib import (
     info,
     logging,
     login,
-    network,
+    settings
 )
 import lib
 import pytest
@@ -26,6 +26,11 @@ def teardown_module(module):
 def setup_function(function):
     logging.log()
 
+    # Make sure that Custom DNS, IPv6 and Threat Protection Lite are disabled before we execute each test
+    lib.set_dns("off")
+    lib.set_ipv6("off")
+    lib.set_threat_protection_lite("off")
+
 
 def teardown_function(function):
     logging.log(data=info.collect())
@@ -33,56 +38,56 @@ def teardown_function(function):
 
 
 @pytest.mark.parametrize("threat_protection_lite", lib.THREAT_PROTECTION_LITE)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_dns_connect(threat_protection_lite):
-    lib.set_technology_and_protocol("openvpn", "udp", "off")
+def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
     lib.set_threat_protection_lite(threat_protection_lite)
     lib.set_ipv6("on")
 
     assert dns.is_unset()
 
-    output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
 
-    print(output)
-    assert lib.is_connect_successful(output)
+        if threat_protection_lite == "on":
+            assert settings.get_is_tpl_enabled()
+            assert settings.dns_visible_in_settings("disabled")
+            assert dns.is_set_for(dns.DNS_TPL_IPV6 + dns.DNS_TPL)
+        else:
+            assert not settings.get_is_tpl_enabled()
+            assert settings.dns_visible_in_settings("disabled")
+            assert dns.is_set_for(dns.DNS_NORD_IPV6 + dns.DNS_NORD)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        assert network.is_connected()
-        assert dns.is_set_for(threat_protection_lite, "on")  # fails when connected over IPv4
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
     assert dns.is_unset()
 
 
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_set_dns_connected():
-    lib.set_technology_and_protocol("openvpn", "udp", "off")
-    lib.set_threat_protection_lite("off")
+def test_set_dns_connected(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    # TODO: LVPN-1349
+    sh.nordvpn.connect()
+    sh.nordvpn.disconnect()
+    #
+
     lib.set_ipv6("on")
 
     assert dns.is_unset()
 
-    output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
-    print(output)
-    assert lib.is_connect_successful(output)
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        assert network.is_connected()
-        assert dns.is_set_for("off", "on")
+        assert not settings.get_is_tpl_enabled()
+        assert settings.dns_visible_in_settings("disabled")
+        assert dns.is_set_for(dns.DNS_NORD_IPV6 + dns.DNS_NORD)
 
-    lib.set_threat_protection_lite("on")
+        lib.set_threat_protection_lite("on")
+        assert settings.get_is_tpl_enabled()
+        assert settings.dns_visible_in_settings("disabled")
+        assert dns.is_set_for(dns.DNS_TPL_IPV6 + dns.DNS_TPL)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        assert network.is_connected()
-        assert dns.is_set_for("on", "on")
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
     assert dns.is_unset()
-    assert network.is_disconnected()

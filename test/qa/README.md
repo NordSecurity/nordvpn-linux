@@ -84,6 +84,7 @@ lib is a Python package developed for making testing NordVPN easier:
 * lib/login.py - defines test user credentials in a single place.
 * lib/network.py - allows easier control of the network.
 * lib/server.py - helpful for calling core API.
+* lib/settings.py - defines functions for checking application settings.
 
 Package is imported by specifying a directory name (imports only `__init__.py`).
 Module is imported by specifying path to file in the following format: `package.file`, where file
