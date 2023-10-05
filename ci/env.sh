@@ -19,7 +19,7 @@ export COVERDIR
 HASH=$(git rev-parse --short HEAD)
 export HASH
 
-LIBNORD_VERSION="0.4.6"
+LIBNORD_VERSION="0.4.7"
 export LIBNORD_VERSION
 
 OPENVPN_VERSION="2.5.8"
