@@ -5,6 +5,7 @@ from lib import (
     login,
     network,
     server,
+    settings
 )
 import lib
 import pytest
@@ -42,9 +43,9 @@ def capture_traffic() -> int:
     """
 
     # Collect information needed for tshark filter
-    server_ip = daemon.get_server_ip()
-    protocol = daemon.get_current_connection_protocol()
-    obfuscated = daemon.get_is_obfuscated()
+    server_ip = settings.get_server_ip()
+    protocol = settings.get_current_connection_protocol()
+    obfuscated = settings.get_is_obfuscated()
 
     # Choose traffic filter according to information collected above
     if protocol == "nordlynx":
