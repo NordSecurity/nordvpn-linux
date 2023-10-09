@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -21,6 +22,10 @@ func (c *cmd) Groups(ctx *cli.Context) error {
 	})
 	if err != nil {
 		return formatError(err)
+	}
+
+	if resp.Type != internal.CodeSuccess {
+		return formatError(errors.New(MsgGroupsListIsEmpty))
 	}
 
 	groupList, err := internal.Columns(resp.Data)
