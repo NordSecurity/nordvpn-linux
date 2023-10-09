@@ -10,7 +10,7 @@ on:
 permissions: {}
 jobs:
   trigger-gitlab-pipeline:
-    runs-on: [self-hosted, nordvpn-linux]
+    runs-on: [self-hosted, gitlab]
     if: |
       github.event_name == 'push' ||
       (
