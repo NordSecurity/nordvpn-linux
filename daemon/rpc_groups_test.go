@@ -15,34 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func configureRPC(dm *DataManager, cm config.Manager) *RPC {
-	return &RPC{
-		ac:        &workingLoginChecker{},
-		cm:        cm,
-		dm:        dm,
-		fileshare: service.NoopFileshare{},
-		netw:      &networker.Mock{},
-		ncClient:  mockNC{},
-		publisher: &subs.Subject[string]{},
-		api:       mockApi{},
-	}
-}
-
-func setupTest(t *testing.T) {
-	category.Set(t, category.Unit)
-}
-
-func tearDown(t *testing.T) {
-	if r := recover(); r != nil {
-		t.Error("The app crashed")
-	}
-
-	testsCleanup()
-}
-
 func TestRPCGroups(t *testing.T) {
-	setupTest(t)
-	defer tearDown(t)
+	category.Set(t, category.Unit)
+	defer testsCleanup()
 
 	tests := []struct {
 		name       string
@@ -78,7 +53,16 @@ func TestRPCGroups(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rpc := configureRPC(test.dm, test.cm)
+			rpc := RPC{
+				ac:        &workingLoginChecker{},
+				cm:        test.cm,
+				dm:        test.dm,
+				fileshare: service.NoopFileshare{},
+				netw:      &networker.Mock{},
+				ncClient:  mockNC{},
+				publisher: &subs.Subject[string]{},
+				api:       mockApi{},
+			}
 			payload, _ := rpc.Groups(context.Background(), &pb.GroupsRequest{})
 
 			assert.Equal(t, test.statusCode, payload.Type)
@@ -87,8 +71,8 @@ func TestRPCGroups(t *testing.T) {
 }
 
 func TestRPCGroups_Successful(t *testing.T) {
-	setupTest(t)
-	defer tearDown(t)
+	category.Set(t, category.Unit)
+	defer testsCleanup()
 
 	dm := testNewDataManager()
 
@@ -103,7 +87,16 @@ func TestRPCGroups_Successful(t *testing.T) {
 	cm := newMockConfigManager()
 	cm.c.AutoConnectData.Protocol = config.Protocol_TCP
 
-	rpc := configureRPC(dm, cm)
+	rpc := RPC{
+		ac:        &workingLoginChecker{},
+		cm:        cm,
+		dm:        dm,
+		fileshare: service.NoopFileshare{},
+		netw:      &networker.Mock{},
+		ncClient:  mockNC{},
+		publisher: &subs.Subject[string]{},
+		api:       mockApi{},
+	}
 
 	groupsRequest := &pb.GroupsRequest{}
 	groupsRequest.Obfuscate = false
