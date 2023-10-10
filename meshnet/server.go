@@ -96,7 +96,8 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if err := s.mc.Register(); err != nil {
+		s.pub.Publish(fmt.Errorf("registering mesh: %w", err))
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_MeshnetError{
 				MeshnetError: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -261,7 +262,8 @@ func (s *Server) StartMeshnet() error {
 		return ErrMeshnetNotEnabled
 	}
 
-	if !s.mc.IsRegistered() {
+	if err := s.mc.Register(); err != nil {
+		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		return ErrDeviceNotRegistered
 	}
 

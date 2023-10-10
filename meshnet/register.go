@@ -1,6 +1,7 @@
 package meshnet
 
 import (
+	"fmt"
 	"log"
 	"sync"
 
@@ -16,6 +17,8 @@ import (
 type Checker interface {
 	// IsRegistered returns true when device has been registered to meshnet.
 	IsRegistered() bool
+	// Register the device
+	Register() error
 }
 
 // RegisteringChecker does both registration checks and registration, if it's not done.
@@ -35,6 +38,13 @@ func NewRegisteringChecker(
 	return &RegisteringChecker{cm: cm, gen: gen, reg: reg}
 }
 
+func isRegistered(cfg config.Config) bool {
+	return cfg.MeshDevice != nil &&
+		cfg.MeshPrivateKey != "" &&
+		cfg.MeshDevice.ID != uuid.Nil &&
+		cfg.MeshDevice.Address.IsValid()
+}
+
 // IsRegistered reports meshnet device registration status.
 //
 // Thread-safe.
@@ -48,6 +58,10 @@ func (r *RegisteringChecker) IsRegistered() bool {
 		return false
 	}
 
+	if isRegistered(cfg) {
+		return true
+	}
+
 	if err := r.register(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return false
@@ -58,17 +72,39 @@ func (r *RegisteringChecker) IsRegistered() bool {
 		return false
 	}
 
-	return cfg.MeshDevice != nil && cfg.MeshPrivateKey != ""
+	return isRegistered(cfg)
+}
+
+// Register registers the device in API, even if it was already registered
+func (r *RegisteringChecker) Register() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		return err
+	}
+
+	if err := r.register(&cfg); err != nil {
+		return err
+	}
+
+	if err := r.cm.SaveWith(meshConfig(cfg.MeshDevice, cfg.MeshPrivateKey)); err != nil {
+		return err
+	}
+
+	if !isRegistered(cfg) {
+		return fmt.Errorf("meshnet registration failure")
+	}
+
+	return nil
 }
 
 func (r *RegisteringChecker) register(cfg *config.Config) error {
-	if cfg.MeshDevice != nil &&
-		cfg.MeshPrivateKey != "" &&
-		cfg.MeshDevice.ID != uuid.Nil {
-		return nil
+	privateKey := cfg.MeshPrivateKey
+	if privateKey == "" {
+		privateKey = r.gen.Private()
 	}
-
-	privateKey := r.gen.Private()
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	distroName, err := distro.ReleaseName()
 	if err != nil {

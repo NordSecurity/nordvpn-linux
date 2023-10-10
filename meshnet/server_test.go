@@ -18,6 +18,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,7 @@ func (meshRenewChecker) IsVPNExpired() (bool, error) { return false, nil }
 type registrationChecker struct{}
 
 func (registrationChecker) IsRegistered() bool { return true }
+func (registrationChecker) Register() error    { return nil }
 
 type allowedIncoming struct {
 	address    UniqueAddress
@@ -94,44 +96,6 @@ func (*workingNetworker) BlockRouting(UniqueAddress) error { return nil }
 func (*workingNetworker) Refresh(mesh.MachineMap) error    { return nil }
 func (*workingNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
-}
-
-type memory struct {
-	cfg     *config.Config
-	saveErr error
-}
-
-func newMemory() *memory {
-	return &memory{}
-}
-
-func (m *memory) SaveWith(fn config.SaveFunc) error {
-	if m.saveErr != nil {
-		return m.saveErr
-	}
-
-	if m.cfg == nil {
-		m.cfg = &config.Config{}
-	}
-	cfg := fn(*m.cfg)
-	*m.cfg = *&cfg
-	return nil
-}
-
-func (m *memory) Load(c *config.Config) error {
-	if m.cfg == nil {
-		m.cfg = &config.Config{}
-	}
-	if m.cfg.MeshDevice == nil {
-		m.cfg.MeshDevice = &mesh.Machine{}
-	}
-	*c = *m.cfg
-	return nil
-}
-
-func (m *memory) Reset() error {
-	*m = *newMemory()
-	return nil
 }
 
 type invitationsAPI struct{}
@@ -250,8 +214,8 @@ func newMockedServer(
 	networker := workingNetworker{}
 	networker.allowedFileshare = []UniqueAddress{}
 
-	configManager := newMemory()
-	configManager.saveErr = saveConfigErr
+	configManager := &mock.ConfigManager{}
+	configManager.SaveErr = saveConfigErr
 
 	server := NewServer(
 		meshRenewChecker{},
@@ -296,7 +260,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			inv:       invitationsAPI{},
 			rc:        registrationChecker{},
 			reg:       &registryAPI{},
-			cm:        newMemory(),
+			cm:        &mock.ConfigManager{},
 			dns:       dnsGetter{},
 			fileshare: service.NoopFileshare{},
 			success:   true,
@@ -308,7 +272,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			inv:       invitationsAPI{},
 			rc:        registrationChecker{},
 			reg:       &registryAPI{},
-			cm:        newMemory(),
+			cm:        &mock.ConfigManager{},
 			dns:       dnsGetter{},
 			fileshare: failingFileshare{},
 			success:   true, // Fileshare shouldn't impact meshnet enabling
@@ -377,7 +341,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			inv:       invitationsAPI{},
 			rc:        registrationChecker{},
 			reg:       &registryAPI{},
-			cm:        newMemory(),
+			cm:        &mock.ConfigManager{},
 			dns:       dnsGetter{},
 			fileshare: service.NoopFileshare{},
 		},
@@ -388,7 +352,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			inv:       invitationsAPI{},
 			rc:        registrationChecker{},
 			reg:       &registryAPI{},
-			cm:        newMemory(),
+			cm:        &mock.ConfigManager{},
 			dns:       dnsGetter{},
 			fileshare: failingFileshare{},
 		},
@@ -457,7 +421,7 @@ func TestServer_Invite(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			server := NewServer(
 				meshRenewChecker{},
-				newMemory(),
+				&mock.ConfigManager{},
 				registrationChecker{},
 				test.inv,
 				&workingNetworker{},
@@ -486,7 +450,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 
 	server := NewServer(
 		meshRenewChecker{},
-		newMemory(),
+		&mock.ConfigManager{},
 		registrationChecker{},
 		acceptInvitationsAPI{},
 		&workingNetworker{},
@@ -515,7 +479,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 
 	server := NewServer(
 		meshRenewChecker{},
-		newMemory(),
+		&mock.ConfigManager{},
 		registrationChecker{},
 		acceptInvitationsAPI{},
 		&workingNetworker{},
@@ -593,8 +557,8 @@ func TestServer_Connect(t *testing.T) {
 
 	getServer := func() *Server {
 		registryApi := registryAPI{}
-		configManager := newMemory()
-		configManager.cfg = &config.Config{Technology: config.Technology_NORDLYNX}
+		configManager := &mock.ConfigManager{}
+		configManager.Cfg = &config.Config{Technology: config.Technology_NORDLYNX}
 
 		registryApi.machinePeers = []mesh.MachinePeer{
 			{
@@ -750,7 +714,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 
 		server := NewServer(
 			meshRenewChecker{},
-			newMemory(),
+			&mock.ConfigManager{},
 			registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
@@ -874,7 +838,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 
 		server := NewServer(
 			meshRenewChecker{},
-			newMemory(),
+			&mock.ConfigManager{},
 			registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
@@ -980,7 +944,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 
 		server := NewServer(
 			meshRenewChecker{},
-			newMemory(),
+			&mock.ConfigManager{},
 			registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
@@ -1086,7 +1050,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 
 		server := NewServer(
 			meshRenewChecker{},
-			newMemory(),
+			&mock.ConfigManager{},
 			registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
