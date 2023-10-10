@@ -16,6 +16,9 @@ func (r *RPC) Cities(ctx context.Context, in *pb.CitiesRequest) (*pb.Payload, er
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
+		return &pb.Payload{
+			Type: internal.CodeConfigError,
+		}, nil
 	}
 
 	// collect cities and sort them

@@ -23,6 +23,10 @@ func (c *cmd) Countries(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
+	if resp.Type != internal.CodeSuccess {
+		return formatError(fmt.Errorf(MsgListIsEmpty, "countries"))
+	}
+
 	countryList, err := internal.Columns(resp.Data)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)

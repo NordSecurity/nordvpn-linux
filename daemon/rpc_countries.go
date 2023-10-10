@@ -76,16 +76,25 @@ func (r *RPC) Countries(ctx context.Context, in *pb.CountriesRequest) (*pb.Paylo
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
+		return &pb.Payload{
+			Type: internal.CodeConfigError,
+		}, nil
 	}
 
-	var countryNames []string
-	for country := range r.dm.GetAppData().CountryNames[in.GetObfuscate()][cfg.AutoConnectData.Protocol].Iter() {
-		countryNames = append(countryNames, country.(string))
+	if countries, ok := r.dm.GetAppData().CountryNames[in.GetObfuscate()][cfg.AutoConnectData.Protocol]; ok {
+		var countryNames []string
+		for country := range countries.Iter() {
+			countryNames = append(countryNames, country.(string))
+		}
+		sort.Strings(countryNames)
+		return &pb.Payload{
+			Type: internal.CodeSuccess,
+			Data: countryNames,
+		}, nil
 	}
-	sort.Strings(countryNames)
+
 	return &pb.Payload{
-		Type: internal.CodeSuccess,
-		Data: countryNames,
+		Type: internal.CodeEmptyPayloadError,
 	}, nil
 }
 
