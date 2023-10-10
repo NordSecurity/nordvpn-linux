@@ -148,6 +148,7 @@ func TestStartAutoConnect(t *testing.T) {
 type meshRenewChecker struct{}
 
 func (meshRenewChecker) IsRegistered() bool { return true }
+func (meshRenewChecker) Register() error    { return nil }
 
 type invitationsAPI struct{}
 
