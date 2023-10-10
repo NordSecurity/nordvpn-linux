@@ -24,6 +24,18 @@ ALL_TEST_DNS_ADDRESSES = \
     DNS_CASE_CUSTOM_DOUBLE.split(" ") + \
     DNS_CASE_CUSTOM_TRIPLE.split(" ")
 
+# Used for DNS test parametrization
+DNS_CASES_ERROR = [
+    ("a", "The provided IP address is invalid."),
+    (["1.1.1.1", "1.1.1.1", "1.1.1.1", "1.1.1.1"], "More than 3 DNS addresses provided.")
+]
+
+# Used to check if error messages are correct
+DNS_MSG_ERROR_ALREADY_SET = "DNS is already set to %s."
+DNS_MSG_ERROR_ALREADY_DISABLED = "DNS is already set to disabled."
+
+TPL_MSG_WARNING_DISABLING = "Disabling Threat Protection Lite."
+
 
 def is_unset() -> bool:
     """ returns True when NordVPN app has not modified the DNS """
