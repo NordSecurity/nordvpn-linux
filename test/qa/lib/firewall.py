@@ -78,6 +78,19 @@ import sh
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
 
+inputLanDiscoveryRules = [
+    "-A INPUT -s 169.254.0.0/16 -i eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A INPUT -s 192.168.0.0/16 -i eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A INPUT -s 172.16.0.0/12 -i eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A INPUT -s 10.0.0.0/8 -i eth0 -m comment --comment nordvpn -j ACCEPT",
+]
+
+outputLanDiscoveryRules = [
+    "-A OUTPUT -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A OUTPUT -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A OUTPUT -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A OUTPUT -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+]
 
 # ToDo: Add missing IPv6 rules (icmp6 & dhcp6)
 def _get_firewall_rules(killswitch, server_ip, iface, port="", protocol="", subnet=""):
