@@ -6,6 +6,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +36,8 @@ func (r *registry) Register(token string, self mesh.Machine) (*mesh.Machine, err
 }
 
 func TestRegister_NotYetRegistered(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	cm := &mock.ConfigManager{}
 	rc := NewRegisteringChecker(cm, &generator{}, &registry{})
 	err := rc.Register()
@@ -45,6 +48,8 @@ func TestRegister_NotYetRegistered(t *testing.T) {
 }
 
 func TestRegister_AlreadyRegistered(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	cm := &mock.ConfigManager{
 		Cfg: &config.Config{
 			MeshPrivateKey: "0002",
@@ -63,6 +68,8 @@ func TestRegister_AlreadyRegistered(t *testing.T) {
 }
 
 func TestIsRegistered_NotYetRegistered(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name          string
 		cfg           *config.Config
@@ -120,6 +127,8 @@ func TestIsRegistered_NotYetRegistered(t *testing.T) {
 }
 
 func TestIsRegistered_AlreadyRegistered(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	cm := &mock.ConfigManager{
 		Cfg: &config.Config{
 			MeshPrivateKey: "0002",
