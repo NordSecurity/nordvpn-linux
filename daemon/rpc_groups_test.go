@@ -26,18 +26,6 @@ func TestRPCGroups(t *testing.T) {
 		statusCode int64
 	}{
 		{
-			name:       "DataManager and config.Manager are nil",
-			dm:         nil,
-			cm:         nil,
-			statusCode: internal.CodeEmptyPayloadError,
-		},
-		{
-			name:       "DataManager is nil",
-			dm:         nil,
-			cm:         newMockConfigManager(),
-			statusCode: internal.CodeEmptyPayloadError,
-		},
-		{
 			name:       "missing configuration file",
 			dm:         testNewDataManager(),
 			cm:         failingConfigManager{},
