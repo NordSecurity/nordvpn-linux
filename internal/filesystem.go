@@ -3,6 +3,7 @@ package internal
 import (
 	"crypto/sha256"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -242,6 +243,11 @@ func IsCommandAvailable(command string) bool {
 func Columns(input []string) (string, error) {
 	cliSize, err := CliDimensions()
 	if err != nil {
+		// workaround for tests: while running tests stty fails
+		// TODO: find a better way
+		if flag.Lookup("test.v") != nil {
+			return strings.Join(input, " "), err
+		}
 		return "", err
 	}
 

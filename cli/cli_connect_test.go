@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"log"
+	"io"
 	"os"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/client/config"
@@ -18,39 +20,92 @@ import (
 	"google.golang.org/grpc"
 )
 
+func captureOutput(f func()) (string, error) {
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		return "", err
+	}
+	stdout := os.Stdout
+	stderr := os.Stderr
+	defer func() {
+		os.Stdout = stdout
+		os.Stderr = stderr
+	}()
+	os.Stdout = writer
+	os.Stderr = writer
+	out := make(chan string)
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	go func() {
+		var buf bytes.Buffer
+		wg.Done()
+		io.Copy(&buf, reader)
+		out <- buf.String()
+	}()
+	wg.Wait()
+	f()
+	writer.Close()
+	return strings.TrimSuffix(<-out, "\n"), nil
+}
+
 type mockDaemonClient struct {
 	pb.DaemonClient
+	cities    []string
+	groups    []string
+	countries []string
 }
 
 func (c mockDaemonClient) Cities(ctx context.Context, in *pb.CitiesRequest, opts ...grpc.CallOption) (*pb.Payload, error) {
-	x := &pb.Payload{
-		Type: internal.CodeSuccess,
-		Data: []string{"Paris", "Madrid", "Atlanta", "Chicago", "Los_Angeles", "Miami", "New_York"},
+	if c.cities != nil {
+		return &pb.Payload{
+			Type: internal.CodeSuccess,
+			Data: c.cities,
+		}, nil
+	} else {
+		return &pb.Payload{
+			Type: internal.CodeEmptyPayloadError,
+			Data: nil,
+		}, nil
 	}
-	return x, nil
 }
+
 func (c mockDaemonClient) Countries(ctx context.Context, in *pb.CountriesRequest, opts ...grpc.CallOption) (*pb.Payload, error) {
-	x := &pb.Payload{
-		Type: internal.CodeSuccess,
-		Data: []string{"Canada", "France", "Germany", "Hong_Kong", "Italy", "Japan", "Netherlands", "Poland", "Singapore", "Spain", "Sweden", "Switzerland", "Spain", "Turkey", "United_Arab_Emirates", "United_Kingdom", "United_States"},
+	if c.countries != nil {
+		return &pb.Payload{
+			Type: internal.CodeSuccess,
+			Data: c.countries,
+		}, nil
+	} else {
+		return &pb.Payload{
+			Type: internal.CodeEmptyPayloadError,
+			Data: nil,
+		}, nil
 	}
-	return x, nil
 }
 func (c mockDaemonClient) Groups(ctx context.Context, in *pb.GroupsRequest, opts ...grpc.CallOption) (*pb.Payload, error) {
-	x := &pb.Payload{
-		Type: internal.CodeSuccess,
-		Data: []string{"Africa_The_Middle_East_And_India", "Asia_Pacific", "Europe", "Obfuscated_Servers", "The_Americas"},
+	if c.groups != nil {
+		return &pb.Payload{
+			Type: internal.CodeSuccess,
+			Data: c.groups,
+		}, nil
+	} else {
+		return &pb.Payload{
+			Type: internal.CodeEmptyPayloadError,
+			Data: nil,
+		}, nil
 	}
-	return x, nil
 }
 
 func TestConnectAutoComplete(t *testing.T) {
 	category.Set(t, category.Unit)
-	c := cmd{mockDaemonClient{}, nil, nil, "", nil, config.Config{}, nil}
+	mockClient := mockDaemonClient{}
+	c := cmd{&mockClient, nil, nil, "", nil, config.Config{}, nil}
 	tests := []struct {
-		name     string
-		expected []string
-		input    []string
+		name      string
+		countries []string
+		groups    []string
+		expected  []string
+		input     []string
 	}{
 		{
 			name:     "France",
@@ -67,10 +122,12 @@ func TestConnectAutoComplete(t *testing.T) {
 			expected: []string{"Atlanta", "Chicago", "Los_Angeles", "Miami", "New_York"},
 			input:    []string{"United_States"},
 		},
-		{
-			name:     "Groups and Countries",
-			expected: []string{"Africa_The_Middle_East_And_India", "Asia_Pacific", "Europe", "Obfuscated_Servers", "The_Americas", "Canada", "France", "Germany", "Hong_Kong", "Italy", "Japan", "Netherlands", "Poland", "Singapore", "Spain", "Sweden", "Switzerland", "Spain", "Turkey", "United_Arab_Emirates", "United_Kingdom", "United_States"},
-			input:    []string{},
+		{ // in this case because input is empty, countries and groups will be displayed
+			name:      "Groups and Countries",
+			groups:    []string{"Europe", "Obfuscated_Servers", "The_Americas"},
+			countries: []string{"Canada", "France", "Germany"},
+			expected:  []string{"Canada", "France", "Germany", "Europe", "Obfuscated_Servers", "The_Americas"},
+			input:     []string{},
 		},
 	}
 
@@ -78,14 +135,21 @@ func TestConnectAutoComplete(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
+			mockClient.cities = test.expected
+			mockClient.countries = test.countries
+			mockClient.groups = test.groups
 			set.Parse(test.input)
 			ctx := cli.NewContext(app, set, &cli.Context{Context: context.Background()})
-			var output bytes.Buffer
-			c.ConnectAutoComplete(ctx)
-			log.SetOutput(&output)
-			defer log.SetOutput(os.Stdout)
+
+			result, err := captureOutput(func() {
+				c.ConnectAutoComplete(ctx)
+			})
+
+			assert.Nil(t, err)
+
 			list, _ := internal.Columns(test.expected)
-			assert.Contains(t, output.String(), list)
+			assert.NotEmpty(t, list)
+			assert.Equal(t, list, result)
 		})
 	}
 }
