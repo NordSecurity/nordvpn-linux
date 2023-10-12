@@ -111,6 +111,7 @@ Example: nordvpn set %s on`
 	CheckYourInternetConnMessage = "Please check your internet connection and try again."
 	ExpiredAccountMessage        = "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN."
 	NoSuchCommand                = "Command '%s' doesn't exist."
+	MsgListIsEmpty               = "We couldn’t load the list of %s. Please try again later."
 
 	// Meshnet
 	MsgSetMeshnetUsage       = "Enables or disables Meshnet on this device."

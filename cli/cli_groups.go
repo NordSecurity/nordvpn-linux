@@ -23,6 +23,10 @@ func (c *cmd) Groups(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
+	if resp.Type != internal.CodeSuccess {
+		return formatError(fmt.Errorf(MsgListIsEmpty, "server groups"))
+	}
+
 	groupList, err := internal.Columns(resp.Data)
 
 	if err != nil {
