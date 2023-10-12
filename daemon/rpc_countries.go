@@ -81,20 +81,20 @@ func (r *RPC) Countries(ctx context.Context, in *pb.CountriesRequest) (*pb.Paylo
 		}, nil
 	}
 
-	if countries, ok := r.dm.GetAppData().CountryNames[in.GetObfuscate()][cfg.AutoConnectData.Protocol]; ok {
-		var countryNames []string
-		for country := range countries.Iter() {
-			countryNames = append(countryNames, country.(string))
-		}
-		sort.Strings(countryNames)
+	countries, ok := r.dm.GetAppData().CountryNames[in.GetObfuscate()][cfg.AutoConnectData.Protocol]
+	if !ok {
 		return &pb.Payload{
-			Type: internal.CodeSuccess,
-			Data: countryNames,
+			Type: internal.CodeEmptyPayloadError,
 		}, nil
 	}
-
+	var countryNames []string
+	for country := range countries.Iter() {
+		countryNames = append(countryNames, country.(string))
+	}
+	sort.Strings(countryNames)
 	return &pb.Payload{
-		Type: internal.CodeEmptyPayloadError,
+		Type: internal.CodeSuccess,
+		Data: countryNames,
 	}, nil
 }
 

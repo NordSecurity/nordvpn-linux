@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/client/config"
@@ -31,21 +30,16 @@ func captureOutput(f func()) (string, error) {
 		os.Stdout = stdout
 		os.Stderr = stderr
 	}()
+
 	os.Stdout = writer
 	os.Stderr = writer
-	out := make(chan string)
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
-	go func() {
-		var buf bytes.Buffer
-		wg.Done()
-		io.Copy(&buf, reader)
-		out <- buf.String()
-	}()
-	wg.Wait()
+
 	f()
-	writer.Close()
-	return strings.TrimSuffix(<-out, "\n"), nil
+
+	writer.Close() // close to unblock io.Copy(&buf, reader)
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	return strings.TrimSuffix(buf.String(), "\n"), nil
 }
 
 type mockDaemonClient struct {

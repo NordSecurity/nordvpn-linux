@@ -12,26 +12,26 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func TestCountriesList(t *testing.T) {
+func TestGroupsList(t *testing.T) {
 	category.Set(t, category.Unit)
 	mockClient := mockDaemonClient{}
 	c := cmd{&mockClient, nil, nil, "", nil, config.Config{}, nil}
 
 	tests := []struct {
 		name          string
-		countries     []string
+		groups        []string
 		expected      string
 		input         string
 		expectedError error
 	}{
 		{
 			name:          "error response",
-			expectedError: formatError(fmt.Errorf(MsgListIsEmpty, "countries")),
+			expectedError: formatError(fmt.Errorf(MsgListIsEmpty, "server groups")),
 		},
 		{
-			name:      "countries list",
-			expected:  "France, Germany",
-			countries: []string{"France", "Germany"},
+			name:     "groups list",
+			expected: "group1, group2",
+			groups:   []string{"group1", "group2"},
 		},
 	}
 
@@ -39,11 +39,11 @@ func TestCountriesList(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
-			mockClient.countries = test.countries
+			mockClient.groups = test.groups
 			ctx := cli.NewContext(app, set, &cli.Context{Context: context.Background()})
 
 			result, err := captureOutput(func() {
-				err := c.Countries(ctx)
+				err := c.Groups(ctx)
 				assert.Equal(t, test.expectedError, err)
 			})
 			assert.Nil(t, err)
