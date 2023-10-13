@@ -20,6 +20,13 @@ func (c *cmd) Countries(ctx *cli.Context) error {
 		Obfuscate: c.config.Obfuscate,
 	})
 	if err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return formatError(err)
+	}
+
+	if resp.Type != internal.CodeSuccess {
+		err := fmt.Errorf(MsgListIsEmpty, "countries")
+		log.Println(internal.ErrorPrefix, err)
 		return formatError(err)
 	}
 
