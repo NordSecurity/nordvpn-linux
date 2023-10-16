@@ -110,7 +110,6 @@ IPV6_SERVERS = [
     "us9591", "us9592"
 ]
 
-
 class Protocol(Enum):
     UDP = "UDP"
     TCP = "TCP"
