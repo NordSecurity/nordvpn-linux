@@ -39,6 +39,12 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
+	if resp.Type != internal.CodeSuccess {
+		err := fmt.Errorf(MsgListIsEmpty, "cities")
+		log.Println(internal.ErrorPrefix, err)
+		return formatError(err)
+	}
+
 	if len(resp.Data) == 0 {
 		return formatError(errors.New(CitiesNotFoundError))
 	}
