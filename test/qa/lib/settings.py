@@ -33,3 +33,8 @@ def dns_visible_in_settings(dns: list) -> bool:
 def get_is_tpl_enabled():
     """ returns True, if Threat Protection Lite is enabled in application settings """
     return "Threat Protection Lite: enabled" in sh.nordvpn.settings()
+
+
+def get_is_notify_enabled():
+    """ returns True, if Threat Protection Lite is enabled in application settings """
+    return "Notify: enabled" in sh.nordvpn.settings()
