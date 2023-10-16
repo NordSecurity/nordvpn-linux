@@ -236,6 +236,13 @@ def set_killswitch(killswitch):
         print("WARNING:", ex)
 
 
+def set_notify(dns):
+    try:
+        print(sh.nordvpn.set.notify(dns))
+    except sh.ErrorReturnCode_1 as ex:
+        print("WARNING:", ex)
+
+
 def add_port_to_allowlist(port):
     try:
         print(sh.nordvpn.allowlist.add.port(port))
