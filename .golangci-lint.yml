@@ -34,7 +34,7 @@ linters:
   #- stylecheck
   - typecheck
   - unconvert
-  #- unparam
+  - unparam
   - unused
   - varcheck
   - whitespace

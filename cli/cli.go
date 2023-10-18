@@ -81,8 +81,8 @@ Options:
 
 var ErrConfig = errors.New(client.ConfigMessage)
 
-func NewApp(version, environment, hash, daemonURL, salt string,
-	lastAppError, pingErr error,
+func NewApp(version, environment, hash, salt string,
+	pingErr error,
 	conn *grpc.ClientConn,
 	fileshareConn *grpc.ClientConn,
 	loaderInterceptor *LoaderInterceptor,
@@ -510,7 +510,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 		app.Commands = append(app.Commands, fileshareCommand(cmd))
 	}
 
-	app.Commands = addLoaderToActions(cmd, pingErr, app.Commands, daemonURL, lastAppError)
+	app.Commands = addLoaderToActions(cmd, pingErr, app.Commands)
 	// Unknown command handler
 	app.CommandNotFound = func(c *cli.Context, command string) {
 		color.Red(fmt.Sprintf(NoSuchCommand, command))
@@ -903,7 +903,7 @@ func (s cliStream) RecvMsg(m interface{}) error {
 	return s.inner.RecvMsg(m)
 }
 
-func (c *cmd) action(err error, f func(*cli.Context) error, daemonURL string, lastAppError error) func(*cli.Context) error {
+func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) error {
 	return func(ctx *cli.Context) error {
 		c.loaderInterceptor.enabled = true
 		if err != nil {
@@ -952,20 +952,20 @@ func (c *cmd) action(err error, f func(*cli.Context) error, daemonURL string, la
 }
 
 // addLoaderToActions wraps all actions with ping error handling and enabling loader
-func addLoaderToActions(c *cmd, err error, commands []*cli.Command, daemonURL string, lastAppError error) []*cli.Command {
+func addLoaderToActions(c *cmd, err error, commands []*cli.Command) []*cli.Command {
 	var actionCommands []*cli.Command
 	for _, command := range commands {
-		actionCommands = append(actionCommands, addLoaderToCommandRecursively(c, err, command, daemonURL, lastAppError))
+		actionCommands = append(actionCommands, addLoaderToCommandRecursively(c, err, command))
 	}
 	return actionCommands
 }
 
-func addLoaderToCommandRecursively(c *cmd, err error, command *cli.Command, daemonURL string, lastAppError error) *cli.Command {
+func addLoaderToCommandRecursively(c *cmd, err error, command *cli.Command) *cli.Command {
 	if command.Action != nil {
-		command.Action = c.action(err, command.Action, daemonURL, lastAppError)
+		command.Action = c.action(err, command.Action)
 	}
 	for _, subc := range command.Subcommands {
-		addLoaderToCommandRecursively(c, err, subc, daemonURL, lastAppError)
+		addLoaderToCommandRecursively(c, err, subc)
 	}
 	return command
 }

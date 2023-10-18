@@ -91,22 +91,20 @@ func TestAddDevice(t *testing.T) {
 
 	t.Run("successful adding", func(t *testing.T) {
 		device := "testdev"
-		devType := "wireguard"
 		defer removeDevice(device)
 
-		err := addDevice(device, devType)
+		err := addDevice(device)
 		assert.NoError(t, err)
 	})
 
 	t.Run("duplicate adding", func(t *testing.T) {
 		device := "faildev"
-		devType := "wireguard"
 		defer removeDevice(device)
 
-		err := addDevice(device, devType)
+		err := addDevice(device)
 		assert.NoError(t, err)
 
-		err = addDevice(device, devType)
+		err = addDevice(device)
 		assert.Error(t, err)
 	})
 }

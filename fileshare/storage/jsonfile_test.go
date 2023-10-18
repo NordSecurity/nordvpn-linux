@@ -69,7 +69,7 @@ func TestSimpleSaveLoad(t *testing.T) {
 	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
 
 	transfers := make(map[string]*pb.Transfer)
-	transfers[transferID] = makeTransfer(transferID, 1, 5, false)
+	transfers[transferID] = makeTransfer(transferID, 5, false)
 	transfers[transferID].Status = pb.Status_REQUESTED
 	i := 0
 	for _, file := range transfers[transferID].Files[0].Children {
@@ -108,7 +108,7 @@ func TestLargeSaveLoad(t *testing.T) {
 
 	for i := range [transfersCount]byte{} {
 		transferID = fmt.Sprintf("%s-%d", transferID, i)
-		transfers[transferID] = makeTransfer(transferID, fileshare.DirDepthLimit, fileshare.TransferFileLimit, true)
+		transfers[transferID] = makeTransfer(transferID, fileshare.TransferFileLimit, true)
 	}
 
 	fmt.Printf("transfers count before: %d\n", len(transfers))
@@ -138,7 +138,7 @@ func TestNormalSaveLoad(t *testing.T) {
 
 	for i := range [transfersCount]byte{} {
 		transferID = fmt.Sprintf("%s-%d", transferID, i)
-		transfers[transferID] = makeTransfer(transferID, 2, 5, false)
+		transfers[transferID] = makeTransfer(transferID, 5, false)
 	}
 
 	fmt.Printf("transfers count before: %d\n", len(transfers))
@@ -157,7 +157,7 @@ func TestNormalSaveLoad(t *testing.T) {
 	assert.GreaterOrEqual(t, transfersCount, len(loadedTransfers))
 }
 
-func makeTransfer(transferID string, dirLevels, fileCount int, makeBigNames bool) *pb.Transfer {
+func makeTransfer(transferID string, fileCount int, makeBigNames bool) *pb.Transfer {
 	nameSize := 10
 	if makeBigNames {
 		nameSize = 200

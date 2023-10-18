@@ -78,7 +78,7 @@ func main() {
 	)
 
 	cmd, err := cli.NewApp(
-		Version, Environment, Hash, DaemonURL, Salt, nil, err, conn, fileshareConn, &loaderInterceptor)
+		Version, Environment, Hash, Salt, err, conn, fileshareConn, &loaderInterceptor)
 	if err != nil {
 		color.Red(err.Error())
 		os.Exit(1)

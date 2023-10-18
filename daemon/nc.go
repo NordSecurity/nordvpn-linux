@@ -27,7 +27,7 @@ func StartNotificationCenter(api core.CredentialsAPI, notificationClient nc.Noti
 		if ncCredentials.IsUserIDEmpty() {
 			ncCredentials.UserID = uuid.New()
 		}
-		ncCredentials, err = requestNewNotificationCenterCredentials(api, notificationClient, cm, tokenData.Token, userID, ncCredentials.UserID)
+		ncCredentials, err = requestNewNotificationCenterCredentials(api, cm, tokenData.Token, userID, ncCredentials.UserID)
 	}
 	if err != nil {
 		log.Println("requesting NC credentials:", err)
@@ -39,7 +39,7 @@ func StartNotificationCenter(api core.CredentialsAPI, notificationClient nc.Noti
 	}
 }
 
-func requestNewNotificationCenterCredentials(api core.CredentialsAPI, notificationClient nc.NotificationClient, cm config.Manager, token string, userID int64, ncUserID uuid.UUID) (config.NCData, error) {
+func requestNewNotificationCenterCredentials(api core.CredentialsAPI, cm config.Manager, token string, userID int64, ncUserID uuid.UUID) (config.NCData, error) {
 	resp, err := api.NotificationCredentials(token, ncUserID.String())
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
