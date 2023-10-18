@@ -139,25 +139,25 @@ func (c *cmd) meshPermissions(ctx *cli.Context) meshPermissions {
 	if ctx.IsSet(flagAllowIncomingTraffic) {
 		permissions.allowTraffic = ctx.Bool(flagAllowIncomingTraffic)
 	} else {
-		permissions.allowTraffic = readForConfirmation(os.Stdin, "Would you like to allow incoming traffic?")
+		permissions.allowTraffic = readForConfirmation(os.Stdin, "Would you like to allow incoming traffic?", true)
 	}
 
 	if ctx.IsSet(flagAllowTrafficRouting) {
 		permissions.routeTraffic = ctx.Bool(flagAllowTrafficRouting)
 	} else {
-		permissions.routeTraffic = readForConfirmation(os.Stdin, "Would you like to allow traffic routing?")
+		permissions.routeTraffic = readForConfirmation(os.Stdin, "Would you like to allow traffic routing?", false)
 	}
 
 	if ctx.IsSet(flagAllowLocalNetwork) {
 		permissions.localNetwork = ctx.Bool(flagAllowLocalNetwork)
 	} else {
-		permissions.localNetwork = readForConfirmation(os.Stdin, "Would you like to allow access to your local network?")
+		permissions.localNetwork = readForConfirmation(os.Stdin, "Would you like to allow access to your local network?", true)
 	}
 
 	if ctx.IsSet(flagAllowFileshare) {
 		permissions.fileshare = ctx.Bool(flagAllowFileshare)
 	} else {
-		permissions.fileshare = readForConfirmation(os.Stdin, "Would you like to allow peer to send you files?")
+		permissions.fileshare = readForConfirmation(os.Stdin, "Would you like to allow peer to send you files?", true)
 	}
 
 	return permissions
@@ -165,8 +165,12 @@ func (c *cmd) meshPermissions(ctx *cli.Context) meshPermissions {
 
 // readForConfirmation from the reader with a given prompt.
 // In case of any invalid input or just enter, return false.
-func readForConfirmation(r io.Reader, prompt string) bool {
-	fmt.Printf("%s [Y/n] ", prompt)
+func readForConfirmation(r io.Reader, prompt string, defaultValue bool) bool {
+	if defaultValue {
+		fmt.Printf("%s [Y/n] ", prompt)
+	} else {
+		fmt.Printf("%s [y/N] ", prompt)
+	}
 	answer, _, _ := bufio.NewReader(r).ReadRune()
 	switch answer {
 	case 'y', 'Y':
@@ -174,7 +178,7 @@ func readForConfirmation(r io.Reader, prompt string) bool {
 	case 'n', 'N':
 		return false
 	default:
-		return true
+		return defaultValue
 	}
 }
 
