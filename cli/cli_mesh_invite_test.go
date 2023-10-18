@@ -70,7 +70,7 @@ func TestReadForConfirmation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, readForConfirmation(test.input, test.name), test.output)
+			assert.Equal(t, readForConfirmation(test.input, test.name, test.output), test.output)
 		})
 	}
 }
