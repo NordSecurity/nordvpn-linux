@@ -155,7 +155,7 @@ func (i IPTablesManager) getRuleLine(command string, chain iptablesChain, priori
 	}
 
 	// Skip first two lines of output they are the chain name and table values name.
-	outputLines := strings.Split(string(output), "\n")
+	outputLines := strings.Split(output, "\n")
 	if len(outputLines) < 2 {
 		return 0, fmt.Errorf("invalid output from %s %s command, expected at least two lines", command, args)
 	}

@@ -276,7 +276,7 @@ func main() {
 			log.Println(err)
 		}
 
-		err = os.Chown(eventsDbPath, os.Getuid(), int(gid))
+		err = os.Chown(eventsDbPath, os.Getuid(), gid)
 		if err != nil {
 			log.Println(err)
 		}

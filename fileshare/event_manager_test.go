@@ -844,7 +844,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 
 		notifier := mockNotifier{
 			notifications: []mockNotification{},
-			nextID:        uint32(pendingTransferNotificationID),
+			nextID:        pendingTransferNotificationID,
 		}
 
 		osInfo := mockEventManagerOsInfo{
@@ -1015,7 +1015,7 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
-		nextID:        uint32(transferNotificationID),
+		nextID:        transferNotificationID,
 	}
 
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
@@ -1076,7 +1076,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 	setup := func() (*NotificationManager, *mockEventManagerFileshare, *mockNotifier) {
 		notifier := mockNotifier{
 			notifications: []mockNotification{},
-			nextID:        uint32(pendingTransferNotificationID),
+			nextID:        pendingTransferNotificationID,
 		}
 
 		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})

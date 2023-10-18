@@ -27,7 +27,7 @@ import (
 )
 
 func mockTimeout(tries int) time.Duration {
-	return time.Duration(time.Millisecond)
+	return time.Millisecond
 }
 
 type failingLoginChecker struct{}

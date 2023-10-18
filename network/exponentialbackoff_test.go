@@ -20,26 +20,26 @@ func Test_ExponentialBackoff(t *testing.T) {
 		{
 			name:        "tries2",
 			tries:       2,
-			expectedMin: time.Duration(5 * time.Second),
-			expectedMax: time.Duration(10 * time.Second),
+			expectedMin: 5 * time.Second,
+			expectedMax: 10 * time.Second,
 		},
 		{
 			name:        "tries8",
 			tries:       8,
-			expectedMin: time.Duration(10 * time.Second),
-			expectedMax: time.Duration(60 * time.Second),
+			expectedMin: 10 * time.Second,
+			expectedMax: 60 * time.Second,
 		},
 		{
 			name:        "tries19",
 			tries:       19,
-			expectedMin: time.Duration(60 * time.Second),
-			expectedMax: time.Duration(300 * time.Second),
+			expectedMin: 60 * time.Second,
+			expectedMax: 300 * time.Second,
 		},
 		{
 			name:        "triesDefault",
 			tries:       200,
-			expectedMin: time.Duration(300 * time.Second),
-			expectedMax: time.Duration(600 * time.Second),
+			expectedMin: 300 * time.Second,
+			expectedMax: 600 * time.Second,
 		},
 	}
 

@@ -352,7 +352,7 @@ func TestRemoteConfig_GetCachedData(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRConfig(time.Duration(test.updatePeriod), rs, cm)
+			rc := NewRConfig(test.updatePeriod, rs, cm)
 
 			rs.fetchError = test.fetchError
 			rs.response = test.remoteConfig
