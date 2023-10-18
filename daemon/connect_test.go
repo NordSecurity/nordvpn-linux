@@ -1,13 +1,11 @@
 package daemon
 
 import (
-	"net"
 	"net/netip"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
@@ -16,21 +14,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
-
-type workingRouter struct{}
-
-func (workingRouter) Add(route routes.Route) error { return nil }
-func (workingRouter) Flush() error                 { return nil }
-
-type mockGateway struct{ ip netip.Addr }
-
-func newGatewayMock(ip netip.Addr) mockGateway {
-	return mockGateway{ip: ip}
-}
-
-func (g mockGateway) Default(bool) (netip.Addr, net.Interface, error) {
-	return g.ip, net.Interface{Name: "noname"}, nil
-}
 
 type mockEndpointResolver struct{ ip netip.Addr }
 
@@ -58,36 +41,24 @@ func TestConnect(t *testing.T) {
 	tests := []struct {
 		name        string
 		netw        networker.Networker
-		fw          firewall.Service
 		allowlist   config.Allowlist
-		router      routes.Agent
-		gateway     routes.GatewayRetriever
 		nameservers []string
 		expected    ConnectEvent
 	}{
 		{
 			name:      "successful connect",
 			netw:      &testnetworker.Mock{},
-			fw:        &workingFirewall{},
 			allowlist: config.NewAllowlist(nil, nil, nil),
-			router:    &workingRouter{},
-			gateway:   newGatewayMock(netip.Addr{}),
 			expected:  ConnectEvent{Code: internal.CodeConnected},
 		},
 		{
 			name:     "successful reconnect",
 			netw:     &testnetworker.Mock{},
-			fw:       &workingFirewall{},
-			router:   &workingRouter{},
-			gateway:  newGatewayMock(netip.Addr{}),
 			expected: ConnectEvent{Code: internal.CodeConnected},
 		},
 		{
 			name:     "failed connect",
 			netw:     testnetworker.Failing{},
-			fw:       &workingFirewall{},
-			router:   &workingRouter{},
-			gateway:  newGatewayMock(netip.Addr{}),
 			expected: ConnectEvent{Code: internal.CodeFailure, Message: "on purpose"},
 		},
 	}

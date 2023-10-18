@@ -119,7 +119,7 @@ func calculateMTU(ipRouteOutput string) int {
 
 func upWGInterface(iface string) error {
 	debug("ip", "link", "add", iface, "type", "wireguard")
-	err := addDevice(iface, "wireguard")
+	err := addDevice(iface)
 	// there are only 2 cases when this can fail:
 	// 1. Either kernel module is not found or the kernel was
 	// recently updated, but the system is yet to be rebooted.
@@ -144,8 +144,8 @@ func deleteInterface(iface net.Interface) error {
 
 // addDevice creates a new device with a given
 // name and specified device type.
-func addDevice(device, devType string) error {
-	_, err := exec.Command("ip", "link", "add", device, "type", devType).CombinedOutput()
+func addDevice(device string) error {
+	_, err := exec.Command("ip", "link", "add", device, "type", "wireguard").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to add device %w", err)
 	}

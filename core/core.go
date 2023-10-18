@@ -81,8 +81,8 @@ func (api *DefaultAPI) Base() string {
 	return api.baseURL
 }
 
-func (api *DefaultAPI) request(path, method string, data []byte, auth *request.BasicAuth) (*http.Response, error) {
-	req, err := request.NewRequestWithBasicAuth(method, api.agent, api.baseURL, path, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), auth)
+func (api *DefaultAPI) request(path, method string, data []byte, token string) (*http.Response, error) {
+	req, err := request.NewRequestWithBearerToken(method, api.agent, api.baseURL, path, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (api *DefaultAPI) Plans() (*Plans, error) {
 
 // ServiceCredentials returns service credentials
 func (api *DefaultAPI) ServiceCredentials(token string) (*CredentialsResponse, error) {
-	resp, err := api.request(CredentialsURL, http.MethodGet, nil, &request.BasicAuth{Username: "token", Password: token})
+	resp, err := api.request(CredentialsURL, http.MethodGet, nil, token)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +171,7 @@ func (api *DefaultAPI) ServiceCredentials(token string) (*CredentialsResponse, e
 
 // Services returns all previously and currently used services by the user
 func (api *DefaultAPI) Services(token string) (ServicesResponse, error) {
-	resp, err := api.request(ServicesURL, http.MethodGet, nil, &request.BasicAuth{Username: "token", Password: token})
+	resp, err := api.request(ServicesURL, http.MethodGet, nil, token)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (api *DefaultAPI) CreateUser(email, password string) (*UserCreateResponse, 
 
 // CurrentUser returns metadata of current user
 func (api *DefaultAPI) CurrentUser(token string) (*CurrentUserResponse, error) {
-	resp, err := api.request(CurrentUserURL, http.MethodGet, nil, &request.BasicAuth{Username: "token", Password: token})
+	resp, err := api.request(CurrentUserURL, http.MethodGet, nil, token)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func (api *DefaultAPI) CurrentUser(token string) (*CurrentUserResponse, error) {
 }
 
 func (api *DefaultAPI) DeleteToken(token string) error {
-	resp, err := api.request(TokensURL, http.MethodDelete, nil, &request.BasicAuth{Username: "token", Password: token})
+	resp, err := api.request(TokensURL, http.MethodDelete, nil, token)
 	if err != nil {
 		return err
 	}
@@ -436,7 +436,7 @@ func (api *DefaultAPI) NotificationCredentials(token, appUserID string) (Notific
 }
 
 func (api *DefaultAPI) Logout(token string) error {
-	resp, err := api.request(urlOAuth2Logout, http.MethodPost, nil, &request.BasicAuth{Username: "token", Password: token})
+	resp, err := api.request(urlOAuth2Logout, http.MethodPost, nil, token)
 	if err != nil {
 		return err
 	}

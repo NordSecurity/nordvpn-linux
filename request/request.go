@@ -42,25 +42,6 @@ func NewRequest(
 	return req, nil
 }
 
-// NewRequestWithBasicAuth builds a Basic Auth authenticated request.
-func NewRequestWithBasicAuth(
-	method, agent, baseURL, pathURL, contentType, contentLength, encoding string,
-	body io.Reader,
-	auth *BasicAuth,
-) (*http.Request, error) {
-	req, err := NewRequest(method, agent, baseURL, pathURL, contentType, contentLength, encoding, body)
-	if err != nil {
-		return nil, err
-	}
-
-	if auth == nil || auth.Username == "" || auth.Password == "" {
-		return nil, ErrUsernameAndPasswordNotProvided
-	}
-	req.SetBasicAuth(auth.Username, auth.Password)
-
-	return req, nil
-}
-
 // NewRequestWithBearerToken builds a Bearer Token authenticated request.
 func NewRequestWithBearerToken(
 	method, agent, baseURL, pathURL, contentType, contentLength, encoding string,

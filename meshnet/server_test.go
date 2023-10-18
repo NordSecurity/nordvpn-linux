@@ -204,16 +204,13 @@ func newMockedServer(
 	saveConfigErr error,
 	configureErr error,
 	isMeshOn bool,
-	peers []mesh.MachinePeer) (*Server, *workingNetworker) {
+	peers []mesh.MachinePeer) *Server {
 	t.Helper()
 
 	registryApi := registryAPI{}
 	registryApi.machinePeers = peers
 	registryApi.listErr = listErr
 	registryApi.configureErr = configureErr
-
-	networker := workingNetworker{}
-	networker.allowedFileshare = []UniqueAddress{}
 
 	configManager := &mock.ConfigManager{}
 	configManager.SaveErr = saveConfigErr
@@ -223,7 +220,7 @@ func newMockedServer(
 		configManager,
 		registrationChecker{},
 		acceptInvitationsAPI{},
-		&networker,
+		&workingNetworker{},
 		&registryApi,
 		dnsGetter{},
 		&subs.Subject[error]{},
@@ -237,7 +234,7 @@ func newMockedServer(
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 	}
 
-	return server, &networker
+	return server
 }
 
 func TestServer_EnableMeshnet(t *testing.T) {
@@ -1230,7 +1227,7 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, _ := newMockedServer(t,
+			server := newMockedServer(t,
 				test.listErr,
 				test.saveConfigErr,
 				test.configureErr,
@@ -1355,7 +1352,7 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, _ := newMockedServer(t,
+			server := newMockedServer(t,
 				test.listErr,
 				test.saveConfigErr,
 				test.configureErr,
