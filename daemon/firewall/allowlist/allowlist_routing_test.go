@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	subnet   = "192.168.99.0/24"
 	mark     = "0x123"
 	port     = "22"
 	protocol = "tcp"
