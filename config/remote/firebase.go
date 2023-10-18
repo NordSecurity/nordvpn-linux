@@ -22,7 +22,6 @@ import (
 
 const (
 	firebaseTimeout   = time.Second * 8
-	minimalVersionKey = "min_version"
 	remoteConfigScope = "https://www.googleapis.com/auth/firebase.remoteconfig"
 )
 

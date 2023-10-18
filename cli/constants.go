@@ -17,9 +17,6 @@ const (
 
 const (
 	flagGroup         = "group"
-	flagUsername      = "username"
-	flagPassword      = "password"
-	flagLegacy        = "legacy"
 	flagToken         = "token"
 	flagLoginCallback = "callback"
 	stringProtocol    = "protocol"
