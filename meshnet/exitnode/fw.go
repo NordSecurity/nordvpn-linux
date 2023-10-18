@@ -97,7 +97,7 @@ func checkFilteringRulesLine(cidrIPs []string, commandFunc runCommandFunc) (int,
 
 func ruleContainsAllIPs(line string, cidrIPs []string) bool {
 	for _, ip := range cidrIPs {
-		if !strings.Contains(string(line), strings.TrimSuffix(ip, "/32")) {
+		if !strings.Contains(line, strings.TrimSuffix(ip, "/32")) {
 			return false
 		}
 	}

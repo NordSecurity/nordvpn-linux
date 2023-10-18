@@ -152,7 +152,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	if err = s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
-		string(cfg.MeshPrivateKey[:]),
+		cfg.MeshPrivateKey,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		if errors.Is(err, ErrTunnelClosed) {
@@ -281,7 +281,7 @@ func (s *Server) StartMeshnet() error {
 	if err := s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
-		string(cfg.MeshPrivateKey[:]),
+		cfg.MeshPrivateKey,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		return fmt.Errorf("setting the meshnet up: %w", err)

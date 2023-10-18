@@ -76,7 +76,7 @@ func TestRotatingRoundTripper_RoundTrip(t *testing.T) {
 				roundTripperH3:     mockRoundTripper{resp: respH3},
 				isCurrentH3:        newAtomicBool(false),
 				lastH3AttemptMilli: newAtomicInt64(time.Now().Add(-time.Second).UnixMilli()),
-				h3ReviveTime:       time.Duration(time.Second * 2),
+				h3ReviveTime:       time.Second * 2,
 			},
 			resp: respH1,
 		},
@@ -145,7 +145,7 @@ func TestRotatingRoundTripper_RoundTripThreadSafety(t *testing.T) {
 			roundTripper: NewRotatingRoundTripper(
 				mockRoundTripper{resp: respH1, duration: time.Millisecond * 100},
 				mockRoundTripper{err: err1, duration: time.Millisecond * 200},
-				time.Duration(time.Minute),
+				time.Minute,
 			),
 			duration: time.Millisecond * 400,
 		},

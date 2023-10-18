@@ -282,7 +282,7 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 	case ErrAcceptDirIsNotADirectory:
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY)})
 	case ErrNoPermissionsToAcceptDirectory:
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS))})
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS)})
 	case nil:
 		break
 	default:

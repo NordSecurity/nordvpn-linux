@@ -31,7 +31,7 @@ func NewRotatingRoundTripper(
 func (rt *RotatingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if !rt.isCurrentH3.Load() && time.Now().After(time.UnixMilli(rt.lastH3AttemptMilli.Load()).Add(rt.h3ReviveTime)) {
 		now := time.Now()
-		rt.lastH3AttemptMilli.Store(int64(now.UnixMilli()))
+		rt.lastH3AttemptMilli.Store(now.UnixMilli())
 		rt.isCurrentH3.Store(true)
 	}
 	if rt.isCurrentH3.Load() {

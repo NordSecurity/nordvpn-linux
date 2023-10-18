@@ -150,7 +150,7 @@ func (r *Router) CleanupRouting() error {
 func (r *Router) TableID() uint {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	return uint(r.tableID)
+	return r.tableID
 }
 
 // calculateRulePriority find out what priority id to use for Fwmark rule
