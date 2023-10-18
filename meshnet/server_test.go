@@ -32,8 +32,8 @@ func (meshRenewChecker) IsVPNExpired() (bool, error) { return false, nil }
 
 type registrationChecker struct{}
 
-func (registrationChecker) IsRegistered() bool { return true }
-func (registrationChecker) Register() error    { return nil }
+func (registrationChecker) IsRegistrationInfoCorrect() bool { return true }
+func (registrationChecker) Register() error                 { return nil }
 
 type allowedIncoming struct {
 	address    UniqueAddress

@@ -236,7 +236,7 @@ func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.ServiceBoolResponse,
 	}
 
 	return &pb.ServiceBoolResponse{
-		Response: &pb.ServiceBoolResponse_Value{Value: s.mc.IsRegistered() && cfg.Mesh},
+		Response: &pb.ServiceBoolResponse_Value{Value: s.mc.IsRegistrationInfoCorrect() && cfg.Mesh},
 	}, nil
 }
 
@@ -376,7 +376,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_MeshnetError{
 				MeshnetError: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -437,7 +437,7 @@ func (s *Server) Invite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.InviteResponse{
 			Response: &pb.InviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -550,7 +550,7 @@ func (s *Server) AcceptInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -675,7 +675,7 @@ func (s *Server) DenyInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -766,7 +766,7 @@ func (s *Server) RevokeInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -854,7 +854,7 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.GetInvitesResponse{
 			Response: &pb.GetInvitesResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -975,7 +975,7 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 
 	peers := pb.PeerList{}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 		resp, err := s.reg.Local(token)
 		if err != nil {
@@ -1098,7 +1098,7 @@ func (s *Server) RemovePeer(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		var cfg config.Config
 		if err := s.cm.Load(&cfg); err != nil {
 			s.pub.Publish(err)
@@ -1281,7 +1281,7 @@ func (s *Server) AllowIncoming(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.AllowIncomingResponse{
 			Response: &pb.AllowIncomingResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -1397,7 +1397,7 @@ func (s *Server) DenyIncoming(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.DenyIncomingResponse{
 			Response: &pb.DenyIncomingResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -1506,7 +1506,7 @@ func (s *Server) AllowRouting(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.AllowRoutingResponse{
 			Response: &pb.AllowRoutingResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -1622,7 +1622,7 @@ func (s *Server) DenyRouting(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.DenyRoutingResponse{
 			Response: &pb.DenyRoutingResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -1738,7 +1738,7 @@ func (s *Server) AllowLocalNetwork(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.AllowLocalNetworkResponse{
 			Response: &pb.AllowLocalNetworkResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -1854,7 +1854,7 @@ func (s *Server) DenyLocalNetwork(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.DenyLocalNetworkResponse{
 			Response: &pb.DenyLocalNetworkResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -1970,7 +1970,7 @@ func (s *Server) AllowFileshare(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.AllowFileshareResponse{
 			Response: &pb.AllowFileshareResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -2090,7 +2090,7 @@ func (s *Server) DenyFileshare(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.DenyFileshareResponse{
 			Response: &pb.DenyFileshareResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -2210,7 +2210,7 @@ func (s *Server) EnableAutomaticFileshare(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.EnableAutomaticFileshareResponse{
 			Response: &pb.EnableAutomaticFileshareResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -2319,7 +2319,7 @@ func (s *Server) DisableAutomaticFileshare(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.DisableAutomaticFileshareResponse{
 			Response: &pb.DisableAutomaticFileshareResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -2435,7 +2435,7 @@ func (s *Server) NotifyNewTransfer(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.NotifyNewTransferResponse{
 			Response: &pb.NotifyNewTransferResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -2534,7 +2534,7 @@ func (s *Server) Connect(
 		}, nil
 	}
 
-	if !s.mc.IsRegistered() {
+	if !s.mc.IsRegistrationInfoCorrect() {
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,

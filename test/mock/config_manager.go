@@ -19,7 +19,7 @@ func (m *ConfigManager) SaveWith(fn config.SaveFunc) error {
 		m.Cfg = &config.Config{}
 	}
 	cfg := fn(*m.Cfg)
-	*m.Cfg = *&cfg
+	*m.Cfg = cfg
 	return nil
 }
 

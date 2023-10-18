@@ -117,7 +117,7 @@ func TestIsRegistered_NotYetRegistered(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cm := &mock.ConfigManager{Cfg: test.cfg}
 			rc := NewRegisteringChecker(cm, &generator{}, &registry{})
-			ok := rc.IsRegistered()
+			ok := rc.IsRegistrationInfoCorrect()
 			assert.True(t, ok)
 			assert.Equal(t, test.newPrivateKey, privateKey == cm.Cfg.MeshPrivateKey)
 			assert.Equal(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
@@ -139,7 +139,7 @@ func TestIsRegistered_AlreadyRegistered(t *testing.T) {
 		},
 	}
 	rc := NewRegisteringChecker(cm, &generator{}, &registry{})
-	ok := rc.IsRegistered()
+	ok := rc.IsRegistrationInfoCorrect()
 	assert.True(t, ok)
 	// Registration should not be done, values should not change
 	assert.NotEqual(t, privateKey, cm.Cfg.MeshPrivateKey)

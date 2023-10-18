@@ -53,7 +53,7 @@ func (m *Meshnet) NotifyPeerUpdate([]string) error {
 		return errors.New("meshnet not enabled")
 	}
 
-	if !m.checker.IsRegistered() {
+	if !m.checker.IsRegistrationInfoCorrect() {
 		return errors.New("not registered to meshnet")
 	}
 
