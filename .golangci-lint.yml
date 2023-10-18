@@ -6,7 +6,7 @@ linters:
   enable:
   #- bodyclose
   #- depguard
-  #- dogsled
+  - dogsled
   #- dupl
   #- errcheck
   - exhaustive
@@ -18,7 +18,7 @@ linters:
   - gofmt
   - goimports
   #- gomnd
-  #- goprintffuncname
+  - goprintffuncname
   #- gosec
   #- gosimple
   - govet
@@ -27,12 +27,12 @@ linters:
   #- lll
   #- misspell
   #- nakedret
-  #- rowserrcheck
+  - rowserrcheck
   #- scopelint
   #- staticcheck
   #- structcheck
   #- stylecheck
-  #- typecheck
+  - typecheck
   #- unconvert
   #- unparam
   - unused
