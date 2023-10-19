@@ -142,7 +142,7 @@ func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
 	if homeDirectory == "" {
 		return "", errors.New("user does not have a home directory")
 	}
-	// We are running as root, so we cannot retreive user config directory path dynamically. We
+	// We are running as root, so we cannot retrieve user config directory path dynamically. We
 	// hardcode it to /home/<username>/.config, and if it doesn't exist on the expected path
 	// (i.e XDG_CONFIG_HOME is set), we default to /var/log/nordvpn/nordfileshared-<username>-<uid>.log
 	userConfigPath := filepath.Join(homeDirectory, ConfigDirectory, UserDataPath)

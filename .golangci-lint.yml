@@ -25,7 +25,7 @@ linters:
   #- ineffassign
   #- interfacer
   #- lll
-  #- misspell
+  - misspell
   #- nakedret
   - rowserrcheck
   #- scopelint

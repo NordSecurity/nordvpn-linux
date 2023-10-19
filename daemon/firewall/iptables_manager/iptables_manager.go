@@ -145,7 +145,7 @@ func (i IPTablesManager) executeCommand(insert bool, rule FwRule) error {
 //     line bellow it. This enforces priority of nordvpn rules over non-nordvpn rules.
 //  3. Non-nordvpn rules located between last nordvpn rule in the chain and the first rule in the chain are ignored.
 func (i IPTablesManager) getRuleLine(command string, chain iptablesChain, priority RulePriority) (int, error) {
-	// Run command with --numeric to avoid reverse DNS lookup. This takes a long time and is unecessary for the purpose
+	// Run command with --numeric to avoid reverse DNS lookup. This takes a long time and is unnecessary for the purpose
 	// of line number calculation(we ignore everything but the 'nordvpn-<priority>' comment or the lack of thereof).
 	args := "-L " + chain.String() + " --numeric"
 
