@@ -38,7 +38,7 @@ func TestIptablesManager(t *testing.T) {
 			expectedCommand: "-I INPUT 1 -j DROP -m comment --comment nordvpn-4",
 		},
 		{
-			name: "insert rule inbetween",
+			name: "insert rule in between",
 			rules: []string{
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-4 */",
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-2 */",
@@ -86,7 +86,7 @@ func TestIptablesManager(t *testing.T) {
 			expectedCommand: "-I INPUT 4 -j DROP -m comment --comment nordvpn-0",
 		},
 		{
-			name: "insert inbetween non-nordvpn rules at the bottom",
+			name: "insert in between non-nordvpn rules at the bottom",
 			rules: []string{
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-3 */",
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-1 */",
@@ -98,7 +98,7 @@ func TestIptablesManager(t *testing.T) {
 			expectedCommand: "-I INPUT 2 -j DROP -m comment --comment nordvpn-2",
 		},
 		{
-			name: "insert with highest priority non-nordvpn inbetween",
+			name: "insert with highest priority non-nordvpn in between",
 			rules: []string{
 				"DROP       all  --  anywhere             anywhere             /* other-0 */",   // (1)
 				"DROP       all  --  anywhere             anywhere             /* other-1 */",   // (2)
@@ -114,7 +114,7 @@ func TestIptablesManager(t *testing.T) {
 			expectedCommand: "-I INPUT 3 -j DROP -m comment --comment nordvpn-4",
 		},
 		{
-			name: "insert with highest priority non-nordvpn inbetween",
+			name: "insert with highest priority non-nordvpn in between",
 			rules: []string{
 				"DROP       all  --  anywhere             anywhere             /* other-0 */",   // (1)
 				"DROP       all  --  anywhere             anywhere             /* other-1 */",   // (2)
@@ -130,7 +130,7 @@ func TestIptablesManager(t *testing.T) {
 			expectedCommand: "-I INPUT 10 -j DROP -m comment --comment nordvpn-0",
 		},
 		{
-			name: "insert inbetween non-nordvpn inbetween",
+			name: "insert in between non-nordvpn in between",
 			rules: []string{
 				"DROP       all  --  anywhere             anywhere             /* other-0 */",   // (1)
 				"DROP       all  --  anywhere             anywhere             /* other-1 */",   // (2)

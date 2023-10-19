@@ -114,7 +114,7 @@ func TestRpcConnect(t *testing.T) {
 		resp    int64
 	}{
 		{
-			name: "successfull connect",
+			name: "successful connect",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},

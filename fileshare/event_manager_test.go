@@ -353,7 +353,7 @@ func TestTransferProgress(t *testing.T) {
 			"data": {
 				"transfer": "%s",
 				"file": "%s",
-				"transfered": %d
+				"transferred": %d
 			}
 			}`, transferID, file1ID, transferredBytes))
 	}()
@@ -921,7 +921,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		expectedErrorNotification string // empty for no error notifications
 	}{
 		{
-			name:                      "transfer succesfully accepted",
+			name:                      "transfer successfully accepted",
 			destinationDirectoryName:  "directory",
 			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
@@ -1121,7 +1121,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 		expectedErrorNotification string // empty for no error notifications
 	}{
 		{
-			name:                      "transfer succesfully canceled",
+			name:                      "transfer successfully canceled",
 			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
 			expectedErrorNotification: "",

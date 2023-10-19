@@ -123,7 +123,7 @@ func TestRotatingRoundTripper_RoundTripThreadSafety(t *testing.T) {
 		duration     time.Duration
 	}{
 		{
-			name: "requests happen simultaniously in after first iteration",
+			name: "requests happen simultaneously in after first iteration",
 			n:    5,
 			roundTripper: NewRotatingRoundTripper(
 				mockRoundTripper{err: err1},
