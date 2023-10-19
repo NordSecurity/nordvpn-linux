@@ -23,7 +23,7 @@ linters:
   - gosimple
   - govet
   #- ineffassign
-  #- interfacer
+  - interfacer
   #- lll
   - misspell
   #- nakedret

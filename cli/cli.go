@@ -84,7 +84,7 @@ var ErrConfig = errors.New(client.ConfigMessage)
 func NewApp(version, environment, hash, salt string,
 	pingErr error,
 	conn *grpc.ClientConn,
-	fileshareConn *grpc.ClientConn,
+	fileshareConn grpc.ClientConnInterface,
 	loaderInterceptor *LoaderInterceptor,
 ) (*cli.App, error) {
 	cmd := newCommander(internal.Environment(environment))
