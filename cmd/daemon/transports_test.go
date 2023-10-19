@@ -41,6 +41,7 @@ func queryAPI(url string, transp http.RoundTripper) error {
 	if err != nil {
 		return err
 	}
+	defer rsp.Body.Close()
 	//fmt.Printf("Got response for %s: %#v\n\n", url, rsp)
 
 	body := &bytes.Buffer{}
@@ -126,7 +127,10 @@ func TestH1Transport_RoundTrip(t *testing.T) {
 			transport := createH1Transport(&workingResolver{IP: test.ip}, 0)()
 			req, err := http.NewRequest(http.MethodGet, serverListSmallURL, nil)
 			assert.NoError(t, err)
-			_, err = transport.RoundTrip(req)
+			resp, err := transport.RoundTrip(req)
+			if err == nil {
+				defer resp.Body.Close()
+			}
 			assert.Contains(t, err.Error(), "connection refused")
 		})
 	}
