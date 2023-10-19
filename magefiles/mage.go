@@ -24,6 +24,9 @@ const (
 	imageTester            = registryPrefix + "tester:1.1.4"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.2"
 	imageRuster            = registryPrefix + "ruster:1.0.3"
+
+	dockerWorkDir  = "/opt"
+	devPackageType = "source"
 )
 
 // Build is used for native builds.
@@ -185,10 +188,10 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	}
 
 	env["ARCH"] = build.Default.GOARCH
-	env["WORKDIR"] = "/opt"
-	env["ENVIRONMENT"] = "dev"
+	env["WORKDIR"] = dockerWorkDir
+	env["ENVIRONMENT"] = string(internal.Development)
 	env["HASH"] = git.commitHash
-	env["PACKAGE"] = "source"
+	env["PACKAGE"] = devPackageType
 	env["VERSION"] = git.versionTag
 	return RunDocker(
 		ctx,
@@ -236,9 +239,9 @@ func buildBinaries(buildFlags string) error {
 	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 	env["HASH"] = git.commitHash
-	env["PACKAGE"] = "source"
+	env["PACKAGE"] = devPackageType
 	env["VERSION"] = git.versionTag
-	env["ENVIRONMENT"] = "dev"
+	env["ENVIRONMENT"] = string(internal.Development)
 	env["BUILD_FLAGS"] = buildFlags
 
 	return sh.RunWith(env, "ci/compile.sh")
@@ -269,10 +272,10 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		return err
 	}
 	env["ARCH"] = build.Default.GOARCH
-	env["WORKDIR"] = "/opt"
-	env["ENVIRONMENT"] = "dev"
+	env["WORKDIR"] = dockerWorkDir
+	env["ENVIRONMENT"] = string(internal.Development)
 	env["HASH"] = git.commitHash
-	env["PACKAGE"] = "source"
+	env["PACKAGE"] = devPackageType
 	env["VERSION"] = git.versionTag
 	env["BUILD_FLAGS"] = buildFlags
 
@@ -302,7 +305,7 @@ func (Build) Openvpn(ctx context.Context) error {
 		return err
 	}
 
-	env["ARCH"] = "amd64"
+	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 
 	return sh.RunWith(env, "build/openvpn/build.sh")
@@ -317,8 +320,8 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 		return err
 	}
 
-	env["ARCH"] = "amd64"
-	env["WORKDIR"] = "/opt"
+	env["ARCH"] = build.Default.GOARCH
+	env["WORKDIR"] = dockerWorkDir
 	return RunDocker(
 		ctx,
 		env,
@@ -347,8 +350,8 @@ func (Build) RustDocker(ctx context.Context) error {
 		return err
 	}
 
-	env["ARCHS"] = "amd64"
-	env["WORKDIR"] = "/opt"
+	env["ARCHS"] = build.Default.GOARCH
+	env["WORKDIR"] = dockerWorkDir
 	if err := RunDocker(
 		ctx,
 		env,
@@ -409,8 +412,8 @@ func (Test) CgoDocker(ctx context.Context) error {
 		return err
 	}
 	env["ARCH"] = build.Default.GOARCH
-	env["WORKDIR"] = "/opt"
-	env["ENVIRONMENT"] = "dev"
+	env["WORKDIR"] = dockerWorkDir
+	env["ENVIRONMENT"] = string(internal.Development)
 
 	return RunDockerWithSettings(
 		ctx,
@@ -434,7 +437,7 @@ func (Test) Hardening(ctx context.Context) error {
 		return err
 	}
 	env["ARCH"] = build.Default.GOARCH
-	env["WORKDIR"] = "/opt"
+	env["WORKDIR"] = dockerWorkDir
 
 	return RunDocker(
 		ctx,
@@ -453,7 +456,7 @@ func (Test) QADocker(ctx context.Context, testGroup, testPattern string) error {
 // Run QA tests in Docker container, builds the package locally and skips the build if it is already
 // present in the package directory (arguments: {testGroup} {testPattern})
 func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) error {
-	const debPath string = "dist/app/deb/nordvpn_*_amd64.deb"
+	debPath := fmt.Sprintf("dist/app/deb/nordvpn_*%s.deb", build.Default.GOARCH)
 	matches, err := filepath.Glob(debPath)
 
 	if len(matches) == 0 || err != nil {
@@ -468,7 +471,7 @@ func qa(ctx context.Context, testGroup, testPattern string) error {
 	if err != nil {
 		return err
 	}
-	env["WORKDIR"] = "/opt"
+	env["WORKDIR"] = dockerWorkDir
 	env["QA_PEER_ADDRESS"] = "http://qa-peer:8000/exec"
 	env["COVERDIR"] = "covdatafiles"
 
@@ -598,7 +601,7 @@ func (Run) Docker() error {
 
 // DockerFast builds and runs nordvpn app in Docker container
 func (Run) DockerFast() error {
-	const debPath string = "dist/app/deb/nordvpn_*_amd64.deb"
+	debPath := fmt.Sprintf("dist/app/deb/nordvpn_*%s.deb", build.Default.GOARCH)
 	matches, err := filepath.Glob(debPath)
 	if len(matches) == 0 || err != nil {
 		mg.Deps(Build.Deb)

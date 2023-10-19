@@ -23,6 +23,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const exampleFileID2 = "file2"
+
 type mockServerFileshare struct {
 	Fileshare
 	cancelReturnValue      error
@@ -405,9 +407,9 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 	exectFileLimit := "directory_exact_limit"
 	populateMapFs(t, &mockFs.MapFS, exectFileLimit, 1000)
 
-	file1 := "file1"
+	file1 := exampleFileID1
 	mockFs.MapFS[file1] = &fstest.MapFile{}
-	file2 := "file2"
+	file2 := exampleFileID2
 	mockFs.MapFS[file2] = &fstest.MapFile{}
 	file3 := "file3"
 	mockFs.MapFS[file3] = &fstest.MapFile{}
@@ -491,7 +493,7 @@ func TestAccept(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	filePath := "test_a.txt"
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	mockFs := newMockFilesystem()
 
@@ -750,7 +752,7 @@ func TestAcceptDirectory(t *testing.T) {
 		Size: uint64(10),
 	}
 
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 	transfer := pb.Transfer{
 		Id:        transferID,
 		Direction: pb.Direction_INCOMING,
@@ -910,7 +912,7 @@ func TestCancel(t *testing.T) {
 		Id:   fileID,
 	}
 
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 	transfer := pb.Transfer{
 		Id:    transferID,
 		Files: []*pb.File{&file},

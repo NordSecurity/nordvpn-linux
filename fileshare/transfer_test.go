@@ -11,6 +11,12 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const (
+	directionIncoming = "incoming"
+	exampleFileDir1   = "/tmp/dir/file1"
+	exampleFileDir3   = "dir/file3"
+)
+
 func TestLibdropTransferToInternalTransfer(t *testing.T) {
 	var timestamp = timestamppb.New(time.Now().Truncate(time.Millisecond))
 	var timestampUnix = timestamp.AsTime().UnixMilli()
@@ -47,7 +53,7 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 					ID:           "file3_id",
 					TransferID:   "transfer_id",
 					BasePath:     "/tmp",
-					RelativePath: "dir/file3",
+					RelativePath: exampleFileDir3,
 					TotalSize:    1000,
 					CreatedAt:    uint64(timestampUnix),
 					States:       []LibdropFileState{},
@@ -71,7 +77,7 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 				{
 					Id:          "file1_id",
 					Path:        "dir/file1",
-					FullPath:    "/tmp/dir/file1",
+					FullPath:    exampleFileDir1,
 					Size:        10,
 					Transferred: 0,
 					Status:      pb.Status_REQUESTED,
@@ -86,7 +92,7 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 				},
 				{
 					Id:          "file3_id",
-					Path:        "dir/file3",
+					Path:        exampleFileDir3,
 					FullPath:    "/tmp/dir/file3",
 					Size:        1000,
 					Transferred: 0,
@@ -109,7 +115,7 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 		{
 			name: "incoming transfer request",
 			in: func(in *LibdropTransfer) {
-				in.Direction = "incoming"
+				in.Direction = directionIncoming
 				in.Files[0].BasePath = ""
 				in.Files[1].BasePath = ""
 				in.Files[2].BasePath = ""
@@ -121,13 +127,13 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 				// Only a relative path is shown for files
 				out.Files[0].FullPath = "dir/file1"
 				out.Files[1].FullPath = "dir/file2"
-				out.Files[2].FullPath = "dir/file3"
+				out.Files[2].FullPath = exampleFileDir3
 			},
 		},
 		{
 			name: "incoming transfer in progress with one cancelled file",
 			in: func(in *LibdropTransfer) {
-				in.Direction = "incoming"
+				in.Direction = directionIncoming
 				in.Files[0].BasePath = ""
 				in.Files[0].States = []LibdropFileState{
 					{State: "pending", BasePath: "/tmp"},
@@ -148,11 +154,11 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 				out.Path = "/tmp"
 				out.Status = pb.Status_ONGOING
 				out.TotalSize = out.Files[0].Size + out.Files[1].Size
-				out.Files[0].FullPath = "/tmp/dir/file1"
+				out.Files[0].FullPath = exampleFileDir1
 				out.Files[0].Status = pb.Status_ONGOING
 				out.Files[1].FullPath = "/tmp/dir/file2"
 				out.Files[1].Status = pb.Status_ONGOING
-				out.Files[2].FullPath = "dir/file3"
+				out.Files[2].FullPath = exampleFileDir3
 				out.Files[2].Status = pb.Status_CANCELED
 			},
 		},
@@ -170,7 +176,7 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 			out: func(out *pb.Transfer) {
 				out.Status = pb.Status_FINISHED_WITH_ERRORS
 				out.TotalSize = 0 // Only one file and it errored out
-				out.Path = "/tmp/dir/file1"
+				out.Path = exampleFileDir1
 				out.Files = []*pb.File{out.Files[0]}
 				out.Files[0].Path = "file1"
 				out.Files[0].Status = pb.Status_FILE_CHECKSUM_MISMATCH
@@ -232,7 +238,7 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 		{
 			name: "incoming transfer in progress with some finished files",
 			in: func(in *LibdropTransfer) {
-				in.Direction = "incoming"
+				in.Direction = directionIncoming
 				in.Files[0].BasePath = ""
 				in.Files[1].BasePath = ""
 				in.Files[2].BasePath = ""
@@ -256,13 +262,13 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 				out.Path = "/tmp"
 				out.Status = pb.Status_ONGOING
 				out.TotalTransferred = 5 + out.Files[1].Size
-				out.Files[0].FullPath = "/tmp/dir/file1"
+				out.Files[0].FullPath = exampleFileDir1
 				out.Files[0].Status = pb.Status_ONGOING
 				out.Files[0].Transferred = 5
 				out.Files[1].FullPath = "/tmp/dir/file2_(1)"
 				out.Files[1].Status = pb.Status_SUCCESS
 				out.Files[1].Transferred = out.Files[1].Size
-				out.Files[2].FullPath = "dir/file3"
+				out.Files[2].FullPath = exampleFileDir3
 				out.Files[2].Status = pb.Status_REQUESTED
 			},
 		},

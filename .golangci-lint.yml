@@ -12,7 +12,7 @@ linters:
   - exhaustive
   #- funlen
   #- gochecknoinits
-  #- goconst
+  - goconst
   #- gocritic
   #- gocyclo
   - gofmt
