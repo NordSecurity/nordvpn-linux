@@ -445,7 +445,7 @@ func stage2Handler(
 
 // VPNMonitor reads from the reader and logs the output.
 // It may also signal to retry on certain errors.
-func vpnMonitor(reader io.ReadCloser, prefix string, inform chan struct{}) {
+func vpnMonitor(reader io.Reader, prefix string, inform chan struct{}) {
 	cipherErr := "cipher final failed"
 	tlsErr := "keys are out of sync"
 	scanner := bufio.NewScanner(reader)
