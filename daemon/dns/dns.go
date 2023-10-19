@@ -289,7 +289,7 @@ func resolvconfIfacePrefix() (string, error) {
 		// #nosec G307 -- no writes are made
 		defer file.Close()
 		fscanner := bufio.NewScanner(file)
-		re := regexp.MustCompile("^([A-Za-z0-9-]+)\\*$")
+		re := regexp.MustCompile(`^([A-Za-z0-9-]+)\*$`)
 		for fscanner.Scan() {
 			match := re.FindStringSubmatch(fscanner.Text())
 			if len(match) > 0 {

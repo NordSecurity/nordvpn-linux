@@ -67,7 +67,6 @@ func (r *RPC) StartKillSwitch() {
 		}
 		return
 	}
-	return
 }
 
 func (r *RPC) StopKillSwitch() error {

@@ -74,11 +74,7 @@ func TestFromDummy(t *testing.T) {
 	got, err := Find(ipAddr)
 	assert.NoError(t, err)
 	assert.Equal(t, ifaceName, got.iface.Name)
-	var ips []netip.Addr
-	for _, ip := range got.ips {
-		ips = append(ips, ip)
-	}
-	assert.Equal(t, []netip.Addr{ipAddr}, ips)
+	assert.Equal(t, []netip.Addr{ipAddr}, got.ips)
 }
 
 func TestTunnelTransferRatesWithSys(t *testing.T) {
