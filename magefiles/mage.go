@@ -73,7 +73,7 @@ func installHookIfNordsec() error {
 		return fmt.Errorf("fetching git-secrets providers: %w", err)
 	}
 
-	if strings.Index(string(output), "llt-secrets") == -1 {
+	if !strings.Contains(string(output), "llt-secrets") {
 		return fmt.Errorf("Secret provider was not configured.")
 	}
 

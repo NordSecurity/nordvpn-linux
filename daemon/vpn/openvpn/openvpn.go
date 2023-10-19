@@ -396,7 +396,7 @@ func stage2Handler(
 	password string,
 ) {
 	for e := range eventCh {
-		switch e.(type) {
+		switch e := e.(type) {
 		case *gopenvpn.FatalEvent:
 			log.Println(e.String())
 			ovpn.setSubstate(vpn.UnknownSubstate)
@@ -410,7 +410,7 @@ func stage2Handler(
 				log.Println(internal.ErrorPrefix, err)
 			}
 		case *gopenvpn.StateEvent:
-			event := e.(*gopenvpn.StateEvent)
+			event := e
 			state := event.NewState()
 			ovpn.setState(state)
 			switch vpn.State(state) { //nolint:exhaustive

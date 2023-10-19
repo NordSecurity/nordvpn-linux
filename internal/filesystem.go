@@ -233,10 +233,7 @@ func FileSha256(filepath string) (sum []byte, err error) {
 // checks if command is in PATH
 func IsCommandAvailable(command string) bool {
 	_, err := exec.LookPath(command)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 // Columns formats a list of strings to a tidy column representation
