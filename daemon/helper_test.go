@@ -188,13 +188,14 @@ func StartServer(port int, handlers []Handler) *http.Server {
 }
 
 func CheckServer(listener net.Listener, attempts int) {
-	_, err := http.Get("http://" + listener.Addr().String())
+	resp, err := http.Get("http://" + listener.Addr().String())
 	if err != nil {
 		if attempts <= 0 {
 			log.Fatal("Error starting server")
 		}
 		CheckServer(listener, attempts-1)
 	}
+	defer resp.Body.Close()
 }
 
 // testNewDataManager returns a pointer to initialized and

@@ -58,6 +58,7 @@ func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	var body []byte
 	var reader io.ReadCloser

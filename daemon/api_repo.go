@@ -116,6 +116,7 @@ func (api *RepoAPI) request(path string) (*RepoAPIResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if err := core.ExtractError(resp); err != nil {
 		return nil, err
