@@ -311,10 +311,10 @@ func TestJobServers_Valid(t *testing.T) {
 
 	defer testsCleanup()
 
-	internal.FileCopy(TestdataPath+"s2.dat", TestdataPath+TestServersFile)
-	internal.FileCopy(TestdataPath+"c2.dat", TestdataPath+TestCountryFile)
+	internal.FileCopy(TestdataS2DatPath, TestdataPath+TestServersFile)
+	internal.FileCopy(TestdataC2DatPath, TestdataPath+TestCountryFile)
 	internal.FileCopy(TestdataPath+"i2.dat", TestdataPath+TestInsightsFile)
-	internal.FileCopy(TestdataPath+"version.dat", TestdataPath+TestVersionFile)
+	internal.FileCopy(TestdataVersionDatPath, TestdataPath+TestVersionFile)
 
 	dm := testNewDataManager()
 	assert.NoError(t, dm.LoadData())
@@ -332,7 +332,7 @@ func TestJobServers_Expired(t *testing.T) {
 
 	defer testsCleanup()
 
-	internal.FileCopy(TestdataPath+"s2.dat", TestdataPath+TestServersFile)
+	internal.FileCopy(TestdataS2DatPath, TestdataPath+TestServersFile)
 
 	dm := testNewDataManager()
 	original, _, _ := mockServersAPI{}.Servers() // do not use filesystem

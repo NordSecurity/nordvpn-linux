@@ -24,6 +24,13 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const (
+	exampleUUID    = "c13c619c-c70b-49b8-9396-72de88155c43"
+	exampleIP1     = "172.20.0.5"
+	exampleFileID1 = "file1"
+	tmpDir         = "/tmp"
+)
+
 type mockNotification struct {
 	id      uint32
 	summary string
@@ -258,9 +265,9 @@ func TestTransferProgress(t *testing.T) {
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	peer := "12.12.12.12"
-	path := "/tmp"
+	path := tmpDir
 	file1 := "testfile-small"
 	file1ID := "file1ID"
 	file1sz := 100
@@ -436,14 +443,14 @@ func TestAcceptTransfer(t *testing.T) {
 	}{
 		{
 			testName:    "accept transfer success",
-			transfer:    "c13c619c-c70b-49b8-9396-72de88155c43",
+			transfer:    exampleUUID,
 			expectedErr: nil,
 			files:       []string{},
 			sizeLimit:   6,
 		},
 		{
 			testName:    "accept files success",
-			transfer:    "c13c619c-c70b-49b8-9396-72de88155c43",
+			transfer:    exampleUUID,
 			expectedErr: nil,
 			files:       []string{"test/file_A"},
 			sizeLimit:   1,
@@ -457,28 +464,28 @@ func TestAcceptTransfer(t *testing.T) {
 		},
 		{
 			testName:    "file doesn't exist",
-			transfer:    "c13c619c-c70b-49b8-9396-72de88155c43",
+			transfer:    exampleUUID,
 			expectedErr: ErrFileNotFound,
 			files:       []string{"invalid_file"},
 			sizeLimit:   6,
 		},
 		{
 			testName:    "size exceeds limit",
-			transfer:    "c13c619c-c70b-49b8-9396-72de88155c43",
+			transfer:    exampleUUID,
 			expectedErr: ErrSizeLimitExceeded,
 			files:       []string{},
 			sizeLimit:   5,
 		},
 		{
 			testName:    "partial transfer size exceeds limit",
-			transfer:    "c13c619c-c70b-49b8-9396-72de88155c43",
+			transfer:    exampleUUID,
 			expectedErr: ErrSizeLimitExceeded,
 			files:       []string{"test/file_C"},
 			sizeLimit:   2,
 		},
 	}
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
@@ -524,7 +531,7 @@ func TestAcceptTransfer_Outgoing(t *testing.T) {
 		"")
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	storage.transfers[transferID] = &pb.Transfer{
 		Id:        transferID,
 		Direction: pb.Direction_OUTGOING,
@@ -547,19 +554,19 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 		"")
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	storage.transfers[transferID] = &pb.Transfer{
 		Id:        transferID,
 		Direction: pb.Direction_INCOMING,
 		Status:    pb.Status_ONGOING,
 	}
 
-	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
+	_, err := eventManager.AcceptTransfer(exampleUUID, mockSystemEnvironment.destinationDirectory, []string{})
 	assert.Equal(t, ErrTransferAlreadyAccepted, err)
 }
 
 func TestTransferFinishedNotifications(t *testing.T) {
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	fileID := "file_id"
 	filePath := "file_path"
 
@@ -669,7 +676,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 }
 
 func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	fileID := "file_id"
 	filePath := "file_path"
 
@@ -730,7 +737,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 }
 
 func TestTransferRequestNotification(t *testing.T) {
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
@@ -754,7 +761,7 @@ func TestTransferRequestNotification(t *testing.T) {
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
-	peer := "172.20.0.5"
+	peer := exampleIP1
 	hostname := "peer.nord"
 	eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 		{
@@ -805,9 +812,9 @@ func TestTransferRequestNotification(t *testing.T) {
 }
 
 func TestTransferRequestNotificationAccept(t *testing.T) {
-	peer := "172.20.0.5"
+	peer := exampleIP1
 
-	pendingTransferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	pendingTransferID := exampleUUID
 	pendingTransferNotificationID := uint32(0)
 
 	transferFinishedID := "022cb1eb-ee22-431a-80c5-ba3050493c17"
@@ -1006,9 +1013,9 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 }
 
 func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
-	peer := "172.20.0.5"
+	peer := exampleIP1
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	transferNotificationID := uint32(0)
 
 	mockOsEnvironment := newMockSystemEnvironment(t)
@@ -1059,9 +1066,9 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 }
 
 func TestTransferRequestNotificationCancel(t *testing.T) {
-	peer := "172.20.0.5"
+	peer := exampleIP1
 
-	pendingTransferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	pendingTransferID := exampleUUID
 	pendingTransferNotificationID := uint32(0)
 
 	transferAlreadyCanceledID := "5f4c3ec4-d4fe-4335-beb6-5db2ffbae351"
@@ -1217,7 +1224,7 @@ func TestAutoaccept(t *testing.T) {
 
 	notificationManager.notifications.transfers = map[uint32]string{}
 
-	peerAutoAcceptIP := "172.20.0.5"
+	peerAutoAcceptIP := exampleIP1
 	peerAutoacceptHostname := "internal.peer1.nord"
 
 	eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
@@ -1229,7 +1236,7 @@ func TestAutoaccept(t *testing.T) {
 		},
 	}}
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 
 	storage.transfers[transferID] = &pb.Transfer{
 		Id:        transferID,

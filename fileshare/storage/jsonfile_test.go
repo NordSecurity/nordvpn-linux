@@ -16,7 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const historySizeMaxBytes = 4 * 1024 * 1024
+const (
+	historySizeMaxBytes = 4 * 1024 * 1024
+	exampleUUID         = "c13c619c-c70b-49b8-9396-72de88155c44"
+)
 
 // This is used only in tests now. It was easier to just copy this into tests instead of refactoring them
 // because we are still keeping Load, so it has to be tested.
@@ -66,7 +69,7 @@ func (jf JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
 func TestSimpleSaveLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	transfers := make(map[string]*pb.Transfer)
 	transfers[transferID] = makeTransfer(transferID, 5, false)
@@ -100,7 +103,7 @@ func TestSimpleSaveLoad(t *testing.T) {
 func TestLargeSaveLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	transfers := make(map[string]*pb.Transfer)
 
@@ -130,7 +133,7 @@ func TestLargeSaveLoad(t *testing.T) {
 func TestNormalSaveLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	transfers := make(map[string]*pb.Transfer)
 
@@ -185,9 +188,7 @@ func makeTransfer(transferID string, fileCount int, makeBigNames bool) *pb.Trans
 func TestCompatibilityLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	category.Set(t, category.Unit)
-
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	transfers := make(map[string]*pb.Transfer)
 

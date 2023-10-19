@@ -25,6 +25,14 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
+const (
+	examplePublicKey1 = "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t="
+	examplePublicKey2 = "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp="
+	exampleUUID1      = "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	exampleUUID2      = "c4a11926-e404-11ed-b5ea-0242ac120002"
+	exampleUUID3      = "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
+)
+
 type meshRenewChecker struct{}
 
 func (meshRenewChecker) IsLoggedIn() bool            { return true }
@@ -549,9 +557,9 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 }
 
 func TestServer_Connect(t *testing.T) {
-	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
-	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
-	peerNoRoutingUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	peerValidUuid := exampleUUID3
+	peerNoIpUuid := exampleUUID2
+	peerNoRoutingUuid := exampleUUID1
 
 	getServer := func() *Server {
 		registryApi := registryAPI{}
@@ -634,9 +642,9 @@ func TestServer_Connect(t *testing.T) {
 }
 
 func TestServer_AcceptIncoming(t *testing.T) {
-	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
-	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
-	peerIncomingAlreadyAllowedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	peerValidUuid := exampleUUID3
+	peerNoIpUuid := exampleUUID2
+	peerIncomingAlreadyAllowedUuid := exampleUUID1
 	peerNoRoutingUuid := "8c9f1e11-4b67-4ba4-a2df-4308757f2d59"
 	peerNoLANUuid := "06d3c1ba-997c-4b2c-9d61-0d718becdd89"
 	peerLANAndRoutingUuid := "7505abad-527f-442f-b17a-820451ff8e8a"
@@ -647,8 +655,8 @@ func TestServer_AcceptIncoming(t *testing.T) {
 	peerNoLANAddress := netip.MustParseAddr("18.203.48.39")
 	peerLANAndRoutingAddress := netip.MustParseAddr("249.205.110.178")
 
-	peerValidPublicKey := "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t="
-	peerIncomingAlreadyAllowedPublicKey := "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp="
+	peerValidPublicKey := examplePublicKey1
+	peerIncomingAlreadyAllowedPublicKey := examplePublicKey2
 	peerNoRoutingPublicKey := "ubQBAfx1VXCI2yXqx5oqmcoc5wpBuRxvXRfXXC8qeR="
 	peerNoLANAddressPublicKey := "OwJTUXZmqOvXtiC8viXIlezSGe5uEZjTkhVWPyNSnA="
 	peerLANAndRoutingPublicKey := "SNoKCfCdi6OKHGI1dRM8QCLwuUMZ5Q2oltlYsLG1kA="
@@ -799,15 +807,15 @@ func TestServer_AcceptIncoming(t *testing.T) {
 }
 
 func TestServer_DenyIncoming(t *testing.T) {
-	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
-	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
-	peerIncomingAlreadyDeniedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	peerValidUuid := exampleUUID3
+	peerNoIpUuid := exampleUUID2
+	peerIncomingAlreadyDeniedUuid := exampleUUID1
 
 	peerValidAddress := netip.MustParseAddr("220.16.61.136")
 	peerIncomingAlreadyDeniedAddress := netip.MustParseAddr("87.169.173.253")
 
-	peerValidPublicKey := "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t="
-	peerIncomingAlreadyDeniedPublicKey := "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp="
+	peerValidPublicKey := examplePublicKey1
+	peerIncomingAlreadyDeniedPublicKey := examplePublicKey2
 
 	getServer := func() (*Server, *workingNetworker) {
 		registryApi := registryAPI{}
@@ -905,15 +913,15 @@ func TestServer_DenyIncoming(t *testing.T) {
 }
 
 func TestServer_AllowFileshare(t *testing.T) {
-	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
-	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
-	peerIncomingAlreadyDeniedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	peerValidUuid := exampleUUID3
+	peerNoIpUuid := exampleUUID2
+	peerIncomingAlreadyDeniedUuid := exampleUUID1
 
 	peerValidAddress := netip.MustParseAddr("220.16.61.136")
 	peerIncomingAlreadyDeniedAddress := netip.MustParseAddr("87.169.173.253")
 
-	peerValidPublicKey := "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t="
-	peerIncomingAlreadyDeniedPublicKey := "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp="
+	peerValidPublicKey := examplePublicKey2
+	peerIncomingAlreadyDeniedPublicKey := examplePublicKey1
 
 	getServer := func() (*Server, *workingNetworker) {
 		registryApi := registryAPI{}
@@ -1011,15 +1019,15 @@ func TestServer_AllowFileshare(t *testing.T) {
 }
 
 func TestServer_DenyFileshare(t *testing.T) {
-	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
-	peerNoIpUuid := "c4a11926-e404-11ed-b5ea-0242ac120002"
-	peerIncomingAlreadyDeniedUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	peerValidUuid := exampleUUID3
+	peerNoIpUuid := exampleUUID2
+	peerIncomingAlreadyDeniedUuid := exampleUUID1
 
 	peerValidAddress := netip.MustParseAddr("220.16.61.136")
 	peerIncomingAlreadyDeniedAddress := netip.MustParseAddr("87.169.173.253")
 
-	peerValidPublicKey := "uXGPBcjbGrM62g5ew9gyPZaJsFNJI1peuFFhv1WYc4t="
-	peerIncomingAlreadyDeniedPublicKey := "bu5BB8ks1pGgvDpENonCr7w51od5gWUM7RwO4SsvHmp="
+	peerValidPublicKey := examplePublicKey1
+	peerIncomingAlreadyDeniedPublicKey := examplePublicKey2
 
 	getServer := func() (*Server, *workingNetworker) {
 		registryApi := registryAPI{}
@@ -1117,8 +1125,8 @@ func TestServer_DenyFileshare(t *testing.T) {
 }
 
 func TestServer_EnableAutomaticFileshare(t *testing.T) {
-	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
-	peerAleradyEnabledUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	peerValidUuid := exampleUUID3
+	peerAleradyEnabledUuid := exampleUUID1
 
 	peers := []mesh.MachinePeer{
 		{
@@ -1242,8 +1250,8 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 }
 
 func TestServer_DisableAutomaticFileshare(t *testing.T) {
-	peerValidUuid := "a7e4e7d6-e404-11ed-b5ea-0242ac120002"
-	peerAleradyDisabledUuid := "cb5a8446-e404-11ed-b5ea-0242ac120002"
+	peerValidUuid := exampleUUID3
+	peerAleradyDisabledUuid := exampleUUID1
 
 	peers := []mesh.MachinePeer{
 		{

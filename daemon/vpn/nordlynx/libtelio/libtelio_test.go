@@ -1,6 +1,7 @@
 package libtelio
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	exampleAppVersion = "3.16.3"
+	exampleDeviceID   = "11111"
+	exampleEventPath  = "/var/data.db"
 )
 
 func TestIsConnected(t *testing.T) {
@@ -115,14 +122,9 @@ func Test_TelioConfig(t *testing.T) {
 
 	expectedCfg := telioRemoteTestConfig
 
-	deviceID := "11111"
-	appVersion := "3.16.3"
-	eventPath := "/var/data.db"
-	prod := true
-
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfig}
 
-	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, &remoteConfigGetter)
+	cfg, err := handleTelioConfig(exampleEventPath, exampleDeviceID, exampleAppVersion, true, &remoteConfigGetter)
 
 	assert.NoError(t, err)
 
@@ -141,14 +143,9 @@ func Test_TelioConfigLanaDisabled(t *testing.T) {
 
 	expectedCfg := telioRemoteTestConfigLanaDisabled
 
-	deviceID := "11111"
-	appVersion := "3.16.3"
-	eventPath := "/var/data.db"
-	prod := true
-
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfigLanaDisabled}
 
-	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, &remoteConfigGetter)
+	cfg, err := handleTelioConfig(exampleEventPath, exampleDeviceID, exampleAppVersion, true, &remoteConfigGetter)
 
 	assert.NoError(t, err)
 
@@ -168,14 +165,9 @@ func Test_TelioConfigAllDisabled(t *testing.T) {
 
 	expectedCfg := telioRemoteTestConfigAllDisabled
 
-	deviceID := "11111"
-	appVersion := "3.16.3"
-	eventPath := "/var/data.db"
-	prod := true
-
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfigAllDisabled}
 
-	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, &remoteConfigGetter)
+	cfg, err := handleTelioConfig(exampleEventPath, exampleDeviceID, exampleAppVersion, true, &remoteConfigGetter)
 
 	assert.NoError(t, err)
 
@@ -289,51 +281,58 @@ func (m *mockVersionGetter) GetTelioConfig(string) (string, error) {
 }
 
 func Test_maskPublicKey(t *testing.T) {
-	eventText := "{" +
-		"\"type\":\"node\"," +
-		"\"body\": {" +
-		" \"identifier\":\"1dd9e096-f420-4afa-bb19-62286a370dc9\"," +
-		" \"public_key\":\"m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe=\"," +
-		" \"state\":\"connected\"," +
-		" \"is_exit\": false," +
-		" \"is_vpn\": false," +
-		" \"ip_addresses\": [" +
-		"	\"248.146.217.126\"" +
-		"  ]," +
-		" \"allowed_ips\": [" +
-		"	\"248.146.217.126/32\"" +
-		"  ]," +
-		" \"endpoint\":\"65.97.11.97:53434\"," +
-		" \"hostname\":\"host-andes.nord\"," +
-		" \"allow_incoming_connections\": true," +
-		" \"allow_peer_send_files\": true," +
-		" \"path\":\"direct\"" +
-		"}" +
-		"}"
+	eventText := `{
+	"type": "node",
+	"body": {
+		"identifier": "1dd9e096-f420-4afa-bb19-62286a370dc9",
+		"public_key": "m1ZvUX5fF5KJA8wQTFukhyxzHDfVQkzKXdi7L7PeVCe=",
+		"state": "connected",
+		"is_exit": false,
+		"is_vpn": false,
+		"ip_addresses": [
+			"248.146.217.126"
+		],
+		"allowed_ips": [
+			"248.146.217.126/32"
+		],
+		"endpoint": "65.97.11.97:53434",
+		"hostname": "host-andes.nord",
+		"allow_incoming_connections": true,
+		"allow_peer_send_files": true,
+		"path": "direct"
+	}
+}`
 
-	expectedMaskedEventText := "{" +
-		"\"type\":\"node\"," +
-		"\"body\": {" +
-		" \"identifier\":\"1dd9e096-f420-4afa-bb19-62286a370dc9\"," +
-		" \"public_key\":\"***\"," +
-		" \"state\":\"connected\"," +
-		" \"is_exit\": false," +
-		" \"is_vpn\": false," +
-		" \"ip_addresses\": [" +
-		"	\"248.146.217.126\"" +
-		"  ]," +
-		" \"allowed_ips\": [" +
-		"	\"248.146.217.126/32\"" +
-		"  ]," +
-		" \"endpoint\":\"65.97.11.97:53434\"," +
-		" \"hostname\":\"host-andes.nord\"," +
-		" \"allow_incoming_connections\": true," +
-		" \"allow_peer_send_files\": true," +
-		" \"path\":\"direct\"" +
-		"}" +
-		"}"
+	expectedMaskedEventText := `{
+	"type": "node",
+	"body": {
+		"identifier": "1dd9e096-f420-4afa-bb19-62286a370dc9",
+		"public_key": "***",
+		"state": "connected",
+		"is_exit": false,
+		"is_vpn": false,
+		"ip_addresses": [
+			"248.146.217.126"
+		],
+		"allowed_ips": [
+			"248.146.217.126/32"
+		],
+		"endpoint": "65.97.11.97:53434",
+		"hostname": "host-andes.nord",
+		"allow_incoming_connections": true,
+		"allow_peer_send_files": true,
+		"path": "direct"
+	}
+}`
 
-	maskedEventText := maskPublicKey(eventText)
+	buf := &bytes.Buffer{}
+	var err error
+	err = json.Compact(buf, []byte(eventText))
+	assert.NoError(t, err)
+	maskedEventText := maskPublicKey(buf.String())
 
-	assert.Equal(t, expectedMaskedEventText, maskedEventText)
+	buf = &bytes.Buffer{}
+	err = json.Compact(buf, []byte(expectedMaskedEventText))
+	assert.NoError(t, err)
+	assert.Equal(t, buf.String(), maskedEventText)
 }

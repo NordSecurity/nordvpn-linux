@@ -156,8 +156,9 @@ func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
 
 // GetFilesharedLogPath when logs aren't handled by systemd
 func GetFilesharedLogPath(uid string) string {
+	filesharedLogFilename := Fileshared + ".log"
 	if uid == "0" {
-		return filepath.Join(LogPath, Fileshared+".log")
+		return filepath.Join(LogPath, filesharedLogFilename)
 	}
 
 	usr, err := user.LookupId(uid)
@@ -172,7 +173,7 @@ func GetFilesharedLogPath(uid string) string {
 		return filepath.Join(LogPath, Fileshared+"-"+uid+".log")
 	}
 
-	return filepath.Join(configDir, Fileshared+".log")
+	return filepath.Join(configDir, filesharedLogFilename)
 }
 
 // GetNordvpnGid returns id of group defined in NordvpnGroup
