@@ -82,11 +82,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 
 		switch out.Type {
 		case internal.CodeFailure:
-			if ctx.NArg() > 0 {
-				rpcErr = fmt.Errorf(client.ConnectCantConnectTo, strings.Join(ctx.Args().Slice(), " "))
-			} else {
-				rpcErr = errors.New(client.ConnectCantConnect)
-			}
+			rpcErr = errors.New(client.ConnectCantConnect)
 		case internal.CodeExpiredRenewToken:
 			color.Yellow(client.RelogRequest)
 			if rpcErr = c.Login(ctx); rpcErr != nil {
