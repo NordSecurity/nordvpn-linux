@@ -74,9 +74,6 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure, internal.CodeEmptyPayloadError:
-		if ctx.NArg() > 1 {
-			return formatError(fmt.Errorf(client.ConnectCantConnectTo, internal.StringsToInterfaces(ctx.Args().Slice()[1:])...))
-		}
 		return formatError(fmt.Errorf(client.ConnectCantConnect))
 	case internal.CodeAutoConnectServerNotObfuscated:
 		return formatError(errors.New(AutoConnectOnNonObfuscatedServerObfuscateOn))
