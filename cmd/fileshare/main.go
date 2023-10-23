@@ -28,6 +28,7 @@ import (
 
 // Values set when building the application
 var (
+	Version     = ""
 	Environment = ""
 	PprofPort   = 6961
 	ConnURL     = internal.GetFilesharedSocket(os.Getuid())
@@ -106,6 +107,7 @@ func main() {
 	fileshareImplementation := drop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
+		Version,
 		internal.IsProdEnv(Environment),
 		fileshare.NewPubkeyProvider(meshClient).PubkeyFunc,
 		string(meshPrivKey),

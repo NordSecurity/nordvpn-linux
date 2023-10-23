@@ -18,6 +18,7 @@ import (
 type Fileshare struct {
 	norddrop     norddropgo.Norddrop
 	eventsDbPath string
+	appVersion   string
 	storagePath  string
 	isProd       bool
 	mutex        sync.Mutex
@@ -47,6 +48,7 @@ func logCB(level int, message string) {
 func New(
 	eventFunc func(string),
 	eventsDbPath string,
+	appVersion string,
 	isProd bool,
 	pubkeyFunc func(string) []byte,
 	privKey string,
@@ -59,6 +61,7 @@ func New(
 	return &Fileshare{
 		norddrop:     norddropgo.NewNorddrop(eventFunc, logLevel, logCB, pubkeyFunc, privKey),
 		eventsDbPath: eventsDbPath,
+		appVersion:   appVersion,
 		storagePath:  storagePath,
 		isProd:       isProd,
 	}
@@ -71,7 +74,7 @@ func (f *Fileshare) Enable(listenAddr netip.Addr) (err error) {
 
 	log.Println(internal.InfoPrefix, "libdrop version:", norddropgo.NorddropVersion())
 
-	if err = f.start(listenAddr, f.eventsDbPath, f.isProd, f.storagePath); err != nil {
+	if err = f.start(listenAddr, f.eventsDbPath, f.appVersion, f.isProd, f.storagePath); err != nil {
 		return fmt.Errorf("starting drop: %w", err)
 	}
 
@@ -79,29 +82,28 @@ func (f *Fileshare) Enable(listenAddr netip.Addr) (err error) {
 }
 
 type libdropStartConfig struct {
-	DirDepthLimit          uint64 `json:"dir_depth_limit"`
-	TransferFileLimit      uint64 `json:"transfer_file_limit"`
-	ReqConnectionTimeoutMs uint64 `json:"req_connection_timeout_ms"`
-	TransferIdleLifetimeMs uint64 `json:"transfer_idle_lifetime_ms"`
-	MooseEventPath         string `json:"moose_event_path"`
-	IsProd                 bool   `json:"moose_prod"`
-	StoragePath            string `json:"storage_path"`
+	DirDepthLimit     uint64 `json:"dir_depth_limit"`
+	TransferFileLimit uint64 `json:"transfer_file_limit"`
+	MooseEventPath    string `json:"moose_event_path"`
+	LinuxAppVersion   string `json:"moose_app_version"`
+	IsProd            bool   `json:"moose_prod"`
+	StoragePath       string `json:"storage_path"`
 }
 
 func (f *Fileshare) start(
 	listenAddr netip.Addr,
 	eventsDbPath string,
+	appVersion string,
 	isProd bool,
 	storagePath string,
 ) error {
 	configJSON, err := json.Marshal(libdropStartConfig{
-		DirDepthLimit:          fileshare.DirDepthLimit,
-		TransferFileLimit:      fileshare.TransferFileLimit,
-		ReqConnectionTimeoutMs: fileshare.ReqConnectionTimeoutMs,
-		TransferIdleLifetimeMs: fileshare.TransferIdleLifetimeMs,
-		MooseEventPath:         eventsDbPath,
-		IsProd:                 isProd,
-		StoragePath:            storagePath,
+		DirDepthLimit:     fileshare.DirDepthLimit,
+		TransferFileLimit: fileshare.TransferFileLimit,
+		MooseEventPath:    eventsDbPath,
+		LinuxAppVersion:   appVersion,
+		IsProd:            isProd,
+		StoragePath:       storagePath,
 	})
 	if err != nil {
 		return fmt.Errorf("marshalling libdrop config: %w", err)
