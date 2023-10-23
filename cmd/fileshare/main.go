@@ -83,11 +83,10 @@ func main() {
 	}
 	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
 	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
-	storagePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
-
+	legacyStoragePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
 	eventManager := fileshare.NewEventManager(
 		internal.IsProdEnv(Environment),
-		fileshare.FileshareHistoryImplementation(storagePath),
+		fileshare.FileshareHistoryImplementation(legacyStoragePath),
 		meshClient,
 		fileshare.StdOsInfo{},
 		fileshare.NewStdFilesystem("/"),
@@ -103,6 +102,17 @@ func main() {
 		log.Fatalf("can't decode mesh private key: %v", err)
 	}
 
+	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
+	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
+	storagePath := path.Join(
+		currentUser.HomeDir,
+		internal.ConfigDirectory,
+		internal.UserDataPath,
+		internal.FileshareHistoryFile,
+	)
+	if err := internal.EnsureDir(storagePath); err != nil {
+		log.Fatalf("ensuring dir for transfer history file: %s", err)
+	}
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
 	fileshareImplementation := drop.New(
 		eventManager.EventFunc,
