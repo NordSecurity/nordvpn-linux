@@ -102,6 +102,7 @@ def disconnect_base_test():
     print(output)
     assert lib.is_disconnect_successful(output)
     assert network.is_disconnected()
+    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
