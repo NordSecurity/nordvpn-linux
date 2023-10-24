@@ -1,6 +1,10 @@
 [Unit]
 Description=NordVPN Fileshare Daemon
 Requires=nordfileshared.socket
+# allow the daemon to run only if it can access nordvpn deamon socket
+ConditionPathExists=/run/nordvpn/nordvpnd.sock
+# on Vagrant VM without this the daemon is not able to access /run/nordvpn/nordvpnd.sock
+ConditionGroup=nordvpn
 
 [Service]
 ExecStart=/usr/bin/nordfileshared
