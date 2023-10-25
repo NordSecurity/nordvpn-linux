@@ -935,7 +935,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error, daemonURL string, la
 				os.Exit(1)
 			case internal.ErrSocketAccessDenied:
 				color.Red(formatError(internal.ErrSocketAccessDenied).Error())
-				color.Red("Run 'usermod -aG nordvpn $USER' to fix this issue and log out of OS afterwards for this to take an effect.")
+				color.Red("Run 'usermod -aG nordvpn $USER' to fix this issue and reboot your device afterwards for this to take an effect.")
 				os.Exit(1)
 			case internal.ErrDaemonConnectionRefused:
 				color.Red(formatError(internal.ErrDaemonConnectionRefused).Error())
