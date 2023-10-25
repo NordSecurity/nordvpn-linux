@@ -97,25 +97,18 @@ def test_set_obfuscate_server_obfuscation_mismatch(obfuscateInitialState, server
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_set_technology(tech, proto, obfuscated):
     assert f"Technology is set to '{tech.upper()}' successfully." in sh.nordvpn.set.technology(tech)
     assert tech.upper() in sh.nordvpn.settings()
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_protocol_in_settings(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-
     assert proto.upper() in sh.nordvpn.settings()
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_technology_set_options(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     
