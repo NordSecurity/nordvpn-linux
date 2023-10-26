@@ -87,7 +87,7 @@ func (f *FirewallManager) Enable() error {
 		}
 	}
 
-	f.enabled = false
+	f.enabled = true
 
 	return nil
 }
