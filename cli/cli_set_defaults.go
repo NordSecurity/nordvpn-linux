@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 
-	"github.com/NordSecurity/nordvpn-linux/client/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -15,11 +14,6 @@ import (
 const SetDefaultsUsageText = "Restores settings to their default values."
 
 func (c *cmd) SetDefaults(ctx *cli.Context) error {
-	cfg := config.NewConfig()
-	if err := c.configManager.Save(cfg); err != nil {
-		return formatError(err)
-	}
-
 	resp, err := c.client.SetDefaults(context.Background(), &pb.Empty{})
 	if err != nil {
 		return formatError(err)

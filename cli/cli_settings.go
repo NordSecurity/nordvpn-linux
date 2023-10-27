@@ -44,7 +44,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
 	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
 	if settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(c.config.Obfuscate))
+		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.GetObfuscate()))
 	}
 	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.Notify))
 	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.AutoConnect))

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/client/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -63,7 +62,7 @@ func (c mockDaemonClient) Cities(ctx context.Context, in *pb.CitiesRequest, opts
 	}
 }
 
-func (c mockDaemonClient) Countries(ctx context.Context, in *pb.CountriesRequest, opts ...grpc.CallOption) (*pb.Payload, error) {
+func (c mockDaemonClient) Countries(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.Payload, error) {
 	if c.countries != nil {
 		return &pb.Payload{
 			Type: internal.CodeSuccess,
@@ -76,7 +75,7 @@ func (c mockDaemonClient) Countries(ctx context.Context, in *pb.CountriesRequest
 		}, nil
 	}
 }
-func (c mockDaemonClient) Groups(ctx context.Context, in *pb.GroupsRequest, opts ...grpc.CallOption) (*pb.Payload, error) {
+func (c mockDaemonClient) Groups(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.Payload, error) {
 	if c.groups != nil {
 		return &pb.Payload{
 			Type: internal.CodeSuccess,
@@ -93,7 +92,7 @@ func (c mockDaemonClient) Groups(ctx context.Context, in *pb.GroupsRequest, opts
 func TestConnectAutoComplete(t *testing.T) {
 	category.Set(t, category.Unit)
 	mockClient := mockDaemonClient{}
-	c := cmd{&mockClient, nil, nil, "", nil, config.Config{}, nil}
+	c := cmd{&mockClient, nil, nil, "", nil}
 	tests := []struct {
 		name      string
 		countries []string

@@ -122,9 +122,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 	args := ctx.Args()
 	if args.Len() == 0 {
-		resp, err := c.client.Groups(context.Background(), &pb.GroupsRequest{
-			Obfuscate: c.config.Obfuscate,
-		})
+		resp, err := c.client.Groups(context.Background(), &pb.Empty{})
 		if err != nil {
 			return
 		}
@@ -132,9 +130,7 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 		if err != nil {
 			log.Println(err)
 		}
-		resp, err = c.client.Countries(context.Background(), &pb.CountriesRequest{
-			Obfuscate: c.config.Obfuscate,
-		})
+		resp, err = c.client.Countries(context.Background(), &pb.Empty{})
 		if err != nil {
 			return
 		}
@@ -145,8 +141,7 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 		fmt.Println(countryList + " " + groupList)
 	} else if args.Len() == 1 {
 		resp, err := c.client.Cities(context.Background(), &pb.CitiesRequest{
-			Obfuscate: c.config.Obfuscate,
-			Country:   ctx.Args().First(),
+			Country: ctx.Args().First(),
 		})
 		if err != nil {
 			return

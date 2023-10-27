@@ -8,7 +8,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/client/config"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
@@ -68,7 +67,7 @@ func (m mockMeshClient) GetPeers(ctx context.Context, in *pb.Empty, opts ...grpc
 
 func TestMeshPeerList(t *testing.T) {
 	category.Set(t, category.Unit)
-	c := cmd{nil, mockMeshClient{}, nil, "", nil, config.Config{}, nil}
+	c := cmd{nil, mockMeshClient{}, nil, "", nil}
 	tests := []struct {
 		name     string
 		expected []string

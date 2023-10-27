@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/client/config"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -15,7 +14,7 @@ import (
 func TestCountriesList(t *testing.T) {
 	category.Set(t, category.Unit)
 	mockClient := mockDaemonClient{}
-	c := cmd{&mockClient, nil, nil, "", nil, config.Config{}, nil}
+	c := cmd{&mockClient, nil, nil, "", nil}
 
 	tests := []struct {
 		name          string

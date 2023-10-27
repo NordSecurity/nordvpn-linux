@@ -91,7 +91,6 @@ func TestRPCCities_Successful(t *testing.T) {
 	}
 
 	request := &pb.CitiesRequest{}
-	request.Obfuscate = false
 	request.Country = "LT"
 
 	payload, _ := rpc.Cities(context.Background(), request)

@@ -33,4 +33,5 @@ message Settings {
   config.Protocol protocol = 13;
   bool lan_discovery = 14;
   Allowlist allowlist = 15;
+  bool obfuscate = 16;
 }

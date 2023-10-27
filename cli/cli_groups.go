@@ -16,9 +16,7 @@ import (
 const GroupsUsageText = "Shows a list of available server groups"
 
 func (c *cmd) Groups(ctx *cli.Context) error {
-	resp, err := c.client.Groups(context.Background(), &pb.GroupsRequest{
-		Obfuscate: c.config.Obfuscate,
-	})
+	resp, err := c.client.Groups(context.Background(), &pb.Empty{})
 	if err != nil {
 		return formatError(err)
 	}

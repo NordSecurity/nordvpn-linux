@@ -22,7 +22,7 @@ func (r *RPC) Cities(ctx context.Context, in *pb.CitiesRequest) (*pb.Payload, er
 	}
 
 	// collect cities and sort them
-	if value, ok := r.dm.GetAppData().CityNames[in.GetObfuscate()][cfg.AutoConnectData.Protocol][strings.ToLower(in.GetCountry())]; ok {
+	if value, ok := r.dm.GetAppData().CityNames[cfg.AutoConnectData.Obfuscate][cfg.AutoConnectData.Protocol][strings.ToLower(in.GetCountry())]; ok {
 		var namesList []string
 		for city := range value.Iter() {
 			namesList = append(namesList, city.(string))
