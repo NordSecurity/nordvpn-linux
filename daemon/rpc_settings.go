@@ -50,6 +50,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 				Ports:   &ports,
 				Subnets: subnets,
 			},
+			Obfuscate: cfg.AutoConnectData.Obfuscate,
 		},
 	}, nil
 }

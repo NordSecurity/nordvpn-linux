@@ -26,10 +26,9 @@ type DaemonClient interface {
 	TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error)
 	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*Payload, error)
 	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (Daemon_ConnectClient, error)
-	Countries(ctx context.Context, in *CountriesRequest, opts ...grpc.CallOption) (*Payload, error)
+	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_DisconnectClient, error)
-	FrontendCountries(ctx context.Context, in *CountriesRequest, opts ...grpc.CallOption) (*CountriesResponse, error)
-	Groups(ctx context.Context, in *GroupsRequest, opts ...grpc.CallOption) (*Payload, error)
+	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	LoginOAuth2(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_LoginOAuth2Client, error)
@@ -128,7 +127,7 @@ func (x *daemonConnectClient) Recv() (*Payload, error) {
 	return m, nil
 }
 
-func (c *daemonClient) Countries(ctx context.Context, in *CountriesRequest, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Countries", in, out, opts...)
 	if err != nil {
@@ -169,16 +168,7 @@ func (x *daemonDisconnectClient) Recv() (*Payload, error) {
 	return m, nil
 }
 
-func (c *daemonClient) FrontendCountries(ctx context.Context, in *CountriesRequest, opts ...grpc.CallOption) (*CountriesResponse, error) {
-	out := new(CountriesResponse)
-	err := c.cc.Invoke(ctx, "/pb.Daemon/FrontendCountries", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) Groups(ctx context.Context, in *GroupsRequest, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Groups", in, out, opts...)
 	if err != nil {
@@ -479,10 +469,9 @@ type DaemonServer interface {
 	TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error)
 	Cities(context.Context, *CitiesRequest) (*Payload, error)
 	Connect(*ConnectRequest, Daemon_ConnectServer) error
-	Countries(context.Context, *CountriesRequest) (*Payload, error)
+	Countries(context.Context, *Empty) (*Payload, error)
 	Disconnect(*Empty, Daemon_DisconnectServer) error
-	FrontendCountries(context.Context, *CountriesRequest) (*CountriesResponse, error)
-	Groups(context.Context, *GroupsRequest) (*Payload, error)
+	Groups(context.Context, *Empty) (*Payload, error)
 	IsLoggedIn(context.Context, *Empty) (*Bool, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
 	LoginOAuth2(*Empty, Daemon_LoginOAuth2Server) error
@@ -531,16 +520,13 @@ func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*Paylo
 func (UnimplementedDaemonServer) Connect(*ConnectRequest, Daemon_ConnectServer) error {
 	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
 }
-func (UnimplementedDaemonServer) Countries(context.Context, *CountriesRequest) (*Payload, error) {
+func (UnimplementedDaemonServer) Countries(context.Context, *Empty) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Countries not implemented")
 }
 func (UnimplementedDaemonServer) Disconnect(*Empty, Daemon_DisconnectServer) error {
 	return status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
 }
-func (UnimplementedDaemonServer) FrontendCountries(context.Context, *CountriesRequest) (*CountriesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FrontendCountries not implemented")
-}
-func (UnimplementedDaemonServer) Groups(context.Context, *GroupsRequest) (*Payload, error) {
+func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Groups not implemented")
 }
 func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*Bool, error) {
@@ -719,7 +705,7 @@ func (x *daemonConnectServer) Send(m *Payload) error {
 }
 
 func _Daemon_Countries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CountriesRequest)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -731,7 +717,7 @@ func _Daemon_Countries_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: "/pb.Daemon/Countries",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Countries(ctx, req.(*CountriesRequest))
+		return srv.(DaemonServer).Countries(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -757,26 +743,8 @@ func (x *daemonDisconnectServer) Send(m *Payload) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Daemon_FrontendCountries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CountriesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).FrontendCountries(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.Daemon/FrontendCountries",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).FrontendCountries(ctx, req.(*CountriesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Daemon_Groups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GroupsRequest)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -788,7 +756,7 @@ func _Daemon_Groups_Handler(srv interface{}, ctx context.Context, dec func(inter
 		FullMethod: "/pb.Daemon/Groups",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Groups(ctx, req.(*GroupsRequest))
+		return srv.(DaemonServer).Groups(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1340,10 +1308,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Countries",
 			Handler:    _Daemon_Countries_Handler,
-		},
-		{
-			MethodName: "FrontendCountries",
-			Handler:    _Daemon_FrontendCountries_Handler,
 		},
 		{
 			MethodName: "Groups",
