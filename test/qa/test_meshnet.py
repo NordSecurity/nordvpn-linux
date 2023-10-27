@@ -102,8 +102,8 @@ def test_allowlist_incoming_connection():
     ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
     ssh_client_mesh.connect()
     with lib.Defer(ssh_client_mesh.disconnect):
-        ssh_client_mesh.exec_command("nordvpn c")
-        with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn d")):
+        ssh_client_mesh.exec_command("nordvpn set killswitch on")
+        with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn set killswitch off")):
             # We should not have direct connection anymore after connecting to VPN
             with pytest.raises(sh.ErrorReturnCode_1) as ex:
                 assert "icmp_seq=" not in sh.ping("-c", "1", "qa-peer")
