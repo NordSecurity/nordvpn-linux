@@ -67,9 +67,9 @@ func (r *RPC) SetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*pb
 		}, nil
 	}
 	r.events.Settings.Allowlist.Publish(events.DataAllowlist{
-		TCPPorts: len(in.Allowlist.Ports.Tcp),
-		UDPPorts: len(in.Allowlist.Ports.Udp),
-		Subnets:  len(in.Allowlist.Subnets),
+		TCPPorts: len(in.GetAllowlist().GetPorts().GetTcp()),
+		UDPPorts: len(in.GetAllowlist().GetPorts().GetUdp()),
+		Subnets:  len(in.GetAllowlist().GetSubnets()),
 	})
 
 	return &pb.Payload{

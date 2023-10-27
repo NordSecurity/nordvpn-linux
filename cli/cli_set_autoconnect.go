@@ -54,17 +54,17 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		serverTag = strings.ToLower(serverTag)
 	}
 
+	settings, err := c.getSettings()
+	if err != nil {
+		return formatError(err)
+	}
+	allowlist := settings.GetAllowlist()
+
 	resp, err := c.client.SetAutoConnect(context.Background(), &pb.SetAutoconnectRequest{
 		ServerTag:   serverTag,
 		Obfuscate:   c.config.Obfuscate,
 		AutoConnect: flag,
-		Allowlist: &pb.Allowlist{
-			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(c.config.Allowlist.Ports.UDP),
-				Tcp: client.SetToInt64s(c.config.Allowlist.Ports.TCP),
-			},
-			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
-		},
+		Allowlist:   allowlist,
 	})
 	if err != nil {
 		return formatError(err)

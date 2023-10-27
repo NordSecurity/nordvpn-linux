@@ -103,6 +103,12 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 	}
 
 	cmd := newCommander(internal.Environment(environment), configManager, cfg)
+	if pingErr == nil {
+		cmd.client = pb.NewDaemonClient(conn)
+		cmd.meshClient = meshpb.NewMeshnetClient(conn)
+		cmd.fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
+	}
+
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.SubcommandHelpTemplate = SubcommandHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
@@ -516,9 +522,6 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 	app.Commands = append(app.Commands, meshnetCommand(cmd))
 
 	if pingErr == nil {
-		cmd.client = pb.NewDaemonClient(conn)
-		cmd.meshClient = meshpb.NewMeshnetClient(conn)
-		cmd.fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
 		app.Commands = append(app.Commands, fileshareCommand(cmd))
 	}
 

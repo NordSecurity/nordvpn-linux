@@ -3,8 +3,6 @@ package internal
 import (
 	"strconv"
 	"strings"
-
-	mapset "github.com/deckarep/golang-set"
 )
 
 func StringsToInterfaces(strings []string) []interface{} {
@@ -13,18 +11,6 @@ func StringsToInterfaces(strings []string) []interface{} {
 		interfaces[i] = s
 	}
 	return interfaces
-}
-
-func SetToStrings(set mapset.Set) []string {
-	var stringSlice []string
-	if set == nil {
-		return stringSlice
-	}
-	for item := range set.Iter() {
-		item, _ := item.(string)
-		stringSlice = append(stringSlice, item)
-	}
-	return stringSlice
 }
 
 func Title(name string) string {
