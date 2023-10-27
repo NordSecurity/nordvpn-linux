@@ -295,3 +295,13 @@ def test_remove_peer_firewall_update():
             break
 
     assert result, message
+
+def test_account_switch():
+    sh.nordvpn.logout("--persist-token")
+    login.login_as("qa-peer")
+    sh.nordvpn.set.mesh.on() # expecting failure here
+
+    # Recover starting state (this is the simplest way)
+    teardown_module(None)
+    setup_module(None)
+    
