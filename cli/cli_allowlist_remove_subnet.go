@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"golang.org/x/exp/slices"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -35,21 +34,21 @@ func (c *cmd) AllowlistRemoveSubnet(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if !c.config.Allowlist.Subnets.Contains(subnet.String()) {
+	settings, err := c.getSettings()
+	if err != nil {
+		return formatError(err)
+	}
+	allowlist := settings.GetAllowlist()
+
+	subnetIndex := slices.Index(allowlist.Subnets, subnet.String())
+	if subnetIndex < 0 {
 		return formatError(fmt.Errorf(AllowlistRemoveSubnetExistsError, subnet.String()))
 	}
 
-	subnets := mapset.NewSetFromSlice(c.config.Allowlist.Subnets.ToSlice())
-	subnets.Remove(subnet.String())
+	allowlist.Subnets = slices.Delete(allowlist.Subnets, subnetIndex, subnetIndex+1)
 
 	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: &pb.Allowlist{
-			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(c.config.Allowlist.Ports.UDP),
-				Tcp: client.SetToInt64s(c.config.Allowlist.Ports.TCP),
-			},
-			Subnets: internal.SetToStrings(subnets),
-		},
+		Allowlist: allowlist,
 	})
 	if err != nil {
 		return formatError(err)
@@ -63,20 +62,19 @@ func (c *cmd) AllowlistRemoveSubnet(ctx *cli.Context) error {
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodeSuccess:
-		c.config.Allowlist.Subnets = subnets
-		err = c.configManager.Save(c.config)
-		if err != nil {
-			return formatError(ErrConfig)
-		}
 		color.Green(fmt.Sprintf(AllowlistRemoveSubnetSuccess, subnet))
 	}
 	return nil
 }
 
 func (c *cmd) AllowlistRemoveSubnetAutoComplete(ctx *cli.Context) {
-	subnets := internal.SetToStrings(c.config.Allowlist.Subnets)
-	for _, subnet := range subnets {
-		if !internal.StringsContains(ctx.Args().Slice(), subnet) {
+	settings, err := c.client.Settings(context.Background(), &pb.SettingsRequest{})
+	if err != nil {
+		return
+	}
+	allowlist := settings.GetData().GetAllowlist()
+	for _, subnet := range allowlist.Subnets {
+		if !slices.Contains(ctx.Args().Slice(), subnet) {
 			fmt.Println(subnet)
 		}
 	}

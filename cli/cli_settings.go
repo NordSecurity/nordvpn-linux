@@ -28,48 +28,54 @@ type PortRange struct {
 }
 
 func (c *cmd) Settings(ctx *cli.Context) error {
-	resp, err := c.client.Settings(context.Background(), &pb.SettingsRequest{
-		Uid: int64(os.Getuid()),
-	})
+	settings, err := c.getSettings()
 	if err != nil {
 		return formatError(err)
 	}
 
-	switch resp.Type {
-	case internal.CodeConfigError:
-		return formatError(ErrConfig)
-	case internal.CodeSuccess:
-		break
-	default:
-		return formatError(internal.ErrUnhandled)
+	fmt.Printf("Technology: %s\n", settings.GetTechnology())
+	if settings.Technology == config.Technology_OPENVPN {
+		fmt.Printf("Protocol: %s\n", settings.GetProtocol())
 	}
-
-	fmt.Printf("Technology: %s\n", resp.Data.GetTechnology())
-	if resp.Data.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Protocol: %s\n", resp.Data.GetProtocol())
-	}
-	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(resp.Data.GetFirewall()))
-	fmt.Printf("Firewall Mark: 0x%x\n", resp.Data.GetFwmark())
-	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(resp.Data.GetRouting()))
-	fmt.Printf("Analytics: %+v\n", nstrings.GetBoolLabel(resp.Data.GetAnalytics()))
-	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(resp.Data.GetKillSwitch()))
-	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(resp.Data.ThreatProtectionLite))
-	if resp.Data.Technology == config.Technology_OPENVPN {
+	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.GetFirewall()))
+	fmt.Printf("Firewall Mark: 0x%x\n", settings.GetFwmark())
+	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
+	fmt.Printf("Analytics: %+v\n", nstrings.GetBoolLabel(settings.GetAnalytics()))
+	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
+	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
+	if settings.Technology == config.Technology_OPENVPN {
 		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(c.config.Obfuscate))
 	}
-	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(resp.Data.Notify))
-	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(resp.Data.AutoConnect))
-	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(resp.Data.Ipv6))
-	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(resp.Data.Meshnet))
-	if len(resp.Data.Dns) == 0 {
+	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.Notify))
+	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.AutoConnect))
+	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Ipv6))
+	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))
+	if len(settings.Dns) == 0 {
 		fmt.Printf("DNS: %+v\n", nstrings.GetBoolLabel(false))
 	} else {
-		fmt.Printf("DNS: %+v\n", strings.Join(resp.Data.Dns, ", "))
+		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
 	}
-	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(resp.Data.LanDiscovery))
+	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
 
-	displayAllowlist(resp.Data.Allowlist)
+	displayAllowlist(settings.Allowlist)
 	return nil
+}
+
+func (c *cmd) getSettings() (*pb.Settings, error) {
+	resp, err := c.client.Settings(context.Background(), &pb.SettingsRequest{
+		Uid: int64(os.Getuid()),
+	})
+	if err != nil {
+		return nil, err
+	}
+	switch resp.Type {
+	case internal.CodeConfigError:
+		return nil, ErrConfig
+	case internal.CodeSuccess:
+		return resp.GetData(), nil
+	default:
+		return nil, internal.ErrUnhandled
+	}
 }
 
 func displayAllowlist(allowlist *pb.Allowlist) {

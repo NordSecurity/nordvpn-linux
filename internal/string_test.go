@@ -1,12 +1,10 @@
 package internal
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,35 +36,6 @@ func TestSnakeCase(t *testing.T) {
 	for _, item := range tests {
 		got := SnakeCase(item.input)
 		assert.Equal(t, item.expected, got)
-	}
-}
-
-func TestSetToStrings(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := [][]string{
-		{"one", "two", "three"},
-		{"o", "o", "o", "n", "p"},
-		{"some", "text", "other", "text"},
-		{"a", "b", "a", "b"},
-	}
-
-	var nilSet mapset.Set = nil
-	emptySlice := SetToStrings(nilSet)
-	assert.Empty(t, emptySlice)
-
-	for _, stringSlice := range tests {
-		set := mapset.NewSet()
-		addStringsToSet(&set, stringSlice)
-
-		// sets don't have repeating elements
-		stringSlice = uniqueString(stringSlice)
-
-		got := SetToStrings(set)
-		sort.Strings(stringSlice)
-		sort.Strings(got)
-
-		assert.EqualValues(t, stringSlice, got)
 	}
 }
 
@@ -134,26 +103,6 @@ func TestStringsGetNext(t *testing.T) {
 		got := StringsGetNext(tt.input, tt.find)
 		assert.Equal(t, tt.expected, got)
 	}
-}
-
-func addStringsToSet(set *mapset.Set, values []string) {
-	for _, val := range values {
-		(*set).Add(val)
-	}
-}
-
-func uniqueString(input []string) []string {
-	unique := make([]string, 0, len(input))
-	sliceMap := make(map[string]bool)
-
-	for _, val := range input {
-		if _, ok := sliceMap[val]; !ok {
-			sliceMap[val] = true
-			unique = append(unique, val)
-		}
-	}
-
-	return unique
 }
 
 func TestIntsToStrings(t *testing.T) {

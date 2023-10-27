@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"golang.org/x/exp/slices"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -38,20 +37,20 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	var subnets = mapset.NewSet()
-	if !subnets.Add(subnet.String()) {
+	settings, err := c.getSettings()
+	if err != nil {
+		return formatError(err)
+	}
+	allowlist := settings.GetAllowlist()
+
+	if slices.Contains(allowlist.Subnets, subnet.String()) {
 		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet.String()))
 	}
 
-	subnets = c.config.Allowlist.Subnets.Union(subnets)
+	allowlist.Subnets = append(allowlist.Subnets, subnet.String())
+
 	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: &pb.Allowlist{
-			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(c.config.Allowlist.Ports.UDP),
-				Tcp: client.SetToInt64s(c.config.Allowlist.Ports.TCP),
-			},
-			Subnets: internal.SetToStrings(subnets),
-		},
+		Allowlist: allowlist,
 	})
 	if err != nil {
 		return formatError(err)
@@ -67,11 +66,6 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 	case internal.CodePrivateSubnetLANDiscovery:
 		return formatError(fmt.Errorf(AllowlistAddSubnetLANDiscovery))
 	case internal.CodeSuccess:
-		c.config.Allowlist.Subnets = subnets
-		err = c.configManager.Save(c.config)
-		if err != nil {
-			return formatError(ErrConfig)
-		}
 		color.Green(fmt.Sprintf(AllowlistAddSubnetSuccess, subnet))
 	}
 	return nil

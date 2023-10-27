@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
@@ -26,15 +25,15 @@ func (c *cmd) SetKillSwitch(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
+	settings, err := c.getSettings()
+	if err != nil {
+		return formatError(err)
+	}
+	allowlist := settings.GetAllowlist()
+
 	resp, err := c.client.SetKillSwitch(context.Background(), &pb.SetKillSwitchRequest{
 		KillSwitch: flag,
-		Allowlist: &pb.Allowlist{
-			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(c.config.Allowlist.Ports.UDP),
-				Tcp: client.SetToInt64s(c.config.Allowlist.Ports.TCP),
-			},
-			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
-		},
+		Allowlist:  allowlist,
 	})
 	if err != nil {
 		return formatError(err)

@@ -2,16 +2,14 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
-	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"golang.org/x/exp/slices"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -37,56 +35,70 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 		return formatError(argsCountError(ctx))
 	}
 
-	portString := args.First()
-	portJSONNumber := json.Number(portString)
-	port, err := strconv.Atoi(portString)
+	port, err := strconv.ParseInt(args.First(), 10, 64)
 	if err != nil {
 		return formatError(argsParseError(ctx))
 	}
 
-	if !(AllowlistMinPort <= port && port <= AllowlistMaxPort) {
-		return formatError(fmt.Errorf(AllowlistPortRangeError, portString, strconv.Itoa(AllowlistMinPort), strconv.Itoa(AllowlistMaxPort)))
+	if port < AllowlistMinPort || port > AllowlistMaxPort {
+		return formatError(fmt.Errorf(
+			AllowlistPortRangeError,
+			port,
+			AllowlistMinPort,
+			AllowlistMaxPort,
+		))
 	}
 
-	var (
-		data    = []interface{}{portString}
-		success bool
-		UDPSet  = mapset.NewSetFromSlice(c.config.Allowlist.Ports.UDP.ToSlice())
-		TCPSet  = mapset.NewSetFromSlice(c.config.Allowlist.Ports.TCP.ToSlice())
-	)
+	isUDP := false
+	isTCP := false
+
 	if args.Len() == 1 {
-		success = UDPSet.Contains(portJSONNumber) || success
-		success = TCPSet.Contains(portJSONNumber) || success
-		UDPSet.Remove(portJSONNumber)
-		TCPSet.Remove(portJSONNumber)
-		data = append(data, fmt.Sprintf("%s|%s", config.Protocol_UDP.String(), config.Protocol_TCP.String()))
+		isUDP = true
+		isTCP = true
 	} else {
 		switch args.Get(2) {
 		case config.Protocol_UDP.String():
-			success = UDPSet.Contains(portJSONNumber) || success
-			UDPSet.Remove(portJSONNumber)
-			data = append(data, config.Protocol_UDP.String())
+			isUDP = true
 		case config.Protocol_TCP.String():
-			success = TCPSet.Contains(portJSONNumber) || success
-			TCPSet.Remove(portJSONNumber)
-			data = append(data, config.Protocol_TCP.String())
+			isTCP = true
 		default:
 			return formatError(argsParseError(ctx))
 		}
 	}
 
-	if !success {
-		return formatError(fmt.Errorf(AllowlistRemovePortExistsError, data...))
+	settings, err := c.getSettings()
+	if err != nil {
+		return formatError(err)
+	}
+	allowlist := settings.GetAllowlist()
+
+	var (
+		udpIndex int
+		tcpIndex int
+	)
+	if isUDP {
+		udpIndex = slices.Index(allowlist.Ports.Udp, port)
+		if udpIndex >= 0 {
+			allowlist.Ports.Udp = slices.Delete(allowlist.Ports.Udp, udpIndex, udpIndex+1)
+		}
+	}
+	if isTCP {
+		tcpIndex = slices.Index(allowlist.Ports.Tcp, port)
+		if tcpIndex >= 0 {
+			allowlist.Ports.Tcp = slices.Delete(allowlist.Ports.Tcp, tcpIndex, tcpIndex+1)
+		}
+	}
+
+	if isUDP && udpIndex < 0 || isTCP && tcpIndex < 0 {
+		return formatError(fmt.Errorf(
+			AllowlistRemovePortExistsError,
+			port,
+			getProtocolStr(isTCP && tcpIndex < 0, isUDP && udpIndex < 0),
+		))
 	}
 
 	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: &pb.Allowlist{
-			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(UDPSet),
-				Tcp: client.SetToInt64s(TCPSet),
-			},
-			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
-		},
+		Allowlist: allowlist,
 	})
 	if err != nil {
 		return formatError(err)
@@ -96,35 +108,47 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure:
-		return formatError(fmt.Errorf(AllowlistRemovePortExistsError, data...))
+		return formatError(fmt.Errorf(
+			AllowlistRemovePortExistsError,
+			port,
+			getProtocolStr(isTCP, isUDP),
+		))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodeSuccess:
-		c.config.Allowlist.Ports.UDP = UDPSet
-		c.config.Allowlist.Ports.TCP = TCPSet
-		err = c.configManager.Save(c.config)
-		if err != nil {
-			return formatError(ErrConfig)
-		}
-		color.Green(fmt.Sprintf(AllowlistRemovePortSuccess, data...))
+		color.Green(fmt.Sprintf(
+			AllowlistRemovePortSuccess,
+			port,
+			getProtocolStr(isTCP, isUDP),
+		))
 	}
 	return nil
 }
 
 func (c *cmd) AllowlistRemovePortAutoComplete(ctx *cli.Context) {
+	settings, err := c.client.Settings(context.Background(), &pb.SettingsRequest{})
+	if err != nil {
+		return
+	}
+	allowlist := settings.GetData().GetAllowlist()
 	switch ctx.NArg() {
 	case 0:
 		// create config after auth
-		for port := range c.config.Allowlist.Ports.UDP.Union(c.config.Allowlist.Ports.TCP).Iter() {
+		ports := append(allowlist.Ports.Udp, allowlist.Ports.Tcp...)
+		slices.Sort(ports)
+		ports = slices.Compact(ports)
+		for _, port := range ports {
 			fmt.Println(port)
 		}
+		return
 	case 1:
 		fmt.Println(stringProtocol)
 	case 2:
-		if c.config.Allowlist.Ports.UDP.Contains(json.Number(ctx.Args().First())) {
+		port, _ := strconv.ParseInt(ctx.Args().First(), 10, 64)
+		if slices.Contains(allowlist.Ports.Udp, port) {
 			fmt.Println(config.Protocol_UDP.String())
 		}
-		if c.config.Allowlist.Ports.TCP.Contains(json.Number(ctx.Args().First())) {
+		if slices.Contains(allowlist.Ports.Tcp, port) {
 			fmt.Println(config.Protocol_TCP.String())
 		}
 	default:

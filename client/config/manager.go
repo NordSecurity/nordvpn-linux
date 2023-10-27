@@ -7,10 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-
-	mapset "github.com/deckarep/golang-set"
 )
 
 // Manager is responsible for loading and saving configurations
@@ -63,7 +60,6 @@ func (m EncryptedManager) Load() (Config, error) {
 		return Config{}, fmt.Errorf("parsing config file: %w", err)
 	}
 
-	config.setDefaultsIfEmpty()
 	return config, nil
 }
 
@@ -155,23 +151,6 @@ func (m EncryptedManager) Save(c Config) error {
 		return fmt.Errorf("closing configuration file: %w", err)
 	}
 	return nil
-}
-
-// setDefaultsIfEmpty sets default values
-func (c *Config) setDefaultsIfEmpty() *Config {
-	if c.Allowlist.Subnets == nil {
-		c.Allowlist.Subnets = mapset.NewSet()
-	}
-	if c.Allowlist.Ports.UDP == nil {
-		c.Allowlist.Ports.UDP = mapset.NewSet()
-	}
-	if c.Allowlist.Ports.TCP == nil {
-		c.Allowlist.Ports.TCP = mapset.NewSet()
-	}
-	if c.Technology == config.Technology_UNKNOWN_TECHNOLOGY {
-		c.Technology = config.Technology_NORDLYNX
-	}
-	return c
 }
 
 func getPassphrase(uid int, salt string) string {

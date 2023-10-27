@@ -68,21 +68,21 @@ Example: nordvpn set %s on`
 	SetLANDiscoveryAlreadyEnabled = "LAN discovery is already set to %s."
 	SetLANDiscoveryAllowlistReset = "Just a little heads-up: Enabling local network discovery will remove your private subnets from the allowlist."
 
-	AllowlistAddPortExistsError = "Port %s (%s) is already allowlisted."
-	AllowlistAddPortSuccess     = "Port %s (%s) is allowlisted successfully."
+	AllowlistAddPortExistsError = "Port %d (%s) is already allowlisted."
+	AllowlistAddPortSuccess     = "Port %d (%s) is allowlisted successfully."
 
-	AllowlistAddPortsExistsError = "Ports %s - %s (%s) are already allowlisted."
-	AllowlistAddPortsSuccess     = "Ports %s - %s (%s) are allowlisted successfully."
+	AllowlistAddPortsExistsError = "Ports %d - %d (%s) are already allowlisted."
+	AllowlistAddPortsSuccess     = "Ports %d - %d (%s) are allowlisted successfully."
 
 	AllowlistAddSubnetExistsError  = "Subnet %s is already allowlisted."
 	AllowlistAddSubnetSuccess      = "Subnet %s is allowlisted successfully."
 	AllowlistAddSubnetLANDiscovery = "Allowlisting a private subnet is not available while local network discovery is enabled."
 
-	AllowlistRemovePortExistsError = "Port %s (%s) is not allowlisted."
-	AllowlistRemovePortSuccess     = "Port %s (%s) is removed from the allowlist successfully."
+	AllowlistRemovePortExistsError = "Port %d (%s) is not allowlisted."
+	AllowlistRemovePortSuccess     = "Port %d (%s) is removed from the allowlist successfully."
 
-	AllowlistRemovePortsExistsError = "Ports %s - %s (%s) are not allowlisted."
-	AllowlistRemovePortsSuccess     = "Ports %s - %s (%s) are removed from the allowlist successfully."
+	AllowlistRemovePortsExistsError = "Ports %d - %d (%s) are not allowlisted."
+	AllowlistRemovePortsSuccess     = "Ports %d - %d (%s) are removed from the allowlist successfully."
 
 	AllowlistRemoveSubnetExistsError = "Subnet %s is not allowlisted."
 	AllowlistRemoveSubnetSuccess     = "Subnet %s is removed from the allowlist successfully."
@@ -90,8 +90,8 @@ Example: nordvpn set %s on`
 	AllowlistRemoveAllError   = "Allowlist elements could not be removed."
 	AllowlistRemoveAllSuccess = "All ports and subnets have been removed from the allowlist successfully."
 
-	AllowlistPortRangeError  = "Port %s value is out of range [%s - %s]."
-	AllowlistPortsRangeError = "Ports %s - %s value is out of range [%s - %s]."
+	AllowlistPortRangeError  = "Port %d value is out of range [%d - %d]."
+	AllowlistPortsRangeError = "Ports %d - %d value is out of range [%d - %d]."
 
 	AccountCreationSuccess = "Account has been successfully created."
 	// AccountInvalidData is displayed when backend returns bad request (400)
