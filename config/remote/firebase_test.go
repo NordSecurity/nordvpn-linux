@@ -9,6 +9,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -309,14 +310,50 @@ func TestRemoteConfig_GetTelioConfig(t *testing.T) {
 	assert.NoError(t, err2)
 }
 
+func TestRemoteConfig_GetCachedData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cm := &mock.ConfigManager{}
+	rs := &remoteServiceMock{}
+	rc := NewRConfig(time.Duration(0), rs, cm)
+
+	// no fetch data and no cached data returns error
+	rs.fetchError = fmt.Errorf("failed to fetch")
+	welcomeMessage, err := rc.GetValue("welcome_message")
+	assert.Error(t, err)
+	assert.Empty(t, welcomeMessage)
+
+	// allow to fetch and cache data
+	rs.fetchError = nil
+	welcomeMessage, err = rc.GetValue("welcome_message")
+	assert.NoError(t, err)
+	assert.Equal(t, "hola", welcomeMessage)
+
+	// fail to fetch and use the cached data
+	rs.fetchError = fmt.Errorf("failed to fetch")
+	welcomeMessage, err = rc.GetValue("welcome_message")
+	assert.NoError(t, err)
+	assert.Equal(t, "hola", welcomeMessage)
+}
+
 // ----------------------------------------------------------------------------------------
 type remoteServiceMock struct {
 	fetchCount int
+	response   string
+	fetchError error
 }
 
 func (rs *remoteServiceMock) FetchRemoteConfig() ([]byte, error) {
 	rs.fetchCount++
-	return []byte(remoteConfigString), nil
+	if rs.fetchError != nil {
+		return nil, rs.fetchError
+	}
+
+	if rs.response == "" {
+		return []byte(remoteConfigString), nil
+	}
+
+	return []byte(rs.response), nil
 }
 
 var remoteConfigString = `
