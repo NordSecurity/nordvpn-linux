@@ -47,11 +47,11 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 	if !in.GetPersistToken() {
 		if err := r.api.DeleteToken(tokenData.Token); err != nil {
 			log.Println(internal.ErrorPrefix, "deleting token: ", err)
-			switch err {
+			switch {
 			// This means that token is invalid anyway
-			case core.ErrUnauthorized:
-			case core.ErrBadRequest:
-			case core.ErrServerInternal:
+			case errors.Is(err, core.ErrUnauthorized):
+			case errors.Is(err, core.ErrBadRequest):
+			case errors.Is(err, core.ErrServerInternal):
 				return &pb.Payload{
 					Type: internal.CodeInternalError,
 				}, nil
@@ -64,11 +64,13 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 
 		if err := r.api.Logout(tokenData.Token); err != nil {
 			log.Println(internal.ErrorPrefix, "logging out: ", err)
-			switch err {
+			switch {
 			// This means that token is invalid anyway
-			case core.ErrUnauthorized:
-			case core.ErrBadRequest:
-			case core.ErrServerInternal:
+			case errors.Is(err, core.ErrUnauthorized):
+			case errors.Is(err, core.ErrBadRequest):
+			// NordAccount tokens do not work with Logout endpoint and return ErrNotFound
+			case errors.Is(err, core.ErrNotFound):
+			case errors.Is(err, core.ErrServerInternal):
 				return &pb.Payload{
 					Type: internal.CodeInternalError,
 				}, nil
