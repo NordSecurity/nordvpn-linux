@@ -97,6 +97,7 @@ func (*workingNetworker) Refresh(mesh.MachineMap) error    { return nil }
 func (*workingNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
+func (*workingNetworker) LastServerName() string { return "" }
 
 type invitationsAPI struct{}
 

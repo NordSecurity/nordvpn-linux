@@ -1,4 +1,4 @@
-from lib import daemon, info, logging, login, meshnet, ssh
+from lib import daemon, info, logging, login, meshnet, network, ssh
 import lib
 import sh
 import requests
@@ -275,6 +275,19 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
             if result:
                 break
         assert result, message
+
+
+def test_connect_set_mesh_off():
+    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}"
+    peer = meshnet.get_peers(output)[0]
+    sh.nordvpn.mesh.peer.connect(peer)
+    sh.nordvpn.disconnect()
+    sh.nordvpn.connect()
+    sh.nordvpn.set.mesh.off()
+
+    with lib.Defer(sh.nordvpn.set.mesh.on):
+        with lib.Defer(sh.nordvpn.disconnect):
+            assert network.is_connected()
 
 
 def test_remove_peer_firewall_update():
