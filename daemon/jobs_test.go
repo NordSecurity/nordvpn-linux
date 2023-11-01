@@ -261,6 +261,7 @@ func (*meshNetworker) Refresh(mesh.MachineMap) error                          { 
 func (*meshNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
+func (*meshNetworker) LastServerName() string { return "" }
 
 func TestStartAutoMeshnet(t *testing.T) {
 	category.Set(t, category.Unit)
