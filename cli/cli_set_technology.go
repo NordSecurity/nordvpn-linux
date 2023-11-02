@@ -69,7 +69,6 @@ func (c *cmd) SetTechnology(ctx *cli.Context) error {
 		flag, _ := strconv.ParseBool(resp.Data[0])
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Technology", strings.Join(resp.Data[1:], " ")))
 		c.config.Technology = tech
-		c.config.Obfuscate = false
 		if flag {
 			color.Yellow(SetReconnect)
 		}

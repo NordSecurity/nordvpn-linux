@@ -118,3 +118,14 @@ def test_technology_set_options(tech, proto, obfuscated):
         assert ovpn_list
     else:
         assert not ovpn_list
+
+
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
+def test_keep_obfuscate_setting_on_technology_switch(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    sh.nordvpn.set.technology('nordlynx')
+    sh.nordvpn.set.technology('openvpn')
+    if obfuscated == 'on':
+        assert "Obfuscate: {}".format('enabled') in sh.nordvpn.settings()
+    else:
+        assert "Obfuscate: {}".format('disabled') in sh.nordvpn.settings()
