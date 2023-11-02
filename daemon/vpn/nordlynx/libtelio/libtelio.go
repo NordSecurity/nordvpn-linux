@@ -184,7 +184,7 @@ func New(prod bool, eventPath string, fwmark uint32,
 
 		fallbackTelioConfig, err := json.Marshal(defaultTelioConfig)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "cannot encode config: ", err)
+			log.Println(internal.ErrorPrefix, "couldn't encode default telio config: ", err)
 			fallbackTelioConfig = []byte(`{"direct":{}}`)
 		}
 		cfg = fallbackTelioConfig
