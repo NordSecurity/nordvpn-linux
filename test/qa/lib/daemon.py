@@ -10,8 +10,8 @@ from typing import List, Tuple
 
 
 def _rewrite_log_path():
-    project_root = os.environ["WORKDIR"].replace("/", "\/")
-    pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\/dist\/logs\/daemon.log/"
+    project_root = os.environ["WORKDIR"].replace("/", "\\/")
+    pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
     sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
 
 
