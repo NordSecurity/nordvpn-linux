@@ -28,7 +28,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
-	"golang.org/x/exp/slices"
 
 	"github.com/kofalt/go-memoize"
 )
@@ -44,15 +43,6 @@ var (
 	// ErrMeshPeerNotFound to report to outside
 	ErrMeshPeerNotFound = errors.New("mesh peer not found")
 	defaultMeshSubnet   = netip.MustParsePrefix("100.64.0.0/10")
-)
-
-const (
-	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
-	// for allowing the incomig connections
-	allowIncomingRule = "-allow-rule-"
-	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
-	// for blocking incoming connections into local networks
-	blockLanRule = "-block-lan-rule-"
 )
 
 // ConnectionStatus of a currently active connection
@@ -117,39 +107,37 @@ type Networker interface {
 // It is implemented in such a way, that all public methods
 // use sync.Mutex and all private ones don't.
 type Combined struct {
-	vpnet              vpn.VPN
-	mesh               meshnet.Mesh
-	gateway            routes.GatewayRetriever
-	publisher          events.Publisher[string]
-	allowlistRouter    routes.Service
-	dnsSetter          dns.Setter
-	ipv6               ipv6.Blocker
-	fw                 firewall.Service
-	allowlistRouting   allowlist.Routing
-	devices            device.ListFunc
-	policyRouter       routes.PolicyService
-	dnsHostSetter      dns.HostnameSetter
-	router             routes.Service
-	peerRouter         routes.Service
-	exitNode           exitnode.Node
-	isNetworkSet       bool // used during cleanup
-	isKillSwitchSet    bool // used during cleanup
-	isV6TrafficAllowed bool // used during cleanup
-	isVpnSet           bool // used during cleanup
-	isMeshnetSet       bool
-	rules              []string // firewall rule names
-	nextVPN            vpn.VPN
-	cfg                mesh.MachineMap
-	allowlist          config.Allowlist
-	lastServer         vpn.ServerData
-	lastCreds          vpn.Credentials
-	startTime          *time.Time
-	lastNameservers    []string
-	lastPrivateKey     string
-	ipv6Enabled        bool
-	fwmark             uint32
-	mu                 sync.Mutex
-	lanDiscovery       bool
+	vpnet            vpn.VPN
+	mesh             meshnet.Mesh
+	gateway          routes.GatewayRetriever
+	publisher        events.Publisher[string]
+	allowlistRouter  routes.Service
+	dnsSetter        dns.Setter
+	ipv6             ipv6.Blocker
+	firewallManager  firewall.FirewallManager
+	allowlistRouting allowlist.Routing
+	devices          device.ListFunc
+	policyRouter     routes.PolicyService
+	dnsHostSetter    dns.HostnameSetter
+	router           routes.Service
+	peerRouter       routes.Service
+	exitNode         exitnode.Node
+	isNetworkSet     bool // used during cleanup
+	isKillSwitchSet  bool // used during cleanup
+	isVpnSet         bool // used during cleanup
+	isMeshnetSet     bool
+	nextVPN          vpn.VPN
+	cfg              mesh.MachineMap
+	allowlist        config.Allowlist
+	lastServer       vpn.ServerData
+	lastCreds        vpn.Credentials
+	startTime        *time.Time
+	lastNameservers  []string
+	lastPrivateKey   string
+	ipv6Enabled      bool
+	fwmark           uint32
+	mu               sync.Mutex
+	lanDiscovery     bool
 	// need to memorize route to remote LAN state set on mesh peer connect
 	// according how remote peer has set its permission, for later when
 	// doing mesh refresh which may happen in background e.g. when network
@@ -168,6 +156,7 @@ func NewCombined(
 	dnsSetter dns.Setter,
 	ipv6 ipv6.Blocker,
 	fw firewall.Service,
+	firewallManager firewall.FirewallManager,
 	allowlist allowlist.Routing,
 	devices device.ListFunc,
 	policyRouter routes.PolicyService,
@@ -186,7 +175,7 @@ func NewCombined(
 		allowlistRouter:    allowlistRouter,
 		dnsSetter:          dnsSetter,
 		ipv6:               ipv6,
-		fw:                 fw,
+		firewallManager:    firewallManager,
 		allowlistRouting:   allowlist,
 		devices:            devices,
 		policyRouter:       policyRouter,
@@ -194,7 +183,6 @@ func NewCombined(
 		router:             router,
 		peerRouter:         peerRouter,
 		exitNode:           exitNode,
-		rules:              []string{},
 		fwmark:             fwmark,
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
@@ -240,11 +228,6 @@ func failureRecover(netw *Combined) {
 		}
 	}
 
-	if netw.isV6TrafficAllowed {
-		if err := netw.stopAllowedIPv6Traffic(); err != nil {
-			log.Println(internal.DebugPrefix, err)
-		}
-	}
 	netw.isVpnSet = false
 }
 
@@ -581,156 +564,11 @@ func (netw *Combined) denyIPv6() error {
 }
 
 func (netw *Combined) blockTraffic() error {
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
-
-	return netw.fw.Add([]firewall.Rule{
-		{
-			Name:       "drop",
-			Direction:  firewall.TwoWay,
-			Interfaces: ifaces,
-			Allow:      false,
-		},
-	})
+	return netw.firewallManager.BlockTraffic()
 }
 
 func (netw *Combined) unblockTraffic() error {
-	return netw.fw.Delete([]string{"drop"})
-}
-
-/*
-https://tools.ietf.org/html/rfc4890
-
-Error messages that are essential to the establishment and
-maintenance of communications:
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 1   -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 2   -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 3   -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 4   -j ACCEPT
-
-Connectivity checking messages:
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 128   -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 129   -j ACCEPT
-
-Address Configuration and Router Selection messages:
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 133 -m hl --hl-eq 255 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 134 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 135 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 136 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 141 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 142 -j ACCEPT
-
-Link-Local Multicast Receiver Notification messages:
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 130 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 131 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 132 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 143 -j ACCEPT
-
-SEND Certificate Path Notification messages:
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 148 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 149 -j ACCEPT
-
-Multicast Router Discovery messages:
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 151 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 152 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 153 -j ACCEPT
-
-DHCP6
--6 -A INPUT -d fe80::/64 -p udp -m udp --dport 546 -m comment --comment dhcp6 -j ACCEPT
--6 -A OUTPUT -s fe80::/64 -p udp -m udp --dport 547 -m comment --comment dhcp6 -j ACCEPT
-*/
-func (netw *Combined) allowIPv6Traffic() error {
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
-
-	err = netw.fw.Add([]firewall.Rule{
-		{
-			Name:        "vpn_allowlist_icmp6_errors",
-			Interfaces:  ifaces,
-			Protocols:   []string{"ipv6-icmp"},
-			Direction:   firewall.TwoWay,
-			Allow:       true,
-			Ipv6Only:    true,
-			Icmpv6Types: []int{1, 2, 3, 4, 128, 129},
-		},
-		{
-			Name:        "vpn_allowlist_icmp6_address",
-			Interfaces:  ifaces,
-			Protocols:   []string{"ipv6-icmp"},
-			Direction:   firewall.TwoWay,
-			Allow:       true,
-			Ipv6Only:    true,
-			Icmpv6Types: []int{133, 134, 135, 136, 141, 142, 148, 149},
-			HopLimit:    255,
-		},
-		{
-			Name:       "vpn_allowlist_icmp6_multicast",
-			Interfaces: ifaces,
-			LocalNetworks: []netip.Prefix{
-				netip.PrefixFrom(netip.AddrFrom16(
-					[16]byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				), 10),
-			},
-			Protocols:   []string{"ipv6-icmp"},
-			Direction:   firewall.TwoWay,
-			Allow:       true,
-			Ipv6Only:    true,
-			Icmpv6Types: []int{130, 131, 132, 143, 151, 152, 153},
-		},
-		{
-			Name:       "vpn_allowlist_dhcp6_in",
-			Interfaces: ifaces,
-			LocalNetworks: []netip.Prefix{
-				netip.PrefixFrom(netip.AddrFrom16(
-					[16]byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				), 10),
-			},
-			Protocols:        []string{"udp"},
-			DestinationPorts: []int{546},
-			Direction:        firewall.Inbound,
-			Allow:            true,
-			Ipv6Only:         true,
-		},
-		{
-			Name:       "vpn_allowlist_dhcp6_out",
-			Interfaces: ifaces,
-			LocalNetworks: []netip.Prefix{
-				netip.PrefixFrom(netip.AddrFrom16(
-					[16]byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				), 10),
-			},
-			Protocols:        []string{"udp"},
-			DestinationPorts: []int{547},
-			Direction:        firewall.Outbound,
-			Allow:            true,
-			Ipv6Only:         true,
-		},
-	})
-	if err != nil {
-		return err
-	}
-	netw.isV6TrafficAllowed = true
-	return nil
-}
-
-func (netw *Combined) stopAllowedIPv6Traffic() error {
-	err := netw.fw.Delete([]string{
-		"vpn_allowlist_icmp6_errors",
-		"vpn_allowlist_icmp6_address",
-		"vpn_allowlist_icmp6_multicast",
-		"vpn_allowlist_dhcp6_in",
-		"vpn_allowlist_dhcp6_out",
-	})
-
-	if err != nil {
-		return err
-	}
-	netw.isV6TrafficAllowed = false
-	return nil
+	return netw.firewallManager.UnblockTraffic()
 }
 
 func (netw *Combined) resetAllowlist() error {
@@ -751,7 +589,8 @@ func (netw *Combined) resetAllowlist() error {
 func (netw *Combined) EnableFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	if err := netw.fw.Enable(); err != nil {
+
+	if err := netw.firewallManager.Enable(); err != nil {
 		return fmt.Errorf("enabling firewall: %w", err)
 	}
 
@@ -762,7 +601,7 @@ func (netw *Combined) EnableFirewall() error {
 func (netw *Combined) DisableFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	if err := netw.fw.Disable(); err != nil {
+	if err := netw.firewallManager.Disable(); err != nil {
 		return fmt.Errorf("disabling firewall: %w", err)
 	}
 
@@ -829,20 +668,13 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 }
 
 func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
-
-	rules := []firewall.Rule{}
-	var subnets []netip.Prefix
-
 	cache := memoize.NewMemoizer(30*time.Second, 1*time.Minute)
 	type cachedGateway struct {
 		gatewayIP        netip.Addr
 		defaultInterface net.Interface
 	}
 
+	var subnets []netip.Prefix
 	for cidr := range allowlist.Subnets {
 		subnet, err := netip.ParsePrefix(cidr)
 		if err != nil {
@@ -887,49 +719,43 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 
 		subnets = append(subnets, subnet)
 	}
-	if subnets != nil {
-		rules = append(rules, firewall.Rule{
-			Name:           "allowlist_subnets",
-			Interfaces:     ifaces,
-			RemoteNetworks: subnets,
-			Direction:      firewall.TwoWay,
-			Allow:          true,
-		})
+
+	tcpPorts := []int{}
+	for port := range allowlist.Ports.TCP {
+		if port > math.MaxUint16 {
+			continue
+		}
+
+		tcpPorts = append(tcpPorts, int(port))
 	}
 
-	for _, pair := range []struct {
-		name  string
-		ports map[int64]bool
-	}{
-		{name: "tcp", ports: allowlist.Ports.TCP},
-		{name: "udp", ports: allowlist.Ports.UDP},
-	} {
-		var ports []int
-		for port := range pair.ports {
-			if port > math.MaxUint16 {
-				continue
-			}
-			ports = append(ports, int(port))
-		}
-		if ports != nil {
-			rules = append(rules, firewall.Rule{
-				Name:       "allowlist_ports_" + pair.name,
-				Interfaces: ifaces,
-				Protocols:  []string{pair.name},
-				Direction:  firewall.TwoWay,
-				Ports:      ports,
-				Allow:      true,
-			})
-			if err := netw.allowlistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
-				return fmt.Errorf("enabling allowlist routing: %w", err)
-			}
+	if tcpPorts != nil {
+		if err := netw.allowlistRouting.EnablePorts(tcpPorts, "tcp", fmt.Sprintf("%#x", netw.fwmark)); err != nil {
+			return fmt.Errorf("enabling allowlist routing: %w", err)
 		}
 	}
 
-	if err := netw.fw.Add(rules); err != nil {
-		return err
+	udpPorts := []int{}
+	for port := range allowlist.Ports.UDP {
+		if port > math.MaxUint16 {
+			continue
+		}
+
+		udpPorts = append(udpPorts, int(port))
 	}
+
+	if udpPorts != nil {
+		if err := netw.allowlistRouting.EnablePorts(udpPorts, "udp", fmt.Sprintf("%#x", netw.fwmark)); err != nil {
+			return fmt.Errorf("enabling allowlist routing: %w", err)
+		}
+	}
+
+	if err := netw.firewallManager.SetAllowlist(udpPorts, tcpPorts, subnets); err != nil {
+		return fmt.Errorf("setting allowlist: %w", err)
+	}
+
 	netw.allowlist = allowlist
+
 	return nil
 }
 
@@ -938,16 +764,8 @@ func (netw *Combined) unsetAllowlist() error {
 		return fmt.Errorf("flushing the allowlist router: %w", err)
 	}
 
-	for _, rule := range []string{
-		"allowlist_subnets",
-		"allowlist_ports_tcp",
-		"allowlist_ports_udp",
-	} {
-		err := netw.fw.Delete([]string{rule})
-		if err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
-			// TODO: after Go 1.20, rewrite using error joining
-			return err
-		}
+	if err := netw.firewallManager.UnsetAllowlist(); err != nil {
+		return fmt.Errorf("unsetting allowlist: %w", err)
 	}
 
 	if err := netw.allowlistRouting.Disable(); err != nil {
@@ -969,21 +787,8 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 		return err
 	}
 
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
-
-	if err := netw.fw.Add([]firewall.Rule{
-		{
-			Name:       "api_allowlist",
-			Interfaces: ifaces,
-			Direction:  firewall.TwoWay,
-			Marks:      []uint32{netw.fwmark},
-			Allow:      true,
-		},
-	}); err != nil {
-		return err
+	if err := netw.firewallManager.ApiAllowlist(); err != nil {
+		return fmt.Errorf("setting network: %w", err)
 	}
 
 	if err := netw.setAllowlist(allowlist); err != nil {
@@ -1001,8 +806,8 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 }
 
 func (netw *Combined) unsetNetwork() error {
-	if err := netw.fw.Delete([]string{"api_allowlist"}); err != nil {
-		return err
+	if err := netw.firewallManager.ApiDenylist(); err != nil {
+		return fmt.Errorf("unsetting network: %w", err)
 	}
 
 	err := netw.unblockTraffic()
@@ -1214,7 +1019,8 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		return fmt.Errorf("adding default block rule: %w", err)
 	}
 
-	if err = netw.allowIncoming(cfg.Machine.PublicKey, cfg.Machine.Address, true); err != nil {
+	machineUniqueAddress := meshnet.UniqueAddress{UID: cfg.Machine.PublicKey, Address: cfg.Machine.Address}
+	if err := netw.firewallManager.AllowIncoming(machineUniqueAddress, true); err != nil {
 		return fmt.Errorf("allowing to reach self via meshnet: %w", err)
 	}
 
@@ -1224,17 +1030,16 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		}
 
 		lanAllowed := peer.DoIAllowRouting && peer.DoIAllowLocalNetwork
+		peerUniqueAddress := meshnet.UniqueAddress{UID: peer.PublicKey, Address: peer.Address}
 
 		if peer.DoIAllowInbound {
-			err = netw.allowIncoming(peer.PublicKey, peer.Address, lanAllowed)
-			if err != nil {
+			if err := netw.firewallManager.AllowIncoming(peerUniqueAddress, lanAllowed); err != nil {
 				return fmt.Errorf("allowing inbound traffic for peer: %w", err)
 			}
 		}
 
 		if peer.DoIAllowFileshare {
-			err = netw.allowFileshare(peer.PublicKey, peer.Address)
-			if err != nil {
+			if err := netw.firewallManager.DenyIncoming(peerUniqueAddress); err != nil {
 				return fmt.Errorf("allowing fileshare for peer: %w", err)
 			}
 		}
@@ -1266,11 +1071,9 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 }
 
 func (netw *Combined) defaultMeshUnBlock() error {
-	err := netw.fw.Delete(netw.rules)
-	if err != nil {
-		return err
+	if err := netw.firewallManager.UnblockMeshnet(); err != nil {
+		return fmt.Errorf("unblocking meshnet: %w", err)
 	}
-	netw.rules = nil
 	return nil
 }
 
@@ -1358,89 +1161,22 @@ func (netw *Combined) StatusMap() (map[string]string, error) {
 func (netw *Combined) AllowIncoming(uniqueAddress meshnet.UniqueAddress, lanAllowed bool) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.allowIncoming(uniqueAddress.UID, uniqueAddress.Address, lanAllowed)
-}
 
-func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAllowed bool) error {
-	rules := []firewall.Rule{}
-
-	ruleName := publicKey + allowIncomingRule + address.String()
-	rule := firewall.Rule{
-		Name:      ruleName,
-		Direction: firewall.Inbound,
-		RemoteNetworks: []netip.Prefix{
-			netip.PrefixFrom(address, address.BitLen()),
-		},
-		Allow: true,
-	}
-	rules = append(rules, rule)
-
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex != -1 {
-		return fmt.Errorf("allow rule already exist for %s", ruleName)
+	if err := netw.firewallManager.AllowIncoming(uniqueAddress, lanAllowed); err != nil {
+		return fmt.Errorf("allowing incoming: %w", err)
 	}
 
-	if !lanAllowed {
-		ruleName := publicKey + blockLanRule + address.String()
-		rule := firewall.Rule{
-			Name:      ruleName,
-			Direction: firewall.Inbound,
-			LocalNetworks: []netip.Prefix{
-				netip.MustParsePrefix("10.0.0.0/8"),
-				netip.MustParsePrefix("172.16.0.0/12"),
-				netip.MustParsePrefix("192.168.0.0/16"),
-				netip.MustParsePrefix("169.254.0.0/16"),
-			},
-			RemoteNetworks: []netip.Prefix{
-				netip.PrefixFrom(address, address.BitLen()),
-			},
-			Allow: false,
-		}
-
-		rules = append(rules, rule)
-		netw.rules = append(netw.rules, ruleName)
-	}
-
-	if err := netw.fw.Add(rules); err != nil {
-		return fmt.Errorf("adding allow-incoming rule to firewall: %w", err)
-	}
-
-	netw.rules = append(netw.rules, ruleName)
 	return nil
 }
 
 func (netw *Combined) AllowFileshare(uniqueAddress meshnet.UniqueAddress) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.allowFileshare(uniqueAddress.UID, uniqueAddress.Address)
-}
 
-func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error {
-	ruleName := publicKey + "-allow-fileshare-rule-" + address.String()
-	rules := []firewall.Rule{{
-		Name:           ruleName,
-		Direction:      firewall.Inbound,
-		Protocols:      []string{"tcp"},
-		Ports:          []int{49111},
-		PortsDirection: firewall.Destination,
-		RemoteNetworks: []netip.Prefix{
-			netip.PrefixFrom(address, address.BitLen()),
-		},
-		Allow: true,
-	}}
-
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex != -1 {
-		return fmt.Errorf("allow rule already exist for %s", ruleName)
+	if err := netw.firewallManager.FileshareAllow(uniqueAddress); err != nil {
+		return fmt.Errorf("allowing fileshare: %w", err)
 	}
 
-	if err := netw.fw.Add(rules); err != nil {
-		return fmt.Errorf("adding allow-fileshare rule to firewall: %w", err)
-	}
-
-	netw.rules = append(netw.rules, ruleName)
 	return nil
 }
 
@@ -1449,39 +1185,20 @@ func (netw *Combined) BlockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	return netw.blockIncoming(uniqueAddress)
-}
-
-func (netw *Combined) blockIncoming(uniqueAddress meshnet.UniqueAddress) error {
-	lanRuleName := uniqueAddress.UID + blockLanRule + uniqueAddress.Address.String()
-	if slices.Index(netw.rules, lanRuleName) != -1 {
-		if err := netw.removeRule(lanRuleName); err != nil {
-			return err
-		}
+	if err := netw.firewallManager.DenyIncoming(uniqueAddress); err != nil {
+		return fmt.Errorf("blocking incoming: %w", err)
 	}
 
-	ruleName := uniqueAddress.UID + allowIncomingRule + uniqueAddress.Address.String()
-	return netw.removeRule(ruleName)
+	return nil
 }
 
 func (netw *Combined) BlockFileshare(uniqueAddress meshnet.UniqueAddress) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	ruleName := uniqueAddress.UID + "-allow-fileshare-rule-" + uniqueAddress.Address.String()
-	return netw.removeRule(ruleName)
-}
 
-func (netw *Combined) removeRule(ruleName string) error {
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex == -1 {
-		return fmt.Errorf("allow rule does not exist for %s", ruleName)
+	if err := netw.firewallManager.FileshareDeny(uniqueAddress); err != nil {
+		return fmt.Errorf("blocking fileshare: %w", err)
 	}
-
-	if err := netw.fw.Delete([]string{ruleName}); err != nil {
-		return err
-	}
-	netw.rules = slices.Delete(netw.rules, ruleIndex, ruleIndex+1)
 
 	return nil
 }
@@ -1512,13 +1229,14 @@ func (netw *Combined) refreshIncoming(peer mesh.MachinePeer) error {
 		UID: peer.PublicKey, Address: peer.Address,
 	}
 
-	if slices.Index(netw.rules, peer.PublicKey+allowIncomingRule+peer.Address.String()) != -1 {
-		if err := netw.blockIncoming(address); err != nil {
-			return fmt.Errorf("blocking incoming traffic: %w", err)
-		}
+	err := netw.firewallManager.DenyIncoming(address)
+	// There is no way to determine if incoming connections are already denied(i.e if rules were previously added) so
+	// when refreshing the permissions so ErrIncomingAlreadyDenied is expected in this case.
+	if err != nil && err != firewall.ErrIncomingAlreadyDenied {
+		return fmt.Errorf("blocking incoming traffic: %w", err)
 	}
 
-	if err := netw.allowIncoming(address.UID, address.Address, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
+	if err := netw.AllowIncoming(address, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
 		return fmt.Errorf("allowing incoming traffic: %w", err)
 	}
 
@@ -1535,38 +1253,10 @@ func (netw *Combined) ResetRouting(peer mesh.MachinePeer, peers mesh.MachinePeer
 }
 
 func (netw *Combined) defaultMeshBlock(ip netip.Addr) error {
-	defaultMeshBlock := "default-mesh-block"
-	defaultMeshAllowEstablished := "default-mesh-allow-established"
-	if err := netw.fw.Add([]firewall.Rule{
-		// Block all the inbound traffic for the meshnet peers
-		{
-			Name:           defaultMeshBlock,
-			Direction:      firewall.Inbound,
-			RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-			Allow:          false,
-		},
-		// Allow inbound traffic for the existing connections
-		// E. g. this device is making some calls to another
-		// peer. In such case it should be able to receive
-		// the response.
-		{
-			Name:           defaultMeshAllowEstablished,
-			Direction:      firewall.Inbound,
-			RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-			ConnectionStates: firewall.ConnectionStates{
-				SrcAddr: ip,
-				States: []firewall.ConnectionState{
-					firewall.Related,
-					firewall.Established,
-				},
-			},
-			Allow: true,
-		},
-	}); err != nil {
-		return err
+	if err := netw.firewallManager.BlockMeshnet(ip.String()); err != nil {
+		return fmt.Errorf("blocking meshnet: %w", err)
 	}
-	netw.rules = append(netw.rules, defaultMeshBlock)
-	netw.rules = append(netw.rules, defaultMeshAllowEstablished)
+
 	return nil
 }
 

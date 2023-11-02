@@ -344,6 +344,7 @@ func main() {
 		dnsSetter,
 		ipv6.NewIpv6(),
 		fw,
+		firewall.NewFirewallManager(device.ListPhysical, firewall.NewCommandExecutor("iptables"), cfg.FirewallMark, cfg.Firewall),
 		allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
 			return exec.Command(command, arg...).CombinedOutput()
 		}),
