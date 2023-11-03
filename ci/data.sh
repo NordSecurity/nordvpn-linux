@@ -28,16 +28,14 @@ for filename in "${files[@]}"; do
     entry_tag=${entry_name%_*}
     entry_date=${entry_name#*_}
 
-    CHANGELOG_START="\055 semver: %s
+    printf "\055 semver: %s
   date: %s
   packager: Nordsec Ltd. <contact@nordteams.com>
   deb:
     urgency: medium
     distributions:
       - stable
-  changes:"
-
-    printf "$CHANGELOG_START" \
+  changes:" \
     	"${entry_tag}" "$(date -d@"${entry_date}" +%Y-%m-%dT%H:%M:%SZ)" >> "${WORKDIR}"/dist/changelog.yml
 
     while read -r line ; do
