@@ -176,7 +176,18 @@ func New(prod bool, eventPath string, fwmark uint32,
 
 	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, telioCfg)
 	if err != nil {
-		cfg = []byte("{}")
+		log.Println(internal.ErrorPrefix, "failed to get telio config: ", err)
+
+		defaultTelioConfig := &telioFeatures{}
+		defaultTelioConfig.Lana = &lanaConfig{Prod: prod, EventPath: eventPath}
+		defaultTelioConfig.Direct = &directConfig{}
+
+		fallbackTelioConfig, err := json.Marshal(defaultTelioConfig)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "couldn't encode default telio config: ", err)
+			fallbackTelioConfig = []byte(`{"direct":{}}`)
+		}
+		cfg = fallbackTelioConfig
 	}
 	log.Println(internal.InfoPrefix, "libtelio final config:", string(cfg))
 
