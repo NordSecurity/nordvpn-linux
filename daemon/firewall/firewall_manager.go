@@ -19,17 +19,17 @@ type CommandExecutor interface {
 	ExecuteCommand(command string) error
 }
 
-type ExecCommandExecutor struct {
+type Iptables struct {
 	command string
 }
 
-func NewCommandExecutor(command string) ExecCommandExecutor {
-	return ExecCommandExecutor{
+func NewCommandExecutor(command string) Iptables {
+	return Iptables{
 		command: command,
 	}
 }
 
-func (e ExecCommandExecutor) ExecuteCommand(command string) error {
+func (e Iptables) ExecuteCommand(command string) error {
 	log.Printf("DEBUG: %s %s", e.command, command)
 	commandArgs := strings.Split(command, " ")
 
@@ -53,9 +53,9 @@ type FirewallManager struct {
 	allowIncomingRules   map[string]allowIncomingRule // peer public key to allow incoming rule
 	fileshareRules       map[string]string            // peers public key to allow fileshare rule
 	allowlistRules       []string
+	trafficBlockRules    []string
 	connmark             uint32
 	meshnetDeviceAddress string // used for unblocking meshnet after if has been blocked and for tracking meshnet block state
-	trafficBlocked       bool
 	enabled              bool
 }
 
@@ -76,42 +76,40 @@ func (f *FirewallManager) Disable() error {
 	}
 
 	// remove traffic block
-	if f.trafficBlocked {
-		if err := f.removeBlockTrafficRules(); err != nil {
-			return fmt.Errorf("unblocking traffic: %w", err)
-		}
+	if err := f.removeBlockTrafficRules(); err != nil {
+		log.Printf("unblocking traffic: %s", err.Error())
 	}
 
 	// remove api allowlist
 	if err := f.manageApiAllowlist(false); err != nil {
-		return fmt.Errorf("removing api allowlist %w", err)
+		log.Printf("removing api allowlist %s", err.Error())
 	}
 
 	// remove allowlist
 	for _, rule := range f.allowlistRules {
 		if err := f.commandExecutor.ExecuteCommand("-D" + rule); err != nil {
-			return fmt.Errorf("removing allowlist rule: %w", err)
+			log.Printf("removing allowlist rule: %s", err.Error())
 		}
 	}
 
 	// remove meshnet block rules
 	if f.meshnetDeviceAddress != "" {
 		if err := f.removeMeshnetBlockRules(f.meshnetDeviceAddress); err != nil {
-			return fmt.Errorf("removing meshnet block rules: %w", err)
+			log.Printf("removing meshnet block rules: %s", err.Error())
 		}
 	}
 
 	// remove allow incoming rules
 	for _, rule := range f.allowIncomingRules {
 		if err := f.removeIncomingRule(rule); err != nil {
-			return fmt.Errorf("removing incoming rules: %w", err)
+			log.Printf("removing incoming rules: %s", err.Error())
 		}
 	}
 
 	// remove allow fileshare rules
 	for _, rule := range f.fileshareRules {
 		if err := f.commandExecutor.ExecuteCommand("-D " + rule); err != nil {
-			return fmt.Errorf("removing fileshare allow rule: %w", err)
+			log.Printf("removing fileshare allow rule: %s", err.Error())
 		}
 	}
 
@@ -126,9 +124,13 @@ func (f *FirewallManager) Enable() error {
 	}
 
 	// add traffic block
-	if f.trafficBlocked {
-		if err := f.addBlockTrafficRules(); err != nil {
-			return fmt.Errorf("blocking traffic: %w", err)
+	for _, rule := range f.trafficBlockRules {
+		if err := f.commandExecutor.ExecuteCommand("-I " + rule); err != nil {
+			return fmt.Errorf("blocking input traffic: %w", err)
+		}
+
+		if err := f.commandExecutor.ExecuteCommand("-I " + rule); err != nil {
+			return fmt.Errorf("blocking output traffic: %w", err)
 		}
 	}
 
@@ -188,8 +190,8 @@ func (f *FirewallManager) FileshareAllow(peer meshnet.UniqueAddress) error {
 }
 
 // FileshareDeny removes ACCEPT rule for all incoming connections to tcp port 49111 from the peer with given UniqueAddress.
-func (f *FirewallManager) FileshareDeny(peer meshnet.UniqueAddress) error {
-	rule, ok := f.fileshareRules[peer.UID]
+func (f *FirewallManager) FileshareDeny(peerUID string) error {
+	rule, ok := f.fileshareRules[peerUID]
 	if !ok {
 		return fmt.Errorf("fileshare allow rule for the given peer doesn't exist")
 	}
@@ -200,11 +202,11 @@ func (f *FirewallManager) FileshareDeny(peer meshnet.UniqueAddress) error {
 		}
 	}
 
-	delete(f.fileshareRules, peer.UID)
+	delete(f.fileshareRules, peerUID)
 	return nil
 }
 
-func (f *FirewallManager) addBlockTrafficRules() error {
+func (f *FirewallManager) BlockTraffic() error {
 	interfaces, err := f.devices()
 	if err != nil {
 		return fmt.Errorf("listing interfaces: %w", err)
@@ -213,52 +215,33 @@ func (f *FirewallManager) addBlockTrafficRules() error {
 	// -I INPUT -i <iface> -m comment --comment nordvpn -j DROP
 	// -I OUTPUT -o <iface> -m comment --comment nordvpn -j DROP
 	for _, iface := range interfaces {
-		inputCommand := fmt.Sprintf("-I INPUT -i %s -m comment --comment nordvpn -j DROP", iface.Name)
-		if err := f.commandExecutor.ExecuteCommand(inputCommand); err != nil {
-			return fmt.Errorf("blocking input traffic: %w", err)
-		}
+		inputCommand := fmt.Sprintf("INPUT -i %s -m comment --comment nordvpn -j DROP", iface.Name)
+		outputCommand := fmt.Sprintf("OUTPUT -o %s -m comment --comment nordvpn -j DROP", iface.Name)
+		f.trafficBlockRules = append(f.trafficBlockRules, inputCommand)
+		f.trafficBlockRules = append(f.trafficBlockRules, outputCommand)
 
-		outputCommand := fmt.Sprintf("-I OUTPUT -o %s -m comment --comment nordvpn -j DROP", iface.Name)
-		if err := f.commandExecutor.ExecuteCommand(outputCommand); err != nil {
-			return fmt.Errorf("blocking output traffic: %w", err)
-		}
-	}
+		if f.enabled {
+			if err := f.commandExecutor.ExecuteCommand("-I " + inputCommand); err != nil {
+				return fmt.Errorf("blocking input traffic: %w", err)
+			}
 
-	return nil
-}
-
-func (f *FirewallManager) BlockTraffic() error {
-	if f.trafficBlocked {
-		return fmt.Errorf("traffic is already blocked")
-	}
-
-	if f.enabled {
-		if err := f.addBlockTrafficRules(); err != nil {
-			return fmt.Errorf("adding block traffic rules: %w", err)
+			if err := f.commandExecutor.ExecuteCommand("-I " + outputCommand); err != nil {
+				return fmt.Errorf("blocking output traffic: %w", err)
+			}
 		}
 	}
-
-	f.trafficBlocked = true
-
 	return nil
 }
 
 func (f *FirewallManager) removeBlockTrafficRules() error {
-	interfaces, err := f.devices()
-	if err != nil {
-		return fmt.Errorf("listing interfaces: %w", err)
-	}
-
 	// -D INPUT -i <iface> -m comment --comment nordvpn -j DROP
 	// -D OUTPUT -o <iface> -m comment --comment nordvpn -j DROP
-	for _, iface := range interfaces {
-		inputCommand := fmt.Sprintf("-D INPUT -i %s -m comment --comment nordvpn -j DROP", iface.Name)
-		if err := f.commandExecutor.ExecuteCommand(inputCommand); err != nil {
+	for _, rule := range f.trafficBlockRules {
+		if err := f.commandExecutor.ExecuteCommand("-D " + rule); err != nil {
 			return fmt.Errorf("unblocking input traffic: %w", err)
 		}
 
-		outputCommand := fmt.Sprintf("-D OUTPUT -o %s -m comment --comment nordvpn -j DROP", iface.Name)
-		if err := f.commandExecutor.ExecuteCommand(outputCommand); err != nil {
+		if err := f.commandExecutor.ExecuteCommand("-D " + rule); err != nil {
 			return fmt.Errorf("unblocking output traffic: %w", err)
 		}
 	}
@@ -267,17 +250,13 @@ func (f *FirewallManager) removeBlockTrafficRules() error {
 }
 
 func (f *FirewallManager) UnblockTraffic() error {
-	if !f.trafficBlocked {
-		return fmt.Errorf("traffic is already unblocked")
-	}
-
 	if f.enabled {
 		if err := f.removeBlockTrafficRules(); err != nil {
 			return fmt.Errorf("removing traffic block rules: %w", err)
 		}
 	}
 
-	f.trafficBlocked = false
+	f.trafficBlockRules = nil
 
 	return nil
 }
@@ -298,7 +277,7 @@ func (f *FirewallManager) addIncomingRule(rule allowIncomingRule) error {
 
 func (f *FirewallManager) AllowIncoming(peer meshnet.UniqueAddress, allowLocal bool) error {
 	if _, ok := f.allowIncomingRules[peer.UID]; ok {
-		return fmt.Errorf("allow incoming rule for the given peer already exists")
+		return fmt.Errorf("incoming allready allowed")
 	}
 
 	rule := fmt.Sprintf("INPUT -s %s/32 -m comment --comment nordvpn -j ACCEPT", peer.Address)
@@ -313,7 +292,7 @@ func (f *FirewallManager) AllowIncoming(peer meshnet.UniqueAddress, allowLocal b
 		}
 
 		for _, lan := range lans {
-			blockLANRule := fmt.Sprintf("INPUT -s %s/32 -d %s -m comment --comment nordvpn -j DROP", peer, lan)
+			blockLANRule := fmt.Sprintf("INPUT -s %s/32 -d %s -m comment --comment nordvpn -j DROP", peer.Address, lan)
 			blockLANRules = append(blockLANRules, blockLANRule)
 		}
 	}
@@ -348,8 +327,8 @@ func (f *FirewallManager) removeIncomingRule(rule allowIncomingRule) error {
 	return nil
 }
 
-func (f *FirewallManager) DenyIncoming(peer meshnet.UniqueAddress) error {
-	rule, ok := f.allowIncomingRules[peer.UID]
+func (f *FirewallManager) DenyIncoming(peerUID string) error {
+	rule, ok := f.allowIncomingRules[peerUID]
 
 	if !ok {
 		return ErrIncomingAlreadyDenied
@@ -361,7 +340,7 @@ func (f *FirewallManager) DenyIncoming(peer meshnet.UniqueAddress) error {
 		}
 	}
 
-	delete(f.allowIncomingRules, peer.UID)
+	delete(f.allowIncomingRules, peerUID)
 
 	return nil
 }
@@ -369,12 +348,12 @@ func (f *FirewallManager) DenyIncoming(peer meshnet.UniqueAddress) error {
 func (f *FirewallManager) removeMeshnetBlockRules(deviceAddress string) error {
 	// -D INPUT -s 100.64.0.0/10 -m conntrack --ctstate RELATED,ESTABLISHED --ctorigsrc <device address> -m comment --comment nordvpn -j ACCEPT
 	// -D INPUT -s 100.64.0.0/10 -m comment --comment nordvpn -j DROP
-	command := fmt.Sprintf("-I INPUT -s 100.64.0.0/10 -m conntrack --ctstate RELATED,ESTABLISHED --ctorigsrc %s -m comment --comment nordvpn -j ACCEPT", f.meshnetDeviceAddress)
+	command := fmt.Sprintf("-D INPUT -s 100.64.0.0/10 -m conntrack --ctstate RELATED,ESTABLISHED --ctorigsrc %s -m comment --comment nordvpn -j ACCEPT", deviceAddress)
 	if err := f.commandExecutor.ExecuteCommand(command); err != nil {
 		return fmt.Errorf("blocking unrelated mesh traffic: %w", err)
 	}
 
-	err := f.commandExecutor.ExecuteCommand("-I INPUT -s 100.64.0.0/10 -m comment --comment nordvpn -j DROP")
+	err := f.commandExecutor.ExecuteCommand("-D INPUT -s 100.64.0.0/10 -m comment --comment nordvpn -j DROP")
 	if err != nil {
 		return fmt.Errorf("blocking mesh traffic: %w", err)
 	}
@@ -384,10 +363,22 @@ func (f *FirewallManager) removeMeshnetBlockRules(deviceAddress string) error {
 
 func (f *FirewallManager) UnblockMeshnet() error {
 	if f.meshnetDeviceAddress == "" {
-		return fmt.Errorf("meshnet is already unblocked")
+		return nil
 	}
 
 	if f.enabled {
+		for peerUID := range f.allowIncomingRules {
+			if err := f.DenyIncoming(peerUID); err != nil {
+				return fmt.Errorf("denying incoming traffic for all peers: %w", err)
+			}
+		}
+
+		for peerUID := range f.fileshareRules {
+			if err := f.FileshareDeny(peerUID); err != nil {
+				return fmt.Errorf("denying fileshare for all peers: %w", err)
+			}
+		}
+
 		if err := f.removeMeshnetBlockRules(f.meshnetDeviceAddress); err != nil {
 			return fmt.Errorf("removing meshnet block rules: %w", err)
 		}
@@ -401,6 +392,7 @@ func (f *FirewallManager) UnblockMeshnet() error {
 func (f *FirewallManager) addMeshnetBlockRules(deviceAddress string) error {
 	// -I INPUT -s 100.64.0.0/10 -m conntrack --ctstate RELATED,ESTABLISHED --ctorigsrc <device address> -m comment --comment nordvpn -j ACCEPT
 	// -I INPUT -s 100.64.0.0/10 -m comment --comment nordvpn -j DROP
+
 	command := fmt.Sprintf("-I INPUT -s 100.64.0.0/10 -m conntrack --ctstate RELATED,ESTABLISHED --ctorigsrc %s -m comment --comment nordvpn -j ACCEPT", deviceAddress)
 	if err := f.commandExecutor.ExecuteCommand(command); err != nil {
 		return fmt.Errorf("blocking unrelated mesh traffic: %w", err)
@@ -416,7 +408,7 @@ func (f *FirewallManager) addMeshnetBlockRules(deviceAddress string) error {
 
 func (f *FirewallManager) BlockMeshnet(deviceAddress string) error {
 	if f.meshnetDeviceAddress != "" {
-		return fmt.Errorf("meshnet is already blocked")
+		return nil
 	}
 
 	if f.enabled {

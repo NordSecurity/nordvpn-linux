@@ -10,6 +10,7 @@ import (
 	"math"
 	"net"
 	"net/netip"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -899,6 +900,7 @@ func (netw *Combined) setMesh(
 	routingRulesSet := false
 	defer func() {
 		if err != nil {
+			log.Println(internal.DeferPrefix, " failed to set mesh: ", err)
 			if routingRulesSet {
 				if err := netw.policyRouter.CleanupRouting(); err != nil {
 					log.Println(internal.DeferPrefix, err)
@@ -993,6 +995,8 @@ func (netw *Combined) setMesh(
 }
 
 func (netw *Combined) refresh(cfg mesh.MachineMap) error {
+	debug.PrintStack()
+
 	if err := netw.defaultMeshUnBlock(); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}
@@ -1039,7 +1043,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		}
 
 		if peer.DoIAllowFileshare {
-			if err := netw.firewallManager.DenyIncoming(peerUniqueAddress); err != nil {
+			if err := netw.firewallManager.FileshareAllow(peerUniqueAddress); err != nil {
 				return fmt.Errorf("allowing fileshare for peer: %w", err)
 			}
 		}
@@ -1185,7 +1189,7 @@ func (netw *Combined) BlockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	if err := netw.firewallManager.DenyIncoming(uniqueAddress); err != nil {
+	if err := netw.firewallManager.DenyIncoming(uniqueAddress.UID); err != nil {
 		return fmt.Errorf("blocking incoming: %w", err)
 	}
 
@@ -1196,7 +1200,7 @@ func (netw *Combined) BlockFileshare(uniqueAddress meshnet.UniqueAddress) error 
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	if err := netw.firewallManager.FileshareDeny(uniqueAddress); err != nil {
+	if err := netw.firewallManager.FileshareDeny(uniqueAddress.UID); err != nil {
 		return fmt.Errorf("blocking fileshare: %w", err)
 	}
 
@@ -1229,14 +1233,14 @@ func (netw *Combined) refreshIncoming(peer mesh.MachinePeer) error {
 		UID: peer.PublicKey, Address: peer.Address,
 	}
 
-	err := netw.firewallManager.DenyIncoming(address)
+	err := netw.firewallManager.DenyIncoming(address.UID)
 	// There is no way to determine if incoming connections are already denied(i.e if rules were previously added) so
 	// when refreshing the permissions so ErrIncomingAlreadyDenied is expected in this case.
 	if err != nil && err != firewall.ErrIncomingAlreadyDenied {
 		return fmt.Errorf("blocking incoming traffic: %w", err)
 	}
 
-	if err := netw.AllowIncoming(address, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
+	if err := netw.firewallManager.AllowIncoming(address, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
 		return fmt.Errorf("allowing incoming traffic: %w", err)
 	}
 
