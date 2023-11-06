@@ -94,3 +94,27 @@ def test_set_obfuscate_server_obfuscation_mismatch(obfuscateInitialState, server
     assert errorMessage in str(ex.value)
 
     sh.nordvpn.set.autoconnect.off()
+
+
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1)
+def test_set_technology(tech, proto, obfuscated):
+    assert f"Technology is set to '{tech.upper()}' successfully." in sh.nordvpn.set.technology(tech)
+    assert tech.upper() in sh.nordvpn.settings()
+
+
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+def test_protocol_in_settings(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    assert proto.upper() in sh.nordvpn.settings()
+
+
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+def test_technology_set_options(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    
+    ovpn_list = "obfuscate" in sh.nordvpn.set() and "protocol" in sh.nordvpn.set()
+
+    if tech == "openvpn":
+        assert ovpn_list
+    else:
+        assert not ovpn_list

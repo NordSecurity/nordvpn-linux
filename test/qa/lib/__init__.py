@@ -60,7 +60,7 @@ STANDARD_GROUPS = [
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 ADDITIONAL_GROUPS = [
-    #"Double_VPN", # TODO: LVPN-3699
+    "Double_VPN",
     "Onion_Over_VPN",
     "Standard_VPN_Servers",
     "P2P",
