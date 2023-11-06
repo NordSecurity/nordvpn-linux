@@ -19,12 +19,12 @@ const (
 type finishReason string
 
 const (
-	transferCanceled finishReason = "TransferCanceled"
-	transferFailed   finishReason = "TransferFailed"
-	fileDownloaded   finishReason = "FileDownloaded"
-	fileUploaded     finishReason = "FileUploaded"
-	fileCanceled     finishReason = "FileCanceled"
-	fileFailed       finishReason = "FileFailed"
+	transferFailed finishReason = "TransferFailed"
+	fileDownloaded finishReason = "FileDownloaded"
+	fileUploaded   finishReason = "FileUploaded"
+	fileCanceled   finishReason = "FileCanceled"
+	fileFailed     finishReason = "FileFailed"
+	fileRejected   finishReason = "FileRejected"
 )
 
 type genericEvent struct {
