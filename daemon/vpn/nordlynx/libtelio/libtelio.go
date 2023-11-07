@@ -179,8 +179,14 @@ func New(prod bool, eventPath string, fwmark uint32,
 		log.Println(internal.ErrorPrefix, "failed to get telio config: ", err)
 
 		defaultTelioConfig := &telioFeatures{}
-		defaultTelioConfig.Lana = &lanaConfig{Prod: prod, EventPath: eventPath}
+		defaultTelioConfig.Lana = &lanaConfig{
+			Prod:      prod,
+			EventPath: eventPath,
+		}
 		defaultTelioConfig.Direct = &directConfig{}
+		defaultTelioConfig.Nurse = &nurseConfig{
+			Fingerprint: deviceID,
+		}
 
 		fallbackTelioConfig, err := json.Marshal(defaultTelioConfig)
 		if err != nil {
