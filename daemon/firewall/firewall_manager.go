@@ -240,10 +240,6 @@ func (f *FirewallManager) removeBlockTrafficRules() error {
 		if err := f.commandExecutor.ExecuteCommand("-D " + rule); err != nil {
 			return fmt.Errorf("unblocking input traffic: %w", err)
 		}
-
-		if err := f.commandExecutor.ExecuteCommand("-D " + rule); err != nil {
-			return fmt.Errorf("unblocking output traffic: %w", err)
-		}
 	}
 
 	return nil
