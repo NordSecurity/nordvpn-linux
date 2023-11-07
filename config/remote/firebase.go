@@ -92,6 +92,15 @@ func (rc *RConfig) fetchRemoteConfigIfTime() error {
 }
 
 func (rc *RConfig) fetchAndSaveRemoteConfig(cfg config.Config) error {
+	// before fetching update RCLastUpdate, even if something fails, to limit the number of requests
+	errUpdateLastRCTime := rc.configManager.SaveWith(func(c config.Config) config.Config {
+		c.RCLastUpdate = time.Now()
+		return c
+	})
+	if errUpdateLastRCTime != nil {
+		fmt.Println("failed to save updated RCLastUpdate: %w", errUpdateLastRCTime)
+	}
+
 	remoteConfigValue, err := rc.remoteService.FetchRemoteConfig()
 	if err != nil {
 		return fmt.Errorf("fetching the remote config failed: %w", err)
@@ -104,7 +113,9 @@ func (rc *RConfig) fetchAndSaveRemoteConfig(cfg config.Config) error {
 		s, err := json.Marshal(rc.config)
 		if err == nil {
 			c.RemoteConfig = string(s)
-			c.RCLastUpdate = time.Now()
+			if errUpdateLastRCTime != nil {
+				c.RCLastUpdate = time.Now()
+			}
 		} else {
 			log.Println(internal.ErrorPrefix, "cannot encode the new remote config:", err)
 		}
