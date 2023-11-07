@@ -185,7 +185,8 @@ func New(prod bool, eventPath string, fwmark uint32,
 		}
 		defaultTelioConfig.Direct = &directConfig{}
 		defaultTelioConfig.Nurse = &nurseConfig{
-			Fingerprint: deviceID,
+			Fingerprint:       deviceID,
+			HeartbeatInterval: 60,
 		}
 
 		fallbackTelioConfig, err := json.Marshal(defaultTelioConfig)
