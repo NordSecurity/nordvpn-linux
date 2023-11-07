@@ -30,7 +30,7 @@ for filename in "${files[@]}"; do
 
     printf "\055 semver: %s
   date: %s
-  packager: Nordsec Ltd. <contact@nordteams.com>
+  packager: NordVPN Linux Team <linux@nordvpn.com>
   deb:
     urgency: medium
     distributions:
