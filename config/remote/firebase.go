@@ -67,20 +67,24 @@ func (rc *RConfig) fetchRemoteConfigIfTime() error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
+	remoteConfig := []byte(cfg.RemoteConfig)
+
 	// don't fetch the remote config too often even if there is nothing cached
 	if time.Now().After(cfg.RCLastUpdate.Add(rc.updatePeriod)) {
-		if err := rc.fetchAndSaveRemoteConfig(cfg); err != nil {
+		if fetchedConfig, err := rc.fetchAndSaveRemoteConfig(); err != nil {
 			// if there no is cached config return error
 			// otherwise use the cached data
-			if cfg.RemoteConfig == "" {
+			if len(remoteConfig) == 0 {
 				return err
 			} else {
 				log.Println(internal.ErrorPrefix, "use cached config because fetch failed:", err)
 			}
+		} else {
+			remoteConfig = fetchedConfig
 		}
 	}
 
-	if err := json.Unmarshal([]byte(cfg.RemoteConfig), rc.config); err != nil {
+	if err := json.Unmarshal(remoteConfig, rc.config); err != nil {
 		return fmt.Errorf("parsing remote config from JSON: %w", err)
 	}
 
@@ -91,43 +95,31 @@ func (rc *RConfig) fetchRemoteConfigIfTime() error {
 	return nil
 }
 
-func (rc *RConfig) fetchAndSaveRemoteConfig(cfg config.Config) error {
-	// before fetching update RCLastUpdate, even if something fails, to limit the number of requests
-	errUpdateLastRCTime := rc.configManager.SaveWith(func(c config.Config) config.Config {
-		c.RCLastUpdate = time.Now()
-		return c
-	})
-	if errUpdateLastRCTime != nil {
-		fmt.Println("failed to save updated RCLastUpdate: %w", errUpdateLastRCTime)
-	}
+func (rc *RConfig) fetchAndSaveRemoteConfig() (remoteConfig []byte, err error) {
+	// Always save the last update time and also save the remote config if it was retrieved successfully
+	defer func() {
+		errCfgSave := rc.configManager.SaveWith(func(c config.Config) config.Config {
+			c.RCLastUpdate = time.Now()
+			if err != nil {
+				c.RemoteConfig = string(remoteConfig)
+			}
+			return c
+		})
+		err = errors.Join(err, errCfgSave)
+	}()
 
 	remoteConfigValue, err := rc.remoteService.FetchRemoteConfig()
 	if err != nil {
-		return fmt.Errorf("fetching the remote config failed: %w", err)
-	}
-	err = json.Unmarshal(remoteConfigValue, rc.config)
-	if err != nil {
-		return fmt.Errorf("parsing the fetched remote config failed: %w", err)
-	}
-	if err := rc.configManager.SaveWith(func(c config.Config) config.Config {
-		s, err := json.Marshal(rc.config)
-		if err == nil {
-			c.RemoteConfig = string(s)
-			if errUpdateLastRCTime != nil {
-				c.RCLastUpdate = time.Now()
-			}
-		} else {
-			log.Println(internal.ErrorPrefix, "cannot encode the new remote config:", err)
-		}
-		return c
-	}); err != nil {
-		return fmt.Errorf("failed to save the new remote config: %w", err)
-	}
-	if err := rc.configManager.Load(&cfg); err != nil {
-		return fmt.Errorf("reloading config: %w", err)
+		return nil, fmt.Errorf("fetching the remote config failed: %w", err)
 	}
 
-	return nil
+	var config firebaseremoteconfig.RemoteConfig
+	err = json.Unmarshal(remoteConfigValue, &config)
+	if err != nil {
+		return nil, fmt.Errorf("parsing the fetched remote config failed: %w", err)
+	}
+
+	return remoteConfigValue, nil
 }
 
 // GetValue provides value of requested key from remote config

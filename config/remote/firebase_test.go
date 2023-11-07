@@ -315,25 +315,61 @@ func TestRemoteConfig_GetCachedData(t *testing.T) {
 
 	cm := &mock.ConfigManager{}
 	rs := &remoteServiceMock{}
-	rc := NewRConfig(time.Duration(0), rs, cm)
 
-	// no fetch data and no cached data returns error
-	rs.fetchError = fmt.Errorf("failed to fetch")
-	welcomeMessage, err := rc.GetValue("welcome_message")
-	assert.Error(t, err)
-	assert.Empty(t, welcomeMessage)
+	tests := []struct {
+		name          string
+		expectedValue string
+		fetchError    error
+		updatePeriod  time.Duration
+		remoteConfig  string
+		cachedValue   string
+	}{
+		{
+			name:       "fetch fails and nothing is cached",
+			fetchError: fmt.Errorf("failed to fetch"),
+		},
+		{
+			name:          "using cached data, no fetching is needed",
+			fetchError:    fmt.Errorf("failed to fetch"),
+			expectedValue: "hola",
+			cachedValue:   remoteConfigString,
+			updatePeriod:  time.Hour,
+		},
+		{
+			name:          "use cache data when fetching fails",
+			fetchError:    fmt.Errorf("failed to fetch"),
+			expectedValue: "hola",
+			cachedValue:   remoteConfigString,
+		},
+		{
+			name:          "using fetch remote config",
+			expectedValue: "hola",
+			remoteConfig:  remoteConfigString,
+			cachedValue:   "broke_data",
+		},
+	}
 
-	// allow to fetch and cache data
-	rs.fetchError = nil
-	welcomeMessage, err = rc.GetValue("welcome_message")
-	assert.NoError(t, err)
-	assert.Equal(t, "hola", welcomeMessage)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rc := NewRConfig(time.Duration(test.updatePeriod), rs, cm)
 
-	// fail to fetch and use the cached data
-	rs.fetchError = fmt.Errorf("failed to fetch")
-	welcomeMessage, err = rc.GetValue("welcome_message")
-	assert.NoError(t, err)
-	assert.Equal(t, "hola", welcomeMessage)
+			rs.fetchError = test.fetchError
+			rs.response = test.remoteConfig
+
+			cm.Cfg = &config.Config{}
+			cm.Cfg.RCLastUpdate = time.Now()
+			cm.Cfg.RemoteConfig = test.cachedValue
+
+			value, err := rc.GetValue("welcome_message")
+
+			assert.Equal(t, test.expectedValue, value)
+			if test.expectedValue == "" {
+				assert.ErrorIs(t, err, test.fetchError)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }
 
 // ----------------------------------------------------------------------------------------
