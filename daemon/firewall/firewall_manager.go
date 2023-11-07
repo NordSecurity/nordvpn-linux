@@ -15,26 +15,53 @@ import (
 
 var ErrIncomingAlreadyDenied = errors.New("allow incoming rule for the given peer not found")
 
-type CommandExecutor interface {
+const (
+	iptables  = "iptables"
+	ip6tables = "ip6tables"
+)
+
+type IptablesExecutor interface {
 	ExecuteCommand(command string) error
 }
 
 type Iptables struct {
-	command string
+	supportedIptables []string
 }
 
-func NewCommandExecutor(command string) Iptables {
+func GetSupportedIPTables() []string {
+	var supported []string
+	for _, cmd := range []string{
+		iptables,
+		ip6tables,
+	} {
+		// #nosec G204 -- input is properly sanitized
+		_, err := exec.Command(cmd, "-S").CombinedOutput()
+		if err != nil {
+			continue
+		}
+		supported = append(supported, cmd)
+	}
+	return supported
+}
+
+func NewIptables() Iptables {
 	return Iptables{
-		command: command,
+		supportedIptables: GetSupportedIPTables(),
 	}
 }
 
 func (e Iptables) ExecuteCommand(command string) error {
-	log.Printf("DEBUG: %s %s", e.command, command)
-	commandArgs := strings.Split(command, " ")
+	for _, iptables := range e.supportedIptables {
+		log.Printf("DEBUG: %s %s", iptables, command)
+		commandArgs := strings.Split(command, " ")
 
-	_, err := exec.Command(e.command, commandArgs...).CombinedOutput()
-	return err
+		// #nosec G204 -- arg values are known before even running the program
+		if _, err := exec.Command(iptables, commandArgs...).CombinedOutput(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type allowIncomingRule struct {
@@ -48,7 +75,7 @@ type PortRange struct {
 }
 
 type FirewallManager struct {
-	commandExecutor      CommandExecutor
+	commandExecutor      IptablesExecutor
 	devices              device.ListFunc              // list network interfaces
 	allowIncomingRules   map[string]allowIncomingRule // peer public key to allow incoming rule
 	fileshareRules       map[string]string            // peers public key to allow fileshare rule
@@ -59,7 +86,7 @@ type FirewallManager struct {
 	enabled              bool
 }
 
-func NewFirewallManager(devices device.ListFunc, commandExecutor CommandExecutor, connmark uint32, enabled bool) FirewallManager {
+func NewFirewallManager(devices device.ListFunc, commandExecutor IptablesExecutor, connmark uint32, enabled bool) FirewallManager {
 	return FirewallManager{
 		commandExecutor:    commandExecutor,
 		devices:            devices,
