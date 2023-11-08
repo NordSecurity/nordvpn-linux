@@ -10,7 +10,6 @@ import (
 	"math"
 	"net"
 	"net/netip"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,7 +17,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
@@ -117,7 +115,6 @@ type Combined struct {
 	ipv6             ipv6.Blocker
 	firewallManager  firewall.FirewallManager
 	allowlistRouting allowlist.Routing
-	devices          device.ListFunc
 	policyRouter     routes.PolicyService
 	dnsHostSetter    dns.HostnameSetter
 	router           routes.Service
@@ -156,10 +153,8 @@ func NewCombined(
 	allowlistRouter routes.Service,
 	dnsSetter dns.Setter,
 	ipv6 ipv6.Blocker,
-	fw firewall.Service,
 	firewallManager firewall.FirewallManager,
 	allowlist allowlist.Routing,
-	devices device.ListFunc,
 	policyRouter routes.PolicyService,
 	dnsHostSetter dns.HostnameSetter,
 	router routes.Service,
@@ -178,7 +173,6 @@ func NewCombined(
 		ipv6:               ipv6,
 		firewallManager:    firewallManager,
 		allowlistRouting:   allowlist,
-		devices:            devices,
 		policyRouter:       policyRouter,
 		dnsHostSetter:      dnsHostSetter,
 		router:             router,
@@ -995,8 +989,6 @@ func (netw *Combined) setMesh(
 }
 
 func (netw *Combined) refresh(cfg mesh.MachineMap) error {
-	debug.PrintStack()
-
 	if err := netw.defaultMeshUnBlock(); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}

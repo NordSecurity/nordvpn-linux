@@ -343,12 +343,10 @@ func main() {
 		allowlistRouter,
 		dnsSetter,
 		ipv6.NewIpv6(),
-		fw,
 		firewall.NewFirewallManager(device.ListPhysical, firewall.NewIptables(), cfg.FirewallMark, cfg.Firewall),
 		allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
 			return exec.Command(command, arg...).CombinedOutput()
 		}),
-		device.ListPhysical,
 		routes.NewPolicyRouter(
 			&norule.Facade{},
 			iprule.NewRouter(

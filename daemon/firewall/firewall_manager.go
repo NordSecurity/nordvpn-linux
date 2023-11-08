@@ -50,8 +50,8 @@ func NewIptables() Iptables {
 	}
 }
 
-func (e Iptables) ExecuteCommand(command string) error {
-	for _, iptables := range e.supportedIptables {
+func (i Iptables) ExecuteCommand(command string) error {
+	for _, iptables := range i.supportedIptables {
 		log.Printf("DEBUG: %s %s", iptables, command)
 		commandArgs := strings.Split(command, " ")
 
