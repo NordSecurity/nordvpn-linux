@@ -10,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	"google.golang.org/api/firebaseremoteconfig/v1"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -367,6 +368,17 @@ func TestRemoteConfig_GetCachedData(t *testing.T) {
 				assert.ErrorIs(t, err, test.fetchError)
 			} else {
 				assert.NoError(t, err)
+			}
+
+			// check if cache remote config is the same as the fetch
+			if test.remoteConfig != "" {
+				var cfgExpected firebaseremoteconfig.RemoteConfig
+				assert.NoError(t, json.Unmarshal([]byte(test.remoteConfig), &cfgExpected))
+
+				var cfg firebaseremoteconfig.RemoteConfig
+				assert.NoError(t, json.Unmarshal([]byte(cm.Cfg.RemoteConfig), &cfg))
+
+				assert.Equal(t, cfgExpected, cfg, "fetch RC different from saved one")
 			}
 		})
 	}
