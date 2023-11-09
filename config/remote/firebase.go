@@ -100,7 +100,7 @@ func (rc *RConfig) fetchAndSaveRemoteConfig() (remoteConfig []byte, err error) {
 	defer func() {
 		errCfgSave := rc.configManager.SaveWith(func(c config.Config) config.Config {
 			c.RCLastUpdate = time.Now()
-			if err != nil {
+			if err == nil {
 				c.RemoteConfig = string(remoteConfig)
 			}
 			return c
