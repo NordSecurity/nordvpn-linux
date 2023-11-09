@@ -18,6 +18,7 @@ RUN dpkg --add-architecture i386; \
         libxml2-dev:i386 \
         libxml2-dev:arm64 \
         libxml2-dev:armhf \
+        sudo \
         # libxml2-dev:armel \
         iptables; \
     apt-get clean; \
