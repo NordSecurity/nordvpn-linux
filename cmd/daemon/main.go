@@ -40,7 +40,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	filedaemon "github.com/NordSecurity/nordvpn-linux/fileshare/daemon"
+	filedaemon "github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/kernel"

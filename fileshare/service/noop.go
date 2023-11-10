@@ -1,4 +1,4 @@
-package daemon
+package service
 
 // NoopFileshare is a stub
 type NoopFileshare struct{}

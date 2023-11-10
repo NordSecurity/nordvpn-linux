@@ -1,5 +1,5 @@
-// Package daemon provides structures to start fileshare service (nordfileshared)
-package daemon
+// Package service provides structures to start fileshare service (nordfileshared)
+package service
 
 // Fileshare daemon management
 type Fileshare interface {
