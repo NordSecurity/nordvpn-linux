@@ -1,20 +1,21 @@
-// Package drop wraps libdrop fileshare implementation.
-package drop
+// Package libdrop wraps libdrop fileshare implementation.
+package libdrop
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/netip"
-	"path/filepath"
 	"sync"
 	"time"
 
 	norddropgo "github.com/NordSecurity/libdrop/norddrop/ffi/bindings/linux/go"
-	"github.com/NordSecurity/nordvpn-linux/fileshare"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	DirDepthLimit     = 5
+	TransferFileLimit = 1000
 )
 
 // Fileshare is the main functional filesharing implementation using norddrop library.
@@ -102,8 +103,8 @@ func (f *Fileshare) start(
 	storagePath string,
 ) error {
 	configJSON, err := json.Marshal(libdropStartConfig{
-		DirDepthLimit:     fileshare.DirDepthLimit,
-		TransferFileLimit: fileshare.TransferFileLimit,
+		DirDepthLimit:     DirDepthLimit,
+		TransferFileLimit: TransferFileLimit,
 		MooseEventPath:    eventsDbPath,
 		LinuxAppVersion:   appVersion,
 		IsProd:            isProd,
@@ -200,6 +201,7 @@ func (f *Fileshare) CancelFile(transferID string, fileID string) error {
 	return nil
 }
 
+// Transfer as represented in libdrop storage
 type Transfer struct {
 	ID        string          `json:"id"`
 	Peer      string          `json:"peer_id"`
@@ -236,193 +238,16 @@ type FileState struct {
 	StatusCode    int    `json:"status_code"`
 }
 
-func (f *Fileshare) Load() (map[string]*pb.Transfer, error) {
+func (f *Fileshare) GetTransfersSince(t time.Time) ([]Transfer, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	libdropTransfers := []Transfer{}
-	transfers := map[string]*pb.Transfer{}
-	rawTransfers := f.norddrop.GetTransfersSince(0)
-	err := json.Unmarshal([]byte(rawTransfers), &libdropTransfers)
+	transfers := []Transfer{}
+	rawTransfers := f.norddrop.GetTransfersSince(t.Unix())
+	err := json.Unmarshal([]byte(rawTransfers), &transfers)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshalling libdrop transfers JSON: %w", err)
 	}
 
-	for _, t := range libdropTransfers {
-		transfer := libdropTransferToInternalTransfer(t)
-		transfers[transfer.Id] = transfer
-	}
-
 	return transfers, nil
-}
-
-func libdropTransferToInternalTransfer(in Transfer) *pb.Transfer {
-	out := &pb.Transfer{}
-
-	out.Id = in.ID
-	out.Peer = in.Peer
-	out.Created = timestamppb.New(time.UnixMilli(in.CreatedAt))
-
-	switch in.Direction {
-	case "outgoing":
-		out.Direction = pb.Direction_OUTGOING
-	case "incoming":
-		out.Direction = pb.Direction_OUTGOING
-	default:
-		log.Printf("%s unknown direction found when parsing libdrop transfers: %s",
-			internal.WarningPrefix, in.Direction)
-		out.Direction = pb.Direction_UNKNOWN_DIRECTION
-	}
-
-	for _, file := range in.Files {
-		outFile := libdropFileToInternalFile(file)
-		out.Files = append(out.Files, outFile)
-		out.TotalSize += outFile.Size
-		out.TotalTransferred += outFile.Transferred
-
-		// Determine transfer path.
-
-		var fileBasePath string
-		// Base path is in different place for incoming and outgoing files
-		if file.BasePath != "" {
-			fileBasePath = file.BasePath
-		} else if len(file.States) != 0 && file.States[0].BasePath != "" {
-			fileBasePath = file.States[0].BasePath
-		}
-
-		// If relative path doesn't contain a directory - means user specified a single file
-		// We show the full path in that case for outgoing transfers
-		if out.Direction == pb.Direction_OUTGOING && filepath.Base(file.RelativePath) == file.RelativePath {
-			fileBasePath = outFile.FullPath
-		}
-
-		if out.Path == "" {
-			out.Path = fileBasePath
-		} else if out.Path != fileBasePath && fileBasePath != "" {
-			out.Path = "multiple files"
-		}
-	}
-
-	if len(in.States) != 0 {
-		lastState := in.States[len(in.States)-1]
-		switch lastState.State {
-		case "canceled":
-			if lastState.ByPeer {
-				out.Status = pb.Status_CANCELED_BY_PEER
-			} else {
-				out.Status = pb.Status_CANCELED
-			}
-		case "failed":
-			out.Status = pb.Status(lastState.StatusCode)
-		}
-	} else {
-		out.Status = getTransferStatus(out.Files)
-	}
-
-	return out
-}
-
-func libdropFileToInternalFile(in File) *pb.File {
-	out := &pb.File{
-		Id:       in.ID,
-		Path:     in.RelativePath,
-		FullPath: filepath.Join(in.BasePath, in.RelativePath),
-		Size:     in.TotalSize,
-		// This only shows the amount from the last status change
-		// The only up to date source for data transferred is events
-		// To show the correct value we track ongoing transfers (TransferProgress) in event manager,
-		// and event manager overwrites values of ongoing transfers before passing them further
-		Transferred: 0,
-	}
-
-	for _, state := range in.States {
-		// BasePath is provided with the very first "pending" state
-		if state.BasePath != "" {
-			out.FullPath = filepath.Join(state.BasePath, out.FullPath)
-		}
-		// FinalPath is provided with the very last "completed" state, so if it is present, then
-		// it will overwrite the previously constructed path
-		if state.FinalPath != "" {
-			out.FullPath = state.FinalPath
-		}
-
-		if state.BytesReceived != 0 {
-			out.Transferred = state.BytesReceived
-		}
-		if state.BytesSent != 0 {
-			out.Transferred = state.BytesSent
-		}
-	}
-
-	if len(in.States) == 0 {
-		out.Status = pb.Status_REQUESTED
-	} else {
-		lastState := in.States[len(in.States)-1]
-		switch lastState.State {
-		case "completed":
-			out.Status = pb.Status_SUCCESS
-		case "failed":
-			out.Status = pb.Status(lastState.StatusCode)
-		case "paused":
-			out.Status = pb.Status_PAUSED
-		case "pending":
-			out.Status = pb.Status_REQUESTED
-		case "reject":
-			out.Status = pb.Status_CANCELED
-		case "started":
-			out.Status = pb.Status_ONGOING
-		default:
-			log.Printf("%s unknown status found when parsing libdrop transfers: %s",
-				internal.WarningPrefix, lastState.State)
-			out.Status = pb.Status_BAD_STATUS
-		}
-	}
-
-	return out
-}
-
-func getTransferStatus(files []*pb.File) pb.Status {
-	allCanceled := true
-	allFinished := true
-	hasNoErrors := true
-	hasStarted := true
-	for _, file := range files {
-		if allCanceled && file.Status != pb.Status_CANCELED {
-			allCanceled = false
-		}
-		if allFinished && !isFileCompleted(file.Status) {
-			allFinished = false
-		}
-		if hasNoErrors && checkFileHasErrors(file) {
-			hasNoErrors = false
-		}
-		if hasStarted && file.Status != pb.Status_REQUESTED {
-			hasStarted = false
-		}
-	}
-
-	switch {
-	case allCanceled:
-		return pb.Status_CANCELED
-	case allFinished && hasNoErrors:
-		return pb.Status_SUCCESS
-	case allFinished && !hasNoErrors:
-		return pb.Status_FINISHED_WITH_ERRORS
-	case hasStarted:
-		return pb.Status_ONGOING
-	default:
-		return pb.Status_REQUESTED
-	}
-}
-
-func checkFileHasErrors(file *pb.File) bool {
-	return file.Status != pb.Status_SUCCESS &&
-		file.Status != pb.Status_REQUESTED &&
-		file.Status != pb.Status_CANCELED &&
-		file.Status != pb.Status_ONGOING
-}
-
-func isFileCompleted(fileStatus pb.Status) bool {
-	return fileStatus != pb.Status_REQUESTED &&
-		fileStatus != pb.Status_ONGOING
 }

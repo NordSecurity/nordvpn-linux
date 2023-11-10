@@ -1,4 +1,4 @@
-package fileshare
+package storage
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"golang.org/x/exp/maps"
 )
@@ -39,7 +40,7 @@ func (jf JsonFile) Load() (map[string]*pb.Transfer, error) {
 		tr.Files = flatten(tr.Files)
 		if tr.Status == pb.Status_REQUESTED || tr.Status == pb.Status_ONGOING {
 			tr.Status = pb.Status_INTERRUPTED
-			SetTransferAllFileStatus(tr, pb.Status_INTERRUPTED)
+			fileshare.SetTransferAllFileStatus(tr, pb.Status_INTERRUPTED)
 		}
 	}
 
@@ -61,33 +62,4 @@ func flatten(files []*pb.File) []*pb.File {
 		}
 	}
 	return flatFiles
-}
-
-// CombinedStorage combines transfers from two storages
-// Originally we had our own storage implementation in JSON file. Later libDrop introduced an
-// integrated storage solution, so we migrated to that. But to not lose transfer history when
-// updating the app, we still load transfers from the original file storage.
-type CombinedStorage struct {
-	legacy  Storage
-	libdrop Storage
-}
-
-func NewCombinedStorage(storagePath string, dropStorage Storage) *CombinedStorage {
-	return &CombinedStorage{NewJsonFile(storagePath), dropStorage}
-}
-
-func (c *CombinedStorage) Load() (map[string]*pb.Transfer, error) {
-	libdropTransfers, err := c.libdrop.Load()
-	if err != nil {
-		return nil, err
-	}
-
-	legacyTransfers, err := c.legacy.Load()
-	if err != nil {
-		for key, value := range legacyTransfers {
-			libdropTransfers[key] = value
-		}
-	}
-
-	return libdropTransfers, nil
 }

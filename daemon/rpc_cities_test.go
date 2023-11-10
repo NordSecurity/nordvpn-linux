@@ -7,7 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/daemon"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
@@ -45,7 +45,7 @@ func TestRPCCities(t *testing.T) {
 				ac:        &workingLoginChecker{},
 				cm:        test.cm,
 				dm:        test.dm,
-				fileshare: service.NoopFileshare{},
+				fileshare: daemon.NoopFileshare{},
 				netw:      &networker.Mock{},
 				ncClient:  mockNC{},
 				publisher: &subs.Subject[string]{},
@@ -83,7 +83,7 @@ func TestRPCCities_Successful(t *testing.T) {
 		ac:        &workingLoginChecker{},
 		cm:        cm,
 		dm:        dm,
-		fileshare: service.NoopFileshare{},
+		fileshare: daemon.NoopFileshare{},
 		netw:      &networker.Mock{},
 		ncClient:  mockNC{},
 		publisher: &subs.Subject[string]{},

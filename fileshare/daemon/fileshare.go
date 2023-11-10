@@ -1,7 +1,7 @@
-// Package service provides structures to start fileshare service (nordfileshared)
-package service
+// Package daemon provides structures to start fileshare service (nordfileshared)
+package daemon
 
-// Fileshare service management
+// Fileshare daemon management
 type Fileshare interface {
 	// uid and gid of the user which is making the call
 	Enable(uid, gid uint32) error

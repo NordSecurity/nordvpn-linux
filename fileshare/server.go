@@ -7,6 +7,7 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
@@ -176,7 +177,7 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		}
 
 		if isDirectory {
-			fileCountInDirectory, err := s.getNumberOfFiles(path, DirDepthLimit)
+			fileCountInDirectory, err := s.getNumberOfFiles(path, libdrop.DirDepthLimit)
 			switch err {
 			case errMaxDirectoryDepthReached:
 				return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_DIRECTORY_TOO_DEEP)})
@@ -189,7 +190,7 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 			fileCount++
 		}
 
-		if fileCount > TransferFileLimit {
+		if fileCount > libdrop.TransferFileLimit {
 			return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TOO_MANY_FILES)})
 		}
 
@@ -298,7 +299,7 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 			})
 
 		if isAccepted {
-			if err := s.fileshare.Accept(req.TransferId, req.DstPath, file.Id); err == nil {
+			if err := s.fileshare.Accept(req.TransferId, req.DstPath, file.Id); err != nil {
 				log.Printf("error accepting file %s in transfer %s: %s", file.Id, req.TransferId, err)
 			} else {
 				transferStarted = true

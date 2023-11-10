@@ -3,14 +3,10 @@ package fileshare
 
 import (
 	"net/netip"
+	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
-)
-
-const (
-	DirDepthLimit       = 5
-	TransferFileLimit   = 1000
-	historySizeMaxBytes = 4 * 1024 * 1024 // 4Mb is also gRPC message default limit
 )
 
 // Fileshare defines a set of operations that any type that wants to act as a fileshare service
@@ -28,6 +24,8 @@ type Fileshare interface {
 	Cancel(transferID string) error
 	// CancelFile id in a transfer
 	CancelFile(transferID string, fileID string) error
+	// GetTransfersSince provided time from fileshare implementation storage
+	GetTransfersSince(t time.Time) ([]libdrop.Transfer, error)
 }
 
 // Storage is used for filesharing history persistence

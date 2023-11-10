@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/daemon"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -38,7 +38,7 @@ func (m *okConfigManager) SaveWith(config.SaveFunc) error {
 func (m *okConfigManager) Load(*config.Config) error { return nil }
 func (m *okConfigManager) Reset() error              { return nil }
 
-type failingFileshare struct{ service.Fileshare }
+type failingFileshare struct{ daemon.Fileshare }
 
 func (failingFileshare) Disable(uint32, uint32) error { return fmt.Errorf("error") }
 
@@ -47,18 +47,18 @@ func TestMeshUnsetter_unsetMesh(t *testing.T) {
 	for _, tt := range []struct {
 		name      string
 		netw      MeshUnsetter
-		fileshare service.Fileshare
+		fileshare daemon.Fileshare
 	}{
 		{
 			name:      "no fail",
 			netw:      okUnsetter{},
-			fileshare: service.NoopFileshare{},
+			fileshare: daemon.NoopFileshare{},
 		},
 		{
 			name: "meshnet unset fails but config " +
 				"is still updated",
 			netw:      failingUnsetter{},
-			fileshare: service.NoopFileshare{},
+			fileshare: daemon.NoopFileshare{},
 		},
 		{
 			name:      "fileshare disable fails but config is still updated",

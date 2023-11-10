@@ -19,7 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/daemon"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
@@ -49,7 +49,7 @@ type Server struct {
 	subjectConnect     events.Publisher[events.DataConnect]
 	lastPeers          string
 	isPeerConnected    bool
-	fileshare          service.Fileshare
+	fileshare          daemon.Fileshare
 	scheduler          *gocron.Scheduler
 	pb.UnimplementedMeshnetServer
 }
@@ -67,7 +67,7 @@ func NewServer(
 	subjectPeerUpdate events.Publisher[[]string],
 	subjectMeshSetting events.PublishSubcriber[bool],
 	subjectConnect events.Publisher[events.DataConnect],
-	fileshare service.Fileshare,
+	fileshare daemon.Fileshare,
 ) *Server {
 	return &Server{
 		ac:                 ac,

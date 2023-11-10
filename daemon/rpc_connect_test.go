@@ -17,7 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/daemon"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -217,7 +217,7 @@ func TestRpcConnect(t *testing.T) {
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
 				&mockAnalytics{},
-				service.NoopFileshare{},
+				daemon.NoopFileshare{},
 				&RegistryMock{},
 			)
 			server := &mockRPCServer{}
@@ -296,7 +296,7 @@ func TestRpcReconnect(t *testing.T) {
 		mockNameservers([]string{"1.1.1.1"}),
 		nil,
 		&mockAnalytics{},
-		service.NoopFileshare{},
+		daemon.NoopFileshare{},
 		&RegistryMock{},
 	)
 	err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})

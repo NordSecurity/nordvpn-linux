@@ -6,7 +6,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/daemon"
 )
 
 type MeshUnsetter interface {
@@ -17,14 +17,14 @@ type Meshnet struct {
 	man          config.Manager
 	netw         MeshUnsetter
 	errPublisher events.Publisher[error]
-	fileshare    service.Fileshare
+	fileshare    daemon.Fileshare
 }
 
 func NewMeshnet(
 	man config.Manager,
 	netw MeshUnsetter,
 	errPublisher events.Publisher[error],
-	fileshare service.Fileshare,
+	fileshare daemon.Fileshare,
 ) *Meshnet {
 	return &Meshnet{
 		man:          man,

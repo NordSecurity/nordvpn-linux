@@ -18,8 +18,9 @@ import (
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/drop"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/storage"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"google.golang.org/grpc"
@@ -111,7 +112,7 @@ func main() {
 	}
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
 
-	fileshareImplementation := drop.New(
+	fileshareImplementation := libdrop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
 		Version,
@@ -122,7 +123,7 @@ func main() {
 	)
 	eventManager.SetFileshare(fileshareImplementation)
 	legacyStoragePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
-	eventManager.SetStorage(fileshare.NewCombinedStorage(legacyStoragePath, fileshareImplementation))
+	eventManager.SetStorage(storage.NewCombined(legacyStoragePath, fileshareImplementation))
 
 	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
 		Uid: int64(os.Getuid()),

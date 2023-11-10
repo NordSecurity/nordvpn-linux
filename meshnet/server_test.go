@@ -14,7 +14,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/daemon"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -192,7 +192,7 @@ type dnsGetter struct{}
 
 func (dnsGetter) Get(bool, bool) []string { return nil }
 
-type failingFileshare struct{ service.Fileshare }
+type failingFileshare struct{ daemon.Fileshare }
 
 func (failingFileshare) Enable(uint32, uint32) error  { return fmt.Errorf("error") }
 func (failingFileshare) Disable(uint32, uint32) error { return fmt.Errorf("error") }
@@ -229,7 +229,7 @@ func newMockedServer(
 		&subs.Subject[[]string]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataConnect]{},
-		service.NoopFileshare{},
+		daemon.NoopFileshare{},
 	)
 
 	if isMeshOn {
@@ -250,7 +250,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 		reg       mesh.Registry
 		cm        config.Manager
 		dns       dns.Getter
-		fileshare service.Fileshare
+		fileshare daemon.Fileshare
 		success   bool
 	}{
 		{
@@ -262,7 +262,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			reg:       &registryAPI{},
 			cm:        &mock.ConfigManager{},
 			dns:       dnsGetter{},
-			fileshare: service.NoopFileshare{},
+			fileshare: daemon.NoopFileshare{},
 			success:   true,
 		},
 		{
@@ -332,7 +332,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 		reg       mesh.Registry
 		cm        config.Manager
 		dns       dns.Getter
-		fileshare service.Fileshare
+		fileshare daemon.Fileshare
 	}{
 		{
 			name:      "everything works",
@@ -343,7 +343,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			reg:       &registryAPI{},
 			cm:        &mock.ConfigManager{},
 			dns:       dnsGetter{},
-			fileshare: service.NoopFileshare{},
+			fileshare: daemon.NoopFileshare{},
 		},
 		{
 			name:      "fileshare fails",
@@ -431,7 +431,7 @@ func TestServer_Invite(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&subs.Subject[bool]{},
 				&subs.Subject[events.DataConnect]{},
-				service.NoopFileshare{},
+				daemon.NoopFileshare{},
 			)
 			server.EnableMeshnet(context.Background(), &pb.Empty{})
 			resp, err := server.Invite(context.Background(), &pb.InviteRequest{})
@@ -460,7 +460,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 		&subs.Subject[[]string]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataConnect]{},
-		service.NoopFileshare{},
+		daemon.NoopFileshare{},
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
 	resp, err := server.AcceptInvite(context.Background(), &pb.InviteRequest{
@@ -489,7 +489,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 		&subs.Subject[[]string]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataConnect]{},
-		service.NoopFileshare{},
+		daemon.NoopFileshare{},
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
 
@@ -590,7 +590,7 @@ func TestServer_Connect(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			daemon.NoopFileshare{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server
@@ -724,7 +724,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			daemon.NoopFileshare{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -848,7 +848,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			daemon.NoopFileshare{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -954,7 +954,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			daemon.NoopFileshare{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -1060,7 +1060,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			daemon.NoopFileshare{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker

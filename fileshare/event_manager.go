@@ -66,6 +66,7 @@ func NewEventManager(
 	defaultDownloadDir string) *EventManager {
 	return &EventManager{
 		isProd:                isProd,
+		liveTransfers:         map[string]*LiveTransfer{},
 		transferSubscriptions: map[string]chan TransferProgressInfo{},
 		meshClient:            meshClient,
 		osInfo:                osInfo,
@@ -169,6 +170,11 @@ func (em *EventManager) handleRequestReceivedEvent(eventJson json.RawMessage) {
 		return
 	}
 	if !peer.DoIAllowFileshare {
+		// This can only happen in the case of abuse, since clients shouldn't allow sending transfers
+		// to peers which don't allow that.
+		if err := em.fileshare.Cancel(event.TransferID); err != nil {
+			log.Printf("failed to auto-reject transfer %s: %s", event.TransferID, err)
+		}
 		return
 	}
 	if !peer.AlwaysAcceptFiles {
@@ -213,13 +219,10 @@ func (em *EventManager) handleTransferProgressEvent(eventJSON json.RawMessage) {
 		return
 	}
 
-	transfer, ok := em.liveTransfers[event.TransferID]
-	if !ok {
-		transfer, err = em.newLiveTransfer(event.TransferID)
-		if err != nil {
-			log.Print(err)
-			return
-		}
+	transfer, err := em.getLiveTransfer(event.TransferID)
+	if err != nil {
+		log.Print(err)
+		return
 	}
 
 	file, ok := transfer.Files[event.FileID]
@@ -253,26 +256,39 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 		return
 	}
 
-	transfer, ok := em.liveTransfers[event.TransferID]
-	if !ok {
-		if event.Reason == transferFailed && event.Data.Status == pb.Status_CANCELED {
-			return // Transfer finalization event - ignore
-		} else {
-			transfer, err = em.newLiveTransfer(event.TransferID)
-			if err != nil {
-				log.Print(err)
-				return
-			}
-		}
+	transfer, err := em.getLiveTransfer(event.TransferID)
+	if err != nil {
+		log.Print(err)
+		return
 	}
 
 	switch event.Reason {
 	case transferFailed:
 		var status pb.Status
+		// Libdrop docs say that "cancel" is a type of failure, so we handle it here, though
+		// in reality it seems to always be reported by the TransferCanceled event.
 		if event.Data.Status == pb.Status_CANCELED && event.Data.ByPeer {
 			status = pb.Status_CANCELED_BY_PEER
 		} else {
 			status = event.Data.Status
+		}
+		em.finalizeTransfer(transfer, status)
+		return
+	case transferCanceled:
+		var status pb.Status
+		switch {
+		case isTransferFinished(transfer):
+			// Successful transfer finalization event
+			storageTransfer, err := getTransferFromStorage(event.TransferID, em.storage)
+			if err != nil {
+				log.Print(err)
+				return
+			}
+			status = storageTransfer.Status
+		case event.Data.ByPeer:
+			status = pb.Status_CANCELED_BY_PEER
+		default:
+			status = pb.Status_CANCELED
 		}
 		em.finalizeTransfer(transfer, status)
 		return
@@ -287,22 +303,12 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 		return
 	}
 
-	// Currently libdrop will not clean up the transfer after transferring all of the files, so we have to
+	// Libdrop will not clean up the transfer after transferring all of the files, so we have to
 	// cancel it manually after all of the files have finished downloading/uploading. This will generate
-	// a TransferCanceled event, which we don't care about and don't want to have any impact on internal state
-	// If transfer has been finalized(canceled), we return early. We should be able to remove this check and
-	// the Finalized flag once cleanup is implemented in libdrop.
-	if isTransferFinished(transfer) {
-		storageTransfer, err := getTransferFromStorage(event.TransferID, em.storage)
-		if err != nil {
-			log.Print(err)
-			return
-		}
-		em.finalizeTransfer(transfer, storageTransfer.Status)
-		if storageTransfer.Direction == pb.Direction_INCOMING {
-			if err := em.fileshare.Cancel(event.TransferID); err != nil {
-				log.Printf("failed to finalize transfer %s: %s", event.TransferID, err)
-			}
+	// a TransferCanceled event, which is processed above and will trigger the finalization of transfer.
+	if isTransferFinished(transfer) && transfer.Direction == pb.Direction_INCOMING {
+		if err := em.fileshare.Cancel(event.TransferID); err != nil {
+			log.Printf("failed to finalize transfer %s: %s", event.TransferID, err)
 		}
 	}
 }
@@ -532,6 +538,7 @@ func (em *EventManager) Subscribe(id string) chan TransferProgressInfo {
 // LiveTransfer to track ongoing transfers live in app based on events
 type LiveTransfer struct {
 	ID               string
+	Direction        pb.Direction
 	TotalSize        uint64
 	TotalTransferred uint64
 	Files            map[string]*LiveFile // Key is ID
@@ -544,14 +551,21 @@ type LiveFile struct {
 	Finished    bool
 }
 
-func (em *EventManager) newLiveTransfer(id string) (*LiveTransfer, error) {
+// Returns an existing live transfer or creates a new one if necessary
+func (em *EventManager) getLiveTransfer(id string) (*LiveTransfer, error) {
+	transfer, ok := em.liveTransfers[id]
+	if ok {
+		return transfer, nil
+	}
+
 	storageTransfer, err := getTransferFromStorage(id, em.storage)
 	if err != nil {
 		return nil, err
 	}
 
-	transfer := &LiveTransfer{
+	transfer = &LiveTransfer{
 		ID:               storageTransfer.Id,
+		Direction:        storageTransfer.Direction,
 		TotalSize:        storageTransfer.TotalSize,
 		TotalTransferred: storageTransfer.TotalTransferred,
 		Files:            map[string]*LiveFile{},
@@ -560,7 +574,7 @@ func (em *EventManager) newLiveTransfer(id string) (*LiveTransfer, error) {
 		transfer.Files[file.Id] = &LiveFile{
 			ID:          file.Id,
 			Transferred: file.Transferred,
-			Finished:    file.Size == file.Transferred,
+			Finished:    isFileCompleted(file.Status),
 		}
 	}
 

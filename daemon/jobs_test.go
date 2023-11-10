@@ -15,7 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/daemon"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/networker"
@@ -131,7 +131,7 @@ func TestStartAutoConnect(t *testing.T) {
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
 				&mockAnalytics{},
-				service.NoopFileshare{},
+				daemon.NoopFileshare{},
 				&RegistryMock{},
 			)
 
@@ -365,7 +365,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				mockNameservers([]string{"1.1.1.1"}),
 				nil,
 				&mockAnalytics{},
-				service.NoopFileshare{},
+				daemon.NoopFileshare{},
 				&RegistryMock{},
 			)
 
@@ -381,7 +381,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				nil,
 				&subs.Subject[bool]{},
 				&subs.Subject[events.DataConnect]{},
-				service.NoopFileshare{},
+				daemon.NoopFileshare{},
 			)
 
 			err := rpc.StartAutoMeshnet(meshService, mockTimeout)
