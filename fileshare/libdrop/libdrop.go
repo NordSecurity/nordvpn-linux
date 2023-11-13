@@ -10,12 +10,8 @@ import (
 	"time"
 
 	norddropgo "github.com/NordSecurity/libdrop/norddrop/ffi/bindings/linux/go"
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-)
-
-const (
-	DirDepthLimit     = 5
-	TransferFileLimit = 1000
 )
 
 // Fileshare is the main functional filesharing implementation using norddrop library.
@@ -103,8 +99,8 @@ func (f *Fileshare) start(
 	storagePath string,
 ) error {
 	configJSON, err := json.Marshal(libdropStartConfig{
-		DirDepthLimit:     DirDepthLimit,
-		TransferFileLimit: TransferFileLimit,
+		DirDepthLimit:     fileshare.DirDepthLimit,
+		TransferFileLimit: fileshare.TransferFileLimit,
 		MooseEventPath:    eventsDbPath,
 		LinuxAppVersion:   appVersion,
 		IsProd:            isProd,
@@ -201,48 +197,11 @@ func (f *Fileshare) CancelFile(transferID string, fileID string) error {
 	return nil
 }
 
-// Transfer as represented in libdrop storage
-type Transfer struct {
-	ID        string          `json:"id"`
-	Peer      string          `json:"peer_id"`
-	CreatedAt int64           `json:"created_at"`
-	States    []TransferState `json:"states"`
-	Direction string          `json:"type"`
-	Files     []File          `json:"paths"`
-}
-
-type TransferState struct {
-	CreatedAt  uint64 `json:"created_at"`
-	State      string `json:"state"`
-	ByPeer     bool   `json:"by_peer"`
-	StatusCode int    `json:"status_code"`
-}
-
-type File struct {
-	ID           string      `json:"file_id"`
-	TransferID   string      `json:"transfer_id"`
-	BasePath     string      `json:"base_path"`
-	RelativePath string      `json:"relative_path"`
-	TotalSize    uint64      `json:"bytes"`
-	CreatedAt    uint64      `json:"created_at"`
-	States       []FileState `json:"states"`
-}
-
-type FileState struct {
-	CreatedAt     uint64 `json:"created_at"`
-	State         string `json:"state"`
-	BytesSent     uint64 `json:"bytes_sent"`
-	BytesReceived uint64 `json:"bytes_received"`
-	BasePath      string `json:"base_dir"`
-	FinalPath     string `json:"final_path"`
-	StatusCode    int    `json:"status_code"`
-}
-
-func (f *Fileshare) GetTransfersSince(t time.Time) ([]Transfer, error) {
+func (f *Fileshare) GetTransfersSince(t time.Time) ([]fileshare.LibdropTransfer, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	transfers := []Transfer{}
+	transfers := []fileshare.LibdropTransfer{}
 	rawTransfers := f.norddrop.GetTransfersSince(t.Unix())
 	err := json.Unmarshal([]byte(rawTransfers), &transfers)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"net/netip"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
@@ -177,7 +176,7 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		}
 
 		if isDirectory {
-			fileCountInDirectory, err := s.getNumberOfFiles(path, libdrop.DirDepthLimit)
+			fileCountInDirectory, err := s.getNumberOfFiles(path, DirDepthLimit)
 			switch err {
 			case errMaxDirectoryDepthReached:
 				return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_DIRECTORY_TOO_DEEP)})
@@ -190,7 +189,7 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 			fileCount++
 		}
 
-		if fileCount > libdrop.TransferFileLimit {
+		if fileCount > TransferFileLimit {
 			return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TOO_MANY_FILES)})
 		}
 

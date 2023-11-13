@@ -5,8 +5,12 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+)
+
+const (
+	DirDepthLimit     = 5
+	TransferFileLimit = 1000
 )
 
 // Fileshare defines a set of operations that any type that wants to act as a fileshare service
@@ -25,7 +29,7 @@ type Fileshare interface {
 	// CancelFile id in a transfer
 	CancelFile(transferID string, fileID string) error
 	// GetTransfersSince provided time from fileshare implementation storage
-	GetTransfersSince(t time.Time) ([]libdrop.Transfer, error)
+	GetTransfersSince(t time.Time) ([]LibdropTransfer, error)
 }
 
 // Storage is used for filesharing history persistence

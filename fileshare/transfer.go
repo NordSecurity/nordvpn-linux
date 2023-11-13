@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -165,8 +164,45 @@ func isTransferFinished(tr *LiveTransfer) bool {
 	return true
 }
 
+// LibdropTransfer as represented in libdrop storage
+type LibdropTransfer struct {
+	ID        string                 `json:"id"`
+	Peer      string                 `json:"peer_id"`
+	CreatedAt int64                  `json:"created_at"`
+	States    []LibdropTransferState `json:"states"`
+	Direction string                 `json:"type"`
+	Files     []LibdropFile          `json:"paths"`
+}
+
+type LibdropTransferState struct {
+	CreatedAt  uint64 `json:"created_at"`
+	State      string `json:"state"`
+	ByPeer     bool   `json:"by_peer"`
+	StatusCode int    `json:"status_code"`
+}
+
+type LibdropFile struct {
+	ID           string             `json:"file_id"`
+	TransferID   string             `json:"transfer_id"`
+	BasePath     string             `json:"base_path"`
+	RelativePath string             `json:"relative_path"`
+	TotalSize    uint64             `json:"bytes"`
+	CreatedAt    uint64             `json:"created_at"`
+	States       []LibdropFileState `json:"states"`
+}
+
+type LibdropFileState struct {
+	CreatedAt     uint64 `json:"created_at"`
+	State         string `json:"state"`
+	BytesSent     uint64 `json:"bytes_sent"`
+	BytesReceived uint64 `json:"bytes_received"`
+	BasePath      string `json:"base_dir"`
+	FinalPath     string `json:"final_path"`
+	StatusCode    int    `json:"status_code"`
+}
+
 // Converts libdrop transfer representation to our own
-func LibdropTransferToInternalTransfer(in libdrop.Transfer) *pb.Transfer {
+func LibdropTransferToInternalTransfer(in LibdropTransfer) *pb.Transfer {
 	out := &pb.Transfer{}
 
 	out.Id = in.ID
@@ -247,7 +283,7 @@ func LibdropTransferToInternalTransfer(in libdrop.Transfer) *pb.Transfer {
 	return out
 }
 
-func libdropFileToInternalFile(in libdrop.File) *pb.File {
+func libdropFileToInternalFile(in LibdropFile) *pb.File {
 	out := &pb.File{
 		Id:       in.ID,
 		Path:     in.RelativePath,
