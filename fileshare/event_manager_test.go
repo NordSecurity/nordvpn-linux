@@ -1,6 +1,7 @@
 package fileshare
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"math"
@@ -199,72 +200,61 @@ func newMockSystemEnvironment(t *testing.T) mockSystemEnvironment {
 	}
 }
 
-func TestIncomingTransfer(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	peer := "172.20.0.5"
-	meshClient := mockMeshClient{}
-	meshClient.externalPeers = []*meshpb.Peer{
-		{
-			Ip:                "172.20.0.5",
-			DoIAllowFileshare: true,
-		},
-	}
-
-	eventManager := NewEventManager(false, NoopStorage{}, &meshClient, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.EventFunc(fmt.Sprintf(`{
-		"type": "RequestReceived",
-		"data": {
-			"peer": "%s",
-			"transfer": "c13c619c-c70b-49b8-9396-72de88155c43",
-			"files": [
-			  {
-				"id": "testfile-small",
-				"size": 1048576
-			  },
-			  {
-				"id": "testfile-big",
-				"size": 10485760
-			  }
-			]
-		}
-	}`, peer))
-	transfer, ok := eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"]
-	assert.True(t, ok)
-	assert.Equal(t, "c13c619c-c70b-49b8-9396-72de88155c43", transfer.Id)
-	assert.Equal(t, peer, transfer.Peer)
-	assert.Equal(t, pb.Direction_INCOMING, transfer.Direction)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	assert.WithinDuration(t, time.Now(), transfer.Created.AsTime(), time.Second*10)
-	assert.Equal(t, 2, len(transfer.Files))
-	assert.Equal(t, "", transfer.Path) // Only set after accepting transfer
+type mockStorage struct {
+	transfers map[string]*pb.Transfer
+	err       error
 }
 
+func (m *mockStorage) Load() (map[string]*pb.Transfer, error) {
+	return m.transfers, m.err
+}
+
+// transfers are ordered
+// transfers are updated with live data
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.notificationManager = nil
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	storage := &mockStorage{}
+	eventManager.SetStorage(storage)
+
 	timeNow := time.Now()
 	for i := 10; i > 0; i-- {
-		eventManager.transfers[strconv.Itoa(i)] = &pb.Transfer{
+		storage.transfers[strconv.Itoa(i)] = &pb.Transfer{
 			Id:      strconv.Itoa(i),
 			Created: timestamppb.New(timeNow.Add(-time.Second * time.Duration(i))),
 		}
 	}
-	transfers := eventManager.GetTransfers()
+	storage.transfers["2"].Files = []*pb.File{{Id: "file"}}
+	eventManager.liveTransfers["2"] = &LiveTransfer{
+		TotalTransferred: 2,
+		Files: map[string]*LiveFile{
+			"file": {
+				Transferred: 3,
+			},
+		},
+	}
+
+	transfers, err := eventManager.GetTransfers()
+	assert.NoError(t, err)
 	assert.Equal(t, 10, len(transfers))
+	// Check if ordered
 	for i := 0; i < 9; i++ {
 		assert.True(t, transfers[i].Created.AsTime().Before(transfers[i+1].Created.AsTime()))
 	}
 
-	// Test whether we received a copy
-	eventManager.transfers[transfers[0].Id].Path = "/test1"
-	transfers[0].Path = "/test2"
-	assert.Equal(t, "/test1", eventManager.transfers[transfers[0].Id].Path)
+	assert.Equal(t, "2", transfers[1].Id)
+	assert.Equal(t, 2, transfers[1].TotalTransferred)
+	assert.Equal(t, 3, transfers[1].Files[0].Transferred)
+}
+
+func TestGetTransfers_Fail(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager.SetStorage(&mockStorage{err: errors.New("storage failure")})
+	_, err := eventManager.GetTransfers()
+	assert.ErrorContains(t, err, "storage failure")
 }
 
 func TestGetTransfer(t *testing.T) {
