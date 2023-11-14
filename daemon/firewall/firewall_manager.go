@@ -3,6 +3,7 @@ package firewall
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/netip"
 	"os/exec"
 	"sort"
@@ -97,6 +98,104 @@ func NewFirewallManager(devices device.ListFunc, commandExecutor IptablesExecuto
 		connmark:           connmark,
 		enabled:            enabled,
 	}
+}
+
+func (f *FirewallManager) Disable() error {
+	if !f.enabled {
+		return fmt.Errorf("firewall is already disabled")
+	}
+
+	// remove traffic block
+	if err := f.removeBlockTrafficRules(); err != nil {
+		log.Printf("unblocking traffic: %s", err.Error())
+	}
+
+	// remove api allowlist
+	if err := f.manageApiAllowlist(false); err != nil {
+		log.Printf("removing api allowlist %s", err.Error())
+	}
+
+	// remove meshnet block rules
+	if f.meshnetDeviceAddress != "" {
+		if err := f.removeMeshnetBlockRules(f.meshnetDeviceAddress); err != nil {
+			log.Printf("removing meshnet block rules: %s", err.Error())
+		}
+	}
+
+	// remove allowlist
+	for _, rule := range f.allowlistRules {
+		if err := f.commandExecutor.ExecuteCommand("-D " + rule); err != nil {
+			log.Printf("removing allowlist rule: %s", err.Error())
+		}
+	}
+
+	// remove allow incoming rules
+	for _, rule := range f.allowIncomingRules {
+		if err := f.removeIncomingRule(rule); err != nil {
+			log.Printf("removing incoming rules: %s", err.Error())
+		}
+	}
+
+	// remove allow fileshare rules
+	for _, rule := range f.fileshareRules {
+		if err := f.commandExecutor.ExecuteCommand("-D " + rule); err != nil {
+			log.Printf("removing fileshare allow rule: %s", err.Error())
+		}
+	}
+
+	f.enabled = false
+
+	return nil
+}
+
+func (f *FirewallManager) Enable() error {
+	if f.enabled {
+		return fmt.Errorf("firewall is already enabled")
+	}
+
+	// add traffic block
+	for _, rule := range f.trafficBlockRules {
+		if err := f.commandExecutor.ExecuteCommand("-I " + rule); err != nil {
+			return fmt.Errorf("blocking input traffic: %w", err)
+		}
+	}
+
+	// add api allowlist
+	if err := f.manageApiAllowlist(true); err != nil {
+		return fmt.Errorf("adding api allowlist %w", err)
+	}
+
+	// add meshnet block rules
+	if f.meshnetDeviceAddress != "" {
+		if err := f.addMeshnetBlockRules(f.meshnetDeviceAddress); err != nil {
+			return fmt.Errorf("adding meshnet block rules: %w", err)
+		}
+	}
+
+	// add allowlist
+	for _, rule := range f.allowlistRules {
+		if err := f.commandExecutor.ExecuteCommand("-I " + rule); err != nil {
+			return fmt.Errorf("adding allowlist rule: %w", err)
+		}
+	}
+
+	// add allow incoming rules
+	for _, rule := range f.allowIncomingRules {
+		if err := f.addIncomingRule(rule); err != nil {
+			return fmt.Errorf("adding incoming rules: %w", err)
+		}
+	}
+
+	// add allow fileshare rules
+	for _, rule := range f.fileshareRules {
+		if err := f.commandExecutor.ExecuteCommand("-I " + rule); err != nil {
+			return fmt.Errorf("adding fileshare allow rule: %w", err)
+		}
+	}
+
+	f.enabled = true
+
+	return nil
 }
 
 // AllowFileshare adds ACCEPT rule for all incoming connections to tcp port 49111 from the peer with given UniqueAddress.

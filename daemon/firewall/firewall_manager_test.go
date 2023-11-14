@@ -906,3 +906,90 @@ func TestApiAllowlist(t *testing.T) {
 		})
 	}
 }
+
+func TestEnableDisable(t *testing.T) {
+	iptablesMock := NewIptablesMock(false)
+	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &iptablesMock, connmark, true)
+
+	// static commands must always remain in the same place, at the bottom of the table
+	firewallManager.BlockTraffic()
+	firewallManager.ApiAllowlist()
+	firewallManager.BlockMeshnet("230.239.113.214")
+	staticCommands := iptablesMock.PopCommands()
+
+	// transient commands change the order depending on users action, i.e when subnet was added to allowlist, when peer
+	// was added/removed, etc.
+	peer1Address := meshnet.UniqueAddress{
+		UID:     "D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet=",
+		Address: netip.MustParseAddr("230.165.178.53"),
+	}
+	firewallManager.AllowIncoming(peer1Address, true)
+
+	peer2Address := meshnet.UniqueAddress{
+		UID:     "zQyBhKrCtcmuzZimzugZxZXFihuyznjCPPtZUUjVY=",
+		Address: netip.MustParseAddr("230.165.178.53"),
+	}
+	firewallManager.AllowIncoming(peer2Address, false)
+
+	firewallManager.AllowFileshare(peer1Address)
+
+	udpPorts := []int{
+		30000,
+		30001,
+		30002,
+		40000,
+	}
+	tcpPorts := []int{
+		50002,
+		50003,
+		50004,
+		60000,
+	}
+	subnets := []netip.Prefix{
+		netip.MustParsePrefix("102.56.52.223/22"),
+	}
+	firewallManager.SetAllowlist(udpPorts, tcpPorts, subnets)
+
+	transientCommands := iptablesMock.PopCommands()
+
+	firewallManager.Disable()
+
+	commandsAfterDisable := iptablesMock.PopCommands()
+
+	expectedStaticCommands := transformCommandsToDelte(t, staticCommands)
+	staticCommandsAfterDisable := commandsAfterDisable[:len(expectedStaticCommands)]
+	assert.Equal(t,
+		expectedStaticCommands,
+		staticCommandsAfterDisable,
+		"Invalid commands executed after disabling firewall:\nExpected:\n%s\nGot:\n%s",
+		transformCommandsForPrinting(t, expectedStaticCommands),
+		transformCommandsForPrinting(t, staticCommandsAfterDisable))
+
+	expectedTransientCommands := transformCommandsToDelte(t, transientCommands)
+	transientCommandsAfterDisable := commandsAfterDisable[len(expectedStaticCommands):]
+	for _, expectedCommand := range expectedTransientCommands {
+		assert.Contains(t,
+			transientCommandsAfterDisable,
+			expectedCommand,
+			"Expected command not executed after disabling firewall.")
+	}
+
+	firewallManager.Enable()
+	commandsAfterReenable := iptablesMock.PopCommands()
+
+	staticCommandsAfterReenable := commandsAfterReenable[:len(staticCommands)]
+	assert.Equal(t,
+		staticCommands,
+		staticCommandsAfterReenable,
+		"Invalid commands executed after reenabling firewall:\n%sExpected:\nGot:\n%s",
+		transformCommandsForPrinting(t, staticCommands),
+		transformCommandsForPrinting(t, staticCommandsAfterReenable))
+
+	transientCommandsAfterReenable := commandsAfterReenable[len(staticCommands):]
+	for _, expectedCommand := range transientCommands {
+		assert.Contains(t,
+			transientCommandsAfterReenable,
+			expectedCommand,
+			"Expected command not executed after reenablign firewall.")
+	}
+}
