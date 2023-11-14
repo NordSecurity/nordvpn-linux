@@ -44,6 +44,7 @@ func NewIptables() Iptables {
 func (i Iptables) ExecuteCommand(command string) error {
 	commandArgs := strings.Split(command, " ")
 
+	// #nosec G204 -- arg values are known before even running the program
 	if _, err := exec.Command(iptables, commandArgs...).CombinedOutput(); err != nil {
 		return err
 	}
@@ -58,6 +59,7 @@ func (i Iptables) ExecuteCommandIPv6(command string) error {
 
 	commandArgs := strings.Split(command, " ")
 
+	// #nosec G204 -- arg values are known before even running the program
 	if _, err := exec.Command(ip6tables, commandArgs...).CombinedOutput(); err != nil {
 		return err
 	}
