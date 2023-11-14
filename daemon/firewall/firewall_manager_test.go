@@ -59,6 +59,10 @@ func (i *IptablesMock) ExecuteCommandIPv6(command string) error {
 	return nil
 }
 
+func (i *IptablesMock) Enable() {}
+
+func (i *IptablesMock) Disable() {}
+
 var ErrGetDevicesFailed error = errors.New("get devices has failed")
 
 // transformCommandsForPriting takes list of commands and combines them into a single string, where commands are
@@ -125,7 +129,6 @@ func TestTrafficBlocking(t *testing.T) {
 		devicesFunc                     device.ListFunc
 		devicesFuncUnblock              device.ListFunc
 		failingCommand                  string
-		firewallDisabled                bool
 		expectedErrBlock                error
 		expectedErrUnblock              error
 		expectedCommandsAfterBlocking   []string
@@ -161,11 +164,6 @@ func TestTrafficBlocking(t *testing.T) {
 			failingCommand:                iface0DeleteInputCommand,
 			expectedErrUnblock:            ErrIptablesFailure,
 		},
-		{
-			name:             "firewall is disabled",
-			devicesFunc:      getDeviceFunc(false, mock.En0Interface),
-			firewallDisabled: true,
-		},
 	}
 
 	for _, test := range tests {
@@ -176,7 +174,7 @@ func TestTrafficBlocking(t *testing.T) {
 				iptablesMock.AddErrCommand(test.failingCommand)
 			}
 
-			firewallManager := NewFirewallManager(test.devicesFunc, &iptablesMock, connmark, !test.firewallDisabled)
+			firewallManager := NewFirewallManager(test.devicesFunc, &iptablesMock, connmark)
 
 			err := firewallManager.BlockTraffic()
 
@@ -235,7 +233,7 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 	}
 
 	iptablesMock := NewIptablesMock(false)
-	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &iptablesMock, connmark, true)
+	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &iptablesMock, connmark)
 
 	err := firewallManager.BlockTraffic()
 	assert.Nil(t, err, "Received unexpected error when blocking traffic.")
@@ -252,7 +250,7 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 
 func TestUnblockTraffic_TrafficNotBlocked(t *testing.T) {
 	iptablesMock := NewIptablesMock(false)
-	firewallManager := NewFirewallManager(getDeviceFunc(false), &iptablesMock, connmark, true)
+	firewallManager := NewFirewallManager(getDeviceFunc(false), &iptablesMock, connmark)
 
 	err := firewallManager.UnblockTraffic()
 	assert.ErrorIs(t, err, ErrRuleAlreadyActive, "Invalid error received when unblocking traffic when it was not blocked.")
@@ -360,11 +358,6 @@ func TestSetAllowlist(t *testing.T) {
 			expectedCommandsAfterSet: expectedCommandsIface0,
 			expectedErrUnset:         ErrIptablesFailure,
 		},
-		{
-			name:             "firewall disabled",
-			firewallDisabled: true,
-			deviceFunc:       getDeviceFunc(false, mock.En0Interface),
-		},
 	}
 
 	for _, test := range tests {
@@ -374,7 +367,7 @@ func TestSetAllowlist(t *testing.T) {
 				iptablesMock.AddErrCommand(test.invalidCommand)
 			}
 
-			firewallManager := NewFirewallManager(test.deviceFunc, &iptablesMock, connmark, !test.firewallDisabled)
+			firewallManager := NewFirewallManager(test.deviceFunc, &iptablesMock, connmark)
 
 			err := firewallManager.SetAllowlist(udpPorts, tcpPorts, subnets)
 			if test.expectedErrSet != nil {
@@ -484,11 +477,6 @@ func TestApiAllowlist(t *testing.T) {
 			expectedAllowlistCommands: expectedAllowlistCommandsIf0,
 			expectedDenylistError:     ErrIptablesFailure,
 		},
-		{
-			name:             "firewall disabled",
-			deviceFunc:       getDeviceFunc(false, mock.En0Interface),
-			firewallDisabled: true,
-		},
 	}
 
 	for _, test := range tests {
@@ -498,7 +486,7 @@ func TestApiAllowlist(t *testing.T) {
 				iptablesMock.AddErrCommand(test.invalidCommand)
 			}
 
-			firewallManager := NewFirewallManager(test.deviceFunc, &iptablesMock, connmark, !test.firewallDisabled)
+			firewallManager := NewFirewallManager(test.deviceFunc, &iptablesMock, connmark)
 
 			err := firewallManager.ApiAllowlist()
 			if test.expectedAllowlistError != nil {
