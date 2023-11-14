@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/coreos/go-semver/semver"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -66,31 +67,24 @@ func (rc *RConfig) fetchRemoteConfigIfTime() error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
+	remoteConfig := []byte(cfg.RemoteConfig)
+
+	// don't fetch the remote config too often even if there is nothing cached
 	if time.Now().After(cfg.RCLastUpdate.Add(rc.updatePeriod)) {
-		remoteConfigValue, err := rc.remoteService.FetchRemoteConfig()
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal(remoteConfigValue, rc.config)
-		if err != nil {
-			return err
-		}
-		if err := rc.configManager.SaveWith(func(c config.Config) config.Config {
-			s, err := json.Marshal(rc.config)
-			if err == nil {
-				c.RemoteConfig = string(s)
-				c.RCLastUpdate = time.Now()
+		if fetchedConfig, err := rc.fetchAndSaveRemoteConfig(); err != nil {
+			// if there no is cached config return error
+			// otherwise use the cached data
+			if len(remoteConfig) == 0 {
+				return err
+			} else {
+				log.Println(internal.ErrorPrefix, "use cached config because fetch failed:", err)
 			}
-			return c
-		}); err != nil {
-			return err
-		}
-		if err := rc.configManager.Load(&cfg); err != nil {
-			return fmt.Errorf("reloading config: %w", err)
+		} else {
+			remoteConfig = fetchedConfig
 		}
 	}
 
-	if err := json.Unmarshal([]byte(cfg.RemoteConfig), rc.config); err != nil {
+	if err := json.Unmarshal(remoteConfig, rc.config); err != nil {
 		return fmt.Errorf("parsing remote config from JSON: %w", err)
 	}
 
@@ -101,18 +95,51 @@ func (rc *RConfig) fetchRemoteConfigIfTime() error {
 	return nil
 }
 
-// GetValue provides value of requested key from remote config
-func (rc *RConfig) GetValue(cfgKey string) (string, error) {
-	if err := rc.fetchRemoteConfigIfTime(); err != nil {
-		return "", err
+func (rc *RConfig) fetchAndSaveRemoteConfig() (remoteConfig []byte, err error) {
+	// Always save the last update time and also save the remote config if it was retrieved successfully
+	defer func() {
+		errCfgSave := rc.configManager.SaveWith(func(c config.Config) config.Config {
+			c.RCLastUpdate = time.Now()
+			if err == nil {
+				c.RemoteConfig = string(remoteConfig)
+			}
+			return c
+		})
+		err = errors.Join(err, errCfgSave)
+	}()
+
+	remoteConfigValue, err := rc.remoteService.FetchRemoteConfig()
+	if err != nil {
+		return nil, fmt.Errorf("fetching the remote config failed: %w", err)
 	}
 
+	var config firebaseremoteconfig.RemoteConfig
+	err = json.Unmarshal(remoteConfigValue, &config)
+	if err != nil {
+		return nil, fmt.Errorf("parsing the fetched remote config failed: %w", err)
+	}
+
+	return remoteConfigValue, nil
+}
+
+// GetValue provides value of requested key from remote config
+func (rc *RConfig) GetValue(cfgKey string) (string, error) {
+	err := rc.fetchRemoteConfigIfTime()
+	if err != nil {
+		log.Println(internal.WarningPrefix, "using cached config:", err)
+	}
+	// if fetching new config fails, use the cached info
 	configParam := rc.config.Parameters
 	for key, val := range configParam {
 		if key == cfgKey {
 			return val.DefaultValue.Value, nil
 		}
 	}
+	if err != nil {
+		// when not found return the original error from fetch
+		return "", err
+	}
+
 	return "", fmt.Errorf("key %s does not exist in remote config", cfgKey)
 }
 
@@ -136,15 +163,16 @@ func stringToSemVersion(stringVersion, prefix string) (*semver.Version, error) {
 // GetTelioConfig try to find remote config field for app version
 // and load json block from that field
 func (rc *RConfig) GetTelioConfig(stringVersion string) (string, error) {
-	cfg := ""
-
 	if err := rc.fetchRemoteConfigIfTime(); err != nil {
-		return cfg, err
+		if len(rc.config.Parameters) == 0 {
+			return "", err
+		}
+		log.Println(internal.WarningPrefix, "using cached config:", err)
 	}
 
 	appVersion, err := stringToSemVersion(stringVersion, "")
 	if err != nil {
-		return cfg, err
+		return "", err
 	}
 
 	// build descending ordered version list
@@ -163,13 +191,13 @@ func (rc *RConfig) GetTelioConfig(stringVersion string) (string, error) {
 	// find exact version match or first older/lower version
 	versionField, err := findVersionField(orderedFields, appVersion)
 	if err != nil {
-		return cfg, err
+		return "", err
 	}
 	log.Println("remote config version field:", versionField)
 
 	jsonString, err := rc.GetValue(versionField)
 	if err != nil {
-		return cfg, err
+		return "", err
 	}
 
 	return jsonString, nil
