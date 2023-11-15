@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
 )
@@ -114,6 +115,8 @@ func transformCommandsToDelte(t *testing.T, oldCommands []string) []string {
 const connmark uint32 = 0x55
 
 func TestTrafficBlocking(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	iface0InsertInputCommand := fmt.Sprintf("-I INPUT -i %s -m comment --comment nordvpn -j DROP", mock.En0Interface.Name)
 	iface0CommandsAfterBlocking := []string{
 		iface0InsertInputCommand,
@@ -239,6 +242,8 @@ func TestTrafficBlocking(t *testing.T) {
 }
 
 func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	iface0CommandsAfterBlocking := []string{
 		fmt.Sprintf("-I INPUT -i %s -m comment --comment nordvpn -j DROP", mock.En0Interface.Name),
 		fmt.Sprintf("-I OUTPUT -o %s -m comment --comment nordvpn -j DROP", mock.En0Interface.Name),
@@ -261,6 +266,8 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 }
 
 func TestUnblockTraffic_TrafficNotBlocked(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	iptablesMock := NewIptablesMock(false)
 	firewallManager := NewFirewallManager(getDeviceFunc(false), &iptablesMock, connmark)
 
@@ -272,6 +279,8 @@ func TestUnblockTraffic_TrafficNotBlocked(t *testing.T) {
 }
 
 func TestSetAllowlist(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	udpPorts := []int{
 		30000,
 		30001,
