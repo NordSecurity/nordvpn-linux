@@ -34,14 +34,14 @@ func (i *IptablesMock) AddErrCommand(command string) {
 	i.errCommands[command] = true
 }
 
-// PopCommands returns recorded commands executed by the mock and clears the internal state.
-func (i *IptablesMock) PopCommands() []string {
+// popCommands returns recorded commands executed by the mock and clears the internal state.
+func (i *IptablesMock) popCommands() []string {
 	commands := i.Commands
 	i.Commands = nil
 	return commands
 }
 
-func (i *IptablesMock) ExecuteCommand(command string) error {
+func (i *IptablesMock) executeCommand(command string) error {
 	if i.isErr {
 		return ErrIptablesFailure
 	}
@@ -55,7 +55,19 @@ func (i *IptablesMock) ExecuteCommand(command string) error {
 	return nil
 }
 
-func (i *IptablesMock) ExecuteCommandIPv6(command string) error {
+func (i *IptablesMock) InsertRule(command string) error {
+	return i.executeCommand("-I " + command)
+}
+
+func (i *IptablesMock) DeleteRule(command string) error {
+	return i.executeCommand("-D " + command)
+}
+
+func (i *IptablesMock) InsertRuleIPv6(command string) error {
+	return nil
+}
+
+func (i *IptablesMock) DeleteRuleIPv6(command string) error {
 	return nil
 }
 
@@ -183,7 +195,7 @@ func TestTrafficBlocking(t *testing.T) {
 				return
 			}
 
-			commands := iptablesMock.PopCommands()
+			commands := iptablesMock.popCommands()
 			expectedNumberOfCommands := len(test.expectedCommandsAfterBlocking)
 			assert.Len(t, commands, expectedNumberOfCommands, "Invalid number of commands when blocking traffic.")
 
@@ -207,7 +219,7 @@ func TestTrafficBlocking(t *testing.T) {
 				return
 			}
 
-			commands = iptablesMock.PopCommands()
+			commands = iptablesMock.popCommands()
 			expectedNumberOfCommands = len(test.expectedCommandsAfterUnblocking)
 			assert.Len(t, commands, expectedNumberOfCommands, "Invalid number of commands when unblocking traffic.")
 
@@ -238,13 +250,13 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 	err := firewallManager.BlockTraffic()
 	assert.Nil(t, err, "Received unexpected error when blocking traffic.")
 
-	commands := iptablesMock.PopCommands()
+	commands := iptablesMock.popCommands()
 	assert.Equal(t, iface0CommandsAfterBlocking, commands, "Invalid commands executed when blocking traffic.")
 
 	err = firewallManager.BlockTraffic()
 	assert.ErrorIs(t, err, ErrRuleAlreadyActive, "Invalid error received after blocking traffic a second time.")
 
-	commands = iptablesMock.PopCommands()
+	commands = iptablesMock.popCommands()
 	assert.Empty(t, commands, "Commands were executed after blocking traffic for a second time.")
 }
 
@@ -255,7 +267,7 @@ func TestUnblockTraffic_TrafficNotBlocked(t *testing.T) {
 	err := firewallManager.UnblockTraffic()
 	assert.ErrorIs(t, err, ErrRuleAlreadyActive, "Invalid error received when unblocking traffic when it was not blocked.")
 
-	commands := iptablesMock.PopCommands()
+	commands := iptablesMock.popCommands()
 	assert.Empty(t, commands, "Commands were executed when ublocking traffic when it was not blocked.")
 }
 
@@ -375,7 +387,7 @@ func TestSetAllowlist(t *testing.T) {
 				return
 			}
 
-			commandsAfterSet := iptablesMock.PopCommands()
+			commandsAfterSet := iptablesMock.popCommands()
 			assert.Len(t,
 				commandsAfterSet,
 				len(test.expectedCommandsAfterSet),
@@ -395,7 +407,7 @@ func TestSetAllowlist(t *testing.T) {
 
 			// same commands should be performed, just with -D flag instead of -I flag
 			expectedCommandsAfterUnset := transformCommandsToDelte(t, test.expectedCommandsAfterSet)
-			commandsAfterUnset := iptablesMock.PopCommands()
+			commandsAfterUnset := iptablesMock.popCommands()
 			assert.Len(t,
 				commandsAfterUnset,
 				len(expectedCommandsAfterUnset),
@@ -494,7 +506,7 @@ func TestApiAllowlist(t *testing.T) {
 				return
 			}
 
-			commandsAfterApiAllowlist := iptablesMock.PopCommands()
+			commandsAfterApiAllowlist := iptablesMock.popCommands()
 			assert.Len(t, commandsAfterApiAllowlist, len(test.expectedAllowlistCommands),
 				"Invalid commands executed after api allowlist.")
 			for _, expectedCommand := range test.expectedAllowlistCommands {
@@ -508,7 +520,7 @@ func TestApiAllowlist(t *testing.T) {
 				return
 			}
 
-			commandsAfterApiDenylist := iptablesMock.PopCommands()
+			commandsAfterApiDenylist := iptablesMock.popCommands()
 			assert.Len(t, commandsAfterApiDenylist, len(test.expectedDenylistCommands),
 				"Invalid commands executed after api denylist.")
 			for _, expectedCommand := range test.expectedDenylistCommands {
