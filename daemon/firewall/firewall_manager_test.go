@@ -500,7 +500,7 @@ func TestApiAllowlist(t *testing.T) {
 
 			firewallManager := NewFirewallManager(test.deviceFunc, &iptablesMock, connmark)
 
-			err := firewallManager.ApiAllowlist()
+			err := firewallManager.APIAllowlist()
 			if test.expectedAllowlistError != nil {
 				assert.ErrorIs(t, err, test.expectedAllowlistError, "Invalid error returned by ApiAllowlist.")
 				return
@@ -514,7 +514,7 @@ func TestApiAllowlist(t *testing.T) {
 					"Expected command not found after api allowlist.")
 			}
 
-			err = firewallManager.ApiDenylist()
+			err = firewallManager.APIDenylist()
 			if test.expectedAllowlistError != nil {
 				assert.ErrorIs(t, err, test.expectedAllowlistError, "Invalid error returned by ApiDenylist.")
 				return

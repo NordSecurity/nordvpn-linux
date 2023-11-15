@@ -287,8 +287,8 @@ func (f *FirewallManager) UnsetAllowlist() error {
 	return nil
 }
 
-// ApiAllowlist adds ACCEPT rules for privileged traffic, for each interface.
-func (f *FirewallManager) ApiAllowlist() error {
+// APIAllowlist adds ACCEPT rules for privileged traffic, for each interface.
+func (f *FirewallManager) APIAllowlist() error {
 	ifaces, err := f.devices()
 	if err != nil {
 		return fmt.Errorf("listing interfaces: %w", err)
@@ -320,7 +320,7 @@ func (f *FirewallManager) ApiAllowlist() error {
 }
 
 // ApiDenylis removes ACCEPT rules added by ApiAllowlist.
-func (f *FirewallManager) ApiDenylist() error {
+func (f *FirewallManager) APIDenylist() error {
 	for _, rule := range f.apiAllowlistRules {
 		if err := f.commandExecutor.DeleteRule(rule); err != nil {
 			return fmt.Errorf("removing api allowlist rule: %w", err)
