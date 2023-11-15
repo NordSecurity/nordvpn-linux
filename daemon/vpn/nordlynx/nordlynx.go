@@ -17,9 +17,10 @@ import (
 
 const (
 	// InterfaceName for various NordLynx implementations
-	InterfaceName = "nordlynx"
-	defaultPort   = 51820
-	defaultMTU    = 1500
+	InterfaceName       = "nordlynx"
+	defaultPort         = 51820
+	defaultMTU          = 1500
+	wireguardHeaderSize = 80
 )
 
 var (
@@ -57,28 +58,7 @@ func getDefaultIpRouteInterface(ipRouteOutput string) (string, error) {
 
 // SetMTU for an interface.
 func SetMTU(iface net.Interface) error {
-	var err error
-
-	c1 := exec.Command("ip", "route", "show", "default")
-	out, err := c1.Output()
-
-	if err != nil {
-		return fmt.Errorf("ip route show default failed: %s", err)
-	}
-
-	defaultGatewayName, err := getDefaultIpRouteInterface(string(out))
-
-	if err != nil {
-		return err
-	}
-
-	defaultGateway, err := net.InterfaceByName(defaultGatewayName)
-	if err != nil {
-		return err
-	}
-
-	// wireguard-quick does this
-	mtu := defaultGateway.MTU - 80
+	mtu := calculateMTU(internal.NewShellCommand("ip"))
 
 	fd, err := unix.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_IP)
 	if err != nil {
@@ -93,6 +73,39 @@ func SetMTU(iface net.Interface) error {
 	req.SetUint32(uint32(mtu))
 
 	return unix.IoctlIfreq(fd, unix.SIOCSIFMTU, req)
+}
+
+func calculateMTU(ip internal.Command) int {
+	defaultGatewayMTU := func() (int, error) {
+		out, err := ip.Output("route", "show", "default")
+		if err != nil {
+			return 0, fmt.Errorf("ip route show default failed: %s", err)
+		}
+
+		defaultGatewayName, err := getDefaultIpRouteInterface(string(out))
+
+		if err != nil {
+			return 0, err
+		}
+
+		defaultGateway, err := net.InterfaceByName(defaultGatewayName)
+		if err != nil {
+			return 0, err
+		}
+
+		// wireguard-quick does this
+		mtu := defaultGateway.MTU - wireguardHeaderSize
+		return mtu, nil
+	}
+
+	mtu, err := defaultGatewayMTU()
+	if err == nil {
+		return mtu
+	}
+
+	log.Println(internal.WarningPrefix, "using default MTU, failed to get default gateway MTU", err)
+
+	return defaultMTU - wireguardHeaderSize
 }
 
 func upWGInterface(iface string) error {

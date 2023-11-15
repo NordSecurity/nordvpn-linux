@@ -1,12 +1,15 @@
 package nordlynx
 
 import (
+	"errors"
 	"net"
 	"os/exec"
 	"strings"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -119,5 +122,57 @@ func TestRemoveDevice(t *testing.T) {
 
 		_, err := removeDevice(device)
 		assert.Error(t, err)
+	})
+}
+
+func TestCalculateMTU(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name          string
+		ipRouteOutput string
+		ipRouteError  error
+		expectedMTU   int
+	}{
+		{
+			name:        "no default route exist",
+			expectedMTU: defaultMTU - wireguardHeaderSize,
+		},
+		{
+			name:          "incorrect ip route output",
+			ipRouteOutput: "default via wlp0s20f3 proto dhcp metric 600",
+			expectedMTU:   defaultMTU - wireguardHeaderSize,
+		},
+		{
+			name:          "ip route returns error",
+			ipRouteOutput: "default via 192.168.0.1 dev interface_name proto dhcp metric 600",
+			ipRouteError:  errors.New("failed"),
+			expectedMTU:   defaultMTU - wireguardHeaderSize,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ip := mock.NewMockCommand("ip")
+			ip.SetOutputForArgs(test.ipRouteOutput, "route", "show", "default")
+			ip.SetErrorForArgs(test.ipRouteError, "route", "show", "default")
+
+			mtu := calculateMTU(ip)
+			assert.Equal(t, mtu, test.expectedMTU)
+		})
+	}
+
+	t.Run("check real system values", func(t *testing.T) {
+		out, err := exec.Command("ip", "route", "show", "default").Output()
+		assert.NoError(t, err)
+
+		defaultGatewayName, err := getDefaultIpRouteInterface(string(out))
+		assert.NoError(t, err)
+
+		defaultGateway, err := net.InterfaceByName(defaultGatewayName)
+		assert.NoError(t, err)
+
+		mtu := calculateMTU(internal.NewShellCommand("ip"))
+		assert.Equal(t, defaultGateway.MTU-wireguardHeaderSize, mtu)
 	})
 }
