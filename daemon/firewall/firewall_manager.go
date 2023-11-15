@@ -129,7 +129,6 @@ func (f *FirewallManager) BlockTraffic() error {
 			return fmt.Errorf("blocking output traffic: %w", err)
 		}
 		f.trafficBlockRules = append(f.trafficBlockRules, outputCommand)
-
 	}
 	return nil
 }
