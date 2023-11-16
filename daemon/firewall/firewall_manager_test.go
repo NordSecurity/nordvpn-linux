@@ -17,9 +17,10 @@ import (
 var ErrIptablesFailure = errors.New("iptables failure")
 
 type IptablesMock struct {
-	isErr       bool
-	Commands    []string
-	errCommands map[string]bool
+	isErr        bool
+	CommandsIPv4 []string
+	CommandsIPv6 []string
+	errCommands  map[string]bool
 }
 
 func NewIptablesMock(isErr bool) IptablesMock {
@@ -35,14 +36,20 @@ func (i *IptablesMock) AddErrCommand(command string) {
 	i.errCommands[command] = true
 }
 
-// popCommands returns recorded commands executed by the mock and clears the internal state.
-func (i *IptablesMock) popCommands() []string {
-	commands := i.Commands
-	i.Commands = nil
+// popIPv4Commands returns recorded commands executed by the mock and clears the internal state.
+func (i *IptablesMock) popIPv4Commands() []string {
+	commands := i.CommandsIPv4
+	i.CommandsIPv4 = nil
 	return commands
 }
 
-func (i *IptablesMock) executeCommand(command string) error {
+func (i *IptablesMock) popIPv6Commands() []string {
+	commands := i.CommandsIPv6
+	i.CommandsIPv6 = nil
+	return commands
+}
+
+func (i *IptablesMock) executeCommand(command string, version IPVersion) error {
 	if i.isErr {
 		return ErrIptablesFailure
 	}
@@ -51,25 +58,23 @@ func (i *IptablesMock) executeCommand(command string) error {
 		return ErrIptablesFailure
 	}
 
-	i.Commands = append(i.Commands, command)
+	if version == IPv4 || version == Both {
+		i.CommandsIPv4 = append(i.CommandsIPv4, command)
+	}
+
+	if version == IPv6 || version == Both {
+		i.CommandsIPv6 = append(i.CommandsIPv6, command)
+	}
 
 	return nil
 }
 
-func (i *IptablesMock) InsertRule(command string) error {
-	return i.executeCommand("-I " + command)
+func (i *IptablesMock) InsertRule(rule string, version IPVersion) error {
+	return i.executeCommand("-I "+rule, version)
 }
 
-func (i *IptablesMock) DeleteRule(command string) error {
-	return i.executeCommand("-D " + command)
-}
-
-func (i *IptablesMock) InsertRuleIPv6(command string) error {
-	return nil
-}
-
-func (i *IptablesMock) DeleteRuleIPv6(command string) error {
-	return nil
+func (i *IptablesMock) DeleteRule(rule string, version IPVersion) error {
+	return i.executeCommand("-D "+rule, version)
 }
 
 func (i *IptablesMock) Enable() {}
@@ -198,19 +203,21 @@ func TestTrafficBlocking(t *testing.T) {
 				return
 			}
 
-			commands := iptablesMock.popCommands()
+			commandsIPv4 := iptablesMock.popIPv4Commands()
+			commandsIPv6 := iptablesMock.popIPv6Commands()
 			expectedNumberOfCommands := len(test.expectedCommandsAfterBlocking)
-			assert.Len(t, commands, expectedNumberOfCommands, "Invalid number of commands when blocking traffic.")
+			assert.Len(t, commandsIPv4, expectedNumberOfCommands, "Invalid number of commands when blocking traffic.")
+			assert.Len(t, commandsIPv6, expectedNumberOfCommands, "Invalid number of commands when blocking traffic.")
 
 			// rules are added to two different chains, so ordering doesn't matter in this case and we can use Contains
 			for _, expectedCommand := range test.expectedCommandsAfterBlocking {
 				assert.Contains(t,
-					commands,
+					commandsIPv4,
 					expectedCommand,
 					"Input block traffic rule was not added to the firewall.")
 
 				assert.Contains(t,
-					commands,
+					commandsIPv6,
 					expectedCommand,
 					"Input block traffic rule was not added to the firewall.")
 			}
@@ -222,18 +229,20 @@ func TestTrafficBlocking(t *testing.T) {
 				return
 			}
 
-			commands = iptablesMock.popCommands()
+			commandsIPv4 = iptablesMock.popIPv4Commands()
+			commandsIPv6 = iptablesMock.popIPv6Commands()
 			expectedNumberOfCommands = len(test.expectedCommandsAfterUnblocking)
-			assert.Len(t, commands, expectedNumberOfCommands, "Invalid number of commands when unblocking traffic.")
+			assert.Len(t, commandsIPv4, expectedNumberOfCommands, "Invalid number of commands when unblocking traffic.")
+			assert.Len(t, commandsIPv6, expectedNumberOfCommands, "Invalid number of commands when unblocking traffic.")
 
 			for _, expectedCommand := range test.expectedCommandsAfterUnblocking {
 				assert.Contains(t,
-					commands,
+					commandsIPv4,
 					expectedCommand,
 					"Input block traffic rule was not added to the firewall.")
 
 				assert.Contains(t,
-					commands,
+					commandsIPv6,
 					expectedCommand,
 					"Input block traffic rule was not added to the firewall.")
 			}
@@ -255,13 +264,13 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 	err := firewallManager.BlockTraffic()
 	assert.Nil(t, err, "Received unexpected error when blocking traffic.")
 
-	commands := iptablesMock.popCommands()
+	commands := iptablesMock.popIPv4Commands()
 	assert.Equal(t, iface0CommandsAfterBlocking, commands, "Invalid commands executed when blocking traffic.")
 
 	err = firewallManager.BlockTraffic()
 	assert.ErrorIs(t, err, ErrRuleAlreadyActive, "Invalid error received after blocking traffic a second time.")
 
-	commands = iptablesMock.popCommands()
+	commands = iptablesMock.popIPv4Commands()
 	assert.Empty(t, commands, "Commands were executed after blocking traffic for a second time.")
 }
 
@@ -274,7 +283,7 @@ func TestUnblockTraffic_TrafficNotBlocked(t *testing.T) {
 	err := firewallManager.UnblockTraffic()
 	assert.ErrorIs(t, err, ErrRuleAlreadyActive, "Invalid error received when unblocking traffic when it was not blocked.")
 
-	commands := iptablesMock.popCommands()
+	commands := iptablesMock.popIPv4Commands()
 	assert.Empty(t, commands, "Commands were executed when ublocking traffic when it was not blocked.")
 }
 
@@ -396,7 +405,7 @@ func TestSetAllowlist(t *testing.T) {
 				return
 			}
 
-			commandsAfterSet := iptablesMock.popCommands()
+			commandsAfterSet := iptablesMock.popIPv4Commands()
 			assert.Len(t,
 				commandsAfterSet,
 				len(test.expectedCommandsAfterSet),
@@ -416,7 +425,7 @@ func TestSetAllowlist(t *testing.T) {
 
 			// same commands should be performed, just with -D flag instead of -I flag
 			expectedCommandsAfterUnset := transformCommandsToDelte(t, test.expectedCommandsAfterSet)
-			commandsAfterUnset := iptablesMock.popCommands()
+			commandsAfterUnset := iptablesMock.popIPv4Commands()
 			assert.Len(t,
 				commandsAfterUnset,
 				len(expectedCommandsAfterUnset),
@@ -429,6 +438,54 @@ func TestSetAllowlist(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSetAllowlist_IPv6(t *testing.T) {
+	udpPorts := []int{
+		30000,
+	}
+
+	// Both IPv4 and IPv6 commands should be executed for ports.
+	expectedCommandsAfterSet := []string{
+		fmt.Sprintf("-I INPUT -i %s -p udp -m udp --dport 30000:30000 -m comment --comment nordvpn -j ACCEPT", mock.En0Interface.Name),
+		fmt.Sprintf("-I INPUT -i %s -p udp -m udp --sport 30000:30000 -m comment --comment nordvpn -j ACCEPT", mock.En0Interface.Name),
+		fmt.Sprintf("-I OUTPUT -o %s -p udp -m udp --dport 30000:30000 -m comment --comment nordvpn -j ACCEPT", mock.En0Interface.Name),
+		fmt.Sprintf("-I OUTPUT -o %s -p udp -m udp --sport 30000:30000 -m comment --comment nordvpn -j ACCEPT", mock.En0Interface.Name),
+	}
+
+	subnets := []netip.Prefix{
+		netip.MustParsePrefix("7628:c55b:3450:b739:bb1f:6112:a544:9226/30"),
+	}
+
+	subnetCommands := []string{
+		fmt.Sprintf("-I INPUT -s 7628:c55b:3450:b739:bb1f:6112:a544:9226/30 -i %s -m comment --comment nordvpn -j ACCEPT", mock.En0Interface.Name),
+		fmt.Sprintf("-I OUTPUT -d 7628:c55b:3450:b739:bb1f:6112:a544:9226/30 -o %s -m comment --comment nordvpn -j ACCEPT", mock.En0Interface.Name),
+	}
+
+	// Only IPv6 commands should be executed for subnets.
+	expectedIPv6CommandsAfterSet := append(subnetCommands, expectedCommandsAfterSet...)
+
+	iptablesMock := NewIptablesMock(false)
+	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &iptablesMock, connmark)
+
+	firewallManager.SetAllowlist(udpPorts, nil, subnets)
+
+	commands := iptablesMock.popIPv4Commands()
+	assert.Equal(t, expectedCommandsAfterSet, commands)
+
+	commands = iptablesMock.popIPv6Commands()
+	assert.Equal(t, expectedIPv6CommandsAfterSet, commands)
+
+	expectedCommandsAfterUnset := transformCommandsToDelte(t, expectedCommandsAfterSet)
+	expectedIPv6CommandsAfterUnset := transformCommandsToDelte(t, expectedIPv6CommandsAfterSet)
+
+	firewallManager.UnsetAllowlist()
+
+	commands = iptablesMock.popIPv4Commands()
+	assert.Equal(t, expectedCommandsAfterUnset, commands)
+
+	commands = iptablesMock.popIPv6Commands()
+	assert.Equal(t, expectedIPv6CommandsAfterUnset, commands)
 }
 
 func TestApiAllowlist(t *testing.T) {
@@ -515,12 +572,17 @@ func TestApiAllowlist(t *testing.T) {
 				return
 			}
 
-			commandsAfterApiAllowlist := iptablesMock.popCommands()
-			assert.Len(t, commandsAfterApiAllowlist, len(test.expectedAllowlistCommands),
-				"Invalid commands executed after api allowlist.")
+			commandsIPv4AfterApiAllowlist := iptablesMock.popIPv4Commands()
+			commandsIPv6AfterApiAllowlist := iptablesMock.popIPv6Commands()
+			assert.Len(t, commandsIPv4AfterApiAllowlist, len(test.expectedAllowlistCommands),
+				"Invalid IPv4 commands executed after api allowlist.")
+			assert.Len(t, commandsIPv6AfterApiAllowlist, len(test.expectedAllowlistCommands),
+				"Invalid IPv6 commands executed after api allowlist.")
 			for _, expectedCommand := range test.expectedAllowlistCommands {
-				assert.Contains(t, commandsAfterApiAllowlist, expectedCommand,
-					"Expected command not found after api allowlist.")
+				assert.Contains(t, commandsIPv4AfterApiAllowlist, expectedCommand,
+					"Expected IPv4 command not found after api allowlist.")
+				assert.Contains(t, commandsIPv6AfterApiAllowlist, expectedCommand,
+					"Expected IPv6 command not found after api allowlist.")
 			}
 
 			err = firewallManager.APIDenylist()
@@ -529,12 +591,17 @@ func TestApiAllowlist(t *testing.T) {
 				return
 			}
 
-			commandsAfterApiDenylist := iptablesMock.popCommands()
-			assert.Len(t, commandsAfterApiDenylist, len(test.expectedDenylistCommands),
-				"Invalid commands executed after api denylist.")
+			commandsIPv4AfterApiDenylist := iptablesMock.popIPv4Commands()
+			assert.Len(t, commandsIPv4AfterApiDenylist, len(test.expectedDenylistCommands),
+				"Invalid IPv4 commands executed after api denylist.")
+			commandsIPv6AfterApiDenylist := iptablesMock.popIPv6Commands()
+			assert.Len(t, commandsIPv6AfterApiDenylist, len(test.expectedDenylistCommands),
+				"Invalid IPv6 commands executed after api denylist.")
 			for _, expectedCommand := range test.expectedDenylistCommands {
-				assert.Contains(t, commandsAfterApiDenylist, expectedCommand,
-					"Expected command not found after api denylist.")
+				assert.Contains(t, commandsIPv4AfterApiDenylist, expectedCommand,
+					"Expected IPv4 command not found after api denylist.")
+				assert.Contains(t, commandsIPv6AfterApiDenylist, expectedCommand,
+					"Expected IPv6 command not found after api denylist.")
 			}
 		})
 	}
