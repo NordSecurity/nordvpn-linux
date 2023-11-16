@@ -304,8 +304,8 @@ func (em *EventManager) EventFunc(eventJSON string) {
 		}
 		transfer, ok := em.transfers[event.TransferID]
 		if !ok {
-			em.transfers[event.TransferID] = NewOutgoingTransfer(event.TransferID, event.Peer, "")
-			transfer = em.transfers[event.TransferID]
+			transfer = NewOutgoingTransfer(event.TransferID, event.Peer, "")
+			em.transfers[event.TransferID] = transfer
 		}
 		transfer.Files = event.Files
 		for _, file := range transfer.Files {
