@@ -223,8 +223,10 @@ func LibdropTransferToInternalTransfer(in LibdropTransfer) *pb.Transfer {
 	for _, file := range in.Files {
 		outFile := libdropFileToInternalFile(file)
 		out.Files = append(out.Files, outFile)
-		out.TotalSize += outFile.Size
-		out.TotalTransferred += outFile.Transferred
+		if isFileBeingTransfered(outFile) {
+			out.TotalSize += outFile.Size
+			out.TotalTransferred += outFile.Transferred
+		}
 
 		// Determine transfer path.
 
@@ -268,7 +270,7 @@ func LibdropTransferToInternalTransfer(in LibdropTransfer) *pb.Transfer {
 					out.Status = pb.Status_CANCELED
 				}
 				for _, file := range out.Files {
-					if !isFileCompleted(file.Status) {
+					if !isFileCompleted(file) {
 						file.Status = pb.Status_CANCELED
 					}
 				}
@@ -328,7 +330,7 @@ func libdropFileToInternalFile(in LibdropFile) *pb.File {
 		case "paused":
 			out.Status = pb.Status_PAUSED
 		case "pending":
-			out.Status = pb.Status_REQUESTED
+			out.Status = pb.Status_PENDING
 		case "rejected":
 			out.Status = pb.Status_CANCELED
 		case "started":
@@ -352,7 +354,7 @@ func getTransferStatus(files []*pb.File) pb.Status {
 		if allCanceled && file.Status != pb.Status_CANCELED {
 			allCanceled = false
 		}
-		if allFinished && !isFileCompleted(file.Status) {
+		if allFinished && !isFileCompleted(file) {
 			allFinished = false
 		}
 		if hasNoErrors && checkFileHasErrors(file) {
@@ -381,10 +383,18 @@ func checkFileHasErrors(file *pb.File) bool {
 	return file.Status != pb.Status_SUCCESS &&
 		file.Status != pb.Status_REQUESTED &&
 		file.Status != pb.Status_CANCELED &&
-		file.Status != pb.Status_ONGOING
+		file.Status != pb.Status_ONGOING &&
+		file.Status != pb.Status_PENDING
 }
 
-func isFileCompleted(fileStatus pb.Status) bool {
-	return fileStatus != pb.Status_REQUESTED &&
-		fileStatus != pb.Status_ONGOING
+func isFileCompleted(file *pb.File) bool {
+	return file.Status != pb.Status_REQUESTED &&
+		file.Status != pb.Status_ONGOING &&
+		file.Status != pb.Status_PENDING
+}
+
+// Used to check if file's size should be part of transfer's total size
+func isFileBeingTransfered(file *pb.File) bool {
+	return file.Status != pb.Status_REQUESTED &&
+		file.Status != pb.Status_CANCELED
 }

@@ -144,9 +144,9 @@ func (em *EventManager) EventFunc(eventJSON string) {
 	switch genericEvent.Type {
 	case requestReceived:
 		em.handleRequestReceivedEvent(genericEvent.Data)
-	// Libdrop tracks transfer state now, so we have nothing to do with these events at the moment
 	case requestQueued:
 	case transferStarted:
+		em.handleTransferStartedEvent(genericEvent.Data)
 	case transferProgress:
 		em.handleTransferProgressEvent(genericEvent.Data)
 	case transferFinished:
@@ -210,6 +210,27 @@ func (em *EventManager) handleRequestReceivedEvent(eventJson json.RawMessage) {
 	}
 }
 
+// Just ensures that the transfer and file would be tracked. Although that is ensured in other
+// functions as well, but it doesn't hurt to play it safe.
+func (em *EventManager) handleTransferStartedEvent(eventJSON json.RawMessage) {
+	var event transferStartedEvent
+	err := json.Unmarshal(eventJSON, &event)
+	if err != nil {
+		log.Printf("unmarshalling drop event: %s", err)
+		return
+	}
+	transfer, err := em.getLiveTransfer(event.TransferID)
+	if err != nil {
+		log.Printf("getting live transfer: %s", err)
+		return
+	}
+	_, err = em.getLiveFile(transfer, event.FileID)
+	if err != nil {
+		log.Printf("getting live file: %s", err)
+		return
+	}
+}
+
 func (em *EventManager) handleTransferProgressEvent(eventJSON json.RawMessage) {
 	// transfer progress per file
 	var event transferProgressEvent
@@ -225,11 +246,9 @@ func (em *EventManager) handleTransferProgressEvent(eventJSON json.RawMessage) {
 		return
 	}
 
-	file, ok := transfer.Files[event.FileID]
-	if !ok {
-		// transfer does not contain reported file?!
-		log.Printf("transfer %s transferProgress event reported file that is not included in transfer",
-			event.TransferID)
+	file, err := em.getLiveFile(transfer, event.FileID)
+	if err != nil {
+		log.Printf("getting file for TransferProgress event: %s", err)
 		return
 	}
 	transfer.TotalTransferred += event.Transferred - file.Transferred // add only delta
@@ -264,21 +283,12 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 
 	switch event.Reason {
 	case transferFailed:
-		var status pb.Status
-		// Libdrop docs say that "cancel" is a type of failure, so we handle it here, though
-		// in reality it seems to always be reported by the TransferCanceled event.
-		if event.Data.Status == pb.Status_CANCELED && event.Data.ByPeer {
-			status = pb.Status_CANCELED_BY_PEER
-		} else {
-			status = event.Data.Status
-		}
-		em.finalizeTransfer(transfer, status)
-		return
+		em.finalizeTransfer(transfer, event.Data.Status)
 	case transferCanceled:
 		var status pb.Status
 		switch {
 		case isTransferFinished(transfer):
-			// Successful transfer finalization event
+			// Automatic cancel due to transfer finalization
 			storageTransfer, err := getTransferFromStorage(event.TransferID, em.storage)
 			if err != nil {
 				log.Print(err)
@@ -291,25 +301,40 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 			status = pb.Status_CANCELED
 		}
 		em.finalizeTransfer(transfer, status)
-		return
 	case fileDownloaded, fileUploaded, fileCanceled, fileFailed, fileRejected:
-		for _, file := range transfer.Files {
-			if file.ID == event.Data.File {
-				file.Finished = true
+		file, err := em.getLiveFile(transfer, event.Data.File)
+		if err != nil {
+			log.Printf("getting file for TransferFinished event: %s", err)
+			return
+		}
+		file.Finished = true
+		// Libdrop will not clean up the transfer after transferring all of the files, so we have to
+		// cancel it manually after all of the files have finished downloading/uploading. This will generate
+		// a TransferCanceled event, which is processed above and will trigger the finalization of transfer.
+		if isTransferFinished(transfer) && transfer.Direction == pb.Direction_INCOMING {
+			if err := em.fileshare.Cancel(event.TransferID); err != nil {
+				log.Printf("failed to finalize transfer %s: %s", event.TransferID, err)
 			}
+		}
+
+		var fileStatus pb.Status
+		switch event.Reason {
+		case fileDownloaded, fileUploaded:
+			fileStatus = pb.Status_SUCCESS
+		case fileCanceled, fileRejected:
+			fileStatus = pb.Status_CANCELED
+		default:
+			fileStatus = event.Data.Status
+		}
+		if em.notificationManager != nil && file != nil {
+			em.notificationManager.NotifyFile(
+				file.FullPath,
+				transfer.Direction,
+				fileStatus,
+			)
 		}
 	default:
 		log.Printf("Unknown reason for transfer finished event: %s", event.Reason)
-		return
-	}
-
-	// Libdrop will not clean up the transfer after transferring all of the files, so we have to
-	// cancel it manually after all of the files have finished downloading/uploading. This will generate
-	// a TransferCanceled event, which is processed above and will trigger the finalization of transfer.
-	if isTransferFinished(transfer) && transfer.Direction == pb.Direction_INCOMING {
-		if err := em.fileshare.Cancel(event.TransferID); err != nil {
-			log.Printf("failed to finalize transfer %s: %s", event.TransferID, err)
-		}
 	}
 }
 
@@ -338,7 +363,7 @@ func (em *EventManager) GetTransfers() ([]*pb.Transfer, error) {
 		return nil, fmt.Errorf("loading transfers from storage: %s", err)
 	}
 
-	var transfers []*pb.Transfer
+	transfers := make([]*pb.Transfer, 0, len(storageTransfers))
 	for _, storageTransfer := range storageTransfers {
 		updateTransferWithLiveData(storageTransfer, em.liveTransfers)
 		transfers = append(transfers, storageTransfer)
@@ -388,10 +413,9 @@ func updateTransferWithLiveData(transfer *pb.Transfer, liveTransfers map[string]
 	transfer.TotalTransferred = liveTransfer.TotalTransferred
 	for _, file := range transfer.Files {
 		liveFile, ok := liveTransfer.Files[file.Id]
-		if !ok {
-			log.Printf("file not found in liveTransfer: %s", file.Id)
+		if ok {
+			file.Transferred = liveFile.Transferred
 		}
-		file.Transferred = liveFile.Transferred
 	}
 }
 
@@ -547,6 +571,8 @@ type LiveTransfer struct {
 // LiveFile is part of LiveTransfer
 type LiveFile struct {
 	ID          string
+	FullPath    string
+	Size        uint64
 	Transferred uint64
 	Finished    bool
 }
@@ -571,13 +597,46 @@ func (em *EventManager) getLiveTransfer(id string) (*LiveTransfer, error) {
 		Files:            map[string]*LiveFile{},
 	}
 	for _, file := range storageTransfer.Files {
-		transfer.Files[file.Id] = &LiveFile{
-			ID:          file.Id,
-			Transferred: file.Transferred,
-			Finished:    isFileCompleted(file.Status),
+		if isFileBeingTransfered(file) {
+			addFileToLiveTransfer(transfer, file)
 		}
 	}
 
 	em.liveTransfers[transfer.ID] = transfer
 	return transfer, nil
+}
+
+func addFileToLiveTransfer(transfer *LiveTransfer, file *pb.File) *LiveFile {
+	transfer.TotalSize += file.Size
+	transfer.TotalTransferred += file.Transferred
+	liveFile := &LiveFile{
+		ID:          file.Id,
+		FullPath:    file.FullPath,
+		Size:        file.Size,
+		Transferred: file.Transferred,
+		Finished:    isFileCompleted(file),
+	}
+	transfer.Files[file.Id] = liveFile
+	return liveFile
+}
+
+// Returns an existing live file from the transfer or adds it if necessary
+func (em *EventManager) getLiveFile(liveTransfer *LiveTransfer, id string) (*LiveFile, error) {
+	file, ok := liveTransfer.Files[id]
+	if ok {
+		return file, nil
+	}
+
+	transfer, err := em.getTransfer(liveTransfer.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range transfer.Files {
+		if file.Id == id {
+			return addFileToLiveTransfer(liveTransfer, file), nil
+		}
+	}
+
+	return nil, fmt.Errorf("no file %s in transfer %s", id, liveTransfer.ID)
 }

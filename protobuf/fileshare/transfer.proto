@@ -54,7 +54,8 @@ enum Status {
 	ACCEPT_FAILURE = 103;
 	CANCELED_BY_PEER = 104;
 	INTERRUPTED = 105;
-	PAUSED = 106; 
+	PAUSED = 106;
+	PENDING = 107;
 }
 
 message Transfer {
