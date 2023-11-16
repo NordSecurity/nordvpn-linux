@@ -33,212 +33,158 @@ def teardown_function(function):
     logging.log()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+#@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_01():
-    lib.set_firewall("on")
-    lib.set_ipv6("on")
-    assert not firewall.is_active()
+def test_firewall_ipv6_01(tech, proto, obfuscated):
+    with lib.Defer(sh.nordvpn.disconnect):
+        lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
-        print(output)
-        assert lib.is_connect_successful(output)
+        lib.set_firewall("on")
+        lib.set_ipv6("on")
+        assert not firewall.is_active()
+
+        sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
         assert network.is_ipv4_and_ipv6_connected(20)
-
-    assert firewall.is_active()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    lib.set_ipv6("off")
-    assert lib.is_disconnect_successful(output)
+        assert firewall.is_active()
     assert network.is_disconnected()
-
     assert not firewall.is_active()
 
 
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
+#@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_02_allowlist_port(port):
-    lib.set_firewall("on")
-    lib.set_ipv6("on")
-    lib.add_port_to_allowlist(port)
-    assert not firewall.is_active(port)
+def test_firewall_ipv6_02_allowlist_port(tech, proto, obfuscated, port):
+    with lib.Defer(lib.flush_allowlist):
+        with lib.Defer(sh.nordvpn.disconnect):
+            lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
+            lib.set_firewall("on")
+            lib.set_ipv6("on")
+            lib.add_port_to_allowlist(port)
+            assert not firewall.is_active(port)
 
-    assert firewall.is_active(port)
+            sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
+            assert network.is_ipv4_and_ipv6_connected(20)
+            assert firewall.is_active(port)
 
-    lib.set_firewall("off")
-
-    assert not firewall.is_active(port)
-
-    with lib.ErrorDefer(lib.flush_allowlist):
-        with lib.ErrorDefer(sh.nordvpn.disconnect):
-            assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    lib.set_ipv6("off")
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
-
-    assert not firewall.is_active(port)
-    lib.flush_allowlist()
+            lib.set_firewall("off")
+            assert not firewall.is_active(port)
+            assert network.is_ipv4_and_ipv6_connected(20)
+        assert network.is_disconnected()
+        assert not firewall.is_active(port)
 
 
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
+#@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_03_allowlist_ports_range(ports):
-    lib.set_firewall("on")
-    lib.set_ipv6("on")
-    lib.add_ports_range_to_allowlist(ports)
-    assert not firewall.is_active(ports)
+def test_firewall_ipv6_03_allowlist_ports_range(tech, proto, obfuscated, ports):
+    with lib.Defer(lib.flush_allowlist):
+        with lib.Defer(sh.nordvpn.disconnect):
+            lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
+            lib.set_firewall("on")
+            lib.set_ipv6("on")
+            lib.add_ports_range_to_allowlist(ports)
+            assert not firewall.is_active(ports)
 
-    assert firewall.is_active(ports)
+            sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
+            assert network.is_ipv4_and_ipv6_connected(20)
+            assert firewall.is_active(ports)
 
-    lib.set_firewall("off")
-
-    assert not firewall.is_active(ports)
-
-    with lib.ErrorDefer(lib.flush_allowlist):
-        with lib.ErrorDefer(sh.nordvpn.disconnect):
-            assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    lib.set_ipv6("off")
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
-
-    assert not firewall.is_active(ports)
-    lib.flush_allowlist()
+            lib.set_firewall("off")
+            assert not firewall.is_active(ports)
+            assert network.is_ipv4_and_ipv6_connected(20)
+        assert network.is_disconnected()
+        assert not firewall.is_active(ports)
 
 
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.parametrize("protocol", lib.PROTOCOLS)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
+#@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_04_allowlist_port_and_protocol(port, protocol):
-    protocol = str(protocol)
-    lib.set_firewall("on")
-    lib.set_ipv6("on")
-    lib.add_port_and_protocol_to_allowlist(port, protocol)
-    assert not firewall.is_active(port, protocol)
+def test_firewall_ipv6_04_allowlist_port_and_protocol(tech, proto, obfuscated, port, protocol):
+    with lib.Defer(lib.flush_allowlist):
+        with lib.Defer(sh.nordvpn.disconnect):
+            lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
+            protocol = str(protocol)
+            lib.set_firewall("on")
+            lib.set_ipv6("on")
+            lib.add_port_and_protocol_to_allowlist(port, protocol)
+            assert not firewall.is_active(port, protocol)
 
-    assert firewall.is_active(port, protocol)
+            sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
+            assert network.is_ipv4_and_ipv6_connected(20)
+            assert firewall.is_active(port, protocol)
 
-    lib.set_firewall("off")
-
-    assert not firewall.is_active(port, protocol)
-
-    with lib.ErrorDefer(lib.flush_allowlist):
-        with lib.ErrorDefer(sh.nordvpn.disconnect):
-            assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    lib.set_ipv6("off")
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
-
-    assert not firewall.is_active(port, protocol)
-    lib.flush_allowlist()
+            lib.set_firewall("off")
+            assert not firewall.is_active(port, protocol)
+            assert network.is_ipv4_and_ipv6_connected(20)
+        assert network.is_disconnected()
+        assert not firewall.is_active(port, protocol)
 
 
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("subnet_addr", lib.SUBNETS)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
+#@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_05_allowlist_subnet(subnet_addr):
-    lib.set_firewall("on")
-    lib.set_ipv6("on")
-    lib.add_subnet_to_allowlist(subnet_addr)
-    assert not firewall.is_active("", "", subnet_addr)
+def test_firewall_ipv6_05_allowlist_subnet(tech, proto, obfuscated, subnet_addr):
+    with lib.Defer(lib.flush_allowlist):
+        with lib.Defer(sh.nordvpn.disconnect):
+            lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
+            lib.set_firewall("on")
+            lib.set_ipv6("on")
+            lib.add_subnet_to_allowlist(subnet_addr)
+            assert not firewall.is_active("", "", subnet_addr)
 
-    assert firewall.is_active("", "", subnet_addr)
+            sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
+            assert network.is_ipv4_and_ipv6_connected(20)
+            assert firewall.is_active("", "", subnet_addr)
 
-    lib.set_firewall("off")
-
-    assert not firewall.is_active("", "", subnet_addr)
-
-    with lib.ErrorDefer(lib.flush_allowlist):
-        with lib.ErrorDefer(sh.nordvpn.disconnect):
-            assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    lib.set_ipv6("off")
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
-
-    assert not firewall.is_active("", "", subnet_addr)
-    lib.flush_allowlist()
+            lib.set_firewall("off")
+            assert not firewall.is_active("", "", subnet_addr)
+            assert network.is_ipv4_and_ipv6_connected(20)
+        assert network.is_disconnected()
+        assert not firewall.is_active("", "", subnet_addr)
 
 
-def test_firewall_ipv6_06_with_killswitch():
-    lib.set_firewall("on")
-    lib.set_ipv6("on")
-    assert not firewall.is_active()
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+def test_firewall_ipv6_06_with_killswitch(tech, proto, obfuscated):
+    with lib.Defer(lambda: lib.set_killswitch("off")):
+        lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    lib.set_killswitch("on")
-    assert firewall.is_active()
+        lib.set_firewall("on")
+        lib.set_ipv6("on")
+        assert not firewall.is_active()
 
-    lib.set_killswitch("off")
+        lib.set_killswitch("on")
+        assert firewall.is_active()
     assert not firewall.is_active()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+#@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_ipv6_07_with_killswitch_while_connected():
-    lib.set_firewall("on")
-    lib.set_ipv6("on")
-    assert not firewall.is_active()
+def test_firewall_ipv6_07_with_killswitch_while_connected(tech, proto, obfuscated):
+    with lib.Defer(sh.nordvpn.disconnect):
+        with lib.Defer(lambda: lib.set_killswitch("off")):
+            lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    lib.set_killswitch("on")
-    assert firewall.is_active()
+            lib.set_firewall("on")
+            lib.set_ipv6("on")
+            assert not firewall.is_active()
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
+            lib.set_killswitch("on")
+            assert firewall.is_active()
 
-    assert firewall.is_active()
-
-    lib.set_killswitch("off")
-    assert firewall.is_active()
-
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        assert network.is_ipv4_and_ipv6_connected(20)
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    lib.set_ipv6("off")
-    assert lib.is_disconnect_successful(output)
+            sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
+            assert network.is_ipv4_and_ipv6_connected(20)
+            assert firewall.is_active()
+        assert firewall.is_active()
     assert network.is_disconnected()
-
     assert not firewall.is_active()
