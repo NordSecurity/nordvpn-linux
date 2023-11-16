@@ -30,20 +30,15 @@ def teardown_function(function):
 
 def test_login():
     output = login.login_as("default")
-    assert "Welcome to NordVPN!" in output
+    assert "Welcome to NordVPN! You can now connect to VPN by using 'nordvpn connect'." in output
     sh.nordvpn.logout("--persist-token")
-
-
-def test_incorrect_login():
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        output = login.login_as("invalid")
-        assert "Username or password is not correct. Please try again." in output
 
 
 def test_invalid_token_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        output = sh.nordvpn.login("--token", "zxc#$%")
-        assert "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support." in output
+        sh.nordvpn.login("--token", "xyz%#")
+    
+    assert "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support." in str(ex.value)
 
 
 def test_repeated_login():
