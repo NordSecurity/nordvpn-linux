@@ -58,7 +58,7 @@ func getDefaultIpRouteInterface(ipRouteOutput string) (string, error) {
 
 // SetMTU for an interface.
 func SetMTU(iface net.Interface) error {
-	mtu := calculateMTU(internal.NewShellCommand("ip"))
+	mtu := retrieveAndCalculateMTU()
 
 	fd, err := unix.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_IP)
 	if err != nil {
@@ -75,14 +75,21 @@ func SetMTU(iface net.Interface) error {
 	return unix.IoctlIfreq(fd, unix.SIOCSIFMTU, req)
 }
 
-func calculateMTU(ip internal.Command) int {
-	defaultGatewayMTU := func() (int, error) {
-		out, err := ip.Output("route", "show", "default")
-		if err != nil {
-			return 0, fmt.Errorf("ip route show default failed: %s", err)
-		}
+func retrieveAndCalculateMTU() int {
+	c1 := exec.Command("ip", "route", "show", "default")
+	out, err := c1.Output()
 
-		defaultGatewayName, err := getDefaultIpRouteInterface(string(out))
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "ip route show default failed: ", err)
+		out = nil
+	}
+
+	return calculateMTU(string(out))
+}
+
+func calculateMTU(ipRouteOutput string) int {
+	defaultGatewayMTU := func() (int, error) {
+		defaultGatewayName, err := getDefaultIpRouteInterface(ipRouteOutput)
 
 		if err != nil {
 			return 0, err
@@ -98,12 +105,14 @@ func calculateMTU(ip internal.Command) int {
 		return mtu, nil
 	}
 
-	mtu, err := defaultGatewayMTU()
-	if err == nil {
-		return mtu
-	}
+	if ipRouteOutput != "" {
+		mtu, err := defaultGatewayMTU()
+		if err == nil {
+			return mtu
+		}
 
-	log.Println(internal.WarningPrefix, "using default MTU, failed to get default gateway MTU", err)
+		log.Println(internal.WarningPrefix, "using default MTU, failed to get default gateway MTU:", err)
+	}
 
 	return defaultMTU - wireguardHeaderSize
 }
