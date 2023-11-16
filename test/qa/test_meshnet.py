@@ -1,4 +1,4 @@
-from lib import daemon, info, logging, login, meshnet, ssh
+from lib import daemon, info, logging, login, meshnet, network, ssh
 import lib
 import sh
 import requests
@@ -102,8 +102,8 @@ def test_allowlist_incoming_connection():
     ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
     ssh_client_mesh.connect()
     with lib.Defer(ssh_client_mesh.disconnect):
-        ssh_client_mesh.exec_command("nordvpn c")
-        with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn d")):
+        ssh_client_mesh.exec_command("nordvpn set killswitch on")
+        with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn set killswitch off")):
             # We should not have direct connection anymore after connecting to VPN
             with pytest.raises(sh.ErrorReturnCode_1) as ex:
                 assert "icmp_seq=" not in sh.ping("-c", "1", "qa-peer")
@@ -277,6 +277,19 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
         assert result, message
 
 
+def test_connect_set_mesh_off():
+    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}"
+    peer = meshnet.get_peers(output)[0]
+    sh.nordvpn.mesh.peer.connect(peer)
+    sh.nordvpn.disconnect()
+    sh.nordvpn.connect()
+    sh.nordvpn.set.mesh.off()
+
+    with lib.Defer(sh.nordvpn.set.mesh.on):
+        with lib.Defer(sh.nordvpn.disconnect):
+            assert network.is_connected()
+
+
 def test_remove_peer_firewall_update():
     peer_ip = meshnet.get_this_device_ipv4(ssh_client.exec_command("nordvpn mesh peer list"))
     set_permissions(peer_ip, True, True, True, True)
@@ -295,3 +308,13 @@ def test_remove_peer_firewall_update():
             break
 
     assert result, message
+
+def test_account_switch():
+    sh.nordvpn.logout("--persist-token")
+    login.login_as("qa-peer")
+    sh.nordvpn.set.mesh.on() # expecting failure here
+
+    # Recover starting state (this is the simplest way)
+    teardown_module(None)
+    setup_module(None)
+    

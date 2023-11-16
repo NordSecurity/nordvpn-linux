@@ -51,7 +51,7 @@ func TestRPCGroups(t *testing.T) {
 				publisher: &subs.Subject[string]{},
 				api:       mockApi{},
 			}
-			payload, _ := rpc.Groups(context.Background(), &pb.GroupsRequest{})
+			payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 
 			assert.Equal(t, test.statusCode, payload.Type)
 		})
@@ -86,10 +86,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 		api:       mockApi{},
 	}
 
-	groupsRequest := &pb.GroupsRequest{}
-	groupsRequest.Obfuscate = false
-
-	payload, _ := rpc.Groups(context.Background(), groupsRequest)
+	payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 	assert.Equal(t, internal.CodeSuccess, payload.GetType())
 	assert.Equal(t, []string{"false_Protocol_TCP"}, payload.GetData())
 }

@@ -8,11 +8,9 @@ import (
 	"io"
 	"log"
 	"os"
-	"path"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
-	cconfig "github.com/NordSecurity/nordvpn-linux/client/config"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -89,20 +87,13 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 	fileshareConn *grpc.ClientConn,
 	loaderInterceptor *LoaderInterceptor,
 ) (*cli.App, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return nil, err
-	}
-	configManager := cconfig.NewEncryptedManager(path.Join(configDir, ConfigFilePath), 0, 0, salt)
-	cfg, err := configManager.Load()
-	if err != nil {
-		cfg = cconfig.NewConfig()
-		if err := configManager.Save(cfg); err != nil {
-			return nil, ErrConfig
-		}
+	cmd := newCommander(internal.Environment(environment))
+	if pingErr == nil {
+		cmd.client = pb.NewDaemonClient(conn)
+		cmd.meshClient = meshpb.NewMeshnetClient(conn)
+		cmd.fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
 	}
 
-	cmd := newCommander(internal.Environment(environment), configManager, cfg)
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.SubcommandHelpTemplate = SubcommandHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
@@ -516,9 +507,6 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 	app.Commands = append(app.Commands, meshnetCommand(cmd))
 
 	if pingErr == nil {
-		cmd.client = pb.NewDaemonClient(conn)
-		cmd.meshClient = meshpb.NewMeshnetClient(conn)
-		cmd.fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
 		app.Commands = append(app.Commands, fileshareCommand(cmd))
 	}
 
@@ -835,13 +823,11 @@ type cmd struct {
 	meshClient        meshpb.MeshnetClient
 	fileshareClient   filesharepb.FileshareClient
 	environment       internal.Environment
-	configManager     cconfig.Manager
-	config            cconfig.Config
 	loaderInterceptor *LoaderInterceptor
 }
 
-func newCommander(environment internal.Environment, configManager cconfig.Manager, config cconfig.Config) *cmd {
-	return &cmd{environment: environment, configManager: configManager, config: config}
+func newCommander(environment internal.Environment) *cmd {
+	return &cmd{environment: environment}
 }
 
 func formatError(e error) error {
@@ -935,7 +921,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error, daemonURL string, la
 				os.Exit(1)
 			case internal.ErrSocketAccessDenied:
 				color.Red(formatError(internal.ErrSocketAccessDenied).Error())
-				color.Red("Run 'usermod -aG nordvpn $USER' to fix this issue and log out of OS afterwards for this to take an effect.")
+				color.Red("Run 'sudo usermod -aG nordvpn $USER' to fix this issue and reboot your device afterwards for this to take an effect.")
 				os.Exit(1)
 			case internal.ErrDaemonConnectionRefused:
 				color.Red(formatError(internal.ErrDaemonConnectionRefused).Error())

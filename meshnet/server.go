@@ -48,7 +48,7 @@ type Server struct {
 	subjectMeshSetting events.Publisher[bool]
 	subjectConnect     events.Publisher[events.DataConnect]
 	lastPeers          string
-	isPeerConnected    bool
+	lastConnectedPeer  string
 	fileshare          service.Fileshare
 	scheduler          *gocron.Scheduler
 	pb.UnimplementedMeshnetServer
@@ -318,12 +318,11 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		s.pub.Publish(fmt.Errorf("disabling fileshare: %w", err))
 	}
 
-	// stop networker only if mesh peer connected before
-	if s.isPeerConnected {
+	// try to stop networker only if mesh peer connected before
+	if s.netw.LastServerName() == s.lastConnectedPeer {
 		if err := s.netw.Stop(); err != nil {
 			s.pub.Publish(fmt.Errorf("disconnecting: %w", err))
 		}
-		s.isPeerConnected = false
 	}
 
 	if err := s.netw.UnSetMesh(); err != nil {
@@ -2671,7 +2670,7 @@ func (s *Server) Connect(
 			},
 		}, nil
 	}
-	s.isPeerConnected = true
+	s.lastConnectedPeer = peer.Hostname
 	s.subjectConnect.Publish(events.DataConnect{
 		IsMeshnetPeer: true,
 	})

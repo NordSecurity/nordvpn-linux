@@ -23,7 +23,7 @@ const (
 	imageScanner           = registryPrefix + "scanner:1.0.0"
 	imageTester            = registryPrefix + "tester:1.1.4"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.2"
-	imageRuster            = registryPrefix + "ruster:1.0.1"
+	imageRuster            = registryPrefix + "ruster:1.0.3"
 )
 
 // Build is used for native builds.

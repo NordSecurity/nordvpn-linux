@@ -32,8 +32,7 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 	}
 
 	resp, err := c.client.Cities(context.Background(), &pb.CitiesRequest{
-		Obfuscate: c.config.Obfuscate,
-		Country:   args.First(),
+		Country: args.First(),
 	})
 	if err != nil {
 		return formatError(err)
@@ -60,9 +59,7 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 }
 
 func (c *cmd) CitiesAutoComplete(ctx *cli.Context) {
-	resp, err := c.client.Countries(context.Background(), &pb.CountriesRequest{
-		Obfuscate: c.config.Obfuscate,
-	})
+	resp, err := c.client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
 		return
 	}

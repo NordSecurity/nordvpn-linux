@@ -34,6 +34,7 @@ type Networker interface {
 	// changed, peers is the map of all the machine peers(including the changed peer).
 	ResetRouting(changedPeer mesh.MachinePeer, peers mesh.MachinePeers) error
 	StatusMap() (map[string]string, error)
+	LastServerName() string
 	Start(
 		vpn.Credentials,
 		vpn.ServerData,

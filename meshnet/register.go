@@ -1,11 +1,13 @@
 package meshnet
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	cmesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -117,6 +119,18 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
 		SupportsRouting: true,
 	})
+	if errors.Is(err, core.ErrConflict) {
+		// We try to keep the same keys as long as possible, but if relogin with different account happens
+		// then they have to be regenerated. There's no way to check if the current mesh device data
+		// belongs to this account or not, so handling this on registering error is the best approach.
+		privateKey = r.gen.Private()
+		peer, err = r.reg.Register(token, cmesh.Machine{
+			HardwareID:      cfg.MachineID,
+			PublicKey:       r.gen.Public(privateKey),
+			OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
+			SupportsRouting: true,
+		})
+	}
 	if err != nil {
 		return err
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 // Groups provides endpoint and autocompletion.
-func (r *RPC) Groups(ctx context.Context, in *pb.GroupsRequest) (*pb.Payload, error) {
+func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
@@ -20,7 +20,7 @@ func (r *RPC) Groups(ctx context.Context, in *pb.GroupsRequest) (*pb.Payload, er
 		}, nil
 	}
 
-	if groups, ok := r.dm.GetAppData().GroupNames[in.GetObfuscate()][cfg.AutoConnectData.Protocol]; ok {
+	if groups, ok := r.dm.GetAppData().GroupNames[cfg.AutoConnectData.Obfuscate][cfg.AutoConnectData.Protocol]; ok {
 		var groupNames []string
 		for group := range groups.Iter() {
 			groupNames = append(groupNames, group.(string))

@@ -16,9 +16,7 @@ import (
 const CountriesUsageText = "Shows a list of countries where servers are available"
 
 func (c *cmd) Countries(ctx *cli.Context) error {
-	resp, err := c.client.Countries(context.Background(), &pb.CountriesRequest{
-		Obfuscate: c.config.Obfuscate,
-	})
+	resp, err := c.client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return formatError(err)

@@ -2,16 +2,14 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
-	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"golang.org/x/exp/slices"
 
-	mapset "github.com/deckarep/golang-set"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -36,54 +34,57 @@ func (c *cmd) AllowlistAddPort(ctx *cli.Context) error {
 		return formatError(argsCountError(ctx))
 	}
 
-	portString := args.First()
-	portJSONNumber := json.Number(portString)
-	port, err := strconv.Atoi(args.First())
+	port, err := strconv.ParseInt(args.First(), 10, 64)
 	if err != nil {
 		return formatError(argsParseError(ctx))
 	}
 
-	if !(AllowlistMinPort <= port && port <= AllowlistMaxPort) {
-		return formatError(fmt.Errorf(AllowlistPortRangeError, portString, strconv.Itoa(AllowlistMinPort), strconv.Itoa(AllowlistMaxPort)))
+	if port < AllowlistMinPort || port > AllowlistMaxPort {
+		return formatError(fmt.Errorf(
+			AllowlistPortRangeError,
+			port,
+			AllowlistMinPort,
+			AllowlistMaxPort,
+		))
 	}
 
-	var (
-		data    = []interface{}{portString}
-		success bool
-		UDPSet  = mapset.NewSet()
-		TCPSet  = mapset.NewSet()
-	)
+	isUDP := false
+	isTCP := false
 	if args.Len() == 1 {
-		success = UDPSet.Add(portJSONNumber) || success
-		success = TCPSet.Add(portJSONNumber) || success
-		data = append(data, fmt.Sprintf("%s|%s", config.Protocol_UDP, config.Protocol_TCP))
+		isUDP = true
+		isTCP = true
 	} else {
 		switch args.Get(2) {
 		case config.Protocol_UDP.String():
-			success = UDPSet.Add(portJSONNumber) || success
-			data = append(data, config.Protocol_UDP)
+			isUDP = true
 		case config.Protocol_TCP.String():
-			success = TCPSet.Add(portJSONNumber) || success
-			data = append(data, config.Protocol_TCP)
+			isTCP = true
 		default:
 			return formatError(argsParseError(ctx))
 		}
 	}
 
-	if !success {
-		return formatError(fmt.Errorf(AllowlistAddPortExistsError, data...))
+	settings, err := c.getSettings()
+	if err != nil {
+		return formatError(err)
 	}
-
-	UDPSet = c.config.Allowlist.Ports.UDP.Union(UDPSet)
-	TCPSet = c.config.Allowlist.Ports.TCP.Union(TCPSet)
+	allowlist := settings.GetAllowlist()
+	if isTCP && slices.Contains(allowlist.Ports.Tcp, port) ||
+		isUDP && slices.Contains(allowlist.Ports.Udp, port) {
+		return formatError(fmt.Errorf(
+			AllowlistAddPortExistsError,
+			port,
+			getProtocolStr(isTCP, isUDP),
+		))
+	}
+	if isTCP {
+		allowlist.Ports.Tcp = append(allowlist.Ports.Tcp, port)
+	}
+	if isUDP {
+		allowlist.Ports.Udp = append(allowlist.Ports.Udp, port)
+	}
 	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: &pb.Allowlist{
-			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(UDPSet),
-				Tcp: client.SetToInt64s(TCPSet),
-			},
-			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
-		},
+		Allowlist: allowlist,
 	})
 	if err != nil {
 		return formatError(err)
@@ -93,17 +94,19 @@ func (c *cmd) AllowlistAddPort(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure:
-		return formatError(fmt.Errorf(AllowlistAddPortExistsError, data...))
+		return formatError(fmt.Errorf(
+			AllowlistAddPortExistsError,
+			port,
+			getProtocolStr(isTCP, isUDP),
+		))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodeSuccess:
-		c.config.Allowlist.Ports.UDP = UDPSet
-		c.config.Allowlist.Ports.TCP = TCPSet
-		err = c.configManager.Save(c.config)
-		if err != nil {
-			return formatError(ErrConfig)
-		}
-		color.Green(fmt.Sprintf(AllowlistAddPortSuccess, data...))
+		color.Green(fmt.Sprintf(
+			AllowlistAddPortSuccess,
+			port,
+			getProtocolStr(isTCP, isUDP),
+		))
 	}
 	return nil
 }
@@ -126,4 +129,17 @@ func (c *cmd) AllowlistAddPortAutoComplete(ctx *cli.Context) {
 	default:
 		return
 	}
+}
+
+// getProtocolStr returns one of:
+// * TCP
+// * UDP
+// * UDP|TCP
+func getProtocolStr(isTCP bool, isUDP bool) string {
+	if isTCP && !isUDP {
+		return config.Protocol_TCP.String()
+	} else if isUDP && !isTCP {
+		return config.Protocol_UDP.String()
+	}
+	return fmt.Sprintf("%s|%s", config.Protocol_UDP, config.Protocol_TCP)
 }

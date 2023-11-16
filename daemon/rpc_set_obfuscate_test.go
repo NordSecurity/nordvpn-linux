@@ -151,6 +151,7 @@ func TestSetObfuscate(t *testing.T) {
 		t.Run(test.testName, func(t *testing.T) {
 			mockConfigManager.c.AutoConnect = test.autoconnectEnabled
 			mockConfigManager.c.AutoConnectData.ServerTag = test.server
+			mockConfigManager.c.AutoConnectData.Obfuscate = !test.obfuscate
 
 			req := pb.SetGenericRequest{Enabled: test.obfuscate}
 			resp, err := r.SetObfuscate(context.Background(), &req)

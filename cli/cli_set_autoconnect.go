@@ -54,17 +54,16 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		serverTag = strings.ToLower(serverTag)
 	}
 
+	settings, err := c.getSettings()
+	if err != nil {
+		return formatError(err)
+	}
+	allowlist := settings.GetAllowlist()
+
 	resp, err := c.client.SetAutoConnect(context.Background(), &pb.SetAutoconnectRequest{
 		ServerTag:   serverTag,
-		Obfuscate:   c.config.Obfuscate,
 		AutoConnect: flag,
-		Allowlist: &pb.Allowlist{
-			Ports: &pb.Ports{
-				Udp: client.SetToInt64s(c.config.Allowlist.Ports.UDP),
-				Tcp: client.SetToInt64s(c.config.Allowlist.Ports.TCP),
-			},
-			Subnets: internal.SetToStrings(c.config.Allowlist.Subnets),
-		},
+		Allowlist:   allowlist,
 	})
 	if err != nil {
 		return formatError(err)
@@ -74,9 +73,6 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure, internal.CodeEmptyPayloadError:
-		if ctx.NArg() > 1 {
-			return formatError(fmt.Errorf(client.ConnectCantConnectTo, internal.StringsToInterfaces(ctx.Args().Slice()[1:])...))
-		}
 		return formatError(fmt.Errorf(client.ConnectCantConnect))
 	case internal.CodeAutoConnectServerNotObfuscated:
 		return formatError(errors.New(AutoConnectOnNonObfuscatedServerObfuscateOn))
@@ -117,13 +113,10 @@ func (c *cmd) SetAutoConnectAutoComplete(ctx *cli.Context) {
 			resp, err := func(args []string) (*pb.Payload, error) {
 				switch len(args) {
 				case 1:
-					return c.client.Countries(context.Background(), &pb.CountriesRequest{
-						Obfuscate: c.config.Obfuscate,
-					})
+					return c.client.Countries(context.Background(), &pb.Empty{})
 				case 2:
 					return c.client.Cities(context.Background(), &pb.CitiesRequest{
-						Obfuscate: c.config.Obfuscate,
-						Country:   args[1],
+						Country: args[1],
 					})
 				}
 				return nil, errors.New("bad args")
