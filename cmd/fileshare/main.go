@@ -111,7 +111,6 @@ func main() {
 		log.Fatalf("ensuring dir for transfer history file: %s", err)
 	}
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
-
 	fileshareImplementation := libdrop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
