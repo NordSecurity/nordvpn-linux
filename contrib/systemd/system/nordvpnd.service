@@ -6,6 +6,8 @@ Wants=network-online.target
 
 [Service]
 ExecStart=/usr/sbin/nordvpnd
+ExecStopPost=/bin/sh -c "iptables-save -c | grep -v '\\-\\-comment nordvpn' | iptables-restore -c"
+ExecStopPost=/bin/sh -c "ip6tables-save -c | grep -v '\\-\\-comment nordvpn' | ip6tables-restore -c"
 NonBlocking=true
 KillMode=process
 Restart=on-failure
