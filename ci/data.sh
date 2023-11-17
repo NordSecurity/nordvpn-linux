@@ -27,12 +27,22 @@ for filename in "${files[@]}"; do
     entry_name=$(basename "${filename}" .md)
     entry_tag=${entry_name%_*}
     entry_date=${entry_name#*_}
-    printf "\055 semver: %s\n  date: %s\n  packager: \"\"\n  changes:" \
+
+    printf "\055 semver: %s
+  date: %s
+  packager: NordVPN Linux Team <linux@nordvpn.com>
+  deb:
+    urgency: medium
+    distributions:
+      - stable
+  changes:" \
     	"${entry_tag}" "$(date -d@"${entry_date}" +%Y-%m-%dT%H:%M:%SZ)" >> "${WORKDIR}"/dist/changelog.yml
+
     while read -r line ; do
         printf "\n   - note: |-\n      %s" "${line:1}" >> "${WORKDIR}"/dist/changelog.yml
     done < "${filename}"
-    printf "\n" >> "${WORKDIR}"/dist/changelog.yml
+
+    printf "\n\n" >> "${WORKDIR}"/dist/changelog.yml
 done
 
 # generate version and date for manual

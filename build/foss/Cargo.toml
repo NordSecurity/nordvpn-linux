@@ -9,4 +9,4 @@ crate-type = ["staticlib"]
 
 [dependencies]
 norddrop = { git = "https://github.com/NordSecurity/libdrop", tag = "v5.4.0" }
-telio = { git = "https://github.com/NordSecurity/libtelio", tag= "v4.0.9" }
+telio = { git = "https://github.com/NordSecurity/libtelio", tag= "v4.1.2" }

@@ -156,3 +156,68 @@ def test_connect_country_and_city(country, city):
     print(output)
     assert lib.is_disconnect_successful(output)
     assert network.is_disconnected()
+
+
+@pytest.mark.parametrize("target_tech,target_proto,target_obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize("source_tech,source_proto,source_obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_status_change_technology_and_protocol(
+    source_tech,
+    target_tech,
+    source_proto,
+    target_proto,
+    source_obfuscated,
+    target_obfuscated,
+):
+    lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert source_tech.upper() in sh.nordvpn.status()
+
+        if source_tech == "openvpn":
+            assert source_proto.upper() in sh.nordvpn.status()
+        else:
+            assert "UDP" in sh.nordvpn.status()
+
+        lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+        assert source_tech.upper() in sh.nordvpn.status()
+
+        if source_tech == "openvpn":
+            assert source_tech.upper() in sh.nordvpn.status()
+        else:
+            assert "UDP" in sh.nordvpn.status()
+
+    assert network.is_disconnected()
+
+
+@pytest.mark.parametrize("target_tech,target_proto,target_obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize("source_tech,source_proto,source_obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_status_change_technology_and_protocol_reconnect(
+    source_tech,
+    target_tech,
+    source_proto,
+    target_proto,
+    source_obfuscated,
+    target_obfuscated,
+):
+    lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
+    lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+    
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert target_tech.upper() in sh.nordvpn.status()
+
+        if target_tech == "openvpn":
+            assert target_proto.upper() in sh.nordvpn.status()
+        else:
+            assert "UDP" in sh.nordvpn.status()
+
+    assert network.is_disconnected()

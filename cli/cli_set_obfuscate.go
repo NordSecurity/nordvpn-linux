@@ -33,17 +33,15 @@ func (c *cmd) SetObfuscate(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if c.config.Obfuscate == flag {
-		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Obfuscation", nstrings.GetBoolLabel(flag)))
-		return nil
-	}
-
 	resp, err := c.client.SetObfuscate(context.Background(), &pb.SetGenericRequest{Enabled: flag})
 	if err != nil {
 		return formatError(err)
 	}
 
 	switch resp.Type {
+	case internal.CodeNothingToDo:
+		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Obfuscation", nstrings.GetBoolLabel(flag)))
+		return nil
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeAutoConnectServerNotObfuscated:
@@ -51,11 +49,6 @@ func (c *cmd) SetObfuscate(ctx *cli.Context) error {
 	case internal.CodeAutoConnectServerObfuscated:
 		return formatError(errors.New(ObfuscateOffServerObfuscated))
 	case internal.CodeSuccess:
-		c.config.Obfuscate = flag
-		err = c.configManager.Save(c.config)
-		if err != nil {
-			return formatError(ErrConfig)
-		}
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Obfuscation", nstrings.GetBoolLabel(flag)))
 		flag, _ := strconv.ParseBool(resp.Data[0])
 		if flag {

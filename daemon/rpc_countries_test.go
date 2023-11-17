@@ -51,7 +51,7 @@ func TestRPCCountries(t *testing.T) {
 				publisher: &subs.Subject[string]{},
 				api:       mockApi{},
 			}
-			payload, _ := rpc.Countries(context.Background(), &pb.CountriesRequest{})
+			payload, _ := rpc.Countries(context.Background(), &pb.Empty{})
 
 			assert.Equal(t, test.statusCode, payload.Type)
 		})
@@ -86,10 +86,7 @@ func TestRPCCountries_Successful(t *testing.T) {
 		api:       mockApi{},
 	}
 
-	request := &pb.CountriesRequest{}
-	request.Obfuscate = false
-
-	payload, _ := rpc.Countries(context.Background(), request)
+	payload, _ := rpc.Countries(context.Background(), &pb.Empty{})
 	assert.Equal(t, internal.CodeSuccess, payload.GetType())
 	assert.Equal(t, []string{"LT"}, payload.GetData())
 }

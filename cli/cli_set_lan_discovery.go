@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -57,26 +56,6 @@ func (c *cmd) SetLANDiscovery(ctx *cli.Context) error {
 		return SetLANDiscoveryErrorCodeToError(resp.GetErrorCode(), isEnabled)
 	case *pb.SetLANDiscoveryResponse_SetLanDiscoveryStatus:
 		SetLANDiscoveryStatusToMessage(resp.GetSetLanDiscoveryStatus(), isEnabled)
-	}
-
-	if isEnabled {
-		// Quick and a bit dirty fix to the issue where private subnets deleted by lan-discovery would
-		// reappear. Ideally we would stop using CLI config at all, but that is too big of a task for now.
-		for _, subnet := range c.config.Allowlist.Subnets.ToSlice() {
-			subnetStr, ok := subnet.(string)
-			if !ok {
-				continue
-			} else if _, subnetParsed, err := net.ParseCIDR(subnetStr); err != nil {
-				continue
-			} else if subnetParsed.IP.IsPrivate() || subnetParsed.IP.IsLinkLocalUnicast() {
-				c.config.Allowlist.Subnets.Remove(subnet)
-			}
-		}
-	}
-
-	err = c.configManager.Save(c.config)
-	if err != nil {
-		return formatError(ErrConfig)
 	}
 
 	return nil

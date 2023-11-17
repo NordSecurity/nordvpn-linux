@@ -17,6 +17,10 @@ func (r *RPC) SetObfuscate(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		log.Println(internal.ErrorPrefix, err)
 	}
 
+	if cfg.AutoConnectData.Obfuscate == in.GetEnabled() {
+		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
+	}
+
 	if cfg.AutoConnect {
 		switch core.IsServerObfuscated(r.dm.GetServersData().Servers, cfg.AutoConnectData.ServerTag) {
 		case core.ServerNotObfuscated:
