@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/netip"
 	"os/exec"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -21,81 +23,196 @@ const (
 type IPVersion int
 
 const (
-	IPv4 = iota
+	IPv4 IPVersion = iota
 	IPv6
 	Both
 )
 
-// IptablesExecutor is an abstraction over iptables command. It should accept any input that is also viable for iptables
-// command.
-type IptablesExecutor interface {
-	InsertRule(rule string, version IPVersion) error
-	DeleteRule(rule string, version IPVersion) error
-	// Enable changes the Executor state so that it performs the commands provided to ExecuteCommand and
-	// ExecuteCommandIPv6.
-	Enable()
-	// Disable changes the Executor state so that it does not perform commands provided to ExecuteCommands and
-	// ExecuteCommandIPv6.
-	Disable()
+type RulePriority int
+
+const (
+	TrafficBlock RulePriority = iota
+	ApiAllowlistMark
+	ApiAllowlistOutputConnmark
+	UserAllowlist
+)
+
+func (r RulePriority) toCommentArgs() string {
+	return fmt.Sprintf("-m comment --comment nordvpn-%d", r)
 }
 
-type Iptables struct {
+func (r RulePriority) toComment() string {
+	return fmt.Sprintf("nordvpn-%d", r)
+}
+
+type Chain int
+
+const (
+	INPUT  = iota
+	OUTPUT = iota
+)
+
+func (c Chain) String() string {
+	switch c {
+	case INPUT:
+		return "INPUT"
+	case OUTPUT:
+		return "OUTPUT"
+	}
+	return ""
+}
+
+type CommandRunner interface {
+	RunCommand(string, string) (string, error)
+}
+
+type ExecCommandRunner struct {
+}
+
+func (ExecCommandRunner) RunCommand(command string, args string) (string, error) {
+	output, err := exec.Command(args, strings.Split(args, " ")...).CombinedOutput()
+	return string(output), err
+}
+
+type iptablesManager struct {
 	ip6tablesSupported bool
 	enabled            bool
+	commandRunner      CommandRunner
 }
 
-func areIp6tablesSupported() bool {
+func AreIp6tablesSupported() bool {
 	// #nosec G204 -- input is properly sanitized
 	_, err := exec.Command(ip6tablesCommand, "-S").CombinedOutput()
 	return err != nil
 }
 
-func NewIptables() Iptables {
-	return Iptables{
-		ip6tablesSupported: areIp6tablesSupported(),
+func newIptablesManager(commandRunner CommandRunner, enabled bool, ip6tablesSupported bool) iptablesManager {
+	return iptablesManager{
+		commandRunner:      commandRunner,
+		enabled:            enabled,
+		ip6tablesSupported: ip6tablesSupported,
 	}
 }
 
-func (i Iptables) executeCommand(version IPVersion, args ...string) error {
+func (i iptablesManager) executeCommand(insert bool, rule FwRule) error {
 	if !i.enabled {
 		return nil
 	}
 
-	switch version {
-	case IPv4:
-		if _, err := exec.Command(iptablesCommand, args...).CombinedOutput(); err != nil {
+	command := rule.ToDeleteCommand()
+
+	if rule.ipVersion == IPv4 || rule.ipVersion == Both {
+		if insert {
+			index, err := i.getRuleLine(iptablesCommand, rule.chain, rule.priority)
+			if err != nil {
+				return fmt.Errorf("calculating rule index: %w", err)
+			}
+			command = rule.ToInsertAppendCommand(index)
+		}
+
+		if _, err := i.commandRunner.RunCommand(iptablesCommand, command); err != nil {
 			return err
 		}
-	case IPv6:
-		if i.enabled {
-			if _, err := exec.Command(ip6tablesCommand, args...).CombinedOutput(); err != nil {
-				return err
-			}
+	}
+
+	if rule.ipVersion == IPv4 || !i.ip6tablesSupported {
+		return nil
+	}
+
+	if insert {
+		index, err := i.getRuleLine(ip6tablesCommand, rule.chain, rule.priority)
+		if err != nil {
+			return fmt.Errorf("calculating rule index: %w", err)
 		}
-	case Both:
-		if _, err := exec.Command(iptablesCommand, args...).CombinedOutput(); err != nil {
-			return err
-		}
-		if i.enabled {
-			if _, err := exec.Command(ip6tablesCommand, args...).CombinedOutput(); err != nil {
-				return err
-			}
-		}
+		command = rule.ToInsertAppendCommand(index)
+	}
+
+	if _, err := i.commandRunner.RunCommand(ip6tablesCommand, command); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (i Iptables) InsertRule(rule string, version IPVersion) error {
-	commandArgs := strings.Split("-I "+rule, " ")
+// getRuleLine returns rules line number, based on given priority. It return line in iptables where the rule should be
+// inserted to satisfy that priority.
+//
+// Line numbers in iptables are inserted in ascending order, with lower line number having priority over higher line
+// number. Higher priority will generally result in lower line number. Line number 1 will be returned for the highest
+// priority.
+//
+// Assumptions/desired behavior:
+//  1. nordvpn rules(i.e rules that contain 'nordvpn-<priority> comment) should always have priority over non-nordvpn
+//     rules.
+//  2. Last nordvpn rule in the chain is our boundary. New rule should be inserted either above it, or at most at one
+//     line bellow it. This enforces priority of nordvpn rules over non-nordvpn rules.
+//  3. Non-nordvpn rules located between last nordvpn rule in the chain and the first rule in the chain are ignored.
+func (i iptablesManager) getRuleLine(command string, chain Chain, priority RulePriority) (int, error) {
+	// Run command with --numeric to avoid reverse DNS lookup. This takes a long time and is unecessary for the purpose
+	// of line number calculation(we ignore everything but the 'nordvpn-<priority>' comment or the lack of thereof).
+	args := "-L " + chain.String() + " --numeric"
 
-	return i.executeCommand(version, commandArgs...)
+	output, err := i.commandRunner.RunCommand(command, args)
+	if err != nil {
+		return 0, fmt.Errorf("listing iptables rules: %w", err)
+	}
+
+	// Skip first two lines of output they are the chain name and table values name.
+	outputLines := strings.Split(string(output), "\n")[2:]
+
+	if len(outputLines) == 0 {
+		return 1, nil
+	}
+
+	nordvpnCommentPattern := regexp.MustCompile(`nordvpn-(\d+)`)
+
+	lastNordvpnRuleLine := 0
+	for ruleIndex, line := range outputLines {
+		matches := nordvpnCommentPattern.FindStringSubmatch(line)
+		if len(matches) > 0 {
+			// Offset by 1 because iptables rules are 1 based
+			lastNordvpnRuleLine = ruleIndex + 1
+		}
+	}
+
+	// Rules are present in iptables, but there are no nordvpn rules. In this case we want to insert the rule at the top
+	// so that it will be prioritized over other rules.
+	if len(outputLines) > 0 && lastNordvpnRuleLine == 0 {
+		return 1, nil
+	}
+
+	// get next lowest index
+	for lineIndex, line := range outputLines[:lastNordvpnRuleLine] {
+		if strings.Contains(line, priority.toComment()) {
+			return lineIndex + 1, nil
+		}
+
+		matches := nordvpnCommentPattern.FindStringSubmatch(line)
+		if len(matches) < 2 {
+			continue
+		}
+
+		rulePriority, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return 0, fmt.Errorf("converting priority to int: %w", err)
+		}
+
+		if rulePriority < int(priority) {
+			// Array indexes are 0 based, iptables line numbers are 1 based.
+			return lineIndex + 1, nil
+		}
+	}
+
+	// Offset by 1 because we want to insert the rule after the last discovered nordvpn rule.
+	return lastNordvpnRuleLine + 1, nil
 }
 
-func (i Iptables) DeleteRule(rule string, version IPVersion) error {
-	commandArgs := strings.Split("-D "+rule, " ")
+func (i iptablesManager) InsertRule(rule FwRule) error {
+	return i.executeCommand(true, rule)
+}
 
-	return i.executeCommand(version, commandArgs...)
+func (i iptablesManager) DeleteRule(rule FwRule) error {
+	return i.executeCommand(false, rule)
 }
 
 type PortRange struct {
@@ -103,24 +220,48 @@ type PortRange struct {
 	max int
 }
 
-type AllowlistSubnet struct {
-	rule      string
+type FwRule struct {
+	chain     Chain
 	ipVersion IPVersion
+	params    string
+	priority  RulePriority
+}
+
+func NewFwRule(chain Chain, ipVersion IPVersion, params string, priority RulePriority) FwRule {
+	return FwRule{
+		chain:     chain,
+		ipVersion: ipVersion,
+		params:    params,
+		priority:  priority,
+	}
+}
+
+// ToInsertAppendCommand returns the FwRule converted to insert command(-I <CHAIN> <ARGS>) or append command if index is
+// -1.
+func (f FwRule) ToInsertAppendCommand(index int) string {
+	return fmt.Sprintf("-I %s %d %s %s", f.chain, index, f.params, f.priority.toCommentArgs())
+}
+
+func (f FwRule) ToDeleteCommand() string {
+	return fmt.Sprintf("-D %s %s %s", f.chain, f.params, f.priority.toCommentArgs())
 }
 
 type FirewallManager struct {
-	commandExecutor      IptablesExecutor
-	devices              device.ListFunc // list network interfaces
-	allowlistPortsRules  []string
-	allowlistSubnetRules []AllowlistSubnet
-	trafficBlockRules    []string
-	apiAllowlistRules    []string
-	connmark             uint32
+	iptablesManager   iptablesManager
+	devices           device.ListFunc // list network interfaces
+	allowlistRules    []FwRule
+	trafficBlockRules []FwRule
+	apiAllowlistRules []FwRule
+	connmark          uint32
 }
 
-func NewFirewallManager(devices device.ListFunc, commandExecutor IptablesExecutor, connmark uint32) FirewallManager {
+func NewFirewallManager(devices device.ListFunc,
+	commandRunner CommandRunner,
+	connmark uint32,
+	ip6TablesSupported bool,
+	enabled bool) FirewallManager {
 	return FirewallManager{
-		commandExecutor: commandExecutor,
+		iptablesManager: newIptablesManager(commandRunner, ip6TablesSupported, enabled),
 		devices:         devices,
 		connmark:        connmark,
 	}
@@ -137,29 +278,31 @@ func (f *FirewallManager) BlockTraffic() error {
 		return fmt.Errorf("listing interfaces: %w", err)
 	}
 
-	// -I INPUT -i <iface> -m comment --comment nordvpn -j DROP
-	// -I OUTPUT -o <iface> -m comment --comment nordvpn -j DROP
+	// -I INPUT -i <iface> -j DROP
+	// -I OUTPUT -o <iface> -j DROP
 	for _, iface := range interfaces {
-		inputCommand := fmt.Sprintf("INPUT -i %s -m comment --comment nordvpn -j DROP", iface.Name)
-		if err := f.commandExecutor.InsertRule(inputCommand, Both); err != nil {
+		inputParams := fmt.Sprintf("-i %s -j DROP", iface.Name)
+		inputRule := NewFwRule(INPUT, Both, inputParams, TrafficBlock)
+		if err := f.iptablesManager.InsertRule(inputRule); err != nil {
 			return fmt.Errorf("blocking input traffic: %w", err)
 		}
-		f.trafficBlockRules = append(f.trafficBlockRules, inputCommand)
+		f.trafficBlockRules = append(f.trafficBlockRules, inputRule)
 
-		outputCommand := fmt.Sprintf("OUTPUT -o %s -m comment --comment nordvpn -j DROP", iface.Name)
-		if err := f.commandExecutor.InsertRule(outputCommand, Both); err != nil {
+		outputParams := fmt.Sprintf("-o %s -j DROP", iface.Name)
+		outputRule := NewFwRule(OUTPUT, Both, outputParams, TrafficBlock)
+		if err := f.iptablesManager.InsertRule(outputRule); err != nil {
 			return fmt.Errorf("blocking output traffic: %w", err)
 		}
-		f.trafficBlockRules = append(f.trafficBlockRules, outputCommand)
+		f.trafficBlockRules = append(f.trafficBlockRules, outputRule)
 	}
 	return nil
 }
 
 func (f *FirewallManager) removeBlockTrafficRules() error {
-	// -D INPUT -i <iface> -m comment --comment nordvpn -j DROP
-	// -D OUTPUT -o <iface> -m comment --comment nordvpn -j DROP
+	// -D INPUT -i <iface> -j DROP
+	// -D OUTPUT -o <iface> -j DROP
 	for _, rule := range f.trafficBlockRules {
-		if err := f.commandExecutor.DeleteRule(rule, Both); err != nil {
+		if err := f.iptablesManager.DeleteRule(rule); err != nil {
 			return fmt.Errorf("unblocking input traffic: %w", err)
 		}
 	}
@@ -206,34 +349,38 @@ func portsToPortRanges(ports []int) []PortRange {
 }
 
 func (f *FirewallManager) allowlistPort(iface string, protocol string, portRange PortRange) error {
-	// -A INPUT -i <interface> -p <protocol> -m <protocol> --dport <port> -m comment --comment nordvpn -j ACCEPT
-	// -A INPUT -i <interface> -p <protocol> -m <protocol> --sport <port> -m comment --comment nordvpn -j ACCEPT
-	// -A OUTPUT -o <interface> -p <protocol> -m <protocol> --sport <port> -m comment --comment nordvpn -j ACCEPT
-	// -A OUTPUT -o <interface> -p <protocol> -m <protocol> --dport <port> -m comment --comment nordvpn -j ACCEPT
+	// -A INPUT -i <interface> -p <protocol> -m <protocol> --dport <port> -j ACCEPT
+	// -A INPUT -i <interface> -p <protocol> -m <protocol> --sport <port> -j ACCEPT
+	// -A OUTPUT -o <interface> -p <protocol> -m <protocol> --sport <port> -j ACCEPT
+	// -A OUTPUT -o <interface> -p <protocol> -m <protocol> --dport <port> -j ACCEPT
 
-	inputDportRule := fmt.Sprintf("INPUT -i %s -p %s -m %s --dport %d:%d -m comment --comment nordvpn -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
-	if err := f.commandExecutor.InsertRule(inputDportRule, Both); err != nil {
+	inputDportParams := fmt.Sprintf("-i %s -p %s -m %s --dport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
+	inputDportRule := NewFwRule(INPUT, Both, inputDportParams, UserAllowlist)
+	if err := f.iptablesManager.InsertRule(inputDportRule); err != nil {
 		return fmt.Errorf("allowlisting input dport: %w", err)
 	}
-	f.allowlistPortsRules = append(f.allowlistPortsRules, inputDportRule)
+	f.allowlistRules = append(f.allowlistRules, inputDportRule)
 
-	inputSportRule := fmt.Sprintf("INPUT -i %s -p %s -m %s --sport %d:%d -m comment --comment nordvpn -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
-	if err := f.commandExecutor.InsertRule(inputSportRule, Both); err != nil {
+	inputSportParams := fmt.Sprintf("-i %s -p %s -m %s --sport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
+	inputSportRule := NewFwRule(INPUT, Both, inputSportParams, UserAllowlist)
+	if err := f.iptablesManager.InsertRule(inputSportRule); err != nil {
 		return fmt.Errorf("allowlisting input sport: %w", err)
 	}
-	f.allowlistPortsRules = append(f.allowlistPortsRules, inputSportRule)
+	f.allowlistRules = append(f.allowlistRules, inputSportRule)
 
-	outputDportRule := fmt.Sprintf("OUTPUT -o %s -p %s -m %s --dport %d:%d -m comment --comment nordvpn -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
-	if err := f.commandExecutor.InsertRule(outputDportRule, Both); err != nil {
+	outputDportParams := fmt.Sprintf("-o %s -p %s -m %s --dport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
+	outputDportRule := NewFwRule(OUTPUT, Both, outputDportParams, UserAllowlist)
+	if err := f.iptablesManager.InsertRule(outputDportRule); err != nil {
 		return fmt.Errorf("allowlisting output dport: %w", err)
 	}
-	f.allowlistPortsRules = append(f.allowlistPortsRules, outputDportRule)
+	f.allowlistRules = append(f.allowlistRules, outputDportRule)
 
-	outputSportRule := fmt.Sprintf("OUTPUT -o %s -p %s -m %s --sport %d:%d -m comment --comment nordvpn -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
-	if err := f.commandExecutor.InsertRule(outputSportRule, Both); err != nil {
+	outputSportParams := fmt.Sprintf("-o %s -p %s -m %s --sport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
+	outputSportRule := NewFwRule(OUTPUT, Both, outputSportParams, UserAllowlist)
+	if err := f.iptablesManager.InsertRule(outputSportRule); err != nil {
 		return fmt.Errorf("allowlisting input dport: %w", err)
 	}
-	f.allowlistPortsRules = append(f.allowlistPortsRules, outputSportRule)
+	f.allowlistRules = append(f.allowlistRules, outputSportRule)
 
 	return nil
 }
@@ -252,17 +399,19 @@ func (f *FirewallManager) SetAllowlist(udpPorts []int, tcpPorts []int, subnets [
 				version = IPv6
 			}
 
-			inputRule := fmt.Sprintf("INPUT -s %s -i %s -m comment --comment nordvpn -j ACCEPT", subnet.String(), iface.Name)
-			if err := f.commandExecutor.InsertRule(inputRule, version); err != nil {
+			inputParams := fmt.Sprintf("-s %s -i %s -j ACCEPT", subnet.String(), iface.Name)
+			inputRule := NewFwRule(INPUT, version, inputParams, UserAllowlist)
+			if err := f.iptablesManager.InsertRule(inputRule); err != nil {
 				return fmt.Errorf("adding input accept rule for subnet: %w", err)
 			}
-			f.allowlistSubnetRules = append(f.allowlistSubnetRules, AllowlistSubnet{rule: inputRule, ipVersion: version})
+			f.allowlistRules = append(f.allowlistRules, inputRule)
 
-			outputRule := fmt.Sprintf("OUTPUT -d %s -o %s -m comment --comment nordvpn -j ACCEPT", subnet.String(), iface.Name)
-			if err := f.commandExecutor.InsertRule(outputRule, version); err != nil {
+			outputParams := fmt.Sprintf("-d %s -o %s -j ACCEPT", subnet.String(), iface.Name)
+			outputRule := NewFwRule(OUTPUT, version, outputParams, UserAllowlist)
+			if err := f.iptablesManager.InsertRule(outputRule); err != nil {
 				return fmt.Errorf("adding output accept rule for subnet: %w", err)
 			}
-			f.allowlistSubnetRules = append(f.allowlistSubnetRules, AllowlistSubnet{rule: outputRule, ipVersion: version})
+			f.allowlistRules = append(f.allowlistRules, outputRule)
 		}
 	}
 
@@ -289,19 +438,13 @@ func (f *FirewallManager) SetAllowlist(udpPorts []int, tcpPorts []int, subnets [
 
 // UnsetAllowlist removes all the rules added by SetAllowlist.
 func (f *FirewallManager) UnsetAllowlist() error {
-	for _, rule := range f.allowlistSubnetRules {
-		if err := f.commandExecutor.DeleteRule(rule.rule, rule.ipVersion); err != nil {
+	for _, rule := range f.allowlistRules {
+		if err := f.iptablesManager.DeleteRule(rule); err != nil {
 			return fmt.Errorf("removing allowlist rule: %w", err)
 		}
 	}
-	f.allowlistSubnetRules = nil
 
-	for _, rule := range f.allowlistPortsRules {
-		if err := f.commandExecutor.DeleteRule(rule, Both); err != nil {
-			return fmt.Errorf("removing allowlist rule: %w", err)
-		}
-	}
-	f.allowlistPortsRules = nil
+	f.allowlistRules = nil
 
 	return nil
 }
@@ -314,25 +457,28 @@ func (f *FirewallManager) APIAllowlist() error {
 	}
 
 	for _, iface := range ifaces {
-		inputRule := fmt.Sprintf("INPUT -i %s -m connmark --mark %d -m comment --comment nordvpn -j ACCEPT", iface.Name, f.connmark)
-		if err := f.commandExecutor.InsertRule(inputRule, Both); err != nil {
+		inputParams := fmt.Sprintf("-i %s -m connmark --mark %d -j ACCEPT", iface.Name, f.connmark)
+		inputRule := NewFwRule(INPUT, Both, inputParams, ApiAllowlistMark)
+		if err := f.iptablesManager.InsertRule(inputRule); err != nil {
 			return fmt.Errorf("adding api allowlist INPUT rule: %w", err)
 		}
 		f.apiAllowlistRules = append(f.apiAllowlistRules, inputRule)
 
-		outputRule :=
-			fmt.Sprintf("OUTPUT -o %s -m mark --mark %d -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
-				iface.Name, f.connmark)
-		if err := f.commandExecutor.InsertRule(outputRule, Both); err != nil {
-			return fmt.Errorf("adding api allowlist OUTPUT rule: %w", err)
-		}
-		f.apiAllowlistRules = append(f.apiAllowlistRules, outputRule)
-
-		outputConnmarkRule := fmt.Sprintf("OUTPUT -o %s -m connmark --mark %d -m comment --comment nordvpn -j ACCEPT", iface.Name, f.connmark)
-		if err := f.commandExecutor.InsertRule(outputConnmarkRule, Both); err != nil {
+		outputConnmarkParams := fmt.Sprintf("-o %s -m connmark --mark %d -j ACCEPT", iface.Name, f.connmark)
+		outputConnmarkRule := NewFwRule(OUTPUT, Both, outputConnmarkParams, ApiAllowlistOutputConnmark)
+		if err := f.iptablesManager.InsertRule(outputConnmarkRule); err != nil {
 			return fmt.Errorf("adding api allowlist OUTPUT rule: %w", err)
 		}
 		f.apiAllowlistRules = append(f.apiAllowlistRules, outputConnmarkRule)
+
+		outputParams :=
+			fmt.Sprintf("-o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
+				iface.Name, f.connmark)
+		outputRule := NewFwRule(OUTPUT, Both, outputParams, ApiAllowlistMark)
+		if err := f.iptablesManager.InsertRule(outputRule); err != nil {
+			return fmt.Errorf("adding api allowlist OUTPUT rule: %w", err)
+		}
+		f.apiAllowlistRules = append(f.apiAllowlistRules, outputRule)
 	}
 
 	return nil
@@ -341,7 +487,7 @@ func (f *FirewallManager) APIAllowlist() error {
 // ApiDenylis removes ACCEPT rules added by ApiAllowlist.
 func (f *FirewallManager) APIDenylist() error {
 	for _, rule := range f.apiAllowlistRules {
-		if err := f.commandExecutor.DeleteRule(rule, Both); err != nil {
+		if err := f.iptablesManager.DeleteRule(rule); err != nil {
 			return fmt.Errorf("removing api allowlist rule: %w", err)
 		}
 	}
