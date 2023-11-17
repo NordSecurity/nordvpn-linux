@@ -1,10 +1,11 @@
-package fileshare
+package storage
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
@@ -55,7 +56,7 @@ func TestLargeSaveLoad(t *testing.T) {
 
 	for i := range [transfersCount]byte{} {
 		transferID = fmt.Sprintf("%s-%d", transferID, i)
-		transfers[transferID] = makeTransfer(transferID, DirDepthLimit, TransferFileLimit, true)
+		transfers[transferID] = makeTransfer(transferID, fileshare.DirDepthLimit, fileshare.TransferFileLimit, true)
 	}
 
 	fmt.Printf("transfers count before: %d\n", len(transfers))

@@ -18,8 +18,9 @@ import (
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/drop"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/storage"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"google.golang.org/grpc"
@@ -86,7 +87,7 @@ func main() {
 	legacyStoragePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
 	eventManager := fileshare.NewEventManager(
 		internal.IsProdEnv(Environment),
-		fileshare.FileshareHistoryImplementation(legacyStoragePath),
+		storage.NewJsonFile(legacyStoragePath),
 		meshClient,
 		fileshare.StdOsInfo{},
 		fileshare.NewStdFilesystem("/"),
@@ -114,7 +115,7 @@ func main() {
 		log.Fatalf("ensuring dir for transfer history file: %s", err)
 	}
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
-	fileshareImplementation := drop.New(
+	fileshareImplementation := libdrop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
 		Version,

@@ -259,10 +259,3 @@ func isTransferFinished(tr *pb.Transfer) bool {
 		tr.Status == pb.Status_CANCELED ||
 		tr.Status == pb.Status_CANCELED_BY_PEER
 }
-
-// TransferProgressInfo info to report to the user
-type TransferProgressInfo struct {
-	TransferID  string
-	Transferred uint32 // percent of transferred bytes
-	Status      pb.Status
-}

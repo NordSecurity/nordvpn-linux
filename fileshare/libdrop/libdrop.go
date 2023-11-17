@@ -1,5 +1,5 @@
-// Package drop wraps libdrop fileshare implementation.
-package drop
+// Package libdrop wraps libdrop fileshare implementation.
+package libdrop
 
 import (
 	"encoding/json"

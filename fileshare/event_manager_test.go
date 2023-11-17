@@ -199,6 +199,14 @@ func newMockSystemEnvironment(t *testing.T) mockSystemEnvironment {
 	}
 }
 
+type mockStorage struct{}
+
+func (mockStorage) Load() (map[string]*pb.Transfer, error) {
+	return map[string]*pb.Transfer{}, nil
+}
+
+func (mockStorage) Save(map[string]*pb.Transfer) error { return nil }
+
 func TestIncomingTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -211,7 +219,7 @@ func TestIncomingTransfer(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(false, NoopStorage{}, &meshClient, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, mockStorage{}, &meshClient, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -246,7 +254,7 @@ func TestIncomingTransfer(t *testing.T) {
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, mockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	timeNow := time.Now()
 	for i := 10; i > 0; i-- {
@@ -270,7 +278,7 @@ func TestGetTransfers(t *testing.T) {
 func TestGetTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, mockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	eventManager.transfers["test"] = &pb.Transfer{
@@ -290,7 +298,7 @@ func TestGetTransfer(t *testing.T) {
 func TestOutgoingTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, mockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -331,7 +339,7 @@ func TestInvalidTransferProgress(t *testing.T) {
 
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 
-	eventManager := NewEventManager(false, NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, mockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -364,7 +372,7 @@ func TestInvalidTransferProgress(t *testing.T) {
 func TestTransferProgress(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, mockStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.notificationManager = nil
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -578,7 +586,7 @@ func TestAcceptTransfer(t *testing.T) {
 	for _, test := range tests {
 		mockSystemEnvironment.mockEventManagerFilesystem.freeSpace = test.sizeLimit
 
-		eventManager := NewEventManager(false, NoopStorage{},
+		eventManager := NewEventManager(false, mockStorage{},
 			&mockMeshClient{},
 			&mockSystemEnvironment.mockEventManagerOsInfo,
 			&mockSystemEnvironment.mockEventManagerFilesystem,
@@ -615,7 +623,7 @@ func TestAcceptTransfer_Outgoing(t *testing.T) {
 
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
@@ -634,7 +642,7 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
@@ -659,7 +667,7 @@ func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
@@ -697,7 +705,7 @@ func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
 func TestSetTransferStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -717,7 +725,7 @@ func TestSetTransferStatus(t *testing.T) {
 func TestFinishedTransfer(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -816,7 +824,7 @@ func TestNewTransfer(t *testing.T) {
 	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	fileID := "file1.xml"
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -962,7 +970,7 @@ func TestCheckTransferStatuses_SingleDirWithFiles(t *testing.T) {
 	file2ID := "file2"
 	path := "/tmp"
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -1049,7 +1057,7 @@ func TestCheckTransferStatuses_MultipleInputPaths(t *testing.T) {
 	file2ID := "file2.xml"
 	path := "/tmp"
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -1162,7 +1170,7 @@ func TestCheckTransferStatuses_MultilevelDirComplexStructure(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -1298,7 +1306,7 @@ func TestTransferRequestPermissionsValidation(t *testing.T) {
 		},
 	}
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -1404,7 +1412,7 @@ func TestTransferFinalization(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eventManager := NewEventManager(false, NoopStorage{},
+		eventManager := NewEventManager(false, mockStorage{},
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
@@ -1468,7 +1476,7 @@ func TestTransferFinalization_TransferCanceled(t *testing.T) {
 		}
 	}`, transferID)
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -1508,7 +1516,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
 		notificationManager.notifier = &notifier
 
-		eventManager := NewEventManager(false, NoopStorage{},
+		eventManager := NewEventManager(false, mockStorage{},
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
@@ -1622,7 +1630,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	notificationManager.notifier = &notifier
 	notificationManager.openFileFunc = openFileFunc
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -1677,7 +1685,7 @@ func TestTransferRequestNotification(t *testing.T) {
 	notificationManager.notifier = &notifier
 	notificationManager.openFileFunc = openFileFunc
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -1789,7 +1797,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		notificationManager := NewMockNotificationManager(&osInfo)
 		notificationManager.notifier = &notifier
 
-		eventManager := NewEventManager(false, NoopStorage{},
+		eventManager := NewEventManager(false, mockStorage{},
 			&mockMeshClient{},
 			&osInfo,
 			&filesystem,
@@ -1965,7 +1973,7 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
 	notificationManager.notifier = &notifier
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
@@ -2029,7 +2037,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 		notificationManager.notifications.transfers[invalidTransferNotificationID] = invalidTransferID
 		notificationManager.notifier = &notifier
 
-		eventManager := NewEventManager(false, NoopStorage{},
+		eventManager := NewEventManager(false, mockStorage{},
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
@@ -2144,7 +2152,7 @@ func TestAutoaccept(t *testing.T) {
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
 	notificationManager.notifier = &notifier
 
-	eventManager := NewEventManager(false, NoopStorage{},
+	eventManager := NewEventManager(false, mockStorage{},
 		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,

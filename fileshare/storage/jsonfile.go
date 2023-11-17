@@ -1,4 +1,4 @@
-package fileshare
+package storage
 
 import (
 	"encoding/json"
@@ -8,11 +8,13 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"golang.org/x/exp/maps"
 )
 
+const historySizeMaxBytes = 4 * 1024 * 1024 // 4Mb is also gRPC message default limit
 const historyFile = "history"
 
 // JsonFile is a implementation of user's fileshare history storage.
@@ -41,7 +43,7 @@ func (jf JsonFile) Load() (map[string]*pb.Transfer, error) {
 		tr.Files = flatten(tr.Files)
 		if tr.Status == pb.Status_REQUESTED || tr.Status == pb.Status_ONGOING {
 			tr.Status = pb.Status_INTERRUPTED
-			SetTransferAllFileStatus(tr, pb.Status_INTERRUPTED)
+			fileshare.SetTransferAllFileStatus(tr, pb.Status_INTERRUPTED)
 		}
 	}
 
