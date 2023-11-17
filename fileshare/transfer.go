@@ -21,6 +21,7 @@ var (
 		pb.Status_ACCEPT_FAILURE:       "accepted with errors",
 		pb.Status_CANCELED:             "canceled",
 		pb.Status_CANCELED_BY_PEER:     "canceled by peer",
+		pb.Status_PENDING:              "pending",
 	}
 	OutgoingStatus = map[pb.Status]string{
 		pb.Status_REQUESTED:            "request sent",
@@ -32,11 +33,13 @@ var (
 		pb.Status_CANCELED:             "canceled",
 		pb.Status_CANCELED_BY_PEER:     "canceled by peer",
 		pb.Status_FILE_REJECTED:        "the receiver has declined the file transfer",
+		pb.Status_PENDING:              "pending",
 	}
 	FileStatus = map[pb.Status]string{
 		pb.Status_SUCCESS:                  "completed",
 		pb.Status_CANCELED:                 "canceled",
 		pb.Status_INTERRUPTED:              "interrupted",
+		pb.Status_PENDING:                  "pending",
 		pb.Status_BAD_PATH:                 "the download path is not valid",
 		pb.Status_BAD_FILE:                 "the file is no longer found",
 		pb.Status_TRANSPORT:                "transport problem",
