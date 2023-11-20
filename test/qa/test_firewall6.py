@@ -213,6 +213,7 @@ def test_firewall_ipv6_05_allowlist_subnet(tech, proto, obfuscated, subnet_addr)
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+@timeout_decorator.timeout(40)
 def test_firewall_ipv6_06_with_killswitch(tech, proto, obfuscated):
     with lib.Defer(lambda: lib.set_killswitch("off")):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
