@@ -10,36 +10,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	"github.com/NordSecurity/nordvpn-linux/tunnel"
 
 	"github.com/stretchr/testify/assert"
 )
-
-type activeVPN struct{}
-
-func (activeVPN) Start(
-	vpn.Credentials,
-	vpn.ServerData,
-) error {
-	return nil
-}
-func (activeVPN) State() vpn.State { return vpn.UnknownState }
-func (activeVPN) Stop() error      { return nil }
-func (activeVPN) Tun() tunnel.T    { return mock.WorkingT{} }
-func (activeVPN) IsActive() bool   { return true }
-
-type inactiveVPN struct{}
-
-func (inactiveVPN) Start(
-	vpn.Credentials,
-	vpn.ServerData,
-) error {
-	return nil
-}
-func (inactiveVPN) State() vpn.State { return vpn.UnknownState }
-func (inactiveVPN) Stop() error      { return nil }
-func (inactiveVPN) Tun() tunnel.T    { return nil }
-func (inactiveVPN) IsActive() bool   { return false }
 
 func TestVPNNetworker_IsVPNActive(t *testing.T) {
 	tests := []struct {
@@ -49,12 +22,12 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 	}{
 		{
 			name:     "active vpn",
-			vpn:      activeVPN{},
+			vpn:      &mock.ActiveVPN{},
 			expected: true,
 		},
 		{
 			name:     "inactive vpn",
-			vpn:      inactiveVPN{},
+			vpn:      mock.WorkingInactiveVPN{},
 			expected: false,
 		},
 		{
