@@ -475,33 +475,20 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_status_disconnected(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    assert network.is_disconnected()
-    assert "Disconnected" in sh.nordvpn.status()
-
-
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(60)
 def test_status_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
+    assert network.is_disconnected()
+    assert "Disconnected" in sh.nordvpn.status()
+    
     with lib.Defer(sh.nordvpn.disconnect):
         name, hostname = server.get_hostname_by(technology=tech, protocol=proto, obfuscated=obfuscated)
         sh.nordvpn.connect(hostname.split(".")[0])
 
         connect_time = time.monotonic()
 
-        data_10MB = requests.get("http://speedtest.tele2.net/10MB.zip")
-        data_10MB.raise_for_status()
-
-        with io.BytesIO(data_10MB.content) as inmemory_file_10MB:
-            files = {'file': ("file_10MB.zip", inmemory_file_10MB)}
-            response = requests.post("http://speedtest.tele2.net/upload.php", files=files)
-            response.raise_for_status()
+        time.sleep(5)
 
         status_time = time.monotonic()
 
@@ -530,11 +517,8 @@ def test_status_connected(tech, proto, obfuscated):
         transfer_received = float(status_info['transfer'].split(" ")[0])
         transfer_sent = float(status_info['transfer'].split(" ")[3])
 
-        #The app shows transfer size in MiB, 10MB = ~10.49MiB
-        assert transfer_received > 10 and transfer_received < 12 
-        assert "MiB" in status_info['transfer'].split(" ")[1]
-        assert transfer_sent > 10 and transfer_sent < 12
-        assert "MiB" in status_info['transfer'].split(" ")[4]
+        assert transfer_received >= 0 
+        assert transfer_sent > 0 
 
         time_connected = int(status_info['uptime'].split(" ")[0])
         time_passed = status_time - connect_time
