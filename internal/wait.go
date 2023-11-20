@@ -10,6 +10,6 @@ import (
 // WaitSignal for app to shutdown
 func WaitSignal() {
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, linux.SIGTERM)
+	signal.Notify(signals, os.Interrupt, linux.SIGTERM, linux.SIGHUP)
 	<-signals
 }
