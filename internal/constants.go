@@ -83,9 +83,6 @@ const (
 	// ConfigDirectory is used for configuration files storage. Hardcoded only for nordfileshared, in
 	// other cases consider using os.UserConfigDir instead.
 	ConfigDirectory = ".config"
-
-	// FileshareHistoryFile is the storage file used by libdrop
-	FileshareHistoryFile = "fileshare_history.db"
 )
 
 const (

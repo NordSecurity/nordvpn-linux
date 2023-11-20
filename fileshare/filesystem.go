@@ -3,6 +3,7 @@ package fileshare
 import (
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -65,6 +66,7 @@ func (stdFs StdFilesystem) Lstat(path string) (fs.FileInfo, error) {
 // GetDefaultDownloadDirectory returns users Downloads directory or an error if it doesn't exist
 func GetDefaultDownloadDirectory() (string, error) {
 	username, err := user.Current()
+	log.Println(username.Name)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to obtain username: %s", err.Error())
