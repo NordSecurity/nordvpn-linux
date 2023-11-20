@@ -72,6 +72,8 @@ func TestIsConnected(t *testing.T) {
 }
 
 func TestEventCallback_DoesntBlock(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	stateC := make(chan state)
 	cb := eventCallback(stateC)
 	event, err := json.Marshal(state{})

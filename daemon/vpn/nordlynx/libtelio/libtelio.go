@@ -5,15 +5,14 @@ project would not need C dependencies to run unit tests.
 package libtelio
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net"
 	"net/netip"
 	"os/exec"
 	"regexp"
+	"strings"
 	"sync"
 	"time"
 
@@ -53,10 +52,7 @@ func eventCallback(states chan<- state) eventFn {
 			return
 		}
 
-		select {
-		case states <- e.Body:
-		default: // drop if nobody is listening
-		}
+		internal.SendNonBlocking(states, e.Body)
 	}
 }
 
@@ -77,11 +73,12 @@ func eventCallback(states chan<- state) eventFn {
 // 7. VPN connected, calling Disable - tunnel must be re-initiated with the originally saved values provided to Start
 // 8. VPN disconnected, calling Disable - tunnel must be destroyed
 type Libtelio struct {
-	state  vpn.State
-	lib    teliogo.Telio
-	events <-chan state
-	active bool
-	tun    *tunnel.Tunnel
+	state        vpn.State
+	stateChanged chan vpn.State
+	lib          teliogo.Telio
+	events       <-chan state
+	active       bool
+	tun          *tunnel.Tunnel
 	// This must be the one given from the public interface and
 	// retrieved from the API
 	currentPrivateKey      string
@@ -91,6 +88,7 @@ type Libtelio struct {
 	isKernelDisabled       bool
 	fwmark                 uint32
 	mu                     sync.Mutex
+	done                   chan bool
 }
 
 var defaultIP = netip.MustParseAddr("10.5.0.2")
@@ -168,7 +166,7 @@ func handleTelioConfig(eventPath, deviceID, version string, prod bool, remoteCon
 
 func New(prod bool, eventPath string, fwmark uint32,
 	telioCfg remote.RemoteConfigGetter, deviceID, appVersion string) *Libtelio {
-	events := make(chan state)
+	events := make(chan state, 3)
 	logLevel := teliogo.TELIOLOGINFO
 	if prod {
 		logLevel = teliogo.TELIOLOGERROR
@@ -207,9 +205,11 @@ func New(prod bool, eventPath string, fwmark uint32,
 					"TELIO("+teliogo.TelioGetVersionTag()+"): "+s,
 				)
 			}),
-		events: events,
-		state:  vpn.ExitedState,
-		fwmark: fwmark,
+		events:       events,
+		state:        vpn.ExitedState,
+		fwmark:       fwmark,
+		stateChanged: make(chan vpn.State),
+		done:         make(chan bool),
 	}
 }
 
@@ -259,11 +259,21 @@ func (l *Libtelio) Start(
 
 // connect to the VPN server
 func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
 	// Start monitoring connection events before connecting to not miss any
-	isConnectedC := isConnected(ctx, l.events, serverPublicKey)
+	l.monitorNodesEvents(serverPublicKey)
 
+	if err := l.connectToExitNode(serverIP, serverPublicKey); err != nil {
+		return err
+	}
+
+	// Check if the connection actually happened. Disconnect if
+	// no actual connection was created within the timeout
+
+	l.active = true
+	return nil
+}
+
+func (l *Libtelio) connectToExitNode(serverIP netip.Addr, serverPublicKey string) error {
 	if err := toError(l.lib.ConnectToExitNode(
 		serverPublicKey,
 		"0.0.0.0/0",
@@ -278,17 +288,6 @@ func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
 		return fmt.Errorf("libtelio connect: %w", err)
 	}
 
-	// Check if the connection actually happened. Disconnect if
-	// no actual connection was created within the timeout
-	isConnected := <-isConnectedC
-	if !isConnected {
-		// #nosec G104 -- errors.Join would be useful here
-		l.disconnect()
-		return errors.New("connected to nordlynx server but there is no internet as a result")
-	}
-
-	l.active = true
-	l.state = vpn.ConnectedState
 	return nil
 }
 
@@ -318,6 +317,8 @@ func (l *Libtelio) disconnect() error {
 	}
 	l.active = false
 	l.state = vpn.ExitedState
+	internal.SendNonBlocking(l.done, true)
+
 	return nil
 }
 
@@ -336,6 +337,9 @@ func (l *Libtelio) State() vpn.State {
 func (l *Libtelio) Tun() tunnel.T {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if l.tun == nil {
+		return nil
+	}
 	return l.tun
 }
 
@@ -440,6 +444,10 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 	}
 
 	return nil
+}
+
+func (l *Libtelio) StateChanged() <-chan vpn.State {
+	return l.stateChanged
 }
 
 type peer struct {
@@ -577,37 +585,42 @@ func (l *Libtelio) Public(private string) string {
 	return l.lib.GeneratePublicKey(private)
 }
 
-// isConnected function designed to be called before performing an action which trigger events.
-// libtelio is sending back events via callback, to properly catch event from libtelio, event
-// is being received in goroutine, but this goroutine has to be 100% started before invoking
-// libtelio function (e.g. ConnectToExitNode).
-// There was a problem observed on VM (Fedora36 and Ubuntu22) when event from libtelio function
-// is not caught, because receiving goroutine is not started yet. So, extra WaitGroup is used
-// to make sure this function is exited only after event receiving goroutine has started.
-func isConnected(ctx context.Context, ch <-chan state, pubKey string) <-chan bool {
+func (l *Libtelio) monitorNodesEvents(pubKey string) {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	connectedC := make(chan bool)
 	go func() {
 		wg.Done() // signal that goroutine has started
 		for {
 			select {
-			case state := <-ch:
-				if state.PublicKey == pubKey &&
-					state.State == "connected" {
-					connectedC <- true
+			case state := <-l.events:
+				if state.PublicKey == pubKey {
+					vpnState, err := vpn.StringToState(strings.ToUpper(state.State))
+					if err != nil {
+						log.Println(internal.ErrorPrefix, "failed to convert to VPN state ", state.State, err)
+					}
+					l.updateState(vpnState)
+				}
+			case shouldStop := <-l.done:
+				if shouldStop {
+					log.Println(internal.InfoPrefix, "stop listening for libtelio events")
 					return
 				}
-			case <-ctx.Done():
-				connectedC <- false
-				return
 			}
 		}
 	}()
 
 	wg.Wait() // wait until goroutine is started
+}
 
-	return connectedC
+// this is executed from the coroutine, because of this is needs to lock
+func (l *Libtelio) updateState(state vpn.State) {
+	log.Println(internal.InfoPrefix, "change state to", state)
+
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.state = state
+
+	internal.SendNonBlocking(l.stateChanged, state)
 }

@@ -12,9 +12,10 @@ import (
 type VPN interface {
 	Start(Credentials, ServerData) error
 	Stop() error
-	State() State // required because of OpenVPN
+	State() State
 	IsActive() bool
 	Tun() tunnel.T // required because of OpenVPN
+	StateChanged() <-chan State
 }
 
 // NetworkChanger allows refreshing VPN connection without the need for full start/stop.

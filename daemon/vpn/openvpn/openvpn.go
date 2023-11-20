@@ -50,13 +50,15 @@ type OpenVPN struct {
 	// Simple Lock(); defer Unlock() results in deadlocks, since
 	// substates updates get stuck waiting for Mutex.
 	sync.Mutex
+	stateChanged chan vpn.State
 }
 
 func New(fwmark uint32) *OpenVPN {
 	return &OpenVPN{
-		state:    vpn.ExitedState,
-		substate: vpn.UnknownSubstate,
-		fwmark:   fwmark,
+		state:        vpn.ExitedState,
+		substate:     vpn.UnknownSubstate,
+		fwmark:       fwmark,
+		stateChanged: make(chan vpn.State, 1),
 	}
 }
 
@@ -207,6 +209,8 @@ func (ovpn *OpenVPN) stop() error {
 	ovpn.tun = nil
 	ovpn.active = false
 	ovpn.state = vpn.ExitedState
+	internal.SendNonBlocking(ovpn.stateChanged, vpn.ExitedState)
+
 	return nil
 }
 
@@ -221,6 +225,10 @@ func (ovpn *OpenVPN) State() vpn.State {
 	ovpn.Lock()
 	defer ovpn.Unlock()
 	return ovpn.state
+}
+
+func (ovpn *OpenVPN) StateChanged() <-chan vpn.State {
+	return ovpn.stateChanged
 }
 
 func (ovpn *OpenVPN) startOpenVPN() error {
@@ -264,13 +272,24 @@ func (ovpn *OpenVPN) setTun(tun tunnel.Tunnel) {
 func (ovpn *OpenVPN) Tun() tunnel.T {
 	ovpn.Lock()
 	defer ovpn.Unlock()
+	if ovpn.tun == nil {
+		return nil
+	}
 	return ovpn.tun
 }
 
 func (ovpn *OpenVPN) setState(arg string) {
 	ovpn.Lock()
 	defer ovpn.Unlock()
-	ovpn.state, _ = vpn.StringToState(arg)
+	log.Println(internal.InfoPrefix, "change state to", arg)
+	state, err := vpn.StringToState(arg)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to convert to VPN state: ", arg, err)
+	}
+
+	ovpn.state = state
+
+	internal.SendNonBlocking(ovpn.stateChanged, state)
 }
 
 func (ovpn *OpenVPN) setSubstate(substate vpn.Substate) {
@@ -292,14 +311,8 @@ func stage1Handler(
 	username string,
 	password string,
 ) error {
-	timeout := time.NewTimer(time.Second * 30)
 	for {
-		var e gopenvpn.Event
-		select {
-		case <-timeout.C:
-			return errServerTimeout
-		case e = <-eventCh:
-		}
+		e := <-eventCh
 
 		switch event := e.(type) {
 		case *gopenvpn.FatalEvent:

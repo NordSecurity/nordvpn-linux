@@ -53,6 +53,9 @@ const (
 	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
 	// for blocking incoming connections into local networks
 	blockLanRule = "-block-lan-rule-"
+	// when connecting to the VPN , this represents the maximum duration during which the application
+	// awaits for the connected state, before disconnecting and reporting timeout error
+	maxDurationForVPNToConnect = 30 * time.Second
 )
 
 // ConnectionStatus of a currently active connection
@@ -201,6 +204,43 @@ func NewCombined(
 	}
 }
 
+func (netw *Combined) monitorVPNConnected() <-chan bool {
+	timeout := time.NewTimer(maxDurationForVPNToConnect)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	chanConnected := make(chan bool, 1)
+	go func() {
+		wg.Done() // signal that goroutine has started
+		for {
+			select {
+			case state := <-netw.vpnet.StateChanged():
+				log.Println(internal.InfoPrefix, "VPN state changed to", state)
+				if state == vpn.ConnectedState {
+					chanConnected <- true
+					timeout.Stop()
+					return
+				}
+			case <-timeout.C:
+				if netw.vpnet.State() == vpn.ConnectedState {
+					chanConnected <- true
+					return
+				}
+				log.Println(internal.InfoPrefix, "timeout while waiting to connect to VPN")
+
+				netw.stop()
+				chanConnected <- false
+				return
+			}
+		}
+	}()
+
+	wg.Wait() // wait until goroutine is started
+
+	return chanConnected
+}
+
 // Start VPN connection after preparing the network.
 func (netw *Combined) Start(
 	creds vpn.Credentials,
@@ -211,11 +251,30 @@ func (netw *Combined) Start(
 ) (err error) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+
+	if netw.vpnet == nil {
+		return errNilVPN
+	}
+
+	connectedChan := netw.monitorVPNConnected()
+
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
-		return netw.restart(creds, serverData, nameservers)
+		if err := netw.restart(creds, serverData, nameservers); err != nil {
+			return err
+		}
 	}
-	return netw.start(creds, serverData, allowlist, nameservers)
+
+	if err := netw.start(creds, serverData, allowlist, nameservers); err != nil {
+		return err
+	}
+
+	isConnected := <-connectedChan
+	if !isConnected {
+		return errors.New("failed to connect to VPN")
+	}
+
+	return nil
 }
 
 // failureRecover what's possible if vpn start fails
@@ -552,9 +611,12 @@ func (netw *Combined) UnsetDNS() error {
 }
 
 func (netw *Combined) unsetDNS() error {
-	err := netw.dnsSetter.Unset(netw.vpnet.Tun().Interface().Name)
-	if err != nil {
-		return fmt.Errorf("networker unsetting dns: %w", err)
+	// for openvpn, tunnel is create only when the VPN is connected, stopping before will crash the application
+	if tun := netw.vpnet.Tun(); tun != nil {
+		err := netw.dnsSetter.Unset(tun.Interface().Name)
+		if err != nil {
+			return fmt.Errorf("networker unsetting dns: %w", err)
+		}
 	}
 	return nil
 }
