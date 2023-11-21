@@ -359,7 +359,7 @@ func TestTransferProgress(t *testing.T) {
 
 	progressEvent := <-progCh
 	assert.Equal(t, pb.Status_ONGOING, progressEvent.Status)
-	expectedProgress := uint32(float64(transferredBytes) / float64(file1sz+file2sz) * 100)
+	expectedProgress := uint32(float64(transferredBytes) / float64(file1sz+file2sz+file3sz) * 100)
 	assert.Equal(t, expectedProgress, progressEvent.Transferred)
 
 	waitGroup := sync.WaitGroup{}

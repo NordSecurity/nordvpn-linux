@@ -158,15 +158,6 @@ func GetTransferFileStatus(file *pb.File, in bool) (status string) {
 	return "-"
 }
 
-func isTransferFinished(tr *LiveTransfer) bool {
-	for _, file := range tr.Files {
-		if !file.Finished {
-			return false
-		}
-	}
-	return true
-}
-
 // LibdropTransfer as represented in libdrop storage
 type LibdropTransfer struct {
 	ID        string                 `json:"id"`
@@ -226,7 +217,7 @@ func LibdropTransferToInternalTransfer(in LibdropTransfer) *pb.Transfer {
 	for _, file := range in.Files {
 		outFile := libdropFileToInternalFile(file)
 		out.Files = append(out.Files, outFile)
-		if isFileBeingTransfered(outFile) {
+		if isFileTransferred(outFile) {
 			out.TotalSize += outFile.Size
 			out.TotalTransferred += outFile.Transferred
 		}
@@ -241,10 +232,21 @@ func LibdropTransferToInternalTransfer(in LibdropTransfer) *pb.Transfer {
 			fileBasePath = file.States[0].BasePath
 		}
 
-		// If relative path doesn't contain a directory - means user specified a single file
-		// We show the full path in that case for outgoing transfers
-		if out.Direction == pb.Direction_OUTGOING && filepath.Base(file.RelativePath) == file.RelativePath {
-			fileBasePath = outFile.FullPath
+		if out.Direction == pb.Direction_OUTGOING {
+			if filepath.Base(file.RelativePath) == file.RelativePath {
+				// If relative path doesn't contain a directory - means user specified a single file
+				// We show the full path in that case for outgoing transfers
+				fileBasePath = outFile.FullPath
+			} else {
+				// If user is sending a directory - we add the directory itself to the path.
+				// Example: user sends /tmp/test, then file.BasePath would be "/tmp", while
+				// file.RelativePath would be "test/file". So we take the dir name from RelativePath
+				// and add it to BasePath to get "/tmp/test".
+				dir, _, ok := strings.Cut(file.RelativePath, string(filepath.Separator))
+				if ok {
+					fileBasePath = filepath.Join(file.BasePath, dir)
+				}
+			}
 		}
 
 		if out.Path == "" {
@@ -397,7 +399,7 @@ func isFileCompleted(file *pb.File) bool {
 }
 
 // Used to check if file's size should be part of transfer's total size
-func isFileBeingTransfered(file *pb.File) bool {
-	return file.Status != pb.Status_REQUESTED &&
-		file.Status != pb.Status_CANCELED
+// Basically we don't include files that are canceled or errored out
+func isFileTransferred(file *pb.File) bool {
+	return !isFileCompleted(file) || file.Status == pb.Status_SUCCESS
 }
