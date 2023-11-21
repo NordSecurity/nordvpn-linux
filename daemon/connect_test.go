@@ -75,32 +75,6 @@ func (failingTunnel) TransferRates() (tunnel.Statistics, error) {
 	return tunnel.Statistics{}, errOnPurpose
 }
 
-type workingVPN struct{}
-
-func (workingVPN) Start(
-	vpn.Credentials,
-	vpn.ServerData,
-) error {
-	return nil
-}
-func (workingVPN) Stop() error      { return nil }
-func (workingVPN) State() vpn.State { return vpn.ConnectedState }
-func (workingVPN) IsActive() bool   { return true }
-func (workingVPN) Tun() tunnel.T    { return workingTunnel{} }
-
-type failingVPN struct{}
-
-func (failingVPN) Start(
-	vpn.Credentials,
-	vpn.ServerData,
-) error {
-	return errOnPurpose
-}
-func (failingVPN) Stop() error      { return errOnPurpose }
-func (failingVPN) State() vpn.State { return vpn.ExitedState }
-func (failingVPN) IsActive() bool   { return false }
-func (failingVPN) Tun() tunnel.T    { return failingTunnel{} }
-
 type UniqueAddress struct{}
 
 func TestConnect(t *testing.T) {

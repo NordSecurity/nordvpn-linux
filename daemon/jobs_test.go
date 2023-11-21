@@ -20,6 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -123,7 +124,7 @@ func TestStartAutoConnect(t *testing.T) {
 					&subs.Subject[int]{},
 				),
 				func(config.Technology) (vpn.VPN, error) {
-					return &workingVPN{}, nil
+					return &mock.WorkingVPN{}, nil
 				},
 				newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 				netw,
@@ -358,7 +359,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 					&subs.Subject[int]{},
 				),
 				func(config.Technology) (vpn.VPN, error) {
-					return &workingVPN{}, nil
+					return &mock.WorkingVPN{}, nil
 				},
 				newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 				test.netw,
