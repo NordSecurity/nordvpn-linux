@@ -1,3 +1,5 @@
+import time
+
 from lib import (
     daemon,
     info,
@@ -110,3 +112,44 @@ def test_toggle_routing_in_the_middle_of_the_connection():
         assert network.is_available()
 
     print(sh.nordvpn.disconnect())
+
+
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_routing_when_iprule_already_exists():
+    table = 205
+
+    with lib.ErrorDefer(sh.nordvpn.disconnect):
+        print(sh.nordvpn.connect())
+
+        routes = sh.ip.route.show.table(table)
+        rules = sh.ip.rule()
+        assert "nordlynx" in routes
+        assert "mark" in rules
+        assert network.is_available()
+
+        for line in rules:
+            if "fwmark" in line:
+                rule = line.split()[1:]
+
+    print(sh.nordvpn.disconnect())
+    daemon.stop()
+
+    with lib.Defer(lambda: sh.sudo.ip.rule('del', *rule, _ok_code=(0, 2))):
+        sh.sudo.ip.rule.add(*rule)
+        daemon.start()
+        time.sleep(5)
+
+        with lib.ErrorDefer(sh.nordvpn.disconnect):
+            print(sh.nordvpn.connect())
+
+            routes = sh.ip.route.show.table(table)
+            rules = sh.ip.rule()
+            assert "nordlynx" in routes
+            assert "mark" in rules
+            assert network.is_available()
+
+            routes = sh.ip.route.show.table("main")
+            assert not "nordlynx" in routes
+
+        print(sh.nordvpn.disconnect())
