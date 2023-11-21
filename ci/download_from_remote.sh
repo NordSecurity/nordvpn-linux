@@ -68,7 +68,7 @@ mkdir -p "${DOWNLOAD_DIR}"
 for arch in ${ARCHS} ; do
     output_arch=${ARCHS_REVERSE[$arch]}
     arch_dir="${DOWNLOAD_DIR}/${output_arch}"
-    output_dir="${arch_dir}/${PACKAGE_VERSION}"
+    output_dir="${arch_dir}/${BINARY_VERSION}"
     latest_dir="${arch_dir}/latest"
     output_file="${output_dir}/${FILE}"
     mkdir -p "${output_dir}"
