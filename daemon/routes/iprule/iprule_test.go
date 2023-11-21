@@ -28,16 +28,16 @@ func TestFwmarkRule(t *testing.T) {
 	err = addFwmarkRule(fwmarkval, prioID, tblID, false)
 	assert.NoError(t, err)
 
-	fnd, err := checkFwmarkRule(fwmarkval, false)
+	fndTblID, err := findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.True(t, fnd)
+	assert.Equal(t, tblID, fndTblID)
 
 	err = removeFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
 
-	fnd, err = checkFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.False(t, fnd)
+	assert.Equal(t, uint(0), fndTblID)
 }
 
 func TestMultiFwmarkRule(t *testing.T) {
@@ -59,9 +59,9 @@ func TestMultiFwmarkRule(t *testing.T) {
 	assert.NoError(t, err)
 
 	// check
-	fnd, err := checkFwmarkRule(fwmarkval, false)
+	fndTblID, err := findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.True(t, fnd)
+	assert.Equal(t, tblID, fndTblID)
 
 	prioID2, err := calculateRulePriority(false)
 	assert.NoError(t, err)
@@ -76,24 +76,24 @@ func TestMultiFwmarkRule(t *testing.T) {
 	assert.NoError(t, err)
 
 	// check
-	fnd, err = checkFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.True(t, fnd)
+	assert.Equal(t, tblID, fndTblID)
 
 	// will remove one
 	err = removeFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
 
-	fnd, err = checkFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.True(t, fnd)
+	assert.Equal(t, tblID2, fndTblID)
 
 	err = removeFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
 
-	fnd, err = checkFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.False(t, fnd)
+	assert.Equal(t, uint(0), fndTblID)
 }
 
 func TestSuppressprefixLengthRule(t *testing.T) {
@@ -110,9 +110,9 @@ func TestSuppressprefixLengthRule(t *testing.T) {
 	var fwmarkval uint32 = 0xe1f1
 	assert.Greater(t, fwmarkval, uint32(0))
 
-	fnd, err := checkFwmarkRule(fwmarkval, false)
+	fndTblID, err := findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.False(t, fnd)
+	assert.Equal(t, uint(0), fndTblID)
 
 	err = addFwmarkRule(fwmarkval, prioID, tblID, false)
 	assert.NoError(t, err)
@@ -121,7 +121,7 @@ func TestSuppressprefixLengthRule(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Greater(t, prioID2, uint(0))
 
-	fnd, err = checkSuppressprefixLengthRule(false)
+	fnd, err := checkSuppressprefixLengthRule(false)
 	assert.NoError(t, err)
 	assert.False(t, fnd)
 
@@ -142,9 +142,9 @@ func TestSuppressprefixLengthRule(t *testing.T) {
 	err = removeFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
 
-	fnd, err = checkFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.False(t, fnd)
+	assert.Equal(t, uint(0), fndTblID)
 }
 
 func TestCustomTable(t *testing.T) {
@@ -164,9 +164,9 @@ func TestCustomTable(t *testing.T) {
 	err = addFwmarkRule(fwmarkval, prioID, tblID, false)
 	assert.NoError(t, err)
 
-	fnd, err := checkFwmarkRule(fwmarkval, false)
+	fndTblID, err := findFwmarkRule(fwmarkval, false)
 	assert.NoError(t, err)
-	assert.True(t, fnd)
+	assert.Equal(t, tblID, fndTblID)
 
 	// prev prio id is in use, so, next one should be less (less is higher prio)
 	prioID2, err := calculateRulePriority(false)

@@ -63,21 +63,20 @@ func (r *Router) SetupRoutingRules(
 	}()
 
 	for _, ipv6 := range ipv6EnabledList {
-		fwmarkRulePresent, err := checkFwmarkRule(r.fwmark, ipv6)
+		routingTableID, err := findFwmarkRule(r.fwmark, ipv6)
 		if err != nil {
 			return err
 		}
 
-		if !fwmarkRulePresent {
+		if routingTableID == 0 {
 			fwMarkRuleID, err := calculateRulePriority(ipv6)
 			if err != nil {
 				return err
 			}
-			routingTableID, err := calculateCustomTableID(ipv6)
+			routingTableID, err = calculateCustomTableID(ipv6)
 			if err != nil {
 				return err
 			}
-			r.tableID = routingTableID
 			if err = addFwmarkRule(
 				r.fwmark,
 				fwMarkRuleID,
@@ -87,6 +86,8 @@ func (r *Router) SetupRoutingRules(
 				return err
 			}
 		}
+
+		r.tableID = routingTableID
 
 		// PeerA (LAN-a 192.168.1.x) connects to PeerB (LAN-b 192.168.1.x)
 		// if PeerB allows its LAN access when used as Exit node
@@ -345,8 +346,8 @@ func addFwmarkRule(
 	return nil
 }
 
-// checkFwmarkRule check if fwmark rule is set
-func checkFwmarkRule(fwMarkVal uint32, ipv6 bool) (bool, error) {
+// findFwmarkRule check if fwmark rule is set and find its table ID
+func findFwmarkRule(fwMarkVal uint32, ipv6 bool) (uint, error) {
 	// CMD: ip rule show
 	// # sample output:
 	// 0:      from all lookup local
@@ -355,7 +356,7 @@ func checkFwmarkRule(fwMarkVal uint32, ipv6 bool) (bool, error) {
 	// 32767:  from all lookup default
 
 	if fwMarkVal == 0 {
-		return false, fmt.Errorf("fwmark cannot be 0")
+		return 0, fmt.Errorf("fwmark cannot be 0")
 	}
 
 	cmdStr := "ip"
@@ -368,10 +369,10 @@ func checkFwmarkRule(fwMarkVal uint32, ipv6 bool) (bool, error) {
 	// #nosec G204 -- input is properly sanitized
 	out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput()
 	if err != nil {
-		return false, fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
+		return 0, fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
 	}
 
-	lookupStr := fmt.Sprintf("not from all fwmark 0x%x", fwMarkVal)
+	lookupStr := fmt.Sprintf("not from all fwmark 0x%x lookup", fwMarkVal)
 
 	// parse ip cmd output line-by-line
 	for _, line := range bytes.Split(out, []byte{'\n'}) {
@@ -379,11 +380,19 @@ func checkFwmarkRule(fwMarkVal uint32, ipv6 bool) (bool, error) {
 			continue
 		}
 		if strings.Contains(string(line), lookupStr) {
-			return true, nil
+			words := strings.Split(strings.Trim(string(line), " "), " ")
+			if len(words) < 7 || words[len(words)-2] != "lookup" {
+				return 0, fmt.Errorf("failed to find fwmark rule: '%s'", line)
+			}
+			tbldID, err := strconv.ParseUint(words[len(words)-1], 10, 64)
+			if err != nil {
+				return 0, fmt.Errorf("converting '%s' to uint: %w", words[len(words)-1], err)
+			}
+			return uint(tbldID), nil
 		}
 	}
 
-	return false, nil
+	return 0, nil
 }
 
 // removeFwmarkRule remove fwmark rule
