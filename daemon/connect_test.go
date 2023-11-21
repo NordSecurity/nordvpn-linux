@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"errors"
 	"net"
 	"net/netip"
 	"testing"
@@ -14,13 +13,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
-	"github.com/NordSecurity/nordvpn-linux/tunnel"
 
 	"github.com/stretchr/testify/assert"
-)
-
-var (
-	errOnPurpose = errors.New("on purpose")
 )
 
 type workingRouter struct{}
@@ -55,25 +49,6 @@ func (workingFirewall) Delete([]string) error     { return nil }
 func (workingFirewall) Enable() error             { return nil }
 func (workingFirewall) Disable() error            { return nil }
 func (workingFirewall) IsEnabled() bool           { return true }
-
-type workingTunnel struct{}
-
-func (workingTunnel) Interface() net.Interface { return en0Interface }
-func (workingTunnel) IPs() []netip.Addr {
-	return []netip.Addr{netip.MustParseAddr("172.105.90.114")}
-}
-
-func (workingTunnel) TransferRates() (tunnel.Statistics, error) {
-	return tunnel.Statistics{Tx: 1337, Rx: 1337}, nil
-}
-
-type failingTunnel struct{}
-
-func (failingTunnel) Interface() net.Interface { return net.Interface{} }
-func (failingTunnel) IPs() []netip.Addr        { return nil }
-func (failingTunnel) TransferRates() (tunnel.Statistics, error) {
-	return tunnel.Statistics{}, errOnPurpose
-}
 
 type UniqueAddress struct{}
 
@@ -132,14 +107,6 @@ func TestConnect(t *testing.T) {
 			assert.Equal(t, test.expected, <-channel)
 		})
 	}
-}
-
-var en0Interface = net.Interface{
-	Index:        1,
-	MTU:          5,
-	Name:         "en0",
-	HardwareAddr: []byte("00:00:5e:00:53:01"),
-	Flags:        net.FlagMulticast,
 }
 
 func TestMaskIPRouteOutput(t *testing.T) {

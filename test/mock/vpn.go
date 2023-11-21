@@ -47,7 +47,7 @@ func (FailingVPN) Start(vpn.Credentials, vpn.ServerData) error { return ErrOnPur
 func (FailingVPN) Stop() error                                 { return ErrOnPurpose }
 func (FailingVPN) State() vpn.State                            { return vpn.ExitedState }
 func (FailingVPN) IsActive() bool                              { return false }
-func (FailingVPN) Tun() tunnel.T                               { return WorkingT{} }
+func (FailingVPN) Tun() tunnel.T                               { return FailingTunnel{} }
 func (FailingVPN) StateChanged() <-chan vpn.State              { return nil }
 
 // ActiveVPN stub of a github.com/NordSecurity/nordvpn-linux/daemon/vpn.VPN interface.

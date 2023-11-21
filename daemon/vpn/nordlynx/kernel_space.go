@@ -15,17 +15,19 @@ import (
 )
 
 type KernelSpace struct {
-	state  vpn.State
-	active bool
-	fwmark uint32
-	tun    *tunnel.Tunnel
+	state        vpn.State
+	stateChanged chan vpn.State
+	active       bool
+	fwmark       uint32
+	tun          *tunnel.Tunnel
 	sync.Mutex
 }
 
 func NewKernelSpace(fwmark uint32) *KernelSpace {
 	return &KernelSpace{
-		state:  vpn.ExitedState,
-		fwmark: fwmark,
+		state:        vpn.ExitedState,
+		fwmark:       fwmark,
+		stateChanged: make(chan vpn.State),
 	}
 }
 
@@ -101,7 +103,7 @@ func (k *KernelSpace) Start(
 	}
 
 	k.active = true
-	k.state = vpn.ConnectedState
+	k.setState(vpn.ConnectedState)
 	return nil
 }
 
@@ -110,7 +112,7 @@ func (k *KernelSpace) Stop() error {
 	k.Lock()
 	defer k.Unlock()
 	if k.state == vpn.ConnectingState {
-		k.state = vpn.ExitingState
+		k.setState(vpn.ExitingState)
 		return nil
 	}
 	return k.stop()
@@ -145,8 +147,17 @@ func (k *KernelSpace) stop() error {
 
 	k.active = false
 	k.tun = nil
-	k.state = vpn.ExitedState
+	k.setState(vpn.ExitedState)
 	return nil
+}
+
+func (k *KernelSpace) StateChanged() <-chan vpn.State {
+	return k.stateChanged
+}
+
+func (k *KernelSpace) setState(newState vpn.State) {
+	k.state = newState
+	k.stateChanged <- newState
 }
 
 func pushConfig(iface net.Interface, wgconf string) error {

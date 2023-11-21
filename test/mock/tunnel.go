@@ -30,3 +30,11 @@ func (WorkingIPv6T) IPs() []netip.Addr {
 func (WorkingIPv6T) TransferRates() (tunnel.Statistics, error) {
 	return tunnel.Statistics{Tx: 1337, Rx: 1337}, nil
 }
+
+type FailingTunnel struct{}
+
+func (FailingTunnel) Interface() net.Interface { return net.Interface{} }
+func (FailingTunnel) IPs() []netip.Addr        { return nil }
+func (FailingTunnel) TransferRates() (tunnel.Statistics, error) {
+	return tunnel.Statistics{}, ErrOnPurpose
+}
