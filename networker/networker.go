@@ -229,7 +229,9 @@ func (netw *Combined) monitorVPNConnected() <-chan bool {
 				}
 				log.Println(internal.InfoPrefix, "timeout while waiting to connect to VPN")
 
-				netw.stop()
+				if err := netw.stop(); err != nil {
+					log.Printf("canceling VPN connection finished with error %s", err)
+				}
 				chanConnected <- false
 				return
 			}
