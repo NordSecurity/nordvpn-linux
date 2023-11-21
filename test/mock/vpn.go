@@ -1,6 +1,8 @@
 package mock
 
 import (
+	"sync"
+
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
@@ -10,9 +12,13 @@ type WorkingVPN struct {
 	isActive     bool
 	StartErr     error
 	StateChannel chan vpn.State
+	sync.Mutex
 }
 
 func (w *WorkingVPN) Start(vpn.Credentials, vpn.ServerData) error {
+	w.Lock()
+	defer w.Unlock()
+
 	w.isActive = w.StartErr == nil
 	go func() {
 		w.StateChannel <- vpn.ConnectedState
@@ -25,6 +31,9 @@ func (*WorkingVPN) State() vpn.State { return vpn.ConnectedState }
 func (w *WorkingVPN) IsActive() bool { return w.isActive }
 func (*WorkingVPN) Tun() tunnel.T    { return WorkingT{} }
 func (w *WorkingVPN) StateChanged() <-chan vpn.State {
+	w.Lock()
+	defer w.Unlock()
+
 	if w.StateChannel == nil {
 		w.StateChannel = make(chan vpn.State)
 	}
@@ -53,9 +62,12 @@ func (FailingVPN) StateChanged() <-chan vpn.State              { return nil }
 // ActiveVPN stub of a github.com/NordSecurity/nordvpn-linux/daemon/vpn.VPN interface.
 type ActiveVPN struct {
 	StateChannel chan vpn.State
+	sync.Mutex
 }
 
 func (a *ActiveVPN) Start(vpn.Credentials, vpn.ServerData) error {
+	a.Lock()
+	defer a.Unlock()
 	go func() {
 		a.StateChannel <- vpn.ConnectedState
 	}()
@@ -66,6 +78,9 @@ func (*ActiveVPN) State() vpn.State { return vpn.ExitedState }
 func (*ActiveVPN) IsActive() bool   { return true }
 func (*ActiveVPN) Tun() tunnel.T    { return WorkingT{} }
 func (a *ActiveVPN) StateChanged() <-chan vpn.State {
+	a.Lock()
+	defer a.Unlock()
+
 	if a.StateChannel == nil {
 		a.StateChannel = make(chan vpn.State)
 	}

@@ -254,13 +254,14 @@ func (netw *Combined) Start(
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
+	netw.enableLocalTraffic = enableLocalTraffic
+
 	if netw.vpnet == nil {
 		return errNilVPN
 	}
 
 	connectedChan := netw.monitorVPNConnected()
 
-	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
 		if err := netw.restart(creds, serverData, nameservers); err != nil {
 			return err
