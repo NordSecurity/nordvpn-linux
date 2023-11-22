@@ -129,6 +129,9 @@ func (em *EventManager) finalizeTransfer(transfer *pb.Transfer) {
 		delete(em.transferSubscriptions, transfer.Id)
 	}
 	transfer.Finalized = true
+	if err := em.storage.Save(em.transfers); err != nil {
+		log.Printf("writing file transfer history: %s", err)
+	}
 }
 
 func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
