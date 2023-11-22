@@ -43,6 +43,7 @@ var (
 // Thread safe.
 type EventManager struct {
 	mutex     sync.Mutex
+	isProd    bool
 	transfers map[string]*pb.Transfer // key is transfer ID
 	// stores transfer status notification channels, added by Subscribe, removed by Unsubscribe when TransferFinished event is received
 	transferSubscriptions map[string]chan TransferProgressInfo
@@ -56,7 +57,9 @@ type EventManager struct {
 }
 
 // NewEventManager loads transfer state from storage, or creates empty state if loading fails.
-func NewEventManager(storage Storage,
+func NewEventManager(
+	isProd bool,
+	storage Storage,
 	meshClient meshpb.MeshnetClient,
 	osInfo OsInfo,
 	filesystem Filesystem,
@@ -68,6 +71,7 @@ func NewEventManager(storage Storage,
 	}
 
 	return &EventManager{
+		isProd:                isProd,
 		transfers:             loadedTransfers,
 		transferSubscriptions: map[string]chan TransferProgressInfo{},
 		storage:               storage,
@@ -278,6 +282,10 @@ func (em *EventManager) EventFunc(eventJSON string) {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
+	if !em.isProd {
+		log.Printf("DROP EVENT: %s", eventJSON)
+	}
+
 	var genericEvent genericEvent
 	err := json.Unmarshal([]byte(eventJSON), &genericEvent)
 	if err != nil {
@@ -299,8 +307,8 @@ func (em *EventManager) EventFunc(eventJSON string) {
 		}
 		transfer, ok := em.transfers[event.TransferID]
 		if !ok {
-			log.Printf("transfer %s from requestQueued event not found", event.TransferID)
-			return
+			transfer = NewOutgoingTransfer(event.TransferID, event.Peer, "")
+			em.transfers[event.TransferID] = transfer
 		}
 		transfer.Files = event.Files
 		for _, file := range transfer.Files {
