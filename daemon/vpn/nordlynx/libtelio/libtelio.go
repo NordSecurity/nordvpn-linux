@@ -170,9 +170,6 @@ func New(prod bool, eventPath string, fwmark uint32,
 	telioCfg remote.RemoteConfigGetter, deviceID, appVersion string) *Libtelio {
 	events := make(chan state)
 	logLevel := teliogo.TELIOLOGINFO
-	if prod {
-		logLevel = teliogo.TELIOLOGERROR
-	}
 
 	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, telioCfg)
 	if err != nil {
