@@ -175,7 +175,7 @@ func main() {
 	infoSubject.Subscribe(loggerSubscriber.NotifyInfo)
 	errSubject.Subscribe(loggerSubscriber.NotifyError)
 
-	daemonEvents.Settings.Subscribe(logger.NewSubscriber(true, fsystem))
+	daemonEvents.Settings.Subscribe(logger.NewSubscriber())
 	daemonEvents.Settings.Publish(cfg)
 
 	// Firewall
