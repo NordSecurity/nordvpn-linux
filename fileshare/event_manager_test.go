@@ -272,10 +272,11 @@ func TestTransferProgress(t *testing.T) {
 	file3sz := 1000
 
 	storage.transfers[transferID] = &pb.Transfer{
-		Id:     transferID,
-		Peer:   peer,
-		Path:   path,
-		Status: pb.Status_REQUESTED,
+		Id:        transferID,
+		Peer:      peer,
+		Path:      path,
+		Status:    pb.Status_REQUESTED,
+		TotalSize: uint64(file1sz) + uint64(file2sz) + uint64(file3sz),
 		Files: []*pb.File{
 			{
 				Id:     file1ID,

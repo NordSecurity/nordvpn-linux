@@ -288,22 +288,21 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 		}
 		file.Finished = true
 
-		var fileStatus pb.Status
-		switch event.Reason {
-		case fileDownloaded, fileUploaded:
-			fileStatus = pb.Status_SUCCESS
-		case fileCanceled, fileRejected:
-			fileStatus = pb.Status_CANCELED
+		var fileStatusInNotification pb.Status
+		if event.Reason == fileDownloaded || event.Reason == fileUploaded {
+			fileStatusInNotification = pb.Status_SUCCESS
+		} else if event.Reason == fileCanceled || event.Reason == fileRejected {
+			fileStatusInNotification = pb.Status_CANCELED
 			removeFileFromLiveTransfer(transfer, file)
-		default:
-			fileStatus = event.Data.Status
+		} else {
+			fileStatusInNotification = event.Data.Status
 			removeFileFromLiveTransfer(transfer, file)
 		}
 		if em.notificationManager != nil && file != nil {
 			em.notificationManager.NotifyFile(
 				file.FullPath,
 				transfer.Direction,
-				fileStatus,
+				fileStatusInNotification,
 			)
 		}
 

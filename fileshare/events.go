@@ -39,16 +39,17 @@ type requestReceivedEvent struct {
 	Files      []*pb.File
 }
 
-type requestQueuedEvent struct {
-	TransferID string `json:"transfer"`
-	Peer       string
-	Files      []*pb.File
-}
+// These are unused at the moment
+// type requestQueuedEvent struct {
+// 	TransferID string `json:"transfer"`
+// 	Peer       string
+// 	Files      []*pb.File
+// }
 
-type transferStartedEvent struct {
-	TransferID string `json:"transfer"`
-	FileID     string `json:"file"`
-}
+// type transferStartedEvent struct {
+// 	TransferID string `json:"transfer"`
+// 	FileID     string `json:"file"`
+// }
 
 type transferProgressEvent struct {
 	TransferID  string `json:"transfer"`
