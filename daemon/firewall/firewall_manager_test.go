@@ -49,10 +49,6 @@ func (i *iptablesOutput) get() string {
 	return strings.Join(iptables, "\n")
 }
 
-func (i *iptablesOutput) flush() {
-	i.rules = i.rules[2:]
-}
-
 type commandRunnerMock struct {
 	ipv4Commands []string
 	ipv6Commands []string
@@ -83,7 +79,7 @@ func (i *commandRunnerMock) addIptablesListOutput(chain string, output string) {
 	i.outputs[listCommand] = output
 }
 
-func (i *commandRunnerMock) RunCommand(command string, args string) (string, error) {
+func (i *commandRunnerMock) runCommand(command string, args string) (string, error) {
 	if args == i.errCommand {
 		return "", ErrIptablesFailure
 	}
@@ -715,7 +711,7 @@ func TestIptablesManager(t *testing.T) {
 	tests := []struct {
 		name            string
 		rules           []string
-		newRulePriority RulePriority
+		newRulePriority rulePriority
 		expectedCommand string
 	}{
 		{
@@ -857,7 +853,7 @@ func TestIptablesManager(t *testing.T) {
 			commandRunnerMock.addIptablesListOutput(INPUT_CHAIN_NAME, chain.get())
 
 			iptablesManager := newIptablesManager(&commandRunnerMock, true, true)
-			iptablesManager.InsertRule(NewFwRule(INPUT, IPv4, "-j DROP", test.newRulePriority))
+			iptablesManager.insertRule(NewFwRule(INPUT, IPv4, "-j DROP", test.newRulePriority))
 
 			commands := commandRunnerMock.popIPv4Commands()
 			assert.Len(t, commands, 1, "Only one command per rule insertion should be executed.")
