@@ -506,6 +506,8 @@ func TestSetAllowlist(t *testing.T) {
 }
 
 func TestSetAllowlist_IPv6(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	udpPorts := []int{
 		30000,
 	}
@@ -573,6 +575,8 @@ func TestSetAllowlist_IPv6(t *testing.T) {
 }
 
 func TestApiAllowlist(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	allowlistCommand := fmt.Sprintf("-I INPUT 1 -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark)
 	expectedAllowlistCommandsIf0 := []string{
 		allowlistCommand,
@@ -706,6 +710,8 @@ func TestApiAllowlist(t *testing.T) {
 }
 
 func TestIptablesManager(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name            string
 		rules           []string
