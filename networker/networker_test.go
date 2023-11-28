@@ -447,12 +447,12 @@ func TestCombined_TransferRates(t *testing.T) {
 	}{
 		{
 			name:     "active vpn",
-			vpn:      activeVPN{},
+			vpn:      mock.ActiveVPN{},
 			expected: tunnel.Statistics{Tx: 1337, Rx: 1337},
 		},
 		{
 			name: "inactive vpn",
-			vpn:  inactiveVPN{},
+			vpn:  mock.WorkingInactiveVPN{},
 			err:  errInactiveVPN,
 		},
 		{
