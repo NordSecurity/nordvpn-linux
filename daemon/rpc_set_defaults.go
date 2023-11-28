@@ -51,6 +51,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error
 	r.netw.SetVPN(v)
 
 	r.events.Settings.Defaults.Publish(nil)
+	r.events.Settings.Publish(cfg)
 	if err := r.ncClient.Stop(); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}

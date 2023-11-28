@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -8,177 +9,84 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
-type DaemonSettingsSubscriber struct {
-	enabled bool
-	cm      config.Manager
-}
+type DaemonSettingsSubscriber struct{}
 
-func NewSubscriber(enabled bool, cm config.Manager) *DaemonSettingsSubscriber {
-	return &DaemonSettingsSubscriber{
-		enabled: enabled,
-		cm:      cm,
-	}
+func NewSubscriber() *DaemonSettingsSubscriber {
+	return &DaemonSettingsSubscriber{}
 }
 
 func (l *DaemonSettingsSubscriber) NotifyTechnology(data config.Technology) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Technology", data.String(), cfg)
+	printSettingsChange("Technology", data.String())
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyMeshnet(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Meshnet", boolToString(data), cfg)
+	printSettingsChange("Meshnet", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyProtocol(data config.Protocol) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Protocol", data.String(), cfg)
+	printSettingsChange("Protocol", data.String())
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyFirewall(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Firewall", boolToString(data), cfg)
+	printSettingsChange("Firewall", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyRouting(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Routing", boolToString(data), cfg)
+	printSettingsChange("Routing", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyKillswitch(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Kill Switch", boolToString(data), cfg)
+	printSettingsChange("Kill Switch", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyThreatProtectionLite(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("ThreatProtectionLite", boolToString(data), cfg)
+	printSettingsChange("ThreatProtectionLite", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyObfuscate(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Obfuscate", boolToString(data), cfg)
+	printSettingsChange("Obfuscate", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyNotify(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Notify", boolToString(data), cfg)
+	printSettingsChange("Notify", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyAutoconnect(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("Auto-connect", boolToString(data), cfg)
+	printSettingsChange("Auto-connect", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyDNS(data events.DataDNS) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("DNS", boolToString(data.Enabled), cfg)
+	printSettingsChange("DNS", strings.Join(data.Ips, " "))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyAllowlist(data events.DataAllowlist) error {
+	printSettingsChange("Allowlist", fmt.Sprintf("%+v", data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyIpv6(data bool) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	printSettingsChange("IPv6", boolToString(data), cfg)
+	printSettingsChange("IPv6", boolToString(data))
 	return nil
 }
 
 func (l *DaemonSettingsSubscriber) NotifyDefaults(any) error {
-	var cfg config.Config
-	err := l.cm.Load(&cfg)
-	if err != nil {
-		return err
-	}
-	log.Printf("Settings have been restored to their default value\n%s", readSettings(cfg))
+	log.Printf("Settings have been restored to their default values")
 	return nil
 }
 
-func readSettings(cfg config.Config) string {
-	var settings strings.Builder
-	settings.WriteString("NordVPN App Connection Settings:\n")
-	settings.WriteString("Technology: " + cfg.Technology.String() + "\n")
-	settings.WriteString("Meshnet: " + boolToString(cfg.Mesh) + "\n")
-	settings.WriteString("Protocol: " + cfg.AutoConnectData.Protocol.String() + "\n")
-	settings.WriteString("Firewall: " + boolToString(cfg.Firewall) + "\n")
-	settings.WriteString("KillSwitch: " + boolToString(cfg.KillSwitch) + "\n")
-	settings.WriteString("Obfuscate: " + boolToString(cfg.AutoConnectData.Obfuscate) + "\n")
-	settings.WriteString("ThreatProtectionLite: " + boolToString(cfg.AutoConnectData.ThreatProtectionLite) + "\n")
-	settings.WriteString("DNS: " + strings.Join(cfg.AutoConnectData.DNS, " ") + "\n")
-	settings.WriteString("IPv6: " + boolToString(cfg.IPv6) + "\n")
-	if cfg.UsersData.Notify != nil && len(cfg.UsersData.Notify) > 0 {
-		settings.WriteString("Notify: enabled\n")
-	} else {
-		settings.WriteString("Notify: disabled\n")
-	}
-	settings.WriteString("Auto-connect: " + boolToString(cfg.AutoConnect) + "\n")
-	settings.WriteString("\n")
-
-	return settings.String()
-}
-
-func printSettingsChange(settingName string, val string, c config.Config) {
-	log.Printf("%s set to: %s\n%s", settingName, val, readSettings(c))
+func printSettingsChange(settingName string, val string) {
+	log.Printf("%s set to: %s", settingName, val)
 }
 
 func boolToString(val bool) string {

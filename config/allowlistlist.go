@@ -66,6 +66,14 @@ func (s *Subnets) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (s *Subnets) ToSlice() []string {
+	result := make([]string, 0, len(*s))
+	for subnet := range *s {
+		result = append(result, subnet)
+	}
+	return result
+}
+
 // Ports is a collection of TCP and UDP ports.
 type Ports struct {
 	TCP PortSet `json:"tcp"`
@@ -100,4 +108,12 @@ func (p *PortSet) UnmarshalJSON(b []byte) error {
 
 	*p = ports
 	return nil
+}
+
+func (p *PortSet) ToSlice() []int64 {
+	result := make([]int64, 0, len(*p))
+	for subnet := range *p {
+		result = append(result, subnet)
+	}
+	return result
 }

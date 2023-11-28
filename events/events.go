@@ -29,14 +29,13 @@ type PublishSubcriber[T any] interface {
 }
 
 type DataAllowlist struct {
-	Subnets  int
-	TCPPorts int
-	UDPPorts int
+	Subnets  []string
+	TCPPorts []int64
+	UDPPorts []int64
 }
 
 type DataDNS struct {
-	Enabled bool
-	Ips     []string
+	Ips []string
 }
 
 type TypeConnect int
