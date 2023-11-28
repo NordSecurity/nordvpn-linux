@@ -66,10 +66,12 @@ type commandRunner interface {
 	runCommand(string, string) (string, error)
 }
 
+// nolint:unused // Will be used once FirewallManager is integrated
 type execCommandRunner struct {
 }
 
-func (execCommandRunner) RunCommand(command string, args string) (string, error) {
+// nolint:unused // Will be used once FirewallManager is integrated
+func (execCommandRunner) runCommand(command string, args string) (string, error) {
 	// #nosec G204 -- input is properly sanitized
 	output, err := exec.Command(args, strings.Split(args, " ")...).CombinedOutput()
 	return string(output), err
@@ -81,6 +83,7 @@ type iptablesManager struct {
 	cmdRunner          commandRunner
 }
 
+// nolint:unused // Will be used once FirewallManager is integrated
 func areIP6TablesSupported() bool {
 	// #nosec G204 -- input is properly sanitized
 	_, err := exec.Command(ip6tablesCommand, "-S").CombinedOutput()

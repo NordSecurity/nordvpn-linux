@@ -853,6 +853,7 @@ func TestIptablesManager(t *testing.T) {
 			commandRunnerMock.addIptablesListOutput(INPUT_CHAIN_NAME, chain.get())
 
 			iptablesManager := newIptablesManager(&commandRunnerMock, true, true)
+			// nolint:errcheck // Tested in other uts
 			iptablesManager.insertRule(NewFwRule(INPUT, IPv4, "-j DROP", test.newRulePriority))
 
 			commands := commandRunnerMock.popIPv4Commands()
