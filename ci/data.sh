@@ -38,7 +38,7 @@ for filename in "${files[@]}"; do
   changes:" \
     	"${entry_tag}" "$(date -d@"${entry_date}" +%Y-%m-%dT%H:%M:%SZ)" >> "${WORKDIR}"/dist/changelog.yml
 
-    while read -r line ; do
+    while read -r line || [ -n "$line" ]; do
         printf "\n   - note: |-\n      %s" "${line:1}" >> "${WORKDIR}"/dist/changelog.yml
     done < "${filename}"
 
