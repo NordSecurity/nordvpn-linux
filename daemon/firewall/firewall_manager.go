@@ -48,15 +48,15 @@ func (r rulePriority) toComment() string {
 type iptablesChain int
 
 const (
-	INPUT  iptablesChain = iota
-	OUTPUT               = iota
+	Input  iptablesChain = iota
+	Output               = iota
 )
 
 func (c iptablesChain) String() string {
 	switch c {
-	case INPUT:
+	case Input:
 		return "INPUT"
-	case OUTPUT:
+	case Output:
 		return "OUTPUT"
 	}
 	return ""
@@ -162,7 +162,11 @@ func (i iptablesManager) getRuleLine(command string, chain iptablesChain, priori
 	}
 
 	// Skip first two lines of output they are the chain name and table values name.
-	outputLines := strings.Split(string(output), "\n")[2:]
+	outputLines := strings.Split(string(output), "\n")
+	if len(outputLines) < 2 {
+		return 0, fmt.Errorf("invalid output from %s %s command, expected at least two lines", command, args)
+	}
+	outputLines = outputLines[2:]
 
 	if len(outputLines) == 0 {
 		return 1, nil
@@ -286,14 +290,14 @@ func (f *FirewallManager) BlockTraffic() error {
 	// -I OUTPUT -o <iface> -j DROP
 	for _, iface := range interfaces {
 		inputParams := fmt.Sprintf("-i %s -j DROP", iface.Name)
-		inputRule := NewFwRule(INPUT, Both, inputParams, TrafficBlock)
+		inputRule := NewFwRule(Input, Both, inputParams, TrafficBlock)
 		if err := f.iptablesManager.insertRule(inputRule); err != nil {
 			return fmt.Errorf("blocking input traffic: %w", err)
 		}
 		f.trafficBlockRules = append(f.trafficBlockRules, inputRule)
 
 		outputParams := fmt.Sprintf("-o %s -j DROP", iface.Name)
-		outputRule := NewFwRule(OUTPUT, Both, outputParams, TrafficBlock)
+		outputRule := NewFwRule(Output, Both, outputParams, TrafficBlock)
 		if err := f.iptablesManager.insertRule(outputRule); err != nil {
 			return fmt.Errorf("blocking output traffic: %w", err)
 		}
@@ -352,39 +356,43 @@ func portsToPortRanges(ports []int) []PortRange {
 	return append(ranges, r)
 }
 
-func (f *FirewallManager) allowlistPort(iface string, protocol string, portRange PortRange) error {
+func (f *FirewallManager) allowlistPort(rule FwRule) error {
+	if err := f.iptablesManager.insertRule(rule); err != nil {
+		return fmt.Errorf("allowlisting port: %w", err)
+	}
+	f.allowlistRules = append(f.allowlistRules, rule)
+	return nil
+}
+
+func (f *FirewallManager) allowlistPorts(iface string, protocol string, portRange PortRange) error {
 	// -A INPUT -i <interface> -p <protocol> -m <protocol> --dport <port> -j ACCEPT
 	// -A INPUT -i <interface> -p <protocol> -m <protocol> --sport <port> -j ACCEPT
 	// -A OUTPUT -o <interface> -p <protocol> -m <protocol> --sport <port> -j ACCEPT
 	// -A OUTPUT -o <interface> -p <protocol> -m <protocol> --dport <port> -j ACCEPT
 
 	inputDportParams := fmt.Sprintf("-i %s -p %s -m %s --dport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
-	inputDportRule := NewFwRule(INPUT, Both, inputDportParams, UserAllowlist)
-	if err := f.iptablesManager.insertRule(inputDportRule); err != nil {
+	inputDportRule := NewFwRule(Input, Both, inputDportParams, UserAllowlist)
+	if err := f.allowlistPort(inputDportRule); err != nil {
 		return fmt.Errorf("allowlisting input dport: %w", err)
 	}
-	f.allowlistRules = append(f.allowlistRules, inputDportRule)
 
 	inputSportParams := fmt.Sprintf("-i %s -p %s -m %s --sport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
-	inputSportRule := NewFwRule(INPUT, Both, inputSportParams, UserAllowlist)
-	if err := f.iptablesManager.insertRule(inputSportRule); err != nil {
+	inputSportRule := NewFwRule(Input, Both, inputSportParams, UserAllowlist)
+	if err := f.allowlistPort(inputSportRule); err != nil {
 		return fmt.Errorf("allowlisting input sport: %w", err)
 	}
-	f.allowlistRules = append(f.allowlistRules, inputSportRule)
 
 	outputDportParams := fmt.Sprintf("-o %s -p %s -m %s --dport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
-	outputDportRule := NewFwRule(OUTPUT, Both, outputDportParams, UserAllowlist)
-	if err := f.iptablesManager.insertRule(outputDportRule); err != nil {
+	outputDportRule := NewFwRule(Output, Both, outputDportParams, UserAllowlist)
+	if err := f.allowlistPort(outputDportRule); err != nil {
 		return fmt.Errorf("allowlisting output dport: %w", err)
 	}
-	f.allowlistRules = append(f.allowlistRules, outputDportRule)
 
 	outputSportParams := fmt.Sprintf("-o %s -p %s -m %s --sport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
-	outputSportRule := NewFwRule(OUTPUT, Both, outputSportParams, UserAllowlist)
-	if err := f.iptablesManager.insertRule(outputSportRule); err != nil {
-		return fmt.Errorf("allowlisting input dport: %w", err)
+	outputSportRule := NewFwRule(Output, Both, outputSportParams, UserAllowlist)
+	if err := f.allowlistPort(outputSportRule); err != nil {
+		return fmt.Errorf("allowlisting output sport: %w", err)
 	}
-	f.allowlistRules = append(f.allowlistRules, outputSportRule)
 
 	return nil
 }
@@ -404,14 +412,14 @@ func (f *FirewallManager) SetAllowlist(udpPorts []int, tcpPorts []int, subnets [
 			}
 
 			inputParams := fmt.Sprintf("-s %s -i %s -j ACCEPT", subnet.String(), iface.Name)
-			inputRule := NewFwRule(INPUT, version, inputParams, UserAllowlist)
+			inputRule := NewFwRule(Input, version, inputParams, UserAllowlist)
 			if err := f.iptablesManager.insertRule(inputRule); err != nil {
 				return fmt.Errorf("adding input accept rule for subnet: %w", err)
 			}
 			f.allowlistRules = append(f.allowlistRules, inputRule)
 
 			outputParams := fmt.Sprintf("-d %s -o %s -j ACCEPT", subnet.String(), iface.Name)
-			outputRule := NewFwRule(OUTPUT, version, outputParams, UserAllowlist)
+			outputRule := NewFwRule(Output, version, outputParams, UserAllowlist)
 			if err := f.iptablesManager.insertRule(outputRule); err != nil {
 				return fmt.Errorf("adding output accept rule for subnet: %w", err)
 			}
@@ -422,7 +430,7 @@ func (f *FirewallManager) SetAllowlist(udpPorts []int, tcpPorts []int, subnets [
 	udpPortRanges := portsToPortRanges(udpPorts)
 	for _, portRange := range udpPortRanges {
 		for _, iface := range ifaces {
-			if err := f.allowlistPort(iface.Name, "udp", portRange); err != nil {
+			if err := f.allowlistPorts(iface.Name, "udp", portRange); err != nil {
 				return fmt.Errorf("allowlisting udp ports: %w", err)
 			}
 		}
@@ -431,7 +439,7 @@ func (f *FirewallManager) SetAllowlist(udpPorts []int, tcpPorts []int, subnets [
 	tcpPortRanges := portsToPortRanges(tcpPorts)
 	for _, portRange := range tcpPortRanges {
 		for _, iface := range ifaces {
-			if err := f.allowlistPort(iface.Name, "tcp", portRange); err != nil {
+			if err := f.allowlistPorts(iface.Name, "tcp", portRange); err != nil {
 				return fmt.Errorf("allowlisting tcp ports: %w", err)
 			}
 		}
@@ -462,14 +470,14 @@ func (f *FirewallManager) APIAllowlist() error {
 
 	for _, iface := range ifaces {
 		inputParams := fmt.Sprintf("-i %s -m connmark --mark %d -j ACCEPT", iface.Name, f.connmark)
-		inputRule := NewFwRule(INPUT, Both, inputParams, ApiAllowlistMark)
+		inputRule := NewFwRule(Input, Both, inputParams, ApiAllowlistMark)
 		if err := f.iptablesManager.insertRule(inputRule); err != nil {
 			return fmt.Errorf("adding api allowlist INPUT rule: %w", err)
 		}
 		f.apiAllowlistRules = append(f.apiAllowlistRules, inputRule)
 
 		outputConnmarkParams := fmt.Sprintf("-o %s -m connmark --mark %d -j ACCEPT", iface.Name, f.connmark)
-		outputConnmarkRule := NewFwRule(OUTPUT, Both, outputConnmarkParams, ApiAllowlistOutputConnmark)
+		outputConnmarkRule := NewFwRule(Output, Both, outputConnmarkParams, ApiAllowlistOutputConnmark)
 		if err := f.iptablesManager.insertRule(outputConnmarkRule); err != nil {
 			return fmt.Errorf("adding api allowlist OUTPUT rule: %w", err)
 		}
@@ -478,7 +486,7 @@ func (f *FirewallManager) APIAllowlist() error {
 		outputParams :=
 			fmt.Sprintf("-o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
 				iface.Name, f.connmark)
-		outputRule := NewFwRule(OUTPUT, Both, outputParams, ApiAllowlistMark)
+		outputRule := NewFwRule(Output, Both, outputParams, ApiAllowlistMark)
 		if err := f.iptablesManager.insertRule(outputRule); err != nil {
 			return fmt.Errorf("adding api allowlist OUTPUT rule: %w", err)
 		}

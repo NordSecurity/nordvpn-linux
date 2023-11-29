@@ -19,8 +19,8 @@ var ErrIptablesFailure = errors.New("iptables failure")
 var ErrGetDevicesFailed error = errors.New("get devices has failed")
 
 const (
-	OUTPUT_CHAIN_NAME = "OUTPUT"
-	INPUT_CHAIN_NAME  = "INPUT"
+	OutputChainName = "OUTPUT"
+	InputChainName  = "INPUT"
 )
 
 type iptablesOutput struct {
@@ -214,11 +214,11 @@ func TestTrafficBlocking(t *testing.T) {
 
 			// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
 			// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-			outputChain := newIptablesOutput(OUTPUT_CHAIN_NAME)
-			commandRunnerMock.addIptablesListOutput(OUTPUT_CHAIN_NAME, outputChain.get())
+			outputChain := newIptablesOutput(OutputChainName)
+			commandRunnerMock.addIptablesListOutput(OutputChainName, outputChain.get())
 
-			inputChain := newIptablesOutput(INPUT_CHAIN_NAME)
-			commandRunnerMock.addIptablesListOutput(INPUT_CHAIN_NAME, inputChain.get())
+			inputChain := newIptablesOutput(InputChainName)
+			commandRunnerMock.addIptablesListOutput(InputChainName, inputChain.get())
 
 			if test.errCommand != "" {
 				commandRunnerMock.errCommand = test.errCommand
@@ -301,11 +301,11 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 
 	// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
 	// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-	outputChain := newIptablesOutput(OUTPUT_CHAIN_NAME)
-	commandRunnerMock.addIptablesListOutput(OUTPUT_CHAIN_NAME, outputChain.get())
+	outputChain := newIptablesOutput(OutputChainName)
+	commandRunnerMock.addIptablesListOutput(OutputChainName, outputChain.get())
 
-	inputChain := newIptablesOutput(INPUT_CHAIN_NAME)
-	commandRunnerMock.addIptablesListOutput(INPUT_CHAIN_NAME, inputChain.get())
+	inputChain := newIptablesOutput(InputChainName)
+	commandRunnerMock.addIptablesListOutput(InputChainName, inputChain.get())
 
 	err := firewallManager.BlockTraffic()
 	assert.Nil(t, err, "Received unexpected error when blocking traffic.")
@@ -444,11 +444,11 @@ func TestSetAllowlist(t *testing.T) {
 
 			// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
 			// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-			outputChain := newIptablesOutput(OUTPUT_CHAIN_NAME)
-			commandRunnerMock.addIptablesListOutput(OUTPUT_CHAIN_NAME, outputChain.get())
+			outputChain := newIptablesOutput(OutputChainName)
+			commandRunnerMock.addIptablesListOutput(OutputChainName, outputChain.get())
 
-			inputChain := newIptablesOutput(INPUT_CHAIN_NAME)
-			commandRunnerMock.addIptablesListOutput(INPUT_CHAIN_NAME, inputChain.get())
+			inputChain := newIptablesOutput(InputChainName)
+			commandRunnerMock.addIptablesListOutput(InputChainName, inputChain.get())
 
 			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true, true)
 
@@ -532,11 +532,11 @@ func TestSetAllowlist_IPv6(t *testing.T) {
 
 	// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
 	// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-	outputChain := newIptablesOutput(OUTPUT_CHAIN_NAME)
-	commandRunnerMock.addIptablesListOutput(OUTPUT_CHAIN_NAME, outputChain.get())
+	outputChain := newIptablesOutput(OutputChainName)
+	commandRunnerMock.addIptablesListOutput(OutputChainName, outputChain.get())
 
-	inputChain := newIptablesOutput(INPUT_CHAIN_NAME)
-	commandRunnerMock.addIptablesListOutput(INPUT_CHAIN_NAME, inputChain.get())
+	inputChain := newIptablesOutput(InputChainName)
+	commandRunnerMock.addIptablesListOutput(InputChainName, inputChain.get())
 
 	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &commandRunnerMock, connmark, true, true)
 
@@ -650,11 +650,11 @@ func TestApiAllowlist(t *testing.T) {
 
 			// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
 			// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-			outputChain := newIptablesOutput(OUTPUT_CHAIN_NAME)
-			commandRunnerMock.addIptablesListOutput(OUTPUT_CHAIN_NAME, outputChain.get())
+			outputChain := newIptablesOutput(OutputChainName)
+			commandRunnerMock.addIptablesListOutput(OutputChainName, outputChain.get())
 
-			inputChain := newIptablesOutput(INPUT_CHAIN_NAME)
-			commandRunnerMock.addIptablesListOutput(INPUT_CHAIN_NAME, inputChain.get())
+			inputChain := newIptablesOutput(InputChainName)
+			commandRunnerMock.addIptablesListOutput(InputChainName, inputChain.get())
 
 			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true, true)
 
@@ -846,15 +846,15 @@ func TestIptablesManager(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			chain := newIptablesOutput(INPUT_CHAIN_NAME)
+			chain := newIptablesOutput(InputChainName)
 			chain.addRules(test.rules...)
 
 			commandRunnerMock := newCommandRunnerMock()
-			commandRunnerMock.addIptablesListOutput(INPUT_CHAIN_NAME, chain.get())
+			commandRunnerMock.addIptablesListOutput(InputChainName, chain.get())
 
 			iptablesManager := newIptablesManager(&commandRunnerMock, true, true)
 			// nolint:errcheck // Tested in other uts
-			iptablesManager.insertRule(NewFwRule(INPUT, IPv4, "-j DROP", test.newRulePriority))
+			iptablesManager.insertRule(NewFwRule(Input, IPv4, "-j DROP", test.newRulePriority))
 
 			commands := commandRunnerMock.popIPv4Commands()
 			assert.Len(t, commands, 1, "Only one command per rule insertion should be executed.")
