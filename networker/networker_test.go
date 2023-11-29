@@ -218,6 +218,7 @@ func (*workingMesh) Tun() tunnel.T                     { return mock.WorkingT{} 
 func (*workingMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
+func (*workingMesh) NotifyNetworkChange() error { return nil }
 
 type workingHostSetter struct {
 	hosts dns.Hosts
