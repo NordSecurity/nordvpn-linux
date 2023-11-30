@@ -196,7 +196,8 @@ type LibdropFileState struct {
 	StatusCode    int    `json:"status_code"`
 }
 
-// Converts libdrop transfer representation to our own
+// LibdropTransferToInternalTransfer converts libdrop transfer to our own representation. We have to wait for version
+// 4.0.0(or other major version) to get rid of this, because it would cause breaking changes.
 func LibdropTransferToInternalTransfer(in LibdropTransfer) *pb.Transfer {
 	out := &pb.Transfer{}
 
