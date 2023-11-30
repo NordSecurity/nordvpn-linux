@@ -390,7 +390,7 @@ func getTransferFromStorage(id string, storage Storage) (*pb.Transfer, error) {
 func updateTransferWithLiveData(transfer *pb.Transfer, liveTransfers map[string]*LiveTransfer) *pb.Transfer {
 	liveTransfer, ok := liveTransfers[transfer.Id]
 	if !ok {
-		return nil
+		return transfer
 	}
 
 	transfer.TotalTransferred = liveTransfer.TotalTransferred
