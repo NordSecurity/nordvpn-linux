@@ -347,8 +347,8 @@ func (em *EventManager) GetTransfers() ([]*pb.Transfer, error) {
 
 	transfers := make([]*pb.Transfer, 0, len(storageTransfers))
 	for _, storageTransfer := range storageTransfers {
-		updateTransferWithLiveData(storageTransfer, em.liveTransfers)
-		transfers = append(transfers, storageTransfer)
+		updatedTransfer := updateTransferWithLiveData(storageTransfer, em.liveTransfers)
+		transfers = append(transfers, updatedTransfer)
 	}
 
 	sort.Slice(transfers, func(i int, j int) bool {
@@ -369,7 +369,7 @@ func (em *EventManager) getTransfer(transferID string) (*pb.Transfer, error) {
 	if err != nil {
 		return nil, err
 	}
-	updateTransferWithLiveData(transfer, em.liveTransfers)
+	transfer = updateTransferWithLiveData(transfer, em.liveTransfers)
 	return transfer, nil
 }
 
@@ -385,11 +385,12 @@ func getTransferFromStorage(id string, storage Storage) (*pb.Transfer, error) {
 	return storageTransfer, nil
 }
 
-// Storage doesn't contain momentary info about transfer progress, so update it from liveTransfers
-func updateTransferWithLiveData(transfer *pb.Transfer, liveTransfers map[string]*LiveTransfer) {
+// updateTransferWithLiveData used for ongoing transfers because Storage doesn't contain momentary info about transfer
+// progress, so update it from liveTransfers
+func updateTransferWithLiveData(transfer *pb.Transfer, liveTransfers map[string]*LiveTransfer) *pb.Transfer {
 	liveTransfer, ok := liveTransfers[transfer.Id]
 	if !ok {
-		return
+		return nil
 	}
 
 	transfer.TotalTransferred = liveTransfer.TotalTransferred
@@ -399,6 +400,8 @@ func updateTransferWithLiveData(transfer *pb.Transfer, liveTransfers map[string]
 			file.Transferred = liveFile.Transferred
 		}
 	}
+
+	return transfer
 }
 
 // AcceptTransfer validates the transfer to ensure it can be accepted
