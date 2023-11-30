@@ -15,11 +15,7 @@ type VPN interface {
 	State() State // required because of OpenVPN
 	IsActive() bool
 	Tun() tunnel.T // required because of OpenVPN
-}
-
-// NetworkChanger allows refreshing VPN connection without the need for full start/stop.
-type NetworkChanger interface {
-	NetworkChange() error
+	NetworkChanged() error
 }
 
 // Credentials define a possible set of credentials required to

@@ -207,7 +207,8 @@ func (e *workingExitNode) SetAllowlist(_ config.Allowlist, lan bool) error {
 func (e *workingExitNode) ResetFirewall(lan bool) error { e.LanAvailable = lan; return nil }
 
 type workingMesh struct {
-	enableErr error
+	enableErr         error
+	errNetworkChanged error
 }
 
 func (w *workingMesh) Enable(netip.Addr, string) error { return w.enableErr }
@@ -218,7 +219,7 @@ func (*workingMesh) Tun() tunnel.T                     { return mock.WorkingT{} 
 func (*workingMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
-func (*workingMesh) NotifyNetworkChange() error { return nil }
+func (w *workingMesh) NetworkChanged() error { return w.errNetworkChanged }
 
 type workingHostSetter struct {
 	hosts dns.Hosts
@@ -1449,9 +1450,11 @@ func TestCombined_Reconnect(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			meshnet := &workingMesh{}
+			meshnet.errNetworkChanged = mock.ErrOnPurpose
 			netw := NewCombined(
 				nil,
-				&workingMesh{},
+				meshnet,
 				workingGateway{},
 				&subs.Subject[string]{},
 				nil,
@@ -1482,6 +1485,7 @@ func TestCombined_Reconnect(t *testing.T) {
 				[]string{"1.1.1.1"},
 				test.enableLan,
 			)
+
 			// simulate network change event and refreshVPN
 			netw.Reconnect(true)
 			assert.Equal(t, test.enableLan, router.EnableLocalTraffic)

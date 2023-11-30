@@ -3,7 +3,11 @@ package networker
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/netip"
+
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // IsVPNActive returns true when connection to VPN server is established.
@@ -26,13 +30,41 @@ func (netw *Combined) IsMeshnetActive() bool {
 	return netw.isMeshnetSet
 }
 
-// refreshVPN fully re-creates the VPN tunnel but keeps the firewall
-// rules
-// This is needed since libtelio's NotifyNetworkChange does not well
-// therefore, full tunnel must be re-created
-//
+func (netw *Combined) handleNetworkChanged() error {
+	if netw.isMeshnetSet {
+		log.Println("reconfigure meshnet")
+		if err := netw.mesh.NetworkChanged(); err != nil {
+			return err
+		}
+	}
+
+	if netw.isVpnSet {
+		// for Nordlynx VPN + Meshnet NetworkChanged was already executed, so skip
+		vpn, ok := netw.mesh.(vpn.VPN)
+		if netw.isMeshnetSet && ok && vpn == netw.vpnet {
+			log.Println(internal.InfoPrefix, "skip network changed for VPN, already executed for meshnet")
+		} else {
+			log.Println("reconfigure VPN")
+
+			return netw.vpnet.NetworkChanged()
+		}
+	}
+
+	return nil
+}
+
+// refreshVPN will handle network changes
+// 1. try to let each VPN implementation to handle
+// 2. as fallback, fully re-creates the VPN tunnel but keeps the firewall rules
 // Thread unsafe.
 func (netw *Combined) refreshVPN() (err error) {
+	errNetChanged := netw.handleNetworkChanged()
+	if errNetChanged == nil {
+		return nil
+	}
+
+	log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", errNetChanged)
+
 	started := netw.isVpnSet
 	var ip netip.Addr
 	var vpnErr, meshErr error
