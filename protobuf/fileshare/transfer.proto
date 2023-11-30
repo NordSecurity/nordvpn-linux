@@ -70,8 +70,6 @@ message Transfer {
 	string path = 7;
 	uint64 total_size = 8;
 	uint64 total_transferred = 9;
-	// TODO: remove once transfer finalization is performed in libdrop
-	bool finalized = 10;
 }
 
 message File {

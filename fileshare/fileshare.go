@@ -3,6 +3,7 @@ package fileshare
 
 import (
 	"net/netip"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 )
@@ -27,10 +28,11 @@ type Fileshare interface {
 	Cancel(transferID string) error
 	// CancelFile id in a transfer
 	CancelFile(transferID string, fileID string) error
+	// GetTransfersSince provided time from fileshare implementation storage
+	GetTransfersSince(t time.Time) ([]LibdropTransfer, error)
 }
 
 // Storage is used for filesharing history persistence
 type Storage interface {
 	Load() (map[string]*pb.Transfer, error)
-	Save(map[string]*pb.Transfer) error
 }
