@@ -114,17 +114,20 @@ def test_toggle_routing_in_the_middle_of_the_connection():
     print(sh.nordvpn.disconnect())
 
 
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_routing_when_iprule_already_exists():
+def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
     table = 205
+    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
         print(sh.nordvpn.connect())
 
         routes = sh.ip.route.show.table(table)
         rules = sh.ip.rule()
-        assert "nordlynx" in routes
+        assert f"default dev {network_interface}" in routes
         assert "mark" in rules
         assert network.is_available()
 
@@ -145,11 +148,11 @@ def test_routing_when_iprule_already_exists():
 
             routes = sh.ip.route.show.table(table)
             rules = sh.ip.rule()
-            assert "nordlynx" in routes
+            assert f"default dev {network_interface}" in routes
             assert "mark" in rules
             assert network.is_available()
 
             routes = sh.ip.route.show.table("main")
-            assert not "nordlynx" in routes
+            assert f"default dev {network_interface}" not in routes
 
         print(sh.nordvpn.disconnect())
