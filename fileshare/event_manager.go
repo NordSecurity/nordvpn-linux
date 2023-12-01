@@ -535,7 +535,7 @@ type TransferProgressInfo struct {
 }
 
 // Subscribe is used to track progress.
-func (em *EventManager) Subscribe(id string) chan TransferProgressInfo {
+func (em *EventManager) Subscribe(id string) <-chan TransferProgressInfo {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
