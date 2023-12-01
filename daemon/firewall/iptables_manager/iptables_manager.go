@@ -13,6 +13,7 @@ const (
 	ip6tablesCommand = "ip6tables"
 )
 
+// IpVersion determines which version of iptables command should be used, i.e iptables, ip6tables or both
 type IpVersion int
 
 const (
@@ -21,6 +22,9 @@ const (
 	Both
 )
 
+// RulePriority determines a line in iptables where rule should be inserted. In iptables, rules are numbered in
+// descending order, with rule with lower line number taking precedence over following rules. Higher priority will
+// result in lower line number.
 type RulePriority int
 
 func (r RulePriority) toCommentArgs() string {
@@ -48,10 +52,12 @@ func (c iptablesChain) String() string {
 	return ""
 }
 
+// CommandRunner is an abstraction over linux command execution.
 type CommandRunner interface {
 	RunCommand(string, string) (string, error)
 }
 
+// ExecCommandRunner is implementation of CommandRunner that facilitates commands execution with Exec calls.
 // nolint:unused // Will be used once FirewallManager is integrated
 type ExecCommandRunner struct {
 }
@@ -63,6 +69,7 @@ func (ExecCommandRunner) RunCommand(command string, args string) (string, error)
 	return string(output), err
 }
 
+// IPTablesManager manages priority and execution of firewall rules with iptables.
 type IPTablesManager struct {
 	ip6tablesSupported bool
 	enabled            bool
@@ -70,7 +77,7 @@ type IPTablesManager struct {
 }
 
 // nolint:unused // Will be used once FirewallManager is integrated
-func areIP6TablesSupported() bool {
+func AreIP6TablesSupported() bool {
 	// #nosec G204 -- input is properly sanitized
 	_, err := exec.Command(ip6tablesCommand, "-S").CombinedOutput()
 	return err != nil
@@ -216,6 +223,14 @@ type FwRule struct {
 	priority RulePriority
 }
 
+// NewFwRule returns a new representation of iptables rule.
+//
+// Args:
+//
+//	chain - chain in which rule should be inserted
+//	version - version of iptables command which should be used to execute the rule, can be ipv4, ipv6 or both
+//	params - rest of the params, need to be valid iptables command arguments separated by spaces
+//	priority - priority at which rule should be inserted
 func NewFwRule(chain iptablesChain, version IpVersion, params string, priority RulePriority) FwRule {
 	return FwRule{
 		chain:    chain,
