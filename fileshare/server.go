@@ -226,12 +226,6 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_CREATED)})
 	}
 
-	if len(req.Paths) > 1 {
-		s.eventManager.NewOutgoingTransfer(transferID, peer.Ip, "multiple files")
-	} else {
-		s.eventManager.NewOutgoingTransfer(transferID, peer.Ip, req.Paths[0])
-	}
-
 	// Ignore response here
 	fileName := ""
 	if len(req.Paths) == 1 {
@@ -304,19 +298,19 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 			})
 
 		if isAccepted {
-			if err := s.fileshare.Accept(req.TransferId, req.DstPath, file.Id); err == nil {
+			if err := s.fileshare.Accept(req.TransferId, req.DstPath, file.Id); err != nil {
+				log.Printf("error accepting file %s in transfer %s: %s", file.Id, req.TransferId, err)
+			} else {
 				transferStarted = true
 			}
 		} else {
-			s.eventManager.SetFileStatus(transfer.Id, file.Id, pb.Status_CANCELED)
+			if err := s.fileshare.CancelFile(req.TransferId, file.Id); err != nil {
+				log.Printf("error cancelling file %s in transfer %s: %s", file.Id, req.TransferId, err)
+			}
 		}
 	}
 
 	if !transferStarted {
-		// Setting transfer status because it will not be set by events because transfer
-		// is not even started.
-		// Also not handling possible error because we are already in error state.
-		_ = s.eventManager.SetTransferStatus(transfer.Id, pb.Status_ACCEPT_FAILURE)
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_ALL_FILES_FAILED)})
 	}
 
@@ -375,7 +369,11 @@ func (s *Server) List(ctx context.Context, _ *pb.Empty) (*pb.ListResponse, error
 		return &pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_INTERNAL_FAILURE)}, nil
 	}
 
-	transfers := s.eventManager.GetTransfers()
+	transfers, err := s.eventManager.GetTransfers()
+	if err != nil {
+		log.Printf("getting transfer list: %s", err)
+		return &pb.ListResponse{Error: fileshareError(pb.FileshareErrorCode_LIB_FAILURE)}, nil
+	}
 	for _, transfer := range transfers {
 		if peer, ok := peers[transfer.Peer]; ok {
 			transfer.Peer = peer.Hostname

@@ -1,6 +1,6 @@
 //go:build internal
 
-package drop
+package libdrop
 
 // #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/amd64/latest -lnord
 // #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/i386/latest -lnord

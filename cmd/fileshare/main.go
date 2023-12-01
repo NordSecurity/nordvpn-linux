@@ -18,8 +18,9 @@ import (
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/drop"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/storage"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"google.golang.org/grpc"
@@ -28,6 +29,7 @@ import (
 
 // Values set when building the application
 var (
+	Version     = ""
 	Environment = ""
 	PprofPort   = 6961
 	ConnURL     = internal.GetFilesharedSocket(os.Getuid())
@@ -76,20 +78,13 @@ func main() {
 		log.Println("failed to find default download directory: ", err.Error())
 	}
 
-	currentUser, err := user.Current()
-	if err != nil {
-		log.Fatalf("can't retrieve current user info: %s", err)
-	}
-	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
-	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
-	storagePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
-
 	eventManager := fileshare.NewEventManager(
-		fileshare.FileshareHistoryImplementation(storagePath),
+		internal.IsProdEnv(Environment),
 		meshClient,
 		fileshare.StdOsInfo{},
 		fileshare.NewStdFilesystem("/"),
-		defaultDownloadDirectory)
+		defaultDownloadDirectory,
+	)
 
 	privKeyResponse, err := meshClient.GetPrivateKey(context.Background(), &meshpb.Empty{})
 	if err != nil || privKeyResponse.GetPrivateKey() == "" {
@@ -100,16 +95,34 @@ func main() {
 		log.Fatalf("can't decode mesh private key: %v", err)
 	}
 
+	currentUser, err := user.Current()
+	if err != nil {
+		log.Fatalf("can't retrieve current user info: %s", err)
+	}
+	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
+	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
+	storagePath := path.Join(
+		currentUser.HomeDir,
+		internal.ConfigDirectory,
+		internal.UserDataPath,
+		internal.FileshareHistoryFile,
+	)
+	if err := internal.EnsureDir(storagePath); err != nil {
+		log.Fatalf("ensuring dir for transfer history file: %s", err)
+	}
 	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
-	fileshareImplementation := drop.New(
+	fileshareImplementation := libdrop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
+		Version,
 		internal.IsProdEnv(Environment),
 		fileshare.NewPubkeyProvider(meshClient).PubkeyFunc,
 		string(meshPrivKey),
 		storagePath,
 	)
 	eventManager.SetFileshare(fileshareImplementation)
+	legacyStoragePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
+	eventManager.SetStorage(storage.NewCombined(legacyStoragePath, fileshareImplementation))
 
 	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
 		Uid: int64(os.Getuid()),
