@@ -242,17 +242,13 @@ def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
         links = socket.if_nameindex()
         logging.log(links)
         default_gateway = network.stop()
-
-        list_without_default_gateway = socket.if_nameindex()
         network.start(default_gateway)
         
-        # wait for the default gateway to come back online
-        daemon.wait_for_reconnect(list_without_default_gateway)
+        # wait for internet
+        network.is_available(10)
 
         assert network.is_connected()
-
-        links_after_reconnect = socket.if_nameindex()
-        assert links == links_after_reconnect
+        assert links == socket.if_nameindex()
 
         logging.log(info.collect())
 
