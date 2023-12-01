@@ -78,16 +78,8 @@ func main() {
 		log.Println("failed to find default download directory: ", err.Error())
 	}
 
-	currentUser, err := user.Current()
-	if err != nil {
-		log.Fatalf("can't retrieve current user info: %s", err)
-	}
-	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
-	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
-	legacyStoragePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
 	eventManager := fileshare.NewEventManager(
 		internal.IsProdEnv(Environment),
-		storage.NewJsonFile(legacyStoragePath),
 		meshClient,
 		fileshare.StdOsInfo{},
 		fileshare.NewStdFilesystem("/"),
@@ -103,6 +95,10 @@ func main() {
 		log.Fatalf("can't decode mesh private key: %v", err)
 	}
 
+	currentUser, err := user.Current()
+	if err != nil {
+		log.Fatalf("can't retrieve current user info: %s", err)
+	}
 	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
 	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
 	storagePath := path.Join(
@@ -125,6 +121,8 @@ func main() {
 		storagePath,
 	)
 	eventManager.SetFileshare(fileshareImplementation)
+	legacyStoragePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
+	eventManager.SetStorage(storage.NewCombined(legacyStoragePath, fileshareImplementation))
 
 	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
 		Uid: int64(os.Getuid()),

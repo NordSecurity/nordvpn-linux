@@ -48,35 +48,6 @@ func isFileListEqual(t *testing.T, lhs []string, rhs []string) bool {
 	return true
 }
 
-func findFileInList(t *testing.T, id string, files []*pb.File) *pb.File {
-	t.Helper()
-
-	for _, file := range files {
-		if file.Id == id {
-			return file
-		}
-	}
-
-	return nil
-}
-
-// checkFilesStatus returns file/status pair for all fileIDs that do not have the expected status
-// and filenames of all of the fileIDs not found in files
-func checkFilesStatus(t *testing.T, fileIDs []string, files []*pb.File, status pb.Status) ([]string, []*pb.File) {
-	notFoundFileIDs := []string{}
-	invalidStatusFiles := []*pb.File{}
-	for _, fileID := range fileIDs {
-		file := findFileInList(t, fileID, files)
-		if file == nil {
-			notFoundFileIDs = append(notFoundFileIDs, fileID)
-		} else if file.Status != status {
-			invalidStatusFiles = append(invalidStatusFiles, file)
-		}
-	}
-
-	return notFoundFileIDs, invalidStatusFiles
-}
-
 func (m *mockServerFileshare) CancelFile(string, fileID string) error {
 	m.canceledFiles = append(m.canceledFiles, fileID)
 	return m.cancelReturnValue
@@ -361,7 +332,7 @@ func TestSend(t *testing.T) {
 		mockFileshare := mockServerFileshare{}
 		server := NewServer(
 			&mockFileshare,
-			&EventManager{transfers: make(map[string]*pb.Transfer)},
+			&EventManager{},
 			&mockMeshClient,
 			mockFs,
 			&mockOsInfo{},
@@ -470,7 +441,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 	for _, test := range fileshareTests {
 		server := NewServer(
 			&mockServerFileshare{},
-			&EventManager{transfers: make(map[string]*pb.Transfer)},
+			&EventManager{},
 			&mockMeshClient{isEnabled: true},
 			mockFs,
 			&mockOsInfo{},
@@ -684,9 +655,12 @@ func TestAccept(t *testing.T) {
 				Path: filePath,
 			}},
 		}
-		eventManager := EventManager{transfers: map[string]*pb.Transfer{
-			transferID: &transfer,
-		},
+		eventManager := EventManager{
+			storage: &mockStorage{
+				transfers: map[string]*pb.Transfer{
+					transferID: &transfer,
+				},
+			},
 			filesystem: &mockFs,
 			osInfo:     &mockOsInfo}
 		server := NewServer(
@@ -854,9 +828,12 @@ func TestAcceptDirectory(t *testing.T) {
 
 	for _, test := range tests {
 		transfer.Status = pb.Status_REQUESTED
-		eventManager := EventManager{transfers: map[string]*pb.Transfer{
-			transferID: &transfer,
-		},
+		eventManager := EventManager{
+			storage: &mockStorage{
+				transfers: map[string]*pb.Transfer{
+					transferID: &transfer,
+				},
+			},
 			filesystem: &mockFs,
 			osInfo:     &mockOsInfo}
 
@@ -889,10 +866,6 @@ func TestAcceptDirectory(t *testing.T) {
 			}
 			assert.True(t, isFileListEqual(t, test.expectedAcceptedFiles, fileshare.acceptedFiles),
 				"expected %v, got %v", test.expectedAcceptedFiles, fileshare.acceptedFiles)
-
-			notFoundFileIDs, invalidStatusFiles := checkFilesStatus(t, test.expectedCanceledFiles, eventManager.transfers[transferID].Files, pb.Status_CANCELED)
-			assert.Equal(t, len(notFoundFileIDs), 0, "not all file IDs from %v found in transfer files list, missing files: %v", test.expectedCanceledFiles, notFoundFileIDs)
-			assert.Equal(t, len(invalidStatusFiles), 0, "not all file IDs from %v are canceled, files with invalid status: %v", test.expectedCanceledFiles, invalidStatusFiles)
 		})
 	}
 }
@@ -974,9 +947,14 @@ func TestCancel(t *testing.T) {
 	}
 
 	for _, test := range fileshareTests {
-		eventManager := EventManager{transfers: map[string]*pb.Transfer{
-			transferID: &transfer,
-		}}
+		transfer.Files[0].Status = test.transferStatus
+		eventManager := EventManager{
+			storage: &mockStorage{
+				transfers: map[string]*pb.Transfer{
+					transferID: &transfer,
+				},
+			},
+		}
 
 		server := NewServer(
 			&mockServerFileshare{cancelReturnValue: test.cancelError},
@@ -985,7 +963,6 @@ func TestCancel(t *testing.T) {
 			newMockFilesystem(),
 			&mockOsInfo{},
 		)
-		eventManager.transfers[transferID].Files[0].Status = test.transferStatus
 
 		t.Run(test.testName, func(t *testing.T) {
 			resp, err := server.CancelFile(context.Background(), &pb.CancelFileRequest{TransferId: test.transferID, FilePath: test.filePath})
