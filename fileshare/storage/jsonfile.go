@@ -1,15 +1,14 @@
-package fileshare
+package storage
 
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"golang.org/x/exp/maps"
 )
 
@@ -41,7 +40,7 @@ func (jf JsonFile) Load() (map[string]*pb.Transfer, error) {
 		tr.Files = flatten(tr.Files)
 		if tr.Status == pb.Status_REQUESTED || tr.Status == pb.Status_ONGOING {
 			tr.Status = pb.Status_INTERRUPTED
-			SetTransferAllFileStatus(tr, pb.Status_INTERRUPTED)
+			fileshare.SetTransferAllFileStatus(tr, pb.Status_INTERRUPTED)
 		}
 	}
 
@@ -63,48 +62,4 @@ func flatten(files []*pb.File) []*pb.File {
 		}
 	}
 	return flatFiles
-}
-
-// Save user's history
-func (jf JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
-	historyFilePath := path.Join(jf.storagePath, historyFile)
-	if err := internal.EnsureDir(historyFilePath); err != nil {
-		return fmt.Errorf("trying to save transfers history: %w", err)
-	}
-
-	var trBytes []byte
-	for {
-		trBytes, err = json.Marshal(transfers)
-		if err != nil {
-			return err
-		}
-
-		if len(trBytes) < historySizeMaxBytes {
-			break
-		}
-
-		// truncate history; find the oldest completed transfer and remove it
-		log.Printf("truncating transfers history json size: %d (max limit: %d)\n", len(trBytes), historySizeMaxBytes)
-		var oldestTransfer *pb.Transfer
-		for _, tr := range transfers {
-			if tr.Status == pb.Status_ONGOING {
-				continue
-			}
-			if oldestTransfer == nil {
-				oldestTransfer = tr
-			} else if tr.Created.AsTime().Before(oldestTransfer.Created.AsTime()) {
-				oldestTransfer = tr
-			}
-		}
-
-		if oldestTransfer == nil {
-			log.Println("cannot truncate transfers history")
-			break
-		} else {
-			delete(transfers, oldestTransfer.Id)
-		}
-	}
-
-	// write (overwrite if exists) and close file
-	return os.WriteFile(historyFilePath, trBytes, internal.PermUserRW)
 }

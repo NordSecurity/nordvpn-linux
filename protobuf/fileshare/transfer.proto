@@ -45,6 +45,8 @@ enum Status {
 	FILE_MODIFIED = 28;
 	FILENAME_TOO_LONG = 29;
 	AUTHENTICATION_FAILED = 30;
+	FILE_CHECKSUM_MISMATCH = 33;
+	FILE_REJECTED = 34;
 	// Internally defined statuses for unfinished transfers
 	REQUESTED = 100;
 	ONGOING = 101;
@@ -52,6 +54,8 @@ enum Status {
 	ACCEPT_FAILURE = 103;
 	CANCELED_BY_PEER = 104;
 	INTERRUPTED = 105;
+	PAUSED = 106;
+	PENDING = 107;
 }
 
 message Transfer {
@@ -66,13 +70,12 @@ message Transfer {
 	string path = 7;
 	uint64 total_size = 8;
 	uint64 total_transferred = 9;
-	// TODO: remove once transfer finalization is performed in libdrop
-	bool finalized = 10;
 }
 
 message File {
 	string id = 1;
-	string path = 6;
+	string path = 6; // Used for display and user input. Can be just file name, or relative to a dir that is sent.
+	string fullPath = 7; // Absolute path
 	uint64 size = 2;
 	uint64 transferred = 3;
 	Status status = 4; // Received from the events for specific set of files

@@ -19,12 +19,13 @@ const (
 type finishReason string
 
 const (
-	transferCanceled finishReason = "TransferCanceled"
 	transferFailed   finishReason = "TransferFailed"
+	transferCanceled finishReason = "TransferCanceled"
 	fileDownloaded   finishReason = "FileDownloaded"
 	fileUploaded     finishReason = "FileUploaded"
 	fileCanceled     finishReason = "FileCanceled"
 	fileFailed       finishReason = "FileFailed"
+	fileRejected     finishReason = "FileRejected"
 )
 
 type genericEvent struct {
@@ -36,17 +37,6 @@ type requestReceivedEvent struct {
 	TransferID string `json:"transfer"`
 	Peer       string
 	Files      []*pb.File
-}
-
-type requestQueuedEvent struct {
-	TransferID string `json:"transfer"`
-	Peer       string
-	Files      []*pb.File
-}
-
-type transferStartedEvent struct {
-	TransferID string `json:"transfer"`
-	FileID     string `json:"file"`
 }
 
 type transferProgressEvent struct {

@@ -1,6 +1,6 @@
 //go:build !internal
 
-package drop
+package libdrop
 
 // #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/foss/amd64/latest -lfoss
 // #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/foss/i386/latest -lfoss

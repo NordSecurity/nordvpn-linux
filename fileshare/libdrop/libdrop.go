@@ -1,5 +1,5 @@
-// Package drop wraps libdrop fileshare implementation.
-package drop
+// Package libdrop wraps libdrop fileshare implementation.
+package libdrop
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/netip"
 	"sync"
+	"time"
 
 	norddropgo "github.com/NordSecurity/libdrop/norddrop/ffi/bindings/linux/go"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
@@ -194,4 +195,18 @@ func (f *Fileshare) CancelFile(transferID string, fileID string) error {
 	}
 
 	return nil
+}
+
+func (f *Fileshare) GetTransfersSince(t time.Time) ([]fileshare.LibdropTransfer, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	transfers := []fileshare.LibdropTransfer{}
+	rawTransfers := f.norddrop.GetTransfersSince(t.Unix())
+	err := json.Unmarshal([]byte(rawTransfers), &transfers)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalling libdrop transfers JSON: %w", err)
+	}
+
+	return transfers, nil
 }
