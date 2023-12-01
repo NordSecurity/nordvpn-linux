@@ -8,9 +8,13 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	iptablesmanager "github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables_manager"
+	"github.com/NordSecurity/nordvpn-linux/meshnet"
 )
 
-var ErrRuleAlreadyActive = errors.New("this rule is already active")
+var (
+	ErrRuleAlreadyActive = errors.New("rule is already active")
+	ErrRuleNotActive     = errors.New("rule does not exist")
+)
 
 type PortRange struct {
 	min int
@@ -22,15 +26,28 @@ const (
 	ApiAllowlistMark
 	ApiAllowlistOutputConnmark
 	UserAllowlist
+	MeshnetFileshare
+	MeshnetIncoming
+	MeshnetBlockIncomingLAN
 )
 
+type meshIncomingRule struct {
+	allowIncomingRule iptablesmanager.FwRule
+	blockLocalRules   []iptablesmanager.FwRule
+}
+
 type FirewallManager struct {
-	iptablesManager   iptablesmanager.IPTablesManager
-	devices           device.ListFunc // list network interfaces
+	iptablesManager iptablesmanager.IPTablesManager
+	// list network interfaces
+	devices           device.ListFunc
 	allowlistRules    []iptablesmanager.FwRule
 	trafficBlockRules []iptablesmanager.FwRule
 	apiAllowlistRules []iptablesmanager.FwRule
-	connmark          uint32
+	// maps peer UID to rules related to allowing incoming traffic
+	allowIncomingRules map[string]meshIncomingRule
+	// maps peer UID to rules that allow fileshare
+	fileshareRules map[string]iptablesmanager.FwRule
+	connmark       uint32
 }
 
 func NewFirewallManager(devices device.ListFunc,
@@ -39,10 +56,111 @@ func NewFirewallManager(devices device.ListFunc,
 	ip6TablesSupported bool,
 	enabled bool) FirewallManager {
 	return FirewallManager{
-		iptablesManager: iptablesmanager.NewIPTablesManager(cmdRunner, ip6TablesSupported, enabled),
-		devices:         devices,
-		connmark:        connmark,
+		iptablesManager:    iptablesmanager.NewIPTablesManager(cmdRunner, enabled, ip6TablesSupported),
+		devices:            devices,
+		allowIncomingRules: make(map[string]meshIncomingRule),
+		fileshareRules:     make(map[string]iptablesmanager.FwRule),
+		connmark:           connmark,
 	}
+}
+
+func (f *FirewallManager) AllowIncoming(peer meshnet.UniqueAddress, allowLocal bool) error {
+	if _, ok := f.allowIncomingRules[peer.UID]; ok {
+		return ErrRuleAlreadyActive
+	}
+
+	blockLANRules := []iptablesmanager.FwRule{}
+	if !allowLocal {
+		lans := []string{
+			"169.254.0.0/16",
+			"192.168.0.0/16",
+			"172.16.0.0/12",
+			"10.0.0.0/8",
+		}
+
+		for _, lan := range lans {
+			rule := iptablesmanager.NewFwRule(
+				iptablesmanager.Input,
+				iptablesmanager.IPv4,
+				fmt.Sprintf("-s %s/32 -d %s -j DROP", peer.Address, lan),
+				MeshnetBlockIncomingLAN)
+			blockLANRules = append(blockLANRules, rule)
+
+			if err := f.iptablesManager.InsertRule(rule); err != nil {
+				return fmt.Errorf("blocking mesh peer from LAN access: %w", err)
+			}
+		}
+	}
+
+	rule := iptablesmanager.NewFwRule(
+		iptablesmanager.Input,
+		iptablesmanager.IPv4,
+		fmt.Sprintf("-s %s/32 -j ACCEPT", peer.Address),
+		MeshnetIncoming)
+
+	if err := f.iptablesManager.InsertRule(rule); err != nil {
+		return fmt.Errorf("allowing incoming traffic for peer: %w", err)
+	}
+
+	f.allowIncomingRules[peer.UID] = meshIncomingRule{
+		allowIncomingRule: rule,
+		blockLocalRules:   blockLANRules,
+	}
+
+	return nil
+}
+
+func (f *FirewallManager) DenyIncoming(peerUID string) error {
+	rule, ok := f.allowIncomingRules[peerUID]
+
+	if !ok {
+		return ErrRuleNotFound
+	}
+
+	if err := f.iptablesManager.DeleteRule(rule.allowIncomingRule); err != nil {
+		return fmt.Errorf("removing allow incoming rule: %w", err)
+	}
+
+	for _, blockLANRule := range rule.blockLocalRules {
+		if err := f.iptablesManager.DeleteRule(blockLANRule); err != nil {
+			return fmt.Errorf("removing block LAN rule: %w", err)
+		}
+	}
+
+	delete(f.allowIncomingRules, peerUID)
+
+	return nil
+}
+
+// AllowFileshare adds ACCEPT rule for all incoming connections to tcp port 49111 from the peer with given UniqueAddress.
+func (f *FirewallManager) AllowFileshare(peer meshnet.UniqueAddress) error {
+	if _, ok := f.fileshareRules[peer.UID]; ok {
+		return ErrRuleAlreadyActive
+	}
+
+	args := fmt.Sprintf("-s %s/32 -p tcp -m tcp --dport 49111 -j ACCEPT", peer.Address.String())
+	rule := iptablesmanager.NewFwRule(iptablesmanager.Input, iptablesmanager.IPv4, args, MeshnetFileshare)
+	if err := f.iptablesManager.InsertRule(rule); err != nil {
+		return fmt.Errorf("adding allow fileshare rule: %w", err)
+	}
+
+	f.fileshareRules[peer.UID] = rule
+	return nil
+}
+
+// DenyFileshare removes ACCEPT rule for all incoming connections to tcp port 49111 from the peer with given UniqueAddress.
+func (f *FirewallManager) DenyFileshare(peerUID string) error {
+	rule, ok := f.fileshareRules[peerUID]
+	if !ok {
+		return ErrRuleNotActive
+	}
+
+	if err := f.iptablesManager.DeleteRule(rule); err != nil {
+		return fmt.Errorf("deleting fileshare rule: %w", err)
+	}
+
+	delete(f.fileshareRules, peerUID)
+	return nil
 }
 
 // BlocTraffic adds DROP rules for all the incoming traffic, for every viable network interface
