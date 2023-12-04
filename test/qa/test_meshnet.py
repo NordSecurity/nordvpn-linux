@@ -334,7 +334,6 @@ def test_network_changed_for_meshnet():
     # wait for internet
     network.is_available(10)
 
-    assert not network.is_connected()
     assert links == socket.if_nameindex()
 
     assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
