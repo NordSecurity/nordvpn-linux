@@ -324,8 +324,7 @@ def test_account_switch():
 def test_network_changed_for_meshnet():
     sh.nordvpn.meshnet.peer.refresh()
 
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
+    assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
 
     links = socket.if_nameindex()
     logging.log(links)
@@ -338,5 +337,4 @@ def test_network_changed_for_meshnet():
     assert not network.is_connected()
     assert links == socket.if_nameindex()
 
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
+    assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
