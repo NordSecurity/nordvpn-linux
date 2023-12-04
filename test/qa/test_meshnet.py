@@ -5,7 +5,6 @@ import requests
 import pytest
 import timeout_decorator
 import socket
-import network
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
