@@ -35,7 +35,7 @@ var (
 	errServerTimeout  = errors.New("server timeout")
 	ErrServerVersion  = errors.New("invalid openvpn server version")
 	errExited         = errors.New("exited")
-	errNotSupported   = errors.New("not supported")
+	errNotImplemented = errors.New("not implemented")
 )
 
 type OpenVPN struct {
@@ -216,7 +216,7 @@ func (ovpn *OpenVPN) NetworkChanged() error {
 	// but because the servers sends different configuration at pull, then the TUN is closed + recreated
 	// https://github.com/OpenVPN/openvpn/blob/a1cb1b47b138b9f654cd0bca5de6d08dbca61888/src/openvpn/init.c#L2421
 
-	return errNotSupported
+	return errNotImplemented
 
 	// the following should be the correct implementation for it
 	// if !ovpn.IsActive() {

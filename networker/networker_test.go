@@ -208,7 +208,7 @@ func (e *workingExitNode) ResetFirewall(lan bool) error { e.LanAvailable = lan; 
 
 type workingMesh struct {
 	enableErr         error
-	errNetworkChanged error
+	networkChangedErr error
 }
 
 func (w *workingMesh) Enable(netip.Addr, string) error { return w.enableErr }
@@ -219,7 +219,7 @@ func (*workingMesh) Tun() tunnel.T                     { return mock.WorkingT{} 
 func (*workingMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
-func (w *workingMesh) NetworkChanged() error { return w.errNetworkChanged }
+func (w *workingMesh) NetworkChanged() error { return w.networkChangedErr }
 
 type workingHostSetter struct {
 	hosts dns.Hosts
@@ -1451,7 +1451,7 @@ func TestCombined_Reconnect(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			meshnet := &workingMesh{}
-			meshnet.errNetworkChanged = mock.ErrOnPurpose
+			meshnet.networkChangedErr = mock.ErrOnPurpose
 			netw := NewCombined(
 				nil,
 				meshnet,

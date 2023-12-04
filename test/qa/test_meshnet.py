@@ -4,6 +4,8 @@ import sh
 import requests
 import pytest
 import timeout_decorator
+import socket
+import network
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -309,6 +311,7 @@ def test_remove_peer_firewall_update():
 
     assert result, message
 
+
 def test_account_switch():
     sh.nordvpn.logout("--persist-token")
     login.login_as("qa-peer")
@@ -317,4 +320,24 @@ def test_account_switch():
     # Recover starting state (this is the simplest way)
     teardown_module(None)
     setup_module(None)
+
+
+def test_network_changed_for_meshnet():
+    sh.nordvpn.meshnet.peer.refresh()
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
+
+    links = socket.if_nameindex()
+    logging.log(links)
+    default_gateway = network.stop()
+    network.start(default_gateway)
     
+    # wait for internet
+    network.is_available(10)
+
+    assert not network.is_connected()
+    assert links == socket.if_nameindex()
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")

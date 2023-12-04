@@ -89,7 +89,7 @@ func TestRefreshVPN_MeshnetFailure(t *testing.T) {
 	assert.True(t, combined.isMeshnetSet)
 
 	combined.mesh.(*workingMesh).enableErr = fmt.Errorf("test error")
-	combined.mesh.(*workingMesh).errNetworkChanged = fmt.Errorf("test error")
+	combined.mesh.(*workingMesh).networkChangedErr = fmt.Errorf("test error")
 
 	err := combined.refreshVPN()
 	assert.Error(t, err)
