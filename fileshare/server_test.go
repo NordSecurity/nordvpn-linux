@@ -92,6 +92,16 @@ func (m *mockSendServer) Send(resp *pb.StatusResponse) error {
 	return m.sendReturnValue
 }
 
+type mockListServer struct {
+	pb.Fileshare_ListServer
+	responses []*pb.ListResponse
+}
+
+func (m *mockListServer) Send(resp *pb.ListResponse) error {
+	m.responses = append(m.responses, resp)
+	return nil
+}
+
 type mockFilesystem struct {
 	fstest.MapFS
 	freeSpace uint64
@@ -171,6 +181,22 @@ func (m *mockMeshClient) NotifyNewTransfer(ctx context.Context, in *meshpb.NewTr
 	return &meshpb.NotifyNewTransferResponse{
 		Response: &meshpb.NotifyNewTransferResponse_Empty{},
 	}, nil
+}
+
+func getTransfers(t *testing.T, numberOfTransfers int) map[string]*pb.Transfer {
+	t.Helper()
+
+	transfersMap := make(map[string]*pb.Transfer, numberOfTransfers)
+	for transfer := 0; transfer < numberOfTransfers; transfer++ {
+		transferID := strconv.Itoa(transfer)
+		pbTransfer := &pb.Transfer{
+			Id: transferID,
+		}
+
+		transfersMap[transferID] = pbTransfer
+	}
+
+	return transfersMap
 }
 
 func TestSend(t *testing.T) {
@@ -336,6 +362,7 @@ func TestSend(t *testing.T) {
 			&mockMeshClient,
 			mockFs,
 			&mockOsInfo{},
+			0,
 		)
 
 		sendServer := mockSendServer{}
@@ -445,6 +472,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 			&mockMeshClient{isEnabled: true},
 			mockFs,
 			&mockOsInfo{},
+			0,
 		)
 
 		sendServer := mockSendServer{}
@@ -668,7 +696,8 @@ func TestAccept(t *testing.T) {
 			&eventManager,
 			&mockMeshClient{isEnabled: true},
 			mockFs,
-			&mockOsInfo)
+			&mockOsInfo,
+			0)
 
 		t.Run(test.testName, func(t *testing.T) {
 			err := server.Accept(
@@ -851,6 +880,7 @@ func TestAcceptDirectory(t *testing.T) {
 			&mockMeshClient{isEnabled: true},
 			mockFs,
 			&mockOsInfo,
+			0,
 		)
 
 		acceptServer := &mockAcceptServer{serverError: nil}
@@ -962,12 +992,88 @@ func TestCancel(t *testing.T) {
 			&mockMeshClient{isEnabled: test.isMeshEnabled},
 			newMockFilesystem(),
 			&mockOsInfo{},
+			0,
 		)
 
 		t.Run(test.testName, func(t *testing.T) {
 			resp, err := server.CancelFile(context.Background(), &pb.CancelFileRequest{TransferId: test.transferID, FilePath: test.filePath})
 			assert.NoError(t, err)
 			assert.Equal(t, test.response, resp)
+		})
+	}
+}
+
+func TestList(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name              string
+		numberOfTransfers int
+		expectedChunks    int
+	}{
+		{
+			name:              "less than one chunk",
+			numberOfTransfers: 2,
+			expectedChunks:    1,
+		},
+		{
+			name:              "one chunk",
+			numberOfTransfers: 5,
+			expectedChunks:    1,
+		},
+		{
+			name:              "one and a half chunk",
+			numberOfTransfers: 7,
+			expectedChunks:    2,
+		},
+		{
+			name:              "two chunks",
+			numberOfTransfers: 10,
+			expectedChunks:    2,
+		},
+	}
+
+	for _, test := range tests {
+		expectedTransfers := getTransfers(t, test.numberOfTransfers)
+		storage := &mockStorage{
+			transfers: expectedTransfers,
+		}
+		eventManager := EventManager{
+			storage: storage,
+		}
+
+		server := NewServer(
+			&mockEventManagerFileshare{},
+			&eventManager,
+			&mockMeshClient{isEnabled: true},
+			newMockFilesystem(),
+			&mockOsInfo{},
+			5,
+		)
+
+		listServer := mockListServer{}
+
+		t.Run(test.name, func(t *testing.T) {
+			server.List(&pb.Empty{}, &listServer)
+
+			assert.Len(t,
+				listServer.responses,
+				test.expectedChunks,
+				"Invalid number of chunks received: Expected: %d, Got: %d",
+				test.expectedChunks,
+				len(listServer.responses))
+
+			receivedTransfers := map[string]*pb.Transfer{}
+			for _, response := range listServer.responses {
+				for _, transfer := range response.Transfers {
+					receivedTransfers[transfer.Id] = transfer
+				}
+			}
+
+			assert.Equal(t,
+				expectedTransfers,
+				receivedTransfers,
+				"Invalid transfers received from server.")
 		})
 	}
 }

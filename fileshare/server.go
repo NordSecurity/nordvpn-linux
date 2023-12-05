@@ -33,11 +33,12 @@ func fileshareError(code pb.FileshareErrorCode) *pb.Error {
 type Server struct {
 	pb.UnimplementedFileshareServer
 	// Errors on Fileshare methods shouldn't be logged, because they are logged by the library itself.
-	fileshare    Fileshare
-	eventManager *EventManager
-	meshClient   meshpb.MeshnetClient
-	filesystem   Filesystem
-	osInfo       OsInfo
+	fileshare     Fileshare
+	eventManager  *EventManager
+	meshClient    meshpb.MeshnetClient
+	filesystem    Filesystem
+	osInfo        OsInfo
+	listChunkSize int
 }
 
 // NewServer is a default constructor for a fileshare server
@@ -47,13 +48,15 @@ func NewServer(
 	meshClient meshpb.MeshnetClient,
 	filesystem Filesystem,
 	osInfo OsInfo,
+	listChunkSize int,
 ) *Server {
 	return &Server{
-		fileshare:    fileshare,
-		eventManager: eventManager,
-		meshClient:   meshClient,
-		filesystem:   filesystem,
-		osInfo:       osInfo,
+		fileshare:     fileshare,
+		eventManager:  eventManager,
+		meshClient:    meshClient,
+		filesystem:    filesystem,
+		osInfo:        osInfo,
+		listChunkSize: listChunkSize,
 	}
 }
 
@@ -66,8 +69,8 @@ func (s *Server) isDirectory(path string) (bool, error) {
 }
 
 var (
-	errMaxDirectoryDepthReached = errors.New("Max directory depth reached")
-	errGetPeersFailed           = errors.New("Failed to get peers from meshnet daemon")
+	errMaxDirectoryDepthReached = errors.New("max directory depth reached")
+	errGetPeersFailed           = errors.New("failed to get peers from meshnet daemon")
 )
 
 // getNumberOfFiles returns number of files in a directory and its subdirectories
@@ -358,21 +361,21 @@ func (s *Server) Cancel(
 }
 
 // List rpc
-func (s *Server) List(ctx context.Context, _ *pb.Empty) (*pb.ListResponse, error) {
+func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
 	if err != nil || !resp.GetValue() {
-		return &pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)}, nil
+		return srv.Send(&pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
 	peers, err := s.getPeers()
 	if err != nil {
-		return &pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_INTERNAL_FAILURE)}, nil
+		return srv.Send(&pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_INTERNAL_FAILURE)})
 	}
 
 	transfers, err := s.eventManager.GetTransfers()
 	if err != nil {
 		log.Printf("getting transfer list: %s", err)
-		return &pb.ListResponse{Error: fileshareError(pb.FileshareErrorCode_LIB_FAILURE)}, nil
+		return srv.Send(&pb.ListResponse{Error: fileshareError(pb.FileshareErrorCode_LIB_FAILURE)})
 	}
 	for _, transfer := range transfers {
 		if peer, ok := peers[transfer.Peer]; ok {
@@ -380,10 +383,25 @@ func (s *Server) List(ctx context.Context, _ *pb.Empty) (*pb.ListResponse, error
 		}
 	}
 
-	return &pb.ListResponse{
-		Error:     empty(),
-		Transfers: transfers,
-	}, nil
+	for chunkStart := 0; chunkStart < len(transfers); chunkStart += s.listChunkSize {
+		chunk := transfers[chunkStart:]
+		if len(chunk) < s.listChunkSize {
+			return srv.Send(&pb.ListResponse{
+				Error:     empty(),
+				Transfers: chunk,
+			})
+		}
+
+		err := srv.Send(&pb.ListResponse{
+			Error:     empty(),
+			Transfers: chunk[:s.listChunkSize],
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // CancelFile rpc
