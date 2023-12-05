@@ -35,6 +35,7 @@ var (
 	errServerTimeout  = errors.New("server timeout")
 	ErrServerVersion  = errors.New("invalid openvpn server version")
 	errExited         = errors.New("exited")
+	errNotImplemented = errors.New("not implemented")
 )
 
 type OpenVPN struct {
@@ -208,6 +209,32 @@ func (ovpn *OpenVPN) stop() error {
 	ovpn.active = false
 	ovpn.state = vpn.ExitedState
 	return nil
+}
+
+func (ovpn *OpenVPN) NetworkChanged() error {
+	// application uses the flag --persist-tun and it should not close the TUN interface at restarts
+	// but because the servers sends different configuration at pull, then the TUN is closed + recreated
+	// https://github.com/OpenVPN/openvpn/blob/a1cb1b47b138b9f654cd0bca5de6d08dbca61888/src/openvpn/init.c#L2421
+
+	return errNotImplemented
+
+	// the following should be the correct implementation for it
+	// if !ovpn.IsActive() {
+	// 	return nil
+	// }
+
+	// ovpn.Lock()
+	// defer ovpn.Unlock()
+
+	// if ovpn.manager != nil {
+	// 	if pid, _ := ovpn.manager.Pid(); pid != 0 {
+	// 		err := ovpn.manager.SendSignal("SIGUSR1")
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
+	// return nil
 }
 
 // IsActive checks if openvpn process is running
@@ -424,11 +451,10 @@ func vpnMonitor(reader io.ReadCloser, prefix string, inform chan struct{}) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		txt := scanner.Text()
-		fmt.Printf("debug: %s\n", txt)
 		if containsSeveral(txt, []string{cipherErr, tlsErr}) {
 			inform <- struct{}{}
 		}
-		log.Println(fmt.Sprintf("[%s] %s", prefix, txt))
+		log.Println(prefix, txt)
 	}
 }
 

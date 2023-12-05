@@ -211,24 +211,46 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+# the tun interface is recreated only for OpenVPN
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.OBFUSCATED_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_connect_network_restart(tech, proto, obfuscated):
+def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test()
+    with lib.ErrorDefer(disconnect_base_test):
+        connect_base_test()
 
-    links = socket.if_nameindex()
-    logging.log(links)
-    default_gateway = network.stop()
-    network.start(default_gateway)
-    daemon.wait_for_reconnect(links)
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
+        links = socket.if_nameindex()
+        logging.log(links)
+        default_gateway = network.stop()
+        network.start(default_gateway)
+        daemon.wait_for_reconnect(links)
         assert network.is_connected()
-    logging.log(info.collect())
+        logging.log(info.collect())
 
-    disconnect_base_test()
+
+# for Nordlynx normally the tunnel is not recreated
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    with lib.ErrorDefer(disconnect_base_test):
+        connect_base_test()
+
+        links = socket.if_nameindex()
+        logging.log(links)
+        default_gateway = network.stop()
+        network.start(default_gateway)
+        
+        # wait for internet
+        network.is_available(10)
+
+        assert network.is_connected()
+        assert links == socket.if_nameindex()
+
+        logging.log(info.collect())
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)

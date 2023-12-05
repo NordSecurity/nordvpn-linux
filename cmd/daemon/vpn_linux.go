@@ -4,6 +4,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -44,6 +45,9 @@ func (noopMesh) Refresh(cesh.MachineMap) error   { return nil }
 func (noopMesh) Tun() tunnel.T                   { return &tunnel.Tunnel{} }
 func (noopMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
+}
+func (noopMesh) NetworkChanged() error {
+	return fmt.Errorf("not supported")
 }
 
 func meshnetImplementation(fn daemon.FactoryFunc) (meshnet.Mesh, error) {

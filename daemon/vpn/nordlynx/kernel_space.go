@@ -149,6 +149,10 @@ func (k *KernelSpace) stop() error {
 	return nil
 }
 
+func (k *KernelSpace) NetworkChanged() error {
+	return fmt.Errorf("not supported")
+}
+
 func pushConfig(iface net.Interface, wgconf string) error {
 	// fill temp file with generated config
 	tmp, err := internal.FileTemp(iface.Name, []byte(wgconf))

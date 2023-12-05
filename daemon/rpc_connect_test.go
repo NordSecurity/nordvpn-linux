@@ -21,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 
 	"github.com/stretchr/testify/assert"
@@ -117,7 +118,7 @@ func TestRpcConnect(t *testing.T) {
 		{
 			name: "successfull connect",
 			factory: func(config.Technology) (vpn.VPN, error) {
-				return &workingVPN{}, nil
+				return &mock.WorkingVPN{}, nil
 			},
 			netw:      &testnetworker.Mock{},
 			retriever: newGatewayMock(netip.Addr{}),
@@ -128,7 +129,7 @@ func TestRpcConnect(t *testing.T) {
 		{
 			name: "failed connect",
 			factory: func(config.Technology) (vpn.VPN, error) {
-				return &failingVPN{}, nil
+				return &mock.FailingVPN{}, nil
 			},
 			netw:      testnetworker.Failing{},
 			retriever: newGatewayMock(netip.Addr{}),
@@ -139,7 +140,7 @@ func TestRpcConnect(t *testing.T) {
 		{
 			name: "VPN expired",
 			factory: func(config.Technology) (vpn.VPN, error) {
-				return &workingVPN{}, nil
+				return &mock.WorkingVPN{}, nil
 			},
 			netw:      &testnetworker.Mock{},
 			retriever: newGatewayMock(netip.Addr{}),
@@ -150,7 +151,7 @@ func TestRpcConnect(t *testing.T) {
 		{
 			name: "VPN expiration check fails",
 			factory: func(config.Technology) (vpn.VPN, error) {
-				return &workingVPN{}, nil
+				return &mock.WorkingVPN{}, nil
 			},
 			netw:      &testnetworker.Mock{},
 			retriever: newGatewayMock(netip.Addr{}),
@@ -235,10 +236,10 @@ func TestRpcReconnect(t *testing.T) {
 	factory := func(config.Technology) (vpn.VPN, error) {
 		if fail {
 			fail = false
-			return &failingVPN{}, nil
+			return &mock.FailingVPN{}, nil
 		}
 		fail = true
-		return &workingVPN{}, nil
+		return &mock.WorkingVPN{}, nil
 	}
 
 	cm := newMockConfigManager()
