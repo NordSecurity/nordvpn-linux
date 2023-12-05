@@ -11,9 +11,11 @@ import (
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"net/netip"
 	"os"
+	"os/signal"
 	"os/user"
 	"path"
 	"strconv"
+	"syscall"
 
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -148,6 +150,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("enabling libdrop: %s", err)
 	}
+
+	terminateChan := make(chan os.Signal, 1)
+	signal.Notify(terminateChan, syscall.SIGTERM)
+	go func() {
+		<-terminateChan
+		eventManager.CancelLiveTransfers()
+	}()
 
 	// Fileshare gRPC server init
 	fileshareServer := fileshare.NewServer(fileshareImplementation,

@@ -358,6 +358,19 @@ func (em *EventManager) GetTransfers() ([]*pb.Transfer, error) {
 	return transfers, nil
 }
 
+// CancelLiveTransfers cancels all ongoing transfers.
+func (em *EventManager) CancelLiveTransfers() {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	for transferID := range em.liveTransfers {
+		err := em.fileshare.Cancel(transferID)
+		if err != nil {
+			log.Printf("failed to cancel live transfer: %s", err)
+		}
+	}
+}
+
 // GetTransfer by ID.
 func (em *EventManager) GetTransfer(transferID string) (*pb.Transfer, error) {
 	em.mutex.Lock()
