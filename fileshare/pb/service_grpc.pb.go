@@ -31,7 +31,7 @@ type FileshareClient interface {
 	// Reject a request from another peer to send you a file
 	Cancel(ctx context.Context, in *CancelRequest, opts ...grpc.CallOption) (*Error, error)
 	// List all transfers
-	List(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListResponse, error)
+	List(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Fileshare_ListClient, error)
 	// Cancel file transfer to another peer
 	CancelFile(ctx context.Context, in *CancelFileRequest, opts ...grpc.CallOption) (*Error, error)
 	// SetNotifications about transfer status changes
@@ -128,13 +128,36 @@ func (c *fileshareClient) Cancel(ctx context.Context, in *CancelRequest, opts ..
 	return out, nil
 }
 
-func (c *fileshareClient) List(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ListResponse, error) {
-	out := new(ListResponse)
-	err := c.cc.Invoke(ctx, "/filesharepb.Fileshare/List", in, out, opts...)
+func (c *fileshareClient) List(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Fileshare_ListClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Fileshare_ServiceDesc.Streams[2], "/filesharepb.Fileshare/List", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &fileshareListClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Fileshare_ListClient interface {
+	Recv() (*ListResponse, error)
+	grpc.ClientStream
+}
+
+type fileshareListClient struct {
+	grpc.ClientStream
+}
+
+func (x *fileshareListClient) Recv() (*ListResponse, error) {
+	m := new(ListResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *fileshareClient) CancelFile(ctx context.Context, in *CancelFileRequest, opts ...grpc.CallOption) (*Error, error) {
@@ -168,7 +191,7 @@ type FileshareServer interface {
 	// Reject a request from another peer to send you a file
 	Cancel(context.Context, *CancelRequest) (*Error, error)
 	// List all transfers
-	List(context.Context, *Empty) (*ListResponse, error)
+	List(*Empty, Fileshare_ListServer) error
 	// Cancel file transfer to another peer
 	CancelFile(context.Context, *CancelFileRequest) (*Error, error)
 	// SetNotifications about transfer status changes
@@ -192,8 +215,8 @@ func (UnimplementedFileshareServer) Accept(*AcceptRequest, Fileshare_AcceptServe
 func (UnimplementedFileshareServer) Cancel(context.Context, *CancelRequest) (*Error, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Cancel not implemented")
 }
-func (UnimplementedFileshareServer) List(context.Context, *Empty) (*ListResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
+func (UnimplementedFileshareServer) List(*Empty, Fileshare_ListServer) error {
+	return status.Errorf(codes.Unimplemented, "method List not implemented")
 }
 func (UnimplementedFileshareServer) CancelFile(context.Context, *CancelFileRequest) (*Error, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CancelFile not implemented")
@@ -292,22 +315,25 @@ func _Fileshare_Cancel_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Fileshare_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
+func _Fileshare_List_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(FileshareServer).List(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/filesharepb.Fileshare/List",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileshareServer).List(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(FileshareServer).List(m, &fileshareListServer{stream})
+}
+
+type Fileshare_ListServer interface {
+	Send(*ListResponse) error
+	grpc.ServerStream
+}
+
+type fileshareListServer struct {
+	grpc.ServerStream
+}
+
+func (x *fileshareListServer) Send(m *ListResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _Fileshare_CancelFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -362,10 +388,6 @@ var Fileshare_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Fileshare_Cancel_Handler,
 		},
 		{
-			MethodName: "List",
-			Handler:    _Fileshare_List_Handler,
-		},
-		{
 			MethodName: "CancelFile",
 			Handler:    _Fileshare_CancelFile_Handler,
 		},
@@ -383,6 +405,11 @@ var Fileshare_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Accept",
 			Handler:       _Fileshare_Accept_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "List",
+			Handler:       _Fileshare_List_Handler,
 			ServerStreams: true,
 		},
 	},

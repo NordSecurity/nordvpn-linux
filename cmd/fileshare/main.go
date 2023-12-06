@@ -36,6 +36,8 @@ var (
 	DaemonURL   = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 )
 
+const transferHistoryChunkSize = 10000
+
 func main() {
 	// Pprof
 	go func() {
@@ -148,7 +150,11 @@ func main() {
 	}
 
 	// Fileshare gRPC server init
-	fileshareServer := fileshare.NewServer(fileshareImplementation, eventManager, meshClient, fileshare.NewStdFilesystem("/"), fileshare.StdOsInfo{})
+	fileshareServer := fileshare.NewServer(fileshareImplementation,
+		eventManager,
+		meshClient, fileshare.NewStdFilesystem("/"),
+		fileshare.StdOsInfo{},
+		transferHistoryChunkSize)
 	grpcServer := grpc.NewServer()
 	pb.RegisterFileshareServer(grpcServer, fileshareServer)
 
