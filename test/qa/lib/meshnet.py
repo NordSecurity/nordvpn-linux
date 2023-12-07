@@ -5,6 +5,7 @@ import os
 import time
 import logging as logger
 import re
+import subprocess
 
 PEER_USERNAME = os.environ.get("QA_PEER_USERNAME")
 
@@ -153,3 +154,12 @@ def revoke_all_invites_in_peer(ssh_client: ssh.Ssh):
     output = ssh_client.exec_command("nordvpn mesh inv list")
     for i in get_sent_invites(output):
         ssh_client.exec_command(f"nordvpn mesh inv revoke {i}")
+
+
+def send_meshnet_invite(email):
+    command = sh.nordvpn.meshnet.invite.send(email)
+    process = subprocess.Popen(str(command), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    
+    for _ in range(4):
+        process.stdin.write('\n')
+        process.stdin.flush()
