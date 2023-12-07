@@ -176,6 +176,7 @@ func main() {
 	// Teardown
 
 	internal.WaitSignal()
+	eventManager.CancelLiveTransfers()
 
 	grpcServer.GracefulStop()
 
