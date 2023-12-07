@@ -4,7 +4,8 @@ import sh
 import requests
 import pytest
 import timeout_decorator
-import socket
+import subprocess
+import os
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -321,19 +322,145 @@ def test_account_switch():
     setup_module(None)
 
 
-def test_network_changed_for_meshnet():
-    sh.nordvpn.meshnet.peer.refresh()
+def test_invite_send_repeated():
 
-    assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
+    with lib.Defer(lambda: sh.nordvpn.meshnet.invite.revoke("test@test.com")):
+        meshnet.send_meshnet_invite("test@test.com")
 
-    links = socket.if_nameindex()
-    logging.log(links)
-    default_gateway = network.stop()
-    network.start(default_gateway)
+        with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            meshnet.send_meshnet_invite("test@test.com")
+
+        assert "Meshnet invitation for 'test@test.com' already exists." in str(ex.value)
+
+
+def test_invite_send_own_email():
     
-    # wait for internet
-    network.is_available(10)
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        meshnet.send_meshnet_invite(os.environ.get("DEFAULT_LOGIN_USERNAME"))
 
-    assert links == socket.if_nameindex()
+    assert "Email should belong to a different user." in str(ex.value)
 
-    assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
+
+def test_invite_send_not_an_email():
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        meshnet.send_meshnet_invite("test")
+
+    assert "Invalid email 'test'." in str(ex.value)
+
+
+@pytest.mark.skip(reason="A different error message is expected - LVPN-262")
+def test_invite_send_long_email():
+    
+    # A long email address containing more than 256 characters is created
+    email = "test" * 65 + "@test.com"
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        meshnet.send_meshnet_invite(email)
+
+    assert not "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." in str(ex.value)
+
+
+@pytest.mark.skip(reason="A different error message is expected - LVPN-262")
+def test_invite_send_email_special_character():
+    
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        meshnet.send_meshnet_invite("\u2222@test.com")
+
+    assert not "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." in str(ex.value)
+
+
+def test_invite_revoke():
+
+    meshnet.send_meshnet_invite("test@test.com")
+
+    assert "Meshnet invitation to 'test@test.com' was revoked." in sh.nordvpn.meshnet.invite.revoke("test@test.com")
+
+
+def test_invite_revoke_repeated():
+
+    with lib.Defer(lambda: sh.nordvpn.meshnet.invite.revoke("test@test.com")):
+        meshnet.send_meshnet_invite("test@test.com")
+    
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.revoke("test@test.com")
+
+    assert "No invitation from 'test@test.com' was found." in str(ex.value)
+
+
+def test_invite_revoke_non_existant():
+    
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.revoke("test@test.com")
+
+    assert "No invitation from 'test@test.com' was found." in str(ex.value)
+
+
+def test_invite_revoke_non_existant_long_email():
+    
+    email = "test" * 65 + "@test.com"
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.revoke(email)
+
+    assert f"No invitation from '{email}' was found." in str(ex.value)
+
+
+def test_invite_revoke_non_existant_special_character():
+    
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.revoke("\u2222@test.com")
+
+    assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
+
+
+def test_invite_deny_non_existant():
+    
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.deny("test@test.com")
+
+    assert "No invitation from 'test@test.com' was found." in str(ex.value)
+
+
+def test_invite_deny_non_existant_long_email():
+    
+    email = "test" * 65 + "@test.com"
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.deny(email)
+
+    assert f"No invitation from '{email}' was found." in str(ex.value)
+
+
+def test_invite_deny_non_existant_special_character():
+    
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.deny("\u2222@test.com")
+
+    assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
+
+
+def test_invite_accept_non_existant():
+    
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.accept("test@test.com")
+
+    assert "No invitation from 'test@test.com' was found." in str(ex.value)
+
+
+def test_invite_accept_non_existant_long_email():
+    
+    email = "test" * 65 + "@test.com"
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.accept(email)
+
+    assert f"No invitation from '{email}' was found." in str(ex.value)
+
+
+def test_invite_accept_non_existant_special_character():
+    
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.meshnet.invite.accept("\u2222@test.com")
+
+    assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
