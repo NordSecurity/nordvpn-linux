@@ -773,6 +773,11 @@ func (api *DefaultAPI) NotifyNewTransfer(
 	}
 
 	resp, err := api.do(req)
+	// 500 Internal Server Error is returned when peer machine have not registered its app_user_uid
+	// Not all platforms implemented it yet, so suppress that error to not clutter logs
+	if errors.Is(err, ErrServerInternal) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}

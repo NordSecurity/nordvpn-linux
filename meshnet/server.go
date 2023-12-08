@@ -2419,13 +2419,6 @@ func (s *Server) NotifyNewTransfer(
 	ctx context.Context,
 	req *pb.NewTransferNotification,
 ) (*pb.NotifyNewTransferResponse, error) {
-	// This is only needed for iOS platform
-	if req.GetOs() != "ios" {
-		return &pb.NotifyNewTransferResponse{
-			Response: &pb.NotifyNewTransferResponse_Empty{},
-		}, nil
-	}
-
 	if !s.ac.IsLoggedIn() {
 		return &pb.NotifyNewTransferResponse{
 			Response: &pb.NotifyNewTransferResponse_ServiceErrorCode{
