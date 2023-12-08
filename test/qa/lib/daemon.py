@@ -147,7 +147,6 @@ def is_running():
 def is_peer_running(ssh_client: ssh.Ssh) -> bool:
     try:
         ssh_client.exec_command("nordvpn status")
+        return True
     except:
         return False
-    else:
-        return True
