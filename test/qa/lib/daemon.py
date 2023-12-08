@@ -36,8 +36,8 @@ def is_disconnected() -> bool:
         return False
 
 
-# return True when Killswitch is activated
 def is_killswitch_on():
+    """ return True when Killswitch is activated """
     try:
         return "Kill Switch: enabled" in sh.nordvpn.settings()
     except sh.ErrorReturnCode:
