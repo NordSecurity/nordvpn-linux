@@ -101,6 +101,7 @@ type MachinePeer struct {
 	DoIAllowLocalNetwork bool
 	DoIAllowFileshare    bool
 	AlwaysAcceptFiles    bool
+	PeerNickname         string `json:"peer_nickname"`
 }
 
 func (p MachinePeer) ToProtobuf() *pb.Peer {

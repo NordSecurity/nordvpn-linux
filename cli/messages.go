@@ -209,7 +209,7 @@ Learn more:
 	MsgMeshnetPeerFileshareAllowSuccess   = "Fileshare for '%s' has been allowed."
 	MsgMeshnetPeerFileshareDenySuccess    = "Fileshare for '%s' has been denied."
 
-	MsgMeshnetPeerAutomaticFileshareUsage              = "Always accept file transfers from a specific peer. We won’t ask you to approve each transfer – files will start downloading automatically."
+	MsgMeshnetPeerAutomaticFileshareUsage              = "Always accept file transfers from a specific peer. We won’t ask you to approve each transfer - files will start downloading automatically."
 	MsgMeshnetPeerAutomaticFileshareAllowUsage         = "Enables automatic fileshare from device."
 	MsgMeshnetPeerAutomaticFileshareDenyUsage          = "Denies automatic fileshare from device."
 	MsgMeshnetPeerAutomaticFileshareAlreadyEnabled     = "Automatic fileshare for '%s' is already allowed."
@@ -223,6 +223,11 @@ Learn more:
 	MsgMeshnetPeerDoesNotAllowRouting = "Meshnet peer '%s' does not allow traffic routing."
 	MsgMeshnetPeerAlreadyConnected    = "You are already connected."
 	MsgMeshnetPeerConnectFailed       = "Connect to other mesh peer failed - check if peer '%s' is online."
+
+	MsgMeshnetPeerRenameUsage      = "rename"
+	MsgMeshnetPeerRenameSuccessful = "peer '%s' renamed to '%s'"
+	MsgMeshnetPeerRenameFailed     = "failed to rename peer: '%s'"
+	MsgMeshnetPeerRenameArgsUsage  = "<peer_id> nickname"
 
 	// Fileshare
 	FileshareName       = "fileshare"

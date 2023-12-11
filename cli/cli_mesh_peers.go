@@ -550,6 +550,11 @@ func (c *cmd) MeshPeerConnect(ctx *cli.Context) error {
 	return nil
 }
 
+func (c *cmd) MeshPeerRename(ctx *cli.Context) error {
+
+	return nil
+}
+
 // retrievePeerFromArgs queries the peer list from the meshnet service,
 // then tries to find a peer by the given identifier, which is either
 // public key, hostname or an IP address
@@ -612,6 +617,15 @@ func (c *cmd) MeshPeerAutoComplete(ctx *cli.Context) {
 	for _, peer := range peers.External {
 		fmt.Println(peer.GetHostname())
 	}
+}
+
+func (c *cmd) MeshPeerRenameAutoComplete(ctx *cli.Context) {
+	if ctx.NArg() != 0 {
+		// second parameter needs to be the peer nickname
+		return
+	}
+	// get peers list
+	c.MeshPeerAutoComplete(ctx)
 }
 
 func peerByIdentifier(id string) func(*pb.Peer) bool {

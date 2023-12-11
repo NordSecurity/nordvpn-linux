@@ -736,6 +736,13 @@ func meshnetCommand(c *cmd) *cli.Command {
 						ArgsUsage:    MsgMeshnetPeerArgsUsage,
 						BashComplete: c.MeshPeerAutoComplete,
 					},
+					{
+						Name:         "rename",
+						Action:       c.MeshPeerRename,
+						Usage:        MsgMeshnetPeerRenameUsage,
+						ArgsUsage:    MsgMeshnetPeerRenameArgsUsage,
+						BashComplete: c.MeshPeerRenameAutoComplete,
+					},
 				},
 			},
 			{
