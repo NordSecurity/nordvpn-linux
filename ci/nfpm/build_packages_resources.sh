@@ -33,24 +33,25 @@ mkdir -p "${BASEDIR}"/usr/share/man/man1
 chmod +x "${WORKDIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn"
 "${STRIP}" "${WORKDIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn"
 
-
 export PKG_VERSION=${VERSION}
-
-# extract symbols into files
-# shellcheck disable=SC2153
-"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordvpnd-${ARCH}.debug" \
-	"${WORKDIR}/bin/${ARCH}/nordvpnd"
-# shellcheck disable=SC2153
-"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordvpn-${ARCH}.debug" \
-	"${WORKDIR}/bin/${ARCH}/nordvpn"
-# shellcheck disable=SC2153
-	"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshared-${ARCH}.debug" \
-		"${WORKDIR}/bin/${ARCH}/nordfileshared"
 
 cp "${WORKDIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
 cp "${WORKDIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
 cp "${WORKDIR}/bin/${ARCH}/nordfileshared" "${BASEDIR}"/usr/bin/nordfileshared
 cd "${WORKDIR}"
+
+# extract symbols into files
+# shellcheck disable=SC2153
+# modify binaries in the target directory
+"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordvpnd-${ARCH}.debug" \
+	"${BASEDIR}"/usr/sbin/nordvpnd
+# shellcheck disable=SC2153
+"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordvpn-${ARCH}.debug" \
+	"${BASEDIR}"/usr/bin/nordvpn
+# shellcheck disable=SC2153
+"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshared-${ARCH}.debug" \
+	"${BASEDIR}"/usr/bin/nordfileshared
+
 
 # pack
 case "$PKG_TO_BUILD" in
