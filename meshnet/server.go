@@ -1254,16 +1254,130 @@ func (s *Server) RemovePeer(
 	}, nil
 }
 
+func (s *Server) RenamePeer(
+	ctx context.Context,
+	req *pb.RenamePeerRequest,
+) (*pb.RenamePeerResponse, error) {
+	// if req.Nickname == "" {
+	// 	return &pb.RenamePeerResponse{
+	// 		Response: &pb.RenamePeerResponse_ServiceErrorCode{
+	// 			ServiceErrorCode: pb.ServiceErrorCode_INSUFFICIENT_ARGUMENTS,
+	// 		},
+	// 	}, nil
+	// }
+
+	if !s.ac.IsLoggedIn() {
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+			},
+		}, nil
+	}
+
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		s.pub.Publish(err)
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	// check if meshnet is enabled
+	if !cfg.Mesh {
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+
+	// check info and re-register if needed
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
+
+	if err != nil {
+		if errors.Is(err, core.ErrUnauthorized) {
+			// TODO: check what happens with cfg.Mesh
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				s.pub.Publish(err)
+				return &pb.RenamePeerResponse{
+					Response: &pb.RenamePeerResponse_ServiceErrorCode{
+						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+					},
+				}, nil
+			}
+			return &pb.RenamePeerResponse{
+				Response: &pb.RenamePeerResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				},
+			}, nil
+		}
+
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	peer := s.getPeerWithId(req.GetIdentifier(), resp)
+
+	if peer == nil {
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_UpdatePeerErrorCode{
+				UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+			},
+		}, nil
+	}
+
+	if req.Nickname == "" && peer.Nickname == "" {
+		// no nickname set, so nothing to reset
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_Empty{},
+		}, nil
+	}
+
+	if req.Nickname != "" && peer.Nickname == req.Nickname {
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_RenamePeerErrorCode{
+				RenamePeerErrorCode: pb.RenamePeerErrorCode_SAME_NICKNAME,
+			},
+		}, nil
+	}
+
+	peer.Nickname = req.Nickname
+	if err := s.reg.Configure(token, cfg.MeshDevice.ID, peer.ID, mesh.NewPeerUpdateRequest(*peer)); err != nil {
+		s.pub.Publish(err)
+		// TODO: display the error to the user
+		return &pb.RenamePeerResponse{
+			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	return &pb.RenamePeerResponse{
+		Response: &pb.RenamePeerResponse_Empty{},
+	}, nil
+}
+
 func (s *Server) updatePeerPermissions(token string, deviceID uuid.UUID, peer mesh.MachinePeer) error {
 	return s.reg.Configure(
 		token,
 		deviceID,
 		peer.ID,
-		peer.DoIAllowInbound,
-		peer.DoIAllowRouting,
-		peer.DoIAllowLocalNetwork,
-		peer.DoIAllowFileshare,
-		peer.AlwaysAcceptFiles,
+		mesh.NewPeerUpdateRequest(peer),
 	)
 }
 
@@ -2698,4 +2812,16 @@ func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKey
 			PrivateKey: cfg.MeshPrivateKey,
 		},
 	}, nil
+}
+
+func (s *Server) getPeerWithId(id string, peers mesh.MachinePeers) *mesh.MachinePeer {
+	index := slices.IndexFunc(peers, func(p mesh.MachinePeer) bool {
+		return p.ID.String() == id
+	})
+
+	if index == -1 {
+		return nil
+	}
+
+	return &peers[index]
 }

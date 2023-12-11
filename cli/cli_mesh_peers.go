@@ -550,7 +550,73 @@ func (c *cmd) MeshPeerConnect(ctx *cli.Context) error {
 	return nil
 }
 
-func (c *cmd) MeshPeerRename(ctx *cli.Context) error {
+func (c *cmd) MeshPeerSetNickname(ctx *cli.Context) error {
+	if ctx.NArg() != 2 {
+		// needed peer ID and nickname
+		return argsCountError(ctx)
+	}
+
+	peer, err := c.retrievePeerFromArgs(ctx)
+	if err != nil {
+		return formatError(err)
+	}
+
+	nickname := ctx.Args().Get(1)
+
+	if err = c.renameMeshnetPeer(peer, nickname); err != nil {
+		return err
+	}
+
+	color.Green(MsgMeshnetPeerSetNicknameSuccessful, peer.Hostname, nickname)
+	return nil
+}
+
+func (c *cmd) MeshPeerResetNickname(ctx *cli.Context) error {
+	peer, err := c.retrievePeerFromArgs(ctx)
+	if err != nil {
+		return formatError(err)
+	}
+
+	oldNickname := peer.Hostname
+	if err = c.renameMeshnetPeer(peer, ""); err != nil {
+		return err
+	}
+
+	color.Green(MsgMeshnetPeerResetNicknameSuccessful, oldNickname, "TODO: implement")
+	return nil
+}
+
+func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
+	resp, err := c.meshClient.RenamePeer(context.Background(), &pb.RenamePeerRequest{
+		Identifier: peer.Identifier,
+		Nickname:   nickname,
+	})
+
+	if err != nil {
+		return formatError(err)
+	}
+
+	if resp == nil {
+		return errors.New(AccountInternalError)
+	}
+	switch resp := resp.Response.(type) {
+	case *pb.RenamePeerResponse_ServiceErrorCode:
+		return serviceErrorCodeToError(resp.ServiceErrorCode)
+
+	case *pb.RenamePeerResponse_UpdatePeerErrorCode:
+		return updatePeerErrorCodeToError(
+			resp.UpdatePeerErrorCode,
+			peer.Hostname,
+		)
+	case *pb.RenamePeerResponse_MeshnetErrorCode:
+		return meshnetErrorToError(resp.MeshnetErrorCode)
+
+	case *pb.RenamePeerResponse_RenamePeerErrorCode:
+		switch resp.RenamePeerErrorCode {
+		case pb.RenamePeerErrorCode_SAME_NICKNAME:
+			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
+		}
+	}
 
 	return nil
 }
@@ -619,7 +685,7 @@ func (c *cmd) MeshPeerAutoComplete(ctx *cli.Context) {
 	}
 }
 
-func (c *cmd) MeshPeerRenameAutoComplete(ctx *cli.Context) {
+func (c *cmd) MeshPeerNicknameAutoComplete(ctx *cli.Context) {
 	if ctx.NArg() != 0 {
 		// second parameter needs to be the peer nickname
 		return

@@ -47,6 +47,8 @@ type MeshnetClient interface {
 	GetPeers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPeersResponse, error)
 	// RemovePeer removes a peer from the meshnet
 	RemovePeer(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*RemovePeerResponse, error)
+	// RenamePeer set a nickname for a meshnet peer
+	RenamePeer(ctx context.Context, in *RenamePeerRequest, opts ...grpc.CallOption) (*RenamePeerResponse, error)
 	// AllowRouting allows a peer to route traffic through this
 	// device
 	AllowRouting(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*AllowRoutingResponse, error)
@@ -180,6 +182,15 @@ func (c *meshnetClient) GetPeers(ctx context.Context, in *Empty, opts ...grpc.Ca
 func (c *meshnetClient) RemovePeer(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*RemovePeerResponse, error) {
 	out := new(RemovePeerResponse)
 	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/RemovePeer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *meshnetClient) RenamePeer(ctx context.Context, in *RenamePeerRequest, opts ...grpc.CallOption) (*RenamePeerResponse, error) {
+	out := new(RenamePeerResponse)
+	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/RenamePeer", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -332,6 +343,8 @@ type MeshnetServer interface {
 	GetPeers(context.Context, *Empty) (*GetPeersResponse, error)
 	// RemovePeer removes a peer from the meshnet
 	RemovePeer(context.Context, *UpdatePeerRequest) (*RemovePeerResponse, error)
+	// RenamePeer set a nickname for a meshnet peer
+	RenamePeer(context.Context, *RenamePeerRequest) (*RenamePeerResponse, error)
 	// AllowRouting allows a peer to route traffic through this
 	// device
 	AllowRouting(context.Context, *UpdatePeerRequest) (*AllowRoutingResponse, error)
@@ -401,6 +414,9 @@ func (UnimplementedMeshnetServer) GetPeers(context.Context, *Empty) (*GetPeersRe
 }
 func (UnimplementedMeshnetServer) RemovePeer(context.Context, *UpdatePeerRequest) (*RemovePeerResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemovePeer not implemented")
+}
+func (UnimplementedMeshnetServer) RenamePeer(context.Context, *RenamePeerRequest) (*RenamePeerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RenamePeer not implemented")
 }
 func (UnimplementedMeshnetServer) AllowRouting(context.Context, *UpdatePeerRequest) (*AllowRoutingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AllowRouting not implemented")
@@ -648,6 +664,24 @@ func _Meshnet_RemovePeer_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MeshnetServer).RemovePeer(ctx, req.(*UpdatePeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Meshnet_RenamePeer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RenamePeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MeshnetServer).RenamePeer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/meshpb.Meshnet/RenamePeer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MeshnetServer).RenamePeer(ctx, req.(*RenamePeerRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -936,6 +970,10 @@ var Meshnet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemovePeer",
 			Handler:    _Meshnet_RemovePeer_Handler,
+		},
+		{
+			MethodName: "RenamePeer",
+			Handler:    _Meshnet_RenamePeer_Handler,
 		},
 		{
 			MethodName: "AllowRouting",

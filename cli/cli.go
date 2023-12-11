@@ -737,11 +737,24 @@ func meshnetCommand(c *cmd) *cli.Command {
 						BashComplete: c.MeshPeerAutoComplete,
 					},
 					{
-						Name:         "rename",
-						Action:       c.MeshPeerRename,
-						Usage:        MsgMeshnetPeerRenameUsage,
-						ArgsUsage:    MsgMeshnetPeerRenameArgsUsage,
-						BashComplete: c.MeshPeerRenameAutoComplete,
+						Name:  "nickname",
+						Usage: MsgMeshnetPeerNicknameUsage,
+						Subcommands: []*cli.Command{
+							{
+								Name:         "set",
+								Usage:        MsgMeshnetPeerSetNicknameUsage,
+								ArgsUsage:    MsgMeshnetPeerSetNicknameArgsUsage,
+								Action:       c.MeshPeerSetNickname,
+								BashComplete: c.MeshPeerNicknameAutoComplete,
+							},
+							{
+								Name:         "reset",
+								Usage:        MsgMeshnetPeerResetNicknameUsage,
+								ArgsUsage:    MsgMeshnetPeerResetNicknameArgsUsage,
+								Action:       c.MeshPeerResetNickname,
+								BashComplete: c.MeshPeerNicknameAutoComplete,
+							},
+						},
 					},
 				},
 			},
@@ -999,6 +1012,9 @@ func serviceErrorCodeToError(code meshpb.ServiceErrorCode) error {
 	switch code {
 	case meshpb.ServiceErrorCode_NOT_LOGGED_IN:
 		return internal.ErrNotLoggedIn
+	case meshpb.ServiceErrorCode_INSUFFICIENT_ARGUMENTS:
+		// TODO: return error using context argsCountError()
+		fallthrough
 	case meshpb.ServiceErrorCode_API_FAILURE, meshpb.ServiceErrorCode_CONFIG_FAILURE:
 		fallthrough
 	default:

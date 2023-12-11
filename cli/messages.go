@@ -224,10 +224,16 @@ Learn more:
 	MsgMeshnetPeerAlreadyConnected    = "You are already connected."
 	MsgMeshnetPeerConnectFailed       = "Connect to other mesh peer failed - check if peer '%s' is online."
 
-	MsgMeshnetPeerRenameUsage      = "rename"
-	MsgMeshnetPeerRenameSuccessful = "peer '%s' renamed to '%s'"
-	MsgMeshnetPeerRenameFailed     = "failed to rename peer: '%s'"
-	MsgMeshnetPeerRenameArgsUsage  = "<peer_id> nickname"
+	MsgMeshnetPeerNicknameUsage           = "rename"
+	MsgMeshnetPeerSetNicknameUsage        = "peer nickname set command info"
+	MsgMeshnetPeerSetNicknameArgsUsage    = "<peer_id> nickname"
+	MsgMeshnetPeerResetNicknameUsage      = "peer nickname reset command"
+	MsgMeshnetPeerResetNicknameArgsUsage  = "args for nickname reset <id>"
+	MsgMeshnetPeerSetNicknameSuccessful   = "peer '%s' renamed to '%s'"
+	MsgMeshnetPeerSetNicknameFailed       = "failed to rename peer: '%s'"
+	MsgMeshnetPeerSetNicknameTheSame      = "same nickname '%s' already set"
+	MsgMeshnetPeerResetNicknameSuccessful = "peer '%s' nickname reset. default name is %s"
+	MsgMeshnetPeerResetNicknameFailed     = "failed to reset nickname peer: '%s'"
 
 	// Fileshare
 	FileshareName       = "fileshare"

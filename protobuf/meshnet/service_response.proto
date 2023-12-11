@@ -12,6 +12,7 @@ enum ServiceErrorCode {
 	NOT_LOGGED_IN = 0;
 	API_FAILURE = 1;
 	CONFIG_FAILURE = 2;
+	INSUFFICIENT_ARGUMENTS = 3;
 }
 
 // MeshnetErrorCode defines a set of meshnet specific error codes.

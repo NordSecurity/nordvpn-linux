@@ -82,6 +82,7 @@ func peersResponseToMachinePeers(rawPeers []mesh.MachinePeerResponse) []mesh.Mac
 			DoIAllowLocalNetwork:      p.DoIAllowLocalNetwork,
 			DoIAllowFileshare:         p.DoIAllowFileshare,
 			AlwaysAcceptFiles:         p.AlwaysAcceptFiles,
+			Nickname:                  p.Nickname,
 		})
 	}
 
@@ -198,22 +199,12 @@ func (api *DefaultAPI) Configure(
 	token string,
 	id uuid.UUID,
 	peerID uuid.UUID,
-	doIAllowInbound bool,
-	doIAllowRouting bool,
-	doIAllowLocalNetwork bool,
-	doIAllowFileshare bool,
-	alwaysAcceptfiles bool,
+	peerUpdateInfo mesh.PeerUpdateRequest,
 ) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	data, err := json.Marshal(mesh.PeerUpdateRequest{
-		DoIAllowInbound:      doIAllowInbound,
-		DoIAllowRouting:      doIAllowRouting,
-		DoIAllowLocalNetwork: doIAllowLocalNetwork,
-		DoIAllowFileshare:    doIAllowFileshare,
-		AllwaysAcceptFiles:   alwaysAcceptfiles,
-	})
+	data, err := json.Marshal(peerUpdateInfo)
 	if err != nil {
 		return err
 	}
