@@ -9,7 +9,7 @@ RUN go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.5.1 && \
     go install github.com/goreleaser/chglog/cmd/chglog@v0.1.2
 
 RUN apt-get update; \
-    apt-get -y install elfutils gettext-base; \
+    apt-get -y install elfutils gettext-base sudo; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
