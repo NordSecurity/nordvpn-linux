@@ -230,6 +230,7 @@ Learn more:
 	FileshareAcceptName = "accept"
 	FileshareCancelName = "cancel"
 	FileshareListName   = "list"
+	FileshareClearName  = "clear"
 
 	flagFileshareNoWait  = "background"
 	flagFilesharePath    = "path"
@@ -284,6 +285,10 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareAcceptArgsUsage   = "<transfer_id> [file_id1] [file_id2...]"
 	MsgFileshareAcceptDescription = MsgFileshareAcceptUsage + "\n\nTo cancel a transfer in progress, press Ctrl+C"
 	MsgFileshareAcceptPathUsage   = "Specify download path (default: $XDG_DOWNLOAD_DIR or $HOME/Downloads)"
+	MsgFileshareClearUsage        = "Clear entries older than time period from the file transfer history."
+	MsgFileshareClearArgsUsage    = "all|<time_period> [time_period...]"
+	MsgFileshareClearDescription  = MsgFileshareClearUsage + "\n\nSpecify the time period using the systemd time span syntax: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html\n\nFor example \"nordvpn fileshare clear 1d 12h\" would clear everything older than 36 hours. Alternatively use \"all\" to remove all entries."
+	MsgFileshareClearSuccess      = "File transfer history cleared"
 
 	MsgFileshareProgressOngoing        = "File transfer [%s] progress [%d%%]"
 	MsgFileshareProgressFinished       = "File transfer [%s] completed.      " // Need extra spaces to cover the progress message

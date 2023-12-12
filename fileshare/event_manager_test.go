@@ -137,6 +137,10 @@ func (*mockEventManagerFileshare) GetTransfersSince(t time.Time) ([]LibdropTrans
 	return nil, nil
 }
 
+func (mfs *mockEventManagerFileshare) PurgeTransfersUntil(until int64) error {
+	return nil
+}
+
 type mockEventManagerOsInfo struct {
 	currentUser user.User
 	groupIds    map[string][]string

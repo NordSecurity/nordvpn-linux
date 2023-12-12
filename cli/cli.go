@@ -584,6 +584,14 @@ func fileshareCommand(c *cmd) *cli.Command {
 				ArgsUsage:    MsgFileshareCancelArgsUsage,
 				BashComplete: c.FileshareAutoCompleteTransfersCancel,
 			},
+			{
+				Name:         FileshareClearName,
+				Action:       c.FileshareClear,
+				Usage:        MsgFileshareClearUsage,
+				ArgsUsage:    MsgFileshareClearArgsUsage,
+				Description:  MsgFileshareClearDescription,
+				BashComplete: c.FileshareAutoCompleteClear,
+			},
 		},
 	}
 }

@@ -197,6 +197,7 @@ func (f *Fileshare) CancelFile(transferID string, fileID string) error {
 	return nil
 }
 
+// GetTransfersSince provided time from fileshare implementation storage
 func (f *Fileshare) GetTransfersSince(t time.Time) ([]fileshare.LibdropTransfer, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
@@ -209,4 +210,13 @@ func (f *Fileshare) GetTransfersSince(t time.Time) ([]fileshare.LibdropTransfer,
 	}
 
 	return transfers, nil
+}
+
+// PurgeTransfersUntil provided time from fileshare implementation storage
+func (f *Fileshare) PurgeTransfersUntil(until int64) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	res := f.norddrop.PurgeTransfersUntil(until)
+	return toError(res)
 }

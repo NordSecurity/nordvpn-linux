@@ -107,3 +107,7 @@ enum SetNotificationsStatus {
 message SetNotificationsResponse {
 	SetNotificationsStatus status = 1;
 }
+
+message PurgeTransfersUntilRequest {
+	int64 until = 1; // Unix timestamp in seconds
+}

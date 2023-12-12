@@ -9,9 +9,12 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"syscall"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -21,6 +24,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
+
+var timespanRegexp = regexp.MustCompile(`-?\d+\s*[a-z]*\s*`)
 
 // AutocompleteFilepaths prints special value telling the autocomplete script to use default bash completion
 func (c *cmd) AutocompleteFilepaths(ctx *cli.Context) {
@@ -203,6 +208,28 @@ func (c *cmd) FileshareAutoCompletePeers(ctx *cli.Context) {
 	}
 }
 
+// FileshareAutoCompleteClear implements bash autocompletion for history clearing
+func (c *cmd) FileshareAutoCompleteClear(ctx *cli.Context) {
+	if ctx.NArg() == 0 {
+		fmt.Println("all\n<time_period>")
+	} else {
+		if ctx.Args().Get(0) == "all" {
+			return
+		}
+		last := ctx.Args().Get(ctx.Args().Len() - 1)
+		i, err := strconv.Atoi(last)
+		if err == nil {
+			if i == 1 {
+				fmt.Println("second\nminute\nhour\nday\nweek\nmonth\nyear")
+			} else {
+				fmt.Println("seconds\nminutes\nhours\ndays\nweeks\nmonths\nyears")
+			}
+		} else {
+			fmt.Println("<time_period>")
+		}
+	}
+}
+
 // FileshareAccept rpc
 func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 	args := ctx.Args()
@@ -297,6 +324,82 @@ func (c *cmd) FileshareCancel(ctx *cli.Context) error {
 	color.Green(MsgFileshareCancelSuccess)
 
 	return nil
+}
+
+// FileshareClear rpc
+func (c *cmd) FileshareClear(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return formatError(argsCountError(ctx))
+	}
+
+	var resp *pb.Error
+	var err error
+	var until = time.Now().Unix()
+
+	args := ctx.Args()
+	if args.Get(0) != "all" {
+		argsJoined := strings.Join(args.Slice(), " ")
+		ts, err := parseTimespan(argsJoined)
+		if err != nil {
+			return formatError(err)
+		}
+		until -= ts
+	}
+
+	resp, err = c.fileshareClient.PurgeTransfersUntil(context.Background(), &pb.PurgeTransfersUntilRequest{Until: until})
+	if err != nil {
+		return formatError(err)
+	}
+	if err := getFileshareResponseToError(resp); err != nil {
+		return formatError(err)
+	}
+
+	color.Green(MsgFileshareClearSuccess)
+	return nil
+}
+
+func parseTimespan(ts string) (int64, error) {
+	var timespan int64 = 0
+	matches := timespanRegexp.FindAllString(ts, -1)
+
+	if matches == nil {
+		return 0, fmt.Errorf("Time span parsing error: '%s'", ts)
+	}
+
+	for _, m := range matches {
+		var num int64
+		var unit string
+		n, err := fmt.Sscanf(m, "%d%s", &num, &unit)
+
+		if err == io.EOF && n == 1 && unit == "" {
+			// pass
+		} else if err != nil {
+			return 0, fmt.Errorf("Time span argument '%s' parsing error: %s", m, err)
+		}
+
+		// Using time span syntax as defined by systemd
+		// https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html
+		switch unit {
+		case "", "seconds", "second", "sec", "s":
+			timespan += num
+		case "minutes", "minute", "min", "m":
+			timespan += num * 60
+		case "hours", "hour", "hr", "h":
+			timespan += num * 3600
+		case "days", "day", "d":
+			timespan += num * 3600 * 24
+		case "weeks", "week", "w":
+			timespan += num * 3600 * 24 * 7
+		case "months", "month", "M":
+			timespan += int64(float64(num) * 3600 * 24 * 30.44)
+		case "years", "year", "y":
+			timespan += int64(float64(num) * 3600 * 24 * 365.25)
+		default:
+			return 0, fmt.Errorf("Time span unit parsing error: '%s'", unit)
+		}
+	}
+
+	return timespan, nil
 }
 
 // getFileshareResponseToError converts resp to error. Params are used in case of some error messages.
