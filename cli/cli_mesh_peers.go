@@ -188,8 +188,12 @@ func peerToOutputString(peer *pb.Peer) string {
 		{Key: "Allows Sending Files", Value: nstrings.GetBoolLabel(peer.IsFileshareAllowed)},
 		{Key: "Accept Fileshare Automatically", Value: nstrings.GetBoolLabel(peer.AlwaysAcceptFiles)},
 	}
+	hostname := peer.Hostname
+	if peer.Nickname != "" {
+		hostname = peer.Nickname
+	}
 	return titledKeyvalListToColoredString(keyval{
-		Key: "Hostname", Value: peer.Hostname,
+		Key: "Hostname", Value: hostname,
 	}, color.FgYellow, kvs)
 }
 
@@ -679,9 +683,15 @@ func (c *cmd) MeshPeerAutoComplete(ctx *cli.Context) {
 
 	for _, peer := range peers.Local {
 		fmt.Println(peer.GetHostname())
+		if peer.Nickname != "" {
+			fmt.Println(peer.Nickname)
+		}
 	}
 	for _, peer := range peers.External {
 		fmt.Println(peer.GetHostname())
+		if peer.Nickname != "" {
+			fmt.Println(peer.Nickname)
+		}
 	}
 }
 
@@ -696,7 +706,7 @@ func (c *cmd) MeshPeerNicknameAutoComplete(ctx *cli.Context) {
 
 func peerByIdentifier(id string) func(*pb.Peer) bool {
 	return func(peer *pb.Peer) bool {
-		return peer.GetIp() == id || peer.GetHostname() == id || peer.GetPubkey() == id
+		return peer.GetIp() == id || peer.GetHostname() == id || peer.GetPubkey() == id || peer.GetNickname() == id
 	}
 }
 

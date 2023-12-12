@@ -1012,9 +1012,6 @@ func serviceErrorCodeToError(code meshpb.ServiceErrorCode) error {
 	switch code {
 	case meshpb.ServiceErrorCode_NOT_LOGGED_IN:
 		return internal.ErrNotLoggedIn
-	case meshpb.ServiceErrorCode_INSUFFICIENT_ARGUMENTS:
-		// TODO: return error using context argsCountError()
-		fallthrough
 	case meshpb.ServiceErrorCode_API_FAILURE, meshpb.ServiceErrorCode_CONFIG_FAILURE:
 		fallthrough
 	default:

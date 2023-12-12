@@ -1258,14 +1258,6 @@ func (s *Server) RenamePeer(
 	ctx context.Context,
 	req *pb.RenamePeerRequest,
 ) (*pb.RenamePeerResponse, error) {
-	// if req.Nickname == "" {
-	// 	return &pb.RenamePeerResponse{
-	// 		Response: &pb.RenamePeerResponse_ServiceErrorCode{
-	// 			ServiceErrorCode: pb.ServiceErrorCode_INSUFFICIENT_ARGUMENTS,
-	// 		},
-	// 	}, nil
-	// }
-
 	if !s.ac.IsLoggedIn() {
 		return &pb.RenamePeerResponse{
 			Response: &pb.RenamePeerResponse_ServiceErrorCode{

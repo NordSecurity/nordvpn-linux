@@ -47,7 +47,7 @@ type MeshnetClient interface {
 	GetPeers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetPeersResponse, error)
 	// RemovePeer removes a peer from the meshnet
 	RemovePeer(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*RemovePeerResponse, error)
-	// RenamePeer set a nickname for a meshnet peer
+	// RenamePeer set or clear a nickname for a meshnet peer
 	RenamePeer(ctx context.Context, in *RenamePeerRequest, opts ...grpc.CallOption) (*RenamePeerResponse, error)
 	// AllowRouting allows a peer to route traffic through this
 	// device
@@ -343,7 +343,7 @@ type MeshnetServer interface {
 	GetPeers(context.Context, *Empty) (*GetPeersResponse, error)
 	// RemovePeer removes a peer from the meshnet
 	RemovePeer(context.Context, *UpdatePeerRequest) (*RemovePeerResponse, error)
-	// RenamePeer set a nickname for a meshnet peer
+	// RenamePeer set or clear a nickname for a meshnet peer
 	RenamePeer(context.Context, *RenamePeerRequest) (*RenamePeerResponse, error)
 	// AllowRouting allows a peer to route traffic through this
 	// device

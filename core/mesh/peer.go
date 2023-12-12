@@ -110,12 +110,6 @@ func (p MachinePeer) ToProtobuf() *pb.Peer {
 		ip = p.Address.String()
 	}
 
-	hostname := p.Hostname
-
-	if p.Nickname != "" {
-		hostname = p.Nickname
-	}
-
 	return &pb.Peer{
 		Identifier:            p.ID.String(),
 		Pubkey:                p.PublicKey,
@@ -123,7 +117,7 @@ func (p MachinePeer) ToProtobuf() *pb.Peer {
 		Ip:                    ip,
 		Os:                    p.OS.Name,
 		Distro:                p.OS.Distro,
-		Hostname:              hostname,
+		Hostname:              p.Hostname,
 		Email:                 p.Email,
 		IsInboundAllowed:      p.DoesPeerAllowInbound,
 		IsRoutable:            p.DoesPeerAllowRouting,
@@ -134,6 +128,7 @@ func (p MachinePeer) ToProtobuf() *pb.Peer {
 		DoIAllowLocalNetwork:  p.DoIAllowLocalNetwork,
 		DoIAllowFileshare:     p.DoIAllowFileshare,
 		AlwaysAcceptFiles:     p.AlwaysAcceptFiles,
+		Nickname:              p.Nickname,
 	}
 }
 

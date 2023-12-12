@@ -44,6 +44,7 @@ message Peer {
 	bool do_i_allow_fileshare = 18;
 	bool always_accept_files = 19;
 	PeerStatus status = 14;
+	string nickname = 20;
 }
 
 // PeerStatus defines the current connection status with the peer
