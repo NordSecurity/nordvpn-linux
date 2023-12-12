@@ -581,12 +581,11 @@ func (c *cmd) MeshPeerResetNickname(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	oldNickname := peer.Hostname
 	if err = c.renameMeshnetPeer(peer, ""); err != nil {
 		return err
 	}
 
-	color.Green(MsgMeshnetPeerResetNicknameSuccessful, oldNickname, "TODO: implement")
+	color.Green(MsgMeshnetPeerResetNicknameSuccessful, peer.Nickname, peer.Hostname)
 	return nil
 }
 

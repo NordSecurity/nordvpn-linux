@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -1296,6 +1297,7 @@ func (s *Server) RenamePeer(
 		}, nil
 	}
 
+	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
 
 	if err != nil {
@@ -1334,13 +1336,16 @@ func (s *Server) RenamePeer(
 	}
 
 	if req.Nickname == "" && peer.Nickname == "" {
-		// no nickname set, so nothing to reset
+		log.Println(internal.InfoPrefix, "peer doesn't have a nickname")
+
 		return &pb.RenamePeerResponse{
 			Response: &pb.RenamePeerResponse_Empty{},
 		}, nil
 	}
 
 	if req.Nickname != "" && peer.Nickname == req.Nickname {
+		log.Println(internal.InfoPrefix, "peer has already the same nickname")
+
 		return &pb.RenamePeerResponse{
 			Response: &pb.RenamePeerResponse_RenamePeerErrorCode{
 				RenamePeerErrorCode: pb.RenamePeerErrorCode_SAME_NICKNAME,
@@ -1351,7 +1356,7 @@ func (s *Server) RenamePeer(
 	peer.Nickname = req.Nickname
 	if err := s.reg.Configure(token, cfg.MeshDevice.ID, peer.ID, mesh.NewPeerUpdateRequest(*peer)); err != nil {
 		s.pub.Publish(err)
-		// TODO: display the error to the user
+		// TODO: display API error to the user
 		return &pb.RenamePeerResponse{
 			Response: &pb.RenamePeerResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
