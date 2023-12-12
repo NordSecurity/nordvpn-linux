@@ -7,8 +7,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	cfgmock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	ncmock "github.com/NordSecurity/nordvpn-linux/test/mock/nc"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,12 +48,32 @@ func (m *mockMqttClient) Unsubscribe(topics ...string) mqtt.Token {
 
 func (m *mockMqttClient) Disconnect(uint) { m.stopped = true }
 
+func getConfigManagerMock(t *testing.T) cfgmock.ConfigManagerMock {
+	t.Helper()
+
+	cfg := config.Config{}
+	cfg.TokensData = make(map[int64]config.TokenData)
+	cfgManager := cfgmock.ConfigManagerMock{
+		Cfg: cfg,
+	}
+
+	return cfgManager
+}
+
 func TestRaceConditions(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
-	mockClient := &mockMqttClient{}
-	client.client = mockClient
+	cfgManager := getConfigManagerMock(t)
+	credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{}, &cfgManager, &ncmock.MockTime{})
+	mockClient := mockMqttClient{}
+	mockClientBuilder := &ncmock.MockClientBuilder{Client: &mockClient}
+
+	client := NewClient(mockClientBuilder,
+		&subs.Subject[string]{},
+		&subs.Subject[error]{},
+		&subs.Subject[[]string]{},
+		credsFetcher)
+	client.client = &mockClient
 
 	ctx, cancel := context.WithCancel(context.Background())
 	client.cancelConnecting = cancel
@@ -73,9 +97,18 @@ func TestRaceConditions(t *testing.T) {
 func TestConnectionRetrying(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
-	mockClient := &mockMqttClient{}
-	client.client = mockClient
+	cfgManager := getConfigManagerMock(t)
+	credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{}, &cfgManager, &ncmock.MockTime{})
+	mockClient := mockMqttClient{}
+	mockClientBuilder := &ncmock.MockClientBuilder{Client: &mockClient}
+
+	client := NewClient(
+		mockClientBuilder,
+		&subs.Subject[string]{},
+		&subs.Subject[error]{},
+		&subs.Subject[[]string]{},
+		credsFetcher)
+	client.client = &mockClient
 
 	client.connectWithBackoff(context.Background(), func(r int) time.Duration {
 		if r == 3 {
@@ -89,9 +122,18 @@ func TestConnectionRetrying(t *testing.T) {
 func TestStopsTryingToConnectWhenStopped(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
-	mockClient := &mockMqttClient{}
-	client.client = mockClient
+	cfgManager := getConfigManagerMock(t)
+	credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{}, &cfgManager, &ncmock.MockTime{})
+	mockClient := mockMqttClient{}
+	mockClientBuilder := &ncmock.MockClientBuilder{Client: &mockClient}
+
+	client := NewClient(
+		mockClientBuilder,
+		&subs.Subject[string]{},
+		&subs.Subject[error]{},
+		&subs.Subject[[]string]{},
+		credsFetcher)
+	client.client = &mockClient
 
 	ctx, cancel := context.WithCancel(context.Background())
 	client.cancelConnecting = cancel

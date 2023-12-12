@@ -399,7 +399,12 @@ func main() {
 
 	authChecker := auth.NewRenewingChecker(fsystem, defaultAPI)
 	endpointResolver := network.NewDefaultResolverChain(fw)
-	notificationClient := nc.NewClient(infoSubject, errSubject, meshnetEvents.PeerUpdate)
+	notificationClient := nc.NewClient(
+		nc.MqttClientBuilder{},
+		infoSubject,
+		errSubject,
+		meshnetEvents.PeerUpdate,
+		nc.NewCredsFetcher(defaultAPI, fsystem, nc.RealTime{}))
 
 	dm := daemon.NewDataManager(
 		daemon.InsightsFilePath,
@@ -503,7 +508,7 @@ func main() {
 	monitor.Start(netw)
 
 	if authChecker.IsLoggedIn() {
-		go daemon.StartNotificationCenter(defaultAPI, notificationClient, fsystem)
+		go daemon.StartNC("[startup]", notificationClient)
 	}
 
 	if cfg.Mesh {

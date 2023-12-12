@@ -130,14 +130,15 @@ func (r *RenewingChecker) renewLoginToken(data *config.TokenData) error {
 }
 
 func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
-	resp, err := r.creds.NotificationCredentials(data.Token, data.NCData.UserID.String())
+	credentials, err := core.GetNCCredentials(r.creds, data.Token, data.NCData.UserID)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting NC credentials: %w", err)
 	}
 
-	data.NCData.Endpoint = resp.Endpoint
-	data.NCData.Username = resp.Username
-	data.NCData.Password = resp.Password
+	data.NCData.Endpoint = credentials.Endpoint
+	data.NCData.Username = credentials.Username
+	data.NCData.Password = credentials.Password
+	data.NCData.IssuedTimestamp = credentials.IssuedTimestamp
 	return nil
 }
 
