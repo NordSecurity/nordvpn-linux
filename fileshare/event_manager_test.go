@@ -137,7 +137,7 @@ func (*mockEventManagerFileshare) GetTransfersSince(t time.Time) ([]LibdropTrans
 	return nil, nil
 }
 
-func (mfs *mockEventManagerFileshare) PurgeTransfersUntil(until int64) error {
+func (mfs *mockEventManagerFileshare) PurgeTransfersUntil(until time.Time) error {
 	return nil
 }
 

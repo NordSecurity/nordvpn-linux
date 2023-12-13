@@ -6,6 +6,8 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/fileshare/pb";
 
 import "transfer.proto";
 
+import "google/protobuf/timestamp.proto";
+
 // Used when there is no error or there is no data to be sent
 message Empty {}
 
@@ -109,5 +111,5 @@ message SetNotificationsResponse {
 }
 
 message PurgeTransfersUntilRequest {
-	int64 until = 1; // Unix timestamp in seconds
+	google.protobuf.Timestamp until = 1;
 }

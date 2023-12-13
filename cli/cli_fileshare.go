@@ -16,6 +16,8 @@ import (
 	"syscall"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -334,7 +336,7 @@ func (c *cmd) FileshareClear(ctx *cli.Context) error {
 
 	var resp *pb.Error
 	var err error
-	var until = time.Now().Unix()
+	var until = time.Now()
 
 	args := ctx.Args()
 	if args.Get(0) != "all" {
@@ -343,10 +345,10 @@ func (c *cmd) FileshareClear(ctx *cli.Context) error {
 		if err != nil {
 			return formatError(err)
 		}
-		until -= ts
+		until = until.Add(time.Duration(-1000000000 * ts))
 	}
 
-	resp, err = c.fileshareClient.PurgeTransfersUntil(context.Background(), &pb.PurgeTransfersUntilRequest{Until: until})
+	resp, err = c.fileshareClient.PurgeTransfersUntil(context.Background(), &pb.PurgeTransfersUntilRequest{Until: timestamppb.New(until)})
 	if err != nil {
 		return formatError(err)
 	}

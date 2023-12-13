@@ -7,9 +7,9 @@
 package pb
 
 import (
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -238,12 +238,12 @@ type Transfer struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id        string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Direction Direction              `protobuf:"varint,2,opt,name=direction,proto3,enum=filesharepb.Direction" json:"direction,omitempty"`
-	Peer      string                 `protobuf:"bytes,3,opt,name=peer,proto3" json:"peer,omitempty"`
-	Status    Status                 `protobuf:"varint,4,opt,name=status,proto3,enum=filesharepb.Status" json:"status,omitempty"` // Calculated from status of all files in the transfer
-	Created   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created,proto3" json:"created,omitempty"`
-	Files     []*File                `protobuf:"bytes,6,rep,name=files,proto3" json:"files,omitempty"`
+	Id        string               `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Direction Direction            `protobuf:"varint,2,opt,name=direction,proto3,enum=filesharepb.Direction" json:"direction,omitempty"`
+	Peer      string               `protobuf:"bytes,3,opt,name=peer,proto3" json:"peer,omitempty"`
+	Status    Status               `protobuf:"varint,4,opt,name=status,proto3,enum=filesharepb.Status" json:"status,omitempty"` // Calculated from status of all files in the transfer
+	Created   *timestamp.Timestamp `protobuf:"bytes,5,opt,name=created,proto3" json:"created,omitempty"`
+	Files     []*File              `protobuf:"bytes,6,rep,name=files,proto3" json:"files,omitempty"`
 	// For outgoing transfers the user provided path to be sent
 	// For incoming transfers path where the files will be downloaded to
 	Path             string `protobuf:"bytes,7,opt,name=path,proto3" json:"path,omitempty"`
@@ -311,7 +311,7 @@ func (x *Transfer) GetStatus() Status {
 	return Status_SUCCESS
 }
 
-func (x *Transfer) GetCreated() *timestamppb.Timestamp {
+func (x *Transfer) GetCreated() *timestamp.Timestamp {
 	if x != nil {
 		return x.Created
 	}
@@ -563,12 +563,12 @@ func file_transfer_proto_rawDescGZIP() []byte {
 var file_transfer_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_transfer_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_transfer_proto_goTypes = []interface{}{
-	(Direction)(0),                // 0: filesharepb.Direction
-	(Status)(0),                   // 1: filesharepb.Status
-	(*Transfer)(nil),              // 2: filesharepb.Transfer
-	(*File)(nil),                  // 3: filesharepb.File
-	nil,                           // 4: filesharepb.File.ChildrenEntry
-	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	(Direction)(0),              // 0: filesharepb.Direction
+	(Status)(0),                 // 1: filesharepb.Status
+	(*Transfer)(nil),            // 2: filesharepb.Transfer
+	(*File)(nil),                // 3: filesharepb.File
+	nil,                         // 4: filesharepb.File.ChildrenEntry
+	(*timestamp.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_transfer_proto_depIdxs = []int32{
 	0, // 0: filesharepb.Transfer.direction:type_name -> filesharepb.Direction

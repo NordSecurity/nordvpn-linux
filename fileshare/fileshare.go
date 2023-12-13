@@ -31,7 +31,7 @@ type Fileshare interface {
 	// GetTransfersSince provided time from fileshare implementation storage
 	GetTransfersSince(t time.Time) ([]LibdropTransfer, error)
 	// PurgeTransfersUntil provided time from fileshare implementation storage
-	PurgeTransfersUntil(until int64) error
+	PurgeTransfersUntil(until time.Time) error
 }
 
 // Storage is used for filesharing history persistence

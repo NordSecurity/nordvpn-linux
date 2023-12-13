@@ -213,10 +213,10 @@ func (f *Fileshare) GetTransfersSince(t time.Time) ([]fileshare.LibdropTransfer,
 }
 
 // PurgeTransfersUntil provided time from fileshare implementation storage
-func (f *Fileshare) PurgeTransfersUntil(until int64) error {
+func (f *Fileshare) PurgeTransfersUntil(until time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	res := f.norddrop.PurgeTransfersUntil(until)
+	res := f.norddrop.PurgeTransfersUntil(until.Unix())
 	return toError(res)
 }
