@@ -1,6 +1,8 @@
 from lib import daemon
 import sh
 
+IP_ROUTE_TABLE = 205
+
 # Rules for killswitch
 # -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP

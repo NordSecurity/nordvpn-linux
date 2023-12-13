@@ -2,10 +2,12 @@ import time
 
 from lib import (
     daemon,
+    firewall,
     info,
     login,
     logging,
     network,
+    settings
 )
 import sh
 import lib
@@ -32,71 +34,88 @@ def teardown_function(function):
     daemon.stop()
 
 
+SUBNET_1 = "2.2.2.2"
+SUBNET_2 = "3.3.3.3"
+SUBNET_3 = "4.4.4.4"
+
+MSG_ROUTING_OFF =  "Routing is set to 'disabled' successfully."
+
+
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_routing_on():
-    subnet1 = "1.1.1.1"
-    subnet2 = "2.2.2.2"
-    subnet3 = "3.3.3.3"
-    lib.add_subnet_to_allowlist(f"{subnet1}/32")
-    lib.add_subnet_to_allowlist(f"{subnet2}/32")
-    lib.add_subnet_to_allowlist(f"{subnet3}/32")
-    table = 205
+def test_routing_enabled_connect(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    output = sh.nordvpn.connect()
-    assert lib.is_connect_successful(output)
+    lib.add_subnet_to_allowlist(f"{SUBNET_1}/32")
+    lib.add_subnet_to_allowlist(f"{SUBNET_2}/32")
+    lib.add_subnet_to_allowlist(f"{SUBNET_3}/32")
 
-    rules = sh.ip.rule.show.table(table)
-    assert "fwmark" in rules
-    policyRoutes = sh.ip.route.show.table(table)
-    assert subnet1 in policyRoutes
-    assert subnet2 in policyRoutes
-    assert subnet3 in policyRoutes
-    assert "nordlynx" in policyRoutes
+    print(sh.nordvpn.connect())
+    assert network.is_available()
+
+    assert "fwmark" in sh.ip.rule.show.table(firewall.IP_ROUTE_TABLE)
+    policy_routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    assert SUBNET_1 in policy_routes
+    assert SUBNET_2 in policy_routes
+    assert SUBNET_3 in policy_routes
+
+    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    assert network_interface in policy_routes
+
+    assert settings.get_is_routing_enabled()
 
 
+@pytest.mark.skip("LVPN-3273; LVPN-1574")
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_routing_off():
-    subnet = "1.1.1.1"
-    table = 205
-    lib.add_subnet_to_allowlist(f"{subnet}/32")
-    lib.set_routing("off")
+def test_routing_disabled_connect(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    lib.add_subnet_to_allowlist(f"{SUBNET_1}/32")
+
+    assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
+    assert not settings.get_is_routing_enabled()
 
     print(sh.nordvpn.connect())
 
-    rules = sh.ip.rule.show.table(table)
-    assert not "fwmark" in rules
-    routes = sh.ip.route()
-    assert not subnet in routes
-    policyRoutes = sh.ip.route.show.table(table)
-    assert not "nordlynx" in policyRoutes
+    assert network.is_not_available()
+
+    assert not "fwmark" in sh.ip.rule.show.table(firewall.IP_ROUTE_TABLE)
+    assert not SUBNET_1 in sh.ip.route()
+
+    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    assert not network_interface in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
 
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)    
-def test_toggle_routing_in_the_middle_of_the_connection():
-    table = 205
+@timeout_decorator.timeout(40)
+def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
 
     print(sh.nordvpn.connect())
 
-    routes = sh.ip.route.show.table(table)
+    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert "nordlynx" in routes
+    assert network_interface in routes
     assert "mark" in rules
     assert network.is_available()
 
     lib.set_routing("off")
-    routes = sh.ip.route.show.table(table)
+    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert not "nordlynx" in routes
+    assert not network_interface in routes
     assert not "mark" in rules
     assert network.is_not_available()
 
     lib.set_routing("on")
-    routes = sh.ip.route.show.table(table)
+    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert "nordlynx" in routes
+    assert network_interface in routes
     assert "mark" in rules
     assert network.is_available()
 
@@ -105,13 +124,13 @@ def test_toggle_routing_in_the_middle_of_the_connection():
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
-    table = 205
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
     lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
 
     print(sh.nordvpn.connect())
 
-    routes = sh.ip.route.show.table(table)
+    routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
     assert f"default dev {network_interface}" in routes
     assert "mark" in rules
@@ -131,7 +150,7 @@ def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
 
         print(sh.nordvpn.connect())
 
-        routes = sh.ip.route.show.table(table)
+        routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         rules = sh.ip.rule()
         assert f"default dev {network_interface}" in routes
         assert "mark" in rules

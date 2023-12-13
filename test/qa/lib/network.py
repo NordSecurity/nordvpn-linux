@@ -1,5 +1,6 @@
 from itertools import cycle
 from lib import daemon, firewall, info, logging, network
+import pytest
 import sh
 import socket
 import time
@@ -17,6 +18,19 @@ def _is_internet_reachable(retry=5) -> bool:
         except sh.ErrorReturnCode:
             time.sleep(1)
             i += 1
+    return False
+
+
+def _is_internet_not_reachable(retry=5) -> bool:
+    """returns True when remote host is reachable by it's public IP"""
+    for i in range(retry):
+        try:
+            with pytest.raises(sh.ErrorReturnCode) as ex:
+                sh.ping("-c", "1", "-w", "1", "1.1.1.1")
+
+            return "Network is unreachable" in str(ex) or "100% packet loss" in str(ex)
+        except Exception as ex:
+            time.sleep(1)
     return False
 
 
@@ -47,12 +61,29 @@ def _is_dns_resolvable(retry=5) -> bool:
     return False
 
 
+def _is_dns_not_resolvable(retry=5) -> bool:
+    """returns True when domain resolution is not working"""
+    for i in range(retry):
+        try:
+            with pytest.raises(sh.ErrorReturnCode_2) as ex:
+                sh.ping("-4", "-c", "1", "nordvpn.com")
+
+            return "Network is unreachable" in str(ex) or \
+                   "Name or service not known" in str(ex) or \
+                   "Temporary failure in name resolution" in str(ex)
+        except Exception as ex:
+            time.sleep(1)
+    return False
+
+
 def is_not_available(retry=5) -> bool:
-    try:
-        is_available(retry)
-        return False
-    except AssertionError:
-        return True
+    """returns True when network access is not available or throws AssertionError otherwise"""
+    assert _is_internet_not_reachable(retry)
+
+    # If assert below fails, and you are running this test on your machine, inside of Docker,
+    # set DNS in resolv.conf of your system to anything else but 127.0.0.53
+    assert _is_dns_not_resolvable(retry)
+    return True
 
 
 def is_available(retry=5) -> bool:
