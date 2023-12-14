@@ -29,7 +29,7 @@ import (
 
 // Values set when building the application
 var (
-	Version     = ""
+	Version     = "0.0.0"
 	Environment = ""
 	PprofPort   = 6961
 	ConnURL     = internal.GetFilesharedSocket(os.Getuid())
