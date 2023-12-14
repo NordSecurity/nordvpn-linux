@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -72,9 +73,46 @@ func SystemDListener() (net.Listener, error) {
 	return net.FileListener(file)
 }
 
+type runDirListener struct {
+	listener net.Listener
+	socket   string
+}
+
+func (rdl *runDirListener) Accept() (net.Conn, error) {
+	return rdl.listener.Accept()
+}
+
+func (rdl *runDirListener) Close() error {
+	listenerCloseErr := rdl.listener.Close()
+
+	var protoRemoveErr error
+	var dirRemoveErr error
+	if protoRemoveErr = os.Remove(rdl.socket); protoRemoveErr == nil {
+		// It's safe to assume that socket dir was created by us so it can be removed.
+		dirRemoveErr = os.Remove(path.Dir(rdl.socket))
+		// In case any other files were added to the dir by other, `os.Remove` will fail.
+		// Such error is expected and can be ignored
+		if dirRemoveErr != nil && errors.Is(dirRemoveErr, os.ErrExist) {
+			dirRemoveErr = nil
+		}
+	}
+
+	return errors.Join(protoRemoveErr, dirRemoveErr, listenerCloseErr)
+}
+
+func (rdl *runDirListener) Addr() net.Addr {
+	return rdl.listener.Addr()
+}
+
 // ManualListener returns manually created listener with provided permissions
 func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error) {
 	return func() (net.Listener, error) {
+		if err := os.MkdirAll(
+			path.Dir(socket), PermUserRWGroupRW,
+		); err != nil && !errors.Is(err, os.ErrExist) {
+			return nil, fmt.Errorf("creating run dir: %w\n", err)
+		}
+
 		listener, err := net.Listen(Proto, socket)
 		if err != nil {
 			return nil, err
@@ -83,7 +121,10 @@ func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error
 		if err != nil {
 			return nil, err
 		}
-		return listener, nil
+		return &runDirListener{
+			listener: listener,
+			socket:   socket,
+		}, nil
 	}
 }
 
