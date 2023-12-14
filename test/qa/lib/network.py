@@ -21,19 +21,6 @@ def _is_internet_reachable(retry=5) -> bool:
     return False
 
 
-def _is_internet_not_reachable(retry=5) -> bool:
-    """returns True when remote host is reachable by it's public IP"""
-    for i in range(retry):
-        try:
-            with pytest.raises(sh.ErrorReturnCode) as ex:
-                sh.ping("-c", "1", "-w", "1", "1.1.1.1")
-
-            return "Network is unreachable" in str(ex) or "100% packet loss" in str(ex)
-        except Exception as ex:
-            time.sleep(1)
-    return False
-
-
 def _is_ipv6_internet_reachable(retry=5) -> bool:
     i = 0
     last = Exception("_is_ipv6_internet_reachable", "error")
@@ -77,13 +64,10 @@ def _is_dns_not_resolvable(retry=5) -> bool:
 
 
 def is_not_available(retry=5) -> bool:
-    """returns True when network access is not available or throws AssertionError otherwise"""
-    assert _is_internet_not_reachable(retry)
-
-    # If assert below fails, and you are running this test on your machine, inside of Docker,
+    """ returns True when network access is not available """
+    # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
-    assert _is_dns_not_resolvable(retry)
-    return True
+    return not _is_internet_reachable(retry) and _is_dns_not_resolvable(retry)
 
 
 def is_available(retry=5) -> bool:

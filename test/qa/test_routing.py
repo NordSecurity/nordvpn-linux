@@ -14,9 +14,6 @@ import lib
 import pytest
 import timeout_decorator
 
-# def setup_module(module):
-
-# def teardown_module(module):
 
 def setup_function(function):
     daemon.start()
