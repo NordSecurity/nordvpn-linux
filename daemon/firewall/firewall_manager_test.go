@@ -19,6 +19,11 @@ import (
 
 var ErrGetDevicesFailed error = errors.New("get devices has failed")
 
+const (
+	peerPublicKey = "D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet="
+	peerIPAddress = "48.242.30.25"
+)
+
 // transformCommandsForPriting takes list of commands and combines them into a single string, where commands are
 // separated by newline.
 func transformCommandsForPrinting(t *testing.T, commands []string) string {
@@ -590,7 +595,7 @@ func TestApiAllowlist(t *testing.T) {
 }
 
 func TestAllowDenyFileshare(t *testing.T) {
-	peerPublicKey := "D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet="
+	peerPublicKey := peerPublicKey
 	peerIPAddress := "48.242.30.25"
 	peerAddress := meshnet.UniqueAddress{
 		UID:     peerPublicKey,
@@ -686,7 +691,7 @@ func TestAllowDenyFileshare(t *testing.T) {
 }
 
 func TestAllowDenyIncoming(t *testing.T) {
-	peerPublicKey := "D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet="
+	peerPublicKey := peerPublicKey
 	peerIPAddress := "48.242.30.25"
 	peerAddress := meshnet.UniqueAddress{
 		UID:     peerPublicKey,
@@ -785,8 +790,8 @@ func TestAllowDenyIncoming(t *testing.T) {
 
 func TestAllowIncoming_AleradyAllowed(t *testing.T) {
 	peerAddress := meshnet.UniqueAddress{
-		UID:     "D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet=",
-		Address: netip.MustParseAddr("48.242.30.25"),
+		UID:     peerPublicKey,
+		Address: netip.MustParseAddr(peerIPAddress),
 	}
 
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
@@ -815,14 +820,12 @@ func TestDenyIncoming_NotDenied(t *testing.T) {
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 	firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, true)
 
-	err := firewallManager.DenyIncoming("D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet=")
+	err := firewallManager.DenyIncoming(peerPublicKey)
 	assert.ErrorIs(t, err, ErrRuleNotFound)
 	assert.Empty(t, commandRunnerMock.PopIPv4Commands(), "Commands executed after denying mesh traffic that was not allowed.")
 }
 
 func TestAllowFileshare_AlreadyAllowed(t *testing.T) {
-	peerPublicKey := "D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet="
-	peerIPAddress := "48.242.30.25"
 	peerAddress := meshnet.UniqueAddress{
 		UID:     peerPublicKey,
 		Address: netip.MustParseAddr(peerIPAddress),
@@ -840,12 +843,10 @@ func TestAllowFileshare_AlreadyAllowed(t *testing.T) {
 
 	err = firewallManager.AllowFileshare(peerAddress)
 	assert.ErrorIs(t, err, ErrRuleAlreadyActive,
-		"Invalid error received when allowing fileshare when it was allready allowed.")
+		"Invalid error received when allowing fileshare when it was already allowed.")
 }
 
 func TestDenyFileshare_NotAllowed(t *testing.T) {
-	peerPublicKey := "D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet="
-
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 
 	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true, true)
