@@ -22,7 +22,7 @@ import (
 
 var (
 	Salt         = ""
-	Version      = ""
+	Version      = "0.0.0"
 	Environment  = ""
 	Hash         = ""
 	DaemonURL    = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)

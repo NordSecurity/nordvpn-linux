@@ -59,7 +59,7 @@ import (
 // Values set when building the application
 var (
 	Salt        = ""
-	Version     = ""
+	Version     = "0.0.0"
 	Environment = ""
 	PackageType = ""
 	Arch        = ""
