@@ -27,11 +27,16 @@ func main() {
 	cm := config.NewFilesystemConfigManager(config.SettingsDataFilePath, config.InstallFilePath, Salt, config.LinuxMachineIDGetter{}, config.StdFilesystemHandle{})
 	dm := daemon.NewDataManager(dataPath+InsightsFilename, dataPath+ServersFilename, dataPath+countriesFilename, "")
 	client := request.NewStdHTTP()
+	validator, err := response.NewNordValidator()
+	if err != nil {
+		log.Fatalln("creating nord validator:", err)
+	}
+
 	api := core.NewDefaultAPI(
 		"",
 		daemon.BaseURL,
 		client,
-		response.NewNordValidator(response.NewFilePKVault(dataPath)),
+		validator,
 	)
 	netw := networker.NewCombined(
 		nil,

@@ -4,7 +4,6 @@ set -euox
 source "${WORKDIR}"/ci/env.sh
 
 mkdir -p "${WORKDIR}"/dist/data
-cp "${WORKDIR}"/contrib/rsa/* "${WORKDIR}"/dist/data/
 
 go run \
 	"${WORKDIR}"/cmd/downloader/main.go "${WORKDIR}"/dist/data/

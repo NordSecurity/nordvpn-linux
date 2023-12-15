@@ -76,7 +76,7 @@ func TestGetSignAlgoName(t *testing.T) {
 		input  string
 		output string
 	}{
-		{input: "rsa-sha256", output: ssh.SigAlgoRSASHA2256},
+		{input: "rsa-sha256", output: ssh.KeyAlgoRSASHA256},
 		{input: "rsa-md5", output: ""},
 		{input: "invalid", output: ""},
 	}
@@ -119,6 +119,15 @@ func validHeaders(data []byte) http.Header {
 	return headers
 }
 
+func TestNewNordValidator(t *testing.T) {
+	category.Set(t, category.Unit)
+	validator, err := NewNordValidator()
+	key, ok := validator.pubKeys["rsa-key-1"]
+	assert.NoError(t, err)
+	assert.True(t, ok)
+	assert.NotNil(t, key)
+}
+
 func TestNordValidator_Validate(t *testing.T) {
 	category.Set(t, category.Unit)
 	sampleData := []byte(`"foo": "bar"`)
@@ -155,9 +164,52 @@ func TestNordValidator_Validate(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			validator := NewNordValidator(mock.PKVault{PublicKey: publicKey})
+			mock.GenerateKeyPair()
+			validator := NordValidator{
+				pubKeys: map[string]ssh.PublicKey{
+					"test-key": publicKey,
+				},
+			}
 			err := validator.Validate(test.code, test.headers, test.data)
 			assert.True(t, test.error == (err != nil), err)
 		})
+	}
+}
+
+func TestParseRSAPublicKey(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rsaKey := `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCgiLXcdcJ3ptUZdxfSnj4kP+HG
+10yJxkAJaDtYx77SCUHVbE+F3GPsv3ZBR6zl5dpRPacMsOCrLb4+b/r6fl91DSnE
+KATF5EpgDp1a143lkIoUcLtdNtJTLnarNJCsdPT5mLFQMV/gK6io/J+3qt4f3Fef
+5COsl7j57745RU0BzQIDAQAB
+-----END PUBLIC KEY-----`
+	emptyKey := `-----BEGIN PUBLIC KEY-----
+-----END PUBLIC KEY-----`
+	dsaKey := `-----BEGIN PUBLIC KEY-----
+MIHxMIGpBgcqhkjOOAQBMIGdAkEAzDCu2OXlAVJseBNhyqGtCF6P2+1+a9Ebuq1u
+yegAhha17+tv8raVr/J+6srgXftgra7BYbRK9yy3XkWy4s+YfQIVAJpSnzjM4Iz7
+stq+nhJPrBe7S515AkEAyl/PGS9pfN7Sum8hOkDvTnapQRjEf5rm1Qq0ZjdxwJwV
+oySuArW/Y0mqhGOJFKsriXuOca+j5BOfIBbwqjgE1ANDAAJAQxTYeiZkxeVAGhxv
+FsMVhJb7w0dV2W0ssMEWiyQ7BtnPTgvyUJnQBJn+WmuQp4Er7Kov93JD/nNTGSvB
+hdDkhA==
+-----END PUBLIC KEY-----`
+
+	category.Set(t, category.Unit)
+	tests := []struct {
+		input string
+		key   bool
+		error bool
+	}{
+		{input: rsaKey, key: true, error: false},
+		{input: "some invalid format", key: false, error: true},
+		{input: emptyKey, key: false, error: true},
+		{input: dsaKey, key: false, error: true},
+	}
+	for _, test := range tests {
+		key, err := parseRSAPublicKey([]byte(test.input))
+		assert.True(t, test.error == (err != nil), err)
+		assert.True(t, test.key == (key != nil), key)
 	}
 }

@@ -2,8 +2,12 @@
 package response
 
 import (
+	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
+	_ "embed"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -13,23 +17,32 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+//go:embed rsa-key-1.pub
+var rsaKey1 []byte
+
 type Validator interface {
 	// Validate validates headers.
 	Validate(code int, headers http.Header, body []byte) error
 }
 
 type NordValidator struct {
-	vault PKVault
+	pubKeys map[string]ssh.PublicKey
 }
 
 type NoopValidator struct{}
 
 func (NoopValidator) Validate(int, http.Header, []byte) error { return nil }
 
-func NewNordValidator(vault PKVault) *NordValidator {
-	return &NordValidator{
-		vault: vault,
+func NewNordValidator() (*NordValidator, error) {
+	rsaKey1Pub, err := parseSSHPublicKey(rsaKey1)
+	if err != nil {
+		return nil, fmt.Errorf("parsing rsa-key-1: %w", err)
 	}
+	return &NordValidator{
+		pubKeys: map[string]ssh.PublicKey{
+			"rsa-key-1": rsaKey1Pub,
+		},
+	}, nil
 }
 
 // Validate validates that the response came from actual NordVPN API
@@ -82,9 +95,10 @@ func (v *NordValidator) Validate(code int, headers http.Header, body []byte) err
 	}
 
 	// Verify X-Signature
-	publicKey, err := v.vault.Get(keyVal["key-id"])
-	if err != nil {
-		return fmt.Errorf("retrieving public key from vault: %w", err)
+	keyID := keyVal["key-id"]
+	publicKey, ok := v.pubKeys[keyID]
+	if !ok {
+		return fmt.Errorf("pub key '%s' is not known", keyID)
 	}
 
 	signature, err := base64.StdEncoding.DecodeString(xSignature)
@@ -96,6 +110,34 @@ func (v *NordValidator) Validate(code int, headers http.Header, body []byte) err
 		Format: signAlgoName,
 		Blob:   signature,
 	})
+}
+
+func parseSSHPublicKey(rawKey []byte) (ssh.PublicKey, error) {
+	rsaPub, err := parseRSAPublicKey(rawKey)
+	if err != nil {
+		return nil, fmt.Errorf("parsing RSA pub key: %w", err)
+	}
+	publicKey, err := ssh.NewPublicKey(rsaPub)
+	if err != nil {
+		return nil, fmt.Errorf("converting to SSH public key: %w", err)
+	}
+	return publicKey, nil
+}
+
+func parseRSAPublicKey(rawKey []byte) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode(rawKey)
+	if block == nil {
+		return nil, fmt.Errorf("public key was not defined correctly")
+	}
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("parsing DER encoded public key: %w", err)
+	}
+	publicKey, ok := pub.(*rsa.PublicKey)
+	if !ok {
+		return nil, fmt.Errorf("parsing RSA public key: %w", err)
+	}
+	return publicKey, nil
 }
 
 func parseKeyVal(str string) (map[string]string, error) {
@@ -115,7 +157,7 @@ func parseKeyVal(str string) (map[string]string, error) {
 func getSignAlgoName(name string) string {
 	switch name {
 	case "rsa-sha256":
-		return ssh.SigAlgoRSASHA2256
+		return ssh.KeyAlgoRSASHA256
 	}
 	return ""
 }
