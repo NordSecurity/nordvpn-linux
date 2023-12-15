@@ -38,8 +38,8 @@ service Meshnet {
 	rpc GetPeers(Empty) returns (GetPeersResponse);
 	// RemovePeer removes a peer from the meshnet
 	rpc RemovePeer(UpdatePeerRequest) returns (RemovePeerResponse);
-	// RenamePeer set or clear a nickname for a meshnet peer
-	rpc RenamePeer(RenamePeerRequest) returns (RenamePeerResponse);
+	// ChangePeerNickname changes(set/remove) the nickname for a meshnet peer
+	rpc ChangePeerNickname(ChangePeerNicknameRequest) returns (ChangeNicknameResponse);
 	// AllowRouting allows a peer to route traffic through this
 	// device
 	rpc AllowRouting(UpdatePeerRequest) returns (AllowRoutingResponse);

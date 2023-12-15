@@ -190,7 +190,7 @@ func peerToOutputString(peer *pb.Peer) string {
 	}
 	hostname := peer.Hostname
 	if peer.Nickname != "" {
-		hostname = peer.Nickname
+		hostname = peer.Nickname + " [" + peer.Hostname + "]"
 	}
 	return titledKeyvalListToColoredString(keyval{
 		Key: "Hostname", Value: hostname,
@@ -590,7 +590,7 @@ func (c *cmd) MeshPeerResetNickname(ctx *cli.Context) error {
 }
 
 func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
-	resp, err := c.meshClient.RenamePeer(context.Background(), &pb.RenamePeerRequest{
+	resp, err := c.meshClient.ChangePeerNickname(context.Background(), &pb.ChangePeerNicknameRequest{
 		Identifier: peer.Identifier,
 		Nickname:   nickname,
 	})
@@ -603,20 +603,20 @@ func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
 		return errors.New(AccountInternalError)
 	}
 	switch resp := resp.Response.(type) {
-	case *pb.RenamePeerResponse_ServiceErrorCode:
+	case *pb.ChangeNicknameResponse_ServiceErrorCode:
 		return serviceErrorCodeToError(resp.ServiceErrorCode)
 
-	case *pb.RenamePeerResponse_UpdatePeerErrorCode:
+	case *pb.ChangeNicknameResponse_UpdatePeerErrorCode:
 		return updatePeerErrorCodeToError(
 			resp.UpdatePeerErrorCode,
 			peer.Hostname,
 		)
-	case *pb.RenamePeerResponse_MeshnetErrorCode:
+	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
 		return meshnetErrorToError(resp.MeshnetErrorCode)
 
-	case *pb.RenamePeerResponse_RenamePeerErrorCode:
-		switch resp.RenamePeerErrorCode {
-		case pb.RenamePeerErrorCode_SAME_NICKNAME:
+	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
+		switch resp.ChangeNicknameErrorCode {
+		case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
 			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
 		}
 	}

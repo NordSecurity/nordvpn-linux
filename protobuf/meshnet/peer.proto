@@ -73,24 +73,25 @@ message RemovePeerResponse {
 	}
 }
 
-enum RenamePeerErrorCode {
+// ChangeNicknameErrorCode defines the errors that occur at meshnet nickname changes
+enum ChangeNicknameErrorCode {
 	SAME_NICKNAME = 0;
 }
 
-// RenamePeerRequest defines a request to remove a peer from a meshnet
-message RenamePeerRequest {
+// ChangePeerNicknameRequest defines a request to change the nickname for a meshnet peer
+message ChangePeerNicknameRequest {
 	string identifier = 1;
 	string nickname = 2;
 }
 
-// RenamePeerResponse defines a peer removal response
-message RenamePeerResponse {
+// ChangeNicknameResponse defines a response to change(set/remove) the nickname for a peer or for current machine
+message ChangeNicknameResponse {
 	oneof response {
 		Empty empty = 1;
 		UpdatePeerErrorCode update_peer_error_code = 2;
 		ServiceErrorCode service_error_code = 3;
 		MeshnetErrorCode meshnet_error_code = 4;
-		RenamePeerErrorCode rename_peer_error_code = 5;
+		ChangeNicknameErrorCode change_nickname_error_code = 5;
 	}
 }
 

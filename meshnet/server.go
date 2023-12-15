@@ -1255,13 +1255,13 @@ func (s *Server) RemovePeer(
 	}, nil
 }
 
-func (s *Server) RenamePeer(
+func (s *Server) ChangePeerNickname(
 	ctx context.Context,
-	req *pb.RenamePeerRequest,
-) (*pb.RenamePeerResponse, error) {
+	req *pb.ChangePeerNicknameRequest,
+) (*pb.ChangeNicknameResponse, error) {
 	if !s.ac.IsLoggedIn() {
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
 			},
 		}, nil
@@ -1270,8 +1270,8 @@ func (s *Server) RenamePeer(
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
 			},
 		}, nil
@@ -1279,8 +1279,8 @@ func (s *Server) RenamePeer(
 
 	// check if meshnet is enabled
 	if !cfg.Mesh {
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_MeshnetErrorCode{
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
 			},
 		}, nil
@@ -1290,8 +1290,8 @@ func (s *Server) RenamePeer(
 
 	// check info and re-register if needed
 	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
 			},
 		}, nil
@@ -1305,21 +1305,21 @@ func (s *Server) RenamePeer(
 			// TODO: check what happens with cfg.Mesh
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
 				s.pub.Publish(err)
-				return &pb.RenamePeerResponse{
-					Response: &pb.RenamePeerResponse_ServiceErrorCode{
+				return &pb.ChangeNicknameResponse{
+					Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
 					},
 				}, nil
 			}
-			return &pb.RenamePeerResponse{
-				Response: &pb.RenamePeerResponse_ServiceErrorCode{
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
 					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
 				},
 			}, nil
 		}
 
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
 			},
 		}, nil
@@ -1328,8 +1328,8 @@ func (s *Server) RenamePeer(
 	peer := s.getPeerWithId(req.GetIdentifier(), resp)
 
 	if peer == nil {
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_UpdatePeerErrorCode{
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_UpdatePeerErrorCode{
 				UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
 			},
 		}, nil
@@ -1338,17 +1338,17 @@ func (s *Server) RenamePeer(
 	if req.Nickname == "" && peer.Nickname == "" {
 		log.Println(internal.InfoPrefix, "peer doesn't have a nickname")
 
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_Empty{},
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_Empty{},
 		}, nil
 	}
 
 	if req.Nickname != "" && peer.Nickname == req.Nickname {
 		log.Println(internal.InfoPrefix, "peer has already the same nickname")
 
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_RenamePeerErrorCode{
-				RenamePeerErrorCode: pb.RenamePeerErrorCode_SAME_NICKNAME,
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+				ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SAME_NICKNAME,
 			},
 		}, nil
 	}
@@ -1357,15 +1357,15 @@ func (s *Server) RenamePeer(
 	if err := s.reg.Configure(token, cfg.MeshDevice.ID, peer.ID, mesh.NewPeerUpdateRequest(*peer)); err != nil {
 		s.pub.Publish(err)
 		// TODO: display API error to the user
-		return &pb.RenamePeerResponse{
-			Response: &pb.RenamePeerResponse_ServiceErrorCode{
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
 			},
 		}, nil
 	}
 
-	return &pb.RenamePeerResponse{
-		Response: &pb.RenamePeerResponse_Empty{},
+	return &pb.ChangeNicknameResponse{
+		Response: &pb.ChangeNicknameResponse_Empty{},
 	}, nil
 }
 
