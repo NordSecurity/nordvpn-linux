@@ -97,15 +97,83 @@ outputLanDiscoveryRules = [
 ]
 
 
-def _get_rules_killswitch_on(interface:str):
+def __rules_connmark_chain_input(interface: str):
     return \
     [
         f"-A INPUT -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
         f"-A INPUT -i {interface} -m comment --comment nordvpn -j DROP",
+    ]
+
+
+def __rules_connmark_chain_output(interface: str):
+    return \
+    [
         f"-A OUTPUT -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
         f"-A OUTPUT -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
         f"-A OUTPUT -o {interface} -m comment --comment nordvpn -j DROP"
     ]
+
+
+def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
+    result = []
+
+    for subnet in subnets:
+        result += f"-A INPUT -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT",
+
+    return result
+
+
+def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
+    result = []
+
+    for subnet in subnets:
+        result += f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT",
+
+    return result
+
+
+def __rules_allowlist_port_chain_input(interface:str, ports_udp: lib.Port, ports_tcp: lib.Port):
+    result = []
+
+    for port in ports_udp:
+        result.extend([
+            f"-A INPUT -i {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
+            f"-A INPUT -i {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT"
+        ])
+    for port in ports_tcp:
+        result.extend([
+            f"-A INPUT -i {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
+            f"-A INPUT -i {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT"
+        ])
+
+    return result
+
+
+def __rules_allowlist_port_chain_output(interface:str, ports_udp: lib.Port, ports_tcp: lib.Port):
+    result = []
+
+    for port in ports_udp:
+        result.extend([
+            f"-A OUTPUT -o {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
+            f"-A OUTPUT -o {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
+        ])
+    for port in ports_tcp:
+        result.extend([
+            f"-A OUTPUT -o {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
+            f"-A OUTPUT -o {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
+        ])
+
+    return result
+
+
+def _get_rules_killswitch_on(interface:str):
+    result = []
+
+    result.extend(__rules_connmark_chain_input(interface))
+
+    result.extend(__rules_connmark_chain_output(interface))
+
+    return result
 
 
 def _get_rules_connected_to_vpn_server(interface:str):
@@ -113,126 +181,53 @@ def _get_rules_connected_to_vpn_server(interface:str):
 
 
 def _get_rules_allowlist_subnet_on(interface:str, subnets:list[str]):
-    # Subnet allowlist rules
     result = []
 
-    for subnet in subnets:
-        result += f"-A INPUT -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT",
+    result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
+    result.extend(__rules_connmark_chain_input(interface))
 
-    result += \
-    [
-        f"-A INPUT -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        f"-A INPUT -i {interface} -m comment --comment nordvpn -j DROP",
-    ]
+    result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
+    result.extend(__rules_connmark_chain_output(interface))
 
-    for subnet in subnets:
-        result += f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT",
-
-    result += \
-    [
-        f"-A OUTPUT -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
-        f"-A OUTPUT -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        f"-A OUTPUT -o {interface} -m comment --comment nordvpn -j DROP"
-    ]
     return result
 
 
 def _get_rules_allowlist_port_on(interface:str, ports:list[lib.Port]):
-    # Port(range) whitelist rules for SPECIFIC protocols
-
     ports_udp: list[lib.Port]
     ports_tcp: list[lib.Port]
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
 
-    for port in ports_udp:
-        result.extend([
-            f"-A INPUT -i {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A INPUT -i {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-        ])
-    for port in ports_tcp:
-        result.extend([
-            f"-A INPUT -i {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A INPUT -i {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT"
-        ])
+    result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
+    result.extend(__rules_connmark_chain_input(interface))
 
-    result += \
-    [
-        f"-A INPUT -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        f"-A INPUT -i {interface} -m comment --comment nordvpn -j DROP",
-    ]
+    result.extend(__rules_allowlist_port_chain_output(interface, ports_udp, ports_tcp))
+    result.extend(__rules_connmark_chain_output(interface))
 
-    for port in ports_udp:
-        result.extend([
-            f"-A OUTPUT -o {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A OUTPUT -o {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-        ])
-    for port in ports_tcp:
-        result.extend([
-            f"-A OUTPUT -o {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A OUTPUT -o {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-        ])
-    result += \
-    [
-        f"-A OUTPUT -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
-        f"-A OUTPUT -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        f"-A OUTPUT -o {interface} -m comment --comment nordvpn -j DROP"
-    ]
     return result
 
 
 def _get_rules_allowlist_subnet_and_port_on(interface:str, subnets:list[str], ports:list[lib.Port]):
-    # Port(range) && subnet whitelist rules for ALL protocols
-
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
 
-    for port in ports_udp:
-        result.extend([
-            f"-A INPUT -i {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A INPUT -i {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-        ])
-    for port in ports_tcp:
-        result.extend([
-            f"-A INPUT -i {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A INPUT -i {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT"
-        ])
-    for subnet in subnets:
-        result += f"-A INPUT -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT",
+    result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
+    result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
+    result.extend(__rules_connmark_chain_input(interface))
 
-    result += \
-    [
-        f"-A INPUT -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        f"-A INPUT -i {interface} -m comment --comment nordvpn -j DROP",
-    ]
+    result.extend(__rules_allowlist_port_chain_output(interface, ports_udp, ports_tcp))
+    result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
+    result.extend(__rules_connmark_chain_output(interface))
 
-    for port in ports_udp:
-        result.extend([
-            f"-A OUTPUT -o {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A OUTPUT -o {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-        ])
-    for port in ports_tcp:
-        result.extend([
-            f"-A OUTPUT -o {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A OUTPUT -o {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-        ])
-    for subnet in subnets:
-        result += f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT",
-
-    result += \
-    [
-        f"-A OUTPUT -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
-        f"-A OUTPUT -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        f"-A OUTPUT -o {interface} -m comment --comment nordvpn -j DROP"
-    ]
     return result
 
 
 # ToDo: Add missing IPv6 rules (icmp6 & dhcp6)
 def _get_firewall_rules(ports: list[lib.Port]=None, subnets: list[str]=None) -> list[str]:
     if subnets:
+        # need to sort subnets Z -> A, since app sort rules like this in iptables
         subnets.sort(reverse=True)
 
     # Default route interface
@@ -267,13 +262,17 @@ def is_active(ports: list[lib.Port]=None, subnets: list[str]=None) -> bool:
 
     expected_rules = _get_firewall_rules(ports, subnets)
     print("\nExpected rules:")
+    logging.log("\nExpected rules:")
     for rule in expected_rules:
         print(rule)
+        logging.log(rule)
 
     current_rules = _get_iptables_rules()
     print("\nCurrent rules:")
+    logging.log("\nCurrent rules:")
     for rule in current_rules:
         print(rule)
+        logging.log(rule)
 
     print()
     print(sh.nordvpn.settings())
@@ -307,7 +306,7 @@ def _sort_ports_by_protocol(ports: list[lib.Port]) -> tuple[list[lib.Port], list
             ports_udp.append(port)
             ports_tcp.append(port)
 
-    # Sort lists in descending order
+    # Sort lists in descending order, since app sort rules like this in iptables
     ports_udp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split('(\\d+)', x.value)], reverse=True)
     ports_tcp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split('(\\d+)', x.value)], reverse=True)
 

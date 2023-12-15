@@ -1,6 +1,7 @@
 import ipaddress
 from lib import (
     daemon,
+    firewall,
     info,
     logging,
     login,
@@ -20,8 +21,8 @@ def setup_module(module):
     # Add a random route and delete it to create routing table
     # Otherwise exceptions happen in tests
     cmd = sh.sudo.ip.route.add.default.via.bake("127.0.0.1")
-    cmd.table("205")
-    sh.sudo.ip.route.delete.default.table("205")
+    cmd.table(firewall.IP_ROUTE_TABLE)
+    sh.sudo.ip.route.delete.default.table(firewall.IP_ROUTE_TABLE)
 
 
 def teardown_module(module):
@@ -43,11 +44,11 @@ def teardown_function(function):
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets():
     subnet = "192.168.1.1/32"
 
-    output_before_add = sh.ip.route.show.table(205)
+    output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     sh.nordvpn.allowlist.add.subnet(subnet)
-    output_after_add = sh.ip.route.show.table(205)
+    output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     sh.nordvpn.allowlist.remove.subnet(subnet)
-    output_after_delete = sh.ip.route.show.table(205)
+    output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert output_before_add == output_after_add
     assert output_after_add == output_after_delete
@@ -56,11 +57,11 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets():
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_ports():
     port = 22
 
-    output_before_add = sh.ip.route.show.table(205)
+    output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     sh.nordvpn.allowlist.add.port(port)
-    output_after_add = sh.ip.route.show.table(205)
+    output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     sh.nordvpn.allowlist.remove.port(port)
-    output_after_delete = sh.ip.route.show.table(205)
+    output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert output_before_add == output_after_add
     assert output_after_add == output_after_delete
@@ -69,9 +70,9 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_ports():
 def test_allowlist_is_not_set_when_disconnected():
     with lib.Defer(sh.nordvpn.allowlist.remove.all):
         subnet = "1.1.1.0/24"
-        assert subnet not in sh.ip.route.show.table(205)
+        assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         sh.nordvpn.allowlist.add.subnet(subnet)
-        assert subnet not in sh.ip.route.show.table(205)
+        assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
         port = 22
         assert f"port {port}" not in sh.sudo.iptables("-S")
@@ -89,15 +90,15 @@ def test_allowlist_requires_connection():
         with lib.Defer(sh.nordvpn.disconnect):
             sh.nordvpn.connect()
 
-            assert subnet not in sh.ip.route.show.table(205)
+            assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
             sh.nordvpn.allowlist.add.subnet(subnet)
-            assert subnet in sh.ip.route.show.table(205)
+            assert subnet in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
             assert f"port {port}" not in sh.sudo.iptables("-S")
             sh.nordvpn.allowlist.add.port(port)
             assert f"port {port}" in sh.sudo.iptables("-S")
 
-        assert subnet not in sh.ip.route.show.table(205)
+        assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         assert f"port {port}" not in sh.sudo.iptables("-S")
 
 

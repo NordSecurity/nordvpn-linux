@@ -130,21 +130,21 @@ PROTOCOLS = [
 
 # Used for test parametrization, when the same test has to be run for different subnets.
 SUBNETS = [
-    ["192.168.1.1/32"],
+    "192.168.1.1/32",
 ]
 
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS = [
-    [Port("22", Protocol.UDP)],
-    [Port("22", Protocol.TCP)],
-    [Port("22", Protocol.ALL)],
+    Port("22", Protocol.UDP),
+    Port("22", Protocol.TCP),
+    Port("22", Protocol.ALL),
 ]
 
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS_RANGE = [
-    [Port("3000:3100", Protocol.UDP)],
-    [Port("3000:3100", Protocol.TCP)],
-    [Port("3000:3100", Protocol.ALL)],
+    Port("3000:3100", Protocol.UDP),
+    Port("3000:3100", Protocol.TCP),
+    Port("3000:3100", Protocol.ALL),
 ]
 
 # Used for integration test coverage
@@ -275,9 +275,10 @@ def add_ports_range_to_allowlist(ports_list: list[Port]):
         print("WARNING:", ex)
 
 
-def add_subnet_to_allowlist(subnet_addr):
+def add_subnet_to_allowlist(subnet_list: list[str]):
     try:
-        print(sh.nordvpn.allowlist.add.subnet(subnet_addr))
+        for subnet in subnet_list:
+            print(sh.nordvpn.allowlist.add.subnet(subnet))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 

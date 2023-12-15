@@ -106,72 +106,72 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.parametrize("port", lib.PORTS, ids=[lib.Protocol.UDP, lib.Protocol.TCP, lib.Protocol.ALL])
+@pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_02_allowlist_port(tech, proto, obfuscated, port: lib.Port):
+def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
             lib.set_firewall("on")
-            lib.add_port_to_allowlist(port)
-            assert not firewall.is_active(port)
+            lib.add_port_to_allowlist([port])
+            assert not firewall.is_active([port])
 
             sh.nordvpn.connect()
             assert network.is_connected()
-            assert firewall.is_active(port)
+            assert firewall.is_active([port])
 
             lib.set_firewall("off")
-            assert not firewall.is_active(port)
+            assert not firewall.is_active([port])
         assert network.is_disconnected()
-    assert not firewall.is_active(port)
+    assert not firewall.is_active([port])
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.parametrize("ports", lib.PORTS_RANGE, ids=[lib.Protocol.UDP, lib.Protocol.TCP, lib.Protocol.ALL])
+@pytest.mark.parametrize("ports", lib.PORTS_RANGE)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(100)
-def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports: lib.Port):
+def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
             lib.set_firewall("on")
-            lib.add_ports_range_to_allowlist(ports)
-            assert not firewall.is_active(ports)
+            lib.add_ports_range_to_allowlist([ports])
+            assert not firewall.is_active([ports])
 
             sh.nordvpn.connect()
             assert network.is_connected()
-            assert firewall.is_active(ports)
+            assert firewall.is_active([ports])
 
             lib.set_firewall("off")
-            assert not firewall.is_active(ports)
+            assert not firewall.is_active([ports])
         assert network.is_disconnected()
-    assert not firewall.is_active(ports)
+    assert not firewall.is_active([ports])
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.parametrize("subnet_addr", lib.SUBNETS, ids=[lib.SUBNETS[0][0]])
+@pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet_addr):
+def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
             lib.set_firewall("on")
-            lib.add_subnet_to_allowlist(subnet_addr)
-            assert not firewall.is_active("", subnet_addr)
+            lib.add_subnet_to_allowlist([subnet])
+            assert not firewall.is_active("", [subnet])
 
             sh.nordvpn.connect()
             assert network.is_connected()
-            assert firewall.is_active("", subnet_addr)
+            assert firewall.is_active("", [subnet])
 
             lib.set_firewall("off")
-            assert not firewall.is_active("", subnet_addr)
+            assert not firewall.is_active("", [subnet])
         assert network.is_disconnected()
-    assert not firewall.is_active("", subnet_addr)
+    assert not firewall.is_active("", [subnet])
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
