@@ -3,6 +3,7 @@ package main
 
 import (
 	"crypto/sha256"
+	_ "embed"
 	"errors"
 	"fmt"
 	"log"
@@ -196,11 +197,15 @@ func main() {
 	)
 
 	// API
-
-	pkVault := response.NewFilePKVault(internal.DatFilesPath)
-	var validator response.Validator = response.NewNordValidator(pkVault)
+	var validator response.Validator
+	var err error
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
 		validator = response.NoopValidator{}
+	} else {
+		validator, err = response.NewNordValidator()
+		if err != nil {
+			log.Fatalln("Error on creating validator:", err)
+		}
 	}
 
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
