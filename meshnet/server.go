@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -1336,16 +1335,14 @@ func (s *Server) ChangePeerNickname(
 	}
 
 	if req.Nickname == "" && peer.Nickname == "" {
-		log.Println(internal.InfoPrefix, "peer doesn't have a nickname")
-
 		return &pb.ChangeNicknameResponse{
-			Response: &pb.ChangeNicknameResponse_Empty{},
+			Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+				ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY,
+			},
 		}, nil
 	}
 
 	if req.Nickname != "" && peer.Nickname == req.Nickname {
-		log.Println(internal.InfoPrefix, "peer has already the same nickname")
-
 		return &pb.ChangeNicknameResponse{
 			Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
 				ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SAME_NICKNAME,

@@ -76,6 +76,7 @@ message RemovePeerResponse {
 // ChangeNicknameErrorCode defines the errors that occur at meshnet nickname changes
 enum ChangeNicknameErrorCode {
 	SAME_NICKNAME = 0;
+	NICKNAME_ALREADY_EMPTY = 1;
 }
 
 // ChangePeerNicknameRequest defines a request to change the nickname for a meshnet peer

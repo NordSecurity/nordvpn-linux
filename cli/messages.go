@@ -232,6 +232,7 @@ Learn more:
 	MsgMeshnetPeerSetNicknameSuccessful   = "peer '%s' renamed to '%s'"
 	MsgMeshnetPeerSetNicknameFailed       = "failed to rename peer: '%s'"
 	MsgMeshnetPeerSetNicknameTheSame      = "same nickname '%s' already set"
+	MsgMeshnetNicknameAlreadyEmpty        = "COPY: nickname already empty"
 	MsgMeshnetPeerResetNicknameSuccessful = "peer '%s' nickname reset. default name is %s"
 	MsgMeshnetPeerResetNicknameFailed     = "failed to reset nickname peer: '%s'"
 

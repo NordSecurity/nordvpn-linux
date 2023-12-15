@@ -618,6 +618,8 @@ func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
 		switch resp.ChangeNicknameErrorCode {
 		case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
 			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
+		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
+			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
 		}
 	}
 
