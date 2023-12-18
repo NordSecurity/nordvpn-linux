@@ -842,3 +842,66 @@ def test_transfers_autocomplete():
     assert peer_transfer_id not in output
     output = ssh_client.exec_command("nordvpn fileshare list --generate-bash-completion")
     assert peer_transfer_id in output
+
+
+def test_clear():
+    output = ssh_client.exec_command("nordvpn mesh peer list")
+    peer_address = meshnet.get_this_device_ipv4(output)
+
+    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{testFiles[0]}")
+    time.sleep(1)
+    local_transfer_id0 = fileshare.get_last_transfer()
+    peer_transfer_id0 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+    ssh_client.exec_command("nordvpn fileshare accept {}".format(peer_transfer_id0))
+
+    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id0)
+
+    transfers = ssh_client.exec_command("nordvpn fileshare list")
+    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id0)
+
+    transfer_time0 = time.time()
+    time.sleep(3)
+
+    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{testFiles[1]}")
+    time.sleep(1)
+    local_transfer_id1 = fileshare.get_last_transfer()
+    peer_transfer_id1 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+    ssh_client.exec_command("nordvpn fileshare accept {}".format(peer_transfer_id1))
+
+    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id0)
+    assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id1)
+
+    transfers = ssh_client.exec_command("nordvpn fileshare list")
+    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id0)
+    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
+
+    sh.nordvpn.fileshare.clear(int(time.time() - transfer_time0))
+
+    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None
+    assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id1)
+
+    transfers = ssh_client.exec_command("nordvpn fileshare list")
+    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id0)
+    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
+
+    ssh_client.exec_command("nordvpn fileshare clear {} seconds".format(int(time.time() - transfer_time0)))
+
+    transfers = ssh_client.exec_command("nordvpn fileshare list")
+    assert fileshare.find_transfer_by_id(transfers, peer_transfer_id0) is None
+    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
+
+    time.sleep(3)
+    sh.nordvpn.fileshare.clear(1)
+
+    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None
+    assert fileshare.find_transfer_by_id(transfers, local_transfer_id1) is None
+
+    ssh_client.exec_command("nordvpn fileshare clear all")
+
+    transfers = ssh_client.exec_command("nordvpn fileshare list")
+    assert fileshare.find_transfer_by_id(transfers, peer_transfer_id0) is None
+    assert fileshare.find_transfer_by_id(transfers, peer_transfer_id1) is None
