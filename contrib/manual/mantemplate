@@ -542,7 +542,7 @@ To clear the history of file transfers, enter the \fInordvpn fileshare clear\fR 
 $ \fBnordvpn fileshare clear <time_period>...\fR
 .RE
 .P
-It will remove all transfers older than the given time period from the list. For example \fInordvpn fileshare clear 1d 12h\fR would clear entries older than 36 hours. Alternatively use \fInordvpn fileshare clear all\fR to remove all entries. Use the systemd time span syntax to specify time periods: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html
+This command removes all transfers older than the specified time period. For example \fInordvpn fileshare clear 1d 12h\fR clears entries older than 36 hours. Use \fInordvpn fileshare clear all\fR to remove all entries. Specify time periods using the systemd time span syntax: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html
 
 .SH "BUGS"
 .sp
