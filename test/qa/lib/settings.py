@@ -38,3 +38,8 @@ def get_is_tpl_enabled():
 def get_is_notify_enabled():
     """ returns True, if Threat Protection Lite is enabled in application settings """
     return "Notify: enabled" in sh.nordvpn.settings()
+
+
+def get_is_routing_enabled():
+    """ returns True, if Routing is enabled in application settings """
+    return "Routing: enabled" in sh.nordvpn.settings()
