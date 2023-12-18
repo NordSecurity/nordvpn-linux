@@ -27,7 +27,10 @@ def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
 
-    meshnet.remove_all_peers()
+    try:
+        meshnet.remove_all_peers()
+    except:
+        pass
 
     sh.nordvpn.logout("--persist-token")
     sh.nordvpn.set.defaults()
@@ -245,3 +248,4 @@ def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
 
         routes = sh.ip.route.show.table("main")
         assert f"default dev {network_interface}" not in routes
+
