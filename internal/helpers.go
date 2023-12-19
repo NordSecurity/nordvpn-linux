@@ -16,8 +16,5 @@ func Find[T comparable](l []T, element T) *T {
 
 func Contains[T comparable](l []T, element T) bool {
 	e := Find(l, element)
-	if e != nil {
-		return true
-	}
-	return false
+	return e != nil
 }
