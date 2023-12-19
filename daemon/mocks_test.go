@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"io/fs"
-	"net/netip"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -111,7 +110,9 @@ type RegistryMock struct {
 func (*RegistryMock) Register(token string, self mesh.Machine) (*mesh.Machine, error) {
 	return nil, nil
 }
-func (*RegistryMock) Update(token string, id uuid.UUID, endpoints []netip.AddrPort) error { return nil }
+func (*RegistryMock) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
+	return nil
+}
 
 func (*RegistryMock) Configure(string, uuid.UUID, uuid.UUID, mesh.PeerUpdateRequest) error {
 	return nil

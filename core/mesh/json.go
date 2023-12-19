@@ -39,12 +39,15 @@ type MachineCreateResponse struct {
 	// Addresses belonging to 100.64.0.0/10 subnet.
 	Addresses       []netip.Addr `json:"ip_addresses"`
 	SupportsRouting bool         `json:"traffic_routing_supported"`
+	Nickname        string       `json:"nickname"`
 }
 
 // MachineUpdateRequest is used to update one's meshnet device.
 type MachineUpdateRequest struct {
+	// TODO: Endpoints doesn't exist in documentation, check if is needed
 	Endpoints       []netip.AddrPort `json:"endpoints"`
 	SupportsRouting bool             `json:"traffic_routing_supported"`
+	Nickname        string           `json:"nickname"`
 }
 
 type MachinePeerResponse struct {
@@ -91,6 +94,7 @@ type MachineMapResponse struct {
 	SupportsRouting bool                  `json:"traffic_routing_supported"`
 	DNS             DNS                   `json:"dns"`
 	Peers           []MachinePeerResponse `json:"peers"`
+	Nickname        string                `json:"nickname"`
 }
 
 // PeerUpdateRequest is used to update one's peer.

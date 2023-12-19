@@ -44,6 +44,7 @@ type Machine struct {
 	// Address is a meshnet IP address of a peer
 	Address         netip.Addr
 	SupportsRouting bool
+	Nickname        string
 }
 
 func (s Machine) ToProtobuf() *pb.Peer {
@@ -59,7 +60,17 @@ func (s Machine) ToProtobuf() *pb.Peer {
 		Os:         s.OS.Name,
 		Distro:     s.OS.Distro,
 		Hostname:   s.Hostname,
+		Nickname:   s.Nickname,
 	}
+}
+
+func (s *Machine) IsEqual(b Machine) bool {
+	return s.ID == b.ID &&
+		s.HardwareID == b.HardwareID &&
+		s.Hostname == b.Hostname &&
+		s.Address == b.Address &&
+		s.SupportsRouting == b.SupportsRouting &&
+		s.Nickname == b.Nickname
 }
 
 type Machines []Machine

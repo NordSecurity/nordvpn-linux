@@ -74,11 +74,14 @@ func TestMeshAPI_Update(t *testing.T) {
 				http.DefaultClient,
 				response.NoopValidator{},
 			)
+
 			err := api.Update(
 				"bearer",
 				id,
-				[]netip.AddrPort{
-					netip.MustParseAddrPort("123.123.123.123:1234"),
+				mesh.MachineUpdateRequest{
+					Endpoints: []netip.AddrPort{
+						netip.MustParseAddrPort("123.123.123.123:1234"),
+					},
 				},
 			)
 			assert.ErrorIs(t, err, test.err)
