@@ -85,6 +85,11 @@ message ChangePeerNicknameRequest {
 	string nickname = 2;
 }
 
+// ChangeMachineNicknameRequest defines a request to change the nickname for the current machine from meshnet
+message ChangeMachineNicknameRequest {
+	string nickname = 1;
+}
+
 // ChangeNicknameResponse defines a response to change(set/remove) the nickname for a peer or for current machine
 message ChangeNicknameResponse {
 	oneof response {

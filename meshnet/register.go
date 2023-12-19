@@ -112,7 +112,6 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-
 	peer, err := r.reg.Register(token, cmesh.Machine{
 		HardwareID:      cfg.MachineID,
 		PublicKey:       r.gen.Public(privateKey),

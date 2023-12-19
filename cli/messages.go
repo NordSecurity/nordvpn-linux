@@ -160,6 +160,19 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetAllowLocalNetworkUsage          = "Allow the peer to access local network when routing traffic through this device."
 	MsgMeshnetAllowFileshare                  = "Allow the peer to send you files."
 
+	// Meshnet set commands group
+	MsgMeshnetSetUsage = "COPY: Sets meshnet configuration option"
+
+	MsgMeshnetSetMachineNicknameUsage = "COPY: set current machine nickname"
+	MsgMeshnetSetNicknameArgsUsage    = "COPY: set current machine nickname usage"
+	MsgMeshnetSetNicknameSuccessful   = "COPY: successfully set current machine nickname to '%s'"
+
+	// Meshnet remove commands group
+	MsgMeshnetRemoveUsage = "COPY: Remove/reset meshnet configuration option to default value"
+
+	MsgMeshnetRemoveMachineNicknameUsage = "COPY: remove current machine nickname"
+	MsgMeshnetRemoveNicknameSuccessful   = "COPY: successfully removed machine's nickname"
+
 	// Peers
 	MsgMeshnetPeerListFilters = "Filters list of available peers in a Meshnet. To apply multiple filters, separate them with a comma. Please note that you will see an empty list if you apply contradictory filters."
 	MsgMeshnetPeerUsage       = "Manage Meshnet peers."
@@ -224,17 +237,17 @@ Learn more:
 	MsgMeshnetPeerAlreadyConnected    = "You are already connected."
 	MsgMeshnetPeerConnectFailed       = "Connect to other mesh peer failed - check if peer '%s' is online."
 
-	MsgMeshnetPeerNicknameUsage           = "rename"
-	MsgMeshnetPeerSetNicknameUsage        = "peer nickname set command info"
-	MsgMeshnetPeerSetNicknameArgsUsage    = "<peer_id> nickname"
-	MsgMeshnetPeerResetNicknameUsage      = "peer nickname reset command"
-	MsgMeshnetPeerResetNicknameArgsUsage  = "args for nickname reset <id>"
-	MsgMeshnetPeerSetNicknameSuccessful   = "peer '%s' renamed to '%s'"
-	MsgMeshnetPeerSetNicknameFailed       = "failed to rename peer: '%s'"
-	MsgMeshnetPeerSetNicknameTheSame      = "same nickname '%s' already set"
+	MsgMeshnetPeerNicknameUsage           = "COPY: rename usage"
+	MsgMeshnetPeerSetNicknameUsage        = "COPY: peer nickname set command info"
+	MsgMeshnetPeerSetNicknameArgsUsage    = "COPY: <peer_id> nickname"
+	MsgMeshnetPeerRemoveNicknameUsage     = "COPY: peer nickname reset command usage"
+	MsgMeshnetPeerRemoveNicknameArgsUsage = "COPY: explain args for nickname reset. Parameter can be peer <id>"
+	MsgMeshnetPeerSetNicknameSuccessful   = "COPY: peer '%s' renamed to '%s'"
+	MsgMeshnetPeerSetNicknameFailed       = "COPY: failed to rename peer: '%s'"
+	MsgMeshnetPeerSetNicknameTheSame      = "COPY: same nickname '%s' already set"
 	MsgMeshnetNicknameAlreadyEmpty        = "COPY: nickname already empty"
-	MsgMeshnetPeerResetNicknameSuccessful = "peer '%s' nickname reset. default name is %s"
-	MsgMeshnetPeerResetNicknameFailed     = "failed to reset nickname peer: '%s'"
+	MsgMeshnetPeerResetNicknameSuccessful = "COPY: peer '%s' nickname reset. default name is %s"
+	MsgMeshnetPeerResetNicknameFailed     = "COPY: failed to reset nickname peer: '%s'"
 
 	// Fileshare
 	FileshareName       = "fileshare"

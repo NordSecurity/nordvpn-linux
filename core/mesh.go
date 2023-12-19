@@ -158,22 +158,16 @@ func (api *DefaultAPI) Register(token string, peer mesh.Machine) (*mesh.Machine,
 		PublicKey: peer.PublicKey,
 		Endpoints: raw.Endpoints,
 		Address:   addr,
+		Nickname:  raw.Nickname,
 	}, nil
 }
 
 // Update publishes new endpoints.
-func (api *DefaultAPI) Update(token string, id uuid.UUID, endpoints []netip.AddrPort) error {
+func (api *DefaultAPI) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	if len(endpoints) == 0 {
-		return ErrPeerEndpointsNotProvided
-	}
-
-	data, err := json.Marshal(mesh.MachineUpdateRequest{
-		Endpoints:       endpoints,
-		SupportsRouting: true,
-	})
+	data, err := json.Marshal(info)
 	if err != nil {
 		return err
 	}
@@ -261,6 +255,7 @@ func peersResponseToLocalPeers(rawPeers []mesh.MachinePeerResponse) []mesh.Machi
 			PublicKey: p.PublicKey,
 			Endpoints: p.Endpoints,
 			Address:   addr,
+			Nickname:  p.Nickname,
 		})
 	}
 
@@ -347,6 +342,7 @@ func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, erro
 			PublicKey: raw.PublicKey,
 			Endpoints: raw.Endpoints,
 			Address:   addr,
+			Nickname:  raw.Nickname,
 		},
 		Hosts: raw.DNS.Hosts,
 		Peers: peers,
