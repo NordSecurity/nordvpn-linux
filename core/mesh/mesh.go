@@ -18,11 +18,7 @@ type Registry interface {
 		token string,
 		id uuid.UUID,
 		peerID uuid.UUID,
-		doIAllowInbound bool,
-		doIAllowRouting bool,
-		doIAllowLocalNetwork bool,
-		doIAllowFileshare bool,
-		alwaysAcceptFiles bool,
+		peerUpdateInfo PeerUpdateRequest,
 	) error
 	// Unregister Peer from the mesh network.
 	Unregister(token string, self uuid.UUID) error

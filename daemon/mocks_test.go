@@ -113,16 +113,7 @@ func (*RegistryMock) Register(token string, self mesh.Machine) (*mesh.Machine, e
 }
 func (*RegistryMock) Update(token string, id uuid.UUID, endpoints []netip.AddrPort) error { return nil }
 
-func (*RegistryMock) Configure(
-	token string,
-	id uuid.UUID,
-	peerID uuid.UUID,
-	doIAllowInbound bool,
-	doIAllowRouting bool,
-	doIAllowLocalNetwork bool,
-	doIAllowFileshare bool,
-	alwaysAcceptFiles bool,
-) error {
+func (*RegistryMock) Configure(string, uuid.UUID, uuid.UUID, mesh.PeerUpdateRequest) error {
 	return nil
 }
 

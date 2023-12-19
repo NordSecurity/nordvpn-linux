@@ -115,11 +115,7 @@ func TestMeshAPI_Configure(t *testing.T) {
 				"bearer",
 				id,
 				targetID,
-				false,
-				false,
-				false,
-				false,
-				false,
+				mesh.PeerUpdateRequest{},
 			)
 			assert.ErrorIs(t, err, test.err)
 		})

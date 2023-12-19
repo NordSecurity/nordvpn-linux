@@ -209,7 +209,7 @@ Learn more:
 	MsgMeshnetPeerFileshareAllowSuccess   = "Fileshare for '%s' has been allowed."
 	MsgMeshnetPeerFileshareDenySuccess    = "Fileshare for '%s' has been denied."
 
-	MsgMeshnetPeerAutomaticFileshareUsage              = "Always accept file transfers from a specific peer. We won’t ask you to approve each transfer – files will start downloading automatically."
+	MsgMeshnetPeerAutomaticFileshareUsage              = "Always accept file transfers from a specific peer. We won’t ask you to approve each transfer - files will start downloading automatically."
 	MsgMeshnetPeerAutomaticFileshareAllowUsage         = "Enables automatic fileshare from device."
 	MsgMeshnetPeerAutomaticFileshareDenyUsage          = "Denies automatic fileshare from device."
 	MsgMeshnetPeerAutomaticFileshareAlreadyEnabled     = "Automatic fileshare for '%s' is already allowed."
@@ -223,6 +223,18 @@ Learn more:
 	MsgMeshnetPeerDoesNotAllowRouting = "Meshnet peer '%s' does not allow traffic routing."
 	MsgMeshnetPeerAlreadyConnected    = "You are already connected."
 	MsgMeshnetPeerConnectFailed       = "Connect to other mesh peer failed - check if peer '%s' is online."
+
+	MsgMeshnetPeerNicknameUsage           = "rename"
+	MsgMeshnetPeerSetNicknameUsage        = "peer nickname set command info"
+	MsgMeshnetPeerSetNicknameArgsUsage    = "<peer_id> nickname"
+	MsgMeshnetPeerResetNicknameUsage      = "peer nickname reset command"
+	MsgMeshnetPeerResetNicknameArgsUsage  = "args for nickname reset <id>"
+	MsgMeshnetPeerSetNicknameSuccessful   = "peer '%s' renamed to '%s'"
+	MsgMeshnetPeerSetNicknameFailed       = "failed to rename peer: '%s'"
+	MsgMeshnetPeerSetNicknameTheSame      = "same nickname '%s' already set"
+	MsgMeshnetNicknameAlreadyEmpty        = "COPY: nickname already empty"
+	MsgMeshnetPeerResetNicknameSuccessful = "peer '%s' nickname reset. default name is %s"
+	MsgMeshnetPeerResetNicknameFailed     = "failed to reset nickname peer: '%s'"
 
 	// Fileshare
 	FileshareName       = "fileshare"

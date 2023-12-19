@@ -101,6 +101,7 @@ type MachinePeer struct {
 	DoIAllowLocalNetwork bool
 	DoIAllowFileshare    bool
 	AlwaysAcceptFiles    bool
+	Nickname             string
 }
 
 func (p MachinePeer) ToProtobuf() *pb.Peer {
@@ -108,6 +109,7 @@ func (p MachinePeer) ToProtobuf() *pb.Peer {
 	if p.Address.IsValid() {
 		ip = p.Address.String()
 	}
+
 	return &pb.Peer{
 		Identifier:            p.ID.String(),
 		Pubkey:                p.PublicKey,
@@ -126,6 +128,7 @@ func (p MachinePeer) ToProtobuf() *pb.Peer {
 		DoIAllowLocalNetwork:  p.DoIAllowLocalNetwork,
 		DoIAllowFileshare:     p.DoIAllowFileshare,
 		AlwaysAcceptFiles:     p.AlwaysAcceptFiles,
+		Nickname:              p.Nickname,
 	}
 }
 
