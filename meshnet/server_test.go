@@ -1591,7 +1591,6 @@ func TestServer_Peer_Nickname(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			registryApi := mock.RegistryMock{}
 			registryApi.Peers = test.peersList
 			registryApi.ListErr = test.listErr
@@ -1643,7 +1642,6 @@ func TestServer_Peer_Nickname(t *testing.T) {
 					assert.Equal(t, test.newNickname, p.Nickname)
 				}
 			}
-
 		})
 	}
 }
@@ -1808,7 +1806,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			registryApi := mock.RegistryMock{}
 			registryApi.ListErr = test.listErr
 			registryApi.ConfigureErr = test.configureErr
