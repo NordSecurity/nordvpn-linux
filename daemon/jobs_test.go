@@ -166,10 +166,6 @@ func (invitationsAPI) Accept(string, uuid.UUID, uuid.UUID, bool, bool, bool, boo
 func (invitationsAPI) Revoke(string, uuid.UUID, uuid.UUID) error                         { return nil }
 func (invitationsAPI) Reject(string, uuid.UUID, uuid.UUID) error                         { return nil }
 
-type dnsGetter struct{}
-
-func (dnsGetter) Get(bool, bool) []string { return nil }
-
 type meshNetworker struct {
 	allowedIncoming  []meshnet.UniqueAddress
 	blockedIncoming  []meshnet.UniqueAddress

@@ -68,7 +68,6 @@ func (r *RegistryMock) GetPeerWithIdentifier(id string) *mesh.MachinePeer {
 	}
 
 	return &r.Peers[index]
-
 }
 
 func (*RegistryMock) Unregister(token string, self uuid.UUID) error { return nil }
