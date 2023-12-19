@@ -188,8 +188,12 @@ func peerToOutputString(peer *pb.Peer) string {
 		{Key: "Allows Sending Files", Value: nstrings.GetBoolLabel(peer.IsFileshareAllowed)},
 		{Key: "Accept Fileshare Automatically", Value: nstrings.GetBoolLabel(peer.AlwaysAcceptFiles)},
 	}
+	hostname := peer.Hostname
+	if peer.Nickname != "" {
+		hostname = peer.Nickname + " [" + peer.Hostname + "]"
+	}
 	return titledKeyvalListToColoredString(keyval{
-		Key: "Hostname", Value: peer.Hostname,
+		Key: "Hostname", Value: hostname,
 	}, color.FgYellow, kvs)
 }
 
@@ -550,6 +554,78 @@ func (c *cmd) MeshPeerConnect(ctx *cli.Context) error {
 	return nil
 }
 
+func (c *cmd) MeshPeerSetNickname(ctx *cli.Context) error {
+	if ctx.NArg() != 2 {
+		// needed peer ID and nickname
+		return argsCountError(ctx)
+	}
+
+	peer, err := c.retrievePeerFromArgs(ctx)
+	if err != nil {
+		return formatError(err)
+	}
+
+	nickname := ctx.Args().Get(1)
+
+	if err = c.renameMeshnetPeer(peer, nickname); err != nil {
+		return err
+	}
+
+	color.Green(MsgMeshnetPeerSetNicknameSuccessful, peer.Hostname, nickname)
+	return nil
+}
+
+func (c *cmd) MeshPeerResetNickname(ctx *cli.Context) error {
+	peer, err := c.retrievePeerFromArgs(ctx)
+	if err != nil {
+		return formatError(err)
+	}
+
+	if err = c.renameMeshnetPeer(peer, ""); err != nil {
+		return err
+	}
+
+	color.Green(MsgMeshnetPeerResetNicknameSuccessful, peer.Nickname, peer.Hostname)
+	return nil
+}
+
+func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
+	resp, err := c.meshClient.ChangePeerNickname(context.Background(), &pb.ChangePeerNicknameRequest{
+		Identifier: peer.Identifier,
+		Nickname:   nickname,
+	})
+
+	if err != nil {
+		return formatError(err)
+	}
+
+	if resp == nil {
+		return errors.New(AccountInternalError)
+	}
+	switch resp := resp.Response.(type) {
+	case *pb.ChangeNicknameResponse_ServiceErrorCode:
+		return serviceErrorCodeToError(resp.ServiceErrorCode)
+
+	case *pb.ChangeNicknameResponse_UpdatePeerErrorCode:
+		return updatePeerErrorCodeToError(
+			resp.UpdatePeerErrorCode,
+			peer.Hostname,
+		)
+	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
+		return meshnetErrorToError(resp.MeshnetErrorCode)
+
+	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
+		switch resp.ChangeNicknameErrorCode {
+		case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
+			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
+		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
+			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
+		}
+	}
+
+	return nil
+}
+
 // retrievePeerFromArgs queries the peer list from the meshnet service,
 // then tries to find a peer by the given identifier, which is either
 // public key, hostname or an IP address
@@ -608,15 +684,30 @@ func (c *cmd) MeshPeerAutoComplete(ctx *cli.Context) {
 
 	for _, peer := range peers.Local {
 		fmt.Println(peer.GetHostname())
+		if peer.Nickname != "" {
+			fmt.Println(peer.Nickname)
+		}
 	}
 	for _, peer := range peers.External {
 		fmt.Println(peer.GetHostname())
+		if peer.Nickname != "" {
+			fmt.Println(peer.Nickname)
+		}
 	}
+}
+
+func (c *cmd) MeshPeerNicknameAutoComplete(ctx *cli.Context) {
+	if ctx.NArg() != 0 {
+		// second parameter needs to be the peer nickname
+		return
+	}
+	// get peers list
+	c.MeshPeerAutoComplete(ctx)
 }
 
 func peerByIdentifier(id string) func(*pb.Peer) bool {
 	return func(peer *pb.Peer) bool {
-		return peer.GetIp() == id || peer.GetHostname() == id || peer.GetPubkey() == id
+		return peer.GetIp() == id || peer.GetHostname() == id || peer.GetPubkey() == id || peer.GetNickname() == id
 	}
 }
 

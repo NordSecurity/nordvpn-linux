@@ -66,11 +66,12 @@ type MachinePeerResponse struct {
 	DoesPeerAllowFileshare    bool `json:"peer_allows_send_files"`
 
 	// Machine settings
-	DoIAllowInbound      bool `json:"allow_incoming_connections"`
-	DoIAllowRouting      bool `json:"allow_peer_traffic_routing"`
-	DoIAllowLocalNetwork bool `json:"allow_peer_local_network_access"`
-	DoIAllowFileshare    bool `json:"allow_peer_send_files"`
-	AlwaysAcceptFiles    bool `json:"always_accept_files"`
+	DoIAllowInbound      bool   `json:"allow_incoming_connections"`
+	DoIAllowRouting      bool   `json:"allow_peer_traffic_routing"`
+	DoIAllowLocalNetwork bool   `json:"allow_peer_local_network_access"`
+	DoIAllowFileshare    bool   `json:"allow_peer_send_files"`
+	AlwaysAcceptFiles    bool   `json:"always_accept_files"`
+	Nickname             string `json:"nickname"`
 }
 
 type MachineMapResponse struct {
@@ -94,11 +95,23 @@ type MachineMapResponse struct {
 
 // PeerUpdateRequest is used to update one's peer.
 type PeerUpdateRequest struct {
-	DoIAllowInbound      bool `json:"allow_incoming_connections"`
-	DoIAllowRouting      bool `json:"allow_peer_traffic_routing"`
-	DoIAllowLocalNetwork bool `json:"allow_peer_local_network_access"`
-	DoIAllowFileshare    bool `json:"allow_peer_send_files"`
-	AllwaysAcceptFiles   bool `json:"always_accept_files"`
+	DoIAllowInbound      bool   `json:"allow_incoming_connections"`
+	DoIAllowRouting      bool   `json:"allow_peer_traffic_routing"`
+	DoIAllowLocalNetwork bool   `json:"allow_peer_local_network_access"`
+	DoIAllowFileshare    bool   `json:"allow_peer_send_files"`
+	AlwaysAcceptFiles    bool   `json:"always_accept_files"`
+	Nickname             string `json:"nickname"`
+}
+
+func NewPeerUpdateRequest(peer MachinePeer) PeerUpdateRequest {
+	return PeerUpdateRequest{
+		DoIAllowInbound:      peer.DoIAllowInbound,
+		DoIAllowRouting:      peer.DoIAllowRouting,
+		DoIAllowLocalNetwork: peer.DoIAllowLocalNetwork,
+		DoIAllowFileshare:    peer.DoIAllowFileshare,
+		AlwaysAcceptFiles:    peer.AlwaysAcceptFiles,
+		Nickname:             peer.Nickname,
+	}
 }
 
 // Invitation to/from other user.

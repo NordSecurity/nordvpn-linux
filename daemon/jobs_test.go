@@ -179,7 +179,7 @@ func (registryAPI) Register(string, mesh.Machine) (*mesh.Machine, error) {
 
 func (*registryAPI) Update(string, uuid.UUID, []netip.AddrPort) error { return nil }
 
-func (r *registryAPI) Configure(string, uuid.UUID, uuid.UUID, bool, bool, bool, bool, bool) error {
+func (r *registryAPI) Configure(string, uuid.UUID, uuid.UUID, mesh.PeerUpdateRequest) error {
 	return r.configureErr
 }
 

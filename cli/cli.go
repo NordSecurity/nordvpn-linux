@@ -744,6 +744,26 @@ func meshnetCommand(c *cmd) *cli.Command {
 						ArgsUsage:    MsgMeshnetPeerArgsUsage,
 						BashComplete: c.MeshPeerAutoComplete,
 					},
+					{
+						Name:  "nickname",
+						Usage: MsgMeshnetPeerNicknameUsage,
+						Subcommands: []*cli.Command{
+							{
+								Name:         "set",
+								Usage:        MsgMeshnetPeerSetNicknameUsage,
+								ArgsUsage:    MsgMeshnetPeerSetNicknameArgsUsage,
+								Action:       c.MeshPeerSetNickname,
+								BashComplete: c.MeshPeerNicknameAutoComplete,
+							},
+							{
+								Name:         "reset",
+								Usage:        MsgMeshnetPeerResetNicknameUsage,
+								ArgsUsage:    MsgMeshnetPeerResetNicknameArgsUsage,
+								Action:       c.MeshPeerResetNickname,
+								BashComplete: c.MeshPeerNicknameAutoComplete,
+							},
+						},
+					},
 				},
 			},
 			{

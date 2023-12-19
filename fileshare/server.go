@@ -141,9 +141,11 @@ func (s *Server) getPeers() (map[string]*meshpb.Peer, error) {
 	case *meshpb.GetPeersResponse_Peers:
 		peerNameToPeer := make(map[string]*meshpb.Peer)
 		for _, peer := range append(resp.Peers.External, resp.Peers.Local...) {
+			// TODO: refactor
 			peerNameToPeer[peer.Ip] = peer
 			peerNameToPeer[peer.Hostname] = peer
 			peerNameToPeer[peer.Pubkey] = peer
+			peerNameToPeer[peer.Nickname] = peer
 		}
 		return peerNameToPeer, nil
 	case *meshpb.GetPeersResponse_ServiceErrorCode:
