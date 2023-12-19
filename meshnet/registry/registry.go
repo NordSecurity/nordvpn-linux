@@ -2,7 +2,6 @@
 package registry
 
 import (
-	"net/netip"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -35,8 +34,8 @@ func (r *Registry) Register(token string, self mesh.Machine) (*mesh.Machine, err
 }
 
 // Update already registered peer.
-func (r *Registry) Update(token string, id uuid.UUID, endpoints []netip.AddrPort) error {
-	return r.inner.Update(token, id, endpoints)
+func (r *Registry) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
+	return r.inner.Update(token, id, info)
 }
 
 // Configure interaction with specific peer.

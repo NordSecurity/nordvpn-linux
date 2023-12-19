@@ -166,8 +166,12 @@ func selfToOutputString(peer *pb.Peer) string {
 		{Key: "OS", Value: peer.Os},
 		{Key: "Distribution", Value: peer.Distro},
 	}
+	hostname := peer.Hostname
+	if peer.Nickname != "" {
+		hostname = peer.Nickname
+	}
 	return titledKeyvalListToColoredString(keyval{
-		Key: "Hostname", Value: peer.Hostname,
+		Key: "Hostname", Value: hostname,
 	}, color.FgGreen, kvs)
 }
 
@@ -575,7 +579,7 @@ func (c *cmd) MeshPeerSetNickname(ctx *cli.Context) error {
 	return nil
 }
 
-func (c *cmd) MeshPeerResetNickname(ctx *cli.Context) error {
+func (c *cmd) MeshPeerRemoveNickname(ctx *cli.Context) error {
 	peer, err := c.retrievePeerFromArgs(ctx)
 	if err != nil {
 		return formatError(err)
@@ -613,7 +617,6 @@ func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
 		)
 	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
 		return meshnetErrorToError(resp.MeshnetErrorCode)
-
 	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
 		switch resp.ChangeNicknameErrorCode {
 		case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
@@ -623,6 +626,75 @@ func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
 		}
 	}
 
+	return nil
+}
+
+func (c *cmd) MeshSetMachineNickname(ctx *cli.Context) error {
+	if ctx.NArg() != 1 {
+		// nickname needed
+		return argsCountError(ctx)
+	}
+	nickname := ctx.Args().First()
+	resp, err := c.meshClient.ChangeMachineNickname(context.Background(), &pb.ChangeMachineNicknameRequest{
+		Nickname: nickname,
+	})
+
+	if err != nil {
+		return formatError(err)
+	}
+
+	if resp == nil {
+		return errors.New(AccountInternalError)
+	}
+	switch resp := resp.Response.(type) {
+	case *pb.ChangeNicknameResponse_ServiceErrorCode:
+		return serviceErrorCodeToError(resp.ServiceErrorCode)
+	case *pb.ChangeNicknameResponse_UpdatePeerErrorCode:
+		return errors.New(AccountInternalError)
+	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
+		return meshnetErrorToError(resp.MeshnetErrorCode)
+	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
+		switch resp.ChangeNicknameErrorCode {
+		case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
+			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
+		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
+			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
+		}
+	}
+
+	color.Green(MsgMeshnetSetNicknameSuccessful, nickname)
+	return nil
+}
+
+func (c *cmd) MeshRemoveMachineNickname(ctx *cli.Context) error {
+	resp, err := c.meshClient.ChangeMachineNickname(context.Background(), &pb.ChangeMachineNicknameRequest{
+		Nickname: "",
+	})
+
+	if err != nil {
+		return formatError(err)
+	}
+
+	if resp == nil {
+		return errors.New(AccountInternalError)
+	}
+	switch resp := resp.Response.(type) {
+	case *pb.ChangeNicknameResponse_ServiceErrorCode:
+		return serviceErrorCodeToError(resp.ServiceErrorCode)
+	case *pb.ChangeNicknameResponse_UpdatePeerErrorCode:
+		return errors.New(AccountInternalError)
+	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
+		return meshnetErrorToError(resp.MeshnetErrorCode)
+	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
+		switch resp.ChangeNicknameErrorCode {
+		case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
+			return errors.New(AccountInternalError)
+		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
+			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
+		}
+	}
+
+	color.Green(MsgMeshnetRemoveNicknameSuccessful)
 	return nil
 }
 

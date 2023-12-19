@@ -186,6 +186,11 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		c.Mesh = true
 		c.Meshnet.EnabledByUID = ucred.Uid
 		c.Meshnet.EnabledByGID = ucred.Gid
+
+		if !c.MeshDevice.IsEqual(resp.Machine) {
+			// update current machine info, it is changed. e.g. nickname
+			c.MeshDevice = &resp.Machine
+		}
 		return c
 	}); err != nil {
 		s.pub.Publish(err)
@@ -1357,6 +1362,117 @@ func (s *Server) ChangePeerNickname(
 		return &pb.ChangeNicknameResponse{
 			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	return &pb.ChangeNicknameResponse{
+		Response: &pb.ChangeNicknameResponse_Empty{},
+	}, nil
+}
+
+func (s *Server) ChangeMachineNickname(
+	ctx context.Context,
+	req *pb.ChangeMachineNicknameRequest,
+) (*pb.ChangeNicknameResponse, error) {
+	if !s.ac.IsLoggedIn() {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+			},
+		}, nil
+	}
+
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	// check if meshnet is enabled
+	if !cfg.Mesh {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+
+	// check info and re-register if needed
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if req.Nickname == "" {
+		if cfg.MeshDevice.Nickname == "" {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY,
+				},
+			}, nil
+		}
+	} else {
+		if cfg.MeshDevice.Nickname == req.Nickname {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SAME_NICKNAME,
+				},
+			}, nil
+		}
+	}
+
+	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
+	info := mesh.MachineUpdateRequest{
+		Nickname:        req.Nickname,
+		SupportsRouting: cfg.MeshDevice.SupportsRouting,
+		Endpoints:       cfg.MeshDevice.Endpoints,
+	}
+
+	if err := s.reg.Update(token, cfg.MeshDevice.ID, info); err != nil {
+		if errors.Is(err, core.ErrUnauthorized) {
+			// TODO: check what happens with cfg.Mesh
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				s.pub.Publish(err)
+				return &pb.ChangeNicknameResponse{
+					Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+					},
+				}, nil
+			}
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				},
+			}, nil
+		}
+
+		// TODO: display API error to the user
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	err := s.cm.SaveWith(func(c config.Config) config.Config {
+		c.MeshDevice.Nickname = req.Nickname
+		return c
+	})
+	if err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
 			},
 		}, nil
 	}
