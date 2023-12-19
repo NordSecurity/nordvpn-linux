@@ -1306,7 +1306,6 @@ func (s *Server) ChangePeerNickname(
 
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			// TODO: check what happens with cfg.Mesh
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
 				s.pub.Publish(err)
 				return &pb.ChangeNicknameResponse{
@@ -1329,7 +1328,7 @@ func (s *Server) ChangePeerNickname(
 		}, nil
 	}
 
-	peer := s.getPeerWithId(req.GetIdentifier(), resp)
+	peer := s.getPeerWithIdentifier(req.GetIdentifier(), resp)
 
 	if peer == nil {
 		return &pb.ChangeNicknameResponse{
@@ -1339,20 +1338,35 @@ func (s *Server) ChangePeerNickname(
 		}, nil
 	}
 
-	if req.Nickname == "" && peer.Nickname == "" {
-		return &pb.ChangeNicknameResponse{
-			Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
-				ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY,
-			},
-		}, nil
-	}
+	if req.Nickname == "" {
+		if peer.Nickname == "" {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY,
+				},
+			}, nil
+		}
+	} else {
+		if peer.Nickname == req.Nickname {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SAME_NICKNAME,
+				},
+			}, nil
+		}
 
-	if req.Nickname != "" && peer.Nickname == req.Nickname {
-		return &pb.ChangeNicknameResponse{
-			Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
-				ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SAME_NICKNAME,
-			},
-		}, nil
+		// resolve the new nickname only if old and new are not case insensitive equal
+		if !strings.EqualFold(peer.Nickname, req.Nickname) {
+			// check that the DNS name is not already used
+			ips, err := s.nameservers.LookupIP(req.Nickname)
+			if err == nil && len(ips) != 0 {
+				return &pb.ChangeNicknameResponse{
+					Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+						ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
+					},
+				}, nil
+			}
+		}
 	}
 
 	peer.Nickname = req.Nickname
@@ -1429,6 +1443,18 @@ func (s *Server) ChangeMachineNickname(
 				},
 			}, nil
 		}
+		// resolve the new nickname only if old and new are not case insensitive equal
+		if !strings.EqualFold(cfg.MeshDevice.Nickname, req.Nickname) {
+			// check that the DNS name is not already used
+			ips, err := s.nameservers.LookupIP(req.Nickname)
+			if err == nil && len(ips) != 0 {
+				return &pb.ChangeNicknameResponse{
+					Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+						ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
+					},
+				}, nil
+			}
+		}
 	}
 
 	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
@@ -1469,6 +1495,8 @@ func (s *Server) ChangeMachineNickname(
 		return c
 	})
 	if err != nil {
+		// in this case the local and the server info are out of sync
+		// the out of sync will remain until current machine receives a NC notification for itself or after mesh restart or settings again a nickname
 		s.pub.Publish(err)
 		return &pb.ChangeNicknameResponse{
 			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
@@ -2924,9 +2952,13 @@ func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKey
 	}, nil
 }
 
-func (s *Server) getPeerWithId(id string, peers mesh.MachinePeers) *mesh.MachinePeer {
+func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh.MachinePeer {
+	if id == "" {
+		return nil
+	}
+	id = strings.ToLower(id)
 	index := slices.IndexFunc(peers, func(p mesh.MachinePeer) bool {
-		return p.ID.String() == id
+		return p.ID.String() == id || p.Hostname == id || p.PublicKey == id || strings.EqualFold(p.Nickname, id)
 	})
 
 	if index == -1 {

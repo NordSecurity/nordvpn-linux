@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -30,21 +31,21 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 		{
 			testName:       "set tpl ipv4",
 			desiredTpl:     true,
-			expectedDNS:    tplNameserversV4,
+			expectedDNS:    mock.TplNameserversV4,
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
 		},
 		{
 			testName:       "set tpl ipv6",
 			ipv6:           true,
 			desiredTpl:     true,
-			expectedDNS:    append(tplNameserversV4, tplNameserversV6...),
+			expectedDNS:    append(mock.TplNameserversV4, mock.TplNameserversV6...),
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
 		},
 		{
 			testName:       "set tpl reset dns ipv4",
 			desiredTpl:     true,
 			currentDNS:     dns,
-			expectedDNS:    tplNameserversV4,
+			expectedDNS:    mock.TplNameserversV4,
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET,
 		},
 		{
@@ -52,15 +53,15 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 			ipv6:           true,
 			desiredTpl:     true,
 			currentDNS:     dns,
-			expectedDNS:    append(tplNameserversV4, tplNameserversV6...),
+			expectedDNS:    append(mock.TplNameserversV4, mock.TplNameserversV6...),
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET,
 		},
 		{
 			testName:       "set tpl off ipv4",
 			desiredTpl:     false,
 			currentTpl:     true,
-			currentDNS:     tplNameserversV4,
-			expectedDNS:    defaultNameserversV4,
+			currentDNS:     mock.TplNameserversV4,
+			expectedDNS:    mock.DefaultNameserversV4,
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
 		},
 		{
@@ -68,8 +69,8 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 			ipv6:           true,
 			desiredTpl:     false,
 			currentTpl:     true,
-			currentDNS:     tplNameserversV4,
-			expectedDNS:    append(defaultNameserversV4, defaultNameserversV6...),
+			currentDNS:     mock.TplNameserversV4,
+			expectedDNS:    append(mock.DefaultNameserversV4, mock.DefaultNameserversV6...),
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
 		},
 	}
@@ -94,7 +95,7 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 			})
 
 			networker := networker.Mock{}
-			dnsGetter := mockDNSGetter{}
+			dnsGetter := mock.DNSGetter{}
 			tplPublisher := &mockPublisherSubcriber{}
 			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
 
@@ -187,7 +188,7 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{
 					ThreatProtectionLite: test.currentTpl,
-					DNS:                  defaultNameserversV4,
+					DNS:                  mock.DefaultNameserversV4,
 				}
 
 				return c
@@ -196,7 +197,7 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 			networker := networker.Mock{
 				SetDNSErr: test.setDnsErr,
 			}
-			dnsGetter := mockDNSGetter{}
+			dnsGetter := mock.DNSGetter{}
 			tplPublisher := &mockPublisherSubcriber{}
 			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
 

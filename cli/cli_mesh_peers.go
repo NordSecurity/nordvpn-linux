@@ -623,6 +623,8 @@ func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
 			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
 		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
 			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
+		case pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS:
+			return fmt.Errorf(MsgMeshnetPeerNicknameIsDomainName)
 		}
 	}
 
@@ -659,6 +661,9 @@ func (c *cmd) MeshSetMachineNickname(ctx *cli.Context) error {
 			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
 		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
 			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
+		case pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS:
+			return fmt.Errorf(MsgMeshnetPeerNicknameIsDomainName)
+
 		}
 	}
 

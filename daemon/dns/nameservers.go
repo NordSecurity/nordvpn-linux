@@ -1,5 +1,7 @@
 package dns
 
+import "net"
+
 const (
 	primaryNameserver4                       = "103.86.96.100"
 	secondaryNameserver4                     = "103.86.99.100"
@@ -13,6 +15,7 @@ const (
 
 type Getter interface {
 	Get(isThreatProtectionLite bool, isIPv6 bool) []string
+	LookupIP(host string) ([]net.IP, error)
 }
 
 type NameServers struct {
@@ -47,4 +50,8 @@ func (n *NameServers) Get(isThreatProtectionLite bool, ipv6 bool) []string {
 
 	nameservers = append(nameservers, primaryNameserver4, secondaryNameserver4)
 	return nameservers
+}
+
+func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
+	return net.LookupIP(host)
 }
