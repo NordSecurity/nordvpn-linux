@@ -210,6 +210,10 @@ func (m *mockStorage) Load() (map[string]*pb.Transfer, error) {
 	return m.transfers, m.err
 }
 
+func (m *mockStorage) PurgeTransfersUntil(until time.Time) error {
+	return nil
+}
+
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 

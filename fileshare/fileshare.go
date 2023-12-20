@@ -37,4 +37,5 @@ type Fileshare interface {
 // Storage is used for filesharing history persistence
 type Storage interface {
 	Load() (map[string]*pb.Transfer, error)
+	PurgeTransfersUntil(until time.Time) error
 }

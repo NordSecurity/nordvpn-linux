@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -38,4 +39,18 @@ func (c *Combined) Load() (map[string]*pb.Transfer, error) {
 	}
 
 	return libdropTransfers, nil
+}
+
+func (c *Combined) PurgeTransfersUntil(until time.Time) error {
+	err := c.libdrop.PurgeTransfersUntil(until)
+	if err != nil {
+		return err
+	}
+
+	err = c.json.PurgeTransfersUntil(until)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

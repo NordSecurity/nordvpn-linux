@@ -472,7 +472,7 @@ func (s *Server) PurgeTransfersUntil(ctx context.Context, req *pb.PurgeTransfers
 		return serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED), nil
 	}
 
-	err = s.fileshare.PurgeTransfersUntil(req.Until.AsTime())
+	err = s.eventManager.storage.PurgeTransfersUntil(req.Until.AsTime())
 	if err != nil {
 		log.Printf("error while purging transfers: %s", err)
 		return fileshareError(pb.FileshareErrorCode_PURGE_FAILURE), nil
