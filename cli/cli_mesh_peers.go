@@ -676,13 +676,7 @@ func (c *cmd) MeshRemoveMachineNickname(ctx *cli.Context) error {
 	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
 		return meshnetErrorToError(resp.MeshnetErrorCode)
 	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
-		switch resp.ChangeNicknameErrorCode {
-		case pb.ChangeNicknameErrorCode_SAME_NICKNAME,
-			pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS:
-			return errors.New(AccountInternalError)
-		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
-			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
-		}
+		return getChangeNicknameResponseToError(resp.ChangeNicknameErrorCode, "")
 	}
 
 	color.Green(MsgMeshnetRemoveNicknameSuccessful)
@@ -1375,7 +1369,9 @@ func getMeshnetResponseToError(resp *pb.MeshnetResponse) error {
 func getChangeNicknameResponseToError(code pb.ChangeNicknameErrorCode, nickname string) error {
 	switch code {
 	case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
-		return fmt.Errorf(MsgMeshnetSetSameNickname, nickname)
+		if nickname != "" {
+			return fmt.Errorf(MsgMeshnetSetSameNickname, nickname)
+		}
 	case pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS:
 		return fmt.Errorf(MsgMeshnetNicknameIsDomainName)
 	case pb.ChangeNicknameErrorCode_RATE_LIMIT_REACH:
@@ -1392,6 +1388,8 @@ func getChangeNicknameResponseToError(code pb.ChangeNicknameErrorCode, nickname 
 		return errors.New(MsgMeshnetNicknameWithDoubleHyphens)
 	case pb.ChangeNicknameErrorCode_INVALID_CHARS:
 		return errors.New(MsgMeshnetContainsInvalidChars)
+	case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
+		return errors.New(MsgMeshnetNicknameAlreadyEmpty)
 	}
 
 	return errors.New(AccountInternalError)
