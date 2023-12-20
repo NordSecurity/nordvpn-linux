@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -13,16 +14,16 @@ func (r *RPC) Register(ctx context.Context, in *pb.RegisterRequest) (*pb.Payload
 	_, err := r.api.CreateUser(in.GetEmail(), in.GetPassword())
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "registering user:", err)
-		switch err {
-		case core.ErrBadRequest:
+		switch {
+		case errors.Is(err, core.ErrBadRequest):
 			return &pb.Payload{
 				Type: internal.CodeBadRequest,
 			}, nil
-		case core.ErrConflict:
+		case errors.Is(err, core.ErrConflict):
 			return &pb.Payload{
 				Type: internal.CodeConflict,
 			}, nil
-		case core.ErrServerInternal:
+		case errors.Is(err, core.ErrServerInternal):
 			return &pb.Payload{
 				Type: internal.CodeInternalError,
 			}, nil

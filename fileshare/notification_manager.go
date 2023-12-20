@@ -1,6 +1,7 @@
 package fileshare
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os/exec"
@@ -263,20 +264,20 @@ func (nm *NotificationManager) OpenFile(notificationID uint32) {
 }
 
 func acceptErrorToNotificationBody(err error) string {
-	switch err {
-	case ErrSizeLimitExceeded:
+	switch {
+	case errors.Is(err, ErrSizeLimitExceeded):
 		return notEnoughSpaceOnDeviceError
-	case ErrTransferAlreadyAccepted:
+	case errors.Is(err, ErrTransferAlreadyAccepted):
 		return transferInvalidated
-	case ErrAcceptDirNotFound:
+	case errors.Is(err, ErrAcceptDirNotFound):
 		return downloadDirNotFoundError
-	case ErrAcceptDirIsASymlink:
+	case errors.Is(err, ErrAcceptDirIsASymlink):
 		return downloadDirIsASymlinkError
-	case ErrAcceptDirIsNotADirectory:
+	case errors.Is(err, ErrAcceptDirIsNotADirectory):
 		return downloadDirIsNotADirError
-	case ErrNoPermissionsToAcceptDirectory:
+	case errors.Is(err, ErrNoPermissionsToAcceptDirectory):
 		return downloadDirNoPermissions
-	case ErrTransferCanceledByPeer:
+	case errors.Is(err, ErrTransferCanceledByPeer):
 		return transferCanceledByPeerNotificationBody
 	default:
 		log.Println("Unknown error: ", err.Error())

@@ -963,20 +963,20 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 		}
 		err = c.Ping()
 		if err != nil {
-			switch err {
-			case ErrUpdateAvailable:
+			switch {
+			case errors.Is(err, ErrUpdateAvailable):
 				color.Yellow(fmt.Sprintf(UpdateAvailableMessage))
-			case ErrInternetConnection:
+			case errors.Is(err, ErrInternetConnection):
 				color.Red(ErrInternetConnection.Error())
 				os.Exit(1)
-			case internal.ErrSocketAccessDenied:
+			case errors.Is(err, internal.ErrSocketAccessDenied):
 				color.Red(formatError(internal.ErrSocketAccessDenied).Error())
 				color.Red("Run 'sudo usermod -aG nordvpn $USER' to fix this issue and reboot your device afterwards for this to take an effect.")
 				os.Exit(1)
-			case internal.ErrDaemonConnectionRefused:
+			case errors.Is(err, internal.ErrDaemonConnectionRefused):
 				color.Red(formatError(internal.ErrDaemonConnectionRefused).Error())
 				os.Exit(1)
-			case internal.ErrSocketNotFound:
+			case errors.Is(err, internal.ErrSocketNotFound):
 				color.Red(formatError(internal.ErrSocketNotFound).Error())
 				color.Red("The NordVPN background service isn't running. Execute the \"systemctl enable --now nordvpnd\" command with root privileges to start the background service. If you're using NordVPN in an environment without systemd (a container, for example), use the \"/etc/init.d/nordvpn start\" command.")
 				os.Exit(1)

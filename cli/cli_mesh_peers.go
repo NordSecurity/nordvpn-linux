@@ -618,14 +618,7 @@ func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
 	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
 		return meshnetErrorToError(resp.MeshnetErrorCode)
 	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
-		switch resp.ChangeNicknameErrorCode {
-		case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
-			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
-		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
-			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
-		case pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS:
-			return fmt.Errorf(MsgMeshnetPeerNicknameIsDomainName)
-		}
+		return getChangeNicknameResponseToError(resp.ChangeNicknameErrorCode, nickname)
 	}
 
 	return nil
@@ -656,14 +649,7 @@ func (c *cmd) MeshSetMachineNickname(ctx *cli.Context) error {
 	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
 		return meshnetErrorToError(resp.MeshnetErrorCode)
 	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
-		switch resp.ChangeNicknameErrorCode {
-		case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
-			return fmt.Errorf(MsgMeshnetPeerSetNicknameTheSame, nickname)
-		case pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY:
-			return fmt.Errorf(MsgMeshnetNicknameAlreadyEmpty)
-		case pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS:
-			return fmt.Errorf(MsgMeshnetPeerNicknameIsDomainName)
-		}
+		return getChangeNicknameResponseToError(resp.ChangeNicknameErrorCode, nickname)
 	}
 
 	color.Green(MsgMeshnetSetNicknameSuccessful, nickname)
@@ -1384,4 +1370,29 @@ func getMeshnetResponseToError(resp *pb.MeshnetResponse) error {
 	default:
 		return errors.New(AccountInternalError)
 	}
+}
+
+func getChangeNicknameResponseToError(code pb.ChangeNicknameErrorCode, nickname string) error {
+	switch code {
+	case pb.ChangeNicknameErrorCode_SAME_NICKNAME:
+		return fmt.Errorf(MsgMeshnetSetSameNickname, nickname)
+	case pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS:
+		return fmt.Errorf(MsgMeshnetNicknameIsDomainName)
+	case pb.ChangeNicknameErrorCode_RATE_LIMIT_REACH:
+		return errors.New(MsgMeshnetRateLimitReach)
+	case pb.ChangeNicknameErrorCode_NICKNAME_TOO_LONG:
+		return errors.New(MsgMeshnetNicknameTooLong)
+	case pb.ChangeNicknameErrorCode_DUPLICATE_NICKNAME:
+		return errors.New(MsgMeshnetDuplicateNickname)
+	case pb.ChangeNicknameErrorCode_CONTAINS_FORBIDDEN_WORD:
+		return errors.New(MsgMeshnetContainsForbiddenWord)
+	case pb.ChangeNicknameErrorCode_SUFFIX_OR_PREFIX_ARE_INVALID:
+		return errors.New(MsgMeshnetInvalidPrefixOrSuffix)
+	case pb.ChangeNicknameErrorCode_NICKNAME_HAS_DOUBLE_HYPHENS:
+		return errors.New(MsgMeshnetNicknameWithDoubleHyphens)
+	case pb.ChangeNicknameErrorCode_INVALID_CHARS:
+		return errors.New(MsgMeshnetContainsInvalidChars)
+	}
+
+	return errors.New(AccountInternalError)
 }

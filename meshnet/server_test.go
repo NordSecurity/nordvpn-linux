@@ -1587,6 +1587,24 @@ func TestServer_Peer_Nickname(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "API returns error that nickname contains invalid chars",
+			isMeshOn: true,
+			peersList: []mesh.MachinePeer{
+				{
+					ID:       uuid.MustParse(exampleUUID1),
+					Nickname: "peer1",
+				},
+			},
+			peerId:       exampleUUID1,
+			newNickname:  peerNickname1,
+			configureErr: core.ErrContainsInvalidChars,
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_INVALID_CHARS,
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -1799,6 +1817,102 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
 					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
+				},
+			},
+		},
+		{
+			name:        "generic API error",
+			isMeshOn:    true,
+			newNickname: machineNickname,
+			machine:     mesh.Machine{},
+			updateErr:   fmt.Errorf("error"),
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				},
+			},
+		},
+		{
+			name:        "API returns error rate limit reach",
+			isMeshOn:    true,
+			newNickname: machineNickname,
+			machine:     mesh.Machine{},
+			updateErr:   core.ErrRateLimitReach,
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_RATE_LIMIT_REACH,
+				},
+			},
+		},
+		{
+			name:        "API returns error nickname too long",
+			isMeshOn:    true,
+			newNickname: machineNickname,
+			machine:     mesh.Machine{},
+			updateErr:   core.ErrNicknameTooLong,
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_TOO_LONG,
+				},
+			},
+		},
+		{
+			name:        "API returns error duplicate nickname",
+			isMeshOn:    true,
+			newNickname: machineNickname,
+			machine:     mesh.Machine{},
+			updateErr:   core.ErrDuplicateNickname,
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DUPLICATE_NICKNAME,
+				},
+			},
+		},
+		{
+			name:        "API returns forbidden word",
+			isMeshOn:    true,
+			newNickname: machineNickname,
+			machine:     mesh.Machine{},
+			updateErr:   core.ErrContainsForbiddenWord,
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_CONTAINS_FORBIDDEN_WORD,
+				},
+			},
+		},
+		{
+			name:        "API returns invalid suffix or prefix",
+			isMeshOn:    true,
+			newNickname: machineNickname,
+			machine:     mesh.Machine{},
+			updateErr:   core.ErrInvalidPrefixOrSuffix,
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SUFFIX_OR_PREFIX_ARE_INVALID,
+				},
+			},
+		},
+		{
+			name:        "API error double hyphens",
+			isMeshOn:    true,
+			newNickname: machineNickname,
+			machine:     mesh.Machine{},
+			updateErr:   core.ErrNicknameWithDoubleHyphens,
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_HAS_DOUBLE_HYPHENS,
+				},
+			},
+		},
+		{
+			name:        "API error nickname contains invalid chars",
+			isMeshOn:    true,
+			newNickname: machineNickname,
+			machine:     mesh.Machine{},
+			updateErr:   core.ErrContainsInvalidChars,
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_INVALID_CHARS,
 				},
 			},
 		},

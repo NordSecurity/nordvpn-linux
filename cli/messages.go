@@ -250,6 +250,17 @@ Learn more:
 	MsgMeshnetPeerResetNicknameSuccessful = "COPY: peer '%s' nickname reset. default name is %s"
 	MsgMeshnetPeerResetNicknameFailed     = "COPY: failed to reset nickname peer: '%s'"
 
+	// errors received for meshnet nicknames
+	MsgMeshnetSetSameNickname           = "COPY: same nickname '%s' already set"
+	MsgMeshnetNicknameIsDomainName      = "COPY: cannot set nickname because a domain with this name already exists"
+	MsgMeshnetRateLimitReach            = "COPY: reach max allowed nickname changes for a week"
+	MsgMeshnetNicknameTooLong           = "COPY: nickname is too long"
+	MsgMeshnetDuplicateNickname         = "COPY: nickname already exist"
+	MsgMeshnetContainsForbiddenWord     = "COPY: nickname contains forbidden word"
+	MsgMeshnetInvalidPrefixOrSuffix     = "COPY: nickname contains invalid prefix or suffix"
+	MsgMeshnetNicknameWithDoubleHyphens = "COPY: nickname contains double hyphens"
+	MsgMeshnetContainsInvalidChars      = "COPY: nickname contains invalid characters"
+
 	// Fileshare
 	FileshareName       = "fileshare"
 	FileshareSendName   = "send"
