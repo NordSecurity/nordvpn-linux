@@ -44,9 +44,7 @@ MSG_ROUTING_OFF =  "Routing is set to 'disabled' successfully."
 def test_routing_enabled_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    lib.add_subnet_to_allowlist(f"{SUBNET_1}/32")
-    lib.add_subnet_to_allowlist(f"{SUBNET_2}/32")
-    lib.add_subnet_to_allowlist(f"{SUBNET_3}/32")
+    lib.add_subnet_to_allowlist([f"{SUBNET_1}/32", f"{SUBNET_2}/32", f"{SUBNET_3}/32"])
 
     print(sh.nordvpn.connect())
     assert network.is_available()
@@ -70,7 +68,7 @@ def test_routing_enabled_connect(tech, proto, obfuscated):
 def test_routing_disabled_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    lib.add_subnet_to_allowlist(f"{SUBNET_1}/32")
+    lib.add_subnet_to_allowlist([f"{SUBNET_1}/32"])
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
     assert not settings.get_is_routing_enabled()
