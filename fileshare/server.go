@@ -475,7 +475,7 @@ func (s *Server) PurgeTransfersUntil(ctx context.Context, req *pb.PurgeTransfers
 	err = s.fileshare.PurgeTransfersUntil(req.Until.AsTime())
 	if err != nil {
 		log.Printf("error while purging transfers: %s", err)
-		return fileshareError(pb.FileshareErrorCode_LIB_FAILURE), nil
+		return fileshareError(pb.FileshareErrorCode_PURGE_FAILURE), nil
 	}
 
 	return empty(), nil

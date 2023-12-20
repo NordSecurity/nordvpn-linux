@@ -437,6 +437,8 @@ func fileshareErrorCodeToError(code pb.FileshareErrorCode, params ...any) error 
 		return errors.New(MsgNoFiles)
 	case pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS:
 		return fmt.Errorf(MsgNoPermissions, params...)
+	case pb.FileshareErrorCode_PURGE_FAILURE:
+		return errors.New(MsgFileshareClearFailure)
 	default:
 		return errors.New(AccountInternalError)
 	}

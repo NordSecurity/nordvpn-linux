@@ -42,6 +42,7 @@ enum FileshareErrorCode {
 	ACCEPT_DIR_IS_NOT_A_DIRECTORY = 19;
 	NO_FILES = 20;
 	ACCEPT_DIR_NO_PERMISSIONS = 21;
+	PURGE_FAILURE = 22;
 }
 
 // Generic error to be used through all responses. If empty then no error occurred.

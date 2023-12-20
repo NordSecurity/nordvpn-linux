@@ -289,6 +289,7 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareClearArgsUsage    = "all|<time_period> [time_period...]"
 	MsgFileshareClearDescription  = MsgFileshareClearUsage + "\n\nSpecify the time period using the systemd time span syntax: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html\n\nFor example, \"nordvpn fileshare clear 1d 12h\" clears entries older than 36 hours. Use \"nordvpn fileshare clear all\" to remove all entries."
 	MsgFileshareClearSuccess      = "File transfer history cleared."
+	MsgFileshareClearFailure      = "Can't clear file transfer history. See nordfileshared.log for more details."
 
 	MsgFileshareProgressOngoing        = "File transfer [%s] progress [%d%%]"
 	MsgFileshareProgressFinished       = "File transfer [%s] completed.      " // Need extra spaces to cover the progress message
