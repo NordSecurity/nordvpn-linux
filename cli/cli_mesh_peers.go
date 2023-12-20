@@ -160,23 +160,40 @@ func peersToOutputString(peers *pb.PeerList, condition string) string {
 }
 
 func selfToOutputString(peer *pb.Peer) string {
+	// if peer has nickname, then it will be displayed first, otherwise is the hostname
+	var title keyval
+	var alternativeName keyval
+	if peer.Nickname != "" {
+		title = keyval{Key: "Nickname", Value: peer.Nickname}
+		alternativeName = keyval{Key: "Hostname", Value: peer.Hostname}
+	} else {
+		alternativeName = keyval{Key: "Nickname", Value: "-"}
+		title = keyval{Key: "Hostname", Value: peer.Hostname}
+	}
+
 	kvs := []keyval{
+		alternativeName,
 		{Key: "IP", Value: peer.Ip},
 		{Key: "Public Key", Value: peer.Pubkey},
 		{Key: "OS", Value: peer.Os},
 		{Key: "Distribution", Value: peer.Distro},
 	}
-	hostname := peer.Hostname
-	if peer.Nickname != "" {
-		hostname = peer.Nickname
-	}
-	return titledKeyvalListToColoredString(keyval{
-		Key: "Hostname", Value: hostname,
-	}, color.FgGreen, kvs)
+	return titledKeyvalListToColoredString(title, color.FgGreen, kvs)
 }
 
 func peerToOutputString(peer *pb.Peer) string {
+	// if peer has nickname, then it will be displayed first, otherwise is the hostname
+	var title keyval
+	var alternativeName keyval
+	if peer.Nickname != "" {
+		title = keyval{Key: "Nickname", Value: peer.Nickname}
+		alternativeName = keyval{Key: "Hostname", Value: peer.Hostname}
+	} else {
+		alternativeName = keyval{Key: "Nickname", Value: "-"}
+		title = keyval{Key: "Hostname", Value: peer.Hostname}
+	}
 	kvs := []keyval{
+		alternativeName,
 		{Key: "Status", Value: strings.ToLower(peer.Status.String())},
 		{Key: "IP", Value: peer.Ip},
 		{Key: "Public Key", Value: peer.Pubkey},
@@ -192,13 +209,7 @@ func peerToOutputString(peer *pb.Peer) string {
 		{Key: "Allows Sending Files", Value: nstrings.GetBoolLabel(peer.IsFileshareAllowed)},
 		{Key: "Accept Fileshare Automatically", Value: nstrings.GetBoolLabel(peer.AlwaysAcceptFiles)},
 	}
-	hostname := peer.Hostname
-	if peer.Nickname != "" {
-		hostname = peer.Nickname + " [" + peer.Hostname + "]"
-	}
-	return titledKeyvalListToColoredString(keyval{
-		Key: "Hostname", Value: hostname,
-	}, color.FgYellow, kvs)
+	return titledKeyvalListToColoredString(title, color.FgYellow, kvs)
 }
 
 func titledKeyvalListToColoredString(
@@ -571,7 +582,7 @@ func (c *cmd) MeshPeerSetNickname(ctx *cli.Context) error {
 
 	nickname := ctx.Args().Get(1)
 
-	if err = c.renameMeshnetPeer(peer, nickname); err != nil {
+	if err = c.changeMeshnetPeerNickname(peer, nickname); err != nil {
 		return err
 	}
 
@@ -585,7 +596,7 @@ func (c *cmd) MeshPeerRemoveNickname(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	if err = c.renameMeshnetPeer(peer, ""); err != nil {
+	if err = c.changeMeshnetPeerNickname(peer, ""); err != nil {
 		return err
 	}
 
@@ -593,7 +604,7 @@ func (c *cmd) MeshPeerRemoveNickname(ctx *cli.Context) error {
 	return nil
 }
 
-func (c *cmd) renameMeshnetPeer(peer *pb.Peer, nickname string) error {
+func (c *cmd) changeMeshnetPeerNickname(peer *pb.Peer, nickname string) error {
 	resp, err := c.meshClient.ChangePeerNickname(context.Background(), &pb.ChangePeerNicknameRequest{
 		Identifier: peer.Identifier,
 		Nickname:   nickname,
@@ -764,7 +775,7 @@ func (c *cmd) MeshPeerNicknameAutoComplete(ctx *cli.Context) {
 
 func peerByIdentifier(id string) func(*pb.Peer) bool {
 	return func(peer *pb.Peer) bool {
-		return peer.GetIp() == id || peer.GetHostname() == id || peer.GetPubkey() == id || peer.GetNickname() == id
+		return peer.GetIp() == id || peer.GetHostname() == id || peer.GetPubkey() == id || strings.EqualFold(peer.GetNickname(), id)
 	}
 }
 
