@@ -129,7 +129,7 @@ func TestStartAutoConnect(t *testing.T) {
 				newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 				netw,
 				&subs.Subject[string]{},
-				mockNameservers([]string{"1.1.1.1"}),
+				&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 				nil,
 				&mockAnalytics{},
 				service.NoopFileshare{},
@@ -165,55 +165,6 @@ func (invitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error) {
 func (invitationsAPI) Accept(string, uuid.UUID, uuid.UUID, bool, bool, bool, bool) error { return nil }
 func (invitationsAPI) Revoke(string, uuid.UUID, uuid.UUID) error                         { return nil }
 func (invitationsAPI) Reject(string, uuid.UUID, uuid.UUID) error                         { return nil }
-
-type registryAPI struct {
-	localPeers   mesh.Machines
-	machinePeers mesh.MachinePeers
-	listErr      error
-	configureErr error
-}
-
-func (registryAPI) Register(string, mesh.Machine) (*mesh.Machine, error) {
-	return &mesh.Machine{}, nil
-}
-
-func (*registryAPI) Update(string, uuid.UUID, mesh.MachineUpdateRequest) error { return nil }
-
-func (r *registryAPI) Configure(string, uuid.UUID, uuid.UUID, mesh.PeerUpdateRequest) error {
-	return r.configureErr
-}
-
-func (*registryAPI) Unregister(string, uuid.UUID) error { return nil }
-
-func (r *registryAPI) List(string, uuid.UUID) (mesh.MachinePeers, error) {
-	if r.listErr != nil {
-		return nil, r.listErr
-	}
-	return r.machinePeers, nil
-}
-
-func (r *registryAPI) Local(string) (mesh.Machines, error) {
-	return r.localPeers, nil
-}
-
-func (r *registryAPI) Unpair(string, uuid.UUID, uuid.UUID) error { return nil }
-
-func (r *registryAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
-	return &mesh.MachineMap{}, nil
-}
-func (r *registryAPI) NotifyNewTransfer(
-	token string,
-	self uuid.UUID,
-	peer uuid.UUID,
-	fileName string,
-	fileCount int,
-) error {
-	return nil
-}
-
-type dnsGetter struct{}
-
-func (dnsGetter) Get(bool, bool) []string { return nil }
 
 type meshNetworker struct {
 	allowedIncoming  []meshnet.UniqueAddress
@@ -364,7 +315,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 				test.netw,
 				&subs.Subject[string]{},
-				mockNameservers([]string{"1.1.1.1"}),
+				&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 				nil,
 				&mockAnalytics{},
 				service.NoopFileshare{},
@@ -377,8 +328,8 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&meshRenewChecker{},
 				&invitationsAPI{},
 				&meshNetworker{},
-				&registryAPI{},
-				&dnsGetter{},
+				&mock.RegistryMock{},
+				&mock.DNSGetter{},
 				&subs.Subject[error]{},
 				nil,
 				&subs.Subject[bool]{},

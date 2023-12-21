@@ -246,6 +246,7 @@ Learn more:
 	MsgMeshnetPeerSetNicknameFailed       = "COPY: failed to rename peer: '%s'"
 	MsgMeshnetPeerSetNicknameTheSame      = "COPY: same nickname '%s' already set"
 	MsgMeshnetNicknameAlreadyEmpty        = "COPY: nickname already empty"
+	MsgMeshnetPeerNicknameIsDomainName    = "COPY: cannot set nickname because a domain with this name already exists"
 	MsgMeshnetPeerResetNicknameSuccessful = "COPY: peer '%s' nickname reset. default name is %s"
 	MsgMeshnetPeerResetNicknameFailed     = "COPY: failed to reset nickname peer: '%s'"
 
