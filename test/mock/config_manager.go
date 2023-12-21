@@ -8,6 +8,15 @@ import (
 type ConfigManager struct {
 	Cfg     *config.Config
 	SaveErr error
+	LoadErr error
+}
+
+func NewMockConfigManager() *ConfigManager {
+	m := ConfigManager{}
+	m.Cfg = &config.Config{}
+	m.Cfg.MeshDevice = &mesh.Machine{}
+
+	return &m
 }
 
 func (m *ConfigManager) SaveWith(fn config.SaveFunc) error {
@@ -24,6 +33,9 @@ func (m *ConfigManager) SaveWith(fn config.SaveFunc) error {
 }
 
 func (m *ConfigManager) Load(c *config.Config) error {
+	if m.LoadErr != nil {
+		return m.LoadErr
+	}
 	if m.Cfg == nil {
 		m.Cfg = &config.Config{}
 	}
