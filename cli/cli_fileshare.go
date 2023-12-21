@@ -210,7 +210,7 @@ func (c *cmd) FileshareAutoCompletePeers(ctx *cli.Context) {
 // FileshareAutoCompleteClear implements bash autocompletion for history clearing
 func (c *cmd) FileshareAutoCompleteClear(ctx *cli.Context) {
 	if ctx.NArg() == 0 {
-		fmt.Println("all\n<time_period>")
+		fmt.Println("all\nhelp")
 	} else {
 		if ctx.Args().Get(0) == "all" {
 			return
@@ -223,8 +223,6 @@ func (c *cmd) FileshareAutoCompleteClear(ctx *cli.Context) {
 			} else {
 				fmt.Println("seconds\nminutes\nhours\ndays\nweeks\nmonths\nyears")
 			}
-		} else {
-			fmt.Println("<time_period>")
 		}
 	}
 }
