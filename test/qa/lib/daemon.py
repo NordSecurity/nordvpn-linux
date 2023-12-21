@@ -1,12 +1,14 @@
 """Functions to make it easier to interact with nordvpnd."""
-from lib import ssh
+import glob
 import logging
 import os
-import sh
 import socket
 import time
-import glob
 from typing import List, Tuple
+
+import sh
+
+from . import ssh
 
 
 def _rewrite_log_path():
@@ -37,7 +39,7 @@ def is_disconnected() -> bool:
 
 
 def is_killswitch_on():
-    """ return True when Killswitch is activated """
+    """return True when Killswitch is activated"""
     try:
         return "Kill Switch: enabled" in sh.nordvpn.settings()
     except sh.ErrorReturnCode:
@@ -144,9 +146,10 @@ def is_running():
 
 
 # returns True when daemon is running in peer
+# noinspection PyBroadException
 def is_peer_running(ssh_client: ssh.Ssh) -> bool:
     try:
         ssh_client.exec_command("nordvpn status")
         return True
-    except:
+    except Exception:
         return False

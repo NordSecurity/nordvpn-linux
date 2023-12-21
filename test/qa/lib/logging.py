@@ -1,5 +1,6 @@
-"""Logging utilities to make it easier to write to daemon logs. """
+"""Logging utilities to make it easier to write to daemon logs."""
 import os
+
 import sh
 
 # log file location

@@ -1,37 +1,34 @@
-from lib import (
-    daemon,
-    info,
-    logging,
-    login,
-    network,
-    server,
-    settings
-)
-import lib
-import pytest
 import queue
-import sh
 import socket
 import threading
 import time
-import timeout_decorator
-import requests
-import io
 
+import pytest
+import sh
+import timeout_decorator
+
+import lib
+from lib import daemon, info, logging, login, network, server, settings
+
+
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -39,7 +36,7 @@ def teardown_function(function):
 
 def capture_traffic() -> int:
     """
-    Captures traffic that goes to VPN server 
+    Captures traffic that goes to VPN server
     :return: int - returns count of captured packets
     """
 
@@ -50,22 +47,24 @@ def capture_traffic() -> int:
 
     # Choose traffic filter according to information collected above
     if protocol == "nordlynx":
-        traffic_filter = "(udp port 51820) and (ip dst {})".format(server_ip)
+        traffic_filter = f"(udp port 51820) and (ip dst {server_ip})"
     elif protocol == "udp" and not obfuscated:
-        traffic_filter = "(udp port 1194) and (ip dst {})".format(server_ip)
+        traffic_filter = f"(udp port 1194) and (ip dst {server_ip})"
     elif protocol == "tcp" and not obfuscated:
-        traffic_filter = "(tcp port 443) and (ip dst {})".format(server_ip)
+        traffic_filter = f"(tcp port 443) and (ip dst {server_ip})"
     elif protocol == "udp" and obfuscated:
-        traffic_filter = "udp and (port not 1194) and (ip dst {})".format(server_ip)
+        traffic_filter = f"udp and (port not 1194) and (ip dst {server_ip})"
     elif protocol == "tcp" and obfuscated:
-        traffic_filter = "tcp and (port not 443) and (ip dst {})".format(server_ip)
+        traffic_filter = f"tcp and (port not 443) and (ip dst {server_ip})"
+    else:
+        traffic_filter = ""
 
     # Actual capture
     # If 2 packets were already captured, do not wait for 3 seconds
     # Show compact output about packets
     tshark_result = sh.tshark("-i", "any", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "-a", "duration:3", "-a", "packets:2", "-f", traffic_filter)
 
-    packets = tshark_result.replace("\t", " -> ")
+    tshark_result.replace("\t", " -> ")
     packets = tshark_result.split("\n")
 
     logging.log("PACKETS_CAPTURED: " + str(packets))
@@ -74,14 +73,16 @@ def capture_traffic() -> int:
     return len(packets) - 1
 
 
-def connect_base_test(group=[], name="", hostname=""):
+def connect_base_test(group=(), name="", hostname=""):
     output = sh.nordvpn.connect(group)
     print(output)
 
+    def packet_capture_thread_func():
+        packet_capture_thread_queue.put(capture_traffic())
+
     # Start capturing packets
     packet_capture_thread_queue = queue.Queue()
-    packet_capture_thread_lambda = lambda: packet_capture_thread_queue.put(capture_traffic())
-    packet_capture_thread = threading.Thread(target=packet_capture_thread_lambda)
+    packet_capture_thread = threading.Thread(target=packet_capture_thread_func)
     packet_capture_thread.start()
 
     # We need to make sure, that packets are being sent out only after
@@ -89,7 +90,7 @@ def connect_base_test(group=[], name="", hostname=""):
     time.sleep(1)
     assert lib.is_connect_successful(output, name, hostname)
 
-    # Following function creates atleast two ICMP packets
+    # Following function creates at least two ICMP packets
     assert network.is_connected()
 
     packet_capture_thread.join()
@@ -122,7 +123,7 @@ def test_quick_connect(tech, proto, obfuscated):
 def test_quick_connect_double_only(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    for n in range(2):
+    for _ in range(2):
         connect_base_test()
 
     disconnect_base_test()
@@ -243,7 +244,7 @@ def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
         logging.log(links)
         default_gateway = network.stop()
         network.start(default_gateway)
-        
+
         # wait for internet
         network.is_available(10)
 
@@ -259,7 +260,7 @@ def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
 def test_quick_connect_double_disconnect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    for n in range(2):
+    for _ in range(2):
         connect_base_test()
         disconnect_base_test()
 
@@ -354,6 +355,7 @@ def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
 
+
 @pytest.mark.parametrize("group", lib.OVPN_GROUPS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
@@ -395,7 +397,7 @@ def test_connect_to_group_invalid(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect("--group", "nonexisting_group")
+        sh.nordvpn.connect("--group", "nonexistent_group")
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
@@ -435,17 +437,17 @@ def test_connect_to_city(tech, proto, obfuscated, city):
 
 
 def get_unavailable_groups():
-    """ Returns groups that are not available with current connection settings """
+    """Returns groups that are not available with current connection settings"""
     ALL_GROUPS = ['Africa_The_Middle_East_And_India',
-              'Asia_Pacific',
-              'Dedicated_IP',
-              'Double_VPN',
-              'Europe',
-              'Obfuscated_Servers',
-              'Onion_Over_VPN',
-              'P2P',
-              'Standard_VPN_Servers',
-              'The_Americas']
+                  'Asia_Pacific',
+                  'Dedicated_IP',
+                  'Double_VPN',
+                  'Europe',
+                  'Obfuscated_Servers',
+                  'Onion_Over_VPN',
+                  'P2P',
+                  'Standard_VPN_Servers',
+                  'The_Americas']
 
     CURRENT_GROUPS = str(sh.nordvpn.groups()).strip("%-\r  ").strip().split(", ")
 
@@ -517,8 +519,9 @@ def test_status_connected(tech, proto, obfuscated):
 
         status_output = sh.nordvpn.status().lstrip('\r-\r  \r\r-\r  \r')
         status_info = dict((a.strip().lower(), b.strip())
-            for a, b in (element.split(':')
-                for element in filter(lambda line: len(line.split(':')) == 2, status_output.split('\n'))))
+                           for a, b in (element.split(':')
+                                        for element in
+                                        filter(lambda line: len(line.split(':')) == 2, status_output.split('\n'))))
 
         print("status_info: " + str(status_info))
         print("status_info: " + str(sh.nordvpn.status()))
@@ -543,15 +546,15 @@ def test_status_connected(tech, proto, obfuscated):
         transfer_received = float(status_info['transfer'].split(" ")[0])
         transfer_sent = float(status_info['transfer'].split(" ")[3])
 
-        assert transfer_received >= 0 
-        assert transfer_sent > 0 
+        assert transfer_received >= 0
+        assert transfer_sent > 0
 
         time_connected = int(status_info['uptime'].split(" ")[0])
         time_passed = status_time - connect_time
         if "minute" in status_info["uptime"]:
             time_connected_seconds = int(status_info['uptime'].split(" ")[2])
-            assert time_connected * 60 + time_connected_seconds >= time_passed - 1 and time_connected * 60 + time_connected_seconds <= time_passed + 1
+            assert time_passed - 1 <= time_connected * 60 + time_connected_seconds <= time_passed + 1
         else:
-            assert time_connected >= time_passed - 1 and time_connected <= time_passed + 1
+            assert time_passed - 1 <= time_connected <= time_passed + 1
 
     assert network.is_disconnected()

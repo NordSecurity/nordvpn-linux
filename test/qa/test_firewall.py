@@ -1,32 +1,37 @@
-from lib import (
-    allowlist,
-    daemon,
-    info,
-    logging,
-    login,
-    network,
-    firewall,
-)
-import lib
 import pytest
 import sh
 import timeout_decorator
 
+import lib
+from lib import (
+    allowlist,
+    daemon,
+    firewall,
+    info,
+    logging,
+    login,
+    network,
+)
 
+
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -163,16 +168,16 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
 
             lib.set_firewall("on")
             allowlist.add_subnet_to_allowlist([subnet])
-            assert not firewall.is_active("", [subnet])
+            assert not firewall.is_active(None, [subnet])
 
             sh.nordvpn.connect()
             assert network.is_connected()
-            assert firewall.is_active("", [subnet])
+            assert firewall.is_active(None, [subnet])
 
             lib.set_firewall("off")
-            assert not firewall.is_active("", [subnet])
+            assert not firewall.is_active(None, [subnet])
         assert network.is_disconnected()
-    assert not firewall.is_active("", [subnet])
+    assert not firewall.is_active(None, [subnet])
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
@@ -217,7 +222,7 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
-    with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0,1))):
+    with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -252,7 +257,7 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
-    with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0,1))):
+    with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 

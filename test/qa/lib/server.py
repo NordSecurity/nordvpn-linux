@@ -1,11 +1,12 @@
 import logging
-import requests
 import time
 from urllib.parse import quote
 
+import requests
+
 
 def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
-    """ returns server name and hostname from core API """
+    """returns server name and hostname from core API"""
     tech_id = ""
 
     if technology != "":
@@ -42,7 +43,6 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
 
     if group_id != "":
         group_id = group_ids[group_id]
-
 
     # api limits
     time.sleep(2)

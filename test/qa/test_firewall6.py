@@ -1,33 +1,39 @@
-from lib import (
-    allowlist,
-    daemon,
-    info,
-    logging,
-    login,
-    network,
-    firewall,
-)
-import lib
 import random
+
 import pytest
 import sh
 import timeout_decorator
 
+import lib
+from lib import (
+    allowlist,
+    daemon,
+    firewall,
+    info,
+    logging,
+    login,
+    network,
+)
 
+
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -198,17 +204,17 @@ def test_firewall_ipv6_05_allowlist_subnet(tech, proto, obfuscated, subnet):
             lib.set_firewall("on")
             lib.set_ipv6("on")
             allowlist.add_subnet_to_allowlist([subnet])
-            assert not firewall.is_active("", [subnet])
+            assert not firewall.is_active(None, [subnet])
 
             sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
             assert network.is_ipv4_and_ipv6_connected(20)
-            assert firewall.is_active("", [subnet])
+            assert firewall.is_active(None, [subnet])
 
             lib.set_firewall("off")
-            assert not firewall.is_active("", [subnet])
+            assert not firewall.is_active(None, [subnet])
             assert network.is_ipv4_and_ipv6_connected(20)
         assert network.is_disconnected()
-        assert not firewall.is_active("", [subnet])
+        assert not firewall.is_active(None, [subnet])
 
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
