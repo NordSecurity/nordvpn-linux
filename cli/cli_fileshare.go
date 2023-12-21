@@ -9,9 +9,13 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"syscall"
+	"time"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -203,6 +207,26 @@ func (c *cmd) FileshareAutoCompletePeers(ctx *cli.Context) {
 	}
 }
 
+// FileshareAutoCompleteClear implements bash autocompletion for history clearing
+func (c *cmd) FileshareAutoCompleteClear(ctx *cli.Context) {
+	if ctx.NArg() == 0 {
+		fmt.Println("all\nhelp")
+	} else {
+		if ctx.Args().Get(0) == "all" {
+			return
+		}
+		last := ctx.Args().Get(ctx.Args().Len() - 1)
+		i, err := strconv.Atoi(last)
+		if err == nil {
+			if i == 1 {
+				fmt.Println("second\nminute\nhour\nday\nweek\nmonth\nyear")
+			} else {
+				fmt.Println("seconds\nminutes\nhours\ndays\nweeks\nmonths\nyears")
+			}
+		}
+	}
+}
+
 // FileshareAccept rpc
 func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 	args := ctx.Args()
@@ -299,6 +323,39 @@ func (c *cmd) FileshareCancel(ctx *cli.Context) error {
 	return nil
 }
 
+// FileshareClear rpc
+func (c *cmd) FileshareClear(ctx *cli.Context) error {
+	if ctx.NArg() < 1 {
+		return formatError(argsCountError(ctx))
+	}
+
+	var resp *pb.Error
+	var err error
+	var until = time.Now()
+
+	args := ctx.Args()
+	if args.Get(0) != "all" {
+		argsJoined := strings.Join(args.Slice(), " ")
+		years, months, days, seconds, err := parseTimespan(argsJoined)
+		if err != nil {
+			return formatError(err)
+		}
+		until = until.AddDate(-years, -months, -days)
+		until = until.Add(-time.Duration(seconds) * time.Second)
+	}
+
+	resp, err = c.fileshareClient.PurgeTransfersUntil(context.Background(), &pb.PurgeTransfersUntilRequest{Until: timestamppb.New(until)})
+	if err != nil {
+		return formatError(err)
+	}
+	if err := getFileshareResponseToError(resp); err != nil {
+		return formatError(err)
+	}
+
+	color.Green(MsgFileshareClearSuccess)
+	return nil
+}
+
 // getFileshareResponseToError converts resp to error. Params are used in case of some error messages.
 func getFileshareResponseToError(resp *pb.Error, params ...any) error {
 	if resp == nil {
@@ -378,6 +435,8 @@ func fileshareErrorCodeToError(code pb.FileshareErrorCode, params ...any) error 
 		return errors.New(MsgNoFiles)
 	case pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS:
 		return fmt.Errorf(MsgNoPermissions, params...)
+	case pb.FileshareErrorCode_PURGE_FAILURE:
+		return errors.New(MsgFileshareClearFailure)
 	default:
 		return errors.New(AccountInternalError)
 	}

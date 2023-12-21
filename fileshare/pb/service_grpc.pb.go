@@ -36,6 +36,8 @@ type FileshareClient interface {
 	CancelFile(ctx context.Context, in *CancelFileRequest, opts ...grpc.CallOption) (*Error, error)
 	// SetNotifications about transfer status changes
 	SetNotifications(ctx context.Context, in *SetNotificationsRequest, opts ...grpc.CallOption) (*SetNotificationsResponse, error)
+	// PurgeTransfersUntil provided time from fileshare implementation storage
+	PurgeTransfersUntil(ctx context.Context, in *PurgeTransfersUntilRequest, opts ...grpc.CallOption) (*Error, error)
 }
 
 type fileshareClient struct {
@@ -178,6 +180,15 @@ func (c *fileshareClient) SetNotifications(ctx context.Context, in *SetNotificat
 	return out, nil
 }
 
+func (c *fileshareClient) PurgeTransfersUntil(ctx context.Context, in *PurgeTransfersUntilRequest, opts ...grpc.CallOption) (*Error, error) {
+	out := new(Error)
+	err := c.cc.Invoke(ctx, "/filesharepb.Fileshare/PurgeTransfersUntil", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileshareServer is the server API for Fileshare service.
 // All implementations must embed UnimplementedFileshareServer
 // for forward compatibility
@@ -196,6 +207,8 @@ type FileshareServer interface {
 	CancelFile(context.Context, *CancelFileRequest) (*Error, error)
 	// SetNotifications about transfer status changes
 	SetNotifications(context.Context, *SetNotificationsRequest) (*SetNotificationsResponse, error)
+	// PurgeTransfersUntil provided time from fileshare implementation storage
+	PurgeTransfersUntil(context.Context, *PurgeTransfersUntilRequest) (*Error, error)
 	mustEmbedUnimplementedFileshareServer()
 }
 
@@ -223,6 +236,9 @@ func (UnimplementedFileshareServer) CancelFile(context.Context, *CancelFileReque
 }
 func (UnimplementedFileshareServer) SetNotifications(context.Context, *SetNotificationsRequest) (*SetNotificationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetNotifications not implemented")
+}
+func (UnimplementedFileshareServer) PurgeTransfersUntil(context.Context, *PurgeTransfersUntilRequest) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PurgeTransfersUntil not implemented")
 }
 func (UnimplementedFileshareServer) mustEmbedUnimplementedFileshareServer() {}
 
@@ -372,6 +388,24 @@ func _Fileshare_SetNotifications_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Fileshare_PurgeTransfersUntil_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PurgeTransfersUntilRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileshareServer).PurgeTransfersUntil(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/filesharepb.Fileshare/PurgeTransfersUntil",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileshareServer).PurgeTransfersUntil(ctx, req.(*PurgeTransfersUntilRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Fileshare_ServiceDesc is the grpc.ServiceDesc for Fileshare service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -394,6 +428,10 @@ var Fileshare_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetNotifications",
 			Handler:    _Fileshare_SetNotifications_Handler,
+		},
+		{
+			MethodName: "PurgeTransfersUntil",
+			Handler:    _Fileshare_PurgeTransfersUntil_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

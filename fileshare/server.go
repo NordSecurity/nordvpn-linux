@@ -465,3 +465,18 @@ func (s *Server) SetNotifications(ctx context.Context, in *pb.SetNotificationsRe
 		}
 	}
 }
+
+func (s *Server) PurgeTransfersUntil(ctx context.Context, req *pb.PurgeTransfersUntilRequest) (*pb.Error, error) {
+	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
+	if err != nil || !resp.GetValue() {
+		return serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED), nil
+	}
+
+	err = s.eventManager.storage.PurgeTransfersUntil(req.Until.AsTime())
+	if err != nil {
+		log.Printf("error while purging transfers: %s", err)
+		return fileshareError(pb.FileshareErrorCode_PURGE_FAILURE), nil
+	}
+
+	return empty(), nil
+}

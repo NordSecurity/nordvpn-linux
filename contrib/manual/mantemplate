@@ -500,21 +500,25 @@ $ \fBnordvpn fileshare accept <id>\fR
 Alternatively transfers can be accepted via notifications, which can be enabled using \fInordvpn set notify on\fR. You can find the files shared with you by checking your computer's default download folder location, which is typically the Downloads folder. 
 .P
 If you want to download only specific files from the transfer, provide the names of the files you choose to accept:
+.P
 .RS 4
 $ \fBnordvpn fileshare accept <id> <file1> <file2>...\fR
 .RE
 .P
 To display the list of files in a particular transfer directory, enter the \fInordvpn fileshare list\fR command followed by the transfer ID:
+.P
 .RS 4
 $ \fBnordvpn fileshare list <id>\fR
 .RE
 .P
 You can enable automatic transfer acceptance from a specific peer. To do this, run the following command, replacing \fI<device>\fR with the peer's Nord name or Meshnet IP:
+.P
 .RS 4
 $ \fBnordvpn meshnet peer auto-accept enable <device>\fR
 .RE
 .P
 If you want to specify the location on your system where downloaded files will be saved, use the --path command option followed by the desired location and the transfer ID:
+.P
 .RS 4
 $ \fBnordvpn fileshare accept --path </path/to/directory> <id>\fR
 .RE
@@ -531,6 +535,14 @@ $ \fBnordvpn fileshare cancel <id>\fR
 $ \fBnordvpn fileshare cancel <id> <file>\fR
 .fi
 .RE
+.P
+To clear the history of file transfers, enter the \fInordvpn fileshare clear\fR command followed by the time period:
+.P
+.RS 4
+$ \fBnordvpn fileshare clear <time_period>...\fR
+.RE
+.P
+This command removes all transfers older than the specified time period. For example \fInordvpn fileshare clear 1d 12h\fR clears entries older than 36 hours. Use \fInordvpn fileshare clear all\fR to remove all entries. Specify time periods using the systemd time span syntax: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html
 
 .SH "BUGS"
 .sp

@@ -21,4 +21,6 @@ service Fileshare {
 	rpc CancelFile(CancelFileRequest) returns (Error);
 	// SetNotifications about transfer status changes
 	rpc SetNotifications(SetNotificationsRequest) returns (SetNotificationsResponse);
+	// PurgeTransfersUntil provided time from fileshare implementation storage
+	rpc PurgeTransfersUntil(PurgeTransfersUntilRequest) returns (Error);
 }

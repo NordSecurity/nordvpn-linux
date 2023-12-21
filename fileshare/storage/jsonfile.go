@@ -2,10 +2,12 @@ package storage
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -62,4 +64,21 @@ func flatten(files []*pb.File) []*pb.File {
 		}
 	}
 	return flatFiles
+}
+
+func (jf JsonFile) PurgeTransfersUntil(until time.Time) error {
+	historyFilePath := path.Join(jf.storagePath, historyFile)
+	info, err := os.Stat(filepath.Clean(historyFilePath))
+
+	if err == nil {
+		if info.ModTime().Before(until) {
+			if err := os.Remove(filepath.Clean(historyFilePath)); err != nil {
+				return fmt.Errorf("removing transfers history file: %w", err)
+			}
+		}
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("stating transfers history file: %w", err)
+	}
+
+	return nil
 }

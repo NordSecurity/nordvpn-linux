@@ -29,3 +29,7 @@ func (l *Libdrop) Load() (map[string]*pb.Transfer, error) {
 
 	return transfers, nil
 }
+
+func (l *Libdrop) PurgeTransfersUntil(until time.Time) error {
+	return l.fileshare.PurgeTransfersUntil(until)
+}
