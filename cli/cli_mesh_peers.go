@@ -135,10 +135,10 @@ func (c *cmd) FiltersAutoComplete(ctx *cli.Context) {
 func peersToOutputString(peers *pb.PeerList, condition string) string {
 	var builder strings.Builder
 	boldCol := color.New(color.Bold)
-	builder.WriteString(boldCol.Sprintf("This device:\n"))
+	builder.WriteString(boldCol.Sprintf("This device:") + "\n")
 	builder.WriteString(selfToOutputString(peers.Self) + "\n")
 	if condition != externalFilter {
-		builder.WriteString(boldCol.Sprintf("Local Peers:\n"))
+		builder.WriteString(boldCol.Sprintf("Local Peers:") + "\n")
 		if len(peers.Local) == 0 {
 			builder.WriteString("[no peers]\n")
 		}
@@ -148,7 +148,7 @@ func peersToOutputString(peers *pb.PeerList, condition string) string {
 		builder.WriteString("\n")
 	}
 	if condition != internalFilter {
-		builder.WriteString(boldCol.Sprintf("External Peers: \n"))
+		builder.WriteString(boldCol.Sprintf("External Peers:") + "\n")
 		if len(peers.External) == 0 {
 			builder.WriteString("[no peers]\n")
 		}
@@ -235,8 +235,8 @@ func (kv keyval) colored(attr color.Attribute) string {
 		boldCol = color.New(color.Bold)
 	}
 	return fmt.Sprintf(
-		"%s: %s",
-		boldCol.Sprintf("%s", kv.Key),
+		"%s %s",
+		boldCol.Sprintf("%s:", kv.Key),
 		color.New(attr).Sprintf(kv.Value),
 	)
 }
