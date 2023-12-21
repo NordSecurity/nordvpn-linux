@@ -775,7 +775,7 @@ func (c *cmd) MeshPeerNicknameAutoComplete(ctx *cli.Context) {
 
 func peerByIdentifier(id string) func(*pb.Peer) bool {
 	return func(peer *pb.Peer) bool {
-		return peer.GetIp() == id || peer.GetHostname() == id || peer.GetPubkey() == id || strings.EqualFold(peer.GetNickname(), id)
+		return peer.GetIp() == id || strings.EqualFold(peer.GetHostname(), id) || peer.GetPubkey() == id || strings.EqualFold(peer.GetNickname(), id)
 	}
 }
 
