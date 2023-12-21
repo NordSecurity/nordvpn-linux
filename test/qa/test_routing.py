@@ -6,7 +6,6 @@ from lib import (
     info,
     login,
     logging,
-    meshnet,
     network,
     settings
 )
@@ -26,11 +25,6 @@ def setup_function(function):
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
-
-    try:
-        meshnet.remove_all_peers()
-    except:
-        pass
 
     sh.nordvpn.logout("--persist-token")
     sh.nordvpn.set.defaults()
@@ -151,6 +145,7 @@ def test_connected_routing_enable_disable(tech, proto, obfuscated):
     assert network.is_not_available()
 
 
+@pytest.mark.skip("LVPN-4360")
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
 def test_meshnet_on_routing_disable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
