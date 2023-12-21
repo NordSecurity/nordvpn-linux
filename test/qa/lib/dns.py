@@ -1,6 +1,5 @@
 import dns.resolver
 
-
 # Used for test parametrization.
 DNS_NORD = ["103.86.96.100", "103.86.99.100"]
 DNS_NORD_IPV6 = ["2400:bb40:4444::100", "2400:bb40:8888::100"]
@@ -46,16 +45,16 @@ TPL_MSG_WARNING_DISABLING = "Disabling Threat Protection Lite."
 
 
 def is_unset() -> bool:
-    """ returns True when NordVPN app has not modified the DNS """
+    """returns True when NordVPN app has not modified the DNS"""
     return all(os_address != address
-        for os_address in dns.resolver.Resolver().nameservers
-            for address in ALL_TEST_DNS_ADDRESSES)
+               for os_address in dns.resolver.Resolver().nameservers
+               for address in ALL_TEST_DNS_ADDRESSES)
 
 
 def is_set_for(dns_set_in_app: list) -> bool:
-    """ returns True, if NordVPN application has successfuly set and overriden DNS servers in Resolver """
+    """returns True, if NordVPN application has successfully set and overriden DNS servers in Resolver"""
 
-    # DNS Adddresses set in Resolver:
+    # DNS Addresses set in Resolver:
     dns_set_in_os_addresses = dns.resolver.Resolver().nameservers
 
     # Make sure, that:

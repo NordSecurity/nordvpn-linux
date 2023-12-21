@@ -1,5 +1,6 @@
 import paramiko
 
+
 class Ssh:
     def __init__(self, hostname: str, username: str, password: str):
         self.client = paramiko.SSHClient()
@@ -9,7 +10,7 @@ class Ssh:
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     def connect(self):
-        self.client.connect(self.hostname, 22, username = self.username, password = self.password)
+        self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
     def exec_command(self, command: str) -> str:
         _, stdout, stderr = self.client.exec_command(command)

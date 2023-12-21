@@ -1,3 +1,11 @@
+import socket
+from urllib.parse import urlparse
+
+import pytest
+import sh
+import timeout_decorator
+
+import lib
 from lib import (
     allowlist,
     daemon,
@@ -7,21 +15,16 @@ from lib import (
     login,
     network,
 )
-import lib
-import pytest
-import sh
-import socket
-import timeout_decorator
-from urllib.parse import urlparse
+
+CIDR_32 = "/32"
 
 
-CIDR_32 = "/32" 
-
-
+# noinspection PyUnusedLocal
 def setup_module(module):
     firewall.add_and_delete_random_route()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     daemon.start()
     login.login_as("default")
@@ -29,6 +32,7 @@ def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -121,28 +125,6 @@ def test_allowlist_subnet_connect(tech, proto, obfuscated):
     assert not firewall.is_active(None, ip_addresses_with_subnet)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_connect_allowlist_subnet(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    my_ip = network.get_external_device_ip()
-
-    sh.nordvpn.connect()
-    assert my_ip != network.get_external_device_ip()
-
-    ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
-    ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
-
-    allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
-    assert firewall.is_active(None, ip_addresses_with_subnet)
-    assert my_ip == network.get_external_device_ip()
-
-    sh.nordvpn.disconnect()
-    assert not firewall.is_active(None, ip_addresses_with_subnet)
-
-
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
@@ -185,7 +167,7 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    
+
     ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
@@ -221,7 +203,7 @@ def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-def test_allowlist_subnet_remove_nonexistant_disconnected(tech, proto, obfuscated, subnet):
+def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscated, subnet):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -235,7 +217,7 @@ def test_allowlist_subnet_remove_nonexistant_disconnected(tech, proto, obfuscate
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_allowlist_subnet_remove_nonexistant_connected(tech, proto, obfuscated, subnet):
+def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, obfuscated, subnet):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()

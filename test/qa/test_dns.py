@@ -1,28 +1,24 @@
-from lib import (
-    daemon,
-    dns,
-    info,
-    logging,
-    login,
-    settings
-)
-import lib
 import pytest
 import sh
 import timeout_decorator
-import requests
+
+import lib
+from lib import daemon, dns, info, logging, login, settings
 
 
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
@@ -32,16 +28,17 @@ def setup_function(function):
     lib.set_threat_protection_lite("off")
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
 
 
-@pytest.mark.parametrize("tpl_allias", dns.TPL_ALIAS)
+@pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_set_tpl_on_off_connected(tpl_allias, tech, proto, obfuscated):
+def test_set_tpl_on_off_connected(tpl_alias, tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     # Make sure, that DNS is unset before we connect to VPN server
@@ -50,33 +47,33 @@ def test_set_tpl_on_off_connected(tpl_allias, tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
-        assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_allias, "on")
+        assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_alias, "on")
 
         assert settings.get_is_tpl_enabled()
-        assert settings.dns_visible_in_settings("disabled")
+        assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_TPL)
 
-        assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_allias, "off")
+        assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_alias, "off")
 
         assert not settings.get_is_tpl_enabled()
-        assert settings.dns_visible_in_settings("disabled")
+        assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_NORD)
 
     # Make sure, that DNS is unset, after we disconnect from VPN server
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("tpl_allias", dns.TPL_ALIAS)
+@pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_set_tpl_on_and_connect(tpl_allias, tech, proto, obfuscated):
+def test_set_tpl_on_and_connect(tpl_alias, tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_allias, "on")
+    assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_alias, "on")
 
     assert settings.get_is_tpl_enabled()
-    assert settings.dns_visible_in_settings("disabled")
+    assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -87,19 +84,19 @@ def test_set_tpl_on_and_connect(tpl_allias, tech, proto, obfuscated):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("tpl_allias", dns.TPL_ALIAS)
+@pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_set_tpl_off_and_connect(tpl_allias, tech, proto, obfuscated):
+def test_set_tpl_off_and_connect(tpl_alias, tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    sh.nordvpn.set(tpl_allias, "on")
+    sh.nordvpn.set(tpl_alias, "on")
 
-    assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_allias, "off")
-    
+    assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_alias, "off")
+
     assert not settings.get_is_tpl_enabled()
-    assert settings.dns_visible_in_settings("disabled")
+    assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -189,7 +186,7 @@ def test_custom_dns_off_connect(tech, proto, obfuscated, nameserver):
     assert dns.is_unset()
 
     sh.nordvpn.set.dns("off")
-    assert settings.dns_visible_in_settings("disabled")
+    assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -235,7 +232,7 @@ def test_set_custom_dns_off_connected(tech, proto, obfuscated, nameserver):
         assert dns.is_set_for(nameserver)
 
         sh.nordvpn.set.dns("off")
-        assert settings.dns_visible_in_settings("disabled")
+        assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_NORD)
 
     assert dns.is_unset()
@@ -252,7 +249,7 @@ def test_custom_dns_errors_disconnected(tech, proto, obfuscated, nameserver, exp
         sh.nordvpn.set.dns(nameserver)
 
     assert expected_error in str(ex)
-    assert settings.dns_visible_in_settings("disabled")
+    assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
 
@@ -270,7 +267,7 @@ def test_custom_dns_errors_connected(tech, proto, obfuscated, nameserver, expect
             sh.nordvpn.set.dns(nameserver)
 
         assert expected_error in str(ex)
-        assert settings.dns_visible_in_settings("disabled")
+        assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_NORD)
 
     assert dns.is_unset()
@@ -333,7 +330,7 @@ def test_custom_dns_already_disabled_disconnected(tech, proto, obfuscated):
         sh.nordvpn.set.dns("off")
 
     assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in str(ex)
-    assert settings.dns_visible_in_settings("disabled")
+    assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
 
@@ -349,7 +346,7 @@ def test_custom_dns_already_disabled_connected(tech, proto, obfuscated):
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.set.dns("off")
 
-        assert settings.dns_visible_in_settings("disabled")
+        assert settings.dns_visible_in_settings(["disabled"])
         assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in str(ex)
         assert dns.is_set_for(dns.DNS_NORD)
 

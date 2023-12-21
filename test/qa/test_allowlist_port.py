@@ -1,22 +1,19 @@
 import random
-from lib import (
-    allowlist,
-    daemon,
-    firewall,
-    info,
-    logging,
-    login
-)
-import lib
+
 import pytest
 import sh
 import timeout_decorator
 
+import lib
+from lib import allowlist, daemon, firewall, info, logging, login
 
+
+# noinspection PyUnusedLocal
 def setup_module(module):
     firewall.add_and_delete_random_route()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     daemon.start()
     login.login_as("default")
@@ -24,6 +21,7 @@ def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -148,7 +146,7 @@ def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
-def test_allowlist_port_remove_nonexistant_disconnected(tech, proto, obfuscated, port):
+def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -165,7 +163,7 @@ def test_allowlist_port_remove_nonexistant_disconnected(tech, proto, obfuscated,
 @pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_allowlist_port_remove_nonexistant_connected(tech, proto, obfuscated, port):
+def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
@@ -182,7 +180,7 @@ def test_allowlist_port_remove_nonexistant_connected(tech, proto, obfuscated, po
 
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS_RANGE])
-def test_allowlist_port_range_remove_nonexistant_disconnected( tech, proto, obfuscated, port):
+def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfuscated, port):
     port_range = port.value.split(":")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -201,7 +199,7 @@ def test_allowlist_port_range_remove_nonexistant_disconnected( tech, proto, obfu
 @pytest.mark.parametrize("port", lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS_RANGE])
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_allowlist_port_range_remove_nonexistant_connected(tech, proto, obfuscated, port):
+def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscated, port):
     port_range = port.value.split(":")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -223,7 +221,7 @@ def test_allowlist_port_range_remove_nonexistant_connected(tech, proto, obfuscat
 def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    for x in range(2):
+    for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
 
     assert not firewall.is_active([port])
@@ -238,7 +236,7 @@ def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
 
     sh.nordvpn.connect()
 
-    for x in range(2):
+    for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
 
     assert firewall.is_active([port])

@@ -1,3 +1,8 @@
+import pytest
+import sh
+import timeout_decorator
+
+import lib
 from lib import (
     daemon,
     info,
@@ -5,32 +10,32 @@ from lib import (
     login,
     network,
 )
-import lib
-import pytest
-import sh
-import timeout_decorator
 
 
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
 
 
-autoconnectOnParameters = [
+autoconnect_on_parameters = [
     ("lt16", "on", "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."),
     ("uk2188", "off", "Turn on obfuscation to connect to obfuscated servers.")
 ]
@@ -48,15 +53,15 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
 
 @pytest.mark.skip(reason="LVPN-2119")
 @timeout_decorator.timeout(40)
-@pytest.mark.parametrize("server,obfuscated,errorMessage", autoconnectOnParameters)
-def test_autoconnect_on_server_obfuscation_mismatch(server, obfuscated, errorMessage):
+@pytest.mark.parametrize("server,obfuscated,error_message", autoconnect_on_parameters)
+def test_autoconnect_on_server_obfuscation_mismatch(server, obfuscated, error_message):
     lib.set_technology_and_protocol("openvpn", "tcp", obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.autoconnect.on(server)
 
     print(ex.value)
-    assert errorMessage in str(ex.value)
+    assert error_message in str(ex.value)
 
     assert "Auto-connect: disabled" in sh.nordvpn.settings()
 
@@ -66,7 +71,7 @@ def test_autoconnect_on_server_obfuscation_mismatch(server, obfuscated, errorMes
     sh.nordvpn.set.autoconnect.off()
 
 
-setObfuscateParameters = [
+set_obfuscate_parameters = [
     ("off", "lt16", "We couldn’t turn on obfuscation because the current auto-connect server doesn’t support it. Set a different server for auto-connect to use obfuscation."),
     ("on", "uk2188", "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. Set a different server for auto-connect, then turn off obfuscation.")
 ]
@@ -74,24 +79,24 @@ setObfuscateParameters = [
 
 @timeout_decorator.timeout(40)
 @pytest.mark.skip(reason="LVPN-2119")
-@pytest.mark.parametrize("obfuscateInitialState,server,errorMessage", setObfuscateParameters)
-def test_set_obfuscate_server_obfuscation_mismatch(obfuscateInitialState, server, errorMessage):
-    lib.set_technology_and_protocol("openvpn", "tcp", obfuscateInitialState)
+@pytest.mark.parametrize("obfuscate_initial_state,server,error_message", set_obfuscate_parameters)
+def test_set_obfuscate_server_obfuscation_mismatch(obfuscate_initial_state, server, error_message):
+    lib.set_technology_and_protocol("openvpn", "tcp", obfuscate_initial_state)
 
     output = sh.nordvpn.set.autoconnect.on(server)
     print(output)
 
-    obfuscateExpectedState = "disabled"
+    obfuscate_expected_state = "disabled"
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        if obfuscateInitialState == "off":
+        if obfuscate_initial_state == "off":
             sh.nordvpn.set.obfuscate.on()
         else:
-            obfuscateExpectedState = "enabled"
+            obfuscate_expected_state = "enabled"
             sh.nordvpn.set.obfuscate.off()
 
-    assert "Obfuscate: {}".format(obfuscateExpectedState) in sh.nordvpn.settings()
+    assert f"Obfuscate: {obfuscate_expected_state}" in sh.nordvpn.settings()
 
-    assert errorMessage in str(ex.value)
+    assert error_message in str(ex.value)
 
     sh.nordvpn.set.autoconnect.off()
 
@@ -111,7 +116,7 @@ def test_protocol_in_settings(tech, proto, obfuscated):
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 def test_technology_set_options(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    
+
     ovpn_list = "obfuscate" in sh.nordvpn.set() and "protocol" in sh.nordvpn.set()
 
     if tech == "openvpn":

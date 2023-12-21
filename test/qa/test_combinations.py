@@ -1,3 +1,8 @@
+import pytest
+import sh
+import timeout_decorator
+
+import lib
 from lib import (
     daemon,
     info,
@@ -5,26 +10,26 @@ from lib import (
     login,
     network,
 )
-import lib
-import pytest
-import sh
-import timeout_decorator
 
 
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -71,12 +76,12 @@ def test_connect_to_additional_group(tech, proto, obfuscated, group):
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_reconnect_matrix_standard(
-    source_tech,
-    target_tech,
-    source_proto,
-    target_proto,
-    source_obfuscated,
-    target_obfuscated,
+        source_tech,
+        target_tech,
+        source_proto,
+        target_proto,
+        source_obfuscated,
+        target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
@@ -96,18 +101,19 @@ def test_reconnect_matrix_standard(
     print(output)
     assert lib.is_disconnect_successful(output)
     assert network.is_disconnected()
+
 
 @pytest.mark.parametrize("target_tech,target_proto,target_obfuscated", lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.parametrize("source_tech,source_proto,source_obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_reconnect_matrix_obfuscated(
-    source_tech,
-    target_tech,
-    source_proto,
-    target_proto,
-    source_obfuscated,
-    target_obfuscated,
+        source_tech,
+        target_tech,
+        source_proto,
+        target_proto,
+        source_obfuscated,
+        target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
@@ -127,8 +133,6 @@ def test_reconnect_matrix_obfuscated(
     print(output)
     assert lib.is_disconnect_successful(output)
     assert network.is_disconnected()
-
-
 
 
 @pytest.mark.parametrize("country, city", list(zip(lib.COUNTRIES, lib.CITIES)))
@@ -163,12 +167,12 @@ def test_connect_country_and_city(country, city):
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_status_change_technology_and_protocol(
-    source_tech,
-    target_tech,
-    source_proto,
-    target_proto,
-    source_obfuscated,
-    target_obfuscated,
+        source_tech,
+        target_tech,
+        source_proto,
+        target_proto,
+        source_obfuscated,
+        target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
@@ -197,12 +201,12 @@ def test_status_change_technology_and_protocol(
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_status_change_technology_and_protocol_reconnect(
-    source_tech,
-    target_tech,
-    source_proto,
-    target_proto,
-    source_obfuscated,
-    target_obfuscated,
+        source_tech,
+        target_tech,
+        source_proto,
+        target_proto,
+        source_obfuscated,
+        target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
@@ -210,7 +214,7 @@ def test_status_change_technology_and_protocol_reconnect(
         sh.nordvpn.connect()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-    
+
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
         assert target_tech.upper() in sh.nordvpn.status()

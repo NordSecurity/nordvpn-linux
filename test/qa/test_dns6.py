@@ -1,28 +1,26 @@
-from lib import (
-    daemon,
-    dns,
-    info,
-    logging,
-    login,
-    settings
-)
-import lib
-import pytest
 import random
+
+import pytest
 import sh
 import timeout_decorator
 
+import lib
+from lib import daemon, dns, info, logging, login, settings
 
+
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
@@ -32,6 +30,7 @@ def setup_function(function):
     lib.set_threat_protection_lite("off")
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -53,11 +52,11 @@ def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
 
         if threat_protection_lite == "on":
             assert settings.get_is_tpl_enabled()
-            assert settings.dns_visible_in_settings("disabled")
+            assert settings.dns_visible_in_settings(["disabled"])
             assert dns.is_set_for(dns.DNS_TPL_IPV6 + dns.DNS_TPL)
         else:
             assert not settings.get_is_tpl_enabled()
-            assert settings.dns_visible_in_settings("disabled")
+            assert settings.dns_visible_in_settings(["disabled"])
             assert dns.is_set_for(dns.DNS_NORD_IPV6 + dns.DNS_NORD)
 
     assert dns.is_unset()
@@ -82,12 +81,12 @@ def test_set_dns_connected(tech, proto, obfuscated):
         sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
 
         assert not settings.get_is_tpl_enabled()
-        assert settings.dns_visible_in_settings("disabled")
+        assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_NORD_IPV6 + dns.DNS_NORD)
 
         lib.set_threat_protection_lite("on")
         assert settings.get_is_tpl_enabled()
-        assert settings.dns_visible_in_settings("disabled")
+        assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_TPL_IPV6 + dns.DNS_TPL)
 
     assert dns.is_unset()

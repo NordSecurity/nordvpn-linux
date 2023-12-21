@@ -1,10 +1,12 @@
+import socket
+import time
 from itertools import cycle
-from lib import daemon, firewall, info, logging, network
+
 import pytest
 import requests
 import sh
-import socket
-import time
+
+from . import daemon, firewall, info, logging
 
 # private variable for storing routes
 _blackholes = []
@@ -13,7 +15,7 @@ API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
 
 def _is_internet_reachable(retry=5) -> bool:
-    """returns True when remote host is reachable by it's public IP"""
+    """returns True when remote host is reachable by its public IP"""
     i = 0
     while i < retry:
         try:
@@ -51,23 +53,24 @@ def _is_dns_resolvable(retry=5) -> bool:
     return False
 
 
+# noinspection PyBroadException
 def _is_dns_not_resolvable(retry=5) -> bool:
     """returns True when domain resolution is not working"""
-    for i in range(retry):
+    for _ in range(retry):
         try:
             with pytest.raises(sh.ErrorReturnCode_2) as ex:
                 sh.ping("-4", "-c", "1", "nordvpn.com")
 
             return "Network is unreachable" in str(ex) or \
-                   "Name or service not known" in str(ex) or \
-                   "Temporary failure in name resolution" in str(ex)
-        except Exception as ex:
+                "Name or service not known" in str(ex) or \
+                "Temporary failure in name resolution" in str(ex)
+        except Exception:
             time.sleep(1)
     return False
 
 
 def is_not_available(retry=5) -> bool:
-    """ returns True when network access is not available """
+    """returns True when network access is not available"""
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
     return not _is_internet_reachable(retry) and _is_dns_not_resolvable(retry)
@@ -89,17 +92,17 @@ def is_connected() -> bool:
 
 def is_ipv4_and_ipv6_connected(retry=5) -> bool:
     return (
-        daemon.is_connected()
-        and is_available(retry)
-        and _is_ipv6_internet_reachable(retry)
+            daemon.is_connected()
+            and is_available(retry)
+            and _is_ipv6_internet_reachable(retry)
     )
 
 
 def is_ipv6_connected(retry=5) -> bool:
     return (
-        daemon.is_connected()
-        and _is_ipv6_internet_reachable(retry)
-        and _is_dns_resolvable()
+            daemon.is_connected()
+            and _is_ipv6_internet_reachable(retry)
+            and _is_dns_resolvable()
     )
 
 
@@ -113,7 +116,7 @@ def is_disconnected(retry=5) -> bool:
 
 # start the networking and wait for completion
 def start(default_gateway: str):
-    '''Must pass default_gateway returned from stop()'''
+    """Must pass default_gateway returned from stop()"""
     if daemon.is_init_systemd():
         sh.sudo.nmcli.networking.on()
     else:
@@ -129,7 +132,8 @@ def start(default_gateway: str):
 
 # stop the networking and wait for completion
 def stop() -> str:
-    '''Returns default_gateway to be used when starting network again'''
+    """Returns default_gateway to be used when starting network again"""
+    default_gateway = None
     for line in sh.ip.route().split('\n'):
         if line.startswith('default'):
             default_gateway = line.split()[2]
@@ -141,7 +145,7 @@ def stop() -> str:
         sh.sudo.ip.link.set.dev.eth0.down()
 
     logging.log("stopping network")
-    assert network.is_not_available()
+    assert is_not_available()
     logging.log(info.collect())
     return default_gateway
 
@@ -164,5 +168,5 @@ def unblock():
 
 
 def get_external_device_ip() -> str:
-    """ returns external device IP """
+    """returns external device IP"""
     return requests.get(API_EXTERNAL_IP).json().get("ip")

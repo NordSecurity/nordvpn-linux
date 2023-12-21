@@ -1,3 +1,8 @@
+import pytest
+import sh
+import timeout_decorator
+
+import lib
 from lib import (
     daemon,
     info,
@@ -5,24 +10,24 @@ from lib import (
     login,
     network,
 )
-import lib
-import pytest
-import sh
-import timeout_decorator
 
 
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -37,7 +42,7 @@ def test_login():
 def test_invalid_token_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--token", "xyz%#")
-    
+
     assert "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support." in str(ex.value)
 
 
@@ -49,6 +54,7 @@ def test_repeated_login():
             login.login_as("default")
 
         assert "You are already logged in." in str(ex.value)
+
 
 @pytest.mark.skip(reason="can't get login token for expired account")
 def test_expired_account_connect():
@@ -87,9 +93,9 @@ def test_login_while_connected():
 def test_login_without_internet():
     default_gateway = network.stop()
 
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+    with pytest.raises(sh.ErrorReturnCode_1):
         login.login_as("default")
-        
+
     network.start(default_gateway)
 
 
@@ -128,21 +134,21 @@ def test_logout_disconnects():
 def test_missing_token_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--token")
-    
+
     assert "Token parameter value is missing." in str(ex.value)
 
 
 def test_missing_url_callback_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--callback")
-    
+
     assert "Expected a url." in str(ex.value)
 
 
 def test_invalid_url_callback_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--callback", "https://www.google.com/")
-    
+
     assert "Expected a url with nordvpn scheme." in str(ex.value)
 
 
@@ -168,7 +174,7 @@ def test_repeated_login_callback_invalid_url():
 
 def test_repeated_login_callback_nordvpn_scheme_url():
     login.login_as("default")
-    
+
     with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.login("--callback", "nordvpn://")

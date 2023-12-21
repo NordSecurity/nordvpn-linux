@@ -1,9 +1,8 @@
 import ipaddress
+
 import sh
 
-import lib
-from lib import daemon, firewall
-
+from . import Port, Protocol, daemon, firewall
 
 MSG_ALLOWLIST_SUBNET_ADD_SUCCESS = "Subnet %s is allowlisted successfully."
 MSG_ALLOWLIST_SUBNET_ADD_ERROR = "Subnet %s is already allowlisted."
@@ -19,7 +18,6 @@ MSG_ALLOWLIST_PORT_RANGE_ADD_SUCCESS = "Ports %s (%s) are allowlisted successful
 MSG_ALLOWLIST_PORT_RANGE_REMOVE_SUCCESS = "Ports %s (%s) are removed from the allowlist successfully."
 MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR = "Ports %s (%s) are not allowlisted."
 
-
 _PRIVATE_NETWORKS = [
     ipaddress.IPv4Network('10.0.0.0/8'),
     ipaddress.IPv4Network('172.16.0.0/12'),
@@ -30,28 +28,20 @@ _PRIVATE_NETWORKS = [
 def _is_private_subnet(subnet_str):
     try:
         subnet = ipaddress.IPv4Network(subnet_str)
-        for private_net in _PRIVATE_NETWORKS:
-            if subnet.overlaps(private_net):
-                return True
-        return False
+        return any(subnet.overlaps(private_net) for private_net in _PRIVATE_NETWORKS)
     except ValueError:
         # Handle the case where an invalid subnet string is provided
         return False
 
 
-def add_ports_to_allowlist(ports_list: list[lib.Port], allowlist_alias="allowlist"):
-    cmd = []
-    cmd_message = None
-    expected_message = None
-    port_value = None
-
+def add_ports_to_allowlist(ports_list: list[Port], allowlist_alias="allowlist"):
     for port in ports_list:
         if ":" in port.value:
             # Port range
             range_start, range_end = port.value.split(":")
 
             cmd = ["ports", range_start, range_end]
-            if port.protocol != lib.Protocol.ALL:
+            if port.protocol != Protocol.ALL:
                 cmd.extend(["protocol", str(port.protocol)])
 
             port_value = port.value.replace(":", " - ")
@@ -59,7 +49,7 @@ def add_ports_to_allowlist(ports_list: list[lib.Port], allowlist_alias="allowlis
         else:
             # Single port
             cmd = ["port", port.value]
-            if port.protocol != lib.Protocol.ALL:
+            if port.protocol != Protocol.ALL:
                 cmd.extend(["protocol", str(port.protocol)])
 
             port_value = port.value
@@ -69,25 +59,20 @@ def add_ports_to_allowlist(ports_list: list[lib.Port], allowlist_alias="allowlis
         print(cmd_message)
 
         assert sh.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 1, \
-            f"Port(range) not found or found more than once in `nordvpn settings`"
+            "Port(range) not found or found more than once in `nordvpn settings`"
 
-        assert cmd_message != None and expected_message in cmd_message, \
+        assert cmd_message is not None and expected_message in cmd_message, \
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
 
 
-def remove_ports_from_allowlist(ports_list: list[lib.Port], allowlist_alias="allowlist"):
-    cmd = []
-    cmd_message = None
-    expected_message = None
-    port_value = None
-
+def remove_ports_from_allowlist(ports_list: list[Port], allowlist_alias="allowlist"):
     for port in ports_list:
         if ":" in port.value:
             # Port range
             range_start, range_end = port.value.split(":")
 
             cmd = ["ports", range_start, range_end]
-            if port.protocol != lib.Protocol.ALL:
+            if port.protocol != Protocol.ALL:
                 cmd.extend(["protocol", str(port.protocol)])
 
             port_value = port.value.replace(":", " - ")
@@ -95,7 +80,7 @@ def remove_ports_from_allowlist(ports_list: list[lib.Port], allowlist_alias="all
         else:
             # Single port
             cmd = ["port", port.value]
-            if port.protocol != lib.Protocol.ALL:
+            if port.protocol != Protocol.ALL:
                 cmd.extend(["protocol", str(port.protocol)])
 
             port_value = port.value
@@ -105,9 +90,9 @@ def remove_ports_from_allowlist(ports_list: list[lib.Port], allowlist_alias="all
         print(cmd_message)
 
         assert sh.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 0, \
-            f"Port(range) found in `nordvpn settings`"
+            "Port(range) found in `nordvpn settings`"
 
-        assert cmd_message != None and expected_message in cmd_message, \
+        assert cmd_message is not None and expected_message in cmd_message, \
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
 
 
@@ -120,7 +105,7 @@ def add_subnet_to_allowlist(subnet_list: list[str], allowlist_alias="allowlist")
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
 
         assert sh.nordvpn.settings().count(subnet) == 1, \
-            f"Subnet not found or found more than once in `nordvpn settings`"
+            "Subnet not found or found more than once in `nordvpn settings`"
 
         # If subnet /32 whitelisted, only IP Address is visible in `ip route`
         if "/32" in subnet:
@@ -143,7 +128,7 @@ def remove_subnet_from_allowlist(subnet_list: list[str], allowlist_alias="allowl
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
 
         assert sh.nordvpn.settings().count(subnet) == 0, \
-            f"Subnet found in `nordvpn settings`"
+            "Subnet found in `nordvpn settings`"
 
         # If subnet /32 whitelisted, only IP Address is visible in `ip route`
         if "/32" in subnet:

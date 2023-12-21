@@ -1,22 +1,24 @@
-from lib import login, ssh
-from enum import Enum
-import sh
 import os
-import time
-import logging as logger
 import re
 import subprocess
+import time
+from enum import Enum
+
+import sh
+
+from . import login, ssh
 
 PEER_USERNAME = os.environ.get("QA_PEER_USERNAME")
 
 LANS = [
-        "169.254.0.0/16",
-        "192.168.0.0/16",
-        "172.16.0.0/12",
-        "10.0.0.0/8",
+    "169.254.0.0/16",
+    "192.168.0.0/16",
+    "172.16.0.0/12",
+    "10.0.0.0/8",
 ]
 
 strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGNORECASE)
+
 
 class PeerName(Enum):
     Hostname = 0
@@ -52,7 +54,6 @@ def add_peer(ssh_client: ssh.Ssh,
     tester_allow_local_arg = f"--allow-local-network-access={str(tester_allow_local).lower()}"
     tester_allow_incoming_arg = f"--allow-incoming-traffic={str(tester_allow_incoming).lower()}"
 
-
     peer_allow_fileshare_arg = f"--allow-peer-send-files={str(peer_allow_fileshare).lower()}"
     peer_allow_routing_arg = f"--allow-traffic-routing={str(peer_allow_routing).lower()}"
     peer_allow_local_arg = f"--allow-local-network-access={str(peer_allow_local).lower()}"
@@ -67,7 +68,7 @@ def add_peer(ssh_client: ssh.Ssh,
 
 def get_peers(output: str) -> list:
     """parses list of peer names from 'nordvpn meshnet peer list' output"""
-    output = output[output.find("Local Peers:"):] # skip this device
+    output = output[output.find("Local Peers:"):]  # skip this device
     peers = []
     for line in output.split("\n"):
         if "Hostname:" in line:
@@ -80,7 +81,7 @@ def get_this_device(output: str):
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
         if "This device:" in line:
-            for subline in output_lines[i+1:]:
+            for subline in output_lines[i + 1:]:
                 if "Hostname:" in subline:
                     return strip_colors.sub('', subline.split(" ")[-1])
 
@@ -90,7 +91,7 @@ def get_this_device_ipv4(output: str):
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
         if "This device:" in line:
-            for subline in output_lines[i+1:]:
+            for subline in output_lines[i + 1:]:
                 if "IP:" in subline:
                     return strip_colors.sub('', subline.split(" ")[-1])
 
@@ -100,14 +101,14 @@ def get_this_device_pubkey(output: str):
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
         if "This device:" in line:
-            for subline in output_lines[i+1:]:
+            for subline in output_lines[i + 1:]:
                 if "Public Key:" in subline:
                     return strip_colors.sub('', subline.split(" ")[-1])
 
 
 def remove_all_peers():
     """removes all meshnet peers from local device"""
-    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}" # convert to string, _tty_out false disables colors
+    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}"  # convert to string, _tty_out false disables colors
     for p in get_peers(output):
         sh.nordvpn.mesh.peer.remove(p)
 
@@ -143,7 +144,7 @@ def get_sent_invites(output: str) -> list:
     emails = []
     for line in output.split("\n"):
         if line.find("Received Invites:") != -1:
-            break # End of sent invites
+            break  # End of sent invites
         if line.find("Email:") != -1:
             emails.append(line.split(" ")[1])
     return emails
@@ -151,7 +152,7 @@ def get_sent_invites(output: str) -> list:
 
 def revoke_all_invites():
     """revokes all sent meshnet invites in local device"""
-    output = f"{sh.nordvpn.mesh.inv.list(_tty_out=False)}" # convert to string, _tty_out false disables colors
+    output = f"{sh.nordvpn.mesh.inv.list(_tty_out=False)}"  # convert to string, _tty_out false disables colors
     for i in get_sent_invites(output):
         sh.nordvpn.mesh.inv.revoke(i)
 
@@ -166,7 +167,7 @@ def revoke_all_invites_in_peer(ssh_client: ssh.Ssh):
 def send_meshnet_invite(email):
     command = sh.nordvpn.meshnet.invite.send(email)
     process = subprocess.Popen(str(command), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    
+
     for _ in range(4):
         process.stdin.write('\n')
         process.stdin.flush()

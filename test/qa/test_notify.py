@@ -1,27 +1,24 @@
-from lib import (
-    daemon,
-    info,
-    logging,
-    login,
-    notify,
-    settings
-)
-import lib
 import pytest
 import sh
 import timeout_decorator
 
+import lib
+from lib import daemon, info, logging, login, notify, settings
 
+
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
@@ -29,6 +26,7 @@ def setup_function(function):
     lib.set_notify("off")
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
@@ -61,7 +59,7 @@ def test_notifications_enabled_connect(tech, proto, obfuscated):
 
     sh.nordvpn.set.notify.on()
     assert settings.get_is_notify_enabled()
-    
+
     connect_notification = notify.connect_and_capture_notifications(tech, proto, obfuscated)
 
     # Should fail here, if tested with 3.16.6, since notification icon is missing

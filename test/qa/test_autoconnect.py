@@ -1,24 +1,29 @@
-from lib import daemon, info, logging, login, network, server
-import lib
 import pytest
 import sh
 import timeout_decorator
 
+import lib
+from lib import daemon, info, logging, login, network, server
 
+
+# noinspection PyUnusedLocal
 def setup_module(module):
     daemon.start()
     login.login_as("default")
 
 
+# noinspection PyUnusedLocal
 def teardown_module(module):
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
+# noinspection PyUnusedLocal
 def setup_function(function):
     logging.log()
 
 
+# noinspection PyUnusedLocal
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
