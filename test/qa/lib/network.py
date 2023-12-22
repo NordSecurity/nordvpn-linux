@@ -1,12 +1,15 @@
 from itertools import cycle
 from lib import daemon, firewall, info, logging, network
 import pytest
+import requests
 import sh
 import socket
 import time
 
 # private variable for storing routes
 _blackholes = []
+
+API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
 
 def _is_internet_reachable(retry=5) -> bool:
@@ -158,3 +161,8 @@ def unblock():
     for destination in reversed(_blackholes):
         sh.sudo.ip.route.delete(destination)
         _blackholes.pop()
+
+
+def get_external_device_ip() -> str:
+    """ returns external device IP """
+    return requests.get(API_EXTERNAL_IP).json().get("ip")
