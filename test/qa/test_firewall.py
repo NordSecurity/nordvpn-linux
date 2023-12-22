@@ -1,4 +1,5 @@
 from lib import (
+    allowlist,
     daemon,
     info,
     logging,
@@ -115,7 +116,7 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
             lib.set_firewall("on")
-            lib.add_port_to_allowlist([port])
+            allowlist.add_ports_to_allowlist([port])
             assert not firewall.is_active([port])
 
             sh.nordvpn.connect()
@@ -138,7 +139,7 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
             lib.set_firewall("on")
-            lib.add_ports_range_to_allowlist([ports])
+            allowlist.add_ports_to_allowlist([ports])
             assert not firewall.is_active([ports])
 
             sh.nordvpn.connect()
@@ -161,7 +162,7 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
             lib.set_firewall("on")
-            lib.add_subnet_to_allowlist([subnet])
+            allowlist.add_subnet_to_allowlist([subnet])
             assert not firewall.is_active("", [subnet])
 
             sh.nordvpn.connect()
