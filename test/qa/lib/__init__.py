@@ -3,6 +3,7 @@ import os
 import sh
 import time
 
+
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 STANDARD_TECHNOLOGIES = [
     # technology, protocol, obfuscation,
@@ -113,7 +114,7 @@ IPV6_SERVERS = [
 class Protocol(Enum):
     UDP = "UDP"
     TCP = "TCP"
-    ALL = "ALL"
+    ALL = "UDP|TCP"
 
     def __str__(self):
         return self.value
@@ -145,6 +146,12 @@ PORTS_RANGE = [
     Port("3000:3100", Protocol.UDP),
     Port("3000:3100", Protocol.TCP),
     Port("3000:3100", Protocol.ALL),
+]
+
+# Used for test parametrization, when the same test has to be run with different allowlist alias.
+ALLOWLIST_ALIAS = [
+    "whitelist",
+    "allowlist"
 ]
 
 # Used for integration test coverage
@@ -247,38 +254,6 @@ def set_killswitch(killswitch):
 def set_notify(dns):
     try:
         print(sh.nordvpn.set.notify(dns))
-    except sh.ErrorReturnCode_1 as ex:
-        print("WARNING:", ex)
-
-
-def add_port_to_allowlist(port_list: list[Port]):
-    try:
-        for port in port_list:
-            if port.protocol == Protocol.ALL:
-                print(sh.nordvpn.whitelist.add.port(port.value))
-            else:
-                print(sh.nordvpn.whitelist.add.port(port.value, "protocol", str(port.protocol)))
-    except sh.ErrorReturnCode_1 as ex:
-        print("WARNING:", ex)
-
-
-def add_ports_range_to_allowlist(ports_list: list[Port]):
-    try:
-        for ports in ports_list:
-            port_range = ports.value.split(":")
-
-            if ports.protocol == Protocol.ALL:
-                print(sh.nordvpn.whitelist.add.ports(port_range[0], port_range[1]))
-            else:
-                print(sh.nordvpn.whitelist.add.ports(port_range[0], port_range[1], "protocol", str(ports.protocol)))
-    except sh.ErrorReturnCode_1 as ex:
-        print("WARNING:", ex)
-
-
-def add_subnet_to_allowlist(subnet_list: list[str]):
-    try:
-        for subnet in subnet_list:
-            print(sh.nordvpn.allowlist.add.subnet(subnet))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
