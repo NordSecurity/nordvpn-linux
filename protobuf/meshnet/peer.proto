@@ -78,6 +78,13 @@ enum ChangeNicknameErrorCode {
 	SAME_NICKNAME = 0;
 	NICKNAME_ALREADY_EMPTY = 1;
 	DOMAIN_NAME_EXISTS = 2;
+	RATE_LIMIT_REACH = 3;
+	NICKNAME_TOO_LONG = 4;
+	DUPLICATE_NICKNAME = 5;
+	CONTAINS_FORBIDDEN_WORD = 6;
+	SUFFIX_OR_PREFIX_ARE_INVALID = 7;
+	NICKNAME_HAS_DOUBLE_HYPHENS = 8;
+	INVALID_CHARS = 9;
 }
 
 // ChangePeerNicknameRequest defines a request to change the nickname for a meshnet peer

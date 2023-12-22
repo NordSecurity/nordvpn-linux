@@ -1372,17 +1372,45 @@ func (s *Server) ChangePeerNickname(
 	peer.Nickname = req.Nickname
 	if err := s.reg.Configure(token, cfg.MeshDevice.ID, peer.ID, mesh.NewPeerUpdateRequest(*peer)); err != nil {
 		s.pub.Publish(err)
-		// TODO: display API error to the user
-		return &pb.ChangeNicknameResponse{
-			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
-			},
-		}, nil
+		return s.apiToNicknameError(err), nil
 	}
 
 	return &pb.ChangeNicknameResponse{
 		Response: &pb.ChangeNicknameResponse_Empty{},
 	}, nil
+}
+
+func (s *Server) apiToNicknameError(err error) *pb.ChangeNicknameResponse {
+	var code pb.ChangeNicknameErrorCode
+
+	switch {
+	case errors.Is(err, core.ErrRateLimitReach):
+		code = pb.ChangeNicknameErrorCode_RATE_LIMIT_REACH
+	case errors.Is(err, core.ErrNicknameTooLong):
+		code = pb.ChangeNicknameErrorCode_NICKNAME_TOO_LONG
+	case errors.Is(err, core.ErrDuplicateNickname):
+		code = pb.ChangeNicknameErrorCode_DUPLICATE_NICKNAME
+	case errors.Is(err, core.ErrContainsForbiddenWord):
+		code = pb.ChangeNicknameErrorCode_CONTAINS_FORBIDDEN_WORD
+	case errors.Is(err, core.ErrInvalidPrefixOrSuffix):
+		code = pb.ChangeNicknameErrorCode_SUFFIX_OR_PREFIX_ARE_INVALID
+	case errors.Is(err, core.ErrNicknameWithDoubleHyphens):
+		code = pb.ChangeNicknameErrorCode_NICKNAME_HAS_DOUBLE_HYPHENS
+	case errors.Is(err, core.ErrContainsInvalidChars):
+		code = pb.ChangeNicknameErrorCode_INVALID_CHARS
+	default:
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}
+	}
+
+	return &pb.ChangeNicknameResponse{
+		Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+			ChangeNicknameErrorCode: code,
+		},
+	}
 }
 
 func (s *Server) ChangeMachineNickname(
@@ -1465,6 +1493,8 @@ func (s *Server) ChangeMachineNickname(
 	}
 
 	if err := s.reg.Update(token, cfg.MeshDevice.ID, info); err != nil {
+		s.pub.Publish(err)
+
 		if errors.Is(err, core.ErrUnauthorized) {
 			// TODO: check what happens with cfg.Mesh
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
@@ -1482,12 +1512,7 @@ func (s *Server) ChangeMachineNickname(
 			}, nil
 		}
 
-		// TODO: display API error to the user
-		return &pb.ChangeNicknameResponse{
-			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
-			},
-		}, nil
+		return s.apiToNicknameError(err), nil
 	}
 
 	err := s.cm.SaveWith(func(c config.Config) config.Config {
