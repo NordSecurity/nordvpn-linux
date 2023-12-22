@@ -230,8 +230,8 @@ func (em *EventManager) handleTransferProgressEvent(eventJSON json.RawMessage) {
 		return
 	}
 
-	transfer.TotalTransferred += event.Transfered - file.Transferred // add only delta
-	file.Transferred = event.Transfered
+	transfer.TotalTransferred += event.Transferred - file.Transferred // add only delta
+	file.Transferred = event.Transferred
 
 	if progressCh, ok := em.transferSubscriptions[transfer.ID]; ok {
 		var progressPercent uint32

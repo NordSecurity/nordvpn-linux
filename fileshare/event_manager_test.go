@@ -363,12 +363,13 @@ func TestTransferProgress(t *testing.T) {
 	transferredBytes := file1sz
 	go func() {
 		eventManager.EventFunc(
+			// nolint:misspell // We receive this json from the library
 			fmt.Sprintf(`{
 			"type": "TransferProgress",
 			"data": {
 				"transfer": "%s",
 				"file": "%s",
-				"transferred": %d
+				"transfered": %d
 			}
 			}`, transferID, file1ID, transferredBytes))
 	}()
