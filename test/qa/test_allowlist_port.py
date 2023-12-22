@@ -33,7 +33,7 @@ def teardown_function(function):
     logging.log()
 
 
-@pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
+@pytest.mark.parametrize("port", lib.PORTS + lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS + lib.PORTS_RANGE])
 @pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconnected(allowlist_alias, tech, proto, obfuscated, port):
@@ -50,7 +50,7 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
         assert output_after_add == output_after_delete
 
 
-@pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
+@pytest.mark.parametrize("port", lib.PORTS + lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS + lib.PORTS_RANGE])
 @pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
@@ -73,7 +73,7 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
             assert output_after_add == output_after_delete
 
 
-@pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
+@pytest.mark.parametrize("port", lib.PORTS + lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS + lib.PORTS_RANGE])
 @pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 def test_allowlist_port_is_not_set_when_disconnected(allowlist_alias, tech, proto, obfuscated, port):
@@ -85,7 +85,7 @@ def test_allowlist_port_is_not_set_when_disconnected(allowlist_alias, tech, prot
         assert not firewall.is_active([port])
 
 
-@pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
+@pytest.mark.parametrize("port", lib.PORTS + lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS + lib.PORTS_RANGE])
 @pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)

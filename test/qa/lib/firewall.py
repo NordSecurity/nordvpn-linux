@@ -333,3 +333,10 @@ def sort_list_by_other_list(to_sort: list[str], sort_by: list[str]) -> list[str]
 
     # Sort `to_sort` based on the order in `sort_by`
     return sorted(to_sort, key=lambda rule: order_dict[rule])
+
+
+def add_and_delete_random_route():
+    """ Adds a random route, and deletes it. If this is not used, exceptions happen in allowlist tests """
+    cmd = sh.sudo.ip.route.add.default.via.bake("127.0.0.1")
+    cmd.table(IP_ROUTE_TABLE)
+    sh.sudo.ip.route.delete.default.table(IP_ROUTE_TABLE)
