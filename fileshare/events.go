@@ -40,9 +40,9 @@ type requestReceivedEvent struct {
 }
 
 type transferProgressEvent struct {
-	TransferID  string `json:"transfer"`
-	FileID      string `json:"file"`
-	Transferred uint64 `json:"transferred"`
+	TransferID string `json:"transfer"`
+	FileID     string `json:"file"`
+	Transfered uint64 `json:"transfered"`
 }
 
 type transferFinishedEvent struct {
