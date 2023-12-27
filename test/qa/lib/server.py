@@ -1,11 +1,11 @@
 import logging
-import random
 import requests
 import time
 from urllib.parse import quote
 
-# get server name and hostname from core API
+
 def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
+    """ returns server name and hostname from core API """
     tech_id = ""
 
     if technology != "":
@@ -48,9 +48,9 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
     time.sleep(2)
     url = f"https://api.nordvpn.com/v1/servers?limit=10&filters[servers.status]=online&filters[servers_technologies]={tech_id}&filters[servers_groups]={group_id}"
     logging.debug(url)
-    available_server_count = len(requests.get(url).json()) - 1
-    server = requests.get(url).json()[random.randint(0, available_server_count)]
+    server = requests.get(url).json()[0]
     return server["name"], server["hostname"]
+
 
 def get_server_info(server_name):
     server_name = quote(server_name)
