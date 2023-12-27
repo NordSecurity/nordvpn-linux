@@ -16,6 +16,10 @@ import pytest
 import timeout_decorator
 
 
+def setup_module(module):
+    firewall.add_and_delete_random_route()
+
+
 def setup_function(function):
     daemon.start()
     login.login_as("default")
