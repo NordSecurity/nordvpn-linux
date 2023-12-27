@@ -120,15 +120,15 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += f"-A INPUT -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT",
 
-    try:
-        current_subnet_rules_input_chain = sh.grep(r"\-s ", _in=sh.grep("INPUT", _in=sh.sudo.iptables("-S"))).split("\n")
+    current_subnet_rules_input_chain = []
 
-        # We need to sort rules, since they appear in iptables in random fashion, unlike port rules
-        # otherwise rule lists in `is_active` wont be the same, and assert will fail
+    for line in sh.sudo.iptables("-S").splitlines():
+        if "INPUT" in line and "-s" in line:
+            current_subnet_rules_input_chain.append(line)
+
+    if current_subnet_rules_input_chain:
         return sort_list_by_other_list(result, current_subnet_rules_input_chain)
-    except:
-        # If "-s" is nowhere to be found in iptables, we get exception, and we do not sort
-        # `result`, since we do not have other list to sort `result` list by
+    else:
         return result
 
 
@@ -138,15 +138,15 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT",
 
-    try:
-        current_subnet_rules_output_chain = sh.grep("\-d ", _in=sh.grep("OUTPUT", _in=sh.sudo.iptables("-S"))).split("\n")
+    current_subnet_rules_input_chain = []
 
-        # We need to sort rules, since they appear in iptables in random fashion, unlike port rules
-        # otherwise rule lists in `is_active` wont be the same, and assert will fail
-        return sort_list_by_other_list(result, current_subnet_rules_output_chain)
-    except:
-        # If "-s" is nowhere to be found in iptables, we get exception, and we do not sort
-        # `result`, since we do not have other list to sort `result` list by
+    for line in sh.sudo.iptables("-S").splitlines():
+        if "OUTPUT" in line and "-d" in line:
+            current_subnet_rules_input_chain.append(line)
+
+    if current_subnet_rules_input_chain:
+        return sort_list_by_other_list(result, current_subnet_rules_input_chain)
+    else:
         return result
 
 
