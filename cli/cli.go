@@ -865,10 +865,11 @@ func meshnetCommand(c *cmd) *cli.Command {
 				Usage:   MsgMeshnetRemoveUsage,
 				Subcommands: []*cli.Command{
 					{
-						Name:    "nickname",
-						Aliases: []string{"nick"},
-						Usage:   MsgMeshnetRemoveMachineNicknameUsage,
-						Action:  c.MeshRemoveMachineNickname,
+						Name:               "nickname",
+						Aliases:            []string{"nick"},
+						Usage:              MsgMeshnetRemoveMachineNicknameUsage,
+						Action:             c.MeshRemoveMachineNickname,
+						CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 					},
 				},
 			},

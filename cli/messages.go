@@ -161,17 +161,17 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetAllowFileshare                  = "Allow the peer to send you files."
 
 	// Meshnet set commands group
-	MsgMeshnetSetUsage = "COPY: Sets meshnet configuration option"
+	MsgMeshnetSetUsage = "Set a Meshnet configuration option."
 
-	MsgMeshnetSetMachineNicknameUsage = "COPY: set current machine nickname"
-	MsgMeshnetSetNicknameArgsUsage    = "COPY: set current machine nickname usage"
-	MsgMeshnetSetNicknameSuccessful   = "COPY: successfully set current machine nickname to '%s'"
+	MsgMeshnetSetMachineNicknameUsage = "Sets a nickname for this machine within Meshnet."
+	MsgMeshnetSetNicknameArgsUsage    = "<new_nickname>"
+	MsgMeshnetSetNicknameSuccessful   = "The nickname for this machine is now set to '%s'."
 
 	// Meshnet remove commands group
-	MsgMeshnetRemoveUsage = "COPY: Remove/reset meshnet configuration option to default value"
+	MsgMeshnetRemoveUsage = "Remove a Meshnet configuration option."
 
-	MsgMeshnetRemoveMachineNicknameUsage = "COPY: remove current machine nickname"
-	MsgMeshnetRemoveNicknameSuccessful   = "COPY: successfully removed machine's nickname"
+	MsgMeshnetRemoveMachineNicknameUsage = "Removes the nickname currently set for this machine within Meshnet."
+	MsgMeshnetRemoveNicknameSuccessful   = "The nickname for this machine has been removed."
 
 	// Peers
 	MsgMeshnetPeerListFilters = "Filters list of available peers in a Meshnet. To apply multiple filters, separate them with a comma. Please note that you will see an empty list if you apply contradictory filters."
@@ -181,7 +181,7 @@ Learn more:
 	Managing Meshnet devices - https://meshnet.nordvpn.com/getting-started/how-to-start-using-meshnet/using-meshnet-on-linux#manage-devices
 	Meshnet permissions explained - https://meshnet.nordvpn.com/features/explaining-permissions
 	Routing traffic in Meshnet - https://meshnet.nordvpn.com/features/routing-traffic-in-meshnet`
-	MsgMeshnetPeerArgsUsage     = "<public_key>|<hostname>|<ip>"
+	MsgMeshnetPeerArgsUsage     = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey>"
 	MsgMeshnetPeerListUsage     = "Lists available peers in a Meshnet."
 	MsgMeshnetPeerRemoveUsage   = "Removes a peer from a Meshnet."
 	MsgMeshnetPeerRemoveSuccess = "Peer '%s' has been removed from the Meshnet."
@@ -237,29 +237,29 @@ Learn more:
 	MsgMeshnetPeerAlreadyConnected    = "You are already connected."
 	MsgMeshnetPeerConnectFailed       = "Connect to other mesh peer failed - check if peer '%s' is online."
 
-	MsgMeshnetPeerNicknameUsage           = "COPY: rename usage"
-	MsgMeshnetPeerSetNicknameUsage        = "COPY: peer nickname set command info"
-	MsgMeshnetPeerSetNicknameArgsUsage    = "COPY: <peer_id> nickname"
-	MsgMeshnetPeerRemoveNicknameUsage     = "COPY: peer nickname reset command usage"
-	MsgMeshnetPeerRemoveNicknameArgsUsage = "COPY: explain args for nickname reset. Parameter can be peer <id>"
-	MsgMeshnetPeerSetNicknameSuccessful   = "COPY: peer '%s' renamed to '%s'"
-	MsgMeshnetPeerSetNicknameFailed       = "COPY: failed to rename peer: '%s'"
-	MsgMeshnetPeerSetNicknameTheSame      = "COPY: same nickname '%s' already set"
-	MsgMeshnetNicknameAlreadyEmpty        = "COPY: nickname already empty"
-	MsgMeshnetPeerNicknameIsDomainName    = "COPY: cannot set nickname because a domain with this name already exists"
-	MsgMeshnetPeerResetNicknameSuccessful = "COPY: peer '%s' nickname reset. default name is %s"
-	MsgMeshnetPeerResetNicknameFailed     = "COPY: failed to reset nickname peer: '%s'"
+	MsgMeshnetPeerNicknameUsage           = "Sets/removes a peer device nickname within Meshnet."
+	MsgMeshnetPeerSetNicknameUsage        = "Sets a nickname for the specified peer device."
+	MsgMeshnetPeerSetNicknameArgsUsage    = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey> <new_peer_nickname>"
+	MsgMeshnetPeerRemoveNicknameUsage     = "Removes the nickname currently set for the specified peer device."
+	MsgMeshnetPeerRemoveNicknameArgsUsage = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey>"
+	MsgMeshnetPeerSetNicknameSuccessful   = "The nickname for the peer '%s' is now set to '%s'."
+	MsgMeshnetPeerSetNicknameFailed       = "Couldn't set the nickname for the peer '%s'."
+	MsgMeshnetPeerSetNicknameTheSame      = "The nickname '%s' is already set for this device."
+	MsgMeshnetNicknameAlreadyEmpty        = "The nickname is already removed for this device."
+	MsgMeshnetPeerNicknameIsDomainName    = "The nickname is unavailable: A domain with this name already exists in your system."
+	MsgMeshnetPeerResetNicknameSuccessful = "The nickname for the peer '%s' has been removed. The default hostname is '%s'."
+	MsgMeshnetPeerResetNicknameFailed     = "Couldn't remove the nickname for the peer '%s'."
 
 	// errors received for meshnet nicknames
-	MsgMeshnetSetSameNickname           = "COPY: same nickname '%s' already set"
-	MsgMeshnetNicknameIsDomainName      = "COPY: cannot set nickname because a domain with this name already exists"
-	MsgMeshnetRateLimitReach            = "COPY: reach max allowed nickname changes for a week"
-	MsgMeshnetNicknameTooLong           = "COPY: nickname is too long"
-	MsgMeshnetDuplicateNickname         = "COPY: nickname already exist"
-	MsgMeshnetContainsForbiddenWord     = "COPY: nickname contains forbidden word"
-	MsgMeshnetInvalidPrefixOrSuffix     = "COPY: nickname contains invalid prefix or suffix"
-	MsgMeshnetNicknameWithDoubleHyphens = "COPY: nickname contains double hyphens"
-	MsgMeshnetContainsInvalidChars      = "COPY: nickname contains invalid characters"
+	MsgMeshnetSetSameNickname           = "The nickname '%s' is already set for this device."
+	MsgMeshnetNicknameIsDomainName      = "The nickname is unavailable: A domain with this name already exists in your system."
+	MsgMeshnetRateLimitReach            = "You've reached the weekly limit for nickname changes."
+	MsgMeshnetNicknameTooLong           = "This nickname is too long. Nicknames can have up to 25 characters."
+	MsgMeshnetDuplicateNickname         = "A device with this nickname already exists."
+	MsgMeshnetContainsForbiddenWord     = "This nickname contains a restricted word."
+	MsgMeshnetInvalidPrefixOrSuffix     = "This nickname contains a disallowed prefix or suffix."
+	MsgMeshnetNicknameWithDoubleHyphens = "Nicknames can't contain double dashes ('--')."
+	MsgMeshnetContainsInvalidChars      = "This nickname contains disallowed characters."
 
 	// Fileshare
 	FileshareName       = "fileshare"
@@ -301,7 +301,7 @@ Learn more:
 	MsgNoPermissions                 = "You don’t have write permissions for the download directory %s. To receive the file transfer, choose another download directory using the --" + flagFilesharePath + " parameter."
 
 	MsgFileshareSendUsage       = "Send files or directories to a Meshnet peer."
-	MsgFileshareSendArgsUsage   = "<peer_ip>|<peer_hostname>|<peer_pubkey> <path_1> [path_2...]"
+	MsgFileshareSendArgsUsage   = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey> <path_1> [path_2...]"
 	MsgFileshareSendDescription = MsgFileshareSendUsage + "\n\nTo cancel a transfer in progress, press Ctrl+C"
 	MsgFileshareNoWaitUsage     = "Send a file transfer in the background instead of seeing its progress. It allows you to continue using the terminal for other commands while a transfer is in progress."
 	MsgFileshareSendNoWait      = "File transfer %s has started in the background."
