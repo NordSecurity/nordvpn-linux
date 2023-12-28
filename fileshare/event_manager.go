@@ -229,6 +229,7 @@ func (em *EventManager) handleTransferProgressEvent(eventJSON json.RawMessage) {
 		log.Printf("file %s from TransferProgress event not found in transfer %s", event.FileID, transfer.ID)
 		return
 	}
+
 	transfer.TotalTransferred += event.Transferred - file.Transferred // add only delta
 	file.Transferred = event.Transferred
 
