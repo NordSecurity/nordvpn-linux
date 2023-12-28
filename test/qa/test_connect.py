@@ -503,22 +503,24 @@ def test_status_connected(tech, proto, obfuscated):
 
     assert network.is_disconnected()
     assert "Disconnected" in sh.nordvpn.status()
-    
+
     with lib.Defer(sh.nordvpn.disconnect):
         name, hostname = server.get_hostname_by(technology=tech, protocol=proto, obfuscated=obfuscated)
         sh.nordvpn.connect(hostname.split(".")[0])
 
         connect_time = time.monotonic()
 
-        time.sleep(5)
+        time.sleep(10)
 
         status_time = time.monotonic()
 
         status_output = sh.nordvpn.status().lstrip('\r-\r  \r\r-\r  \r')
-        status_info = dict((a.strip().lower(), b.strip())  
-            for a, b in (element.split(':') 
-                for element in filter(lambda line: len(line.split(':')) == 2, status_output.split('\n')))) 
-        
+        status_info = dict((a.strip().lower(), b.strip())
+            for a, b in (element.split(':')
+                for element in filter(lambda line: len(line.split(':')) == 2, status_output.split('\n'))))
+
+        print("status_info: " + str(status_info))
+
         assert "Connected" in status_info['status']
 
         assert hostname in status_info['hostname']
@@ -547,7 +549,7 @@ def test_status_connected(tech, proto, obfuscated):
         if "minute" in status_info["uptime"]:
             time_connected_seconds = int(status_info['uptime'].split(" ")[2])
             assert time_connected * 60 + time_connected_seconds >= time_passed - 1 and time_connected * 60 + time_connected_seconds <= time_passed + 1
-        else:    
+        else:
             assert time_connected >= time_passed - 1 and time_connected <= time_passed + 1
 
     assert network.is_disconnected()
