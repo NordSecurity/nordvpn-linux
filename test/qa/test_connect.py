@@ -510,7 +510,7 @@ def test_status_connected(tech, proto, obfuscated):
 
         connect_time = time.monotonic()
 
-        time.sleep(10)
+        time.sleep(15)
 
         status_time = time.monotonic()
 
@@ -520,6 +520,7 @@ def test_status_connected(tech, proto, obfuscated):
                 for element in filter(lambda line: len(line.split(':')) == 2, status_output.split('\n'))))
 
         print("status_info: " + str(status_info))
+        print("status_info: " + str(sh.nordvpn.status()))
 
         assert "Connected" in status_info['status']
 
