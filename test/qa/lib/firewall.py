@@ -120,7 +120,16 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += f"-A INPUT -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT",
 
-    return result
+    current_subnet_rules_input_chain = []
+
+    for line in sh.sudo.iptables("-S").splitlines():
+        if "INPUT" in line and "-s" in line:
+            current_subnet_rules_input_chain.append(line)
+
+    if current_subnet_rules_input_chain:
+        return sort_list_by_other_list(result, current_subnet_rules_input_chain)
+    else:
+        return result
 
 
 def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
@@ -129,7 +138,16 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT",
 
-    return result
+    current_subnet_rules_input_chain = []
+
+    for line in sh.sudo.iptables("-S").splitlines():
+        if "OUTPUT" in line and "-d" in line:
+            current_subnet_rules_input_chain.append(line)
+
+    if current_subnet_rules_input_chain:
+        return sort_list_by_other_list(result, current_subnet_rules_input_chain)
+    else:
+        return result
 
 
 def __rules_allowlist_port_chain_input(interface:str, ports_udp: lib.Port, ports_tcp: lib.Port):
@@ -226,10 +244,6 @@ def _get_rules_allowlist_subnet_and_port_on(interface:str, subnets:list[str], po
 
 # ToDo: Add missing IPv6 rules (icmp6 & dhcp6)
 def _get_firewall_rules(ports: list[lib.Port]=None, subnets: list[str]=None) -> list[str]:
-    if subnets:
-        # need to sort subnets Z -> A, since app sort rules like this in iptables
-        subnets.sort(reverse=True)
-
     # Default route interface
     interface = sh.ip.route.show("default").split(None)[4]
 
@@ -311,3 +325,11 @@ def _sort_ports_by_protocol(ports: list[lib.Port]) -> tuple[list[lib.Port], list
     ports_tcp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split('(\\d+)', x.value)], reverse=True)
 
     return ports_udp, ports_tcp
+
+
+def sort_list_by_other_list(to_sort: list[str], sort_by: list[str]) -> list[str]:
+    # Create a dictionary to store the order of rules in `sort_by`
+    order_dict = {rule: index for index, rule in enumerate(sort_by)}
+
+    # Sort `to_sort` based on the order in `sort_by`
+    return sorted(to_sort, key=lambda rule: order_dict[rule])
