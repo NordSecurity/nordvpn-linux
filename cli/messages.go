@@ -4,10 +4,7 @@ const (
 	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s %s --help' to see the options."
 	ArgumentParsingError = "The command you entered is not valid. Enter '%s %s --help' to see the options."
 
-	LoginStart            = "Please enter your login details."
 	LoginSuccess          = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
-	LoginAttempt          = "Attempt %d/%d"
-	LoginTooManyAttempts  = "Too many login attempts. Type '%s login' to start over."
 	LogoutSuccess         = "You are logged out."
 	LogoutTokenSuccess    = "You have been logged out. To keep your account secure, we've revoked your current access token. If you want to reuse your next access token despite the potential risks, use the --" + flagPersistToken + " option when logging out."
 	LogoutUsageText       = "Logs you out"
@@ -243,12 +240,8 @@ Learn more:
 	MsgMeshnetPeerRemoveNicknameUsage     = "Removes the nickname currently set for the specified peer device."
 	MsgMeshnetPeerRemoveNicknameArgsUsage = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey>"
 	MsgMeshnetPeerSetNicknameSuccessful   = "The nickname for the peer '%s' is now set to '%s'."
-	MsgMeshnetPeerSetNicknameFailed       = "Couldn't set the nickname for the peer '%s'."
-	MsgMeshnetPeerSetNicknameTheSame      = "The nickname '%s' is already set for this device."
 	MsgMeshnetNicknameAlreadyEmpty        = "The nickname is already removed for this device."
-	MsgMeshnetPeerNicknameIsDomainName    = "The nickname is unavailable: A domain with this name already exists in your system."
 	MsgMeshnetPeerResetNicknameSuccessful = "The nickname for the peer '%s' has been removed. The default hostname is '%s'."
-	MsgMeshnetPeerResetNicknameFailed     = "Couldn't remove the nickname for the peer '%s'."
 
 	// errors received for meshnet nicknames
 	MsgMeshnetSetSameNickname           = "The nickname '%s' is already set for this device."
