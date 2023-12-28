@@ -60,7 +60,7 @@ func (r *RegistryMock) Configure(token string, id uuid.UUID, peerID uuid.UUID, p
 
 func (r *RegistryMock) GetPeerWithIdentifier(id string) *mesh.MachinePeer {
 	index := slices.IndexFunc(r.Peers, func(p mesh.MachinePeer) bool {
-		return p.ID.String() == id || p.Hostname == id || p.PublicKey == id || strings.EqualFold(p.Nickname, id)
+		return p.ID.String() == id || strings.EqualFold(p.Hostname, id) || p.PublicKey == id || strings.EqualFold(p.Nickname, id)
 	})
 
 	if index == -1 {

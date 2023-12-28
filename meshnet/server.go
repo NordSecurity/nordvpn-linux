@@ -2983,7 +2983,7 @@ func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh
 	}
 	id = strings.ToLower(id)
 	index := slices.IndexFunc(peers, func(p mesh.MachinePeer) bool {
-		return p.ID.String() == id || p.Hostname == id || p.PublicKey == id || strings.EqualFold(p.Nickname, id)
+		return p.ID.String() == id || strings.EqualFold(p.Hostname, id) || p.PublicKey == id || strings.EqualFold(p.Nickname, id)
 	})
 
 	if index == -1 {
