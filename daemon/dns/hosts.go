@@ -19,9 +19,9 @@ const (
 type Hosts []Host
 
 type Host struct {
-	IP         netip.Addr
-	FQDN       string
-	DomainName string
+	IP          netip.Addr
+	FQDN        string
+	DomainNames []string
 }
 
 // Add hostname interface
@@ -42,7 +42,7 @@ func NewHostsFileSetter(filePath string) *HostsFileSetter {
 }
 
 func (h Host) String() string {
-	return fmt.Sprintf("%s\t%s\t%s\t%s", h.IP, h.FQDN, h.DomainName, mark)
+	return fmt.Sprintf("%s\t%s\t%s\t%s", h.IP, h.FQDN, strings.Join(h.DomainNames, "\t"), mark)
 }
 
 func (s *HostsFileSetter) SetHosts(hosts Hosts) error {

@@ -16,6 +16,8 @@ LANS = [
         "10.0.0.0/8",
 ]
 
+strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGNORECASE)
+
 class PeerName(Enum):
     Hostname = 0
     Ip = 1
@@ -68,8 +70,8 @@ def get_peers(output: str) -> list:
     output = output[output.find("Local Peers:"):] # skip this device
     peers = []
     for line in output.split("\n"):
-        if line.find("Hostname:") != -1:
-            peers.append(line.split(" ")[1])
+        if "Hostname:" in line:
+            peers.append(strip_colors.sub('', line.split(" ")[-1]))
     return peers
 
 
@@ -77,25 +79,30 @@ def get_this_device(output: str):
     """parses current device hostname from 'nordvpn meshnet peer list' output"""
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
-        if line.find("This device:") != -1:
-            return output_lines[i+1].split(" ")[1]
+        if "This device:" in line:
+            for subline in output_lines[i+1:]:
+                if "Hostname:" in subline:
+                    return strip_colors.sub('', subline.split(" ")[-1])
 
 
 def get_this_device_ipv4(output: str):
     """parses current device ip from 'nordvpn meshnet peer list' output"""
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
-        if line.find("This device:") != -1:
-            return output_lines[i+2].split(" ")[1]
+        if "This device:" in line:
+            for subline in output_lines[i+1:]:
+                if "IP:" in subline:
+                    return strip_colors.sub('', subline.split(" ")[-1])
 
 
 def get_this_device_pubkey(output: str):
     """parses current device pubkey from 'nordvpn meshnet peer list' output"""
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
-        if line.find("This device:") != -1:
-            # example: Public Key: uAexQo2yuiVBZocvuiFPQjAujkDmQVemKaircpxDaUc=
-            return output_lines[i+3].split(" ")[2]
+        if "This device:" in line:
+            for subline in output_lines[i+1:]:
+                if "Public Key:" in subline:
+                    return strip_colors.sub('', subline.split(" ")[-1])
 
 
 def remove_all_peers():

@@ -44,6 +44,7 @@ message Peer {
 	bool do_i_allow_fileshare = 18;
 	bool always_accept_files = 19;
 	PeerStatus status = 14;
+	string nickname = 20;
 }
 
 // PeerStatus defines the current connection status with the peer
@@ -69,6 +70,42 @@ message RemovePeerResponse {
 		UpdatePeerErrorCode update_peer_error_code = 2;
 		ServiceErrorCode service_error_code = 3;
 		MeshnetErrorCode meshnet_error_code = 4;
+	}
+}
+
+// ChangeNicknameErrorCode defines the errors that occur at meshnet nickname changes
+enum ChangeNicknameErrorCode {
+	SAME_NICKNAME = 0;
+	NICKNAME_ALREADY_EMPTY = 1;
+	DOMAIN_NAME_EXISTS = 2;
+	RATE_LIMIT_REACH = 3;
+	NICKNAME_TOO_LONG = 4;
+	DUPLICATE_NICKNAME = 5;
+	CONTAINS_FORBIDDEN_WORD = 6;
+	SUFFIX_OR_PREFIX_ARE_INVALID = 7;
+	NICKNAME_HAS_DOUBLE_HYPHENS = 8;
+	INVALID_CHARS = 9;
+}
+
+// ChangePeerNicknameRequest defines a request to change the nickname for a meshnet peer
+message ChangePeerNicknameRequest {
+	string identifier = 1;
+	string nickname = 2;
+}
+
+// ChangeMachineNicknameRequest defines a request to change the nickname for the current machine from meshnet
+message ChangeMachineNicknameRequest {
+	string nickname = 1;
+}
+
+// ChangeNicknameResponse defines a response to change(set/remove) the nickname for a peer or for current machine
+message ChangeNicknameResponse {
+	oneof response {
+		Empty empty = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+		ServiceErrorCode service_error_code = 3;
+		MeshnetErrorCode meshnet_error_code = 4;
+		ChangeNicknameErrorCode change_nickname_error_code = 5;
 	}
 }
 

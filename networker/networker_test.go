@@ -1841,9 +1841,9 @@ func TestCombined_Refresh(t *testing.T) {
 	assert.Equal(t, 2, len(hostSetter.hosts), "%d DNS hosts were configured, expected 2.", len(hostSetter.hosts))
 
 	expectedMachineDnsHost := dns.Host{
-		IP:         machineAddress,
-		FQDN:       machineHostName,
-		DomainName: "test-fuji",
+		IP:          machineAddress,
+		FQDN:        machineHostName,
+		DomainNames: []string{"test-fuji"},
 	}
 	assert.Equal(t, expectedMachineDnsHost, hostSetter.hosts[0],
 		"DNS host was not configured properly for %s, \nexpected config: \n%v, \nactual config: \n%v",
@@ -1851,9 +1851,9 @@ func TestCombined_Refresh(t *testing.T) {
 	)
 
 	expectedPeer1DnsHost := dns.Host{
-		IP:         peer1Address,
-		FQDN:       peer1HostName,
-		DomainName: "test-everest",
+		IP:          peer1Address,
+		FQDN:        peer1HostName,
+		DomainNames: []string{"test-everest"},
 	}
 
 	assert.Equal(t, expectedPeer1DnsHost, hostSetter.hosts[1],

@@ -1250,10 +1250,12 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		return err
 	}
 
+	domainNames := []string{strings.TrimSuffix(cfg.Machine.Hostname, ".nord")}
+
 	hosts := dns.Hosts{dns.Host{
-		IP:         cfg.Machine.Address,
-		FQDN:       cfg.Machine.Hostname,
-		DomainName: strings.TrimSuffix(cfg.Machine.Hostname, ".nord"),
+		IP:          cfg.Machine.Address,
+		FQDN:        cfg.Machine.Hostname,
+		DomainNames: domainNames,
 	}}
 	hosts = append(hosts, getHostsFromConfig(cfg.Peers)...)
 	netw.publisher.Publish("updating mesh dns")
@@ -1490,10 +1492,25 @@ func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 	hosts := make(dns.Hosts, 0, len(peers))
 	for _, peer := range peers {
 		if peer.Address.IsValid() {
+			var hostName string
+			var domainNames []string
+
+			if peer.Nickname != "" {
+				hostName = peer.Nickname
+				domainNames = []string{
+					peer.Hostname,
+					strings.TrimSuffix(peer.Hostname, ".nord"),
+					peer.Nickname + ".nord",
+				}
+			} else {
+				hostName = peer.Hostname
+				domainNames = []string{strings.TrimSuffix(peer.Hostname, ".nord")}
+			}
+
 			hosts = append(hosts, dns.Host{
-				IP:         peer.Address,
-				FQDN:       peer.Hostname,
-				DomainName: strings.TrimSuffix(peer.Hostname, ".nord"),
+				IP:          peer.Address,
+				FQDN:        hostName,
+				DomainNames: domainNames,
 			})
 		}
 	}

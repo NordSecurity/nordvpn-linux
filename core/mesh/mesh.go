@@ -2,8 +2,6 @@
 package mesh
 
 import (
-	"net/netip"
-
 	"github.com/google/uuid"
 )
 
@@ -12,17 +10,13 @@ type Registry interface {
 	// Register Self to mesh network.
 	Register(token string, self Machine) (*Machine, error)
 	// Update already registered peer.
-	Update(token string, id uuid.UUID, endpoints []netip.AddrPort) error
+	Update(token string, id uuid.UUID, info MachineUpdateRequest) error
 	// Configure interaction with specific peer.
 	Configure(
 		token string,
 		id uuid.UUID,
 		peerID uuid.UUID,
-		doIAllowInbound bool,
-		doIAllowRouting bool,
-		doIAllowLocalNetwork bool,
-		doIAllowFileshare bool,
-		alwaysAcceptFiles bool,
+		peerUpdateInfo PeerUpdateRequest,
 	) error
 	// Unregister Peer from the mesh network.
 	Unregister(token string, self uuid.UUID) error

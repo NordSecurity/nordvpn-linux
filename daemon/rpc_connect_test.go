@@ -33,12 +33,6 @@ type mockRPCServer struct {
 
 func (m *mockRPCServer) Send(p *pb.Payload) error { m.msg = p; return nil }
 
-type mockNameservers []string
-
-func (m mockNameservers) Get(bool, bool) []string {
-	return m
-}
-
 type mockAuthenticationAPI struct{}
 
 func (mockAuthenticationAPI) Login() (string, error) {
@@ -209,7 +203,7 @@ func TestRpcConnect(t *testing.T) {
 				newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 				test.netw,
 				&subs.Subject[string]{},
-				mockNameservers([]string{"1.1.1.1"}),
+				&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 				nil,
 				&mockAnalytics{},
 				service.NoopFileshare{},
@@ -288,7 +282,7 @@ func TestRpcReconnect(t *testing.T) {
 		newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 		&testnetworker.Mock{},
 		&subs.Subject[string]{},
-		mockNameservers([]string{"1.1.1.1"}),
+		&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 		nil,
 		&mockAnalytics{},
 		service.NoopFileshare{},

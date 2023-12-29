@@ -2,53 +2,12 @@ package daemon
 
 import (
 	"io/fs"
-	"net/netip"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/google/uuid"
 )
-
-var tplNameserversV4 config.DNS = []string{
-	"103.86.96.96",
-	"103.86.99.99",
-}
-
-var tplNameserversV6 config.DNS = []string{
-	"2400:bb40:4444::103",
-	"2400:bb40:8888::103",
-}
-
-var defaultNameserversV4 config.DNS = []string{
-	"103.86.96.100",
-	"103.86.99.100",
-}
-
-var defaultNameserversV6 config.DNS = []string{
-	"2400:bb40:4444::100",
-	"2400:bb40:8888::100",
-}
-
-type mockDNSGetter struct {
-}
-
-func (md *mockDNSGetter) Get(isThreatProtectionLite bool, isIPv6 bool) []string {
-	if isThreatProtectionLite {
-		nameservers := tplNameserversV4
-		if isIPv6 {
-			nameservers = append(nameservers, tplNameserversV6...)
-		}
-		return nameservers
-	}
-
-	nameservers := defaultNameserversV4
-	if isIPv6 {
-		nameservers = append(nameservers, defaultNameserversV6...)
-	}
-	return nameservers
-}
 
 type mockPublisherSubcriber struct {
 	eventPublished bool
@@ -105,36 +64,40 @@ func (mid *machineIDGetterMock) GetMachineID() uuid.UUID {
 }
 
 type RegistryMock struct {
-	peers mesh.MachinePeers
+	listErr      error
+	peers        mesh.MachinePeers
+	configureErr error
+	localPeers   mesh.Machines
 }
 
 func (*RegistryMock) Register(token string, self mesh.Machine) (*mesh.Machine, error) {
-	return nil, nil
+	return &mesh.Machine{}, nil
 }
-func (*RegistryMock) Update(token string, id uuid.UUID, endpoints []netip.AddrPort) error { return nil }
-
-func (*RegistryMock) Configure(
-	token string,
-	id uuid.UUID,
-	peerID uuid.UUID,
-	doIAllowInbound bool,
-	doIAllowRouting bool,
-	doIAllowLocalNetwork bool,
-	doIAllowFileshare bool,
-	alwaysAcceptFiles bool,
-) error {
+func (*RegistryMock) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
 	return nil
 }
 
-func (*RegistryMock) Unregister(token string, self uuid.UUID) error { return nil }
-func (*RegistryMock) Local(token string) (mesh.Machines, error)     { return mesh.Machines{}, nil }
-
-func (rm *RegistryMock) List(token string, self uuid.UUID) (mesh.MachinePeers, error) {
-	return rm.peers, nil
+func (r *RegistryMock) Configure(string, uuid.UUID, uuid.UUID, mesh.PeerUpdateRequest) error {
+	return r.configureErr
 }
 
-func (*RegistryMock) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) { return nil, nil }
-func (*RegistryMock) Unpair(token string, self uuid.UUID, peer uuid.UUID) error  { return nil }
+func (*RegistryMock) Unregister(token string, self uuid.UUID) error { return nil }
+func (r *RegistryMock) Local(token string) (mesh.Machines, error) {
+	return r.localPeers, nil
+}
+
+func (r *RegistryMock) List(token string, self uuid.UUID) (mesh.MachinePeers, error) {
+	if r.listErr != nil {
+		return nil, r.listErr
+	}
+	return r.peers, nil
+}
+
+func (*RegistryMock) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
+	return &mesh.MachineMap{}, nil
+}
+
+func (*RegistryMock) Unpair(token string, self uuid.UUID, peer uuid.UUID) error { return nil }
 
 func (*RegistryMock) NotifyNewTransfer(
 	token string,

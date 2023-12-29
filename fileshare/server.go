@@ -141,9 +141,11 @@ func (s *Server) getPeers() (map[string]*meshpb.Peer, error) {
 	case *meshpb.GetPeersResponse_Peers:
 		peerNameToPeer := make(map[string]*meshpb.Peer)
 		for _, peer := range append(resp.Peers.External, resp.Peers.Local...) {
+			// TODO: refactor
 			peerNameToPeer[peer.Ip] = peer
 			peerNameToPeer[peer.Hostname] = peer
 			peerNameToPeer[peer.Pubkey] = peer
+			peerNameToPeer[peer.Nickname] = peer
 		}
 		return peerNameToPeer, nil
 	case *meshpb.GetPeersResponse_ServiceErrorCode:
@@ -180,10 +182,10 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 
 		if isDirectory {
 			fileCountInDirectory, err := s.getNumberOfFiles(path, DirDepthLimit)
-			switch err {
-			case errMaxDirectoryDepthReached:
+			switch {
+			case errors.Is(err, errMaxDirectoryDepthReached):
 				return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_DIRECTORY_TOO_DEEP)})
-			case nil:
+			case err == nil:
 				fileCount += fileCountInDirectory
 			default:
 				return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)})
@@ -264,26 +266,26 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 
 	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files)
 
-	switch err {
-	case ErrTransferNotFound:
+	switch {
+	case errors.Is(err, ErrTransferNotFound):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND)})
-	case ErrTransferAcceptOutgoing:
+	case errors.Is(err, ErrTransferAcceptOutgoing):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_OUTGOING)})
-	case ErrTransferAlreadyAccepted:
+	case errors.Is(err, ErrTransferAlreadyAccepted):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ALREADY_ACCEPTED)})
-	case ErrFileNotFound:
+	case errors.Is(err, ErrFileNotFound):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)})
-	case ErrSizeLimitExceeded:
+	case errors.Is(err, ErrSizeLimitExceeded):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
-	case ErrAcceptDirNotFound:
+	case errors.Is(err, ErrAcceptDirNotFound):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND)})
-	case ErrAcceptDirIsASymlink:
+	case errors.Is(err, ErrAcceptDirIsASymlink):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK)})
-	case ErrAcceptDirIsNotADirectory:
+	case errors.Is(err, ErrAcceptDirIsNotADirectory):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY)})
-	case ErrNoPermissionsToAcceptDirectory:
+	case errors.Is(err, ErrNoPermissionsToAcceptDirectory):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS)})
-	case nil:
+	case err == nil:
 		break
 	default:
 		log.Printf("error while accepting transfer %s: %s", req.TransferId, err)
@@ -339,10 +341,10 @@ func (s *Server) Cancel(
 	}
 
 	transfer, err := s.eventManager.GetTransfer(req.GetTransferId())
-	switch err {
-	case ErrTransferNotFound:
+	switch {
+	case errors.Is(err, ErrTransferNotFound):
 		return fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND), nil
-	case nil:
+	case err == nil:
 		break
 	default:
 		log.Printf("error while cancelling transfer %s: %s", req.TransferId, err)
@@ -412,10 +414,10 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 	}
 
 	transfer, err := s.eventManager.GetTransfer(req.TransferId)
-	switch err {
-	case ErrTransferNotFound:
+	switch {
+	case errors.Is(err, ErrTransferNotFound):
 		return fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND), nil
-	case nil:
+	case err == nil:
 		break
 	default:
 		log.Printf("error while cancelling transfer %s: %s", req.TransferId, err)
