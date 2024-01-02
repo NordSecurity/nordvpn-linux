@@ -1,9 +1,11 @@
 package nc
 
+import "time"
+
 type MockTime struct {
-	SecondsSinceTimestamp float64
+	SecondsSinceTimestamp int
 }
 
-func (m *MockTime) GetSecondsSinceTimestamp(int64) float64 {
-	return m.SecondsSinceTimestamp
+func (m *MockTime) GetDurationSinceTimestamp(int64) time.Duration {
+	return time.Duration(m.SecondsSinceTimestamp) * time.Second
 }

@@ -208,21 +208,20 @@ func (c *Client) reinitializeClient(opts *mqtt.ClientOptions) {
 func (c *Client) connectWithBackoff(ctx context.Context, backoff func(int) time.Duration) {
 	for tries := 0; ; tries++ {
 		ncData, err := c.credsFetcher.GetCredentials()
-		if err != nil {
-			log.Println("failed to fetch new credentials, retrying with old client: ", err)
-			continue
-		}
-
-		opts := c.getClientOptions(ncData.Endpoint, ncData.UserID.String(), ncData.Username, ncData.Password)
-		c.reinitializeClient(opts)
-
-		err = c.connect()
 		if err == nil {
-			break
-		}
-		if tries == 0 {
-			// Don't spam the logs, only print the first time
-			c.subjectErr.Publish(fmt.Errorf("%s failed to connect: %w", logPrefix, err))
+			opts := c.getClientOptions(ncData.Endpoint, ncData.UserID.String(), ncData.Username, ncData.Password)
+			c.reinitializeClient(opts)
+
+			err = c.connect()
+			if err == nil {
+				break
+			}
+			if tries == 0 {
+				// Don't spam the logs, only print the first time
+				c.subjectErr.Publish(fmt.Errorf("%s failed to connect: %w", logPrefix, err))
+			}
+		} else if tries == 0 {
+			log.Println("failed to fetch new credentials, retrying with old client: ", err)
 		}
 
 		select {

@@ -9,13 +9,13 @@ import (
 )
 
 type TimeSource interface {
-	GetSecondsSinceTimestamp(int64) float64
+	GetDurationSinceTimestamp(int64) time.Duration
 }
 
 type RealTime struct{}
 
-func (r RealTime) GetSecondsSinceTimestamp(timestamp int64) float64 {
-	return time.Since(time.Unix(timestamp, 0)).Seconds()
+func (r RealTime) GetDurationSinceTimestamp(timestamp int64) time.Duration {
+	return time.Since(time.Unix(timestamp, 0))
 }
 
 type CredentialsGetter struct {
@@ -51,10 +51,10 @@ func (cf *CredentialsGetter) GetCredentials() (config.NCData, error) {
 	tokenData := cfg.TokensData[userID]
 	ncData := tokenData.NCData
 
-	const tokenValidityPeriodSec = 86400
-	elapsedSinceTokenIssued := cf.timeSource.GetSecondsSinceTimestamp(ncData.IssuedTimestamp)
+	const tokenValidityPeriod time.Duration = 86400 * time.Second
+	elapsedSinceTokenIssued := cf.timeSource.GetDurationSinceTimestamp(ncData.IssuedTimestamp)
 
-	if elapsedSinceTokenIssued < tokenValidityPeriodSec && areNCCredentialsValid(ncData) {
+	if elapsedSinceTokenIssued < tokenValidityPeriod && areNCCredentialsValid(ncData) {
 		return ncData, nil
 	}
 

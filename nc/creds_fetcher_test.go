@@ -51,7 +51,7 @@ func TestCredsFetcher(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		timeSinceLastUpdate float64
+		timeSinceLastUpdate int
 		expectedUsername    string
 		expectedPassword    string
 		expectedEndpoint    string

@@ -508,7 +508,7 @@ func main() {
 	monitor.Start(netw)
 
 	if authChecker.IsLoggedIn() {
-		go notificationClient.Start()
+		go daemon.StartNC("[startup]", notificationClient)
 	}
 
 	if cfg.Mesh {
