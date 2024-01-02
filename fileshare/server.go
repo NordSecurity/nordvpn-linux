@@ -143,9 +143,13 @@ func (s *Server) getPeers() (map[string]*meshpb.Peer, error) {
 		for _, peer := range append(resp.Peers.External, resp.Peers.Local...) {
 			// TODO: refactor
 			peerNameToPeer[peer.Ip] = peer
-			peerNameToPeer[peer.Hostname] = peer
+			peerNameToPeer[strings.ToLower(peer.Hostname)] = peer
+			peerNameToPeer[strings.ToLower(strings.TrimSuffix(peer.Hostname, ".nord"))] = peer
 			peerNameToPeer[peer.Pubkey] = peer
-			peerNameToPeer[peer.Nickname] = peer
+			if peer.Nickname != "" {
+				peerNameToPeer[strings.ToLower(peer.Nickname)] = peer
+				peerNameToPeer[strings.ToLower(peer.Nickname)+".nord"] = peer
+			}
 		}
 		return peerNameToPeer, nil
 	case *meshpb.GetPeersResponse_ServiceErrorCode:
@@ -208,7 +212,7 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		return srv.Send(&pb.StatusResponse{Error: serviceError(pb.ServiceErrorCode_INTERNAL_FAILURE)})
 	}
 
-	peer, ok := peers[req.Peer]
+	peer, ok := peers[strings.ToLower(req.Peer)]
 	if !ok {
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_INVALID_PEER)})
 	}
@@ -380,7 +384,7 @@ func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 		return srv.Send(&pb.ListResponse{Error: fileshareError(pb.FileshareErrorCode_LIB_FAILURE)})
 	}
 	for _, transfer := range transfers {
-		if peer, ok := peers[transfer.Peer]; ok {
+		if peer, ok := peers[strings.ToLower(transfer.Peer)]; ok {
 			transfer.Peer = peer.Hostname
 		}
 	}
