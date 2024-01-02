@@ -579,6 +579,9 @@ func (c *cmd) MeshPeerSetNickname(ctx *cli.Context) error {
 	}
 
 	nickname := ctx.Args().Get(1)
+	if nickname == "" {
+		return errors.New(MsgMeshnetContainsInvalidChars)
+	}
 
 	if err = c.changeMeshnetPeerNickname(peer, nickname); err != nil {
 		return err
@@ -639,6 +642,10 @@ func (c *cmd) MeshSetMachineNickname(ctx *cli.Context) error {
 		return argsCountError(ctx)
 	}
 	nickname := ctx.Args().First()
+	if nickname == "" {
+		return errors.New(MsgMeshnetContainsInvalidChars)
+	}
+
 	resp, err := c.meshClient.ChangeMachineNickname(context.Background(), &pb.ChangeMachineNicknameRequest{
 		Nickname: nickname,
 	})
