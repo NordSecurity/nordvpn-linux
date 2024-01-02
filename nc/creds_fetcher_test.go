@@ -21,7 +21,7 @@ func TestCredsFetcher(t *testing.T) {
 
 	userID := int64(1000)
 
-	const tokenValidityPeriodSec = 86400.0
+	const tokenValidityPeriodSec = 86400
 
 	uuid := uuid.MustParse("5ec09d24-9e6d-11ee-8c90-0242ac120002")
 
@@ -51,7 +51,7 @@ func TestCredsFetcher(t *testing.T) {
 
 	tests := []struct {
 		name                string
-		timeSinceLastUpdate int
+		timeSinceLastUpdate int64
 		expectedUsername    string
 		expectedPassword    string
 		expectedEndpoint    string

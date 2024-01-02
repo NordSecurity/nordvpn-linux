@@ -3,7 +3,7 @@ package nc
 import "time"
 
 type MockTime struct {
-	SecondsSinceTimestamp int
+	SecondsSinceTimestamp int64
 }
 
 func (m *MockTime) GetDurationSinceTimestamp(time.Time) time.Duration {
