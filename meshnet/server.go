@@ -3039,3 +3039,19 @@ func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh
 
 	return &peers[index]
 }
+
+func MakePeerMap(peers *pb.PeerList) map[string]*pb.Peer {
+	peerNameToPeer := make(map[string]*pb.Peer)
+	for _, peer := range append(peers.External, peers.Local...) {
+		// TODO: refactor
+		peerNameToPeer[peer.Ip] = peer
+		peerNameToPeer[strings.ToLower(peer.Hostname)] = peer
+		peerNameToPeer[strings.ToLower(strings.TrimSuffix(peer.Hostname, ".nord"))] = peer
+		peerNameToPeer[peer.Pubkey] = peer
+		if peer.Nickname != "" {
+			peerNameToPeer[strings.ToLower(peer.Nickname)] = peer
+			peerNameToPeer[strings.ToLower(peer.Nickname)+".nord"] = peer
+		}
+	}
+	return peerNameToPeer
+}

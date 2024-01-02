@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
 )
@@ -139,18 +140,7 @@ func (s *Server) getPeers() (map[string]*meshpb.Peer, error) {
 
 	switch resp := resp.Response.(type) {
 	case *meshpb.GetPeersResponse_Peers:
-		peerNameToPeer := make(map[string]*meshpb.Peer)
-		for _, peer := range append(resp.Peers.External, resp.Peers.Local...) {
-			// TODO: refactor
-			peerNameToPeer[peer.Ip] = peer
-			peerNameToPeer[strings.ToLower(peer.Hostname)] = peer
-			peerNameToPeer[strings.ToLower(strings.TrimSuffix(peer.Hostname, ".nord"))] = peer
-			peerNameToPeer[peer.Pubkey] = peer
-			if peer.Nickname != "" {
-				peerNameToPeer[strings.ToLower(peer.Nickname)] = peer
-				peerNameToPeer[strings.ToLower(peer.Nickname)+".nord"] = peer
-			}
-		}
+		peerNameToPeer := meshnet.MakePeerMap(resp.Peers)
 		return peerNameToPeer, nil
 	case *meshpb.GetPeersResponse_ServiceErrorCode:
 		log.Printf("GetPeers failed, service error: %s", meshpb.ServiceErrorCode_name[int32(resp.ServiceErrorCode)])
