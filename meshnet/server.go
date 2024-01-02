@@ -1375,6 +1375,25 @@ func (s *Server) ChangePeerNickname(
 		return s.apiToNicknameError(err), nil
 	}
 
+	mapResp, err := s.reg.Map(token, cfg.MeshDevice.ID)
+	if err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	if err := s.netw.Refresh(*mapResp); err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
 	return &pb.ChangeNicknameResponse{
 		Response: &pb.ChangeNicknameResponse_Empty{},
 	}, nil
@@ -1531,6 +1550,25 @@ func (s *Server) ChangeMachineNickname(
 	if err != nil {
 		// in this case the local and the server info are out of sync
 		// the out of sync will remain until current machine receives a NC notification for itself or after mesh restart or settings again a nickname
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
+	if err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	if err := s.netw.Refresh(*resp); err != nil {
 		s.pub.Publish(err)
 		return &pb.ChangeNicknameResponse{
 			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
