@@ -1464,6 +1464,15 @@ func (s *Server) ChangeMachineNickname(
 			}, nil
 		}
 	} else {
+		// API returns wrong error code (101101 instead of 101127) when setting too long own machine nickname
+		// TODO: Remove this check when it will be fixed on the API side
+		if len(req.Nickname) > 25 {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_TOO_LONG,
+				},
+			}, nil
+		}
 		if cfg.MeshDevice.Nickname == req.Nickname {
 			return &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
