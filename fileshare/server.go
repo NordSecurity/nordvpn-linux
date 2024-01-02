@@ -385,7 +385,11 @@ func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 	}
 	for _, transfer := range transfers {
 		if peer, ok := peers[strings.ToLower(transfer.Peer)]; ok {
-			transfer.Peer = peer.Hostname
+			if peer.Nickname != "" {
+				transfer.Peer = peer.Nickname
+			} else {
+				transfer.Peer = peer.Hostname
+			}
 		}
 	}
 
