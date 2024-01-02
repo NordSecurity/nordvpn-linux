@@ -6,6 +6,6 @@ type MockTime struct {
 	SecondsSinceTimestamp int
 }
 
-func (m *MockTime) GetDurationSinceTimestamp(int64) time.Duration {
+func (m *MockTime) GetDurationSinceTimestamp(time.Time) time.Duration {
 	return time.Duration(m.SecondsSinceTimestamp) * time.Second
 }
