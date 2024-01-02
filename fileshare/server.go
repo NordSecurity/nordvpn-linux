@@ -129,28 +129,28 @@ func (s *Server) startTransferStatusStream(srv pb.Fileshare_SendServer, transfer
 	return nil
 }
 
-// getPeers returns map where peer ip/hostname/pubkey maps to *meshpb.Peer
-func (s *Server) getPeers() (map[string]*meshpb.Peer, error) {
+// getPeers returns maps where peer pubkey or ip/hostname/nickname maps to *meshpb.Peer
+func (s *Server) getPeers() (map[string]*meshpb.Peer, map[string]*meshpb.Peer, error) {
 	resp, err := s.meshClient.GetPeers(context.Background(), &meshpb.Empty{})
 
 	if err != nil {
 		log.Printf("GetPeers failed: %s", err)
-		return nil, errGetPeersFailed
+		return nil, nil, errGetPeersFailed
 	}
 
 	switch resp := resp.Response.(type) {
 	case *meshpb.GetPeersResponse_Peers:
-		peerNameToPeer := meshnet.MakePeerMap(resp.Peers)
-		return peerNameToPeer, nil
+		peerPubkeyToPeer, peerNameToPeer := meshnet.MakePeerMaps(resp.Peers)
+		return peerPubkeyToPeer, peerNameToPeer, nil
 	case *meshpb.GetPeersResponse_ServiceErrorCode:
 		log.Printf("GetPeers failed, service error: %s", meshpb.ServiceErrorCode_name[int32(resp.ServiceErrorCode)])
-		return nil, errGetPeersFailed
+		return nil, nil, errGetPeersFailed
 	case *meshpb.GetPeersResponse_MeshnetErrorCode:
 		log.Printf("GetPeers failed, meshnet error: %s", meshpb.ServiceErrorCode_name[int32(resp.MeshnetErrorCode)])
-		return nil, errGetPeersFailed
+		return nil, nil, errGetPeersFailed
 	default:
 		log.Printf("GetPeers failed, unknown error")
-		return nil, errGetPeersFailed
+		return nil, nil, errGetPeersFailed
 	}
 }
 
@@ -197,14 +197,17 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		}
 	}
 
-	peers, err := s.getPeers()
+	peerPubkeyToPeer, peerNameToPeer, err := s.getPeers()
 	if err != nil {
 		return srv.Send(&pb.StatusResponse{Error: serviceError(pb.ServiceErrorCode_INTERNAL_FAILURE)})
 	}
 
-	peer, ok := peers[strings.ToLower(req.Peer)]
+	peer, ok := peerPubkeyToPeer[req.Peer]
 	if !ok {
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_INVALID_PEER)})
+		peer, ok = peerNameToPeer[strings.ToLower(req.Peer)]
+		if !ok {
+			return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_INVALID_PEER)})
+		}
 	}
 
 	if peer.Status == meshpb.PeerStatus_DISCONNECTED {
@@ -363,7 +366,7 @@ func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 		return srv.Send(&pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
-	peers, err := s.getPeers()
+	peerPubkeyToPeer, peerNameToPeer, err := s.getPeers()
 	if err != nil {
 		return srv.Send(&pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_INTERNAL_FAILURE)})
 	}
@@ -374,7 +377,11 @@ func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 		return srv.Send(&pb.ListResponse{Error: fileshareError(pb.FileshareErrorCode_LIB_FAILURE)})
 	}
 	for _, transfer := range transfers {
-		if peer, ok := peers[strings.ToLower(transfer.Peer)]; ok {
+		peer, ok := peerPubkeyToPeer[transfer.Peer]
+		if !ok {
+			peer, ok = peerNameToPeer[strings.ToLower(transfer.Peer)]
+		}
+		if ok {
 			if peer.Nickname != "" {
 				transfer.Peer = peer.Nickname
 			} else {

@@ -724,13 +724,16 @@ func (c *cmd) retrievePeerFromArgs(
 		return nil, formatError(err)
 	}
 
-	peerNameToPeer := meshnet.MakePeerMap(peers)
-	peer, ok := peerNameToPeer[strings.ToLower(identifier)]
+	peerPubkeyToPeer, peerNameToPeer := meshnet.MakePeerMaps(peers)
+	peer, ok := peerPubkeyToPeer[identifier]
 	if !ok {
-		return nil, fmt.Errorf(
-			MsgMeshnetPeerUnknown,
-			identifier,
-		)
+		peer, ok = peerNameToPeer[strings.ToLower(identifier)]
+		if !ok {
+			return nil, fmt.Errorf(
+				MsgMeshnetPeerUnknown,
+				identifier,
+			)
+		}
 	}
 
 	return peer, nil
