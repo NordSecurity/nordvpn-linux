@@ -10,8 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
-	"golang.org/x/exp/slices"
-
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -718,21 +716,28 @@ func (c *cmd) retrievePeerFromArgs(
 		return nil, formatError(err)
 	}
 
-	// Find the real identifier (the one used in API) by the given
-	// one
-	peerList := []*pb.Peer{}
-	peerList = append(peerList, peers.Local...)
-	peerList = append(peerList, peers.External...)
+	peerNameToPeer := make(map[string]*pb.Peer)
+	for _, peer := range append(peers.External, peers.Local...) {
+		// TODO: refactor
+		peerNameToPeer[peer.Ip] = peer
+		peerNameToPeer[strings.ToLower(peer.Hostname)] = peer
+		peerNameToPeer[strings.ToLower(strings.TrimSuffix(peer.Hostname, ".nord"))] = peer
+		peerNameToPeer[peer.Pubkey] = peer
+		if peer.Nickname != "" {
+			peerNameToPeer[strings.ToLower(peer.Nickname)] = peer
+			peerNameToPeer[strings.ToLower(peer.Nickname)+".nord"] = peer
+		}
+	}
 
-	index := slices.IndexFunc(peerList, peerByIdentifier(identifier))
-	if index == -1 {
+	peer, ok := peerNameToPeer[strings.ToLower(identifier)]
+	if !ok {
 		return nil, fmt.Errorf(
 			MsgMeshnetPeerUnknown,
 			identifier,
 		)
 	}
 
-	return peerList[index], nil
+	return peer, nil
 }
 
 // MeshPeerAutoComplete queries the peer list from the meshnet service, and
@@ -771,12 +776,6 @@ func (c *cmd) MeshPeerNicknameAutoComplete(ctx *cli.Context) {
 	}
 	// get peers list
 	c.MeshPeerAutoComplete(ctx)
-}
-
-func peerByIdentifier(id string) func(*pb.Peer) bool {
-	return func(peer *pb.Peer) bool {
-		return peer.GetIp() == id || strings.EqualFold(peer.GetHostname(), id) || peer.GetPubkey() == id || strings.EqualFold(peer.GetNickname(), id)
-	}
 }
 
 // allowRoutingResponseToError determines whether the allow routing
