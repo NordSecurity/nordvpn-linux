@@ -346,7 +346,7 @@ $ \fBnordvpn meshnet invite list\fR
 
 .SH "MESHNET NICKNAMES"
 .P
-Meshnet nicknames offer a convenient method for organizing your devices, making it easier to remember and identify them within your Meshnet. Each device is assigned an automatically generated Nord hostname, but you have the freedom to create custom nicknames and use them as hostnames for accessing your Meshnet devices.
+Meshnet nicknames offer a convenient way to organize your devices, making it easier to remember and identify them within your Meshnet. Each device gets an automatically generated Nord hostname, but you also have the freedom to create custom nicknames and use them as hostnames for accessing your Meshnet devices.
 .P
 When creating nicknames for your Meshnet devices, keep them simple and within these rules:
 .RS 4
@@ -362,25 +362,25 @@ Do not use spaces.
 .P
 After you personalize a device with a nickname, you can still use its original Nord hostname.
 .P
-To assign a nickname to this machine, run the following command, replacing \fI<new_nickname>\fR with the name you prefer:
+To assign a nickname to this device, run the following command, replacing \fI<new_nickname>\fR with the name you prefer:
 .P
 .RS 4
 $ \fBnordvpn meshnet set nickname <new_nickname>\fR
 .RE
 .P
-To remove the nickname currently set for this machine, enter this command:
+To remove the current nickname, enter this command:
 .P
 .RS 4
 $ \fBnordvpn meshnet remove nickname\fR
 .RE
 .P
-To set a nickname for a specific peer device, enter the following command, where \fI<device>\fR is the device's Nord hostname, nickname, or Meshnet IP address:
+To set a nickname for a specific peer device, enter the following command, where \fI<device>\fR is the device's Nord hostname, nickname (if already set), or Meshnet IP address:
 .P
 .RS 4
 $ \fBnordvpn meshnet peer nickname set <device> <new_nickname>\fR
 .RE
 .P
-To remove a nickname from a specific peer device, use the following command, replacing \fI<device>\fR with the device's Nord hostname, nickname, or Meshnet IP address:
+To remove a nickname from a specific peer device, use the following command:
 .P
 .RS 4
 $ \fBnordvpn meshnet peer nickname remove <device>\fR
