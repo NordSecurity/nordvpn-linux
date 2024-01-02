@@ -8,6 +8,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
 	"github.com/fatih/color"
@@ -723,19 +724,7 @@ func (c *cmd) retrievePeerFromArgs(
 		return nil, formatError(err)
 	}
 
-	peerNameToPeer := make(map[string]*pb.Peer)
-	for _, peer := range append(peers.External, peers.Local...) {
-		// TODO: refactor
-		peerNameToPeer[peer.Ip] = peer
-		peerNameToPeer[strings.ToLower(peer.Hostname)] = peer
-		peerNameToPeer[strings.ToLower(strings.TrimSuffix(peer.Hostname, ".nord"))] = peer
-		peerNameToPeer[peer.Pubkey] = peer
-		if peer.Nickname != "" {
-			peerNameToPeer[strings.ToLower(peer.Nickname)] = peer
-			peerNameToPeer[strings.ToLower(peer.Nickname)+".nord"] = peer
-		}
-	}
-
+	peerNameToPeer := meshnet.MakePeerMap(peers)
 	peer, ok := peerNameToPeer[strings.ToLower(identifier)]
 	if !ok {
 		return nil, fmt.Errorf(
