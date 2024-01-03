@@ -198,6 +198,16 @@ func FileExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
+// FileWritable checks if the given file exists and is writable by its owner
+func FileWritable(path string) bool {
+	info, err := os.Stat(path)
+	if err == nil && info.Mode().Perm()&0200 == 0200 {
+		return true
+	} else {
+		return false
+	}
+}
+
 // FileDelete deletes file from system
 func FileDelete(path string) error {
 	return os.Remove(path)
