@@ -86,6 +86,8 @@ func createH3Transport() *http3.RoundTripper {
 		log.Fatal(err)
 	}
 
+	// as of quic-go 0.40.1, GSO handling causes race conditions
+	_ = os.Setenv("QUIC_GO_DISABLE_GSO", "1")
 	// #nosec G402 -- minimum tls version is controlled by the standard library
 	return &http3.RoundTripper{
 		QuicConfig: &quic.Config{
