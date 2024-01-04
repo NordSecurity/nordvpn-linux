@@ -81,10 +81,10 @@ Options:
 
 var ErrConfig = errors.New(client.ConfigMessage)
 
-func NewApp(version, environment, hash, daemonURL, salt string,
-	lastAppError, pingErr error,
+func NewApp(version, environment, hash, salt string,
+	pingErr error,
 	conn *grpc.ClientConn,
-	fileshareConn *grpc.ClientConn,
+	fileshareConn grpc.ClientConnInterface,
 	loaderInterceptor *LoaderInterceptor,
 ) (*cli.App, error) {
 	cmd := newCommander(internal.Environment(environment))
@@ -510,7 +510,7 @@ func NewApp(version, environment, hash, daemonURL, salt string,
 		app.Commands = append(app.Commands, fileshareCommand(cmd))
 	}
 
-	app.Commands = addLoaderToActions(cmd, pingErr, app.Commands, daemonURL, lastAppError)
+	app.Commands = addLoaderToActions(cmd, pingErr, app.Commands)
 	// Unknown command handler
 	app.CommandNotFound = func(c *cli.Context, command string) {
 		color.Red(fmt.Sprintf(NoSuchCommand, command))
@@ -583,6 +583,14 @@ func fileshareCommand(c *cmd) *cli.Command {
 				Usage:        MsgFileshareCancelUsage,
 				ArgsUsage:    MsgFileshareCancelArgsUsage,
 				BashComplete: c.FileshareAutoCompleteTransfersCancel,
+			},
+			{
+				Name:         FileshareClearName,
+				Action:       c.FileshareClear,
+				Usage:        MsgFileshareClearUsage,
+				ArgsUsage:    MsgFileshareClearArgsUsage,
+				Description:  MsgFileshareClearDescription,
+				BashComplete: c.FileshareAutoCompleteClear,
 			},
 		},
 	}
@@ -736,6 +744,29 @@ func meshnetCommand(c *cmd) *cli.Command {
 						ArgsUsage:    MsgMeshnetPeerArgsUsage,
 						BashComplete: c.MeshPeerAutoComplete,
 					},
+					{
+						Name:    "nickname",
+						Aliases: []string{"nick"},
+						Usage:   MsgMeshnetPeerNicknameUsage,
+						Subcommands: []*cli.Command{
+							{
+								Name:         "set",
+								Aliases:      []string{"s"},
+								Usage:        MsgMeshnetPeerSetNicknameUsage,
+								ArgsUsage:    MsgMeshnetPeerSetNicknameArgsUsage,
+								Action:       c.MeshPeerSetNickname,
+								BashComplete: c.MeshPeerNicknameAutoComplete,
+							},
+							{
+								Name:         "remove",
+								Aliases:      []string{"r"},
+								Usage:        MsgMeshnetPeerRemoveNicknameUsage,
+								ArgsUsage:    MsgMeshnetPeerRemoveNicknameArgsUsage,
+								Action:       c.MeshPeerRemoveNickname,
+								BashComplete: c.MeshPeerNicknameAutoComplete,
+							},
+						},
+					},
 				},
 			},
 			{
@@ -811,6 +842,34 @@ func meshnetCommand(c *cmd) *cli.Command {
 						Usage:        MsgMeshnetInviteRevokeUsage,
 						ArgsUsage:    MsgMeshnetInviteArgsUsage,
 						BashComplete: c.MeshInviteAutoCompletion,
+					},
+				},
+			},
+			{
+				Name:    "set",
+				Aliases: []string{"s"},
+				Usage:   MsgMeshnetSetUsage,
+				Subcommands: []*cli.Command{
+					{
+						Name:      "nickname",
+						Aliases:   []string{"nick"},
+						Usage:     MsgMeshnetSetMachineNicknameUsage,
+						ArgsUsage: MsgMeshnetSetNicknameArgsUsage,
+						Action:    c.MeshSetMachineNickname,
+					},
+				},
+			},
+			{
+				Name:    "remove",
+				Aliases: []string{"r"},
+				Usage:   MsgMeshnetRemoveUsage,
+				Subcommands: []*cli.Command{
+					{
+						Name:               "nickname",
+						Aliases:            []string{"nick"},
+						Usage:              MsgMeshnetRemoveMachineNicknameUsage,
+						Action:             c.MeshRemoveMachineNickname,
+						CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 					},
 				},
 			},
@@ -903,7 +962,7 @@ func (s cliStream) RecvMsg(m interface{}) error {
 	return s.inner.RecvMsg(m)
 }
 
-func (c *cmd) action(err error, f func(*cli.Context) error, daemonURL string, lastAppError error) func(*cli.Context) error {
+func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) error {
 	return func(ctx *cli.Context) error {
 		c.loaderInterceptor.enabled = true
 		if err != nil {
@@ -913,20 +972,20 @@ func (c *cmd) action(err error, f func(*cli.Context) error, daemonURL string, la
 		}
 		err = c.Ping()
 		if err != nil {
-			switch err {
-			case ErrUpdateAvailable:
+			switch {
+			case errors.Is(err, ErrUpdateAvailable):
 				color.Yellow(fmt.Sprintf(UpdateAvailableMessage))
-			case ErrInternetConnection:
+			case errors.Is(err, ErrInternetConnection):
 				color.Red(ErrInternetConnection.Error())
 				os.Exit(1)
-			case internal.ErrSocketAccessDenied:
+			case errors.Is(err, internal.ErrSocketAccessDenied):
 				color.Red(formatError(internal.ErrSocketAccessDenied).Error())
 				color.Red("Run 'sudo usermod -aG nordvpn $USER' to fix this issue and reboot your device afterwards for this to take an effect.")
 				os.Exit(1)
-			case internal.ErrDaemonConnectionRefused:
+			case errors.Is(err, internal.ErrDaemonConnectionRefused):
 				color.Red(formatError(internal.ErrDaemonConnectionRefused).Error())
 				os.Exit(1)
-			case internal.ErrSocketNotFound:
+			case errors.Is(err, internal.ErrSocketNotFound):
 				color.Red(formatError(internal.ErrSocketNotFound).Error())
 				color.Red("The NordVPN background service isn't running. Execute the \"systemctl enable --now nordvpnd\" command with root privileges to start the background service. If you're using NordVPN in an environment without systemd (a container, for example), use the \"/etc/init.d/nordvpn start\" command.")
 				os.Exit(1)
@@ -952,20 +1011,20 @@ func (c *cmd) action(err error, f func(*cli.Context) error, daemonURL string, la
 }
 
 // addLoaderToActions wraps all actions with ping error handling and enabling loader
-func addLoaderToActions(c *cmd, err error, commands []*cli.Command, daemonURL string, lastAppError error) []*cli.Command {
+func addLoaderToActions(c *cmd, err error, commands []*cli.Command) []*cli.Command {
 	var actionCommands []*cli.Command
 	for _, command := range commands {
-		actionCommands = append(actionCommands, addLoaderToCommandRecursively(c, err, command, daemonURL, lastAppError))
+		actionCommands = append(actionCommands, addLoaderToCommandRecursively(c, err, command))
 	}
 	return actionCommands
 }
 
-func addLoaderToCommandRecursively(c *cmd, err error, command *cli.Command, daemonURL string, lastAppError error) *cli.Command {
+func addLoaderToCommandRecursively(c *cmd, err error, command *cli.Command) *cli.Command {
 	if command.Action != nil {
-		command.Action = c.action(err, command.Action, daemonURL, lastAppError)
+		command.Action = c.action(err, command.Action)
 	}
 	for _, subc := range command.Subcommands {
-		addLoaderToCommandRecursively(c, err, subc, daemonURL, lastAppError)
+		addLoaderToCommandRecursively(c, err, subc)
 	}
 	return command
 }

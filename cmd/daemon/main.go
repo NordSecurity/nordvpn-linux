@@ -3,6 +3,7 @@ package main
 
 import (
 	"crypto/sha256"
+	_ "embed"
 	"errors"
 	"fmt"
 	"log"
@@ -59,7 +60,7 @@ import (
 // Values set when building the application
 var (
 	Salt        = ""
-	Version     = ""
+	Version     = "0.0.0"
 	Environment = ""
 	PackageType = ""
 	Arch        = ""
@@ -175,7 +176,7 @@ func main() {
 	infoSubject.Subscribe(loggerSubscriber.NotifyInfo)
 	errSubject.Subscribe(loggerSubscriber.NotifyError)
 
-	daemonEvents.Settings.Subscribe(logger.NewSubscriber(true, fsystem))
+	daemonEvents.Settings.Subscribe(logger.NewSubscriber())
 	daemonEvents.Settings.Publish(cfg)
 
 	// Firewall
@@ -196,11 +197,15 @@ func main() {
 	)
 
 	// API
-
-	pkVault := response.NewFilePKVault(internal.DatFilesPath)
-	var validator response.Validator = response.NewNordValidator(pkVault)
+	var validator response.Validator
+	var err error
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
 		validator = response.NoopValidator{}
+	} else {
+		validator, err = response.NewNordValidator()
+		if err != nil {
+			log.Fatalln("Error on creating validator:", err)
+		}
 	}
 
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
@@ -276,7 +281,7 @@ func main() {
 			log.Println(err)
 		}
 
-		err = os.Chown(eventsDbPath, os.Getuid(), int(gid))
+		err = os.Chown(eventsDbPath, os.Getuid(), gid)
 		if err != nil {
 			log.Println(err)
 		}

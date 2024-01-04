@@ -26,9 +26,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
-// compile-time check to make sure Libtelio implements the interface
-var _ vpn.NetworkChanger = (*Libtelio)(nil)
-
 type state struct {
 	State     string `json:"state"`
 	PublicKey string `json:"public_key"`
@@ -41,7 +38,7 @@ type event struct {
 type eventFn func(string)
 
 func maskPublicKey(event string) string {
-	expr := regexp.MustCompile(`"public_key":"(.*?)"`)
+	expr := regexp.MustCompile(`"public_key":(\s)*"(.*?)"`)
 	return expr.ReplaceAllString(event, `"public_key":"***"`)
 }
 
@@ -88,6 +85,7 @@ type Libtelio struct {
 	currentServerIP        netip.Addr
 	currentServerPublicKey string
 	isMeshEnabled          bool
+	meshnetMap             string
 	isKernelDisabled       bool
 	fwmark                 uint32
 	mu                     sync.Mutex
@@ -170,13 +168,27 @@ func New(prod bool, eventPath string, fwmark uint32,
 	telioCfg remote.RemoteConfigGetter, deviceID, appVersion string) *Libtelio {
 	events := make(chan state)
 	logLevel := teliogo.TELIOLOGINFO
-	if prod {
-		logLevel = teliogo.TELIOLOGERROR
-	}
 
 	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, telioCfg)
 	if err != nil {
-		cfg = []byte("{}")
+		log.Println(internal.ErrorPrefix, "failed to get telio config: ", err)
+
+		defaultTelioConfig := &telioFeatures{}
+		defaultTelioConfig.Lana = &lanaConfig{
+			Prod:      prod,
+			EventPath: eventPath,
+		}
+		defaultTelioConfig.Direct = &directConfig{}
+		defaultTelioConfig.Nurse = &nurseConfig{
+			Fingerprint: deviceID,
+		}
+
+		fallbackTelioConfig, err := json.Marshal(defaultTelioConfig)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "couldn't encode default telio config: ", err)
+			fallbackTelioConfig = []byte(`{"direct":{}}`)
+		}
+		cfg = fallbackTelioConfig
 	}
 	log.Println(internal.InfoPrefix, "libtelio final config:", string(cfg))
 
@@ -396,9 +408,34 @@ func (l *Libtelio) disable() error {
 	return nil
 }
 
-func (l *Libtelio) NetworkChange() error {
+func (l *Libtelio) NetworkChanged() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	if result := l.lib.NotifyNetworkChange(""); result != teliogo.TELIORESOK {
-		return fmt.Errorf("failed to notify network change: %d", result)
+		log.Println(internal.ErrorPrefix, "failed to notify network change:", toError(result))
+
+		if l.active {
+			serverIP := l.currentServerIP
+			serverPublicKey := l.currentServerPublicKey
+			if err := l.disconnect(); err != nil {
+				return err
+			}
+
+			if err := l.connect(serverIP, serverPublicKey); err != nil {
+				return err
+			}
+		}
+
+		if l.isMeshEnabled {
+			if err := toError(l.lib.SetMeshnetOff()); err != nil {
+				return err
+			}
+
+			if err := toError(l.lib.SetMeshnet(l.meshnetMap)); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -410,9 +447,11 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 		return nil
 	}
 
+	meshnetMap := string(c.Raw)
+
 	result := teliogo.TELIORESOK
 	for i := 0; i < 10; i++ {
-		if result = l.lib.SetMeshnet(string(c.Raw)); result == teliogo.TELIORESOK {
+		if result = l.lib.SetMeshnet(meshnetMap); result == teliogo.TELIORESOK {
 			break
 		}
 		time.Sleep(time.Millisecond * 100)
@@ -421,6 +460,8 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 	if result != teliogo.TELIORESOK {
 		return fmt.Errorf("failed to refresh meshnet: %d", result)
 	}
+
+	l.meshnetMap = meshnetMap
 
 	return nil
 }

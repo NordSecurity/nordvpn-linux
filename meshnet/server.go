@@ -152,7 +152,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	if err = s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
-		string(cfg.MeshPrivateKey[:]),
+		cfg.MeshPrivateKey,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		if errors.Is(err, ErrTunnelClosed) {
@@ -186,6 +186,11 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		c.Mesh = true
 		c.Meshnet.EnabledByUID = ucred.Uid
 		c.Meshnet.EnabledByGID = ucred.Gid
+
+		if !c.MeshDevice.IsEqual(resp.Machine) {
+			// update current machine info, it is changed. e.g. nickname
+			c.MeshDevice = &resp.Machine
+		}
 		return c
 	}); err != nil {
 		s.pub.Publish(err)
@@ -281,7 +286,7 @@ func (s *Server) StartMeshnet() error {
 	if err := s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
-		string(cfg.MeshPrivateKey[:]),
+		cfg.MeshPrivateKey,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		return fmt.Errorf("setting the meshnet up: %w", err)
@@ -1254,16 +1259,288 @@ func (s *Server) RemovePeer(
 	}, nil
 }
 
+func (s *Server) ChangePeerNickname(
+	ctx context.Context,
+	req *pb.ChangePeerNicknameRequest,
+) (*pb.ChangeNicknameResponse, error) {
+	if !s.ac.IsLoggedIn() {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+			},
+		}, nil
+	}
+
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	// check if meshnet is enabled
+	if !cfg.Mesh {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+
+	// check info and re-register if needed
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
+	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
+
+	if err != nil {
+		if errors.Is(err, core.ErrUnauthorized) {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				s.pub.Publish(err)
+				return &pb.ChangeNicknameResponse{
+					Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+					},
+				}, nil
+			}
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				},
+			}, nil
+		}
+
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	peer := s.getPeerWithIdentifier(req.GetIdentifier(), resp)
+
+	if peer == nil {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_UpdatePeerErrorCode{
+				UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+			},
+		}, nil
+	}
+
+	if req.Nickname == "" {
+		if peer.Nickname == "" {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY,
+				},
+			}, nil
+		}
+	} else {
+		if peer.Nickname == req.Nickname {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SAME_NICKNAME,
+				},
+			}, nil
+		}
+
+		// resolve the new nickname only if old and new are not case insensitive equal
+		if !strings.EqualFold(peer.Nickname, req.Nickname) {
+			// check that the DNS name is not already used
+			ips, err := s.nameservers.LookupIP(req.Nickname)
+			if err == nil && len(ips) != 0 {
+				return &pb.ChangeNicknameResponse{
+					Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+						ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
+					},
+				}, nil
+			}
+		}
+	}
+
+	peer.Nickname = req.Nickname
+	if err := s.reg.Configure(token, cfg.MeshDevice.ID, peer.ID, mesh.NewPeerUpdateRequest(*peer)); err != nil {
+		s.pub.Publish(err)
+		return s.apiToNicknameError(err), nil
+	}
+
+	return &pb.ChangeNicknameResponse{
+		Response: &pb.ChangeNicknameResponse_Empty{},
+	}, nil
+}
+
+func (s *Server) apiToNicknameError(err error) *pb.ChangeNicknameResponse {
+	var code pb.ChangeNicknameErrorCode
+
+	switch {
+	case errors.Is(err, core.ErrRateLimitReach):
+		code = pb.ChangeNicknameErrorCode_RATE_LIMIT_REACH
+	case errors.Is(err, core.ErrNicknameTooLong):
+		code = pb.ChangeNicknameErrorCode_NICKNAME_TOO_LONG
+	case errors.Is(err, core.ErrDuplicateNickname):
+		code = pb.ChangeNicknameErrorCode_DUPLICATE_NICKNAME
+	case errors.Is(err, core.ErrContainsForbiddenWord):
+		code = pb.ChangeNicknameErrorCode_CONTAINS_FORBIDDEN_WORD
+	case errors.Is(err, core.ErrInvalidPrefixOrSuffix):
+		code = pb.ChangeNicknameErrorCode_SUFFIX_OR_PREFIX_ARE_INVALID
+	case errors.Is(err, core.ErrNicknameWithDoubleHyphens):
+		code = pb.ChangeNicknameErrorCode_NICKNAME_HAS_DOUBLE_HYPHENS
+	case errors.Is(err, core.ErrContainsInvalidChars):
+		code = pb.ChangeNicknameErrorCode_INVALID_CHARS
+	default:
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}
+	}
+
+	return &pb.ChangeNicknameResponse{
+		Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+			ChangeNicknameErrorCode: code,
+		},
+	}
+}
+
+func (s *Server) ChangeMachineNickname(
+	ctx context.Context,
+	req *pb.ChangeMachineNicknameRequest,
+) (*pb.ChangeNicknameResponse, error) {
+	if !s.ac.IsLoggedIn() {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+			},
+		}, nil
+	}
+
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	// check if meshnet is enabled
+	if !cfg.Mesh {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+
+	// check info and re-register if needed
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if req.Nickname == "" {
+		if cfg.MeshDevice.Nickname == "" {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY,
+				},
+			}, nil
+		}
+	} else {
+		if cfg.MeshDevice.Nickname == req.Nickname {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SAME_NICKNAME,
+				},
+			}, nil
+		}
+		// resolve the new nickname only if old and new are not case insensitive equal
+		if !strings.EqualFold(cfg.MeshDevice.Nickname, req.Nickname) {
+			// check that the DNS name is not already used
+			ips, err := s.nameservers.LookupIP(req.Nickname)
+			if err == nil && len(ips) != 0 {
+				return &pb.ChangeNicknameResponse{
+					Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+						ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
+					},
+				}, nil
+			}
+		}
+	}
+
+	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
+	info := mesh.MachineUpdateRequest{
+		Nickname:        req.Nickname,
+		SupportsRouting: cfg.MeshDevice.SupportsRouting,
+		Endpoints:       cfg.MeshDevice.Endpoints,
+	}
+
+	if err := s.reg.Update(token, cfg.MeshDevice.ID, info); err != nil {
+		s.pub.Publish(err)
+
+		if errors.Is(err, core.ErrUnauthorized) {
+			// TODO: check what happens with cfg.Mesh
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				s.pub.Publish(err)
+				return &pb.ChangeNicknameResponse{
+					Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+					},
+				}, nil
+			}
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				},
+			}, nil
+		}
+
+		return s.apiToNicknameError(err), nil
+	}
+
+	err := s.cm.SaveWith(func(c config.Config) config.Config {
+		c.MeshDevice.Nickname = req.Nickname
+		return c
+	})
+	if err != nil {
+		// in this case the local and the server info are out of sync
+		// the out of sync will remain until current machine receives a NC notification for itself or after mesh restart or settings again a nickname
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	return &pb.ChangeNicknameResponse{
+		Response: &pb.ChangeNicknameResponse_Empty{},
+	}, nil
+}
+
 func (s *Server) updatePeerPermissions(token string, deviceID uuid.UUID, peer mesh.MachinePeer) error {
 	return s.reg.Configure(
 		token,
 		deviceID,
 		peer.ID,
-		peer.DoIAllowInbound,
-		peer.DoIAllowRouting,
-		peer.DoIAllowLocalNetwork,
-		peer.DoIAllowFileshare,
-		peer.AlwaysAcceptFiles,
+		mesh.NewPeerUpdateRequest(peer),
 	)
 }
 
@@ -2419,13 +2696,6 @@ func (s *Server) NotifyNewTransfer(
 	ctx context.Context,
 	req *pb.NewTransferNotification,
 ) (*pb.NotifyNewTransferResponse, error) {
-	// This is only needed for iOS platform
-	if req.GetOs() != "ios" {
-		return &pb.NotifyNewTransferResponse{
-			Response: &pb.NotifyNewTransferResponse_Empty{},
-		}, nil
-	}
-
 	if !s.ac.IsLoggedIn() {
 		return &pb.NotifyNewTransferResponse{
 			Response: &pb.NotifyNewTransferResponse_ServiceErrorCode{
@@ -2705,4 +2975,20 @@ func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKey
 			PrivateKey: cfg.MeshPrivateKey,
 		},
 	}, nil
+}
+
+func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh.MachinePeer {
+	if id == "" {
+		return nil
+	}
+	id = strings.ToLower(id)
+	index := slices.IndexFunc(peers, func(p mesh.MachinePeer) bool {
+		return p.ID.String() == id || strings.EqualFold(p.Hostname, id) || p.PublicKey == id || strings.EqualFold(p.Nickname, id)
+	})
+
+	if index == -1 {
+		return nil
+	}
+
+	return &peers[index]
 }

@@ -10,8 +10,8 @@ from typing import List, Tuple
 
 
 def _rewrite_log_path():
-    project_root = os.environ["WORKDIR"].replace("/", "\/")
-    pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\/dist\/logs\/daemon.log/"
+    project_root = os.environ["WORKDIR"].replace("/", "\\/")
+    pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
     sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
 
 
@@ -36,8 +36,8 @@ def is_disconnected() -> bool:
         return False
 
 
-# return True when Killswitch is activated
 def is_killswitch_on():
+    """ return True when Killswitch is activated """
     try:
         return "Kill Switch: enabled" in sh.nordvpn.settings()
     except sh.ErrorReturnCode:
@@ -147,7 +147,6 @@ def is_running():
 def is_peer_running(ssh_client: ssh.Ssh) -> bool:
     try:
         ssh_client.exec_command("nordvpn status")
+        return True
     except:
         return False
-    else:
-        return True

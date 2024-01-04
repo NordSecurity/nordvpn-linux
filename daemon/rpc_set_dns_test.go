@@ -11,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -82,14 +83,14 @@ func TestSetDNS_Success(t *testing.T) {
 			name:                "remove custom dns ipv4",
 			requestedDNS:        nil,
 			currentDNS:          dnsMock,
-			expectedDNS:         defaultNameserversV4,
+			expectedDNS:         mock.DefaultNameserversV4,
 			expectedDNSInConfig: nil,
 		},
 		{
 			name:                "remove custom dns ipv4 tpl",
 			requestedDNS:        nil,
 			currentDNS:          dnsMock,
-			expectedDNS:         tplNameserversV4,
+			expectedDNS:         mock.TplNameserversV4,
 			expectedDNSInConfig: nil,
 			tpl:                 true,
 			expectedTPL:         true,
@@ -98,7 +99,7 @@ func TestSetDNS_Success(t *testing.T) {
 			name:                "remove custom dns ipv6",
 			requestedDNS:        nil,
 			currentDNS:          dnsMock,
-			expectedDNS:         append(defaultNameserversV4, defaultNameserversV6...),
+			expectedDNS:         append(mock.DefaultNameserversV4, mock.DefaultNameserversV6...),
 			expectedDNSInConfig: nil,
 			ipv6:                true,
 		},
@@ -106,7 +107,7 @@ func TestSetDNS_Success(t *testing.T) {
 			name:                "remove custom dns ipv6 tpl",
 			requestedDNS:        nil,
 			currentDNS:          dnsMock,
-			expectedDNS:         append(tplNameserversV4, tplNameserversV6...),
+			expectedDNS:         append(mock.TplNameserversV4, mock.TplNameserversV6...),
 			expectedDNSInConfig: nil,
 			tpl:                 true,
 			ipv6:                true,
@@ -148,7 +149,7 @@ func TestSetDNS_Success(t *testing.T) {
 
 			networker := networker.Mock{}
 			publisher := mockPublisherSubscriberDNS{}
-			dnsGetter := mockDNSGetter{}
+			dnsGetter := mock.DNSGetter{}
 
 			var endpoint network.Endpoint
 			if test.ipv6 {
@@ -255,7 +256,7 @@ func TestSetDNS_Errors(t *testing.T) {
 
 			networker := networker.Mock{SetDNSErr: test.setDNSErr}
 			publisher := mockPublisherSubscriberDNS{}
-			dnsGetter := mockDNSGetter{}
+			dnsGetter := mock.DNSGetter{}
 
 			rpc := RPC{
 				cm:          configManager,

@@ -84,7 +84,7 @@ func runDocker(
 
 	if pullImage {
 		fmt.Printf("pulling docker image %s\n", image)
-		if err := pullDocker(ctx, docker, env, image); err != nil {
+		if err := pullDocker(ctx, docker, image); err != nil {
 			return err
 		}
 	}
@@ -178,7 +178,6 @@ func runDocker(
 func pullDocker(
 	ctx context.Context,
 	cli *client.Client,
-	env map[string]string,
 	image string,
 ) error {
 	reader, err := cli.ImagePull(ctx, image, types.ImagePullOptions{})

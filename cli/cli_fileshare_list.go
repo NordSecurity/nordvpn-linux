@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -18,24 +19,47 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+func (c *cmd) getTransfers() ([]*pb.Transfer, error) {
+	listClient, err := c.fileshareClient.List(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, formatError(err)
+	}
+
+	transfers := []*pb.Transfer{}
+
+	for {
+		resp, err := listClient.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, formatError(err)
+		}
+		if err := getFileshareResponseToError(resp.GetError()); err != nil {
+			return nil, formatError(err)
+		}
+
+		transfers = append(transfers, resp.GetTransfers()...)
+	}
+
+	return transfers, nil
+}
+
 // FileshareList rpc
 func (c *cmd) FileshareList(ctx *cli.Context) error {
-	resp, err := c.fileshareClient.List(context.Background(), &pb.Empty{})
+	transfers, err := c.getTransfers()
 	if err != nil {
-		return formatError(err)
-	}
-	if err := getFileshareResponseToError(resp.GetError()); err != nil {
 		return formatError(err)
 	}
 
 	if id := ctx.Args().First(); id != "" {
 		matchIDFunc := func(t *pb.Transfer) bool { return t.GetId() == id }
-		idx := slices.IndexFunc(resp.GetTransfers(), matchIDFunc)
+		idx := slices.IndexFunc(transfers, matchIDFunc)
 		if idx == -1 {
 			return errors.New(MsgFileshareTransferNotFound)
 		}
 
-		fmt.Println(strings.TrimSpace(transferToOutputString(resp.GetTransfers()[idx])))
+		fmt.Println(strings.TrimSpace(transferToOutputString(transfers[idx])))
 		return nil
 	}
 
@@ -44,7 +68,7 @@ func (c *cmd) FileshareList(ctx *cli.Context) error {
 		printIn = ctx.IsSet(flagFileshareListIn)
 		printOut = ctx.IsSet(flagFileshareListOut)
 	}
-	fmt.Println(strings.TrimSpace(transfersToOutputString(resp.GetTransfers(), printIn, printOut)))
+	fmt.Println(strings.TrimSpace(transfersToOutputString(transfers, printIn, printOut)))
 	return nil
 }
 
@@ -57,14 +81,14 @@ func (c *cmd) fileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Dire
 		return
 	}
 
-	resp, err := c.fileshareClient.List(context.Background(), &pb.Empty{})
-	if err != nil || getFileshareResponseToError(resp.GetError()) != nil {
+	transfers, err := c.getTransfers()
+	if err != nil {
 		return
 	}
 
 	if ctx.NArg() == 0 {
 		// Autocomplete transfer id
-		for _, transfer := range resp.GetTransfers() {
+		for _, transfer := range transfers {
 			if (transfer.GetDirection() == direction || direction == pb.Direction_UNKNOWN_DIRECTION) &&
 				statusFilter(transfer.Status) {
 				fmt.Println(transfer.GetId())
@@ -72,7 +96,7 @@ func (c *cmd) fileshareAutoCompleteTransfers(ctx *cli.Context, direction pb.Dire
 		}
 	} else {
 		// Autocomplete transfer files
-		for _, transfer := range resp.GetTransfers() {
+		for _, transfer := range transfers {
 			if transfer.Id == ctx.Args().First() {
 				fileshare.ForAllFiles(transfer.Files, func(f *pb.File) {
 					fmt.Println(f.Path)

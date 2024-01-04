@@ -33,11 +33,12 @@ func fileshareError(code pb.FileshareErrorCode) *pb.Error {
 type Server struct {
 	pb.UnimplementedFileshareServer
 	// Errors on Fileshare methods shouldn't be logged, because they are logged by the library itself.
-	fileshare    Fileshare
-	eventManager *EventManager
-	meshClient   meshpb.MeshnetClient
-	filesystem   Filesystem
-	osInfo       OsInfo
+	fileshare     Fileshare
+	eventManager  *EventManager
+	meshClient    meshpb.MeshnetClient
+	filesystem    Filesystem
+	osInfo        OsInfo
+	listChunkSize int
 }
 
 // NewServer is a default constructor for a fileshare server
@@ -47,13 +48,15 @@ func NewServer(
 	meshClient meshpb.MeshnetClient,
 	filesystem Filesystem,
 	osInfo OsInfo,
+	listChunkSize int,
 ) *Server {
 	return &Server{
-		fileshare:    fileshare,
-		eventManager: eventManager,
-		meshClient:   meshClient,
-		filesystem:   filesystem,
-		osInfo:       osInfo,
+		fileshare:     fileshare,
+		eventManager:  eventManager,
+		meshClient:    meshClient,
+		filesystem:    filesystem,
+		osInfo:        osInfo,
+		listChunkSize: listChunkSize,
 	}
 }
 
@@ -66,8 +69,8 @@ func (s *Server) isDirectory(path string) (bool, error) {
 }
 
 var (
-	errMaxDirectoryDepthReached = errors.New("Max directory depth reached")
-	errGetPeersFailed           = errors.New("Failed to get peers from meshnet daemon")
+	errMaxDirectoryDepthReached = errors.New("max directory depth reached")
+	errGetPeersFailed           = errors.New("failed to get peers from meshnet daemon")
 )
 
 // getNumberOfFiles returns number of files in a directory and its subdirectories
@@ -138,9 +141,11 @@ func (s *Server) getPeers() (map[string]*meshpb.Peer, error) {
 	case *meshpb.GetPeersResponse_Peers:
 		peerNameToPeer := make(map[string]*meshpb.Peer)
 		for _, peer := range append(resp.Peers.External, resp.Peers.Local...) {
+			// TODO: refactor
 			peerNameToPeer[peer.Ip] = peer
 			peerNameToPeer[peer.Hostname] = peer
 			peerNameToPeer[peer.Pubkey] = peer
+			peerNameToPeer[peer.Nickname] = peer
 		}
 		return peerNameToPeer, nil
 	case *meshpb.GetPeersResponse_ServiceErrorCode:
@@ -177,10 +182,10 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 
 		if isDirectory {
 			fileCountInDirectory, err := s.getNumberOfFiles(path, DirDepthLimit)
-			switch err {
-			case errMaxDirectoryDepthReached:
+			switch {
+			case errors.Is(err, errMaxDirectoryDepthReached):
 				return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_DIRECTORY_TOO_DEEP)})
-			case nil:
+			case err == nil:
 				fileCount += fileCountInDirectory
 			default:
 				return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)})
@@ -226,12 +231,6 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_CREATED)})
 	}
 
-	if len(req.Paths) > 1 {
-		s.eventManager.NewOutgoingTransfer(transferID, peer.Ip, "multiple files")
-	} else {
-		s.eventManager.NewOutgoingTransfer(transferID, peer.Ip, req.Paths[0])
-	}
-
 	// Ignore response here
 	fileName := ""
 	if len(req.Paths) == 1 {
@@ -267,26 +266,26 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 
 	transfer, err := s.eventManager.AcceptTransfer(req.TransferId, req.DstPath, req.Files)
 
-	switch err {
-	case ErrTransferNotFound:
+	switch {
+	case errors.Is(err, ErrTransferNotFound):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND)})
-	case ErrTransferAcceptOutgoing:
+	case errors.Is(err, ErrTransferAcceptOutgoing):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_OUTGOING)})
-	case ErrTransferAlreadyAccepted:
+	case errors.Is(err, ErrTransferAlreadyAccepted):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ALREADY_ACCEPTED)})
-	case ErrFileNotFound:
+	case errors.Is(err, ErrFileNotFound):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)})
-	case ErrSizeLimitExceeded:
+	case errors.Is(err, ErrSizeLimitExceeded):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_NOT_ENOUGH_SPACE)})
-	case ErrAcceptDirNotFound:
+	case errors.Is(err, ErrAcceptDirNotFound):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND)})
-	case ErrAcceptDirIsASymlink:
+	case errors.Is(err, ErrAcceptDirIsASymlink):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK)})
-	case ErrAcceptDirIsNotADirectory:
+	case errors.Is(err, ErrAcceptDirIsNotADirectory):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY)})
-	case ErrNoPermissionsToAcceptDirectory:
-		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS))})
-	case nil:
+	case errors.Is(err, ErrNoPermissionsToAcceptDirectory):
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS)})
+	case err == nil:
 		break
 	default:
 		log.Printf("error while accepting transfer %s: %s", req.TransferId, err)
@@ -304,19 +303,19 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 			})
 
 		if isAccepted {
-			if err := s.fileshare.Accept(req.TransferId, req.DstPath, file.Id); err == nil {
+			if err := s.fileshare.Accept(req.TransferId, req.DstPath, file.Id); err != nil {
+				log.Printf("error accepting file %s in transfer %s: %s", file.Id, req.TransferId, err)
+			} else {
 				transferStarted = true
 			}
 		} else {
-			s.eventManager.SetFileStatus(transfer.Id, file.Id, pb.Status_CANCELED)
+			if err := s.fileshare.CancelFile(req.TransferId, file.Id); err != nil {
+				log.Printf("error cancelling file %s in transfer %s: %s", file.Id, req.TransferId, err)
+			}
 		}
 	}
 
 	if !transferStarted {
-		// Setting transfer status because it will not be set by events because transfer
-		// is not even started.
-		// Also not handling possible error because we are already in error state.
-		_ = s.eventManager.SetTransferStatus(transfer.Id, pb.Status_ACCEPT_FAILURE)
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_ALL_FILES_FAILED)})
 	}
 
@@ -342,10 +341,10 @@ func (s *Server) Cancel(
 	}
 
 	transfer, err := s.eventManager.GetTransfer(req.GetTransferId())
-	switch err {
-	case ErrTransferNotFound:
+	switch {
+	case errors.Is(err, ErrTransferNotFound):
 		return fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND), nil
-	case nil:
+	case err == nil:
 		break
 	default:
 		log.Printf("error while cancelling transfer %s: %s", req.TransferId, err)
@@ -364,28 +363,47 @@ func (s *Server) Cancel(
 }
 
 // List rpc
-func (s *Server) List(ctx context.Context, _ *pb.Empty) (*pb.ListResponse, error) {
+func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
 	if err != nil || !resp.GetValue() {
-		return &pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)}, nil
+		return srv.Send(&pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
 	peers, err := s.getPeers()
 	if err != nil {
-		return &pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_INTERNAL_FAILURE)}, nil
+		return srv.Send(&pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_INTERNAL_FAILURE)})
 	}
 
-	transfers := s.eventManager.GetTransfers()
+	transfers, err := s.eventManager.GetTransfers()
+	if err != nil {
+		log.Printf("getting transfer list: %s", err)
+		return srv.Send(&pb.ListResponse{Error: fileshareError(pb.FileshareErrorCode_LIB_FAILURE)})
+	}
 	for _, transfer := range transfers {
 		if peer, ok := peers[transfer.Peer]; ok {
 			transfer.Peer = peer.Hostname
 		}
 	}
 
-	return &pb.ListResponse{
-		Error:     empty(),
-		Transfers: transfers,
-	}, nil
+	for chunkStart := 0; chunkStart < len(transfers); chunkStart += s.listChunkSize {
+		chunk := transfers[chunkStart:]
+		if len(chunk) < s.listChunkSize {
+			return srv.Send(&pb.ListResponse{
+				Error:     empty(),
+				Transfers: chunk,
+			})
+		}
+
+		err := srv.Send(&pb.ListResponse{
+			Error:     empty(),
+			Transfers: chunk[:s.listChunkSize],
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // CancelFile rpc
@@ -396,10 +414,10 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 	}
 
 	transfer, err := s.eventManager.GetTransfer(req.TransferId)
-	switch err {
-	case ErrTransferNotFound:
+	switch {
+	case errors.Is(err, ErrTransferNotFound):
 		return fileshareError(pb.FileshareErrorCode_TRANSFER_NOT_FOUND), nil
-	case nil:
+	case err == nil:
 		break
 	default:
 		log.Printf("error while cancelling transfer %s: %s", req.TransferId, err)
@@ -448,4 +466,19 @@ func (s *Server) SetNotifications(ctx context.Context, in *pb.SetNotificationsRe
 			return &pb.SetNotificationsResponse{Status: pb.SetNotificationsStatus_SET_FAILURE}, nil
 		}
 	}
+}
+
+func (s *Server) PurgeTransfersUntil(ctx context.Context, req *pb.PurgeTransfersUntilRequest) (*pb.Error, error) {
+	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
+	if err != nil || !resp.GetValue() {
+		return serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED), nil
+	}
+
+	err = s.eventManager.storage.PurgeTransfersUntil(req.Until.AsTime())
+	if err != nil {
+		log.Printf("error while purging transfers: %s", err)
+		return fileshareError(pb.FileshareErrorCode_PURGE_FAILURE), nil
+	}
+
+	return empty(), nil
 }

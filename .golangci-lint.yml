@@ -4,37 +4,37 @@ run:
 linters:
   disable-all: true
   enable:
-  #- bodyclose
+  - bodyclose
   #- depguard
-  #- dogsled
+  - dogsled
   #- dupl
   #- errcheck
   - exhaustive
   #- funlen
   #- gochecknoinits
-  #- goconst
+  - goconst
   #- gocritic
   #- gocyclo
   - gofmt
   - goimports
   #- gomnd
-  #- goprintffuncname
+  - goprintffuncname
   #- gosec
-  #- gosimple
+  - gosimple
   - govet
   #- ineffassign
-  #- interfacer
+  - interfacer
   #- lll
-  #- misspell
+  - misspell
   #- nakedret
-  #- rowserrcheck
+  - rowserrcheck
   #- scopelint
   #- staticcheck
   #- structcheck
   #- stylecheck
-  #- typecheck
-  #- unconvert
-  #- unparam
+  - typecheck
+  - unconvert
+  - unparam
   - unused
-  #- varcheck
+  - varcheck
   - whitespace

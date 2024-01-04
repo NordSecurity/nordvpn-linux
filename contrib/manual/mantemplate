@@ -309,7 +309,7 @@ $ \fBnordvpn set meshnet on\fR
 .P
 You should now see a message confirming that you've enabled Meshnet.
 .P
-When connected to Meshnet, your device is assigned a unique Nord name and a Meshnet IP address, both of which you can use to access the device from other linked devices. Nord names are unique, automatically assigned host names for all devices in Meshnet. This feature allows more convenient device access because you don't have to memorize each device's Meshnet IP address. The format is \fI<username>-<mountain>.nord\fR, where \fI<username>\fR is the username of your Nord Account email address and \fI<mountain>\fR is the name of a mountain or mountain range. For example, \fIsecret.raccoon-andes.nord\fR.
+When connected to Meshnet, your device is assigned a unique Nord hostname and a Meshnet IP address, both of which you can use to access the device from other linked devices. Nord hostnames are unique, automatically assigned host names for all devices in Meshnet. The format is \fI<username>-<mountain>.nord\fR, where \fI<username>\fR is the username of your Nord Account email address and \fI<mountain>\fR is the name of a mountain or mountain range. For example, \fIsecret.raccoon-andes.nord\fR. Additionally, you can assign each device your own nickname, which will be used as an alternative host name for that device.
 .P
 You can add devices to your Meshnet in two ways, depending on whether the device is your own or belongs to another NordVPN user. To add your own devices to your Meshnet, just install the NordVPN app on the devices you want to connect, log in with your account, and enable Meshnet. They will connect automatically. Meshnet allows you to add up to 10 devices that use the same NordVPN account. To add a device owned by another NordVPN user, send an invitation through the NordVPN app specifying their email address. As soon as they accept the invitation in their NordVPN app, their device becomes part of your Meshnet.
 .P
@@ -319,13 +319,13 @@ To view a list of your Meshnet devices, run the following command:
 $ \fBnordvpn meshnet peer list\fR
 .RE
 .P
-If you want to unlink your device from Meshnet, enter the following command, where \fI<device>\fR is the device's Nord name or Meshnet IP address:
+If you want to unlink your device from Meshnet, enter the following command, where \fI<device>\fR is the device's Nord hostname, nickname or Meshnet IP address:
 .P
 .RS 4
 $ \fBnordvpn meshnet peer remove <device>\fR
 .RE
 .P
-To link your personal device back, restart Meshnet on the unlinked device. To find your peer's Nord name faster, start typing the name and press Tab. The system will auto-complete the name based on matching peers.
+To link your personal device back, restart Meshnet on the unlinked device. To find your peer's device name faster, start typing the name and press Tab. The system will auto-complete the name based on matching peers.
 
 .SH "LINKING DEVICES IN MESHNET"
 .P
@@ -359,11 +359,37 @@ To view a list of sent and received invitations, type:
 $ \fBnordvpn meshnet invite list\fR
 .RE
 
+.SH "MESHNET NICKNAMES"
+.P
+To set a nickname for this machine, run the following command:
+.P
+.RS 4
+$ \fBnordvpn meshnet set nickname <new_nickname>\fR
+.RE
+.P
+To remove the nickname currently set for this machine, run the following command:
+.P
+.RS 4
+$ \fBnordvpn meshnet remove nickname\fR
+.RE
+.P
+To set a nickname for a specified peer device, enter the following command, where \fI<device>\fR is the device's Nord hostname, nickname or Meshnet IP address:
+.P
+.RS 4
+$ \fBnordvpn meshnet peer nickname set <device> <new_nickname>\fR
+.RE
+.P
+If you want to remove the nickname currently set for a specified peer device, enter the following command, where \fI<device>\fR is the device's Nord hostname, nickname or Meshnet IP address:
+.P
+.RS 4
+$ \fBnordvpn meshnet peer nickname remove <device>\fR
+.RE
+
 .SH "MESHNET PERMISSIONS"
 .P
 Meshnet permissions control the access granted to other devices within your network. You can choose who can connect to your device, send you files, route their internet traffic through your device, and access your local resources. These permissions help protect the security and privacy of your network resources and data by limiting the potential for unauthorized access.
 .P
-The \fBremote access\fR permission determines if a Meshnet peer can access your device using the Meshnet IP or Nord name. By default, remote access is granted for all devices, but you can adjust it in the Meshnet permission menu. 
+The \fBremote access\fR permission determines if a Meshnet peer can access your device using the Nord hostname, nickname or Meshnet IP address. By default, remote access is granted for all devices, but you can adjust it in the Meshnet permission menu.
 .P
 When remote access is enabled your device accepts incoming connections from a Meshnet peer. The connections can be initiated from the same local network or from the outside. When remote access is disabled your device does not accept connections from a Meshnet peer. If a connection is attempted (for example, using the ping command), it will fail because the recipient will not receive it. Having the remote access permission disabled prevents the peer from accessing any shared folders or services on your device. 
 .P
@@ -387,14 +413,14 @@ Run the following command to list your Meshnet peers:
 $ \fBnordvpn meshnet peer list\fR
 .RE
 .IP 2. 4
-Note the Nord name of the peer you want to alter permissions for. The output also shows current permission settings. 
+Note the name of the peer device you want to alter permissions for. The output also shows current permission settings.
 .IP 3. 4
-To either allow or disable the permission, use one of the following commands, replacing \fI<Permission>\fR with one of \fI[incoming|routing|local|fileshare|auto-accept]\fR and replacing \fI<NordName>\fR with the peer's Nord name or Meshnet IP:
+To either allow or disable the permission, use one of the following commands, replacing \fI<permission>\fR with one of \fI[incoming|routing|local|fileshare|auto-accept]\fR and replacing \fI<device>\fR with the peer's Nord hostname, nickname or Meshnet IP address:
 .P
 .RS 8
 .nf
-$ \fBnordvpn meshnet peer <Permission> allow <NordName>\fR
-$ \fBnordvpn meshnet peer <Permission> deny <NordName>\fR
+$ \fBnordvpn meshnet peer <permission> allow <device>\fR
+$ \fBnordvpn meshnet peer <permission> deny <device>\fR
 .fi
 .RE
 
@@ -432,9 +458,9 @@ Run the following command to list your Meshnet peers:
 $ \fBnordvpn meshnet peer list\fR
 .RE
 .IP 2. 4
-Note the Nord name of the host device you want to route traffic through.
+Note the name of the host device you want to route traffic through.
 .IP 3. 4
-Run the following command, replacing \fI<device>\fR with the device's Nord name or Meshnet IP.
+Run the following command, replacing \fI<device>\fR with the device's Nord hostname, nickname or Meshnet IP address.
 .P
 .RS 8
 $ \fBnordvpn meshnet peer connect <device>\fR
@@ -459,7 +485,7 @@ $ \fBnordvpn d\fR
 .P
 When transferring files over Meshnet, you don't need to worry about the security of your private data. An encrypted connection protects the files you send and download from unwanted access. Additionally, a peer-to-peer mechanism that underlies Meshnet's file sharing feature enables you to share files with each other directly without the need for a centralized server. This ensures the anonymity of sent data, which cannot be viewed by anyone but you and the intended recipients.
 .P
-\fBNote: most values (device Nord Name, transfer ID, file name) in the following examples can be entered faster using auto-completion. Simply press Tab and the app will suggest valid options for you.
+\fBNote: most values (device name, transfer ID, file name) in the following examples can be entered faster using auto-completion. Simply press Tab and the app will suggest valid options for you.
 .P
 Before you begin, make sure that the device you want to share files with meets the following criteria:
 .IP \(bu 2
@@ -469,9 +495,9 @@ The device is connected to your Meshnet.
 .P
 You can initiate a file transfer from the NordVPN app by completing these steps:
 .IP 1. 4
-Enter the \fInordvpn meshnet peer list\fR command and copy the Nord name or Meshnet IP address of the device you want to share your files with.
+Enter the \fInordvpn meshnet peer list\fR command and copy the name or Meshnet IP address of the device you want to share your files with.
 .IP 2. 4
-Type the nordvpn fileshare send command, followed by your peer device's Nord name or Meshnet IP address and the path to the file you want to transfer, as shown:
+Type the nordvpn fileshare send command, followed by your peer device's Nord hostname, nickname or Meshnet IP address and the path to the file you want to transfer, as shown:
 .P
 .RS 8
 $ \fBnordvpn fileshare send <peer> </path/to/your/file>\fR
@@ -500,21 +526,25 @@ $ \fBnordvpn fileshare accept <id>\fR
 Alternatively transfers can be accepted via notifications, which can be enabled using \fInordvpn set notify on\fR. You can find the files shared with you by checking your computer's default download folder location, which is typically the Downloads folder. 
 .P
 If you want to download only specific files from the transfer, provide the names of the files you choose to accept:
+.P
 .RS 4
 $ \fBnordvpn fileshare accept <id> <file1> <file2>...\fR
 .RE
 .P
 To display the list of files in a particular transfer directory, enter the \fInordvpn fileshare list\fR command followed by the transfer ID:
+.P
 .RS 4
 $ \fBnordvpn fileshare list <id>\fR
 .RE
 .P
-You can enable automatic transfer acceptance from a specific peer. To do this, run the following command, replacing \fI<device>\fR with the peer's Nord name or Meshnet IP:
+You can enable automatic transfer acceptance from a specific peer. To do this, run the following command, replacing \fI<device>\fR with the peer's Nord hostname, nickname or Meshnet IP address:
+.P
 .RS 4
 $ \fBnordvpn meshnet peer auto-accept enable <device>\fR
 .RE
 .P
 If you want to specify the location on your system where downloaded files will be saved, use the --path command option followed by the desired location and the transfer ID:
+.P
 .RS 4
 $ \fBnordvpn fileshare accept --path </path/to/directory> <id>\fR
 .RE
@@ -531,6 +561,14 @@ $ \fBnordvpn fileshare cancel <id>\fR
 $ \fBnordvpn fileshare cancel <id> <file>\fR
 .fi
 .RE
+.P
+To clear the history of file transfers, enter the \fInordvpn fileshare clear\fR command followed by the time period:
+.P
+.RS 4
+$ \fBnordvpn fileshare clear <time_period>...\fR
+.RE
+.P
+This command removes all transfers older than the specified time period. For example \fInordvpn fileshare clear 1d 12h\fR clears entries older than 36 hours. Use \fInordvpn fileshare clear all\fR to remove all entries. Specify time periods using the systemd time span syntax: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html
 
 .SH "BUGS"
 .sp

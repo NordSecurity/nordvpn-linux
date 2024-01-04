@@ -105,7 +105,7 @@ func (u *UserSpace) Start(
 		return vpn.ErrTunnelAlreadyExists
 	}
 
-	conn, err := wgGoTurnOn(InterfaceName, 0, conf)
+	conn, err := wgGoTurnOn(InterfaceName, conf)
 	if err != nil {
 		return fmt.Errorf("turning on nordlynx: %w", err)
 	}
@@ -213,7 +213,7 @@ func (t tunnelHandle) Close() error {
 
 var tHandles map[int32]tunnelHandle = make(map[int32]tunnelHandle)
 
-func wgGoTurnOn(iface string, tunFd int32, settings string) (int32, error) {
+func wgGoTurnOn(iface string, settings string) (int32, error) {
 	var i int32
 	for i = 0; i < math.MaxInt32; i++ {
 		if _, exists := tHandles[i]; !exists {
@@ -224,7 +224,7 @@ func wgGoTurnOn(iface string, tunFd int32, settings string) (int32, error) {
 		return i, errors.New("out of file descriptors")
 	}
 
-	interfaceName := string([]byte(iface))
+	interfaceName := iface
 
 	logLevel := func() int {
 		switch os.Getenv("LOG_LEVEL") {

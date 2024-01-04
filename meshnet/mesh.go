@@ -25,6 +25,8 @@ type Mesh interface {
 	// StatusMap retrieves the current status map for the related
 	// meshnet peers
 	StatusMap() (map[string]string, error)
+	// NetworkChanged is called at network changes
+	NetworkChanged() error
 }
 
 // KeyGenerator for use in meshnet.

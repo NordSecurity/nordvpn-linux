@@ -6,11 +6,11 @@ import (
 
 func InterfaceToInt64(item interface{}) int64 {
 	var i int64
-	switch item.(type) {
+	switch item := item.(type) {
 	case json.Number:
-		i, _ = item.(json.Number).Int64()
+		i, _ = item.Int64()
 	case int64:
-		i = item.(int64)
+		i = item
 	}
 	return i
 }

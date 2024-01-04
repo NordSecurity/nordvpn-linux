@@ -13,7 +13,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -21,6 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 
 	"github.com/stretchr/testify/assert"
@@ -32,12 +32,6 @@ type mockRPCServer struct {
 }
 
 func (m *mockRPCServer) Send(p *pb.Payload) error { m.msg = p; return nil }
-
-type mockNameservers []string
-
-func (m mockNameservers) Get(bool, bool) []string {
-	return m
-}
 
 type mockAuthenticationAPI struct{}
 
@@ -106,57 +100,52 @@ func TestRpcConnect(t *testing.T) {
 
 	defer testsCleanup()
 	tests := []struct {
-		name      string
-		factory   FactoryFunc
-		netw      networker.Networker
-		retriever routes.GatewayRetriever
-		fw        firewall.Service
-		checker   auth.Checker
-		resp      int64
+		name    string
+		factory FactoryFunc
+		netw    networker.Networker
+		fw      firewall.Service
+		checker auth.Checker
+		resp    int64
 	}{
 		{
-			name: "successfull connect",
+			name: "successful connect",
 			factory: func(config.Technology) (vpn.VPN, error) {
-				return &workingVPN{}, nil
+				return &mock.WorkingVPN{}, nil
 			},
-			netw:      &testnetworker.Mock{},
-			retriever: newGatewayMock(netip.Addr{}),
-			fw:        &workingFirewall{},
-			checker:   &workingLoginChecker{},
-			resp:      internal.CodeConnected,
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{},
+			resp:    internal.CodeConnected,
 		},
 		{
 			name: "failed connect",
 			factory: func(config.Technology) (vpn.VPN, error) {
-				return &failingVPN{}, nil
+				return &mock.FailingVPN{}, nil
 			},
-			netw:      testnetworker.Failing{},
-			retriever: newGatewayMock(netip.Addr{}),
-			fw:        &workingFirewall{},
-			checker:   &workingLoginChecker{},
-			resp:      internal.CodeFailure,
+			netw:    testnetworker.Failing{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{},
+			resp:    internal.CodeFailure,
 		},
 		{
 			name: "VPN expired",
 			factory: func(config.Technology) (vpn.VPN, error) {
-				return &workingVPN{}, nil
+				return &mock.WorkingVPN{}, nil
 			},
-			netw:      &testnetworker.Mock{},
-			retriever: newGatewayMock(netip.Addr{}),
-			fw:        &workingFirewall{},
-			checker:   &workingLoginChecker{isVPNExpired: true},
-			resp:      internal.CodeAccountExpired,
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{isVPNExpired: true},
+			resp:    internal.CodeAccountExpired,
 		},
 		{
 			name: "VPN expiration check fails",
 			factory: func(config.Technology) (vpn.VPN, error) {
-				return &workingVPN{}, nil
+				return &mock.WorkingVPN{}, nil
 			},
-			netw:      &testnetworker.Mock{},
-			retriever: newGatewayMock(netip.Addr{}),
-			fw:        &workingFirewall{},
-			checker:   &workingLoginChecker{vpnErr: errors.New("test error")},
-			resp:      internal.CodeTokenRenewError,
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{vpnErr: errors.New("test error")},
+			resp:    internal.CodeTokenRenewError,
 		},
 	}
 
@@ -214,7 +203,7 @@ func TestRpcConnect(t *testing.T) {
 				newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 				test.netw,
 				&subs.Subject[string]{},
-				mockNameservers([]string{"1.1.1.1"}),
+				&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 				nil,
 				&mockAnalytics{},
 				service.NoopFileshare{},
@@ -235,10 +224,10 @@ func TestRpcReconnect(t *testing.T) {
 	factory := func(config.Technology) (vpn.VPN, error) {
 		if fail {
 			fail = false
-			return &failingVPN{}, nil
+			return &mock.FailingVPN{}, nil
 		}
 		fail = true
-		return &workingVPN{}, nil
+		return &mock.WorkingVPN{}, nil
 	}
 
 	cm := newMockConfigManager()
@@ -293,7 +282,7 @@ func TestRpcReconnect(t *testing.T) {
 		newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 		&testnetworker.Mock{},
 		&subs.Subject[string]{},
-		mockNameservers([]string{"1.1.1.1"}),
+		&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 		nil,
 		&mockAnalytics{},
 		service.NoopFileshare{},

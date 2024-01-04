@@ -1,6 +1,7 @@
 package fileshare
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"math"
@@ -21,6 +22,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	exampleUUID    = "c13c619c-c70b-49b8-9396-72de88155c43"
+	exampleIP1     = "172.20.0.5"
+	exampleFileID1 = "file1"
+	tmpDir         = "/tmp"
 )
 
 type mockNotification struct {
@@ -125,6 +133,14 @@ func (mfs *mockEventManagerFileshare) getLastCanceledTransferID() string {
 	return mfs.canceledTransferIDs[length-1]
 }
 
+func (*mockEventManagerFileshare) GetTransfersSince(t time.Time) ([]LibdropTransfer, error) {
+	return nil, nil
+}
+
+func (mfs *mockEventManagerFileshare) PurgeTransfersUntil(until time.Time) error {
+	return nil
+}
+
 type mockEventManagerOsInfo struct {
 	currentUser user.User
 	groupIds    map[string][]string
@@ -137,20 +153,6 @@ func (mOS *mockEventManagerOsInfo) CurrentUser() (*user.User, error) {
 func (mOS *mockEventManagerOsInfo) GetGroupIds(userInfo *user.User) ([]string, error) {
 	return mOS.groupIds[userInfo.Uid], nil
 }
-
-type mockFileshare struct{}
-
-func (mfs *mockFileshare) Enable(listenAddress netip.Addr) error { return nil }
-
-func (mfs *mockFileshare) Disable() error { return nil }
-
-func (mfs *mockFileshare) Send(peer netip.Addr, paths []string) (string, error) { return "", nil }
-
-func (mfs *mockFileshare) Accept(transferID, dstPath string, fileID string) error { return nil }
-
-func (mfs *mockFileshare) Cancel(transferID string) error { return nil }
-
-func (mfs *mockFileshare) CancelFile(transferID string, fileID string) error { return nil }
 
 type mockSystemEnvironment struct {
 	mockEventManagerOsInfo
@@ -199,179 +201,81 @@ func newMockSystemEnvironment(t *testing.T) mockSystemEnvironment {
 	}
 }
 
-func TestIncomingTransfer(t *testing.T) {
-	category.Set(t, category.Unit)
+type mockStorage struct {
+	transfers map[string]*pb.Transfer
+	err       error
+}
 
-	peer := "172.20.0.5"
-	meshClient := mockMeshClient{}
-	meshClient.externalPeers = []*meshpb.Peer{
-		{
-			Ip:                "172.20.0.5",
-			DoIAllowFileshare: true,
-		},
-	}
+func (m *mockStorage) Load() (map[string]*pb.Transfer, error) {
+	return m.transfers, m.err
+}
 
-	eventManager := NewEventManager(NoopStorage{}, &meshClient, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.EventFunc(fmt.Sprintf(`{
-		"type": "RequestReceived",
-		"data": {
-			"peer": "%s",
-			"transfer": "c13c619c-c70b-49b8-9396-72de88155c43",
-			"files": [
-			  {
-				"id": "testfile-small",
-				"size": 1048576
-			  },
-			  {
-				"id": "testfile-big",
-				"size": 10485760
-			  }
-			]
-		}
-	}`, peer))
-	transfer, ok := eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"]
-	assert.True(t, ok)
-	assert.Equal(t, "c13c619c-c70b-49b8-9396-72de88155c43", transfer.Id)
-	assert.Equal(t, peer, transfer.Peer)
-	assert.Equal(t, pb.Direction_INCOMING, transfer.Direction)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	assert.WithinDuration(t, time.Now(), transfer.Created.AsTime(), time.Second*10)
-	assert.Equal(t, 2, len(transfer.Files))
-	assert.Equal(t, "", transfer.Path) // Only set after accepting transfer
+func (m *mockStorage) PurgeTransfersUntil(until time.Time) error {
+	return nil
 }
 
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.notificationManager = nil
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+	eventManager.SetStorage(storage)
+
 	timeNow := time.Now()
 	for i := 10; i > 0; i-- {
-		eventManager.transfers[strconv.Itoa(i)] = &pb.Transfer{
+		storage.transfers[strconv.Itoa(i)] = &pb.Transfer{
 			Id:      strconv.Itoa(i),
 			Created: timestamppb.New(timeNow.Add(-time.Second * time.Duration(i))),
 		}
 	}
-	transfers := eventManager.GetTransfers()
+	storage.transfers["2"].Files = []*pb.File{{Id: "file"}}
+	eventManager.liveTransfers["2"] = &LiveTransfer{
+		TotalTransferred: 2,
+		Files: map[string]*LiveFile{
+			"file": {
+				Transferred: 3,
+			},
+		},
+	}
+
+	transfers, err := eventManager.GetTransfers()
+	assert.NoError(t, err)
 	assert.Equal(t, 10, len(transfers))
+	// Check if ordered
 	for i := 0; i < 9; i++ {
 		assert.True(t, transfers[i].Created.AsTime().Before(transfers[i+1].Created.AsTime()))
 	}
 
-	// Test whether we received a copy
-	eventManager.transfers[transfers[0].Id].Path = "/test1"
-	transfers[0].Path = "/test2"
-	assert.Equal(t, "/test1", eventManager.transfers[transfers[0].Id].Path)
-}
+	assert.Equal(t, "2", transfers[8].Id)
+	assert.EqualValues(t, 2, transfers[8].TotalTransferred)
+	assert.EqualValues(t, 3, transfers[8].Files[0].Transferred)
 
-func TestGetTransfer(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	eventManager := NewEventManager(NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-	eventManager.transfers["test"] = &pb.Transfer{
-		Id: "test",
-	}
-
-	transfer, err := eventManager.GetTransfer("test")
+	// Almost same functionality, so let's just test GetTransfer here as well
+	transfer, err := eventManager.GetTransfer("2")
 	assert.NoError(t, err)
-	assert.Equal(t, "test", transfer.Id)
-
-	// Test whether we received a copy
-	eventManager.transfers["test"].Path = "/test1"
-	transfer.Path = "/test1"
-	assert.Equal(t, "/test1", eventManager.transfers["test"].Path)
+	assert.Equal(t, transfers[8], transfer)
 }
 
-func TestOutgoingTransfer(t *testing.T) {
+func TestGetTransfers_Fail(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
-
-	transfer, ok := eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"]
-	assert.True(t, ok)
-	assert.Equal(t, "c13c619c-c70b-49b8-9396-72de88155c43", transfer.Id)
-	assert.Equal(t, "172.20.0.5", transfer.Peer)
-	assert.Equal(t, pb.Direction_OUTGOING, transfer.Direction)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	assert.WithinDuration(t, time.Now(), transfer.Created.AsTime(), time.Second*10)
-	assert.Equal(t, 0, len(transfer.Files)) // Files only added upon confirmation from libdrop
-	assert.Equal(t, "/tmp", transfer.Path)
-
-	eventManager.EventFunc(`{
-		"type": "RequestQueued",
-		"data": {
-			"peer": "172.20.0.5",
-			"transfer": "c13c619c-c70b-49b8-9396-72de88155c43",
-			"files": [
-			  {
-				"id": "testfile-small",
-				"size": 1048576
-			  },
-			  {
-				"id": "testfile-big",
-				"size": 10485760
-			  }
-			]
-		}
-	}`)
-	assert.Equal(t, 2, len(transfer.Files))
-}
-
-func TestInvalidTransferProgress(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
-
-	eventManager := NewEventManager(NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	waitGroup := sync.WaitGroup{}
-	waitGroup.Add(1)
-	go func() {
-		eventManager.EventFunc(
-			fmt.Sprintf(`{
-			"type": "TransferFinished",
-			"data": {
-				"transfer": "%s",
-				"reason": "TransferFailed",
-				"data": {
-					"status": 3
-				}
-			}
-			}`, transferID))
-		waitGroup.Done()
-	}()
-
-	waitGroup.Wait()
-	testName := "invalid transfer error handling"
-	transfer, ok := eventManager.transfers[transferID]
-	assert.True(t, ok, testName)
-	if ok {
-		assert.Equal(t, pb.Status_FINISHED_WITH_ERRORS, transfer.Status, testName)
-	}
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager.SetStorage(&mockStorage{err: errors.New("storage failure")})
+	_, err := eventManager.GetTransfers()
+	assert.ErrorContains(t, err, "storage failure")
 }
 
 func TestTransferProgress(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(NoopStorage{}, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.notificationManager = nil
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
+	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+	eventManager.SetStorage(storage)
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	peer := "12.12.12.12"
-	path := "/tmp"
-	fileCnt := 3
+	path := tmpDir
 	file1 := "testfile-small"
 	file1ID := "file1ID"
 	file1sz := 100
@@ -382,7 +286,33 @@ func TestTransferProgress(t *testing.T) {
 	file3ID := "file3ID"
 	file3sz := 1000
 
-	eventManager.NewOutgoingTransfer(transferID, peer, path)
+	storage.transfers[transferID] = &pb.Transfer{
+		Id:        transferID,
+		Peer:      peer,
+		Path:      path,
+		Status:    pb.Status_REQUESTED,
+		TotalSize: uint64(file1sz) + uint64(file2sz) + uint64(file3sz),
+		Files: []*pb.File{
+			{
+				Id:     file1ID,
+				Path:   file1,
+				Size:   uint64(file1sz),
+				Status: pb.Status_REQUESTED,
+			},
+			{
+				Id:     file2ID,
+				Path:   file2,
+				Size:   uint64(file2sz),
+				Status: pb.Status_REQUESTED,
+			},
+			{
+				Id:     file3ID,
+				Path:   file3,
+				Size:   uint64(file3sz),
+				Status: pb.Status_REQUESTED,
+			},
+		},
+	}
 
 	eventManager.EventFunc(
 		fmt.Sprintf(`{
@@ -410,16 +340,6 @@ func TestTransferProgress(t *testing.T) {
 			}
 		}`, peer, transferID, file1ID, file1, file1sz, file2ID, file2, file2sz, file3ID, file3, file3sz))
 
-	transfer, ok := eventManager.transfers[transferID]
-	assert.True(t, ok)
-	assert.Equal(t, transferID, transfer.Id)
-	assert.Equal(t, peer, transfer.Peer)
-	assert.Equal(t, pb.Direction_OUTGOING, transfer.Direction)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	assert.WithinDuration(t, time.Now(), transfer.Created.AsTime(), time.Second*10)
-	assert.Equal(t, path, transfer.Path)
-	assert.Equal(t, fileCnt, len(transfer.Files))
-
 	progCh := eventManager.Subscribe(transferID)
 
 	eventManager.EventFunc(
@@ -431,8 +351,6 @@ func TestTransferProgress(t *testing.T) {
 		}
 		}`, transferID, file1ID))
 
-	assert.EqualValues(t, transfer.TotalSize, file1sz)
-
 	eventManager.EventFunc(
 		fmt.Sprintf(`{
 		"type": "TransferStarted",
@@ -442,11 +360,10 @@ func TestTransferProgress(t *testing.T) {
 		}
 		}`, transferID, file2ID))
 
-	assert.EqualValues(t, transfer.TotalSize, file1sz+file2sz)
-
 	transferredBytes := file1sz
 	go func() {
 		eventManager.EventFunc(
+			// nolint:misspell // We receive this json from the library
 			fmt.Sprintf(`{
 			"type": "TransferProgress",
 			"data": {
@@ -459,7 +376,7 @@ func TestTransferProgress(t *testing.T) {
 
 	progressEvent := <-progCh
 	assert.Equal(t, pb.Status_ONGOING, progressEvent.Status)
-	expectedProgress := uint32(float64(transferredBytes) / float64(file1sz+file2sz) * 100)
+	expectedProgress := uint32(float64(transferredBytes) / float64(file1sz+file2sz+file3sz) * 100)
 	assert.Equal(t, expectedProgress, progressEvent.Transferred)
 
 	waitGroup := sync.WaitGroup{}
@@ -498,6 +415,16 @@ func TestTransferProgress(t *testing.T) {
 					}
 				}
 				}`, transferID, file3ID))
+		// Final transfer state is determined from storage
+		storage.transfers[transferID].Status = pb.Status_SUCCESS
+		eventManager.EventFunc(
+			fmt.Sprintf(`{
+				"type": "TransferFinished",
+				"data": {
+					"transfer": "%s",
+					"reason": "TransferCanceled"
+				}
+				}`, transferID))
 		waitGroup.Done()
 	}()
 
@@ -505,8 +432,10 @@ func TestTransferProgress(t *testing.T) {
 	assert.Equal(t, pb.Status_SUCCESS, progressEvent.Status)
 
 	waitGroup.Wait()
-	_, ok = eventManager.transferSubscriptions[transferID]
+	_, ok := eventManager.transferSubscriptions[transferID]
 	assert.False(t, ok) // expect subscriber to be removed
+	_, ok = eventManager.liveTransfers[transferID]
+	assert.False(t, ok) // expect transfer not to be tracked anymore
 }
 
 func TestAcceptTransfer(t *testing.T) {
@@ -522,69 +451,64 @@ func TestAcceptTransfer(t *testing.T) {
 		sizeLimit uint64
 	}{
 		{
-			testName:       "accept transfer success",
-			transfer:       "c13c619c-c70b-49b8-9396-72de88155c43",
-			expectedErr:    nil,
-			expectedStatus: pb.Status_ONGOING,
-			files:          []string{},
-			sizeLimit:      6,
+			testName:    "accept transfer success",
+			transfer:    exampleUUID,
+			expectedErr: nil,
+			files:       []string{},
+			sizeLimit:   6,
 		},
 		{
-			testName:       "accept files success",
-			transfer:       "c13c619c-c70b-49b8-9396-72de88155c43",
-			expectedErr:    nil,
-			expectedStatus: pb.Status_ONGOING,
-			files:          []string{"test/file_A"},
-			sizeLimit:      1,
+			testName:    "accept files success",
+			transfer:    exampleUUID,
+			expectedErr: nil,
+			files:       []string{"test/file_A"},
+			sizeLimit:   1,
 		},
 		{
-			testName:       "transfer doesn't exist",
-			transfer:       "invalid_transfer",
-			expectedErr:    ErrTransferNotFound,
-			expectedStatus: pb.Status_REQUESTED,
-			files:          []string{},
-			sizeLimit:      6,
+			testName:    "transfer doesn't exist",
+			transfer:    "invalid_transfer",
+			expectedErr: ErrTransferNotFound,
+			files:       []string{},
+			sizeLimit:   6,
 		},
 		{
-			testName:       "file doesn't exist",
-			transfer:       "c13c619c-c70b-49b8-9396-72de88155c43",
-			expectedErr:    ErrFileNotFound,
-			expectedStatus: pb.Status_REQUESTED,
-			files:          []string{"invalid_file"},
-			sizeLimit:      6,
+			testName:    "file doesn't exist",
+			transfer:    exampleUUID,
+			expectedErr: ErrFileNotFound,
+			files:       []string{"invalid_file"},
+			sizeLimit:   6,
 		},
 		{
-			testName:       "size exceeds limit",
-			transfer:       "c13c619c-c70b-49b8-9396-72de88155c43",
-			expectedErr:    ErrSizeLimitExceeded,
-			expectedStatus: pb.Status_REQUESTED,
-			files:          []string{},
-			sizeLimit:      5,
+			testName:    "size exceeds limit",
+			transfer:    exampleUUID,
+			expectedErr: ErrSizeLimitExceeded,
+			files:       []string{},
+			sizeLimit:   5,
 		},
 		{
-			testName:       "partial transfer size exceeds limit",
-			transfer:       "c13c619c-c70b-49b8-9396-72de88155c43",
-			expectedErr:    ErrSizeLimitExceeded,
-			expectedStatus: pb.Status_REQUESTED,
-			files:          []string{"test/file_C"},
-			sizeLimit:      2,
+			testName:    "partial transfer size exceeds limit",
+			transfer:    exampleUUID,
+			expectedErr: ErrSizeLimitExceeded,
+			files:       []string{"test/file_C"},
+			sizeLimit:   2,
 		},
 	}
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
 	for _, test := range tests {
 		mockSystemEnvironment.mockEventManagerFilesystem.freeSpace = test.sizeLimit
 
-		eventManager := NewEventManager(NoopStorage{},
+		eventManager := NewEventManager(false,
 			&mockMeshClient{},
 			&mockSystemEnvironment.mockEventManagerOsInfo,
 			&mockSystemEnvironment.mockEventManagerFilesystem,
 			"")
-		eventManager.notificationManager = nil
-		eventManager.transfers[transferID] = &pb.Transfer{
+		storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+		eventManager.SetStorage(storage)
+		storage.transfers[transferID] = &pb.Transfer{
 			Id:        transferID,
 			Direction: pb.Direction_INCOMING,
 			Status:    pb.Status_REQUESTED,
@@ -598,14 +522,8 @@ func TestAcceptTransfer(t *testing.T) {
 		eventManager.SetFileshare(&mockEventManagerFileshare{})
 
 		t.Run(test.testName, func(t *testing.T) {
-			transfer, err := eventManager.AcceptTransfer(test.transfer, mockSystemEnvironment.destinationDirectory, test.files)
-
+			_, err := eventManager.AcceptTransfer(test.transfer, mockSystemEnvironment.destinationDirectory, test.files)
 			assert.Equal(t, test.expectedErr, err)
-			assert.Equal(t, test.expectedStatus, eventManager.transfers[transferID].Status)
-
-			if transfer != nil {
-				assert.Equal(t, mockSystemEnvironment.destinationDirectory, transfer.Path)
-			}
 		})
 	}
 }
@@ -615,17 +533,21 @@ func TestAcceptTransfer_Outgoing(t *testing.T) {
 
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
-	eventManager := NewEventManager(NoopStorage{},
+	eventManager := NewEventManager(false,
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
 		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
+	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+	eventManager.SetStorage(storage)
+	transferID := exampleUUID
+	storage.transfers[transferID] = &pb.Transfer{
+		Id:        transferID,
+		Direction: pb.Direction_OUTGOING,
+		Status:    pb.Status_REQUESTED,
+	}
 
-	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
-
-	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
+	_, err := eventManager.AcceptTransfer(transferID, mockSystemEnvironment.destinationDirectory, []string{})
 	assert.Equal(t, ErrTransferAcceptOutgoing, err)
 }
 
@@ -634,869 +556,26 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
-	eventManager := NewEventManager(NoopStorage{},
+	eventManager := NewEventManager(false,
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
 		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"] = &pb.Transfer{
-		Id:        "c13c619c-c70b-49b8-9396-72de88155c43",
+	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+	eventManager.SetStorage(storage)
+	transferID := exampleUUID
+	storage.transfers[transferID] = &pb.Transfer{
+		Id:        transferID,
 		Direction: pb.Direction_INCOMING,
-		Status:    pb.Status_REQUESTED,
+		Status:    pb.Status_ONGOING,
 	}
 
-	_, err := eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
-	assert.NoError(t, err)
-	_, err = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
+	_, err := eventManager.AcceptTransfer(exampleUUID, mockSystemEnvironment.destinationDirectory, []string{})
 	assert.Equal(t, ErrTransferAlreadyAccepted, err)
 }
 
-func TestAcceptTransfer_ConcurrentAccepts(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	mockSystemEnvironment := newMockSystemEnvironment(t)
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockSystemEnvironment.mockEventManagerOsInfo,
-		&mockSystemEnvironment.mockEventManagerFilesystem,
-		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.transfers["c13c619c-c70b-49b8-9396-72de88155c43"] = &pb.Transfer{
-		Id:        "c13c619c-c70b-49b8-9396-72de88155c43",
-		Direction: pb.Direction_INCOMING,
-		Status:    pb.Status_REQUESTED,
-	}
-
-	var err1, err2 error
-	waitGroup := sync.WaitGroup{}
-	waitGroup.Add(2)
-	go func() {
-		_, err1 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
-		waitGroup.Done()
-	}()
-	go func() {
-		_, err2 = eventManager.AcceptTransfer("c13c619c-c70b-49b8-9396-72de88155c43", mockSystemEnvironment.destinationDirectory, []string{})
-		waitGroup.Done()
-	}()
-	waitGroup.Wait()
-
-	if err1 == nil {
-		assert.Equal(t, ErrTransferAlreadyAccepted, err2)
-	} else {
-		assert.NoError(t, err2)
-		assert.Equal(t, ErrTransferAlreadyAccepted, err1)
-	}
-}
-
-func TestSetTransferStatus(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockEventManagerOsInfo{},
-		&mockEventManagerFilesystem{},
-		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.NewOutgoingTransfer("c13c619c-c70b-49b8-9396-72de88155c43", "172.20.0.5", "/tmp")
-
-	err := eventManager.SetTransferStatus("c13c619c-c70b-49b8-9396-72de88155c43", pb.Status_CANCELED)
-	assert.NoError(t, err)
-	transfer, err := eventManager.GetTransfer("c13c619c-c70b-49b8-9396-72de88155c43")
-	assert.NoError(t, err)
-	assert.Equal(t, pb.Status_CANCELED, transfer.Status)
-}
-
-func TestFinishedTransfer(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockEventManagerOsInfo{},
-		&mockEventManagerFilesystem{},
-		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	finishTests := []struct {
-		testName       string
-		transferID     string
-		peer           string
-		reason         string
-		transferFileID string
-		eventFileID    string
-		fileStatus     pb.Status
-		transferFound  bool
-		transferStatus pb.Status
-		disabled       bool
-	}{
-		{
-			testName:       "transfer finished success",
-			transferID:     "b537743c-a328-4a3e-b2ec",
-			peer:           "1.1.1.1",
-			reason:         "FileUploaded",
-			transferFileID: "testfile-big",
-			eventFileID:    "testfile-big",
-			fileStatus:     pb.Status_SUCCESS,
-			transferFound:  true,
-			transferStatus: pb.Status_SUCCESS,
-		},
-		{
-			testName:       "transfer finished with errors",
-			transferID:     "b537743c-a328-4a3e-b2ec",
-			peer:           "1.1.1.1",
-			reason:         "FileFailed",
-			transferFileID: "testfile-big",
-			eventFileID:    "testfile-big",
-			fileStatus:     pb.Status_BAD_FILE,
-			transferFound:  true,
-			transferStatus: pb.Status_FINISHED_WITH_ERRORS,
-		},
-		{
-			testName:       "transfer canceled",
-			transferID:     "b537743c-a328-4a3e-b2ec",
-			peer:           "1.1.1.1",
-			reason:         "FileCanceled",
-			transferFileID: "testfile-big",
-			eventFileID:    "testfile-big",
-			fileStatus:     pb.Status_CANCELED,
-			transferFound:  true,
-			transferStatus: pb.Status_CANCELED,
-		},
-		{
-			testName:       "event has unknown file",
-			transferID:     "b537743c-a328-4a3e-b2ec",
-			peer:           "1.1.1.1",
-			reason:         "FileFailed",
-			transferFileID: "testfile-big",
-			eventFileID:    "testfile-big-nonono",
-			fileStatus:     pb.Status_BAD_FILE,
-			transferFound:  true,
-			transferStatus: pb.Status_REQUESTED,
-		},
-	}
-
-	for _, test := range finishTests {
-		if test.disabled {
-			continue
-		}
-		t.Run(test.testName, func(t *testing.T) {
-			eventManager.transfers[test.transferID] =
-				NewIncomingTransfer(test.transferID, test.peer, []*pb.File{{Id: test.transferFileID}})
-			eventManager.EventFunc(
-				fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "%s",
-					"data": {
-					  "file": "%s",
-					  "by_peer": false,
-					  "status": %d
-					}
-				}
-			}`, test.transferID, test.reason, test.eventFileID, test.fileStatus))
-			transfer, ok := eventManager.transfers[test.transferID]
-			assert.Equal(t, test.transferFound, ok, test.testName)
-			assert.Equal(t, test.transferStatus, transfer.Status, test.testName)
-		})
-	}
-}
-
-func TestNewTransfer(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
-	fileID := "file1.xml"
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockEventManagerOsInfo{},
-		&mockEventManagerFilesystem{},
-		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.NewOutgoingTransfer(transferID, "172.20.0.5", fileID)
-
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-			"type": "RequestQueued",
-			"data": {
-				"transfer": "%s",
-				"files": [
-				{
-					"id": "%s",
-					"size": 1048576
-				}
-				]
-			}
-		}`, transferID, fileID))
-
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "TransferCanceled",
-					"data": {
-						"by_peer": false
-					}
-				}
-			}`, transferID))
-
-	transfer, ok := eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, pb.Status_CANCELED, transfer.Status)
-
-	transfer.Status = pb.Status_ONGOING
-	transfer.Finalized = false
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "FileDownloaded",
-					"data": {
-						"file": "%s",
-						"final_path": "testfile-big"
-					}
-				}
-			}`, transferID, fileID))
-
-	transfer, ok = eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, pb.Status_SUCCESS, transfer.Status)
-
-	transfer.Status = pb.Status_ONGOING
-	transfer.Finalized = false
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "FileUploaded",
-					"data": {
-						"file": "%s"
-					}
-				}
-			}`, transferID, fileID))
-
-	transfer, ok = eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, pb.Status_SUCCESS, transfer.Status)
-
-	transfer.Status = pb.Status_ONGOING
-	transfer.Finalized = false
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "FileCanceled",
-					"data": {
-						"file": "%s",
-						"by_peer": true
-					}
-				}
-			}`, transferID, fileID))
-
-	transfer, ok = eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, pb.Status_CANCELED, transfer.Status)
-
-	transfer.Status = pb.Status_ONGOING
-	transfer.Finalized = false
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "FileFailed",
-					"data": {
-						"file": "%s",
-						"status": 2
-					}
-				}
-			}`, transferID, fileID))
-
-	transfer, ok = eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, pb.Status_FINISHED_WITH_ERRORS, transfer.Status)
-
-	transfer.Status = pb.Status_ONGOING
-	transfer.Finalized = false
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "TransferFailed",
-					"data": {
-						"status": 3
-					}
-				}
-			}`, transferID))
-
-	transfer, ok = eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, pb.Status_FINISHED_WITH_ERRORS, transfer.Status)
-}
-
-//nolint:errcheck
-func TestCheckTransferStatuses_SingleDirWithFiles(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
-	peer := "2.2.2.2"
-	file1Path := "tst3/file1.xml"
-	file1ID := "file1"
-	file2Path := "tst3/file2.xml"
-	file2ID := "file2"
-	path := "/tmp"
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockEventManagerOsInfo{},
-		&mockEventManagerFilesystem{},
-		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.NewOutgoingTransfer(transferID, peer, path)
-
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "RequestQueued",
-				"data": {
-					"transfer": "%s",
-					"files": [
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 10
-						},
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 20
-						}
-					]
-				}
-		}`, transferID, file1ID, file1Path, file2ID, file2Path))
-
-	transfer, ok := eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, 2, len(transfer.Files))
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	assert.Equal(t, uint64(0), transfer.TotalSize) // Size is being appended when downloads for files start
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetFileStatus(transfer.Files, file1ID, pb.Status_REQUESTED)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_REQUESTED)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-
-	// check canceled
-	SetFileStatus(transfer.Files, file1ID, pb.Status_CANCELED)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_CANCELED)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_CANCELED, transfer.Status)
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetFileStatus(transfer.Files, file1ID, pb.Status_REQUESTED)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_REQUESTED)
-
-	// check finished success
-	SetFileStatus(transfer.Files, file1ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_SUCCESS, transfer.Status)
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetFileStatus(transfer.Files, file1ID, pb.Status_REQUESTED)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_REQUESTED)
-
-	// check finished with errors
-	SetFileStatus(transfer.Files, file1ID, pb.Status_BAD_FILE)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_FINISHED_WITH_ERRORS, transfer.Status)
-}
-
-//nolint:errcheck
-func TestCheckTransferStatuses_MultipleInputPaths(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
-	peer := "2.2.2.2"
-	file1ID := "file1.xml"
-	file2ID := "file2.xml"
-	path := "/tmp"
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockEventManagerOsInfo{},
-		&mockEventManagerFilesystem{},
-		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.NewOutgoingTransfer(transferID, peer, path)
-
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "RequestQueued",
-				"data": {
-					"transfer": "%s",
-					"files": [
-						{
-							"id": "%s",
-							"size": 100,
-							"children": {}
-						},
-						{
-							"id": "%s",
-							"size": 200,
-							"children": {}
-						}
-					]
-				}
-		}`, transferID, file1ID, file2ID))
-
-	transfer, ok := eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, 2, len(transfer.Files))
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	assert.Equal(t, uint64(0), transfer.TotalSize) // Size is being appended when downloads for files start
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetFileStatus(transfer.Files, file1ID, pb.Status_REQUESTED)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_REQUESTED)
-
-	// check canceled
-	SetFileStatus(transfer.Files, file1ID, pb.Status_CANCELED)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_CANCELED)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_CANCELED, transfer.Status)
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetFileStatus(transfer.Files, file1ID, pb.Status_REQUESTED)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_REQUESTED)
-
-	// check finished success
-	SetFileStatus(transfer.Files, file1ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_SUCCESS, transfer.Status)
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetFileStatus(transfer.Files, file1ID, pb.Status_REQUESTED)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_REQUESTED)
-
-	// check finished with errors
-	SetFileStatus(transfer.Files, file1ID, pb.Status_BAD_FILE)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_FINISHED_WITH_ERRORS, transfer.Status)
-}
-
-//nolint:errcheck
-func TestCheckTransferStatuses_MultilevelDirComplexStructure(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
-	peer := "2.2.2.2"
-	file1ID := "file1"
-	file1Path := "file1.xml"
-	file2ID := "file2"
-	file2Path := "file2.xml"
-	path := "/tmp"
-	topLevelID := "multilevel"
-	level1ID := "level1"
-	level1File1ID := "level1-file1.txt"
-	level1File2ID := "level1-file2.txt"
-	level2ID := "level2"
-	level2File1ID := "level2-file1.txt"
-	level2File2ID := "level2-file2.txt"
-	level3ID := "level3"
-	level3File1ID := "level3-file1.txt"
-	level3File2ID := "level3-file2.txt"
-
-	level1File1Path := topLevelID + "/" + level1ID + "/" + level1File1ID
-	level1File2Path := topLevelID + "/" + level1ID + "/" + level1File2ID
-	level2File1Path := topLevelID + "/" + level1ID + "/" + level2ID + "/" + level2File1ID
-	level2File2Path := topLevelID + "/" + level1ID + "/" + level2ID + "/" + level2File2ID
-	level3File1Path := topLevelID + "/" + level1ID + "/" + level2ID + "/" + level3ID + "/" + level3File1ID
-	level3File2Path := topLevelID + "/" + level1ID + "/" + level2ID + "/" + level3ID + "/" + level3File2ID
-
-	meshClient := mockMeshClient{}
-	meshClient.externalPeers = []*meshpb.Peer{
-		{
-			Ip:                peer,
-			DoIAllowFileshare: true,
-		},
-	}
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockEventManagerOsInfo{},
-		&mockEventManagerFilesystem{},
-		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	eventManager.NewOutgoingTransfer(transferID, peer, path)
-
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-				"type": "RequestQueued",
-				"data": {
-					"transfer": "%s",
-					"files": [
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 1
-						},
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 1
-						},
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 1
-						},
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 1
-						},
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 1
-						},
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 1
-						},
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 1
-						},
-						{
-							"id": "%s",
-							"path": "%s",
-							"size": 1
-						}
-					]
-				}
-		}`, transferID, file1ID, file1Path, file2ID, file2Path,
-			level1File1ID, level1File1Path, level1File2ID, level1File2Path,
-			level2File1ID, level2File1Path, level2File2ID, level2File2Path,
-			level3File1ID, level3File1Path, level3File2ID, level3File2Path))
-
-	transfer, ok := eventManager.transfers[transferID]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, 8, len(transfer.Files))
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	assert.Equal(t, uint64(0), transfer.TotalSize) // Size is being appended when downloads for files start
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetTransferAllFileStatus(transfer, pb.Status_REQUESTED)
-
-	// check canceled
-	SetFileStatus(transfer.Files, file1ID, pb.Status_CANCELED)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_CANCELED)
-	SetFileStatus(transfer.Files, level1File1ID, pb.Status_CANCELED)
-	SetFileStatus(transfer.Files, level1File2ID, pb.Status_CANCELED)
-	SetFileStatus(transfer.Files, level2File1ID, pb.Status_CANCELED)
-	SetFileStatus(transfer.Files, level2File2ID, pb.Status_CANCELED)
-	SetFileStatus(transfer.Files, level3File1ID, pb.Status_CANCELED)
-	SetFileStatus(transfer.Files, level3File2ID, pb.Status_CANCELED)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_CANCELED, transfer.Status)
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetTransferAllFileStatus(transfer, pb.Status_REQUESTED)
-
-	// check finished success
-	SetFileStatus(transfer.Files, file1ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level1File1ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level1File2ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level2File1ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level2File2ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level3File1ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level3File2ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_SUCCESS, transfer.Status)
-
-	// init transfer
-	transfer.Status = pb.Status_REQUESTED
-	SetTransferAllFileStatus(transfer, pb.Status_REQUESTED)
-
-	// check finished with errors
-	SetFileStatus(transfer.Files, file1ID, pb.Status_BAD_FILE)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_REQUESTED, transfer.Status)
-	SetFileStatus(transfer.Files, file2ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level1File1ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level1File2ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level2File1ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level2File2ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level3File1ID, pb.Status_SUCCESS)
-	SetFileStatus(transfer.Files, level3File2ID, pb.Status_SUCCESS)
-	transfer.Status = GetNewTransferStatus(transfer.Files, transfer.Status)
-	assert.Equal(t, pb.Status_FINISHED_WITH_ERRORS, transfer.Status)
-}
-
-func TestTransferRequestPermissionsValidation(t *testing.T) {
-	meshClient := mockMeshClient{}
-	noPermissionPeer := "172.10.0.5"
-	meshClient.externalPeers = []*meshpb.Peer{
-		{
-			Ip:                noPermissionPeer,
-			Pubkey:            "aZ9KwmEzystVJ0R1YitV02NzNngmSrZ3JDTj6tkI8T6=",
-			Hostname:          "internal.peer1.nord",
-			DoIAllowFileshare: false,
-		},
-	}
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockEventManagerOsInfo{},
-		&mockEventManagerFilesystem{},
-		"")
-	eventManager.notificationManager = nil
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-
-	tests := []struct {
-		testName string
-		peer     string
-	}{
-		{
-			testName: "peer has no send permissions",
-			peer:     noPermissionPeer,
-		},
-		{
-			testName: "unknown peer",
-			peer:     "1.2.3.4",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.testName, func(t *testing.T) {
-			eventManager.EventFunc(fmt.Sprintf(`{
-				"type": "RequestReceived",
-				"data": {
-					"peer": "%s",
-					"transfer": "c13c619c-c70b-49b8-9396-72de88155c43",
-					"files": [
-					{
-						"id": "testfile",
-						"size": 1
-					}
-					]
-				}
-			}`, test.peer))
-			assert.True(t, len(eventManager.transfers) == 0)
-		})
-	}
-}
-
-func TestTransferFinalization(t *testing.T) {
-	fileUploadedEventFormat := `{
-		"type": "TransferFinished",
-		"data": {
-			"transfer": "c13c619c-c70b-49b8-9396-72de88155c43",
-			"reason": "%s",
-			"data": {
-				"file": "%s",
-				"status": %d
-			}
-		}
-	}`
-
-	transferCanceledEvent := `{
-		"type": "TransferFinished",
-		"data": {
-			"transfer": "c13c619c-c70b-49b8-9396-72de88155c43",
-			"reason": "TransferCanceled",
-			"data": {}
-		}
-	}`
-
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
-
-	file1 := "file1"
-	file2 := "file2"
-	file3 := "file3"
-
-	tests := []struct {
-		testName                string
-		transferFinishedReasons [3]string
-		fileStatuses            [3]int
-		file1Status             string
-		file2Status             string
-		file3Status             string
-		finalStatus             pb.Status
-	}{
-		{
-			testName:                "all accepted",
-			transferFinishedReasons: [3]string{"FileUploaded", "FileUploaded", "FileUploaded"},
-			fileStatuses:            [3]int{int(pb.Status_SUCCESS), int(pb.Status_SUCCESS), int(pb.Status_SUCCESS)},
-			finalStatus:             pb.Status_SUCCESS,
-		},
-		{
-			testName:                "one canceled",
-			transferFinishedReasons: [3]string{"FileUploaded", "FileCanceled", "FileUploaded"},
-			fileStatuses:            [3]int{int(pb.Status_SUCCESS), int(pb.Status_CANCELED), int(pb.Status_SUCCESS)},
-			finalStatus:             pb.Status_SUCCESS,
-		},
-		{
-			testName:                "all canceled",
-			transferFinishedReasons: [3]string{"FileCanceled", "FileCanceled", "FileCanceled"},
-			fileStatuses:            [3]int{int(pb.Status_CANCELED), int(pb.Status_CANCELED), int(pb.Status_CANCELED)},
-			finalStatus:             pb.Status_CANCELED,
-		},
-		{
-			testName:                "one failed",
-			transferFinishedReasons: [3]string{"FileUploaded", "FileFailed", "FileUploaded"},
-			fileStatuses:            [3]int{int(pb.Status_SUCCESS), int(pb.Status_IO), int(pb.Status_SUCCESS)},
-			finalStatus:             pb.Status_FINISHED_WITH_ERRORS,
-		},
-	}
-
-	for _, test := range tests {
-		eventManager := NewEventManager(NoopStorage{},
-			&mockMeshClient{},
-			&mockEventManagerOsInfo{},
-			&mockEventManagerFilesystem{},
-			"")
-		eventManager.notificationManager = nil
-		mockFileshare := mockEventManagerFileshare{}
-		eventManager.SetFileshare(&mockFileshare)
-
-		eventManager.transfers[transferID] = &pb.Transfer{
-			Id:     transferID,
-			Status: pb.Status_ONGOING,
-			Files: []*pb.File{
-				{Id: file1, Status: pb.Status_ONGOING},
-				{Id: file2, Status: pb.Status_ONGOING},
-				{Id: file3, Status: pb.Status_ONGOING}},
-			TotalSize:        3,
-			TotalTransferred: 0,
-			Direction:        pb.Direction_INCOMING,
-		}
-
-		t.Run(test.testName, func(t *testing.T) {
-			file1UploadedEvent := fmt.Sprintf(fileUploadedEventFormat, test.transferFinishedReasons[0], file1, test.fileStatuses[0])
-			eventManager.EventFunc(file1UploadedEvent)
-
-			assert.Empty(t, mockFileshare.canceledTransferIDs, "Transfer has been finalized(canceled) before it has finished")
-			assert.Equal(t, pb.Status_ONGOING, eventManager.transfers[transferID].Status,
-				"Invalid transfer status.")
-
-			file2UploadedEvent := fmt.Sprintf(fileUploadedEventFormat, test.transferFinishedReasons[1], file2, test.fileStatuses[1])
-			eventManager.EventFunc(file2UploadedEvent)
-
-			assert.Empty(t, mockFileshare.canceledTransferIDs, "Transfer has been finalized(canceled) before it has finished")
-			assert.Equal(t, pb.Status_ONGOING, eventManager.transfers[transferID].Status,
-				"Invalid transfer status")
-
-			file3UploadedEvent := fmt.Sprintf(fileUploadedEventFormat, test.transferFinishedReasons[2], file3, test.fileStatuses[2])
-			eventManager.EventFunc(file3UploadedEvent)
-
-			assert.Equal(t, transferID, mockFileshare.getLastCanceledTransferID(), "Transfer was not finalized(canceled) after it has finished")
-			assert.Equal(t, test.finalStatus, eventManager.transfers[transferID].Status,
-				"Invalid transfer status")
-
-			eventManager.EventFunc(transferCanceledEvent)
-
-			assert.Equal(t, len(mockFileshare.canceledTransferIDs), 1, "Transfer has been finalized(canceled) twice")
-			assert.Equal(t, test.finalStatus, eventManager.transfers[transferID].Status,
-				"Invalid transfer status")
-		})
-	}
-}
-
-func TestTransferFinalization_TransferCanceled(t *testing.T) {
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
-
-	transferCanceledEvent := fmt.Sprintf(`{
-		"type": "TransferFinished",
-		"data": {
-			"transfer": "%s",
-			"reason": "TransferCanceled",
-			"data": {}
-		}
-	}`, transferID)
-
-	eventManager := NewEventManager(NoopStorage{},
-		&mockMeshClient{},
-		&mockEventManagerOsInfo{},
-		&mockEventManagerFilesystem{},
-		"")
-	eventManager.notificationManager = nil
-	mockFileshare := mockEventManagerFileshare{}
-	eventManager.SetFileshare(&mockFileshare)
-
-	eventManager.transfers[transferID] = &pb.Transfer{
-		Id:     transferID,
-		Status: pb.Status_ONGOING,
-		Files: []*pb.File{
-			{Id: "file1", Status: pb.Status_ONGOING},
-			{Id: "file2", Status: pb.Status_ONGOING},
-			{Id: "file3", Status: pb.Status_SUCCESS}},
-		TotalSize:        3,
-		TotalTransferred: 0,
-		Direction:        pb.Direction_INCOMING,
-	}
-
-	eventManager.EventFunc(transferCanceledEvent)
-	assert.Empty(t, mockFileshare.canceledTransferIDs, "Canceled transfer has been finalized")
-	assert.Equal(t, pb.Status_CANCELED, eventManager.transfers[transferID].Status,
-		"Invalid transfer status")
-}
-
 func TestTransferFinishedNotifications(t *testing.T) {
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	fileID := "file_id"
 	filePath := "file_path"
 
@@ -1508,18 +587,20 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
 		notificationManager.notifier = &notifier
 
-		eventManager := NewEventManager(NoopStorage{},
+		eventManager := NewEventManager(false,
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
 			"")
 		eventManager.notificationManager = &notificationManager
-		eventManager.SetFileshare(&mockFileshare{})
-		eventManager.transfers[transferID] = &pb.Transfer{
+		eventManager.SetFileshare(&mockEventManagerFileshare{})
+		storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+		eventManager.SetStorage(storage)
+		storage.transfers[transferID] = &pb.Transfer{
 			Id:     transferID,
 			Status: pb.Status_ONGOING,
 			Files: []*pb.File{
-				{Id: fileID, Path: filePath, Status: pb.Status_ONGOING},
+				{Id: fileID, FullPath: filePath, Status: pb.Status_ONGOING},
 			},
 			TotalSize:        1,
 			TotalTransferred: 0,
@@ -1604,7 +685,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 }
 
 func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	fileID := "file_id"
 	filePath := "file_path"
 
@@ -1622,18 +703,20 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	notificationManager.notifier = &notifier
 	notificationManager.openFileFunc = openFileFunc
 
-	eventManager := NewEventManager(NoopStorage{},
+	eventManager := NewEventManager(false,
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
 		"")
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
-	eventManager.transfers[transferID] = &pb.Transfer{
+	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+	eventManager.SetStorage(storage)
+	storage.transfers[transferID] = &pb.Transfer{
 		Id:     transferID,
 		Status: pb.Status_ONGOING,
 		Files: []*pb.File{
-			{Id: fileID, Path: filePath, Status: pb.Status_ONGOING},
+			{Id: fileID, FullPath: filePath, Status: pb.Status_ONGOING},
 		},
 		TotalSize:        1,
 		TotalTransferred: 0,
@@ -1663,6 +746,8 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 }
 
 func TestTransferRequestNotification(t *testing.T) {
+	transferID := exampleUUID
+
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
 		nextID:        0,
@@ -1677,7 +762,7 @@ func TestTransferRequestNotification(t *testing.T) {
 	notificationManager.notifier = &notifier
 	notificationManager.openFileFunc = openFileFunc
 
-	eventManager := NewEventManager(NoopStorage{},
+	eventManager := NewEventManager(false,
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
@@ -1685,7 +770,7 @@ func TestTransferRequestNotification(t *testing.T) {
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
-	peer := "172.20.0.5"
+	peer := exampleIP1
 	hostname := "peer.nord"
 	eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 		{
@@ -1695,7 +780,6 @@ func TestTransferRequestNotification(t *testing.T) {
 		},
 	}}
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
 	event := fmt.Sprintf(`{
 		"type": "RequestReceived",
 		"data": {
@@ -1737,9 +821,9 @@ func TestTransferRequestNotification(t *testing.T) {
 }
 
 func TestTransferRequestNotificationAccept(t *testing.T) {
-	peer := "172.20.0.5"
+	peer := exampleIP1
 
-	pendingTransferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	pendingTransferID := exampleUUID
 	pendingTransferNotificationID := uint32(0)
 
 	transferFinishedID := "022cb1eb-ee22-431a-80c5-ba3050493c17"
@@ -1776,7 +860,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 
 		notifier := mockNotifier{
 			notifications: []mockNotification{},
-			nextID:        uint32(pendingTransferNotificationID),
+			nextID:        pendingTransferNotificationID,
 		}
 
 		osInfo := mockEventManagerOsInfo{
@@ -1789,23 +873,14 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		notificationManager := NewMockNotificationManager(&osInfo)
 		notificationManager.notifier = &notifier
 
-		eventManager := NewEventManager(NoopStorage{},
+		eventManager := NewEventManager(false,
 			&mockMeshClient{},
 			&osInfo,
 			&filesystem,
 			"")
-		eventManager.notificationManager = &notificationManager
-		eventManager.SetFileshare(&mockEventManagerFileshare{})
-		eventManager.transfers[pendingTransferID] = &pb.Transfer{
-			Status:    pb.Status_REQUESTED,
-			Direction: pb.Direction_INCOMING,
-			Files: []*pb.File{
-				{
-					Size: 1000,
-				},
-			}}
-
-		eventManager.transfers = map[string]*pb.Transfer{
+		storage := &mockStorage{}
+		eventManager.SetStorage(storage)
+		storage.transfers = map[string]*pb.Transfer{
 			pendingTransferID: {
 				Status:    pb.Status_REQUESTED,
 				Direction: pb.Direction_INCOMING,
@@ -1862,7 +937,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		expectedErrorNotification string // empty for no error notifications
 	}{
 		{
-			name:                      "transfer succesfully accepted",
+			name:                      "transfer successfully accepted",
 			destinationDirectoryName:  "directory",
 			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
@@ -1922,9 +997,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 			testEnv := setup(test.destinationDirectoryName, test.freeSpace)
 			testEnv.notificationManager.AcceptTransfer(test.notificationID)
 
-			assert.Equal(t, test.expectedTransferStatus, testEnv.eventManager.transfers[test.transferID].Status,
-				"Invalid transfer status after accept notification action has been executed")
-
 			if test.expectedErrorNotification == "" {
 				assert.Empty(t, testEnv.notifier.notifications,
 					"Unexpected notifications received: %v",
@@ -1950,27 +1022,28 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 }
 
 func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
-	peer := "172.20.0.5"
+	peer := exampleIP1
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
 	transferNotificationID := uint32(0)
 
 	mockOsEnvironment := newMockSystemEnvironment(t)
 
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
-		nextID:        uint32(transferNotificationID),
+		nextID:        transferNotificationID,
 	}
 
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
 	notificationManager.notifier = &notifier
 
-	eventManager := NewEventManager(NoopStorage{},
+	eventManager := NewEventManager(false,
 		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
 		mockOsEnvironment.destinationDirectory)
 	eventManager.notificationManager = &notificationManager
+	eventManager.SetStorage(&mockStorage{})
 
 	notificationManager.eventManager = eventManager
 	notificationManager.fileshare = &mockEventManagerFileshare{}
@@ -2002,9 +1075,9 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 }
 
 func TestTransferRequestNotificationCancel(t *testing.T) {
-	peer := "172.20.0.5"
+	peer := exampleIP1
 
-	pendingTransferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	pendingTransferID := exampleUUID
 	pendingTransferNotificationID := uint32(0)
 
 	transferAlreadyCanceledID := "5f4c3ec4-d4fe-4335-beb6-5db2ffbae351"
@@ -2019,7 +1092,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 	setup := func() (*NotificationManager, *mockEventManagerFileshare, *mockNotifier) {
 		notifier := mockNotifier{
 			notifications: []mockNotification{},
-			nextID:        uint32(pendingTransferNotificationID),
+			nextID:        pendingTransferNotificationID,
 		}
 
 		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
@@ -2029,7 +1102,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 		notificationManager.notifications.transfers[invalidTransferNotificationID] = invalidTransferID
 		notificationManager.notifier = &notifier
 
-		eventManager := NewEventManager(NoopStorage{},
+		eventManager := NewEventManager(false,
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
@@ -2048,9 +1121,11 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 			},
 		}}
 
-		eventManager.transfers[pendingTransferID] = &pb.Transfer{Status: pb.Status_REQUESTED}
-		eventManager.transfers[transferAlreadyCanceledID] = &pb.Transfer{Status: pb.Status_CANCELED}
-		eventManager.transfers[transferFinishedID] = &pb.Transfer{Status: pb.Status_SUCCESS}
+		storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+		eventManager.SetStorage(storage)
+		storage.transfers[pendingTransferID] = &pb.Transfer{Status: pb.Status_REQUESTED}
+		storage.transfers[transferAlreadyCanceledID] = &pb.Transfer{Status: pb.Status_CANCELED}
+		storage.transfers[transferFinishedID] = &pb.Transfer{Status: pb.Status_SUCCESS}
 
 		return &notificationManager, &fileshare, &notifier
 	}
@@ -2062,7 +1137,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 		expectedErrorNotification string // empty for no error notifications
 	}{
 		{
-			name:                      "transfer succesfully canceled",
+			name:                      "transfer successfully canceled",
 			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
 			expectedErrorNotification: "",
@@ -2144,31 +1219,47 @@ func TestAutoaccept(t *testing.T) {
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
 	notificationManager.notifier = &notifier
 
-	eventManager := NewEventManager(NoopStorage{},
+	eventManager := NewEventManager(false,
 		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
 		mockOsEnvironment.destinationDirectory)
 	eventManager.notificationManager = &notificationManager
+	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+	eventManager.SetStorage(storage)
 
 	notificationManager.eventManager = eventManager
 	notificationManager.defaultDownloadDir = mockOsEnvironment.destinationDirectory
 
 	notificationManager.notifications.transfers = map[uint32]string{}
 
-	peerAutacceptIP := "172.20.0.5"
+	peerAutoAcceptIP := exampleIP1
 	peerAutoacceptHostname := "internal.peer1.nord"
 
 	eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 		{
-			Ip:                peerAutacceptIP,
+			Ip:                peerAutoAcceptIP,
 			Hostname:          peerAutoacceptHostname,
 			DoIAllowFileshare: true,
 			AlwaysAcceptFiles: true,
 		},
 	}}
 
-	transferID := "c13c619c-c70b-49b8-9396-72de88155c43"
+	transferID := exampleUUID
+
+	storage.transfers[transferID] = &pb.Transfer{
+		Id:        transferID,
+		Peer:      peerAutoAcceptIP,
+		Direction: pb.Direction_INCOMING,
+		Status:    pb.Status_REQUESTED,
+		Files: []*pb.File{
+			{
+				Id:   "testfile",
+				Size: 1048576,
+			},
+		},
+	}
+
 	event := fmt.Sprintf(`{
 		"type": "RequestReceived",
 		"data": {
@@ -2181,7 +1272,7 @@ func TestAutoaccept(t *testing.T) {
 			  }
 			]
 		}
-	}`, peerAutacceptIP, transferID)
+	}`, peerAutoAcceptIP, transferID)
 
 	tests := []struct {
 		name                        string
@@ -2230,29 +1321,31 @@ func TestAutoaccept(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		mockFileshare := mockEventManagerFileshare{}
+		t.Run(test.name, func(t *testing.T) {
+			mockFileshare := mockEventManagerFileshare{}
 
-		eventManager.fileshare = &mockFileshare
-		eventManager.defaultDownloadDir = test.defaultDownloadDirectory
-		eventManager.EventFunc(event)
+			eventManager.fileshare = &mockFileshare
+			eventManager.defaultDownloadDir = test.defaultDownloadDirectory
+			eventManager.EventFunc(event)
 
-		if test.acceptedTransferID != "" {
-			assert.NotEmpty(t, mockFileshare.acceptedTransferIDS,
-				"Incoming transfer was not accepted")
-			assert.Equal(t, transferID, mockFileshare.getLastAcceptedTransferID(),
-				"Invalid transfer was accepted")
-		} else {
-			assert.Empty(t, mockFileshare.acceptedTransferIDS,
-				"Unexpected incoming transfer was accepted")
-		}
+			if test.acceptedTransferID != "" {
+				assert.NotEmpty(t, mockFileshare.acceptedTransferIDS,
+					"Incoming transfer was not accepted")
+				assert.Equal(t, transferID, mockFileshare.getLastAcceptedTransferID(),
+					"Invalid transfer was accepted")
+			} else {
+				assert.Empty(t, mockFileshare.acceptedTransferIDS,
+					"Unexpected incoming transfer was accepted")
+			}
 
-		notification := notifier.getLastNotification()
-		assert.Equal(t, test.expectedNotificationSummary, notification.summary,
-			"Invalid notification summary")
+			notification := notifier.getLastNotification()
+			assert.Equal(t, test.expectedNotificationSummary, notification.summary,
+				"Invalid notification summary")
 
-		assert.Equal(t, test.expectedNotificationBody, notification.body, "Invalid notification body")
+			assert.Equal(t, test.expectedNotificationBody, notification.body, "Invalid notification body")
 
-		assert.Empty(t, notification.actions,
-			"Unexpected actions found in autoaccepted transfer notification")
+			assert.Empty(t, notification.actions,
+				"Unexpected actions found in autoaccepted transfer notification")
+		})
 	}
 }

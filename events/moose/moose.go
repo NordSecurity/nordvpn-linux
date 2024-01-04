@@ -204,7 +204,7 @@ func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
 	if err := s.response(moose.Set_context_application_config_userPreferences_customDnsEnabled_meta(fmt.Sprintf(`{"count":%d}`, len(data.Ips)))); err != nil {
 		return err
 	}
-	return s.response(moose.Set_context_application_config_userPreferences_customDnsEnabled_value(data.Enabled))
+	return s.response(moose.Set_context_application_config_userPreferences_customDnsEnabled_value(len(data.Ips) > 0))
 }
 
 func (s *Subscriber) NotifyFirewall(data bool) error {
@@ -274,8 +274,10 @@ func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
 }
 
 func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
-	enabled := data.UDPPorts != 0 || data.TCPPorts != 0 || data.Subnets != 0
-	if err := s.response(moose.Set_context_application_config_userPreferences_splitTunnelingEnabled_meta(fmt.Sprintf(`{"udp_ports":%d,"tcp_ports:%d,"subnets":%d}`, data.UDPPorts, data.TCPPorts, data.Subnets))); err != nil {
+	enabled := len(data.UDPPorts) != 0 || len(data.TCPPorts) != 0 || len(data.Subnets) != 0
+	if err := s.response(moose.Set_context_application_config_userPreferences_splitTunnelingEnabled_meta(
+		fmt.Sprintf(`{"udp_ports":%d,"tcp_ports:%d,"subnets":%d}`, len(data.UDPPorts), len(data.TCPPorts), len(data.Subnets)),
+	)); err != nil {
 		return err
 	}
 	return s.response(moose.Set_context_application_config_userPreferences_splitTunnelingEnabled_value(enabled))

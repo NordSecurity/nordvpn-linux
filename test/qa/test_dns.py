@@ -10,6 +10,7 @@ import lib
 import pytest
 import sh
 import timeout_decorator
+import requests
 
 
 def setup_module(module):
@@ -36,13 +37,12 @@ def teardown_function(function):
     logging.log()
 
 
-@pytest.mark.parametrize("threat_protection_lite", lib.THREAT_PROTECTION_LITE)
+@pytest.mark.parametrize("tpl_allias", dns.TPL_ALIAS)
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_tpl_connect(tech, proto, obfuscated, threat_protection_lite):
+def test_set_tpl_on_off_connected(tpl_allias, tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    lib.set_threat_protection_lite(threat_protection_lite)
 
     # Make sure, that DNS is unset before we connect to VPN server
     assert dns.is_unset()
@@ -50,39 +50,62 @@ def test_tpl_connect(tech, proto, obfuscated, threat_protection_lite):
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
-        if threat_protection_lite == "on":
-            assert settings.get_is_tpl_enabled()
-            assert settings.dns_visible_in_settings("disabled")
-            assert dns.is_set_for(dns.DNS_TPL)
-        else:
-            assert not settings.get_is_tpl_enabled()
-            assert settings.dns_visible_in_settings("disabled")
-            assert dns.is_set_for(dns.DNS_NORD)
+        assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_allias, "on")
 
-    # Make sure, that DNS is unset, after we disconnect from VPN server
-    assert dns.is_unset()
+        assert settings.get_is_tpl_enabled()
+        assert settings.dns_visible_in_settings("disabled")
+        assert dns.is_set_for(dns.DNS_TPL)
 
-
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_set_tpl_connected(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    assert dns.is_unset()
-
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+        assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_allias, "off")
 
         assert not settings.get_is_tpl_enabled()
         assert settings.dns_visible_in_settings("disabled")
         assert dns.is_set_for(dns.DNS_NORD)
 
-        lib.set_threat_protection_lite("on")
+    # Make sure, that DNS is unset, after we disconnect from VPN server
+    assert dns.is_unset()
 
-        assert settings.get_is_tpl_enabled()
-        assert settings.dns_visible_in_settings("disabled")
+
+@pytest.mark.parametrize("tpl_allias", dns.TPL_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_set_tpl_on_and_connect(tpl_allias, tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_allias, "on")
+
+    assert settings.get_is_tpl_enabled()
+    assert settings.dns_visible_in_settings("disabled")
+    assert dns.is_unset()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
         assert dns.is_set_for(dns.DNS_TPL)
+
+    assert dns.is_unset()
+
+
+@pytest.mark.parametrize("tpl_allias", dns.TPL_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_set_tpl_off_and_connect(tpl_allias, tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    sh.nordvpn.set(tpl_allias, "on")
+
+    assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_allias, "off")
+    
+    assert not settings.get_is_tpl_enabled()
+    assert settings.dns_visible_in_settings("disabled")
+    assert dns.is_unset()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
+        assert dns.is_set_for(dns.DNS_NORD)
 
     assert dns.is_unset()
 
@@ -128,7 +151,6 @@ def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
         assert dns.is_set_for(nameserver)
 
     assert dns.is_unset()
-
 
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)

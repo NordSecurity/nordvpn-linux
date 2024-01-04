@@ -9,6 +9,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	"google.golang.org/api/firebaseremoteconfig/v1"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -309,14 +311,97 @@ func TestRemoteConfig_GetTelioConfig(t *testing.T) {
 	assert.NoError(t, err2)
 }
 
+func TestRemoteConfig_GetCachedData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cm := &mock.ConfigManager{}
+	rs := &remoteServiceMock{}
+
+	tests := []struct {
+		name          string
+		expectedValue string
+		fetchError    error
+		updatePeriod  time.Duration
+		remoteConfig  string
+		cachedValue   string
+	}{
+		{
+			name:       "fetch fails and nothing is cached",
+			fetchError: fmt.Errorf("failed to fetch"),
+		},
+		{
+			name:          "using cached data, no fetching is needed",
+			fetchError:    fmt.Errorf("failed to fetch"),
+			expectedValue: "hola",
+			cachedValue:   remoteConfigString,
+			updatePeriod:  time.Hour,
+		},
+		{
+			name:          "use cache data when fetching fails",
+			fetchError:    fmt.Errorf("failed to fetch"),
+			expectedValue: "hola",
+			cachedValue:   remoteConfigString,
+		},
+		{
+			name:          "using fetch remote config",
+			expectedValue: "hola",
+			remoteConfig:  remoteConfigString,
+			cachedValue:   "broke_data",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rc := NewRConfig(test.updatePeriod, rs, cm)
+
+			rs.fetchError = test.fetchError
+			rs.response = test.remoteConfig
+
+			cm.Cfg = &config.Config{}
+			cm.Cfg.RCLastUpdate = time.Now()
+			cm.Cfg.RemoteConfig = test.cachedValue
+
+			value, err := rc.GetValue("welcome_message")
+
+			assert.Equal(t, test.expectedValue, value)
+			if test.expectedValue == "" {
+				assert.ErrorIs(t, err, test.fetchError)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			// check if cache remote config is the same as the fetch
+			if test.remoteConfig != "" {
+				var cfgExpected firebaseremoteconfig.RemoteConfig
+				assert.NoError(t, json.Unmarshal([]byte(test.remoteConfig), &cfgExpected))
+
+				var cfg firebaseremoteconfig.RemoteConfig
+				assert.NoError(t, json.Unmarshal([]byte(cm.Cfg.RemoteConfig), &cfg))
+
+				assert.Equal(t, cfgExpected, cfg, "fetch RC different from saved one")
+			}
+		})
+	}
+}
+
 // ----------------------------------------------------------------------------------------
 type remoteServiceMock struct {
 	fetchCount int
+	response   string
+	fetchError error
 }
 
 func (rs *remoteServiceMock) FetchRemoteConfig() ([]byte, error) {
 	rs.fetchCount++
-	return []byte(remoteConfigString), nil
+	if rs.fetchError != nil {
+		return nil, rs.fetchError
+	}
+
+	if rs.response == "" {
+		return []byte(remoteConfigString), nil
+	}
+
+	return []byte(rs.response), nil
 }
 
 var remoteConfigString = `

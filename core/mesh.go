@@ -1,16 +1,14 @@
 package core
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/request"
 
 	"github.com/google/uuid"
 )
@@ -84,6 +82,7 @@ func peersResponseToMachinePeers(rawPeers []mesh.MachinePeerResponse) []mesh.Mac
 			DoIAllowLocalNetwork:      p.DoIAllowLocalNetwork,
 			DoIAllowFileshare:         p.DoIAllowFileshare,
 			AlwaysAcceptFiles:         p.AlwaysAcceptFiles,
+			Nickname:                  p.Nickname,
 		})
 	}
 
@@ -114,25 +113,18 @@ func (api *DefaultAPI) Register(token string, peer mesh.Machine) (*mesh.Machine,
 	if err != nil {
 		return nil, err
 	}
-	req, err := request.NewRequestWithBearerToken(
-		http.MethodPost,
-		api.agent,
-		api.baseURL,
+
+	resp, err := api.request(
 		urlMeshRegister,
-		"application/json",
-		"",
-		"",
-		bytes.NewBuffer(data),
+		http.MethodPost,
+		data,
 		token,
 	)
+
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
-	if err != nil {
-		return nil, err
-	}
 	defer resp.Body.Close()
 
 	if err := ExtractError(resp); err != nil {
@@ -140,7 +132,7 @@ func (api *DefaultAPI) Register(token string, peer mesh.Machine) (*mesh.Machine,
 	}
 
 	var raw mesh.MachineCreateResponse
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -166,46 +158,31 @@ func (api *DefaultAPI) Register(token string, peer mesh.Machine) (*mesh.Machine,
 		PublicKey: peer.PublicKey,
 		Endpoints: raw.Endpoints,
 		Address:   addr,
+		Nickname:  raw.Nickname,
 	}, nil
 }
 
 // Update publishes new endpoints.
-func (api *DefaultAPI) Update(token string, id uuid.UUID, endpoints []netip.AddrPort) error {
+func (api *DefaultAPI) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	if len(endpoints) == 0 {
-		return ErrPeerEndpointsNotProvided
-	}
-
-	data, err := json.Marshal(mesh.MachineUpdateRequest{
-		Endpoints:       endpoints,
-		SupportsRouting: true,
-	})
+	data, err := json.Marshal(info)
 	if err != nil {
 		return err
 	}
 
-	url := fmt.Sprintf(urlMeshMachines, id.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlMeshMachines, id.String()),
 		http.MethodPatch,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
-		bytes.NewBuffer(data),
+		data,
 		token,
 	)
+
 	if err != nil {
 		return err
 	}
 
-	resp, err := api.do(req)
-	if err != nil {
-		return err
-	}
 	defer resp.Body.Close()
 
 	return ExtractError(resp)
@@ -216,46 +193,27 @@ func (api *DefaultAPI) Configure(
 	token string,
 	id uuid.UUID,
 	peerID uuid.UUID,
-	doIAllowInbound bool,
-	doIAllowRouting bool,
-	doIAllowLocalNetwork bool,
-	doIAllowFileshare bool,
-	alwaysAcceptfiles bool,
+	peerUpdateInfo mesh.PeerUpdateRequest,
 ) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	data, err := json.Marshal(mesh.PeerUpdateRequest{
-		DoIAllowInbound:      doIAllowInbound,
-		DoIAllowRouting:      doIAllowRouting,
-		DoIAllowLocalNetwork: doIAllowLocalNetwork,
-		DoIAllowFileshare:    doIAllowFileshare,
-		AllwaysAcceptFiles:   alwaysAcceptfiles,
-	})
+	data, err := json.Marshal(peerUpdateInfo)
 	if err != nil {
 		return err
 	}
 
-	url := fmt.Sprintf(urlMeshMachinesPeers, id.String(), peerID.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlMeshMachinesPeers, id.String(), peerID.String()),
 		http.MethodPatch,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
-		bytes.NewBuffer(data),
+		data,
 		token,
 	)
+
 	if err != nil {
 		return err
 	}
 
-	resp, err := api.do(req)
-	if err != nil {
-		return err
-	}
 	defer resp.Body.Close()
 
 	return ExtractError(resp)
@@ -266,23 +224,12 @@ func (api *DefaultAPI) Unregister(token string, self uuid.UUID) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlMeshMachines, self.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlMeshMachines, self.String()),
 		http.MethodDelete,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
 		nil,
 		token,
 	)
-	if err != nil {
-		return err
-	}
-
-	resp, err := api.do(req)
 	if err != nil {
 		return err
 	}
@@ -308,6 +255,7 @@ func peersResponseToLocalPeers(rawPeers []mesh.MachinePeerResponse) []mesh.Machi
 			PublicKey: p.PublicKey,
 			Endpoints: p.Endpoints,
 			Address:   addr,
+			Nickname:  p.Nickname,
 		})
 	}
 
@@ -319,22 +267,12 @@ func (api *DefaultAPI) Local(token string) (mesh.Machines, error) {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	req, err := request.NewRequestWithBearerToken(
-		http.MethodGet,
-		api.agent,
-		api.baseURL,
+	resp, err := api.request(
 		urlMeshMachines,
-		"application/json",
-		"",
-		"",
+		http.MethodGet,
 		nil,
 		token,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := api.do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +282,7 @@ func (api *DefaultAPI) Local(token string) (mesh.Machines, error) {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -364,23 +302,12 @@ func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, erro
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlMeshMap, self.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlMeshMap, self.String()),
 		http.MethodGet,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
 		nil,
 		token,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := api.do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -390,7 +317,7 @@ func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, erro
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -415,6 +342,7 @@ func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, erro
 			PublicKey: raw.PublicKey,
 			Endpoints: raw.Endpoints,
 			Address:   addr,
+			Nickname:  raw.Nickname,
 		},
 		Hosts: raw.DNS.Hosts,
 		Peers: peers,
@@ -427,23 +355,12 @@ func (api *DefaultAPI) List(token string, self uuid.UUID) (mesh.MachinePeers, er
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlMeshPeers, self.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlMeshPeers, self.String()),
 		http.MethodGet,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
 		nil,
 		token,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := api.do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +370,7 @@ func (api *DefaultAPI) List(token string, self uuid.UUID) (mesh.MachinePeers, er
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -474,23 +391,12 @@ func (api *DefaultAPI) Unpair(token string, self uuid.UUID, peer uuid.UUID) erro
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlMeshUnpair, self.String(), peer.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlMeshUnpair, self.String(), peer.String()),
 		http.MethodDelete,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
 		nil,
 		token,
 	)
-	if err != nil {
-		return err
-	}
-
-	resp, err := api.do(req)
 	if err != nil {
 		return err
 	}
@@ -522,27 +428,18 @@ func (api *DefaultAPI) Invite(
 	if err != nil {
 		return err
 	}
-	url := fmt.Sprintf(urlInvitationSend, self.String())
 
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlInvitationSend, self.String()),
 		http.MethodPost,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
-		bytes.NewBuffer(data),
+		data,
 		token,
 	)
+
 	if err != nil {
 		return err
 	}
 
-	resp, err := api.do(req)
-	if err != nil {
-		return err
-	}
 	defer resp.Body.Close()
 
 	return ExtractError(resp)
@@ -553,23 +450,12 @@ func (api *DefaultAPI) Received(token string, self uuid.UUID) (mesh.Invitations,
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlReceivedInvitationsList, self.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlReceivedInvitationsList, self.String()),
 		http.MethodGet,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
 		nil,
 		token,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := api.do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -579,7 +465,7 @@ func (api *DefaultAPI) Received(token string, self uuid.UUID) (mesh.Invitations,
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -597,23 +483,12 @@ func (api *DefaultAPI) Sent(token string, self uuid.UUID) (mesh.Invitations, err
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlSentInvitationsList, self.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlSentInvitationsList, self.String()),
 		http.MethodGet,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
 		nil,
 		token,
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := api.do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -623,7 +498,7 @@ func (api *DefaultAPI) Sent(token string, self uuid.UUID) (mesh.Invitations, err
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -659,23 +534,12 @@ func (api *DefaultAPI) Accept(
 		return err
 	}
 
-	url := fmt.Sprintf(urlAcceptInvitation, self.String(), invitation.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlAcceptInvitation, self.String(), invitation.String()),
 		http.MethodPost,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
-		bytes.NewReader(data),
+		data,
 		token,
 	)
-	if err != nil {
-		return err
-	}
-
-	resp, err := api.do(req)
 	if err != nil {
 		return err
 	}
@@ -689,13 +553,12 @@ func (api *DefaultAPI) Reject(token string, self uuid.UUID, invitation uuid.UUID
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlRejectInvitation, self.String(), invitation.String())
-	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, url, "application/json", "", "", nil, token)
-	if err != nil {
-		return err
-	}
-
-	resp, err := api.do(req)
+	resp, err := api.request(
+		fmt.Sprintf(urlRejectInvitation, self.String(), invitation.String()),
+		http.MethodPost,
+		nil,
+		token,
+	)
 	if err != nil {
 		return err
 	}
@@ -709,23 +572,13 @@ func (api *DefaultAPI) Revoke(token string, self uuid.UUID, invitation uuid.UUID
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlRevokeInvitation, self.String(), invitation.String())
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlRevokeInvitation, self.String(), invitation.String()),
 		http.MethodDelete,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
 		nil,
 		token,
 	)
-	if err != nil {
-		return err
-	}
 
-	resp, err := api.do(req)
 	if err != nil {
 		return err
 	}
@@ -745,8 +598,6 @@ func (api *DefaultAPI) NotifyNewTransfer(
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
-	url := fmt.Sprintf(urlNotifyFileTransfer, self.String())
-
 	dataUnmarshaled := mesh.NotificationNewTransactionRequest{
 		ReceiverMachineIdentifier: peer.String(),
 		FileCount:                 fileCount,
@@ -757,22 +608,21 @@ func (api *DefaultAPI) NotifyNewTransfer(
 		return fmt.Errorf("marshaling request: %w", err)
 	}
 
-	req, err := request.NewRequestWithBearerToken(
+	resp, err := api.request(
+		fmt.Sprintf(urlNotifyFileTransfer, self.String()),
 		http.MethodPost,
-		api.agent,
-		api.baseURL,
-		url,
-		"application/json",
-		"",
-		"",
-		bytes.NewReader(data),
+		data,
 		token,
 	)
 	if err != nil {
 		return err
 	}
 
-	resp, err := api.do(req)
+	// 500 Internal Server Error is returned when peer machine have not registered its app_user_uid
+	// Not all platforms implemented it yet, so suppress that error to not clutter logs
+	if errors.Is(err, ErrServerInternal) {
+		return nil
+	}
 	if err != nil {
 		return err
 	}

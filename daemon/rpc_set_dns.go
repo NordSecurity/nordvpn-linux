@@ -70,8 +70,7 @@ func (r *RPC) SetDNS(ctx context.Context, in *pb.SetDNSRequest) (*pb.SetDNSRespo
 			Response: &pb.SetDNSResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 		}, nil
 	}
-	enabled := len(in.GetDns()) > 0
-	r.events.Settings.DNS.Publish(events.DataDNS{Enabled: enabled, Ips: in.GetDns()})
+	r.events.Settings.DNS.Publish(events.DataDNS{Ips: in.GetDns()})
 
 	if newThreatProtectionLiteStatus != cfg.AutoConnectData.ThreatProtectionLite {
 		return &pb.SetDNSResponse{

@@ -155,15 +155,17 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Firewall.Publish(cfg.Firewall)
 	s.Routing.Publish(cfg.Routing.Get())
 	s.Autoconnect.Publish(cfg.AutoConnect)
-	s.DNS.Publish(events.DataDNS{Enabled: len(cfg.AutoConnectData.DNS) != 0, Ips: cfg.AutoConnectData.DNS})
+	s.DNS.Publish(events.DataDNS{Ips: cfg.AutoConnectData.DNS})
 	s.ThreatProtectionLite.Publish(cfg.AutoConnectData.ThreatProtectionLite)
 	s.Protocol.Publish(cfg.AutoConnectData.Protocol)
 	s.Allowlist.Publish(events.DataAllowlist{
-		TCPPorts: len(cfg.AutoConnectData.Allowlist.Ports.TCP),
-		UDPPorts: len(cfg.AutoConnectData.Allowlist.Ports.UDP),
-		Subnets:  len(cfg.AutoConnectData.Allowlist.Subnets),
+		TCPPorts: cfg.AutoConnectData.Allowlist.Ports.TCP.ToSlice(),
+		UDPPorts: cfg.AutoConnectData.Allowlist.Ports.UDP.ToSlice(),
+		Subnets:  cfg.AutoConnectData.Allowlist.Subnets.ToSlice(),
 	})
 	s.Meshnet.Publish(cfg.Mesh)
 	s.Ipv6.Publish(cfg.IPv6)
 	s.Technology.Publish(cfg.Technology)
+	s.Obfuscate.Publish(cfg.AutoConnectData.Obfuscate)
+	s.Notify.Publish(cfg.UsersData.Notify != nil && len(cfg.UsersData.Notify) > 0)
 }

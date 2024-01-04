@@ -6,6 +6,8 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/fileshare/pb";
 
 import "transfer.proto";
 
+import "google/protobuf/timestamp.proto";
+
 // Used when there is no error or there is no data to be sent
 message Empty {}
 
@@ -40,6 +42,7 @@ enum FileshareErrorCode {
 	ACCEPT_DIR_IS_NOT_A_DIRECTORY = 19;
 	NO_FILES = 20;
 	ACCEPT_DIR_NO_PERMISSIONS = 21;
+	PURGE_FAILURE = 22;
 }
 
 // Generic error to be used through all responses. If empty then no error occurred.
@@ -106,4 +109,8 @@ enum SetNotificationsStatus {
 
 message SetNotificationsResponse {
 	SetNotificationsStatus status = 1;
+}
+
+message PurgeTransfersUntilRequest {
+	google.protobuf.Timestamp until = 1;
 }

@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/netip"
@@ -38,10 +39,10 @@ func Connect(
 		nameservers,
 		true, // here vpn connect - enable routing to local LAN
 	)
-	switch err {
-	case vpn.ErrVPNAIsAlreadyStarted:
+	switch {
+	case errors.Is(err, vpn.ErrVPNAIsAlreadyStarted):
 		events <- ConnectEvent{Code: internal.CodeDisconnected}
-	case nil:
+	case err == nil:
 		events <- ConnectEvent{Code: internal.CodeConnected}
 	default:
 		events <- ConnectEvent{

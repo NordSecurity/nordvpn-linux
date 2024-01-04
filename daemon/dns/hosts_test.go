@@ -37,9 +37,9 @@ var setHostsTestCases = []setHostsTestCase{
 		name:    "single entry",
 		content: `127.0.0.1	localhost`,
 		hosts: Hosts{{
-			IP:         netip.MustParseAddr("1.2.3.4"),
-			FQDN:       "itsme.nord",
-			DomainName: "itsme",
+			IP:          netip.MustParseAddr("1.2.3.4"),
+			FQDN:        "itsme.nord",
+			DomainNames: []string{"itsme"},
 		}},
 		after: `127.0.0.1	localhost
 
@@ -52,14 +52,14 @@ var setHostsTestCases = []setHostsTestCase{
 1.1.1.1	something	# Best VPN`,
 		hosts: Hosts{
 			{
-				IP:         netip.MustParseAddr("1.2.3.4"),
-				FQDN:       "itsme.nord",
-				DomainName: "itsme",
+				IP:          netip.MustParseAddr("1.2.3.4"),
+				FQDN:        "itsme.nord",
+				DomainNames: []string{"itsme"},
 			},
 			{
-				IP:         netip.MustParseAddr("1.2.3.5"),
-				FQDN:       "itsyou.nord",
-				DomainName: "itsyou",
+				IP:          netip.MustParseAddr("1.2.3.5"),
+				FQDN:        "itsyou.nord",
+				DomainNames: []string{"itsyou"},
 			},
 		},
 		after: `127.0.0.1	localhost
@@ -78,14 +78,14 @@ var setHostsTestCases = []setHostsTestCase{
 1.2.3.4	itsme.nord	itsme	# NordVPN`,
 		hosts: Hosts{
 			{
-				IP:         netip.MustParseAddr("1.2.3.4"),
-				FQDN:       "itsme.nord",
-				DomainName: "itsme",
+				IP:          netip.MustParseAddr("1.2.3.4"),
+				FQDN:        "itsme.nord",
+				DomainNames: []string{"itsme"},
 			},
 			{
-				IP:         netip.MustParseAddr("1.2.3.5"),
-				FQDN:       "itsyou.nord",
-				DomainName: "itsyou",
+				IP:          netip.MustParseAddr("1.2.3.5"),
+				FQDN:        "itsyou.nord",
+				DomainNames: []string{"itsyou"},
 			},
 		},
 		after: `127.0.0.1	localhost
@@ -161,9 +161,9 @@ func TestAppendHostLines(t *testing.T) {
 1.2.3.4	itsme.nord	itsme	# NordVPN
 `,
 		hosts: Hosts{{
-			IP:         netip.MustParseAddr("1.2.3.4"),
-			FQDN:       "itsme.nord",
-			DomainName: "itsme",
+			IP:          netip.MustParseAddr("1.2.3.4"),
+			FQDN:        "itsme.nord",
+			DomainNames: []string{"itsme"},
 		}},
 	})
 	for _, test := range tests {

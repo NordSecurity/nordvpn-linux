@@ -1,22 +1,78 @@
-package fileshare
+package storage
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"os"
+	"path"
 	"strings"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	historySizeMaxBytes = 4 * 1024 * 1024
+	exampleUUID         = "c13c619c-c70b-49b8-9396-72de88155c44"
+)
+
+// This is used only in tests now. It was easier to just copy this into tests instead of refactoring them
+// because we are still keeping Load, so it has to be tested.
+func (jf JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
+	historyFilePath := path.Join(jf.storagePath, historyFile)
+	if err := internal.EnsureDir(historyFilePath); err != nil {
+		return fmt.Errorf("trying to save transfers history: %w", err)
+	}
+
+	var trBytes []byte
+	for {
+		trBytes, err = json.Marshal(transfers)
+		if err != nil {
+			return err
+		}
+
+		if len(trBytes) < historySizeMaxBytes {
+			break
+		}
+
+		// truncate history; find the oldest completed transfer and remove it
+		log.Printf("truncating transfers history json size: %d (max limit: %d)\n", len(trBytes), historySizeMaxBytes)
+		var oldestTransfer *pb.Transfer
+		for _, tr := range transfers {
+			if tr.Status == pb.Status_ONGOING {
+				continue
+			}
+			if oldestTransfer == nil {
+				oldestTransfer = tr
+			} else if tr.Created.AsTime().Before(oldestTransfer.Created.AsTime()) {
+				oldestTransfer = tr
+			}
+		}
+
+		if oldestTransfer == nil {
+			log.Println("cannot truncate transfers history")
+			break
+		} else {
+			delete(transfers, oldestTransfer.Id)
+		}
+	}
+
+	// write (overwrite if exists) and close file
+	return os.WriteFile(historyFilePath, trBytes, internal.PermUserRW)
+}
+
 func TestSimpleSaveLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	transfers := make(map[string]*pb.Transfer)
-	transfers[transferID] = makeTransfer(transferID, 1, 5, false)
+	transfers[transferID] = makeTransfer(transferID, 5, false)
 	transfers[transferID].Status = pb.Status_REQUESTED
 	i := 0
 	for _, file := range transfers[transferID].Files[0].Children {
@@ -47,7 +103,7 @@ func TestSimpleSaveLoad(t *testing.T) {
 func TestLargeSaveLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	transfers := make(map[string]*pb.Transfer)
 
@@ -55,7 +111,7 @@ func TestLargeSaveLoad(t *testing.T) {
 
 	for i := range [transfersCount]byte{} {
 		transferID = fmt.Sprintf("%s-%d", transferID, i)
-		transfers[transferID] = makeTransfer(transferID, DirDepthLimit, TransferFileLimit, true)
+		transfers[transferID] = makeTransfer(transferID, fileshare.TransferFileLimit, true)
 	}
 
 	fmt.Printf("transfers count before: %d\n", len(transfers))
@@ -77,7 +133,7 @@ func TestLargeSaveLoad(t *testing.T) {
 func TestNormalSaveLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	transfers := make(map[string]*pb.Transfer)
 
@@ -85,7 +141,7 @@ func TestNormalSaveLoad(t *testing.T) {
 
 	for i := range [transfersCount]byte{} {
 		transferID = fmt.Sprintf("%s-%d", transferID, i)
-		transfers[transferID] = makeTransfer(transferID, 2, 5, false)
+		transfers[transferID] = makeTransfer(transferID, 5, false)
 	}
 
 	fmt.Printf("transfers count before: %d\n", len(transfers))
@@ -104,7 +160,7 @@ func TestNormalSaveLoad(t *testing.T) {
 	assert.GreaterOrEqual(t, transfersCount, len(loadedTransfers))
 }
 
-func makeTransfer(transferID string, dirLevels, fileCount int, makeBigNames bool) *pb.Transfer {
+func makeTransfer(transferID string, fileCount int, makeBigNames bool) *pb.Transfer {
 	nameSize := 10
 	if makeBigNames {
 		nameSize = 200
@@ -132,9 +188,7 @@ func makeTransfer(transferID string, dirLevels, fileCount int, makeBigNames bool
 func TestCompatibilityLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	category.Set(t, category.Unit)
-
-	transferID := "b537743c-a328-4a3e-b2ec-fc87f98c2164"
+	transferID := exampleUUID
 
 	transfers := make(map[string]*pb.Transfer)
 

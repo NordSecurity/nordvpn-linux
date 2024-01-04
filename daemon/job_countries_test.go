@@ -13,6 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const TestdataC2DatPath = TestdataPath + "c2.dat"
+const TestdataS2DatPath = TestdataPath + "s2.dat"
+const TestdataVersionDatPath = TestdataPath + "version.dat"
+
 type mockCountriesAPI struct{}
 
 func (mockCountriesAPI) Servers() (core.Servers, http.Header, error) {
@@ -117,10 +121,10 @@ func TestJobCountries_Valid(t *testing.T) {
 
 	defer testsCleanup()
 
-	internal.FileCopy(TestdataPath+"s2.dat", TestdataPath+TestServersFile)
-	internal.FileCopy(TestdataPath+"c2.dat", TestdataPath+TestCountryFile)
+	internal.FileCopy(TestdataS2DatPath, TestdataPath+TestServersFile)
+	internal.FileCopy(TestdataC2DatPath, TestdataPath+TestCountryFile)
 	internal.FileCopy(TestdataPath+"i2.dat", TestdataPath+TestInsightsFile)
-	internal.FileCopy(TestdataPath+"version.dat", TestdataPath+TestVersionFile)
+	internal.FileCopy(TestdataVersionDatPath, TestdataPath+TestVersionFile)
 
 	dm := testNewDataManager()
 	assert.NoError(t, dm.LoadData())
@@ -138,7 +142,7 @@ func TestJobCountries_Expired(t *testing.T) {
 
 	defer testsCleanup()
 
-	internal.FileCopy(TestdataPath+"c2.dat", TestdataPath+TestCountryFile)
+	internal.FileCopy(TestdataC2DatPath, TestdataPath+TestCountryFile)
 
 	dm := testNewDataManager()
 	original, _, _ := mockCountriesAPI{}.ServersCountries() // do not use filesystem

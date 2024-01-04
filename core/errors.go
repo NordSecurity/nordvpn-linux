@@ -14,6 +14,15 @@ var (
 	ErrBadRequest = errors.New(http.StatusText(http.StatusBadRequest))
 	// ErrMaximumDeviceCount is returned for some of the 400 HTTP responses.
 	ErrMaximumDeviceCount = errors.New("maximum device count reached")
+	// error codes returned for meshnet nicknames, when 400 HTTP responses
+	ErrRateLimitReach            = errors.New("reach max allowed nickname changes for a week")
+	ErrNicknameTooLong           = errors.New("nickname is too long")
+	ErrDuplicateNickname         = errors.New("nickname already exist")
+	ErrContainsForbiddenWord     = errors.New("nickname contains forbidden word")
+	ErrInvalidPrefixOrSuffix     = errors.New("nickname contains invalid prefix or suffix")
+	ErrNicknameWithDoubleHyphens = errors.New("nickname contains double hyphens")
+	ErrContainsInvalidChars      = errors.New("nickname contains invalid characters")
+
 	// ErrUnauthorized is returned for 401 HTTP responses.
 	ErrUnauthorized = errors.New(http.StatusText(http.StatusUnauthorized))
 	// ErrForbidden is returned for 403 HTTP responses.
@@ -31,6 +40,7 @@ var (
 type apiError struct {
 	Errors struct {
 		Message string `json:"message"`
+		Code    int    `json:"code"`
 	} `json:"errors"`
 }
 
@@ -39,7 +49,6 @@ type apiError struct {
 // if an error was returned, do not try to read a
 // response again.
 func ExtractError(resp *http.Response) error {
-	status := http.StatusText(resp.StatusCode)
 	if resp.StatusCode < 400 {
 		return nil
 	}
@@ -66,11 +75,15 @@ func ExtractError(resp *http.Response) error {
 		)
 	}
 
+	status := http.StatusText(resp.StatusCode)
 	if info.Errors.Message != "" {
 		switch resp.StatusCode {
 		case http.StatusBadRequest:
 			if strings.Contains(info.Errors.Message, "count reached") {
 				return ErrMaximumDeviceCount
+			}
+			if err := extractErrorForMeshnet(info); err != nil {
+				return err
 			}
 			return fmt.Errorf("%w: %s", ErrBadRequest, info.Errors.Message)
 		case http.StatusUnauthorized:
@@ -86,4 +99,33 @@ func ExtractError(resp *http.Response) error {
 		}
 	}
 	return errors.New(status)
+}
+
+func extractErrorForMeshnet(info apiError) error {
+	const (
+		rateLimitReachCode           = 101126 // rate limit reached (max allowed nickname changes per user per week)
+		nicknameTooLongCode          = 101127 // nickname too long
+		duplicateNicknameCode        = 101128 // duplicate nickname (nickname already exist)
+		forbiddenWordCode            = 101129 // nickname with forbidden word
+		invalidPrefixOrSuffixCode    = 101130 // nickname contains invalid prefix or suffix
+		nicknameHasDoubleHyphensCode = 101131 // nickname contains double hyphens
+		invalidCharsCode             = 101132 // nickname contains invalid characters
+	)
+	switch info.Errors.Code {
+	case rateLimitReachCode:
+		return ErrRateLimitReach
+	case nicknameTooLongCode:
+		return ErrNicknameTooLong
+	case duplicateNicknameCode:
+		return ErrDuplicateNickname
+	case forbiddenWordCode:
+		return ErrContainsForbiddenWord
+	case invalidPrefixOrSuffixCode:
+		return ErrInvalidPrefixOrSuffix
+	case nicknameHasDoubleHyphensCode:
+		return ErrNicknameWithDoubleHyphens
+	case invalidCharsCode:
+		return ErrContainsInvalidChars
+	}
+	return nil
 }

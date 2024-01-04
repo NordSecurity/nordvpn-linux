@@ -83,6 +83,7 @@ func Login(
 	if err != nil {
 		return nil, fmt.Errorf("http: %w", err)
 	}
+	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {

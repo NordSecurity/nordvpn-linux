@@ -76,7 +76,7 @@ func TestRotatingRoundTripper_RoundTrip(t *testing.T) {
 				roundTripperH3:     mockRoundTripper{resp: respH3},
 				isCurrentH3:        newAtomicBool(false),
 				lastH3AttemptMilli: newAtomicInt64(time.Now().Add(-time.Second).UnixMilli()),
-				h3ReviveTime:       time.Duration(time.Second * 2),
+				h3ReviveTime:       time.Second * 2,
 			},
 			resp: respH1,
 		},
@@ -105,6 +105,9 @@ func TestRotatingRoundTripper_RoundTrip(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := tt.roundTripper.RoundTrip(&http.Request{})
+			if err != nil {
+				defer resp.Body.Close()
+			}
 			assert.ErrorIs(t, tt.err, err)
 			assert.Equal(t, tt.resp, resp)
 		})
@@ -120,7 +123,7 @@ func TestRotatingRoundTripper_RoundTripThreadSafety(t *testing.T) {
 		duration     time.Duration
 	}{
 		{
-			name: "requests happen simultaniously in after first iteration",
+			name: "requests happen simultaneously in after first iteration",
 			n:    5,
 			roundTripper: NewRotatingRoundTripper(
 				mockRoundTripper{err: err1},
@@ -145,7 +148,7 @@ func TestRotatingRoundTripper_RoundTripThreadSafety(t *testing.T) {
 			roundTripper: NewRotatingRoundTripper(
 				mockRoundTripper{resp: respH1, duration: time.Millisecond * 100},
 				mockRoundTripper{err: err1, duration: time.Millisecond * 200},
-				time.Duration(time.Minute),
+				time.Minute,
 			),
 			duration: time.Millisecond * 400,
 		},
@@ -155,13 +158,19 @@ func TestRotatingRoundTripper_RoundTripThreadSafety(t *testing.T) {
 			wg := sync.WaitGroup{}
 			for i := 0; i < tt.n; i++ {
 				if i == 0 {
-					tt.roundTripper.RoundTrip(&http.Request{})
+					resp, err := tt.roundTripper.RoundTrip(&http.Request{})
+					if err != nil {
+						defer resp.Body.Close()
+					}
 					continue
 				}
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					tt.roundTripper.RoundTrip(&http.Request{})
+					resp, err := tt.roundTripper.RoundTrip(&http.Request{})
+					if err != nil {
+						defer resp.Body.Close()
+					}
 				}()
 			}
 			wg.Wait()

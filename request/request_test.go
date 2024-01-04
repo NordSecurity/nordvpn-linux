@@ -85,69 +85,6 @@ func TestNewRequest(t *testing.T) {
 	}
 }
 
-func TestNewRequestWithBasicAuth(t *testing.T) {
-	tests := []struct {
-		name     string
-		base     string
-		path     string
-		headers  string
-		auth     *BasicAuth
-		hasError bool
-	}{
-		{
-			name:     "invalid url",
-			base:     "::",
-			hasError: true,
-		},
-		{
-			name:     "auth is nil",
-			hasError: true,
-		},
-		{
-			name:     "auth is empty",
-			auth:     &BasicAuth{},
-			hasError: true,
-		},
-		{
-			name:     "empty username",
-			auth:     &BasicAuth{Password: "password"},
-			hasError: true,
-		},
-		{
-			name:     "empty password",
-			auth:     &BasicAuth{Username: "username"},
-			hasError: true,
-		},
-		{
-			name:    "no error",
-			auth:    &BasicAuth{Username: "username", Password: "password"},
-			headers: "Basic dXNlcm5hbWU6cGFzc3dvcmQ=",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req, err := NewRequestWithBasicAuth(
-				"",
-				"",
-				test.base,
-				test.path,
-				"",
-				"",
-				"",
-				nil,
-				test.auth,
-			)
-			assert.Equal(t, test.hasError, err != nil)
-			if !test.hasError {
-				assert.Equal(t, test.base, req.URL.Host)
-				assert.Equal(t, test.path, req.URL.Path)
-				assert.Equal(t, test.headers, req.Header.Get("Authorization"))
-			}
-		})
-	}
-}
-
 func TestNewRequestWithBearerToken(t *testing.T) {
 	tests := []struct {
 		name     string

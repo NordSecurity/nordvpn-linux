@@ -91,22 +91,20 @@ func TestAddDevice(t *testing.T) {
 
 	t.Run("successful adding", func(t *testing.T) {
 		device := "testdev"
-		devType := "wireguard"
 		defer removeDevice(device)
 
-		err := addDevice(device, devType)
+		err := addDevice(device)
 		assert.NoError(t, err)
 	})
 
 	t.Run("duplicate adding", func(t *testing.T) {
 		device := "faildev"
-		devType := "wireguard"
 		defer removeDevice(device)
 
-		err := addDevice(device, devType)
+		err := addDevice(device)
 		assert.NoError(t, err)
 
-		err = addDevice(device, devType)
+		err = addDevice(device)
 		assert.Error(t, err)
 	})
 }
@@ -120,4 +118,47 @@ func TestRemoveDevice(t *testing.T) {
 		_, err := removeDevice(device)
 		assert.Error(t, err)
 	})
+}
+
+func TestCalculateMTU(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name          string
+		ipRouteOutput string
+		expectedMTU   int
+	}{
+		{
+			name:        "no default route exist",
+			expectedMTU: defaultMTU - wireguardHeaderSize,
+		},
+		{
+			name:          "incorrect ip route output",
+			ipRouteOutput: "default via interface_name proto dhcp metric 600",
+			expectedMTU:   defaultMTU - wireguardHeaderSize,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mtu := calculateMTU(test.ipRouteOutput)
+			assert.Equal(t, mtu, test.expectedMTU)
+		})
+	}
+}
+
+func TestRetrieveAndCalculateMTU(t *testing.T) {
+	category.Set(t, category.Link)
+
+	out, err := exec.Command("ip", "route", "show", "default").Output()
+	assert.NoError(t, err)
+
+	defaultGatewayName, err := getDefaultIpRouteInterface(string(out))
+	assert.NoError(t, err)
+
+	defaultGateway, err := net.InterfaceByName(defaultGatewayName)
+	assert.NoError(t, err)
+
+	mtu := retrieveAndCalculateMTU()
+	assert.Equal(t, defaultGateway.MTU-wireguardHeaderSize, mtu)
 }

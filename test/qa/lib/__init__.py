@@ -113,10 +113,15 @@ IPV6_SERVERS = [
 class Protocol(Enum):
     UDP = "UDP"
     TCP = "TCP"
+    ALL = "ALL"
 
     def __str__(self):
         return self.value
 
+class Port:
+    def __init__(self, value: str, protocol: Protocol):
+        self.value = value
+        self.protocol = protocol
 
 PROTOCOLS = [
     Protocol.UDP,
@@ -130,12 +135,16 @@ SUBNETS = [
 
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS = [
-    "22",
+    Port("22", Protocol.UDP),
+    Port("22", Protocol.TCP),
+    Port("22", Protocol.ALL),
 ]
 
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS_RANGE = [
-    "3000:3100",
+    Port("3000:3100", Protocol.UDP),
+    Port("3000:3100", Protocol.TCP),
+    Port("3000:3100", Protocol.ALL),
 ]
 
 # Used for integration test coverage
@@ -242,31 +251,34 @@ def set_notify(dns):
         print("WARNING:", ex)
 
 
-def add_port_to_allowlist(port):
+def add_port_to_allowlist(port_list: list[Port]):
     try:
-        print(sh.nordvpn.allowlist.add.port(port))
+        for port in port_list:
+            if port.protocol == Protocol.ALL:
+                print(sh.nordvpn.whitelist.add.port(port.value))
+            else:
+                print(sh.nordvpn.whitelist.add.port(port.value, "protocol", str(port.protocol)))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
-def add_ports_range_to_allowlist(ports):
-    port_range = ports.split(":")
+def add_ports_range_to_allowlist(ports_list: list[Port]):
     try:
-        print(sh.nordvpn.allowlist.add.ports(port_range[0], port_range[1]))
+        for ports in ports_list:
+            port_range = ports.value.split(":")
+
+            if ports.protocol == Protocol.ALL:
+                print(sh.nordvpn.whitelist.add.ports(port_range[0], port_range[1]))
+            else:
+                print(sh.nordvpn.whitelist.add.ports(port_range[0], port_range[1], "protocol", str(ports.protocol)))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
 
-def add_port_and_protocol_to_allowlist(port, protocol):
+def add_subnet_to_allowlist(subnet_list: list[str]):
     try:
-        print(sh.nordvpn.allowlist.add.port(port, "protocol", protocol))
-    except sh.ErrorReturnCode_1 as ex:
-        print("WARNING:", ex)
-
-
-def add_subnet_to_allowlist(subnet_addr):
-    try:
-        print(sh.nordvpn.allowlist.add.subnet(subnet_addr))
+        for subnet in subnet_list:
+            print(sh.nordvpn.allowlist.add.subnet(subnet))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 

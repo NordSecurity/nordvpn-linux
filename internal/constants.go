@@ -83,6 +83,9 @@ const (
 	// ConfigDirectory is used for configuration files storage. Hardcoded only for nordfileshared, in
 	// other cases consider using os.UserConfigDir instead.
 	ConfigDirectory = ".config"
+
+	// FileshareHistoryFile is the storage file used by libdrop
+	FileshareHistoryFile = "fileshare_history.db"
 )
 
 const (
@@ -139,7 +142,7 @@ func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
 	if homeDirectory == "" {
 		return "", errors.New("user does not have a home directory")
 	}
-	// We are running as root, so we cannot retreive user config directory path dynamically. We
+	// We are running as root, so we cannot retrieve user config directory path dynamically. We
 	// hardcode it to /home/<username>/.config, and if it doesn't exist on the expected path
 	// (i.e XDG_CONFIG_HOME is set), we default to /var/log/nordvpn/nordfileshared-<username>-<uid>.log
 	userConfigPath := filepath.Join(homeDirectory, ConfigDirectory, UserDataPath)
@@ -153,8 +156,9 @@ func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
 
 // GetFilesharedLogPath when logs aren't handled by systemd
 func GetFilesharedLogPath(uid string) string {
+	filesharedLogFilename := Fileshared + ".log"
 	if uid == "0" {
-		return filepath.Join(LogPath, Fileshared+".log")
+		return filepath.Join(LogPath, filesharedLogFilename)
 	}
 
 	usr, err := user.LookupId(uid)
@@ -169,7 +173,7 @@ func GetFilesharedLogPath(uid string) string {
 		return filepath.Join(LogPath, Fileshared+"-"+uid+".log")
 	}
 
-	return filepath.Join(configDir, Fileshared+".log")
+	return filepath.Join(configDir, filesharedLogFilename)
 }
 
 // GetNordvpnGid returns id of group defined in NordvpnGroup

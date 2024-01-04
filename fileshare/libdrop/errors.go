@@ -1,4 +1,4 @@
-package drop
+package libdrop
 
 import (
 	"errors"
@@ -32,6 +32,8 @@ func toError(result norddropgo.Enum_SS_norddrop_result) error {
 		return errors.New("failed to stop the libdrop instance")
 	case norddropgo.NORDDROPRESINVALIDPRIVKEY:
 		return errors.New("invalid private key provided")
+	case norddropgo.NORDDROPRESDBERROR:
+		return errors.New("libdrop database error")
 	default:
 		return errors.New(fmt.Sprint(result))
 	}

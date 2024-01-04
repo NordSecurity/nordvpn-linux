@@ -4,10 +4,7 @@ const (
 	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s %s --help' to see the options."
 	ArgumentParsingError = "The command you entered is not valid. Enter '%s %s --help' to see the options."
 
-	LoginStart            = "Please enter your login details."
 	LoginSuccess          = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
-	LoginAttempt          = "Attempt %d/%d"
-	LoginTooManyAttempts  = "Too many login attempts. Type '%s login' to start over."
 	LogoutSuccess         = "You are logged out."
 	LogoutTokenSuccess    = "You have been logged out. To keep your account secure, we've revoked your current access token. If you want to reuse your next access token despite the potential risks, use the --" + flagPersistToken + " option when logging out."
 	LogoutUsageText       = "Logs you out"
@@ -160,6 +157,19 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetAllowLocalNetworkUsage          = "Allow the peer to access local network when routing traffic through this device."
 	MsgMeshnetAllowFileshare                  = "Allow the peer to send you files."
 
+	// Meshnet set commands group
+	MsgMeshnetSetUsage = "Set a Meshnet configuration option."
+
+	MsgMeshnetSetMachineNicknameUsage = "Sets a nickname for this machine within Meshnet."
+	MsgMeshnetSetNicknameArgsUsage    = "<new_nickname>"
+	MsgMeshnetSetNicknameSuccessful   = "The nickname for this machine is now set to '%s'."
+
+	// Meshnet remove commands group
+	MsgMeshnetRemoveUsage = "Remove a Meshnet configuration option."
+
+	MsgMeshnetRemoveMachineNicknameUsage = "Removes the nickname currently set for this machine within Meshnet."
+	MsgMeshnetRemoveNicknameSuccessful   = "The nickname for this machine has been removed."
+
 	// Peers
 	MsgMeshnetPeerListFilters = "Filters list of available peers in a Meshnet. To apply multiple filters, separate them with a comma. Please note that you will see an empty list if you apply contradictory filters."
 	MsgMeshnetPeerUsage       = "Manage Meshnet peers."
@@ -168,7 +178,7 @@ Learn more:
 	Managing Meshnet devices - https://meshnet.nordvpn.com/getting-started/how-to-start-using-meshnet/using-meshnet-on-linux#manage-devices
 	Meshnet permissions explained - https://meshnet.nordvpn.com/features/explaining-permissions
 	Routing traffic in Meshnet - https://meshnet.nordvpn.com/features/routing-traffic-in-meshnet`
-	MsgMeshnetPeerArgsUsage     = "<public_key>|<hostname>|<ip>"
+	MsgMeshnetPeerArgsUsage     = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey>"
 	MsgMeshnetPeerListUsage     = "Lists available peers in a Meshnet."
 	MsgMeshnetPeerRemoveUsage   = "Removes a peer from a Meshnet."
 	MsgMeshnetPeerRemoveSuccess = "Peer '%s' has been removed from the Meshnet."
@@ -209,7 +219,7 @@ Learn more:
 	MsgMeshnetPeerFileshareAllowSuccess   = "Fileshare for '%s' has been allowed."
 	MsgMeshnetPeerFileshareDenySuccess    = "Fileshare for '%s' has been denied."
 
-	MsgMeshnetPeerAutomaticFileshareUsage              = "Always accept file transfers from a specific peer. We won’t ask you to approve each transfer – files will start downloading automatically."
+	MsgMeshnetPeerAutomaticFileshareUsage              = "Always accept file transfers from a specific peer. We won’t ask you to approve each transfer - files will start downloading automatically."
 	MsgMeshnetPeerAutomaticFileshareAllowUsage         = "Enables automatic fileshare from device."
 	MsgMeshnetPeerAutomaticFileshareDenyUsage          = "Denies automatic fileshare from device."
 	MsgMeshnetPeerAutomaticFileshareAlreadyEnabled     = "Automatic fileshare for '%s' is already allowed."
@@ -224,12 +234,33 @@ Learn more:
 	MsgMeshnetPeerAlreadyConnected    = "You are already connected."
 	MsgMeshnetPeerConnectFailed       = "Connect to other mesh peer failed - check if peer '%s' is online."
 
+	MsgMeshnetPeerNicknameUsage           = "Sets/removes a peer device nickname within Meshnet."
+	MsgMeshnetPeerSetNicknameUsage        = "Sets a nickname for the specified peer device."
+	MsgMeshnetPeerSetNicknameArgsUsage    = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey> <new_peer_nickname>"
+	MsgMeshnetPeerRemoveNicknameUsage     = "Removes the nickname currently set for the specified peer device."
+	MsgMeshnetPeerRemoveNicknameArgsUsage = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey>"
+	MsgMeshnetPeerSetNicknameSuccessful   = "The nickname for the peer '%s' is now set to '%s'."
+	MsgMeshnetNicknameAlreadyEmpty        = "The nickname is already removed for this device."
+	MsgMeshnetPeerResetNicknameSuccessful = "The nickname for the peer '%s' has been removed. The default hostname is '%s'."
+
+	// errors received for meshnet nicknames
+	MsgMeshnetSetSameNickname           = "The nickname '%s' is already set for this device."
+	MsgMeshnetNicknameIsDomainName      = "The nickname is unavailable: A domain with this name already exists in your system."
+	MsgMeshnetRateLimitReach            = "You've reached the weekly limit for nickname changes."
+	MsgMeshnetNicknameTooLong           = "This nickname is too long. Nicknames can have up to 25 characters."
+	MsgMeshnetDuplicateNickname         = "A device with this nickname already exists."
+	MsgMeshnetContainsForbiddenWord     = "This nickname contains a restricted word."
+	MsgMeshnetInvalidPrefixOrSuffix     = "This nickname contains a disallowed prefix or suffix."
+	MsgMeshnetNicknameWithDoubleHyphens = "Nicknames can't contain double dashes ('--')."
+	MsgMeshnetContainsInvalidChars      = "This nickname contains disallowed characters."
+
 	// Fileshare
 	FileshareName       = "fileshare"
 	FileshareSendName   = "send"
 	FileshareAcceptName = "accept"
 	FileshareCancelName = "cancel"
 	FileshareListName   = "list"
+	FileshareClearName  = "clear"
 
 	flagFileshareNoWait  = "background"
 	flagFilesharePath    = "path"
@@ -263,7 +294,7 @@ Learn more:
 	MsgNoPermissions                 = "You don’t have write permissions for the download directory %s. To receive the file transfer, choose another download directory using the --" + flagFilesharePath + " parameter."
 
 	MsgFileshareSendUsage       = "Send files or directories to a Meshnet peer."
-	MsgFileshareSendArgsUsage   = "<peer_ip>|<peer_hostname>|<peer_pubkey> <path_1> [path_2...]"
+	MsgFileshareSendArgsUsage   = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey> <path_1> [path_2...]"
 	MsgFileshareSendDescription = MsgFileshareSendUsage + "\n\nTo cancel a transfer in progress, press Ctrl+C"
 	MsgFileshareNoWaitUsage     = "Send a file transfer in the background instead of seeing its progress. It allows you to continue using the terminal for other commands while a transfer is in progress."
 	MsgFileshareSendNoWait      = "File transfer %s has started in the background."
@@ -279,11 +310,16 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareListOutUsage      = "Show only outgoing transfers."
 	MsgFileshareCancelUsage       = "Cancel a transfer or a single file. To cancel an entire transfer, specify the transfer ID. To cancel a single file, specify the transfer ID and the file ID."
 	MsgFileshareCancelArgsUsage   = "<transfer_id> [file_id]"
-	MsgFileshareCancelSuccess     = "File transfer canceled"
+	MsgFileshareCancelSuccess     = "File transfer canceled."
 	MsgFileshareAcceptUsage       = "Accept an incoming file transfer. To download an entire transfer, specify the transfer ID. To download a single file, specify the transfer ID and the file ID."
 	MsgFileshareAcceptArgsUsage   = "<transfer_id> [file_id1] [file_id2...]"
 	MsgFileshareAcceptDescription = MsgFileshareAcceptUsage + "\n\nTo cancel a transfer in progress, press Ctrl+C"
 	MsgFileshareAcceptPathUsage   = "Specify download path (default: $XDG_DOWNLOAD_DIR or $HOME/Downloads)"
+	MsgFileshareClearUsage        = "Clear entries older than the specified time period from the file transfer history."
+	MsgFileshareClearArgsUsage    = "all|<time_period> [time_period...]"
+	MsgFileshareClearDescription  = MsgFileshareClearUsage + "\n\nSpecify the time period using the systemd time span syntax: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html\n\nFor example, \"nordvpn fileshare clear 1d 12h\" clears entries older than 36 hours. Use \"nordvpn fileshare clear all\" to remove all entries."
+	MsgFileshareClearSuccess      = "File transfer history cleared."
+	MsgFileshareClearFailure      = "Can't clear file transfer history. See nordfileshared.log for more details."
 
 	MsgFileshareProgressOngoing        = "File transfer [%s] progress [%d%%]"
 	MsgFileshareProgressFinished       = "File transfer [%s] completed.      " // Need extra spaces to cover the progress message
