@@ -2,7 +2,6 @@ package mesh
 
 import (
 	"net/netip"
-	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
@@ -68,10 +67,10 @@ func (s Machine) ToProtobuf() *pb.Peer {
 func (s *Machine) IsEqual(b Machine) bool {
 	return s.ID == b.ID &&
 		s.HardwareID == b.HardwareID &&
-		strings.EqualFold(s.Hostname, b.Hostname) &&
+		s.Hostname == b.Hostname &&
 		s.Address == b.Address &&
 		s.SupportsRouting == b.SupportsRouting &&
-		strings.EqualFold(s.Nickname, b.Nickname)
+		s.Nickname == b.Nickname
 }
 
 type Machines []Machine
