@@ -201,6 +201,7 @@ func (c *Client) reinitializeClient(opts *mqtt.ClientOptions) {
 
 	// nil client means that it has been stopped and there is nothing to reinitialize
 	if c.client != nil {
+		c.client.Disconnect(0)
 		c.client = c.clientBuilder.Build(opts)
 	}
 }
