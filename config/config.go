@@ -82,11 +82,10 @@ func (d DNS) Or(defaultValue []string) DNS {
 }
 
 type NCData struct {
-	UserID          uuid.UUID `json:"user_id,omitempty"`
-	Username        string    `json:"username,omitempty"`
-	Password        string    `json:"password,omitempty"`
-	Endpoint        string    `json:"endpoint,omitempty"`
-	IssuedTimestamp int64     `json:"issued_timestamp,omitempty"`
+	UserID   uuid.UUID `json:"user_id,omitempty"`
+	Username string    `json:"username,omitempty"`
+	Password string    `json:"password,omitempty"`
+	Endpoint string    `json:"endpoint,omitempty"`
 }
 
 type meshnet struct {
