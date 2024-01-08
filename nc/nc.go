@@ -9,7 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -98,24 +97,13 @@ type AcknowledgementPayload struct {
 }
 
 type NotificationClient interface {
-	Start() error
+	Start(endpoint string, clientID string, username string, password string) error
 	Stop() error
-}
-
-type ClientBuilder interface {
-	Build(opts *mqtt.ClientOptions) mqtt.Client
-}
-
-type MqttClientBuilder struct{}
-
-func (MqttClientBuilder) Build(opts *mqtt.ClientOptions) mqtt.Client {
-	return mqtt.NewClient(opts)
 }
 
 // Client is a client for Notification center
 type Client struct {
-	clientBuilder ClientBuilder
-	client        mqtt.Client // nil if not started or stopped, always check for nil before using
+	client mqtt.Client // nil if not started or stopped, always check for nil before using
 	// MQTT Docs say that reusing client after doing Disconnect can lead to panics.
 	// Since we are doing connect manually with our exponential backoff, we are in risk of those panics.
 	// That's why this mutex must be locked everytime client is used.
@@ -124,31 +112,23 @@ type Client struct {
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
 	cancelConnecting  context.CancelFunc // Used to stop connecting attempts if we are already stopping
-	credsFetcher      CredentialsGetter
 }
 
 // NewClient is a constructor for a NC client
 func NewClient(
-	clientBuilder ClientBuilder,
 	subjectInfo events.Publisher[string],
 	subjectErr events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
-	credsFetcher CredentialsGetter,
 ) *Client {
 	return &Client{
-		clientBuilder:     clientBuilder,
 		subjectInfo:       subjectInfo,
 		subjectErr:        subjectErr,
 		subjectPeerUpdate: subjectPeerUpdate,
-		credsFetcher:      credsFetcher,
 	}
 }
 
-func (c *Client) getClientOptions(
-	endpoint string,
-	clientID string,
-	username string,
-	password string) *mqtt.ClientOptions {
+// Start initiates the connection with the NC server and subscribes to mandatory topics
+func (c *Client) Start(endpoint string, clientID string, username string, password string) error {
 	opts := mqtt.NewClientOptions()
 	opts.SetCleanSession(false)
 	opts.SetOrderMatters(false)
@@ -160,18 +140,6 @@ func (c *Client) getClientOptions(
 	opts.SetClientID(clientID)
 	opts.SetOnConnectHandler(c.onConnect)
 	opts.SetConnectionLostHandler(c.onConnectionLost)
-
-	return opts
-}
-
-// Start initiates the connection with the NC server and subscribes to mandatory topics
-func (c *Client) Start() error {
-	ncData, err := c.credsFetcher.GetCredentials()
-	if err != nil {
-		return fmt.Errorf("failed to fetch nc credentials: %w", err)
-	}
-
-	opts := c.getClientOptions(ncData.Endpoint, ncData.UserID.String(), ncData.Username, ncData.Password)
 
 	if err := c.newClient(opts); err != nil {
 		return err
@@ -191,43 +159,24 @@ func (c *Client) newClient(opts *mqtt.ClientOptions) error {
 		return fmt.Errorf("already started")
 	}
 
-	c.client = c.clientBuilder.Build(opts)
+	c.client = mqtt.NewClient(opts)
 	return nil
-}
-
-func (c *Client) reinitializeClient(opts *mqtt.ClientOptions) {
-	c.clientMutex.Lock()
-	defer c.clientMutex.Unlock()
-
-	// nil client means that it has been stopped and there is nothing to reinitialize
-	if c.client != nil {
-		c.client.Disconnect(0)
-		c.client = c.clientBuilder.Build(opts)
-	}
 }
 
 func (c *Client) connectWithBackoff(ctx context.Context, backoff func(int) time.Duration) {
 	for tries := 0; ; tries++ {
-		ncData, err := c.credsFetcher.GetCredentials()
+		err := c.connect()
 		if err == nil {
-			opts := c.getClientOptions(ncData.Endpoint, ncData.UserID.String(), ncData.Username, ncData.Password)
-			c.reinitializeClient(opts)
-
-			err = c.connect()
-			if err == nil {
-				break
-			}
-			if tries == 0 {
-				// Don't spam the logs, only print the first time
-				c.subjectErr.Publish(fmt.Errorf("%s failed to connect: %w", logPrefix, err))
-			}
-		} else if tries == 0 {
-			log.Println("failed to fetch new credentials, retrying with old client: ", err)
+			break
+		}
+		if tries == 0 {
+			// Don't spam the logs, only print the first time
+			c.subjectErr.Publish(fmt.Errorf("%s failed to connect: %w", logPrefix, err))
 		}
 
 		select {
 		case <-ctx.Done():
-			return
+			break
 		case <-time.After(backoff(tries)):
 		}
 	}
@@ -288,7 +237,6 @@ func (c *Client) onConnect(mqtt.Client) {
 
 func (c *Client) onConnectionLost(_ mqtt.Client, err error) {
 	c.subjectErr.Publish(fmt.Errorf("%s connection lost: %s", logPrefix, err.Error()))
-
 	var ctx context.Context
 	ctx, c.cancelConnecting = context.WithCancel(context.Background())
 	c.connectWithBackoff(ctx, network.ExponentialBackoff)
