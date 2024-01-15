@@ -2,113 +2,179 @@ package nc
 
 import (
 	"context"
-	"math/rand"
-	"sync"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	cfgmock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	ncmock "github.com/NordSecurity/nordvpn-linux/test/mock/nc"
 	"github.com/stretchr/testify/assert"
+
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 type mockMqttClient struct {
 	mqtt.Client
-	stopped        bool
-	connectSuccess bool
+	// connecting indicates if client is in connecting or disconnecting state
+	connecting   bool
+	connectToken mockMqttToken
 }
+
+func (m *mockMqttClient) Connect() mqtt.Token {
+	m.connecting = true
+	return &m.connectToken
+}
+
+func (m *mockMqttClient) Unsubscribe(topics ...string) mqtt.Token {
+	return &mockMqttToken{timesOut: true}
+}
+
+func (m *mockMqttClient) Disconnect(uint) { m.connecting = false }
 
 type mockMqttToken struct {
 	mqtt.Token
-	success bool
-	err     error
+	timesOut bool
+	err      error
 }
 
 func (m *mockMqttToken) WaitTimeout(time.Duration) bool {
-	return m.success
+	return !m.timesOut
 }
 
 func (m *mockMqttToken) Error() error {
 	return m.err
 }
 
-func (m *mockMqttClient) Connect() mqtt.Token {
-	m.stopped = false
-	return &mockMqttToken{success: m.connectSuccess}
+func connectionStateToString(t *testing.T, state connectionState) string {
+	t.Helper()
+
+	switch state {
+	case needsAuthorization:
+		return "needsAuthorization"
+	case connecting:
+		return "connecting"
+	case connectedSuccesfully:
+		return "connectedSuccesfully"
+	}
+
+	return "unknown"
 }
 
-func (m *mockMqttClient) Unsubscribe(topics ...string) mqtt.Token {
-	return &mockMqttToken{success: true}
-}
-
-func (m *mockMqttClient) Disconnect(uint) { m.stopped = true }
-
-func TestRaceConditions(t *testing.T) {
+func TestStartStopNotificationClient(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
-	mockClient := &mockMqttClient{}
-	client.client = mockClient
+	cfg := config.Config{}
+	cfg.TokensData = make(map[int64]config.TokenData)
+	cfgManager := cfgmock.ConfigManagerMock{
+		Cfg: cfg,
+	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	client.cancelConnecting = cancel
-	waitgroup := sync.WaitGroup{}
-	waitgroup.Add(2)
-	go func() {
-		client.connectWithBackoff(ctx, func(int) time.Duration { return time.Nanosecond })
-		waitgroup.Done()
-	}()
-	go func() {
-		// Introducing randomness to so that various scenarios of start/stop timing would be tested
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
-		_ = client.Stop() // Not checking for error because stop might happen before connect
-		waitgroup.Done()
-	}()
-	waitgroup.Wait()
+	tests := []struct {
+		name                    string
+		initialState            connectionState
+		expectedConnectionState connectionState
+		credentialsFetchError   error
+		connectionTimeout       bool
+		connectionTokenErr      error
+		expectedClientState     bool
+	}{
+		{
+			name:                    "unauthorized client connects successfully",
+			initialState:            needsAuthorization,
+			expectedConnectionState: connectedSuccesfully,
+			expectedClientState:     true,
+			credentialsFetchError:   nil,
+			connectionTimeout:       false,
+			connectionTokenErr:      nil,
+		},
+		{
+			name:                    "authorized client connects successfully",
+			initialState:            connecting,
+			expectedConnectionState: connectedSuccesfully,
+			expectedClientState:     true,
+			credentialsFetchError:   nil,
+			connectionTimeout:       false,
+			connectionTokenErr:      nil,
+		},
+		{
+			name:         "unauthorized client times out when attempting to connect",
+			initialState: needsAuthorization,
+			// in case of timeout, MQTT client should be manually disconnected to clean the state
+			expectedClientState:     false,
+			expectedConnectionState: connecting,
+			credentialsFetchError:   nil,
+			connectionTimeout:       true,
+			connectionTokenErr:      nil,
+		},
+		{
+			name:                    "authorized client times out when attempting to connect",
+			initialState:            connecting,
+			expectedConnectionState: connecting,
+			expectedClientState:     false,
+			credentialsFetchError:   nil,
+			connectionTimeout:       true,
+			connectionTokenErr:      nil,
+		},
+		{
+			name:                    "authorized client loses authorization",
+			initialState:            connecting,
+			expectedConnectionState: needsAuthorization,
+			expectedClientState:     true,
+			credentialsFetchError:   nil,
+			connectionTimeout:       false,
+			connectionTokenErr:      fmt.Errorf("not Authorized"),
+		},
+		{
+			name:                    "authorized client fails to connect",
+			initialState:            needsAuthorization,
+			expectedConnectionState: needsAuthorization,
+			expectedClientState:     false,
+			credentialsFetchError:   fmt.Errorf("failed to fetch credentials"),
+			connectionTimeout:       false,
+			connectionTokenErr:      nil,
+		},
+	}
 
-	assert.True(t, mockClient.stopped)
-}
-
-func TestConnectionRetrying(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
-	mockClient := &mockMqttClient{}
-	client.client = mockClient
-
-	client.connectWithBackoff(context.Background(), func(r int) time.Duration {
-		if r == 3 {
-			mockClient.connectSuccess = true
+	for _, test := range tests {
+		connectionToken := mockMqttToken{
+			timesOut: test.connectionTimeout,
+			err:      test.connectionTokenErr,
 		}
-		return time.Nanosecond
-	})
-	assert.False(t, mockClient.stopped)
-}
+		mockMqttClient := mockMqttClient{
+			connectToken: connectionToken,
+		}
+		clientBuilderMock := ncmock.MockClientBuilder{
+			Client: &mockMqttClient,
+		}
 
-func TestStopsTryingToConnectWhenStopped(t *testing.T) {
-	category.Set(t, category.Unit)
+		credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{
+			NotificationCredentialsError: test.credentialsFetchError,
+		}, &cfgManager, &ncmock.MockTime{})
+		notificationClient := NewClient(&clientBuilderMock,
+			&subs.Subject[string]{},
+			&subs.Subject[error]{},
+			&subs.Subject[[]string]{},
+			credsFetcher)
 
-	client := NewClient(&subs.Subject[string]{}, &subs.Subject[error]{}, &subs.Subject[[]string]{})
-	mockClient := &mockMqttClient{}
-	client.client = mockClient
+		t.Run(test.name, func(t *testing.T) {
+			_, newConnectionState := notificationClient.tryConnect(&mockMqttClient,
+				true,
+				test.initialState,
+				make(chan<- interface{}),
+				context.Background())
 
-	ctx, cancel := context.WithCancel(context.Background())
-	client.cancelConnecting = cancel
-	waitgroup := sync.WaitGroup{}
-	waitgroup.Add(2)
-	go func() {
-		client.connectWithBackoff(ctx, func(int) time.Duration { return time.Second })
-		waitgroup.Done()
-	}()
-	go func() {
-		err := client.Stop()
-		assert.NoError(t, err)
-		waitgroup.Done()
-	}()
-	start := time.Now()
-	waitgroup.Wait()
-
-	assert.True(t, mockClient.stopped)
-	assert.Less(t, time.Since(start), time.Second)
+			assert.Equal(t,
+				test.expectedConnectionState,
+				newConnectionState,
+				"Invalid connection status after trying to connect, expected '%s', got '%s'.",
+				connectionStateToString(t, test.expectedConnectionState),
+				connectionStateToString(t, newConnectionState))
+			assert.Equal(t, test.expectedClientState, mockMqttClient.connecting,
+				"MQTT client left in invalid state after calling tryConnect.")
+		})
+	}
 }
