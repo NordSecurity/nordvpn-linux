@@ -1,4 +1,3 @@
-import copy
 import ipaddress
 import sh
 
@@ -6,14 +5,14 @@ import lib
 from lib import daemon, firewall
 
 
-MSG_ALLOWLIST_ADD_SUBNET_SUCCESS = "Subnet %s is allowlisted successfully."
-MSG_ALLOWLIST_REMOVE_SUBNET_SUCCESS = "Subnet %s is removed from the allowlist successfully."
+MSG_ALLOWLIST_SUBNET_ADD_SUCCESS = "Subnet %s is allowlisted successfully."
+MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS = "Subnet %s is removed from the allowlist successfully."
 
-MSG_ALLOWLIST_ADD_PORT_SUCCESS = "Port %s (%s) is allowlisted successfully."
-MSG_ALLOWLIST_REMOVE_PORT_SUCCESS = "Port %s (%s) is removed from the allowlist successfully."
+MSG_ALLOWLIST_PORT_ADD_SUCCESS = "Port %s (%s) is allowlisted successfully."
+MSG_ALLOWLIST_PORT_REMOVE_SUCCESS = "Port %s (%s) is removed from the allowlist successfully."
 
-MSG_ALLOWLIST_ADD_PORT_RANGE_SUCCESS = "Ports %s (%s) are allowlisted successfully."
-MSG_ALLOWLIST_REMOVE_PORT_RANGE_SUCCESS = "Ports %s (%s) are removed from the allowlist successfully."
+MSG_ALLOWLIST_PORT_RANGE_ADD_SUCCESS = "Ports %s (%s) are allowlisted successfully."
+MSG_ALLOWLIST_PORT_RANGE_REMOVE_SUCCESS = "Ports %s (%s) are removed from the allowlist successfully."
 
 
 _PRIVATE_NETWORKS = [
@@ -51,7 +50,7 @@ def add_ports_to_allowlist(ports_list: list[lib.Port], allowlist_alias="allowlis
                 cmd.extend(["protocol", str(port.protocol)])
 
             port_value = port.value.replace(":", " - ")
-            expected_message = MSG_ALLOWLIST_ADD_PORT_RANGE_SUCCESS % (port_value, port.protocol)
+            expected_message = MSG_ALLOWLIST_PORT_RANGE_ADD_SUCCESS % (port_value, port.protocol)
         else:
             # Single port
             cmd = ["port", port.value]
@@ -59,7 +58,7 @@ def add_ports_to_allowlist(ports_list: list[lib.Port], allowlist_alias="allowlis
                 cmd.extend(["protocol", str(port.protocol)])
 
             port_value = port.value
-            expected_message = MSG_ALLOWLIST_ADD_PORT_SUCCESS % (port_value, port.protocol)
+            expected_message = MSG_ALLOWLIST_PORT_ADD_SUCCESS % (port_value, port.protocol)
 
         cmd_message = sh.nordvpn(allowlist_alias, "add", cmd)
         print(cmd_message)
@@ -87,7 +86,7 @@ def remove_ports_from_allowlist(ports_list: list[lib.Port], allowlist_alias="all
                 cmd.extend(["protocol", str(port.protocol)])
 
             port_value = port.value.replace(":", " - ")
-            expected_message = MSG_ALLOWLIST_REMOVE_PORT_RANGE_SUCCESS % (port_value, port.protocol)
+            expected_message = MSG_ALLOWLIST_PORT_RANGE_REMOVE_SUCCESS % (port_value, port.protocol)
         else:
             # Single port
             cmd = ["port", port.value]
@@ -95,7 +94,7 @@ def remove_ports_from_allowlist(ports_list: list[lib.Port], allowlist_alias="all
                 cmd.extend(["protocol", str(port.protocol)])
 
             port_value = port.value
-            expected_message = MSG_ALLOWLIST_REMOVE_PORT_SUCCESS % (port_value, port.protocol)
+            expected_message = MSG_ALLOWLIST_PORT_REMOVE_SUCCESS % (port_value, port.protocol)
 
         cmd_message = sh.nordvpn(allowlist_alias, "remove", cmd)
         print(cmd_message)
@@ -110,7 +109,7 @@ def remove_ports_from_allowlist(ports_list: list[lib.Port], allowlist_alias="all
 def add_subnet_to_allowlist(subnet_list: list[str], allowlist_alias="allowlist"):
     for subnet in subnet_list:
         cmd_message = sh.nordvpn(allowlist_alias, "add", "subnet", subnet)
-        expected_message = MSG_ALLOWLIST_ADD_SUBNET_SUCCESS % subnet
+        expected_message = MSG_ALLOWLIST_SUBNET_ADD_SUCCESS % subnet
 
         assert expected_message in cmd_message, \
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
@@ -133,7 +132,7 @@ def add_subnet_to_allowlist(subnet_list: list[str], allowlist_alias="allowlist")
 def remove_subnet_from_allowlist(subnet_list: list[str], allowlist_alias="allowlist"):
     for subnet in subnet_list:
         cmd_message = sh.nordvpn(allowlist_alias, "remove", "subnet", subnet)
-        expected_message = MSG_ALLOWLIST_REMOVE_SUBNET_SUCCESS % subnet
+        expected_message = MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS % subnet
 
         assert expected_message in cmd_message, \
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
