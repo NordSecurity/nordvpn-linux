@@ -388,7 +388,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 	credentialsInvalidated := false
 	credentials, err := c.credsFetcher.GetCredentialsFromConfig()
 	if err != nil {
-		if err == ErrInvalidCredentials {
+		if errors.Is(err, ErrInvalidCredentials) {
 			// Client will be initialized when connecting if credentials are invalidated. We want to do this as a part
 			// of connection loop, because we might not have internet connection at this point
 			credentialsInvalidated = true
