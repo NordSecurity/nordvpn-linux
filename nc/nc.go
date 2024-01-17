@@ -212,9 +212,7 @@ func (c *Client) tryConnect(
 	connectionState connectionState,
 	managementChan chan<- interface{},
 	ctx context.Context) (mqtt.Client, connectionState) {
-	logFunc := func(args ...any) {
-		log.Println(args...)
-	}
+	logFunc := log.Println
 	if !shouldLog {
 		logFunc = func(args ...any) {}
 	}
