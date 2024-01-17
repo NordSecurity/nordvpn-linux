@@ -223,6 +223,8 @@ func (c *Client) tryConnect(
 	}
 
 	if connectionState == connectedSuccessfully {
+		// this error is unusual(this function should never be called with a 'connected' sate), so it's better to risk
+		// spaming the logs so that we do not miss it.
 		log.Println(logPrefix, "connection attempt with connected client!")
 		return client, connectionState
 	}
