@@ -57,7 +57,7 @@ func connectionStateToString(t *testing.T, state connectionState) string {
 		return "needsAuthorization"
 	case connecting:
 		return "connecting"
-	case connectedSuccesfully:
+	case connectedSuccessfully:
 		return "connectedSuccesfully"
 	}
 
@@ -85,7 +85,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 		{
 			name:                    "unauthorized client connects successfully",
 			initialState:            needsAuthorization,
-			expectedConnectionState: connectedSuccesfully,
+			expectedConnectionState: connectedSuccessfully,
 			expectedClientState:     true,
 			credentialsFetchError:   nil,
 			connectionTimeout:       false,
@@ -94,7 +94,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 		{
 			name:                    "authorized client connects successfully",
 			initialState:            connecting,
-			expectedConnectionState: connectedSuccesfully,
+			expectedConnectionState: connectedSuccessfully,
 			expectedClientState:     true,
 			credentialsFetchError:   nil,
 			connectionTimeout:       false,

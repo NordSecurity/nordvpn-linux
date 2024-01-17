@@ -150,7 +150,7 @@ type mqttMessage struct {
 	message mqtt.Message
 }
 
-func (c *Client) getClientOptions(
+func (c *Client) createClientOptions(
 	credentials config.NCData,
 	managementChan chan<- interface{},
 	ctx context.Context) *mqtt.ClientOptions {
@@ -200,7 +200,7 @@ type connectionState int
 const (
 	needsAuthorization connectionState = iota
 	connecting
-	connectedSuccesfully
+	connectedSuccessfully
 )
 
 // tryConnect performs connection actions appropriate to provided connection state and returns new client and state
@@ -219,7 +219,7 @@ func (c *Client) tryConnect(
 		logFunc = func(args ...any) {}
 	}
 
-	if connectionState == connectedSuccesfully {
+	if connectionState == connectedSuccessfully {
 		log.Println(logPrefix + "[ERROR] connection attempt with connected client!")
 		return client, connectionState
 	}
@@ -231,7 +231,7 @@ func (c *Client) tryConnect(
 			return client, needsAuthorization
 		}
 
-		opts := c.getClientOptions(credentials, managementChan, ctx)
+		opts := c.createClientOptions(credentials, managementChan, ctx)
 		client = c.clientBuilder.Build(opts)
 		connectionState = connecting
 	}
@@ -257,7 +257,7 @@ func (c *Client) tryConnect(
 		}
 
 		c.subjectInfo.Publish(logPrefix + " Connected")
-		return client, connectedSuccesfully
+		return client, connectedSuccessfully
 	}
 
 	return client, connecting
@@ -276,9 +276,9 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 
 	for tries := 0; ; tries++ {
 		// we only want to log the errors every on 1st and every 10th try, so that we do not spam the logs
-		shouldLog := tries%10 == 0 || tries == 1
+		shouldLog := tries%10 == 0
 		client, connectionState = c.tryConnect(client, shouldLog, connectionState, managementChan, ctx)
-		if connectionState == connectedSuccesfully {
+		if connectionState == connectedSuccessfully {
 			break
 		}
 
@@ -379,14 +379,16 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 
 	credentialsInvalidated := false
 	credentials, err := c.credsFetcher.GetCredentialsFromConfig()
-	if err == ErrInvalidCredentials {
-		// Client will be initialized when connecting if credentials are invalidated. We want to do this as a part of
-		// connection loop, because we might not have internet connection at this point
-		credentialsInvalidated = true
-	} else if err != nil {
-		return fmt.Errorf("fetching credentials: %w", err)
+	if err != nil {
+		if err == ErrInvalidCredentials {
+			// Client will be initialized when connecting if credentials are invalidated. We want to do this as a part of
+			// connection loop, because we might not have internet connection at this point
+			credentialsInvalidated = true
+		} else if err != nil {
+			return fmt.Errorf("fetching credentials: %w", err)
+		}
 	} else {
-		opts := c.getClientOptions(credentials, managementChan, ctx)
+		opts := c.createClientOptions(credentials, managementChan, ctx)
 		client = c.clientBuilder.Build(opts)
 	}
 
