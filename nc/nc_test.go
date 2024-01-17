@@ -59,7 +59,7 @@ func connectionStateToString(t *testing.T, state connectionState) string {
 	case connecting:
 		return "connecting"
 	case connectedSuccessfully:
-		return "connectedSuccesfully"
+		return "connectedSuccessfully"
 	}
 
 	return "unknown"

@@ -210,7 +210,7 @@ const (
 )
 
 // tryConnect performs connection actions appropriate to provided connection state and returns new client and state
-// after those actions were performed. The desired state is always connectedSuccesfully, so providing this state will
+// after those actions were performed. The desired state is always connectedSuccessfully, so providing this state will
 // result in a noop.
 func (c *Client) tryConnect(
 	client mqtt.Client,
@@ -437,7 +437,7 @@ func (c *Client) Start() error {
 	defer c.startMu.Unlock()
 
 	if c.started {
-		log.Println(logPrefix, "attemt to start client that was already started")
+		log.Println(logPrefix, "attemtp to start client that was already started")
 		return nil
 	}
 
