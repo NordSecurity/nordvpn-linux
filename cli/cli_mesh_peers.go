@@ -8,10 +8,9 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
-	"golang.org/x/exp/slices"
-
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -581,6 +580,9 @@ func (c *cmd) MeshPeerSetNickname(ctx *cli.Context) error {
 	}
 
 	nickname := ctx.Args().Get(1)
+	if nickname == "" {
+		return errors.New(MsgMeshnetContainsInvalidChars)
+	}
 
 	if err = c.changeMeshnetPeerNickname(peer, nickname); err != nil {
 		return err
@@ -641,6 +643,10 @@ func (c *cmd) MeshSetMachineNickname(ctx *cli.Context) error {
 		return argsCountError(ctx)
 	}
 	nickname := ctx.Args().First()
+	if nickname == "" {
+		return errors.New(MsgMeshnetContainsInvalidChars)
+	}
+
 	resp, err := c.meshClient.ChangeMachineNickname(context.Background(), &pb.ChangeMachineNicknameRequest{
 		Nickname: nickname,
 	})
@@ -718,21 +724,19 @@ func (c *cmd) retrievePeerFromArgs(
 		return nil, formatError(err)
 	}
 
-	// Find the real identifier (the one used in API) by the given
-	// one
-	peerList := []*pb.Peer{}
-	peerList = append(peerList, peers.Local...)
-	peerList = append(peerList, peers.External...)
-
-	index := slices.IndexFunc(peerList, peerByIdentifier(identifier))
-	if index == -1 {
-		return nil, fmt.Errorf(
-			MsgMeshnetPeerUnknown,
-			identifier,
-		)
+	peerPubkeyToPeer, peerNameToPeer := meshnet.MakePeerMaps(peers)
+	peer, ok := peerPubkeyToPeer[identifier]
+	if !ok {
+		peer, ok = peerNameToPeer[strings.ToLower(identifier)]
+		if !ok {
+			return nil, fmt.Errorf(
+				MsgMeshnetPeerUnknown,
+				identifier,
+			)
+		}
 	}
 
-	return peerList[index], nil
+	return peer, nil
 }
 
 // MeshPeerAutoComplete queries the peer list from the meshnet service, and
@@ -771,12 +775,6 @@ func (c *cmd) MeshPeerNicknameAutoComplete(ctx *cli.Context) {
 	}
 	// get peers list
 	c.MeshPeerAutoComplete(ctx)
-}
-
-func peerByIdentifier(id string) func(*pb.Peer) bool {
-	return func(peer *pb.Peer) bool {
-		return peer.GetIp() == id || strings.EqualFold(peer.GetHostname(), id) || peer.GetPubkey() == id || strings.EqualFold(peer.GetNickname(), id)
-	}
 }
 
 // allowRoutingResponseToError determines whether the allow routing
