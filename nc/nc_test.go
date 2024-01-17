@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
 )
 
 type mockMqttClient struct {
@@ -126,7 +127,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 			expectedClientState:     true,
 			credentialsFetchError:   nil,
 			connectionTimeout:       false,
-			connectionTokenErr:      fmt.Errorf("not Authorized"),
+			connectionTokenErr:      mqttp.ErrorRefusedNotAuthorised,
 		},
 		{
 			name:                    "authorized client fails to connect",

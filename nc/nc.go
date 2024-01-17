@@ -8,6 +8,7 @@ package nc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -17,6 +18,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
 )
 
 const (
@@ -178,7 +180,7 @@ func (c *Client) createClientOptions(
 	opts.SetConnectionLostHandler(func(_ mqtt.Client, err error) {
 		log.Println(logPrefix+" connection lost: ", err)
 		var message interface{}
-		if err.Error() == "not Authorized" {
+		if errors.Is(err, mqttp.ErrorRefusedNotAuthorised) {
 			message = authLost{}
 		} else {
 			message = connectionLost{}
@@ -246,7 +248,7 @@ func (c *Client) tryConnect(
 
 		if err := token.Error(); err != nil {
 			logFunc(logPrefix+" failed to connect: ", err.Error())
-			if err.Error() == "not Authorized" {
+			if errors.Is(err, mqttp.ErrorRefusedNotAuthorised) {
 				logFunc(logPrefix + " credentials invalidated, will retry with new creds")
 				return client, needsAuthorization
 			} else {
