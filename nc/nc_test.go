@@ -9,7 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	cfgmock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	cfgmock "github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	ncmock "github.com/NordSecurity/nordvpn-linux/test/mock/nc"
 	"github.com/stretchr/testify/assert"
@@ -70,9 +70,8 @@ func TestStartStopNotificationClient(t *testing.T) {
 
 	cfg := config.Config{}
 	cfg.TokensData = make(map[int64]config.TokenData)
-	cfgManager := cfgmock.ConfigManagerMock{
-		Cfg: cfg,
-	}
+	cfgManager := cfgmock.NewMockConfigManager()
+	cfgManager.Cfg = &cfg
 
 	tests := []struct {
 		name                    string
@@ -154,7 +153,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 
 		credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{
 			NotificationCredentialsError: test.credentialsFetchError,
-		}, &cfgManager, &ncmock.MockTime{})
+		}, cfgManager, &ncmock.MockTime{})
 		notificationClient := NewClient(&clientBuilderMock,
 			&subs.Subject[string]{},
 			&subs.Subject[error]{},
