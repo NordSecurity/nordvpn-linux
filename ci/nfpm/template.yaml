@@ -25,7 +25,7 @@ maintainer: ${PKG_HOMEPAGE}
 description: "${PKG_DESCRIPTION}"
 
 # Vendor.
-vendor: ${PKG_VENDOR}
+vendor: ${PKG_HOMEPAGE}
 
 # Package's homepage.
 homepage: ${PKG_HOMEPAGE}

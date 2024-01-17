@@ -5,11 +5,11 @@ APT_GET="$(which apt-get 2> /dev/null)"
 
 case "$ENVIRONMENT" in
 "qa")
-    export URLPATH='nordvpn-test'
+    URLPATH='nordvpn-test'
     export REPOSITORY='nordvpn-test-debian'
     ;;
 "prod")
-    export URLPATH='nordvpn'
+    URLPATH='nordvpn'
     export REPOSITORY='nordvpn-debian'
     ;;
 *)

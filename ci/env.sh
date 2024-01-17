@@ -19,9 +19,6 @@ export COVERDIR
 HASH=$(git rev-parse --short HEAD)
 export HASH
 
-LIBNORD_VERSION="0.5.1"
-export LIBNORD_VERSION
-
 OPENVPN_VERSION="2.5.8"
 export OPENVPN_VERSION
 
@@ -30,9 +27,6 @@ export OPENSSL_VERSION
 
 LZO_VERSION="2.10"
 export LZO_VERSION
-
-TUNNELBLICK_VERSION="v3.8.8"
-export TUNNELBLICK_VERSION
 
 VERSION_PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
 if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then

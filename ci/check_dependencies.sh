@@ -3,6 +3,7 @@ set -euo pipefail
 
 source "${WORKDIR}/ci/env.sh"
 
+TUNNELBLICK_VERSION="v3.8.8"
 OPENVPN_TARBALL_DIR="${WORKDIR}/build/openvpn/tarballs"
 OPENVPN_URL="https://github.com/Tunnelblick/Tunnelblick/raw/${TUNNELBLICK_VERSION}/third_party/sources"
 mkdir -p "${OPENVPN_TARBALL_DIR}"
@@ -22,6 +23,7 @@ pushd "${OPENVPN_PATCHES_DIR}"
 	wget --quiet -nc "${OPENVPN_URL}/openvpn/openvpn-${OPENVPN_VERSION}/patches/06-tunnelblick-openvpn_xorpatch-e.diff"
 popd
 
+LIBNORD_VERSION="0.5.1"
 LIBNORD_ID="6385"
 
 if [[ "${FEATURES}" == *internal* ]]; then
