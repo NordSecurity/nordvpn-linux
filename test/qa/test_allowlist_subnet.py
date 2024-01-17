@@ -47,8 +47,10 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disco
     with lib.Defer(sh.nordvpn.allowlist.remove.all):
         output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         allowlist.add_subnet_to_allowlist([subnet], allowlist_alias)
+        assert not firewall.is_active(None, [subnet])
         output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         allowlist.remove_subnet_from_allowlist([subnet], allowlist_alias)
+        assert not firewall.is_active(None, [subnet])
         output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
         assert output_before_add == output_after_add
@@ -86,6 +88,7 @@ def test_connect_allowlist_subnet(allowlist_alias, tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     my_ip = network.get_external_device_ip()
+    ip_addresses_with_subnet = None
 
     with lib.Defer(sh.nordvpn.allowlist.remove.all):
         with lib.Defer(sh.nordvpn.disconnect):
@@ -99,3 +102,4 @@ def test_connect_allowlist_subnet(allowlist_alias, tech, proto, obfuscated):
             allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet, allowlist_alias)
             assert firewall.is_active(None, ip_addresses_with_subnet)
             assert my_ip == network.get_external_device_ip()
+        assert not firewall.is_active(None, ip_addresses_with_subnet)
