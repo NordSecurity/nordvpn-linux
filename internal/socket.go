@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os/user"
 	"strconv"
 	"strings"
 
@@ -70,7 +71,37 @@ func getUnixCreds(conn net.Conn) (*unix.Ucred, error) {
 		return nil, fmt.Errorf("doing rawConn Control: %w", err)
 	}
 
+	if err := authenticateUser(ucred); err != nil {
+		return nil, err
+	}
+
 	return ucred, nil
+}
+
+func authenticateUser(ucred *unix.Ucred) error {
+	// root?
+	if ucred.Uid == 0 {
+		return nil
+	}
+	userInfo, err := user.LookupId(fmt.Sprintf("%d", ucred.Uid))
+	if err != nil {
+		return fmt.Errorf("authenticate user, lookup user info: %s", err)
+	}
+	// user belongs to 'nordvpn' or 'sudo' group?
+	groups, err := userInfo.GroupIds()
+	if err != nil {
+		return fmt.Errorf("authenticate user, check user groups: %s", err)
+	}
+	for _, groupId := range groups {
+		groupInfo, err := user.LookupGroupId(groupId)
+		if err != nil {
+			return fmt.Errorf("authenticate user, check user group: %s", err)
+		}
+		if groupInfo.Name == "nordvpn" || groupInfo.Name == "sudo" {
+			return nil
+		}
+	}
+	return fmt.Errorf("requesting user does not have permissions")
 }
 
 // UcredAuth is a wrapper to use unix.Ucred as gRPC credentials.AuthInfo

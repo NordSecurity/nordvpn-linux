@@ -481,6 +481,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("Error on listening to UNIX domain socket: %s\n", err)
 			}
+			internal.UpdateSocketFilePermissions(ConnURL)
 		case sockTCP:
 			listener, err = net.Listen("tcp", ConnURL)
 			if err != nil {
@@ -489,6 +490,7 @@ func main() {
 		default:
 			log.Fatalf("Invalid predefined connection type: %s", ConnType)
 		}
+
 		if err := s.Serve(listener); err != nil {
 			log.Fatalln(err)
 		}
