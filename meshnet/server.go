@@ -1375,6 +1375,25 @@ func (s *Server) ChangePeerNickname(
 		return s.apiToNicknameError(err), nil
 	}
 
+	mapResp, err := s.reg.Map(token, cfg.MeshDevice.ID)
+	if err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	if err := s.netw.Refresh(*mapResp); err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
 	return &pb.ChangeNicknameResponse{
 		Response: &pb.ChangeNicknameResponse_Empty{},
 	}, nil
@@ -1464,6 +1483,15 @@ func (s *Server) ChangeMachineNickname(
 			}, nil
 		}
 	} else {
+		// API returns wrong error code (101101 instead of 101127) when setting too long own machine nickname
+		// TODO: Remove this check when it will be fixed on the API side
+		if len(req.Nickname) > 25 {
+			return &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_TOO_LONG,
+				},
+			}, nil
+		}
 		if cfg.MeshDevice.Nickname == req.Nickname {
 			return &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1522,6 +1550,25 @@ func (s *Server) ChangeMachineNickname(
 	if err != nil {
 		// in this case the local and the server info are out of sync
 		// the out of sync will remain until current machine receives a NC notification for itself or after mesh restart or settings again a nickname
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
+	if err != nil {
+		s.pub.Publish(err)
+		return &pb.ChangeNicknameResponse{
+			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
+				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+			},
+		}, nil
+	}
+
+	if err := s.netw.Refresh(*resp); err != nil {
 		s.pub.Publish(err)
 		return &pb.ChangeNicknameResponse{
 			Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
@@ -2991,4 +3038,20 @@ func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh
 	}
 
 	return &peers[index]
+}
+
+func MakePeerMaps(peers *pb.PeerList) (map[string]*pb.Peer, map[string]*pb.Peer) {
+	peerPubkeyToPeer := make(map[string]*pb.Peer)
+	peerNameToPeer := make(map[string]*pb.Peer)
+	for _, peer := range append(peers.External, peers.Local...) {
+		peerPubkeyToPeer[peer.Pubkey] = peer
+		peerNameToPeer[strings.ToLower(peer.Ip)] = peer
+		peerNameToPeer[strings.ToLower(peer.Hostname)] = peer
+		peerNameToPeer[strings.ToLower(strings.TrimSuffix(peer.Hostname, ".nord"))] = peer
+		if peer.Nickname != "" {
+			peerNameToPeer[strings.ToLower(peer.Nickname)] = peer
+			peerNameToPeer[strings.ToLower(peer.Nickname)+".nord"] = peer
+		}
+	}
+	return peerPubkeyToPeer, peerNameToPeer
 }

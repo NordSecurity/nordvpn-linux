@@ -1250,11 +1250,24 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		return err
 	}
 
-	domainNames := []string{strings.TrimSuffix(cfg.Machine.Hostname, ".nord")}
+	var hostName string
+	var domainNames []string
+
+	if cfg.Machine.Nickname != "" {
+		hostName = cfg.Machine.Nickname
+		domainNames = []string{
+			cfg.Machine.Nickname + ".nord",
+			cfg.Machine.Hostname,
+			strings.TrimSuffix(cfg.Machine.Hostname, ".nord"),
+		}
+	} else {
+		hostName = cfg.Machine.Hostname
+		domainNames = []string{strings.TrimSuffix(cfg.Machine.Hostname, ".nord")}
+	}
 
 	hosts := dns.Hosts{dns.Host{
 		IP:          cfg.Machine.Address,
-		FQDN:        cfg.Machine.Hostname,
+		FQDN:        hostName,
 		DomainNames: domainNames,
 	}}
 	hosts = append(hosts, getHostsFromConfig(cfg.Peers)...)
@@ -1498,9 +1511,9 @@ func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 			if peer.Nickname != "" {
 				hostName = peer.Nickname
 				domainNames = []string{
+					peer.Nickname + ".nord",
 					peer.Hostname,
 					strings.TrimSuffix(peer.Hostname, ".nord"),
-					peer.Nickname + ".nord",
 				}
 			} else {
 				hostName = peer.Hostname

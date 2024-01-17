@@ -201,9 +201,15 @@ func (c *cmd) FileshareAutoCompletePeers(ctx *cli.Context) {
 
 	for _, peer := range peers.Local {
 		fmt.Println(peer.GetHostname())
+		if peer.Nickname != "" {
+			fmt.Println(peer.Nickname)
+		}
 	}
 	for _, peer := range peers.External {
 		fmt.Println(peer.GetHostname())
+		if peer.Nickname != "" {
+			fmt.Println(peer.Nickname)
+		}
 	}
 }
 
