@@ -6,7 +6,9 @@ from lib import daemon, firewall
 
 
 MSG_ALLOWLIST_SUBNET_ADD_SUCCESS = "Subnet %s is allowlisted successfully."
+MSG_ALLOWLIST_SUBNET_ADD_ERROR = "Subnet %s is already allowlisted."
 MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS = "Subnet %s is removed from the allowlist successfully."
+MSG_ALLOWLIST_SUBNET_REMOVE_ERROR = "Subnet %s is not allowlisted."
 
 MSG_ALLOWLIST_PORT_ADD_SUCCESS = "Port %s (%s) is allowlisted successfully."
 MSG_ALLOWLIST_PORT_REMOVE_SUCCESS = "Port %s (%s) is removed from the allowlist successfully."

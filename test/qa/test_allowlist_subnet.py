@@ -103,3 +103,177 @@ def test_connect_allowlist_subnet(allowlist_alias, tech, proto, obfuscated):
             assert firewall.is_active(None, ip_addresses_with_subnet)
             assert my_ip == network.get_external_device_ip()
         assert not firewall.is_active(None, ip_addresses_with_subnet)
+
+
+@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_allowlist_subnet_connect(allowlist_alias, tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    my_ip = network.get_external_device_ip()
+    ip_addresses_with_subnet = None
+
+    with lib.Defer(sh.nordvpn.allowlist.remove.all):
+        with lib.Defer(sh.nordvpn.disconnect):
+            ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
+            ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
+
+            allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet, allowlist_alias)
+            assert not firewall.is_active(None, ip_addresses_with_subnet)
+
+            sh.nordvpn.connect()
+            assert network.is_connected()
+            assert firewall.is_active(None, ip_addresses_with_subnet)
+            assert my_ip == network.get_external_device_ip()
+        assert network.is_disconnected()
+    assert not firewall.is_active(None, ip_addresses_with_subnet)
+
+
+@pytest.mark.parametrize("subnet", lib.SUBNETS)
+@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_allowlist_subnet_twice_connect(allowlist_alias, tech, proto, obfuscated, subnet):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with lib.Defer(sh.nordvpn.allowlist.remove.all):
+        with lib.Defer(sh.nordvpn.disconnect):
+            allowlist.add_subnet_to_allowlist([subnet], allowlist_alias)
+
+            with pytest.raises(sh.ErrorReturnCode_1) as ex:
+                sh.nordvpn(allowlist_alias, "add", "subnet", subnet)
+
+            expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
+            assert expected_message in str(ex)
+            assert str(sh.nordvpn.settings()).count(subnet) == 1
+            assert not firewall.is_active(None, [subnet])
+
+            sh.nordvpn.connect()
+            assert network.is_connected()
+            assert firewall.is_active(None, [subnet])
+        assert network.is_disconnected()
+    assert not firewall.is_active(None, [subnet])
+
+
+@pytest.mark.parametrize("subnet", lib.SUBNETS)
+@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_connect_allowlist_subnet_twice(allowlist_alias, tech, proto, obfuscated, subnet):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with lib.Defer(sh.nordvpn.allowlist.remove.all):
+        with lib.Defer(sh.nordvpn.disconnect):
+            sh.nordvpn.connect()
+            assert network.is_connected()
+            assert firewall.is_active()
+
+            allowlist.add_subnet_to_allowlist([subnet], allowlist_alias)
+
+            with pytest.raises(sh.ErrorReturnCode_1) as ex:
+                sh.nordvpn(allowlist_alias, "add", "subnet", subnet)
+
+            expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
+            assert expected_message in str(ex)
+            assert str(sh.nordvpn.settings()).count(subnet) == 1
+            assert firewall.is_active(None, [subnet])
+        assert network.is_disconnected()
+    assert not firewall.is_active(None, [subnet])
+
+
+@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_allowlist_subnet_and_remove_connect(allowlist_alias, tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    my_ip = network.get_external_device_ip()
+
+    with lib.Defer(sh.nordvpn.allowlist.remove.all):
+        with lib.Defer(sh.nordvpn.disconnect):
+            ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
+            ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
+
+            allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet, allowlist_alias)
+            assert not firewall.is_active(None, ip_addresses_with_subnet)
+
+            allowlist.remove_subnet_from_allowlist(ip_addresses_with_subnet, allowlist_alias)
+            assert not firewall.is_active(None, ip_addresses_with_subnet)
+
+            sh.nordvpn.connect()
+            assert network.is_connected()
+            assert firewall.is_active()
+            assert my_ip != network.get_external_device_ip()
+        assert network.is_disconnected()
+    assert not firewall.is_active()
+
+
+@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_connect_allowlist_subnet_and_remove(allowlist_alias, tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    my_ip = network.get_external_device_ip()
+
+    with lib.Defer(sh.nordvpn.allowlist.remove.all):
+        with lib.Defer(sh.nordvpn.disconnect):
+            sh.nordvpn.connect()
+            assert network.is_connected()
+            assert firewall.is_active()
+            assert my_ip != network.get_external_device_ip()
+
+            ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
+            ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
+
+            allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet, allowlist_alias)
+            assert firewall.is_active(None, ip_addresses_with_subnet)
+            assert my_ip == network.get_external_device_ip()
+
+            allowlist.remove_subnet_from_allowlist(ip_addresses_with_subnet, allowlist_alias)
+            assert not firewall.is_active(None, ip_addresses_with_subnet)
+            assert firewall.is_active()
+
+            assert my_ip != network.get_external_device_ip()
+        assert network.is_disconnected()
+    assert not firewall.is_active()
+
+
+@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize("subnet", lib.SUBNETS)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_allowlist_subnet_remove_nonexistant_disconnected(allowlist_alias, tech, proto, obfuscated, subnet):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn(allowlist_alias, "remove", "subnet", subnet)
+
+    expected_message = allowlist.MSG_ALLOWLIST_SUBNET_REMOVE_ERROR % subnet
+    assert expected_message in str(ex)
+
+
+@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize("subnet", lib.SUBNETS)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_allowlist_subnet_remove_nonexistant_connected(allowlist_alias, tech, proto, obfuscated, subnet):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        assert network.is_connected()
+
+        with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh.nordvpn(allowlist_alias, "remove", "subnet", subnet)
+
+        expected_message = allowlist.MSG_ALLOWLIST_SUBNET_REMOVE_ERROR % subnet
+        assert expected_message in str(ex)
