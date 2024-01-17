@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -123,8 +124,11 @@ type Client struct {
 	subjectInfo       events.Publisher[string]
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
-	cancelConnecting  context.CancelFunc // Used to stop connecting attempts if we are already stopping
 	credsFetcher      CredentialsGetter
+
+	startMu          sync.Mutex
+	started          bool
+	cancelConnecting context.CancelFunc // Used to stop connecting attempts if we are already stopping
 }
 
 // NewClient is a constructor for a NC client
@@ -167,18 +171,18 @@ func (c *Client) createClientOptions(
 	opts.SetConnectTimeout(timeout)
 
 	opts.SetDefaultPublishHandler(func(_ mqtt.Client, m mqtt.Message) {
-		log.Println(logPrefix + " MQTT message received.")
+		log.Println(logPrefix, "MQTT message received.")
 		select {
 		case managementChan <- mqttMessage{message: m}:
 			return
 		case <-ctx.Done():
-			log.Println(logPrefix + " message received but client was stopped before it could be handled.")
+			log.Println(logPrefix, "message received but client was stopped before it could be handled.")
 			return
 		}
 	})
 
 	opts.SetConnectionLostHandler(func(_ mqtt.Client, err error) {
-		log.Println(logPrefix+" connection lost: ", err)
+		log.Println(logPrefix, "connection lost: ", err)
 		var message interface{}
 		if errors.Is(err, mqttp.ErrorRefusedNotAuthorised) {
 			message = authLost{}
@@ -210,24 +214,23 @@ const (
 // result in a noop.
 func (c *Client) tryConnect(
 	client mqtt.Client,
-	shouldLog bool,
+	logFunc func(v ...any),
 	connectionState connectionState,
 	managementChan chan<- interface{},
 	ctx context.Context) (mqtt.Client, connectionState) {
-	logFunc := log.Println
-	if !shouldLog {
+	if logFunc == nil {
 		logFunc = func(args ...any) {}
 	}
 
 	if connectionState == connectedSuccessfully {
-		log.Println(logPrefix + "[ERROR] connection attempt with connected client!")
+		log.Println(logPrefix, "connection attempt with connected client!")
 		return client, connectionState
 	}
 
 	if connectionState == needsAuthorization {
 		credentials, err := c.credsFetcher.GetCredentialsFromAPI()
 		if err != nil {
-			logFunc(logPrefix+" failed to fetch credentials: ", err.Error())
+			logFunc(logPrefix, "failed to fetch credentials: ", err.Error())
 			return client, needsAuthorization
 		}
 
@@ -240,16 +243,16 @@ func (c *Client) tryConnect(
 		token := client.Connect()
 
 		if !token.WaitTimeout(timeout) {
-			logFunc(logPrefix + " failed to connect: timeout")
+			logFunc(logPrefix, "failed to connect: timeout")
 			// client is still connecting at this point, so we have to disconnect to not get double connection
 			client.Disconnect(0)
 			return client, connecting
 		}
 
 		if err := token.Error(); err != nil {
-			logFunc(logPrefix+" failed to connect: ", err.Error())
+			logFunc(logPrefix, "failed to connect: ", err.Error())
 			if errors.Is(err, mqttp.ErrorRefusedNotAuthorised) {
-				logFunc(logPrefix + " credentials invalidated, will retry with new creds")
+				logFunc(logPrefix, "credentials invalidated, will retry with new creds")
 				return client, needsAuthorization
 			} else {
 				return client, connecting
@@ -267,7 +270,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 	credentialsInvalidated bool,
 	managementChan chan<- interface{},
 	ctx context.Context) mqtt.Client {
-	log.Println(logPrefix + " start connection loop")
+	log.Println(logPrefix, "start connection loop")
 
 	connectionState := connecting
 	if credentialsInvalidated {
@@ -276,15 +279,18 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 
 	for tries := 0; ; tries++ {
 		// we only want to log the errors every on 1st and every 10th try, so that we do not spam the logs
-		shouldLog := tries%10 == 0
-		client, connectionState = c.tryConnect(client, shouldLog, connectionState, managementChan, ctx)
+		logFunc := log.Println
+		if tries%10 != 0 {
+			logFunc = nil
+		}
+		client, connectionState = c.tryConnect(client, logFunc, connectionState, managementChan, ctx)
 		if connectionState == connectedSuccessfully {
 			break
 		}
 
 		select {
 		case <-ctx.Done():
-			log.Println(logPrefix + " stopping connection loop")
+			log.Println(logPrefix, "stopping connection loop")
 			client.Disconnect(0)
 			return client
 		case <-time.After(network.ExponentialBackoff(tries)):
@@ -298,7 +304,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 		)
 	}
 
-	log.Println(logPrefix + " Connected")
+	log.Println(logPrefix, "Connected")
 
 	return client
 }
@@ -332,7 +338,7 @@ func (c *Client) sendAcknowledgement(client mqtt.Client, messageID, trackType, a
 }
 
 func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message) {
-	log.Println(logPrefix + " handle message")
+	log.Println(logPrefix, "handle message")
 	var payload RecPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
 		c.subjectErr.Publish(fmt.Errorf("%s parsing message payload: %s", logPrefix, err))
@@ -370,10 +376,12 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message) {
 	}
 }
 
+// ncClientManagementLoop starts a background goroutine that handles events related to the notification client and
+// attempts reconnection in case of disconnection.
 func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 	managementChan := make(chan interface{})
 
-	log.Println(logPrefix + " starting management loop")
+	log.Println(logPrefix, "starting management loop")
 
 	var client mqtt.Client
 
@@ -381,8 +389,8 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 	credentials, err := c.credsFetcher.GetCredentialsFromConfig()
 	if err != nil {
 		if err == ErrInvalidCredentials {
-			// Client will be initialized when connecting if credentials are invalidated. We want to do this as a part of
-			// connection loop, because we might not have internet connection at this point
+			// Client will be initialized when connecting if credentials are invalidated. We want to do this as a part
+			// of connection loop, because we might not have internet connection at this point
 			credentialsInvalidated = true
 		} else if err != nil {
 			return fmt.Errorf("fetching credentials: %w", err)
@@ -398,7 +406,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println(logPrefix + " stopping management loop")
+				log.Println(logPrefix, "stopping management loop")
 				if client != nil {
 					client.Unsubscribe(unsubscriptions...)
 					client.Disconnect(0)
@@ -423,7 +431,15 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 
 // Start initiates the connection with the NC server and subscribes to mandatory topics
 func (c *Client) Start() error {
-	log.Println(logPrefix + " start")
+	c.startMu.Lock()
+	defer c.startMu.Unlock()
+
+	if c.started {
+		log.Println(logPrefix, "attemt to start client that was already started")
+		return nil
+	}
+
+	log.Println(logPrefix, "start")
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	c.cancelConnecting = cancelFunc
@@ -432,14 +448,24 @@ func (c *Client) Start() error {
 		return fmt.Errorf("starting NC management loop: %w", err)
 	}
 
+	c.started = true
+
 	return nil
 }
 
 // Stop unsubscribes the topics and drops a connection with the NC server
 func (c *Client) Stop() error {
-	log.Println(logPrefix + " stop")
+	c.startMu.Lock()
+	defer c.startMu.Unlock()
 
+	if !c.started {
+		log.Println(logPrefix, "attempt to stop client that was already stopped")
+		return nil
+	}
+
+	log.Println(logPrefix, "stop")
 	c.cancelConnecting()
+	c.started = false
 
 	return nil
 }

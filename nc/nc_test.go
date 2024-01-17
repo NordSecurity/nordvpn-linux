@@ -162,7 +162,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 
 		t.Run(test.name, func(t *testing.T) {
 			_, newConnectionState := notificationClient.tryConnect(&mockMqttClient,
-				true,
+				nil,
 				test.initialState,
 				make(chan<- interface{}),
 				context.Background())
