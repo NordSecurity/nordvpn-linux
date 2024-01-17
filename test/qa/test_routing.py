@@ -1,6 +1,7 @@
 import time
 
 from lib import (
+    allowlist,
     daemon,
     firewall,
     info,
@@ -13,6 +14,10 @@ import sh
 import lib
 import pytest
 import timeout_decorator
+
+
+def setup_module(module):
+    firewall.add_and_delete_random_route()
 
 
 def setup_function(function):
@@ -48,7 +53,7 @@ MSG_ROUTING_USED_BY_MESH = "Routing is currently used by Meshnet. Disable it fir
 def test_routing_enabled_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    lib.add_subnet_to_allowlist([f"{SUBNET_1}/32", f"{SUBNET_2}/32", f"{SUBNET_3}/32"])
+    allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32", f"{SUBNET_2}/32", f"{SUBNET_3}/32"])
 
     print(sh.nordvpn.connect())
     assert network.is_available()
@@ -72,7 +77,7 @@ def test_routing_enabled_connect(tech, proto, obfuscated):
 def test_routing_disabled_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    lib.add_subnet_to_allowlist([f"{SUBNET_1}/32"])
+    allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32"])
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
     assert not settings.get_is_routing_enabled()
