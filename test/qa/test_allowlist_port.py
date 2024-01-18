@@ -42,8 +42,10 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
     with lib.Defer(sh.nordvpn.allowlist.remove.all):
         output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         allowlist.add_ports_to_allowlist([port], allowlist_alias)
+        assert not firewall.is_active([port])
         output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         allowlist.remove_ports_from_allowlist([port], allowlist_alias)
+        assert not firewall.is_active([port])
         output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
         assert output_before_add == output_after_add
@@ -65,8 +67,10 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
 
             output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
             allowlist.add_ports_to_allowlist([port], allowlist_alias)
+            assert firewall.is_active([port])
             output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
             allowlist.remove_ports_from_allowlist([port], allowlist_alias)
+            assert not firewall.is_active([port])
             output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
             assert output_before_add == output_after_add
@@ -100,5 +104,4 @@ def test_allowlist_port_requires_connection(allowlist_alias, tech, proto, obfusc
             assert not firewall.is_active([port])
             allowlist.add_ports_to_allowlist([port], allowlist_alias)
             assert firewall.is_active([port])
-
         assert not firewall.is_active([port])
