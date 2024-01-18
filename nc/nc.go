@@ -414,6 +414,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 					client.Disconnect(0)
 					client = nil
 				}
+				log.Println(logPrefix, "stopped management loop")
 				return
 			case event := <-managementChan:
 				switch ev := event.(type) {
