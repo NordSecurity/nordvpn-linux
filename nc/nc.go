@@ -293,7 +293,9 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 		select {
 		case <-ctx.Done():
 			log.Println(logPrefix, "stopping connection loop")
-			client.Disconnect(0)
+			if client != nil {
+				client.Disconnect(0)
+			}
 			return client
 		case <-time.After(network.ExponentialBackoff(tries)):
 		}
