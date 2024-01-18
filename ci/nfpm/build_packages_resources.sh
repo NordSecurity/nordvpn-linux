@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
-source "${WORKDIR}/ci/build_environment.sh"
+source "${WORKDIR}/ci/env.sh"
+source "${WORKDIR}/ci/archs.sh"
 
 PKG_TO_BUILD=$1
 export PKG_HOMEPAGE="https://nordvpn.com/"
