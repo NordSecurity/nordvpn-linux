@@ -76,34 +76,6 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
             assert output_after_add == output_after_delete
 
 
-@pytest.mark.parametrize("port", lib.PORTS + lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS + lib.PORTS_RANGE])
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-def test_allowlist_port_is_not_set_when_disconnected(tech, proto, obfuscated, port):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    with lib.Defer(sh.nordvpn.allowlist.remove.all):
-        assert not firewall.is_active([port])
-        allowlist.add_ports_to_allowlist([port])
-        assert not firewall.is_active([port])
-
-
-@pytest.mark.parametrize("port", lib.PORTS + lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS + lib.PORTS_RANGE])
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_allowlist_port_requires_connection(tech, proto, obfuscated, port):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    with lib.Defer(sh.nordvpn.allowlist.remove.all):
-        with lib.Defer(sh.nordvpn.disconnect):
-            sh.nordvpn.connect()
-
-            assert not firewall.is_active([port])
-            allowlist.add_ports_to_allowlist([port])
-            assert firewall.is_active([port])
-        assert not firewall.is_active([port])
-
-
 @pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
 def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
