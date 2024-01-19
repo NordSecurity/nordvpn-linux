@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/netip"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"golang.org/x/exp/slices"
 )
 
@@ -45,6 +46,10 @@ type ConnectionStates struct {
 	States  []ConnectionState
 }
 
+func (c ConnectionStates) Equal(other ConnectionStates) bool {
+	return c.SrcAddr == other.SrcAddr && slices.Equal(c.States, other.States)
+}
+
 // Rule defines a single firewall rule which is applicable for set of addresses, ports and protocols
 type Rule struct {
 	// Name of the firewall rule
@@ -79,6 +84,26 @@ type Rule struct {
 	Comment          string `json:"comment"`
 }
 
+func (r Rule) Equal(other Rule) bool {
+	return r.Name == other.Name &&
+		slices.EqualFunc(r.Interfaces, other.Interfaces, internal.EqualInterface) &&
+		slices.Equal(r.RemoteNetworks, other.RemoteNetworks) &&
+		slices.Equal(r.LocalNetworks, other.LocalNetworks) &&
+		slices.Equal(r.Ports, other.Ports) &&
+		r.PortsDirection == other.PortsDirection &&
+		slices.Equal(r.Protocols, other.Protocols) &&
+		r.Direction == other.Direction &&
+		r.ConnectionStates.Equal(other.ConnectionStates) &&
+		slices.Equal(r.Marks, other.Marks) &&
+		r.Allow == other.Allow &&
+		r.Ipv6Only == other.Ipv6Only &&
+		slices.Equal(r.Icmpv6Types, other.Icmpv6Types) &&
+		r.HopLimit == other.HopLimit &&
+		slices.Equal(r.SourcePorts, other.SourcePorts) &&
+		slices.Equal(r.DestinationPorts, other.DestinationPorts) &&
+		r.Comment == other.Comment
+}
+
 // OrderedRules stores rules in an order they were added.
 type OrderedRules struct {
 	// rules is unexported in order to prevent direct appends
@@ -94,8 +119,14 @@ func (or *OrderedRules) Add(rule Rule) error {
 		return NewError(ErrRuleWithoutName)
 	}
 
-	if slices.ContainsFunc(or.rules, byName(rule.Name)) {
-		return NewError(ErrRuleAlreadyExists)
+	index := slices.IndexFunc(or.rules, byName(rule.Name))
+	if index != -1 {
+		existingRule := or.rules[index]
+		if existingRule.Equal(rule) {
+			return NewError(ErrRuleAlreadyExists)
+		}
+
+		or.rules = slices.Delete(or.rules, index, index+1)
 	}
 
 	or.rules = append(or.rules, rule)

@@ -170,7 +170,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 			// to the server - DO NOT DISABLE IPv6.
 			if !server.SupportsIPv6() {
 				if err := r.netw.DenyIPv6(); err != nil {
-					log.Println(internal.ErrorPrefix, "failed to disable ipv6:")
+					log.Println(internal.ErrorPrefix, "failed to disable ipv6:", err)
 				}
 			}
 			event.Type = events.ConnectSuccess

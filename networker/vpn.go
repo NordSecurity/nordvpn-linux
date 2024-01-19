@@ -58,19 +58,25 @@ func (netw *Combined) handleNetworkChanged() error {
 // 2. as fallback, fully re-creates the VPN tunnel but keeps the firewall rules
 // Thread unsafe.
 func (netw *Combined) refreshVPN() (err error) {
-	errNetChanged := netw.handleNetworkChanged()
-	if errNetChanged == nil {
+	isVPNStarted := netw.isVpnSet
+	isMeshStarted := netw.isMeshnetSet
+
+	if !isVPNStarted && !isMeshStarted {
 		return nil
 	}
 
+	errNetChanged := netw.handleNetworkChanged()
+	// if errNetChanged == nil {
+	// 	return nil
+	// }
+
 	log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", errNetChanged)
 
-	started := netw.isVpnSet
 	var ip netip.Addr
 	var vpnErr, meshErr error
 	defer func() { err = errors.Join(vpnErr, meshErr) }()
 
-	if started {
+	if isVPNStarted {
 		if !netw.isKillSwitchSet {
 			if err := netw.setKillSwitch(netw.allowlist); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
@@ -95,7 +101,7 @@ func (netw *Combined) refreshVPN() (err error) {
 		}
 	}
 
-	if netw.isMeshnetSet {
+	if isMeshStarted {
 		if netw.mesh.Tun() != nil && len(netw.mesh.Tun().IPs()) > 0 {
 			ip = netw.mesh.Tun().IPs()[0]
 		}
@@ -112,7 +118,7 @@ func (netw *Combined) refreshVPN() (err error) {
 		}
 	}
 
-	if started {
+	if isVPNStarted {
 		if vpnErr = netw.start(
 			netw.lastCreds,
 			netw.lastServer,

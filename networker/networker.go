@@ -291,11 +291,14 @@ func (netw *Combined) start(
 	}
 
 	netw.publisher.Publish("starting network configuration")
-	// if KillSwitch is turned on, connection is already dropped
-	if !netw.isNetworkSet {
-		err = netw.setNetwork(allowlist)
-		if err != nil {
+	// if firewall is already configured, update the rules in case something changed
+	err = netw.setNetwork(allowlist)
+	if err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
+		if !netw.isNetworkSet {
 			return err
+		} else {
+			// ignore errors???
+			netw.publisher.Publish("ignore error:" + err.Error())
 		}
 	}
 
@@ -330,6 +333,12 @@ func (netw *Combined) start(
 				"refreshing meshnet: %w",
 				err,
 			)
+		}
+	}
+
+	if !netw.ipv6Enabled {
+		if err := netw.denyIPv6(); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to disable ipv6:")
 		}
 	}
 
@@ -399,6 +408,12 @@ func (netw *Combined) restart(
 	}
 	if err != nil {
 		return err
+	}
+
+	if !netw.ipv6Enabled {
+		if err := netw.denyIPv6(); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to disable ipv6", err)
+		}
 	}
 
 	netw.lastServer = serverData
