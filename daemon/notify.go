@@ -46,7 +46,8 @@ func Notify(cm config.Manager, notificationType NotificationType, args []string)
 
 func notify(id int64, body string) error {
 	var cmd *exec.Cmd
-	commandContext, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
+	commandContext, cancelFunc := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
+	defer cancelFunc()
 	if internal.IsCommandAvailable("notify-send") {
 		cmd = exec.CommandContext(commandContext, "notify-send", "-t", "3000", "-i", IconPath, summary, body)
 	} else if internal.IsCommandAvailable("kdialog") {
