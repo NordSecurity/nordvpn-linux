@@ -5,11 +5,11 @@ APT_GET="$(which apt-get 2> /dev/null)"
 
 case "$ENVIRONMENT" in
 "qa")
-    URLPATH='nordvpn-test'
+    urlpath='nordvpn-test'
     export REPOSITORY='nordvpn-test-debian'
     ;;
 "prod")
-    URLPATH='nordvpn'
+    urlpath='nordvpn'
     export REPOSITORY='nordvpn-debian'
     ;;
 *)
@@ -20,7 +20,7 @@ esac
 
 FILENAME=${NAME}_${VERSION}_all.deb
 # check if file exists in repo
-STATUSCODE=$(curl -X HEAD -I -s -o /dev/null -w "%{http_code}" https://repo.nordvpn.com/deb/"${URLPATH}"/debian/pool/main/"${FILENAME}")
+STATUSCODE=$(curl -X HEAD -I -s -o /dev/null -w "%{http_code}" https://repo.nordvpn.com/deb/"${urlpath}"/debian/pool/main/"${FILENAME}")
 
 case "$STATUSCODE" in
 "200")
