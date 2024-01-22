@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
+	dpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	mpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -109,7 +110,12 @@ func statusLoop(fileshareClient pb.FileshareClient, client transferStatusClient,
 // IsFileshareDaemonReachable returns error if fileshare daemon is not reachable, daemon not running
 // being the most likely cause
 func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
-	_, err := c.fileshareClient.Ping(context.Background(), &pb.Empty{})
+	resp, err := c.client.IsLoggedIn(context.Background(), &dpb.Empty{})
+	if err != nil || !resp.GetValue() {
+		return formatError(fmt.Errorf(MsgFileshareUserNotLoggedIn))
+	}
+
+	_, err = c.fileshareClient.Ping(context.Background(), &pb.Empty{})
 
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {

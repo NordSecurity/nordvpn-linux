@@ -278,6 +278,7 @@ Learn more:
 	MsgFileshareDisconnectedPeer          = "Peer is disconnected."
 	MsgFileshareFileNotFound              = "File not found."
 	MsgFileshareSocketNotFound            = "Enable Meshnet to share files. If Meshnet is already enabled, try disabling and enabling it again. Use \"nordvpn set meshnet on\" to enable it."
+	MsgFileshareUserNotLoggedIn           = "You are not logged in. Please log in and enable meshnet to share files."
 
 	MsgFileshareAcceptHomeError      = "Cannot determine default download path. Please provide download path explicitly via --" + flagFilesharePath
 	MsgFileshareAcceptAllError       = "Download couldn't start."
