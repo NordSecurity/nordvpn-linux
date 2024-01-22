@@ -57,7 +57,7 @@ func (fw *Firewall) Add(rules []Rule) error {
 
 		existingRule, err := fw.rules.Get(rule.Name)
 		if err == nil {
-			// rule with the given name exists, check if is also the rule is equal
+			// rule with the given name exists, check if the rules are equal
 			if existingRule.Equal(rule) {
 				return NewError(ErrRuleAlreadyExists)
 			}

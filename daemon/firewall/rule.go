@@ -86,7 +86,7 @@ type Rule struct {
 
 func (r Rule) Equal(other Rule) bool {
 	return r.Name == other.Name &&
-		slices.EqualFunc(r.Interfaces, other.Interfaces, internal.EqualInterface) &&
+		slices.EqualFunc(r.Interfaces, other.Interfaces, internal.AreInterfacesEqual) &&
 		slices.Equal(r.RemoteNetworks, other.RemoteNetworks) &&
 		slices.Equal(r.LocalNetworks, other.LocalNetworks) &&
 		slices.Equal(r.Ports, other.Ports) &&

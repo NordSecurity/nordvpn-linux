@@ -23,7 +23,7 @@ func Contains[T comparable](l []T, element T) bool {
 	return e != nil
 }
 
-func EqualInterface(iface1 net.Interface, iface2 net.Interface) bool {
+func AreInterfacesEqual(iface1 net.Interface, iface2 net.Interface) bool {
 	// Compare relevant fields
 	return iface1.Index == iface2.Index &&
 		iface1.MTU == iface2.MTU &&
