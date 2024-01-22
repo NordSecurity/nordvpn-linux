@@ -390,8 +390,6 @@ func getFileshareResponseToError(resp *pb.Error, params ...any) error {
 // the error code provided
 func fileshareServiceErrorCodeToError(code pb.ServiceErrorCode) error {
 	switch code {
-	case pb.ServiceErrorCode_NOT_LOGGED_IN:
-		return internal.ErrNotLoggedIn
 	case pb.ServiceErrorCode_MESH_NOT_ENABLED:
 		return errors.New(MsgMeshnetNotEnabled)
 	case pb.ServiceErrorCode_INTERNAL_FAILURE:
