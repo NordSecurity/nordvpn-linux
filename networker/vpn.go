@@ -32,13 +32,9 @@ func (netw *Combined) IsMeshnetActive() bool {
 
 func (netw *Combined) handleNetworkChanged() error {
 	if netw.isMeshnetSet {
-		log.Println("reconfigure meshnet")
+		log.Println(internal.InfoPrefix, "handle network changes for meshnet")
 		if err := netw.mesh.NetworkChanged(); err != nil {
 			return err
-		}
-
-		if err := netw.refresh(netw.cfg); err != nil {
-			return fmt.Errorf("refreshing meshnet: %w", err)
 		}
 	}
 
@@ -48,30 +44,20 @@ func (netw *Combined) handleNetworkChanged() error {
 		if netw.isMeshnetSet && ok && vpn == netw.vpnet {
 			log.Println(internal.InfoPrefix, "skip network changed for VPN, already executed for meshnet")
 		} else {
-			log.Println("reconfigure VPN")
+			log.Println(internal.InfoPrefix, "handle network changes for VPN")
 
 			if err := netw.vpnet.NetworkChanged(); err != nil {
 				return err
 			}
 		}
-
-		if err := netw.configureFirewall(netw.allowlist); err != nil {
-			return err
-		}
-
-		if err := netw.configureDNS(netw.lastServer, netw.lastNameservers); err != nil {
-			return err
-		}
-
-		return netw.disableIPv6IfNeeded()
 	}
 
 	return nil
 }
 
 // refreshVPN will handle network changes
-// 1. try to let each VPN implementation to handle
-// 2. as fallback, fully re-creates the VPN tunnel but keeps the firewall rules
+// 1. try to let each VPN implementation to handle, if the system interfaces didn't changed
+// 2. fully re-creates the VPN tunnel but keeps the firewall rules
 // Thread unsafe.
 func (netw *Combined) refreshVPN() (err error) {
 	isVPNStarted := netw.isVpnSet
@@ -81,12 +67,21 @@ func (netw *Combined) refreshVPN() (err error) {
 		return nil
 	}
 
-	errNetChanged := netw.handleNetworkChanged()
-	if errNetChanged == nil {
-		return nil
+	newInterfaces := internal.GetInterfacesFromDefaultRoutes(internal.NewSet(netw.vpnet.Tun().Interface().Name))
+	newInterfaceDetected := !newInterfaces.IsSubset(netw.interfaces)
+	log.Println(internal.InfoPrefix, "refresh VPN, new interface detected:", newInterfaceDetected)
+
+	if !newInterfaceDetected {
+		// if there is no new OS interface, just reconfigure the VPN internally if possible
+		errNetChanged := netw.handleNetworkChanged()
+		if errNetChanged == nil {
+			return nil
+		}
+
+		log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", errNetChanged)
 	}
 
-	log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", errNetChanged)
+	netw.interfaces = newInterfaces
 
 	var ip netip.Addr
 	var vpnErr, meshErr error

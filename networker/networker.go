@@ -155,6 +155,9 @@ type Combined struct {
 	// doing mesh refresh which may happen in background e.g. when network
 	// change event happens
 	enableLocalTraffic bool
+	// list with the existing OS interfaces when VPN was connected.
+	// This is used at network changes to know when a new interface was inserted
+	interfaces internal.Set[string]
 }
 
 // NewCombined returns a ready made version of
@@ -198,6 +201,7 @@ func NewCombined(
 		fwmark:             fwmark,
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
+		interfaces:         make(internal.Set[string]),
 	}
 }
 
@@ -300,6 +304,7 @@ func (netw *Combined) start(
 	netw.lastNameservers = nameservers
 	start := time.Now()
 	netw.startTime = &start
+	netw.interfaces = internal.GetInterfacesFromDefaultRoutes(internal.NewSet(netw.vpnet.Tun().Interface().Name))
 	return nil
 }
 
@@ -453,6 +458,8 @@ func (netw *Combined) Stop() error {
 		if err != nil && !errors.Is(err, errNilVPN) {
 			return err
 		}
+
+		netw.interfaces = make(internal.Set[string])
 	}
 	return nil
 }
