@@ -44,6 +44,9 @@ func NewFirewall(noop, working Agent, publisher events.Publisher[string], enable
 
 // Add rules to the firewall.
 func (fw *Firewall) Add(rules []Rule) error {
+	if len(rules) == 0 {
+		return nil
+	}
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 	for _, rule := range rules {

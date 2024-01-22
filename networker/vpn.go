@@ -36,6 +36,10 @@ func (netw *Combined) handleNetworkChanged() error {
 		if err := netw.mesh.NetworkChanged(); err != nil {
 			return err
 		}
+
+		if err := netw.refresh(netw.cfg); err != nil {
+			return fmt.Errorf("refreshing meshnet: %w", err)
+		}
 	}
 
 	if netw.isVpnSet {
@@ -46,8 +50,20 @@ func (netw *Combined) handleNetworkChanged() error {
 		} else {
 			log.Println("reconfigure VPN")
 
-			return netw.vpnet.NetworkChanged()
+			if err := netw.vpnet.NetworkChanged(); err != nil {
+				return err
+			}
 		}
+
+		if err := netw.configureFirewall(netw.allowlist); err != nil {
+			return err
+		}
+
+		if err := netw.configureDNS(netw.lastServer, netw.lastNameservers); err != nil {
+			return err
+		}
+
+		return netw.disableIPv6IfNeeded()
 	}
 
 	return nil
@@ -66,9 +82,9 @@ func (netw *Combined) refreshVPN() (err error) {
 	}
 
 	errNetChanged := netw.handleNetworkChanged()
-	// if errNetChanged == nil {
-	// 	return nil
-	// }
+	if errNetChanged == nil {
+		return nil
+	}
 
 	log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", errNetChanged)
 

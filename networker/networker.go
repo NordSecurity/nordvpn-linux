@@ -290,56 +290,8 @@ func (netw *Combined) start(
 		return err
 	}
 
-	netw.publisher.Publish("starting network configuration")
-	// if firewall is already configured, update the rules in case something changed
-	err = netw.setNetwork(allowlist)
-	if err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
-		if !netw.isNetworkSet {
-			return err
-		} else {
-			// ignore errors???
-			netw.publisher.Publish("ignore error:" + err.Error())
-		}
-	}
-
-	if err = netw.resetAllowlist(); err != nil {
+	if err := netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
 		return err
-	}
-
-	err = netw.router.Add(routes.Route{
-		Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
-		Device:  netw.vpnet.Tun().Interface(),
-		TableID: netw.policyRouter.TableID(),
-	})
-
-	if err != nil {
-		return fmt.Errorf("adding the default route: %w", err)
-	}
-
-	dnsGetter := &dns.NameServers{}
-
-	if netw.isMeshnetSet && defaultMeshSubnet.Contains(serverData.IP) {
-		err = netw.setDNS(dnsGetter.Get(false, false))
-	} else {
-		err = netw.setDNS(nameservers)
-	}
-	if err != nil {
-		return err
-	}
-
-	if netw.isMeshnetSet {
-		if err = netw.refresh(netw.cfg); err != nil {
-			return fmt.Errorf(
-				"refreshing meshnet: %w",
-				err,
-			)
-		}
-	}
-
-	if !netw.ipv6Enabled {
-		if err := netw.denyIPv6(); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to disable ipv6:")
-		}
 	}
 
 	netw.isVpnSet = true
@@ -348,6 +300,81 @@ func (netw *Combined) start(
 	netw.lastNameservers = nameservers
 	start := time.Now()
 	netw.startTime = &start
+	return nil
+}
+
+func (netw *Combined) configureNetwork(
+	allowlist config.Allowlist,
+	serverData vpn.ServerData,
+	nameservers config.DNS,
+) error {
+	netw.publisher.Publish("starting network configuration")
+	if err := netw.configureFirewall(allowlist); err != nil {
+		return err
+	}
+
+	if err := netw.addDefaultRoute(); err != nil {
+		return err
+	}
+
+	if err := netw.configureDNS(serverData, nameservers); err != nil {
+		return err
+	}
+
+	if netw.isMeshnetSet {
+		if err := netw.refresh(netw.cfg); err != nil {
+			return fmt.Errorf("refreshing meshnet: %w", err)
+		}
+	}
+
+	return netw.disableIPv6IfNeeded()
+}
+
+func (netw *Combined) disableIPv6IfNeeded() error {
+	if !netw.ipv6Enabled {
+		if err := netw.denyIPv6(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (netw *Combined) configureDNS(serverData vpn.ServerData, nameservers config.DNS) error {
+	dnsGetter := &dns.NameServers{}
+
+	if netw.isMeshnetSet && defaultMeshSubnet.Contains(serverData.IP) {
+		return netw.setDNS(dnsGetter.Get(false, false))
+	} else {
+		return netw.setDNS(nameservers)
+	}
+}
+
+func (netw *Combined) addDefaultRoute() error {
+	err := netw.router.Add(routes.Route{
+		Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
+		Device:  netw.vpnet.Tun().Interface(),
+		TableID: netw.policyRouter.TableID(),
+	})
+
+	if err != nil {
+		return fmt.Errorf("adding the default route: %w", err)
+	}
+	return err
+}
+
+func (netw *Combined) configureFirewall(allowlist config.Allowlist) error {
+	if err := netw.setNetwork(allowlist); err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
+		if !netw.isNetworkSet {
+			return err
+		} else {
+			netw.publisher.Publish("re-setting firewall failed: " + err.Error())
+		}
+	}
+
+	if err := netw.resetAllowlist(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -392,12 +419,8 @@ func (netw *Combined) restart(
 
 	// after restarting need to restore routing - because tun interface was recreated
 	// assuming all other routing rules are left as it was before restart
-	if err = netw.router.Add(routes.Route{
-		Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
-		Device:  netw.vpnet.Tun().Interface(),
-		TableID: netw.policyRouter.TableID(),
-	}); err != nil {
-		return fmt.Errorf("adding the default route: %w", err)
+	if err = netw.addDefaultRoute(); err != nil {
+		return err
 	}
 
 	dnsGetter := &dns.NameServers{}
@@ -410,10 +433,8 @@ func (netw *Combined) restart(
 		return err
 	}
 
-	if !netw.ipv6Enabled {
-		if err := netw.denyIPv6(); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to disable ipv6", err)
-		}
+	if err := netw.disableIPv6IfNeeded(); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to disable ipv6", err)
 	}
 
 	netw.lastServer = serverData
@@ -1154,15 +1175,8 @@ func (netw *Combined) setMesh(
 	}
 
 	if netw.isVpnSet {
-		if err = netw.router.Add(routes.Route{
-			Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
-			Device:  netw.vpnet.Tun().Interface(),
-			TableID: netw.policyRouter.TableID(),
-		}); err != nil {
-			return fmt.Errorf(
-				"re-creating the default route: %w",
-				err,
-			)
+		if err = netw.addDefaultRoute(); err != nil {
+			return err
 		}
 	}
 
@@ -1362,15 +1376,8 @@ func (netw *Combined) unSetMesh() error {
 	}
 
 	if netw.isVpnSet {
-		if err := netw.router.Add(routes.Route{
-			Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
-			Device:  netw.vpnet.Tun().Interface(),
-			TableID: netw.policyRouter.TableID(),
-		}); err != nil {
-			return fmt.Errorf(
-				"re-creating the default route: %w",
-				err,
-			)
+		if err := netw.addDefaultRoute(); err != nil {
+			return err
 		}
 	}
 
