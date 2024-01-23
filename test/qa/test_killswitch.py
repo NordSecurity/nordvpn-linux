@@ -29,32 +29,35 @@ def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
 
+MSG_KILLSWITCH_ON = "Kill Switch is set to 'enabled' successfully."
+MSG_KILLSWITCH_OFF = "Kill Switch is set to 'disabled' successfully."
 
-# @TODO optimize takes > 1hour. using 1 technology for now
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
-def test_killswitch_without_connect(tech, proto, obfuscated):
+
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+def test_killswitch_on_disconnected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
 
-    output = sh.nordvpn.set.killswitch("on")
-    assert "Kill Switch is set to 'enabled' successfully." in output
+    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
+    assert daemon.is_killswitch_on()
 
     with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
         assert network.is_not_available(2)
 
-    sh.nordvpn.set.killswitch("off")
+    assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off")
+    assert not daemon.is_killswitch_on()
     assert network.is_available()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_killswitch_connect(tech, proto, obfuscated):
+def test_killswitch_on_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
 
-    output = sh.nordvpn.set.killswitch("on")
-    assert "Kill Switch is set to 'enabled' successfully." in output
+    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
+    assert daemon.is_killswitch_on()
 
     with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
         assert network.is_not_available(2)
@@ -62,24 +65,69 @@ def test_killswitch_connect(tech, proto, obfuscated):
         with lib.ErrorDefer(sh.nordvpn.disconnect):
             output = sh.nordvpn.connect()
             print(output)
-            assert lib.is_connect_successful(output)
             assert network.is_connected()
 
     output = sh.nordvpn.disconnect()
     print(output)
-    assert lib.is_disconnect_successful(output)
 
     with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
         assert network.is_not_available(2)
 
-    sh.nordvpn.set.killswitch("off")
+    assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off")
+    assert not daemon.is_killswitch_on()
     assert network.is_available()
 
 
-@pytest.mark.parametrize(
-    "tech_from,proto_from,obfuscated_from", lib.TECHNOLOGIES_BASIC1
-)
-@pytest.mark.parametrize("tech_to,proto_to,obfuscated_to", lib.TECHNOLOGIES_BASIC2)
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_killswitch_on_connected(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    assert network.is_available()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        output = sh.nordvpn.connect()
+        print(output)
+        assert network.is_connected()
+
+        assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
+        assert daemon.is_killswitch_on()
+
+    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+        assert network.is_not_available(2)
+
+    assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off")
+    assert not daemon.is_killswitch_on()
+    assert network.is_available()
+
+
+@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_killswitch_off_connected(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    assert network.is_available()
+
+    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
+    assert daemon.is_killswitch_on()
+
+    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+        assert network.is_not_available(2)
+
+        with lib.Defer(sh.nordvpn.disconnect):
+            output = sh.nordvpn.connect()
+            print(output)
+            assert network.is_connected()
+
+            assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off")
+            assert not daemon.is_killswitch_on()
+            assert network.is_available()
+
+    assert network.is_available()
+
+
+@pytest.mark.parametrize("tech_from,proto_from,obfuscated_from", lib.TECHNOLOGIES)
+@pytest.mark.parametrize("tech_to,proto_to,obfuscated_to", lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_killswitch_reconnect(
@@ -88,8 +136,8 @@ def test_killswitch_reconnect(
     lib.set_technology_and_protocol(tech_from, proto_from, obfuscated_from)
     assert network.is_available()
 
-    output = sh.nordvpn.set.killswitch("on")
-    assert "Kill Switch is set to 'enabled' successfully." in output
+    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
+    assert daemon.is_killswitch_on()
 
     with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
         assert network.is_not_available(2)
@@ -97,24 +145,23 @@ def test_killswitch_reconnect(
         with lib.ErrorDefer(sh.nordvpn.disconnect):
             output = sh.nordvpn.connect()
             print(output)
-            assert lib.is_connect_successful(output)
             assert network.is_connected()
 
             lib.set_technology_and_protocol(tech_to, proto_to, obfuscated_to)
             assert network.is_connected()
             output = sh.nordvpn.connect()
-            assert lib.is_connect_successful(output)
+            print(output)
             assert network.is_connected()
 
     output = sh.nordvpn.disconnect()
     print(output)
-    assert lib.is_disconnect_successful(output)
     assert daemon.is_disconnected()
 
     with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
         assert network.is_not_available(2)
 
-    sh.nordvpn.set.killswitch("off")
+    assert MSG_KILLSWITCH_OFF in sh.nordvpn.set.killswitch("off")
+    assert not daemon.is_killswitch_on()
     assert network.is_available()
 
 
@@ -123,7 +170,7 @@ def test_killswitch_reconnect(
 def test_fancy_transport():
     sh.nordvpn.logout("--persist-token")
     output = sh.nordvpn.set.killswitch("on")
-    assert "Kill Switch is set to 'enabled' successfully." in output
+    assert MSG_KILLSWITCH_ON in output
 
     output = login.login_as("default")
     print(output)
@@ -133,7 +180,6 @@ def test_fancy_transport():
         output = sh.nordvpn.account()
         print(output)
         assert "Account Information:" in output
-
 
     sh.nordvpn.set.killswitch("off")
     assert network.is_available()
