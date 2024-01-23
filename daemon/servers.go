@@ -193,6 +193,10 @@ func getServersRemote(
 		limit = count
 	}
 
+	if group == config.UndefinedGroup && obfuscated {
+		group = config.Obfuscated
+	}
+
 	filter := core.ServersFilter{
 		Group: group,
 		Tech:  serverTech,

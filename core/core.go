@@ -325,6 +325,7 @@ func (api *DefaultAPI) RecommendedServers(filter ServersFilter, longitude, latit
 	default:
 		filterQuery = ""
 	}
+
 	// When flag is defined append it to filter query
 	if filter.Group != config.UndefinedGroup {
 		filterQuery += fmt.Sprintf(RecommendedServersGroupsFilter, filter.Group)
