@@ -67,7 +67,11 @@ func (netw *Combined) refreshVPN() (err error) {
 		return nil
 	}
 
-	newInterfaces := internal.GetInterfacesFromDefaultRoutes(internal.NewSet(netw.vpnet.Tun().Interface().Name))
+	tunnelName := ""
+	if netw.vpnet != nil && netw.vpnet.Tun() != nil {
+		tunnelName = netw.vpnet.Tun().Interface().Name
+	}
+	newInterfaces := internal.GetInterfacesFromDefaultRoutes(internal.NewSet(tunnelName))
 	newInterfaceDetected := !newInterfaces.IsSubset(netw.interfaces)
 	log.Println(internal.InfoPrefix, "refresh VPN, new interface detected:", newInterfaceDetected)
 
