@@ -664,10 +664,11 @@ func TestTransferFinishedNotifications(t *testing.T) {
 					"reason": "%s",
 					"data": {
 						"file": "%s",
+						"final_path": "%s",
 						"status": %d
 					}
 				}
-			}`, transferID, test.reason, fileID, test.status))
+			}`, transferID, test.reason, fileID, filePath, test.status))
 
 			assert.Equal(t, 1, len(notifier.notifications),
 				"TransferFinished event was received, but EventManager did not send any notifications.")
@@ -730,10 +731,11 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 			"reason": "FileDownloaded",
 			"data": {
 				"file": "%s",
-				"status": %d
+				"status": %d,
+				"final_path": "%s"
 			}
 		}
-	}`, transferID, fileID, pb.Status_SUCCESS))
+	}`, transferID, fileID, pb.Status_SUCCESS, filePath))
 
 	notification := notifier.notifications[0]
 

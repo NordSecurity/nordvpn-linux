@@ -52,7 +52,8 @@ type transferFinishedEvent struct {
 }
 
 type transferFinshedSubEvent struct {
-	File   string    `json:"file"`
-	Status pb.Status `json:"status"`
-	ByPeer bool      `json:"by_peer"`
+	File      string    `json:"file"`
+	Status    pb.Status `json:"status"`
+	ByPeer    bool      `json:"by_peer"`
+	FinalPath string    `json:"final_path"`
 }

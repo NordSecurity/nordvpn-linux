@@ -300,8 +300,12 @@ func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
 			removeFileFromLiveTransfer(transfer, file)
 		}
 		if em.notificationManager != nil && file != nil {
+			displayPath := file.FullPath
+			if event.Reason == fileDownloaded {
+				displayPath = event.Data.FinalPath
+			}
 			em.notificationManager.NotifyFile(
-				file.FullPath,
+				displayPath,
 				transfer.Direction,
 				fileStatusInNotification,
 			)
