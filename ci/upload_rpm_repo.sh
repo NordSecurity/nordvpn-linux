@@ -5,11 +5,11 @@ APT_GET="$(which apt-get 2> /dev/null)"
 
 case "$ENVIRONMENT" in
 "qa")
-    export URLPATH='nordvpn-test'
+    urlpath='nordvpn-test'
     export REPOSITORY='nordvpn-test-centos'
     ;;
 "prod")
-    export URLPATH='nordvpn'
+    urlpath='nordvpn'
     export REPOSITORY='nordvpn-centos'
     ;;
 *)
@@ -20,7 +20,7 @@ esac
 
 FILENAME=${NAME}-${VERSION}.noarch.rpm
 # check if file exists in repo
-STATUSCODE=$(curl -X HEAD -I -s -o /dev/null -w "%{http_code}" https://repo.nordvpn.com/yum/"${URLPATH}"/centos/noarch/Packages/n/"${FILENAME}")
+STATUSCODE=$(curl -X HEAD -I -s -o /dev/null -w "%{http_code}" https://repo.nordvpn.com/yum/"${urlpath}"/centos/noarch/Packages/n/"${FILENAME}")
 
 case "$STATUSCODE" in
 "200")

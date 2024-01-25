@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
-source "${WORKDIR}/ci/build_environment.sh"
+source "${WORKDIR}/ci/env.sh"
+source "${WORKDIR}/ci/archs.sh"
 
 PKG_TO_BUILD=$1
 export PKG_HOMEPAGE="https://nordvpn.com/"
-export PKG_MAINTAINER=${PKG_HOMEPAGE}
-export PKG_VENDOR=${PKG_HOMEPAGE}
 export PKG_DESCRIPTION="The best online VPN service for speed and security\nNordVPN protects your privacy online and\nlets access media content without regional restrictions.\nStrong encryption and no-log policy\nwith 5000+ servers in 60+ countries."
 
 # clean build dir
