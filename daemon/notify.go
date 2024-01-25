@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -44,14 +46,20 @@ func Notify(cm config.Manager, notificationType NotificationType, args []string)
 
 func notify(id int64, body string) error {
 	var cmd *exec.Cmd
+	commandContext, cancelFunc := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
+	defer cancelFunc()
 	if internal.IsCommandAvailable("notify-send") {
-		cmd = exec.Command(
-			"notify-send", "-t", "3000", "-i", IconPath, summary, body,
-		)
+		cmd = exec.CommandContext(commandContext, "notify-send", "-t", "3000", "-i", IconPath, summary, body)
 	} else if internal.IsCommandAvailable("kdialog") {
-		cmd = exec.Command(
-			"kdialog", "--title", summary, "--passivepopup", body, "--icon", IconPath, "3",
-		)
+		cmd = exec.CommandContext(commandContext,
+			"kdialog",
+			"--title",
+			summary,
+			"--passivepopup",
+			body,
+			"--icon",
+			IconPath,
+			"3")
 	} else {
 		return nil
 	}
