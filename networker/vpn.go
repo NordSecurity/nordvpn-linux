@@ -50,6 +50,11 @@ func (netw *Combined) handleNetworkChanged() error {
 				return err
 			}
 		}
+		// at network changes on Mint 20.03, VPN interface is removed as DNS resolved
+		// as a fix reconfigure the DNS
+		if err := netw.setDNS(netw.lastNameservers); err != nil {
+			return err
+		}
 	}
 
 	return nil
