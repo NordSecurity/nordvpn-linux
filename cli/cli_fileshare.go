@@ -18,6 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
+	dpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	mpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -109,7 +110,16 @@ func statusLoop(fileshareClient pb.FileshareClient, client transferStatusClient,
 // IsFileshareDaemonReachable returns error if fileshare daemon is not reachable, daemon not running
 // being the most likely cause
 func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
-	_, err := c.fileshareClient.Ping(context.Background(), &pb.Empty{})
+	resp, err := c.client.IsLoggedIn(context.Background(), &dpb.Empty{})
+	if err != nil {
+		return formatError(fmt.Errorf(internal.UnhandledMessage))
+	}
+
+	if !resp.GetValue() {
+		return formatError(fmt.Errorf(MsgFileshareUserNotLoggedIn))
+	}
+
+	_, err = c.fileshareClient.Ping(context.Background(), &pb.Empty{})
 
 	if err != nil {
 		if strings.Contains(err.Error(), "no such file or directory") {
@@ -384,8 +394,6 @@ func getFileshareResponseToError(resp *pb.Error, params ...any) error {
 // the error code provided
 func fileshareServiceErrorCodeToError(code pb.ServiceErrorCode) error {
 	switch code {
-	case pb.ServiceErrorCode_NOT_LOGGED_IN:
-		return internal.ErrNotLoggedIn
 	case pb.ServiceErrorCode_MESH_NOT_ENABLED:
 		return errors.New(MsgMeshnetNotEnabled)
 	case pb.ServiceErrorCode_INTERNAL_FAILURE:

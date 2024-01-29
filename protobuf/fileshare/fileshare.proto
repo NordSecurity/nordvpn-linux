@@ -14,9 +14,8 @@ message Empty {}
 // ServiceErrorCode defines a set of error codes whose handling
 // does not depend on any specific command used.
 enum ServiceErrorCode {
-	NOT_LOGGED_IN = 0;
-	MESH_NOT_ENABLED = 1;
-	INTERNAL_FAILURE = 2;
+	MESH_NOT_ENABLED = 0;
+	INTERNAL_FAILURE = 1;
 }
 
 // FileshareErrorCode defines a set of fileshare specific error codes.

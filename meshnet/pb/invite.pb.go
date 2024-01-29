@@ -7,9 +7,9 @@
 package pb
 
 import (
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -300,9 +300,9 @@ type Invite struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Email     string               `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	ExpiresAt *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	Os        string               `protobuf:"bytes,3,opt,name=os,proto3" json:"os,omitempty"`
+	Email     string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	Os        string                 `protobuf:"bytes,3,opt,name=os,proto3" json:"os,omitempty"`
 }
 
 func (x *Invite) Reset() {
@@ -344,7 +344,7 @@ func (x *Invite) GetEmail() string {
 	return ""
 }
 
-func (x *Invite) GetExpiresAt() *timestamp.Timestamp {
+func (x *Invite) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.ExpiresAt
 	}
@@ -858,7 +858,7 @@ var file_invite_proto_goTypes = []interface{}{
 	(*InviteResponse)(nil),          // 8: meshpb.InviteResponse
 	(ServiceErrorCode)(0),           // 9: meshpb.ServiceErrorCode
 	(MeshnetErrorCode)(0),           // 10: meshpb.MeshnetErrorCode
-	(*timestamp.Timestamp)(nil),     // 11: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),   // 11: google.protobuf.Timestamp
 	(*Empty)(nil),                   // 12: meshpb.Empty
 }
 var file_invite_proto_depIdxs = []int32{
