@@ -6,8 +6,10 @@ import (
 	"log"
 	"net/netip"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // IsVPNActive returns true when connection to VPN server is established.
@@ -50,8 +52,7 @@ func (netw *Combined) handleNetworkChanged() error {
 				return err
 			}
 		}
-		// at network changes on Mint 20.03, VPN interface is removed as DNS resolved
-		// as a fix reconfigure the DNS
+		// during network changes in Linux Mint 20.03, systemd removes the tunnel interface from DNS resolver.
 		if err := netw.setDNS(netw.lastNameservers); err != nil {
 			return err
 		}
@@ -61,7 +62,7 @@ func (netw *Combined) handleNetworkChanged() error {
 }
 
 // refreshVPN will handle network changes
-// 1. try to let each VPN implementation to handle, if the system interfaces didn't changed
+// 1. try to let each VPN implementation to handle, if the system interfaces didn't change
 // 2. fully re-creates the VPN tunnel but keeps the firewall rules
 // Thread unsafe.
 func (netw *Combined) refreshVPN() (err error) {
@@ -76,7 +77,7 @@ func (netw *Combined) refreshVPN() (err error) {
 	if netw.vpnet != nil && netw.vpnet.Tun() != nil {
 		tunnelName = netw.vpnet.Tun().Interface().Name
 	}
-	newInterfaces := internal.GetInterfacesFromDefaultRoutes(internal.NewSet(tunnelName))
+	newInterfaces := device.InterfacesWithDefaultRoute(mapset.NewSet(tunnelName))
 	newInterfaceDetected := !newInterfaces.IsSubset(netw.interfaces)
 	log.Println(internal.InfoPrefix, "refresh VPN, new interface detected:", newInterfaceDetected)
 

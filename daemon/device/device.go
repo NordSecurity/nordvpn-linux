@@ -8,6 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/vishvananda/netlink"
 )
 
 type ListFunc func() ([]net.Interface, error)
@@ -145,4 +148,25 @@ func interfacesAreEqual(a net.Interface, b net.Interface) bool {
 		a.Name == b.Name &&
 		a.HardwareAddr.String() == b.HardwareAddr.String() &&
 		a.Flags == b.Flags
+}
+
+func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) mapset.Set[string] {
+	// get interface list from default routes
+	routeList, _ := netlink.RouteList(nil, netlink.FAMILY_V4)
+	interfacesList := mapset.NewSet[string]()
+	for _, r := range routeList {
+		if r.Dst != nil {
+			continue
+		}
+		if r.Gw == nil {
+			continue
+		}
+		if iface, err := net.InterfaceByIndex(r.LinkIndex); err == nil {
+			if !ignoreSet.Contains(iface.Name) {
+				interfacesList.Add(iface.Name)
+			}
+		}
+	}
+
+	return interfacesList
 }

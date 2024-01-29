@@ -3,7 +3,8 @@ package netstate
 import (
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/daemon/device"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/vishvananda/netlink"
 )
 
@@ -17,9 +18,9 @@ type NetlinkMonitor struct {
 	linkUpdatesChan  chan netlink.LinkUpdate
 	routeUpdatesChan chan netlink.RouteUpdate
 	doneChan         chan struct{} // close(doneChan) to terminate Subscribe loop
-	mtx              sync.RWMutex
-	cached           internal.Set[string] // interface cache
-	ignored          internal.Set[string] // ignore our-selfs created interfaces
+	mtx              sync.Mutex
+	cached           mapset.Set[string] // interface cache
+	ignored          mapset.Set[string] // ignore our-selfs created interfaces
 }
 
 // NewNetlinkMonitor instantiate netlink monitor
@@ -28,10 +29,10 @@ func NewNetlinkMonitor(ignoreIntfs []string) (*NetlinkMonitor, error) {
 		linkUpdatesChan:  make(chan netlink.LinkUpdate),
 		routeUpdatesChan: make(chan netlink.RouteUpdate),
 		doneChan:         make(chan struct{}),
-		mtx:              sync.RWMutex{},
+		mtx:              sync.Mutex{},
 	}
-	nlmon.ignored = internal.NewSet(ignoreIntfs...)
-	nlmon.cached = internal.GetInterfacesFromDefaultRoutes(nlmon.ignored)
+	nlmon.ignored = mapset.NewSet(ignoreIntfs...)
+	nlmon.cached = device.InterfacesWithDefaultRoute(nlmon.ignored)
 
 	if err := netlink.LinkSubscribe(nlmon.linkUpdatesChan, nlmon.doneChan); err != nil {
 		return nil, err
@@ -69,15 +70,20 @@ func (m *NetlinkMonitor) run(re Reconnector) {
 }
 
 func (m *NetlinkMonitor) checkForChanges(re Reconnector) {
-	newSet := internal.GetInterfacesFromDefaultRoutes(m.ignored)
-	// compare new and cached lists
-	m.mtx.RLock()
-	eql := m.cached.Equal(newSet)
-	m.mtx.RUnlock()
-	if !eql {
-		m.mtx.Lock()
-		m.cached = newSet // apply changes
-		m.mtx.Unlock()
-		re.Reconnect(!m.cached.Empty())
+	interfaces := device.InterfacesWithDefaultRoute(m.ignored)
+
+	if m.setCachedInterfaces(interfaces) {
+		re.Reconnect(!interfaces.IsEmpty())
 	}
+}
+
+func (m *NetlinkMonitor) setCachedInterfaces(interfaces mapset.Set[string]) bool {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
+	if m.cached != interfaces {
+		m.cached = interfaces
+		return true
+	}
+
+	return false
 }

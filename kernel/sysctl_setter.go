@@ -28,9 +28,24 @@ func NewSysctlSetter(
 }
 
 func (s *SysctlSetterImpl) Set() error {
+	if !s.changed {
+		values, err := Parameter(s.paramName)
+		if err != nil {
+			return fmt.Errorf(
+				"retrieving the value of '%s': %w",
+				s.paramName,
+				err,
+			)
+		}
+
+		if values[s.paramName] != s.desiredValue {
+			s.changed = true
+		}
+	}
+
 	// always set the new value, even if the values is already set
-	// otherwise when a new USB adapter is connected, even if net.ipv6.conf.all.disable_ipv6=0 the new adaptor will have IPv6
-	// so it needs to be set again to zero, to disabled IPv6 also for the new interface
+	// otherwise when a new USB adapter is connected, even if net.ipv6.conf.all.disable_ipv6=1 the new adaptor will have IPv6
+	// so it needs to be set again, to disabled IPv6 also for the new interface
 	if err := SetParameter(s.paramName, s.desiredValue); err != nil {
 		return fmt.Errorf(
 			"setting the value of '%s' to %d: %w",
@@ -39,7 +54,6 @@ func (s *SysctlSetterImpl) Set() error {
 			err,
 		)
 	}
-	s.changed = true
 
 	return nil
 }

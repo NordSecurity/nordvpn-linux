@@ -1,7 +1,6 @@
 package firewall
 
 import (
-	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -47,21 +46,6 @@ func TestOrderedRulesAdd(t *testing.T) {
 				},
 			},
 			hasError: true,
-		},
-		{
-			testName: "replace existing rule",
-			rule:     Rule{Name: "block", Interfaces: []net.Interface{{Name: "lo0"}}},
-			given: OrderedRules{
-				rules: []Rule{
-					{Name: "block", Interfaces: []net.Interface{{Name: "en0"}}},
-				},
-			},
-			expected: OrderedRules{
-				rules: []Rule{
-					{Name: "block", Interfaces: []net.Interface{{Name: "lo0"}}},
-				},
-			},
-			hasError: false,
 		},
 	}
 

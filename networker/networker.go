@@ -28,6 +28,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
+	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
 
 	"github.com/kofalt/go-memoize"
@@ -157,7 +158,7 @@ type Combined struct {
 	enableLocalTraffic bool
 	// list with the existing OS interfaces when VPN was connected.
 	// This is used at network changes to know when a new interface was inserted
-	interfaces internal.Set[string]
+	interfaces mapset.Set[string]
 }
 
 // NewCombined returns a ready made version of
@@ -201,7 +202,7 @@ func NewCombined(
 		fwmark:             fwmark,
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
-		interfaces:         make(internal.Set[string]),
+		interfaces:         mapset.NewSet[string](),
 	}
 }
 
@@ -304,7 +305,7 @@ func (netw *Combined) start(
 	netw.lastNameservers = nameservers
 	start := time.Now()
 	netw.startTime = &start
-	netw.interfaces = internal.GetInterfacesFromDefaultRoutes(internal.NewSet(netw.vpnet.Tun().Interface().Name))
+	netw.interfaces = device.InterfacesWithDefaultRoute(mapset.NewSet(netw.vpnet.Tun().Interface().Name))
 	return nil
 }
 
@@ -459,7 +460,7 @@ func (netw *Combined) Stop() error {
 			return err
 		}
 
-		netw.interfaces = make(internal.Set[string])
+		netw.interfaces = mapset.NewSet[string]()
 	}
 	return nil
 }
