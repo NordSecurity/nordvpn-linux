@@ -111,7 +111,11 @@ func statusLoop(fileshareClient pb.FileshareClient, client transferStatusClient,
 // being the most likely cause
 func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
 	resp, err := c.client.IsLoggedIn(context.Background(), &dpb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil {
+		return formatError(fmt.Errorf(internal.UnhandledMessage))
+	}
+
+	if !resp.GetValue() {
 		return formatError(fmt.Errorf(MsgFileshareUserNotLoggedIn))
 	}
 
