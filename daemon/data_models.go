@@ -10,13 +10,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
 	"github.com/coreos/go-semver/semver"
-	mapset "github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 type AppData struct {
-	CountryNames map[bool]map[config.Protocol]mapset.Set
-	CityNames    map[bool]map[config.Protocol]map[string]mapset.Set
-	GroupNames   map[bool]map[config.Protocol]mapset.Set
+	CountryNames map[bool]map[config.Protocol]mapset.Set[string]
+	CityNames    map[bool]map[config.Protocol]map[string]mapset.Set[string]
+	GroupNames   map[bool]map[config.Protocol]mapset.Set[string]
 }
 
 type VersionData struct {

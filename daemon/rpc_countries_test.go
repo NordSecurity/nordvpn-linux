@@ -11,7 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
-	mapset "github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,7 +64,7 @@ func TestRPCCountries_Successful(t *testing.T) {
 
 	dm := testNewDataManager()
 
-	countryNames := map[bool]map[config.Protocol]mapset.Set{
+	countryNames := map[bool]map[config.Protocol]mapset.Set[string]{
 		false: {
 			config.Protocol_UDP: mapset.NewSet("LT"),
 			config.Protocol_TCP: mapset.NewSet("DE"),
