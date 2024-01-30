@@ -53,9 +53,6 @@ const (
 	// PermUserRWXGroupRXOthersRX forbidding group and others to write to it
 	PermUserRWXGroupRXOthersRX = 0755
 
-	// PermUserRWXGroupRWXOthersRWX allowing group and others to write to it
-	PermUserRWXGroupRWXOthersRWX = 0777
-
 	// ChattrExec is the chattr command executable name
 	ChattrExec = "chattr"
 

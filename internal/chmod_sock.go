@@ -11,7 +11,7 @@ func UpdateSocketFilePermissions(sockFileName string) {
 		return
 	}
 	// #nosec G302 -- need world writable permissions
-	if err := os.Chmod(sockFileName, PermUserRWXGroupRWXOthersRWX); err != nil {
+	if err := os.Chmod(sockFileName, PermUserRWGroupRWOthersRW); err != nil {
 		log.Println(err)
 	}
 }

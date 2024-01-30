@@ -71,14 +71,14 @@ func getUnixCreds(conn net.Conn) (*unix.Ucred, error) {
 		return nil, fmt.Errorf("doing rawConn Control: %w", err)
 	}
 
-	if err := authenticateUser(ucred); err != nil {
+	if err := authenticateUser(ucred, []string{"nordvpn"}); err != nil {
 		return nil, err
 	}
 
 	return ucred, nil
 }
 
-func authenticateUser(ucred *unix.Ucred) error {
+func authenticateUser(ucred *unix.Ucred, allowGroups []string) error {
 	// root?
 	if ucred.Uid == 0 {
 		return nil
@@ -97,8 +97,10 @@ func authenticateUser(ucred *unix.Ucred) error {
 		if err != nil {
 			return fmt.Errorf("authenticate user, check user group: %s", err)
 		}
-		if groupInfo.Name == "nordvpn" || groupInfo.Name == "sudo" || groupInfo.Name == "wheel" {
-			return nil
+		for _, allowGroupName := range allowGroups {
+			if groupInfo.Name == allowGroupName {
+				return nil
+			}
 		}
 	}
 	return fmt.Errorf("requesting user does not have permissions")
