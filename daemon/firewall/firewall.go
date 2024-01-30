@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"golang.org/x/exp/slices"
 )
 
 // Firewall is responsible for correctly changing one firewall agent over another.
@@ -53,8 +52,13 @@ func (fw *Firewall) Add(rules []Rule) error {
 			return NewError(ErrRuleWithoutName)
 		}
 
-		if slices.ContainsFunc(fw.rules.rules, byName(rule.Name)) {
-			return NewError(ErrRuleAlreadyExists)
+		existingRule, err := fw.rules.Get(rule.Name)
+		if err == nil {
+			// rule with the given name exists, check if the rules are equal
+			if existingRule.Equal(rule) {
+				return NewError(ErrRuleAlreadyExists)
+			}
+			fw.publisher.Publish(fmt.Sprintf("replacing existing rule %s", rule.Name))
 		}
 
 		if err := fw.current.Add(rule); err != nil {
@@ -63,6 +67,13 @@ func (fw *Firewall) Add(rules []Rule) error {
 
 		if err := fw.rules.Add(rule); err != nil {
 			return NewError(fmt.Errorf("adding %s to memory: %w", rule.Name, err))
+		}
+
+		if err == nil {
+			// remove older rule
+			if err := fw.current.Delete(existingRule); err != nil {
+				return NewError(fmt.Errorf("removing replaced rule %s to memory: %w", rule.Name, err))
+			}
 		}
 	}
 	return nil
