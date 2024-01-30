@@ -282,6 +282,10 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY)})
 	case errors.Is(err, ErrNoPermissionsToAcceptDirectory):
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS)})
+	case errors.Is(err, ErrTransferCanceledByUs):
+		fallthrough
+	case errors.Is(err, ErrTransferCanceledByPeer):
+		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_TRANSFER_INVALIDATED)})
 	case err == nil:
 		break
 	default:
