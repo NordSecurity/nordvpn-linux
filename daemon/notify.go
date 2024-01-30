@@ -2,12 +2,10 @@ package daemon
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 	"syscall"
 	"time"
 
@@ -46,7 +44,7 @@ func Notify(cm config.Manager, notificationType NotificationType, args []string)
 
 func notify(id int64, body string) error {
 	var cmd *exec.Cmd
-	commandContext, cancelFunc := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
+	commandContext, cancelFunc := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancelFunc()
 	if internal.IsCommandAvailable("notify-send") {
 		cmd = exec.CommandContext(commandContext, "notify-send", "-t", "3000", "-i", IconPath, summary, body)
@@ -72,9 +70,10 @@ func notify(id int64, body string) error {
 	cmd.Env = append(cmd.Env, "DISPLAY=:0.0")
 	cmd.Env = append(cmd.Env, dbusAddr)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid: uint32(id)}}
-	out, err := cmd.CombinedOutput()
+	// Use Run instead of CombinedOutput because CombineOutput creates a buffer that blocks the timeout.
+	err := cmd.Run()
 	if err != nil {
-		return errors.New(strings.Trim(string(out), "\n"))
+		return fmt.Errorf("running notify command: %w", err)
 	}
 	return nil
 }
