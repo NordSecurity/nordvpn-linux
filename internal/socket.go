@@ -97,7 +97,7 @@ func authenticateUser(ucred *unix.Ucred) error {
 		if err != nil {
 			return fmt.Errorf("authenticate user, check user group: %s", err)
 		}
-		if groupInfo.Name == "nordvpn" || groupInfo.Name == "sudo" {
+		if groupInfo.Name == "nordvpn" || groupInfo.Name == "sudo" || groupInfo.Name == "wheel" {
 			return nil
 		}
 	}
