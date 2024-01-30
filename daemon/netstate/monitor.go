@@ -80,7 +80,7 @@ func (m *NetlinkMonitor) checkForChanges(re Reconnector) {
 func (m *NetlinkMonitor) setCachedInterfaces(interfaces mapset.Set[string]) bool {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
-	if m.cached != interfaces {
+	if !m.cached.Equal(interfaces) {
 		m.cached = interfaces
 		return true
 	}
