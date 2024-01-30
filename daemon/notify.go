@@ -70,6 +70,7 @@ func notify(id int64, body string) error {
 	cmd.Env = append(cmd.Env, "DISPLAY=:0.0")
 	cmd.Env = append(cmd.Env, dbusAddr)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid: uint32(id)}}
+	// Use Run instead of CombinedOutput because CombineOutput creates a buffer that blocks the timeout.
 	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("running notify command: %w", err)
