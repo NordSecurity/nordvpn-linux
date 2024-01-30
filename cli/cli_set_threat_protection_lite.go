@@ -16,7 +16,7 @@ import (
 const (
 	SetThreatProtectionLiteUsageText     = "Enables or disables ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/features/threat-protection/."
 	SetThreatProtectionLiteArgsUsageText = `<enabled>|<disabled>`
-	SetThreatProtectionLiteDescription   = `Use this command to enable or disable ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/lt/features/threat-protection/
+	SetThreatProtectionLiteDescription   = `Use this command to enable or disable ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/features/threat-protection/
 
 Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set threatprotectionlite off
