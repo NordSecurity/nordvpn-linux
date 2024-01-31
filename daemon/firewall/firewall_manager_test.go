@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
+	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	iptablesmock "github.com/NordSecurity/nordvpn-linux/test/mock/firewall/iptables_manager"
@@ -17,6 +18,11 @@ import (
 )
 
 var ErrGetDevicesFailed error = errors.New("get devices has failed")
+
+const (
+	peerPublicKey = "D3YXjHgrzVw6Tniwd7p5zpXD0RGgx3BpMivueganzet="
+	peerIPAddress = "48.242.30.25"
+)
 
 // transformCommandsForPriting takes list of commands and combines them into a single string, where commands are
 // separated by newline.
@@ -125,15 +131,7 @@ func TestTrafficBlocking(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			commandRunnerMock := iptablesmock.NewCommandRunnerMock()
-
-			// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
-			// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-			outputChain := iptablesmock.NewIptablesOutput(iptablesmock.OutputChainName)
-			commandRunnerMock.AddIptablesListOutput(iptablesmock.OutputChainName, outputChain.Get())
-
-			inputChain := iptablesmock.NewIptablesOutput(iptablesmock.InputChainName)
-			commandRunnerMock.AddIptablesListOutput(iptablesmock.InputChainName, inputChain.Get())
+			commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 
 			if test.errCommand != "" {
 				commandRunnerMock.ErrCommand = test.errCommand
@@ -211,16 +209,8 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 		fmt.Sprintf("-I OUTPUT 1 -o %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name),
 	}
 
-	commandRunnerMock := iptablesmock.NewCommandRunnerMock()
+	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &commandRunnerMock, connmark, true, true)
-
-	// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
-	// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-	outputChain := iptablesmock.NewIptablesOutput(iptablesmock.OutputChainName)
-	commandRunnerMock.AddIptablesListOutput(iptablesmock.OutputChainName, outputChain.Get())
-
-	inputChain := iptablesmock.NewIptablesOutput(iptablesmock.InputChainName)
-	commandRunnerMock.AddIptablesListOutput(iptablesmock.InputChainName, inputChain.Get())
 
 	err := firewallManager.BlockTraffic()
 	assert.Nil(t, err, "Received unexpected error when blocking traffic.")
@@ -352,18 +342,10 @@ func TestSetAllowlist(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			commandRunnerMock := iptablesmock.NewCommandRunnerMock()
+			commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 			if test.invalidCommand != "" {
 				commandRunnerMock.ErrCommand = test.invalidCommand
 			}
-
-			// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
-			// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-			outputChain := iptablesmock.NewIptablesOutput(iptablesmock.OutputChainName)
-			commandRunnerMock.AddIptablesListOutput(iptablesmock.OutputChainName, outputChain.Get())
-
-			inputChain := iptablesmock.NewIptablesOutput(iptablesmock.InputChainName)
-			commandRunnerMock.AddIptablesListOutput(iptablesmock.InputChainName, inputChain.Get())
 
 			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true, true)
 
@@ -443,15 +425,7 @@ func TestSetAllowlist_IPv6(t *testing.T) {
 	// Only IPv6 commands should be executed for subnets.
 	expectedIPv6CommandsAfterSet := append(subnetCommands, expectedCommandsAfterSet...)
 
-	commandRunnerMock := iptablesmock.NewCommandRunnerMock()
-
-	// When testing a single type rule, we do not care so much about ordering/respecting priority, so it is
-	// enough to set output to empty iptables(necessary because output processing would crash the tests otherwise).
-	outputChain := iptablesmock.NewIptablesOutput(iptablesmock.OutputChainName)
-	commandRunnerMock.AddIptablesListOutput(iptablesmock.OutputChainName, outputChain.Get())
-
-	inputChain := iptablesmock.NewIptablesOutput(iptablesmock.InputChainName)
-	commandRunnerMock.AddIptablesListOutput(iptablesmock.InputChainName, inputChain.Get())
+	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 
 	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &commandRunnerMock, connmark, true, true)
 
@@ -558,7 +532,7 @@ func TestApiAllowlist(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			commandRunnerMock := iptablesmock.NewCommandRunnerMock()
+			commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 			if test.invalidCommand != "" {
 				commandRunnerMock.ErrCommand = test.invalidCommand
 			}
@@ -618,4 +592,270 @@ func TestApiAllowlist(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAllowDenyFileshare(t *testing.T) {
+	peerPublicKey := peerPublicKey
+	peerIPAddress := "48.242.30.25"
+	peerAddress := meshnet.UniqueAddress{
+		UID:     peerPublicKey,
+		Address: netip.MustParseAddr(peerIPAddress),
+	}
+
+	allowFileshareCommand := fmt.Sprintf(
+		"-I INPUT 1 -s %s/32 -p tcp -m tcp --dport 49111 -j ACCEPT -m comment --comment nordvpn-4",
+		peerIPAddress)
+	denyFileshareCommand := fmt.Sprintf(
+		"-D INPUT -s %s/32 -p tcp -m tcp --dport 49111 -j ACCEPT -m comment --comment nordvpn-4",
+		peerIPAddress)
+
+	tests := []struct {
+		name                       string
+		invalidCommand             string
+		firewallDisabled           bool
+		expectedCommandsAfterAllow []string
+		expectedCommandsAfterDeny  []string
+		expectedAllowErr           error
+		expectedDenyErr            error
+	}{
+		{
+			name:                       "success",
+			expectedCommandsAfterAllow: []string{allowFileshareCommand},
+			expectedCommandsAfterDeny:  []string{denyFileshareCommand},
+			expectedAllowErr:           nil,
+		},
+		{
+			name:             "allow fails",
+			invalidCommand:   allowFileshareCommand,
+			expectedAllowErr: iptablesmock.ErrIptablesFailure,
+		},
+		{
+			name:                       "deny fileshare",
+			invalidCommand:             denyFileshareCommand,
+			expectedCommandsAfterAllow: []string{allowFileshareCommand},
+			expectedDenyErr:            iptablesmock.ErrIptablesFailure,
+		},
+		{
+			name:             "firewall disabled",
+			firewallDisabled: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
+			if test.invalidCommand != "" {
+				commandRunnerMock.ErrCommand = test.invalidCommand
+			}
+			firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, !test.firewallDisabled)
+
+			err := firewallManager.AllowFileshare(peerAddress)
+			if test.expectedAllowErr != nil {
+				assert.ErrorIs(t,
+					err,
+					test.expectedAllowErr,
+					"Unexpected error returned by FirewallManager: %w", err)
+				return
+			}
+
+			commandsAfterAllow := commandRunnerMock.PopIPv4Commands()
+			assert.Len(t,
+				commandsAfterAllow,
+				len(test.expectedCommandsAfterAllow),
+				"Unexpected commands executed after allowing fileshare")
+			assert.Equal(t,
+				test.expectedCommandsAfterAllow,
+				commandsAfterAllow,
+				"Fileshare allow rule was not added to iptables.")
+
+			err = firewallManager.DenyFileshare(peerPublicKey)
+			if test.expectedDenyErr != nil {
+				assert.ErrorIs(t,
+					err,
+					test.expectedDenyErr,
+					"Unexpected error returned by FirewallManager: %w", err)
+				return
+			}
+
+			commandsAfterDeny := commandRunnerMock.PopIPv4Commands()
+			assert.Len(t,
+				commandsAfterDeny,
+				len(test.expectedCommandsAfterDeny),
+				"Unexpected commands executed denying fileshare.")
+			assert.Equal(t,
+				test.expectedCommandsAfterDeny,
+				commandsAfterDeny,
+				"Fileshare deny rule was not added to iptables.")
+		})
+	}
+}
+
+func TestAllowDenyIncoming(t *testing.T) {
+	peerPublicKey := peerPublicKey
+	peerIPAddress := "48.242.30.25"
+	peerAddress := meshnet.UniqueAddress{
+		UID:     peerPublicKey,
+		Address: netip.MustParseAddr(peerIPAddress),
+	}
+
+	allowCommand := fmt.Sprintf("-I INPUT 1 -s %s/32 -j ACCEPT -m comment --comment nordvpn-5", peerIPAddress)
+	blockLANCommands := []string{
+		fmt.Sprintf("-I INPUT 1 -s %s/32 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+		fmt.Sprintf("-I INPUT 1 -s %s/32 -d 192.168.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+		fmt.Sprintf("-I INPUT 1 -s %s/32 -d 172.16.0.0/12 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+		fmt.Sprintf("-I INPUT 1 -s %s/32 -d 10.0.0.0/8 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+	}
+
+	denyCommand := fmt.Sprintf("-D INPUT -s %s/32 -j ACCEPT -m comment --comment nordvpn-5", peerIPAddress)
+	unblockLANCommands := []string{
+		fmt.Sprintf("-D INPUT -s %s/32 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+		fmt.Sprintf("-D INPUT -s %s/32 -d 192.168.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+		fmt.Sprintf("-D INPUT -s %s/32 -d 172.16.0.0/12 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+		fmt.Sprintf("-D INPUT -s %s/32 -d 10.0.0.0/8 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+	}
+
+	tests := []struct {
+		name                       string
+		lanAllowed                 bool
+		firewallDisabled           bool
+		expectedCommandsAfterAllow []string
+		expectedCommandsAfterDeny  []string
+		invalidCommand             string
+		expectedAllowErr           error
+		expectedDenyErr            error
+	}{
+		{
+			name:                       "success",
+			lanAllowed:                 true,
+			expectedCommandsAfterAllow: []string{allowCommand},
+			expectedCommandsAfterDeny:  []string{denyCommand},
+		},
+		{
+			name:       "success lan blocked",
+			lanAllowed: false,
+			// commands in order of execution, i.e allow incoming first, then block all LANs
+			expectedCommandsAfterAllow: append(blockLANCommands, allowCommand),
+			expectedCommandsAfterDeny:  append([]string{denyCommand}, unblockLANCommands...),
+		},
+		{
+			name:             "failure when allowing",
+			lanAllowed:       true,
+			invalidCommand:   allowCommand,
+			expectedAllowErr: iptablesmock.ErrIptablesFailure,
+		},
+		{
+			name:                       "failure when denying",
+			lanAllowed:                 true,
+			invalidCommand:             denyCommand,
+			expectedCommandsAfterAllow: []string{allowCommand},
+			expectedDenyErr:            iptablesmock.ErrIptablesFailure,
+		},
+		{
+			name:             "firewall disabled",
+			firewallDisabled: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
+			if test.invalidCommand != "" {
+				commandRunnerMock.ErrCommand = test.invalidCommand
+			}
+
+			firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, !test.firewallDisabled)
+
+			err := firewallManager.AllowIncoming(peerAddress, test.lanAllowed)
+			if test.expectedAllowErr != nil {
+				assert.ErrorIs(t, err, test.expectedAllowErr, "Invalid error returned by AllowIncoming.")
+				return
+			}
+
+			commandsAfterAllow := commandRunnerMock.PopIPv4Commands()
+			assert.Equal(t, test.expectedCommandsAfterAllow, commandsAfterAllow,
+				"Invalid commands executed when allowing incoming mesh traffic.")
+
+			err = firewallManager.DenyIncoming(peerPublicKey)
+			if test.expectedDenyErr != nil {
+				assert.ErrorIs(t, err, test.expectedDenyErr, "Invalid error returned by DenyIncoming.")
+				return
+			}
+
+			commandsAfterDeny := commandRunnerMock.PopIPv4Commands()
+			assert.Equal(t, test.expectedCommandsAfterDeny, commandsAfterDeny,
+				"Invalid commands executed when denying incoming mesh traffic.")
+		})
+	}
+}
+
+func TestAllowIncoming_AleradyAllowed(t *testing.T) {
+	peerAddress := meshnet.UniqueAddress{
+		UID:     peerPublicKey,
+		Address: netip.MustParseAddr(peerIPAddress),
+	}
+
+	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
+	firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, true)
+
+	err := firewallManager.AllowIncoming(peerAddress, true)
+	assert.Nil(t, err, "AllowIncoming has returned an unexpected error.")
+
+	// remove commands form initial call from the mock
+	commandRunnerMock.PopIPv4Commands()
+
+	err = firewallManager.AllowIncoming(peerAddress, true)
+	assert.ErrorIs(t, err, ErrRuleAlreadyActive,
+		"Invalid error returned on subsequent AllowIncoming.")
+	assert.Empty(t, commandRunnerMock.PopIPv4Commands(), "Commands executed after allowing incoming traffic for a second time")
+
+	// rule duplication should be based on peers public key, so it should be detected even if the address has changed
+	peerAddress.Address = netip.MustParseAddr("128.236.166.204")
+	err = firewallManager.AllowIncoming(peerAddress, true)
+	assert.ErrorIs(t, err, ErrRuleAlreadyActive,
+		"Invalid error returned on subsequent AllowIncoming.")
+	assert.Empty(t, commandRunnerMock.PopIPv4Commands(), "Commands executed after allowing incoming traffic for a second time")
+}
+
+func TestDenyIncoming_NotDenied(t *testing.T) {
+	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
+	firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, true)
+
+	err := firewallManager.DenyIncoming(peerPublicKey)
+	assert.ErrorIs(t, err, ErrRuleNotFound)
+	assert.Empty(t, commandRunnerMock.PopIPv4Commands(), "Commands executed after denying mesh traffic that was not allowed.")
+}
+
+func TestAllowFileshare_AlreadyAllowed(t *testing.T) {
+	peerAddress := meshnet.UniqueAddress{
+		UID:     peerPublicKey,
+		Address: netip.MustParseAddr(peerIPAddress),
+	}
+
+	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
+
+	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true, true)
+
+	err := firewallManager.AllowFileshare(peerAddress)
+	assert.Nil(t, err, "Unexpected error when allowing fileshare: %w", err)
+
+	commands := commandRunnerMock.PopIPv4Commands()
+	assert.Len(t, commands, 1, "Unexpected commands executed when allowing fileshare.")
+
+	err = firewallManager.AllowFileshare(peerAddress)
+	assert.ErrorIs(t, err, ErrRuleAlreadyActive,
+		"Invalid error received when allowing fileshare when it was already allowed.")
+}
+
+func TestDenyFileshare_NotAllowed(t *testing.T) {
+	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
+
+	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true, true)
+
+	err := firewallManager.DenyFileshare(peerPublicKey)
+	assert.ErrorIs(t, err, ErrRuleNotActive,
+		"Invalid error received when denying fileshare when it was not previously allowed.")
+
+	commands := commandRunnerMock.PopIPv4Commands()
+	assert.Empty(t, commands,
+		"Commands were executed when denying fileshare when it was not previously allowed.")
 }

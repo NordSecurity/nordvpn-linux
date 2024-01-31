@@ -52,6 +52,26 @@ func NewCommandRunnerMock() CommandRunnerMock {
 	}
 }
 
+// NewCommandRunnerMockWithTables returns CommandRunnerMock where outputs are configured to return first two lines of
+// iptables output, i.e:
+//
+// Chain INPUC (policy ACCEPT)
+//
+// target     prot opt source               destination
+//
+// For OUTPUT and INPUT table.
+func NewCommandRunnerMockWithTables() CommandRunnerMock {
+	commandRunnerMock := NewCommandRunnerMock()
+
+	inputOutputs := NewIptablesOutput(InputChainName)
+	commandRunnerMock.AddIptablesListOutput(InputChainName, inputOutputs.Get())
+
+	outputOutputs := NewIptablesOutput(OutputChainName)
+	commandRunnerMock.AddIptablesListOutput(OutputChainName, outputOutputs.Get())
+
+	return commandRunnerMock
+}
+
 func (i *CommandRunnerMock) PopIPv4Commands() []string {
 	commands := i.ipv4Commands
 	i.ipv4Commands = nil
