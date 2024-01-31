@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/netip"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
@@ -52,12 +53,26 @@ func (netw *Combined) handleNetworkChanged() error {
 				return err
 			}
 		}
-		// during network changes in Linux Mint 20.03, systemd removes the tunnel interface from DNS resolver.
-		if err := netw.setDNS(netw.lastNameservers); err != nil {
+		if err := netw.fixForLinuxMint20(); err != nil {
 			return err
 		}
 	}
 
+	return nil
+}
+
+// during network changes in Linux Mint 20.03, systemd removes the tunnel interface from DNS resolver.
+func (netw *Combined) fixForLinuxMint20() error {
+	if err := netw.setDNS(netw.lastNameservers); err != nil {
+		return err
+	}
+	// It needs to be set with delay to be sure systemd finishes its internal setup at network changes,
+	// otherwise systemd will remove again the tunnel from DNS resolver.
+	// In this way nordvpn will be the last changing the DNS resolvers list.
+	time.Sleep(1 * time.Second)
+	if err := netw.setDNS(netw.lastNameservers); err != nil {
+		return err
+	}
 	return nil
 }
 
