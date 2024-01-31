@@ -43,6 +43,9 @@ ARG GROUP_ID=1000
 
 RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} builder && useradd -l -m -u ${USER_ID} -g builder -G nordvpn builder && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
+# Enable `go` in sudo mode
+RUN echo "Defaults secure_path=\"$(dirname $(which go)):$PATH\"" | sudo tee --append /etc/sudoers.d/env_keep
+
 RUN chown -R builder:builder /go/pkg/mod
 
 USER builder
