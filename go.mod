@@ -1,6 +1,6 @@
 module github.com/NordSecurity/nordvpn-linux
 
-go 1.20
+go 1.21
 
 require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
