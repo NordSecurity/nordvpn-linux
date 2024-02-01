@@ -1,11 +1,11 @@
 package internal
 
-import "golang.org/x/exp/slices"
+import (
+	"golang.org/x/exp/slices"
+)
 
 func Find[T comparable](l []T, element T) *T {
-	index := slices.IndexFunc[T](l, func(t T) bool {
-		return t == element
-	})
+	index := slices.Index(l, element)
 
 	if index != -1 {
 		return &l[index]

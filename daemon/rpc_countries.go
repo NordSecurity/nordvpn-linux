@@ -28,7 +28,7 @@ func (r *RPC) Countries(ctx context.Context, in *pb.Empty) (*pb.Payload, error) 
 	}
 	var countryNames []string
 	for country := range countries.Iter() {
-		countryNames = append(countryNames, country.(string))
+		countryNames = append(countryNames, country)
 	}
 	sort.Strings(countryNames)
 	return &pb.Payload{

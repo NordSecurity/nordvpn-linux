@@ -78,10 +78,8 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 	}
 
 	if cfg.IPv6 {
-		if r.netw.IsVPNActive() {
-			if err := r.netw.PermitIPv6(); err != nil {
-				log.Println(internal.ErrorPrefix, "failed to re-enable ipv6:", err)
-			}
+		if err := r.netw.PermitIPv6(); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to re-enable ipv6:", err)
 		}
 		r.endpoint = network.DefaultEndpoint(r.endpointResolver, server.IPs())
 	} else {
@@ -170,7 +168,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 			// to the server - DO NOT DISABLE IPv6.
 			if !server.SupportsIPv6() {
 				if err := r.netw.DenyIPv6(); err != nil {
-					log.Println(internal.ErrorPrefix, "failed to disable ipv6:")
+					log.Println(internal.ErrorPrefix, "failed to disable ipv6:", err)
 				}
 			}
 			event.Type = events.ConnectSuccess

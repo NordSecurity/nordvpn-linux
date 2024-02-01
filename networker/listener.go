@@ -11,14 +11,10 @@ func (c *Combined) Reconnect(stateIsUp bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	isStarted := c.isVpnSet
-	ipv6Enabled := c.ipv6Enabled
-
-	if isStarted {
-		if !ipv6Enabled {
-			if err := c.denyIPv6(); err != nil {
-				log.Println(internal.ErrorPrefix, "refreshing network", err)
-			}
+	if c.isVpnSet {
+		// disable IPv6 as soon as possible to prevent leaks when a new Ethernet is inserted
+		if err := c.disableIPv6IfNeeded(); err != nil {
+			log.Println(internal.ErrorPrefix, "refreshing network", err)
 		}
 	}
 

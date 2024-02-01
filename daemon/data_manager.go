@@ -12,7 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
 	"github.com/coreos/go-semver/semver"
-	mapset "github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 type InsightsDataManager interface {
@@ -157,9 +157,9 @@ func (dm *DataManager) SetServerStatus(s core.Server, status core.Status) error 
 }
 
 func (dm *DataManager) SetAppData(
-	countryNames map[bool]map[config.Protocol]mapset.Set,
-	cityNames map[bool]map[config.Protocol]map[string]mapset.Set,
-	groupNames map[bool]map[config.Protocol]mapset.Set,
+	countryNames map[bool]map[config.Protocol]mapset.Set[string],
+	cityNames map[bool]map[config.Protocol]map[string]mapset.Set[string],
+	groupNames map[bool]map[config.Protocol]mapset.Set[string],
 ) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()

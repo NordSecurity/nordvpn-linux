@@ -2,6 +2,7 @@ package firewall
 
 import (
 	"fmt"
+	"net"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -148,6 +149,27 @@ func TestFirewallAdd(t *testing.T) {
 			},
 			agent:    &mockAgent{},
 			hasError: true,
+		},
+		{
+			name: "replace existing rule",
+			rules: []Rule{
+				{
+					Name:       "block",
+					Interfaces: []net.Interface{{Name: "lo0"}},
+				},
+				{
+					Name:       "block",
+					Interfaces: []net.Interface{{Name: "en0"}},
+				},
+			},
+			expected: []Rule{
+				{
+					Name:       "block",
+					Interfaces: []net.Interface{{Name: "en0"}},
+				},
+			},
+			agent:    &mockAgent{},
+			hasError: false,
 		},
 	}
 

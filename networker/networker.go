@@ -28,6 +28,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
+	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
 
 	"github.com/kofalt/go-memoize"
@@ -155,6 +156,9 @@ type Combined struct {
 	// doing mesh refresh which may happen in background e.g. when network
 	// change event happens
 	enableLocalTraffic bool
+	// list with the existing OS interfaces when VPN was connected.
+	// This is used at network changes to know when a new interface was inserted
+	interfaces mapset.Set[string]
 }
 
 // NewCombined returns a ready made version of
@@ -198,6 +202,7 @@ func NewCombined(
 		fwmark:             fwmark,
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
+		interfaces:         mapset.NewSet[string](),
 	}
 }
 
@@ -290,47 +295,8 @@ func (netw *Combined) start(
 		return err
 	}
 
-	netw.publisher.Publish("starting network configuration")
-	// if KillSwitch is turned on, connection is already dropped
-	if !netw.isNetworkSet {
-		err = netw.setNetwork(allowlist)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err = netw.resetAllowlist(); err != nil {
+	if err := netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
 		return err
-	}
-
-	err = netw.router.Add(routes.Route{
-		Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
-		Device:  netw.vpnet.Tun().Interface(),
-		TableID: netw.policyRouter.TableID(),
-	})
-
-	if err != nil {
-		return fmt.Errorf("adding the default route: %w", err)
-	}
-
-	dnsGetter := &dns.NameServers{}
-
-	if netw.isMeshnetSet && defaultMeshSubnet.Contains(serverData.IP) {
-		err = netw.setDNS(dnsGetter.Get(false, false))
-	} else {
-		err = netw.setDNS(nameservers)
-	}
-	if err != nil {
-		return err
-	}
-
-	if netw.isMeshnetSet {
-		if err = netw.refresh(netw.cfg); err != nil {
-			return fmt.Errorf(
-				"refreshing meshnet: %w",
-				err,
-			)
-		}
 	}
 
 	netw.isVpnSet = true
@@ -339,6 +305,82 @@ func (netw *Combined) start(
 	netw.lastNameservers = nameservers
 	start := time.Now()
 	netw.startTime = &start
+	netw.interfaces = device.InterfacesWithDefaultRoute(mapset.NewSet(netw.vpnet.Tun().Interface().Name))
+	return nil
+}
+
+func (netw *Combined) configureNetwork(
+	allowlist config.Allowlist,
+	serverData vpn.ServerData,
+	nameservers config.DNS,
+) error {
+	netw.publisher.Publish("starting network configuration")
+	if err := netw.configureFirewall(allowlist); err != nil {
+		return err
+	}
+
+	if err := netw.addDefaultRoute(); err != nil {
+		return err
+	}
+
+	if err := netw.configureDNS(serverData, nameservers); err != nil {
+		return err
+	}
+
+	if netw.isMeshnetSet {
+		if err := netw.refresh(netw.cfg); err != nil {
+			return fmt.Errorf("refreshing meshnet: %w", err)
+		}
+	}
+
+	return netw.disableIPv6IfNeeded()
+}
+
+func (netw *Combined) disableIPv6IfNeeded() error {
+	if !netw.ipv6Enabled {
+		if err := netw.denyIPv6(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (netw *Combined) configureDNS(serverData vpn.ServerData, nameservers config.DNS) error {
+	dnsGetter := &dns.NameServers{}
+
+	if netw.isMeshnetSet && defaultMeshSubnet.Contains(serverData.IP) {
+		return netw.setDNS(dnsGetter.Get(false, false))
+	} else {
+		return netw.setDNS(nameservers)
+	}
+}
+
+func (netw *Combined) addDefaultRoute() error {
+	err := netw.router.Add(routes.Route{
+		Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
+		Device:  netw.vpnet.Tun().Interface(),
+		TableID: netw.policyRouter.TableID(),
+	})
+
+	if err != nil {
+		return fmt.Errorf("adding the default route: %w", err)
+	}
+	return err
+}
+
+func (netw *Combined) configureFirewall(allowlist config.Allowlist) error {
+	if err := netw.setNetwork(allowlist); err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
+		if !netw.isNetworkSet {
+			return err
+		} else {
+			netw.publisher.Publish("re-setting firewall failed: " + err.Error())
+		}
+	}
+
+	if err := netw.resetAllowlist(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -383,12 +425,8 @@ func (netw *Combined) restart(
 
 	// after restarting need to restore routing - because tun interface was recreated
 	// assuming all other routing rules are left as it was before restart
-	if err = netw.router.Add(routes.Route{
-		Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
-		Device:  netw.vpnet.Tun().Interface(),
-		TableID: netw.policyRouter.TableID(),
-	}); err != nil {
-		return fmt.Errorf("adding the default route: %w", err)
+	if err = netw.addDefaultRoute(); err != nil {
+		return err
 	}
 
 	dnsGetter := &dns.NameServers{}
@@ -399,6 +437,10 @@ func (netw *Combined) restart(
 	}
 	if err != nil {
 		return err
+	}
+
+	if err := netw.disableIPv6IfNeeded(); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to disable ipv6", err)
 	}
 
 	netw.lastServer = serverData
@@ -417,6 +459,8 @@ func (netw *Combined) Stop() error {
 		if err != nil && !errors.Is(err, errNilVPN) {
 			return err
 		}
+
+		netw.interfaces = mapset.NewSet[string]()
 	}
 	return nil
 }
@@ -1139,15 +1183,8 @@ func (netw *Combined) setMesh(
 	}
 
 	if netw.isVpnSet {
-		if err = netw.router.Add(routes.Route{
-			Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
-			Device:  netw.vpnet.Tun().Interface(),
-			TableID: netw.policyRouter.TableID(),
-		}); err != nil {
-			return fmt.Errorf(
-				"re-creating the default route: %w",
-				err,
-			)
+		if err = netw.addDefaultRoute(); err != nil {
+			return err
 		}
 	}
 
@@ -1347,15 +1384,8 @@ func (netw *Combined) unSetMesh() error {
 	}
 
 	if netw.isVpnSet {
-		if err := netw.router.Add(routes.Route{
-			Subnet:  netip.MustParsePrefix("0.0.0.0/0"),
-			Device:  netw.vpnet.Tun().Interface(),
-			TableID: netw.policyRouter.TableID(),
-		}); err != nil {
-			return fmt.Errorf(
-				"re-creating the default route: %w",
-				err,
-			)
+		if err := netw.addDefaultRoute(); err != nil {
+			return err
 		}
 	}
 

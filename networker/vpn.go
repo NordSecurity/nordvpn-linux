@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/netip"
+	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 // IsVPNActive returns true when connection to VPN server is established.
@@ -32,7 +35,7 @@ func (netw *Combined) IsMeshnetActive() bool {
 
 func (netw *Combined) handleNetworkChanged() error {
 	if netw.isMeshnetSet {
-		log.Println("reconfigure meshnet")
+		log.Println(internal.InfoPrefix, "handle network changes for meshnet")
 		if err := netw.mesh.NetworkChanged(); err != nil {
 			return err
 		}
@@ -44,33 +47,72 @@ func (netw *Combined) handleNetworkChanged() error {
 		if netw.isMeshnetSet && ok && vpn == netw.vpnet {
 			log.Println(internal.InfoPrefix, "skip network changed for VPN, already executed for meshnet")
 		} else {
-			log.Println("reconfigure VPN")
+			log.Println(internal.InfoPrefix, "handle network changes for VPN")
 
-			return netw.vpnet.NetworkChanged()
+			if err := netw.vpnet.NetworkChanged(); err != nil {
+				return err
+			}
+		}
+		if err := netw.fixForLinuxMint20(); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
+// during network changes in Linux Mint 20.03, systemd removes the tunnel interface from DNS resolver.
+func (netw *Combined) fixForLinuxMint20() error {
+	if err := netw.setDNS(netw.lastNameservers); err != nil {
+		return err
+	}
+	// It needs to be set with delay to be sure systemd finishes its internal setup at network changes,
+	// otherwise systemd will remove again the tunnel from DNS resolver.
+	// In this way nordvpn will be the last changing the DNS resolvers list.
+	time.Sleep(1 * time.Second)
+	if err := netw.setDNS(netw.lastNameservers); err != nil {
+		return err
+	}
+	return nil
+}
+
 // refreshVPN will handle network changes
-// 1. try to let each VPN implementation to handle
-// 2. as fallback, fully re-creates the VPN tunnel but keeps the firewall rules
+// 1. try to let each VPN implementation to handle, if the system interfaces didn't change
+// 2. fully re-creates the VPN tunnel but keeps the firewall rules
 // Thread unsafe.
 func (netw *Combined) refreshVPN() (err error) {
-	errNetChanged := netw.handleNetworkChanged()
-	if errNetChanged == nil {
+	isVPNStarted := netw.isVpnSet
+	isMeshStarted := netw.isMeshnetSet
+
+	if !isVPNStarted && !isMeshStarted {
 		return nil
 	}
 
-	log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", errNetChanged)
+	tunnelName := ""
+	if netw.vpnet != nil && netw.vpnet.Tun() != nil {
+		tunnelName = netw.vpnet.Tun().Interface().Name
+	}
+	newInterfaces := device.InterfacesWithDefaultRoute(mapset.NewSet(tunnelName))
+	newInterfaceDetected := !newInterfaces.IsSubset(netw.interfaces)
+	log.Println(internal.InfoPrefix, "refresh VPN, new interface detected:", newInterfaceDetected)
 
-	started := netw.isVpnSet
+	if !newInterfaceDetected {
+		// if there is no new OS interface, just reconfigure the VPN internally if possible
+		errNetChanged := netw.handleNetworkChanged()
+		if errNetChanged == nil {
+			return nil
+		}
+
+		log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", errNetChanged)
+	}
+
+	netw.interfaces = newInterfaces
+
 	var ip netip.Addr
 	var vpnErr, meshErr error
 	defer func() { err = errors.Join(vpnErr, meshErr) }()
 
-	if started {
+	if isVPNStarted {
 		if !netw.isKillSwitchSet {
 			if err := netw.setKillSwitch(netw.allowlist); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
@@ -95,7 +137,7 @@ func (netw *Combined) refreshVPN() (err error) {
 		}
 	}
 
-	if netw.isMeshnetSet {
+	if isMeshStarted {
 		if netw.mesh.Tun() != nil && len(netw.mesh.Tun().IPs()) > 0 {
 			ip = netw.mesh.Tun().IPs()[0]
 		}
@@ -112,7 +154,7 @@ func (netw *Combined) refreshVPN() (err error) {
 		}
 	}
 
-	if started {
+	if isVPNStarted {
 		if vpnErr = netw.start(
 			netw.lastCreds,
 			netw.lastServer,

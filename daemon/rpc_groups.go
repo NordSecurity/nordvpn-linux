@@ -23,7 +23,7 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.Payload, error) {
 	if groups, ok := r.dm.GetAppData().GroupNames[cfg.AutoConnectData.Obfuscate][cfg.AutoConnectData.Protocol]; ok {
 		var groupNames []string
 		for group := range groups.Iter() {
-			groupNames = append(groupNames, group.(string))
+			groupNames = append(groupNames, group)
 		}
 
 		sort.Strings(groupNames)

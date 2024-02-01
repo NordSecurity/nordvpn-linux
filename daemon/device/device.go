@@ -8,6 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	"github.com/vishvananda/netlink"
 )
 
 type ListFunc func() ([]net.Interface, error)
@@ -55,7 +58,7 @@ func ListPhysical() ([]net.Interface, error) {
 		gateway4, err4 := DefaultGateway(false)
 		gateway6, err6 := DefaultGateway(true)
 
-		if err4 == nil && err6 == nil && !interfacesAreEqual(gateway4, gateway6) {
+		if err4 == nil && err6 == nil && !InterfacesAreEqual(gateway4, gateway6) {
 			return []net.Interface{gateway4, gateway6}, nil
 		}
 		if err4 == nil {
@@ -139,10 +142,31 @@ func interfaceNameFromIPRoute(line string) (string, error) {
 	return "", fmt.Errorf("malformed input")
 }
 
-func interfacesAreEqual(a net.Interface, b net.Interface) bool {
+func InterfacesAreEqual(a net.Interface, b net.Interface) bool {
 	return a.Index == b.Index &&
 		a.MTU == b.MTU &&
 		a.Name == b.Name &&
 		a.HardwareAddr.String() == b.HardwareAddr.String() &&
 		a.Flags == b.Flags
+}
+
+func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) mapset.Set[string] {
+	// get interface list from default routes
+	routeList, _ := netlink.RouteList(nil, netlink.FAMILY_V4)
+	interfacesList := mapset.NewSet[string]()
+	for _, r := range routeList {
+		if r.Dst != nil {
+			continue
+		}
+		if r.Gw == nil {
+			continue
+		}
+		if iface, err := net.InterfaceByIndex(r.LinkIndex); err == nil {
+			if !ignoreSet.Contains(iface.Name) {
+				interfacesList.Add(iface.Name)
+			}
+		}
+	}
+
+	return interfacesList
 }

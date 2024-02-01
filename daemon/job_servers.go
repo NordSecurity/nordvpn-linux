@@ -12,7 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
-	mapset "github.com/deckarep/golang-set"
+	mapset "github.com/deckarep/golang-set/v2"
 )
 
 var alphanumeric = regexp.MustCompile(`[^0-9a-zA-Z ]+`)
@@ -161,34 +161,34 @@ func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validat
 }
 
 func SetAppData(dm *DataManager, tech config.Technology, servers core.Servers) {
-	countryNames := map[bool]map[config.Protocol]mapset.Set{
+	countryNames := map[bool]map[config.Protocol]mapset.Set[string]{
 		false: {
-			config.Protocol_UDP: mapset.NewSet(),
-			config.Protocol_TCP: mapset.NewSet(),
+			config.Protocol_UDP: mapset.NewSet[string](),
+			config.Protocol_TCP: mapset.NewSet[string](),
 		},
 		true: {
-			config.Protocol_UDP: mapset.NewSet(),
-			config.Protocol_TCP: mapset.NewSet(),
+			config.Protocol_UDP: mapset.NewSet[string](),
+			config.Protocol_TCP: mapset.NewSet[string](),
 		},
 	}
-	cityNames := map[bool]map[config.Protocol]map[string]mapset.Set{
+	cityNames := map[bool]map[config.Protocol]map[string]mapset.Set[string]{
 		false: {
-			config.Protocol_UDP: make(map[string]mapset.Set, 0),
-			config.Protocol_TCP: make(map[string]mapset.Set, 0),
+			config.Protocol_UDP: make(map[string]mapset.Set[string], 0),
+			config.Protocol_TCP: make(map[string]mapset.Set[string], 0),
 		},
 		true: {
-			config.Protocol_UDP: make(map[string]mapset.Set, 0),
-			config.Protocol_TCP: make(map[string]mapset.Set, 0),
+			config.Protocol_UDP: make(map[string]mapset.Set[string], 0),
+			config.Protocol_TCP: make(map[string]mapset.Set[string], 0),
 		},
 	}
-	groupNames := map[bool]map[config.Protocol]mapset.Set{
+	groupNames := map[bool]map[config.Protocol]mapset.Set[string]{
 		false: {
-			config.Protocol_UDP: mapset.NewSet(),
-			config.Protocol_TCP: mapset.NewSet(),
+			config.Protocol_UDP: mapset.NewSet[string](),
+			config.Protocol_TCP: mapset.NewSet[string](),
 		},
 		true: {
-			config.Protocol_UDP: mapset.NewSet(),
-			config.Protocol_TCP: mapset.NewSet(),
+			config.Protocol_UDP: mapset.NewSet[string](),
+			config.Protocol_TCP: mapset.NewSet[string](),
 		},
 	}
 
@@ -240,7 +240,7 @@ func SetAppData(dm *DataManager, tech config.Technology, servers core.Servers) {
 			if _, ok := cityNames[obfuscated][proto][loweredCountryTitle]; ok {
 				cityNames[obfuscated][proto][loweredCountryTitle].Add(cityTitle)
 			} else {
-				cityNames[obfuscated][proto][loweredCountryTitle] = mapset.NewSetWith(cityTitle)
+				cityNames[obfuscated][proto][loweredCountryTitle] = mapset.NewSet(cityTitle)
 			}
 			for _, group := range groupTitles {
 				groupNames[obfuscated][proto].Add(group)
