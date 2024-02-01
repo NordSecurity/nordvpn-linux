@@ -1,4 +1,9 @@
 FROM debian:buster-slim
+# TODO: Change base image to ubuntu:20.04 on 2024-06-30
+# Then to debian:bullseye-slim on 2025-05-29
+# Then to ubuntu:22.04 on 2026-06-30
+# Then to debian:bookworm-slim on 2027-06-01
+# Then to ubuntu:24:04 on 2028-06-30
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
