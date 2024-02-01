@@ -16,4 +16,3 @@ RUN ln -s $(which python3) /usr/bin/python
 # Add golang binaries
 COPY --from=golang:latest /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
-
