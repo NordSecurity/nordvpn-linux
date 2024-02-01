@@ -19,6 +19,8 @@ RUN dpkg --add-architecture i386; \
         libxml2-dev:arm64 \
         libxml2-dev:armhf \
         # libxml2-dev:armel \
+        # Install libc6-dev-armel-cross instead of libxml2-dev:armel to provide libc6-dev for armel
+        libc6-dev-armel-cross \
         sudo \
         procps; \
     apt-get clean; \
