@@ -19,7 +19,8 @@ RUN dpkg --add-architecture i386; \
         libxml2-dev:arm64 \
         libxml2-dev:armhf \
         # libxml2-dev:armel \
-        sudo; \
+        sudo \
+        procps; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
