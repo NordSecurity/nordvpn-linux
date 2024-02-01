@@ -8,6 +8,7 @@ RUN apt-get update; \
         iptables \
         iproute2 \
         wget \
+        curl \
         ca-certificates \
         git; \
     apt-get clean; \
