@@ -51,6 +51,8 @@ else
   REVISION="${HASH}"
   export REVISION
 
+  git tag -l --sort=-v:refname | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | head -1
+  echo PIPESTATUS: "${PIPESTATUS[@]}"
   # '+' character is chosen because '_' is not allowed in .deb packages and '-' is not allowed in .rpm packages
   VERSION="$(git tag -l --sort=-v:refname | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | head -1)+${REVISION}"
   export VERSION
