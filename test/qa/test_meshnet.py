@@ -1,4 +1,4 @@
-from lib import daemon, info, logging, login, meshnet, network, ssh
+from lib import daemon, info, logging, login, meshnet, network, ssh, settings
 import lib
 import sh
 import requests
@@ -64,7 +64,6 @@ def test_mesh_removed_machine_by_other():
             _, mytoken = ln.split(None, 2)
 
     myname = meshnet.get_this_device(sh.nordvpn.mesh.peer.list())
-
     # find my machineid from api
     mymachineid = ""
     headers = {
@@ -464,3 +463,49 @@ def test_invite_accept_non_existant_special_character():
         sh.nordvpn.meshnet.invite.accept("\u2222@test.com")
 
     assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
+
+
+@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
+def test_set_meshnet_off_on(meshnet_allias):
+
+    assert "Meshnet is set to 'disabled' successfully." in sh.nordvpn.set(meshnet_allias, "off")
+    assert not settings.is_meshnet_on()
+
+    assert "Meshnet is set to 'enabled' successfully." in sh.nordvpn.set(meshnet_allias, "on")
+    assert settings.is_meshnet_on()
+
+
+@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
+def test_set_meshnet_on_repeated(meshnet_allias):
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh.nordvpn.set(meshnet_allias, "on")
+
+    assert "Meshnet is already enabled." in str(ex.value)
+
+
+@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
+def test_set_meshnet_off_repeated(meshnet_allias):
+
+    sh.nordvpn.set(meshnet_allias, "off")
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh.nordvpn.set(meshnet_allias, "off")
+
+    assert "Meshnet is already disabled." in str(ex.value)
+
+    sh.nordvpn.set.meshnet("on")
+
+
+@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
+def test_set_meshnet_on_off_logged_out(meshnet_allias):
+    
+    sh.nordvpn.logout("--persist-token")
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh.nordvpn.set(meshnet_allias, "on")
+
+    assert "You are not logged in." in str(ex.value)
+
+    login.login_as("default")
+    sh.nordvpn.set.meshnet("on")

@@ -23,6 +23,14 @@ def get_is_obfuscated():
     return "Obfuscate: enabled" in sh.nordvpn.settings()
 
 
+def is_meshnet_on():
+    """ return True when Meshnet is enabled """
+    try:
+        return "Meshnet: enabled" in sh.nordvpn.settings()
+    except sh.ErrorReturnCode:
+        return False
+
+
 def dns_visible_in_settings(dns: list) -> bool:
     """ return True, if DNS that were passed as parameter are visible in app settings """
     current_dns_settings = sh.nordvpn("settings").split('\n')[-3]
