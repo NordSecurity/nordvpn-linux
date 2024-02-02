@@ -2,7 +2,7 @@
 # CI_COMMIT_TAG variable is predefined if run by CI/CD. In case you want to build qa or
 # prod builds locally, set these variables accordingly or use release/X.X.X branch for qa build
 # dev and qa builds contain hash in version name
-set -eux
+set -euxo pipefail
 
 # if inside of docker container on CI || if inside of docker container on the host
 if grep docker /proc/self/cgroup || [ "$(< /proc/self/cgroup)" == "0::/" ]; then
@@ -51,9 +51,7 @@ else
   REVISION="${HASH}"
   export REVISION
 
-  git tag -l --sort=-v:refname | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | head -1
-  echo PIPESTATUS: "${PIPESTATUS[@]}"
   # '+' character is chosen because '_' is not allowed in .deb packages and '-' is not allowed in .rpm packages
-  VERSION="$(git tag -l --sort=-v:refname | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | head -1)+${REVISION}"
+  VERSION="$(git tag -l --sort=-v:refname | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sed -n 1p)+${REVISION}"
   export VERSION
 fi
