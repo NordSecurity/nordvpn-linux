@@ -2,11 +2,11 @@ FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-buster-20240201
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
-RUN dpkg --add-architecture i386; \
-    dpkg --add-architecture arm64; \
-    dpkg --add-architecture armhf; \
-    dpkg --add-architecture armel; \
-    apt-get update; \
+RUN dpkg --add-architecture i386 && \
+    dpkg --add-architecture arm64 && \
+    dpkg --add-architecture armhf && \
+    dpkg --add-architecture armel && \
+    apt-get update && \
     apt-get -y --no-install-recommends install \
         make \
         gcc \
@@ -22,33 +22,30 @@ RUN dpkg --add-architecture i386; \
         # Install libc6-dev-armel-cross instead of libxml2-dev:armel to provide libc6-dev for armel
         libc6-dev-armel-cross \
         sudo \
-        procps; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/*
-
-# This is not a dangerous hack. `libxml2-dev:armel` package is broken on Debian 10. Therefore,
-# this symlink fakes the existence of armel build. The expected symbols in `libxml.so` are no
-# different than `armhf` and since real `libxml2.so` is loaded at runtime and package has a
-# dependency for `libxml2`, a proper library is loaded
-RUN ln -s /usr/lib/arm-linux-gnueabihf/libxml2.so /usr/lib/arm-linux-gnueabi/libxml2.so
-
-# Download and install musl to PATH (/usr/bin)
-# Because i386 app compiled with Zig segfaults when linked against glibc during go runtime setup
-RUN wget --progress=dot:giga "https://musl.cc/i686-linux-musl-cross.tgz" -O /tmp/musl.tar.gz && \
+        procps && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    # This is not a dangerous hack. `libxml2-dev:armel` package is broken on Debian 10. Therefore,
+    # this symlink fakes the existence of armel build. The expected symbols in `libxml.so` are no
+    # different than `armhf` and since real `libxml2.so` is loaded at runtime and package has a
+    # dependency for `libxml2`, a proper library is loaded
+    ln -s /usr/lib/arm-linux-gnueabihf/libxml2.so /usr/lib/arm-linux-gnueabi/libxml2.so && \
+    # Download and install musl to PATH (/usr/bin)
+    # Because i386 app compiled with Zig segfaults when linked against glibc during go runtime setup
+    wget --progress=dot:giga "https://musl.cc/i686-linux-musl-cross.tgz" -O /tmp/musl.tar.gz && \
     echo "5047afc68170a2910895db2dfa448227e71a984bfa2130a1bc946fd1015d722b80b15e4abf90c64300815aa84fe781cc8b8a72f10174f9dce96169e035911880 /tmp/musl.tar.gz" | sha512sum -c - && \
     tar -xzf /tmp/musl.tar.gz -C /usr/lib && rm /tmp/musl.tar.gz && \
-    ln -s /usr/lib/i686-linux-musl-cross/bin/i686-linux-musl-gcc /usr/bin/i686-linux-musl-gcc
-
-RUN go install github.com/boumenot/gocover-cobertura@latest && \
+    ln -s /usr/lib/i686-linux-musl-cross/bin/i686-linux-musl-gcc /usr/bin/i686-linux-musl-gcc && \
+    # Install gocover-cobertura which is used for test coverage visualization in the diff view
+    go install github.com/boumenot/gocover-cobertura@latest && \
     go clean -cache -modcache
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
-RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} builder && useradd -l -m -u ${USER_ID} -g builder -G nordvpn builder && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-# Enable `go` in sudo mode
-RUN echo "Defaults secure_path=\"$(dirname $(which go)):$PATH\"" | sudo tee --append /etc/sudoers.d/env_keep
+RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} builder && useradd -l -m -u ${USER_ID} -g builder -G nordvpn builder && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    # Enable `go` in sudo mode
+    echo "Defaults secure_path=\"$(dirname $(which go)):$PATH\"" | sudo tee --append /etc/sudoers.d/env_keep
 
 USER builder
 
