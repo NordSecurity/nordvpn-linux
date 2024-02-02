@@ -8,7 +8,7 @@
 # How to setup the development environment
 Please follow the instructions in the following step for setting up the development environment. (Note: This process was tested on a virtual machine with Ubuntu 22.04):
 1. Install [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-1. Install [Go 1.21+](https://go.dev/doc/install)
+1. Install [Go 1.20+](https://go.dev/doc/install)
 1. Install [Rust 1.64+](https://www.rust-lang.org/tools/install)
 1. Install [Mage](https://github.com/magefile/mage#installation).
     If you are installing `Mage` using GOPATH, make sure that your `$GOPATH` variable is set correctly.
@@ -54,7 +54,7 @@ mage build:binariesDocker
 Below steps can be used to build the app without mage and build scripts.
 ### Dependencies
 #### Compile time
-- Go 1.21+
+- Go 1.20+
 - libxml2
 #### Runtime
 - iptables
