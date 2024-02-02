@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
-          go-version: '1.21'
+          go-version: '1.20'
           cache: false # golangci-lint caching doesn't seem to get along with setup-go caching
       - uses: golangci/golangci-lint-action@639cd343e1d3b897ff35927a75193d57cfcba299 # v3.6.0
         with:
@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
-          go-version: '1.21'
+          go-version: '1.20'
       - run: ./ci/test.sh
         env:
           WORKDIR: ${{ github.workspace }}
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
-          go-version: '1.21'
+          go-version: '1.20'
       - run: go install github.com/securego/gosec/v2/cmd/gosec@v2.13.0
       - run: gosec -quiet -exclude-dir=third-party ./...
 

@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.21.6-bullseye
+FROM docker.io/library/golang:1.20.13-bullseye
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 

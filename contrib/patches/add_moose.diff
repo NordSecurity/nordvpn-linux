@@ -4,7 +4,7 @@ index 25f066ce..fee14c21 100644
 +++ b/go.mod
 @@ -2,4 +2,9 @@ module github.com/NordSecurity/nordvpn-linux
  
- go 1.21
+ go 1.20
  
 +replace (
 +	moose/events => ./third-party/moose-events/moosenordvpnappgo
