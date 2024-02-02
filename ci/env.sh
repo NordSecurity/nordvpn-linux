@@ -2,7 +2,7 @@
 # CI_COMMIT_TAG variable is predefined if run by CI/CD. In case you want to build qa or
 # prod builds locally, set these variables accordingly or use release/X.X.X branch for qa build
 # dev and qa builds contain hash in version name
-set -euxo pipefail
+set -eux
 
 # if inside of docker container on CI || if inside of docker container on the host
 if grep docker /proc/self/cgroup || [ "$(< /proc/self/cgroup)" == "0::/" ]; then
