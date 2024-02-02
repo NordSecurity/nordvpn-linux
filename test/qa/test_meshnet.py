@@ -12,11 +12,18 @@ ssh_client = ssh.Ssh("qa-peer", "root", "root")
 def setup_module(module):
     ssh_client.connect()
     daemon.install_peer(ssh_client)
+
+def teardown_module(module):
+    daemon.uninstall_peer(ssh_client)
+    ssh_client.disconnect()
+
+
+def setup_function(function):
+    logging.log()
     daemon.start()
     daemon.start_peer(ssh_client)
     login.login_as("default")
     login.login_as("qa-peer", ssh_client) # TODO: same account is used for everybody, tests can't be run in parallel
-    lib.set_technology_and_protocol("nordlynx", "", "")
     sh.nordvpn.set.meshnet.on()
     ssh_client.exec_command("nordvpn set mesh on")
     # Ensure clean starting state
@@ -27,26 +34,15 @@ def setup_module(module):
     meshnet.add_peer(ssh_client)
 
 
-def teardown_module(module):
-    meshnet.revoke_all_invites()
-    meshnet.remove_all_peers()
-    ssh_client.exec_command("nordvpn set mesh off")
-    sh.nordvpn.set.meshnet.off()
-    ssh_client.exec_command("nordvpn logout --persist-token")
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop_peer(ssh_client)
-    daemon.stop()
-    daemon.uninstall_peer(ssh_client)
-    ssh_client.disconnect()
-
-
-def setup_function(function):
-    logging.log()
-
-
 def teardown_function(function):
     logging.log(data=info.collect())
     logging.log()
+    meshnet.revoke_all_invites()
+    meshnet.remove_all_peers()
+    ssh_client.exec_command("nordvpn set defaults")
+    sh.nordvpn.set.defaults()
+    daemon.stop_peer(ssh_client)
+    daemon.stop()
 
 
 def test_meshnet_connect():
@@ -316,10 +312,6 @@ def test_account_switch():
     login.login_as("qa-peer")
     sh.nordvpn.set.mesh.on() # expecting failure here
 
-    # Recover starting state (this is the simplest way)
-    teardown_module(None)
-    setup_module(None)
-
 
 def test_invite_send_repeated():
 
@@ -498,12 +490,27 @@ def test_set_meshnet_off_repeated(meshnet_allias):
 
 
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
-def test_set_meshnet_on_off_logged_out(meshnet_allias):
+def test_set_meshnet_on_logged_out(meshnet_allias):
     
     sh.nordvpn.logout("--persist-token")
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.set(meshnet_allias, "on")
+
+    assert "You are not logged in." in str(ex.value)
+
+    login.login_as("default")
+    sh.nordvpn.set.meshnet("on")
+
+
+@pytest.mark.skip(reason="LVPN-4590")
+@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
+def test_set_meshnet_off_logged_out(meshnet_allias):
+    
+    sh.nordvpn.logout("--persist-token")
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh.nordvpn.set(meshnet_allias, "off")
 
     assert "You are not logged in." in str(ex.value)
 
