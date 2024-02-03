@@ -52,6 +52,6 @@ else
   export REVISION
 
   # '+' character is chosen because '_' is not allowed in .deb packages and '-' is not allowed in .rpm packages
-  VERSION="$(git tag -l --sort=-v:refname | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | head -1)+${REVISION}"
+  VERSION="$(git tag -l --sort=-v:refname | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sed -n 1p)+${REVISION}"
   export VERSION
 fi
