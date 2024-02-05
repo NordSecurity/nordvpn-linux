@@ -291,7 +291,10 @@ func (ovpn *OpenVPN) setTun(tun tunnel.Tunnel) {
 func (ovpn *OpenVPN) Tun() tunnel.T {
 	ovpn.Lock()
 	defer ovpn.Unlock()
-	return ovpn.tun
+	if ovpn.tun != nil {
+		return ovpn.tun
+	}
+	return nil
 }
 
 func (ovpn *OpenVPN) setState(arg string) {

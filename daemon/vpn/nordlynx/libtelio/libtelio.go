@@ -331,7 +331,11 @@ func (l *Libtelio) State() vpn.State {
 func (l *Libtelio) Tun() tunnel.T {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.tun
+	if l.tun != nil {
+		return l.tun
+	}
+
+	return nil
 }
 
 // Enable initiates the tunnel if it is not initiated yet. It can be
