@@ -126,7 +126,7 @@ def is_peer_reachable(ssh_client: ssh.Ssh, retry: int = 5) -> bool:
     i = 0
     while i < retry:
         try:
-            return "icmp_seq=" in sh.ping("-c", "1", peer_hostname)
+            return "icmp_seq=" in sh.ping("-c", "1", "-w", "1", peer_hostname)
         except sh.ErrorReturnCode as e:
             print(e.stdout)
             print(e.stderr)

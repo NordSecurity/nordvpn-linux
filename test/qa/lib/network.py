@@ -30,7 +30,7 @@ def _is_ipv6_internet_reachable(retry=5) -> bool:
     anycast_ips = cycle(["2400:bb40:4444::100", "2400:bb40:8888::100"])
     while i < retry:
         try:
-            return "icmp_seq=" in sh.ping("-c", "1", next(anycast_ips))
+            return "icmp_seq=" in sh.ping("-c", "1", "-w", "1", next(anycast_ips))
         except sh.ErrorReturnCode as e:
             time.sleep(1)
             i += 1
