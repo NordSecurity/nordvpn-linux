@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ARG version
 RUN apt-get update && \
-    apt-get install -y wget iputils-ping curl && \
+    apt-get install -y wget iputils-ping host curl && \
     wget -O /tmp/nordrepo.deb https://repo.nordvpn.com/deb/nordvpn/debian/pool/main/nordvpn-release_1.0.0_all.deb && \
     apt-get install -y /tmp/nordrepo.deb && \
     apt-get update && \

@@ -17,6 +17,6 @@ RUN groupadd -g ${GROUP_ID} qapeer && useradd -l -m -u ${USER_ID} -g qapeer qape
 
 USER qapeer
 
-COPY ci/docker/qa-peer/entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT [ "/entrypoint.sh" ]

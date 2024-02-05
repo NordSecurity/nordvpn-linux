@@ -6,7 +6,7 @@ COPY requirements.txt /tmp/requirements.txt
 
 RUN apt-get update \
     # linux app
-    && apt-get install -y apt-utils curl git iputils-ping sudo \
+    && apt-get install -y apt-utils curl git iputils-ping host sudo \
     # preinstall deps required by nordvpn
     && apt-get install -y libxml2 iproute2 iptables \
     # install wireguard tools for tests
@@ -33,4 +33,8 @@ RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} qa && useradd -l -m -u 
 RUN usermod -a -G wireshark qa
 
 USER qa
+
+COPY entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT [ "/entrypoint.sh" ]
 CMD ["exec", "$@"]

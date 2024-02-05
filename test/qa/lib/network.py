@@ -24,6 +24,21 @@ def _is_internet_reachable(retry=5) -> bool:
     return False
 
 
+def _is_internet_not_reachable(retry=5) -> bool:
+    """returns True when remote host is not reachable by its public IP"""
+    i = 0
+    while i < retry:
+        try:
+            if "icmp_seq=" in sh.ping("-c", "1", "-w", "1", "1.1.1.1"):
+                time.sleep(1)
+                i += 1
+            else:
+                return True
+        except sh.ErrorReturnCode:
+            return True
+    return False
+
+
 def _is_ipv6_internet_reachable(retry=5) -> bool:
     i = 0
     last = Exception("_is_ipv6_internet_reachable", "error")
@@ -44,7 +59,8 @@ def _is_dns_resolvable(retry=5) -> bool:
     while i < retry:
         try:
             # @TODO gitlab docker runner has public ipv6, but no connectivity. remove -4 once fixed
-            return "icmp_seq=" in sh.ping("-4", "-c", "1", "nordvpn.com")
+            sh.host("-4", "-t", "A", "-W", "1", "nordvpn.com")
+            return True
         except sh.ErrorReturnCode:
             time.sleep(1)
             i += 1
@@ -55,14 +71,11 @@ def _is_dns_not_resolvable(retry=5) -> bool:
     """returns True when domain resolution is not working"""
     for i in range(retry):
         try:
-            with pytest.raises(sh.ErrorReturnCode_2) as ex:
-                sh.ping("-4", "-c", "1", "nordvpn.com")
-
-            return "Network is unreachable" in str(ex) or \
-                   "Name or service not known" in str(ex) or \
-                   "Temporary failure in name resolution" in str(ex)
-        except Exception as ex:
+            sh.host("-4", "-t", "A", "-W", "1", "nordvpn.com")
             time.sleep(1)
+            i += 1
+        except sh.ErrorReturnCode:
+            return True
     return False
 
 
@@ -70,21 +83,17 @@ def is_not_available(retry=5) -> bool:
     """ returns True when network access is not available """
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
-    return not _is_internet_reachable(retry) and _is_dns_not_resolvable(retry)
+    return _is_internet_not_reachable(retry) and _is_dns_not_resolvable(retry)
 
 
 def is_available(retry=5) -> bool:
-    """returns True when network access is available or throws AssertionError otherwise"""
-    assert _is_internet_reachable(retry)
-    assert _is_dns_resolvable(retry)
-    return True
+    """returns True when network access is available"""
+    return _is_internet_reachable(retry) and _is_dns_resolvable(retry)
 
 
 def is_connected() -> bool:
-    """returns True when connected to VPN server or throws AssertionError otherwise"""
-    assert daemon.is_connected()
-    assert is_available()
-    return True
+    """returns True when connected to VPN server"""
+    return daemon.is_connected() and is_available()
 
 
 def is_ipv4_and_ipv6_connected(retry=5) -> bool:
@@ -104,11 +113,8 @@ def is_ipv6_connected(retry=5) -> bool:
 
 
 def is_disconnected(retry=5) -> bool:
-    """returns True when not connected to VPN server or throws AssertionError otherwise"""
-    assert firewall.is_empty()
-    assert daemon.is_disconnected()
-    assert is_available(retry)
-    return True
+    """returns True when not connected to VPN server"""
+    return firewall.is_empty() and daemon.is_disconnected() and is_available(retry)
 
 
 # start the networking and wait for completion
