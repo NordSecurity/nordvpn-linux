@@ -128,6 +128,7 @@ def start(default_gateway: str):
         cmd.dev.eth0()
 
     logging.log("starting network")
+    assert is_available(10)
     while not daemon.is_running():
         time.sleep(1)
     logging.log(info.collect())
