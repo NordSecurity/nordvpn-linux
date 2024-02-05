@@ -306,8 +306,6 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		return nil
 	}
 
-	s.connectedAt = time.Now()
-	dnsResolutionTime := int(data.DNSResolutionTime.Milliseconds())
 	var threatProtection moose.Enum_SS_NordvpnappOptBool
 	if data.ThreatProtectionLite {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolTrue)
@@ -319,6 +317,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	switch data.Type {
 	case events.ConnectAttempt:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusAttempt)
+		s.connectedAt = time.Now()
 	case events.ConnectSuccess:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusSuccess)
 	case events.ConnectFailure:
@@ -365,7 +364,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 	return s.response(moose.Send_serviceQuality_servers_connect(
 		-1,
-		dnsResolutionTime,
+		int(time.Since(s.connectedAt).Seconds()),
 		result,
 		moose.Enum_SS_NordvpnappEventTrigger(moose.EventTriggerUser),
 		moose.Enum_SS_NordvpnappVpnConnectionPreset(moose.VpnConnectionPresetNone),

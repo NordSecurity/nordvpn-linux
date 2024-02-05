@@ -59,7 +59,6 @@ type DataConnect struct {
 	APIHostname                string
 	Auto                       bool
 	ThreatProtectionLite       bool
-	DNSResolutionTime          time.Duration
 	Protocol                   config.Protocol
 	ResponseServersCount       int
 	ResponseTime               int
