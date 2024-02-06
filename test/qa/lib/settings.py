@@ -24,7 +24,7 @@ def get_is_obfuscated():
 
 
 def is_meshnet_on():
-    """ return True when Meshnet is enabled """
+    """Return True when Meshnet is enabled."""
     try:
         return "Meshnet: enabled" in sh.nordvpn.settings()
     except sh.ErrorReturnCode:
