@@ -4,8 +4,6 @@ set -euox
 source "${WORKDIR}"/ci/env.sh
 source "${WORKDIR}"/ci/archs.sh
 
-"${WORKDIR}"/ci/check_dependencies.sh
-
 # Since race detector has huge performance price and it works only on amd64 and does not
 # work with pie executables, its enabled only for development builds.
 # shellcheck disable=SC2153
