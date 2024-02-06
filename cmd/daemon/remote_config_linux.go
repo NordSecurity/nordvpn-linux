@@ -14,7 +14,7 @@ func (noopVersionGetter) GetValue(key string) (string, error) {
 }
 
 func (noopVersionGetter) GetTelioConfig(string) (string, error) {
-	return "{}", nil
+	return `{direct: {}}`, nil
 }
 
 func remoteConfigGetterImplementation(_ config.Manager) remote.RemoteConfigGetter {
