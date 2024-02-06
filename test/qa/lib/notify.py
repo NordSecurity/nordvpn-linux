@@ -28,9 +28,7 @@ NOTIFY_MSG_ERROR_ALREADY_DISABLED = "Notifications are already set to 'disabled'
 
 
 def capture_notifications(message):
-    """
-        returns `NotificationCaptureThreadResult`, and contains booleans - icon_match, summary_match, body_match - according to found notification contents
-    """
+    """Returns `NotificationCaptureThreadResult`, and contains booleans - icon_match, summary_match, body_match - according to found notification contents."""
 
     # Timeout is needed, in order for Thread not to hang, as we need to exit the process at some point
     # Timeout can be altered according to how fast you connect to NordVPN server
@@ -63,7 +61,7 @@ class NotificationCaptureThread(Thread):
 
 
 def connect_and_capture_notifications(tech, proto, obfuscated) -> NotificationCaptureThreadResult:
-    """returns [True, True, True] if notification with all expected contents from NordVPN was captured while connecting to VPN server"""
+    """Returns [True, True, True] if notification with all expected contents from NordVPN was captured while connecting to VPN server."""
 
     # Choose server for test, so we know the full expected message
     name, hostname = server.get_hostname_by(tech, proto, obfuscated)
@@ -82,7 +80,7 @@ def connect_and_capture_notifications(tech, proto, obfuscated) -> NotificationCa
 
 
 def disconnect_and_capture_notifications() -> NotificationCaptureThreadResult:
-    """returns [True, True, True] if notification with all expected contents from NordVPN was captured while disconnecting from VPN server"""
+    """Returns [True, True, True] if notification with all expected contents from NordVPN was captured while disconnecting from VPN server."""
 
     # We know what message we expect to appear in notification
     expected_msg = "You are disconnected from NordVPN."
@@ -99,9 +97,9 @@ def disconnect_and_capture_notifications() -> NotificationCaptureThreadResult:
 
 
 def print_tidy_exception(obj1: NotificationCaptureThreadResult, obj2: NotificationCaptureThreadResult) -> str:
-    """Prints values of attributes from specified NotificationCaptureThreadResult type of objects"""
+    """Prints values of attributes from specified NotificationCaptureThreadResult type of objects."""
     return \
-        f"\n\n(icon, summary, body)\n" \
-        f"({obj1.icon_match}, {obj1.summary_match}, {obj1.body_match}) - connect_notification / disconnect_notification - found\n" \
-        f"({obj2.icon_match}, {obj2.summary_match}, {obj2.body_match}) - notify.NOTIFICATION_DETECTED / notify.NOTIFICATION_NOT_DETECTED - expected" \
-        f"\n\n"
+        "\n\n(icon, summary, body)\n" + \
+        f"({obj1.icon_match}, {obj1.summary_match}, {obj1.body_match}) - connect_notification / disconnect_notification - found\n" + \
+        f"({obj2.icon_match}, {obj2.summary_match}, {obj2.body_match}) - notify.NOTIFICATION_DETECTED / notify.NOTIFICATION_NOT_DETECTED - expected" + \
+        "\n\n"

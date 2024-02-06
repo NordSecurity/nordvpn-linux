@@ -45,14 +45,14 @@ TPL_MSG_WARNING_DISABLING = "Disabling Threat Protection Lite."
 
 
 def is_unset() -> bool:
-    """returns True when NordVPN app has not modified the DNS"""
+    """Returns True when NordVPN app has not modified the DNS."""
     return all(os_address != address
                for os_address in dns.resolver.Resolver().nameservers
                for address in ALL_TEST_DNS_ADDRESSES)
 
 
 def is_set_for(dns_set_in_app: list) -> bool:
-    """returns True, if NordVPN application has successfully set and overriden DNS servers in Resolver"""
+    """Returns True, if NordVPN application has successfully set and overriden DNS servers in Resolver."""
 
     # DNS Addresses set in Resolver:
     dns_set_in_os_addresses = dns.resolver.Resolver().nameservers

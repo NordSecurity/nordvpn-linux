@@ -14,30 +14,26 @@ from lib import (
 )
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
 
-# noinspection PyUnusedLocal
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connected_firewall_disable(tech, proto, obfuscated):
@@ -57,7 +53,7 @@ def test_connected_firewall_disable(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connected_firewall_enable(tech, proto, obfuscated):
@@ -77,7 +73,7 @@ def test_connected_firewall_enable(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_firewall_disable_connect(tech, proto, obfuscated):
@@ -94,7 +90,7 @@ def test_firewall_disable_connect(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_firewall_enable_connect(tech, proto, obfuscated):
@@ -111,7 +107,7 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -134,7 +130,7 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
     assert not firewall.is_active([port])
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(100)
@@ -157,7 +153,7 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
     assert not firewall.is_active([ports])
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -180,7 +176,7 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
     assert not firewall.is_active(None, [subnet])
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_firewall_06_with_killswitch(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.set.killswitch.off):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -193,7 +189,7 @@ def test_firewall_06_with_killswitch(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
@@ -217,7 +213,7 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("before_connect", [True, False])
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -235,25 +231,25 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
                 sh.nordvpn.set("lan-discovery", "on")
 
             rules = sh.sudo.iptables("-S", "INPUT")
-            for rule in firewall.inputLanDiscoveryRules:
+            for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
                 assert rule in rules, f"{rule} input rule not found in iptables."
 
             rules = sh.sudo.iptables("-S", "OUTPUT")
-            for rule in firewall.outputLanDiscoveryRules:
+            for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
                 assert rule in rules, f"{rule} output rule not found in iptables"
 
             sh.nordvpn.set("lan-discovery", "off")
 
             rules = sh.sudo.iptables("-S", "INPUT")
-            for rule in firewall.inputLanDiscoveryRules:
+            for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} input rule not found in iptables."
 
             rules = sh.sudo.iptables("-S", "OUTPUT")
-            for rule in firewall.outputLanDiscoveryRules:
+            for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} output rule not found in iptables"
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
@@ -277,9 +273,9 @@ def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
             sh.nordvpn.set("lan-discovery", "off")
 
             rules = sh.sudo.iptables("-S", "INPUT")
-            for rule in firewall.inputLanDiscoveryRules:
+            for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} input rule not found in iptables."
 
             rules = sh.sudo.iptables("-S", "OUTPUT")
-            for rule in firewall.outputLanDiscoveryRules:
+            for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} output rule not found in iptables"

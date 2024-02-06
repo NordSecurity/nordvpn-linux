@@ -6,33 +6,29 @@ import lib
 from lib import daemon, info, logging, login, notify, settings
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
 
-# noinspection PyUnusedLocal
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
     # Make sure that Notifications are disabled before we execute each test
     lib.set_notify("off")
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_notifications_disabled_connect(tech, proto, obfuscated):
@@ -51,7 +47,7 @@ def test_notifications_disabled_connect(tech, proto, obfuscated):
         notify.print_tidy_exception(connect_notification, notify.NOTIFICATION_NOT_DETECTED)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_notifications_enabled_connect(tech, proto, obfuscated):
@@ -72,7 +68,7 @@ def test_notifications_enabled_connect(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_DETECTED)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_notifications_enabled_connected_disable(tech, proto, obfuscated):
@@ -95,7 +91,7 @@ def test_notifications_enabled_connected_disable(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_NOT_DETECTED)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_notifications_disabled_connected_enable(tech, proto, obfuscated):
@@ -117,7 +113,7 @@ def test_notifications_disabled_connected_enable(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_DETECTED)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_notify_already_enabled_disconnected(tech, proto, obfuscated):
@@ -131,7 +127,7 @@ def test_notify_already_enabled_disconnected(tech, proto, obfuscated):
     assert settings.get_is_notify_enabled()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_notify_already_enabled_connected(tech, proto, obfuscated):
@@ -148,7 +144,7 @@ def test_notify_already_enabled_connected(tech, proto, obfuscated):
         assert settings.get_is_notify_enabled()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_notify_already_disabled_disconnected(tech, proto, obfuscated):
@@ -161,7 +157,7 @@ def test_notify_already_disabled_disconnected(tech, proto, obfuscated):
     assert not settings.get_is_notify_enabled()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_notify_already_disabled_connected(tech, proto, obfuscated):

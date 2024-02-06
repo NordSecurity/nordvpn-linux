@@ -109,7 +109,7 @@ def add_subnet_to_allowlist(subnet_list: list[str], allowlist_alias="allowlist")
 
         # If subnet /32 whitelisted, only IP Address is visible in `ip route`
         if "/32" in subnet:
-            subnet = subnet.replace("/32", "")
+            subnet = subnet.replace("/32", "")  # noqa: PLW2901
 
         if daemon.is_connected() and not _is_private_subnet(subnet):
             assert subnet in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), \
@@ -132,7 +132,7 @@ def remove_subnet_from_allowlist(subnet_list: list[str], allowlist_alias="allowl
 
         # If subnet /32 whitelisted, only IP Address is visible in `ip route`
         if "/32" in subnet:
-            subnet = subnet.replace("/32", "")
+            subnet = subnet.replace("/32", "")  # noqa: PLW2901
 
         if not _is_private_subnet(subnet):
             assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), \

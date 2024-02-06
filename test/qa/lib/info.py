@@ -2,7 +2,7 @@ import sh
 
 
 def collect():
-    """collect system information and return as multiline string"""
+    """Collect system information and return as multiline string."""
     link_layer_info = sh.sudo.ip.link()
     network_interface_info = sh.sudo.ip.addr()
     routing_info = sh.sudo.ip.route()

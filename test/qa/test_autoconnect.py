@@ -6,25 +6,21 @@ import lib
 from lib import daemon, info, logging, login, network, server
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
 
-# noinspection PyUnusedLocal
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
@@ -48,7 +44,7 @@ def autoconnect_base_test(group):
     assert network.is_disconnected()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_autoconnect_default(tech, proto, obfuscated):
@@ -56,7 +52,7 @@ def test_autoconnect_default(tech, proto, obfuscated):
     autoconnect_base_test("")
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_not_autoconnect(tech, proto, obfuscated):
@@ -70,7 +66,7 @@ def test_not_autoconnect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("group", lib.COUNTRIES + lib.COUNTRY_CODES)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_autoconnect_to_country(tech, proto, obfuscated, group):
@@ -79,7 +75,7 @@ def test_autoconnect_to_country(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.CITIES)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_autoconnect_to_city(tech, proto, obfuscated, group):
@@ -87,7 +83,7 @@ def test_autoconnect_to_city(tech, proto, obfuscated, group):
     autoconnect_base_test(group)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
@@ -100,7 +96,7 @@ def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_autoconnect_to_standard_group(tech, proto, obfuscated, group):
@@ -109,7 +105,7 @@ def test_autoconnect_to_standard_group(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_autoconnect_to_additional_group(tech, proto, obfuscated, group):

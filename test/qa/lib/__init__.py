@@ -187,10 +187,11 @@ class Defer:
 
 
 def set_technology_and_protocol(tech, proto, obfuscation):
-    """Allows setting technology, protocol and obfuscation regardless
-    of whether it is already set or not.
+    """
+    Allows setting technology, protocol and obfuscation regardless of whether it is already set or not.
 
-    Tests do not break on reordering when using this."""
+    Tests do not break on reordering when using this.
+    """
     if tech:
         try:
             print(sh.nordvpn.set.technology(tech))

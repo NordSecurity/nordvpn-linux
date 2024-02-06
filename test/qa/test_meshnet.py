@@ -11,8 +11,7 @@ from lib import daemon, info, logging, login, meshnet, network, ssh
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     ssh_client.connect()
     daemon.install_peer(ssh_client)
     daemon.start()
@@ -30,8 +29,7 @@ def setup_module(module):
     meshnet.add_peer(ssh_client)
 
 
-# noinspection PyUnusedLocal
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     meshnet.revoke_all_invites()
     meshnet.remove_all_peers()
     ssh_client.exec_command("nordvpn set mesh off")
@@ -44,13 +42,11 @@ def teardown_module(module):
     ssh_client.disconnect()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
@@ -77,7 +73,7 @@ def test_mesh_removed_machine_by_other():
         'Accept': 'application/json',
         'Authorization': 'Bearer token:' + mytoken,
     }
-    response = requests.get('https://api.nordvpn.com/v1/meshnet/machines', headers=headers)
+    response = requests.get('https://api.nordvpn.com/v1/meshnet/machines', headers=headers, timeout=5)
     for itm in response.json():
         if str(itm['hostname']) in myname:
             mymachineid = itm['identifier']
@@ -87,12 +83,12 @@ def test_mesh_removed_machine_by_other():
         'Accept': 'application/json',
         'Authorization': 'Bearer token:' + mytoken,
     }
-    requests.delete('https://api.nordvpn.com/v1/meshnet/machines/' + mymachineid, headers=headers)
+    requests.delete('https://api.nordvpn.com/v1/meshnet/machines/' + mymachineid, headers=headers, timeout=5)
 
     # machine not found error should be handled by disabling meshnet
     try:
         sh.nordvpn.mesh.peer.list()
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         assert "Meshnet is not enabled." in str(e)
 
     sh.nordvpn.set.meshnet.on()  # enable back on for other tests
@@ -271,15 +267,14 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
             if local and lan_discovery:
                 if lan_drop_rule_idx < routing_rule_idx:
                     return False, f"Routing rule was added after LAN block rule for subnet {lan}\nrules:\n{rules}"
-            else:
-                if lan_drop_rule_idx > routing_rule_idx:
-                    return False, f"Routing rule was added before LAN block rule for subnet {lan}\nrules:\n{rules}"
+            elif lan_drop_rule_idx > routing_rule_idx:
+                return False, f"Routing rule was added before LAN block rule for subnet {lan}\nrules:\n{rules}"
 
         return True, ""
 
     sh.nordvpn.connect()
     with lib.Defer(sh.nordvpn.disconnect):
-        for (result, message) in lib.poll(check_rules_routing):
+        for (result, message) in lib.poll(check_rules_routing):  # noqa: B007
             if result:
                 break
         assert result, message
@@ -312,7 +307,7 @@ def test_remove_peer_firewall_update():
         return False, f"Rules for peer were not removed from firewall\nPeer IP: {peer_ip}\nrules:\n{rules}"
 
     result, message = None, None
-    for (result, message) in lib.poll(all_peer_permissions_removed):
+    for (result, message) in lib.poll(all_peer_permissions_removed):  # noqa: B007
         if result:
             break
 

@@ -8,20 +8,17 @@ import lib
 from lib import daemon, dns, info, logging, login, settings
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
 
-# noinspection PyUnusedLocal
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
     # Make sure that Custom DNS, IPv6 and Threat Protection Lite are disabled before we execute each test
@@ -30,14 +27,13 @@ def setup_function(function):
     lib.set_threat_protection_lite("off")
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
 
 @pytest.mark.parametrize("threat_protection_lite", lib.THREAT_PROTECTION_LITE)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
@@ -62,7 +58,7 @@ def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_set_dns_connected(tech, proto, obfuscated):

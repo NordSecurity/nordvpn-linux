@@ -12,25 +12,21 @@ from lib import (
 )
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
 
-# noinspection PyUnusedLocal
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
@@ -41,7 +37,7 @@ autoconnect_on_parameters = [
 ]
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 def test_obfuscate_nonobfucated(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
@@ -53,7 +49,7 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
 
 @pytest.mark.skip(reason="LVPN-2119")
 @timeout_decorator.timeout(40)
-@pytest.mark.parametrize("server,obfuscated,error_message", autoconnect_on_parameters)
+@pytest.mark.parametrize(("server", "obfuscated", "error_message"), autoconnect_on_parameters)
 def test_autoconnect_on_server_obfuscation_mismatch(server, obfuscated, error_message):
     lib.set_technology_and_protocol("openvpn", "tcp", obfuscated)
 
@@ -79,7 +75,7 @@ set_obfuscate_parameters = [
 
 @timeout_decorator.timeout(40)
 @pytest.mark.skip(reason="LVPN-2119")
-@pytest.mark.parametrize("obfuscate_initial_state,server,error_message", set_obfuscate_parameters)
+@pytest.mark.parametrize(("obfuscate_initial_state", "server", "error_message"), set_obfuscate_parameters)
 def test_set_obfuscate_server_obfuscation_mismatch(obfuscate_initial_state, server, error_message):
     lib.set_technology_and_protocol("openvpn", "tcp", obfuscate_initial_state)
 
@@ -101,19 +97,19 @@ def test_set_obfuscate_server_obfuscation_mismatch(obfuscate_initial_state, serv
     sh.nordvpn.set.autoconnect.off()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1)
-def test_set_technology(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1)
+def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
     assert f"Technology is set to '{tech.upper()}' successfully." in sh.nordvpn.set.technology(tech)
     assert tech.upper() in sh.nordvpn.settings()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 def test_protocol_in_settings(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert proto.upper() in sh.nordvpn.settings()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_technology_set_options(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 

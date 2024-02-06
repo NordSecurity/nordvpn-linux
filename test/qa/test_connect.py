@@ -11,33 +11,30 @@ import lib
 from lib import daemon, info, logging, login, network, server, settings
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
 
-# noinspection PyUnusedLocal
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
 
 def capture_traffic() -> int:
     """
-    Captures traffic that goes to VPN server
-    :return: int - returns count of captured packets
+    Captures traffic that goes to VPN server.
+
+    :return: int - returns count of captured packets.
     """
 
     # Collect information needed for tshark filter
@@ -107,7 +104,7 @@ def disconnect_base_test():
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_quick_connect(tech, proto, obfuscated):
@@ -117,7 +114,7 @@ def test_quick_connect(tech, proto, obfuscated):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_quick_connect_double_only(tech, proto, obfuscated):
@@ -129,7 +126,7 @@ def test_quick_connect_double_only(tech, proto, obfuscated):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_server_absent(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -141,7 +138,7 @@ def test_connect_to_server_absent(tech, proto, obfuscated):
     assert network.is_disconnected()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_mistype_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -153,7 +150,7 @@ def test_mistype_connect(tech, proto, obfuscated):
     assert network.is_disconnected()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_server_random_by_name(tech, proto, obfuscated):
@@ -165,7 +162,7 @@ def test_connect_to_server_random_by_name(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscated, group):
@@ -177,7 +174,7 @@ def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscat
 
 
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated, group):
@@ -189,7 +186,7 @@ def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated
 
 
 @pytest.mark.parametrize("group", lib.OVPN_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_random_server_by_name_ovpn(tech, proto, obfuscated, group):
@@ -201,7 +198,7 @@ def test_connect_to_group_random_server_by_name_ovpn(tech, proto, obfuscated, gr
 
 
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
@@ -213,7 +210,7 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
 
 
 # the tun interface is recreated only for OpenVPN
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OBFUSCATED_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated):
@@ -232,7 +229,7 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated
 
 
 # for Nordlynx normally the tunnel is not recreated
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_BASIC1)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
@@ -254,7 +251,7 @@ def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
         logging.log(info.collect())
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_quick_connect_double_disconnect(tech, proto, obfuscated):
@@ -265,7 +262,7 @@ def test_quick_connect_double_disconnect(tech, proto, obfuscated):
         disconnect_base_test()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_network_gone(tech, proto, obfuscated):
@@ -279,7 +276,7 @@ def test_connect_network_gone(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_standard(tech, proto, obfuscated, group):
@@ -290,7 +287,7 @@ def test_connect_to_group_standard(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_additional(tech, proto, obfuscated, group):
@@ -301,7 +298,7 @@ def test_connect_to_group_additional(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.OVPN_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
@@ -312,7 +309,7 @@ def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
@@ -323,7 +320,7 @@ def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
@@ -340,7 +337,7 @@ def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
@@ -357,7 +354,7 @@ def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.OVPN_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
@@ -374,7 +371,7 @@ def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
@@ -390,7 +387,7 @@ def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
     assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_group_invalid(tech, proto, obfuscated):
@@ -404,7 +401,7 @@ def test_connect_to_group_invalid(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("country", lib.COUNTRIES)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_country(tech, proto, obfuscated, country):
@@ -415,7 +412,7 @@ def test_connect_to_country(tech, proto, obfuscated, country):
 
 
 @pytest.mark.parametrize("country_code", lib.COUNTRY_CODES)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_country_code(tech, proto, obfuscated, country_code):
@@ -426,7 +423,7 @@ def test_connect_to_country_code(tech, proto, obfuscated, country_code):
 
 
 @pytest.mark.parametrize("city", lib.CITIES)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_city(tech, proto, obfuscated, city):
@@ -437,8 +434,8 @@ def test_connect_to_city(tech, proto, obfuscated, city):
 
 
 def get_unavailable_groups():
-    """Returns groups that are not available with current connection settings"""
-    ALL_GROUPS = ['Africa_The_Middle_East_And_India',
+    """Returns groups that are not available with current connection settings."""
+    ALL_GROUPS = ['Africa_The_Middle_East_And_India',  # noqa: N806
                   'Asia_Pacific',
                   'Dedicated_IP',
                   'Double_VPN',
@@ -449,12 +446,13 @@ def get_unavailable_groups():
                   'Standard_VPN_Servers',
                   'The_Americas']
 
-    CURRENT_GROUPS = str(sh.nordvpn.groups()).strip("%-\r  ").strip().split(", ")
+    # TODO: Fix .strip("%-\r  ")
+    CURRENT_GROUPS = str(sh.nordvpn.groups()).strip("%-\r  ").strip().split(", ")  # noqa: B005, N806
 
     return set(ALL_GROUPS) - set(CURRENT_GROUPS)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_unavailable_groups(tech, proto, obfuscated):
@@ -463,7 +461,7 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    UNAVAILABLE_GROUPS = get_unavailable_groups()
+    UNAVAILABLE_GROUPS = get_unavailable_groups()  # noqa: N806
     logging.log("UNAVAILABLE_GROUPS: " + str(UNAVAILABLE_GROUPS))
 
     for group in UNAVAILABLE_GROUPS:
@@ -475,7 +473,7 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
         assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_unavailable_servers(tech, proto, obfuscated):
@@ -484,7 +482,7 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    UNAVAILABLE_GROUPS = get_unavailable_groups()
+    UNAVAILABLE_GROUPS = get_unavailable_groups()  # noqa: N806
     logging.log("UNAVAILABLE_GROUPS: " + str(UNAVAILABLE_GROUPS))
 
     for group in UNAVAILABLE_GROUPS:
@@ -497,7 +495,7 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
         assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(60)
 def test_status_connected(tech, proto, obfuscated):
@@ -517,11 +515,12 @@ def test_status_connected(tech, proto, obfuscated):
 
         status_time = time.monotonic()
 
-        status_output = sh.nordvpn.status().lstrip('\r-\r  \r\r-\r  \r')
-        status_info = dict((a.strip().lower(), b.strip())
+        # TODO: Fix .lstrip('\r-\r  \r\r-\r  \r')
+        status_output = sh.nordvpn.status().lstrip('\r-\r  \r\r-\r  \r')  # noqa: B005
+        status_info = {a.strip().lower(): b.strip()
                            for a, b in (element.split(':')
                                         for element in
-                                        filter(lambda line: len(line.split(':')) == 2, status_output.split('\n'))))
+                                        filter(lambda line: len(line.split(':')) == 2, status_output.split('\n')))}
 
         print("status_info: " + str(status_info))
         print("status_info: " + str(sh.nordvpn.status()))
