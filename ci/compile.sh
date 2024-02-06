@@ -11,20 +11,12 @@ source "${WORKDIR}"/ci/archs.sh
 # shellcheck disable=SC2153
 [ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
 
-if [[ "${ENVIRONMENT}" == "prod" ]]; then
-	EVENTS_DOMAIN="${EVENTS_PROD_DOMAIN}"
-else
-	EVENTS_DOMAIN="${EVENTS_STAGING_DOMAIN}"
-fi
-
-LDFLAGS="-X 'main.Version=${VERSION}' \
+ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Environment=${ENVIRONMENT}' \
 	-X 'main.Hash=${HASH}' \
 	-X 'main.Arch=${ARCH}' \
 	-X 'main.PackageType=${PACKAGE:-deb}' \
 	-X 'main.Salt=${SALT}' \
-	-X 'main.EventsDomain=${EVENTS_DOMAIN}' \
-	-X 'main.EventsSubdomain=${EVENTS_SUBDOMAIN}' \
 	-X 'main.FirebaseToken=${FIREBASE_TOKEN:-""}'"
 
 declare -A names_map=(
@@ -62,8 +54,19 @@ export CGO_LDFLAGS="-Wl,-z,relro,-z,now"
 # In order to enable additional features, provide `FEATURES` environment variable
 tags="${FEATURES:-"telio drop"}"
 
-# Apply moose patch in case compiling with moose
 if [[ $tags == *"moose"* ]]; then 
+	# Set correct events domain in case compiling with moose
+	if [[ "${ENVIRONMENT}" == "prod" ]]; then
+		events_domain="${EVENTS_PROD_DOMAIN}"
+	else
+		events_domain="${EVENTS_STAGING_DOMAIN}"
+	fi
+
+	ldflags="${ldflags} \
+		-X 'main.EventsDomain=${events_domain:-""}' \
+		-X 'main.EventsSubdomain=${EVENTS_SUBDOMAIN:-""}'"
+
+	# Apply moose patch in case compiling with moose
 	git apply "${WORKDIR}"/contrib/patches/add_moose.diff || \
 		# If applying fails try reverting and applying again 
 		(git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff && \
@@ -79,7 +82,7 @@ for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
 	CC="${cross_compiler_map[${ARCH}]}" \
 		go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} "${BUILDMODE}" -tags "${tags}" \
-		-ldflags "-linkmode=external ${LDFLAGS}" \
+		-ldflags "-linkmode=external ${ldflags}" \
 		-o "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}"
 	popd
 done
