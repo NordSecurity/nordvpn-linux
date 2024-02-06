@@ -1,29 +1,31 @@
-from lib import daemon, info, logging, login, meshnet, network, ssh, settings
-import lib
-import sh
-import requests
-import pytest
-import timeout_decorator
-import subprocess
 import os
+
+import pytest
+import requests
+import sh
+import timeout_decorator
+
+import lib
+from lib import daemon, info, logging, login, meshnet, network, settings, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
-def setup_module(module):
+
+def setup_module(module):  # noqa: ARG001
     ssh_client.connect()
     daemon.install_peer(ssh_client)
 
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     daemon.uninstall_peer(ssh_client)
     ssh_client.disconnect()
 
 
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
     daemon.start()
     daemon.start_peer(ssh_client)
     login.login_as("default")
-    login.login_as("qa-peer", ssh_client) # TODO: same account is used for everybody, tests can't be run in parallel
+    login.login_as("qa-peer", ssh_client)  # TODO: same account is used for everybody, tests can't be run in parallel
     sh.nordvpn.set.meshnet.on()
     ssh_client.exec_command("nordvpn set mesh on")
     # Ensure clean starting state
@@ -34,7 +36,7 @@ def setup_function(function):
     meshnet.add_peer(ssh_client)
 
 
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
     meshnet.revoke_all_invites()
@@ -54,7 +56,7 @@ def test_meshnet_connect():
 def test_mesh_removed_machine_by_other():
     # find my token from cli
     mytoken = ""
-    output =  sh.nordvpn.token()
+    output = sh.nordvpn.token()
     for ln in output.splitlines():
         if "Token:" in ln:
             _, mytoken = ln.split(None, 2)
@@ -64,9 +66,9 @@ def test_mesh_removed_machine_by_other():
     mymachineid = ""
     headers = {
         'Accept': 'application/json',
-        'Authorization': 'Bearer token:'+mytoken,
+        'Authorization': 'Bearer token:' + mytoken,
     }
-    response = requests.get('https://api.nordvpn.com/v1/meshnet/machines', headers=headers)
+    response = requests.get('https://api.nordvpn.com/v1/meshnet/machines', headers=headers, timeout=5)
     for itm in response.json():
         if str(itm['hostname']) in myname:
             mymachineid = itm['identifier']
@@ -74,17 +76,17 @@ def test_mesh_removed_machine_by_other():
     # remove myself using api call
     headers = {
         'Accept': 'application/json',
-        'Authorization': 'Bearer token:'+mytoken,
+        'Authorization': 'Bearer token:' + mytoken,
     }
-    response = requests.delete('https://api.nordvpn.com/v1/meshnet/machines/'+mymachineid, headers=headers)
+    requests.delete('https://api.nordvpn.com/v1/meshnet/machines/' + mymachineid, headers=headers, timeout=5)
 
     # machine not found error should be handled by disabling meshnet
     try:
-        output = sh.nordvpn.mesh.peer.list()
-    except Exception as e:
+        sh.nordvpn.mesh.peer.list()
+    except Exception as e:  # noqa: BLE001
         assert "Meshnet is not enabled." in str(e)
 
-    sh.nordvpn.set.meshnet.on() # enable back on for other tests
+    sh.nordvpn.set.meshnet.on()  # enable back on for other tests
     meshnet.add_peer(ssh_client)
 
 
@@ -102,7 +104,7 @@ def test_allowlist_incoming_connection():
         ssh_client_mesh.exec_command("nordvpn set killswitch on")
         with lib.Defer(lambda: ssh_client_mesh.exec_command("nordvpn set killswitch off")):
             # We should not have direct connection anymore after connecting to VPN
-            with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            with pytest.raises(sh.ErrorReturnCode_1):
                 assert "icmp_seq=" not in sh.ping("-c", "1", "qa-peer")
 
                 ssh_client_mesh.exec_command(f"nordvpn allowlist add subnet {my_ip}/32")
@@ -116,36 +118,37 @@ def validate_input_chain(peer_ip: str, routing: bool, local: bool, incoming: boo
 
     fileshare_rule = f"-A INPUT -s {peer_ip}/32 -p tcp -m tcp --dport 49111 -m comment --comment nordvpn -j ACCEPT"
     if (fileshare_rule in rules) != fileshare:
-        return (False, f"Fileshare permissions configured incorrectly, rule expected: {fileshare}\nrules:{rules}")
+        return False, f"Fileshare permissions configured incorrectly, rule expected: {fileshare}\nrules:{rules}"
 
     incoming_rule = f"-A INPUT -s {peer_ip}/32 -m comment --comment nordvpn -j ACCEPT"
     if (incoming_rule in rules) != incoming:
-        return (False, f"Incoming permissions configured incorrectly, rule expected: {incoming}\nrules:{rules}")
+        return False, f"Incoming permissions configured incorrectly, rule expected: {incoming}\nrules:{rules}"
 
     # If incoming is not enabled, no rules other than fileshare(if enabled) for that peer should be added
     if not incoming:
         if fileshare:
             rules = rules.replace(fileshare_rule, "")
         if peer_ip not in rules:
-            return (True, "")
+            return True, ""
         else:
-            return (False, f"Rules for peer({peer_ip}) found in the INCOMING chain but peer does not have the icoming permissions\nrules:\n{rules}")
+            return False, f"Rules for peer({peer_ip}) found in the INCOMING chain but peer does not have the incoming permissions\nrules:\n{rules}"
 
-    incomig_rule_idx = rules.find(incoming_rule)
+    incoming_rule_idx = rules.find(incoming_rule)
 
     for lan in meshnet.LANS:
         lan_rule = f"-A INPUT -s {peer_ip}/32 -d {lan} -m comment --comment nordvpn -j DROP"
         lan_rule_idx = rules.find(lan_rule)
         if (routing and local) and lan_rule_idx != -1:
-            return (False, f"LAN/Routing permissions configured incorrectly\nlocal enabled: {local}\nrouting enabled: {routing}\nrules:\n{rules}")
+            return False, f"LAN/Routing permissions configured incorrectly\nlocal enabled: {local}\nrouting enabled: {routing}\nrules:\n{rules}"
         # verify that lan_rule is located above the local rule
-        if lan_rule_idx > incomig_rule_idx:
-            return (False, f"LAN/Routing rules ineffective(added after incoming traffic rule)\nlocal enabled: {local}\nrouting enabled: {routing}\nrules:\n{rules}")
+        if lan_rule_idx > incoming_rule_idx:
+            return False, f"LAN/Routing rules ineffective(added after incoming traffic rule)\nlocal enabled: {local}\nrouting enabled: {routing}\nrules:\n{rules}"
 
-    return (True, "")
+    return True, ""
 
 
 def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: bool, fileshare: bool) -> (bool, str):
+    _, _ = incoming, fileshare
     rules = sh.sudo.iptables("-S", "FORWARD")
 
     # This rule is added above the LAN denial rules if both local and routing is allowed to peer, or bellow LAN denial
@@ -154,9 +157,9 @@ def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: b
     routing_enabled_rule_index = rules.find(routing_enabled_rule)
 
     if routing and (routing_enabled_rule_index == -1):
-        return (False, f"Routing permission not found\nrules:{rules}")
+        return False, f"Routing permission not found\nrules:{rules}"
     if not routing and (routing_enabled_rule_index != -1):
-        return (False, f"Routing permission found\nrules:{rules}")
+        return False, f"Routing permission found\nrules:{rules}"
 
     for lan in meshnet.LANS:
         lan_drop_rule = f"-A FORWARD -s 100.64.0.0/10 -d {lan} -m comment --comment nordvpn-exitnode-transient -j DROP"
@@ -164,21 +167,21 @@ def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: b
 
         # If any peer has routing or local permission, lan block rules should be added, otherwise no rules should be added.
         if (routing or local) and lan_drop_rule_index == -1:
-            return (False, f"LAN drop rule not added for subnet {lan}\nrules:\n{rules}")
+            return False, f"LAN drop rule not added for subnet {lan}\nrules:\n{rules}"
         elif (not routing) and (not lan) and lan_drop_rule_index != -1:
-            return (False, f"LAN drop rule added for subnet {lan}\nrules:\n{rules}")
+            return False, f"LAN drop rule added for subnet {lan}\nrules:\n{rules}"
 
         if routing:
             # Local is allowed, routing rule should be above LAN block rules to allow peer to access any subnet.
             if local and (lan_drop_rule_index < routing_enabled_rule_index):
-                return (False, f"LAN drop rule for subnet {lan} added before routing\nrules: {rules}")
-            # Local is not allowed, routing rule should be bellow LAN block rules to deny peer access to local subnets.
+                return False, f"LAN drop rule for subnet {lan} added before routing\nrules: {rules}"
+            # Local is not allowed, routing rule should be below LAN block rules to deny peer access to local subnets.
             if (not local) and (lan_drop_rule_index > routing_enabled_rule_index):
-                return (False, f"LAN drop rule for subnet {lan} added after routing\nrules: {rules}")
+                return False, f"LAN drop rule for subnet {lan} added after routing\nrules: {rules}"
             continue
 
         # If routing is not enabled, but lan is enabled, there should be one rule for each local network for the peer.
-        # They should be located abouve the LAN block rules.
+        # They should be located above the LAN block rules.
         if not local:
             continue
 
@@ -186,13 +189,12 @@ def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: b
         lan_allow_rule_index = rules.find(lan_allow_rule)
 
         if lan_allow_rule not in rules:
-            return (False, f"LAN allow rule for subnet {lan} not found\nrules:\n{rules}")
+            return False, f"LAN allow rule for subnet {lan} not found\nrules:\n{rules}"
 
         if lan_allow_rule_index > lan_drop_rule_index:
-            return (False, f"LAN allow rule is added after LAN drop rule\nrules:\n{rules}")
+            return False, f"LAN allow rule is added after LAN drop rule\nrules:\n{rules}"
 
-
-    return (True, "")
+    return True, ""
 
 
 def set_permissions(peer: str, routing: bool, local: bool, incoming: bool, fileshare: bool):
@@ -249,26 +251,25 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
         routing_rule = f"-A FORWARD -s {peer_ip}/32 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"
         routing_rule_idx = rules.find(routing_rule)
         if routing_rule_idx == -1:
-            return (False, f"Routing rule not found\nrules:\n{rules}")
+            return False, f"Routing rule not found\nrules:\n{rules}"
 
         for lan in meshnet.LANS:
             lan_drop_rule = f"-A FORWARD -s 100.64.0.0/10 -d {lan} -m comment --comment nordvpn-exitnode-transient -j DROP"
             lan_drop_rule_idx = rules.find(lan_drop_rule)
             if lan_drop_rule_idx == -1:
-                return (False, f"LAN drop rule not found for subnet {lan}\nrules:\n{rules}")
+                return False, f"LAN drop rule not found for subnet {lan}\nrules:\n{rules}"
 
             if local and lan_discovery:
                 if lan_drop_rule_idx < routing_rule_idx:
-                    return (False, f"Routing rule was added after LAN block rule for subnet {lan}\nrules:\n{rules}")
-            else:
-                if lan_drop_rule_idx > routing_rule_idx:
-                    return (False, f"Routing rule was added before LAN block rule for subnet {lan}\nrules:\n{rules}")
+                    return False, f"Routing rule was added after LAN block rule for subnet {lan}\nrules:\n{rules}"
+            elif lan_drop_rule_idx > routing_rule_idx:
+                return False, f"Routing rule was added before LAN block rule for subnet {lan}\nrules:\n{rules}"
 
-        return (True, "")
+        return True, ""
 
     sh.nordvpn.connect()
     with lib.Defer(sh.nordvpn.disconnect):
-        for (result, message) in lib.poll(check_rules_routing):
+        for (result, message) in lib.poll(check_rules_routing):  # noqa: B007
             if result:
                 break
         assert result, message
@@ -297,10 +298,11 @@ def test_remove_peer_firewall_update():
     def all_peer_permissions_removed() -> (bool, str):
         rules = sh.sudo.iptables("-S")
         if peer_ip not in rules:
-            return (True, "")
-        return (False, f"Rules for peer were not removed from firewall\nPeer IP: {peer_ip}\nrules:\n{rules}")
+            return True, ""
+        return False, f"Rules for peer were not removed from firewall\nPeer IP: {peer_ip}\nrules:\n{rules}"
 
-    for (result, message) in lib.poll(all_peer_permissions_removed):
+    result, message = None, None
+    for (result, message) in lib.poll(all_peer_permissions_removed):  # noqa: B007
         if result:
             break
 
@@ -310,11 +312,10 @@ def test_remove_peer_firewall_update():
 def test_account_switch():
     sh.nordvpn.logout("--persist-token")
     login.login_as("qa-peer")
-    sh.nordvpn.set.mesh.on() # expecting failure here
+    sh.nordvpn.set.mesh.on()  # expecting failure here
 
 
 def test_invite_send_repeated():
-
     with lib.Defer(lambda: sh.nordvpn.meshnet.invite.revoke("test@test.com")):
         meshnet.send_meshnet_invite("test@test.com")
 
@@ -325,7 +326,6 @@ def test_invite_send_repeated():
 
 
 def test_invite_send_own_email():
-    
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         meshnet.send_meshnet_invite(os.environ.get("DEFAULT_LOGIN_USERNAME"))
 
@@ -333,7 +333,6 @@ def test_invite_send_own_email():
 
 
 def test_invite_send_not_an_email():
-
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         meshnet.send_meshnet_invite("test")
 
@@ -342,53 +341,47 @@ def test_invite_send_not_an_email():
 
 @pytest.mark.skip(reason="A different error message is expected - LVPN-262")
 def test_invite_send_long_email():
-    
     # A long email address containing more than 256 characters is created
     email = "test" * 65 + "@test.com"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         meshnet.send_meshnet_invite(email)
 
-    assert not "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." in str(ex.value)
+    assert "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." not in str(ex.value)
 
 
 @pytest.mark.skip(reason="A different error message is expected - LVPN-262")
 def test_invite_send_email_special_character():
-    
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         meshnet.send_meshnet_invite("\u2222@test.com")
 
-    assert not "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." in str(ex.value)
+    assert "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." not in str(ex.value)
 
 
 def test_invite_revoke():
-
     meshnet.send_meshnet_invite("test@test.com")
 
     assert "Meshnet invitation to 'test@test.com' was revoked." in sh.nordvpn.meshnet.invite.revoke("test@test.com")
 
 
 def test_invite_revoke_repeated():
-
     with lib.Defer(lambda: sh.nordvpn.meshnet.invite.revoke("test@test.com")):
         meshnet.send_meshnet_invite("test@test.com")
-    
+
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.revoke("test@test.com")
 
     assert "No invitation from 'test@test.com' was found." in str(ex.value)
 
 
-def test_invite_revoke_non_existant():
-    
+def test_invite_revoke_non_existent():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.revoke("test@test.com")
 
     assert "No invitation from 'test@test.com' was found." in str(ex.value)
 
 
-def test_invite_revoke_non_existant_long_email():
-    
+def test_invite_revoke_non_existent_long_email():
     email = "test" * 65 + "@test.com"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -397,24 +390,21 @@ def test_invite_revoke_non_existant_long_email():
     assert f"No invitation from '{email}' was found." in str(ex.value)
 
 
-def test_invite_revoke_non_existant_special_character():
-    
+def test_invite_revoke_non_existent_special_character():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.revoke("\u2222@test.com")
 
     assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
 
 
-def test_invite_deny_non_existant():
-    
+def test_invite_deny_non_existent():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.deny("test@test.com")
 
     assert "No invitation from 'test@test.com' was found." in str(ex.value)
 
 
-def test_invite_deny_non_existant_long_email():
-    
+def test_invite_deny_non_existent_long_email():
     email = "test" * 65 + "@test.com"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -423,24 +413,21 @@ def test_invite_deny_non_existant_long_email():
     assert f"No invitation from '{email}' was found." in str(ex.value)
 
 
-def test_invite_deny_non_existant_special_character():
-    
+def test_invite_deny_non_existent_special_character():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.deny("\u2222@test.com")
 
     assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
 
 
-def test_invite_accept_non_existant():
-    
+def test_invite_accept_non_existent():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.accept("test@test.com")
 
     assert "No invitation from 'test@test.com' was found." in str(ex.value)
 
 
-def test_invite_accept_non_existant_long_email():
-    
+def test_invite_accept_non_existent_long_email():
     email = "test" * 65 + "@test.com"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -449,8 +436,7 @@ def test_invite_accept_non_existant_long_email():
     assert f"No invitation from '{email}' was found." in str(ex.value)
 
 
-def test_invite_accept_non_existant_special_character():
-    
+def test_invite_accept_non_existent_special_character():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.accept("\u2222@test.com")
 

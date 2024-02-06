@@ -1,0 +1,86 @@
+line-length = 220
+target-version = "py310"
+
+[lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # Unused function argument
+    "ARG001",
+    # Wrong type
+    "PT006",
+    # Missing explicit return at the end of function able to return non-None value
+    "RET503",
+    # Exception must not use an f-string literal, assign to variable first
+    "EM102",
+    # Do not catch blind exception
+    "BLE001",
+    # Trailing comma on bare tuple prohibited
+    "COM818",
+    # Unnecessary generator
+    "C402",
+    # Consider * instead of concatenation
+    "RUF005",
+    # Use elif instead of else then if, to reduce indentation
+    "PLR5501",
+    # Loop variable overwritten by assignment target
+    "PLW2901",
+    # Implicitly concatenated string literals over multiple lines
+    "ISC002",
+    # Variable in function should be lowercase
+    "N806",
+    # Variable in global scope should not be mixedCase
+    "N816",
+    # Trailing whitespace
+    "W291",
+    # One-line docstring should fit on one line
+    "D200",
+    # 1 blank line required between summary line and description
+    "D205",
+    # Docstring is over-indented
+    "D208",
+    # Multi-line docstring closing quotes should be on a separate line
+    "D209",
+    # Multi-line docstring summary should start at the second line
+    "D213",
+    # First line should end with a period
+    "D400",
+    # First word of the first line should be capitalized
+    "D403",
+    # Use specific rule codes when using noqa
+    "PGH004",
+    # Invalid TODO capitalization: ToDo should be TODO
+    "TD006",
+    # Probable use of requests call without timeout
+    "S113",
+    # Apply all rules
+    # "ALL"
+]
+
+ignore = [
+    # Line too long
+    "E501",
+    # Use ternary operator instead of if-else-block
+    "SIM108",
+    # Use a single `with` statement with multiple contexts instead of nested `with` statements
+    "SIM117",
+    # Rules to be selected in future
+    "UP007", "UP035", "RUF013", "D401", "PTH",
+    # Rules to be selected in future, but currently broken
+    "RET505",
+    # Rules ignored from ALL
+    "ANN001", "ANN101", "ANN201", "ANN202", "ANN204", "T201", "D100", "D101", "D102", "D103", "D104", "D105", "D107",
+    "D202", "D212", "COM812", "S101", "TD002", "TD003", "FIX002", "FBT001", "FBT002", "FBT003", "RUF001", "RUF010",
+    "Q000", "PLR0913", "PLR0915", "PLR0911", "PLR2004", "PT012", "PT017", "PT018", "PYI024", "C901", "TRY300",
+    "PERF203", "PERF401", "S60", "S108", "S311", "ISC003", "ERA001"
+]

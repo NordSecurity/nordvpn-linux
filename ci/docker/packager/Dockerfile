@@ -1,24 +1,43 @@
-FROM golang:1.20.1-buster
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-buster-20240201
+
+# Need to build nfpm with patch; expeting sometime
+# nfpm upstream will be fixed (issue submitted)
+RUN cd && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends file binutils && \
+    wget --progress=dot:giga "https://github.com/go-task/task/releases/download/v3.34.1/task_linux_amd64.deb" -O /tmp/task.deb && \
+    echo "c40af16a9bda90ffd55c50f72d8f5ad2e7a9a341dc1edf4154e42271463858ad /tmp/task.deb" | sha256sum -c - && \
+    dpkg -i /tmp/task.deb && rm /tmp/task.deb && \
+    git clone https://github.com/keliramu/nfpm.git && \
+    cd nfpm && \
+    git checkout ensure-reproducable-deb-new && \
+    task setup && \
+    task build && \
+    strip ./nfpm && \
+    file ./nfpm && \
+    ls -lh ./nfpm && \
+    ./nfpm --version
+
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-buster-20240201
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
-ENV GOBIN=/usr/bin
-ENV GOPATH=/go
+# From first stage copy only nfpm binary
+COPY --from=0 /root/nfpm/nfpm /usr/bin/nfpm
 
-RUN go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.5.1 && \
-    go install github.com/goreleaser/chglog/cmd/chglog@v0.1.2
-
-RUN apt-get update; \
-    apt-get -y install elfutils gettext-base sudo; \
-    apt-get clean; \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get -y --no-install-recommends install elfutils gettext-base sudo && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    # Install chglog
+    go install github.com/goreleaser/chglog/cmd/chglog@v0.1.2 && \
+    go clean -cache -modcache && \
+    nfpm --version
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
 RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} packager && useradd -l -m -u ${USER_ID} -g packager -G nordvpn packager && echo "packager ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-RUN chown -R packager:packager /go
 
 USER packager
 

@@ -1,5 +1,6 @@
 import paramiko
 
+
 class Ssh:
     def __init__(self, hostname: str, username: str, password: str):
         self.client = paramiko.SSHClient()
@@ -9,12 +10,13 @@ class Ssh:
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     def connect(self):
-        self.client.connect(self.hostname, 22, username = self.username, password = self.password)
+        self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
     def exec_command(self, command: str) -> str:
         _, stdout, stderr = self.client.exec_command(command)
         if stdout.channel.recv_exit_status() != 0:
-            raise RuntimeError(f'{stdout.read().decode()} {stderr.read().decode()}')
+            msg = f'{stdout.read().decode()} {stderr.read().decode()}'
+            raise RuntimeError(msg)
         return stdout.read().decode()
 
     # Sends file in the provided path to the ssh peer

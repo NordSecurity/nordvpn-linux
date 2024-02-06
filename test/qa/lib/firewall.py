@@ -1,7 +1,8 @@
-from lib import daemon, logging
-import lib
 import re
+
 import sh
+
+from . import Port, Protocol, daemon, logging
 
 IP_ROUTE_TABLE = 205
 
@@ -82,14 +83,14 @@ IP_ROUTE_TABLE = 205
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
 
-inputLanDiscoveryRules = [
+INPUT_LAN_DISCOVERY_RULES = [
     "-A INPUT -s 169.254.0.0/16 -i eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A INPUT -s 192.168.0.0/16 -i eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A INPUT -s 172.16.0.0/12 -i eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A INPUT -s 10.0.0.0/8 -i eth0 -m comment --comment nordvpn -j ACCEPT",
 ]
 
-outputLanDiscoveryRules = [
+OUTPUT_LAN_DISCOVERY_RULES = [
     "-A OUTPUT -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A OUTPUT -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A OUTPUT -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
@@ -99,26 +100,26 @@ outputLanDiscoveryRules = [
 
 def __rules_connmark_chain_input(interface: str):
     return \
-    [
-        f"-A INPUT -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        f"-A INPUT -i {interface} -m comment --comment nordvpn -j DROP",
-    ]
+        [
+            f"-A INPUT -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
+            f"-A INPUT -i {interface} -m comment --comment nordvpn -j DROP",
+        ]
 
 
 def __rules_connmark_chain_output(interface: str):
     return \
-    [
-        f"-A OUTPUT -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
-        f"-A OUTPUT -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        f"-A OUTPUT -o {interface} -m comment --comment nordvpn -j DROP"
-    ]
+        [
+            f"-A OUTPUT -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
+            f"-A OUTPUT -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
+            f"-A OUTPUT -o {interface} -m comment --comment nordvpn -j DROP"
+        ]
 
 
 def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
     result = []
 
     for subnet in subnets:
-        result += f"-A INPUT -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT",
+        result += (f"-A INPUT -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT", )
 
     current_subnet_rules_input_chain = []
 
@@ -136,7 +137,7 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
     result = []
 
     for subnet in subnets:
-        result += f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT",
+        result += (f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
 
     current_subnet_rules_input_chain = []
 
@@ -150,7 +151,7 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
         return result
 
 
-def __rules_allowlist_port_chain_input(interface:str, ports_udp: lib.Port, ports_tcp: lib.Port):
+def __rules_allowlist_port_chain_input(interface: str, ports_udp: list[Port], ports_tcp: list[Port]):
     result = []
 
     for port in ports_udp:
@@ -167,7 +168,7 @@ def __rules_allowlist_port_chain_input(interface:str, ports_udp: lib.Port, ports
     return result
 
 
-def __rules_allowlist_port_chain_output(interface:str, ports_udp: lib.Port, ports_tcp: lib.Port):
+def __rules_allowlist_port_chain_output(interface: str, ports_udp: list[Port], ports_tcp: list[Port]):
     result = []
 
     for port in ports_udp:
@@ -184,7 +185,7 @@ def __rules_allowlist_port_chain_output(interface:str, ports_udp: lib.Port, port
     return result
 
 
-def _get_rules_killswitch_on(interface:str):
+def _get_rules_killswitch_on(interface: str):
     result = []
 
     result.extend(__rules_connmark_chain_input(interface))
@@ -194,11 +195,11 @@ def _get_rules_killswitch_on(interface:str):
     return result
 
 
-def _get_rules_connected_to_vpn_server(interface:str):
+def _get_rules_connected_to_vpn_server(interface: str):
     return _get_rules_killswitch_on(interface)
 
 
-def _get_rules_allowlist_subnet_on(interface:str, subnets:list[str]):
+def _get_rules_allowlist_subnet_on(interface: str, subnets: list[str]):
     result = []
 
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
@@ -210,9 +211,9 @@ def _get_rules_allowlist_subnet_on(interface:str, subnets:list[str]):
     return result
 
 
-def _get_rules_allowlist_port_on(interface:str, ports:list[lib.Port]):
-    ports_udp: list[lib.Port]
-    ports_tcp: list[lib.Port]
+def _get_rules_allowlist_port_on(interface: str, ports: list[Port]):
+    ports_udp: list[Port]
+    ports_tcp: list[Port]
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
@@ -226,7 +227,7 @@ def _get_rules_allowlist_port_on(interface:str, ports:list[lib.Port]):
     return result
 
 
-def _get_rules_allowlist_subnet_and_port_on(interface:str, subnets:list[str], ports:list[lib.Port]):
+def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], ports: list[Port]):
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
@@ -242,8 +243,8 @@ def _get_rules_allowlist_subnet_and_port_on(interface:str, subnets:list[str], po
     return result
 
 
-# ToDo: Add missing IPv6 rules (icmp6 & dhcp6)
-def _get_firewall_rules(ports: list[lib.Port]=None, subnets: list[str]=None) -> list[str]:
+# TODO: Add missing IPv6 rules (icmp6 & dhcp6)
+def _get_firewall_rules(ports: list[Port] = None, subnets: list[str] = None) -> list[str]:
     # Default route interface
     interface = sh.ip.route.show("default").split(None)[4]
 
@@ -268,10 +269,11 @@ def _get_firewall_rules(ports: list[lib.Port]=None, subnets: list[str]=None) -> 
     # Connected & Port(s) allowlisted
     if ports:
         return _get_rules_allowlist_port_on(interface, ports)
+    return []
 
 
-def is_active(ports: list[lib.Port]=None, subnets: list[str]=None) -> bool:
-    """ returns True when all expected rules are found in iptables, in matching order """
+def is_active(ports: list[Port] = None, subnets: list[str] = None) -> bool:
+    """Returns True when all expected rules are found in iptables, in matching order."""
     print(sh.ip.route())
 
     expected_rules = _get_firewall_rules(ports, subnets)
@@ -295,7 +297,7 @@ def is_active(ports: list[lib.Port]=None, subnets: list[str]=None) -> bool:
 
 
 def is_empty() -> bool:
-    """ returns True when firewall does not have DROP rules """
+    """Returns True when firewall does not have DROP rules."""
     return "DROP" not in sh.sudo.iptables("-S")
 
 
@@ -305,16 +307,16 @@ def _get_iptables_rules() -> list[str]:
     return sh.sudo.iptables("-S").split('\n')[3:-1]
 
 
-def _sort_ports_by_protocol(ports: list[lib.Port]) -> tuple[list[lib.Port], list[lib.Port]]:
-    """ Sorts a list of ports and their corresponding protocols into UDP and TCP, both in descending order. """
+def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
+    """Sorts a list of ports and their corresponding protocols into UDP and TCP, both in descending order."""
 
-    ports_udp: list[lib.Port] = []
-    ports_tcp: list[lib.Port] = []
+    ports_udp: list[Port] = []
+    ports_tcp: list[Port] = []
 
     for port in ports:
-        if port.protocol == lib.Protocol.UDP:
+        if port.protocol == Protocol.UDP:
             ports_udp.append(port)
-        elif port.protocol == lib.Protocol.TCP:
+        elif port.protocol == Protocol.TCP:
             ports_tcp.append(port)
         else:
             ports_udp.append(port)
@@ -336,7 +338,7 @@ def sort_list_by_other_list(to_sort: list[str], sort_by: list[str]) -> list[str]
 
 
 def add_and_delete_random_route():
-    """ Adds a random route, and deletes it. If this is not used, exceptions happen in allowlist tests """
+    """Adds a random route, and deletes it. If this is not used, exceptions happen in allowlist tests."""
     cmd = sh.sudo.ip.route.add.default.via.bake("127.0.0.1")
     cmd.table(IP_ROUTE_TABLE)
     sh.sudo.ip.route.delete.default.table(IP_ROUTE_TABLE)

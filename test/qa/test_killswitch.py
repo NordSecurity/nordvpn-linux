@@ -1,3 +1,8 @@
+import pytest
+import sh
+import timeout_decorator
+
+import lib
 from lib import (
     daemon,
     info,
@@ -5,35 +10,32 @@ from lib import (
     login,
     network,
 )
-import lib
-import pytest
-import sh
-import timeout_decorator
 
 
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
 
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
+
 
 MSG_KILLSWITCH_ON = "Kill Switch is set to 'enabled' successfully."
 MSG_KILLSWITCH_OFF = "Kill Switch is set to 'disabled' successfully."
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_killswitch_on_disconnected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
@@ -49,7 +51,7 @@ def test_killswitch_on_disconnected(tech, proto, obfuscated):
     assert network.is_available()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_killswitch_on_connect(tech, proto, obfuscated):
@@ -78,7 +80,7 @@ def test_killswitch_on_connect(tech, proto, obfuscated):
     assert network.is_available()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_killswitch_on_connected(tech, proto, obfuscated):
@@ -101,7 +103,7 @@ def test_killswitch_on_connected(tech, proto, obfuscated):
     assert network.is_available()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_killswitch_off_connected(tech, proto, obfuscated):
@@ -126,13 +128,11 @@ def test_killswitch_off_connected(tech, proto, obfuscated):
     assert network.is_available()
 
 
-@pytest.mark.parametrize("tech_from,proto_from,obfuscated_from", lib.TECHNOLOGIES)
-@pytest.mark.parametrize("tech_to,proto_to,obfuscated_to", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech_from", "proto_from", "obfuscated_from"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech_to", "proto_to", "obfuscated_to"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_killswitch_reconnect(
-    tech_from, proto_from, obfuscated_from, tech_to, proto_to, obfuscated_to
-):
+def test_killswitch_reconnect(tech_from, proto_from, obfuscated_from, tech_to, proto_to, obfuscated_to):
     lib.set_technology_and_protocol(tech_from, proto_from, obfuscated_from)
     assert network.is_available()
 

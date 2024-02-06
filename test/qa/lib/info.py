@@ -2,10 +2,10 @@ import sh
 
 
 def collect():
-    """collect system information and return as multiline string"""
+    """Collect system information and return as multiline string."""
     link_layer_info = sh.sudo.ip.link()
     network_interface_info = sh.sudo.ip.addr()
-    rounting_info = sh.sudo.ip.route()
+    routing_info = sh.sudo.ip.route()
     firewall_info = sh.sudo.iptables("-S")
     nameserver_info = sh.sudo.cat("/etc/resolv.conf")
 
@@ -20,7 +20,7 @@ def collect():
             "Network Interfaces:",
             str(network_interface_info),
             "Routing:",
-            str(rounting_info),
+            str(routing_info),
             "Firewall:",
             str(firewall_info),
             "DNS:",

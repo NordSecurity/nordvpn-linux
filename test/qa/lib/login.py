@@ -1,11 +1,13 @@
-from lib import logging, ssh
-import sh
-import time
 import json
 import os
 
+import sh
+
+from . import logging, ssh
+
+
 def get_default_credentials():
-    """returns tuple[username,token]"""
+    """Returns tuple[username,token]."""
     default_username = os.environ.get("DEFAULT_LOGIN_USERNAME")
     default_token = os.environ.get("DEFAULT_LOGIN_TOKEN")
     ci_credentials = os.environ.get("NA_TESTS_CREDENTIALS")
@@ -14,11 +16,12 @@ def get_default_credentials():
         dev_email = os.environ.get("GITLAB_USER_EMAIL")
         if dev_email in devs:
             default_username = devs[dev_email]["username"]
-            default_token= devs[dev_email]["token"]
+            default_token = devs[dev_email]["token"]
     return default_username, default_token
 
+
 def login_as(username, ssh_client: ssh.Ssh = None):
-    """login_as specified user with optional delay before calling login"""
+    """login_as specified user with optional delay before calling login."""
 
     default_username, default_token = get_default_credentials()
     users = {

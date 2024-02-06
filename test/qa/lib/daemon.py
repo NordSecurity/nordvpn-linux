@@ -1,12 +1,13 @@
 """Functions to make it easier to interact with nordvpnd."""
-from lib import ssh
+import glob
 import logging
 import os
-import sh
 import socket
 import time
-import glob
-from typing import List, Tuple
+
+import sh
+
+from . import ssh
 
 
 def _rewrite_log_path():
@@ -21,7 +22,7 @@ def is_init_systemd():
 
 
 def is_connected() -> bool:
-    """returns True when connected to VPN server"""
+    """Returns True when connected to VPN server."""
     try:
         return "Connected" in sh.nordvpn.status()
     except sh.ErrorReturnCode:
@@ -29,7 +30,7 @@ def is_connected() -> bool:
 
 
 def is_disconnected() -> bool:
-    """returns True when not connected to VPN"""
+    """Returns True when not connected to VPN."""
     try:
         return "Disconnected" in sh.nordvpn.status()
     except sh.ErrorReturnCode:
@@ -37,7 +38,7 @@ def is_disconnected() -> bool:
 
 
 def is_killswitch_on():
-    """ return True when Killswitch is activated """
+    """Return True when Killswitch is activated."""
     try:
         return "Kill Switch: enabled" in sh.nordvpn.settings()
     except sh.ErrorReturnCode:
@@ -53,7 +54,7 @@ def is_ipv6_on():
 
 
 def install_peer(ssh_client: ssh.Ssh):
-    """installs nordvpn in peer"""
+    """Installs nordvpn in peer."""
     project_root = os.environ["WORKDIR"]
     deb_path = glob.glob(f'{project_root}/dist/app/deb/*amd64.deb')[0]
     ssh_client.send_file(deb_path, '/tmp/nordvpn.deb')
@@ -61,14 +62,15 @@ def install_peer(ssh_client: ssh.Ssh):
 
 
 def uninstall_peer(ssh_client: ssh.Ssh):
-    """uninstalls nordvpn in peer"""
+    """Uninstalls nordvpn in peer."""
     ssh_client.exec_command('sudo apt remove -y nordvpn')
 
 
 def start():
-    """starts daemon and blocks until it is actually started"""
+    """Starts daemon and blocks until it is actually started."""
     if is_init_systemd():
-        return sh.sudo.systemctl.start.nordvpnd()
+        sh.sudo.systemctl.start.nordvpnd()
+        return
     # call to init.d returns before the daemon is actually started
     _rewrite_log_path()
     sh.sudo("/etc/init.d/nordvpn", "start")
@@ -77,7 +79,7 @@ def start():
 
 
 def start_peer(ssh_client: ssh.Ssh):
-    """starts daemon in peer and blocks until it is actually started"""
+    """Starts daemon in peer and blocks until it is actually started."""
     ssh_client.exec_command("sudo /etc/init.d/nordvpn start")
     time.sleep(1)
     while not is_peer_running(ssh_client):
@@ -85,9 +87,10 @@ def start_peer(ssh_client: ssh.Ssh):
 
 
 def stop():
-    """stops the daemon and blocks until it is actually stopped"""
+    """Stops the daemon and blocks until it is actually stopped."""
     if is_init_systemd():
-        return sh.sudo.systemctl.stop.nordvpnd()
+        sh.sudo.systemctl.stop.nordvpnd()
+        return
     # call to init.d returns before the daemon is actually stopped
     sh.sudo("/etc/init.d/nordvpn", "stop")
     while is_running():
@@ -95,7 +98,7 @@ def stop():
 
 
 def stop_peer(ssh_client: ssh.Ssh):
-    """stops the daemon in peer and blocks until it is actually stopped"""
+    """Stops the daemon in peer and blocks until it is actually stopped."""
     ssh_client.exec_command("sudo /etc/init.d/nordvpn stop")
     while is_peer_running(ssh_client):
         time.sleep(1)
@@ -113,7 +116,7 @@ def restart():
 
 # retrieving links inside this function creates a race condition,
 # therefore it is safer to provide them as arguments
-def wait_for_reconnect(links: List[Tuple[int, str]]):
+def wait_for_reconnect(links: list[tuple[int, str]]):
     logging.info("waiting for reconnect")
     while True:
         got = socket.if_nameindex()
@@ -148,5 +151,5 @@ def is_peer_running(ssh_client: ssh.Ssh) -> bool:
     try:
         ssh_client.exec_command("nordvpn status")
         return True
-    except:
+    except Exception:  # noqa: BLE001
         return False

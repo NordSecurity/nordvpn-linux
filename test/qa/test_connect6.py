@@ -1,3 +1,10 @@
+import random
+
+import pytest
+import sh
+import timeout_decorator
+
+import lib
 from lib import (
     daemon,
     info,
@@ -5,33 +12,28 @@ from lib import (
     login,
     network,
 )
-import lib
-import pytest
-import random
-import sh
-import timeout_decorator
 
 
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
 
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 
 
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES_WITH_IPV6[:-1])
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_WITH_IPV6[:-1])
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_ipv6_connect(tech, proto, obfuscated):

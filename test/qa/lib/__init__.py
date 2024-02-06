@@ -1,8 +1,9 @@
-from enum import Enum
 import os
-import sh
 import time
+from enum import Enum
+from typing import Callable, Union
 
+import sh
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 STANDARD_TECHNOLOGIES = [
@@ -35,7 +36,6 @@ TECHNOLOGIES_BASIC1 = [
 TECHNOLOGIES_BASIC2 = [
     ("openvpn", "udp", "off"),
 ]
-
 
 # no obfuscated servers with ipv6 2021/05/24
 TECHNOLOGIES_WITH_IPV6 = STANDARD_TECHNOLOGIES
@@ -111,6 +111,7 @@ IPV6_SERVERS = [
     "us9591", "us9592"
 ]
 
+
 class Protocol(Enum):
     UDP = "UDP"
     TCP = "TCP"
@@ -119,10 +120,12 @@ class Protocol(Enum):
     def __str__(self):
         return self.value
 
+
 class Port:
     def __init__(self, value: str, protocol: Protocol):
         self.value = value
         self.protocol = protocol
+
 
 PROTOCOLS = [
     Protocol.UDP,
@@ -157,9 +160,10 @@ ALLOWLIST_ALIAS = [
 # Used for integration test coverage
 os.environ["GOCOVERDIR"] = os.environ["WORKDIR"] + "/" + os.environ["COVERDIR"]
 
+
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.
 class ErrorDefer:
-    def __init__(self, command: sh.Command):
+    def __init__(self, command: Union[sh.Command, Callable]):
         self.command = command
 
     def __enter__(self):
@@ -172,7 +176,7 @@ class ErrorDefer:
 
 # Implements context manager a.k.a. with block and executes command on exit.
 class Defer:
-    def __init__(self, command: sh.Command):
+    def __init__(self, command: Union[sh.Command, Callable]):
         self.command = command
 
     def __enter__(self):
@@ -183,10 +187,11 @@ class Defer:
 
 
 def set_technology_and_protocol(tech, proto, obfuscation):
-    """Allows setting technology, protocol and obfuscation regardless
-    of whether it is already set or not.
+    """
+    Allows setting technology, protocol and obfuscation regardless of whether it is already set or not.
 
-    Tests do not break on reordering when using this."""
+    Tests do not break on reordering when using this.
+    """
     if tech:
         try:
             print(sh.nordvpn.set.technology(tech))
@@ -269,8 +274,8 @@ def flush_allowlist():
 def is_connect_successful(output, name="", hostname=""):
     if name and hostname:
         return (
-            f"Connecting to {name} ({hostname})"
-            and f"You are connected to {name} ({hostname})!" in output
+                f"Connecting to {name} ({hostname})"
+                and f"You are connected to {name} ({hostname})!" in output
         )
     return "Connecting to" and "You are connected to" in output
 
@@ -278,15 +283,15 @@ def is_connect_successful(output, name="", hostname=""):
 # returns True when failed to connect
 def is_connect_unsuccessful(exception):
     return (
-        "The specified server does not exist." in str(exception.value)
-        or "The specified server is not available at the moment or does not support your connection settings."
-        in str(exception.value)
-        or "You cannot connect to a group and set the group option at the same time."
-        in str(exception.value)
-        or "Something went wrong. Please try again. If the problem persists, contact our customer support."
-        in str(exception.value)
-        or "The specified group does not exist."
-        in str(exception.value)
+            "The specified server does not exist." in str(exception.value)
+            or "The specified server is not available at the moment or does not support your connection settings."
+            in str(exception.value)
+            or "You cannot connect to a group and set the group option at the same time."
+            in str(exception.value)
+            or "Something went wrong. Please try again. If the problem persists, contact our customer support."
+            in str(exception.value)
+            or "The specified group does not exist."
+            in str(exception.value)
     )
 
 

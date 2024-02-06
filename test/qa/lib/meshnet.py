@@ -1,22 +1,24 @@
-from lib import login, ssh
-from enum import Enum
-import sh
 import os
-import time
-import logging as logger
 import re
 import subprocess
+import time
+from enum import Enum
+
+import sh
+
+from . import login, ssh
 
 PEER_USERNAME = os.environ.get("QA_PEER_USERNAME")
 
 LANS = [
-        "169.254.0.0/16",
-        "192.168.0.0/16",
-        "172.16.0.0/12",
-        "10.0.0.0/8",
+    "169.254.0.0/16",
+    "192.168.0.0/16",
+    "172.16.0.0/12",
+    "10.0.0.0/8",
 ]
 
 strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGNORECASE)
+
 
 class PeerName(Enum):
     Hostname = 0
@@ -51,14 +53,14 @@ def add_peer(ssh_client: ssh.Ssh,
              peer_allow_local: bool = True,
              peer_allow_incoming: bool = True):
     """
-    adds QA peer to meshnet
-    try to minimize usage of this, because there's a weekly invite limit
+    Adds QA peer to meshnet.
+
+    Try to minimize usage of this, because there's a weekly invite limit.
     """
     tester_allow_fileshare_arg = f"--allow-peer-send-files={str(tester_allow_fileshare).lower()}"
     tester_allow_routing_arg = f"--allow-traffic-routing={str(tester_allow_routing).lower()}"
     tester_allow_local_arg = f"--allow-local-network-access={str(tester_allow_local).lower()}"
     tester_allow_incoming_arg = f"--allow-incoming-traffic={str(tester_allow_incoming).lower()}"
-
 
     peer_allow_fileshare_arg = f"--allow-peer-send-files={str(peer_allow_fileshare).lower()}"
     peer_allow_routing_arg = f"--allow-traffic-routing={str(peer_allow_routing).lower()}"
@@ -73,8 +75,8 @@ def add_peer(ssh_client: ssh.Ssh,
 
 
 def get_peers(output: str) -> list:
-    """parses list of peer names from 'nordvpn meshnet peer list' output"""
-    output = output[output.find("Local Peers:"):] # skip this device
+    """Parses list of peer names from 'nordvpn meshnet peer list' output."""
+    output = output[output.find("Local Peers:"):]  # skip this device
     peers = []
     for line in output.split("\n"):
         if "Hostname:" in line:
@@ -83,51 +85,54 @@ def get_peers(output: str) -> list:
 
 
 def get_this_device(output: str):
-    """parses current device hostname from 'nordvpn meshnet peer list' output"""
+    """Parses current device hostname from 'nordvpn meshnet peer list' output."""
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
         if "This device:" in line:
-            for subline in output_lines[i+1:]:
+            for subline in output_lines[i + 1:]:
                 if "Hostname:" in subline:
                     return strip_colors.sub('', subline.split(" ")[-1])
+    return None
 
 
 def get_this_device_ipv4(output: str):
-    """parses current device ip from 'nordvpn meshnet peer list' output"""
+    """Parses current device ip from 'nordvpn meshnet peer list' output."""
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
         if "This device:" in line:
-            for subline in output_lines[i+1:]:
+            for subline in output_lines[i + 1:]:
                 if "IP:" in subline:
                     return strip_colors.sub('', subline.split(" ")[-1])
+    return None
 
 
 def get_this_device_pubkey(output: str):
-    """parses current device pubkey from 'nordvpn meshnet peer list' output"""
+    """Parses current device pubkey from 'nordvpn meshnet peer list' output."""
     output_lines = output.split("\n")
     for i, line in enumerate(output_lines):
         if "This device:" in line:
-            for subline in output_lines[i+1:]:
+            for subline in output_lines[i + 1:]:
                 if "Public Key:" in subline:
                     return strip_colors.sub('', subline.split(" ")[-1])
+    return None
 
 
 def remove_all_peers():
-    """removes all meshnet peers from local device"""
-    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}" # convert to string, _tty_out false disables colors
+    """Removes all meshnet peers from local device."""
+    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}"  # convert to string, _tty_out false disables colors
     for p in get_peers(output):
         sh.nordvpn.mesh.peer.remove(p)
 
 
 def remove_all_peers_in_peer(ssh_client: ssh.Ssh):
-    """removes all meshnet peers from peer device"""
+    """Removes all meshnet peers from peer device."""
     output = ssh_client.exec_command("nordvpn mesh peer list")
     for p in get_peers(output):
         ssh_client.exec_command(f"nordvpn mesh peer remove {p}")
 
 
 def is_peer_reachable(ssh_client: ssh.Ssh, retry: int = 5) -> bool:
-    """returns True when ping to peer succeeds."""
+    """Returns True when ping to peer succeeds."""
     output = ssh_client.exec_command("nordvpn mesh peer list")
     peer_hostname = get_this_device(output)
     i = 0
@@ -146,25 +151,25 @@ def is_peer_reachable(ssh_client: ssh.Ssh, retry: int = 5) -> bool:
 
 
 def get_sent_invites(output: str) -> list:
-    """parses list of sent invites from 'nordvpn meshnet inv list' output"""
+    """Parses list of sent invites from 'nordvpn meshnet inv list' output."""
     emails = []
     for line in output.split("\n"):
         if line.find("Received Invites:") != -1:
-            break # End of sent invites
+            break  # End of sent invites
         if line.find("Email:") != -1:
             emails.append(line.split(" ")[1])
     return emails
 
 
 def revoke_all_invites():
-    """revokes all sent meshnet invites in local device"""
-    output = f"{sh.nordvpn.mesh.inv.list(_tty_out=False)}" # convert to string, _tty_out false disables colors
+    """Revokes all sent meshnet invites in local device."""
+    output = f"{sh.nordvpn.mesh.inv.list(_tty_out=False)}"  # convert to string, _tty_out false disables colors
     for i in get_sent_invites(output):
         sh.nordvpn.mesh.inv.revoke(i)
 
 
 def revoke_all_invites_in_peer(ssh_client: ssh.Ssh):
-    """revokes all sent meshnet invites in peer device"""
+    """Revokes all sent meshnet invites in peer device."""
     output = ssh_client.exec_command("nordvpn mesh inv list")
     for i in get_sent_invites(output):
         ssh_client.exec_command(f"nordvpn mesh inv revoke {i}")
@@ -173,7 +178,7 @@ def revoke_all_invites_in_peer(ssh_client: ssh.Ssh):
 def send_meshnet_invite(email):
     command = sh.nordvpn.meshnet.invite.send(email)
     process = subprocess.Popen(str(command), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    
+
     for _ in range(4):
         process.stdin.write('\n')
         process.stdin.flush()

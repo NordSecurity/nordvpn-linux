@@ -1,11 +1,12 @@
 import logging
-import requests
 import time
 from urllib.parse import quote
 
+import requests
+
 
 def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
-    """ returns server name and hostname from core API """
+    """Returns server name and hostname from core API."""
     tech_id = ""
 
     if technology != "":
@@ -43,19 +44,18 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
     if group_id != "":
         group_id = group_ids[group_id]
 
-
     # api limits
     time.sleep(2)
     url = f"https://api.nordvpn.com/v1/servers?limit=10&filters[servers.status]=online&filters[servers_technologies]={tech_id}&filters[servers_groups]={group_id}"
     logging.debug(url)
-    server = requests.get(url).json()[0]
+    server = requests.get(url, timeout=5).json()[0]
     return server["name"], server["hostname"]
 
 
 def get_server_info(server_name):
     server_name = quote(server_name)
     url = f"https://api.nordvpn.com/v1/servers?filters[servers.name]={server_name}&fields[servers.locations]"
-    server_info = requests.get(url).json()
+    server_info = requests.get(url, timeout=5).json()
 
     city = server_info[0]["locations"][0]["country"]["city"]["name"]
     country = server_info[0]["locations"][0]["country"]["name"]
