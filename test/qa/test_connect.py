@@ -518,9 +518,9 @@ def test_status_connected(tech, proto, obfuscated):
         # TODO: Fix .lstrip('\r-\r  \r\r-\r  \r')
         status_output = sh.nordvpn.status().lstrip('\r-\r  \r\r-\r  \r')  # noqa: B005
         status_info = {a.strip().lower(): b.strip()
-                           for a, b in (element.split(':')
-                                        for element in
-                                        filter(lambda line: len(line.split(':')) == 2, status_output.split('\n')))}
+                       for a, b in (element.split(':')
+                                    for element in
+                                    filter(lambda line: len(line.split(':')) == 2, status_output.split('\n')))}
 
         print("status_info: " + str(status_info))
         print("status_info: " + str(sh.nordvpn.status()))
