@@ -19,21 +19,18 @@ from lib import (
 CIDR_32 = "/32"
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     firewall.add_and_delete_random_route()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
 
     logging.log()
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
@@ -44,7 +41,7 @@ def teardown_function(function):
 
 @pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disconnected(allowlist_alias, tech, proto, obfuscated, subnet):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -62,7 +59,7 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disco
 
 @pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_connected(allowlist_alias, tech, proto, obfuscated, subnet):
@@ -80,7 +77,7 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_conne
     assert output_after_add == output_after_delete
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_allowlist_subnet(tech, proto, obfuscated):
@@ -103,7 +100,7 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
     assert not firewall.is_active(None, ip_addresses_with_subnet)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_allowlist_subnet_connect(tech, proto, obfuscated):
@@ -126,7 +123,7 @@ def test_allowlist_subnet_connect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -142,7 +139,7 @@ def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
 
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
@@ -164,7 +161,7 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
     assert not firewall.is_active(None, [subnet])
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -178,7 +175,7 @@ def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
     assert not firewall.is_active(None, ip_addresses_with_subnet)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
@@ -201,7 +198,7 @@ def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
     assert my_ip != network.get_external_device_ip()
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscated, subnet):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -213,7 +210,7 @@ def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscate
     assert expected_message in str(ex)
 
 
-@pytest.mark.parametrize("tech,proto,obfuscated", lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)

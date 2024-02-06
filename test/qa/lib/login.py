@@ -7,7 +7,7 @@ from . import logging, ssh
 
 
 def get_default_credentials():
-    """returns tuple[username,token]"""
+    """Returns tuple[username,token]."""
     default_username = os.environ.get("DEFAULT_LOGIN_USERNAME")
     default_token = os.environ.get("DEFAULT_LOGIN_TOKEN")
     ci_credentials = os.environ.get("NA_TESTS_CREDENTIALS")
@@ -21,7 +21,7 @@ def get_default_credentials():
 
 
 def login_as(username, ssh_client: ssh.Ssh = None):
-    """login_as specified user with optional delay before calling login"""
+    """login_as specified user with optional delay before calling login."""
 
     default_username, default_token = get_default_credentials()
     users = {

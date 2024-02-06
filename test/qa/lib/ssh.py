@@ -15,7 +15,8 @@ class Ssh:
     def exec_command(self, command: str) -> str:
         _, stdout, stderr = self.client.exec_command(command)
         if stdout.channel.recv_exit_status() != 0:
-            raise RuntimeError(f'{stdout.read().decode()} {stderr.read().decode()}')
+            msg = f'{stdout.read().decode()} {stderr.read().decode()}'
+            raise RuntimeError(msg)
         return stdout.read().decode()
 
     # Sends file in the provided path to the ssh peer

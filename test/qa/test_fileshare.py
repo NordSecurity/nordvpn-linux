@@ -15,13 +15,12 @@ from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 workdir = "/tmp"
-testFiles = ["testing_fileshare_0.txt", "testing_fileshare_1.txt", "testing_fileshare_2.txt", "testing_fileshare_3.txt"]
+test_files = ["testing_fileshare_0.txt", "testing_fileshare_1.txt", "testing_fileshare_2.txt", "testing_fileshare_3.txt"]
 
 default_download_directory = "/home/qa/Downloads"
 
 
-# noinspection PyUnusedLocal
-def setup_module(module):
+def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
     lib.set_technology_and_protocol("nordlynx", "", "")
@@ -45,7 +44,7 @@ def setup_module(module):
     assert meshnet.is_peer_reachable(ssh_client)
 
     message = "testing fileshare"
-    for file in testFiles:
+    for file in test_files:
         filepath = f"{workdir}/{file}"
         with open(filepath, "w") as f:
             f.write(message)
@@ -53,8 +52,7 @@ def setup_module(module):
     ssh_client.exec_command("mkdir /root/Downloads")
 
 
-# noinspection PyUnusedLocal
-def teardown_module(module):
+def teardown_module(module):  # noqa: ARG001
     dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
     # Preserve other peer log
     output = ssh_client.exec_command("cat /var/log/nordvpn/daemon.log")
@@ -72,13 +70,11 @@ def teardown_module(module):
     daemon.stop()
 
 
-# noinspection PyUnusedLocal
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
-# noinspection PyUnusedLocal
-def teardown_function(function):
+def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
     ssh_client.exec_command("rm -rf /tmp/*")
@@ -139,7 +135,7 @@ def test_accept(accept_directories):
 
     local_transfer_id = None
     error_message = None
-    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):
+    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):  # noqa: B007
         if local_transfer_id is not None:
             break
 
@@ -165,7 +161,7 @@ def test_accept(accept_directories):
 
     receiver_files_status_ok = False
     transfer = None
-    for receiver_files_status_ok, transfer in poll(check_files_status_receiver, attempts=10):
+    for receiver_files_status_ok, transfer in poll(check_files_status_receiver, attempts=10):  # noqa: B007
         if receiver_files_status_ok is True:
             break
 
@@ -176,7 +172,7 @@ def test_accept(accept_directories):
         return fileshare.for_all_files_in_transfer(tsfr, transfer_files, predicate), tsfr
 
     sender_files_status_ok = False
-    for sender_files_status_ok, transfer in poll(check_files_status_sender, attempts=10):
+    for sender_files_status_ok, transfer in poll(check_files_status_sender, attempts=10):  # noqa: B007
         if sender_files_status_ok is True:
             break
 
@@ -249,7 +245,7 @@ def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.
     dir3 = fileshare.create_directory(2, "3")
 
     # transfer dir1 and dir2 as directories and individual files from dir3, i.e /<dir1> /<dir2> /<dir3>/<file1> /<dir3>/<file2>
-    files_to_transfer = [dir1.dir_path, dir2.dir_path] + dir3.paths
+    files_to_transfer = [dir1.dir_path, dir2.dir_path, *dir3.paths]
 
     if background:
         command_handle = sh.nordvpn.fileshare.send("--background", peer_address, *files_to_transfer)
@@ -498,7 +494,7 @@ def test_transfers_persistence():
     output = ssh_client.exec_command("nordvpn mesh peer list")
     peer_address = meshnet.get_this_device_ipv4(output)
 
-    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{testFiles[0]}")
+    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[0]}")
 
     time.sleep(1)
 
@@ -536,7 +532,7 @@ def test_transfers_persistence_load():
     nordvpnd_memory_usage = get_memory_usage(int(nordvpnd_pid))
     nordfileshared_memory_usage = get_memory_usage(int(nordfileshared_pid))
 
-    filepath = f"{workdir}/{testFiles[0]}"
+    filepath = f"{workdir}/{test_files[0]}"
 
     # give time to start and connect
     time.sleep(1)
@@ -618,9 +614,9 @@ def get_memory_usage(pid):
 
 
 def format_memory_usage(rss):
-    KB = 1024
-    MB = 1024 * 1024
-    GB = 1024 * 1024 * 1024
+    KB = 1024  # noqa: N806
+    MB = 1024 * 1024  # noqa: N806
+    GB = 1024 * 1024 * 1024  # noqa: N806
 
     if rss >= GB:
         return f'{round(rss / GB, 2)}gb'
@@ -722,7 +718,7 @@ def test_accept_destination_directory_does_not_exist():
 
     local_transfer_id = None
     error_message = None
-    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):
+    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):  # noqa: B007
         if local_transfer_id is not None:
             break
 
@@ -744,7 +740,7 @@ def test_accept_destination_directory_symlink():
 
     local_transfer_id = None
     error_message = None
-    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):
+    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):  # noqa: B007
         if local_transfer_id is not None:
             break
 
@@ -772,7 +768,7 @@ def test_accept_destination_directory_not_a_directory():
 
     local_transfer_id = None
     error_message = None
-    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):
+    for local_transfer_id, error_message in poll(fileshare.get_new_incoming_transfer):  # noqa: B007
         if local_transfer_id is not None:
             break
 
@@ -788,7 +784,7 @@ def test_accept_destination_directory_not_a_directory():
 def test_autoaccept():
     output = ssh_client.exec_command("nordvpn mesh peer list")
     peer_name = meshnet.get_peer_name(output, meshnet.PeerName.Ip)
-    subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name])
+    subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name], check=False)
     # subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name])
 
     time.sleep(10)
@@ -868,7 +864,7 @@ def test_clear():
     output = ssh_client.exec_command("nordvpn mesh peer list")
     peer_address = meshnet.get_this_device_ipv4(output)
 
-    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{testFiles[0]}")
+    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[0]}")
     time.sleep(1)
     local_transfer_id0 = fileshare.get_last_transfer()
     peer_transfer_id0 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
@@ -883,7 +879,7 @@ def test_clear():
     transfer_time0 = time.time()
     time.sleep(3)
 
-    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{testFiles[1]}")
+    sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[1]}")
     time.sleep(1)
     local_transfer_id1 = fileshare.get_last_transfer()
     peer_transfer_id1 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)

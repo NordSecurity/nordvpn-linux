@@ -50,7 +50,7 @@ def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
 
 
 def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> Optional[str]:
-    """Return last id of the last received or sent transfer"""
+    """Return last id of the last received or sent transfer."""
     if ssh_client is None:
         transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     else:
@@ -104,7 +104,7 @@ def for_all_files_in_transfer(transfer: str, files: list[str], predicate: Callab
 
 
 def get_new_incoming_transfer(ssh_client: ssh.Ssh = None):
-    """Returns last incoming transfer that has not completed"""
+    """Returns last incoming transfer that has not completed."""
     local_transfer_id = get_last_transfer(outgoing=False, ssh_client=ssh_client)
     if local_transfer_id is None:
         return None, "there are no started transfers"
