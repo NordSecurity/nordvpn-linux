@@ -313,11 +313,13 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolFalse)
 	}
 
+	eventDuration := int(time.Since(s.connectedAt).Seconds())
 	var result moose.Enum_SS_NordvpnappEventStatus
 	switch data.Type {
 	case events.ConnectAttempt:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusAttempt)
 		s.connectedAt = time.Now()
+		eventDuration = -1
 	case events.ConnectSuccess:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusSuccess)
 	case events.ConnectFailure:
@@ -364,7 +366,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 	return s.response(moose.Send_serviceQuality_servers_connect(
 		-1,
-		int(time.Since(s.connectedAt).Seconds()),
+		eventDuration,
 		result,
 		moose.Enum_SS_NordvpnappEventTrigger(moose.EventTriggerUser),
 		moose.Enum_SS_NordvpnappVpnConnectionPreset(moose.VpnConnectionPresetNone),
