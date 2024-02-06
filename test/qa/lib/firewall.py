@@ -269,7 +269,7 @@ def _get_firewall_rules(ports: list[Port] = None, subnets: list[str] = None) -> 
     # Connected & Port(s) allowlisted
     if ports:
         return _get_rules_allowlist_port_on(interface, ports)
-    return None
+    return []
 
 
 def is_active(ports: list[Port] = None, subnets: list[str] = None) -> bool:

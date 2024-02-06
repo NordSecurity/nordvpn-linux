@@ -69,13 +69,13 @@ def uninstall_peer(ssh_client: ssh.Ssh):
 def start():
     """Starts daemon and blocks until it is actually started."""
     if is_init_systemd():
-        return sh.sudo.systemctl.start.nordvpnd()
+        sh.sudo.systemctl.start.nordvpnd()
+        return
     # call to init.d returns before the daemon is actually started
     _rewrite_log_path()
     sh.sudo("/etc/init.d/nordvpn", "start")
     while not is_running():
         time.sleep(1)
-    return None
 
 
 def start_peer(ssh_client: ssh.Ssh):
@@ -89,12 +89,12 @@ def start_peer(ssh_client: ssh.Ssh):
 def stop():
     """Stops the daemon and blocks until it is actually stopped."""
     if is_init_systemd():
-        return sh.sudo.systemctl.stop.nordvpnd()
+        sh.sudo.systemctl.stop.nordvpnd()
+        return
     # call to init.d returns before the daemon is actually stopped
     sh.sudo("/etc/init.d/nordvpn", "stop")
     while is_running():
         time.sleep(1)
-    return None
 
 
 def stop_peer(ssh_client: ssh.Ssh):
