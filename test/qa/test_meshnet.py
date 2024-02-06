@@ -39,8 +39,6 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
-    meshnet.revoke_all_invites()
-    meshnet.remove_all_peers()
     ssh_client.exec_command("nordvpn set defaults")
     sh.nordvpn.set.defaults()
     daemon.stop_peer(ssh_client)
@@ -444,6 +442,31 @@ def test_invite_accept_non_existent_special_character():
 
 
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
+def test_set_meshnet_on_when_logged_out(meshnet_allias):
+    
+    sh.nordvpn.logout("--persist-token")
+    assert not settings.is_meshnet_on()
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh.nordvpn.set(meshnet_allias, "on")
+
+    assert "You are not logged in." in str(ex.value)
+
+
+@pytest.mark.skip(reason="LVPN-4590")
+@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
+def test_set_meshnet_off_when_logged_out(meshnet_allias):
+    
+    sh.nordvpn.logout("--persist-token")
+    assert not settings.is_meshnet_on()
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh.nordvpn.set(meshnet_allias, "off")
+
+    assert "You are not logged in." in str(ex.value)
+
+
+@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_on(meshnet_allias):
 
     assert "Meshnet is set to 'disabled' successfully." in sh.nordvpn.set(meshnet_allias, "off")
@@ -471,34 +494,3 @@ def test_set_meshnet_off_repeated(meshnet_allias):
             sh.nordvpn.set(meshnet_allias, "off")
 
     assert "Meshnet is already disabled." in str(ex.value)
-
-    sh.nordvpn.set.meshnet("on")
-
-
-@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
-def test_set_meshnet_on_logged_out(meshnet_allias):
-    
-    sh.nordvpn.logout("--persist-token")
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.set(meshnet_allias, "on")
-
-    assert "You are not logged in." in str(ex.value)
-
-    login.login_as("default")
-    sh.nordvpn.set.meshnet("on")
-
-
-@pytest.mark.skip(reason="LVPN-4590")
-@pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
-def test_set_meshnet_off_logged_out(meshnet_allias):
-    
-    sh.nordvpn.logout("--persist-token")
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.set(meshnet_allias, "off")
-
-    assert "You are not logged in." in str(ex.value)
-
-    login.login_as("default")
-    sh.nordvpn.set.meshnet("on")
