@@ -45,7 +45,7 @@ export GOARCH="${GOARCH}"
 export CGO_CFLAGS="-g -O2 -D_FORTIFY_SOURCE=2"
 
 # These C linker flags get appended to the ones specified in the source code
-export CGO_LDFLAGS="-Wl,-z,relro,-z,now"
+export CGO_LDFLAGS="${CGO_LDFLAGS:-""} -Wl,-z,relro,-z,now"
 
 # Required by Go when cross-compiling to 32bit ARM architectures
 [ "${ARCH}" == "armel" ] && export GOARM=5
