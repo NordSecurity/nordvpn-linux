@@ -12,6 +12,7 @@ import (
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strconv"
 
@@ -259,7 +260,7 @@ func main() {
 	dnsSetter := dns.NewSetter(infoSubject)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
-	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
+	eventsDbPath := filepath.Join(internal.DatFilesPath, "moose.db")
 	// TODO: remove once this is fixed: https://github.com/ziglang/zig/issues/11878
 	// P.S. this issue does not happen with Zig 0.10.0, but it requires Go 1.19+
 	if !internal.FileExists(eventsDbPath) {

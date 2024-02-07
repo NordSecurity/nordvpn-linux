@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"text/template"
@@ -33,17 +34,17 @@ const (
 	techUDP    openvpnID = "openvpn_udp"
 	techXORTCP openvpnID = "openvpn_xor_tcp"
 	techTCP    openvpnID = "openvpn_tcp"
-)
-
-const (
-	// openVPNConfigFileName is a name of a openvpn config file to be used for connecting to a VPN
-	openVPNConfigFileName = internal.DatFilesPath + ".config.ovpn"
-
-	// openVPNExec defines openvpn executable path
-	openVPNExec = internal.AppDataPath + "openvpn"
 
 	interfaceType = "tun"
 	InterfaceName = "nordtun"
+)
+
+var (
+	// openVPNConfigFileName is a name of a openvpn config file to be used for connecting to a VPN
+	openVPNConfigFileName = filepath.Join(internal.DatFilesPath, ".config.ovpn")
+
+	// openVPNExec defines openvpn executable path
+	openVPNExec = filepath.Join(internal.AppDataPathStatic, "openvpn")
 )
 
 type ovpnConfigData struct {

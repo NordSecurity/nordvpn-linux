@@ -1,6 +1,10 @@
 package daemon
 
-import "github.com/NordSecurity/nordvpn-linux/internal"
+import (
+	"path/filepath"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
+)
 
 const (
 	// app should not use trailing slashes and prefix endpoints
@@ -12,24 +16,26 @@ const (
 	// RepoURL is the url for NordVPN repository
 	RepoURL = "https://repo.nordvpn.com"
 
-	// IconPath defines icon file path
-	IconPath = "/usr/share/icons/hicolor/scalable/apps/nordvpn.svg"
-
-	// ServersDataFilePath defines path to servers data file
-	ServersDataFilePath = internal.DatFilesPath + "servers.dat"
-
-	// CountryDataFilePath defines path to countries data file
-	CountryDataFilePath = internal.DatFilesPath + "countries.dat"
-
-	// InsightsFilePath defines filename of insights file
-	InsightsFilePath = internal.DatFilesPath + "insights.dat"
-
-	// VersionFilePath defines filename of latest available version file
-	VersionFilePath = internal.DatFilesPath + "version.dat"
-
 	// RandomComponentMin defines minimal value of random component
 	RandomComponentMin = 0
 
-	// RandomComponentMin defines maximum value of random component
+	// RandomComponentMax defines maximum value of random component
 	RandomComponentMax = 0.001
+)
+
+var (
+	// ServersDataFilePath defines path to servers data file
+	ServersDataFilePath = filepath.Join(internal.DatFilesPath, "servers.dat")
+
+	// CountryDataFilePath defines path to countries data file
+	CountryDataFilePath = filepath.Join(internal.DatFilesPath, "countries.dat")
+
+	// InsightsFilePath defines filename of insights file
+	InsightsFilePath = filepath.Join(internal.DatFilesPath, "insights.dat")
+
+	// VersionFilePath defines filename of latest available version file
+	VersionFilePath = filepath.Join(internal.DatFilesPath, "version.dat")
+
+	// IconPath defines icon file path
+	IconPath = internal.PrefixCommonPath("/usr/share/icons/hicolor/scalable/apps/nordvpn.svg")
 )

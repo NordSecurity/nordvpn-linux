@@ -12,7 +12,7 @@ import (
 	"net/netip"
 	"os"
 	"os/user"
-	"path"
+	"path/filepath"
 	"strconv"
 
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -103,16 +103,15 @@ func main() {
 	}
 	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
 	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
-	storagePath := path.Join(
+	storagePath := filepath.Join(
 		currentUser.HomeDir,
 		internal.ConfigDirectory,
-		internal.UserDataPath,
 		internal.FileshareHistoryFile,
 	)
 	if err := internal.EnsureDir(storagePath); err != nil {
 		log.Fatalf("ensuring dir for transfer history file: %s", err)
 	}
-	eventsDbPath := fmt.Sprintf("%smoose.db", internal.DatFilesPath)
+	eventsDbPath := filepath.Join(internal.DatFilesPath, "moose.db")
 	fileshareImplementation := libdrop.New(
 		eventManager.EventFunc,
 		eventsDbPath,
@@ -123,7 +122,7 @@ func main() {
 		storagePath,
 	)
 	eventManager.SetFileshare(fileshareImplementation)
-	legacyStoragePath := path.Join(currentUser.HomeDir, internal.ConfigDirectory, internal.UserDataPath)
+	legacyStoragePath := filepath.Join(currentUser.HomeDir, internal.ConfigDirectory)
 	eventManager.SetStorage(storage.NewCombined(legacyStoragePath, fileshareImplementation))
 
 	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{

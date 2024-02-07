@@ -26,17 +26,8 @@ const (
 	// TempDir defines temporary storage directory
 	TempDir = "/tmp/"
 
-	// RunDir defines default socket directory
-	RunDir = "/run/nordvpn/"
-
-	// LogPath defines where logs are located if systemd isn't used
-	LogPath = "/var/log/nordvpn/"
-
 	// NordvpnGroup that can access daemon socket
 	NordvpnGroup = "nordvpn"
-
-	// DaemonSocket defines system daemon socket file location
-	DaemonSocket = RunDir + "nordvpnd.sock"
 
 	// PermUserRWX user permission type to read write and execute
 	PermUserRWX = 0700
@@ -80,41 +71,48 @@ const (
 	// Fileshared defines filesharing daemon name
 	Fileshared = "nordfileshared"
 
-	// ConfigDirectory is used for configuration files storage. Hardcoded only for nordfileshared, in
-	// other cases consider using os.UserConfigDir instead.
-	ConfigDirectory = ".config"
-
 	// FileshareHistoryFile is the storage file used by libdrop
 	FileshareHistoryFile = "fileshare_history.db"
-)
-
-const (
-	// UserDataPath defines path where user data is stored
-	UserDataPath = "nordvpn/"
-
-	// ResolvconfFilePath defines path to resolv.conf file for DNS
-	ResolvconfFilePath = "/etc/resolv.conf"
-
-	// AppDataPath defines path where app data is stored
-	AppDataPath = "/var/lib/nordvpn/"
-
-	DatFilesPath = AppDataPath + "data/"
-
-	BakFilesPath = AppDataPath + "backup/"
-
-	// LogFilePath defines CLI log path
-	LogFilePath = UserDataPath + "cli.log"
-
-	// OvpnTemplatePath defines filename of ovpn template file
-	OvpnTemplatePath = DatFilesPath + "ovpn_template.xslt"
-
-	// OvpnObfsTemplatePath defines filename of ovpn obfuscated template file
-	OvpnObfsTemplatePath = DatFilesPath + "ovpn_xor_template.xslt"
 )
 
 var (
 	PlatformSupportsIPv4 = true
 	PlatformSupportsIPv6 = true
+)
+
+var (
+	// RunDir defines default socket directory
+	RunDir = PrefixCommonPath("/run/nordvpn")
+
+	// LogPath defines where logs are located if systemd isn't used
+	LogPath = PrefixDataPath("/var/log/nordvpn")
+
+	// AppDataPath defines path where app data is stored
+	AppDataPath = PrefixDataPath("/var/lib/nordvpn")
+
+	// AppDataPathStatic defines path where static app data (such as helper executables) are
+	// stored. Normally it is the same as AppDataPath
+	AppDataPathStatic = PrefixStaticPath("/var/lib/nordvpn")
+
+	DatFilesPath = filepath.Join(AppDataPath, "data")
+
+	BakFilesPath = filepath.Join(AppDataPath, "backup")
+
+	// OvpnTemplatePath defines filename of ovpn template file
+	OvpnTemplatePath = filepath.Join(DatFilesPath, "ovpn_template.xslt")
+
+	// OvpnObfsTemplatePath defines filename of ovpn obfuscated template file
+	OvpnObfsTemplatePath = filepath.Join(DatFilesPath, "ovpn_xor_template.xslt")
+
+	// ConfigDirectory is used for configuration files storage. Hardcoded only for nordfileshared, in
+	// other cases consider using os.UserConfigDir instead.
+	ConfigDirectory = filepath.Join(".config", "nordvpn")
+
+	// LogFilePath defines CLI log path
+	LogFilePath = filepath.Join("nordvpn", "cli.log")
+
+	// DaemonSocket defines system daemon socket file location
+	DaemonSocket = filepath.Join(RunDir, "/nordvpnd.sock")
 )
 
 func GetSupportedIPTables() []string {
@@ -145,12 +143,11 @@ func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
 	// We are running as root, so we cannot retrieve user config directory path dynamically. We
 	// hardcode it to /home/<username>/.config, and if it doesn't exist on the expected path
 	// (i.e XDG_CONFIG_HOME is set), we default to /var/log/nordvpn/nordfileshared-<username>-<uid>.log
-	userConfigPath := filepath.Join(homeDirectory, ConfigDirectory, UserDataPath)
+	userConfigPath := filepath.Join(homeDirectory, ConfigDirectory)
 	_, err := os.Stat(userConfigPath)
 	if err == nil {
 		return userConfigPath, nil
 	}
-
 	return "", fmt.Errorf("%s directory not found in users home directory", ConfigDirectory)
 }
 

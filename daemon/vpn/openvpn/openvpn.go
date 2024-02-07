@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/netip"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,12 +23,11 @@ import (
 )
 
 const (
-	scriptSecurityLevel     = "1"
-	connectRetryScale       = "5"
-	connectRetryMax         = "5"
-	authFailureDesc         = "auth-failure"
-	timeoutDesc             = "server_poll"
-	openvpnManagementSocket = "/run/nordvpn/nordvpn-openvpn.sock"
+	scriptSecurityLevel = "1"
+	connectRetryScale   = "5"
+	connectRetryMax     = "5"
+	authFailureDesc     = "auth-failure"
+	timeoutDesc         = "server_poll"
 )
 
 var (
@@ -36,6 +36,8 @@ var (
 	ErrServerVersion  = errors.New("invalid openvpn server version")
 	errExited         = errors.New("exited")
 	errNotImplemented = errors.New("not implemented")
+
+	openvpnManagementSocket = filepath.Join(internal.RunDir, "nordvpn-openvpn.sock")
 )
 
 type OpenVPN struct {
