@@ -26,6 +26,13 @@ class PeerName(Enum):
     Pubkey = 2
 
 
+# Used for test parametrization, when the same test has to be run with different Meshnet alias.
+MESHNET_ALIAS = [
+    "meshnet",
+    "mesh"
+]
+    
+
 def get_peer_name(output: str, name_type: PeerName) -> str:
     match name_type:
         case PeerName.Hostname:
