@@ -45,17 +45,17 @@ const (
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	connectedAt   time.Time
-	EventsDbPath  string
-	Config        config.Manager
-	Version       string
-	Environment   string
-	Domain        string
-	Subdomain     string
-	DeviceID      string
-	currentDomain string
-	enabled       bool
-	mux           sync.RWMutex
+	connectionStartTime time.Time
+	EventsDbPath        string
+	Config              config.Manager
+	Version             string
+	Environment         string
+	Domain              string
+	Subdomain           string
+	DeviceID            string
+	currentDomain       string
+	enabled             bool
+	mux                 sync.RWMutex
 }
 
 // Enable moose analytics engine
@@ -313,17 +313,18 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolFalse)
 	}
 
-	eventDuration := int(time.Since(s.connectedAt).Seconds())
+	eventDuration := -1
 	var result moose.Enum_SS_NordvpnappEventStatus
 	switch data.Type {
 	case events.ConnectAttempt:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusAttempt)
-		s.connectedAt = time.Now()
-		eventDuration = -1
+		s.connectionStartTime = time.Now()
 	case events.ConnectSuccess:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusSuccess)
+		eventDuration = int(time.Since(s.connectionStartTime).Seconds())
 	case events.ConnectFailure:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusFailureDueToRuntimeException)
+		eventDuration = int(time.Since(s.connectionStartTime).Seconds())
 	default:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusAttempt)
 	}
@@ -439,8 +440,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolFalse)
 	}
 	return s.response(moose.Send_serviceQuality_servers_disconnect(
-		int(time.Since(s.connectedAt).Seconds()),
-		0,
+		int(time.Since(s.connectionStartTime).Seconds()),
+		-1,
 		event,
 		moose.Enum_SS_NordvpnappEventTrigger(moose.EventTriggerUser),
 		moose.Enum_SS_NordvpnappVpnConnectionPreset(moose.VpnConnectionPresetNone),
