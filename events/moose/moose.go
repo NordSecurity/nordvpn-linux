@@ -313,7 +313,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolFalse)
 	}
 
-	eventDuration := -1
+	eventDurationMs := -1
 	var result moose.Enum_SS_NordvpnappEventStatus
 	switch data.Type {
 	case events.ConnectAttempt:
@@ -321,10 +321,10 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		s.connectionStartTime = time.Now()
 	case events.ConnectSuccess:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusSuccess)
-		eventDuration = int(time.Since(s.connectionStartTime).Seconds())
+		eventDurationMs = int(time.Since(s.connectionStartTime).Milliseconds())
 	case events.ConnectFailure:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusFailureDueToRuntimeException)
-		eventDuration = int(time.Since(s.connectionStartTime).Seconds())
+		eventDurationMs = int(time.Since(s.connectionStartTime).Milliseconds())
 	default:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusAttempt)
 	}
@@ -366,8 +366,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		rule = moose.Enum_SS_NordvpnappServerSelectionRule(moose.ServerSelectionRuleRecommended)
 	}
 	return s.response(moose.Send_serviceQuality_servers_connect(
-		-1,
-		eventDuration,
+		-1,              // seconds
+		eventDurationMs, // milliseconds
 		result,
 		moose.Enum_SS_NordvpnappEventTrigger(moose.EventTriggerUser),
 		moose.Enum_SS_NordvpnappVpnConnectionPreset(moose.VpnConnectionPresetNone),
@@ -440,8 +440,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolFalse)
 	}
 	return s.response(moose.Send_serviceQuality_servers_disconnect(
-		int(time.Since(s.connectionStartTime).Seconds()),
-		-1,
+		int(time.Since(s.connectionStartTime).Seconds()), // seconds
+		-1, // milliseconds
 		event,
 		moose.Enum_SS_NordvpnappEventTrigger(moose.EventTriggerUser),
 		moose.Enum_SS_NordvpnappVpnConnectionPreset(moose.VpnConnectionPresetNone),
