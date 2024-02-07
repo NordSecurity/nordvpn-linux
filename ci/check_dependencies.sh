@@ -17,9 +17,9 @@ pushd "${openvpn_tarbal_dir}"
 	openssl_tarbal="openssl-${OPENSSL_VERSION}.tar.gz"
 	lzo_tarbal="lzo-${LZO_VERSION}.tar.gz"
 
-	wget --quiet -nc "https://swupdate.openvpn.org/community/releases/${openvpn_tarbal}"
-	wget --quiet -nc "https://www.openssl.org/source/${openssl_tarbal}"
-	wget --quiet -nc "https://www.oberhumer.com/opensource/lzo/download/${lzo_tarbal}"
+	wget -nv -nc "https://swupdate.openvpn.org/community/releases/${openvpn_tarbal}"
+	wget -nv -nc "https://www.openssl.org/source/${openssl_tarbal}"
+	wget -nv -nc "https://www.oberhumer.com/opensource/lzo/download/${lzo_tarbal}"
 
 	echo "${OPENVPN_SHA256SUM} ${openvpn_tarbal}" | sha256sum -c -
 	echo "${OPENSSL_SHA256SUM} ${openssl_tarbal}" | sha256sum -c -
@@ -29,11 +29,11 @@ popd
 openvpn_patches_dir="${WORKDIR}/build/openvpn/patches"
 mkdir -p "${openvpn_patches_dir}"
 pushd "${openvpn_patches_dir}"
-	wget --quiet -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/02-tunnelblick-openvpn_xorpatch-a.diff"
-	wget --quiet -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/03-tunnelblick-openvpn_xorpatch-b.diff"
-	wget --quiet -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/04-tunnelblick-openvpn_xorpatch-c.diff"
-	wget --quiet -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/05-tunnelblick-openvpn_xorpatch-d.diff"
-	wget --quiet -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/06-tunnelblick-openvpn_xorpatch-e.diff"
+	wget -nv -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/02-tunnelblick-openvpn_xorpatch-a.diff"
+	wget -nv -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/03-tunnelblick-openvpn_xorpatch-b.diff"
+	wget -nv -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/04-tunnelblick-openvpn_xorpatch-c.diff"
+	wget -nv -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/05-tunnelblick-openvpn_xorpatch-d.diff"
+	wget -nv -nc "${tunnelblick_url}/openvpn/openvpn-${OPENVPN_VERSION}/patches/06-tunnelblick-openvpn_xorpatch-e.diff"
 	[[ "$(sha256sum <<< "$(cat ./*diff)" | awk $'{print $1}')" == "${tunnelblick_sha256sum}" ]] || exit 1
 popd
 
