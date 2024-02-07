@@ -3,6 +3,7 @@ package dns
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -12,9 +13,11 @@ import (
 const (
 	// resolvconfFilePath defines path to resolv.conf file for DNS
 	resolvconfFilePath = "/etc/resolv.conf"
+)
 
+var (
 	// resolvconfBackupPath defines where resolv.conf backup file is stored
-	resolvconfBackupPath = internal.BakFilesPath + "resolv.conf"
+	resolvconfBackupPath = filepath.Join(internal.BakFilesPath, "resolv.conf")
 )
 
 // Direct file resolv.conf editing based DNS handling method.

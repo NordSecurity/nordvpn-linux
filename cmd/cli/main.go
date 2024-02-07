@@ -6,7 +6,7 @@ import (
 	"log"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
-	"path"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -53,7 +53,7 @@ func main() {
 
 	// Setup logging
 	fileLogger := &lumberjack.Logger{
-		Filename:   path.Join(configDir, internal.LogFilePath),
+		Filename:   filepath.Join(configDir, internal.LogFilePath),
 		MaxSize:    500,
 		MaxBackups: 3,
 		MaxAge:     28,

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -24,7 +24,7 @@ const (
 // This is used only in tests now. It was easier to just copy this into tests instead of refactoring them
 // because we are still keeping Load, so it has to be tested.
 func (jf JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
-	historyFilePath := path.Join(jf.storagePath, historyFile)
+	historyFilePath := filepath.Join(jf.storagePath, historyFile)
 	if err := internal.EnsureDir(historyFilePath); err != nil {
 		return fmt.Errorf("trying to save transfers history: %w", err)
 	}

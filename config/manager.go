@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -16,11 +17,11 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
+var (
 	// InstallFilePath defines filename of install id file
-	InstallFilePath = internal.DatFilesPath + "install.dat"
+	InstallFilePath = filepath.Join(internal.DatFilesPath, "install.dat")
 	// SettingsDataFilePath defines path to app configs file
-	SettingsDataFilePath = internal.DatFilesPath + "settings.dat"
+	SettingsDataFilePath = filepath.Join(internal.DatFilesPath, "settings.dat")
 )
 
 var errNoInstallFile = errors.New("install file doesn't exist")

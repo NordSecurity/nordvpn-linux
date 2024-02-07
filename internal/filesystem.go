@@ -108,7 +108,7 @@ func (rdl *runDirListener) Addr() net.Addr {
 func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error) {
 	return func() (net.Listener, error) {
 		if err := os.MkdirAll(
-			path.Dir(socket), PermUserRWGroupRW,
+			path.Dir(socket), PermUserRWXGroupRXOthersRX,
 		); err != nil && !errors.Is(err, os.ErrExist) {
 			return nil, fmt.Errorf("creating run dir: %w\n", err)
 		}
@@ -484,4 +484,27 @@ func IsNetworkLinkUnmanaged(link string) bool {
 		}
 	}
 	return false
+}
+
+// PrefixCommonPath is supposed to be used for files which are version specific and not persistent
+func PrefixCommonPath(p string) string {
+	return prefixPath(p, "PREFIX_COMMON")
+}
+
+// PrefixDataPath is supposed to be used for files which are non version specific and persistent
+func PrefixDataPath(p string) string {
+	return prefixPath(p, "PREFIX_DATA")
+}
+
+// PrefixStaticPath is supposed to be used for files which are version specific and persistent
+func PrefixStaticPath(p string) string {
+	return prefixPath(p, "PREFIX_STATIC")
+}
+
+func prefixPath(p string, envKey string) string {
+	dir := os.Getenv(envKey)
+	if dir == "" {
+		dir = "/"
+	}
+	return filepath.Clean(dir + p)
 }

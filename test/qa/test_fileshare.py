@@ -18,9 +18,10 @@ workdir = "/tmp"
 test_files = ["testing_fileshare_0.txt", "testing_fileshare_1.txt", "testing_fileshare_2.txt", "testing_fileshare_3.txt"]
 
 default_download_directory = "/home/qa/Downloads"
-
+nordvpn_user_data_dir = "/home/qa/.config/nordvpn"
 
 def setup_module(module):  # noqa: ARG001
+    os.makedirs(nordvpn_user_data_dir, exist_ok=True)
     daemon.start()
     login.login_as("default")
     lib.set_technology_and_protocol("nordlynx", "", "")

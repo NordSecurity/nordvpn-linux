@@ -21,8 +21,8 @@ const (
 	imagePackager          = registryPrefix + "packager:1.0.3"
 	imageProtobufGenerator = registryPrefix + "generator:1.0.2"
 	imageScanner           = registryPrefix + "scanner:1.0.3"
-	imageTester            = registryPrefix + "tester:1.1.4"
-	imageQAPeer            = registryPrefix + "qa-peer:1.0.2"
+	imageTester            = registryPrefix + "tester:1.1.7"
+	imageQAPeer            = registryPrefix + "qa-peer:1.0.3"
 	imageRuster            = registryPrefix + "ruster:1.0.3"
 
 	dockerWorkDir  = "/opt"
