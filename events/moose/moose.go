@@ -45,17 +45,17 @@ const (
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	connectedAt   time.Time
-	EventsDbPath  string
-	Config        config.Manager
-	Version       string
-	Environment   string
-	Domain        string
-	Subdomain     string
-	DeviceID      string
-	currentDomain string
-	enabled       bool
-	mux           sync.RWMutex
+	connectionStartTime time.Time
+	EventsDbPath        string
+	Config              config.Manager
+	Version             string
+	Environment         string
+	Domain              string
+	Subdomain           string
+	DeviceID            string
+	currentDomain       string
+	enabled             bool
+	mux                 sync.RWMutex
 }
 
 // Enable moose analytics engine
@@ -306,8 +306,6 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		return nil
 	}
 
-	s.connectedAt = time.Now()
-	dnsResolutionTime := int(data.DNSResolutionTime.Milliseconds())
 	var threatProtection moose.Enum_SS_NordvpnappOptBool
 	if data.ThreatProtectionLite {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolTrue)
@@ -315,14 +313,18 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolFalse)
 	}
 
+	eventDurationMs := -1
 	var result moose.Enum_SS_NordvpnappEventStatus
 	switch data.Type {
 	case events.ConnectAttempt:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusAttempt)
+		s.connectionStartTime = time.Now()
 	case events.ConnectSuccess:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusSuccess)
+		eventDurationMs = int(time.Since(s.connectionStartTime).Milliseconds())
 	case events.ConnectFailure:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusFailureDueToRuntimeException)
+		eventDurationMs = int(time.Since(s.connectionStartTime).Milliseconds())
 	default:
 		result = moose.Enum_SS_NordvpnappEventStatus(moose.EventStatusAttempt)
 	}
@@ -364,8 +366,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		rule = moose.Enum_SS_NordvpnappServerSelectionRule(moose.ServerSelectionRuleRecommended)
 	}
 	return s.response(moose.Send_serviceQuality_servers_connect(
-		-1,
-		dnsResolutionTime,
+		-1,              // seconds
+		eventDurationMs, // milliseconds
 		result,
 		moose.Enum_SS_NordvpnappEventTrigger(moose.EventTriggerUser),
 		moose.Enum_SS_NordvpnappVpnConnectionPreset(moose.VpnConnectionPresetNone),
@@ -438,8 +440,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		threatProtection = moose.Enum_SS_NordvpnappOptBool(moose.OptBoolFalse)
 	}
 	return s.response(moose.Send_serviceQuality_servers_disconnect(
-		int(time.Since(s.connectedAt).Seconds()),
-		0,
+		int(time.Since(s.connectionStartTime).Seconds()), // seconds
+		-1, // milliseconds
 		event,
 		moose.Enum_SS_NordvpnappEventTrigger(moose.EventTriggerUser),
 		moose.Enum_SS_NordvpnappVpnConnectionPreset(moose.VpnConnectionPresetNone),

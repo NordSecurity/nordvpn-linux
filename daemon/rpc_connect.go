@@ -16,7 +16,7 @@ import (
 )
 
 // Connect initiates and handles the VPN connection process
-func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error {
+func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	if !r.ac.IsLoggedIn() {
 		return internal.ErrNotLoggedIn
 	}
@@ -39,6 +39,35 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 	}
 
 	insights := r.dm.GetInsightsData().Insights
+
+	event := events.DataConnect{
+		APIHostname:                r.api.Base(),
+		Auto:                       false,
+		Protocol:                   cfg.AutoConnectData.Protocol,
+		Technology:                 cfg.Technology,
+		ThreatProtectionLite:       cfg.AutoConnectData.ThreatProtectionLite,
+		ResponseServersCount:       1,
+		ResponseTime:               0,
+		Type:                       events.ConnectAttempt,
+		ServerFromAPI:              true,
+		TargetServerCity:           "",
+		TargetServerCountry:        "",
+		TargetServerDomain:         "",
+		TargetServerGroup:          "",
+		TargetServerIP:             "",
+		TargetServerPick:           "",
+		TargetServerPickerResponse: "",
+	}
+	r.events.Service.Connect.Publish(event)
+
+	defer func() {
+		// send failure event if the function returns an error
+		// and no connected or failure event was sent
+		if retErr != nil && event.Type == events.ConnectAttempt {
+			event.Type = events.ConnectFailure
+			r.events.Service.Connect.Publish(event)
+		}
+	}()
 
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology")
 	server, remote, err := PickServer(
@@ -126,6 +155,12 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 		allowlist = addLANPermissions(allowlist)
 	}
 
+	event.ServerFromAPI = remote
+	event.TargetServerCity = country.City.Name
+	event.TargetServerCountry = country.Name
+	event.TargetServerDomain = server.Hostname
+	event.TargetServerIP = subnet.Addr().String()
+
 	go Connect(
 		eventCh,
 		creds,
@@ -138,30 +173,8 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) error 
 	)
 
 	var data []string
-	var event events.DataConnect
 	for ev := range eventCh {
 		switch ev.Code {
-		case internal.CodeConnecting:
-			data = []string{r.lastServer.Name, r.lastServer.Hostname}
-			event = events.DataConnect{
-				APIHostname:                r.api.Base(),
-				Auto:                       false,
-				Protocol:                   cfg.AutoConnectData.Protocol,
-				Technology:                 cfg.Technology,
-				ThreatProtectionLite:       cfg.AutoConnectData.ThreatProtectionLite,
-				ResponseServersCount:       1,
-				ResponseTime:               0,
-				Type:                       events.ConnectAttempt,
-				ServerFromAPI:              remote,
-				TargetServerCity:           country.City.Name,
-				TargetServerCountry:        country.Name,
-				TargetServerDomain:         server.Hostname,
-				TargetServerGroup:          "",
-				TargetServerIP:             subnet.Addr().String(),
-				TargetServerPick:           "",
-				TargetServerPickerResponse: "",
-			}
-			r.events.Service.Connect.Publish(event)
 		case internal.CodeConnected:
 			// If server has at least one IPv6 address
 			// regardless if IPv4 or IPv6 is used to connect
