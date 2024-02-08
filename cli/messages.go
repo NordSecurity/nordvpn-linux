@@ -328,5 +328,5 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareProgressCanceledByPeer = "File transfer [%s] canceled by peer."
 	MsgFileshareProgressCanceled       = "File transfer [%s] canceled by other process."
 
-	MsgFileshareStartedByOtherUser = "Fileshare was already started by other user. Restart meshnet and re-run the command to run in on this user."
+	MsgFileshareStartedByOtherUser = "A file sharing session is already in progress under another user account. To use the feature, restart Meshnet and enter your file sharing command again. "
 )
