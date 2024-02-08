@@ -3,9 +3,9 @@
 package main
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare_process"
 )
 
-func fileshareImplementation() service.Fileshare {
-	return service.NoopFileshare{}
+func fileshareImplementation() fileshare_process.NoopFileshareProcess {
+	return fileshare_process.NoopFileshareProcess{}
 }

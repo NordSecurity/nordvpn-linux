@@ -42,7 +42,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
@@ -538,10 +537,7 @@ func main() {
 	if err := fsystem.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, "loading config:", err)
 	} else {
-		err := fileshareImplementation.Stop(cfg.Meshnet.EnabledByUID, cfg.Meshnet.EnabledByGID)
-		if err != nil && !errors.Is(err, service.ErrNotStarted) {
-			log.Println(internal.ErrorPrefix, "disabling fileshare:", err)
-		}
+		fileshareImplementation.Disable()
 	}
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)

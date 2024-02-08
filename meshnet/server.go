@@ -19,7 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	"github.com/NordSecurity/nordvpn-linux/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
@@ -49,7 +49,7 @@ type Server struct {
 	subjectConnect     events.Publisher[events.DataConnect]
 	lastPeers          string
 	lastConnectedPeer  string
-	fileshare          service.Fileshare
+	fileshare          fileshare_process.FileshareProcess
 	scheduler          *gocron.Scheduler
 	pb.UnimplementedMeshnetServer
 }
@@ -67,7 +67,7 @@ func NewServer(
 	subjectPeerUpdate events.Publisher[[]string],
 	subjectMeshSetting events.PublishSubcriber[bool],
 	subjectConnect events.Publisher[events.DataConnect],
-	fileshare service.Fileshare,
+	fileshare fileshare_process.FileshareProcess,
 ) *Server {
 	return &Server{
 		ac:                 ac,
@@ -203,18 +203,6 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 
 	s.subjectMeshSetting.Publish(true)
 
-	// We want to enable filesharing only after setting config to avoid race condition
-	// because filesharing daemon checks whether meshnet is enabled.
-	// Also not returning errors on filesharing enabling failure because it is not essential
-	// for Meshnet usage.
-	if ucred.Pid != 0 {
-		if err = s.fileshare.Enable(ucred.Uid, ucred.Gid); err != nil {
-			s.pub.Publish(fmt.Errorf("enabling fileshare: %w", err))
-		}
-	} else {
-		s.pub.Publish(fmt.Errorf("ucred not set - skipping enabling fileshare"))
-	}
-
 	return &pb.MeshnetResponse{
 		Response: &pb.MeshnetResponse_Empty{},
 	}, nil
@@ -292,11 +280,6 @@ func (s *Server) StartMeshnet() error {
 		return fmt.Errorf("setting the meshnet up: %w", err)
 	}
 
-	// When OS is booted nordvpnd is started before user session is created. This is a valid case
-	// where an error would be returned here, so we ignore it. Filesharing daemon should be started
-	// by systemd on login in this case. Also fileshare error shouldn't stop meshnet from starting anyway.
-	_ = s.fileshare.Enable(cfg.Meshnet.EnabledByUID, cfg.Meshnet.EnabledByGID)
-
 	return nil
 }
 
@@ -319,9 +302,7 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		}, nil
 	}
 
-	if err := s.fileshare.Disable(cfg.Meshnet.EnabledByUID, cfg.Meshnet.EnabledByGID); err != nil {
-		s.pub.Publish(fmt.Errorf("disabling fileshare: %w", err))
-	}
+	s.fileshare.Disable()
 
 	// try to stop networker only if mesh peer connected before
 	if s.netw.LastServerName() == s.lastConnectedPeer {

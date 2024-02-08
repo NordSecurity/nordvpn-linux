@@ -7,6 +7,8 @@ import (
 	norddropgo "github.com/NordSecurity/libdrop/norddrop/ffi/bindings/linux/go"
 )
 
+var ErrLAddressAlreadyInUse = errors.New("address already in use")
+
 // toError conversion for drop result type
 func toError(result norddropgo.Enum_SS_norddrop_result) error {
 	switch result {

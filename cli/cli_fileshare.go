@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strconv"
@@ -15,11 +16,13 @@ import (
 	"syscall"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
 	dpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	mpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
@@ -107,6 +110,26 @@ func statusLoop(fileshareClient pb.FileshareClient, client transferStatusClient,
 	}
 }
 
+func processStartupExitCodeToError(code fileshare_process.StartupErrorCode) error {
+	switch code {
+	case fileshare_process.CodeAlreadyRunning:
+		// this is ok, means that fileshare process is already running so there is no need to start it
+		return nil
+	case fileshare_process.CodeAddressAlreadyInUse:
+		fallthrough
+	case fileshare_process.CodeAlreadyRunningForOtherUser:
+		return formatError(fmt.Errorf(MsgFileshareStartedByOtherUser))
+	case fileshare_process.CodeFailedToEnable:
+		fallthrough
+	case fileshare_process.CodeFailedToCreateUnixScoket:
+		return formatError(fmt.Errorf(internal.UnhandledMessage))
+	case fileshare_process.CodeMeshnetNotEnabled:
+		return formatError(fmt.Errorf(MsgFileshareSocketNotFound))
+	}
+
+	return formatError(fmt.Errorf(internal.UnhandledMessage))
+}
+
 // IsFileshareDaemonReachable returns error if fileshare daemon is not reachable, daemon not running
 // being the most likely cause
 func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
@@ -119,14 +142,31 @@ func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(MsgFileshareUserNotLoggedIn))
 	}
 
-	_, err = c.fileshareClient.Ping(context.Background(), &pb.Empty{})
+	errChan := make(chan error)
+	go func() {
+		err := exec.Command("nordfileshared").Run()
+		errChan <- err
+	}()
 
-	if err != nil {
-		if strings.Contains(err.Error(), "no such file or directory") {
-			return formatError(fmt.Errorf(MsgFileshareSocketNotFound))
+	pingChan := make(chan error)
+	// Start another goroutine where we ping the WaitForReady option, so that server has time to start up before we run
+	// the acctuall command.
+	go func() {
+		_, err := c.fileshareClient.Ping(context.Background(), &pb.Empty{}, grpc.WaitForReady(true))
+		pingChan <- err
+	}()
+
+	select {
+	case err := <-errChan:
+		if exiterr, ok := err.(*exec.ExitError); ok {
+			return processStartupExitCodeToError(fileshare_process.StartupErrorCode(exiterr.ExitCode()))
+		} else {
+			return fmt.Errorf(internal.UnhandledMessage)
 		}
-
-		return formatError(fmt.Errorf(internal.UnhandledMessage))
+	case <-pingChan:
+		if err != nil {
+			return fmt.Errorf(internal.UnhandledMessage)
+		}
 	}
 
 	return nil

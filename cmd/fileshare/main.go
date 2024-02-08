@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -13,7 +14,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"strconv"
 
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -21,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/storage"
+	"github.com/NordSecurity/nordvpn-linux/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"google.golang.org/grpc"
@@ -38,7 +39,40 @@ var (
 
 const transferHistoryChunkSize = 10000
 
+func getLogDirectory() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(usr.HomeDir, "/.config/nordvpn/nordfileshared.log"), nil
+}
+
+func openLogFile(path string) (*os.File, error) {
+	// #nosec path is constant
+	logFile, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
+	if err != nil {
+		return nil, err
+	}
+	return logFile, nil
+}
+
 func main() {
+	if logDirectory, err := getLogDirectory(); err == nil {
+		if logFile, err := openLogFile(logDirectory); err == nil {
+			log.SetOutput(logFile)
+			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+		}
+	}
+
+	processStatus := fileshare_process.GRPCFileshareProcess{}.ProcessStatus()
+	if processStatus == fileshare_process.Running {
+		os.Exit(int(fileshare_process.CodeAlreadyRunning))
+	} else if processStatus == fileshare_process.RunningForOtherUser {
+		os.Exit(int(fileshare_process.CodeAlreadyRunningForOtherUser))
+		log.Println("Cannot start fileshare daemon, it is already running for another user.")
+	}
+
 	// Pprof
 	go func() {
 		if internal.IsDevEnv(Environment) {
@@ -49,9 +83,6 @@ func main() {
 		}
 	}()
 
-	// Logging
-
-	log.SetOutput(os.Stdout)
 	log.Println(internal.InfoPrefix, "Daemon has started")
 
 	// Connection to Meshnet gRPC server
@@ -71,7 +102,8 @@ func main() {
 		log.Fatalf("can't check if meshnet is enabled: %s", err)
 	}
 	if !resp.GetValue() {
-		log.Fatalf("meshnet is not enabled")
+		log.Println("meshnet is not enabled")
+		os.Exit(int(fileshare_process.CodeMeshnetNotEnabled))
 	}
 
 	// Libdrop init
@@ -145,25 +177,36 @@ func main() {
 
 	err = fileshareImplementation.Enable(meshnetIP)
 	if err != nil {
-		log.Fatalf("enabling libdrop: %s", err)
+		log.Printf("enabling libdrop: %s", err)
+		if errors.Is(err, libdrop.ErrLAddressAlreadyInUse) {
+			os.Exit(int(fileshare_process.CodeAddressAlreadyInUse))
+		}
+		os.Exit(int(fileshare_process.CodeFailedToEnable))
 	}
+
+	shutdownChan := make(chan struct{})
 
 	// Fileshare gRPC server init
 	fileshareServer := fileshare.NewServer(fileshareImplementation,
 		eventManager,
 		meshClient, fileshare.NewStdFilesystem("/"),
 		fileshare.StdOsInfo{},
-		transferHistoryChunkSize)
+		transferHistoryChunkSize,
+		shutdownChan)
 	grpcServer := grpc.NewServer()
 	pb.RegisterFileshareServer(grpcServer, fileshareServer)
 
-	var listenerFunction = internal.SystemDListener
-	if os.Getenv(internal.ListenPID) != strconv.Itoa(os.Getpid()) {
-		listenerFunction = internal.ManualListener(ConnURL, internal.PermUserRWX)
-	}
-	listener, err := listenerFunction()
+	listener, err := net.Listen("unix", fileshare_process.FileshareSocket)
+
 	if err != nil {
-		log.Fatalf("Error on listening to UNIX domain socket: %s\n", err)
+		log.Printf("Failed to open unix socket: %s", err)
+		os.Exit(int(fileshare_process.CodeFailedToCreateUnixScoket))
+	}
+
+	err = os.Chmod(fileshare_process.FileshareSocket, 0600)
+	if err != nil {
+		log.Printf("Failed to change socket permissions: %s", err)
+		os.Exit(int(fileshare_process.CodeFailedToCreateUnixScoket))
 	}
 
 	go func() {
@@ -172,9 +215,15 @@ func main() {
 		}
 	}()
 
+	signals := internal.GetSignalChan()
+
+	select {
+	case <-signals:
+	case <-shutdownChan:
+	}
+
 	// Teardown
 
-	internal.WaitSignal()
 	eventManager.CancelLiveTransfers()
 
 	grpcServer.GracefulStop()

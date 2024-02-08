@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
+	"github.com/NordSecurity/nordvpn-linux/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
 	"github.com/fatih/color"
@@ -21,12 +22,11 @@ import (
 )
 
 var (
-	Salt         = ""
-	Version      = "0.0.0"
-	Environment  = ""
-	Hash         = ""
-	DaemonURL    = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
-	FileshareURL = fmt.Sprintf("%s://%s", internal.Proto, internal.GetFilesharedSocket(os.Getuid()))
+	Salt        = ""
+	Version     = "0.0.0"
+	Environment = ""
+	Hash        = ""
+	DaemonURL   = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 )
 
 func init() {
@@ -71,7 +71,7 @@ func main() {
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),
 	)
 	fileshareConn, err := grpc.Dial(
-		FileshareURL,
+		fileshare_process.FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(loaderInterceptor.UnaryInterceptor),
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),
