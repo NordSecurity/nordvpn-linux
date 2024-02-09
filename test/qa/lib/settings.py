@@ -51,3 +51,52 @@ def get_is_notify_enabled():
 def get_is_routing_enabled():
     """Returns True, if Routing is enabled in application settings."""
     return "Routing: enabled" in sh.nordvpn.settings()
+
+
+def get_is_autoconnect_enabled():
+    """Returns True, if Auto-connect is enabled in application settings."""
+    return "Auto-connect: enabled" in sh.nordvpn.settings()
+
+
+def get_is_lan_discovery_enabled():
+    """Returns True, if LAN Discovery is enabled in application settings."""
+    return "LAN Discovery: enabled" in sh.nordvpn.settings()
+
+
+def get_is_firewall_enabled():
+    """Returns True, if Firewall is enabled in application settings."""
+    return "Firewall: enabled" in sh.nordvpn.settings()
+
+
+def get_is_dns_disabled():
+    """Returns True, if DNS is disabled in application settings."""
+    return "DNS: disabled" in sh.nordvpn.settings()
+
+
+def get_are_analytics_enabled():
+    """Returns True, if Analytics are enabled in application settings."""
+    return "Analytics: enabled" in sh.nordvpn.settings()
+
+
+def get_is_ipv6_enabled():
+    """Returns True, if IPv6 is enabled in application settings."""
+    return "IPv6: enabled" in sh.nordvpn.settings()
+
+
+def get_default_application_settings():
+    settings = sh.nordvpn.settings()
+    return (
+        "Technology: NORDLYNX" in settings and
+        "Firewall: enabled" in settings and
+        "Firewall Mark: 0xe1f1" in settings and
+        "Routing: enabled" in settings and
+        "Analytics: enabled" in settings and
+        "Kill Switch: disabled" in settings and
+        "Threat Protection Lite: disabled" in settings and
+        "Notify: disabled" in settings and
+        "Auto-connect: disabled" in settings and
+        "IPv6: disabled" in settings and
+        "Meshnet: disabled" in settings and
+        "DNS: disabled" in settings and
+        "LAN Discovery: disabled" in settings
+    )
