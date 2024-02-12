@@ -25,9 +25,6 @@ if [ "${1:-""}" = "full" ]; then
 
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="root,link"
-
-	# check for the C dependencies existence
-	"${WORKDIR}"/ci/check_dependencies.sh
 fi
 
 # Execute tests in all the packages except the excluded ones

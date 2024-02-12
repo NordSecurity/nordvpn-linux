@@ -3,8 +3,6 @@ set -euxo pipefail
 
 source "${WORKDIR}"/ci/env.sh
 
-"${WORKDIR}"/ci/check_dependencies.sh
-
 CORES=$(nproc)
 
 current_dir="${WORKDIR}/build/openvpn"
