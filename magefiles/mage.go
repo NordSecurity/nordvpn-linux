@@ -112,6 +112,23 @@ func Download() error {
 	return sh.RunWith(env, "ci/check_dependencies.sh")
 }
 
+// Download OpenVPN external dependencies
+func DownloadOpenvpn() error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	env["ARCH"] = build.Default.GOARCH
+	env["WORKDIR"] = cwd
+	return sh.RunWith(env, "build/openvpn/check_dependencies.sh")
+}
+
 // Data for Linux packages
 func (Build) Data() error {
 	if internal.FileExists("dist/data") {
@@ -294,7 +311,7 @@ func (Build) BinariesDocker(ctx context.Context) error {
 
 // Openvpn binaries for the host architecture
 func (Build) Openvpn(ctx context.Context) error {
-	mg.Deps(Download)
+	mg.Deps(DownloadOpenvpn)
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -313,7 +330,7 @@ func (Build) Openvpn(ctx context.Context) error {
 
 // Openvpn binaries for the host architecture
 func (Build) OpenvpnDocker(ctx context.Context) error {
-	mg.Deps(Download)
+	mg.Deps(DownloadOpenvpn)
 
 	env, err := getEnv()
 	if err != nil {
@@ -366,8 +383,6 @@ func (Build) RustDocker(ctx context.Context) error {
 
 // Generate Protobuf from protobuf/* definitions using Docker builder
 func (Generate) ProtobufDocker(ctx context.Context) error {
-	mg.Deps(Download)
-
 	env, err := getEnv()
 	if err != nil {
 		return err
@@ -403,6 +418,7 @@ func (Test) Go() error {
 
 // run cgo tests
 func (Test) CgoDocker(ctx context.Context) error {
+	mg.Deps(Download)
 	if err := sh.Rm("coverage.txt"); err != nil {
 		return err
 	}

@@ -19,8 +19,6 @@ mkdir -p "${SYMBOL_DIR}"/{deb,rpm} || true
 # do not match with architecture names on other distros
 STRIP="$(which eu-strip 2>/dev/null)" # architecture does not matter for strip
 
-"${WORKDIR}"/ci/check_dependencies.sh
-
 # shellcheck disable=SC2153
 export BASEDIR=${APP_DIR}/packages/${NAME}_${VERSION}_${ARCH}
 
