@@ -1082,10 +1082,12 @@ func meshnetErrorToError(code meshpb.MeshnetErrorCode) error {
 }
 
 func argsCountError(ctx *cli.Context) error {
+	// ctx.Command.FullName() is broken and doesn't work
+	// https://github.com/urfave/cli/issues/1859
 	return fmt.Errorf(
 		ArgumentCountError,
 		ctx.App.Name,
-		ctx.Command.Name,
+		strings.Join(os.Args[1:], " "),
 	)
 }
 
