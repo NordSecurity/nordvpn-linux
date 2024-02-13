@@ -57,11 +57,14 @@ def install_peer(ssh_client: ssh.Ssh):
     project_root = os.environ["WORKDIR"]
     deb_path = glob.glob(f'{project_root}/dist/app/deb/*amd64.deb')[0]
     ssh_client.send_file(deb_path, '/tmp/nordvpn.deb')
+    # TODO: Install required dependencies during qa-peer image build, then replace with 'dpkg -i /tmp/nordvpn.deb'
+    ssh_client.exec_command('sudo apt-get update')
     ssh_client.exec_command('sudo apt install -y /tmp/nordvpn.deb')
 
 
 def uninstall_peer(ssh_client: ssh.Ssh):
     """uninstalls nordvpn in peer"""
+    # TODO: Replace with 'dpkg --purge nordvpn'
     ssh_client.exec_command('sudo apt remove -y nordvpn')
 
 
