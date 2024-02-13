@@ -1092,9 +1092,11 @@ func argsCountError(ctx *cli.Context) error {
 }
 
 func argsParseError(ctx *cli.Context) error {
+	// ctx.Command.FullName() is broken and doesn't work
+	// https://github.com/urfave/cli/issues/1859
 	return fmt.Errorf(
 		ArgumentParsingError,
 		ctx.App.Name,
-		ctx.Command.Name,
+		strings.Join(os.Args[1:], " "),
 	)
 }
