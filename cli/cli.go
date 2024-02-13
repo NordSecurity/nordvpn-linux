@@ -1082,21 +1082,40 @@ func meshnetErrorToError(code meshpb.MeshnetErrorCode) error {
 }
 
 func argsCountError(ctx *cli.Context) error {
-	// ctx.Command.FullName() is broken and doesn't work
-	// https://github.com/urfave/cli/issues/1859
 	return fmt.Errorf(
 		ArgumentCountError,
 		ctx.App.Name,
-		strings.Join(os.Args[1:], " "),
+		commandFullName(ctx),
 	)
 }
 
 func argsParseError(ctx *cli.Context) error {
-	// ctx.Command.FullName() is broken and doesn't work
-	// https://github.com/urfave/cli/issues/1859
 	return fmt.Errorf(
 		ArgumentParsingError,
 		ctx.App.Name,
-		strings.Join(os.Args[1:], " "),
+		commandFullName(ctx),
 	)
+}
+
+// because ctx.Command.FullName() doesn't work: https://github.com/urfave/cli/issues/1859
+func commandFullName(ctx *cli.Context) string {
+	if len(os.Args) < 2 {
+		return ""
+	}
+	fullName := []string{}
+	var cmd *cli.Command
+	for _, arg := range os.Args[1:] {
+		if cmd == nil {
+			cmd = ctx.App.Command(arg)
+		} else {
+			cmd = cmd.Command(arg)
+		}
+		if cmd == nil {
+			break
+		}
+
+		fullName = append(fullName, cmd.Name)
+	}
+
+	return strings.Join(fullName, " ")
 }
