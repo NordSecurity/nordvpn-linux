@@ -1,6 +1,11 @@
 package kernel
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
+)
 
 type SysctlSetter interface {
 	Set() error
@@ -72,4 +77,16 @@ func (s *SysctlSetterImpl) Unset() error {
 		s.changed = false
 	}
 	return nil
+}
+
+func (s *SysctlSetterImpl) IsEnabled() bool {
+	if !internal.FileExists(strings.ReplaceAll(s.paramName, ".", ".")) {
+		return false
+	}
+
+	if _, err := Parameter(s.paramName); err != nil {
+		return strings.Contains(err.Error(), "cannot stat")
+	}
+
+	return true
 }

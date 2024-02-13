@@ -2,8 +2,10 @@
 package ipv6
 
 import (
+	"log"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 )
 
@@ -30,12 +32,19 @@ func NewIpv6() *Ipv6 {
 func (i *Ipv6) Block() error {
 	i.Lock()
 	defer i.Unlock()
-	return i.sysctlSetter.Set()
+	if i.sysctlSetter.IsEnabled() {
+		return i.sysctlSetter.Set()
+	}
+	log.Println(internal.InfoPrefix, "IPv6 module is not enabled")
+	return nil
 }
 
 // Unblock Ipv6 and restore previous settings from backup.
 func (i *Ipv6) Unblock() error {
 	i.Lock()
 	defer i.Unlock()
-	return i.sysctlSetter.Unset()
+	if i.sysctlSetter.IsEnabled() {
+		return i.sysctlSetter.Unset()
+	}
+	return nil
 }
