@@ -143,7 +143,7 @@ def test_missing_url_callback_login():
 
 def test_invalid_url_callback_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.login("--callback", "https://www.google.com/")
+        sh.nordvpn.login("--callback", "https://www.nordvpn.com/")
 
     assert "Expected a url with nordvpn scheme." in str(ex.value)
 
@@ -163,7 +163,7 @@ def test_repeated_login_callback_invalid_url():
 
     with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.login("--callback", "https://www.google.com/")
+            sh.nordvpn.login("--callback", "https://www.nordvpn.com/")
 
         assert "You are already logged in." in str(ex.value)
 

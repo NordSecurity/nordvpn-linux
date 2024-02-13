@@ -130,7 +130,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
 
     sh.nordvpn.set.firewall("off")
     sh.nordvpn.set.routing("off")
-    sh.nordvpn.set.dns("1.1.1.1")
+    sh.nordvpn.set.dns("103.86.96.100")
     sh.nordvpn.set.analytics("off")
     sh.nordvpn.set.ipv6("on")
     sh.nordvpn.set.notify("on")
@@ -162,7 +162,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     sh.nordvpn.set.routing("off")
     sh.nordvpn.set.autoconnect("on")
     sh.nordvpn.set.notify("on")
-    sh.nordvpn.set.dns("1.1.1.1")
+    sh.nordvpn.set.dns("103.86.96.100")
     sh.nordvpn.set.ipv6("on")
 
     assert not settings.is_firewall_enabled()
@@ -189,7 +189,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.routing("off")
-    sh.nordvpn.set.dns("1.1.1.1")
+    sh.nordvpn.set.dns("103.86.96.100")
     sh.nordvpn.set.analytics("off")
     sh.nordvpn.set("lan-discovery", "on")
 

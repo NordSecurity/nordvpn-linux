@@ -511,7 +511,7 @@ def test_status_connected(tech, proto, obfuscated):
         connect_time = time.monotonic()
 
         time.sleep(15)
-        sh.ping("-c", "1", "-w", "1", "1.1.1.1")
+        sh.ping("-c", "1", "-w", "1", "103.86.96.100")
 
         status_time = time.monotonic()
 

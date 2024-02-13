@@ -34,7 +34,7 @@ ALL_TEST_DNS_ADDRESSES = \
 # Used for DNS test parametrization
 DNS_CASES_ERROR = [
     ("a", "The provided IP address is invalid."),
-    (["1.1.1.1", "1.1.1.1", "1.1.1.1", "1.1.1.1"], "More than 3 DNS addresses provided.")
+    (["103.86.96.100", "103.86.96.100", "103.86.96.100", "103.86.96.100"], "More than 3 DNS addresses provided.")
 ]
 
 # Used to check if error messages are correct

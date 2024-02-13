@@ -19,7 +19,7 @@ def _is_internet_reachable(retry=5) -> bool:
     i = 0
     while i < retry:
         try:
-            return "icmp_seq=" in sh.ping("-c", "1", "-w", "1", "1.1.1.1")
+            return "icmp_seq=" in sh.ping("-c", "1", "-w", "1", "103.86.96.100")
         except sh.ErrorReturnCode:
             time.sleep(1)
             i += 1
