@@ -79,7 +79,7 @@ func (s *SysctlSetterImpl) Unset() error {
 	return nil
 }
 
-func (s *SysctlSetterImpl) IsEnabled() bool {
+func (s *SysctlSetterImpl) Exists() bool {
 	if !internal.FileExists(strings.ReplaceAll(s.paramName, ".", ".")) {
 		return false
 	}

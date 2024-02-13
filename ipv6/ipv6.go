@@ -32,7 +32,7 @@ func NewIpv6() *Ipv6 {
 func (i *Ipv6) Block() error {
 	i.Lock()
 	defer i.Unlock()
-	if i.sysctlSetter.IsEnabled() {
+	if i.sysctlSetter.Exists() {
 		return i.sysctlSetter.Set()
 	}
 	log.Println(internal.InfoPrefix, "IPv6 module is not enabled")
@@ -43,7 +43,7 @@ func (i *Ipv6) Block() error {
 func (i *Ipv6) Unblock() error {
 	i.Lock()
 	defer i.Unlock()
-	if i.sysctlSetter.IsEnabled() {
+	if i.sysctlSetter.Exists() {
 		return i.sysctlSetter.Unset()
 	}
 	return nil
