@@ -80,7 +80,7 @@ func (s *SysctlSetterImpl) Unset() error {
 }
 
 func (s *SysctlSetterImpl) Exists() bool {
-	if !internal.FileExists(strings.ReplaceAll(s.paramName, ".", ".")) {
+	if !internal.FileExists("/proc/sys/" + strings.ReplaceAll(s.paramName, ".", "/")) {
 		return false
 	}
 
