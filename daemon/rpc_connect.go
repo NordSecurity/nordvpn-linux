@@ -172,7 +172,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		r.netw,
 	)
 
-	var data []string
+	data := []string{r.lastServer.Name, r.lastServer.Hostname}
 	for ev := range eventCh {
 		switch ev.Code {
 		case internal.CodeConnected:
@@ -187,7 +187,6 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 			event.Type = events.ConnectSuccess
 			r.events.Service.Connect.Publish(event)
 
-			data = []string{r.lastServer.Name, r.lastServer.Hostname}
 			if err := srv.Send(&pb.Payload{Type: ev.Code, Data: data}); err != nil {
 				log.Println(internal.ErrorPrefix, err)
 				return internal.ErrUnhandled
