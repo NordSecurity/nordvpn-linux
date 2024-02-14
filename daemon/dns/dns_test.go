@@ -2,6 +2,7 @@ package dns
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -120,6 +121,45 @@ func Test_Method(t *testing.T) {
 			assert.True(t, (test.setErr && err != nil) || (!test.setErr && err == nil))
 			err = test.settr.Unset(test.intf)
 			assert.True(t, (test.unsetErr && err != nil) || (!test.unsetErr && err == nil))
+		})
+	}
+}
+
+func Test_InterfacePreifx(t *testing.T) {
+	category.Set(t, category.Integration)
+	filePath := "test/interface-order"
+	prefix, err := resolvconfIfacePrefix(filePath)
+	assert.Equal(t, "tun.", prefix)
+	assert.NoError(t, err)
+}
+
+func Test_CheckForEntry(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		data         string
+		expectResult string
+	}{
+		{
+			name:         "valid data",
+			data:         "lo\ntun*\ntap*",
+			expectResult: "tun.",
+		},
+		{
+			name:         "empty data",
+			data:         "",
+			expectResult: "",
+		},
+		{
+			name:         "random data",
+			data:         "lo\ntap",
+			expectResult: "",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.EqualValues(t, test.expectResult, checkForEntry(strings.NewReader(test.data)))
 		})
 	}
 }
