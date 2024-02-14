@@ -85,7 +85,7 @@ func (s *SysctlSetterImpl) Exists() bool {
 	}
 
 	if _, err := Parameter(s.paramName); err != nil {
-		return strings.Contains(err.Error(), "cannot stat")
+		return !strings.Contains(err.Error(), "cannot stat")
 	}
 
 	return true
