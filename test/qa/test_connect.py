@@ -40,7 +40,7 @@ def capture_traffic() -> int:
     # Collect information needed for tshark filter
     server_ip = settings.get_server_ip()
     protocol = settings.get_current_connection_protocol()
-    obfuscated = settings.get_is_obfuscated()
+    obfuscated = settings.is_obfuscated_enabled()
 
     # Choose traffic filter according to information collected above
     if protocol == "nordlynx":

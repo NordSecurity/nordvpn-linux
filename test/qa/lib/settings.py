@@ -18,12 +18,12 @@ def get_current_connection_protocol():
         return "nordlynx"
 
 
-def get_is_obfuscated():
+def is_obfuscated_enabled():
     """Returns True, if Obfuscate is enabled in application settings."""
     return "Obfuscate: enabled" in sh.nordvpn.settings()
 
 
-def is_meshnet_on():
+def is_meshnet_enabled():
     """Return True when Meshnet is enabled."""
     try:
         return "Meshnet: enabled" in sh.nordvpn.settings()
@@ -38,52 +38,53 @@ def dns_visible_in_settings(dns: list) -> bool:
     return all(entry in current_dns_settings for entry in dns)
 
 
-def get_is_tpl_enabled():
+def is_tpl_enabled():
     """Returns True, if Threat Protection Lite is enabled in application settings."""
     return "Threat Protection Lite: enabled" in sh.nordvpn.settings()
 
 
-def get_is_notify_enabled():
+def is_notify_enabled():
     """Returns True, if Threat Protection Lite is enabled in application settings."""
     return "Notify: enabled" in sh.nordvpn.settings()
 
 
-def get_is_routing_enabled():
+def is_routing_enabled():
     """Returns True, if Routing is enabled in application settings."""
     return "Routing: enabled" in sh.nordvpn.settings()
 
 
-def get_is_autoconnect_enabled():
+def is_autoconnect_enabled():
     """Returns True, if Auto-connect is enabled in application settings."""
     return "Auto-connect: enabled" in sh.nordvpn.settings()
 
 
-def get_is_lan_discovery_enabled():
+def is_lan_discovery_enabled():
     """Returns True, if LAN Discovery is enabled in application settings."""
     return "LAN Discovery: enabled" in sh.nordvpn.settings()
 
 
-def get_is_firewall_enabled():
+def is_firewall_enabled():
     """Returns True, if Firewall is enabled in application settings."""
     return "Firewall: enabled" in sh.nordvpn.settings()
 
 
-def get_is_dns_disabled():
+def is_dns_disabled():
     """Returns True, if DNS is disabled in application settings."""
     return "DNS: disabled" in sh.nordvpn.settings()
 
 
-def get_are_analytics_enabled():
+def are_analytics_enabled():
     """Returns True, if Analytics are enabled in application settings."""
     return "Analytics: enabled" in sh.nordvpn.settings()
 
 
-def get_is_ipv6_enabled():
+def is_ipv6_enabled():
     """Returns True, if IPv6 is enabled in application settings."""
     return "IPv6: enabled" in sh.nordvpn.settings()
 
 
-def get_default_application_settings():
+def app_has_defaults_settings():
+    """Returns True, if application settings match the default settings."""
     settings = sh.nordvpn.settings()
     return (
         "Technology: NORDLYNX" in settings and

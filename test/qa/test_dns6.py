@@ -47,11 +47,11 @@ def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
         sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
 
         if threat_protection_lite == "on":
-            assert settings.get_is_tpl_enabled()
+            assert settings.is_tpl_enabled()
             assert settings.dns_visible_in_settings(["disabled"])
             assert dns.is_set_for(dns.DNS_TPL_IPV6 + dns.DNS_TPL)
         else:
-            assert not settings.get_is_tpl_enabled()
+            assert not settings.is_tpl_enabled()
             assert settings.dns_visible_in_settings(["disabled"])
             assert dns.is_set_for(dns.DNS_NORD_IPV6 + dns.DNS_NORD)
 
@@ -76,12 +76,12 @@ def test_set_dns_connected(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
 
-        assert not settings.get_is_tpl_enabled()
+        assert not settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_NORD_IPV6 + dns.DNS_NORD)
 
         lib.set_threat_protection_lite("on")
-        assert settings.get_is_tpl_enabled()
+        assert settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_TPL_IPV6 + dns.DNS_TPL)
 

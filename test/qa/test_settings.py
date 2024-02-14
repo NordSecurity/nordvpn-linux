@@ -3,7 +3,7 @@ import sh
 import timeout_decorator
 
 import lib
-from lib import daemon, dns, info, logging, login, meshnet, network, settings
+from lib import daemon, dns, info, logging, login, network, settings
 
 
 def setup_module(module):  # noqa: ARG001
@@ -135,85 +135,21 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set.ipv6("on")
     sh.nordvpn.set.notify("on")
 
-    assert not settings.get_is_firewall_enabled()
-    assert not settings.get_is_routing_enabled()
-    assert not settings.get_is_dns_disabled()
-    assert not settings.get_are_analytics_enabled()
-    assert settings.get_is_ipv6_enabled()
-    assert settings.get_is_notify_enabled()
+    assert not settings.is_firewall_enabled()
+    assert not settings.is_routing_enabled()
+    assert not settings.is_dns_disabled()
+    assert not settings.are_analytics_enabled()
+    assert settings.is_ipv6_enabled()
+    assert settings.is_notify_enabled()
 
     if obfuscated == "on":
-        assert settings.get_is_obfuscated()
+        assert settings.is_obfuscated_enabled()
     else:
-        assert not settings.get_is_obfuscated()
+        assert not settings.is_obfuscated_enabled()
 
     assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
-    assert settings.get_default_application_settings()
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES) # Only using standard technologies here because of "LVPN-4601 - Enabling Auto-connect disables Obfuscation"
-def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    sh.nordvpn.set.fwmark("0xe2f2")
-    sh.nordvpn.set.meshnet("on")
-    sh.nordvpn.set.killswitch("on")
-    sh.nordvpn.set.tpl("on")
-    sh.nordvpn.set.autoconnect("on")
-    sh.nordvpn.set("lan-discovery", "on")
-
-    assert "0xe1f1" not in sh.nordvpn.settings()
-    assert settings.is_meshnet_on()
-    assert daemon.is_killswitch_on()
-    assert settings.get_is_tpl_enabled()
-    assert settings.get_is_autoconnect_enabled()
-    assert settings.get_is_lan_discovery_enabled()
-    
-    if tech == "openvpn":
-        assert not settings.get_is_obfuscated()
-
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
-
-    assert settings.get_default_application_settings()
-
-    login.login_as("default")
-    sh.nordvpn.set.meshnet("on")
-    meshnet.remove_all_peers()
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    sh.nordvpn.set.fwmark("0xe2f2")
-    sh.nordvpn.set.killswitch("on")
-    sh.nordvpn.set.notify("on")
-    sh.nordvpn.set.meshnet("on")
-    sh.nordvpn.set.ipv6("on")
-    sh.nordvpn.set.dns("1.1.1.1")
-
-    assert "0xe1f1" not in sh.nordvpn.settings()
-    assert daemon.is_killswitch_on()
-    assert settings.get_is_notify_enabled()
-    assert settings.is_meshnet_on()
-    assert settings.get_is_ipv6_enabled()
-    assert not settings.get_is_dns_disabled()
-    
-    if obfuscated == "on":
-        assert settings.get_is_obfuscated()
-    else:
-        assert not settings.get_is_obfuscated()
-
-    sh.nordvpn.logout("--persist-token")
-
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
-
-    assert settings.get_default_application_settings()
-
-    login.login_as("default")
-    sh.nordvpn.set.meshnet("on")
-    meshnet.remove_all_peers()
+    assert settings.app_has_defaults_settings()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES) # Only using standard technologies here because of "LVPN-4601 - Enabling Auto-connect disables Obfuscation"
@@ -224,26 +160,26 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
 
     sh.nordvpn.set.firewall("off")
     sh.nordvpn.set.routing("off")
-    sh.nordvpn.set.tpl("on")
     sh.nordvpn.set.autoconnect("on")
-    sh.nordvpn.set("lan-discovery", "on")
-    sh.nordvpn.set.analytics("off")
+    sh.nordvpn.set.notify("on")
+    sh.nordvpn.set.dns("1.1.1.1")
+    sh.nordvpn.set.ipv6("on")
 
-    assert not settings.get_is_firewall_enabled()
-    assert not settings.get_is_routing_enabled()
-    assert settings.get_is_tpl_enabled()
-    assert settings.get_is_autoconnect_enabled()
-    assert settings.get_is_lan_discovery_enabled()
-    assert not settings.get_are_analytics_enabled()
+    assert not settings.is_firewall_enabled()
+    assert not settings.is_routing_enabled()
+    assert settings.is_autoconnect_enabled()
+    assert settings.is_notify_enabled()
+    assert not settings.is_dns_disabled()
+    assert settings.is_ipv6_enabled()
 
     if tech == "openvpn":
-        assert not settings.get_is_obfuscated()
+        assert not settings.is_obfuscated_enabled()
 
     sh.nordvpn.logout("--persist-token")
 
     assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
-    assert settings.get_default_application_settings()
+    assert settings.app_has_defaults_settings()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -260,58 +196,21 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     sh.nordvpn.connect()
     assert "Status: Connected" in sh.nordvpn.status()
 
-    assert not settings.get_is_routing_enabled()
-    assert not settings.get_is_dns_disabled()
-    assert not settings.get_are_analytics_enabled()
-    assert settings.get_is_lan_discovery_enabled()
+    assert not settings.is_routing_enabled()
+    assert not settings.is_dns_disabled()
+    assert not settings.are_analytics_enabled()
+    assert settings.is_lan_discovery_enabled()
 
     if obfuscated == "on":
-        assert settings.get_is_obfuscated()
+        assert settings.is_obfuscated_enabled()
     else:
-        assert not settings.get_is_obfuscated()
+        assert not settings.is_obfuscated_enabled()
 
     assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert "Status: Disconnected" in sh.nordvpn.status()
 
-    assert settings.get_default_application_settings()
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    daemon.restart() # Temporary solution to avoid Firewall staying enabled in settings - LVPN-4121
-
-    sh.nordvpn.set.firewall("off")
-    sh.nordvpn.set.notify("on")
-    sh.nordvpn.set.meshnet("on")
-    sh.nordvpn.set.tpl("on")
-
-    sh.nordvpn.connect()
-    assert "Status: Connected" in sh.nordvpn.status()
-
-    assert not settings.get_is_firewall_enabled()
-    assert settings.get_is_notify_enabled()
-    assert settings.is_meshnet_on()
-    assert settings.get_is_tpl_enabled()
-    
-    if obfuscated == "on":
-        assert settings.get_is_obfuscated()
-    else:
-        assert not settings.get_is_obfuscated()
-
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
-
-    assert "Status: Disconnected" in sh.nordvpn.status()
-
-    assert settings.get_default_application_settings()
-
-    login.login_as("default")
-    sh.nordvpn.set.meshnet("on")
-    meshnet.remove_all_peers()
+    assert settings.app_has_defaults_settings()
 
 
 @pytest.mark.skip(reason="LVPN-265")
@@ -331,16 +230,16 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     assert daemon.is_killswitch_on()
     
     if obfuscated == "on":
-        assert settings.get_is_obfuscated()
+        assert settings.is_obfuscated_enabled()
     else:
-        assert not settings.get_is_obfuscated()
+        assert not settings.is_obfuscated_enabled()
 
     assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert network.is_available()
 
-    assert settings.get_default_application_settings()
+    assert settings.app_has_defaults_settings()
 
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
@@ -363,7 +262,7 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
 
     login.login_as("default")
 
-    assert settings.get_default_application_settings()
+    assert settings.app_has_defaults_settings()
 
     sh.nordvpn.connect()
 

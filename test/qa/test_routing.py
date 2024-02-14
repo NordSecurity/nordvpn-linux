@@ -59,7 +59,7 @@ def test_routing_enabled_connect(tech, proto, obfuscated):
     network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
     assert network_interface in policy_routes
 
-    assert settings.get_is_routing_enabled()
+    assert settings.is_routing_enabled()
 
 
 @pytest.mark.skip("LVPN-3273; LVPN-1574")
@@ -72,7 +72,7 @@ def test_routing_disabled_connect(tech, proto, obfuscated):
     allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32"])
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
-    assert not settings.get_is_routing_enabled()
+    assert not settings.is_routing_enabled()
 
     print(sh.nordvpn.connect())
 
@@ -85,7 +85,7 @@ def test_routing_disabled_connect(tech, proto, obfuscated):
     assert network_interface not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert MSG_ROUTING_ON_ALREADY in sh.nordvpn.set.routing.on()
-    assert settings.get_is_routing_enabled()
+    assert settings.is_routing_enabled()
 
 
 @pytest.mark.skip("LVPN-3273")
@@ -101,13 +101,13 @@ def test_connected_routing_disable_enable(tech, proto, obfuscated):
     assert network.is_available()
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
-    assert not settings.get_is_routing_enabled()
+    assert not settings.is_routing_enabled()
     assert network_interface not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert "mark" not in sh.ip.rule()
     assert network.is_not_available()
 
     assert MSG_ROUTING_ON in sh.nordvpn.set.routing.on()
-    assert settings.get_is_routing_enabled()
+    assert settings.is_routing_enabled()
     assert network_interface in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert "mark" in sh.ip.rule()
     assert network.is_available()
@@ -123,19 +123,19 @@ def test_connected_routing_enable_disable(tech, proto, obfuscated):
     network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
-    assert not settings.get_is_routing_enabled()
+    assert not settings.is_routing_enabled()
 
     print(sh.nordvpn.connect())
     assert network.is_not_available()
 
     assert MSG_ROUTING_ON in sh.nordvpn.set.routing.on()
-    assert settings.get_is_routing_enabled()
+    assert settings.is_routing_enabled()
     assert network_interface in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert "mark" in sh.ip.rule()
     assert network.is_available()
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
-    assert not settings.get_is_routing_enabled()
+    assert not settings.is_routing_enabled()
     assert network_interface not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert "mark" not in sh.ip.rule()
     assert network.is_not_available()
@@ -148,7 +148,7 @@ def test_meshnet_on_routing_disable(tech, proto, obfuscated):
 
     sh.nordvpn.set.mesh.on()
     assert MSG_ROUTING_USED_BY_MESH in sh.nordvpn.set.routing.off()
-    assert settings.get_is_routing_enabled()
+    assert settings.is_routing_enabled()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -157,7 +157,7 @@ def test_routing_already_enabled(tech, proto, obfuscated):
     lib.set_routing("on")
 
     assert MSG_ROUTING_ON_ALREADY in sh.nordvpn.set.routing.on()
-    assert settings.get_is_routing_enabled()
+    assert settings.is_routing_enabled()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -166,7 +166,7 @@ def test_routing_already_disabled(tech, proto, obfuscated):
     lib.set_routing("off")
 
     assert MSG_ROUTING_OFF_ALREADY in sh.nordvpn.set.routing.off()
-    assert not settings.get_is_routing_enabled()
+    assert not settings.is_routing_enabled()
 
 
 @pytest.mark.skip("LVPN-3273")
