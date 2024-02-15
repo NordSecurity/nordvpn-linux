@@ -484,6 +484,7 @@ func main() {
 			if os.Getenv(internal.InSnapOperation) != "" {
 				internal.UpdateSocketFilePermissions(ConnURL)
 			}
+			listener = internal.NewLimitListener(listener)
 		case sockTCP:
 			listener, err = net.Listen("tcp", ConnURL)
 			if err != nil {

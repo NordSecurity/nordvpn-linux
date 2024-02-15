@@ -56,8 +56,11 @@ func Test_authenticateUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := authenticateUser(&unix.Ucred{Uid: uint32(tt.uid)}, tt.grps); (err != nil) != tt.wantErr {
-				t.Errorf("authenticateUser() error = %v, wantErr %v", err, tt.wantErr)
+			err := authenticateUser(&unix.Ucred{Uid: uint32(tt.uid)}, tt.grps)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

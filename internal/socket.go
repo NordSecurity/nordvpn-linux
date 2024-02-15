@@ -12,41 +12,6 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// UnixSocketCredentials is used to retrieve linux user ID from unix socket connection between client and daemon
-// Implements credentials.TransportCredentials to be passed to gRPC server initialization
-type UnixSocketCredentials struct{}
-
-// ServerHandshake is called when client connects to daemon.
-// We retrieve user ID which opened the client here.
-func (UnixSocketCredentials) ServerHandshake(c net.Conn) (net.Conn, credentials.AuthInfo, error) {
-	creds, err := getUnixCreds(c)
-	if err != nil || creds == nil {
-		return c, UcredAuth{}, err
-	}
-
-	return c, UcredAuth(*creds), nil
-}
-
-// ClientHandshake is a stub to implement credentials.TransportCredentials
-func (UnixSocketCredentials) ClientHandshake(_ context.Context, _ string, c net.Conn) (net.Conn, credentials.AuthInfo, error) {
-	return c, nil, nil
-}
-
-// Info is a stub to implement credentials.TransportCredentials
-func (UnixSocketCredentials) Info() credentials.ProtocolInfo {
-	return credentials.ProtocolInfo{}
-}
-
-// Clone is a stub to implement credentials.TransportCredentials
-func (UnixSocketCredentials) Clone() credentials.TransportCredentials {
-	return UnixSocketCredentials{}
-}
-
-// OverrideServerName is a stub to implement credentials.TransportCredentials
-func (UnixSocketCredentials) OverrideServerName(string) error {
-	return nil
-}
-
 // getUnixCreds returns info from unix socket connection about the process on the other end.
 func getUnixCreds(conn net.Conn) (*unix.Ucred, error) {
 	unixConn, ok := conn.(*net.UnixConn)
@@ -87,7 +52,7 @@ func authenticateUser(ucred *unix.Ucred, allowGroups []string) error {
 	if err != nil {
 		return fmt.Errorf("authenticate user, lookup user info: %s", err)
 	}
-	// user belongs to 'nordvpn' or 'sudo' group?
+	// user belongs to the allowed group?
 	groups, err := userInfo.GroupIds()
 	if err != nil {
 		return fmt.Errorf("authenticate user, check user groups: %s", err)
@@ -104,6 +69,41 @@ func authenticateUser(ucred *unix.Ucred, allowGroups []string) error {
 		}
 	}
 	return fmt.Errorf("requesting user does not have permissions")
+}
+
+// UnixSocketCredentials is used to retrieve linux user ID from unix socket connection between client and daemon
+// Implements credentials.TransportCredentials to be passed to gRPC server initialization
+type UnixSocketCredentials struct{}
+
+// ServerHandshake is called when client connects to daemon.
+// We retrieve user ID which opened the client here.
+func (UnixSocketCredentials) ServerHandshake(c net.Conn) (net.Conn, credentials.AuthInfo, error) {
+	creds, err := getUnixCreds(c)
+	if err != nil || creds == nil {
+		return c, UcredAuth{}, err
+	}
+
+	return c, UcredAuth(*creds), nil
+}
+
+// ClientHandshake is a stub to implement credentials.TransportCredentials
+func (UnixSocketCredentials) ClientHandshake(_ context.Context, _ string, c net.Conn) (net.Conn, credentials.AuthInfo, error) {
+	return c, nil, nil
+}
+
+// Info is a stub to implement credentials.TransportCredentials
+func (UnixSocketCredentials) Info() credentials.ProtocolInfo {
+	return credentials.ProtocolInfo{}
+}
+
+// Clone is a stub to implement credentials.TransportCredentials
+func (UnixSocketCredentials) Clone() credentials.TransportCredentials {
+	return UnixSocketCredentials{}
+}
+
+// OverrideServerName is a stub to implement credentials.TransportCredentials
+func (UnixSocketCredentials) OverrideServerName(string) error {
+	return nil
 }
 
 // UcredAuth is a wrapper to use unix.Ucred as gRPC credentials.AuthInfo
