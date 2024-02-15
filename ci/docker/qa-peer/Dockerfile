@@ -5,7 +5,8 @@ LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-li
 EXPOSE 22
 
 RUN apt-get update && \
-    apt-get install -y openssh-server sudo && \
+    apt-get install -y openssh-server sudo iptables \
+        iproute2 procps ca-certificates libxml2 libidn2-0 zlib1g && \
     echo "root:root" | chpasswd && \
     echo PermitRootLogin yes >> /etc/ssh/sshd_config && \
     mkdir /run/sshd
