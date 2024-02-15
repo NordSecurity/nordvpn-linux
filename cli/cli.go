@@ -1085,7 +1085,7 @@ func argsCountError(ctx *cli.Context) error {
 	return fmt.Errorf(
 		ArgumentCountError,
 		ctx.App.Name,
-		commandFullName(ctx),
+		commandFullName(ctx, os.Args),
 	)
 }
 
@@ -1093,18 +1093,18 @@ func argsParseError(ctx *cli.Context) error {
 	return fmt.Errorf(
 		ArgumentParsingError,
 		ctx.App.Name,
-		commandFullName(ctx),
+		commandFullName(ctx, os.Args),
 	)
 }
 
 // because ctx.Command.FullName() doesn't work: https://github.com/urfave/cli/issues/1859
-func commandFullName(ctx *cli.Context) string {
-	if len(os.Args) < 2 {
+func commandFullName(ctx *cli.Context, args []string) string {
+	if len(args) < 2 {
 		return ctx.Command.Name
 	}
 	fullName := []string{}
 	var cmd *cli.Command
-	for _, arg := range os.Args[1:] {
+	for _, arg := range args[1:] {
 		if cmd == nil {
 			cmd = ctx.App.Command(arg)
 		} else {
