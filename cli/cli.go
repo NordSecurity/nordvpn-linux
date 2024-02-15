@@ -1100,7 +1100,7 @@ func argsParseError(ctx *cli.Context) error {
 // because ctx.Command.FullName() doesn't work: https://github.com/urfave/cli/issues/1859
 func commandFullName(ctx *cli.Context) string {
 	if len(os.Args) < 2 {
-		return ""
+		return ctx.Command.Name
 	}
 	fullName := []string{}
 	var cmd *cli.Command
