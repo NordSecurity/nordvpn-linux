@@ -45,13 +45,13 @@ def test_set_tpl_on_off_connected(tpl_alias, tech, proto, obfuscated):
 
         assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_alias, "on")
 
-        assert settings.get_is_tpl_enabled()
+        assert settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_TPL)
 
         assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_alias, "off")
 
-        assert not settings.get_is_tpl_enabled()
+        assert not settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_NORD)
 
@@ -68,7 +68,7 @@ def test_set_tpl_on_and_connect(tpl_alias, tech, proto, obfuscated):
 
     assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_alias, "on")
 
-    assert settings.get_is_tpl_enabled()
+    assert settings.is_tpl_enabled()
     assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
@@ -91,7 +91,7 @@ def test_set_tpl_off_and_connect(tpl_alias, tech, proto, obfuscated):
 
     assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_alias, "off")
 
-    assert not settings.get_is_tpl_enabled()
+    assert not settings.is_tpl_enabled()
     assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
@@ -113,12 +113,12 @@ def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver)
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.tpl("on")
-    assert settings.get_is_tpl_enabled()
+    assert settings.is_tpl_enabled()
 
     output = sh.nordvpn.set.dns(nameserver)
 
     assert dns.TPL_MSG_WARNING_DISABLING in output
-    assert not settings.get_is_tpl_enabled()
+    assert not settings.is_tpl_enabled()
     assert settings.dns_visible_in_settings(nameserver)
     assert dns.is_unset()
 
@@ -135,11 +135,11 @@ def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
         sh.nordvpn.set.tpl("on")
-        assert settings.get_is_tpl_enabled()
+        assert settings.is_tpl_enabled()
 
         output = sh.nordvpn.set.dns(nameserver)
         assert dns.TPL_MSG_WARNING_DISABLING in output
-        assert not settings.get_is_tpl_enabled()
+        assert not settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(nameserver)
         assert dns.is_set_for(nameserver)
 
@@ -161,7 +161,7 @@ def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
-        assert not settings.get_is_tpl_enabled()
+        assert not settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(nameserver)
         assert dns.is_set_for(nameserver)
 
