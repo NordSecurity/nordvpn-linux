@@ -2,6 +2,7 @@
 set -euxo pipefail
 
 source "${WORKDIR}/ci/env.sh"
+source "${WORKDIR}/build/openvpn/env.sh"
 
 # implemented it this way, because expansion did not work
 binaries=(

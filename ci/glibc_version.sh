@@ -2,6 +2,7 @@
 set -euxo pipefail
 
 source "${WORKDIR}/ci/env.sh"
+source "${WORKDIR}/build/openvpn/env.sh"
 
 glibc_version=$1
 
