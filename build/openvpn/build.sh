@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-source "${WORKDIR}"/ci/env.sh
+src_dir=$(dirname -- ${BASH_SOURCE[0]})
+source "${src_dir}/env.sh"
 
-CORES=$(nproc)
+cores=$(nproc)
 
 current_dir="${WORKDIR}/build/openvpn"
 sources="${current_dir}/src"
@@ -106,20 +107,20 @@ pushd "${current_dir}"
 
   pushd "${sources}/openssl-${OPENSSL_VERSION}"
     configure_openssl "${compiler}"
-    make -j$CORES CFLAGS+="$openssl_cflags" LDFLAGS+="$openssl_ldflags" > /dev/null
-    make install -j$CORES CFLAGS+="$openssl_cflags" LDFLAGS+="$openssl_ldflags" > /dev/null
+    make -j$cores CFLAGS+="$openssl_cflags" LDFLAGS+="$openssl_ldflags" > /dev/null
+    make install -j$cores CFLAGS+="$openssl_cflags" LDFLAGS+="$openssl_ldflags" > /dev/null
   popd
 
   pushd "${sources}/lzo-${LZO_VERSION}"
     configure_lzo "${compiler}" "${target}" "${lzo_cflags}" "${lzo_ldflags}"
-    make -j$CORES > /dev/null
-    make install -j$CORES > /dev/null
+    make -j$cores > /dev/null
+    make install -j$cores > /dev/null
   popd
 
   pushd "${sources}/openvpn-${OPENVPN_VERSION}"
     configure_openvpn "${compiler}" "${target}" "${openvpn_cflags}" "${openvpn_ldflags}"
-    make -j$CORES > /dev/null
-    make install -j$CORES /dev/null
+    make -j$cores > /dev/null
+    make install -j$cores /dev/null
   popd
 popd
 
