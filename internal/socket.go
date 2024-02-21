@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"strconv"
 	"strings"
+	"sync"
 
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/credentials"
@@ -43,7 +44,13 @@ func getUnixCreds(conn net.Conn) (*unix.Ucred, error) {
 	return ucred, nil
 }
 
+// serialize user information handling
+var here_lock sync.Mutex = sync.Mutex{}
+
 func authenticateUser(ucred *unix.Ucred, allowGroups []string) error {
+	here_lock.Lock()
+	defer here_lock.Unlock()
+
 	// root?
 	if ucred.Uid == 0 {
 		return nil
