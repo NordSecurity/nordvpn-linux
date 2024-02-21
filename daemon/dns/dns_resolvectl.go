@@ -35,12 +35,7 @@ func (m *Resolvectl) Name() string {
 }
 
 func setDNSWithResolvectl(iface string, addresses []string) error {
-	prefix, err := resolvconfIfacePrefix()
-	if err != nil {
-		return fmt.Errorf("determining interface prefix: %w", err)
-	}
-
-	cmdStr := []string{"dns", prefix + iface}
+	cmdStr := []string{"dns", iface}
 	cmdStr = append(cmdStr, addresses...)
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, cmdStr...).CombinedOutput(); err != nil {
@@ -48,11 +43,11 @@ func setDNSWithResolvectl(iface string, addresses []string) error {
 	}
 	// "Catch-all" domain routing for interface, more here: https://github.com/poettering/systemd/commit/8cedb0aef94da880e61b4c8cfeb7f450f8760ec6
 	// #nosec G204 -- input is properly validated
-	if out, err := exec.Command("resolvectl", "domain", prefix+iface, "~.").CombinedOutput(); err != nil {
+	if out, err := exec.Command("resolvectl", "domain", iface, "~.").CombinedOutput(); err != nil {
 		log.Println("dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated
-	if out, err := exec.Command("resolvectl", "default-route", prefix+iface, "true").CombinedOutput(); err != nil {
+	if out, err := exec.Command("resolvectl", "default-route", iface, "true").CombinedOutput(); err != nil {
 		log.Println("dns domain default-route with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated
@@ -63,22 +58,17 @@ func setDNSWithResolvectl(iface string, addresses []string) error {
 }
 
 func unsetDNSWithResolvectl(iface string) error {
-	prefix, err := resolvconfIfacePrefix()
-	if err != nil {
-		return fmt.Errorf("determining interface prefix: %w", err)
-	}
-
 	// Just set empty/no DNS server for interface
 	// #nosec G204 -- input is properly validated
-	if out, err := exec.Command(execResolvectl, "dns", prefix+iface, "").CombinedOutput(); err != nil {
+	if out, err := exec.Command(execResolvectl, "dns", iface, "").CombinedOutput(); err != nil {
 		return fmt.Errorf("unsetting dns with resolvectl: %s: %w", strings.TrimSpace(string(out)), err)
 	}
 	// #nosec G204 -- input is properly validated
-	if out, err := exec.Command("resolvectl", "domain", prefix+iface, "").CombinedOutput(); err != nil {
+	if out, err := exec.Command("resolvectl", "domain", iface, "").CombinedOutput(); err != nil {
 		log.Println("dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated
-	if out, err := exec.Command("resolvectl", "default-route", prefix+iface, "false").CombinedOutput(); err != nil {
+	if out, err := exec.Command("resolvectl", "default-route", iface, "false").CombinedOutput(); err != nil {
 		log.Println("dns domain default-route with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated

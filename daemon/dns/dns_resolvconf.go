@@ -3,6 +3,7 @@ package dns
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -43,25 +44,31 @@ func (m *Resolvconf) Name() string {
 	return "resolvconf"
 }
 
-func resolvconfIfacePrefix() (string, error) {
-	if internal.FileExists(resolconfInterfaceFilePath) {
-		file, err := os.Open(resolconfInterfaceFilePath)
+func resolvconfIfacePrefix(filePath string) (string, error) {
+	if internal.FileExists(filePath) {
+		// #nosec G304 - file path/name is constant
+		file, err := os.Open(filePath)
 		if err != nil {
-			return "", fmt.Errorf("opening %s: %w", resolconfInterfaceFilePath, err)
+			return "", fmt.Errorf("opening %s: %w", filePath, err)
 		}
 		// #nosec G307 -- no writes are made
 		defer file.Close()
-		fscanner := bufio.NewScanner(file)
-		re := regexp.MustCompile(`^([A-Za-z0-9-]+)\*$`)
-		for fscanner.Scan() {
-			match := re.FindStringSubmatch(fscanner.Text())
-			if len(match) > 0 {
-				return fmt.Sprintf("%s.", match[1]), nil
-			}
-		}
-		return "", nil
+
+		return checkForEntry(file), nil
 	}
 	return "", nil
+}
+
+func checkForEntry(data io.Reader) string {
+	fscanner := bufio.NewScanner(data)
+	re := regexp.MustCompile(`^([A-Za-z0-9-]+)\*$`)
+	for fscanner.Scan() {
+		match := re.FindStringSubmatch(fscanner.Text())
+		if len(match) > 1 {
+			return fmt.Sprintf("%s.", match[1])
+		}
+	}
+	return ""
 }
 
 func setDNSWithResolvconf(iface string, addresses []string) error {
@@ -70,7 +77,7 @@ func setDNSWithResolvconf(iface string, addresses []string) error {
 		addrs[idx] = "nameserver " + address
 	}
 	content := strings.Join(addrs, "\n")
-	prefix, err := resolvconfIfacePrefix()
+	prefix, err := resolvconfIfacePrefix(resolconfInterfaceFilePath)
 	if err != nil {
 		return fmt.Errorf("determining interface prefix: %w", err)
 	}
@@ -87,7 +94,7 @@ func setDNSWithResolvconf(iface string, addresses []string) error {
 }
 
 func unsetDNSWithResolvconf(iface string) error {
-	prefix, err := resolvconfIfacePrefix()
+	prefix, err := resolvconfIfacePrefix(resolconfInterfaceFilePath)
 	if err != nil {
 		return fmt.Errorf("determining interface prefix: %w", err)
 	}
