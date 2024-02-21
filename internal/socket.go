@@ -4,12 +4,72 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os/user"
 	"strconv"
 	"strings"
 
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/credentials"
 )
+
+// getUnixCreds returns info from unix socket connection about the process on the other end.
+func getUnixCreds(conn net.Conn) (*unix.Ucred, error) {
+	unixConn, ok := conn.(*net.UnixConn)
+	if !ok {
+		return nil, fmt.Errorf("socket is not a unix socket")
+	}
+
+	rawConn, err := unixConn.SyscallConn()
+	if err != nil {
+		return nil, fmt.Errorf("getting raw connection: %w", err)
+	}
+
+	var ucred *unix.Ucred
+	var internalErr error
+	err = rawConn.Control(func(fd uintptr) {
+		ucred, internalErr = unix.GetsockoptUcred(int(fd), unix.SOL_SOCKET, unix.SO_PEERCRED)
+	})
+	if internalErr != nil {
+		return nil, fmt.Errorf("doing GetsockoptUcred: %w", internalErr)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("doing rawConn Control: %w", err)
+	}
+
+	if err := authenticateUser(ucred, []string{"nordvpn"}); err != nil {
+		return nil, err
+	}
+
+	return ucred, nil
+}
+
+func authenticateUser(ucred *unix.Ucred, allowGroups []string) error {
+	// root?
+	if ucred.Uid == 0 {
+		return nil
+	}
+	userInfo, err := user.LookupId(fmt.Sprintf("%d", ucred.Uid))
+	if err != nil {
+		return fmt.Errorf("authenticate user, lookup user info: %s", err)
+	}
+	// user belongs to the allowed group?
+	groups, err := userInfo.GroupIds()
+	if err != nil {
+		return fmt.Errorf("authenticate user, check user groups: %s", err)
+	}
+	for _, groupId := range groups {
+		groupInfo, err := user.LookupGroupId(groupId)
+		if err != nil {
+			return fmt.Errorf("authenticate user, check user group: %s", err)
+		}
+		for _, allowGroupName := range allowGroups {
+			if groupInfo.Name == allowGroupName {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("requesting user does not have permissions")
+}
 
 // UnixSocketCredentials is used to retrieve linux user ID from unix socket connection between client and daemon
 // Implements credentials.TransportCredentials to be passed to gRPC server initialization
@@ -44,33 +104,6 @@ func (UnixSocketCredentials) Clone() credentials.TransportCredentials {
 // OverrideServerName is a stub to implement credentials.TransportCredentials
 func (UnixSocketCredentials) OverrideServerName(string) error {
 	return nil
-}
-
-// getUnixCreds returns info from unix socket connection about the process on the other end.
-func getUnixCreds(conn net.Conn) (*unix.Ucred, error) {
-	unixConn, ok := conn.(*net.UnixConn)
-	if !ok {
-		return nil, fmt.Errorf("socket is not a unix socket")
-	}
-
-	rawConn, err := unixConn.SyscallConn()
-	if err != nil {
-		return nil, fmt.Errorf("getting raw connection: %w", err)
-	}
-
-	var ucred *unix.Ucred
-	var internalErr error
-	err = rawConn.Control(func(fd uintptr) {
-		ucred, internalErr = unix.GetsockoptUcred(int(fd), unix.SOL_SOCKET, unix.SO_PEERCRED)
-	})
-	if internalErr != nil {
-		return nil, fmt.Errorf("doing GetsockoptUcred: %w", internalErr)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("doing rawConn Control: %w", err)
-	}
-
-	return ucred, nil
 }
 
 // UcredAuth is a wrapper to use unix.Ucred as gRPC credentials.AuthInfo
