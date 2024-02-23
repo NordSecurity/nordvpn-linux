@@ -109,5 +109,4 @@ func TestCLICommands(t *testing.T) {
 			assert.Equal(t, test.expected, commandFullName(ctx, test.appArgs))
 		})
 	}
-
 }
