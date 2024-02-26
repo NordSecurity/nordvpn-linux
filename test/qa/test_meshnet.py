@@ -313,6 +313,13 @@ def test_account_switch():
     sh.nordvpn.set.mesh.on()  # expecting failure here
 
 
+def test_invite_send():
+
+    assert "Meshnet invitation to 'test@test.com' was sent." in meshnet.send_meshnet_invite("test@test.com")
+
+    assert "test@test.com" in sh.nordvpn.meshnet.invite.list()
+
+
 def test_invite_send_repeated():
     with lib.Defer(lambda: sh.nordvpn.meshnet.invite.revoke("test@test.com")):
         meshnet.send_meshnet_invite("test@test.com")
@@ -357,9 +364,12 @@ def test_invite_send_email_special_character():
 
 
 def test_invite_revoke():
+
     meshnet.send_meshnet_invite("test@test.com")
 
     assert "Meshnet invitation to 'test@test.com' was revoked." in sh.nordvpn.meshnet.invite.revoke("test@test.com")
+
+    assert "test@test.com" not in sh.nordvpn.meshnet.invite.list()
 
 
 def test_invite_revoke_repeated():
@@ -395,6 +405,19 @@ def test_invite_revoke_non_existent_special_character():
     assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
 
 
+def test_invite_deny():
+
+    meshnet.remove_all_peers()
+    meshnet.remove_all_peers_in_peer(ssh_client)
+    meshnet.revoke_all_invites()
+    meshnet.revoke_all_invites_in_peer(ssh_client)
+
+    meshnet.send_meshnet_invite(os.environ.get("QA_PEER_USERNAME"))
+
+    assert os.environ.get("DEFAULT_LOGIN_USERNAME") in ssh_client.exec_command("nordvpn meshnet invite list")
+    assert f"Meshnet invitation from '{os.environ.get('DEFAULT_LOGIN_USERNAME')}' was denied." in meshnet.deny_meshnet_invite(ssh_client)
+
+
 def test_invite_deny_non_existent():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.deny("test@test.com")
@@ -416,6 +439,19 @@ def test_invite_deny_non_existent_special_character():
         sh.nordvpn.meshnet.invite.deny("\u2222@test.com")
 
     assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
+
+
+def test_invite_accept():
+
+    meshnet.remove_all_peers()
+    meshnet.remove_all_peers_in_peer(ssh_client)
+    meshnet.revoke_all_invites()
+    meshnet.revoke_all_invites_in_peer(ssh_client)
+
+    meshnet.send_meshnet_invite(os.environ.get("QA_PEER_USERNAME"))
+
+    assert os.environ.get("DEFAULT_LOGIN_USERNAME") in ssh_client.exec_command("nordvpn meshnet invite list")
+    assert f"Meshnet invitation from '{os.environ.get('DEFAULT_LOGIN_USERNAME')}' was accepted." in meshnet.accept_meshnet_invite(ssh_client)
 
 
 def test_invite_accept_non_existent():

@@ -176,9 +176,50 @@ def revoke_all_invites_in_peer(ssh_client: ssh.Ssh):
 
 
 def send_meshnet_invite(email):
-    command = sh.nordvpn.meshnet.invite.send(email)
-    process = subprocess.Popen(str(command), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        command = ["nordvpn", "meshnet", "invite", "send", email]
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    for _ in range(4):
-        process.stdin.write('\n')
-        process.stdin.flush()
+        for _ in range(4):
+            process.stdin.write('\n')
+            process.stdin.flush()
+
+        try:
+            stdout, stderr = process.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            stdout, stderr = process.communicate()
+
+        if process.returncode != 0:
+            raise sh.ErrorReturnCode_1(full_cmd="", stdout=b"", stderr=stdout.split('\n')[-2].encode('utf-8'))
+
+        return stdout.strip().split('\n')[-1]
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred: {e}")
+        raise sh.ErrorReturnCode_1 from None
+
+
+def accept_meshnet_invite(ssh_client: ssh.Ssh,
+             peer_allow_fileshare: bool = True,
+             peer_allow_routing: bool = True,
+             peer_allow_local: bool = True,
+             peer_allow_incoming: bool = True):
+
+    peer_allow_fileshare_arg = f"--allow-peer-send-files={str(peer_allow_fileshare).lower()}"
+    peer_allow_routing_arg = f"--allow-traffic-routing={str(peer_allow_routing).lower()}"
+    peer_allow_local_arg = f"--allow-local-network-access={str(peer_allow_local).lower()}"
+    peer_allow_incoming_arg = f"--allow-incoming-traffic={str(peer_allow_incoming).lower()}"
+
+    local_user, _ = login.get_default_credentials()
+    output = ssh_client.exec_command(f"yes | nordvpn mesh inv accept {peer_allow_local_arg} {peer_allow_incoming_arg} {peer_allow_routing_arg} {peer_allow_fileshare_arg} {local_user}")
+    sh.nordvpn.mesh.peer.refresh()
+
+    return output
+
+
+def deny_meshnet_invite(ssh_client: ssh.Ssh):
+
+    local_user, _ = login.get_default_credentials()
+    output = ssh_client.exec_command(f"yes | nordvpn mesh inv deny {local_user}")
+    
+    return output
