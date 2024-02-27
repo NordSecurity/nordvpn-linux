@@ -1103,7 +1103,6 @@ func commandFullName(ctx *cli.Context, args []string) string {
 			fullCommand = append(fullCommand, ctx.Command.Name)
 		}
 	} else {
-
 		var cmd *cli.Command
 		for _, arg := range args[1:] {
 			if cmd == nil {
