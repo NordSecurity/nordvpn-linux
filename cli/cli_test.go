@@ -71,29 +71,29 @@ func TestCLICommands(t *testing.T) {
 			expected: "",
 		},
 		{
-			name:     "one argument",
+			name:     "only app name is into the list",
 			appArgs:  []string{"nordvpn"},
 			expected: "",
 		},
 		{
-			name:     "nordvpn set",
+			name:     "app name and one subcommand works",
 			appArgs:  []string{"nordvp", "set"},
 			expected: ctx.App.Name + " set",
 		},
 		{
-			name:     "nordvpn set dns",
+			name:     "app name and 2 subcommands",
 			appArgs:  []string{"nordvp", "set", "dns"},
 			expected: ctx.App.Name + " set dns",
 		},
 		{
-			name:     "nordvpn set dns 1234",
+			name:     "one argument for command is not returned",
 			appArgs:  []string{"nordvp", "set", "dns", "1234"},
 			expected: ctx.App.Name + " set dns",
 		},
 		{
-			name:     "nordvpn set dns 1 2 3 4",
-			appArgs:  []string{"nordvp", "set", "dns", "1", "2", "3", "4"},
-			expected: ctx.App.Name + " set dns",
+			name:     "multiple arguments are the command are not returned",
+			appArgs:  []string{"nordvp", "set", "firewall", "1", "2", "3", "4"},
+			expected: ctx.App.Name + " set firewall",
 		},
 		{
 			name:     "works with aliases",
