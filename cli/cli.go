@@ -1084,7 +1084,6 @@ func meshnetErrorToError(code meshpb.MeshnetErrorCode) error {
 func argsCountError(ctx *cli.Context) error {
 	return fmt.Errorf(
 		ArgumentCountError,
-		ctx.App.Name,
 		commandFullName(ctx, os.Args),
 	)
 }
@@ -1092,7 +1091,6 @@ func argsCountError(ctx *cli.Context) error {
 func argsParseError(ctx *cli.Context) error {
 	return fmt.Errorf(
 		ArgumentParsingError,
-		ctx.App.Name,
 		commandFullName(ctx, os.Args),
 	)
 }
@@ -1102,7 +1100,7 @@ func commandFullName(ctx *cli.Context, args []string) string {
 	if len(args) < 2 {
 		return ctx.Command.Name
 	}
-	fullName := []string{}
+	fullName := []string{ctx.App.Name}
 	var cmd *cli.Command
 	for _, arg := range args[1:] {
 		if cmd == nil {

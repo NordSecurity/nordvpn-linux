@@ -5,11 +5,14 @@ import (
 	"flag"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
 )
 
 func TestCLICommands(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	app := cli.NewApp()
 	app.Commands = []*cli.Command{
 		{
@@ -75,32 +78,32 @@ func TestCLICommands(t *testing.T) {
 		{
 			name:     "nordvpn set",
 			appArgs:  []string{"nordvp", "set"},
-			expected: "set",
+			expected: ctx.App.Name + " set",
 		},
 		{
 			name:     "nordvpn set dns",
 			appArgs:  []string{"nordvp", "set", "dns"},
-			expected: "set dns",
+			expected: ctx.App.Name + " set dns",
 		},
 		{
 			name:     "nordvpn set dns 1234",
 			appArgs:  []string{"nordvp", "set", "dns", "1234"},
-			expected: "set dns",
+			expected: ctx.App.Name + " set dns",
 		},
 		{
 			name:     "nordvpn set dns 1 2 3 4",
 			appArgs:  []string{"nordvp", "set", "dns", "1", "2", "3", "4"},
-			expected: "set dns",
+			expected: ctx.App.Name + " set dns",
 		},
 		{
 			name:     "works with aliases",
 			appArgs:  []string{"nordvp", "set", "tpl"},
-			expected: "set threatprotectionlite",
+			expected: ctx.App.Name + " set threatprotectionlite",
 		},
 		{
 			name:     "works with more subcommands levels",
 			appArgs:  []string{"nordvp", "set", "autoconnect", "arg", "a"},
-			expected: "set autoconnect arg",
+			expected: ctx.App.Name + " set autoconnect arg",
 		},
 	}
 
