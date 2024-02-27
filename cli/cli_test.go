@@ -68,12 +68,12 @@ func TestCLICommands(t *testing.T) {
 		{
 			name:     "empty arguments",
 			appArgs:  []string{},
-			expected: "",
+			expected: ctx.App.Name,
 		},
 		{
 			name:     "only app name is into the list",
 			appArgs:  []string{"nordvpn"},
-			expected: "",
+			expected: ctx.App.Name,
 		},
 		{
 			name:     "app name and one subcommand works",

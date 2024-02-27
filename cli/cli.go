@@ -1097,23 +1097,27 @@ func argsParseError(ctx *cli.Context) error {
 
 // because ctx.Command.FullName() doesn't work: https://github.com/urfave/cli/issues/1859
 func commandFullName(ctx *cli.Context, args []string) string {
+	fullCommand := []string{ctx.App.Name}
 	if len(args) < 2 {
-		return ctx.Command.Name
-	}
-	fullName := []string{ctx.App.Name}
-	var cmd *cli.Command
-	for _, arg := range args[1:] {
-		if cmd == nil {
-			cmd = ctx.App.Command(arg)
-		} else {
-			cmd = cmd.Command(arg)
+		if ctx.Command.Name != "" {
+			fullCommand = append(fullCommand, ctx.Command.Name)
 		}
-		if cmd == nil {
-			break
-		}
+	} else {
 
-		fullName = append(fullName, cmd.Name)
+		var cmd *cli.Command
+		for _, arg := range args[1:] {
+			if cmd == nil {
+				cmd = ctx.App.Command(arg)
+			} else {
+				cmd = cmd.Command(arg)
+			}
+			if cmd == nil {
+				break
+			}
+
+			fullCommand = append(fullCommand, cmd.Name)
+		}
 	}
 
-	return strings.Join(fullName, " ")
+	return strings.Join(fullCommand, " ")
 }
