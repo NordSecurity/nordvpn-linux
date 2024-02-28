@@ -65,6 +65,7 @@ type DaemonClient interface {
 	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_SubscribeToStateChangesClient, error)
 	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
+	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 }
 
 type daemonClient struct {
@@ -554,6 +555,15 @@ func (c *daemonClient) GetServers(ctx context.Context, in *Empty, opts ...grpc.C
 	return out, nil
 }
 
+func (c *daemonClient) SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/SetPostQuantum", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
@@ -601,6 +611,7 @@ type DaemonServer interface {
 	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
 	SubscribeToStateChanges(*Empty, Daemon_SubscribeToStateChangesServer) error
 	GetServers(context.Context, *Empty) (*ServersResponse, error)
+	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -736,6 +747,9 @@ func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, Daemon_Subscrib
 }
 func (UnimplementedDaemonServer) GetServers(context.Context, *Empty) (*ServersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServers not implemented")
+}
+func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetPostQuantum not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -1536,6 +1550,24 @@ func _Daemon_GetServers_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_SetPostQuantum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetPostQuantum(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/SetPostQuantum",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetPostQuantum(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1698,6 +1730,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetServers",
 			Handler:    _Daemon_GetServers_Handler,
+		},
+		{
+			MethodName: "SetPostQuantum",
+			Handler:    _Daemon_SetPostQuantum_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

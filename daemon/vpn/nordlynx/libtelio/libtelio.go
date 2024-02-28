@@ -25,6 +25,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
+	"github.com/google/uuid"
 )
 
 const (
@@ -282,7 +283,7 @@ func (l *Libtelio) Start(
 	}
 
 	l.currentServer = serverData
-	if err = l.connect(serverData.IP, serverData.NordLynxPublicKey); err != nil {
+	if err = l.connect(serverData.IP, serverData.NordLynxPublicKey, serverData.PostQuantum); err != nil {
 		return err
 	}
 
@@ -293,18 +294,30 @@ func (l *Libtelio) Start(
 }
 
 // connect to the VPN server
-func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
+func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string, postQuantum bool) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	l.cancelConnectionMonitor = cancel
 
 	// Start monitoring connection events before connecting to not miss any
 	isConnectedC := isConnected(ctx, l.events, connParameters{pubKey: serverPublicKey, server: l.currentServer}, l.eventsPublisher)
 
-	if err := toError(l.lib.ConnectToExitNode(
-		serverPublicKey,
-		"0.0.0.0/0",
-		net.JoinHostPort(serverIP.String(), "51820"),
-	)); err != nil {
+	var res teliogo.Enum_SS_telio_result
+	if postQuantum {
+		res = l.lib.ConnectToExitNodePostquantum(
+			uuid.NewString(),
+			serverPublicKey,
+			"0.0.0.0/0",
+			net.JoinHostPort(serverIP.String(), "51820"),
+		)
+	} else {
+		res = l.lib.ConnectToExitNode(
+			serverPublicKey,
+			"0.0.0.0/0",
+			net.JoinHostPort(serverIP.String(), "51820"),
+		)
+	}
+
+	if err := toError(res); err != nil {
 		if !l.isMeshEnabled {
 			// only close the tunnel when there was VPN connect problem
 			// and meshnet is not active
@@ -423,7 +436,7 @@ func (l *Libtelio) Enable(ip netip.Addr, privateKey string) (err error) {
 		}
 
 		// Re-connect to the VPN server
-		if err = l.connect(l.currentServer.IP, l.currentServer.NordLynxPublicKey); err != nil {
+		if err = l.connect(l.currentServer.IP, l.currentServer.NordLynxPublicKey, l.currentServer.PostQuantum); err != nil {
 			return fmt.Errorf("reconnecting to server: %w", err)
 		}
 	}
@@ -470,11 +483,12 @@ func (l *Libtelio) NetworkChanged() error {
 		if l.active {
 			serverIP := l.currentServer.IP
 			serverPublicKey := l.currentServer.NordLynxPublicKey
+			serverPQ := l.currentServer.PostQuantum
 			if err := l.disconnect(); err != nil {
 				return err
 			}
 
-			if err := l.connect(serverIP, serverPublicKey); err != nil {
+			if err := l.connect(serverIP, serverPublicKey, serverPQ); err != nil {
 				return err
 			}
 		}

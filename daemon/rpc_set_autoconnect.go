@@ -86,6 +86,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				Obfuscate:            cfg.AutoConnectData.Obfuscate,
 				DNS:                  cfg.AutoConnectData.DNS,
 				Allowlist:            cfg.AutoConnectData.Allowlist,
+				PostquantumVpn:       cfg.AutoConnectData.PostquantumVpn,
 			}
 			return c
 		}); err != nil {

@@ -235,6 +235,8 @@ func (s *Subscriber) NotifyVirtualLocation(data bool) error {
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue(data))
 }
 
+func (s *Subscriber) NotifyPostquantumVpn(bool) error { return nil }
+
 func (s *Subscriber) NotifyIpv6(data bool) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIpv6EnabledValue(data)); err != nil {
 		return err

@@ -84,6 +84,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 				},
 				Obfuscate:       cfg.AutoConnectData.Obfuscate,
 				VirtualLocation: cfg.VirtualLocation.Get(),
+				PostquantumVpn:  cfg.AutoConnectData.PostquantumVpn,
 			},
 			UserSpecificSettings: &pb.UserSpecificSettings{
 				Uid:    in.GetUid(),

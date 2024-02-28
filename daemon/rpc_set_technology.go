@@ -47,6 +47,12 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 		obfuscate = false
 	}
 
+	if in.GetTechnology() != config.Technology_NORDLYNX && cfg.AutoConnectData.PostquantumVpn {
+		return &pb.Payload{
+			Type: internal.CodePqWithoutNordlynx,
+		}, nil
+	}
+
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.Technology = in.GetTechnology()
 		c.AutoConnectData.Protocol = protocol

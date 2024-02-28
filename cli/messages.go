@@ -66,6 +66,7 @@ Example: nordvpn set %s on`
 	SetProtocolAlreadySet  = "Protocol is already set to %s"
 
 	SetTechnologyDepsError = "Missing %s kernel module or configuration utility."
+	SetTechnologyDisablePQ = "The post-quantum VPN is only available with %s technology. Disable post-quantum before switching."
 
 	SetDNSDisableThreatProtectionLite = "Disabling Threat Protection Lite."
 	SetDNSInvalidAddress              = "The provided IP address is invalid."
@@ -358,4 +359,8 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFooterVirtualLocationNote     = "* Virtual location servers"
 
 	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
+
+	SetPqUnavailable = "Postqauntum VPN is not available with the current technology. Change the technology to Nordlynx to use postqauntum VPN."
+	SetPqAndMeshnet  = "Cannot use Postqauntum VPN and Meshnet simultaneously. The features are incompatible."
+	SetPqUsageText   = "Enables or disables postquantum VPN. When enabled, the VPN connection will use resistant quantum computer resistant cryptography."
 )
