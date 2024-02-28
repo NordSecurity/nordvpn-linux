@@ -48,7 +48,7 @@ def teardown_function(function):  # noqa: ARG001
 def test_meshnet_connect():
     # Ideally peer update should happen through Notification Center, but that doesn't work often
     sh.nordvpn.meshnet.peer.refresh()
-    assert meshnet.is_peer_reachable(ssh_client)
+    assert meshnet.is_peer_reachable(ssh_client) # Test
 
 
 def test_mesh_removed_machine_by_other():
