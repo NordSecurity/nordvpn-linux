@@ -104,8 +104,6 @@ func TestResetPeersExitnode(t *testing.T) {
 		},
 	}
 
-	interfaces := []string{"eth0", "eth1"}
-
 	commandExecutor := newCommandExecutorMock(t)
 	commandExecutor.mockedOutputs["iptables -t nat -S POSTROUTING"] = strings.Join(
 		[]string{
@@ -132,7 +130,7 @@ func TestResetPeersExitnode(t *testing.T) {
 		}, "\n",
 	)
 
-	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
+	server := NewServer(commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
 
 	server.ResetPeers(peers, true)
 
@@ -165,8 +163,7 @@ func TestResetPeersExitnode(t *testing.T) {
 		"iptables -t filter -I FORWARD -s 202.242.38.68/32 -d 192.168.0.0/16 -j ACCEPT -m comment --comment nordvpn-exitnode-transient",
 		"iptables -t filter -I FORWARD -s 202.242.38.68/32 -d 169.254.0.0/16 -j ACCEPT -m comment --comment nordvpn-exitnode-transient",
 		// Add nat rules for 70.19.250.31/32. 202.242.38.68/32 will not be touched, as routing is not enabled for that peer.
-		"iptables -t nat -A POSTROUTING -s 70.19.250.31/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat -A POSTROUTING -s 70.19.250.31/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn",
+		"iptables -t nat -A POSTROUTING -s 70.19.250.31/32 ! -d 100.64.0.0/10 -j MASQUERADE -m comment --comment nordvpn",
 	}
 
 	assert.Equal(t, expectedCommands, commandExecutor.executedCommands,
@@ -178,9 +175,8 @@ func TestResetPeers_LANDiscoveryEnabled(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	peers := getPeers()
-	interfaces := []string{"eth0", "eth1"}
 	commandExecutor := CommandExecutorMock{}
-	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{
+	server := NewServer(commandExecutor.Execute, config.Allowlist{
 		Subnets: config.Subnets{"192.168.0.1/32": true},
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	}, &mock.SysctlSetterMock{})
@@ -216,10 +212,8 @@ func TestResetPeers_LANDiscoveryEnabled(t *testing.T) {
 		"iptables -t filter -I FORWARD -s 202.242.38.68/32 -d 169.254.0.0/16 -j ACCEPT -m comment --comment nordvpn-exitnode-transient",
 		// 192.168.0.1 and 192.168.0.2 are the only valid peers that can route to this machine
 		// (see getPeers function). MASQUERADE rules are added for those peers.
-		"iptables -t nat -A POSTROUTING -s 192.168.0.1/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat -A POSTROUTING -s 192.168.0.1/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat -A POSTROUTING -s 192.168.0.2/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat -A POSTROUTING -s 192.168.0.2/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn",
+		"iptables -t nat -A POSTROUTING -s 192.168.0.1/32 ! -d 100.64.0.0/10 -j MASQUERADE -m comment --comment nordvpn",
+		"iptables -t nat -A POSTROUTING -s 192.168.0.2/32 ! -d 100.64.0.0/10 -j MASQUERADE -m comment --comment nordvpn",
 	}
 
 	assert.Equal(t, expectedCommands, commandExecutor.executedCommands,
@@ -231,9 +225,8 @@ func TestResetPeers_LANDiscoveryDisabled(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	peers := getPeers()
-	interfaces := []string{"eth0", "eth1"}
 	commandExecutor := CommandExecutorMock{}
-	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{
+	server := NewServer(commandExecutor.Execute, config.Allowlist{
 		Subnets: config.Subnets{"192.168.0.1/32": true},
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	}, &mock.SysctlSetterMock{})
@@ -259,10 +252,8 @@ func TestResetPeers_LANDiscoveryDisabled(t *testing.T) {
 		"iptables -t filter -I FORWARD -s 100.64.0.0/10 -d 192.168.0.0/16 -j DROP -m comment --comment nordvpn-exitnode-transient",
 		"iptables -t filter -D FORWARD -s 100.64.0.0/10 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-exitnode-transient",
 		"iptables -t filter -I FORWARD -s 100.64.0.0/10 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-exitnode-transient",
-		"iptables -t nat -A POSTROUTING -s 192.168.0.1/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat -A POSTROUTING -s 192.168.0.1/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat -A POSTROUTING -s 192.168.0.2/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat -A POSTROUTING -s 192.168.0.2/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn",
+		"iptables -t nat -A POSTROUTING -s 192.168.0.1/32 ! -d 100.64.0.0/10 -j MASQUERADE -m comment --comment nordvpn",
+		"iptables -t nat -A POSTROUTING -s 192.168.0.2/32 ! -d 100.64.0.0/10 -j MASQUERADE -m comment --comment nordvpn",
 		"iptables -I FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32",
 		"iptables -I FORWARD -s 192.168.0.3 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32",
 		"iptables -I FORWARD -s 202.242.38.68 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32",
@@ -280,7 +271,6 @@ func TestSetAllowlist(t *testing.T) {
 
 	peers := getPeers()
 	initialNetwork := "192.168.0.0/16"
-	interfaces := []string{"eth0", "eth1"}
 	commandExecutor := CommandExecutorMock{}
 
 	tests := []struct {
@@ -323,7 +313,6 @@ func TestSetAllowlist(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			server := Server{
-				interfaceNames: interfaces,
 				runCommandFunc: commandExecutor.Execute,
 				allowlistManager: newAllowlist(commandExecutor.Execute, config.Allowlist{
 					Subnets: config.Subnets{initialNetwork: true},
@@ -408,9 +397,7 @@ func TestDisable(t *testing.T) {
 		}, "\n",
 	)
 
-	interfaces := []string{"eth0", "eth1"}
-
-	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
+	server := NewServer(commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
 	server.Disable()
 
 	expectedCommands := []string{
