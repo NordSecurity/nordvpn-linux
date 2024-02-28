@@ -20,10 +20,125 @@ LANS = [
 strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGNORECASE)
 
 
+class Peer:
+    def __init__(
+            self,
+            hostname: str,
+            nickname: str,
+            ip: str,
+            public_key: str,
+            os: str,
+            distribution: str,
+            status: str = None,
+            allow_incoming_traffic: bool = None,
+            allow_routing: bool = None,
+            allow_lan_access: bool = None,
+            allow_sending_files: bool = None,
+            allows_incoming_traffic: bool = None,
+            allows_routing: bool = None,
+            allows_lan_access: bool = None,
+            allows_sending_files: bool = None,
+            accept_fileshare_automatically: bool = None
+            ):
+        self.hostname = hostname
+        self.nickname = nickname
+        self.status = status
+        self.ip = ip
+        self.public_key = public_key
+        self.os = os
+        self.distribution = distribution
+        self.allow_incoming_traffic = self._convert_to_bool(allow_incoming_traffic)
+        self.allow_routing = self._convert_to_bool(allow_routing)
+        self.allow_lan_access = self._convert_to_bool(allow_lan_access)
+        self.allow_sending_files = self._convert_to_bool(allow_sending_files)
+        self.allows_incoming_traffic = self._convert_to_bool(allows_incoming_traffic)
+        self.allows_routing = self._convert_to_bool(allows_routing)
+        self.allows_lan_access = self._convert_to_bool(allows_lan_access)
+        self.allows_sending_files = self._convert_to_bool(allows_sending_files)
+        self.accept_fileshare_automatically = self._convert_to_bool(accept_fileshare_automatically)
+
+    def _convert_to_bool(self, value):
+        return value.lower() == "enabled" if value is not None else None
+
+
 class PeerName(Enum):
     Hostname = 0
     Ip = 1
     Pubkey = 2
+
+
+class PeerList:
+    def __init__(self):
+        self.this_device: list[Peer] = []
+        self.internal_peers: list[Peer] = []
+        self.external_peers: list[Peer] = []
+
+    def _str_to_dictionary(self, data: str):
+        new_dictionary = {a.strip().lower(): b.strip()
+                for a, b in (element.split(':')
+                                for element in
+                                filter(lambda line: len(line.split(':')) == 2, data.split('\n')))}
+
+        return new_dictionary
+
+    def _add_peer(self, to_peer_list: list[Peer], peer_data: str):
+        peer_data_dictionary = self._str_to_dictionary(peer_data)
+
+        # This device case
+        peer = Peer(
+                hostname = peer_data_dictionary['hostname'],
+                nickname = peer_data_dictionary["nickname"],
+                ip = peer_data_dictionary["ip"],
+                public_key = peer_data_dictionary["public key"],
+                os = peer_data_dictionary["os"],
+                distribution = peer_data_dictionary["distribution"],
+            )
+
+        # Internal, external peer cases
+        if "Status" in peer_data_dictionary:
+            peer.status = peer_data_dictionary["status"]
+            peer.allow_incoming_traffic = peer_data_dictionary["allow incoming traffic"]
+            peer.allow_routing = peer_data_dictionary["allow routing"]
+            peer.allow_lan_access = peer_data_dictionary["allow local network access"]
+            peer.allow_sending_files = peer_data_dictionary["allow sending files"]
+            peer.allows_incoming_traffic = peer_data_dictionary["allows incoming traffic"]
+            peer.allows_routing = peer_data_dictionary["allows routing"]
+            peer.allows_lan_access = peer_data_dictionary["allows local network access"]
+            peer.allows_sending_files = peer_data_dictionary["allows sending files"]
+            peer.accept_fileshare_automatically = peer_data_dictionary["accept fileshare automatically"]
+        
+        to_peer_list.append(peer)
+
+    def set_this_device(self, peer_data: str):
+        self.this_device = []
+        self._add_peer(self.this_device, peer_data)
+
+    def get_this_device(self) -> Peer:
+        return self.this_device[0]
+
+
+    def add_internal_peer(self, peer_data: str) -> None:
+        self._add_peer(self.internal_peers, peer_data)
+
+    def get_internal_peer(self) -> Peer | None:
+        if len(self.internal_peers) != 0:
+            return self.internal_peers[0]
+        return None
+
+    def get_all_internal_peers(self) -> list[Peer]:
+        return self.internal_peers
+
+
+    def add_external_peer(self, peer_data: str):
+        self._add_peer(self.external_peers, peer_data)
+
+    def get_external_peer(self) -> Peer | None:
+        if len(self.external_peers) != 0:
+            return self.external_peers[0]
+        return None
+
+    def get_all_external_peers(self) -> list[Peer]:
+        return self.external_peers
 
 
 # Used for test parametrization, when the same test has to be run with different Meshnet alias.
@@ -319,3 +434,43 @@ def set_permissions(peer: str, routing: bool, local: bool, incoming: bool, files
     sh.nordvpn.mesh.peer.local(bool_to_permission(local), peer, _ok_code=(0, 1))
     sh.nordvpn.mesh.peer.incoming(bool_to_permission(incoming), peer, _ok_code=(0, 1))
     sh.nordvpn.mesh.peer.fileshare(bool_to_permission(fileshare), peer, _ok_code=(0, 1))
+
+
+def get_clean_peer_list(peer_list: str):
+    output = strip_colors.sub('', str(peer_list))
+    output = "This " + output.split("This", 1)[-1].strip()
+    return output
+
+
+def populate_peer_list_object(output: str):
+    """ Converts output/meshnet peer list string to PeerList object. """
+
+    def remove_text_before_and_keyword(input_string, keyword):
+        index = input_string.find(keyword)
+
+        if index != -1:
+            return input_string[index + len(keyword):]
+        else:
+            return input_string
+
+    peer_list = get_clean_peer_list(output)
+    peer_list_object = PeerList()
+
+    this_device = peer_list.split("\n\n")[0].replace("This device:\n", "")
+    peer_list_object.set_this_device(this_device)
+
+    internal_peers = remove_text_before_and_keyword(peer_list, "Local Peers:\n").split("\n\n\n")[0]
+    if "[no peers]" not in internal_peers:
+        internal_peer_list = internal_peers.split("\n\n")
+
+        for peer_data in internal_peer_list:
+            peer_list_object.add_internal_peer(peer_data)
+
+    external_peers = remove_text_before_and_keyword(peer_list, "External Peers:\n")
+    if "[no peers]" not in external_peers:
+        external_peer_list = external_peers.split("\n\n")
+
+        for peer_data in external_peer_list:
+            peer_list_object.add_external_peer(peer_data)
+
+    return peer_list_object
