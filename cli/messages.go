@@ -327,4 +327,8 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareProgressFinishedErrors = "File transfer [%s] completed. Some of the files have failed to transfer."
 	MsgFileshareProgressCanceledByPeer = "File transfer [%s] canceled by peer."
 	MsgFileshareProgressCanceled       = "File transfer [%s] canceled by other process."
+
+	SetPqUnavailable = "Postqauntum VPN is not available with the current technology. Change the technology to Nordlynx to use postqauntum VPN."
+	SetPqAndMeshnet  = "Cannot use Postqauntum VPN and Meshnet simultaneously. The features are incompatible."
+	SetPqUsageText   = "Enables or disables postquantum VPN. When enabled, the VPN connection will use resistant quantum computer resistant cryptography."
 )

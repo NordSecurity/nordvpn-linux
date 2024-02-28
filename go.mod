@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
 	github.com/NordSecurity/libdrop v1.1.2-0.20231010121727-b5419b71d89d
-	github.com/NordSecurity/libtelio v0.0.0-20230717142529-ae1c7c103e55
+	github.com/NordSecurity/libtelio v0.0.0-20240227135122-434585c6046a
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/docker/docker v24.0.7+incompatible

@@ -23,6 +23,7 @@ enum MeshnetErrorCode {
 	NOT_ENABLED = 5;
 	TECH_FAILURE = 6;
 	TUNNEL_CLOSED = 7;
+	CONFLICT_WITH_PQ = 8;
 }
 
 // MeshnetErrorCode is one of the:

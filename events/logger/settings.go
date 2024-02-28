@@ -85,6 +85,11 @@ func (l *DaemonSettingsSubscriber) NotifyDefaults(any) error {
 	return nil
 }
 
+func (l *DaemonSettingsSubscriber) NotifyPostquantumVpn(data bool) error {
+	printSettingsChange("PostquantumVpn", boolToString(data))
+	return nil
+}
+
 func printSettingsChange(settingName string, val string) {
 	log.Printf("%s set to: %s", settingName, val)
 }
