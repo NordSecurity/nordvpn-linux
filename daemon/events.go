@@ -34,6 +34,7 @@ func NewEvents(
 	rate events.PublishSubcriber[events.ServerRating],
 	heartBeat events.PublishSubcriber[int],
 	lanDiscovery events.PublishSubcriber[bool],
+	postquantumVpn events.PublishSubcriber[bool],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -52,6 +53,7 @@ func NewEvents(
 			Ipv6:                 ipv6,
 			Defaults:             defaults,
 			LANDiscovery:         lanDiscovery,
+			PostquantumVPN:       postquantumVpn,
 		},
 		Service: &ServiceEvents{
 			Connect:      connect,
@@ -90,6 +92,7 @@ type SettingsPublisher interface {
 	NotifyIpv6(bool) error
 	NotifyDefaults(any) error
 	NotifyLANDiscovery(bool) error
+	NotifyPostquantumVpn(bool) error
 }
 
 type SettingsEvents struct {
@@ -108,6 +111,7 @@ type SettingsEvents struct {
 	Ipv6                 events.PublishSubcriber[bool]
 	Defaults             events.PublishSubcriber[any]
 	LANDiscovery         events.PublishSubcriber[bool]
+	PostquantumVPN       events.PublishSubcriber[bool]
 }
 
 func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
@@ -126,6 +130,7 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Ipv6.Subscribe(to.NotifyIpv6)
 	s.Defaults.Subscribe(to.NotifyDefaults)
 	s.LANDiscovery.Subscribe(to.NotifyLANDiscovery)
+	s.PostquantumVPN.Subscribe(to.NotifyPostquantumVpn)
 }
 
 type ServicePublisher interface {
@@ -174,4 +179,5 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Obfuscate.Publish(cfg.AutoConnectData.Obfuscate)
 	s.Notify.Publish(cfg.UsersData.Notify != nil && len(cfg.UsersData.Notify) > 0)
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
+	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)
 }

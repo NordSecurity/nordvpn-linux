@@ -50,7 +50,8 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 				Ports:   &ports,
 				Subnets: subnets,
 			},
-			Obfuscate: cfg.AutoConnectData.Obfuscate,
+			Obfuscate:      cfg.AutoConnectData.Obfuscate,
+			PostquantumVpn: cfg.AutoConnectData.PostquantumVpn,
 		},
 	}, nil
 }
