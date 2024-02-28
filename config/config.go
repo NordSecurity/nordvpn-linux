@@ -63,6 +63,7 @@ type AutoConnectData struct {
 	Obfuscate            bool      `json:"obfuscate,omitempty"`
 	DNS                  DNS       `json:"dns,omitempty"`
 	Allowlist            Allowlist `json:"whitelist,omitempty"`
+	PostquantumVpn       bool      `json:"postquantum_vpn"`
 }
 
 type DNS []string

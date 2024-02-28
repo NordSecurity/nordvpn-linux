@@ -55,6 +55,8 @@ const (
 	CodeDedicatedIPRenewError          int64 = 3041
 	CodeDedicatedIPNoServer            int64 = 3042
 	CodeDedicatedIPServiceButNoServers int64 = 3043
+	CodePqAndMeshnetSimultaneously     int64 = 3044
+	CodePqWitoughNordlynx              int64 = 3045
 )
 
 type ErrorWithCode struct {

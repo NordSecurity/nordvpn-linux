@@ -136,6 +136,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		Obfuscated:        cfg.AutoConnectData.Obfuscate,
 		OpenVPNVersion:    server.Version(),
 		VirtualLocation:   server.IsVirtualLocation(),
+		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist

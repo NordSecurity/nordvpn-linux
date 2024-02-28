@@ -639,3 +639,5 @@ func DrainStart(dbPath string) uint {
 func (s *Subscriber) NotifyVirtualLocation(enabled bool) error {
 	return nil
 }
+
+func (s *Subscriber) NotifyPostquantumVpn(bool) error { return nil }

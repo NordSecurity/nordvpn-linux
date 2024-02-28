@@ -58,6 +58,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
 	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.VirtualLocation))
+	fmt.Printf("Postquantum VPN: %+v\n", nstrings.GetBoolLabel(settings.PostquantumVpn))
 
 	displayAllowlist(settings.Allowlist)
 	return nil

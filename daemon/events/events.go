@@ -39,6 +39,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
 	)
 }
 
@@ -68,6 +69,7 @@ func NewEvents(
 	deviceLocation events.PublishSubcriber[core.Insights],
 	lanDiscovery events.PublishSubcriber[bool],
 	virtualLocation events.PublishSubcriber[bool],
+	postquantumVpn events.PublishSubcriber[bool],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -87,6 +89,7 @@ func NewEvents(
 			Defaults:             defaults,
 			LANDiscovery:         lanDiscovery,
 			VirtualLocation:      virtualLocation,
+			PostquantumVPN:       postquantumVpn,
 		},
 		Service: &ServiceEvents{
 			Connect:        connect,
@@ -128,6 +131,7 @@ type SettingsPublisher interface {
 	NotifyDefaults(any) error
 	NotifyLANDiscovery(bool) error
 	NotifyVirtualLocation(bool) error
+	NotifyPostquantumVpn(bool) error
 }
 
 type SettingsEvents struct {
@@ -147,6 +151,7 @@ type SettingsEvents struct {
 	Defaults             events.PublishSubcriber[any]
 	LANDiscovery         events.PublishSubcriber[bool]
 	VirtualLocation      events.PublishSubcriber[bool]
+	PostquantumVPN       events.PublishSubcriber[bool]
 }
 
 func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
@@ -166,6 +171,7 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Defaults.Subscribe(to.NotifyDefaults)
 	s.LANDiscovery.Subscribe(to.NotifyLANDiscovery)
 	s.VirtualLocation.Subscribe(to.NotifyVirtualLocation)
+	s.PostquantumVPN.Subscribe(to.NotifyPostquantumVpn)
 }
 
 type ServicePublisher interface {
@@ -221,6 +227,7 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Notify.Publish(!(cfg.UsersData.NotifyOff != nil && len(cfg.UsersData.NotifyOff) > 0))
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.VirtualLocation.Publish(cfg.VirtualLocation.Get())
+	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)
 }
 
 type MockPublisherSubscriber[T any] struct {

@@ -60,4 +60,5 @@ service Daemon {
   rpc SetIpv6(SetGenericRequest) returns (Payload);
   rpc ClaimOnlinePurchase(Empty) returns(ClaimOnlinePurchaseResponse);
   rpc SetVirtualLocation(SetGenericRequest) returns (Payload);
+  rpc SetPostQuantum(SetGenericRequest) returns (Payload);
 }

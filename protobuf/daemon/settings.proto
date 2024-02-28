@@ -36,4 +36,5 @@ message Settings {
   Allowlist allowlist = 16;
   bool obfuscate = 17;
   bool virtualLocation = 18;
+  bool postquantum_vpn = 19;
 }
