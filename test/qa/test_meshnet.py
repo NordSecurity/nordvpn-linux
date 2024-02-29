@@ -228,9 +228,9 @@ def test_exitnode_permissions(routing: bool,
     rules = sh.sudo.iptables("-S", "POSTROUTING", "-t", "nat")
 
     if routing:
-        assert f"-A POSTROUTING -s {peer_ip}/32 -o eth0 -m comment --comment nordvpn -j MASQUERADE" in rules
+        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" in rules
     else:
-        assert f"-A POSTROUTING -s {peer_ip}/32 -o eth0 -m comment --comment nordvpn -j MASQUERADE" not in rules
+        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" not in rules
 
 
 @pytest.mark.parametrize("lan_discovery", [True, False])
