@@ -146,16 +146,15 @@ MESHNET_ALIAS = [
     "meshnet",
     "mesh"
 ]
-    
 
-def get_peer_name(output: str, name_type: PeerName) -> str:
+def get_peer_name(peer: Peer, name_type: PeerName) -> str:
     match name_type:
         case PeerName.Hostname:
-            return get_this_device(output)
+            return peer.hostname
         case PeerName.Ip:
-            return get_this_device_ipv4(output)
+            return peer.ip
         case PeerName.Pubkey:
-            return get_this_device_pubkey(output)
+            return peer.public_key
 
 
 def add_peer(ssh_client: ssh.Ssh,
@@ -189,80 +188,20 @@ def add_peer(ssh_client: ssh.Ssh,
     sh.nordvpn.mesh.peer.refresh()
 
 
-def get_peers(output: str) -> list:
-    """Parses list of peer names from 'nordvpn meshnet peer list' output."""
-    output = output[output.find("Local Peers:"):]  # skip this device
-    peers = []
-    for line in output.split("\n"):
-        if "Hostname:" in line:
-            peers.append(strip_colors.sub('', line.split(" ")[-1]))
-    return peers
-
-
-def get_this_device(output: str):
-    """Parses current device hostname from 'nordvpn meshnet peer list' output."""
-    output_lines = output.split("\n")
-    for i, line in enumerate(output_lines):
-        if "This device:" in line:
-            for subline in output_lines[i + 1:]:
-                if "Hostname:" in subline:
-                    return strip_colors.sub('', subline.split(" ")[-1])
-    return None
-
-
-def get_this_device_ipv4(output: str):
-    """Parses current device ip from 'nordvpn meshnet peer list' output."""
-    output_lines = output.split("\n")
-    for i, line in enumerate(output_lines):
-        if "This device:" in line:
-            for subline in output_lines[i + 1:]:
-                if "IP:" in subline:
-                    return strip_colors.sub('', subline.split(" ")[-1])
-    return None
-
-
-def get_this_device_pubkey(output: str):
-    """Parses current device pubkey from 'nordvpn meshnet peer list' output."""
-    output_lines = output.split("\n")
-    for i, line in enumerate(output_lines):
-        if "This device:" in line:
-            for subline in output_lines[i + 1:]:
-                if "Public Key:" in subline:
-                    return strip_colors.sub('', subline.split(" ")[-1])
-    return None
-
-
 def remove_all_peers():
     """Removes all meshnet peers from local device."""
-    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}"  # convert to string, _tty_out false disables colors
-    for p in get_peers(output):
-        sh.nordvpn.mesh.peer.remove(p)
+    peer_list = parse_peer_list(sh.nordvpn.mesh.peer.list())
+
+    for peer in peer_list.get_all_internal_peers() + peer_list.get_all_external_peers():
+        sh.nordvpn.mesh.peer.remove(peer.hostname)
 
 
 def remove_all_peers_in_peer(ssh_client: ssh.Ssh):
     """Removes all meshnet peers from peer device."""
-    output = ssh_client.exec_command("nordvpn mesh peer list")
-    for p in get_peers(output):
-        ssh_client.exec_command(f"nordvpn mesh peer remove {p}")
+    peer_list = parse_peer_list(ssh_client.exec_command("nordvpn mesh peer list"))
 
-
-def is_peer_reachable(ssh_client: ssh.Ssh, retry: int = 5) -> bool:
-    """Returns True when ping to peer succeeds."""
-    output = ssh_client.exec_command("nordvpn mesh peer list")
-    peer_hostname = get_this_device(output)
-    i = 0
-    while i < retry:
-        try:
-            return "icmp_seq=" in sh.ping("-c", "1", peer_hostname)
-        except sh.ErrorReturnCode as e:
-            print(e.stdout)
-            print(e.stderr)
-            time.sleep(1)
-            i += 1
-    print(sh.nordvpn.mesh.peer.list())
-    output = ssh_client.exec_command("nordvpn mesh peer list")
-    print(output)
-    return False
+    for peer in peer_list.get_all_internal_peers() + peer_list.get_all_external_peers():
+        ssh_client.exec_command(f"nordvpn mesh peer remove {peer.hostname}")
 
 
 def get_sent_invites(output: str) -> list:
@@ -442,7 +381,7 @@ def get_clean_peer_list(peer_list: str):
     return output
 
 
-def populate_peer_list_object(output: str):
+def parse_peer_list(output: str):
     """ Converts output/meshnet peer list string to PeerList object. """
 
     def remove_text_before_and_keyword(input_string, keyword):
@@ -474,3 +413,22 @@ def populate_peer_list_object(output: str):
             peer_list_object.add_external_peer(peer_data)
 
     return peer_list_object
+
+
+def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, retry: int = 5) -> bool:
+    """Returns True when ping to peer succeeds."""
+    output = ssh_client.exec_command("nordvpn mesh peer list")
+    peer_hostname = peer.hostname
+    i = 0
+    while i < retry:
+        try:
+            return "icmp_seq=" in sh.ping("-c", "1", peer_hostname)
+        except sh.ErrorReturnCode as e:
+            print(e.stdout)
+            print(e.stderr)
+            time.sleep(1)
+            i += 1
+    print(sh.nordvpn.mesh.peer.list())
+    output = ssh_client.exec_command("nordvpn mesh peer list")
+    print(output)
+    return False
