@@ -17,6 +17,9 @@ func (c *cmd) Ping() error {
 		if strings.Contains(err.Error(), "permission denied") {
 			return internal.ErrSocketAccessDenied
 		}
+		if snapErr := retrieveSnapConnsError(err); snapErr != nil {
+			return err
+		}
 		return internal.ErrDaemonConnectionRefused
 	}
 

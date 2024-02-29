@@ -16,12 +16,12 @@ import (
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
+	snappb "github.com/NordSecurity/nordvpn-linux/snapconf/pb"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/term"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -903,7 +903,6 @@ func formatError(e error) error {
 	return errors.New(capitalized)
 }
 
-// LoaderInterceptor is responsible for deciding whether to show loader or not
 type LoaderInterceptor struct {
 	enabled bool
 }
@@ -923,43 +922,44 @@ func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string,
 func (i *LoaderInterceptor) StreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string,
 	streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	stream, err := streamer(ctx, desc, cc, method, opts...)
-	return cliStream{inner: stream, loaderEnabled: i.enabled}, err
+	return loaderStream{ClientStream: stream, loaderEnabled: i.enabled}, err
 }
 
-type cliStream struct {
-	inner         grpc.ClientStream
+// retrieveSnapConnsError checks whether ny of the details inside gRPC error is a
+// `SnapPermissionError` and returns pointer to it. Otherwise, returns nil
+func retrieveSnapConnsError(err error) *snappb.ErrMissingConnections {
+	s := status.Convert(err)
+	for _, d := range s.Details() {
+		permError, ok := d.(*snappb.ErrMissingConnections)
+		if ok {
+			return permError
+		}
+	}
+	return nil
+}
+
+func formatSnapMissingConnsErr(err *snappb.ErrMissingConnections) string {
+	permissionStr := ""
+	for _, permission := range err.MissingConnections {
+		permissionStr += fmt.Sprintf("sudo snap connect nordvpn:%s\n", permission)
+	}
+	return fmt.Sprintf(MsgNoSnapPermissions, permissionStr)
+}
+
+type loaderStream struct {
+	grpc.ClientStream
 	loaderEnabled bool
 }
 
-func (s cliStream) Header() (metadata.MD, error) {
-	return s.inner.Header()
-}
-
-func (s cliStream) Trailer() metadata.MD {
-	return s.inner.Trailer()
-}
-
-func (s cliStream) CloseSend() error {
-	return s.inner.CloseSend()
-}
-
-func (s cliStream) Context() context.Context {
-	return s.inner.Context()
-}
-
-func (s cliStream) SendMsg(m interface{}) error {
-	return s.inner.SendMsg(m)
-}
-
-func (s cliStream) RecvMsg(m interface{}) error {
+func (s loaderStream) RecvMsg(m interface{}) error {
 	if s.loaderEnabled {
 		loader := NewLoader()
 		loader.Start()
-		err := s.inner.RecvMsg(m)
+		err := s.ClientStream.RecvMsg(m)
 		loader.Stop()
 		return err
 	}
-	return s.inner.RecvMsg(m)
+	return s.ClientStream.RecvMsg(m)
 }
 
 func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) error {
@@ -972,6 +972,10 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 		}
 		err = c.Ping()
 		if err != nil {
+			if snapErr := retrieveSnapConnsError(err); snapErr != nil {
+				color.Red(formatSnapMissingConnsErr(snapErr))
+				os.Exit(1)
+			}
 			switch {
 			case errors.Is(err, ErrUpdateAvailable):
 				color.Yellow(fmt.Sprintf(UpdateAvailableMessage))
