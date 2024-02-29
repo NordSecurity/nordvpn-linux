@@ -54,6 +54,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"golang.org/x/net/netutil"
 
 	"google.golang.org/grpc"
@@ -450,7 +451,16 @@ func main() {
 		fileshareImplementation,
 	)
 
-	s := grpc.NewServer(grpc.Creds(&internal.UnixSocketCredentials{}))
+	opts := []grpc.ServerOption{
+		grpc.Creds(&internal.UnixSocketCredentials{}),
+	}
+	if snapconf.IsUnderSnap() {
+		checker := snapChecker(errSubject)
+		opts = append(opts, grpc.UnaryInterceptor(checker.UnaryInterceptor))
+		opts = append(opts, grpc.StreamInterceptor(checker.StreamInterceptor))
+	}
+	s := grpc.NewServer(opts...)
+
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
 
@@ -473,7 +483,7 @@ func main() {
 			if err != nil {
 				log.Fatalf("Error on listening to UNIX domain socket: %s\n", err)
 			}
-			if os.Getenv(internal.InSnapOperation) != "" {
+			if snapconf.IsUnderSnap() {
 				internal.UpdateSocketFilePermissions(ConnURL)
 			}
 			// limit count of requests on socket at the same time from
@@ -549,4 +559,23 @@ func main() {
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
+}
+
+func snapChecker(publisherErr events.Publisher[error]) *snapconf.ConnChecker {
+	return snapconf.NewConnChecker(
+		[]snapconf.Interface{
+			snapconf.InterfaceNetwork,
+			snapconf.InterfaceNetworkBind,
+			snapconf.InterfaceNetworkControl,
+			snapconf.InterfaceFirewallControl,
+		},
+		// TODO: Add nordfileshared requirements
+		[]snapconf.Interface{
+			snapconf.InterfaceNetwork,
+			snapconf.InterfaceNetworkBind,
+			snapconf.InterfaceNetworkControl,
+			snapconf.InterfaceFirewallControl,
+		},
+		publisherErr,
+	)
 }

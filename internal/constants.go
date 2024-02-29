@@ -20,9 +20,6 @@ const (
 	// ListenFDNames defines systemDFile descriptors names env key
 	ListenFDNames = "LISTEN_FDNAMES"
 
-	// InSnapOperation indicates we are runnning inside Snap VM
-	InSnapOperation = "SNAP_NAME"
-
 	// Proto defines protocol to be used
 	Proto = "unix"
 

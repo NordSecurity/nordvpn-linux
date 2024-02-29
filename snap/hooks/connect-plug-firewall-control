@@ -1,0 +1,4 @@
+#!/bin/sh
+if [ "$(cat ${SNAP_COMMON}/connections/firewall-control 2> /dev/null)" -ne "1" ]; then
+	snapctl restart nordvpn.nordvpnd
+fi

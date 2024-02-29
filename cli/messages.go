@@ -327,4 +327,6 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareProgressFinishedErrors = "File transfer [%s] completed. Some of the files have failed to transfer."
 	MsgFileshareProgressCanceledByPeer = "File transfer [%s] canceled by peer."
 	MsgFileshareProgressCanceled       = "File transfer [%s] canceled by other process."
+
+	MsgNoSnapPermissions = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\n%s\nAfter doing so, continue using the application."
 )
