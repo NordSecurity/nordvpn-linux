@@ -1,0 +1,94 @@
+name: nordvpn
+base: core22
+version: '3.17.0'
+summary: TODO
+description: |
+  TODO
+
+grade: devel
+confinement: strict
+
+apps:
+  nordvpn:
+    command: bin/nordvpn
+    environment:
+      PREFIX_COMMON: $SNAP_COMMON
+  nordvpnd:
+    command: bin/nordvpnd
+    daemon: simple
+    environment:
+      PREFIX_COMMON: $SNAP_COMMON
+      PREFIX_DATA: $SNAP_DATA
+      PREFIX_STATIC: $SNAP
+    plugs:
+      - network
+      - network-bind
+      - network-control
+      - firewall-control
+parts:
+  rustup:
+    plugin: nil
+    # TODO: checksum validation
+    override-build: |
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  foss:
+    after:
+      - rustup
+    plugin: rust
+    source-type: local
+    source: .
+    build-environment:
+      - WORKDIR: $(pwd)
+      - ARCHS: ${SNAPCRAFT_TARGET_ARCH}
+    override-build: |
+      ./build/foss/build.sh
+  openvpn:
+    plugin: nil
+    source: ./build/openvpn
+    source-type: local
+    # TODO: define build dependencies and/or plugin. This only works because other parts
+    # install their dependencies
+    build-packages:
+      - iproute2
+    build-environment:
+      - WORKDIR: $(pwd)
+      - ARCH: ${SNAPCRAFT_TARGET_ARCH}
+    # TODO: don't hardcode OpenVPN version
+    override-build: |
+      ./check_dependencies.sh
+      ./build.sh
+      mkdir -p ${SNAPCRAFT_PART_INSTALL}/var/lib/nordvpn
+      cp bin/deps/openvpn/${SNAPCRAFT_TARGET_ARCH}/2.5.8/openvpn ${SNAPCRAFT_PART_INSTALL}/var/lib/nordvpn/openvpn
+      rm -rf ./build/openvpn/patches ./build/openvpn/tarballs
+    stage:
+      - var/lib/nordvpn/openvpn
+
+  nordvpn:
+    after:
+      - foss
+      - openvpn
+    plugin: go
+    source-type: local
+    source: .
+    build-snaps:
+      - go
+    build-packages:
+      - git
+      - wget
+      - libxml2-dev
+    build-environment:
+      - WORKDIR: $(pwd)
+      - ARCH: ${SNAPCRAFT_TARGET_ARCH}
+      - SALT: none
+        # TODO: Set correct value
+      - FEATURES: drop
+        # TODO: Set correct value
+      - CGO_LDFLAGS: -L/root/parts/foss/build/bin/deps/foss/${SNAPCRAFT_TARGET_ARCH}/latest/
+    stage-packages:
+      - wireguard-tools
+      - libxml2
+      - e2fsprogs
+    override-build: |
+      ./ci/compile.sh
+      mkdir -p ${SNAPCRAFT_PART_INSTALL}/bin
+      cp -r bin/amd64/* ${SNAPCRAFT_PART_INSTALL}/bin
