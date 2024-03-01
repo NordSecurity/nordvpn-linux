@@ -1,8 +1,8 @@
 package cli
 
 const (
-	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s %s --help' to see the options."
-	ArgumentParsingError = "The command you entered is not valid. Enter '%s %s --help' to see the options."
+	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s --help' to see the options."
+	ArgumentParsingError = "The command you entered is not valid. Enter '%s --help' to see the options."
 
 	LoginSuccess          = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
 	LogoutSuccess         = "You are logged out."
