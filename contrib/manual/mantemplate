@@ -278,7 +278,7 @@ $ \fBnordvpn allowlist remove all\fR
 .RS 4
 .nf
 $ \fBnordvpn set dns off\fR
-$ \fBnordvpn set dns 1.1.1.1 8.8.8.8\fR
+$ \fBnordvpn set dns 1.1.1.1 1.0.0.1\fR
 .fi
 .RE
 
