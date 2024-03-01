@@ -25,7 +25,7 @@ func TestCitiesList(t *testing.T) {
 	}{
 		{
 			name:          "missing country name",
-			expectedError: formatError(fmt.Errorf("The command you entered is not valid. Enter 'cli.test  --help' to see the options.")),
+			expectedError: formatError(fmt.Errorf("The command you entered is not valid. Enter 'cli.test --help' to see the options.")),
 		},
 		{
 			name:          "no cities data",

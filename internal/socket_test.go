@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"net"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
@@ -64,4 +66,33 @@ func Test_authenticateUser(t *testing.T) {
 			}
 		})
 	}
+}
+
+type MockNetConn struct{}
+
+func (c MockNetConn) Read(b []byte) (n int, err error)   { return 0, nil }
+func (c MockNetConn) Write(b []byte) (n int, err error)  { return 0, nil }
+func (c MockNetConn) Close() error                       { return nil }
+func (c MockNetConn) LocalAddr() net.Addr                { return nil }
+func (c MockNetConn) RemoteAddr() net.Addr               { return nil }
+func (c MockNetConn) SetDeadline(t time.Time) error      { return nil }
+func (c MockNetConn) SetReadDeadline(t time.Time) error  { return nil }
+func (c MockNetConn) SetWriteDeadline(t time.Time) error { return nil }
+
+type MockWrappConnection struct{ net.Conn }
+
+func Test_ExtractConnection(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// test with object
+	c1 := MockNetConn{}
+	c2 := MockWrappConnection{Conn: c1}
+	c3 := extractConnection(c2)
+	assert.NotNil(t, c3)
+
+	// test with pointer
+	var c01 net.Conn = &MockNetConn{}
+	c02 := &MockWrappConnection{Conn: c01}
+	c03 := extractConnection(c02)
+	assert.NotNil(t, c03)
 }

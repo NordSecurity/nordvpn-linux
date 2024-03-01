@@ -54,6 +54,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"golang.org/x/net/netutil"
 
 	"google.golang.org/grpc"
 )
@@ -311,15 +312,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	devices, err := device.ListPhysical()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	ifaceNames := []string{}
-	for _, d := range devices {
-		ifaceNames = append(ifaceNames, d.Name)
-	}
-
 	mesh, err := meshnetImplementation(vpnFactory)
 	if err != nil {
 		log.Fatalln(err)
@@ -365,7 +357,7 @@ func main() {
 		dnsHostSetter,
 		vpnRouter,
 		meshRouter,
-		exitnode.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
+		exitnode.NewServer(func(command string, arg ...string) ([]byte, error) {
 			return exec.Command(command, arg...).CombinedOutput()
 		}, cfg.AutoConnectData.Allowlist,
 			kernel.NewSysctlSetter(
@@ -458,7 +450,7 @@ func main() {
 		fileshareImplementation,
 	)
 
-	s := grpc.NewServer(grpc.Creds(internal.UnixSocketCredentials{}))
+	s := grpc.NewServer(grpc.Creds(&internal.UnixSocketCredentials{}))
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
 
@@ -484,7 +476,9 @@ func main() {
 			if os.Getenv(internal.InSnapOperation) != "" {
 				internal.UpdateSocketFilePermissions(ConnURL)
 			}
-			listener = internal.NewLimitListener(listener)
+			// limit count of requests on socket at the same time from
+			// non-authorized users to prevent from crashing daemon
+			listener = netutil.LimitListener(listener, 100)
 		case sockTCP:
 			listener, err = net.Listen("tcp", ConnURL)
 			if err != nil {

@@ -23,20 +23,19 @@ const (
 
 type runCommandFunc func(command string, arg ...string) ([]byte, error)
 
-func enableMasquerading(peerAddress string, intfNames []string, commandFunc runCommandFunc) error {
-	for _, intfName := range intfNames {
-		// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 -o eth0 -j MASQUERADE -m comment --comment "exitnode"
-		args := fmt.Sprintf(
-			"-t nat -A POSTROUTING -s %s -o %s -j MASQUERADE -m comment --comment %s",
-			peerAddress,
-			intfName,
-			msqRuleComment,
-		)
-		// #nosec G204 -- input is properly sanitized
-		out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
-		if err != nil {
-			return fmt.Errorf("iptables adding masquerading rule: %w: %s", err, string(out))
-		}
+func enableMasquerading(peerAddress string, commandFunc runCommandFunc) error {
+	// reed: what comes from meshnet and goes outside meshnet should be translated
+	// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE
+	args := fmt.Sprintf(
+		"-t nat -A POSTROUTING -s %s ! -d %s -j MASQUERADE -m comment --comment %s",
+		peerAddress,
+		meshSrcSubnet,
+		msqRuleComment,
+	)
+	// #nosec G204 -- input is properly sanitized
+	out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
+	if err != nil {
+		return fmt.Errorf("iptables adding masquerading rule: %w: %s", err, string(out))
 	}
 	return nil
 }
@@ -193,7 +192,7 @@ func clearExitnodeForwardRules(commandFunc runCommandFunc) error {
 	return nil
 }
 
-func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc runCommandFunc) error {
+func resetPeersTraffic(peers []TrafficPeer, commandFunc runCommandFunc) error {
 	if err := clearMasquerading(commandFunc); err != nil {
 		return fmt.Errorf("clearing masquerade rules: %w", err)
 	}
@@ -239,7 +238,7 @@ func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc
 
 	for _, peer := range peers {
 		if peer.Routing {
-			if err := enableMasquerading(peer.IP.String(), interfaceNames, commandFunc); err != nil {
+			if err := enableMasquerading(peer.IP.String(), commandFunc); err != nil {
 				return fmt.Errorf("enabling masquerading for peer: %w", err)
 			}
 		}

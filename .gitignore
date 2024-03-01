@@ -12,8 +12,9 @@ build/*/target/
 
 # Openvpn
 build/openvpn/*
-!build/openvpn/check_dependencies.sh
 !build/openvpn/build.sh
+!build/openvpn/check_dependencies.sh
+!build/openvpn/env.sh
 
 # Linux packages
 *.deb
