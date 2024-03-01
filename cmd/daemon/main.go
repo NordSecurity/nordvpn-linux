@@ -313,6 +313,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	devices, err := device.ListPhysical()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	ifaceNames := []string{}
+	for _, d := range devices {
+		ifaceNames = append(ifaceNames, d.Name)
+	}
+
 	mesh, err := meshnetImplementation(vpnFactory)
 	if err != nil {
 		log.Fatalln(err)
@@ -358,7 +367,7 @@ func main() {
 		dnsHostSetter,
 		vpnRouter,
 		meshRouter,
-		exitnode.NewServer(func(command string, arg ...string) ([]byte, error) {
+		exitnode.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
 			return exec.Command(command, arg...).CombinedOutput()
 		}, cfg.AutoConnectData.Allowlist,
 			kernel.NewSysctlSetter(

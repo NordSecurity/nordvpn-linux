@@ -27,6 +27,7 @@ type Node interface {
 // Server struct for server side
 type Server struct {
 	mu               sync.Mutex
+	interfaceNames   []string // need to remember on which interface we started
 	runCommandFunc   runCommandFunc
 	sysctlSetter     kernel.SysctlSetter
 	peers            mesh.MachinePeers
@@ -35,8 +36,9 @@ type Server struct {
 }
 
 // NewServer create & initialize new Server
-func NewServer(commandFunc runCommandFunc, allowlist config.Allowlist, sysctlSetter kernel.SysctlSetter) *Server {
+func NewServer(interfaceNames []string, commandFunc runCommandFunc, allowlist config.Allowlist, sysctlSetter kernel.SysctlSetter) *Server {
 	return &Server{
+		interfaceNames:   interfaceNames,
 		runCommandFunc:   commandFunc,
 		sysctlSetter:     sysctlSetter,
 		allowlistManager: newAllowlist(commandFunc, allowlist),
@@ -94,7 +96,7 @@ func (en *Server) resetPeers(lanAvailable bool) error {
 		}
 	}
 
-	if err := resetPeersTraffic(trafficPeers, en.runCommandFunc); err != nil {
+	if err := resetPeersTraffic(trafficPeers, en.interfaceNames, en.runCommandFunc); err != nil {
 		return err
 	}
 
