@@ -192,7 +192,7 @@ func clearExitnodeForwardRules(commandFunc runCommandFunc) error {
 	return nil
 }
 
-func resetPeersTraffic(peers []TrafficPeer, commandFunc runCommandFunc) error {
+func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc runCommandFunc) error {
 	if err := clearMasquerading(commandFunc); err != nil {
 		return fmt.Errorf("clearing masquerade rules: %w", err)
 	}

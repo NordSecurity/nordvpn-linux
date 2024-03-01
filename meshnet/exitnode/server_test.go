@@ -104,6 +104,8 @@ func TestResetPeersExitnode(t *testing.T) {
 		},
 	}
 
+	interfaces := []string{"eth0", "eth1"}
+
 	commandExecutor := newCommandExecutorMock(t)
 	commandExecutor.mockedOutputs["iptables -t nat -S POSTROUTING"] = strings.Join(
 		[]string{
@@ -130,7 +132,7 @@ func TestResetPeersExitnode(t *testing.T) {
 		}, "\n",
 	)
 
-	server := NewServer(commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
+	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
 
 	server.ResetPeers(peers, true)
 
@@ -175,8 +177,9 @@ func TestResetPeers_LANDiscoveryEnabled(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	peers := getPeers()
+	interfaces := []string{"eth0", "eth1"}
 	commandExecutor := CommandExecutorMock{}
-	server := NewServer(commandExecutor.Execute, config.Allowlist{
+	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{
 		Subnets: config.Subnets{"192.168.0.1/32": true},
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	}, &mock.SysctlSetterMock{})
@@ -225,8 +228,9 @@ func TestResetPeers_LANDiscoveryDisabled(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	peers := getPeers()
+	interfaces := []string{"eth0", "eth1"}
 	commandExecutor := CommandExecutorMock{}
-	server := NewServer(commandExecutor.Execute, config.Allowlist{
+	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{
 		Subnets: config.Subnets{"192.168.0.1/32": true},
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	}, &mock.SysctlSetterMock{})
@@ -271,6 +275,7 @@ func TestSetAllowlist(t *testing.T) {
 
 	peers := getPeers()
 	initialNetwork := "192.168.0.0/16"
+	interfaces := []string{"eth0", "eth1"}
 	commandExecutor := CommandExecutorMock{}
 
 	tests := []struct {
@@ -313,6 +318,7 @@ func TestSetAllowlist(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			server := Server{
+				interfaceNames: interfaces,
 				runCommandFunc: commandExecutor.Execute,
 				allowlistManager: newAllowlist(commandExecutor.Execute, config.Allowlist{
 					Subnets: config.Subnets{initialNetwork: true},
@@ -397,7 +403,9 @@ func TestDisable(t *testing.T) {
 		}, "\n",
 	)
 
-	server := NewServer(commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
+	interfaces := []string{"eth0", "eth1"}
+
+	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
 	server.Disable()
 
 	expectedCommands := []string{

@@ -45,7 +45,8 @@ func TestFiltering(t *testing.T) {
 
 	ip := netip.MustParsePrefix("100.77.1.1/32")
 
-	err = resetPeersTraffic([]TrafficPeer{{ip, true, false}}, commandFunc)
+	interfaceNames := []string{"eth0"}
+	err = resetPeersTraffic([]TrafficPeer{{ip, true, false}}, interfaceNames, commandFunc)
 	assert.NoError(t, err)
 
 	rc, err = checkFilteringRule(ip.String(), commandFunc)
@@ -194,9 +195,11 @@ func TestResetPeersTraffic(t *testing.T) {
 		return true
 	}
 
+	interfaceNames := []string{"eth0"}
+
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%+v", test.peers), func(t *testing.T) {
-			err = resetPeersTraffic(test.peers, commandFunc)
+			err = resetPeersTraffic(test.peers, interfaceNames, commandFunc)
 			assert.NoError(t, err)
 
 			for i, peer := range test.peers {
