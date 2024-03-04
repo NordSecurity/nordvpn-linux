@@ -23,11 +23,6 @@ type notifyRequest func(
 	responseSummary string,
 ) uint32
 
-// (	hostname string,
-// 	requestLimits string,
-// 	requestOffset string,
-// ) uint
-
 func noSuchEndpoint(
 	eventDuration int32,
 	eventStatus moose.NordvpnappEventStatus,
