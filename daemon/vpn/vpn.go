@@ -42,4 +42,5 @@ type ServerData struct {
 	NordLynxPublicKey string
 	Obfuscated        bool
 	OpenVPNVersion    string
+	PostQuantum       bool
 }

@@ -123,6 +123,14 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
+	if cfg.AutoConnectData.PostquantumVpn {
+		return &pb.MeshnetResponse{
+			Response: &pb.MeshnetResponse_MeshnetError{
+				MeshnetError: pb.MeshnetErrorCode_CONFLICT_WITH_PQ,
+			},
+		}, nil
+	}
+
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
 	if err != nil {

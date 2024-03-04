@@ -24,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
+	"github.com/google/uuid"
 )
 
 type state struct {
@@ -84,6 +85,7 @@ type Libtelio struct {
 	currentPrivateKey      string
 	currentServerIP        netip.Addr
 	currentServerPublicKey string
+	currentServerPQ        bool
 	isMeshEnabled          bool
 	meshnetMap             string
 	isKernelDisabled       bool
@@ -240,7 +242,7 @@ func (l *Libtelio) Start(
 		return fmt.Errorf("opening the tunnel: %w", err)
 	}
 
-	if err = l.connect(serverData.IP, serverData.NordLynxPublicKey); err != nil {
+	if err = l.connect(serverData.IP, serverData.NordLynxPublicKey, serverData.PostQuantum); err != nil {
 		return err
 	}
 
@@ -249,21 +251,34 @@ func (l *Libtelio) Start(
 	l.currentPrivateKey = creds.NordLynxPrivateKey
 	l.currentServerIP = serverData.IP
 	l.currentServerPublicKey = serverData.NordLynxPublicKey
+	l.currentServerPQ = serverData.PostQuantum
 	return nil
 }
 
 // connect to the VPN server
-func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
+func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string, postQuantum bool) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	// Start monitoring connection events before connecting to not miss any
 	isConnectedC := isConnected(ctx, l.events, serverPublicKey)
 
-	if err := toError(l.lib.ConnectToExitNode(
-		serverPublicKey,
-		"0.0.0.0/0",
-		net.JoinHostPort(serverIP.String(), "51820"),
-	)); err != nil {
+	var res teliogo.Enum_SS_telio_result
+	if postQuantum {
+		res = l.lib.ConnectToExitNodePostquantum(
+			uuid.NewString(),
+			serverPublicKey,
+			"0.0.0.0/0",
+			net.JoinHostPort(serverIP.String(), "51820"),
+		)
+	} else {
+		res = l.lib.ConnectToExitNode(
+			serverPublicKey,
+			"0.0.0.0/0",
+			net.JoinHostPort(serverIP.String(), "51820"),
+		)
+	}
+
+	if err := toError(res); err != nil {
 		if !l.isMeshEnabled {
 			// only close the tunnel when there was VPN connect problem
 			// and meshnet is not active
@@ -375,7 +390,7 @@ func (l *Libtelio) Enable(ip netip.Addr, privateKey string) (err error) {
 		}
 
 		// Re-connect to the VPN server
-		if err = l.connect(l.currentServerIP, l.currentServerPublicKey); err != nil {
+		if err = l.connect(l.currentServerIP, l.currentServerPublicKey, l.currentServerPQ); err != nil {
 			return fmt.Errorf("reconnecting to server: %w", err)
 		}
 	}
@@ -422,11 +437,12 @@ func (l *Libtelio) NetworkChanged() error {
 		if l.active {
 			serverIP := l.currentServerIP
 			serverPublicKey := l.currentServerPublicKey
+			serverPQ := l.currentServerPQ
 			if err := l.disconnect(); err != nil {
 				return err
 			}
 
-			if err := l.connect(serverIP, serverPublicKey); err != nil {
+			if err := l.connect(serverIP, serverPublicKey, serverPQ); err != nil {
 				return err
 			}
 		}

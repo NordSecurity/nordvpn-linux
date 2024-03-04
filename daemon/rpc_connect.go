@@ -148,6 +148,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		NordLynxPublicKey: server.NordLynxPublicKey,
 		Obfuscated:        cfg.AutoConnectData.Obfuscate,
 		OpenVPNVersion:    server.Version(),
+		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
