@@ -196,7 +196,9 @@ func (ovpn *OpenVPN) stop() error {
 
 	if ovpn.process.Process != nil {
 		if err := ovpn.process.Wait(); err != nil {
-			return err
+			// Don't return here as this could've failed due to non zero return code.
+			// This would result in broken ovpn state
+			log.Println(internal.ErrorPrefix, "Error on waiting for OpenVPN to stop:", err)
 		}
 
 		if err := ovpn.manager.Close(); err != nil {

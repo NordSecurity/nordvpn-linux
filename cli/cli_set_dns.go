@@ -24,7 +24,7 @@ Supported values for <disabled>: 0, false, disable, off, disabled
 Example: nordvpn set dns off
 
 Arguments <servers> is a list of IP addresses separated by space
-Example: nordvpn set dns 1.1.1.1 8.8.8.8
+Example: nordvpn set dns 1.1.1.1 1.0.0.1
 
 Limits:
   Can set up to 3 DNS servers

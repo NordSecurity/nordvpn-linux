@@ -27,10 +27,6 @@ func (r *RPC) SetPostQuantum(ctx context.Context, in *pb.SetGenericRequest) (*pb
 		return &pb.Payload{Type: internal.CodePqWitoughNordlynx}, nil
 	}
 
-	if cfg.AutoConnect && in.GetEnabled() {
-		//TODO(msz): validate that server supports PQ
-	}
-
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.AutoConnectData.PostquantumVpn = in.GetEnabled()
 		return c
