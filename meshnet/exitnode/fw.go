@@ -24,7 +24,7 @@ const (
 type runCommandFunc func(command string, arg ...string) ([]byte, error)
 
 func enableMasquerading(peerAddress string, commandFunc runCommandFunc) error {
-	// reed: what comes from meshnet and goes outside meshnet should be translated
+	// read: what comes from meshnet and goes outside meshnet should be translated
 	// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE
 	args := fmt.Sprintf(
 		"-t nat -A POSTROUTING -s %s ! -d %s -j MASQUERADE -m comment --comment %s",
