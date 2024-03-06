@@ -484,7 +484,10 @@ func main() {
 				log.Fatalf("Error on listening to UNIX domain socket: %s\n", err)
 			}
 			if snapconf.IsUnderSnap() {
-				internal.UpdateSocketFilePermissions(ConnURL)
+				internal.UpdateFilePermissions(
+					ConnURL,
+					internal.PermUserRWGroupRWOthersRW,
+				)
 			}
 			// limit count of requests on socket at the same time from
 			// non-authorized users to prevent from crashing daemon
