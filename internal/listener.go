@@ -30,7 +30,7 @@ func (l *LimitListener) Accept() (net.Conn, error) {
 		return nil, err
 	}
 	// verify a requesting user
-	_, err = getUnixCreds(conn)
+	_, err = getUnixCreds(conn, DaemonAuthenticator{})
 	if err != nil {
 		return nil, err
 	}

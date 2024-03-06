@@ -36,27 +36,51 @@ func Test_authenticateUser(t *testing.T) {
 	// created after install if it is a host system) and this user
 	// should belong to the `nordvpn` group.
 	tests := []struct {
-		name    string
-		uid     int
-		grps    []string
-		wantErr bool
+		name          string
+		uid           int
+		grps          []string
+		authenticator SocketAuthenticator
+		wantErr       bool
 	}{
 		{
-			name:    "test1: existing user id 1000",
-			uid:     1000,
-			grps:    []string{"nordvpn"},
-			wantErr: false,
+			name:          "test1: existing user id 1000",
+			uid:           1000,
+			grps:          []string{"nordvpn"},
+			wantErr:       false,
+			authenticator: DaemonAuthenticator{},
 		},
 		{
-			name:    "test2: non existing user",
-			uid:     9000,
-			grps:    []string{"nordvpn"},
-			wantErr: true,
+			name:          "test2: non existing user",
+			uid:           9000,
+			grps:          []string{"nordvpn"},
+			wantErr:       true,
+			authenticator: DaemonAuthenticator{},
+		},
+		{
+			name:          "test3: existing user id 1000, fileshare authentication",
+			uid:           1000,
+			grps:          []string{"nordvpn"},
+			wantErr:       false,
+			authenticator: FileshareAuthenticator{controllingUserUUID: 1000},
+		},
+		{
+			name:          "test4: non exisiting user, fileshare authentication",
+			uid:           9000,
+			grps:          []string{"nordvpn"},
+			wantErr:       true,
+			authenticator: FileshareAuthenticator{controllingUserUUID: 1000},
+		},
+		{
+			name:          "test5: non controlling user, fileshare authentication",
+			uid:           1000,
+			grps:          []string{"nordvpn"},
+			wantErr:       true,
+			authenticator: FileshareAuthenticator{controllingUserUUID: 2000},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := authenticateUser(&unix.Ucred{Uid: uint32(tt.uid)}, tt.grps)
+			err := tt.authenticator.Authenticate(&unix.Ucred{Uid: uint32(tt.uid)})
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

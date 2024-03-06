@@ -40,6 +40,7 @@ type Server struct {
 	filesystem    Filesystem
 	osInfo        OsInfo
 	listChunkSize int
+	shutdownChan  chan<- struct{}
 }
 
 // NewServer is a default constructor for a fileshare server
@@ -50,6 +51,7 @@ func NewServer(
 	filesystem Filesystem,
 	osInfo OsInfo,
 	listChunkSize int,
+	shutdownChan chan<- struct{},
 ) *Server {
 	return &Server{
 		fileshare:     fileshare,
@@ -58,6 +60,7 @@ func NewServer(
 		filesystem:    filesystem,
 		osInfo:        osInfo,
 		listChunkSize: listChunkSize,
+		shutdownChan:  shutdownChan,
 	}
 }
 
@@ -156,6 +159,12 @@ func (s *Server) getPeers() (map[string]*meshpb.Peer, map[string]*meshpb.Peer, e
 
 // Ping rpc
 func (*Server) Ping(ctx context.Context, _ *pb.Empty) (*pb.Empty, error) {
+	return &pb.Empty{}, nil
+}
+
+// Stop rpc
+func (s *Server) Stop(ctx context.Context, _ *pb.Empty) (*pb.Empty, error) {
+	s.shutdownChan <- struct{}{}
 	return &pb.Empty{}, nil
 }
 
