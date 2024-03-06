@@ -327,4 +327,6 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareProgressFinishedErrors = "File transfer [%s] completed. Some of the files have failed to transfer."
 	MsgFileshareProgressCanceledByPeer = "File transfer [%s] canceled by peer."
 	MsgFileshareProgressCanceled       = "File transfer [%s] canceled by other process."
+
+	MsgFileshareStartedByOtherUser = "A file sharing session is already in progress under another user account. To use the feature, restart Meshnet and enter your file sharing command again. "
 )

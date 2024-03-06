@@ -458,7 +458,7 @@ func main() {
 		fileshareImplementation,
 	)
 
-	s := grpc.NewServer(grpc.Creds(internal.UnixSocketCredentials{}))
+	s := grpc.NewServer(grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())))
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
 
