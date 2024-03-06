@@ -7,6 +7,8 @@ import (
 	norddropgo "github.com/NordSecurity/libdrop/norddrop/ffi/bindings/linux/go"
 )
 
+var ErrLAddressAlreadyInUse = errors.New("address already in use")
+
 // toError conversion for drop result type
 func toError(result norddropgo.Enum_SS_norddrop_result) error {
 	switch result {
@@ -25,7 +27,7 @@ func toError(result norddropgo.Enum_SS_norddrop_result) error {
 	case norddropgo.NORDDROPRESNOTSTARTED:
 		return errors.New("the libdrop instance is not started yet")
 	case norddropgo.NORDDROPRESADDRINUSE:
-		return errors.New("address already in use")
+		return ErrLAddressAlreadyInUse
 	case norddropgo.NORDDROPRESINSTANCESTART:
 		return errors.New("failed to start the libdrop instance")
 	case norddropgo.NORDDROPRESINSTANCESTOP:

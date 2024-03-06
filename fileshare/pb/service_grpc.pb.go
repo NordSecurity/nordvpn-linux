@@ -24,6 +24,8 @@ const _ = grpc.SupportPackageIsVersion7
 type FileshareClient interface {
 	// Ping to test connection between CLI and Fileshare daemon
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	// Stop
+	Stop(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// Send a file to a peer
 	Send(ctx context.Context, in *SendRequest, opts ...grpc.CallOption) (Fileshare_SendClient, error)
 	// Accept a request from another peer to send you a file
@@ -51,6 +53,15 @@ func NewFileshareClient(cc grpc.ClientConnInterface) FileshareClient {
 func (c *fileshareClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/filesharepb.Fileshare/Ping", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileshareClient) Stop(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/filesharepb.Fileshare/Stop", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +206,8 @@ func (c *fileshareClient) PurgeTransfersUntil(ctx context.Context, in *PurgeTran
 type FileshareServer interface {
 	// Ping to test connection between CLI and Fileshare daemon
 	Ping(context.Context, *Empty) (*Empty, error)
+	// Stop
+	Stop(context.Context, *Empty) (*Empty, error)
 	// Send a file to a peer
 	Send(*SendRequest, Fileshare_SendServer) error
 	// Accept a request from another peer to send you a file
@@ -218,6 +231,9 @@ type UnimplementedFileshareServer struct {
 
 func (UnimplementedFileshareServer) Ping(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedFileshareServer) Stop(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
 func (UnimplementedFileshareServer) Send(*SendRequest, Fileshare_SendServer) error {
 	return status.Errorf(codes.Unimplemented, "method Send not implemented")
@@ -267,6 +283,24 @@ func _Fileshare_Ping_Handler(srv interface{}, ctx context.Context, dec func(inte
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(FileshareServer).Ping(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Fileshare_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileshareServer).Stop(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/filesharepb.Fileshare/Stop",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileshareServer).Stop(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -416,6 +450,10 @@ var Fileshare_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _Fileshare_Ping_Handler,
+		},
+		{
+			MethodName: "Stop",
+			Handler:    _Fileshare_Stop_Handler,
 		},
 		{
 			MethodName: "Cancel",
