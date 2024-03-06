@@ -365,6 +365,7 @@ func TestSend(t *testing.T) {
 			mockFs,
 			&mockOsInfo{},
 			0,
+			nil,
 		)
 
 		sendServer := mockSendServer{}
@@ -475,6 +476,7 @@ func TestSendDirectoryFilesystemErrorHandling(t *testing.T) {
 			mockFs,
 			&mockOsInfo{},
 			0,
+			nil,
 		)
 
 		sendServer := mockSendServer{}
@@ -699,7 +701,8 @@ func TestAccept(t *testing.T) {
 			&mockMeshClient{isEnabled: true},
 			mockFs,
 			&mockOsInfo,
-			0)
+			0,
+			nil)
 
 		t.Run(test.testName, func(t *testing.T) {
 			err := server.Accept(
@@ -883,6 +886,7 @@ func TestAcceptDirectory(t *testing.T) {
 			mockFs,
 			&mockOsInfo,
 			0,
+			nil,
 		)
 
 		acceptServer := &mockAcceptServer{serverError: nil}
@@ -995,6 +999,7 @@ func TestCancel(t *testing.T) {
 			newMockFilesystem(),
 			&mockOsInfo{},
 			0,
+			nil,
 		)
 
 		t.Run(test.testName, func(t *testing.T) {
@@ -1051,6 +1056,7 @@ func TestList(t *testing.T) {
 			newMockFilesystem(),
 			&mockOsInfo{},
 			5,
+			nil,
 		)
 
 		listServer := mockListServer{}

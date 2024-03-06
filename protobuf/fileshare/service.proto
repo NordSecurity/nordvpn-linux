@@ -9,6 +9,8 @@ import "fileshare.proto";
 service Fileshare {
 	// Ping to test connection between CLI and Fileshare daemon
 	rpc Ping(Empty) returns (Empty);
+	// Stop
+	rpc Stop(Empty) returns (Empty);
 	// Send a file to a peer
 	rpc Send(SendRequest) returns (stream StatusResponse);
 	// Accept a request from another peer to send you a file
