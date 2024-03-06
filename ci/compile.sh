@@ -17,12 +17,19 @@ ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Salt=${SALT}' \
 	-X 'main.FirebaseToken=${FIREBASE_TOKEN:-""}'"
 
+FILESHARE_BINARY=nordfileshared
+FILESHARE_SRC_DIR=fileshare
+if [[ -n "${FILESHARE_PROCESS-}" ]]; then
+	FILESHARE_BINARY=nordfileshare_process
+	FILESHARE_SRC_DIR=fileshare_process
+fi
+
 declare -A names_map=(
 	[cli]=nordvpn
 	[daemon]=nordvpnd
 	[downloader]=downloader
 	[pulp]=pulp
-	[fileshare]=nordfileshared
+	[$FILESHARE_SRC_DIR]=$FILESHARE_BINARY
 )
 
 # shellcheck disable=SC2034
@@ -52,7 +59,7 @@ export CGO_LDFLAGS="${CGO_LDFLAGS:-""} -Wl,-z,relro,-z,now"
 # In order to enable additional features, provide `FEATURES` environment variable
 tags="${FEATURES:-"telio drop"}"
 
-if [[ $tags == *"moose"* ]]; then 
+if [[ $tags == *"moose"* ]]; then
 	# Set correct events domain in case compiling with moose
 	if [[ "${ENVIRONMENT}" == "prod" ]]; then
 		events_domain="${EVENTS_PROD_DOMAIN}"
@@ -66,7 +73,7 @@ if [[ $tags == *"moose"* ]]; then
 
 	# Apply moose patch in case compiling with moose
 	git apply "${WORKDIR}"/contrib/patches/add_moose.diff || \
-		# If applying fails try reverting and applying again 
+		# If applying fails try reverting and applying again
 		(git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff && \
 		git apply "${WORKDIR}"/contrib/patches/add_moose.diff)
 	function revert_moose_patch {
@@ -74,6 +81,10 @@ if [[ $tags == *"moose"* ]]; then
 		git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff
 	}
 	trap revert_moose_patch EXIT
+fi
+
+if [[ -n "${FILESHARE_PROCESS-}" ]]; then
+	tags="$tags fileshare_process"
 fi
 
 for program in ${!names_map[*]}; do # looping over keys
