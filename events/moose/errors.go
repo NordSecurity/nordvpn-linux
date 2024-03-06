@@ -8,9 +8,11 @@ import (
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+
+	moose "moose/events"
 )
 
-func initCallback(errCode uint) {
+func (s *Subscriber) PostInit(errCode uint32) *moose.ListenerError {
 	switch errCode {
 	case 13:
 		log.Println(internal.WarningPrefix, "moose: init internal error")
@@ -25,9 +27,11 @@ func initCallback(errCode uint) {
 	default:
 		log.Println(internal.WarningPrefix, "moose: unexpected init error:", errCode)
 	}
+
+	return nil
 }
 
-func errorCallback(level uint, code uint, message string) {
+func (s *Subscriber) OnError(level uint32, code uint32, message string) *moose.ListenerError {
 	var prefix string
 	switch level {
 	case 2:
@@ -37,9 +41,11 @@ func errorCallback(level uint, code uint, message string) {
 	}
 
 	log.Println(prefix, message, code)
+
+	return nil
 }
 
-func (s *Subscriber) response(respCode uint) error {
+func (s *Subscriber) response(respCode uint32) error {
 	switch respCode {
 	case 0:
 		return nil

@@ -11,10 +11,10 @@ github.com/Microsoft/go-winio v0.6.0 h1:slsWYD/zyx7lCXoZVlvQrj0hPTM1HI4+v1sIda2y
 github.com/Microsoft/go-winio v0.6.0/go.mod h1:cTAf44im0RAYeL23bpB+fzCyDH2MJiz2BO69KH/soAE=
 github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4 h1:2ozEjYEw4WzXAXe/t5rxnvcFytR8z/PA/Xrv3FpByng=
 github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4/go.mod h1:tguhorMSnkMcQExNIHWBX6TRhFeGYlERzbeAWZ4j9Uw=
-github.com/NordSecurity/libdrop v1.1.2-0.20231010121727-b5419b71d89d h1:pT1DnGZZoEhSsXUbF86fV4a5oQZ1c2fAIoyLl9wDJ5E=
-github.com/NordSecurity/libdrop v1.1.2-0.20231010121727-b5419b71d89d/go.mod h1:uWQP1L7e1CCtg1VYvm4/zjUNR7Oyw/EDjQfo8qO1nM4=
-github.com/NordSecurity/libtelio v0.0.0-20230717142529-ae1c7c103e55 h1:4sme6uzBPhzH2BrZGbth/67EQMaN5dSYhsmniL9v3Fo=
-github.com/NordSecurity/libtelio v0.0.0-20230717142529-ae1c7c103e55/go.mod h1:gWS9UWU2FSEixmSWdm1MsIoacVttKykO0mgPec2uBVc=
+github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948 h1:stDWDEyqQwjw/o3SQvqfBXTGj4c0tgthB8f4JHTHlLs=
+github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948/go.mod h1:uWQP1L7e1CCtg1VYvm4/zjUNR7Oyw/EDjQfo8qO1nM4=
+github.com/NordSecurity/libtelio v0.0.0-20240227161636-29680450e9b9 h1:P9qHOEndqPx0EW8ik9Iv385t5cQbjrLTmQiAIUMpa+0=
+github.com/NordSecurity/libtelio v0.0.0-20240227161636-29680450e9b9/go.mod h1:gWS9UWU2FSEixmSWdm1MsIoacVttKykO0mgPec2uBVc=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=

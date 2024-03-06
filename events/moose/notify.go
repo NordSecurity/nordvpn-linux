@@ -5,57 +5,57 @@ package moose
 import (
 	"fmt"
 
-	events "moose/events"
+	moose "moose/events"
 )
 
 type notifyRequest func(
-	hostname string,
-	dnsResolutionTime int,
-	eventDuration int,
-	eventStatus events.Enum_SS_NordvpnappEventStatus,
-	eventTrigger events.Enum_SS_NordvpnappEventTrigger,
-	requestLimits string,
-	requestOffset string,
-	requestFields string,
-	requestFilters string,
-	responseCode int,
-	responseSummary string,
+	eventDuration int32,
+	eventStatus moose.NordvpnappEventStatus,
+	eventTrigger moose.NordvpnappEventTrigger,
+	apiHostName string,
+	responseCode int32,
 	transferProtocol string,
-) uint
+	dnsResolutionTime int32,
+	requestFilters string,
+	requestFields string,
+	limits string,
+	offset string,
+	responseSummary string,
+) uint32
 
 func noSuchEndpoint(
-	string,
-	int,
-	int,
-	events.Enum_SS_NordvpnappEventStatus,
-	events.Enum_SS_NordvpnappEventTrigger,
-	string,
-	string,
-	string,
-	string,
-	int,
-	string,
-	string,
-) uint {
+	eventDuration int32,
+	eventStatus moose.NordvpnappEventStatus,
+	eventTrigger moose.NordvpnappEventTrigger,
+	apiHostName string,
+	responseCode int32,
+	transferProtocol string,
+	dnsResolutionTime int32,
+	requestFilters string,
+	requestFields string,
+	limits string,
+	offset string,
+	responseSummary string,
+) uint32 {
 	return 0
 }
 
 func pickNotifier(endpoint string) (notifyRequest, error) {
 	switch endpoint {
 	case "/v1/servers":
-		return events.Send_serviceQuality_apiRequest_requestServers, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestServers, nil
 	case "/v1/servers/recommendations":
-		return events.Send_serviceQuality_apiRequest_requestServersRecommendations, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestServersRecommendations, nil
 	case "/v1/users/current":
-		return events.Send_serviceQuality_apiRequest_requestCurrentUser, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestCurrentUser, nil
 	case "/v1/users/services":
-		return events.Send_serviceQuality_apiRequest_requestUserServices, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestUserServices, nil
 	case "/v1/users/services/credentials":
-		return events.Send_serviceQuality_apiRequest_requestServiceCredentials, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestServiceCredentials, nil
 	case "/v1/users/tokens":
-		return events.Send_serviceQuality_apiRequest_requestTokenCreation, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestTokenCreation, nil
 	case "/v1/users/tokens/renew":
-		return events.Send_serviceQuality_apiRequest_requestTokenRenew, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestTokenRenew, nil
 	default:
 		return noSuchEndpoint, fmt.Errorf("%s is not important to moose", endpoint)
 	}
