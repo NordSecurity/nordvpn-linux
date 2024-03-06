@@ -1,4 +1,4 @@
-//go:build drop
+//go:build drop && !fileshare_process
 
 package main
 

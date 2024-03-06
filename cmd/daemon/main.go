@@ -452,7 +452,7 @@ func main() {
 	)
 
 	opts := []grpc.ServerOption{
-		grpc.Creds(&internal.UnixSocketCredentials{}),
+		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
 	}
 	if snapconf.IsUnderSnap() {
 		checker := snapChecker(errSubject)
