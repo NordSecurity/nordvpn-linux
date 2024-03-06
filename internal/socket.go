@@ -14,10 +14,134 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+var allowedGroups []string = []string{"nordvpn"}
+var ErrNoPermission error = fmt.Errorf("requesting user does not have permissions")
+
+func isInAllowedGroup(ucred *unix.Ucred) (bool, error) {
+	userInfo, err := user.LookupId(fmt.Sprintf("%d", ucred.Uid))
+	if err != nil {
+		return false, fmt.Errorf("authenticate user, lookup user info: %s", err)
+	}
+	// user belongs to the allowed group?
+	groups, err := userInfo.GroupIds()
+	if err != nil {
+		return false, fmt.Errorf("authenticate user, check user groups: %s", err)
+	}
+
+	for _, groupId := range groups {
+		groupInfo, err := user.LookupGroupId(groupId)
+		if err != nil {
+			return false, fmt.Errorf("authenticate user, check user group: %s", err)
+		}
+		for _, allowGroupName := range allowedGroups {
+			if groupInfo.Name == allowGroupName {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
+}
+
+// getUnixCreds returns info from unix socket connection about the process on the other end.
+func getUnixCreds(conn net.Conn, authenticator SocketAuthenticator) (*unix.Ucred, error) {
+	conn2 := extractConnection(conn)
+	if conn2 == nil {
+		return nil, fmt.Errorf("cannot extract connection of proper type, is netutil.LimitListener used?")
+	}
+
+	unixConn, ok := conn2.(*net.UnixConn)
+	if !ok {
+		return nil, fmt.Errorf("socket is not a unix socket")
+	}
+
+	rawConn, err := unixConn.SyscallConn()
+	if err != nil {
+		return nil, fmt.Errorf("getting raw connection: %w", err)
+	}
+
+	var ucred *unix.Ucred
+	var internalErr error
+	err = rawConn.Control(func(fd uintptr) {
+		ucred, internalErr = unix.GetsockoptUcred(int(fd), unix.SOL_SOCKET, unix.SO_PEERCRED)
+	})
+	if internalErr != nil {
+		return nil, fmt.Errorf("doing GetsockoptUcred: %w", internalErr)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("doing rawConn Control: %w", err)
+	}
+
+	if err := authenticator.Authenticate(ucred); err != nil {
+		return nil, err
+	}
+
+	return ucred, nil
+}
+
+// SocketAuthenticator provides abstraction over various authentication types.
+type SocketAuthenticator interface {
+	Authenticate(ucred *unix.Ucred) error
+}
+
+type DaemonAuthenticator struct{}
+
+func NewDaemonAuthenticator() DaemonAuthenticator {
+	return DaemonAuthenticator{}
+}
+
+func (DaemonAuthenticator) Authenticate(ucred *unix.Ucred) error {
+	// root?
+	if ucred.Uid == 0 {
+		return nil
+	}
+
+	isGroup, err := isInAllowedGroup(ucred)
+	if err != nil {
+		return err
+	}
+
+	if !isGroup {
+		return ErrNoPermission
+	}
+
+	return nil
+}
+
+type FileshareAuthenticator struct {
+	DaemonAuthenticator
+	controllingUserUUID uint32
+}
+
+func NewFileshareAuthenticator(controlingUserUUID uint32) FileshareAuthenticator {
+	return FileshareAuthenticator{
+		controllingUserUUID: controlingUserUUID,
+	}
+}
+
+func (f FileshareAuthenticator) Authenticate(ucred *unix.Ucred) error {
+	if err := f.DaemonAuthenticator.Authenticate(ucred); err != nil {
+		return fmt.Errorf("user authentication failed: %w", err)
+	}
+
+	if ucred.Uid != f.controllingUserUUID {
+		return ErrNoPermission
+	}
+
+	return nil
+}
+
 // UnixSocketCredentials is used to retrieve linux user ID from unix socket connection between client and daemon
 // Implements credentials.TransportCredentials to be passed to gRPC server initialization
 type UnixSocketCredentials struct {
-	mu sync.Mutex
+	mu            sync.Mutex
+	authenticator SocketAuthenticator
+}
+
+func NewUnixSocketCredentials(authenticator SocketAuthenticator) *UnixSocketCredentials {
+	return &UnixSocketCredentials{
+		authenticator: authenticator,
+	}
 }
 
 // ServerHandshake is called when client connects to daemon.
@@ -27,7 +151,7 @@ func (cr *UnixSocketCredentials) ServerHandshake(c net.Conn) (net.Conn, credenti
 	cr.mu.Lock()
 	defer cr.mu.Unlock()
 
-	creds, err := getUnixCreds(c)
+	creds, err := getUnixCreds(c, cr.authenticator)
 	if err != nil || creds == nil {
 		return c, UcredAuth{}, err
 	}
@@ -88,70 +212,6 @@ func StringToUcred(ucredStr string) (unix.Ucred, error) {
 	}
 
 	return unix.Ucred{Pid: int32(pid), Uid: uint32(uid), Gid: uint32(gid)}, nil
-}
-
-// getUnixCreds returns info from unix socket connection about the process on the other end.
-func getUnixCreds(conn net.Conn) (*unix.Ucred, error) {
-	conn2 := extractConnection(conn)
-	if conn2 == nil {
-		return nil, fmt.Errorf("cannot extract connection of proper type, is netutil.LimitListener used?")
-	}
-
-	unixConn, ok := conn2.(*net.UnixConn)
-	if !ok {
-		return nil, fmt.Errorf("socket is not a unix socket")
-	}
-
-	rawConn, err := unixConn.SyscallConn()
-	if err != nil {
-		return nil, fmt.Errorf("getting raw connection: %w", err)
-	}
-
-	var ucred *unix.Ucred
-	var internalErr error
-	err = rawConn.Control(func(fd uintptr) {
-		ucred, internalErr = unix.GetsockoptUcred(int(fd), unix.SOL_SOCKET, unix.SO_PEERCRED)
-	})
-	if internalErr != nil {
-		return nil, fmt.Errorf("doing GetsockoptUcred: %w", internalErr)
-	}
-	if err != nil {
-		return nil, fmt.Errorf("doing rawConn Control: %w", err)
-	}
-
-	if err := authenticateUser(ucred, []string{"nordvpn"}); err != nil {
-		return nil, err
-	}
-
-	return ucred, nil
-}
-
-func authenticateUser(ucred *unix.Ucred, allowGroups []string) error {
-	// root?
-	if ucred.Uid == 0 {
-		return nil
-	}
-	userInfo, err := user.LookupId(fmt.Sprintf("%d", int(ucred.Uid)))
-	if err != nil {
-		return fmt.Errorf("authenticate user, lookup user info: %s", err)
-	}
-	// user belongs to the allowed group?
-	groups, err := userInfo.GroupIds()
-	if err != nil {
-		return fmt.Errorf("authenticate user, check user groups: %s", err)
-	}
-	for _, groupId := range groups {
-		groupInfo, err := user.LookupGroupId(groupId)
-		if err != nil {
-			return fmt.Errorf("authenticate user, check user group: %s", err)
-		}
-		for _, allowGroupName := range allowGroups {
-			if groupInfo.Name == allowGroupName {
-				return nil
-			}
-		}
-	}
-	return fmt.Errorf("requesting user does not have permissions")
 }
 
 // using `netutil.LimitListener` but it has internal unexported type `limitListenerConn`
