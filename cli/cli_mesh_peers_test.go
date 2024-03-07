@@ -67,7 +67,7 @@ func (m mockMeshClient) GetPeers(ctx context.Context, in *pb.Empty, opts ...grpc
 
 func TestMeshPeerList(t *testing.T) {
 	category.Set(t, category.Unit)
-	c := cmd{nil, mockMeshClient{}, nil, "", nil}
+	c := cmd{nil, mockMeshClient{}, nil, nil, "", nil}
 	tests := []struct {
 		name     string
 		expected []string
