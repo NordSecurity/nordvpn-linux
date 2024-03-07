@@ -130,6 +130,23 @@ func refreshPrivateSubnetsBlock(commandFunc runCommandFunc) error {
 	return nil
 }
 
+func blockPhysicalForwarding(intfNames []string, commandFunc runCommandFunc) error {
+	for _, intfName := range intfNames {
+		// iptables -t filter -I FORWARD -o eth0 -j DROP -m comment --comment "<linux-app identifier>"
+		args := fmt.Sprintf(
+			"-t filter -I FORWARD -o %s -j DROP -m comment --comment %s",
+			intfName,
+			transientFilterRuleComment,
+		)
+		// #nosec G204 -- input is properly sanitized
+		out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
+		if err != nil {
+			return fmt.Errorf("iptables inserting rule: %w: %s", err, string(out))
+		}
+	}
+	return nil
+}
+
 func enableFiltering(commandFunc runCommandFunc) error {
 	if ok, err := checkFilteringRule(meshSrcSubnet, commandFunc); ok || err != nil {
 		return err
@@ -192,7 +209,7 @@ func clearExitnodeForwardRules(commandFunc runCommandFunc) error {
 	return nil
 }
 
-func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc runCommandFunc) error {
+func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc runCommandFunc, killswitch bool) error {
 	if err := clearMasquerading(commandFunc); err != nil {
 		return fmt.Errorf("clearing masquerade rules: %w", err)
 	}
@@ -201,8 +218,15 @@ func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc
 		return fmt.Errorf("clearing exitnode forward rules: %w", err)
 	}
 
+	// Filter FORWARD rules ends here (read bottom to top!)
+	// Any packets which do not pass rules below will be dropped here
+
+	// Allow forwarding to non-private IPs for 'routing allow' peers
+	// If killswitch is enabled, this would only allow forwarding through virtual interfaces,
+	// because packets forwarded through physical interfaces (e.g. when not connected to VPN) were dropped before
 	for _, peer := range peers {
-		if peer.Routing && !peer.LocalNetwork {
+		// Add the rule only if the "forwarding to all" single rule was not added before
+		if peer.Routing && (!peer.LocalNetwork || killswitch) {
 			if err := modifyPeerTraffic(peer.IP, "-I", true, true, commandFunc); err != nil {
 				return fmt.Errorf(
 					"adding rule while resetting peers traffic for peer %v: %w",
@@ -212,13 +236,24 @@ func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc
 		}
 	}
 
+	// Disallow forwarding to private IP blocks
+	// This only affects 'local deny' peers, because private IPs traffic from 'local allow' peers was permitted before
 	if err := refreshPrivateSubnetsBlock(commandFunc); err != nil {
 		return fmt.Errorf("refreshing private subnets block while resetting peers traffic: %w", err)
 	}
 
+	// If killswitch is enabled, disallow forwarding through physical interfaces
+	if killswitch {
+		if err := blockPhysicalForwarding(interfaceNames, commandFunc); err != nil {
+			return fmt.Errorf("adding killswitch physical forwarding block rules while resetting peers traffic: %w", err)
+		}
+	}
+
 	for _, peer := range peers {
 		if peer.LocalNetwork {
-			if peer.Routing {
+			if peer.Routing && !killswitch {
+				// If both local and routing are allowed and killswitch is disabled, allow forwarding to all (public and
+				// private) IPs using a single rule
 				if err := modifyPeerTraffic(peer.IP, "-I", true, true, commandFunc); err != nil {
 					return fmt.Errorf(
 						"adding rule while resetting peers traffic for peer %v: %w",
@@ -226,7 +261,8 @@ func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc
 					)
 				}
 			} else {
-				if err := allowOnlyLocalNetworkAccess(peer.IP, "-I", commandFunc); err != nil {
+				// Allow forwarding to private IPs for 'local allow' peers, also when killswitch is enabled
+				if err := allowLocalNetworkAccess(peer.IP, "-I", commandFunc); err != nil {
 					return fmt.Errorf(
 						"adding rules to access local network while resetting peers traffic %v: %w",
 						peer, err,
@@ -235,6 +271,8 @@ func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc
 			}
 		}
 	}
+
+	// Filter FORWARD rules starts here, read bottom to top ^^
 
 	for _, peer := range peers {
 		if peer.Routing {
@@ -247,7 +285,11 @@ func resetPeersTraffic(peers []TrafficPeer, interfaceNames []string, commandFunc
 	return nil
 }
 
-func allowOnlyLocalNetworkAccess(subnet netip.Prefix, flag string, commandFunc runCommandFunc) error {
+func allowLocalNetworkAccess(subnet netip.Prefix, flag string, commandFunc runCommandFunc) error {
+	// TODO: Probably this should add rules only for actually connected local networks (both physical and virtual, for
+	// example Docker), instead of all private ranges, because packets destined to private IPs from non-connected local
+	// networks will be forwarded through the default gateway and we do not want that, because this should be controlled
+	// by peer.Routing.
 	for _, localSubnet := range []netip.Prefix{
 		netip.MustParsePrefix("10.0.0.0/8"),
 		netip.MustParsePrefix("172.16.0.0/12"),
