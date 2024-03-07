@@ -8,15 +8,23 @@ description: |
 grade: devel
 confinement: strict
 
+plugs:
+  nordfileshare-autostart:
+    interface: personal-files
+    write:
+    - $HOME/.config/autostart/nordvpn.desktop
+
 apps:
   nordvpn:
     command: bin/nordvpn
+    autostart: nordvpn.desktop
     environment:
       PREFIX_COMMON: $SNAP_COMMON
       PREFIX_DATA: $SNAP_DATA
       PREFIX_STATIC: $SNAP
       USER_DATA: $SNAP_USER_COMMON
     plugs:
+      - nordfileshare-autostart
       - home
       - network
       - network-bind

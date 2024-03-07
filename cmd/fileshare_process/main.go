@@ -3,11 +3,13 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strconv"
 
@@ -26,6 +28,36 @@ func openLogFile(path string) (*os.File, error) {
 		return nil, err
 	}
 	return logFile, nil
+}
+
+func addAutostart(userHomeDir string) (string, error) {
+	autostartDesktopFileContents := "[Desktop Entry]" +
+		"\nName=NordVPN" +
+		"\nExec=nordvpn fileshare list" +
+		"\nTerminal=false" +
+		"\nType=Application" +
+		"\nX-GNOME-Autostart-enabled=true" +
+		"\nX-GNOME-Autostart-Delay=10" +
+		"\nX-KDE-autostart-after=panel" +
+		"\nX-MATE-Autostart-Delay=10" +
+		"\nComment=This is an autostart app for NordVPN fileshare feature" +
+		"\nCategories=Utility;"
+
+	path := path.Join(userHomeDir, ".config", "autostart", "nordvpn.desktop")
+	if err := internal.EnsureDir(path); err != nil {
+		return "", fmt.Errorf("ensuring path: %w", err)
+	}
+
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return "", fmt.Errorf("opening file: %w", err)
+	}
+
+	if _, err := file.Write([]byte(autostartDesktopFileContents)); err != nil {
+		return "", fmt.Errorf("writign file: %w", err)
+	}
+
+	return "", nil
 }
 
 func main() {
@@ -96,7 +128,7 @@ func main() {
 		Environment,
 		internal.NewFileshareAuthenticator(uint32(uid)))
 	if err != nil {
-		log.Println("Failed to start the service: %s", err.Error())
+		log.Println("Failed to start the service: ", err.Error())
 		if errors.Is(err, fileshare_startup.ErrMeshNotEnabled) {
 			os.Exit(int(fileshare_process.CodeMeshnetNotEnabled))
 		}
@@ -106,6 +138,11 @@ func main() {
 		os.Exit(int(fileshare_process.CodeFailedToEnable))
 	}
 
+	autostartFile, err := addAutostart(usr.HomeDir)
+	if err != nil {
+		log.Println("Failed to add autostart file: ", err.Error())
+	}
+
 	signals := internal.GetSignalChan()
 
 	log.Println(internal.InfoPrefix, "Daemon has started")
@@ -113,6 +150,10 @@ func main() {
 	case sig := <-signals:
 		log.Println("Received signal: ", sig)
 	case <-fileshareHandle.GetShutdownChan():
+	}
+
+	if err := os.Remove(autostartFile); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Println("Failed to remove autostart file: ", err)
 	}
 
 	// Teardown

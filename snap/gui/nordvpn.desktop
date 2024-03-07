@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=NordVPN
+Exec=nordvpn fileshare list
+Terminal=false
+Type=Application
+X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=10
+X-KDE-autostart-after=panel
+X-MATE-Autostart-Delay=10
+Comment=This is an autostart app for NordVPN fileshare feature
+Categories=Utility;

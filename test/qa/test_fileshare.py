@@ -78,7 +78,7 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
-    ssh_client.exec_command("rm -rf /tmp/*")
+    ssh_client.exec_command("find /tmp -type f -exec rm -f {} +")
 
 
 @pytest.mark.parametrize("accept_directories",
