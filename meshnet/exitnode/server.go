@@ -18,8 +18,8 @@ const (
 // Node is exit node server side interface
 type Node interface {
 	Enable() error
-	ResetPeers(mesh.MachinePeers, bool) error
-	ResetFirewall(lanAvailable bool) error
+	ResetPeers(mesh.MachinePeers, bool, bool) error
+	ResetFirewall(lanAvailable bool, killswitch bool) error
 	Disable() error
 	SetAllowlist(config config.Allowlist, lanAvailable bool) error
 }
@@ -65,41 +65,45 @@ func (en *Server) Enable() error {
 }
 
 // ResetFirewall resets peer rules when peers don't change
-func (en *Server) ResetFirewall(lanAvailable bool) error {
+func (en *Server) ResetFirewall(lanAvailable bool, killswitch bool) error {
 	if !en.enabled {
 		return nil
 	}
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
-	return en.resetPeers(lanAvailable)
+	return en.resetPeers(lanAvailable, killswitch)
 }
 
 // EnablePeer enables masquerading for peer
-func (en *Server) ResetPeers(peers mesh.MachinePeers, lanAvailable bool) error {
+func (en *Server) ResetPeers(peers mesh.MachinePeers, lanAvailable bool, killswitch bool) error {
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
 	en.peers = peers
-	return en.resetPeers(lanAvailable)
+	return en.resetPeers(lanAvailable, killswitch)
 }
 
-func (en *Server) resetPeers(lanAvailable bool) error {
+func (en *Server) resetPeers(lanAvailable bool, killswitch bool) error {
 	trafficPeers := make([]TrafficPeer, 0, len(en.peers))
 	for _, peer := range en.peers {
 		if peer.Address.IsValid() {
 			trafficPeers = append(trafficPeers, TrafficPeer{
 				netip.PrefixFrom(peer.Address, peer.Address.BitLen()),
 				peer.DoIAllowRouting,
+				// TODO: Remove '&& lanAvailable'
+				// According to the user-facing documentation meshnet peer local access does not depend on
+				// host VPN lan discovery or allowlists settings
 				peer.DoIAllowLocalNetwork && lanAvailable,
 			})
 		}
 	}
 
-	if err := resetPeersTraffic(trafficPeers, en.interfaceNames, en.runCommandFunc); err != nil {
+	if err := resetPeersTraffic(trafficPeers, en.interfaceNames, en.runCommandFunc, killswitch); err != nil {
 		return err
 	}
 
+	// TODO: Peer local access should not depend on host VPN allowlists settings
 	if err := en.allowlistManager.disableAllowlist(); err != nil {
 		return err
 	}

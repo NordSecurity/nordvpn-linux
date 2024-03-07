@@ -134,7 +134,7 @@ func TestResetPeersExitnode(t *testing.T) {
 
 	server := NewServer(interfaces, commandExecutor.Execute, config.Allowlist{}, &mock.SysctlSetterMock{})
 
-	server.ResetPeers(peers, true)
+	server.ResetPeers(peers, true, false)
 
 	expectedCommands := []string{
 		// List nat table so that old nat rules can be deleted. All existing rules should be deleted.
@@ -184,7 +184,7 @@ func TestResetPeers_LANDiscoveryEnabled(t *testing.T) {
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	}, &mock.SysctlSetterMock{})
 
-	err := server.ResetPeers(peers, true)
+	err := server.ResetPeers(peers, true, false)
 	assert.NoError(t, err)
 
 	expectedCommands := []string{
@@ -235,7 +235,7 @@ func TestResetPeers_LANDiscoveryDisabled(t *testing.T) {
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	}, &mock.SysctlSetterMock{})
 
-	err := server.ResetPeers(peers, false)
+	err := server.ResetPeers(peers, false, false)
 	assert.NoError(t, err)
 
 	expectedCommands := []string{
@@ -328,7 +328,7 @@ func TestSetAllowlist(t *testing.T) {
 
 			commandExecutor.err = nil
 
-			err := server.ResetPeers(peers, false)
+			err := server.ResetPeers(peers, false, false)
 			assert.NoError(t, err)
 			// clean expected commands as ResetPeers is covered by other tests
 			commandExecutor.executedCommands = commandExecutor.executedCommands[:0]

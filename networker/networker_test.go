@@ -192,7 +192,7 @@ func (e *workingExitNode) Enable() error {
 	return nil
 }
 
-func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lan bool) error {
+func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lan bool, killswitch bool) error {
 	e.peers = peers
 	e.LanAvailable = lan
 	return nil
@@ -204,7 +204,10 @@ func (e *workingExitNode) SetAllowlist(_ config.Allowlist, lan bool) error {
 	e.LanAvailable = lan
 	return nil
 }
-func (e *workingExitNode) ResetFirewall(lan bool) error { e.LanAvailable = lan; return nil }
+func (e *workingExitNode) ResetFirewall(lan bool, killswitch bool) error {
+	e.LanAvailable = lan
+	return nil
+}
 
 type workingMesh struct {
 	enableErr         error
