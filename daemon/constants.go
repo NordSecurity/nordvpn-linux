@@ -25,16 +25,16 @@ const (
 
 var (
 	// ServersDataFilePath defines path to servers data file
-	ServersDataFilePath = filepath.Join(internal.DatFilesPath, "servers.dat")
+	ServersDataFilePath = filepath.Join(internal.DatFilesPathCommon, "servers.dat")
 
 	// CountryDataFilePath defines path to countries data file
-	CountryDataFilePath = filepath.Join(internal.DatFilesPath, "countries.dat")
+	CountryDataFilePath = filepath.Join(internal.DatFilesPathCommon, "countries.dat")
 
 	// InsightsFilePath defines filename of insights file
 	InsightsFilePath = filepath.Join(internal.DatFilesPath, "insights.dat")
 
 	// VersionFilePath defines filename of latest available version file
-	VersionFilePath = filepath.Join(internal.DatFilesPath, "version.dat")
+	VersionFilePath = filepath.Join(internal.DatFilesPathCommon, "version.dat")
 
 	// IconPath defines icon file path
 	IconPath = internal.PrefixCommonPath("/usr/share/icons/hicolor/scalable/apps/nordvpn.svg")

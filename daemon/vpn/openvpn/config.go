@@ -41,7 +41,7 @@ const (
 
 var (
 	// openVPNConfigFileName is a name of a openvpn config file to be used for connecting to a VPN
-	openVPNConfigFileName = filepath.Join(internal.DatFilesPath, ".config.ovpn")
+	openVPNConfigFileName = filepath.Join(internal.DatFilesPathCommon, ".config.ovpn")
 
 	// openVPNExec defines openvpn executable path
 	openVPNExec = filepath.Join(internal.AppDataPathStatic, "openvpn")
