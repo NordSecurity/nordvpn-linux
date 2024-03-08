@@ -23,7 +23,6 @@ apps:
   nordvpnd:
     command: bin/nordvpnd
     daemon: simple
-    stop-timeout: 10s
     environment:
       PREFIX_COMMON: $SNAP_COMMON
       PREFIX_DATA: $SNAP_DATA
