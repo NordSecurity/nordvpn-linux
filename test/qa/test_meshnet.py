@@ -276,14 +276,25 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
 def test_connect_set_mesh_off():
     output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}"
     peer = meshnet.get_peers(output)[0]
+    assert network.is_available()
     sh.nordvpn.mesh.peer.connect(peer)
+    assert daemon.is_connected()
+    assert network.is_available()
     sh.nordvpn.disconnect()
+    assert not daemon.is_connected()
+    assert network.is_available()
     sh.nordvpn.connect()
+    assert daemon.is_connected()
+    assert network.is_available()
     sh.nordvpn.set.mesh.off()
-
-    with lib.Defer(sh.nordvpn.set.mesh.on):
-        with lib.Defer(sh.nordvpn.disconnect):
-            assert network.is_connected()
+    assert daemon.is_connected()
+    assert network.is_available()
+    sh.nordvpn.disconnect()
+    assert not daemon.is_connected()
+    assert network.is_available()
+    sh.nordvpn.set.mesh.on()
+    assert not daemon.is_connected()
+    assert network.is_available()
 
 
 def test_remove_peer_firewall_update():
