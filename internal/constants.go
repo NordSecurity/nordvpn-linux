@@ -94,19 +94,25 @@ var (
 	// AppDataPath defines path where app data is stored
 	AppDataPath = PrefixDataPath("/var/lib/nordvpn")
 
+	// AppDataPathCommon defines path where common app data files are stored. These files may
+	// be removed after every app update
+	AppDataPathCommon = PrefixCommonPath("/var/lib/nordvpn")
+
 	// AppDataPathStatic defines path where static app data (such as helper executables) are
 	// stored. Normally it is the same as AppDataPath
 	AppDataPathStatic = PrefixStaticPath("/var/lib/nordvpn")
 
 	DatFilesPath = filepath.Join(AppDataPath, "data")
 
+	DatFilesPathCommon = filepath.Join(AppDataPathCommon, "data")
+
 	BakFilesPath = filepath.Join(AppDataPath, "backup")
 
 	// OvpnTemplatePath defines filename of ovpn template file
-	OvpnTemplatePath = filepath.Join(DatFilesPath, "ovpn_template.xslt")
+	OvpnTemplatePath = filepath.Join(DatFilesPathCommon, "ovpn_template.xslt")
 
 	// OvpnObfsTemplatePath defines filename of ovpn obfuscated template file
-	OvpnObfsTemplatePath = filepath.Join(DatFilesPath, "ovpn_xor_template.xslt")
+	OvpnObfsTemplatePath = filepath.Join(DatFilesPathCommon, "ovpn_xor_template.xslt")
 
 	// ConfigDirectory is used for configuration files storage. Hardcoded only for nordfileshared, in
 	// other cases consider using os.UserConfigDir instead.

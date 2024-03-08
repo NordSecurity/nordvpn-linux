@@ -1,0 +1,3 @@
+#!/bin/sh
+mkdir -p ${SNAP_COMMON}/var/lib/nordvpn/data
+cp ${SNAP}/var/lib/nordvpn/data/* ${SNAP_COMMON}/var/lib/nordvpn/data

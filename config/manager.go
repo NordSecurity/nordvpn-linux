@@ -19,7 +19,7 @@ import (
 
 var (
 	// InstallFilePath defines filename of install id file
-	InstallFilePath = filepath.Join(internal.DatFilesPath, "install.dat")
+	InstallFilePath = filepath.Join(internal.DatFilesPathCommon, "install.dat")
 	// SettingsDataFilePath defines path to app configs file
 	SettingsDataFilePath = filepath.Join(internal.DatFilesPath, "settings.dat")
 )
