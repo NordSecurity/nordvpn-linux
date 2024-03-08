@@ -13,6 +13,13 @@ apps:
     command: bin/nordvpn
     environment:
       PREFIX_COMMON: $SNAP_COMMON
+      PREFIX_DATA: $SNAP_DATA
+      PREFIX_STATIC: $SNAP
+      USER_DATA: $SNAP_USER_COMMON
+    plugs:
+      - home
+      - network
+      - network-bind
   nordvpnd:
     command: bin/nordvpnd
     daemon: simple
@@ -84,6 +91,7 @@ parts:
       - FEATURES: drop
         # TODO: Set correct value
       - CGO_LDFLAGS: -L/root/parts/foss/build/bin/deps/foss/${SNAPCRAFT_TARGET_ARCH}/latest/
+      - FILESHARE_PROCESS: "test"
     stage-packages:
       - wireguard-tools
       - libxml2
@@ -92,3 +100,5 @@ parts:
       ./ci/compile.sh
       mkdir -p ${SNAPCRAFT_PART_INSTALL}/bin
       cp -r bin/amd64/* ${SNAPCRAFT_PART_INSTALL}/bin
+      mkdir -p ${SNAPCRAFT_PART_INSTALL}/var/lib/nordvpn
+      mv ${SNAPCRAFT_PART_INSTALL}/bin/nordfileshare_process ${SNAPCRAFT_PART_INSTALL}/var/lib/nordvpn/nordfileshare_process
