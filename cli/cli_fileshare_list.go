@@ -47,6 +47,7 @@ func (c *cmd) getTransfers() ([]*pb.Transfer, error) {
 
 // FileshareList rpc
 func (c *cmd) FileshareList(ctx *cli.Context) error {
+	// fmt.Println("fileshare list")
 	transfers, err := c.getTransfers()
 	if err != nil {
 		return formatError(err)

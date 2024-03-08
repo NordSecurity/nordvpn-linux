@@ -34,5 +34,10 @@ func (c *cmd) MeshSet(ctx *cli.Context) error {
 	}
 
 	color.Green(MsgSetMeshnetSuccess, nstrings.GetBoolLabel(flag))
+
+	if flag {
+		c.fileshareProcessManager.StartProcess()
+	}
+
 	return nil
 }
