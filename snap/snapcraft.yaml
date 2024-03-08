@@ -13,6 +13,13 @@ apps:
     command: bin/nordvpn
     environment:
       PREFIX_COMMON: $SNAP_COMMON
+      PREFIX_DATA: $SNAP_DATA
+      PREFIX_STATIC: $SNAP
+      USER_DATA: $SNAP_USER_COMMON
+    plugs:
+      - home
+      - network
+      - network-bind
   nordvpnd:
     command: bin/nordvpnd
     daemon: simple
