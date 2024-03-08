@@ -46,7 +46,7 @@ def _is_dns_resolvable(retry=5) -> bool:
     while i < retry:
         try:
             # @TODO gitlab docker runner has public ipv6, but no connectivity. remove -4 once fixed
-            return "icmp_seq=" in sh.ping("-4", "-c", "1", "nordvpn.com")
+            return "icmp_seq=" in sh.ping("-4", "-c", "1", "-w", "1", "nordvpn.com")
         except sh.ErrorReturnCode:
             time.sleep(1)
             i += 1
@@ -58,7 +58,7 @@ def _is_dns_not_resolvable(retry=5) -> bool:
     for _ in range(retry):
         try:
             with pytest.raises(sh.ErrorReturnCode_2) as ex:
-                sh.ping("-4", "-c", "1", "nordvpn.com")
+                sh.ping("-4", "-c", "1", "-w", "1", "nordvpn.com")
 
             return "Network is unreachable" in str(ex) or \
                 "Name or service not known" in str(ex) or \
