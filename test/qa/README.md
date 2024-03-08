@@ -49,8 +49,22 @@ There are three ways to run QA tests:
 Running tests in CI is a simple button clicking.
 
 ### Docker
-Running tests in docker requires docker to be installed on the system and running `make qa TEST_CATEGORY=<category>`
-Once tests are finished, logs are available at `dist/logs/daemon.log`
+Running tests in docker requires Docker to be installed on the system. We have dedicated mage targets for testing.
+
+In order to run QA tests, run `test:qaDocker` or `test:qaDockerFast`. It requires two arguments, name of the category and pattern for test functions to run.
+Name of the test suite would be the name of the desired test file with *test* omitted. For test name, simply provide the desired function name from that file. Test names are selected by pattern matching. Since all test function names start with `test_`, simply use `test` as an argument to run every test in the suite.
+
+For example, to run every test from the `test_fileshare.py` suite:
+
+`mage test:qaDocker fileshare test`
+
+And to run a single test:
+
+`mage test:qaDocker fileshare test_accept`
+
+To run tests without rebuilding everything each time use `test:qaDockerFast` instead of `test:qaDocker`.
+
+Once tests are finished, logs are available at `dist/logs/daemon.log`.
 
 ### Locally
 Running tests locally involves virtualenv creation, dependency installation etc.

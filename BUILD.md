@@ -168,13 +168,19 @@ go build -o "bin/<binary>" "cmd/<binary>"
 # Testing
 We have dedicated mage targets for testing.
 ## Running QA tests
-In order to run QA tests, run `test:qaDocker`. It requires two arguments, name of the test suite and pattern for test functions to run.
-For test suite names, check out [test](test) directory. Name of the test suite would be name of the desired test file with *test* omitted. For test name, simply provide the desired function name from that file. Test names are selected by pattern matching. Since all test function names start with `test_`, simply use `test` as an argument to run every test in the suite.
+In order to run QA tests, run `test:qaDocker` or `test:qaDockerFast`. It requires two arguments, name of the test category and pattern for test functions to run.
+For test category names, check out [test/qa](test/qa) directory. Name of the test suite would be the name of the desired test file with *test* omitted. For test name, simply provide the desired function name from that file. Test names are selected by pattern matching. Since all test function names start with `test_`, simply use `test` as an argument to run every test in the suite.
 
-For example, to run every test from the `test_fileshare.py` suite:
+For example, to run every test from the `test_fileshare.py` category:
+
 `mage test:qaDocker fileshare test`
+
 And to run a single test:
+
 `mage test:qaDocker fileshare test_accept`
+
+To run tests without rebuilding everything each time use `test:qaDockerFast` instead of `test:qaDocker`.
+
 ### Test credentials for QA tests
 Login credentials are required in order to run the QA tests. They are configured in the `.env` file in the form of authentication tokens and usernames. Tokens can be generated from the [nordvpn account dashboard](https://my.nordaccount.com/dashboard/nordvpn/). Usernames are used only for logging purposes, so in reality they can be configured to anything meaningful.
 
