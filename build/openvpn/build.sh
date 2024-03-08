@@ -10,6 +10,7 @@ current_dir="${WORKDIR}/build/openvpn"
 sources="${current_dir}/src"
 tarballs="${current_dir}/tarballs"
 output_dir="${WORKDIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}"
+latest_dir="${WORKDIR}/bin/deps/openvpn/${ARCH}/latest"
 
 patch_sources() {
   mkdir -p "${sources}"
@@ -126,6 +127,7 @@ popd
 
 mkdir -p "${output_dir}"
 mv "${current_dir}/openvpn/sbin/openvpn" "${output_dir}"
+ln -fsnr "${output_dir}" "${latest_dir}" 
 
 rm -rf "${sources}"
 rm -rf "${current_dir}/openssl"
