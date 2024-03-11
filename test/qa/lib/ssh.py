@@ -13,7 +13,7 @@ class Ssh:
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
     def exec_command(self, command: str) -> str:
-        _, stdout, stderr = self.client.exec_command(command)
+        _, stdout, stderr = self.client.exec_command(command, timeout=10)
         if stdout.channel.recv_exit_status() != 0:
             msg = f'{stdout.read().decode()} {stderr.read().decode()}'
             raise RuntimeError(msg)
