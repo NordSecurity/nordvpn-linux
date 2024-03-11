@@ -11,7 +11,7 @@ import (
 	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
-	"github.com/NordSecurity/nordvpn-linux/fileshare_startup"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_startup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
