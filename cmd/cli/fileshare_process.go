@@ -2,7 +2,7 @@
 
 package main
 
-import "github.com/NordSecurity/nordvpn-linux/fileshare_process"
+import "github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 
 var FileshareURL = fileshare_process.FileshareURL
 

@@ -19,8 +19,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/client"
 	dpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
-	"github.com/NordSecurity/nordvpn-linux/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	mpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 

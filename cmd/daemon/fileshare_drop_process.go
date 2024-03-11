@@ -3,8 +3,8 @@
 package main
 
 import (
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
-	"github.com/NordSecurity/nordvpn-linux/fileshare_process"
 )
 
 func fileshareImplementation() service.Fileshare {
