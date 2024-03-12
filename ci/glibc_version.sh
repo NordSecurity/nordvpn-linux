@@ -12,6 +12,7 @@ binaries=(
   "${WORKDIR}/bin/${ARCH}/nordvpnd"
   "${WORKDIR}/bin/${ARCH}/nordfileshared"
   "${WORKDIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn"
+  "${WORKDIR}/bin/${ARCH}/norduserd"
 )
 
 for binary in "${binaries[@]}"; do

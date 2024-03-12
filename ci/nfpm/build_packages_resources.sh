@@ -36,6 +36,7 @@ export PKG_VERSION=${VERSION}
 cp "${WORKDIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
 cp "${WORKDIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
 cp "${WORKDIR}/bin/${ARCH}/nordfileshared" "${BASEDIR}"/usr/bin/nordfileshared
+cp "${WORKDIR}/bin/${ARCH}/norduserd" "${BASEDIR}"/usr/bin/norduserd
 cd "${WORKDIR}"
 
 # extract symbols into files
@@ -49,6 +50,9 @@ cd "${WORKDIR}"
 # shellcheck disable=SC2153
 "${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshared-${ARCH}.debug" \
 	"${BASEDIR}"/usr/bin/nordfileshared
+# shellcheck disable=SC2153
+"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/norduserd-${ARCH}.debug" \
+	"${BASEDIR}"/usr/bin/norduserd
 
 
 # pack

@@ -88,24 +88,22 @@ func (c *ConnChecker) StreamInterceptor(
 	srv interface{},
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo,
-	handler grpc.StreamHandler,
 ) error {
 	if err := c.permissionCheck(); err != nil {
 		return err
 	}
-	return handler(srv, ss)
+	return nil
 }
 
 func (c *ConnChecker) UnaryInterceptor(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler,
 ) (interface{}, error) {
 	if err := c.permissionCheck(); err != nil {
 		return nil, err
 	}
-	return handler(ctx, req)
+	return nil, nil
 }
 
 func storeInitialConnections(connections []Interface) error {

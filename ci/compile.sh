@@ -23,6 +23,7 @@ declare -A names_map=(
 	[downloader]=downloader
 	[pulp]=pulp
 	[fileshare]=nordfileshared
+	[norduser]=norduserd
 )
 
 # shellcheck disable=SC2034
