@@ -30,3 +30,4 @@ protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf
 protoc --go_grpc_opt=module=github.com/NordSecurity/nordvpn-linux --go_grpc_out=. protobuf/daemon/service.proto -I protobuf/daemon
 protoc --go_grpc_opt=module=github.com/NordSecurity/nordvpn-linux --go_grpc_out=. protobuf/meshnet/service.proto -I protobuf/meshnet
 protoc --go_grpc_opt=module=github.com/NordSecurity/nordvpn-linux --go_grpc_out=. protobuf/fileshare/service.proto -I protobuf/fileshare
+protoc --go_grpc_opt=module=github.com/NordSecurity/nordvpn-linux --go_grpc_out=. protobuf/norduser/service.proto -I protobuf/norduser

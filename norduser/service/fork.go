@@ -8,7 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -25,8 +27,37 @@ type ChildProcessNorduser struct {
 	logFile io.Closer
 }
 
+func isRunning(uid uint32) (bool, error) {
+	debug.PrintStack()
+
+	// list all norduserd processes, restrict output to uid of the owner
+	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
+	if err != nil {
+		fmt.Println("listing processes: %w", err)
+	}
+
+	desiredUID := fmt.Sprint(uid)
+	uids := string(output)
+	for _, uid := range strings.Split(uids, "\n") {
+		if strings.Trim(uid, " ") == desiredUID {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // Enable starts norduser process
 func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32) (err error) {
+	running, err := isRunning(uid)
+	if err != nil {
+		return fmt.Errorf("failed to determine if the process is already running: %w", err)
+	}
+
+	if running {
+		return nil
+	}
+
 	// Set up log file
 	fileFlags := os.O_APPEND | os.O_WRONLY | os.O_CREATE
 	logFilePath := internal.GetNorduserdLogPath(strconv.Itoa(int(uid)))

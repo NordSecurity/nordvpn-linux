@@ -463,7 +463,7 @@ func main() {
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
 	}
 
-	// TODO: uncomment once norduser has something to do(starting fileshare)
+	// TODO: [norduser] uncomment once norduser has something to do(starting fileshare)
 	// norduserService := norduserservice.NewNorduserService()
 	// norduserMonitor := norduser.NewNordvpnGroupMonitor(&norduserService)
 	// go func() {
@@ -479,7 +479,7 @@ func main() {
 		middleware.AddUnaryMiddleware(checker.UnaryInterceptor)
 	}
 
-	// TODO: uncomment once norduser has something to do(starting fileshare)
+	// TODO: [norduser] uncomment once norduser has something to do(starting fileshare)
 	// norduserMiddleware := norduser.NewStartNorduserMiddleware(&norduserService)
 	// middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
 	// middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
@@ -565,6 +565,8 @@ func main() {
 	internal.WaitSignal()
 
 	s.GracefulStop()
+	// TODO: [norduser]
+	// norduserService.StopAll()
 
 	if err := dnsSetter.Unset(""); err != nil {
 		log.Printf("unsetting dns: %s", err)

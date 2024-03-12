@@ -641,6 +641,16 @@ func (Install) Binaries() error {
 		return err
 	}
 
+	norduserDst, err := sh.Output("which", internal.Norduserd)
+	if err != nil {
+		norduserDst = "/usr/bin/" + internal.Norduserd
+	}
+
+	norduserSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Norduserd)
+	if err := cp(norduserSrc, norduserDst); err != nil {
+		return err
+	}
+
 	return systemctl("start", "nordvpnd")
 }
 
