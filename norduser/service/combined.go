@@ -30,13 +30,13 @@ func (c *Combined) Enable(uid uint32, gid uint32) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// err := c.systemd.Enable(uid)
-	// if err == nil {
-	// 	c.uidToProcessType[uid] = systemd
-	// 	return nil
-	// }
+	err := c.systemd.Enable(uid)
+	if err == nil {
+		c.uidToProcessType[uid] = systemd
+		return nil
+	}
 
-	// log.Printf("failed to enable norduserd via systemd: %s, will fallback to fork implementation", err)
+	log.Printf("failed to enable norduserd via systemd: %s, will fallback to fork implementation", err)
 	if err := c.fork.Enable(uid, gid); err != nil {
 		return fmt.Errorf("enabling norduserd via fork: %w", err)
 	}
@@ -51,9 +51,9 @@ func (c *Combined) Disable(uid uint32) error {
 
 	switch c.uidToProcessType[uid] {
 	case systemd:
-		// if err := c.systemd.Disable(uid); err != nil {
-		// 	return fmt.Errorf("disabling systemd norduserd: %w", err)
-		// }
+		if err := c.systemd.Disable(uid); err != nil {
+			return fmt.Errorf("disabling systemd norduserd: %w", err)
+		}
 	case fork:
 		if err := c.fork.Stop(uid); err != nil {
 			return fmt.Errorf("stopping fork norduserd: %w", err)
@@ -68,9 +68,9 @@ func (c *Combined) Disable(uid uint32) error {
 func (c *Combined) stop(uid uint32, process processType) error {
 	switch process {
 	case systemd:
-		// if err := c.systemd.Stop(uid); err != nil {
-		// 	return fmt.Errorf("stopping systemd norduserd: %w", err)
-		// }
+		if err := c.systemd.Stop(uid); err != nil {
+			return fmt.Errorf("stopping systemd norduserd: %w", err)
+		}
 	case fork:
 		if err := c.fork.Stop(uid); err != nil {
 			return fmt.Errorf("stopping fork norduserd: %w", err)

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package norduserpb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/norduser/pb";
+
+message Empty{}
+
+service Norduser {
+    // StartsFileshare starts fileshare process
+	rpc StartFileshare(Empty) returns (Empty);
+    // StopFileshare stops fileshare process
+    rpc StopFileshare(Empty) returns (Empty);
+}
