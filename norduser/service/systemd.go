@@ -9,33 +9,33 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// SystemdFileshare manages fileshare service through systemctl
-type SystemdFileshare struct{}
+// SystemdNorduser manages norduser service through systemctl
+type SystemdNorduser struct{}
 
-// Enable and start fileshare service
-func (*SystemdFileshare) Enable(uid, _ uint32) error {
-	return systemdFileshare(uid, "enable")
+// Enable and start norduser service
+func (*SystemdNorduser) Enable(uid uint32) error {
+	return systemdNorduser(uid, "enable")
 }
 
-// Disable and stop fileshare service
-func (*SystemdFileshare) Disable(uid, _ uint32) error {
-	return systemdFileshare(uid, "disable")
+// Disable and stop norduser service
+func (*SystemdNorduser) Disable(uid uint32) error {
+	return systemdNorduser(uid, "disable")
 }
 
 // Stop without disabling
-func (*SystemdFileshare) Stop(uid, _ uint32) error {
-	return systemdFileshare(uid, "stop")
+func (*SystemdNorduser) Stop(uid uint32) error {
+	return systemdNorduser(uid, "stop")
 }
 
-func systemdFileshare(uid uint32, command string) error {
+func systemdNorduser(uid uint32, command string) error {
 	if uid == 0 {
 		// #nosec G204 -- no input comes from user
-		return exec.Command("systemctl", "--now", command, internal.Fileshared).Run()
+		return exec.Command("systemctl", "--now", command, internal.Norduserd).Run()
 	}
 
 	// #nosec G204 -- no input comes from user
 	cmd := exec.Command(
-		"systemctl", "--user", "--now", command, internal.Fileshared,
+		"systemctl", "--user", "--now", command, internal.Norduserd,
 	)
 	cmd.Env = os.Environ()
 	dbusAddr, err := internal.DBUSSessionBusAddress(int64(uid))

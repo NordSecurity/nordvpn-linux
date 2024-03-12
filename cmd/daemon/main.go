@@ -43,6 +43,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
+	grpcmiddleware "github.com/NordSecurity/nordvpn-linux/grpc_middleware"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
@@ -116,7 +117,6 @@ func main() {
 	log.Println(internal.InfoPrefix, "Daemon has started")
 
 	// Config
-
 	fsystem := config.NewFilesystemConfigManager(
 		config.SettingsDataFilePath,
 		config.InstallFilePath,
@@ -462,11 +462,30 @@ func main() {
 	opts := []grpc.ServerOption{
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
 	}
+
+	// TODO: uncomment once norduser has something to do(starting fileshare)
+	// norduserService := norduserservice.NewNorduserService()
+	// norduserMonitor := norduser.NewNordvpnGroupMonitor(&norduserService)
+	// go func() {
+	// 	if err := norduserMonitor.Start(); err != nil {
+	// 		log.Println("Error when starting norduser monitor: ", err.Error())
+	// 	}
+	// }()
+
+	middleware := grpcmiddleware.Middleware{}
 	if snapconf.IsUnderSnap() {
 		checker := snapChecker(errSubject)
-		opts = append(opts, grpc.UnaryInterceptor(checker.UnaryInterceptor))
-		opts = append(opts, grpc.StreamInterceptor(checker.StreamInterceptor))
+		middleware.AddStreamMiddleware(checker.StreamInterceptor)
+		middleware.AddUnaryMiddleware(checker.UnaryInterceptor)
 	}
+
+	// TODO: uncomment once norduser has something to do(starting fileshare)
+	// norduserMiddleware := norduser.NewStartNorduserMiddleware(&norduserService)
+	// middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
+	// middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
+
+	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
+	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))
 	s := grpc.NewServer(opts...)
 
 	pb.RegisterDaemonServer(s, rpc)

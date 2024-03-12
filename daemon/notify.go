@@ -61,7 +61,7 @@ func notify(id int64, body string) error {
 	} else {
 		return nil
 	}
-	dbusAddr := internal.DBUSSessionBusAddress(id)
+	dbusAddr, _ := internal.DBUSSessionBusAddress(id)
 	if dbusAddr == "" {
 		// user does not have active dbus session - cannot send notification
 		return nil
