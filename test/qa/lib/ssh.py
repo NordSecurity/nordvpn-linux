@@ -25,5 +25,10 @@ class Ssh:
         with self.client.open_sftp() as sftp:
             sftp.put(path, remote_path)
 
+    # Downloads file to the provided path from the ssh peer
+    def download_file(self, remote_path: str, path: str):
+        with self.client.open_sftp() as sftp:
+            sftp.get(remote_path, path)
+
     def disconnect(self):
         self.client.close()

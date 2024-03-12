@@ -300,7 +300,6 @@ func main() {
 		}
 	}
 	daemonEvents.Subscribe(analytics)
-	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
 
 	remoteConfigGetter := remoteConfigGetterImplementation(fsystem)
 
