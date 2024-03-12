@@ -84,7 +84,7 @@ contents:
     dst: /usr/share/bash-completion/completions/nordvpn
   - src: ${WORKDIR}/dist/autocomplete/zsh_autocomplete
     dst: /usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete
-  - src: ${WORKDIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn
+  - src: ${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn
     dst: /var/lib/${NAME}/openvpn
   - src: ${WORKDIR}/contrib/desktop/nordvpn.desktop
     dst: /usr/share/applications/nordvpn.desktop

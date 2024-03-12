@@ -6,7 +6,7 @@ source "${WORKDIR}/build/openvpn/env.sh"
 
 # implemented it this way, because expansion did not work
 binaries=(
-  "${WORKDIR}/bin/deps/openvpn/${ARCH}/${OPENVPN_VERSION}/openvpn"
+  "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
 )
 
 for binary in "${binaries[@]}"; do
