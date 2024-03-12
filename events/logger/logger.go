@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"log"
@@ -55,9 +56,18 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 	// Additional read of response body. Do not use in production builds
 	var respBodyBytes []byte
 	if data.Response != nil {
-		respBodyBytes, _ := io.ReadAll(data.Response.Body)
+		rawRespBodyBytes, _ := io.ReadAll(data.Response.Body)
 		_ = data.Response.Body.Close()
-		data.Response.Body = io.NopCloser(bytes.NewBuffer(respBodyBytes))
+		var reader io.Reader = bytes.NewBuffer(bytes.Clone(rawRespBodyBytes))
+		if data.Response.Header.Get("Content-Encoding") == "gzip" {
+			gReader, err := gzip.NewReader(io.NopCloser(reader))
+			if err == nil {
+				reader = gReader
+			}
+		}
+		data.Response.Body = io.NopCloser(bytes.NewBuffer(rawRespBodyBytes))
+
+		respBodyBytes, _ = io.ReadAll(reader)
 	}
 	log.Printf("%s HTTP CALL %s",
 		internal.InfoPrefix,
