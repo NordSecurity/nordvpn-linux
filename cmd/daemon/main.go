@@ -54,6 +54,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
+	"github.com/NordSecurity/nordvpn-linux/norduser"
+	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"golang.org/x/net/netutil"
@@ -456,11 +458,11 @@ func main() {
 	}
 
 	// TODO: uncomment once norduser has something to do(starting fileshare)
-	// norduserService := norduserservice.NewNorduserService()
-	// norduserMonitor := norduser.NewNordvpnGroupMonitor(&norduserService)
-	// if err := norduserMonitor.Start(); err != nil {
-	// 	log.Println("Error when starting norduser monitor: ", err.Error())
-	// }
+	norduserService := norduserservice.NewNorduserService()
+	norduserMonitor := norduser.NewNordvpnGroupMonitor(&norduserService)
+	if err := norduserMonitor.Start(); err != nil {
+		log.Println("Error when starting norduser monitor: ", err.Error())
+	}
 
 	middleware := grpcmiddleware.Middleware{}
 	if snapconf.IsUnderSnap() {
@@ -555,6 +557,7 @@ func main() {
 	internal.WaitSignal()
 
 	s.GracefulStop()
+	norduserService.StopAll()
 
 	if err := dnsSetter.Unset(""); err != nil {
 		log.Printf("unsetting dns: %s", err)

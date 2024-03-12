@@ -65,11 +65,8 @@ func (c *Combined) Disable(uid uint32) error {
 	return nil
 }
 
-func (c *Combined) Stop(uid uint32) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	switch c.uidToProcessType[uid] {
+func (c *Combined) stop(uid uint32, process processType) error {
+	switch process {
 	case systemd:
 		if err := c.systemd.Stop(uid); err != nil {
 			return fmt.Errorf("stopping systemd norduserd: %w", err)
@@ -83,4 +80,24 @@ func (c *Combined) Stop(uid uint32) error {
 	delete(c.uidToProcessType, uid)
 
 	return nil
+}
+
+func (c *Combined) Stop(uid uint32) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if processType, ok := c.uidToProcessType[uid]; ok {
+		return c.stop(uid, processType)
+	}
+
+	return fmt.Errorf("uid not found")
+}
+
+func (c *Combined) StopAll() {
+	var err error
+	for uid, processType := range c.uidToProcessType {
+		if err = c.stop(uid, processType); err != nil {
+			log.Println("failed to stop norduser for user: ", err.Error())
+		}
+	}
 }
