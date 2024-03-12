@@ -96,7 +96,7 @@ func (g GRPCFileshareProcess) StartProcess() error {
 
 	pingChan := make(chan error)
 	// Start another goroutine where we ping the WaitForReady option, so that server has time to start up before we run
-	// the acctuall command.
+	// the acctual command.
 	go func() {
 		fileshareClient, err := getFileshareClient()
 		if err != nil {

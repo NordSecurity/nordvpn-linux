@@ -37,8 +37,8 @@ func main() {
 	if processStatus == fileshare_process.Running {
 		os.Exit(int(fileshare_process.CodeAlreadyRunning))
 	} else if processStatus == fileshare_process.RunningForOtherUser {
-		os.Exit(int(fileshare_process.CodeAlreadyRunningForOtherUser))
 		log.Println("Cannot start fileshare daemon, it is already running for another user.")
+		os.Exit(int(fileshare_process.CodeAlreadyRunningForOtherUser))
 	}
 
 	usr, err := user.Current()
