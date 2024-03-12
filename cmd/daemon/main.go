@@ -472,9 +472,9 @@ func main() {
 	}
 
 	// TODO: uncomment once norduser has something to do(starting fileshare)
-	// norduserMiddleware := norduser.NewStartNorduserMiddleware(&norduserService)
-	// middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
-	// middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
+	norduserMiddleware := norduser.NewStartNorduserMiddleware(&norduserService)
+	middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
+	middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 
 	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))

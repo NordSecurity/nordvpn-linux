@@ -113,6 +113,8 @@ func NewNordvpnGroupMonitor(service *service.Combined) NordvpnGroupMonitor {
 	}
 }
 
+// Start enabled norduserd for all the users in nordvpn group and starts a group monitor goroutine that will start/stop
+// norduserd when user is added/removed from the group.
 func (n *NordvpnGroupMonitor) Start() error {
 	const etcPath = "/etc"
 
@@ -128,6 +130,17 @@ func (n *NordvpnGroupMonitor) Start() error {
 	currentGrupMembers, err := n.getNordvpnGroupMembers()
 	if err != nil {
 		return fmt.Errorf("getting initial group members: %w", err)
+	}
+
+	for member := range currentGrupMembers {
+		usr, err := getUID(member)
+		if err != nil {
+			log.Println("failed to get user ids when starting nordused: ", err.Error())
+		}
+		if err := n.norduserd.Enable(usr.uid, usr.gid); err != nil {
+			log.Println("failed to start nordused: ", err)
+		}
+		currentGrupMembers[member] = true
 	}
 
 	go func() {
