@@ -22,26 +22,22 @@ func NewStartNorduserMiddleware(norduserd *service.Combined) StartNorduserdMiddl
 	}
 }
 
-func (n *StartNorduserdMiddleware) middleware(ctx context.Context) error {
+func (n *StartNorduserdMiddleware) middleware(ctx context.Context) {
 	var ucred unix.Ucred
 	peer, ok := peer.FromContext(ctx)
 	if !ok || peer.AuthInfo == nil {
 		log.Println("no peer/auth info found in stream context")
-		return nil
 	} else {
 		var err error
 		ucred, err = internal.StringToUcred(peer.AuthInfo.AuthType())
 		if err != nil {
 			log.Println("failed to convert auth info to user credentials: ", err.Error())
-			return nil
 		}
 	}
 
 	if err := n.nodruserd.Enable(ucred.Uid, ucred.Gid); err != nil {
 		log.Println("failed to enable norduserd: ", err)
 	}
-
-	return nil
 }
 
 func (n *StartNorduserdMiddleware) StreamMiddleware(srv interface{},
