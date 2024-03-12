@@ -36,6 +36,7 @@ func (c *cmd) MeshSet(ctx *cli.Context) error {
 	color.Green(MsgSetMeshnetSuccess, nstrings.GetBoolLabel(flag))
 
 	if flag {
+		// #nosec G104 -- fileshare startup failure is not critical
 		c.fileshareProcessManager.StartProcess()
 	}
 

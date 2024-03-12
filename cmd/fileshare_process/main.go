@@ -70,7 +70,9 @@ func main() {
 	}
 	defer func() {
 		if err != nil {
-			listener.Close()
+			if err := listener.Close(); err != nil {
+				log.Println("Failed to close socket listener on failure: ", err)
+			}
 		}
 	}()
 
