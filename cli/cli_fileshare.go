@@ -109,9 +109,7 @@ func statusLoop(fileshareClient pb.FileshareClient, client transferStatusClient,
 }
 
 func startupErrorToErrorMessage(err error) error {
-	// fmt.Println("TEST")
 	if errors.Is(err, fileshare_process.ErrAlreadyRunning) || err == nil {
-		// fmt.Println("no err")
 		return nil
 	}
 

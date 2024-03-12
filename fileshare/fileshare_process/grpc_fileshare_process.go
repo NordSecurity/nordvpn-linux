@@ -108,16 +108,17 @@ func (g GRPCFileshareProcess) StartProcess() error {
 
 	select {
 	case err := <-errChan:
-		// fmt.Println("err chan")
-		if exiterr, ok := err.(*exec.ExitError); ok {
-			return errorCodeToError[StartupErrorCode(exiterr.ExitCode())]
+		var exiterr *exec.ExitError
+		if errors.As(err, exiterr) {
+			if err, ok := errorCodeToError[StartupErrorCode(exiterr.ExitCode())]; ok {
+				return err
+			}
+			return ErrFailedToEnable
 		} else {
 			return ErrFailedToEnable
 		}
 	case err := <-pingChan:
-		// fmt.Println("ping chan")
 		if err != nil {
-			// fmt.Println("ping err")
 			return ErrFailedToEnable
 		}
 	}

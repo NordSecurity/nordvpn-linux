@@ -33,7 +33,7 @@ func main() {
 		log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 	}
 
-	processStatus := fileshare_process.GRPCFileshareProcess{}.ProcessStatus()
+	processStatus := fileshare_process.NewGRPCFileshareProcess().ProcessStatus()
 	if processStatus == fileshare_process.Running {
 		os.Exit(int(fileshare_process.CodeAlreadyRunning))
 	} else if processStatus == fileshare_process.RunningForOtherUser {
@@ -83,7 +83,7 @@ func main() {
 		Environment,
 		internal.NewFileshareAuthenticator(uint32(uid)))
 	if err != nil {
-		log.Println("Failed to start the service: %s", err.Error())
+		log.Println("Failed to start the service: ", err.Error())
 		if errors.Is(err, fileshare_startup.ErrMeshNotEnabled) {
 			os.Exit(int(fileshare_process.CodeMeshnetNotEnabled))
 		}
