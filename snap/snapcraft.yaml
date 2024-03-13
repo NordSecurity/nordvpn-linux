@@ -53,6 +53,20 @@ parts:
       - bin/*
       - usr/*
 
+  nordfileshare:
+    plugin: dump
+    source-type: local
+    source:
+      - on i386: ./bin/i386
+      - on amd64: ./bin/amd64
+      - on armel: ./bin/armel
+      - on armhf: ./bin/armhf
+      - on aarch64: ./bin/aarch64
+    organize:
+      nordfileshare_process: var/lib/nordvpn/nordfileshare_process
+    stage:
+      - var/lib/nordvpn/nordfileshare_process
+
   openvpn-bin:
     plugin: dump
     source-type: local
