@@ -178,9 +178,8 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
 @pytest.mark.parametrize("local", [True, False])
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 def test_killswitch_exitnode(lan_discovery: bool, local: bool):
-    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}"
-    my_ip = meshnet.get_this_device_ipv4(output)
-    peer_ip = meshnet.get_peers(output)[0]
+    my_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
 
     # Initiate ssh connection via mesh because we are going to lose the main connection
     ssh_client_mesh = ssh.Ssh(peer_ip, "root", "root")
@@ -246,9 +245,8 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
 @pytest.mark.parametrize("local", [True, False])
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
-    output = f"{sh.nordvpn.mesh.peer.list(_tty_out=False)}"
-    my_ip = meshnet.get_this_device_ipv4(output)
-    peer_ip = meshnet.get_peers(output)[0]
+    my_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
 
     # Initiate ssh connection via mesh because we are going to lose the main connection
     ssh_client_mesh = ssh.Ssh(peer_ip, "root", "root")

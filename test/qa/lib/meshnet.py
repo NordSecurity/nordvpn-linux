@@ -20,6 +20,12 @@ LANS = [
 strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGNORECASE)
 
 
+class PeerName(Enum):
+    Hostname = 0
+    Ip = 1
+    Pubkey = 2
+
+
 class Peer:
     def _convert_to_bool(self, value):
         return value.lower() == "enabled" if value is not None else None
@@ -95,12 +101,15 @@ class Peer:
             peer.accept_fileshare_automatically = cls._convert_to_bool(peer_dict["accept fileshare automatically"])
 
         return peer
-
-
-class PeerName(Enum):
-    Hostname = 0
-    Ip = 1
-    Pubkey = 2
+    
+    def get_peer_name(self, name_type: PeerName) -> str:
+        match name_type:
+            case PeerName.Hostname:
+                return self.hostname
+            case PeerName.Ip:
+                return self.ip
+            case PeerName.Pubkey:
+                return self.public_key
 
 
 class PeerList:
@@ -181,16 +190,6 @@ MESHNET_ALIAS = [
     "meshnet",
     "mesh"
 ]
-
-def get_peer_name(peer: Peer, name_type: PeerName) -> str:
-    match name_type:
-        case PeerName.Hostname:
-            return peer.hostname
-        case PeerName.Ip:
-            return peer.ip
-        case PeerName.Pubkey:
-            return peer.public_key
-
 
 def add_peer(ssh_client: ssh.Ssh,
              tester_allow_fileshare: bool = True,
