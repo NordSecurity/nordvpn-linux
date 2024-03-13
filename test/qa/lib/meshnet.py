@@ -21,6 +21,9 @@ strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGN
 
 
 class Peer:
+    def _convert_to_bool(self, value):
+        return value.lower() == "enabled" if value is not None else None
+
     def __init__(
             self,
             hostname: str,
@@ -56,9 +59,42 @@ class Peer:
         self.allows_lan_access = self._convert_to_bool(allows_lan_access)
         self.allows_sending_files = self._convert_to_bool(allows_sending_files)
         self.accept_fileshare_automatically = self._convert_to_bool(accept_fileshare_automatically)
+    
+    @classmethod
+    def from_str(cls, data: str):
+        # Split the data into lines, filter out lines that don't contain ':',
+        # split each line into key-value pairs, strip whitespace, and convert keys to lowercase
+        peer_dict = {
+            a.strip().lower(): b.strip()
+            for a, b in (
+                element.split(':')  # Split each line into key-value pair
+                for element in filter(lambda line: len(line.split(':')) == 2, data.split('\n'))  # Filter lines containing ':'
+            )
+        }
 
-    def _convert_to_bool(self, value):
-        return value.lower() == "enabled" if value is not None else None
+        peer = cls(
+                hostname = peer_dict['hostname'],
+                nickname = peer_dict["nickname"],
+                ip = peer_dict["ip"],
+                public_key = peer_dict["public key"],
+                os = peer_dict["os"],
+                distribution = peer_dict["distribution"],
+            )
+
+        # Internal, external peer cases
+        if "Status" in peer_dict:
+            peer.status = peer_dict["status"]
+            peer.allow_incoming_traffic = cls._convert_to_bool(peer_dict["allow incoming traffic"])
+            peer.allow_routing = cls._convert_to_bool(peer_dict["allow routing"])
+            peer.allow_lan_access = cls._convert_to_bool(peer_dict["allow local network access"])
+            peer.allow_sending_files = cls._convert_to_bool(peer_dict["allow sending files"])
+            peer.allows_incoming_traffic = cls._convert_to_bool(peer_dict["allows incoming traffic"])
+            peer.allows_routing = cls._convert_to_bool(peer_dict["allows routing"])
+            peer.allows_lan_access = cls._convert_to_bool(peer_dict["allows local network access"])
+            peer.allows_sending_files = cls._convert_to_bool(peer_dict["allows sending files"])
+            peer.accept_fileshare_automatically = cls._convert_to_bool(peer_dict["accept fileshare automatically"])
+
+        return peer
 
 
 class PeerName(Enum):
@@ -73,52 +109,16 @@ class PeerList:
         self.internal_peers: list[Peer] = []
         self.external_peers: list[Peer] = []
 
-    def _str_to_dictionary(self, data: str):
-        new_dictionary = {a.strip().lower(): b.strip()
-                for a, b in (element.split(':')
-                                for element in
-                                filter(lambda line: len(line.split(':')) == 2, data.split('\n')))}
-
-        return new_dictionary
-
-    def _add_peer(self, to_peer_list: list[Peer], peer_data: str):
-        peer_data_dictionary = self._str_to_dictionary(peer_data)
-
-        # This device case
-        peer = Peer(
-                hostname = peer_data_dictionary['hostname'],
-                nickname = peer_data_dictionary["nickname"],
-                ip = peer_data_dictionary["ip"],
-                public_key = peer_data_dictionary["public key"],
-                os = peer_data_dictionary["os"],
-                distribution = peer_data_dictionary["distribution"],
-            )
-
-        # Internal, external peer cases
-        if "Status" in peer_data_dictionary:
-            peer.status = peer_data_dictionary["status"]
-            peer.allow_incoming_traffic = peer_data_dictionary["allow incoming traffic"]
-            peer.allow_routing = peer_data_dictionary["allow routing"]
-            peer.allow_lan_access = peer_data_dictionary["allow local network access"]
-            peer.allow_sending_files = peer_data_dictionary["allow sending files"]
-            peer.allows_incoming_traffic = peer_data_dictionary["allows incoming traffic"]
-            peer.allows_routing = peer_data_dictionary["allows routing"]
-            peer.allows_lan_access = peer_data_dictionary["allows local network access"]
-            peer.allows_sending_files = peer_data_dictionary["allows sending files"]
-            peer.accept_fileshare_automatically = peer_data_dictionary["accept fileshare automatically"]
-        
-        to_peer_list.append(peer)
-
     def set_this_device(self, peer_data: str):
         self.this_device = []
-        self._add_peer(self.this_device, peer_data)
+        self.this_device.append(Peer.from_str(peer_data))
 
     def get_this_device(self) -> Peer:
         return self.this_device[0]
 
 
     def add_internal_peer(self, peer_data: str) -> None:
-        self._add_peer(self.internal_peers, peer_data)
+        self.internal_peers.append(Peer.from_str(peer_data))
 
     def get_internal_peer(self) -> Peer | None:
         if len(self.internal_peers) != 0:
@@ -130,7 +130,7 @@ class PeerList:
 
 
     def add_external_peer(self, peer_data: str):
-        self._add_peer(self.external_peers, peer_data)
+        self.external_peers.append(Peer.from_str(peer_data))
 
     def get_external_peer(self) -> Peer | None:
         if len(self.external_peers) != 0:
@@ -139,6 +139,41 @@ class PeerList:
 
     def get_all_external_peers(self) -> list[Peer]:
         return self.external_peers
+
+
+    @classmethod
+    def from_str(cls, output: str):
+        """ Converts output/meshnet peer list string to PeerList object. """
+
+        def remove_text_before_and_keyword(input_string, keyword):
+            index = input_string.find(keyword)
+
+            if index != -1:
+                return input_string[index + len(keyword):]
+            else:
+                return input_string
+
+        peer_list = get_clean_peer_list(output)
+        peer_list_object = cls()
+
+        this_device = peer_list.split("\n\n")[0].replace("This device:\n", "")
+        peer_list_object.set_this_device(this_device)
+
+        internal_peers = remove_text_before_and_keyword(peer_list, "Local Peers:\n").split("\n\n\n")[0]
+        if "[no peers]" not in internal_peers:
+            internal_peer_list = internal_peers.split("\n\n")
+
+            for peer_data in internal_peer_list:
+                peer_list_object.add_internal_peer(peer_data)
+
+        external_peers = remove_text_before_and_keyword(peer_list, "External Peers:\n")
+        if "[no peers]" not in external_peers:
+            external_peer_list = external_peers.split("\n\n")
+
+            for peer_data in external_peer_list:
+                peer_list_object.add_external_peer(peer_data)
+
+        return peer_list_object
 
 
 # Used for test parametrization, when the same test has to be run with different Meshnet alias.
@@ -190,7 +225,7 @@ def add_peer(ssh_client: ssh.Ssh,
 
 def remove_all_peers():
     """Removes all meshnet peers from local device."""
-    peer_list = parse_peer_list(sh.nordvpn.mesh.peer.list())
+    peer_list = PeerList.from_str(sh.nordvpn.mesh.peer.list())
 
     for peer in peer_list.get_all_internal_peers() + peer_list.get_all_external_peers():
         sh.nordvpn.mesh.peer.remove(peer.hostname)
@@ -198,7 +233,7 @@ def remove_all_peers():
 
 def remove_all_peers_in_peer(ssh_client: ssh.Ssh):
     """Removes all meshnet peers from peer device."""
-    peer_list = parse_peer_list(ssh_client.exec_command("nordvpn mesh peer list"))
+    peer_list = PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list"))
 
     for peer in peer_list.get_all_internal_peers() + peer_list.get_all_external_peers():
         ssh_client.exec_command(f"nordvpn mesh peer remove {peer.hostname}")
@@ -379,40 +414,6 @@ def get_clean_peer_list(peer_list: str):
     output = strip_colors.sub('', str(peer_list))
     output = "This " + output.split("This", 1)[-1].strip()
     return output
-
-
-def parse_peer_list(output: str):
-    """ Converts output/meshnet peer list string to PeerList object. """
-
-    def remove_text_before_and_keyword(input_string, keyword):
-        index = input_string.find(keyword)
-
-        if index != -1:
-            return input_string[index + len(keyword):]
-        else:
-            return input_string
-
-    peer_list = get_clean_peer_list(output)
-    peer_list_object = PeerList()
-
-    this_device = peer_list.split("\n\n")[0].replace("This device:\n", "")
-    peer_list_object.set_this_device(this_device)
-
-    internal_peers = remove_text_before_and_keyword(peer_list, "Local Peers:\n").split("\n\n\n")[0]
-    if "[no peers]" not in internal_peers:
-        internal_peer_list = internal_peers.split("\n\n")
-
-        for peer_data in internal_peer_list:
-            peer_list_object.add_internal_peer(peer_data)
-
-    external_peers = remove_text_before_and_keyword(peer_list, "External Peers:\n")
-    if "[no peers]" not in external_peers:
-        external_peer_list = external_peers.split("\n\n")
-
-        for peer_data in external_peer_list:
-            peer_list_object.add_external_peer(peer_data)
-
-    return peer_list_object
 
 
 def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, retry: int = 5) -> bool:
