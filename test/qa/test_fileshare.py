@@ -183,7 +183,7 @@ def test_accept(accept_directories):
 @pytest.mark.parametrize("background", [True, False])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
-    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     wdir = fileshare.create_directory(1)
 
@@ -237,7 +237,7 @@ def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
 @pytest.mark.parametrize("background", [True, False])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.PeerName):
-    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     dir1 = fileshare.create_directory(5, "1")
     dir2 = fileshare.create_directory(5, "2")
@@ -630,7 +630,7 @@ def format_time(nanoseconds):
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_permissions_send_allowed(peer_name):
-    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     directory = fileshare.create_directory(1)
     filename = directory.paths[0]
@@ -647,14 +647,14 @@ def test_permissions_send_allowed(peer_name):
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_permissions_send_forbidden(peer_name):
-    tester_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device(), peer_name)
+    tester_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().get_peer_name(peer_name)
 
     ssh_client.exec_command(f"nordvpn mesh peer fileshare deny {tester_address}")
 
     directory = fileshare.create_directory(1)
     filename = directory.paths[0]
 
-    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.fileshare.send("--background", peer_address, filename).stdout.decode("utf-8")
@@ -667,7 +667,7 @@ def test_permissions_send_forbidden(peer_name):
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_permissions_meshnet_receive_forbidden(peer_name):
-    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     sh.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
 
@@ -675,7 +675,7 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     expected_transfer_list = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     expected_transfer_list = expected_transfer_list[expected_transfer_list.index("Incoming"):].strip()
 
-    tester_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device(), peer_name)
+    tester_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().get_peer_name(peer_name)
 
     file_name = "/tmp/file_allowed"
     ssh_client.exec_command(f"echo > {file_name}")
