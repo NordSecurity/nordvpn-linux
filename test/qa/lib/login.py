@@ -31,7 +31,7 @@ NA_USERNAME_PAGE_BUTTON_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/bu
 NA_PASSWORD_PAGE_TEXTBOX_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/div[3]/span/input'
 NA_PASSWORD_PAGE_BUTTON_XPATH = NA_USERNAME_PAGE_BUTTON_XPATH
 
-NA_CONTINUE_PAGE_LINK_BUTTON = '/html/body/div/div/div[1]/main/p[2]/a'
+NA_CONTINUE_PAGE_LINK_BUTTON = '/html/body/div/div/div[1]/main/div/a'
 
 # used with Selenium login tests
 LOGIN_FLAG = ["", "--nordaccount"]

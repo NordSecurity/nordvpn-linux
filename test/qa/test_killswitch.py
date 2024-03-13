@@ -1,3 +1,5 @@
+import os
+
 import pytest
 import sh
 import timeout_decorator
@@ -33,6 +35,45 @@ def teardown_function(function):  # noqa: ARG001
 
 MSG_KILLSWITCH_ON = "Kill Switch is set to 'enabled' successfully."
 MSG_KILLSWITCH_OFF = "Kill Switch is set to 'disabled' successfully."
+
+
+@pytest.mark.parametrize("login_flag", login.LOGIN_FLAG)
+#@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(60)
+def test_a(login_flag):
+    sh.nordvpn.logout("--persist-token")
+
+    selenium = login.SeleniumBrowser()
+    browser = selenium.browser_get()
+
+    #with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
+    with lib.Defer(selenium.browser_kill):
+        # Get login link from NordVPN app, trim all spaces & chars after link itself
+        login_link = sh.nordvpn.login(login_flag).split(": ")[1][:login.LOGIN_LINK_LENGTH]
+
+        # Open login link from NordVPN app
+        browser.get(login_link)
+
+        # User credentials, that we will use in order to log in to NordAccount
+        user_info = os.environ.get("DEFAULT_LOGIN_USERNAME") + ":" + os.environ.get("DEFAULT_LOGIN_PASSWORD")
+
+        try:
+            # Username page
+            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, user_info.split(':')[0])
+            selenium.browser_element_interact(login.NA_USERNAME_PAGE_BUTTON_XPATH)
+
+            # Password page
+            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, user_info.split(':')[1])
+            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_BUTTON_XPATH)
+
+            # Continue to app page
+            # preferences not set in constructor, so when we click link it does not redirect us to app.
+            callback_link = selenium.browser_element_interact(login.NA_CONTINUE_PAGE_LINK_BUTTON, return_attribute='href')
+        except:  # noqa: E722
+            browser.save_screenshot(login.BROWSER_LOGS_PATH + "Screenshot.png")
+            pytest.fail("Exception occured")
+
+        assert login.LOGIN_MSG_SUCCESS in sh.nordvpn.login("--callback", callback_link)
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
