@@ -12,7 +12,9 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"github.com/fatih/color"
 	"google.golang.org/grpc"
@@ -21,12 +23,11 @@ import (
 )
 
 var (
-	Salt         = ""
-	Version      = "0.0.0"
-	Environment  = ""
-	Hash         = ""
-	DaemonURL    = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
-	FileshareURL = fmt.Sprintf("%s://%s", internal.Proto, internal.GetFilesharedSocket(os.Getuid()))
+	Salt        = ""
+	Version     = "0.0.0"
+	Environment = ""
+	Hash        = ""
+	DaemonURL   = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 )
 
 func init() {
@@ -37,6 +38,24 @@ func init() {
 func clearFormatting(input string) string {
 	escapedString := strconv.Quote(input)
 	return strings.Trim(escapedString, "\"")
+}
+
+func getFileshareURL() string {
+	if snapconf.IsUnderSnap() {
+		return fileshare_process.FileshareURL
+	}
+
+	return fmt.Sprintf("%s://%s", internal.Proto, internal.GetFilesharedSocket(os.Getuid()))
+}
+
+var FileshareURL = getFileshareURL()
+
+func buildFileshareProcessManager() fileshare_process.FileshareProcess {
+	if snapconf.IsUnderSnap() {
+		return fileshare_process.NewGRPCFileshareProcess()
+	}
+
+	return fileshare_process.NoopFileshareProcess{}
 }
 
 func main() {
@@ -78,7 +97,7 @@ func main() {
 	)
 
 	cmd, err := cli.NewApp(
-		Version, Environment, Hash, Salt, err, conn, fileshareConn, &loaderInterceptor)
+		Version, Environment, Hash, Salt, err, conn, fileshareConn, &loaderInterceptor, buildFileshareProcessManager())
 	if err != nil {
 		color.Red(err.Error())
 		os.Exit(1)

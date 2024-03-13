@@ -13,6 +13,13 @@ apps:
     command: bin/nordvpn
     environment:
       PREFIX_COMMON: $SNAP_COMMON
+      PREFIX_DATA: $SNAP_DATA
+      PREFIX_STATIC: $SNAP
+      USER_DATA: $SNAP_USER_COMMON
+    plugs:
+      - home
+      - network
+      - network-bind
   nordvpnd:
     command: bin/nordvpnd
     daemon: simple
@@ -45,6 +52,20 @@ parts:
     stage:
       - bin/*
       - usr/*
+
+  nordfileshare:
+    plugin: dump
+    source-type: local
+    source:
+      - on i386: ./bin/i386
+      - on amd64: ./bin/amd64
+      - on armel: ./bin/armel
+      - on armhf: ./bin/armhf
+      - on aarch64: ./bin/aarch64
+    organize:
+      nordfileshare: var/lib/nordvpn/nordfileshare
+    stage:
+      - var/lib/nordvpn/nordfileshare
 
   openvpn-bin:
     plugin: dump
