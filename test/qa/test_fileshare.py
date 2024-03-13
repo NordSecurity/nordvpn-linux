@@ -41,7 +41,7 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn set mesh on")
 
     ssh_client.exec_command("nordvpn mesh peer refresh")
-    peer = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer()
+    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
     assert meshnet.is_peer_reachable(ssh_client, peer)
 
     message = "testing fileshare"
@@ -87,7 +87,7 @@ def teardown_function(function):  # noqa: ARG001
                           ["outer", "nested/inner"],
                           ["nested/inner"]])
 def test_accept(accept_directories):
-    address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
 
     # Check peer list on both ends
     output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
@@ -183,7 +183,7 @@ def test_accept(accept_directories):
 @pytest.mark.parametrize("background", [True, False])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
-    peer_address = meshnet.get_peer_name(meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
 
     wdir = fileshare.create_directory(1)
 
@@ -237,7 +237,7 @@ def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
 @pytest.mark.parametrize("background", [True, False])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.PeerName):
-    peer_address = meshnet.get_peer_name(meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
 
     dir1 = fileshare.create_directory(5, "1")
     dir2 = fileshare.create_directory(5, "2")
@@ -285,7 +285,7 @@ def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.
 
 @pytest.mark.parametrize("background", [True, False])
 def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
-    peer_address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     wdir = fileshare.create_directory(4)
 
@@ -325,7 +325,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
 def test_fileshare_graceful_cancel():
     wdir = fileshare.create_directory(1)
 
-    peer_address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
     command_handle = fileshare.start_transfer(peer_address, *wdir.paths)
 
     time.sleep(1)
@@ -358,7 +358,7 @@ def test_fileshare_graceful_cancel():
 @pytest.mark.parametrize("single_file", [True, False])
 @pytest.mark.parametrize("sender_cancels", [True, False])
 def test_fileshare_cancel_transfer(background: bool, single_file: bool, sender_cancels: bool):
-    peer_address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     if single_file:
         d = fileshare.create_directory(1)
@@ -419,7 +419,7 @@ def test_fileshare_cancel_transfer(background: bool, single_file: bool, sender_c
 
 @pytest.mark.parametrize("sender_cancels", [True, False])
 def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
-    peer_address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     wdir = fileshare.create_directory(5)
     sh.nordvpn.fileshare.send("--background", peer_address, wdir.dir_path)
@@ -443,7 +443,7 @@ def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
 @pytest.mark.parametrize("background", [True, False])
 @pytest.mark.parametrize("multiple_directories", [True, False])
 def test_fileshare_file_limit_exceeded(background: bool, multiple_directories: bool):
-    peer_address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     if multiple_directories:
         wdir = fileshare.create_directory(1001)
@@ -471,7 +471,7 @@ def test_fileshare_file_directory_depth_exceeded(background: bool):
     for _ in range(5):
         path = tempfile.mkdtemp(dir=path)
 
-    peer_address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer()
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if background:
@@ -483,7 +483,7 @@ def test_fileshare_file_directory_depth_exceeded(background: bool):
 
 
 def test_transfers_persistence():
-    peer = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer()
+    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
 
     sh.nordvpn.fileshare.send("--background", peer.ip, f"{workdir}/{test_files[0]}")
 
@@ -528,7 +528,7 @@ def test_transfers_persistence_load():
     # give time to start and connect
     time.sleep(1)
 
-    peer = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer()
+    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
     assert len(peer.ip.strip()) != 0
     assert meshnet.is_peer_reachable(ssh_client, peer)
 
@@ -630,7 +630,7 @@ def format_time(nanoseconds):
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_permissions_send_allowed(peer_name):
-    peer_address = meshnet.get_peer_name(meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
 
     directory = fileshare.create_directory(1)
     filename = directory.paths[0]
@@ -647,14 +647,14 @@ def test_permissions_send_allowed(peer_name):
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_permissions_send_forbidden(peer_name):
-    tester_address = meshnet.get_peer_name(meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_this_device(), peer_name)
+    tester_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device(), peer_name)
 
     ssh_client.exec_command(f"nordvpn mesh peer fileshare deny {tester_address}")
 
     directory = fileshare.create_directory(1)
     filename = directory.paths[0]
 
-    peer_address = meshnet.get_peer_name(meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.fileshare.send("--background", peer_address, filename).stdout.decode("utf-8")
@@ -667,7 +667,7 @@ def test_permissions_send_forbidden(peer_name):
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
 def test_permissions_meshnet_receive_forbidden(peer_name):
-    peer_address = meshnet.get_peer_name(meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
+    peer_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer(), peer_name)
 
     sh.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
 
@@ -675,7 +675,7 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     expected_transfer_list = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     expected_transfer_list = expected_transfer_list[expected_transfer_list.index("Incoming"):].strip()
 
-    tester_address = meshnet.get_peer_name(meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_this_device(), peer_name)
+    tester_address = meshnet.get_peer_name(meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device(), peer_name)
 
     file_name = "/tmp/file_allowed"
     ssh_client.exec_command(f"echo > {file_name}")
@@ -692,7 +692,7 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
 
 
 def test_accept_destination_directory_does_not_exist():
-    address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
 
     filename = "file"
 
@@ -713,7 +713,7 @@ def test_accept_destination_directory_does_not_exist():
 
 
 def test_accept_destination_directory_symlink():
-    address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
 
     filename = "file"
 
@@ -740,7 +740,7 @@ def test_accept_destination_directory_symlink():
 
 
 def test_accept_destination_directory_not_a_directory():
-    address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
 
     filename = "file"
 
@@ -763,7 +763,7 @@ def test_accept_destination_directory_not_a_directory():
 
 
 def test_autoaccept():
-    peer_list = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list())
+    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     peer_name = peer_list.get_internal_peer().ip
     subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name], check=False)
     # subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name])
@@ -794,7 +794,7 @@ def test_autoaccept():
 
 
 def test_peers_autocomplete():
-    peer_hostname = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
+    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
     output = sh.nordvpn.fileshare.send("--generate-bash-completion")
     assert peer_hostname in output
     output = sh.nordvpn.fileshare.send(peer_hostname, "--generate-bash-completion")
@@ -802,7 +802,7 @@ def test_peers_autocomplete():
 
 
 def test_transfers_autocomplete():
-    peer_address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
     wdir = fileshare.create_directory(2)
     fileshare.start_transfer(peer_address, *wdir.paths)
 
@@ -840,7 +840,7 @@ def test_transfers_autocomplete():
 
 
 def test_clear():
-    peer_address = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[0]}")
     time.sleep(1)

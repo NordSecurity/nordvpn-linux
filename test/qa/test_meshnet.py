@@ -48,7 +48,7 @@ def teardown_function(function):  # noqa: ARG001
 def test_meshnet_connect():
     # Ideally peer update should happen through Notification Center, but that doesn't work often
     sh.nordvpn.meshnet.peer.refresh()
-    peer = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_external_peer()
+    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer()
     assert meshnet.is_peer_reachable(ssh_client, peer)
 
 
@@ -60,7 +60,7 @@ def test_mesh_removed_machine_by_other():
         if "Token:" in ln:
             _, mytoken = ln.split(None, 2)
 
-    myname = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_this_device().hostname
+    myname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().hostname
     # find my machineid from api
     mymachineid = ""
     headers = {
@@ -95,7 +95,7 @@ def test_mesh_removed_machine_by_other():
 def test_allowlist_incoming_connection():
     my_ip = ssh_client.exec_command("echo $SSH_CLIENT").split()[0]
 
-    peer_hostname = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
+    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
     # Initiate ssh connection via mesh because we are going to lose the main connection
     ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
     ssh_client_mesh.connect()
@@ -117,7 +117,7 @@ def test_allowlist_incoming_connection():
 @pytest.mark.parametrize("incoming", [True, False])
 @pytest.mark.parametrize("fileshare", [True, False])
 def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, fileshare: bool):
-    peer_ip = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
+    peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, routing, local, incoming, fileshare)
 
     (result, message) = meshnet.validate_input_chain(peer_ip, routing, local, incoming, fileshare)
@@ -137,7 +137,7 @@ def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, filesh
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
-    peer_ip = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
+    peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, True, local, True, True)
 
     lan_discovery_value = "on" if lan_discovery else "off"
@@ -315,7 +315,7 @@ def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
 
 
 def test_connect_set_mesh_off():
-    peer = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
+    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
     assert network.is_available()
     sh.nordvpn.mesh.peer.connect(peer)
     assert daemon.is_connected()
@@ -338,7 +338,7 @@ def test_connect_set_mesh_off():
 
 
 def test_remove_peer_firewall_update():
-    peer_ip = meshnet.parse_peer_list(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
+    peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, True, True, True, True)
 
     sh.nordvpn.mesh.peer.remove(peer_ip)
