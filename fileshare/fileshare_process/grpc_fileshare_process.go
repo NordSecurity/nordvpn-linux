@@ -108,8 +108,8 @@ func (g GRPCFileshareProcess) StartProcess() error {
 
 	select {
 	case err := <-errChan:
-		var exiterr *exec.ExitError
-		if errors.As(err, exiterr) {
+		var exiterr exec.ExitError
+		if errors.As(err, &exiterr) {
 			if err, ok := errorCodeToError[StartupErrorCode(exiterr.ExitCode())]; ok {
 				return err
 			}

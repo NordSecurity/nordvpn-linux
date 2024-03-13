@@ -63,9 +63,9 @@ parts:
       - on armhf: ./bin/armhf
       - on aarch64: ./bin/aarch64
     organize:
-      nordfileshare_process: var/lib/nordvpn/nordfileshare_process
+      nordfileshare: var/lib/nordvpn/nordfileshare
     stage:
-      - var/lib/nordvpn/nordfileshare_process
+      - var/lib/nordvpn/nordfileshare
 
   openvpn-bin:
     plugin: dump

@@ -121,10 +121,10 @@ func NewFileshareAuthenticator(controlingUserUUID uint32) FileshareAuthenticator
 
 func (f FileshareAuthenticator) Authenticate(ucred *unix.Ucred) error {
 	if err := f.DaemonAuthenticator.Authenticate(ucred); err != nil {
-		return fmt.Errorf("user authentication failed: %w", err)
+		return err
 	}
 
-	if ucred.Uid != f.controllingUserUUID {
+	if ucred.Uid != f.controllingUserUUID && ucred.Uid != 0 {
 		return ErrNoPermission
 	}
 

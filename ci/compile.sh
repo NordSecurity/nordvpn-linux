@@ -17,19 +17,13 @@ ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Salt=${SALT}' \
 	-X 'main.FirebaseToken=${FIREBASE_TOKEN:-""}'"
 
-FILESHARE_BINARY=nordfileshared
-FILESHARE_SRC_DIR=fileshare
-if [[ -n "${FILESHARE_PROCESS-}" ]]; then
-	FILESHARE_BINARY=nordfileshare_process
-	FILESHARE_SRC_DIR=fileshare_process
-fi
-
 declare -A names_map=(
 	[cli]=nordvpn
 	[daemon]=nordvpnd
 	[downloader]=downloader
 	[pulp]=pulp
-	[$FILESHARE_SRC_DIR]=$FILESHARE_BINARY
+	[fileshare]=nordfileshared
+	[fileshare_process]=nordfileshare
 )
 
 # shellcheck disable=SC2034
@@ -81,10 +75,6 @@ if [[ $tags == *"moose"* ]]; then
 		git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff
 	}
 	trap revert_moose_patch EXIT
-fi
-
-if [[ -n "${FILESHARE_PROCESS-}" ]]; then
-	tags="$tags fileshare_process"
 fi
 
 for program in ${!names_map[*]}; do # looping over keys

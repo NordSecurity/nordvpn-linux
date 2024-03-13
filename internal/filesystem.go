@@ -108,7 +108,7 @@ func (rdl *runDirListener) Addr() net.Addr {
 func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error) {
 	return func() (net.Listener, error) {
 		if err := os.MkdirAll(
-			path.Dir(socket), PermUserRWXGroupRXOthersRX,
+			path.Dir(socket), PermUserRWGroupRWOthersRW,
 		); err != nil && !errors.Is(err, os.ErrExist) {
 			return nil, fmt.Errorf("creating run dir: %w\n", err)
 		}
@@ -420,14 +420,19 @@ func DBUSSessionBusAddress(id int64) string {
 	// #nosec G204 -- input is properly sanitized
 	out, err := exec.Command("ps", "-u", fmt.Sprintf("%d", id), "-o", "pid=").CombinedOutput()
 	if err != nil {
+		log.Println("Listing processes for uid: ", err.Error())
 		return ""
 	}
 	for _, number := range strings.Split(strings.Trim(string(out), "\n"), "\n") {
 		pid, err := strconv.ParseInt(strings.Trim(strings.Trim(number, "\n"), " "), 10, 64)
 		if err != nil {
+			log.Println("Parsing PID: ", err.Error())
 			continue
 		}
 		out, err := os.ReadFile(fmt.Sprintf("/proc/%d/environ", pid))
+		if err != nil {
+			log.Println("Reading environment file for pid: ", err)
+		}
 		for _, env := range strings.Split(string(out), "\000") {
 			if strings.Contains(env, "DBUS_SESSION_BUS_ADDRESS") {
 				return env

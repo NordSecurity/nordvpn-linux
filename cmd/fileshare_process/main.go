@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_startup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"golang.org/x/net/netutil"
 )
 
 // Values set when building the application
@@ -34,6 +35,7 @@ func main() {
 	}
 
 	processStatus := fileshare_process.NewGRPCFileshareProcess().ProcessStatus()
+
 	if processStatus == fileshare_process.Running {
 		os.Exit(int(fileshare_process.CodeAlreadyRunning))
 	} else if processStatus == fileshare_process.RunningForOtherUser {
@@ -63,11 +65,17 @@ func main() {
 		os.Exit(int(fileshare_process.CodeFailedToEnable))
 	}
 
+	if err := os.Remove(fileshare_process.FileshareSocket); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Println("Failed to remove old socket file: ", err)
+	}
+
 	listener, err := internal.ManualListener(fileshare_process.FileshareSocket, internal.PermUserRWGroupRWOthersRW)()
 	if err != nil {
 		log.Printf("Failed to open unix socket: %s", err)
 		os.Exit(int(fileshare_process.CodeFailedToCreateUnixScoket))
 	}
+	limitedListener := netutil.LimitListener(listener, 100)
+
 	defer func() {
 		if err != nil {
 			if err := listener.Close(); err != nil {
@@ -81,7 +89,7 @@ func main() {
 	fileshareHandle, err := fileshare_startup.Startup(storagePath,
 		legacyStoragePath,
 		eventsDBPath,
-		listener,
+		limitedListener,
 		Environment,
 		internal.NewFileshareAuthenticator(uint32(uid)))
 	if err != nil {
