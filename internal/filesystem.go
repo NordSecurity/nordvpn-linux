@@ -416,30 +416,25 @@ func SystemUsersIDs() ([]int64, error) {
 }
 
 // DBUSSessionBusAddress finds user dbus session bus address
-func DBUSSessionBusAddress(id int64) string {
+func DBUSSessionBusAddress(id int64) (string, error) {
 	// #nosec G204 -- input is properly sanitized
 	out, err := exec.Command("ps", "-u", fmt.Sprintf("%d", id), "-o", "pid=").CombinedOutput()
 	if err != nil {
-		log.Println("Listing processes for uid: ", err.Error())
-		return ""
+		return "", fmt.Errorf("listing processes for uid: %w", err)
 	}
 	for _, number := range strings.Split(strings.Trim(string(out), "\n"), "\n") {
 		pid, err := strconv.ParseInt(strings.Trim(strings.Trim(number, "\n"), " "), 10, 64)
 		if err != nil {
-			log.Println("Parsing PID: ", err.Error())
 			continue
 		}
-		out, err := os.ReadFile(fmt.Sprintf("/proc/%d/environ", pid))
-		if err != nil {
-			log.Println("Reading environment file for pid: ", err)
-		}
+		out, _ := os.ReadFile(fmt.Sprintf("/proc/%d/environ", pid))
 		for _, env := range strings.Split(string(out), "\000") {
 			if strings.Contains(env, "DBUS_SESSION_BUS_ADDRESS") {
-				return env
+				return env, nil
 			}
 		}
 	}
-	return ""
+	return "", nil
 }
 
 type NetLink struct {

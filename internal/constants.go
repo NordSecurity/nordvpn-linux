@@ -71,8 +71,12 @@ const (
 	// Fileshared defines filesharing daemon name
 	Fileshared = "nordfileshared"
 
+	Norduserd = "norduserd"
+
 	// FileshareHistoryFile is the storage file used by libdrop
 	FileshareHistoryFile = "fileshare_history.db"
+
+	LogFileExtension = ".log"
 )
 
 var (
@@ -135,8 +139,17 @@ func GetFilesharedSocket(uid int) string {
 	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Fileshared, Fileshared)
 }
 
-// GetFilesharedConfigDirPath returns the directory used to store nordfileshared logs and transfers history
-func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
+// GetNorduserdSocket to communicate with norduser daemon
+func GetNorduserdSocket(uid int) string {
+	_, err := os.Stat(fmt.Sprintf("/run/user/%d", uid))
+	if uid == 0 || os.IsNotExist(err) {
+		return fmt.Sprintf("/run/%s/%s.sock", Norduserd, Norduserd)
+	}
+	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Norduserd, Norduserd)
+}
+
+// GetConfigDirPath returns the directory used to store local user config and logs
+func GetConfigDirPath(homeDirectory string) (string, error) {
 	if homeDirectory == "" {
 		return "", errors.New("user does not have a home directory")
 	}
@@ -153,7 +166,7 @@ func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
 
 // GetFilesharedLogPath when logs aren't handled by systemd
 func GetFilesharedLogPath(uid string) string {
-	filesharedLogFilename := Fileshared + ".log"
+	filesharedLogFilename := Fileshared + LogFileExtension
 	if uid == "0" {
 		return filepath.Join(LogPath, filesharedLogFilename)
 	}
@@ -163,14 +176,36 @@ func GetFilesharedLogPath(uid string) string {
 		log.Printf("failed to lookup user, users fileshared logs will be stored in %s: %s", LogPath, err.Error())
 	}
 
-	configDir, err := GetFilesharedConfigDirPath(usr.HomeDir)
+	configDir, err := GetConfigDirPath(usr.HomeDir)
 
 	if err != nil {
 		log.Printf("users fileshared logs will be stored in %s: %s", LogPath, err.Error())
-		return filepath.Join(LogPath, Fileshared+"-"+uid+".log")
+		return filepath.Join(LogPath, Fileshared+"-"+uid+LogFileExtension)
 	}
 
 	return filepath.Join(configDir, filesharedLogFilename)
+}
+
+// GetNorduserdLogPath when logs aren't handled by systemd
+func GetNorduserdLogPath(uid string) string {
+	norduserdLogFilename := Norduserd + LogFileExtension
+	if uid == "0" {
+		return filepath.Join(LogPath, norduserdLogFilename)
+	}
+
+	usr, err := user.LookupId(uid)
+	if err != nil {
+		log.Printf("failed to lookup user, users norduser logs will be stored in %s: %s", LogPath, err.Error())
+	}
+
+	configDir, err := GetConfigDirPath(usr.HomeDir)
+
+	if err != nil {
+		log.Printf("users norduserd logs will be stored in %s: %s", LogPath, err.Error())
+		return filepath.Join(LogPath, Norduserd+"-"+uid+LogFileExtension)
+	}
+
+	return filepath.Join(configDir, norduserdLogFilename)
 }
 
 // GetNordvpnGid returns id of group defined in NordvpnGroup

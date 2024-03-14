@@ -13,6 +13,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/esiqveland/notify v0.11.2
 	github.com/fatih/color v1.15.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-co-op/gocron v1.18.1
 	github.com/go-ping/ping v1.1.0
 	github.com/godbus/dbus/v5 v5.1.0
