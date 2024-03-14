@@ -2,11 +2,13 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/mattn/go-isatty"
 )
 
 // loader defines loader's every frame
@@ -17,7 +19,20 @@ var loader = []string{
 	"/",
 }
 
-type Loader struct {
+// Loader is show progress interface
+type Loader interface {
+	Start()
+	Stop()
+}
+
+// SilentLoader do not show progress in case of non-terminal output
+type SilentLoader struct{}
+
+func (l *SilentLoader) Start() {}
+func (l *SilentLoader) Stop()  {}
+
+// TerminalLoader show operation progress to the human user in the terminal
+type TerminalLoader struct {
 	lastWrite int
 	active    bool
 	stopChan  chan struct{}
@@ -30,18 +45,21 @@ type LoaderConfig struct {
 }
 
 func NewLoader() Loader {
-	return Loader{
-		active:   false,
-		stopChan: make(chan struct{}, 1),
-		lock:     &sync.RWMutex{},
+	if isatty.IsTerminal(os.Stdout.Fd()) {
+		return &TerminalLoader{
+			active:   false,
+			stopChan: make(chan struct{}, 1),
+			lock:     &sync.RWMutex{},
+		}
 	}
+	return &SilentLoader{}
 }
 
-func (l *Loader) Start() {
-	l.StartWithConfig(nil)
+func (l *TerminalLoader) Start() {
+	l.startWithConfig(nil)
 }
 
-func (l *Loader) StartWithConfig(config *LoaderConfig) {
+func (l *TerminalLoader) startWithConfig(config *LoaderConfig) {
 	l.lock.Lock()
 	if l.active {
 		l.lock.Unlock()
@@ -71,7 +89,7 @@ func (l *Loader) StartWithConfig(config *LoaderConfig) {
 	}()
 }
 
-func (l *Loader) Stop() {
+func (l *TerminalLoader) Stop() {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	if l.active {
