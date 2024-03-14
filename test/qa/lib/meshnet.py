@@ -27,7 +27,8 @@ class PeerName(Enum):
 
 
 class Peer:
-    def _convert_to_bool(self, value):
+    @staticmethod
+    def _convert_to_bool(value):
         return value.lower() == "enabled" if value is not None else None
 
     def __init__(
@@ -88,7 +89,7 @@ class Peer:
             )
 
         # Internal, external peer cases
-        if "Status" in peer_dict:
+        if "status" in peer_dict:
             peer.status = peer_dict["status"]
             peer.allow_incoming_traffic = cls._convert_to_bool(peer_dict["allow incoming traffic"])
             peer.allow_routing = cls._convert_to_bool(peer_dict["allow routing"])
@@ -101,7 +102,7 @@ class Peer:
             peer.accept_fileshare_automatically = cls._convert_to_bool(peer_dict["accept fileshare automatically"])
 
         return peer
-    
+
     def get_peer_name(self, name_type: PeerName) -> str:
         match name_type:
             case PeerName.Hostname:
@@ -110,6 +111,43 @@ class Peer:
                 return self.ip
             case PeerName.Pubkey:
                 return self.public_key
+
+    @staticmethod
+    def _convert_to_str(value):
+        return "enabled" if value else "disabled"
+
+    def to_str(self):
+        output = [
+            f"Hostname: {self.hostname}",
+            f"Nickname: {self.nickname}",
+        ]
+
+        if self.status is not None:
+            output += [
+                f"Status: {self.status}",
+            ]
+
+        output += [
+            f"IP: {self.ip}",
+            f"Public Key: {self.public_key}",
+            f"OS: {self.os}",
+            f"Distribution: {self.distribution}"
+        ]
+
+        if self.status is not None:
+            output += [
+                f"Allow Incoming Traffic: {self._convert_to_str(self.allow_incoming_traffic)}",
+                f"Allow Routing: {self._convert_to_str(self.allow_routing)}",
+                f"Allow Local Network Access: {self._convert_to_str(self.allow_lan_access)}",
+                f"Allow Sending Files: {self._convert_to_str(self.allow_sending_files)}",
+                f"Allows Incoming Traffic: {self._convert_to_str(self.allows_incoming_traffic)}",
+                f"Allows Routing: {self._convert_to_str(self.allows_routing)}",
+                f"Allows Local Network Access: {self._convert_to_str(self.allows_lan_access)}",
+                f"Allows Sending Files: {self._convert_to_str(self.allows_sending_files)}",
+                f"Accept Fileshare Automatically: {self._convert_to_str(self.accept_fileshare_automatically)}"
+            ]
+
+        return output
 
 
 class PeerList:
@@ -137,6 +175,9 @@ class PeerList:
     def get_all_internal_peers(self) -> list[Peer]:
         return self.internal_peers
 
+    def clear_internal_peer_list(self):
+        self.internal_peers = []
+
 
     def add_external_peer(self, peer_data: str):
         self.external_peers.append(Peer.from_str(peer_data))
@@ -148,6 +189,56 @@ class PeerList:
 
     def get_all_external_peers(self) -> list[Peer]:
         return self.external_peers
+
+    def clear_external_peer_list(self):
+        self.external_peers = []
+
+
+
+    def parse_peer_list(self, filter_list: str = None) -> list[str]:
+        """ Builds expected Meshnet peer list string according to passed list of filters. """
+
+        show_internal = True
+        show_external = True
+
+        if filter_list is not None:
+            for filter in filter_list:
+                if filter == "external":
+                    show_external = True
+                    show_internal = False
+                    self.clear_internal_peer_list()
+
+                if filter == "internal":
+                    show_internal = True
+                    show_external = False
+                    self.clear_external_peer_list()
+
+                if filter == "offline":
+                    self.clear_internal_peer_list()
+                    self.clear_external_peer_list()
+
+        output = ["This device:"]
+        output.extend(self.get_this_device().to_str())
+        output += [""]
+
+        if show_internal:
+            output += ["Local Peers:"]
+            if self.get_internal_peer() is not None:
+                output.extend(self.get_internal_peer().to_str())
+            else:
+                output.extend(["[no peers]"])
+
+            if show_external:
+                output.extend([""])
+
+        if show_external:
+            output += ["External Peers:"]
+            if self.get_external_peer() is not None:
+                output.extend(self.get_external_peer().to_str())
+            else:
+                output.extend(["[no peers]"])
+
+        return output
 
 
     @classmethod
@@ -396,17 +487,24 @@ def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: b
     return True, ""
 
 
-def set_permissions(peer: str, routing: bool, local: bool, incoming: bool, fileshare: bool):
+def set_permissions(peer: str, routing: bool = None, local: bool = None, incoming: bool = None, fileshare: bool = None):
     def bool_to_permission(permission: bool) -> str:
         if permission:
             return "allow"
         return "deny"
 
     # ignore any failures that might occur when permissions are already configured to the desired value
-    sh.nordvpn.mesh.peer.routing(bool_to_permission(routing), peer, _ok_code=(0, 1))
-    sh.nordvpn.mesh.peer.local(bool_to_permission(local), peer, _ok_code=(0, 1))
-    sh.nordvpn.mesh.peer.incoming(bool_to_permission(incoming), peer, _ok_code=(0, 1))
-    sh.nordvpn.mesh.peer.fileshare(bool_to_permission(fileshare), peer, _ok_code=(0, 1))
+    if routing is not None:
+        sh.nordvpn.mesh.peer.routing(bool_to_permission(routing), peer, _ok_code=(0, 1))
+
+    if local is not None:
+        sh.nordvpn.mesh.peer.local(bool_to_permission(local), peer, _ok_code=(0, 1))
+
+    if incoming is not None:
+        sh.nordvpn.mesh.peer.incoming(bool_to_permission(incoming), peer, _ok_code=(0, 1))
+
+    if fileshare is not None:
+        sh.nordvpn.mesh.peer.fileshare(bool_to_permission(fileshare), peer, _ok_code=(0, 1))
 
 
 def get_clean_peer_list(peer_list: str):
