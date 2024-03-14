@@ -1,11 +1,54 @@
 name: nordvpn
+title: NordVPN
 base: core22
-summary: TODO
+
+website: https://nordvpn.com
+license: GPL-3.0
+contact: support@nordvpn.com
+source-code: https://github.com/NordSecurity/nordvpn-linux
+
+icon: assets/icon.svg
+summary: Shield your online activity and browse privately with the world’s leading VPN
 description: |
-  TODO
+  Take your online security to the next level with one of the fastest VPNs for Linux. Whether
+  you’re working from home or browsing over your hotel’s Wi-Fi, explore the internet with peace of
+  mind.
+  
+  * **Secure connection.** Without encryption, your online traffic is vulnerable. NordVPN encrypts
+    your connection to stop malicious actors from potentially stealing data.   
+  * **URL scanner.** Never visit dangerous sites by accident (such as through phishing links). Once
+    turned on, Threat Protection Lite will block access to known malicious pages.
+  * **Kill Switch.** Prevent leaks when you unexpectedly lose connection to NordVPN. Kill Switch
+    automatically cuts off online access until your VPN connection is restored. 
+  * **Specialty servers.** Get even more security from our Double VPN servers. Access the Tor
+    network without the Tor browser thanks to Onion Over VPN. 
+  
+  **More privacy**
+  
+  * **Private online activity.** Unencrypted online traffic may be observed by others, including
+    your ISP. Using NordVPN shields your online activity from prying eyes. 
+  * **New virtual location.** Connect to a VPN server to use its IP address — and thus virtual
+    location. NordVPN offers 6,000+ VPN servers in over 90 locations.
+  * **Censorship bypass.** Connecting to NordVPN servers lets you avoid many common censorship
+    measures. Privately experience the internet as it was meant to be.
+  * **Privacy-friendly practices.** NordVPN operates under a strict no-logs policy. Our practices
+    have been independently audited four times — we do not log your activity.
+  
+  **More convenience**
+  
+  * **SmartPlay.** Safely stream your favorite content from home with no extra steps. Thanks to
+    NordVPN’s SmartPlay, simply connect to a VPN server in your country and enjoy.
+  * **Ad blocker.** Browse the web without ads getting in your way. Turn on our Threat Protection
+    Lite feature for Linux to block ads before they load.
+  * **Meshnet.** Join up to 60 devices together to create an encrypted private network for secure
+    file sharing, project collaboration, and LAN gaming.  
+  * **Optimized for speed.** All VPNs slow you down — but with NordVPN’s infrastructure and
+    revolutionary NordLynx protocol (based on WireGuard), you won’t notice it.  
+  * **24/7 support.** Our friendly customer support team is ready to help you at any time. We also
+    have detailed guides covering every NordVPN function in our Help Center.
+
 adopt-info: nordvpn
 confinement: strict
-
 apps:
   nordvpn:
     command: bin/nordvpn
@@ -49,7 +92,7 @@ parts:
       sed -i 's/\.\./..\/..\/..\/../g' .git || true
       WORKDIR=$(pwd) source ./ci/env.sh
       sed -i 's\VERSION\'"${VERSION}"'\g' contrib/snap/appdata.xml
-      cp contrib/snap/appdata.xml ${SNAPCRAFT_PART_INSTALL}/com.nordsec.nordvpn.appdata.xml
+      cp contrib/snap/appdata.xml ${SNAPCRAFT_PART_BUILD}/com.nordsec.nordvpn.appdata.xml
     parse-info: [com.nordsec.nordvpn.appdata.xml]
 
   nordvpn-bin:
@@ -117,23 +160,18 @@ parts:
       ovpn_template.xslt: var/lib/nordvpn/data/ovpn_template.xslt
       ovpn_xor_template.xslt: var/lib/nordvpn/data/ovpn_xor_template.xslt
       servers.dat: var/lib/nordvpn/data/servers.dat
+    stage:
+      - var/lib/nordvpn/data/*
 
   desktop:
     plugin: dump
     source-type: local
     source: contrib/desktop
     override-build: |
-      sed -i 's\Icon=nordvpn\Icon=${SNAP}/usr/share/icons/hicolor/scalable/apps/nordvpn.svg\g' nordvpn.desktop
+      sed -i 's\Icon=nordvpn\Icon=${SNAP}/meta/icon.svg\g' nordvpn.desktop
       cp nordvpn.desktop ${SNAPCRAFT_PART_INSTALL}/nordvpn.desktop
     organize:
       nordvpn.desktop: usr/share/applications/nordvpn.desktop
-
-  assets:
-    plugin: dump
-    source-type: local
-    source: assets
-    organize:
-      icon.svg: usr/share/icons/hicolor/scalable/apps/nordvpn.svg
 
   # Contents of this part are not affecting the functionality in any way but they are here for
   # convenience
@@ -149,3 +187,5 @@ parts:
         #
       nordvpn.1.gz: usr/share/man/man1/nordvpn.1.gz
       changelog.yml: usr/share/doc/nordvpn/changelog.yml
+    stage:
+      - usr/share/*
