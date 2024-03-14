@@ -108,9 +108,9 @@ func (rdl *runDirListener) Addr() net.Addr {
 func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error) {
 	return func() (net.Listener, error) {
 		if err := os.MkdirAll(
-			path.Dir(socket), PermUserRWGroupRWOthersRW,
+			path.Dir(socket), PermUserRWXGroupRXOthersRX,
 		); err != nil && !errors.Is(err, os.ErrExist) {
-			return nil, fmt.Errorf("creating run dir: %w\n", err)
+			return nil, fmt.Errorf("creating run dir: %w", err)
 		}
 
 		listener, err := net.Listen(Proto, socket)
