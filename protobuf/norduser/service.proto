@@ -4,11 +4,11 @@ package norduserpb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/norduser/pb";
 
-message Empty{}
+import "norduser.proto";
 
 service Norduser {
     // StartsFileshare starts fileshare process
-	rpc StartFileshare(Empty) returns (Empty);
+    rpc StartFileshare(Empty) returns (StartFileshareResponse);
     // StopFileshare stops fileshare process
-    rpc StopFileshare(Empty) returns (Empty);
+    rpc StopFileshare(Empty) returns (StopFileshareResponse);
 }

@@ -6,6 +6,14 @@ import (
 	"sync"
 )
 
+type NorduserService interface {
+	Enable(uid uint32, gid uint32) error
+	Disable(uid uint32) error
+	Stop(uid uint32) error
+	StopAll()
+	DisableAll()
+}
+
 type processType int
 
 const (
@@ -20,8 +28,8 @@ type Combined struct {
 	uidToProcessType map[uint32]processType
 }
 
-func NewNorduserService() Combined {
-	return Combined{
+func NewNorduserService() *Combined {
+	return &Combined{
 		uidToProcessType: make(map[uint32]processType),
 	}
 }
@@ -45,14 +53,11 @@ func (c *Combined) Enable(uid uint32, gid uint32) error {
 	return nil
 }
 
-func (c *Combined) Disable(uid uint32) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	switch c.uidToProcessType[uid] {
+func (c *Combined) disable(uid uint32, process processType) error {
+	switch process {
 	case systemd:
 		if err := c.systemd.Disable(uid); err != nil {
-			return fmt.Errorf("disabling systemd norduserd: %w", err)
+			return fmt.Errorf("stopping systemd norduserd: %w", err)
 		}
 	case child:
 		if err := c.childProcess.Stop(uid); err != nil {
@@ -61,6 +66,17 @@ func (c *Combined) Disable(uid uint32) error {
 	}
 
 	delete(c.uidToProcessType, uid)
+
+	return nil
+}
+
+func (c *Combined) Disable(uid uint32) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if processType, ok := c.uidToProcessType[uid]; ok {
+		return c.disable(uid, processType)
+	}
 
 	return nil
 }
@@ -94,10 +110,17 @@ func (c *Combined) Stop(uid uint32) error {
 }
 
 func (c *Combined) StopAll() {
-	var err error
 	for uid, processType := range c.uidToProcessType {
-		if err = c.stop(uid, processType); err != nil {
+		if err := c.stop(uid, processType); err != nil {
 			log.Println("failed to stop norduser for user: ", err.Error())
+		}
+	}
+}
+
+func (c *Combined) DisableAll() {
+	for uid, processType := range c.uidToProcessType {
+		if err := c.disable(uid, processType); err != nil {
+			log.Println("failed to disable norduser for user: ", err.Error())
 		}
 	}
 }

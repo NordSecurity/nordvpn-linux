@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -38,32 +38,28 @@ func (m *okConfigManager) SaveWith(config.SaveFunc) error {
 func (m *okConfigManager) Load(*config.Config) error { return nil }
 func (m *okConfigManager) Reset() error              { return nil }
 
-type failingFileshare struct{ service.Fileshare }
-
-func (failingFileshare) Disable(uint32, uint32) error { return fmt.Errorf("error") }
-
 func TestMeshUnsetter_unsetMesh(t *testing.T) {
 	category.Set(t, category.Unit)
 	for _, tt := range []struct {
-		name      string
-		netw      MeshUnsetter
-		fileshare service.Fileshare
+		name              string
+		netw              MeshUnsetter
+		startFileshareErr error
 	}{
 		{
-			name:      "no fail",
-			netw:      okUnsetter{},
-			fileshare: service.NoopFileshare{},
+			name:              "no fail",
+			netw:              okUnsetter{},
+			startFileshareErr: nil,
 		},
 		{
 			name: "meshnet unset fails but config " +
 				"is still updated",
-			netw:      failingUnsetter{},
-			fileshare: service.NoopFileshare{},
+			netw:              failingUnsetter{},
+			startFileshareErr: nil,
 		},
 		{
-			name:      "fileshare disable fails but config is still updated",
-			netw:      okUnsetter{},
-			fileshare: failingFileshare{},
+			name:              "fileshare disable fails but config is still updated",
+			netw:              okUnsetter{},
+			startFileshareErr: fmt.Errorf("failed to start fileshare"),
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -72,7 +68,7 @@ func TestMeshUnsetter_unsetMesh(t *testing.T) {
 				cm,
 				tt.netw,
 				okPublisher{},
-				tt.fileshare,
+				testnorduser.NewMockNorduserClient(tt.startFileshareErr),
 			)
 			err := unsetter.unsetMesh()
 			assert.NoError(t, err)

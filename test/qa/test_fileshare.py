@@ -14,7 +14,7 @@ from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
-workdir = "/tmp"
+workdir = "/tmp/testfiles"
 test_files = ["testing_fileshare_0.txt", "testing_fileshare_1.txt", "testing_fileshare_2.txt", "testing_fileshare_3.txt"]
 
 default_download_directory = "/home/qa/Downloads"
@@ -38,11 +38,17 @@ def setup_module(module):  # noqa: ARG001
     daemon.install_peer(ssh_client)
     daemon.start_peer(ssh_client)
     login.login_as("default", ssh_client)
+
+    ssh_client.exec_command(f"mkdir -p {workdir}")
+    ssh_client.exec_command(f"chmod 0777 {workdir}")
     ssh_client.exec_command("nordvpn set mesh on")
 
     ssh_client.exec_command("nordvpn mesh peer refresh")
     peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
     assert meshnet.is_peer_reachable(ssh_client, peer)
+
+    if not os.path.exists(workdir):
+        os.makedirs(workdir)
 
     message = "testing fileshare"
     for file in test_files:
@@ -59,6 +65,7 @@ def teardown_module(module):  # noqa: ARG001
 
     ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
 
+    shutil.copy("/home/qa/.config/nordvpn/norduserd.log", dest_logs_path)
     shutil.copy("/home/qa/.config/nordvpn/nordfileshared.log", dest_logs_path)
     ssh_client.exec_command("nordvpn set mesh off")
     ssh_client.exec_command("nordvpn logout --persist-token")
@@ -78,7 +85,7 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
-    ssh_client.exec_command("rm -rf /tmp/*")
+    ssh_client.exec_command(f"rm -rf {workdir}/*")
 
 
 @pytest.mark.parametrize("accept_directories",
@@ -112,12 +119,12 @@ def test_accept(accept_directories):
     outer_dir = "outer"
     filename = "file"
 
-    ssh_client.exec_command(f"mkdir -p {nested_dir}")
-    ssh_client.exec_command(f"echo > {nested_dir}/{filename}")
-    ssh_client.exec_command(f"mkdir -p {nested_dir}/{inner_dir}")
-    ssh_client.exec_command(f"echo > {nested_dir}/{inner_dir}/{filename}")
-    ssh_client.exec_command(f"mkdir -p {outer_dir}")
-    ssh_client.exec_command(f"echo > {outer_dir}/{filename}")
+    ssh_client.exec_command(f"mkdir -p {workdir}/{nested_dir}")
+    ssh_client.exec_command(f"echo > {workdir}/{nested_dir}/{filename}")
+    ssh_client.exec_command(f"mkdir -p {workdir}/{nested_dir}/{inner_dir}")
+    ssh_client.exec_command(f"echo > {workdir}/{nested_dir}/{inner_dir}/{filename}")
+    ssh_client.exec_command(f"mkdir -p {workdir}/{outer_dir}")
+    ssh_client.exec_command(f"echo > {workdir}/{outer_dir}/{filename}")
 
     transfer_files = [f"{nested_dir}/{filename}", f"{nested_dir}/{inner_dir}/{filename}", f"{outer_dir}/{filename}"]
 
@@ -132,7 +139,7 @@ def test_accept(accept_directories):
     logging.log(data="------------------------------------------------------")
 
     # accept entire transfer
-    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {nested_dir} {outer_dir}")
+    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {workdir}/{nested_dir} {workdir}/{outer_dir}")
 
     local_transfer_id = None
     error_message = None
@@ -263,7 +270,7 @@ def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, files_in_transfer, lambda file_entry: "request sent" in file_entry)
 
-    ssh_client.exec_command(f"nordvpn fileshare accept --path / {peer_transfer_id}")
+    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id}")
 
     time.sleep(1)
 
@@ -304,7 +311,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     assert fileshare.for_all_files_in_transfer(transfer, wdir.transfer_paths, lambda file_entry: "request sent" in file_entry)
 
     ssh_client.exec_command(
-        f"nordvpn fileshare accept --path / {peer_transfer_id} {wdir.transfer_paths[0]} {wdir.transfer_paths[2]}"
+        f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wdir.transfer_paths[0]} {wdir.transfer_paths[2]}"
     )
 
     time.sleep(1)
@@ -328,11 +335,11 @@ def test_fileshare_graceful_cancel():
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
     command_handle = fileshare.start_transfer(peer_address, *wdir.paths)
 
-    time.sleep(1)
+    time.sleep(2)
 
     sh.kill("-s", "2", command_handle.pid)
 
-    time.sleep(1)
+    time.sleep(2)
 
     local_transfer_id = fileshare.get_last_transfer()
     peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
@@ -492,7 +499,7 @@ def test_transfers_persistence():
     local_transfer_id = fileshare.get_last_transfer()
     peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
 
-    ssh_client.exec_command(f"nordvpn fileshare accept {peer_transfer_id}")
+    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id}")
 
     sh.nordvpn.set.mesh.off()
     sh.nordvpn.set.mesh.on()
@@ -696,8 +703,8 @@ def test_accept_destination_directory_does_not_exist():
 
     filename = "file"
 
-    ssh_client.exec_command(f"touch {filename}")
-    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {filename}")
+    ssh_client.exec_command(f"touch {workdir}/{filename}")
+    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {workdir}/{filename}")
 
     local_transfer_id = None
     error_message = None
@@ -717,8 +724,8 @@ def test_accept_destination_directory_symlink():
 
     filename = "file"
 
-    ssh_client.exec_command(f"touch {filename}")
-    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {filename}")
+    ssh_client.exec_command(f"touch {workdir}/{filename}")
+    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {workdir}/{filename}")
 
     local_transfer_id = None
     error_message = None
@@ -744,8 +751,8 @@ def test_accept_destination_directory_not_a_directory():
 
     filename = "file"
 
-    ssh_client.exec_command(f"touch {filename}")
-    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {filename}")
+    ssh_client.exec_command(f"touch {workdir}/{filename}")
+    ssh_client.exec_command(f"nordvpn fileshare send --background {address} {workdir}/{filename}")
 
     local_transfer_id = None
     error_message = None
@@ -846,7 +853,7 @@ def test_clear():
     time.sleep(1)
     local_transfer_id0 = fileshare.get_last_transfer()
     peer_transfer_id0 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
-    ssh_client.exec_command(f"nordvpn fileshare accept {peer_transfer_id0}")
+    ssh_client.exec_command(f"nordvpn fileshare accept  --path {workdir} {peer_transfer_id0}")
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id0)
@@ -861,7 +868,7 @@ def test_clear():
     time.sleep(1)
     local_transfer_id1 = fileshare.get_last_transfer()
     peer_transfer_id1 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
-    ssh_client.exec_command(f"nordvpn fileshare accept {peer_transfer_id1}")
+    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id1}")
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id0)

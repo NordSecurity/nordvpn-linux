@@ -13,7 +13,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -87,9 +86,8 @@ func NewApp(version, environment, hash, salt string,
 	conn *grpc.ClientConn,
 	fileshareConn grpc.ClientConnInterface,
 	loaderInterceptor *LoaderInterceptor,
-	fileshareProcessManager fileshare_process.FileshareProcess,
 ) (*cli.App, error) {
-	cmd := newCommander(internal.Environment(environment), fileshareProcessManager)
+	cmd := newCommander(internal.Environment(environment))
 	if pingErr == nil {
 		cmd.client = pb.NewDaemonClient(conn)
 		cmd.meshClient = meshpb.NewMeshnetClient(conn)
@@ -880,19 +878,16 @@ func meshnetCommand(c *cmd) *cli.Command {
 }
 
 type cmd struct {
-	client                  pb.DaemonClient
-	meshClient              meshpb.MeshnetClient
-	fileshareClient         filesharepb.FileshareClient
-	fileshareProcessManager fileshare_process.FileshareProcess
-	environment             internal.Environment
-	loaderInterceptor       *LoaderInterceptor
+	client            pb.DaemonClient
+	meshClient        meshpb.MeshnetClient
+	fileshareClient   filesharepb.FileshareClient
+	environment       internal.Environment
+	loaderInterceptor *LoaderInterceptor
 }
 
-func newCommander(environment internal.Environment,
-	fileshareProcessManager fileshare_process.FileshareProcess) *cmd {
+func newCommander(environment internal.Environment) *cmd {
 	return &cmd{
-		environment:             environment,
-		fileshareProcessManager: fileshareProcessManager,
+		environment: environment,
 	}
 }
 

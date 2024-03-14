@@ -8,10 +8,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
+	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +32,7 @@ func TestLogout_Token(t *testing.T) {
 	rpc := RPC{
 		ac:        &workingLoginChecker{},
 		cm:        newMockConfigManager(),
-		fileshare: service.NoopFileshare{},
+		norduser:  &testnorduser.MockNorduserCombinedService{},
 		netw:      &networker.Mock{},
 		ncClient:  mockNC{},
 		publisher: &subs.Subject[string]{},

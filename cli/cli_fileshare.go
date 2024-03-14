@@ -19,7 +19,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/client"
 	dpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	mpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -108,23 +107,6 @@ func statusLoop(fileshareClient pb.FileshareClient, client transferStatusClient,
 	}
 }
 
-func startupErrorToErrorMessage(err error) error {
-	if errors.Is(err, fileshare_process.ErrAlreadyRunning) || err == nil {
-		return nil
-	}
-
-	if errors.Is(err, fileshare_process.ErrAlreadyRunningForOtherUser) ||
-		errors.Is(err, fileshare_process.ErrFailedToCreateUnixScoket) {
-		return formatError(fmt.Errorf(MsgFileshareStartedByOtherUser))
-	}
-
-	if errors.Is(err, fileshare_process.ErrMeshnetNotEnabled) {
-		return formatError(fmt.Errorf(MsgFileshareSocketNotFound))
-	}
-
-	return formatError(fmt.Errorf(internal.UnhandledMessage))
-}
-
 // IsFileshareDaemonReachable returns error if fileshare daemon is not reachable, daemon not running
 // being the most likely cause
 func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
@@ -146,7 +128,7 @@ func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(MsgMeshnetNotEnabled))
 	}
 
-	return startupErrorToErrorMessage(c.fileshareProcessManager.StartProcess())
+	return nil
 }
 
 // FileshareSend rpc

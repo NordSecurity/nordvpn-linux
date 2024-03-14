@@ -10,7 +10,7 @@ glibc_version=$1
 binaries=(
   "${WORKDIR}/bin/${ARCH}/nordvpn"
   "${WORKDIR}/bin/${ARCH}/nordvpnd"
-  "${WORKDIR}/bin/${ARCH}/nordfileshared"
+  "${WORKDIR}/bin/${ARCH}/nordfileshare"
   "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
   "${WORKDIR}/bin/${ARCH}/norduserd"
 )
