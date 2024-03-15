@@ -532,7 +532,7 @@ func (netw *Combined) ConnectionStatus() (ConnectionStatus, error) {
 
 	stats, err := netw.vpnet.Tun().TransferRates()
 	if err != nil {
-		return ConnectionStatus{}, err
+		return ConnectionStatus{}, fmt.Errorf("acquiring tun interface transfer rates: %w", err)
 	}
 
 	tech := config.Technology_OPENVPN
