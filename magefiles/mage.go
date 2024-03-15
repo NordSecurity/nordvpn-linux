@@ -19,6 +19,7 @@ const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.1.4"
 	imagePackager          = registryPrefix + "packager:1.0.3"
+	imageSnapPackager      = registryPrefix + "snaper:0.0.2"
 	imageProtobufGenerator = registryPrefix + "generator:1.0.2"
 	imageScanner           = registryPrefix + "scanner:1.0.3"
 	imageTester            = registryPrefix + "tester:1.1.7"
@@ -93,6 +94,52 @@ func (View) Coverage() error {
 func (View) Docs() error {
 	fmt.Println("Open http://localhost:6060/pkg/nordvpn to view documentation")
 	return sh.Run("godoc")
+}
+
+// Clean is used to clean build results.
+func Clean() error {
+	// cleanup regular build folders
+	buildFolders := []string{"./bin", "./dist"}
+	for _, folder := range buildFolders {
+		if internal.FileExists(folder) {
+			fmt.Println("Cleanup build folder:", folder)
+			if err := sh.Run("rm", "-r", folder); err != nil {
+				return err
+			}
+		}
+	}
+	// cleanup folders left after building snap in docker
+	// if folders do not exist - no problem, no error
+	snapFolders := []string{"./parts", "./stage", "./prime"}
+	for _, folder := range snapFolders {
+		if internal.FileExists(folder) {
+			fmt.Println("Cleanup snapcraft folder:", folder)
+			if err := sh.Run("sudo", "rm", "-r", folder); err != nil {
+				return err
+			}
+		}
+	}
+	// cleanup snap packages in current dir
+	pattern := "*.snap"
+	matches, err := filepath.Glob(pattern)
+	if err == nil && len(matches) > 0 {
+		fmt.Println("Cleanup snaps...")
+		for _, snap := range matches {
+			fmt.Println("Cleanup snap:", snap)
+			// sudo is needed when snap is built using docker
+			if err := sh.Run("sudo", "rm", snap); err != nil {
+				return err
+			}
+		}
+	}
+	// not everybody have/use snapcraft
+	if err := sh.Run("which", "snapcraft"); err == nil {
+		fmt.Println("Cleanup snapcraft internals...")
+		if err := sh.Run("snapcraft", "clean"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Download external dependencies
@@ -175,6 +222,9 @@ func buildPackage(packageType string, buildFlags string) error {
 		return err
 	}
 	env["WORKDIR"] = cwd
+	if packageType == "snap" {
+		return sh.RunWith(env, "snapcraft")
+	}
 	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", packageType)
 }
 
@@ -186,6 +236,11 @@ func (Build) Deb() error {
 // Rpm package for the host architecture
 func (Build) Rpm() error {
 	return buildPackage("rpm", "")
+}
+
+// Snap package for the host architecture
+func (Build) Snap() error {
+	return buildPackage("snap", "")
 }
 
 func buildPackageDocker(ctx context.Context, packageType string, buildFlags string) error {
@@ -210,6 +265,14 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
 	env["VERSION"] = git.versionTag
+	if packageType == "snap" {
+		return RunDocker(
+			ctx,
+			env,
+			imageSnapPackager,
+			[]string{"snapcraft", "--destructive-mode"},
+		)
+	}
 	return RunDocker(
 		ctx,
 		env,
@@ -226,6 +289,11 @@ func (Build) DebDocker(ctx context.Context) error {
 // RpmDocker package using Docker builder
 func (Build) RpmDocker(ctx context.Context) error {
 	return buildPackageDocker(ctx, "rpm", "")
+}
+
+// SnapDocker package using Docker builder
+func (Build) SnapDocker(ctx context.Context) error {
+	return buildPackageDocker(ctx, "snap", "")
 }
 
 func buildBinaries(buildFlags string) error {
