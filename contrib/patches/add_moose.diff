@@ -16,7 +16,7 @@ index f30dc66..65f6137 100644
  	github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948
 @@ -39,6 +44,8 @@ require (
  	google.golang.org/grpc v1.56.3
- 	google.golang.org/protobuf v1.30.0
+ 	google.golang.org/protobuf v1.33.0
  	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 +	moose/events v0.0.0
 +	moose/worker v0.0.0
