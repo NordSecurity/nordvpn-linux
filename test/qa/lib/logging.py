@@ -4,7 +4,8 @@ import os
 import sh
 
 # log file location
-FILE = f"{os.environ['WORKDIR']}/dist/logs/daemon.log"
+PATH = f"{os.environ['WORKDIR']}/dist/logs"
+FILE = f"{PATH}/daemon.log"
 
 
 def log(data=None):
