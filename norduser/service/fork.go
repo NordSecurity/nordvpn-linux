@@ -28,7 +28,7 @@ type ChildProcessNorduser struct {
 
 func isRunning(uid uint32) (bool, error) {
 	// list all norduserd processes, restrict output to uid of the owner
-	// #nosec G204 -- arguments are constatn
+	// #nosec G204 -- arguments are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
 	if err != nil {
 		return false, fmt.Errorf("listing processes: %w", err)
