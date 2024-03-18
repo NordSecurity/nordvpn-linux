@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"syscall"
@@ -28,12 +27,11 @@ type ChildProcessNorduser struct {
 }
 
 func isRunning(uid uint32) (bool, error) {
-	debug.PrintStack()
-
 	// list all norduserd processes, restrict output to uid of the owner
+	// #nosec G204 -- arguments are constatn
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
 	if err != nil {
-		fmt.Println("listing processes: %w", err)
+		return false, fmt.Errorf("listing processes: %w", err)
 	}
 
 	desiredUID := fmt.Sprint(uid)
