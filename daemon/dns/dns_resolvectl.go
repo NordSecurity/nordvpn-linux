@@ -5,8 +5,6 @@ import (
 	"log"
 	"os/exec"
 	"strings"
-
-	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // Executables
@@ -27,7 +25,13 @@ func (m *Resolvectl) Unset(iface string) error {
 }
 
 func (m *Resolvectl) IsAvailable() bool {
-	return internal.IsCommandAvailable(execResolvectl)
+	// resolvectl binary can be installed/available in headless/docker system;
+	// let's check if it is functional;
+	// #nosec G204 -- input is properly validated
+	if _, err := exec.Command("resolvectl", "status").CombinedOutput(); err != nil {
+		return false
+	}
+	return true
 }
 
 func (m *Resolvectl) Name() string {
