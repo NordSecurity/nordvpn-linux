@@ -68,15 +68,20 @@ const (
 	// ServerDateFormat defines api date format
 	ServerDateFormat = "2006-01-02 15:04:05"
 
-	// Fileshared defines filesharing daemon name
-	Fileshared = "nordfileshared"
+	// Fileshared defines filesharing process name
+	Fileshare = "nordfileshare"
 
+	Norduser  = "norduser"
 	Norduserd = "norduserd"
+
+	NorduserLogFile = "norduser" + LogFileExtension
 
 	// FileshareHistoryFile is the storage file used by libdrop
 	FileshareHistoryFile = "fileshare_history.db"
 
-	FileshareSocket = TmpDir + "/fileshare.sock"
+	FileshareSocket = TmpDir + "fileshare.sock"
+
+	FileshareLogFileName = "nordfileshare" + LogFileExtension
 
 	LogFileExtension = ".log"
 )
@@ -125,6 +130,10 @@ var (
 
 	// DaemonSocket defines system daemon socket file location
 	DaemonSocket = filepath.Join(RunDir, "/nordvpnd.sock")
+
+	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
+
+	NorduserBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
 )
 
 func GetSupportedIPTables() []string {
@@ -138,26 +147,27 @@ func GetSupportedIPTables() []string {
 	return iptables
 }
 
-// GetFilesharedSocket to communicate with fileshare daemon
-func GetFilesharedSocket(uid int) string {
-	_, err := os.Stat(fmt.Sprintf("/run/user/%d", uid))
-	if uid == 0 || os.IsNotExist(err) {
-		return fmt.Sprintf("/run/%s/%s.sock", Fileshared, Fileshared)
-	}
-	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Fileshared, Fileshared)
+func GetNorduserSocketSnap(uid uint32) string {
+	return fmt.Sprintf("%s%d-%s.sock", TmpDir, uid, Norduser)
 }
 
 // GetNorduserdSocket to communicate with norduser daemon
 func GetNorduserdSocket(uid int) string {
 	_, err := os.Stat(fmt.Sprintf("/run/user/%d", uid))
 	if uid == 0 || os.IsNotExist(err) {
-		return fmt.Sprintf("/run/%s/%s.sock", Norduserd, Norduserd)
+		return fmt.Sprintf("/run/%s/%s.sock", Norduser, Norduser)
 	}
-	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Norduserd, Norduserd)
+	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Norduser, Norduser)
 }
 
 // GetConfigDirPath returns the directory used to store local user config and logs
 func GetConfigDirPath(homeDirectory string) (string, error) {
+	// USER_DATA is set in case of snap.
+	snapUserDataDir := os.Getenv("USER_DATA")
+	if snapUserDataDir != "" {
+		return snapUserDataDir, nil
+	}
+
 	if homeDirectory == "" {
 		return "", errors.New("user does not have a home directory")
 	}
@@ -172,31 +182,9 @@ func GetConfigDirPath(homeDirectory string) (string, error) {
 	return "", fmt.Errorf("%s directory not found in users home directory", ConfigDirectory)
 }
 
-// GetFilesharedLogPath when logs aren't handled by systemd
-func GetFilesharedLogPath(uid string) string {
-	filesharedLogFilename := Fileshared + LogFileExtension
-	if uid == "0" {
-		return filepath.Join(LogPath, filesharedLogFilename)
-	}
-
-	usr, err := user.LookupId(uid)
-	if err != nil {
-		log.Printf("failed to lookup user, users fileshared logs will be stored in %s: %s", LogPath, err.Error())
-	}
-
-	configDir, err := GetConfigDirPath(usr.HomeDir)
-
-	if err != nil {
-		log.Printf("users fileshared logs will be stored in %s: %s", LogPath, err.Error())
-		return filepath.Join(LogPath, Fileshared+"-"+uid+LogFileExtension)
-	}
-
-	return filepath.Join(configDir, filesharedLogFilename)
-}
-
 // GetNorduserdLogPath when logs aren't handled by systemd
 func GetNorduserdLogPath(uid string) string {
-	norduserdLogFilename := Norduserd + LogFileExtension
+	norduserdLogFilename := Norduser + LogFileExtension
 	if uid == "0" {
 		return filepath.Join(LogPath, norduserdLogFilename)
 	}
@@ -210,7 +198,7 @@ func GetNorduserdLogPath(uid string) string {
 
 	if err != nil {
 		log.Printf("users norduserd logs will be stored in %s: %s", LogPath, err.Error())
-		return filepath.Join(LogPath, Norduserd+"-"+uid+LogFileExtension)
+		return filepath.Join(LogPath, fmt.Sprintf("%s-%s.%s", Norduser, uid, LogFileExtension))
 	}
 
 	return filepath.Join(configDir, norduserdLogFilename)

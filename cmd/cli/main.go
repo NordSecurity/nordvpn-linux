@@ -6,13 +6,18 @@ import (
 	"log"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
 
+	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/cli"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/norduser/process"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"github.com/fatih/color"
 	"google.golang.org/grpc"
@@ -21,13 +26,31 @@ import (
 )
 
 var (
-	Salt         = ""
-	Version      = "0.0.0"
-	Environment  = ""
-	Hash         = ""
-	DaemonURL    = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
-	FileshareURL = fmt.Sprintf("%s://%s", internal.Proto, internal.FileshareSocket)
+	Salt        = ""
+	Version     = "0.0.0"
+	Environment = ""
+	Hash        = ""
+	DaemonURL   = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 )
+
+func getNorduserManager() childprocess.ChildProcessManager {
+	if snapconf.IsUnderSnap() {
+		usr, err := user.Current()
+		if err != nil {
+			os.Exit(int(childprocess.CodeFailedToEnable))
+		}
+
+		uid, err := strconv.Atoi(usr.Uid)
+		if err != nil {
+			log.Printf("Invalid unix user id, failed to convert from string: %s", usr.Uid)
+			os.Exit(int(childprocess.CodeFailedToEnable))
+		}
+
+		return process.NewNorduserGRPCProcessManager(uint32(uid))
+	}
+
+	return childprocess.NoopChildProcessManager{}
+}
 
 func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -45,6 +68,10 @@ func main() {
 			log.Println(internal.UnhandledMessage)
 		}
 	}()
+
+	// nolint:errcheck // we want to suppress errors in the cli app, as starting norduser is not strictly related to the
+	// running command. For startup details norduser logs could be checked.
+	go getNorduserManager().StartProcess()
 
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -71,7 +98,7 @@ func main() {
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),
 	)
 	fileshareConn, err := grpc.Dial(
-		FileshareURL,
+		fileshare_process.FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(loaderInterceptor.UnaryInterceptor),
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),

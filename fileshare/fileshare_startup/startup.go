@@ -27,7 +27,6 @@ import (
 var (
 	version   = "0.0.0"
 	daemonURL = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
-	ConnURL   = internal.GetFilesharedSocket(os.Getuid())
 )
 
 var (

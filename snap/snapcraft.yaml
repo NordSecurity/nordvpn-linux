@@ -129,6 +129,20 @@ parts:
       nordfileshare: var/lib/nordvpn/nordfileshare
     stage:
       - var/lib/nordvpn/nordfileshare
+    
+  norduser:
+    plugin: dump
+    source-type: local
+    source:
+      - on i386: ./bin/i386
+      - on amd64: ./bin/amd64
+      - on armel: ./bin/armel
+      - on armhf: ./bin/armhf
+      - on aarch64: ./bin/aarch64
+    organize:
+      norduserd: var/lib/nordvpn/norduserd
+    stage:
+      - var/lib/nordvpn/norduserd
 
   openvpn-bin:
     plugin: dump

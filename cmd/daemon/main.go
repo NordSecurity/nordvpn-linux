@@ -384,7 +384,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	norduserService := norduserservice.NewNorduserService()
+	var norduserService norduserservice.NorduserService
+	if snapconf.IsUnderSnap() {
+		norduserService = norduserservice.NewNorduserSnapService()
+	} else {
+		norduserService = norduserservice.NewNorduserService()
+	}
+
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
 	meshnetChecker := meshnet.NewRegisteringChecker(
@@ -476,11 +482,12 @@ func main() {
 		checker := snapChecker(errSubject)
 		middleware.AddStreamMiddleware(checker.StreamInterceptor)
 		middleware.AddUnaryMiddleware(checker.UnaryInterceptor)
+	} else {
+		// in non snap environment, norduser is started on the daemon side on every command
+		norduserMiddleware := norduser.NewStartNorduserMiddleware(norduserService)
+		middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
+		middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 	}
-
-	norduserMiddleware := norduser.NewStartNorduserMiddleware(norduserService)
-	middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
-	middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 
 	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))
