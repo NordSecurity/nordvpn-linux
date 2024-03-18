@@ -38,7 +38,7 @@ require (
 	golang.zx2c4.com/wireguard v0.0.0-20230313165553-0ad14a89f5f9
 	google.golang.org/api v0.114.0
 	google.golang.org/grpc v1.56.3
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
