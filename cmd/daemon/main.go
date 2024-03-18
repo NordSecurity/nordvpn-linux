@@ -509,7 +509,7 @@ func main() {
 			var listenerFunction = internal.SystemDListener
 			// switch to manual if pids mismatch
 			if os.Getenv(internal.ListenPID) != strconv.Itoa(os.Getpid()) {
-				listenerFunction = internal.ManualListener(ConnURL,
+				listenerFunction = internal.ManualListenerIfNotInUse(ConnURL,
 					internal.PermUserRWGroupRW, internal.DaemonPid)
 			}
 			listener, err = listenerFunction()
@@ -569,7 +569,6 @@ func main() {
 	// Graceful stop
 
 	internal.WaitSignal()
-
 	s.GracefulStop()
 	norduserService.StopAll()
 

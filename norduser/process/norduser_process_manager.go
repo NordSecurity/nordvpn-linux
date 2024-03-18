@@ -61,7 +61,7 @@ func (n *NorduserProcessClient) Ping(nowait bool) error {
 	return err
 }
 
-func (n *NorduserProcessClient) Stop() error {
+func (n *NorduserProcessClient) Stop(disable bool) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -77,7 +77,7 @@ func (n *NorduserProcessClient) Stop() error {
 		}
 	}()
 
-	_, err = client.Stop(context.Background(), &pb.Empty{})
+	_, err = client.Stop(context.Background(), &pb.StopNorduserRequest{Disable: disable})
 
 	return err
 }

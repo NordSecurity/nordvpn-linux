@@ -502,6 +502,11 @@ func NewApp(version, environment, hash, salt string,
 				},
 			},
 		},
+		{
+			Name:   "user",
+			Action: cmd.User,
+			Hidden: true,
+		},
 	}
 
 	app.Commands = append(app.Commands, meshnetCommand(cmd))

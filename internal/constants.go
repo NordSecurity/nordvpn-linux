@@ -151,16 +151,19 @@ func GetSupportedIPTables() []string {
 }
 
 func GetNorduserSocketSnap(uid uint32) string {
-	return fmt.Sprintf("%s%d-%s.sock", TmpDir, uid, Norduser)
+	return fmt.Sprintf("%s%d-%s.sock", TmpDir, uid, Norduserd)
 }
 
 // GetNorduserdSocket to communicate with norduser daemon
 func GetNorduserdSocket(uid int) string {
-	_, err := os.Stat(fmt.Sprintf("/run/user/%d", uid))
-	if uid == 0 || os.IsNotExist(err) {
-		return fmt.Sprintf("/run/%s/%s.sock", Norduser, Norduser)
+	if uid == 0 {
+		return fmt.Sprintf("/run/%s/%s.sock", Norduserd, Norduserd)
 	}
-	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Norduser, Norduser)
+	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Norduserd, Norduserd)
+}
+
+func GetNorduserSocketFork(uid int) string {
+	return fmt.Sprintf("/tmp/%d-%s.sock", uid, Norduserd)
 }
 
 // GetFilesharedPid to save fileshare daemon pid

@@ -17,14 +17,14 @@ type Meshnet struct {
 	man          config.Manager
 	netw         MeshUnsetter
 	errPublisher events.Publisher[error]
-	norduser     service.NorduserClient
+	norduser     service.NorduserFileshareClient
 }
 
 func NewMeshnet(
 	man config.Manager,
 	netw MeshUnsetter,
 	errPublisher events.Publisher[error],
-	norduser service.NorduserClient,
+	norduser service.NorduserFileshareClient,
 ) *Meshnet {
 	return &Meshnet{
 		man:          man,

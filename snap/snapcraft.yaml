@@ -49,6 +49,13 @@ description: |
 
 adopt-info: nordvpn
 confinement: strict
+
+plugs:
+  norduser-autostart:
+    interface: personal-files
+    write:
+    - $HOME/.config/autostart/nordvpn.desktop
+
 apps:
   nordvpn:
     command: bin/nordvpn
@@ -61,6 +68,7 @@ apps:
       - home
       - network
       - network-bind
+      - norduser-autostart
     completer: usr/share/bash-completion/completions/nordvpn
     # Snap does not support zsh autocompletions. In order to enable them, after installing snap,
     # execute:
@@ -129,7 +137,7 @@ parts:
       nordfileshare: var/lib/nordvpn/nordfileshare
     stage:
       - var/lib/nordvpn/nordfileshare
-    
+
   norduser:
     plugin: dump
     source-type: local

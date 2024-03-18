@@ -111,7 +111,7 @@ func Startup(storagePath string,
 	meshClient := meshpb.NewMeshnetClient(grpcConn)
 
 	resp, err := meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil || !resp.GetStatus().GetValue() {
 		return FileshareHandle{}, ErrMeshNotEnabled
 	}
 

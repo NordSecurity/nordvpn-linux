@@ -23,3 +23,7 @@ message StartFileshareResponse {
 message StopFileshareResponse {
     bool success = 1;
 }
+
+message StopNorduserRequest {
+	bool disable = 1;
+}

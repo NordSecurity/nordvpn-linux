@@ -651,7 +651,7 @@ func (Install) Binaries() error {
 		norduserDst = fmt.Sprintf("/usr/bin/%s", internal.Norduserd)
 	}
 
-	norduserSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Norduser)
+	norduserSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Norduserd)
 	if err := cp(norduserSrc, norduserDst); err != nil {
 		return err
 	}

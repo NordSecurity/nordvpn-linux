@@ -159,8 +159,8 @@ type mockMeshClient struct {
 }
 
 // IsEnabled mock implementation
-func (m *mockMeshClient) IsEnabled(ctx context.Context, in *meshpb.Empty, opts ...grpc.CallOption) (*meshpb.ServiceBoolResponse, error) {
-	return &meshpb.ServiceBoolResponse{Response: &meshpb.ServiceBoolResponse_Value{Value: m.isEnabled}}, nil
+func (m *mockMeshClient) IsEnabled(ctx context.Context, in *meshpb.Empty, opts ...grpc.CallOption) (*meshpb.IsEnabledResponse, error) {
+	return &meshpb.IsEnabledResponse{Response: &meshpb.IsEnabledResponse_Status{Status: &meshpb.EnabledStatus{Value: m.isEnabled}}}, nil
 }
 
 // GetPeers mock implementation
