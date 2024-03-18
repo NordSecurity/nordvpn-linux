@@ -267,3 +267,20 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
     sh.nordvpn.connect()
 
     assert not dns.is_set_for(nameserver)
+
+
+def test_set_analytics_off_on():
+
+    assert "Analytics is set to 'disabled' successfully." in sh.nordvpn.set.analytics("off")
+    assert not settings.are_analytics_enabled()
+
+    assert "Analytics is set to 'enabled' successfully." in sh.nordvpn.set.analytics("on")
+    assert settings.are_analytics_enabled()
+
+
+def test_set_analytics_on_off_repeated():
+
+    assert "Analytics is already set to 'enabled'." in sh.nordvpn.set.analytics("on")
+
+    sh.nordvpn.set.analytics("off")
+    assert "Analytics is already set to 'disabled'." in sh.nordvpn.set.analytics("off")
