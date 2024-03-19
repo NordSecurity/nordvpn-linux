@@ -1,3 +1,5 @@
+import contextlib
+
 import paramiko
 
 
@@ -8,6 +10,8 @@ class Ssh:
         self.username = username
         self.password = password
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        self.meshnet = self.Meshnet(self)
 
     def connect(self):
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
@@ -32,3 +36,31 @@ class Ssh:
 
     def disconnect(self):
         self.client.close()
+
+
+    class Meshnet:
+        def __init__(self, ssh_class_instance):
+            self.ssh_class_instance = ssh_class_instance
+
+        def set_permissions(self, peer: str, routing: bool = None, local: bool = None, incoming: bool = None, fileshare: bool = None):
+            def bool_to_permission(permission: bool) -> str:
+                if permission:
+                    return "allow"
+                return "deny"
+
+            # ignore any failures that might occur when permissions are already configured to the desired value
+            if routing is not None:
+                with contextlib.suppress(Exception):
+                    self.ssh_class_instance.exec_command(f"nordvpn mesh peer routing {bool_to_permission(routing)} {peer}")
+
+            if local is not None:
+                with contextlib.suppress(Exception):
+                    self.ssh_class_instance.exec_command(f"nordvpn mesh peer local {bool_to_permission(local)} {peer}")
+
+            if incoming is not None:
+                with contextlib.suppress(Exception):
+                    self.ssh_class_instance.exec_command(f"nordvpn mesh peer incoming {bool_to_permission(incoming)} {peer}")
+
+            if fileshare is not None:
+                with contextlib.suppress(Exception):
+                    self.ssh_class_instance.exec_command(f"nordvpn mesh peer fileshare {bool_to_permission(fileshare)} {peer}")
