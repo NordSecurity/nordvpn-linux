@@ -29,7 +29,7 @@ func (c *cmd) MeshSet(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
-	if err := meshnetResponseToError(resp); err != nil {
+	if err := MeshnetResponseToError(resp); err != nil {
 		return formatError(err)
 	}
 
