@@ -932,9 +932,9 @@ func (i *LoaderInterceptor) StreamInterceptor(ctx context.Context, desc *grpc.St
 	return loaderStream{ClientStream: stream, loaderEnabled: i.enabled}, err
 }
 
-// retrieveSnapConnsError checks whether ny of the details inside gRPC error is a
+// RetrieveSnapConnsError checks whether ny of the details inside gRPC error is a
 // `SnapPermissionError` and returns pointer to it. Otherwise, returns nil
-func retrieveSnapConnsError(err error) *snappb.ErrMissingConnections {
+func RetrieveSnapConnsError(err error) *snappb.ErrMissingConnections {
 	s := status.Convert(err)
 	for _, d := range s.Details() {
 		permError, ok := d.(*snappb.ErrMissingConnections)
@@ -945,7 +945,7 @@ func retrieveSnapConnsError(err error) *snappb.ErrMissingConnections {
 	return nil
 }
 
-func formatSnapMissingConnsErr(err *snappb.ErrMissingConnections) string {
+func FormatSnapMissingConnsErr(err *snappb.ErrMissingConnections) string {
 	permissionStr := ""
 	for _, permission := range err.MissingConnections {
 		permissionStr += fmt.Sprintf("sudo snap connect nordvpn:%s\n", permission)
@@ -979,8 +979,8 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 		}
 		err = c.Ping()
 		if err != nil {
-			if snapErr := retrieveSnapConnsError(err); snapErr != nil {
-				color.Red(formatSnapMissingConnsErr(snapErr))
+			if snapErr := RetrieveSnapConnsError(err); snapErr != nil {
+				color.Red(FormatSnapMissingConnsErr(snapErr))
 				os.Exit(1)
 			}
 			switch {
@@ -1040,8 +1040,8 @@ func addLoaderToCommandRecursively(c *cmd, err error, command *cli.Command) *cli
 	return command
 }
 
-// meshnetResponseToError returns a human readable error
-func meshnetResponseToError(resp *meshpb.MeshnetResponse) error {
+// MeshnetResponseToError returns a human readable error
+func MeshnetResponseToError(resp *meshpb.MeshnetResponse) error {
 	if resp == nil {
 		return errors.New(AccountInternalError)
 	}
