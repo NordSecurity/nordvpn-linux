@@ -42,7 +42,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	grpcmiddleware "github.com/NordSecurity/nordvpn-linux/grpc_middleware"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -54,6 +53,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
+	"github.com/NordSecurity/nordvpn-linux/norduser"
+	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"golang.org/x/net/netutil"
@@ -378,13 +379,13 @@ func main() {
 		cfg.LanDiscovery,
 	)
 
-	// RPC Servers
-	fileshareImplementation := fileshareImplementation()
-
 	keygen, err := keygenImplementation(vpnFactory)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	norduserService := norduserservice.NewNorduserService()
+	norduserClient := norduserservice.NewNorduserGRPCClient()
 
 	meshnetChecker := meshnet.NewRegisteringChecker(
 		fsystem,
@@ -400,7 +401,7 @@ func main() {
 		fsystem,
 		netw,
 		errSubject,
-		fileshareImplementation,
+		norduserClient,
 	)
 	meshnetEvents.SelfRemoved.Subscribe(meshUnsetter.NotifyDisabled)
 
@@ -441,7 +442,7 @@ func main() {
 		threatProtectionLiteServers,
 		notificationClient,
 		analytics,
-		fileshareImplementation,
+		norduserService,
 		meshAPIex,
 	)
 	meshService := meshnet.NewServer(
@@ -456,21 +457,19 @@ func main() {
 		meshnetEvents.PeerUpdate,
 		daemonEvents.Settings.Meshnet,
 		daemonEvents.Service.Connect,
-		fileshareImplementation,
+		norduserClient,
 	)
 
 	opts := []grpc.ServerOption{
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
 	}
 
-	// TODO: [norduser] uncomment once norduser has something to do(starting fileshare)
-	// norduserService := norduserservice.NewNorduserService()
-	// norduserMonitor := norduser.NewNordvpnGroupMonitor(&norduserService)
-	// go func() {
-	// 	if err := norduserMonitor.Start(); err != nil {
-	// 		log.Println("Error when starting norduser monitor: ", err.Error())
-	// 	}
-	// }()
+	norduserMonitor := norduser.NewNordvpnGroupMonitor(norduserService)
+	go func() {
+		if err := norduserMonitor.Start(); err != nil {
+			log.Println("Error when starting norduser monitor: ", err.Error())
+		}
+	}()
 
 	middleware := grpcmiddleware.Middleware{}
 	if snapconf.IsUnderSnap() {
@@ -479,10 +478,9 @@ func main() {
 		middleware.AddUnaryMiddleware(checker.UnaryInterceptor)
 	}
 
-	// TODO: [norduser] uncomment once norduser has something to do(starting fileshare)
-	// norduserMiddleware := norduser.NewStartNorduserMiddleware(&norduserService)
-	// middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
-	// middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
+	norduserMiddleware := norduser.NewStartNorduserMiddleware(norduserService)
+	middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
+	middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 
 	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))
@@ -565,19 +563,10 @@ func main() {
 	internal.WaitSignal()
 
 	s.GracefulStop()
-	// TODO: [norduser]
-	// norduserService.StopAll()
+	norduserService.StopAll()
 
 	if err := dnsSetter.Unset(""); err != nil {
 		log.Printf("unsetting dns: %s", err)
-	}
-	if err := fsystem.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, "loading config:", err)
-	} else {
-		err := fileshareImplementation.Stop(cfg.Meshnet.EnabledByUID, cfg.Meshnet.EnabledByGID)
-		if err != nil && !errors.Is(err, service.ErrNotStarted) {
-			log.Println(internal.ErrorPrefix, "disabling fileshare:", err)
-		}
 	}
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)

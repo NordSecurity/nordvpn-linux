@@ -13,11 +13,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
+	"github.com/NordSecurity/nordvpn-linux/norduser/service"
 
 	"github.com/go-co-op/gocron"
 )
@@ -49,7 +49,7 @@ type RPC struct {
 	nameservers      dns.Getter
 	ncClient         nc.NotificationClient
 	analytics        events.Analytics
-	fileshare        service.Fileshare
+	norduser         service.NorduserService
 	meshRegistry     mesh.Registry
 	pb.UnimplementedDaemonServer
 }
@@ -75,7 +75,7 @@ func NewRPC(
 	nameservers dns.Getter,
 	ncClient nc.NotificationClient,
 	analytics events.Analytics,
-	fileshare service.Fileshare,
+	norduser service.NorduserService,
 	meshRegistry mesh.Registry,
 ) *RPC {
 	return &RPC{
@@ -101,7 +101,7 @@ func NewRPC(
 		nameservers:      nameservers,
 		ncClient:         ncClient,
 		analytics:        analytics,
-		fileshare:        fileshare,
+		norduser:         norduser,
 		meshRegistry:     meshRegistry,
 	}
 }

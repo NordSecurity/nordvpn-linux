@@ -31,6 +31,14 @@ func isRunning(uid uint32) (bool, error) {
 	// #nosec G204 -- arguments are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
 	if err != nil {
+		var exiterr *exec.ExitError
+		if errors.As(err, &exiterr) {
+			// ps returns 1 when no processes are shown
+			if exiterr.ExitCode() == 1 {
+				return false, nil
+			}
+		}
+
 		return false, fmt.Errorf("listing processes: %w", err)
 	}
 

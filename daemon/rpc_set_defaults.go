@@ -16,9 +16,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
-	if err := r.fileshare.Disable(cfg.Meshnet.EnabledByUID, cfg.Meshnet.EnabledByGID); err != nil {
-		log.Println(internal.ErrorPrefix, "disabling fileshare: ", err)
-	}
+	r.norduser.DisableAll()
 
 	if err := r.netw.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, err)

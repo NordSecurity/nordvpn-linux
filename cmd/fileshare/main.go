@@ -2,84 +2,117 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"log"
-	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_startup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"golang.org/x/net/netutil"
 )
 
 // Values set when building the application
-var (
-	Environment = ""
-	PprofPort   = 6961
-)
+var Environment = ""
+
+func openLogFile(path string) (*os.File, error) {
+	// #nosec path is constant
+	logFile, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, internal.PermUserRW)
+	if err != nil {
+		return nil, err
+	}
+	return logFile, nil
+}
 
 func main() {
-	// Pprof
-	go func() {
-		if internal.IsDevEnv(Environment) {
-			// #nosec G114 -- not used in production
-			if err := http.ListenAndServe(fmt.Sprintf(":%d", PprofPort), nil); err != nil {
-				log.Println(internal.ErrorPrefix, err)
+	if logFile, err := openLogFile(filepath.Join(fileshare_process.FileshareLogPath, "/nordfileshared.log")); err == nil {
+		log.SetOutput(logFile)
+		log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+	}
+
+	processStatus := fileshare_process.NewGRPCFileshareProcess().ProcessStatus()
+
+	if processStatus == fileshare_process.Running {
+		os.Exit(int(fileshare_process.CodeAlreadyRunning))
+	} else if processStatus == fileshare_process.RunningForOtherUser {
+		log.Println("Cannot start fileshare daemon, it is already running for another user.")
+		os.Exit(int(fileshare_process.CodeAlreadyRunningForOtherUser))
+	}
+
+	usr, err := user.Current()
+	if err != nil {
+		log.Println("Failed to retrieve current user: ", err)
+		os.Exit(int(fileshare_process.CodeFailedToEnable))
+	}
+
+	storagePath := filepath.Join(
+		fileshare_process.FileshareDataPath,
+		internal.FileshareHistoryFile,
+	)
+
+	// Before storage handling was implemented in libdrop, we had our own json implementation. It is possible that user
+	// still has this history file, so we need to account for that by joining new transfer history with old transfer
+	// history. Fileshare process was implemented after this change, so we do not need legacy storage.
+	legacyStoragePath := ""
+
+	uid, err := strconv.Atoi(usr.Uid)
+	if err != nil {
+		log.Printf("Invalid unix user id, failed to convert from string: %s", usr.Uid)
+		os.Exit(int(fileshare_process.CodeFailedToEnable))
+	}
+
+	if err := os.Remove(fileshare_process.FileshareSocket); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Println("Failed to remove old socket file: ", err)
+	}
+
+	listener, err := internal.ManualListener(fileshare_process.FileshareSocket, internal.PermUserRWGroupRWOthersRW)()
+	if err != nil {
+		log.Printf("Failed to open unix socket: %s", err)
+		os.Exit(int(fileshare_process.CodeFailedToCreateUnixScoket))
+	}
+	limitedListener := netutil.LimitListener(listener, 100)
+
+	defer func() {
+		if err != nil {
+			if err := listener.Close(); err != nil {
+				log.Println("Failed to close socket listener on failure: ", err)
 			}
 		}
 	}()
 
-	// Logging
-
-	log.SetOutput(os.Stdout)
-
-	currentUser, err := user.Current()
-	if err != nil {
-		log.Fatalf("can't retrieve current user info: %s", err)
-	}
-	// we have to hardcode config directory, using os.UserConfigDir is not viable as nordfileshared
-	// is spawned by nordvpnd(owned by root) and inherits roots environment variables
-	storagePath := filepath.Join(
-		currentUser.HomeDir,
-		internal.ConfigDirectory,
-		internal.FileshareHistoryFile,
-	)
-	if err := internal.EnsureDir(storagePath); err != nil {
-		log.Fatalf("ensuring dir for transfer history file: %s", err)
-	}
-
-	eventsDbPath := filepath.Join(internal.DatFilesPath, "moose.db")
-
-	listenerFunction := internal.SystemDListener
-	if os.Getenv(internal.ListenPID) != strconv.Itoa(os.Getpid()) {
-		listenerFunction = internal.ManualListener(fileshare_startup.ConnURL, internal.PermUserRWX)
-	}
-	listener, err := listenerFunction()
-	if err != nil {
-		log.Fatalf("Error on listening to UNIX domain socket: %s\n", err)
-	}
-
-	// Before storage handling was implemented in libdrop, we had our own json implementation. It is possible that user
-	// still has this history file, so we need to account for that by joining new transfer history with old transfer
-	// history.
-	legacyStoragePath := filepath.Join(currentUser.HomeDir, internal.ConfigDirectory)
+	eventsDBPath := filepath.Join(fileshare_process.FileshareDataPath, "moose.db")
 
 	fileshareHandle, err := fileshare_startup.Startup(storagePath,
 		legacyStoragePath,
-		eventsDbPath,
-		listener,
+		eventsDBPath,
+		limitedListener,
 		Environment,
-		nil)
+		internal.NewFileshareAuthenticator(uint32(uid)))
 	if err != nil {
-		log.Fatalf("Fileshare daemon startup failed: %s", err.Error())
+		log.Println("Failed to start the service: ", err.Error())
+		if errors.Is(err, fileshare_startup.ErrMeshNotEnabled) {
+			os.Exit(int(fileshare_process.CodeMeshnetNotEnabled))
+		}
+		if errors.Is(err, fileshare_startup.ErrMeshAddressAlreadyInUse) {
+			os.Exit(int(fileshare_process.CodeAddressAlreadyInUse))
+		}
+		os.Exit(int(fileshare_process.CodeFailedToEnable))
 	}
 
+	signals := internal.GetSignalChan()
+
 	log.Println(internal.InfoPrefix, "Daemon has started")
+	select {
+	case sig := <-signals:
+		log.Println("Received signal: ", sig)
+	case <-fileshareHandle.GetShutdownChan():
+	}
+
 	// Teardown
-	internal.WaitSignal()
-	log.Println("Stopping fileshare daemon.")
+	log.Println("Stopping fileshare process.")
 	fileshareHandle.Shutdown()
 }

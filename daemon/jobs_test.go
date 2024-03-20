@@ -15,13 +15,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
+	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -132,7 +132,7 @@ func TestStartAutoConnect(t *testing.T) {
 				&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 				nil,
 				&mockAnalytics{},
-				service.NoopFileshare{},
+				&testnorduser.MockNorduserCombinedService{},
 				&RegistryMock{},
 			)
 
@@ -318,7 +318,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 				nil,
 				&mockAnalytics{},
-				service.NoopFileshare{},
+				&testnorduser.MockNorduserCombinedService{},
 				&RegistryMock{},
 			)
 
@@ -334,7 +334,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				nil,
 				&subs.Subject[bool]{},
 				&subs.Subject[events.DataConnect]{},
-				service.NoopFileshare{},
+				&testnorduser.MockNorduserClient{},
 			)
 
 			err := rpc.StartAutoMeshnet(meshService, mockTimeout)

@@ -35,7 +35,7 @@ export PKG_VERSION=${VERSION}
 
 cp "${WORKDIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
 cp "${WORKDIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
-cp "${WORKDIR}/bin/${ARCH}/nordfileshared" "${BASEDIR}"/usr/bin/nordfileshared
+cp "${WORKDIR}/bin/${ARCH}/nordfileshare" "${BASEDIR}"/usr/bin/nordfileshare
 cp "${WORKDIR}/bin/${ARCH}/norduserd" "${BASEDIR}"/usr/bin/norduserd
 cd "${WORKDIR}"
 
@@ -48,8 +48,8 @@ cd "${WORKDIR}"
 "${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordvpn-${ARCH}.debug" \
 	"${BASEDIR}"/usr/bin/nordvpn
 # shellcheck disable=SC2153
-"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshared-${ARCH}.debug" \
-	"${BASEDIR}"/usr/bin/nordfileshared
+"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshare-${ARCH}.debug" \
+	"${BASEDIR}"/usr/bin/nordfileshare
 # shellcheck disable=SC2153
 "${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/norduserd-${ARCH}.debug" \
 	"${BASEDIR}"/usr/bin/norduserd

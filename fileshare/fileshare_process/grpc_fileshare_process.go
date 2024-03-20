@@ -3,16 +3,21 @@ package fileshare_process
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
+
+	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	norduserpb "github.com/NordSecurity/nordvpn-linux/norduser/pb"
 )
 
 type StartupErrorCode int
@@ -35,13 +40,13 @@ var (
 	ErrFailedToEnable             = errors.New("failed to enable")
 )
 
-var errorCodeToError = map[StartupErrorCode]error{
-	CodeAlreadyRunning:             ErrAlreadyRunning,
-	CodeAlreadyRunningForOtherUser: ErrAlreadyRunningForOtherUser,
-	CodeFailedToCreateUnixScoket:   ErrFailedToCreateUnixScoket,
-	CodeMeshnetNotEnabled:          ErrMeshnetNotEnabled,
-	CodeAddressAlreadyInUse:        ErrAddressAlreadyInUse,
-	CodeFailedToEnable:             ErrFailedToEnable,
+var errorCodeToProtobuffError = map[StartupErrorCode]norduserpb.StartFileshareStatus{
+	CodeAlreadyRunning:             norduserpb.StartFileshareStatus_ALREADY_RUNNING,
+	CodeAlreadyRunningForOtherUser: norduserpb.StartFileshareStatus_ALREADY_RUNNING_FOR_OTHER_USER,
+	CodeFailedToCreateUnixScoket:   norduserpb.StartFileshareStatus_FAILED_TO_CREATE_UNIX_SOCKET,
+	CodeMeshnetNotEnabled:          norduserpb.StartFileshareStatus_MESHNET_NOT_ENABLED,
+	CodeAddressAlreadyInUse:        norduserpb.StartFileshareStatus_ADDRESS_ALREADY_IN_USE,
+	CodeFailedToEnable:             norduserpb.StartFileshareStatus_FAILED_TO_ENABLE,
 }
 
 const (
@@ -56,7 +61,12 @@ func getUserDataDir() string {
 		return dir
 	}
 
-	return ""
+	usr, err := user.Current()
+	if err != nil {
+		log.Println("failed to lookup current user")
+	}
+
+	return filepath.Join(usr.HomeDir, ".config", "nordvpn")
 }
 
 var FileshareURL = fmt.Sprintf("%s://%s", internal.Proto, FileshareSocket)
@@ -86,7 +96,7 @@ func getFileshareClient() (pb.FileshareClient, error) {
 	return client, nil
 }
 
-func (g GRPCFileshareProcess) StartProcess() error {
+func (g GRPCFileshareProcess) StartProcess() norduserpb.StartFileshareStatus {
 	errChan := make(chan error)
 	go func() {
 		// #nosec G204 -- arg values are known before even running the program
@@ -108,22 +118,21 @@ func (g GRPCFileshareProcess) StartProcess() error {
 
 	select {
 	case err := <-errChan:
-		var exiterr exec.ExitError
+		log.Println(err)
+		var exiterr *exec.ExitError
 		if errors.As(err, &exiterr) {
-			if err, ok := errorCodeToError[StartupErrorCode(exiterr.ExitCode())]; ok {
-				return err
+			if status, ok := errorCodeToProtobuffError[StartupErrorCode(exiterr.ExitCode())]; ok {
+				return status
 			}
-			return ErrFailedToEnable
-		} else {
-			return ErrFailedToEnable
 		}
+		return norduserpb.StartFileshareStatus_FAILED_TO_ENABLE
 	case err := <-pingChan:
 		if err != nil {
-			return ErrFailedToEnable
+			return norduserpb.StartFileshareStatus_FAILED_TO_ENABLE
 		}
 	}
 
-	return nil
+	return norduserpb.StartFileshareStatus_SUCCESS
 }
 
 func (g GRPCFileshareProcess) StopProcess() error {
@@ -155,19 +164,4 @@ func (c GRPCFileshareProcess) ProcessStatus() ProcessStatus {
 	}
 
 	return Running
-}
-
-// Enable is a stub function, implemented to satisfy the Service interface. Enable is called from within the daemon, but
-// in case of the orphan process we want to always start it from the client side. To start this implementation, use
-// StartProcess function.
-func (g GRPCFileshareProcess) Enable(_, _ uint32) error {
-	return nil
-}
-
-func (g GRPCFileshareProcess) Disable(_, _ uint32) error {
-	return g.Stop(0, 0)
-}
-
-func (g GRPCFileshareProcess) Stop(_, _ uint32) error {
-	return g.StopProcess()
 }

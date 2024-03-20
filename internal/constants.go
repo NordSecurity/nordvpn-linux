@@ -23,8 +23,8 @@ const (
 	// Proto defines protocol to be used
 	Proto = "unix"
 
-	// TempDir defines temporary storage directory
-	TempDir = "/tmp/"
+	// TmpDir defines temporary storage directory
+	TmpDir = "/tmp/"
 
 	// NordvpnGroup that can access daemon socket
 	NordvpnGroup = "nordvpn"
@@ -75,6 +75,8 @@ const (
 
 	// FileshareHistoryFile is the storage file used by libdrop
 	FileshareHistoryFile = "fileshare_history.db"
+
+	FileshareSocket = TmpDir + "/fileshare.sock"
 
 	LogFileExtension = ".log"
 )

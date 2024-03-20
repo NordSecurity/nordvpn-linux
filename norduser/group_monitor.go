@@ -112,11 +112,12 @@ func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 
 		userIDs, err := getUID(member)
 		if err != nil {
-			log.Println("failed to look up UID/GID of deleted group member: ", err.Error())
+			log.Println("failed to look up UID/GID of deleted group member:", err)
+			continue
 		}
 
 		if err := n.norduserd.Disable(userIDs.uid); err != nil {
-			log.Println("disabling norduserd for user: ", err.Error())
+			log.Println("disabling norduserd for user:", err.Error())
 		}
 	}
 
@@ -128,11 +129,26 @@ func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 
 		userID, err := getUID(member)
 		if err != nil {
-			log.Println("failed to lookup UID/GID for new group member: ", err)
+			log.Println("failed to lookup UID/GID for new group member:", err)
+			continue
 		}
 
 		if err := n.norduserd.Enable(userID.uid, userID.gid); err != nil {
-			log.Println("enabling norduserd for member: ", err)
+			log.Println("enabling norduserd for member:", err)
+		}
+	}
+}
+
+func (n *NordvpnGroupMonitor) startForEveryGroupMember(groupMembers userSet) {
+	for member := range groupMembers {
+		user, err := getUID(member)
+		if err != nil {
+			log.Println("failed to get UID/GID for group member:", err)
+			continue
+		}
+
+		if err := n.norduserd.Enable(user.uid, user.gid); err != nil {
+			log.Println("failed to start norduser for group member:", err)
 		}
 	}
 }
@@ -167,6 +183,8 @@ func (n *NordvpnGroupMonitor) Start() error {
 		return fmt.Errorf("getting initial group members: %w", err)
 	}
 
+	n.startForEveryGroupMember(currentGrupMembers)
+
 	defer watcher.Close()
 	for {
 		select {
@@ -182,12 +200,12 @@ func (n *NordvpnGroupMonitor) Start() error {
 				if err == nil {
 					n.handleGroupUpdate(currentGrupMembers, newGroupMembers)
 					if err != nil {
-						log.Println("Failed to read new group members after groupfile has changed: ", err)
+						log.Println("Failed to read new group members after groupfile has changed:", err)
 					} else {
 						currentGrupMembers = newGroupMembers
 					}
 				} else {
-					log.Println("Failed to get new group members: ", err)
+					log.Println("Failed to get new group members:", err)
 				}
 			}
 		case err, ok := <-watcher.Errors:

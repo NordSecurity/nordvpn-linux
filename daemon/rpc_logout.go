@@ -25,9 +25,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
-	if err := r.fileshare.Disable(cfg.Meshnet.EnabledByUID, cfg.Meshnet.EnabledByGID); err != nil {
-		log.Println(internal.ErrorPrefix, "disabling fileshare: ", err)
-	}
+	r.norduser.DisableAll()
 
 	if err := r.netw.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, err)

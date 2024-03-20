@@ -16,11 +16,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/service"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -160,11 +160,6 @@ func (acceptInvitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error
 	}, nil
 }
 
-type failingFileshare struct{ service.Fileshare }
-
-func (failingFileshare) Enable(uint32, uint32) error  { return fmt.Errorf("error") }
-func (failingFileshare) Disable(uint32, uint32) error { return fmt.Errorf("error") }
-
 func newMockedServer(
 	t *testing.T,
 	listErr error,
@@ -194,7 +189,7 @@ func newMockedServer(
 		&subs.Subject[[]string]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataConnect]{},
-		service.NoopFileshare{},
+		testnorduser.NewMockNorduserClient(nil),
 	)
 
 	if isMeshOn {
@@ -207,40 +202,40 @@ func newMockedServer(
 func TestServer_EnableMeshnet(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
-		name      string
-		netw      Networker
-		ac        auth.Checker
-		inv       mesh.Inviter
-		rc        Checker
-		reg       mesh.Registry
-		cm        config.Manager
-		dns       dns.Getter
-		fileshare service.Fileshare
-		success   bool
+		name                string
+		netw                Networker
+		ac                  auth.Checker
+		inv                 mesh.Inviter
+		rc                  Checker
+		reg                 mesh.Registry
+		cm                  config.Manager
+		dns                 dns.Getter
+		startFileshareError error
+		success             bool
 	}{
 		{
-			name:      "everything works",
-			netw:      &workingNetworker{},
-			ac:        meshRenewChecker{},
-			inv:       invitationsAPI{},
-			rc:        registrationChecker{},
-			reg:       &mock.RegistryMock{},
-			cm:        &mock.ConfigManager{},
-			dns:       &mock.DNSGetter{},
-			fileshare: service.NoopFileshare{},
-			success:   true,
+			name:                "everything works",
+			netw:                &workingNetworker{},
+			ac:                  meshRenewChecker{},
+			inv:                 invitationsAPI{},
+			rc:                  registrationChecker{},
+			reg:                 &mock.RegistryMock{},
+			cm:                  &mock.ConfigManager{},
+			dns:                 &mock.DNSGetter{},
+			startFileshareError: nil,
+			success:             true,
 		},
 		{
-			name:      "fileshare fails",
-			netw:      &workingNetworker{},
-			ac:        meshRenewChecker{},
-			inv:       invitationsAPI{},
-			rc:        registrationChecker{},
-			reg:       &mock.RegistryMock{},
-			cm:        &mock.ConfigManager{},
-			dns:       &mock.DNSGetter{},
-			fileshare: failingFileshare{},
-			success:   true, // Fileshare shouldn't impact meshnet enabling
+			name:                "fileshare fails",
+			netw:                &workingNetworker{},
+			ac:                  meshRenewChecker{},
+			inv:                 invitationsAPI{},
+			rc:                  registrationChecker{},
+			reg:                 &mock.RegistryMock{},
+			cm:                  &mock.ConfigManager{},
+			dns:                 &mock.DNSGetter{},
+			startFileshareError: fmt.Errorf("failed to disable fileshare"),
+			success:             true, // Fileshare shouldn't impact meshnet enabling
 		},
 	}
 
@@ -259,7 +254,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&subs.Subject[bool]{},
 				&subs.Subject[events.DataConnect]{},
-				test.fileshare,
+				testnorduser.NewMockNorduserClient(test.startFileshareError),
 			)
 			assert.NotEqual(t, nil, mserver)
 			assert.Equal(t, test.cm, mserver.cm)
@@ -289,37 +284,37 @@ func TestServer_EnableMeshnet(t *testing.T) {
 func TestServer_DisableMeshnet(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
-		name      string
-		netw      Networker
-		ac        auth.Checker
-		inv       mesh.Inviter
-		rc        Checker
-		reg       mesh.Registry
-		cm        config.Manager
-		dns       dns.Getter
-		fileshare service.Fileshare
+		name                string
+		netw                Networker
+		ac                  auth.Checker
+		inv                 mesh.Inviter
+		rc                  Checker
+		reg                 mesh.Registry
+		cm                  config.Manager
+		dns                 dns.Getter
+		startFileshareError error
 	}{
 		{
-			name:      "everything works",
-			netw:      &workingNetworker{},
-			ac:        meshRenewChecker{},
-			inv:       invitationsAPI{},
-			rc:        registrationChecker{},
-			reg:       &mock.RegistryMock{},
-			cm:        &mock.ConfigManager{},
-			dns:       &mock.DNSGetter{},
-			fileshare: service.NoopFileshare{},
+			name:                "everything works",
+			netw:                &workingNetworker{},
+			ac:                  meshRenewChecker{},
+			inv:                 invitationsAPI{},
+			rc:                  registrationChecker{},
+			reg:                 &mock.RegistryMock{},
+			cm:                  &mock.ConfigManager{},
+			dns:                 &mock.DNSGetter{},
+			startFileshareError: nil,
 		},
 		{
-			name:      "fileshare fails",
-			netw:      &workingNetworker{},
-			ac:        meshRenewChecker{},
-			inv:       invitationsAPI{},
-			rc:        registrationChecker{},
-			reg:       &mock.RegistryMock{},
-			cm:        &mock.ConfigManager{},
-			dns:       &mock.DNSGetter{},
-			fileshare: failingFileshare{},
+			name:                "fileshare fails",
+			netw:                &workingNetworker{},
+			ac:                  meshRenewChecker{},
+			inv:                 invitationsAPI{},
+			rc:                  registrationChecker{},
+			reg:                 &mock.RegistryMock{},
+			cm:                  &mock.ConfigManager{},
+			dns:                 &mock.DNSGetter{},
+			startFileshareError: fmt.Errorf("failed to start fileshare"),
 		},
 	}
 
@@ -338,7 +333,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&subs.Subject[bool]{},
 				&subs.Subject[events.DataConnect]{},
-				test.fileshare,
+				testnorduser.NewMockNorduserClient(test.startFileshareError),
 			)
 			assert.NotEqual(t, nil, mserver)
 			assert.Equal(t, test.cm, mserver.cm)
@@ -396,7 +391,7 @@ func TestServer_Invite(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&subs.Subject[bool]{},
 				&subs.Subject[events.DataConnect]{},
-				service.NoopFileshare{},
+				testnorduser.NewMockNorduserClient(nil),
 			)
 			server.EnableMeshnet(context.Background(), &pb.Empty{})
 			resp, err := server.Invite(context.Background(), &pb.InviteRequest{})
@@ -425,7 +420,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 		&subs.Subject[[]string]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataConnect]{},
-		service.NoopFileshare{},
+		testnorduser.NewMockNorduserClient(nil),
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
 	resp, err := server.AcceptInvite(context.Background(), &pb.InviteRequest{
@@ -454,7 +449,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 		&subs.Subject[[]string]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataConnect]{},
-		service.NoopFileshare{},
+		testnorduser.NewMockNorduserClient(nil),
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
 
@@ -555,7 +550,7 @@ func TestServer_Connect(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			testnorduser.NewMockNorduserClient(nil),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server
@@ -689,7 +684,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			testnorduser.NewMockNorduserClient(nil),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -813,7 +808,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			testnorduser.NewMockNorduserClient(nil),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -919,7 +914,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			testnorduser.NewMockNorduserClient(nil),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -1025,7 +1020,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataConnect]{},
-			service.NoopFileshare{},
+			testnorduser.NewMockNorduserClient(nil),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -1635,7 +1630,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&subs.Subject[bool]{},
 				&subs.Subject[events.DataConnect]{},
-				service.NoopFileshare{},
+				testnorduser.NewMockNorduserClient(nil),
 			)
 
 			if test.isMeshOn {
@@ -1947,7 +1942,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&subs.Subject[bool]{},
 				&subs.Subject[events.DataConnect]{},
-				service.NoopFileshare{},
+				testnorduser.NewMockNorduserClient(nil),
 			)
 
 			if test.isMeshOn {
