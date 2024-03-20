@@ -30,8 +30,7 @@ func (f *ForkFileshare) Enable(uid, gid uint32) (err error) {
 	// Set up log file
 	fileFlags := os.O_APPEND | os.O_WRONLY | os.O_CREATE
 	logFilePath := internal.GetFilesharedLogPath(strconv.Itoa(int(uid)))
-	// #nosec G304 -- logFilePath is properly validated
-	logFile, err := os.OpenFile(logFilePath, fileFlags, internal.PermUserRW)
+	logFile, err := internal.OpenOrCreateRegularFile(logFilePath, fileFlags, internal.PermUserRW)
 	if err != nil {
 		return fmt.Errorf("opening fileshare log file %s: %w", logFilePath, err)
 	}

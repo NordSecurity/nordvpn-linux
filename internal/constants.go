@@ -76,6 +76,9 @@ const (
 
 	// FileshareHistoryFile is the storage file used by libdrop
 	FileshareHistoryFile = "fileshare_history.db"
+
+	// Extension for log files
+	LogFileExtension = ".log"
 )
 
 var (
@@ -156,7 +159,7 @@ func GetFilesharedConfigDirPath(homeDirectory string) (string, error) {
 
 // GetFilesharedLogPath when logs aren't handled by systemd
 func GetFilesharedLogPath(uid string) string {
-	filesharedLogFilename := Fileshared + ".log"
+	const filesharedLogFilename = Fileshared + LogFileExtension
 	if uid == "0" {
 		return filepath.Join(LogPath, filesharedLogFilename)
 	}
@@ -170,7 +173,7 @@ func GetFilesharedLogPath(uid string) string {
 
 	if err != nil {
 		log.Printf("users fileshared logs will be stored in %s: %s", LogPath, err.Error())
-		return filepath.Join(LogPath, Fileshared+"-"+uid+".log")
+		return filepath.Join(LogPath, Fileshared+"-"+uid+LogFileExtension)
 	}
 
 	return filepath.Join(configDir, filesharedLogFilename)

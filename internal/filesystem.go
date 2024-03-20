@@ -208,6 +208,15 @@ func FileWritable(path string) bool {
 	}
 }
 
+func IsFile(fileName string) bool {
+	fileInfo, err := os.Lstat(fileName)
+	if err != nil {
+		return false
+	}
+
+	return fileInfo.Mode().IsRegular()
+}
+
 // FileDelete deletes file from system
 func FileDelete(path string) error {
 	return os.Remove(path)
@@ -507,4 +516,29 @@ func prefixPath(p string, envKey string) string {
 		dir = "/"
 	}
 	return filepath.Clean(dir + p)
+}
+
+// Will open or create the given file.
+// If a file already exists with the given name but is not a regular file,
+// e.g. a symlink, it will be deleted and a regular file re-created instead
+func OpenOrCreateRegularFile(fileName string, flags int, permission fs.FileMode) (*os.File, error) {
+	fileName = filepath.Clean(fileName)
+	// check if it is a file before opening, because if it is a pipe will block on open
+	if !IsFile(fileName) {
+		if err := os.Remove(fileName); err != nil && !os.IsNotExist(err) {
+			return nil, fmt.Errorf("cannot delete file %s: %w", fileName, err)
+		}
+	}
+	// #nosec G304 -- fileName was cleaned before
+	file, err := os.OpenFile(fileName, flags, permission)
+	if err != nil {
+		return nil, fmt.Errorf("opening file %s: %w", fileName, err)
+	}
+
+	// check again that the file is a regular file after it is open to be sure it was not changed between checking and opening it
+	if !IsFile(fileName) {
+		return nil, fmt.Errorf("not a regular file %s", fileName)
+	}
+
+	return file, nil
 }
