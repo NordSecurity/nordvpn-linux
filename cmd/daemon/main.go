@@ -418,7 +418,7 @@ func main() {
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
-		nc.NewCredsFetcher(defaultAPI, fsystem, nc.RealTime{}))
+		nc.NewCredsFetcher(defaultAPI, fsystem))
 
 	dm := daemon.NewDataManager(
 		daemon.InsightsFilePath,

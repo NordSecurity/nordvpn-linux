@@ -2,34 +2,21 @@ package nc
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/google/uuid"
 )
 
-type TimeSource interface {
-	GetDurationSinceTimestamp(time.Time) time.Duration
-}
-
-type RealTime struct{}
-
-func (r RealTime) GetDurationSinceTimestamp(timestamp time.Time) time.Duration {
-	return time.Since(timestamp)
-}
-
 type CredentialsGetter struct {
-	api        core.CredentialsAPI
-	cm         config.Manager
-	timeSource TimeSource
+	api core.CredentialsAPI
+	cm  config.Manager
 }
 
-func NewCredsFetcher(api core.CredentialsAPI, cm config.Manager, time TimeSource) CredentialsGetter {
+func NewCredsFetcher(api core.CredentialsAPI, cm config.Manager) CredentialsGetter {
 	return CredentialsGetter{
-		api:        api,
-		cm:         cm,
-		timeSource: time,
+		api: api,
+		cm:  cm,
 	}
 }
 
@@ -71,6 +58,16 @@ func (cf *CredentialsGetter) GetCredentialsFromAPI() (config.NCData, error) {
 
 	if ncData.IsUserIDEmpty() {
 		ncData.UserID = uuid.New()
+		err := cf.cm.SaveWith(func(c config.Config) config.Config {
+			user := c.TokensData[userID]
+			user.NCData = ncData
+			c.TokensData[userID] = user
+
+			return c
+		})
+		if err != nil {
+			return ncData, fmt.Errorf("saving new generated user id: %w", err)
+		}
 	}
 
 	resp, err := cf.api.NotificationCredentials(tokenData.Token, ncData.UserID.String())
