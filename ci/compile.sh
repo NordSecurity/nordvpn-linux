@@ -24,6 +24,7 @@ declare -A names_map=(
 	[pulp]=pulp
 	[fileshare]=nordfileshare
 	[norduser]=norduserd
+	[tray]=nordtray
 )
 
 # shellcheck disable=SC2034

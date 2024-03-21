@@ -69,16 +69,16 @@ func ping(client pb.DaemonClient) bool {
 
 	state.mu.Lock()
 
-	if state.daemonAvailable == false && daemonAvailable == true {
+	if !state.daemonAvailable && daemonAvailable {
 		state.daemonAvailable = true
 		changed = true
-		if notifyEnabled {
+		if NotifyEnabled {
 			defer notification("info", "Connected to NordVPN daemon")
 		}
-	} else if state.daemonAvailable == true && daemonAvailable == false {
+	} else if state.daemonAvailable && !daemonAvailable {
 		state.daemonAvailable = false
 		changed = true
-		if notifyEnabled {
+		if NotifyEnabled {
 			defer notification("info", "Disconnected from NordVPN daemon")
 		}
 	}
@@ -99,16 +99,16 @@ func fetchLogged(client pb.DaemonClient) bool {
 
 	state.mu.Lock()
 
-	if state.loggedIn == false && loggedIn == true {
+	if !state.loggedIn && loggedIn {
 		state.loggedIn = true
 		changed = true
-		if notifyEnabled {
+		if NotifyEnabled {
 			defer notification("info", "Logged in")
 		}
-	} else if state.loggedIn == true && loggedIn == false {
+	} else if state.loggedIn && !loggedIn {
 		state.loggedIn = false
 		changed = true
-		if notifyEnabled {
+		if NotifyEnabled {
 			defer notification("info", "Logged out")
 		}
 	}
@@ -124,16 +124,16 @@ func fetchMeshnet(meshClient meshpb.MeshnetClient) bool {
 
 	state.mu.Lock()
 
-	if state.meshnetEnabled == false && meshnetEnabled == true {
+	if !state.meshnetEnabled && meshnetEnabled {
 		state.meshnetEnabled = true
 		changed = true
-		if notifyEnabled {
+		if NotifyEnabled {
 			defer notification("info", "Meshnet enabled")
 		}
-	} else if state.meshnetEnabled == true && meshnetEnabled == false {
+	} else if state.meshnetEnabled && !meshnetEnabled {
 		state.meshnetEnabled = false
 		changed = true
-		if notifyEnabled {
+		if NotifyEnabled {
 			defer notification("info", "Meshnet disabled")
 		}
 	}
@@ -161,12 +161,12 @@ func fetchStatus(client pb.DaemonClient) bool {
 	if state.vpnStatus != vpnStatus {
 		if vpnStatus == "Connected" {
 			systray.SetIconName(iconConnected)
-			if notifyEnabled {
+			if NotifyEnabled {
 				defer notification("info", "Connected to VPN server: %s", vpnHostname)
 			}
 		} else {
 			systray.SetIconName(iconDisconnected)
-			if notifyEnabled {
+			if NotifyEnabled {
 				defer notification("info", "Disconnected from VPN server")
 			}
 		}
@@ -251,7 +251,7 @@ func maybeRedraw(result bool, previous bool) bool {
 	return result || previous
 }
 
-func pollingMonitor(client pb.DaemonClient, update <-chan bool, ticker <-chan time.Time) {
+func pollingMonitor(client pb.DaemonClient, meshClient meshpb.MeshnetClient, update <-chan bool, ticker <-chan time.Time) {
 	fullUpdate := true
 	fullUpdateLast := time.Time{}
 	for {
@@ -283,7 +283,7 @@ func pollingMonitor(client pb.DaemonClient, update <-chan bool, ticker <-chan ti
 				fullUpdate = false
 			}
 		}
-		if debugMode {
+		if DebugMode {
 			if fullUpdate {
 				fmt.Println(time.Now().String(), "Full update")
 			} else {

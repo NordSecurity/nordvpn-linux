@@ -37,6 +37,7 @@ cp "${WORKDIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
 cp "${WORKDIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
 cp "${WORKDIR}/bin/${ARCH}/nordfileshare" "${BASEDIR}"/usr/bin/nordfileshare
 cp "${WORKDIR}/bin/${ARCH}/norduserd" "${BASEDIR}"/usr/bin/norduserd
+cp "${WORKDIR}/bin/${ARCH}/nordtray" "${BASEDIR}"/usr/bin/nordtray
 cd "${WORKDIR}"
 
 # extract symbols into files
@@ -53,6 +54,9 @@ cd "${WORKDIR}"
 # shellcheck disable=SC2153
 "${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/norduserd-${ARCH}.debug" \
 	"${BASEDIR}"/usr/bin/norduserd
+# shellcheck disable=SC2153
+"${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordtray-${ARCH}.debug" \
+	"${BASEDIR}"/usr/bin/nordtray
 
 
 # pack

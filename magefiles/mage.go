@@ -656,6 +656,16 @@ func (Install) Binaries() error {
 		return err
 	}
 
+	nordtrayDst, err := sh.Output("which", "nordtray")
+	if err != nil {
+		nordtrayDst = "/usr/bin/nordtray"
+	}
+
+	nordtraySrc := fmt.Sprintf("bin/%s/nordtray", build.Default.GOARCH)
+	if err := cp(nordtraySrc, nordtrayDst); err != nil {
+		return err
+	}
+
 	return systemctl("start", "nordvpnd")
 }
 
