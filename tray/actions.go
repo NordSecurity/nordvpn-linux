@@ -43,6 +43,7 @@ func login(client pb.DaemonClient) {
 		}
 
 		if url := resp.GetData(); url != "" {
+			// #nosec G204 -- user input is not passed in
 			cmd := exec.Command("xdg-open", url)
 			err = cmd.Start()
 			if err != nil {
