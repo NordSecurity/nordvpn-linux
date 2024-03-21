@@ -43,7 +43,6 @@ func login(client pb.DaemonClient) {
 		}
 
 		if url := resp.GetData(); url != "" {
-
 			cmd := exec.Command("xdg-open", url)
 			err = cmd.Start()
 			if err != nil {
@@ -55,7 +54,6 @@ func login(client pb.DaemonClient) {
 				notification("warning", "Failed to open the web browser: %v", err)
 				notification("info", "Continue log in in the browser: %s", url)
 			}
-
 		}
 	}
 }
@@ -71,12 +69,12 @@ func logout(client pb.DaemonClient, persistToken bool) bool {
 
 	switch payload.Type {
 	case internal.CodeSuccess:
-		if !notifyEnabled {
+		if !NotifyEnabled {
 			notification("info", cli.LogoutSuccess)
 		}
 		return true
 	case internal.CodeTokenInvalidated:
-		if !notifyEnabled {
+		if !NotifyEnabled {
 			notification("info", cli.LogoutTokenSuccess)
 		}
 		return true
@@ -171,7 +169,7 @@ func disconnect(client pb.DaemonClient) bool {
 		case internal.CodeVPNNotRunning:
 			notification("warning", cli.DisconnectNotConnected)
 		case internal.CodeDisconnected:
-			if !notifyEnabled {
+			if !NotifyEnabled {
 				notification("info", internal.DisconnectSuccess)
 			}
 		}
@@ -180,7 +178,6 @@ func disconnect(client pb.DaemonClient) bool {
 }
 
 func enableMeshnet(meshClient meshpb.MeshnetClient) bool {
-
 	resp, err := meshClient.EnableMeshnet(context.Background(), &meshpb.Empty{})
 	if err != nil {
 		notification("error", "Enable meshnet error: %s", err)
@@ -191,7 +188,7 @@ func enableMeshnet(meshClient meshpb.MeshnetClient) bool {
 		return false
 	}
 
-	if !notifyEnabled {
+	if !NotifyEnabled {
 		notification("info", cli.MsgSetMeshnetSuccess, "enabled")
 	}
 
@@ -200,7 +197,6 @@ func enableMeshnet(meshClient meshpb.MeshnetClient) bool {
 }
 
 func disableMeshnet(meshClient meshpb.MeshnetClient) bool {
-
 	resp, err := meshClient.DisableMeshnet(context.Background(), &meshpb.Empty{})
 	if err != nil {
 		notification("error", "Disable meshnet error: %s", err)
@@ -211,7 +207,7 @@ func disableMeshnet(meshClient meshpb.MeshnetClient) bool {
 		return false
 	}
 
-	if !notifyEnabled {
+	if !NotifyEnabled {
 		notification("info", cli.MsgSetMeshnetSuccess, "disabled")
 	}
 

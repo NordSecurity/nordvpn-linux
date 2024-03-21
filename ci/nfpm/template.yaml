@@ -121,6 +121,8 @@ contents:
     dst: /var/lib/${NAME}/nordfileshare
   - src: ${BASEDIR}/usr/bin/norduserd
     dst: /usr/bin/norduserd
+  - src: ${BASEDIR}/usr/bin/nordtray
+    dst: /usr/bin/nordtray
 
   - src: ${WORKDIR}/contrib/initd/nordvpn
     dst: /etc/init.d/nordvpn

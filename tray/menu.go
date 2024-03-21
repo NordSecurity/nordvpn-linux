@@ -85,7 +85,7 @@ func addVpnSection() {
 			success := false
 			for !success {
 				<-mDisconnect.ClickedCh
-				success = disconnect(client)
+				success = disconnect(Client)
 			}
 			updateChan <- true
 		}()
@@ -95,7 +95,7 @@ func addVpnSection() {
 			success := false
 			for !success {
 				<-mConnect.ClickedCh
-				success = connect(client, "", "")
+				success = connect(Client, "", "")
 			}
 			updateChan <- true
 		}()
@@ -120,7 +120,7 @@ func addMeshnetSection() {
 			success := false
 			for !success {
 				<-mDisconnect.ClickedCh
-				success = disableMeshnet(meshClient)
+				success = disableMeshnet(MeshClient)
 			}
 			updateChan <- true
 		}()
@@ -130,7 +130,7 @@ func addMeshnetSection() {
 			success := false
 			for !success {
 				<-mConnect.ClickedCh
-				success = enableMeshnet(meshClient)
+				success = enableMeshnet(MeshClient)
 			}
 			updateChan <- true
 		}()
@@ -153,7 +153,7 @@ func addAccountSection() {
 			success := false
 			for !success {
 				<-mLogout.ClickedCh
-				success = logout(client, false)
+				success = logout(Client, false)
 			}
 			updateChan <- true
 		}()
@@ -166,7 +166,7 @@ func addAccountSection() {
 		go func() {
 			for {
 				<-mLogin.ClickedCh
-				login(client)
+				login(Client)
 			}
 		}()
 	}

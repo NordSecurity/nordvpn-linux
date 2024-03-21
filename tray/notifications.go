@@ -12,7 +12,7 @@ import (
 
 func notification(mode string, text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
-	_, err := dbusNotifier.SendNotification("NordVPN", text)
+	_, err := notifier.sendNotification("NordVPN", text)
 	if err != nil {
 		switch mode {
 		case "info":
@@ -25,14 +25,26 @@ func notification(mode string, text string, a ...any) {
 	}
 }
 
-// DbusNotifier wraps github.com/esiqveland/notify notifier implementation
-type DbusNotifier struct {
+// dbusNotifier wraps github.com/esiqveland/notify notifier implementation
+type dbusNotifier struct {
 	mu       sync.Mutex
 	notifier notify.Notifier
 }
 
-// SendNotification sends notification via dbus. Thread safe.
-func (n *DbusNotifier) SendNotification(summary string, body string) (uint32, error) {
+func (n *dbusNotifier) start() {
+	ntf, err := newNotifier()
+	if err == nil {
+		notification("info", "Started dbusNotifier")
+		n.mu.Lock()
+		n.notifier = ntf
+		n.mu.Unlock()
+	} else {
+		notification("error", "Failed to start dbusNotifier: %s", err)
+	}
+}
+
+// sendNotification sends notification via dbus. Thread safe.
+func (n *dbusNotifier) sendNotification(summary string, body string) (uint32, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -49,23 +61,11 @@ func (n *DbusNotifier) SendNotification(summary string, body string) (uint32, er
 		}
 		return n.notifier.SendNotification(notification)
 	} else {
-		return 0, errors.New("DbusNotifier not connected")
+		return 0, errors.New("dbusNotifier not connected")
 	}
 }
 
-// Close dbus connection. Thread safe.
-func (n *DbusNotifier) Close() error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	if n.notifier != nil {
-		return n.notifier.Close()
-	} else {
-		return nil
-	}
-}
-
-func NewDbusNotifier() (*DbusNotifier, error) {
+func newNotifier() (notify.Notifier, error) {
 	dbusConn, err := dbus.SessionBusPrivate()
 	defer func() {
 		if err != nil {
@@ -87,10 +87,10 @@ func NewDbusNotifier() (*DbusNotifier, error) {
 		return nil, err
 	}
 
-	notifier, err := notify.New(dbusConn)
+	ntf, err := notify.New(dbusConn)
 	defer func() {
 		if err != nil {
-			if err := notifier.Close(); err != nil {
+			if err := ntf.Close(); err != nil {
 				color.Red("failed to close notifier: ", err)
 			}
 		}
@@ -100,5 +100,5 @@ func NewDbusNotifier() (*DbusNotifier, error) {
 		return nil, err
 	}
 
-	return &DbusNotifier{notifier: notifier}, nil
+	return ntf, nil
 }
