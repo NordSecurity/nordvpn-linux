@@ -1,33 +1,32 @@
 package tray
 
 import (
-	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/systray"
 )
 
-func addDebugSection() {
+func addDebugSection(ti *Instance) {
 	systray.AddSeparator()
 	mRedraw := systray.AddMenuItem("Redraw", "Redraw")
 	go func() {
 		for {
 			<-mRedraw.ClickedCh
-			redrawChan <- struct{}{}
+			ti.redrawChan <- struct{}{}
 		}
 	}()
 	mUpdate := systray.AddMenuItem("Update", "Update")
 	go func() {
 		for {
 			<-mUpdate.ClickedCh
-			updateChan <- false
+			ti.updateChan <- false
 		}
 	}()
 	mUpdateFull := systray.AddMenuItem("Full update", "Full update")
 	go func() {
 		for {
 			<-mUpdateFull.ClickedCh
-			updateChan <- true
+			ti.updateChan <- true
 		}
 	}()
 }
@@ -43,51 +42,39 @@ func addQuitItem() {
 }
 
 func addAppSection() {
-	m := systray.AddMenuItem("NordVPN", "NordVPN")
-	go func() {
-		for {
-			<-m.ClickedCh
-			cmd := exec.Command("zenity", "--info", "--text", "This will be the NordVPN GUI", "--no-wrap")
-			err := cmd.Start()
-			if err != nil {
-				notification("error", "Failed to start NordVPN GUI: %s", err)
-			} else {
-				err = cmd.Wait()
-			}
-		}
-	}()
+	systray.AddMenuItem("NordVPN", "NordVPN")
 }
 
-func addDaemonSection() {
+func addDaemonSection(ti *Instance) {
 	systray.AddSeparator()
 	m := systray.AddMenuItem("Daemon not available", "Daemon not available")
 	m.Disable()
 
-	mError := systray.AddMenuItem(state.daemonError, state.daemonError)
+	mError := systray.AddMenuItem(ti.state.daemonError, ti.state.daemonError)
 	mError.Disable()
 }
 
-func addVpnSection() {
+func addVpnSection(ti *Instance) {
 	systray.AddSeparator()
 
-	mStatus := systray.AddMenuItem("VPN "+strings.ToLower(state.vpnStatus), "VPN "+strings.ToLower(state.vpnStatus))
+	mStatus := systray.AddMenuItem("VPN "+strings.ToLower(ti.state.vpnStatus), "VPN "+strings.ToLower(ti.state.vpnStatus))
 	mStatus.Disable()
 
-	if state.vpnStatus == "Connected" {
-		mHostname := systray.AddMenuItem("Server: "+state.vpnHostname, "Server: "+state.vpnHostname)
+	if ti.state.vpnStatus == "Connected" {
+		mHostname := systray.AddMenuItem("Server: "+ti.state.vpnHostname, "Server: "+ti.state.vpnHostname)
 		mHostname.Disable()
-		mCity := systray.AddMenuItem("City: "+state.vpnCity, "City: "+state.vpnCity)
+		mCity := systray.AddMenuItem("City: "+ti.state.vpnCity, "City: "+ti.state.vpnCity)
 		mCity.Disable()
-		mCountry := systray.AddMenuItem("Country: "+state.vpnCountry, "Country: "+state.vpnCountry)
+		mCountry := systray.AddMenuItem("Country: "+ti.state.vpnCountry, "Country: "+ti.state.vpnCountry)
 		mCountry.Disable()
 		mDisconnect := systray.AddMenuItem("Disconnect", "Disconnect")
 		go func() {
 			success := false
 			for !success {
 				<-mDisconnect.ClickedCh
-				success = disconnect(Client)
+				success = ti.disconnect()
 			}
-			updateChan <- true
+			ti.updateChan <- true
 		}()
 	} else {
 		mConnect := systray.AddMenuItem("Quick Connect", "Quick Connect")
@@ -95,19 +82,19 @@ func addVpnSection() {
 			success := false
 			for !success {
 				<-mConnect.ClickedCh
-				success = connect(Client, "", "")
+				success = ti.connect("", "")
 			}
-			updateChan <- true
+			ti.updateChan <- true
 		}()
 	}
 }
 
 // nolint:unused
-func addMeshnetSection() {
+func addMeshnetSection(ti *Instance) {
 	systray.AddSeparator()
 
 	status := ""
-	if state.meshnetEnabled {
+	if ti.state.meshnetEnabled {
 		status = "enabled"
 	} else {
 		status = "disabled"
@@ -115,15 +102,15 @@ func addMeshnetSection() {
 	mStatus := systray.AddMenuItem("Meshnet "+status, "Meshnet "+status)
 	mStatus.Disable()
 
-	if state.meshnetEnabled {
+	if ti.state.meshnetEnabled {
 		mDisconnect := systray.AddMenuItem("Disable", "Disable")
 		go func() {
 			success := false
 			for !success {
 				<-mDisconnect.ClickedCh
-				success = disableMeshnet(MeshClient)
+				success = ti.disableMeshnet()
 			}
-			updateChan <- true
+			ti.updateChan <- true
 		}()
 	} else {
 		mConnect := systray.AddMenuItem("Enable", "Enable")
@@ -131,21 +118,21 @@ func addMeshnetSection() {
 			success := false
 			for !success {
 				<-mConnect.ClickedCh
-				success = enableMeshnet(MeshClient)
+				success = ti.enableMeshnet()
 			}
-			updateChan <- true
+			ti.updateChan <- true
 		}()
 	}
 }
 
-func addAccountSection() {
+func addAccountSection(ti *Instance) {
 	systray.AddSeparator()
 
-	if state.loggedIn {
+	if ti.state.loggedIn {
 		m := systray.AddMenuItem("Logged in as:", "Logged in as:")
 		m.Disable()
 
-		mName := systray.AddMenuItem(state.accountName, state.accountName)
+		mName := systray.AddMenuItem(ti.state.accountName, ti.state.accountName)
 		mName.Disable()
 
 		mLogout := systray.AddMenuItem("Log out", "Log out")
@@ -154,9 +141,9 @@ func addAccountSection() {
 			success := false
 			for !success {
 				<-mLogout.ClickedCh
-				success = logout(Client, false)
+				success = ti.logout(false)
 			}
-			updateChan <- true
+			ti.updateChan <- true
 		}()
 	} else {
 		m := systray.AddMenuItem("Not logged in", "Not logged in")
@@ -167,7 +154,7 @@ func addAccountSection() {
 		go func() {
 			for {
 				<-mLogin.ClickedCh
-				login(Client)
+				ti.login()
 			}
 		}()
 	}

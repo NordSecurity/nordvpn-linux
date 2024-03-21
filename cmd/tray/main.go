@@ -18,27 +18,29 @@ var (
 	DaemonURL = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 )
 
-func onExit() {
-	if tray.DebugMode {
+func onExit(ti *tray.Instance) {
+	if ti.DebugMode {
 		now := time.Now()
 		fmt.Println("Exit at", now.String())
 	}
 }
 
 func main() {
+	var ti = tray.Instance{}
+
 	conn, err := grpc.Dial(
 		DaemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
 	if err == nil {
-		tray.Client = pb.NewDaemonClient(conn)
-		tray.MeshClient = meshpb.NewMeshnetClient(conn)
-		tray.FileshareClient = nil
+		ti.Client = pb.NewDaemonClient(conn)
+		ti.MeshClient = meshpb.NewMeshnetClient(conn)
+		ti.FileshareClient = nil
 	}
 
-	tray.NotifyEnabled = true
-	tray.DebugMode = true
+	ti.NotifyEnabled = true
+	ti.DebugMode = true
 
-	systray.Run(tray.OnReady, onExit)
+	systray.Run(func() { tray.OnReady(&ti) }, func() { onExit(&ti) })
 }

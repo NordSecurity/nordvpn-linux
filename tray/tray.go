@@ -2,6 +2,7 @@ package tray
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -17,7 +18,7 @@ const (
 	PollingFullUpdateInterval = 60 * time.Second
 )
 
-var (
+type Instance struct {
 	Client           pb.DaemonClient
 	MeshClient       meshpb.MeshnetClient
 	FileshareClient  filesharepb.FileshareClient
@@ -26,47 +27,67 @@ var (
 	notifier         dbusNotifier
 	redrawChan       chan struct{}
 	updateChan       chan bool
-	iconConnected    = "nordvpn-tray-blue"
-	iconDisconnected = "nordvpn-tray-white"
-)
+	iconConnected    string
+	iconDisconnected string
+	state            trayState
+}
 
-func OnReady() {
+type trayState struct {
+	daemonAvailable bool
+	loggedIn        bool
+	vpnActive       bool
+	meshnetEnabled  bool
+	daemonError     string
+	accountName     string
+	vpnStatus       string
+	vpnHostname     string
+	vpnCity         string
+	vpnCountry      string
+	mu              sync.RWMutex
+}
+
+func OnReady(ti *Instance) {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
-	systray.SetIconName(iconDisconnected)
+
+	ti.iconConnected = "nordvpn-tray-blue"
+	ti.iconDisconnected = "nordvpn-tray-white"
 
 	// TODO: Detect running DE and set iconDisconnected to "nordvpn-tray-black" on KDE/Plasma,
 	// and to "nordvpn-tray-gray" on before-Gnome Ubuntu versions
 
-	redrawChan = make(chan struct{})
-	updateChan = make(chan bool)
+	systray.SetIconName(ti.iconDisconnected)
 
-	time.AfterFunc(NotifierStartDelay, func() { notifier.start() })
+	ti.state.vpnStatus = "Disconnected"
+	ti.redrawChan = make(chan struct{})
+	ti.updateChan = make(chan bool)
+
+	time.AfterFunc(NotifierStartDelay, func() { ti.notifier.start() })
 
 	ticker := time.Tick(PollingUpdateInterval)
-	go pollingMonitor(Client, MeshClient, updateChan, ticker)
+	go ti.pollingMonitor(ticker)
 
 	go func() {
 		for {
-			state.mu.RLock()
+			ti.state.mu.RLock()
 			addAppSection()
-			if state.daemonAvailable {
-				if state.loggedIn {
-					addVpnSection()
+			if ti.state.daemonAvailable {
+				if ti.state.loggedIn {
+					addVpnSection(ti)
 					// Disabled for now: addMeshnetSection()
 				}
-				addAccountSection()
+				addAccountSection(ti)
 			} else {
-				addDaemonSection()
+				addDaemonSection(ti)
 			}
-			state.mu.RUnlock()
-			if DebugMode {
-				addDebugSection()
+			ti.state.mu.RUnlock()
+			if ti.DebugMode {
+				addDebugSection(ti)
 			}
 			addQuitItem()
 			systray.Refresh()
-			<-redrawChan
-			if DebugMode {
+			<-ti.redrawChan
+			if ti.DebugMode {
 				fmt.Println(time.Now().String(), "Redraw")
 			}
 			systray.ResetMenu()
