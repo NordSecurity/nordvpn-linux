@@ -19,7 +19,7 @@ import (
 func (ti *Instance) login() {
 	resp, err := ti.Client.IsLoggedIn(context.Background(), &pb.Empty{})
 	if err != nil || resp.GetValue() {
-		ti.notification("warning", "You are already logged in")
+		ti.notify(pWarning, "You are already logged in")
 		return
 	}
 
@@ -28,7 +28,7 @@ func (ti *Instance) login() {
 		&pb.Empty{},
 	)
 	if err != nil {
-		ti.notification("error", "Login error: %s", err)
+		ti.notify(pError, "Login error: %s", err)
 		return
 	}
 
@@ -38,7 +38,7 @@ func (ti *Instance) login() {
 			if err == io.EOF {
 				break
 			}
-			ti.notification("error", "Login error: %s", err)
+			ti.notify(pError, "Login error: %s", err)
 			return
 		}
 
@@ -47,13 +47,13 @@ func (ti *Instance) login() {
 			cmd := exec.Command("xdg-open", url)
 			err = cmd.Start()
 			if err != nil {
-				ti.notification("warning", "Failed to start xdg-open: %v", err)
+				ti.notify(pWarning, "Failed to start xdg-open: %v", err)
 			}
 			err = cmd.Wait()
 
 			if err != nil {
-				ti.notification("warning", "Failed to open the web browser: %v", err)
-				ti.notification("info", "Continue log in in the browser: %s", url)
+				ti.notify(pWarning, "Failed to open the web browser: %v", err)
+				ti.notify(pInfo, "Continue log in in the browser: %s", url)
 			}
 		}
 	}
@@ -64,23 +64,23 @@ func (ti *Instance) logout(persistToken bool) bool {
 		PersistToken: persistToken,
 	})
 	if err != nil {
-		ti.notification("error", "Logout error: %s", err)
+		ti.notify(pError, "Logout error: %s", err)
 		return false
 	}
 
 	switch payload.Type {
 	case internal.CodeSuccess:
 		if !ti.NotifyEnabled {
-			ti.notification("info", cli.LogoutSuccess)
+			ti.notify(pInfo, cli.LogoutSuccess)
 		}
 		return true
 	case internal.CodeTokenInvalidated:
 		if !ti.NotifyEnabled {
-			ti.notification("info", cli.LogoutTokenSuccess)
+			ti.notify(pInfo, cli.LogoutTokenSuccess)
 		}
 		return true
 	default:
-		ti.notification("error", cli.CheckYourInternetConnMessage)
+		ti.notify(pError, cli.CheckYourInternetConnMessage)
 		return false
 	}
 }
@@ -101,7 +101,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		ServerGroup: serverGroup,
 	})
 	if err != nil {
-		ti.notification("error", "Connect error: %s", err)
+		ti.notify(pError, "Connect error: %s", err)
 		return false
 	}
 
@@ -111,35 +111,35 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 			if err == io.EOF {
 				break
 			}
-			ti.notification("error", "Connect error: %s", err)
+			ti.notify(pError, "Connect error: %s", err)
 			return false
 		}
 
 		switch out.Type {
 		case internal.CodeFailure:
-			ti.notification("error", "Connect error: %s", nordclient.ConnectCantConnect)
+			ti.notify(pError, "Connect error: %s", nordclient.ConnectCantConnect)
 		case internal.CodeExpiredRenewToken:
-			ti.notification("warning", nordclient.RelogRequest)
+			ti.notify(pWarning, nordclient.RelogRequest)
 			ti.login()
 			return ti.connect(serverTag, serverGroup)
 		case internal.CodeTokenRenewError:
-			ti.notification("error", nordclient.AccountTokenRenewError)
+			ti.notify(pError, nordclient.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
-			ti.notification("error", cli.ErrAccountExpired.Error())
+			ti.notify(pError, cli.ErrAccountExpired.Error())
 		case internal.CodeDisconnected:
-			ti.notification("info", internal.DisconnectSuccess)
+			ti.notify(pInfo, internal.DisconnectSuccess)
 		case internal.CodeTagNonexisting:
-			ti.notification("error", internal.TagNonexistentErrorMessage)
+			ti.notify(pError, internal.TagNonexistentErrorMessage)
 		case internal.CodeGroupNonexisting:
-			ti.notification("error", internal.GroupNonexistentErrorMessage)
+			ti.notify(pError, internal.GroupNonexistentErrorMessage)
 		case internal.CodeServerUnavailable:
-			ti.notification("error", internal.ServerUnavailableErrorMessage)
+			ti.notify(pError, internal.ServerUnavailableErrorMessage)
 		case internal.CodeDoubleGroupError:
-			ti.notification("error", internal.DoubleGroupErrorMessage)
+			ti.notify(pError, internal.DoubleGroupErrorMessage)
 		case internal.CodeVPNRunning:
-			ti.notification("warning", nordclient.ConnectConnected)
+			ti.notify(pWarning, nordclient.ConnectConnected)
 		case internal.CodeUFWDisabled:
-			ti.notification("warning", nordclient.UFWDisabledMessage)
+			ti.notify(pWarning, nordclient.UFWDisabledMessage)
 		case internal.CodeConnecting:
 		case internal.CodeConnected:
 			return true
@@ -152,7 +152,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 func (ti *Instance) disconnect() bool {
 	resp, err := ti.Client.Disconnect(context.Background(), &pb.Empty{})
 	if err != nil {
-		ti.notification("error", "Disconnect error: %s", err)
+		ti.notify(pError, "Disconnect error: %s", err)
 		return false
 	}
 
@@ -162,16 +162,16 @@ func (ti *Instance) disconnect() bool {
 			if err == io.EOF {
 				break
 			}
-			ti.notification("error", "Disconnect error: %s", err)
+			ti.notify(pError, "Disconnect error: %s", err)
 			return false
 		}
 
 		switch out.Type {
 		case internal.CodeVPNNotRunning:
-			ti.notification("warning", cli.DisconnectNotConnected)
+			ti.notify(pWarning, cli.DisconnectNotConnected)
 		case internal.CodeDisconnected:
 			if !ti.NotifyEnabled {
-				ti.notification("info", internal.DisconnectSuccess)
+				ti.notify(pInfo, internal.DisconnectSuccess)
 			}
 		}
 	}
@@ -182,16 +182,16 @@ func (ti *Instance) disconnect() bool {
 func (ti *Instance) enableMeshnet() bool {
 	resp, err := ti.MeshClient.EnableMeshnet(context.Background(), &meshpb.Empty{})
 	if err != nil {
-		ti.notification("error", "Enable meshnet error: %s", err)
+		ti.notify(pError, "Enable meshnet error: %s", err)
 		return false
 	}
 	if err := cli.MeshnetResponseToError(resp); err != nil {
-		ti.notification("error", "Enable meshnet error: %s", err)
+		ti.notify(pError, "Enable meshnet error: %s", err)
 		return false
 	}
 
 	if !ti.NotifyEnabled {
-		ti.notification("info", cli.MsgSetMeshnetSuccess, "enabled")
+		ti.notify(pInfo, cli.MsgSetMeshnetSuccess, "enabled")
 	}
 
 	// TODO: c.fileshareProcessManager.StartProcess() is called here in the CLI
@@ -202,16 +202,16 @@ func (ti *Instance) enableMeshnet() bool {
 func (ti *Instance) disableMeshnet() bool {
 	resp, err := ti.MeshClient.DisableMeshnet(context.Background(), &meshpb.Empty{})
 	if err != nil {
-		ti.notification("error", "Disable meshnet error: %s", err)
+		ti.notify(pError, "Disable meshnet error: %s", err)
 		return false
 	}
 	if err := cli.MeshnetResponseToError(resp); err != nil {
-		ti.notification("error", "Disable meshnet error: %s", err)
+		ti.notify(pError, "Disable meshnet error: %s", err)
 		return false
 	}
 
 	if !ti.NotifyEnabled {
-		ti.notification("info", cli.MsgSetMeshnetSuccess, "disabled")
+		ti.notify(pInfo, cli.MsgSetMeshnetSuccess, "disabled")
 	}
 
 	return true

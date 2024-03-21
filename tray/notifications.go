@@ -3,25 +3,38 @@ package tray
 import (
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/esiqveland/notify"
-	"github.com/fatih/color"
 	"github.com/godbus/dbus/v5"
 )
 
-func (ti *Instance) notification(mode string, text string, a ...any) {
+type logPriority int
+
+const (
+	pInfo logPriority = iota
+	pWarning
+	pError
+)
+
+func log(mode logPriority, text string, a ...any) {
+	text = fmt.Sprintf(text, a...)
+	switch mode {
+	case pInfo:
+		_, _ = fmt.Fprintln(os.Stderr, "INFO:", text)
+	case pWarning:
+		_, _ = fmt.Fprintln(os.Stderr, "WARNING:", text)
+	case pError:
+		_, _ = fmt.Fprintln(os.Stderr, "ERROR:", text)
+	}
+}
+
+func (ti *Instance) notify(mode logPriority, text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
 	_, err := ti.notifier.sendNotification("NordVPN", text)
 	if err != nil {
-		switch mode {
-		case "info":
-			color.Green(text)
-		case "warning":
-			color.Yellow(text)
-		case "error":
-			color.Red(text)
-		}
+		log(mode, text)
 	}
 }
 
@@ -34,12 +47,12 @@ type dbusNotifier struct {
 func (n *dbusNotifier) start() {
 	ntf, err := newNotifier()
 	if err == nil {
-		fmt.Println("Started dbus notifier")
+		log(pInfo, "Started dbus notifier")
 		n.mu.Lock()
 		n.notifier = ntf
 		n.mu.Unlock()
 	} else {
-		fmt.Printf("Failed to start dbus notifier: %s\n", err)
+		log(pError, "Failed to start dbus notifier: %s", err)
 	}
 }
 
@@ -70,7 +83,7 @@ func newNotifier() (notify.Notifier, error) {
 	defer func() {
 		if err != nil {
 			if err := dbusConn.Close(); err != nil {
-				color.Red("failed to close dbus connection: ", err)
+				log(pError, "Failed to close dbus connection: %s", err)
 			}
 		}
 	}()
@@ -91,7 +104,7 @@ func newNotifier() (notify.Notifier, error) {
 	defer func() {
 		if err != nil {
 			if err := ntf.Close(); err != nil {
-				color.Red("failed to close notifier: ", err)
+				log(pError, "Failed to close notifier: %s", err)
 			}
 		}
 	}()
