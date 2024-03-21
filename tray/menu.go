@@ -102,6 +102,7 @@ func addVpnSection() {
 	}
 }
 
+// nolint:unused
 func addMeshnetSection() {
 	systray.AddSeparator()
 

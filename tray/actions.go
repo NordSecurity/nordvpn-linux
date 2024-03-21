@@ -178,6 +178,7 @@ func disconnect(client pb.DaemonClient) bool {
 	return true
 }
 
+// nolint:unused
 func enableMeshnet(meshClient meshpb.MeshnetClient) bool {
 	resp, err := meshClient.EnableMeshnet(context.Background(), &meshpb.Empty{})
 	if err != nil {
@@ -197,6 +198,7 @@ func enableMeshnet(meshClient meshpb.MeshnetClient) bool {
 	return true
 }
 
+// nolint:unused
 func disableMeshnet(meshClient meshpb.MeshnetClient) bool {
 	resp, err := meshClient.DisableMeshnet(context.Background(), &meshpb.Empty{})
 	if err != nil {
