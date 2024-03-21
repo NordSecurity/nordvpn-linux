@@ -40,7 +40,6 @@ func main() {
 	}
 
 	ti.NotifyEnabled = true
-	ti.DebugMode = true
 
 	systray.Run(func() { tray.OnReady(&ti) }, func() { onExit(&ti) })
 }

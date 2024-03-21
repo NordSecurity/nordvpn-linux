@@ -2,6 +2,7 @@ package tray
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -47,6 +48,12 @@ type trayState struct {
 }
 
 func OnReady(ti *Instance) {
+	if os.Getenv("NORDVPN_TRAY_DEBUG") == "1" {
+		ti.DebugMode = true
+	} else {
+		ti.DebugMode = false
+	}
+
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
 
