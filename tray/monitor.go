@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
@@ -17,30 +16,14 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type stateType struct {
-	daemonAvailable bool
-	loggedIn        bool
-	vpnActive       bool
-	meshnetEnabled  bool
-	daemonError     string
-	accountName     string
-	vpnStatus       string
-	vpnHostname     string
-	vpnCity         string
-	vpnCountry      string
-	mu              sync.RWMutex
-}
-
-var state = stateType{vpnStatus: "Disconnected"}
-
 // The pattern is to return 'true' if something has changed and 'false' when no changes were detected
 
-func ping(client pb.DaemonClient) bool {
+func (ti *Instance) ping() bool {
 	changed := false
 	daemonAvailable := false
 	daemonError := ""
 
-	resp, err := client.Ping(context.Background(), &pb.Empty{})
+	resp, err := ti.Client.Ping(context.Background(), &pb.Empty{})
 	if err != nil {
 		daemonError = internal.ErrDaemonConnectionRefused.Error()
 		if strings.Contains(err.Error(), "no such file or directory") {
@@ -67,88 +50,88 @@ func ping(client pb.DaemonClient) bool {
 		daemonAvailable = true
 	}
 
-	state.mu.Lock()
+	ti.state.mu.Lock()
 
-	if !state.daemonAvailable && daemonAvailable {
-		state.daemonAvailable = true
+	if !ti.state.daemonAvailable && daemonAvailable {
+		ti.state.daemonAvailable = true
 		changed = true
-		if NotifyEnabled {
-			defer notification("info", "Connected to NordVPN daemon")
+		if ti.NotifyEnabled {
+			defer ti.notification("info", "Connected to NordVPN daemon")
 		}
-	} else if state.daemonAvailable && !daemonAvailable {
-		state.daemonAvailable = false
+	} else if ti.state.daemonAvailable && !daemonAvailable {
+		ti.state.daemonAvailable = false
 		changed = true
-		if NotifyEnabled {
-			defer notification("info", "Disconnected from NordVPN daemon")
+		if ti.NotifyEnabled {
+			defer ti.notification("info", "Disconnected from NordVPN daemon")
 		}
 	}
 
-	if state.daemonError != daemonError {
-		state.daemonError = daemonError
+	if ti.state.daemonError != daemonError {
+		ti.state.daemonError = daemonError
 		changed = true
 	}
 
-	state.mu.Unlock()
+	ti.state.mu.Unlock()
 	return changed
 }
 
-func fetchLogged(client pb.DaemonClient) bool {
+func (ti *Instance) fetchLogged() bool {
 	changed := false
-	resp, err := client.IsLoggedIn(context.Background(), &pb.Empty{})
+	resp, err := ti.Client.IsLoggedIn(context.Background(), &pb.Empty{})
 	loggedIn := err == nil && resp.GetValue()
 
-	state.mu.Lock()
+	ti.state.mu.Lock()
 
-	if !state.loggedIn && loggedIn {
-		state.loggedIn = true
+	if !ti.state.loggedIn && loggedIn {
+		ti.state.loggedIn = true
 		changed = true
-		if NotifyEnabled {
-			defer notification("info", "Logged in")
+		if ti.NotifyEnabled {
+			defer ti.notification("info", "Logged in")
 		}
-	} else if state.loggedIn && !loggedIn {
-		state.loggedIn = false
+	} else if ti.state.loggedIn && !loggedIn {
+		ti.state.loggedIn = false
 		changed = true
-		if NotifyEnabled {
-			defer notification("info", "Logged out")
+		if ti.NotifyEnabled {
+			defer ti.notification("info", "Logged out")
 		}
 	}
 
-	state.mu.Unlock()
+	ti.state.mu.Unlock()
 	return changed
 }
 
-func fetchMeshnet(meshClient meshpb.MeshnetClient) bool {
+func (ti *Instance) fetchMeshnet() bool {
 	changed := false
-	meshResp, err := meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
+	meshResp, err := ti.MeshClient.IsEnabled(context.Background(), &meshpb.Empty{})
 	meshnetEnabled := err == nil && meshResp.GetValue()
 
-	state.mu.Lock()
+	ti.state.mu.Lock()
 
-	if !state.meshnetEnabled && meshnetEnabled {
-		state.meshnetEnabled = true
+	if !ti.state.meshnetEnabled && meshnetEnabled {
+		ti.state.meshnetEnabled = true
 		changed = true
-		if NotifyEnabled {
-			defer notification("info", "Meshnet enabled")
+		if ti.NotifyEnabled {
+			defer ti.notification("info", "Meshnet enabled")
 		}
-	} else if state.meshnetEnabled && !meshnetEnabled {
-		state.meshnetEnabled = false
+	} else if ti.state.meshnetEnabled && !meshnetEnabled {
+		ti.state.meshnetEnabled = false
 		changed = true
-		if NotifyEnabled {
-			defer notification("info", "Meshnet disabled")
+		if ti.NotifyEnabled {
+			defer ti.notification("info", "Meshnet disabled")
 		}
 	}
 
-	state.mu.Unlock()
+	ti.state.mu.Unlock()
 	return changed
 }
 
-func fetchStatus(client pb.DaemonClient) bool {
+func (ti *Instance) fetchStatus() bool {
 	changed := false
 	vpnStatus := ""
 	vpnHostname := ""
 	vpnCity := ""
 	vpnCountry := ""
-	resp, err := client.Status(context.Background(), &pb.Empty{})
+	resp, err := ti.Client.Status(context.Background(), &pb.Empty{})
 	if err == nil {
 		vpnStatus = resp.State
 		vpnHostname = resp.Hostname
@@ -156,43 +139,43 @@ func fetchStatus(client pb.DaemonClient) bool {
 		vpnCountry = resp.Country
 	}
 
-	state.mu.Lock()
+	ti.state.mu.Lock()
 
-	if state.vpnStatus != vpnStatus {
+	if ti.state.vpnStatus != vpnStatus {
 		if vpnStatus == "Connected" {
-			systray.SetIconName(iconConnected)
-			if NotifyEnabled {
-				defer notification("info", "Connected to VPN server: %s", vpnHostname)
+			systray.SetIconName(ti.iconConnected)
+			if ti.NotifyEnabled {
+				defer ti.notification("info", "Connected to VPN server: %s", vpnHostname)
 			}
 		} else {
-			systray.SetIconName(iconDisconnected)
-			if NotifyEnabled {
-				defer notification("info", "Disconnected from VPN server")
+			systray.SetIconName(ti.iconDisconnected)
+			if ti.NotifyEnabled {
+				defer ti.notification("info", "Disconnected from VPN server")
 			}
 		}
-		state.vpnStatus = vpnStatus
+		ti.state.vpnStatus = vpnStatus
 		changed = true
 	}
 
-	if state.vpnHostname != vpnHostname {
-		state.vpnHostname = vpnHostname
+	if ti.state.vpnHostname != vpnHostname {
+		ti.state.vpnHostname = vpnHostname
 		changed = true
 	}
 
-	state.vpnCity = vpnCity
-	state.vpnCountry = vpnCountry
+	ti.state.vpnCity = vpnCity
+	ti.state.vpnCountry = vpnCountry
 
-	state.mu.Unlock()
+	ti.state.mu.Unlock()
 	return changed
 }
 
-func accountInfo(client pb.DaemonClient) bool {
+func (ti *Instance) accountInfo() bool {
 	changed := false
 	loggedIn := false
 	vpnActive := false
 	accountName := ""
 
-	payload, err := client.AccountInfo(context.Background(), &pb.Empty{})
+	payload, err := ti.Client.AccountInfo(context.Background(), &pb.Empty{})
 	if err != nil {
 		if status.Convert(err).Message() != internal.ErrNotLoggedIn.Error() {
 			color.Red("Error retrieving account info: %s", err)
@@ -223,57 +206,57 @@ func accountInfo(client pb.DaemonClient) bool {
 		}
 	}
 
-	state.mu.Lock()
+	ti.state.mu.Lock()
 
-	if state.loggedIn != loggedIn {
-		state.loggedIn = loggedIn
+	if ti.state.loggedIn != loggedIn {
+		ti.state.loggedIn = loggedIn
 		changed = true
 	}
 
-	if state.vpnActive != vpnActive {
-		state.vpnActive = vpnActive
+	if ti.state.vpnActive != vpnActive {
+		ti.state.vpnActive = vpnActive
 		changed = true
 	}
 
-	if state.accountName != accountName {
-		state.accountName = accountName
+	if ti.state.accountName != accountName {
+		ti.state.accountName = accountName
 		changed = true
 	}
 
-	state.mu.Unlock()
+	ti.state.mu.Unlock()
 	return changed
 }
 
-func maybeRedraw(result bool, previous bool) bool {
+func (ti *Instance) maybeRedraw(result bool, previous bool) bool {
 	if result {
-		redrawChan <- struct{}{}
+		ti.redrawChan <- struct{}{}
 	}
 	return result || previous
 }
 
-func pollingMonitor(client pb.DaemonClient, meshClient meshpb.MeshnetClient, update <-chan bool, ticker <-chan time.Time) {
+func (ti *Instance) pollingMonitor(ticker <-chan time.Time) {
 	fullUpdate := true
 	fullUpdateLast := time.Time{}
 	for {
 		changed := false
-		fullUpdate = maybeRedraw(ping(client), fullUpdate)
-		if state.daemonAvailable {
-			fullUpdate = maybeRedraw(fetchLogged(client), fullUpdate)
-			if state.loggedIn {
-				fullUpdate = maybeRedraw(fetchMeshnet(meshClient), fullUpdate)
-				fullUpdate = maybeRedraw(fetchStatus(client), fullUpdate)
+		fullUpdate = ti.maybeRedraw(ti.ping(), fullUpdate)
+		if ti.state.daemonAvailable {
+			fullUpdate = ti.maybeRedraw(ti.fetchLogged(), fullUpdate)
+			if ti.state.loggedIn {
+				fullUpdate = ti.maybeRedraw(ti.fetchMeshnet(), fullUpdate)
+				fullUpdate = ti.maybeRedraw(ti.fetchStatus(), fullUpdate)
 				if fullUpdate {
-					changed = accountInfo(client)
+					changed = ti.accountInfo()
 					fullUpdateLast = time.Now()
 				}
 			}
 		}
 
 		if changed {
-			redrawChan <- struct{}{}
+			ti.redrawChan <- struct{}{}
 		}
 		select {
-		case fullUpdate = <-update:
+		case fullUpdate = <-ti.updateChan:
 		case <-systray.TrayOpenedCh:
 			fullUpdate = true
 		case ts := <-ticker:
@@ -283,7 +266,7 @@ func pollingMonitor(client pb.DaemonClient, meshClient meshpb.MeshnetClient, upd
 				fullUpdate = false
 			}
 		}
-		if DebugMode {
+		if ti.DebugMode {
 			if fullUpdate {
 				fmt.Println(time.Now().String(), "Full update")
 			} else {

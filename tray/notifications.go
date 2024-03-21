@@ -10,9 +10,9 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
-func notification(mode string, text string, a ...any) {
+func (ti *Instance) notification(mode string, text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
-	_, err := notifier.sendNotification("NordVPN", text)
+	_, err := ti.notifier.sendNotification("NordVPN", text)
 	if err != nil {
 		switch mode {
 		case "info":
@@ -34,12 +34,12 @@ type dbusNotifier struct {
 func (n *dbusNotifier) start() {
 	ntf, err := newNotifier()
 	if err == nil {
-		notification("info", "Started dbusNotifier")
+		fmt.Println("Started dbus notifier")
 		n.mu.Lock()
 		n.notifier = ntf
 		n.mu.Unlock()
 	} else {
-		notification("error", "Failed to start dbusNotifier: %s", err)
+		fmt.Printf("Failed to start dbus notifier: %s\n", err)
 	}
 }
 
