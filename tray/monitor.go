@@ -12,7 +12,6 @@ import (
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
 	"github.com/NordSecurity/systray"
-	"github.com/fatih/color"
 	"google.golang.org/grpc/status"
 )
 
@@ -56,13 +55,13 @@ func (ti *Instance) ping() bool {
 		ti.state.daemonAvailable = true
 		changed = true
 		if ti.NotifyEnabled {
-			defer ti.notification("info", "Connected to NordVPN daemon")
+			defer ti.notify(pInfo, "Connected to NordVPN daemon")
 		}
 	} else if ti.state.daemonAvailable && !daemonAvailable {
 		ti.state.daemonAvailable = false
 		changed = true
 		if ti.NotifyEnabled {
-			defer ti.notification("info", "Disconnected from NordVPN daemon")
+			defer ti.notify(pInfo, "Disconnected from NordVPN daemon")
 		}
 	}
 
@@ -86,13 +85,13 @@ func (ti *Instance) updateLoginStatus() bool {
 		ti.state.loggedIn = true
 		changed = true
 		if ti.NotifyEnabled {
-			defer ti.notification("info", "Logged in")
+			defer ti.notify(pInfo, "Logged in")
 		}
 	} else if ti.state.loggedIn && !loggedIn {
 		ti.state.loggedIn = false
 		changed = true
 		if ti.NotifyEnabled {
-			defer ti.notification("info", "Logged out")
+			defer ti.notify(pInfo, "Logged out")
 		}
 	}
 
@@ -111,13 +110,13 @@ func (ti *Instance) updateMeshnetStatus() bool {
 		ti.state.meshnetEnabled = true
 		changed = true
 		if ti.NotifyEnabled {
-			defer ti.notification("info", "Meshnet enabled")
+			defer ti.notify(pInfo, "Meshnet enabled")
 		}
 	} else if ti.state.meshnetEnabled && !meshnetEnabled {
 		ti.state.meshnetEnabled = false
 		changed = true
 		if ti.NotifyEnabled {
-			defer ti.notification("info", "Meshnet disabled")
+			defer ti.notify(pInfo, "Meshnet disabled")
 		}
 	}
 
@@ -145,12 +144,12 @@ func (ti *Instance) updateVpnStatus() bool {
 		if vpnStatus == "Connected" {
 			systray.SetIconName(ti.iconConnected)
 			if ti.NotifyEnabled {
-				defer ti.notification("info", "Connected to VPN server: %s", vpnHostname)
+				defer ti.notify(pInfo, "Connected to VPN server: %s", vpnHostname)
 			}
 		} else {
 			systray.SetIconName(ti.iconDisconnected)
 			if ti.NotifyEnabled {
-				defer ti.notification("info", "Disconnected from VPN server")
+				defer ti.notify(pInfo, "Disconnected from VPN server")
 			}
 		}
 		ti.state.vpnStatus = vpnStatus
@@ -178,16 +177,16 @@ func (ti *Instance) updateAccountInfo() bool {
 	payload, err := ti.Client.AccountInfo(context.Background(), &pb.Empty{})
 	if err != nil {
 		if status.Convert(err).Message() != internal.ErrNotLoggedIn.Error() {
-			color.Red("Error retrieving account info: %s", err)
+			log(pError, "Error retrieving account info: %s", err)
 		}
 	} else {
 		switch payload.Type {
 		case internal.CodeUnauthorized:
-			color.Red(cli.AccountTokenUnauthorizedError)
+			log(pError, cli.AccountTokenUnauthorizedError)
 		case internal.CodeExpiredRenewToken:
-			color.Red("CodeExpiredRenewToken")
+			log(pError, "CodeExpiredRenewToken")
 		case internal.CodeTokenRenewError:
-			color.Red("CodeTokenRenewError")
+			log(pError, "CodeTokenRenewError")
 		default:
 			loggedIn = true
 		}
