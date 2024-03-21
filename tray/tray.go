@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
 	"github.com/NordSecurity/systray"
 )
@@ -20,7 +19,6 @@ const (
 
 type Instance struct {
 	Client           pb.DaemonClient
-	MeshClient       meshpb.MeshnetClient
 	DebugMode        bool
 	notifier         dbusNotifier
 	redrawChan       chan struct{}
@@ -34,7 +32,6 @@ type trayState struct {
 	daemonAvailable bool
 	loggedIn        bool
 	vpnActive       bool
-	meshnetEnabled  bool
 	notifyEnabled   bool
 	daemonError     string
 	accountName     string
@@ -80,7 +77,6 @@ func OnReady(ti *Instance) {
 			if ti.state.daemonAvailable {
 				if ti.state.loggedIn {
 					addVpnSection(ti)
-					// Disabled for now: addMeshnetSection()
 				}
 				addAccountSection(ti)
 			} else {

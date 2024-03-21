@@ -6,7 +6,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/tray"
 
 	"github.com/NordSecurity/systray"
@@ -35,7 +34,6 @@ func main() {
 
 	if err == nil {
 		ti.Client = pb.NewDaemonClient(conn)
-		ti.MeshClient = meshpb.NewMeshnetClient(conn)
 	} else {
 		fmt.Printf("Error connecting to the NordVPN daemon: %s", err)
 		return

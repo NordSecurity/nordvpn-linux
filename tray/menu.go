@@ -89,42 +89,6 @@ func addVpnSection(ti *Instance) {
 	}
 }
 
-// nolint:unused
-func addMeshnetSection(ti *Instance) {
-	systray.AddSeparator()
-
-	status := ""
-	if ti.state.meshnetEnabled {
-		status = "enabled"
-	} else {
-		status = "disabled"
-	}
-	mStatus := systray.AddMenuItem("Meshnet "+status, "Meshnet "+status)
-	mStatus.Disable()
-
-	if ti.state.meshnetEnabled {
-		mDisconnect := systray.AddMenuItem("Disable", "Disable")
-		go func() {
-			success := false
-			for !success {
-				<-mDisconnect.ClickedCh
-				success = ti.disableMeshnet()
-			}
-			ti.updateChan <- true
-		}()
-	} else {
-		mConnect := systray.AddMenuItem("Enable", "Enable")
-		go func() {
-			success := false
-			for !success {
-				<-mConnect.ClickedCh
-				success = ti.enableMeshnet()
-			}
-			ti.updateChan <- true
-		}()
-	}
-}
-
 func addAccountSection(ti *Instance) {
 	systray.AddSeparator()
 

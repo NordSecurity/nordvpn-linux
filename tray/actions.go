@@ -11,7 +11,6 @@ import (
 	nordclient "github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 )
 
 // The pattern for actions is to return 'true' on success and 'false' (along with emitting a notification) on failure
@@ -166,36 +165,5 @@ func (ti *Instance) disconnect() bool {
 		case internal.CodeDisconnected:
 		}
 	}
-	return true
-}
-
-// nolint:unused
-func (ti *Instance) enableMeshnet() bool {
-	resp, err := ti.MeshClient.EnableMeshnet(context.Background(), &meshpb.Empty{})
-	if err != nil {
-		ti.notify(pError, "Enable meshnet error: %s", err)
-		return false
-	}
-	if err := cli.MeshnetResponseToError(resp); err != nil {
-		ti.notify(pError, "Enable meshnet error: %s", err)
-		return false
-	}
-
-	// TODO: c.fileshareProcessManager.StartProcess() is called here in the CLI
-	return true
-}
-
-// nolint:unused
-func (ti *Instance) disableMeshnet() bool {
-	resp, err := ti.MeshClient.DisableMeshnet(context.Background(), &meshpb.Empty{})
-	if err != nil {
-		ti.notify(pError, "Disable meshnet error: %s", err)
-		return false
-	}
-	if err := cli.MeshnetResponseToError(resp); err != nil {
-		ti.notify(pError, "Disable meshnet error: %s", err)
-		return false
-	}
-
 	return true
 }
