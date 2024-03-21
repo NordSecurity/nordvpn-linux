@@ -32,7 +32,13 @@ func log(mode logPriority, text string, a ...any) {
 
 func (ti *Instance) notify(mode logPriority, text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
-	_, err := ti.notifier.sendNotification("NordVPN", text)
+	ti.state.mu.RLock()
+	notifyEnabled := ti.state.notifyEnabled
+	ti.state.mu.RUnlock()
+	err := errors.New("notifications disabled")
+	if notifyEnabled {
+		_, err = ti.notifier.sendNotification("NordVPN", text)
+	}
 	if err != nil {
 		log(mode, text)
 	}
@@ -74,7 +80,7 @@ func (n *dbusNotifier) sendNotification(summary string, body string) (uint32, er
 		}
 		return n.notifier.SendNotification(notification)
 	} else {
-		return 0, errors.New("dbusNotifier not connected")
+		return 0, errors.New("dbus notifier not connected")
 	}
 }
 

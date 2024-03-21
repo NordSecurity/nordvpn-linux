@@ -3,10 +3,12 @@ package tray
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
+	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -54,15 +56,11 @@ func (ti *Instance) ping() bool {
 	if !ti.state.daemonAvailable && daemonAvailable {
 		ti.state.daemonAvailable = true
 		changed = true
-		if ti.NotifyEnabled {
-			defer ti.notify(pInfo, "Connected to NordVPN daemon")
-		}
+		defer ti.notify(pInfo, "Connected to NordVPN daemon")
 	} else if ti.state.daemonAvailable && !daemonAvailable {
 		ti.state.daemonAvailable = false
 		changed = true
-		if ti.NotifyEnabled {
-			defer ti.notify(pInfo, "Disconnected from NordVPN daemon")
-		}
+		defer ti.notify(pInfo, "Disconnected from NordVPN daemon")
 	}
 
 	if ti.state.daemonError != daemonError {
@@ -84,15 +82,11 @@ func (ti *Instance) updateLoginStatus() bool {
 	if !ti.state.loggedIn && loggedIn {
 		ti.state.loggedIn = true
 		changed = true
-		if ti.NotifyEnabled {
-			defer ti.notify(pInfo, "Logged in")
-		}
+		defer ti.notify(pInfo, "Logged in")
 	} else if ti.state.loggedIn && !loggedIn {
 		ti.state.loggedIn = false
 		changed = true
-		if ti.NotifyEnabled {
-			defer ti.notify(pInfo, "Logged out")
-		}
+		defer ti.notify(pInfo, "Logged out")
 	}
 
 	ti.state.mu.Unlock()
@@ -109,15 +103,11 @@ func (ti *Instance) updateMeshnetStatus() bool {
 	if !ti.state.meshnetEnabled && meshnetEnabled {
 		ti.state.meshnetEnabled = true
 		changed = true
-		if ti.NotifyEnabled {
-			defer ti.notify(pInfo, "Meshnet enabled")
-		}
+		defer ti.notify(pInfo, "Meshnet enabled")
 	} else if ti.state.meshnetEnabled && !meshnetEnabled {
 		ti.state.meshnetEnabled = false
 		changed = true
-		if ti.NotifyEnabled {
-			defer ti.notify(pInfo, "Meshnet disabled")
-		}
+		defer ti.notify(pInfo, "Meshnet disabled")
 	}
 
 	ti.state.mu.Unlock()
@@ -143,14 +133,10 @@ func (ti *Instance) updateVpnStatus() bool {
 	if ti.state.vpnStatus != vpnStatus {
 		if vpnStatus == "Connected" {
 			systray.SetIconName(ti.iconConnected)
-			if ti.NotifyEnabled {
-				defer ti.notify(pInfo, "Connected to VPN server: %s", vpnHostname)
-			}
+			defer ti.notify(pInfo, "Connected to VPN server: %s", vpnHostname)
 		} else {
 			systray.SetIconName(ti.iconDisconnected)
-			if ti.NotifyEnabled {
-				defer ti.notify(pInfo, "Disconnected from VPN server")
-			}
+			defer ti.notify(pInfo, "Disconnected from VPN server")
 		}
 		ti.state.vpnStatus = vpnStatus
 		changed = true
@@ -165,6 +151,47 @@ func (ti *Instance) updateVpnStatus() bool {
 	ti.state.vpnCountry = vpnCountry
 
 	ti.state.mu.Unlock()
+	return changed
+}
+
+func (ti *Instance) updateSettings() bool {
+	changed := false
+
+	resp, err := ti.Client.Settings(context.Background(), &pb.SettingsRequest{
+		Uid: int64(os.Getuid()),
+	})
+	var settings *pb.Settings
+
+	if err != nil {
+		log(pError, "Error retrieving settings: %s", err)
+	} else {
+		switch resp.Type {
+		case internal.CodeConfigError:
+			log(pError, "Error retrieving settings: %s", client.ConfigMessage)
+		case internal.CodeSuccess:
+			settings = resp.GetData()
+		default:
+			log(pError, "Error retrieving settings: %s", internal.ErrUnhandled)
+		}
+	}
+
+	if settings == nil {
+		return false
+	}
+
+	ti.state.mu.Lock()
+	if !ti.state.notifyEnabled && settings.Notify {
+		ti.state.notifyEnabled = true
+		changed = true
+		defer ti.notify(pInfo, "Notifications enabled")
+	}
+	if ti.state.notifyEnabled && !settings.Notify {
+		ti.state.notifyEnabled = false
+		changed = true
+		defer log(pInfo, "Notifications disabled")
+	}
+	ti.state.mu.Unlock()
+
 	return changed
 }
 
@@ -246,6 +273,7 @@ func (ti *Instance) pollingMonitor(ticker <-chan time.Time) {
 				fullUpdate = ti.maybeRedraw(ti.updateVpnStatus(), fullUpdate)
 				if fullUpdate {
 					changed = ti.updateAccountInfo()
+					changed = ti.updateSettings() || changed
 					fullUpdateLast = time.Now()
 				}
 			}

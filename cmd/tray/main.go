@@ -36,10 +36,10 @@ func main() {
 	if err == nil {
 		ti.Client = pb.NewDaemonClient(conn)
 		ti.MeshClient = meshpb.NewMeshnetClient(conn)
-		ti.FileshareClient = nil
+	} else {
+		fmt.Printf("Error connecting to the NordVPN daemon: %s", err)
+		return
 	}
-
-	ti.NotifyEnabled = true
 
 	systray.Run(func() { tray.OnReady(&ti) }, func() { onExit(&ti) })
 }
