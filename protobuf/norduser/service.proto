@@ -7,8 +7,11 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/norduser/pb";
 import "norduser.proto";
 
 service Norduser {
+    rpc Ping(Empty) returns (Empty);
     // StartsFileshare starts fileshare process
     rpc StartFileshare(Empty) returns (StartFileshareResponse);
     // StopFileshare stops fileshare process
     rpc StopFileshare(Empty) returns (StopFileshareResponse);
+    // Stop stops norduser process
+    rpc Stop(Empty) returns (Empty);
 }

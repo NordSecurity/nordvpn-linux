@@ -631,22 +631,19 @@ func (Install) Binaries() error {
 		return err
 	}
 
-	filesharedDst, err := sh.Output("which", internal.Fileshared)
-	if err != nil {
-		filesharedDst = "/usr/bin/" + internal.Fileshared
-	}
+	filesharedDst := internal.FileshareBinaryPath
 
-	filesharedSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Fileshared)
+	filesharedSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Fileshare)
 	if err := cp(filesharedSrc, filesharedDst); err != nil {
 		return err
 	}
 
 	norduserDst, err := sh.Output("which", internal.Norduserd)
 	if err != nil {
-		norduserDst = "/usr/bin/" + internal.Norduserd
+		norduserDst = fmt.Sprintf("/usr/bin/%s", internal.Norduserd)
 	}
 
-	norduserSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Norduserd)
+	norduserSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Norduser)
 	if err := cp(norduserSrc, norduserDst); err != nil {
 		return err
 	}

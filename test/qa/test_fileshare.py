@@ -65,8 +65,8 @@ def teardown_module(module):  # noqa: ARG001
 
     ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
 
-    shutil.copy("/home/qa/.config/nordvpn/norduserd.log", dest_logs_path)
-    shutil.copy("/home/qa/.config/nordvpn/nordfileshared.log", dest_logs_path)
+    shutil.copy("/home/qa/.config/nordvpn/norduser.log", dest_logs_path)
+    shutil.copy("/home/qa/.config/nordvpn/nordfileshare.log", dest_logs_path)
     ssh_client.exec_command("nordvpn set mesh off")
     ssh_client.exec_command("nordvpn logout --persist-token")
     daemon.stop_peer(ssh_client)

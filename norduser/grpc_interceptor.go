@@ -13,10 +13,10 @@ import (
 
 // StartNorduserdMiddleware provides a way to start/stop norduserd when handling nordvpnd gRPCs.
 type StartNorduserdMiddleware struct {
-	nodruserd *service.Combined
+	nodruserd service.NorduserService
 }
 
-func NewStartNorduserMiddleware(norduserd *service.Combined) StartNorduserdMiddleware {
+func NewStartNorduserMiddleware(norduserd service.NorduserService) StartNorduserdMiddleware {
 	return StartNorduserdMiddleware{
 		nodruserd: norduserd,
 	}

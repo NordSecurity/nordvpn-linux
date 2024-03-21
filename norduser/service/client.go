@@ -6,6 +6,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/pb"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -24,6 +25,10 @@ func NewNorduserGRPCClient() NorduserGRPCClient {
 
 func getNorduserClient(uid int) (pb.NorduserClient, error) {
 	socket := internal.GetNorduserdSocket(uid)
+	if snapconf.IsUnderSnap() {
+		socket = internal.GetNorduserSocketSnap(uint32(uid))
+	}
+
 	if socket == "" {
 		return nil, fmt.Errorf("norduser socket not found")
 	}

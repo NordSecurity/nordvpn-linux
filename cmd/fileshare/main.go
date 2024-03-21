@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_startup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -29,28 +30,29 @@ func openLogFile(path string) (*os.File, error) {
 }
 
 func main() {
-	if logFile, err := openLogFile(filepath.Join(fileshare_process.FileshareLogPath, "/nordfileshared.log")); err == nil {
-		log.SetOutput(logFile)
-		log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-	}
-
-	processStatus := fileshare_process.NewGRPCFileshareProcess().ProcessStatus()
-
-	if processStatus == fileshare_process.Running {
-		os.Exit(int(fileshare_process.CodeAlreadyRunning))
-	} else if processStatus == fileshare_process.RunningForOtherUser {
-		log.Println("Cannot start fileshare daemon, it is already running for another user.")
-		os.Exit(int(fileshare_process.CodeAlreadyRunningForOtherUser))
-	}
-
 	usr, err := user.Current()
 	if err != nil {
-		log.Println("Failed to retrieve current user: ", err)
-		os.Exit(int(fileshare_process.CodeFailedToEnable))
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
+	configDirPath, err := internal.GetConfigDirPath(usr.HomeDir)
+	if err == nil {
+		if logFile, err := openLogFile(filepath.Join(configDirPath + "/" + internal.FileshareLogFileName)); err == nil {
+			log.SetOutput(logFile)
+			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+		}
+	}
+
+	processStatus := fileshare_process.NewFileshareGRPCProcessManager().ProcessStatus()
+	if processStatus == childprocess.Running {
+		os.Exit(int(childprocess.CodeAlreadyRunning))
+	} else if processStatus == childprocess.RunningForOtherUser {
+		log.Println("Cannot start fileshare daemon, it is already running for another user.")
+		os.Exit(int(childprocess.CodeAlreadyRunningForOtherUser))
 	}
 
 	storagePath := filepath.Join(
-		fileshare_process.FileshareDataPath,
+		configDirPath,
 		internal.FileshareHistoryFile,
 	)
 
@@ -62,17 +64,17 @@ func main() {
 	uid, err := strconv.Atoi(usr.Uid)
 	if err != nil {
 		log.Printf("Invalid unix user id, failed to convert from string: %s", usr.Uid)
-		os.Exit(int(fileshare_process.CodeFailedToEnable))
+		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	if err := os.Remove(fileshare_process.FileshareSocket); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.Remove(internal.FileshareSocket); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Println("Failed to remove old socket file: ", err)
 	}
 
-	listener, err := internal.ManualListener(fileshare_process.FileshareSocket, internal.PermUserRWGroupRWOthersRW)()
+	listener, err := internal.ManualListener(internal.FileshareSocket, internal.PermUserRWGroupRWOthersRW)()
 	if err != nil {
 		log.Printf("Failed to open unix socket: %s", err)
-		os.Exit(int(fileshare_process.CodeFailedToCreateUnixScoket))
+		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
 	}
 	limitedListener := netutil.LimitListener(listener, 100)
 
@@ -84,7 +86,7 @@ func main() {
 		}
 	}()
 
-	eventsDBPath := filepath.Join(fileshare_process.FileshareDataPath, "moose.db")
+	eventsDBPath := filepath.Join(configDirPath, "moose.db")
 
 	fileshareHandle, err := fileshare_startup.Startup(storagePath,
 		legacyStoragePath,
@@ -95,12 +97,12 @@ func main() {
 	if err != nil {
 		log.Println("Failed to start the service: ", err.Error())
 		if errors.Is(err, fileshare_startup.ErrMeshNotEnabled) {
-			os.Exit(int(fileshare_process.CodeMeshnetNotEnabled))
+			os.Exit(int(childprocess.CodeMeshnetNotEnabled))
 		}
 		if errors.Is(err, fileshare_startup.ErrMeshAddressAlreadyInUse) {
-			os.Exit(int(fileshare_process.CodeAddressAlreadyInUse))
+			os.Exit(int(childprocess.CodeAddressAlreadyInUse))
 		}
-		os.Exit(int(fileshare_process.CodeFailedToEnable))
+		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	signals := internal.GetSignalChan()

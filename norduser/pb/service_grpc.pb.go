@@ -22,10 +22,13 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NorduserClient interface {
+	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// StartsFileshare starts fileshare process
 	StartFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StartFileshareResponse, error)
 	// StopFileshare stops fileshare process
 	StopFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StopFileshareResponse, error)
+	// Stop stops norduser process
+	Stop(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type norduserClient struct {
@@ -34,6 +37,15 @@ type norduserClient struct {
 
 func NewNorduserClient(cc grpc.ClientConnInterface) NorduserClient {
 	return &norduserClient{cc}
+}
+
+func (c *norduserClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/norduserpb.Norduser/Ping", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *norduserClient) StartFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StartFileshareResponse, error) {
@@ -54,14 +66,26 @@ func (c *norduserClient) StopFileshare(ctx context.Context, in *Empty, opts ...g
 	return out, nil
 }
 
+func (c *norduserClient) Stop(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, "/norduserpb.Norduser/Stop", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NorduserServer is the server API for Norduser service.
 // All implementations must embed UnimplementedNorduserServer
 // for forward compatibility
 type NorduserServer interface {
+	Ping(context.Context, *Empty) (*Empty, error)
 	// StartsFileshare starts fileshare process
 	StartFileshare(context.Context, *Empty) (*StartFileshareResponse, error)
 	// StopFileshare stops fileshare process
 	StopFileshare(context.Context, *Empty) (*StopFileshareResponse, error)
+	// Stop stops norduser process
+	Stop(context.Context, *Empty) (*Empty, error)
 	mustEmbedUnimplementedNorduserServer()
 }
 
@@ -69,11 +93,17 @@ type NorduserServer interface {
 type UnimplementedNorduserServer struct {
 }
 
+func (UnimplementedNorduserServer) Ping(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+}
 func (UnimplementedNorduserServer) StartFileshare(context.Context, *Empty) (*StartFileshareResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartFileshare not implemented")
 }
 func (UnimplementedNorduserServer) StopFileshare(context.Context, *Empty) (*StopFileshareResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopFileshare not implemented")
+}
+func (UnimplementedNorduserServer) Stop(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
 func (UnimplementedNorduserServer) mustEmbedUnimplementedNorduserServer() {}
 
@@ -86,6 +116,24 @@ type UnsafeNorduserServer interface {
 
 func RegisterNorduserServer(s grpc.ServiceRegistrar, srv NorduserServer) {
 	s.RegisterService(&Norduser_ServiceDesc, srv)
+}
+
+func _Norduser_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NorduserServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/norduserpb.Norduser/Ping",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NorduserServer).Ping(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Norduser_StartFileshare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -124,6 +172,24 @@ func _Norduser_StopFileshare_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Norduser_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NorduserServer).Stop(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/norduserpb.Norduser/Stop",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NorduserServer).Stop(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Norduser_ServiceDesc is the grpc.ServiceDesc for Norduser service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -132,12 +198,20 @@ var Norduser_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*NorduserServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "Ping",
+			Handler:    _Norduser_Ping_Handler,
+		},
+		{
 			MethodName: "StartFileshare",
 			Handler:    _Norduser_StartFileshare_Handler,
 		},
 		{
 			MethodName: "StopFileshare",
 			Handler:    _Norduser_StopFileshare_Handler,
+		},
+		{
+			MethodName: "Stop",
+			Handler:    _Norduser_Stop_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

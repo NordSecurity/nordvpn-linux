@@ -10,6 +10,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -121,6 +122,11 @@ func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 		}
 	}
 
+	if n.isSnap {
+		// in snap environment norduser is enabled on the cli side
+		return
+	}
+
 	// enable norduserd for new members
 	for member, norduserdEnabled := range newGroupMembers {
 		if norduserdEnabled {
@@ -156,12 +162,14 @@ func (n *NordvpnGroupMonitor) startForEveryGroupMember(groupMembers userSet) {
 // NordvpnGroupMonitor monitors the nordvpn system group and starts/stops norduserd for users added/removed from the
 // group.
 type NordvpnGroupMonitor struct {
-	norduserd *service.Combined
+	norduserd service.NorduserService
+	isSnap    bool
 }
 
-func NewNordvpnGroupMonitor(service *service.Combined) NordvpnGroupMonitor {
+func NewNordvpnGroupMonitor(service service.NorduserService) NordvpnGroupMonitor {
 	return NordvpnGroupMonitor{
 		norduserd: service,
+		isSnap:    snapconf.IsUnderSnap(),
 	}
 }
 
@@ -181,9 +189,9 @@ func (n *NordvpnGroupMonitor) Start() error {
 	currentGrupMembers, err := getNordvpnGroupMembers()
 	if err != nil {
 		return fmt.Errorf("getting initial group members: %w", err)
+	} else if !n.isSnap { // in snap environment norduser is enabled on the cli side
+		n.startForEveryGroupMember(currentGrupMembers)
 	}
-
-	n.startForEveryGroupMember(currentGrupMembers)
 
 	defer watcher.Close()
 	for {
