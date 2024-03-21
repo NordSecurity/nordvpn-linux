@@ -75,7 +75,7 @@ func (ti *Instance) ping() bool {
 	return changed
 }
 
-func (ti *Instance) fetchLogged() bool {
+func (ti *Instance) updateLoginStatus() bool {
 	changed := false
 	resp, err := ti.Client.IsLoggedIn(context.Background(), &pb.Empty{})
 	loggedIn := err == nil && resp.GetValue()
@@ -100,7 +100,7 @@ func (ti *Instance) fetchLogged() bool {
 	return changed
 }
 
-func (ti *Instance) fetchMeshnet() bool {
+func (ti *Instance) updateMeshnetStatus() bool {
 	changed := false
 	meshResp, err := ti.MeshClient.IsEnabled(context.Background(), &meshpb.Empty{})
 	meshnetEnabled := err == nil && meshResp.GetValue()
@@ -125,7 +125,7 @@ func (ti *Instance) fetchMeshnet() bool {
 	return changed
 }
 
-func (ti *Instance) fetchStatus() bool {
+func (ti *Instance) updateVpnStatus() bool {
 	changed := false
 	vpnStatus := ""
 	vpnHostname := ""
@@ -169,7 +169,7 @@ func (ti *Instance) fetchStatus() bool {
 	return changed
 }
 
-func (ti *Instance) accountInfo() bool {
+func (ti *Instance) updateAccountInfo() bool {
 	changed := false
 	loggedIn := false
 	vpnActive := false
@@ -241,12 +241,12 @@ func (ti *Instance) pollingMonitor(ticker <-chan time.Time) {
 		changed := false
 		fullUpdate = ti.maybeRedraw(ti.ping(), fullUpdate)
 		if ti.state.daemonAvailable {
-			fullUpdate = ti.maybeRedraw(ti.fetchLogged(), fullUpdate)
+			fullUpdate = ti.maybeRedraw(ti.updateLoginStatus(), fullUpdate)
 			if ti.state.loggedIn {
-				fullUpdate = ti.maybeRedraw(ti.fetchMeshnet(), fullUpdate)
-				fullUpdate = ti.maybeRedraw(ti.fetchStatus(), fullUpdate)
+				fullUpdate = ti.maybeRedraw(ti.updateMeshnetStatus(), fullUpdate)
+				fullUpdate = ti.maybeRedraw(ti.updateVpnStatus(), fullUpdate)
 				if fullUpdate {
-					changed = ti.accountInfo()
+					changed = ti.updateAccountInfo()
 					fullUpdateLast = time.Now()
 				}
 			}
