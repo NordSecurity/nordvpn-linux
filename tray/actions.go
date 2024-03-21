@@ -70,14 +70,8 @@ func (ti *Instance) logout(persistToken bool) bool {
 
 	switch payload.Type {
 	case internal.CodeSuccess:
-		if !ti.NotifyEnabled {
-			ti.notify(pInfo, cli.LogoutSuccess)
-		}
 		return true
 	case internal.CodeTokenInvalidated:
-		if !ti.NotifyEnabled {
-			ti.notify(pInfo, cli.LogoutTokenSuccess)
-		}
 		return true
 	default:
 		ti.notify(pError, cli.CheckYourInternetConnMessage)
@@ -170,9 +164,6 @@ func (ti *Instance) disconnect() bool {
 		case internal.CodeVPNNotRunning:
 			ti.notify(pWarning, cli.DisconnectNotConnected)
 		case internal.CodeDisconnected:
-			if !ti.NotifyEnabled {
-				ti.notify(pInfo, internal.DisconnectSuccess)
-			}
 		}
 	}
 	return true
@@ -190,10 +181,6 @@ func (ti *Instance) enableMeshnet() bool {
 		return false
 	}
 
-	if !ti.NotifyEnabled {
-		ti.notify(pInfo, cli.MsgSetMeshnetSuccess, "enabled")
-	}
-
 	// TODO: c.fileshareProcessManager.StartProcess() is called here in the CLI
 	return true
 }
@@ -208,10 +195,6 @@ func (ti *Instance) disableMeshnet() bool {
 	if err := cli.MeshnetResponseToError(resp); err != nil {
 		ti.notify(pError, "Disable meshnet error: %s", err)
 		return false
-	}
-
-	if !ti.NotifyEnabled {
-		ti.notify(pInfo, cli.MsgSetMeshnetSuccess, "disabled")
 	}
 
 	return true

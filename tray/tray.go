@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
 	"github.com/NordSecurity/systray"
@@ -22,8 +21,6 @@ const (
 type Instance struct {
 	Client           pb.DaemonClient
 	MeshClient       meshpb.MeshnetClient
-	FileshareClient  filesharepb.FileshareClient
-	NotifyEnabled    bool
 	DebugMode        bool
 	notifier         dbusNotifier
 	redrawChan       chan struct{}
@@ -38,6 +35,7 @@ type trayState struct {
 	loggedIn        bool
 	vpnActive       bool
 	meshnetEnabled  bool
+	notifyEnabled   bool
 	daemonError     string
 	accountName     string
 	vpnStatus       string
@@ -66,6 +64,7 @@ func OnReady(ti *Instance) {
 	systray.SetIconName(ti.iconDisconnected)
 
 	ti.state.vpnStatus = "Disconnected"
+	ti.state.notifyEnabled = true
 	ti.redrawChan = make(chan struct{})
 	ti.updateChan = make(chan bool)
 
