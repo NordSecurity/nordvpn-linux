@@ -19,9 +19,10 @@ jobs:
         github.event.label.name == 'gitlab'
       )
     steps:
-      - uses: NordSecurity/trigger-gitlab-pipeline@v1
+      - uses: NordSecurity/trigger-gitlab-pipeline@v2.0.0
         with:
           ci-api-v4-url: ${{ secrets.CI_API_V4_URL }}
           project-id: ${{ secrets.PROJECT_ID }}
-          ref: ${{ secrets.REF }}
-          token: ${{ secrets.TOKEN }}
+          access-token: ${{ secrets.ACCESS_TOKEN }}
+          triggered-ref: ${{ secrets.TRIGGERED_REF }}
+          trigger-token: ${{ secrets.TRIGGER_TOKEN }}
