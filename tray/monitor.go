@@ -11,7 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
 	"github.com/NordSecurity/systray"
 	"google.golang.org/grpc/status"
@@ -87,27 +86,6 @@ func (ti *Instance) updateLoginStatus() bool {
 		ti.state.loggedIn = false
 		changed = true
 		defer ti.notify(pInfo, "Logged out")
-	}
-
-	ti.state.mu.Unlock()
-	return changed
-}
-
-func (ti *Instance) updateMeshnetStatus() bool {
-	changed := false
-	meshResp, err := ti.MeshClient.IsEnabled(context.Background(), &meshpb.Empty{})
-	meshnetEnabled := err == nil && meshResp.GetValue()
-
-	ti.state.mu.Lock()
-
-	if !ti.state.meshnetEnabled && meshnetEnabled {
-		ti.state.meshnetEnabled = true
-		changed = true
-		defer ti.notify(pInfo, "Meshnet enabled")
-	} else if ti.state.meshnetEnabled && !meshnetEnabled {
-		ti.state.meshnetEnabled = false
-		changed = true
-		defer ti.notify(pInfo, "Meshnet disabled")
 	}
 
 	ti.state.mu.Unlock()
@@ -269,7 +247,6 @@ func (ti *Instance) pollingMonitor(ticker <-chan time.Time) {
 		if ti.state.daemonAvailable {
 			fullUpdate = ti.maybeRedraw(ti.updateLoginStatus(), fullUpdate)
 			if ti.state.loggedIn {
-				fullUpdate = ti.maybeRedraw(ti.updateMeshnetStatus(), fullUpdate)
 				fullUpdate = ti.maybeRedraw(ti.updateVpnStatus(), fullUpdate)
 				if fullUpdate {
 					changed = ti.updateAccountInfo()
