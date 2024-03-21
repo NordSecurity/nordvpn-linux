@@ -53,7 +53,7 @@ func OnReady() {
 			if state.daemonAvailable {
 				if state.loggedIn {
 					addVpnSection()
-					addMeshnetSection()
+					// Disabled for now: addMeshnetSection()
 				}
 				addAccountSection()
 			} else {
