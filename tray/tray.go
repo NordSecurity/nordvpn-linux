@@ -3,6 +3,7 @@ package tray
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -55,11 +56,16 @@ func OnReady(ti *Instance) {
 	ti.iconConnected = "nordvpn-tray-blue"
 	ti.iconDisconnected = "nordvpn-tray-white"
 
-	// TODO: Detect running DE and set iconDisconnected to "nordvpn-tray-black" on KDE/Plasma,
-	// and to "nordvpn-tray-gray" on before-Gnome Ubuntu versions
+	currentDesktop := strings.ToLower(os.Getenv("XDG_CURRENT_DESKTOP"))
+	if strings.Contains(currentDesktop, "kde") {
+		// TODO: Kubuntu uses dark tray background instead KDE default white
+		ti.iconDisconnected = "nordvpn-tray-black"
+	}
+	if strings.Contains(currentDesktop, "mate") {
+		ti.iconDisconnected = "nordvpn-tray-gray"
+	}
 
 	systray.SetIconName(ti.iconDisconnected)
-
 	ti.state.vpnStatus = "Disconnected"
 	ti.state.notifyEnabled = true
 	ti.redrawChan = make(chan struct{})
