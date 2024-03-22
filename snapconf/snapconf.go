@@ -32,7 +32,7 @@ const (
 	InterfaceNetworkBind     Interface = "network-bind"
 	InterfaceNetworkControl  Interface = "network-control"
 	InterfaceFirewallControl Interface = "firewall-control"
-	InterfaceHardwareObserve Interface = "hardware-observe"
+	InterfaceNetworkObserve  Interface = "network-observe"
 )
 
 // IsUnderSnap defines whether the current process is executed under snapd
