@@ -775,3 +775,7 @@ def test_permission_messages_error(permission, permission_state, expected_messag
     expected_message = expected_message % peer_hostname
 
     assert expected_message in str(ex)
+
+# temporary
+def test_runner():
+    logging.log(str(sh.curl("icanhazip.com")))
