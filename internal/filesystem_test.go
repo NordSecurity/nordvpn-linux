@@ -28,9 +28,9 @@ const (
 func TestManualListener(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	listener, err := ManualListener("10601", PermUserRWGroupRWOthersRW)()
-	defer listener.Close()
+	listener, err := ManualListener("10601", PermUserRWGroupRWOthersRW, "pidfile")()
 	assert.NoError(t, err)
+	listener.Close()
 }
 
 func TestMachineID(t *testing.T) {

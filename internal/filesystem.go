@@ -85,6 +85,8 @@ func (rdl *runDirListener) Accept() (net.Conn, error) {
 func (rdl *runDirListener) Close() error {
 	listenerCloseErr := rdl.listener.Close()
 
+	cleanPidFile()
+
 	var protoRemoveErr error
 	var dirRemoveErr error
 	if protoRemoveErr = os.Remove(rdl.socket); protoRemoveErr == nil {
@@ -105,8 +107,21 @@ func (rdl *runDirListener) Addr() net.Addr {
 }
 
 // ManualListener returns manually created listener with provided permissions
-func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error) {
+func ManualListener(socket string, perm fs.FileMode, pidfile string) func() (net.Listener, error) {
 	return func() (net.Listener, error) {
+		// check if daemon already is running
+		if err := checkPidFile(pidfile); err != nil {
+			return nil, err
+		}
+
+		// we checked if daemon is running, if daemon is not running, then socket file exsits as garbage
+		// and should be removed otherwise new socket listener will fail to start
+		if FileExists(socket) {
+			if err := FileDelete(socket); err != nil {
+				log.Println(WarningPrefix, "cleaning socket file:", err)
+			}
+		}
+
 		if err := os.MkdirAll(
 			path.Dir(socket), PermUserRWXGroupRXOthersRX,
 		); err != nil && !errors.Is(err, os.ErrExist) {
@@ -117,14 +132,59 @@ func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error
 		if err != nil {
 			return nil, err
 		}
+
 		err = os.Chmod(socket, perm)
 		if err != nil {
 			return nil, err
 		}
+
+		// write PID to file
+		pidstring := fmt.Sprintf("%d", os.Getpid())
+		if err := FileWrite(pidfile, []byte(pidstring), PermUserRWGroupROthersR); err != nil {
+			return nil, err
+		}
+
 		return &runDirListener{
 			listener: listener,
 			socket:   socket,
 		}, nil
+	}
+}
+
+func checkPidFile(pidfile string) error {
+	// check and read pid file
+	if FileExists(pidfile) {
+		out, err := FileRead(pidfile)
+		if err != nil {
+			// pid file exists, but is not readable,
+			// some garbage from previous run/failure? maybe we can cleanup and proceed?
+			return fmt.Errorf("daemon pid file is not readable: %w", err)
+		}
+		pidFromFile, err := strconv.Atoi(strings.TrimSpace(string(out)))
+		if err != nil {
+			// pid value is not valid integer, some garbage from previous run/failure?
+			log.Println(WarningPrefix, fmt.Errorf("daemon pid file does not contain valid integer value: %w", err))
+		} else {
+			procFile := fmt.Sprintf("/proc/%d/cmdline", pidFromFile)
+			out, err := FileRead(procFile)
+			if err == nil && strings.Contains(string(out), "nord") {
+				// found process in the process list - not going to start another process, exiting
+				return fmt.Errorf("daemon is already running with pid: %d", pidFromFile)
+			}
+		}
+		// invalid pid or process not found - remove pid file
+		if err := FileDelete(pidfile); err != nil {
+			log.Println(WarningPrefix, "cleaning pid file:", err)
+		}
+	}
+	return nil
+}
+
+func cleanPidFile() {
+	if FileExists(DaemonPid) {
+		if err := FileDelete(DaemonPid); err != nil {
+			log.Println(ErrorPrefix, "removing pid file:", err)
+		}
 	}
 }
 

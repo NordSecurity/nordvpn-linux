@@ -21,7 +21,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 )
 
-var ConnURL = internal.GetNorduserdSocket(os.Geteuid())
+var (
+	ConnURL = internal.GetNorduserdSocket(os.Geteuid())
+	PidFile = internal.GetFilesharedPid(os.Getuid())
+)
 
 func openLogFile(path string) (*os.File, error) {
 	// #nosec path is constant
@@ -63,7 +66,7 @@ func startSnap() {
 		log.Println("Failed to remove old socket file: ", err)
 	}
 
-	listener, err := internal.ManualListener(socketPath, internal.PermUserRWGroupRWOthersRW)()
+	listener, err := internal.ManualListener(socketPath, internal.PermUserRWGroupRWOthersRW, PidFile)()
 	if err != nil {
 		log.Printf("Failed to open unix socket: %s", err)
 		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
@@ -105,7 +108,7 @@ func startSnap() {
 func start() {
 	var listenerFunction = internal.SystemDListener
 	if os.Getenv(internal.ListenPID) != strconv.Itoa(os.Getpid()) {
-		listenerFunction = internal.ManualListener(ConnURL, internal.PermUserRWX)
+		listenerFunction = internal.ManualListener(ConnURL, internal.PermUserRWX, PidFile)
 	}
 
 	listener, err := listenerFunction()

@@ -509,7 +509,8 @@ func main() {
 			var listenerFunction = internal.SystemDListener
 			// switch to manual if pids mismatch
 			if os.Getenv(internal.ListenPID) != strconv.Itoa(os.Getpid()) {
-				listenerFunction = internal.ManualListener(ConnURL, internal.PermUserRWGroupRW)
+				listenerFunction = internal.ManualListener(ConnURL,
+					internal.PermUserRWGroupRW, internal.DaemonPid)
 			}
 			listener, err = listenerFunction()
 			if err != nil {
