@@ -131,6 +131,9 @@ var (
 	// DaemonSocket defines system daemon socket file location
 	DaemonSocket = filepath.Join(RunDir, "/nordvpnd.sock")
 
+	// DaemonPid defines daemon PID file location
+	DaemonPid = filepath.Join(RunDir, "/nordvpnd.pid")
+
 	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
 	NorduserBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
@@ -158,6 +161,15 @@ func GetNorduserdSocket(uid int) string {
 		return fmt.Sprintf("/run/%s/%s.sock", Norduser, Norduser)
 	}
 	return fmt.Sprintf("/run/user/%d/%s/%s.sock", uid, Norduser, Norduser)
+}
+
+// GetFilesharedPid to save fileshare daemon pid
+func GetFilesharedPid(uid int) string {
+	_, err := os.Stat(fmt.Sprintf("/run/user/%d", uid))
+	if uid == 0 || os.IsNotExist(err) {
+		return fmt.Sprintf("/run/%s/%s.pid", Fileshare, Fileshare)
+	}
+	return fmt.Sprintf("/run/user/%d/%s/%s.pid", uid, Fileshare, Fileshare)
 }
 
 // GetConfigDirPath returns the directory used to store local user config and logs
