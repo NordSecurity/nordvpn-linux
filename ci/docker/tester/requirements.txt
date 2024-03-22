@@ -1,5 +1,5 @@
 attrs==20.3.0
-black==21.9b0
+black==24.3.0
 certifi>=2022.12.07
 chardet==4.0.0
 click==8.0.3
@@ -9,7 +9,7 @@ isort==5.9.3
 jedi==0.17.2
 mypy==0.910
 mypy-extensions==0.4.3
-packaging==20.8
+packaging==22.0
 parso==0.7.1
 pathspec==0.9.0
 platformdirs==2.4.0
@@ -34,7 +34,7 @@ timeout_decorator==0.5.0
 toml==0.10.2
 tomli==1.2.2
 types-requests==2.25.11
-typing-extensions==3.10.0.2
+typing-extensions==4.0.1
 ujson==5.4.0
 urllib3==1.26.18
 paramiko==3.4.0
