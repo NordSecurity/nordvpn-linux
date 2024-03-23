@@ -153,7 +153,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 
 		credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{
 			NotificationCredentialsError: test.credentialsFetchError,
-		}, cfgManager, &ncmock.MockTime{})
+		}, cfgManager)
 		notificationClient := NewClient(&clientBuilderMock,
 			&subs.Subject[string]{},
 			&subs.Subject[error]{},
