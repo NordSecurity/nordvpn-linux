@@ -80,8 +80,8 @@ apps:
       - network
       - network-bind
       - network-control
+      - network-observe
       - firewall-control
-      - hardware-observe
 parts:
   nordvpn:
     plugin: nil
