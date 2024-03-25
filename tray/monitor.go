@@ -23,7 +23,7 @@ func (ti *Instance) ping() bool {
 	daemonAvailable := false
 	daemonError := ""
 
-	resp, err := ti.Client.Ping(context.Background(), &pb.Empty{})
+	resp, err := ti.client.Ping(context.Background(), &pb.Empty{})
 	if err != nil {
 		daemonError = internal.ErrDaemonConnectionRefused.Error()
 		if strings.Contains(err.Error(), "no such file or directory") {
@@ -73,7 +73,7 @@ func (ti *Instance) ping() bool {
 
 func (ti *Instance) updateLoginStatus() bool {
 	changed := false
-	resp, err := ti.Client.IsLoggedIn(context.Background(), &pb.Empty{})
+	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
 	loggedIn := err == nil && resp.GetValue()
 
 	ti.state.mu.Lock()
@@ -98,7 +98,7 @@ func (ti *Instance) updateVpnStatus() bool {
 	vpnHostname := ""
 	vpnCity := ""
 	vpnCountry := ""
-	resp, err := ti.Client.Status(context.Background(), &pb.Empty{})
+	resp, err := ti.client.Status(context.Background(), &pb.Empty{})
 	if err == nil {
 		vpnStatus = resp.State
 		vpnHostname = resp.Hostname
@@ -135,7 +135,7 @@ func (ti *Instance) updateVpnStatus() bool {
 func (ti *Instance) updateSettings() bool {
 	changed := false
 
-	resp, err := ti.Client.Settings(context.Background(), &pb.SettingsRequest{
+	resp, err := ti.client.Settings(context.Background(), &pb.SettingsRequest{
 		Uid: int64(os.Getuid()),
 	})
 	var settings *pb.Settings
@@ -179,7 +179,7 @@ func (ti *Instance) updateAccountInfo() bool {
 	vpnActive := false
 	accountName := ""
 
-	payload, err := ti.Client.AccountInfo(context.Background(), &pb.Empty{})
+	payload, err := ti.client.AccountInfo(context.Background(), &pb.Empty{})
 	if err != nil {
 		if status.Convert(err).Message() != internal.ErrNotLoggedIn.Error() {
 			log(pError, "Error retrieving account info: %s", err)
@@ -270,7 +270,7 @@ func (ti *Instance) pollingMonitor(ticker <-chan time.Time) {
 				fullUpdate = false
 			}
 		}
-		if ti.DebugMode {
+		if ti.debugMode {
 			if fullUpdate {
 				fmt.Println(time.Now().String(), "Full update")
 			} else {
