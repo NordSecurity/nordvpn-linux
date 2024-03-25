@@ -32,10 +32,6 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 		Technology:           cfg.Technology,
 		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 	})
-	if err := Notify(r.cm, internal.NotificationDisconnected, []string{}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
-		return internal.ErrUnhandled
-	}
 
 	return srv.Send(&pb.Payload{
 		Type: internal.CodeDisconnected,

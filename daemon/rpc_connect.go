@@ -197,7 +197,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 					log.Printf("POST_CONNECT system info:\n%s\n", r.networkInfoFunc())
 				}()
 			}
-			return Notify(r.cm, internal.NotificationConnected, data)
+			return nil
 		case internal.CodeFailure:
 			log.Println(internal.ErrorPrefix, ev.Message)
 			r.publisher.Publish(fmt.Sprintf("failed to connect to %s", server.Hostname))
