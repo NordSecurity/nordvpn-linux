@@ -57,7 +57,7 @@ func (f *FileshareProcessClient) Ping(nowait bool) error {
 	return err
 }
 
-func (f *FileshareProcessClient) Stop() error {
+func (f *FileshareProcessClient) Stop(bool) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 

@@ -171,7 +171,7 @@ func (s *Server) Stop(ctx context.Context, _ *pb.Empty) (*pb.Empty, error) {
 // Send rpc
 func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil || !resp.GetStatus().GetValue() {
 		return srv.Send(&pb.StatusResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
@@ -266,7 +266,7 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 // Accept rpc
 func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) error {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil || !resp.GetStatus().GetValue() {
 		return srv.Send(&pb.StatusResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
@@ -346,7 +346,7 @@ func (s *Server) Cancel(
 	req *pb.CancelRequest,
 ) (*pb.Error, error) {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil || !resp.GetStatus().GetValue() {
 		return serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED), nil
 	}
 
@@ -375,7 +375,7 @@ func (s *Server) Cancel(
 // List rpc
 func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil || !resp.GetStatus().GetValue() {
 		return srv.Send(&pb.ListResponse{Error: serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED)})
 	}
 
@@ -427,7 +427,7 @@ func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 // CancelFile rpc
 func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb.Error, error) {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil || !resp.GetStatus().GetValue() {
 		return serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED), nil
 	}
 
@@ -488,7 +488,7 @@ func (s *Server) SetNotifications(ctx context.Context, in *pb.SetNotificationsRe
 
 func (s *Server) PurgeTransfersUntil(ctx context.Context, req *pb.PurgeTransfersUntilRequest) (*pb.Error, error) {
 	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil || !resp.GetStatus().GetValue() {
 		return serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED), nil
 	}
 

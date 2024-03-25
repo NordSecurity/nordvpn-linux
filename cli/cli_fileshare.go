@@ -124,7 +124,7 @@ func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(internal.UnhandledMessage))
 	}
 
-	if !meshResp.GetValue() {
+	if !meshResp.GetStatus().GetValue() {
 		return formatError(fmt.Errorf(MsgMeshnetNotEnabled))
 	}
 

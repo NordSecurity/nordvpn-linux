@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/pb"
@@ -11,7 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type NorduserClient interface {
+type NorduserFileshareClient interface {
 	StartFileshare(uid uint32) error
 	StopFileshare(uid uint32) error
 }
@@ -25,6 +26,9 @@ func NewNorduserGRPCClient() NorduserGRPCClient {
 
 func getNorduserClient(uid int) (pb.NorduserClient, error) {
 	socket := internal.GetNorduserdSocket(uid)
+	if _, err := os.Stat(socket); os.IsNotExist(err) {
+		socket = internal.GetNorduserSocketFork(uid)
+	}
 	if snapconf.IsUnderSnap() {
 		socket = internal.GetNorduserSocketSnap(uint32(uid))
 	}

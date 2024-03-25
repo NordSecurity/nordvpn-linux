@@ -13,5 +13,5 @@ service Norduser {
     // StopFileshare stops fileshare process
     rpc StopFileshare(Empty) returns (StopFileshareResponse);
     // Stop stops norduser process
-    rpc Stop(Empty) returns (Empty);
+    rpc Stop(StopNorduserRequest) returns (Empty);
 }

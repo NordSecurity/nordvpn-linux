@@ -28,7 +28,7 @@ type NorduserClient interface {
 	// StopFileshare stops fileshare process
 	StopFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StopFileshareResponse, error)
 	// Stop stops norduser process
-	Stop(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	Stop(ctx context.Context, in *StopNorduserRequest, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type norduserClient struct {
@@ -66,7 +66,7 @@ func (c *norduserClient) StopFileshare(ctx context.Context, in *Empty, opts ...g
 	return out, nil
 }
 
-func (c *norduserClient) Stop(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+func (c *norduserClient) Stop(ctx context.Context, in *StopNorduserRequest, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/norduserpb.Norduser/Stop", in, out, opts...)
 	if err != nil {
@@ -85,7 +85,7 @@ type NorduserServer interface {
 	// StopFileshare stops fileshare process
 	StopFileshare(context.Context, *Empty) (*StopFileshareResponse, error)
 	// Stop stops norduser process
-	Stop(context.Context, *Empty) (*Empty, error)
+	Stop(context.Context, *StopNorduserRequest) (*Empty, error)
 	mustEmbedUnimplementedNorduserServer()
 }
 
@@ -102,7 +102,7 @@ func (UnimplementedNorduserServer) StartFileshare(context.Context, *Empty) (*Sta
 func (UnimplementedNorduserServer) StopFileshare(context.Context, *Empty) (*StopFileshareResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopFileshare not implemented")
 }
-func (UnimplementedNorduserServer) Stop(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedNorduserServer) Stop(context.Context, *StopNorduserRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
 func (UnimplementedNorduserServer) mustEmbedUnimplementedNorduserServer() {}
@@ -173,7 +173,7 @@ func _Norduser_StopFileshare_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _Norduser_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(StopNorduserRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func _Norduser_Stop_Handler(srv interface{}, ctx context.Context, dec func(inter
 		FullMethod: "/norduserpb.Norduser/Stop",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NorduserServer).Stop(ctx, req.(*Empty))
+		return srv.(NorduserServer).Stop(ctx, req.(*StopNorduserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

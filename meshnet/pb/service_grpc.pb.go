@@ -25,7 +25,7 @@ type MeshnetClient interface {
 	// EnableMeshnet enables the meshnet on this device
 	EnableMeshnet(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*MeshnetResponse, error)
 	// IsEnabled retrieves whether meshnet is enabled
-	IsEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServiceBoolResponse, error)
+	IsEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsEnabledResponse, error)
 	// DisableMeshnet disables the meshnet on this device
 	DisableMeshnet(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*MeshnetResponse, error)
 	RefreshMeshnet(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*MeshnetResponse, error)
@@ -100,8 +100,8 @@ func (c *meshnetClient) EnableMeshnet(ctx context.Context, in *Empty, opts ...gr
 	return out, nil
 }
 
-func (c *meshnetClient) IsEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServiceBoolResponse, error) {
-	out := new(ServiceBoolResponse)
+func (c *meshnetClient) IsEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsEnabledResponse, error) {
+	out := new(IsEnabledResponse)
 	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/IsEnabled", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -332,7 +332,7 @@ type MeshnetServer interface {
 	// EnableMeshnet enables the meshnet on this device
 	EnableMeshnet(context.Context, *Empty) (*MeshnetResponse, error)
 	// IsEnabled retrieves whether meshnet is enabled
-	IsEnabled(context.Context, *Empty) (*ServiceBoolResponse, error)
+	IsEnabled(context.Context, *Empty) (*IsEnabledResponse, error)
 	// DisableMeshnet disables the meshnet on this device
 	DisableMeshnet(context.Context, *Empty) (*MeshnetResponse, error)
 	RefreshMeshnet(context.Context, *Empty) (*MeshnetResponse, error)
@@ -398,7 +398,7 @@ type UnimplementedMeshnetServer struct {
 func (UnimplementedMeshnetServer) EnableMeshnet(context.Context, *Empty) (*MeshnetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EnableMeshnet not implemented")
 }
-func (UnimplementedMeshnetServer) IsEnabled(context.Context, *Empty) (*ServiceBoolResponse, error) {
+func (UnimplementedMeshnetServer) IsEnabled(context.Context, *Empty) (*IsEnabledResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsEnabled not implemented")
 }
 func (UnimplementedMeshnetServer) DisableMeshnet(context.Context, *Empty) (*MeshnetResponse, error) {

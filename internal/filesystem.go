@@ -106,8 +106,9 @@ func (rdl *runDirListener) Addr() net.Addr {
 	return rdl.listener.Addr()
 }
 
-// ManualListener returns manually created listener with provided permissions
-func ManualListener(socket string, perm fs.FileMode, pidfile string) func() (net.Listener, error) {
+// ManualListenerIfNotInUse returns manually created listener with provided permissions, it also detects if this socket
+// is in use by another process, and returns an appropriate error if it is.
+func ManualListenerIfNotInUse(socket string, perm fs.FileMode, pidfile string) func() (net.Listener, error) {
 	return func() (net.Listener, error) {
 		// check if daemon already is running
 		if err := checkPidFile(pidfile); err != nil {
@@ -141,6 +142,32 @@ func ManualListener(socket string, perm fs.FileMode, pidfile string) func() (net
 		// write PID to file
 		pidstring := fmt.Sprintf("%d", os.Getpid())
 		if err := FileWrite(pidfile, []byte(pidstring), PermUserRWGroupROthersR); err != nil {
+			return nil, err
+		}
+
+		return &runDirListener{
+			listener: listener,
+			socket:   socket,
+		}, nil
+	}
+}
+
+// ManualListener returns manually created listener with provided permissions
+func ManualListener(socket string, perm fs.FileMode) func() (net.Listener, error) {
+	return func() (net.Listener, error) {
+		if err := os.MkdirAll(
+			path.Dir(socket), PermUserRWXGroupRXOthersRX,
+		); err != nil && !errors.Is(err, os.ErrExist) {
+			return nil, fmt.Errorf("creating run dir: %w", err)
+		}
+
+		listener, err := net.Listen(Proto, socket)
+		if err != nil {
+			return nil, err
+		}
+
+		err = os.Chmod(socket, perm)
+		if err != nil {
 			return nil, err
 		}
 

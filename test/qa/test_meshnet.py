@@ -12,6 +12,7 @@ ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 
 def setup_module(module):  # noqa: ARG001
+    os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
     ssh_client.connect()
     daemon.install_peer(ssh_client)
 

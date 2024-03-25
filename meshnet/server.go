@@ -49,7 +49,7 @@ type Server struct {
 	subjectConnect     events.Publisher[events.DataConnect]
 	lastPeers          string
 	lastConnectedPeer  string
-	norduser           service.NorduserClient
+	norduser           service.NorduserFileshareClient
 	scheduler          *gocron.Scheduler
 	pb.UnimplementedMeshnetServer
 }
@@ -67,7 +67,7 @@ func NewServer(
 	subjectPeerUpdate events.Publisher[[]string],
 	subjectMeshSetting events.PublishSubcriber[bool],
 	subjectConnect events.Publisher[events.DataConnect],
-	norduser service.NorduserClient,
+	norduser service.NorduserFileshareClient,
 ) *Server {
 	return &Server{
 		ac:                 ac,
@@ -221,10 +221,10 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 }
 
 // IsEnabled checks if meshnet is enabled
-func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.ServiceBoolResponse, error) {
+func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.IsEnabledResponse, error) {
 	if !s.ac.IsLoggedIn() {
-		return &pb.ServiceBoolResponse{
-			Response: &pb.ServiceBoolResponse_ErrorCode{
+		return &pb.IsEnabledResponse{
+			Response: &pb.IsEnabledResponse_ErrorCode{
 				ErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
 			},
 		}, nil
@@ -233,15 +233,20 @@ func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.ServiceBoolResponse,
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
-		return &pb.ServiceBoolResponse{
-			Response: &pb.ServiceBoolResponse_ErrorCode{
+		return &pb.IsEnabledResponse{
+			Response: &pb.IsEnabledResponse_ErrorCode{
 				ErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
 			},
 		}, nil
 	}
 
-	return &pb.ServiceBoolResponse{
-		Response: &pb.ServiceBoolResponse_Value{Value: s.mc.IsRegistrationInfoCorrect() && cfg.Mesh},
+	return &pb.IsEnabledResponse{
+		Response: &pb.IsEnabledResponse_Status{
+			Status: &pb.EnabledStatus{
+				Value: s.mc.IsRegistrationInfoCorrect() && cfg.Mesh,
+				Uid:   cfg.Meshnet.EnabledByUID,
+			},
+		},
 	}, nil
 }
 

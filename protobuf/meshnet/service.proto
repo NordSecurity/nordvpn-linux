@@ -16,7 +16,7 @@ service Meshnet {
 	// EnableMeshnet enables the meshnet on this device
 	rpc EnableMeshnet(Empty) returns (MeshnetResponse);
 	// IsEnabled retrieves whether meshnet is enabled
-	rpc IsEnabled(Empty) returns (ServiceBoolResponse);
+	rpc IsEnabled(Empty) returns (IsEnabledResponse);
 	// DisableMeshnet disables the meshnet on this device
 	rpc DisableMeshnet(Empty) returns (MeshnetResponse);
 	rpc RefreshMeshnet(Empty) returns (MeshnetResponse); // Remove later

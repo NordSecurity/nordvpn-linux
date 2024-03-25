@@ -18,14 +18,17 @@ var errorCodeToProtobuffError = map[childprocess.StartupErrorCode]pb.StartFilesh
 	childprocess.CodeFailedToEnable:             pb.StartFileshareStatus_FAILED_TO_ENABLE,
 }
 
+type StopRequest struct {
+	DisableAutostart bool
+}
+
 type Server struct {
 	pb.UnimplementedNorduserServer
 	fileshareProcessManager childprocess.ChildProcessManager
-	fileshareRunning        bool
-	stopChan                chan<- interface{}
+	stopChan                chan<- StopRequest
 }
 
-func NewServer(fileshareProcessManager childprocess.ChildProcessManager, stopChan chan<- interface{}) *Server {
+func NewServer(fileshareProcessManager childprocess.ChildProcessManager, stopChan chan<- StopRequest) *Server {
 	return &Server{
 		fileshareProcessManager: fileshareProcessManager,
 		stopChan:                stopChan,
@@ -39,6 +42,13 @@ func (s *Server) Ping(context.Context, *pb.Empty) (*pb.Empty, error) {
 
 func (s *Server) StartFileshare(context.Context, *pb.Empty) (*pb.StartFileshareResponse, error) {
 	log.Println("Starting nordfileshare process")
+
+	fileshareStatus := s.fileshareProcessManager.ProcessStatus()
+	if fileshareStatus == childprocess.Running || fileshareStatus == childprocess.RunningForOtherUser {
+		log.Println("Received start fileshare request but fileshare is already running, status is: ", fileshareStatus)
+		return &pb.StartFileshareResponse{StartFileshareStatus: pb.StartFileshareStatus_SUCCESS}, nil
+	}
+
 	returnCode, err := s.fileshareProcessManager.StartProcess()
 
 	if err != nil {
@@ -48,7 +58,6 @@ func (s *Server) StartFileshare(context.Context, *pb.Empty) (*pb.StartFileshareR
 
 	returnStatus := pb.StartFileshareStatus_FAILED_TO_ENABLE
 	if returnCode == 0 {
-		s.fileshareRunning = true
 		returnStatus = pb.StartFileshareStatus_SUCCESS
 		log.Println("Fileshare started")
 	} else {
@@ -63,18 +72,24 @@ func (s *Server) StartFileshare(context.Context, *pb.Empty) (*pb.StartFileshareR
 
 func (s *Server) StopFileshare(context.Context, *pb.Empty) (*pb.StopFileshareResponse, error) {
 	log.Println(internal.InfoPrefix + "Stopping nordfileshare process")
-	if s.fileshareRunning {
-		if err := s.fileshareProcessManager.StopProcess(); err != nil {
-			log.Println(internal.ErrorPrefix+"Failed to stop fileshare process: ", err.Error())
-			return &pb.StopFileshareResponse{Success: false}, nil
-		}
 
-		s.fileshareRunning = false
+	fileshareStatus := s.fileshareProcessManager.ProcessStatus()
+	if fileshareStatus == childprocess.NotRunning {
+		log.Println("Received stop fileshare request but fileshare is already running, status is: ", fileshareStatus)
+		return &pb.StopFileshareResponse{Success: true}, nil
 	}
+
+	if err := s.fileshareProcessManager.StopProcess(false); err != nil {
+		log.Println("Failed to stop fileshare process: ", err.Error())
+		return &pb.StopFileshareResponse{Success: false}, nil
+	}
+
 	return &pb.StopFileshareResponse{Success: true}, nil
 }
 
-func (s *Server) Stop(context.Context, *pb.Empty) (*pb.Empty, error) {
-	s.stopChan <- struct{}{}
+func (s *Server) Stop(_ context.Context, req *pb.StopNorduserRequest) (*pb.Empty, error) {
+	s.stopChan <- StopRequest{
+		DisableAutostart: req.Disable,
+	}
 	return &pb.Empty{}, nil
 }

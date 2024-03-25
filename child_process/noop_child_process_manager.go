@@ -6,7 +6,7 @@ func (c NoopChildProcessManager) StartProcess() (StartupErrorCode, error) {
 	return 0, nil
 }
 
-func (c NoopChildProcessManager) StopProcess() error {
+func (c NoopChildProcessManager) StopProcess(bool) error {
 	return nil
 }
 

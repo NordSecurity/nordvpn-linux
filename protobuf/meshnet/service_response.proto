@@ -52,3 +52,15 @@ message ServiceBoolResponse {
 		ServiceErrorCode error_code = 2;
 	}
 }
+
+message EnabledStatus {
+	bool value = 1;
+	uint32 uid = 2;
+}
+
+message IsEnabledResponse {
+	oneof response {
+		EnabledStatus status = 1;
+		ServiceErrorCode error_code = 2;
+	}
+}

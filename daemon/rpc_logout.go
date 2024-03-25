@@ -25,8 +25,6 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
-	r.norduser.DisableAll()
-
 	if err := r.netw.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return &pb.Payload{Type: internal.CodeFailure}, nil

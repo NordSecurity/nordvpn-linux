@@ -16,8 +16,6 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
-	r.norduser.DisableAll()
-
 	if err := r.netw.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return &pb.Payload{Type: internal.CodeFailure}, nil
