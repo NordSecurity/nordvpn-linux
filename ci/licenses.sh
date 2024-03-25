@@ -4,7 +4,7 @@ set -euxo pipefail
 source "${WORKDIR}/ci/env.sh"
 
 exclude_self() {
-  grep -v "github.com/NordSecurity\|moose"
+  grep -P -v "github.com/NordSecurity/(?!systray)|moose"
 }
 
 mkdir -p "${WORKDIR}/dist"
