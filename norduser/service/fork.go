@@ -65,10 +65,10 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32) (err error) {
 	}
 
 	// Set up log file
-	fileFlags := os.O_APPEND | os.O_WRONLY | os.O_CREATE
+	fileFlags := os.O_APPEND | os.O_WRONLY | os.O_CREATE | syscall.O_NOFOLLOW
 	logFilePath := internal.GetNorduserdLogPath(strconv.Itoa(int(uid)))
 	// #nosec G304 -- logFilePath is properly validated
-	logFile, err := os.OpenFile(logFilePath, fileFlags, internal.PermUserRW)
+	logFile, err := internal.OpenOrCreateRegularFile(logFilePath, fileFlags, internal.PermUserRW)
 	if err != nil {
 		return fmt.Errorf("opening norduser log file %s: %w", logFilePath, err)
 	}
