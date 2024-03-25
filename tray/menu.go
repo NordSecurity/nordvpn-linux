@@ -28,21 +28,30 @@ func addDebugSection(ti *Instance) {
 	mRedraw := systray.AddMenuItem("Redraw", "Redraw")
 	go func() {
 		for {
-			<-mRedraw.ClickedCh
+			_, open := <-mRedraw.ClickedCh
+			if !open {
+				return
+			}
 			ti.redrawChan <- struct{}{}
 		}
 	}()
 	mUpdate := systray.AddMenuItem("Update", "Update")
 	go func() {
 		for {
-			<-mUpdate.ClickedCh
+			_, open := <-mUpdate.ClickedCh
+			if !open {
+				return
+			}
 			ti.updateChan <- false
 		}
 	}()
 	mUpdateFull := systray.AddMenuItem("Full update", "Full update")
 	go func() {
 		for {
-			<-mUpdateFull.ClickedCh
+			_, open := <-mUpdateFull.ClickedCh
+			if !open {
+				return
+			}
 			ti.updateChan <- true
 		}
 	}()
@@ -53,7 +62,10 @@ func addQuitItem() {
 	m := systray.AddMenuItem("Quit", "Quit")
 	m.Enable()
 	go func() {
-		<-m.ClickedCh
+		_, open := <-m.ClickedCh
+		if !open {
+			return
+		}
 		systray.Quit()
 	}()
 }
@@ -88,7 +100,10 @@ func addVpnSection(ti *Instance) {
 		go func() {
 			success := false
 			for !success {
-				<-mDisconnect.ClickedCh
+				_, open := <-mDisconnect.ClickedCh
+				if !open {
+					return
+				}
 				success = ti.disconnect()
 			}
 			ti.updateChan <- true
@@ -98,7 +113,10 @@ func addVpnSection(ti *Instance) {
 		go func() {
 			success := false
 			for !success {
-				<-mConnect.ClickedCh
+				_, open := <-mConnect.ClickedCh
+				if !open {
+					return
+				}
 				success = ti.connect("", "")
 			}
 			ti.updateChan <- true
@@ -121,7 +139,10 @@ func addAccountSection(ti *Instance) {
 		go func() {
 			success := false
 			for !success {
-				<-mLogout.ClickedCh
+				_, open := <-mLogout.ClickedCh
+				if !open {
+					return
+				}
 				success = ti.logout(false)
 			}
 			ti.updateChan <- true
@@ -134,7 +155,10 @@ func addAccountSection(ti *Instance) {
 
 		go func() {
 			for {
-				<-mLogin.ClickedCh
+				_, open := <-mLogin.ClickedCh
+				if !open {
+					return
+				}
 				ti.login()
 			}
 		}()
