@@ -1,13 +1,30 @@
 package tray
 
 import (
+	"fmt"
+	"runtime"
 	"strings"
+	"time"
 
 	"github.com/NordSecurity/systray"
 )
 
 func addDebugSection(ti *Instance) {
 	systray.AddSeparator()
+	m := systray.AddMenuItem("Active goroutines", "Active goroutines")
+	m.Disable()
+	go func() {
+		for {
+			select {
+			case _, open := <-m.ClickedCh:
+				if !open {
+					return
+				}
+			case <-time.After(1 * time.Second):
+				m.SetTitle(fmt.Sprintf("Active goroutines: %d", runtime.NumGoroutine()))
+			}
+		}
+	}()
 	mRedraw := systray.AddMenuItem("Redraw", "Redraw")
 	go func() {
 		for {
