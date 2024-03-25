@@ -86,6 +86,11 @@ func (n *dbusNotifier) sendNotification(summary string, body string) (uint32, er
 
 func newNotifier() (notify.Notifier, error) {
 	dbusConn, err := dbus.SessionBusPrivate()
+
+	if err != nil {
+		return nil, err
+	}
+
 	defer func() {
 		if err != nil {
 			if err := dbusConn.Close(); err != nil {
@@ -93,10 +98,6 @@ func newNotifier() (notify.Notifier, error) {
 			}
 		}
 	}()
-
-	if err != nil {
-		return nil, err
-	}
 
 	if err = dbusConn.Auth(nil); err != nil {
 		return nil, err
@@ -107,6 +108,11 @@ func newNotifier() (notify.Notifier, error) {
 	}
 
 	ntf, err := notify.New(dbusConn)
+
+	if err != nil {
+		return nil, err
+	}
+
 	defer func() {
 		if err != nil {
 			if err := ntf.Close(); err != nil {
@@ -114,10 +120,6 @@ func newNotifier() (notify.Notifier, error) {
 			}
 		}
 	}()
-
-	if err != nil {
-		return nil, err
-	}
 
 	return ntf, nil
 }
