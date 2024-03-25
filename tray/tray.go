@@ -19,8 +19,8 @@ const (
 )
 
 type Instance struct {
-	Client           pb.DaemonClient
-	DebugMode        bool
+	client           pb.DaemonClient
+	debugMode        bool
 	notifier         dbusNotifier
 	redrawChan       chan struct{}
 	updateChan       chan bool
@@ -43,11 +43,15 @@ type trayState struct {
 	mu              sync.RWMutex
 }
 
+func NewTrayInstance(client pb.DaemonClient) *Instance {
+	return &Instance{client: client}
+}
+
 func OnReady(ti *Instance) {
 	if os.Getenv("NORDVPN_TRAY_DEBUG") == "1" {
-		ti.DebugMode = true
+		ti.debugMode = true
 	} else {
-		ti.DebugMode = false
+		ti.debugMode = false
 	}
 
 	systray.SetTitle("NordVPN")
@@ -89,13 +93,13 @@ func OnReady(ti *Instance) {
 				addDaemonSection(ti)
 			}
 			ti.state.mu.RUnlock()
-			if ti.DebugMode {
+			if ti.debugMode {
 				addDebugSection(ti)
 			}
 			addQuitItem()
 			systray.Refresh()
 			<-ti.redrawChan
-			if ti.DebugMode {
+			if ti.debugMode {
 				fmt.Println(time.Now().String(), "Redraw")
 			}
 			systray.ResetMenu()

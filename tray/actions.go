@@ -16,13 +16,13 @@ import (
 // The pattern for actions is to return 'true' on success and 'false' (along with emitting a notification) on failure
 
 func (ti *Instance) login() {
-	resp, err := ti.Client.IsLoggedIn(context.Background(), &pb.Empty{})
+	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
 	if err != nil || resp.GetValue() {
 		ti.notify(pWarning, "You are already logged in")
 		return
 	}
 
-	cl, err := ti.Client.LoginOAuth2(
+	cl, err := ti.client.LoginOAuth2(
 		context.Background(),
 		&pb.Empty{},
 	)
@@ -59,7 +59,7 @@ func (ti *Instance) login() {
 }
 
 func (ti *Instance) logout(persistToken bool) bool {
-	payload, err := ti.Client.Logout(context.Background(), &pb.LogoutRequest{
+	payload, err := ti.client.Logout(context.Background(), &pb.LogoutRequest{
 		PersistToken: persistToken,
 	})
 	if err != nil {
@@ -85,11 +85,11 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 	go func(ch chan os.Signal) {
 		for range ch {
 			// #nosec G104 -- LVPN-2090
-			ti.Client.Disconnect(context.Background(), &pb.Empty{})
+			ti.client.Disconnect(context.Background(), &pb.Empty{})
 		}
 	}(ch)
 
-	resp, err := ti.Client.Connect(context.Background(), &pb.ConnectRequest{
+	resp, err := ti.client.Connect(context.Background(), &pb.ConnectRequest{
 		ServerTag:   serverTag,
 		ServerGroup: serverGroup,
 	})
@@ -143,7 +143,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 }
 
 func (ti *Instance) disconnect() bool {
-	resp, err := ti.Client.Disconnect(context.Background(), &pb.Empty{})
+	resp, err := ti.client.Disconnect(context.Background(), &pb.Empty{})
 	if err != nil {
 		ti.notify(pError, "Disconnect error: %s", err)
 		return false

@@ -17,27 +17,25 @@ var (
 	DaemonURL = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 )
 
-func onExit(ti *tray.Instance) {
-	if ti.DebugMode {
-		now := time.Now()
-		fmt.Println("Exit at", now.String())
-	}
+func onExit() {
+	now := time.Now()
+	fmt.Println("Exit at", now.String())
 }
 
 func main() {
-	var ti = tray.Instance{}
-
 	conn, err := grpc.Dial(
 		DaemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
+	var client pb.DaemonClient
 	if err == nil {
-		ti.Client = pb.NewDaemonClient(conn)
+		client = pb.NewDaemonClient(conn)
 	} else {
 		fmt.Printf("Error connecting to the NordVPN daemon: %s", err)
 		return
 	}
 
-	systray.Run(func() { tray.OnReady(&ti) }, func() { onExit(&ti) })
+	ti := tray.NewTrayInstance(client)
+	systray.Run(func() { tray.OnReady(ti) }, func() { onExit() })
 }
