@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -310,5 +311,99 @@ func TestNetworkLinks(t *testing.T) {
 		assert.NotEmpty(t, iface.Name)
 		regex := regexp.MustCompile(`^([0-9]{1,3}\.){3}[0-9]{1,3}(\/([0-9]|[1-2][0-9]|3[0-2]))?$`)
 		assert.True(t, regex.MatchString(iface.Address))
+	}
+}
+
+func TestOpenLogFile(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	testFilename := filepath.Join(TestDataPath, "logfile.log")
+	otherFileName := testFilename + LogFileExtension
+
+	tests := []struct {
+		name        string
+		fileName    string
+		setup       func()
+		cleanup     func()
+		failsToOpen bool
+	}{
+		{
+			name:    "create and open new file",
+			setup:   func() { os.Remove(testFilename) },
+			cleanup: func() { assert.Nil(t, os.Remove(testFilename)) },
+		},
+		{
+			name:    "open existing file",
+			setup:   func() { os.OpenFile(testFilename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, PermUserRW) },
+			cleanup: func() { assert.Nil(t, os.Remove(testFilename)) },
+		},
+		{
+			name: "remove symlink and open a new one",
+			setup: func() {
+				os.Remove(otherFileName)
+				os.Remove(testFilename)
+				os.OpenFile(otherFileName, os.O_APPEND|os.O_WRONLY|os.O_CREATE, PermUserRW)
+				currentDir, err := os.Getwd()
+				assert.Nil(t, err)
+				assert.Nil(t, os.Symlink(filepath.Join(currentDir, otherFileName), testFilename))
+			},
+			cleanup: func() {
+				os.Remove(otherFileName)
+				assert.Nil(t, os.Remove(testFilename))
+			},
+		},
+		{
+			name: "deletes pipe and recreate regular file",
+			setup: func() {
+				os.Remove(testFilename)
+				assert.Nil(t, syscall.Mkfifo(testFilename, 0666))
+			},
+			cleanup: func() {
+				os.Remove(otherFileName)
+				assert.Nil(t, os.Remove(testFilename))
+			},
+		},
+		{
+			name: "delete empty folder and create file",
+			setup: func() {
+				os.Mkdir(testFilename, PermUserRW)
+			},
+			cleanup: func() {
+				assert.Nil(t, os.Remove(testFilename))
+			},
+		},
+		{
+			name:        "fails for non-empty folder",
+			failsToOpen: true,
+			setup: func() {
+				os.Remove(testFilename)
+				os.Mkdir(testFilename, PermUserRWX)
+				_, err := os.OpenFile(filepath.Join(testFilename, "log.log"), os.O_APPEND|os.O_WRONLY|os.O_CREATE, PermUserRW)
+				assert.NoError(t, err)
+			},
+			cleanup: func() {
+				assert.NoError(t, os.RemoveAll(testFilename))
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.setup != nil {
+				test.setup()
+			}
+
+			file, err := OpenOrCreateRegularFile(testFilename, os.O_APPEND|os.O_WRONLY|os.O_CREATE, PermUserRW)
+			if test.failsToOpen {
+				assert.Nil(t, file)
+				assert.Error(t, err)
+			} else {
+				assert.NotNil(t, file)
+				assert.NoError(t, err)
+				assert.NoError(t, file.Close())
+			}
+
+			test.cleanup()
+		})
 	}
 }
