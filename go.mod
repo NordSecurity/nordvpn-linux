@@ -6,7 +6,7 @@ require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
 	github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948
 	github.com/NordSecurity/libtelio v0.0.0-20240227161636-29680450e9b9
-	github.com/NordSecurity/systray v0.0.0-20240321011122-a4bf8f695817
+	github.com/NordSecurity/systray v0.0.0-20240325015348-96568c691b1d
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/docker/docker v24.0.9+incompatible
