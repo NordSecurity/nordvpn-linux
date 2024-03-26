@@ -47,6 +47,10 @@ func (c *Combined) Enable(uid uint32, gid uint32) error {
 	}
 
 	log.Printf("failed to enable norduserd via systemd: %s, will fallback to fork implementation", err)
+	if err := c.systemd.Disable(uid); err != nil {
+		log.Println("failed to disable norduser sytemd after enable has failed")
+	}
+
 	if err := c.childProcess.Enable(uid, gid); err != nil {
 		return fmt.Errorf("enabling norduserd via fork: %w", err)
 	}
