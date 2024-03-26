@@ -40,13 +40,13 @@ func (c *Combined) Enable(uid uint32, gid uint32) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// err := c.systemd.Enable(uid)
-	// if err == nil {
-	// 	c.uidToProcessType[uid] = systemd
-	// 	return nil
-	// }
+	err := c.systemd.Enable(uid)
+	if err == nil {
+		c.uidToProcessType[uid] = systemd
+		return nil
+	}
 
-	// log.Printf("failed to enable norduserd via systemd: %s, will fallback to fork implementation", err)
+	log.Printf("failed to enable norduserd via systemd: %s, will fallback to fork implementation", err)
 	if err := c.childProcess.Enable(uid, gid); err != nil {
 		return fmt.Errorf("enabling norduserd via fork: %w", err)
 	}
