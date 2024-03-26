@@ -8,7 +8,6 @@ import (
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	cesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
@@ -19,7 +18,7 @@ import (
 )
 
 func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
-	telioCfg remote.RemoteConfigGetter, deviceID, appVersion string) daemon.FactoryFunc {
+	cfg vpn.LibConfigGetter, deviceID, appVersion string) daemon.FactoryFunc {
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {
 		case config.Technology_NORDLYNX:

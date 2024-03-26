@@ -272,11 +272,7 @@ type mockVersionGetter struct {
 	remoteConfig string
 }
 
-func (m *mockVersionGetter) GetValue(key string) (string, error) {
-	return "", nil
-}
-
-func (m *mockVersionGetter) GetTelioConfig(string) (string, error) {
+func (m *mockVersionGetter) GetConfig(string) (string, error) {
 	return m.remoteConfig, nil
 }
 

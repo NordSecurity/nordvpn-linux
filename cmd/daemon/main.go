@@ -302,11 +302,11 @@ func main() {
 	}
 	daemonEvents.Subscribe(analytics)
 
-	remoteConfigGetter := remoteConfigGetterImplementation(fsystem)
+	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem)
 
 	// Networker
 	vpnFactory := getVpnFactory(eventsDbPath, cfg.FirewallMark,
-		internal.IsDevEnv(Environment), remoteConfigGetter, deviceID, Version)
+		internal.IsDevEnv(Environment), vpnLibConfigGetter, deviceID, Version)
 
 	vpn, err := vpnFactory(cfg.Technology)
 	if err != nil {

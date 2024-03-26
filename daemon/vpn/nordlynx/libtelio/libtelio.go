@@ -18,12 +18,16 @@ import (
 	"time"
 
 	teliogo "github.com/NordSecurity/libtelio/ffi/bindings/linux/go"
-	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
+)
+
+const (
+	// TelioLocalConfigName defines env key for local config value
+	TelioLocalConfigName = "TELIO_LOCAL_CFG"
 )
 
 type state struct {
@@ -141,15 +145,15 @@ type persistentKeepAliveConfig struct {
 	Stun     int `json:"stun,omitempty"`
 }
 
-func handleTelioConfig(eventPath, deviceID, version string, prod bool, remoteConfig remote.RemoteConfigGetter) ([]byte, error) {
+func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) ([]byte, error) {
 	telioConfig := &telioFeatures{}
-	cfgString, err := remoteConfig.GetTelioConfig(version)
+	cfgString, err := vpnLibCfg.GetConfig(version)
 	if err != nil {
-		return nil, fmt.Errorf("getting telio remote config json string: %s\n", err)
+		return nil, fmt.Errorf("getting telio config json string: %w", err)
 	} else {
 		err := json.Unmarshal([]byte(cfgString), &telioConfig)
 		if err != nil {
-			return nil, fmt.Errorf("unmarshaling telio remote config json string: %s\n", err)
+			return nil, fmt.Errorf("unmarshaling telio config json string: %w", err)
 		}
 	}
 	if telioConfig.Lana != nil {
@@ -165,13 +169,14 @@ func handleTelioConfig(eventPath, deviceID, version string, prod bool, remoteCon
 }
 
 func New(prod bool, eventPath string, fwmark uint32,
-	telioCfg remote.RemoteConfigGetter, deviceID, appVersion string) *Libtelio {
+	vpnLibCfg vpn.LibConfigGetter, deviceID, appVersion string) *Libtelio {
 	events := make(chan state)
 	logLevel := teliogo.TELIOLOGINFO
 
-	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, telioCfg)
+	var telioConfigString string
+	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, vpnLibCfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get telio config: ", err)
+		log.Println(internal.ErrorPrefix, "Failed to get telio config:", err)
 
 		defaultTelioConfig := &telioFeatures{}
 		defaultTelioConfig.Lana = &lanaConfig{
@@ -185,16 +190,18 @@ func New(prod bool, eventPath string, fwmark uint32,
 
 		fallbackTelioConfig, err := json.Marshal(defaultTelioConfig)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "couldn't encode default telio config: ", err)
+			log.Println(internal.ErrorPrefix, "Couldn't encode default telio config:", err)
 			fallbackTelioConfig = []byte(`{"direct":{}}`)
 		}
 		cfg = fallbackTelioConfig
 	}
-	log.Println(internal.InfoPrefix, "libtelio final config:", string(cfg))
+	telioConfigString = string(cfg)
+
+	log.Println(internal.InfoPrefix, "Telio final config:", telioConfigString)
 
 	return &Libtelio{
 		lib: teliogo.NewTelio(
-			string(cfg),
+			telioConfigString,
 			eventCallback(events),
 			logLevel, func(i int, s string) {
 				log.Println(
