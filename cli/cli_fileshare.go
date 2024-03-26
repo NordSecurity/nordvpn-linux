@@ -19,6 +19,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/client"
 	dpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	mpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -251,23 +252,17 @@ func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 	}
 
 	var path string
+	var err error
 	if ctx.IsSet(flagFilesharePath) {
-		var err error
 		path, err = filepath.Abs(ctx.String(flagFilesharePath))
 		if err != nil {
 			return fmt.Errorf(MsgFileshareInvalidPath, formatError(err))
 		}
 	} else {
-		downloads, ok := os.LookupEnv("XDG_DOWNLOAD_DIR")
-		if !ok {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				log.Print("determining user home directory: " + err.Error())
-				return fmt.Errorf(MsgFileshareAcceptHomeError)
-			}
-			path = filepath.Join(home, "Downloads")
-		} else {
-			path = downloads
+		path, err = fileshare.GetDefaultDownloadDirectory()
+		if err != nil {
+			log.Print("determining user home directory: " + err.Error())
+			return fmt.Errorf(MsgFileshareAcceptHomeError)
 		}
 	}
 
