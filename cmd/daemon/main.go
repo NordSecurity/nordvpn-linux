@@ -598,13 +598,14 @@ func snapChecker(publisherErr events.Publisher[error]) *snapconf.ConnChecker {
 			snapconf.InterfaceNetworkObserve,
 			snapconf.InterfaceFirewallControl,
 		},
-		// TODO: Add nordfileshared requirements
 		[]snapconf.Interface{
 			snapconf.InterfaceNetwork,
 			snapconf.InterfaceNetworkBind,
 			snapconf.InterfaceNetworkControl,
 			snapconf.InterfaceNetworkObserve,
 			snapconf.InterfaceFirewallControl,
+			snapconf.InterfaceNorduserAutostart,
+			snapconf.InterfaceHome,
 		},
 		publisherErr,
 	)
