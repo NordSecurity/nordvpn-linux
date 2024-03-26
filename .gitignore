@@ -47,3 +47,9 @@ coverage/unit
 # Env files
 .env
 .pcap
+
+# Snap files
+parts
+prime
+stage
+*.snap

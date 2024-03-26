@@ -125,10 +125,18 @@ func shouldEnableFileshare(uid uint32) (bool, error) {
 func startSnap() {
 	usr, err := user.Current()
 	if err != nil {
+		log.Println("Unable to retrieve current user:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	configDirPath, err := internal.GetConfigDirPath(usr.HomeDir)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Println("Unable to retrieve user home directory:", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
+	configDirPath, err := internal.GetConfigDirPath(homeDir)
+
 	if err == nil {
 		if logFile, err := openLogFile(filepath.Join(configDirPath, internal.NorduserLogFile)); err == nil {
 			log.SetOutput(logFile)
@@ -136,6 +144,7 @@ func startSnap() {
 		}
 	}
 
+	// Always use real home dir here regardless of `$HOME` value
 	autostartFile, err := addAutostart(usr.HomeDir)
 	if err != nil {
 		log.Println("Failed to add autostart: ", err)
@@ -228,12 +237,12 @@ func start() {
 	listenerFunction := internal.SystemDListener
 
 	if isFork() {
-		usr, err := user.Current()
+		homeDir, err := os.UserHomeDir()
 		if err != nil {
-			log.Fatalf("failed to find current user")
+			log.Fatalln("failed to find home dir", err)
 		}
 
-		configDirPath, err := internal.GetConfigDirPath(usr.HomeDir)
+		configDirPath, err := internal.GetConfigDirPath(homeDir)
 		if err == nil {
 			if logFile, err := openLogFile(filepath.Join(configDirPath, internal.NorduserLogFile)); err == nil {
 				log.SetOutput(logFile)

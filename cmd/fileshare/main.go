@@ -6,14 +6,13 @@ import (
 	"log"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
-	"os/user"
 	"path/filepath"
-	"strconv"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_startup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"golang.org/x/net/netutil"
 )
 
@@ -30,12 +29,12 @@ func openLogFile(path string) (*os.File, error) {
 }
 
 func main() {
-	usr, err := user.Current()
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	configDirPath, err := internal.GetConfigDirPath(usr.HomeDir)
+	configDirPath, err := internal.GetConfigDirPath(homeDir)
 	if err == nil {
 		if logFile, err := openLogFile(filepath.Join(configDirPath + "/" + internal.FileshareLogFileName)); err == nil {
 			log.SetOutput(logFile)
@@ -56,16 +55,22 @@ func main() {
 		internal.FileshareHistoryFile,
 	)
 
+	eventsDBPath := filepath.Join(internal.DatFilesPath, "moose.db")
+
+	if snapconf.IsUnderSnap() {
+		eventsDBPath = filepath.Join(os.Getenv("SNAP_USER_COMMON"), "moose.db")
+		// In case of snap, if default directory is determined to be under $HOME and that
+		// is translated to $SNAP_USER_DATA, during the first execution Downloads directory
+		// will not be created yet
+		if err := internal.EnsureDir(filepath.Join(homeDir, "Downloads", "a")); err != nil {
+			log.Println("Failed to ensure default downloads directory:", err)
+		}
+	}
+
 	// Before storage handling was implemented in libdrop, we had our own json implementation. It is possible that user
 	// still has this history file, so we need to account for that by joining new transfer history with old transfer
 	// history. Fileshare process was implemented after this change, so we do not need legacy storage.
 	legacyStoragePath := ""
-
-	uid, err := strconv.Atoi(usr.Uid)
-	if err != nil {
-		log.Printf("Invalid unix user id, failed to convert from string: %s", usr.Uid)
-		os.Exit(int(childprocess.CodeFailedToEnable))
-	}
 
 	if err := os.Remove(internal.FileshareSocket); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Println("Failed to remove old socket file: ", err)
@@ -86,14 +91,12 @@ func main() {
 		}
 	}()
 
-	eventsDBPath := filepath.Join(configDirPath, "moose.db")
-
 	fileshareHandle, err := fileshare_startup.Startup(storagePath,
 		legacyStoragePath,
 		eventsDBPath,
 		limitedListener,
 		Environment,
-		internal.NewFileshareAuthenticator(uint32(uid)))
+		internal.NewFileshareAuthenticator(uint32(os.Getuid())))
 	if err != nil {
 		log.Println("Failed to start the service: ", err.Error())
 		if errors.Is(err, fileshare_startup.ErrMeshNotEnabled) {
