@@ -3,7 +3,6 @@ import os
 import pytest
 import sh
 
-import lib
 from lib import meshnet, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
@@ -33,13 +32,12 @@ def test_invite_send():
 
 
 def test_invite_send_repeated():
-    with lib.Defer(lambda: sh.nordvpn.meshnet.invite.revoke("test@test.com")):
+    meshnet.send_meshnet_invite("test@test.com")
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
         meshnet.send_meshnet_invite("test@test.com")
 
-        with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            meshnet.send_meshnet_invite("test@test.com")
-
-        assert "Meshnet invitation for 'test@test.com' already exists." in str(ex.value)
+    assert "Meshnet invitation for 'test@test.com' already exists." in str(ex.value)
 
 
 def test_invite_send_own_email():
@@ -85,8 +83,7 @@ def test_invite_revoke():
 
 
 def test_invite_revoke_repeated():
-    with lib.Defer(lambda: sh.nordvpn.meshnet.invite.revoke("test@test.com")):
-        meshnet.send_meshnet_invite("test@test.com")
+    meshnet.send_meshnet_invite("test@test.com")
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.meshnet.invite.revoke("test@test.com")
