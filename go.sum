@@ -17,6 +17,8 @@ github.com/NordSecurity/libtelio v0.0.0-20240227161636-29680450e9b9 h1:P9qHOEndq
 github.com/NordSecurity/libtelio v0.0.0-20240227161636-29680450e9b9/go.mod h1:gWS9UWU2FSEixmSWdm1MsIoacVttKykO0mgPec2uBVc=
 github.com/NordSecurity/systray v0.0.0-20240325015348-96568c691b1d h1:ELvQwIvVYkNvO6UNZEx8Wr9BOWlKWz0YnLDN/pU559w=
 github.com/NordSecurity/systray v0.0.0-20240325015348-96568c691b1d/go.mod h1:PqJ9YgQXNUYUuoLvVrbMmZACufI5xM8JJ5aSuRX5ljg=
+github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d h1:oUEFXgFRa9Svcjr+O1stzR3vEXZ5OfQxLUcDjqFcOuo=
+github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d/go.mod h1:PqJ9YgQXNUYUuoLvVrbMmZACufI5xM8JJ5aSuRX5ljg=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=

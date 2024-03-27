@@ -23,6 +23,11 @@ func onExit() {
 }
 
 func main() {
+	if !systray.IsAvailable() {
+		fmt.Println("Session tray not available, exiting")
+		return
+	}
+
 	conn, err := grpc.Dial(
 		DaemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
