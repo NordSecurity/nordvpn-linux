@@ -75,7 +75,7 @@ func (s *Server) StopFileshare(context.Context, *pb.Empty) (*pb.StopFileshareRes
 
 	fileshareStatus := s.fileshareProcessManager.ProcessStatus()
 	if fileshareStatus == childprocess.NotRunning {
-		log.Println("Received stop fileshare request but fileshare is already running, status is: ", fileshareStatus)
+		log.Println("Received stop fileshare request but fileshare is already not running, status is: ", fileshareStatus)
 		return &pb.StopFileshareResponse{Success: true}, nil
 	}
 
