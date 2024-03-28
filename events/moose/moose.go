@@ -550,3 +550,16 @@ func (s *Subscriber) updateEventDomain() error {
 	s.currentDomain = domainUrl.String()
 	return nil
 }
+
+func DrainStart(dbPath string) uint {
+	return worker.Start(
+		dbPath,
+		workerVersion,
+		"http://localhost",
+		100,
+		1000,
+		false,
+		20,
+		false,
+	)
+}

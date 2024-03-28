@@ -65,6 +65,7 @@ func main() {
 		if err := internal.EnsureDir(filepath.Join(homeDir, "Downloads", "a")); err != nil {
 			log.Println("Failed to ensure default downloads directory:", err)
 		}
+		drainStart(eventsDBPath)
 	}
 
 	// Before storage handling was implemented in libdrop, we had our own json implementation. It is possible that user
