@@ -40,6 +40,7 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
+
     ssh_client.exec_command("nordvpn set defaults")
     sh.nordvpn.set.defaults()
     daemon.stop_peer(ssh_client)
@@ -707,7 +708,7 @@ def base_test_peer_list(filter_list: list[str] = None) -> None:
 @pytest.mark.parametrize("offline", [True, False], ids=lambda value: "offline" if value else "")
 @pytest.mark.parametrize("online", [True, False], ids=lambda value: "online" if value else "")
 @pytest.mark.flaky(reruns=3, reruns_delay=20)
-def test_new_filtered_basic_meshnet_peer_list(external, internal, offline, online):
+def test_filtered_basic_meshnet_peer_list(external, internal, offline, online):
     filter_list = ["external"] * external \
                 + ["internal"] * internal \
                 + ["offline"] * offline \
@@ -722,7 +723,7 @@ def test_new_filtered_basic_meshnet_peer_list(external, internal, offline, onlin
 @pytest.mark.parametrize("incoming_traffic_allowed", [True, False], ids=lambda value: "incoming_traffic_allowed" if value else "")
 @pytest.mark.parametrize("routing_allowed", [True, False], ids=lambda value: "routing_allowed" if value else "")
 @pytest.mark.flaky(reruns=3, reruns_delay=20)
-def test_new_filtered_basic2_meshnet_peer_list(allows_incoming_traffic, allows_routing, allows_sending_files, incoming_traffic_allowed, routing_allowed):
+def test_filtered_basic2_meshnet_peer_list(allows_incoming_traffic, allows_routing, allows_sending_files, incoming_traffic_allowed, routing_allowed):
     filter_list = ["allows-incoming-traffic"] * allows_incoming_traffic \
                 + ["allows-routing"] * allows_routing \
                 + ["allows-sending-files"] * allows_sending_files \
@@ -730,3 +731,52 @@ def test_new_filtered_basic2_meshnet_peer_list(allows_incoming_traffic, allows_r
                 + ["routing-allowed"] * routing_allowed
 
     base_test_peer_list(filter_list)
+
+
+@timeout_decorator.timeout(40)
+def test_incoming_connections():
+    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    local_hostname = peer_list.get_this_device().hostname
+    peer_hostname = peer_list.get_external_peer().hostname
+
+    sh.nordvpn.mesh.peer.incoming.deny(peer_hostname)
+    assert not ssh_client.network.ping(local_hostname, retry=1)
+
+    ssh_client.exec_command(f"nordvpn mesh peer incoming deny {local_hostname}")
+    assert not meshnet.is_peer_reachable(ssh_client, peer_list.get_external_peer(), retry=1)
+
+
+@pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET, \
+                         ids=[f"{line[0]}-{line[1]}" for line in meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET])
+@timeout_decorator.timeout(25)
+def test_permission_messages_success(permission, permission_state, expected_message):
+    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
+
+    reverse_permission_value = "allow" if permission_state == "deny" else "deny"
+    meshnet.set_permission(peer_hostname, permission, reverse_permission_value)
+
+    got_message = sh.nordvpn.mesh.peer(permission, permission_state, peer_hostname)
+
+    expected_message = expected_message % peer_hostname
+
+    assert expected_message in got_message
+
+
+@pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_ERROR_MESSAGE_PARAMETER_SET, \
+                         ids=[f"{line[0]}-{line[1]}" for line in meshnet.PERMISSION_ERROR_MESSAGE_PARAMETER_SET])
+@timeout_decorator.timeout(25)
+def test_permission_messages_error(permission, permission_state, expected_message):
+    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
+
+    sh.nordvpn.mesh.peer(permission, permission_state, peer_hostname, _ok_code=(0, 1))
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        print(sh.nordvpn.mesh.peer(permission, permission_state, peer_hostname))
+
+    expected_message = expected_message % peer_hostname
+
+    assert expected_message in str(ex)
+
+# temporary
+def test_runner():
+    logging.log(str(sh.curl("icanhazip.com")))
