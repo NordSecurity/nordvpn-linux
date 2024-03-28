@@ -3,7 +3,6 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -121,10 +120,6 @@ var (
 	// OvpnObfsTemplatePath defines filename of ovpn obfuscated template file
 	OvpnObfsTemplatePath = filepath.Join(DatFilesPathCommon, "ovpn_xor_template.xslt")
 
-	// ConfigDirectory is used for configuration files storage. Hardcoded only for nordfileshared, in
-	// other cases consider using os.UserConfigDir instead.
-	ConfigDirectory = filepath.Join(".config", "nordvpn")
-
 	// LogFilePath defines CLI log path
 	LogFilePath = filepath.Join("nordvpn", "cli.log")
 
@@ -177,46 +172,17 @@ func GetFilesharedPid(uid int) string {
 
 // GetConfigDirPath returns the directory used to store local user config and logs
 func GetConfigDirPath(homeDirectory string) (string, error) {
-	// USER_DATA is set in case of snap.
-	snapUserDataDir := os.Getenv("USER_DATA")
-	if snapUserDataDir != "" {
-		return snapUserDataDir, nil
-	}
-
-	if homeDirectory == "" {
+	_, err := os.Stat(homeDirectory)
+	if homeDirectory == "" || os.IsNotExist(err) {
 		return "", errors.New("user does not have a home directory")
 	}
-	// We are running as root, so we cannot retrieve user config directory path dynamically. We
-	// hardcode it to /home/<username>/.config, and if it doesn't exist on the expected path
-	// (i.e XDG_CONFIG_HOME is set), we default to /var/log/nordvpn/nordfileshared-<username>-<uid>.log
-	userConfigPath := filepath.Join(homeDirectory, ConfigDirectory)
-	_, err := os.Stat(userConfigPath)
-	if err == nil {
-		return userConfigPath, nil
+
+	userConfigPath := filepath.Join(homeDirectory, ".config", "nordvpn")
+
+	if err := EnsureDir(userConfigPath); err != nil {
+		return "", fmt.Errorf("ensuring config dir: %w", err)
 	}
-	return "", fmt.Errorf("%s directory not found in users home directory", ConfigDirectory)
-}
-
-// GetNorduserdLogPath when logs aren't handled by systemd
-func GetNorduserdLogPath(uid string) string {
-	norduserdLogFilename := Norduser + LogFileExtension
-	if uid == "0" {
-		return filepath.Join(LogPath, norduserdLogFilename)
-	}
-
-	usr, err := user.LookupId(uid)
-	if err != nil {
-		log.Printf("failed to lookup user, users norduser logs will be stored in %s: %s", LogPath, err.Error())
-	}
-
-	configDir, err := GetConfigDirPath(usr.HomeDir)
-
-	if err != nil {
-		log.Printf("users norduserd logs will be stored in %s: %s", LogPath, err.Error())
-		return filepath.Join(LogPath, fmt.Sprintf("%s-%s.%s", Norduser, uid, LogFileExtension))
-	}
-
-	return filepath.Join(configDir, norduserdLogFilename)
+	return userConfigPath, nil
 }
 
 // GetNordvpnGid returns id of group defined in NordvpnGroup

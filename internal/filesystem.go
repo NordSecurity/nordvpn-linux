@@ -76,6 +76,7 @@ func SystemDListener() (net.Listener, error) {
 type runDirListener struct {
 	listener net.Listener
 	socket   string
+	pidfile  string
 }
 
 func (rdl *runDirListener) Accept() (net.Conn, error) {
@@ -85,7 +86,7 @@ func (rdl *runDirListener) Accept() (net.Conn, error) {
 func (rdl *runDirListener) Close() error {
 	listenerCloseErr := rdl.listener.Close()
 
-	cleanPidFile()
+	cleanPidFile(rdl.pidfile)
 
 	var protoRemoveErr error
 	var dirRemoveErr error
@@ -148,6 +149,7 @@ func ManualListenerIfNotInUse(socket string, perm fs.FileMode, pidfile string) f
 		return &runDirListener{
 			listener: listener,
 			socket:   socket,
+			pidfile:  pidfile,
 		}, nil
 	}
 }
@@ -207,9 +209,9 @@ func checkPidFile(pidfile string) error {
 	return nil
 }
 
-func cleanPidFile() {
-	if FileExists(DaemonPid) {
-		if err := FileDelete(DaemonPid); err != nil {
+func cleanPidFile(pidFile string) {
+	if pidFile != "" && FileExists(pidFile) {
+		if err := FileDelete(pidFile); err != nil {
 			log.Println(ErrorPrefix, "removing pid file:", err)
 		}
 	}

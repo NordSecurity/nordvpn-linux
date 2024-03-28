@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sync"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -18,7 +17,6 @@ func NorduserURL(uid uint32) string {
 }
 
 type NorduserProcessClient struct {
-	mu  sync.Mutex
 	uid uint32
 }
 
@@ -41,9 +39,6 @@ func getNorduserClient(uid uint32) (pb.NorduserClient, *grpc.ClientConn, error) 
 }
 
 func (n *NorduserProcessClient) Ping(nowait bool) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	client, clientConn, err := getNorduserClient(n.uid)
 	if err != nil {
 		return fmt.Errorf("failed to initialize the connection: %w", err)
@@ -62,9 +57,6 @@ func (n *NorduserProcessClient) Ping(nowait bool) error {
 }
 
 func (n *NorduserProcessClient) Stop(disable bool) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
 	client, clientConn, err := getNorduserClient(n.uid)
 	if err != nil {
 		return fmt.Errorf("failed to initialize the connection: %w", err)

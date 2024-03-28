@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"sync"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -15,9 +14,7 @@ import (
 
 var FileshareURL = fmt.Sprintf("%s://%s", internal.Proto, internal.FileshareSocket)
 
-type FileshareProcessClient struct {
-	mu sync.Mutex
-}
+type FileshareProcessClient struct{}
 
 func NewFileshareProcessClient() *FileshareProcessClient {
 	return &FileshareProcessClient{}
@@ -37,9 +34,6 @@ func getFileshareClient() (pb.FileshareClient, *grpc.ClientConn, error) {
 }
 
 func (f *FileshareProcessClient) Ping(nowait bool) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
 	client, clientConn, err := getFileshareClient()
 	if err != nil {
 		return fmt.Errorf("failed to initialize the connection: %w", err)
@@ -58,9 +52,6 @@ func (f *FileshareProcessClient) Ping(nowait bool) error {
 }
 
 func (f *FileshareProcessClient) Stop(bool) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-
 	client, clientConn, err := getFileshareClient()
 	if err != nil {
 		return fmt.Errorf("failed to initialize the connection: %w", err)
