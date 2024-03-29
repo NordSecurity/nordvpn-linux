@@ -13,37 +13,37 @@ description: |
   Take your online security to the next level with one of the fastest VPNs for Linux. Whether
   you’re working from home or browsing over your hotel’s Wi-Fi, explore the internet with peace of
   mind.
-  
+
   * **Secure connection.** Without encryption, your online traffic is vulnerable. NordVPN encrypts
-    your connection to stop malicious actors from potentially stealing data.   
+    your connection to stop malicious actors from potentially stealing data.
   * **URL scanner.** Never visit dangerous sites by accident (such as through phishing links). Once
     turned on, Threat Protection Lite will block access to known malicious pages.
   * **Kill Switch.** Prevent leaks when you unexpectedly lose connection to NordVPN. Kill Switch
-    automatically cuts off online access until your VPN connection is restored. 
+    automatically cuts off online access until your VPN connection is restored.
   * **Specialty servers.** Get even more security from our Double VPN servers. Access the Tor
-    network without the Tor browser thanks to Onion Over VPN. 
-  
+    network without the Tor browser thanks to Onion Over VPN.
+
   **More privacy**
-  
+
   * **Private online activity.** Unencrypted online traffic may be observed by others, including
-    your ISP. Using NordVPN shields your online activity from prying eyes. 
+    your ISP. Using NordVPN shields your online activity from prying eyes.
   * **New virtual location.** Connect to a VPN server to use its IP address — and thus virtual
     location. NordVPN offers 6,000+ VPN servers in over 90 locations.
   * **Censorship bypass.** Connecting to NordVPN servers lets you avoid many common censorship
     measures. Privately experience the internet as it was meant to be.
   * **Privacy-friendly practices.** NordVPN operates under a strict no-logs policy. Our practices
     have been independently audited four times — we do not log your activity.
-  
+
   **More convenience**
-  
+
   * **SmartPlay.** Safely stream your favorite content from home with no extra steps. Thanks to
     NordVPN’s SmartPlay, simply connect to a VPN server in your country and enjoy.
   * **Ad blocker.** Browse the web without ads getting in your way. Turn on our Threat Protection
     Lite feature for Linux to block ads before they load.
   * **Meshnet.** Join up to 60 devices together to create an encrypted private network for secure
-    file sharing, project collaboration, and LAN gaming.  
+    file sharing, project collaboration, and LAN gaming.
   * **Optimized for speed.** All VPNs slow you down — but with NordVPN’s infrastructure and
-    revolutionary NordLynx protocol (based on WireGuard), you won’t notice it.  
+    revolutionary NordLynx protocol (based on WireGuard), you won’t notice it.
   * **24/7 support.** Our friendly customer support team is ready to help you at any time. We also
     have detailed guides covering every NordVPN function in our Help Center.
 
@@ -54,7 +54,7 @@ plugs:
   norduser-autostart:
     interface: personal-files
     write:
-    - $HOME/.config/autostart/nordvpn.desktop
+    - $HOME/.config/autostart
 
 apps:
   nordvpn:
@@ -69,6 +69,9 @@ apps:
       - network
       - network-bind
       - norduser-autostart
+      - desktop-legacy
+      - desktop
+      - unity7
     completer: usr/share/bash-completion/completions/nordvpn
     # Snap does not support zsh autocompletions. In order to enable them, after installing snap,
     # execute:
@@ -212,3 +215,13 @@ parts:
       changelog.yml: usr/share/doc/nordvpn/changelog.yml
     stage:
       - usr/share/*
+
+  assets:
+    plugin: dump
+    source-type: local
+    source: assets
+    organize:
+      icon.svg: usr/share/icons/hicolor/scalable/apps/nordvpn.svg
+      tray-blue.svg: usr/share/icons/hicolor/scalable/apps/nordvpn-tray-blue.svg
+      tray-black.svg: usr/share/icons/hicolor/scalable/apps/nordvpn-tray-black.svg
+      tray-white.svg: usr/share/icons/hicolor/scalable/apps/nordvpn-tray-white.svg

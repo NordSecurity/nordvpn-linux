@@ -22,7 +22,6 @@ binaries=(
   "${WORKDIR}/bin/${ARCH}/nordfileshare"
   "${WORKDIR}/bin/${ARCH}/nordvpn"
   "${WORKDIR}/bin/${ARCH}/norduserd"
-  "${WORKDIR}/bin/${ARCH}/nordtray"
 )
 
 for binary in "${binaries[@]}"; do

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/systray"
 )
 
@@ -57,7 +58,7 @@ func addDebugSection(ti *Instance) {
 	}()
 }
 
-func addQuitItem() {
+func addQuitItem(quitChan chan<- norduser.StopRequest) {
 	systray.AddSeparator()
 	m := systray.AddMenuItem("Quit", "Quit")
 	m.Enable()
@@ -67,6 +68,10 @@ func addQuitItem() {
 			return
 		}
 		systray.Quit()
+		select {
+		case quitChan <- norduser.StopRequest{}:
+		default:
+		}
 	}()
 }
 

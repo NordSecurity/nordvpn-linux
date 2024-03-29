@@ -10,12 +10,14 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"golang.org/x/net/netutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
+	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -23,6 +25,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser/pb"
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/tray"
+	"github.com/NordSecurity/systray"
 )
 
 func openLogFile(path string) (*os.File, error) {
@@ -53,6 +57,40 @@ func addAutostart(userHomeDir string) (string, error) {
 	}
 
 	return path, internal.FileWrite(path, []byte(autostartDesktopFileContents), internal.PermUserRW)
+}
+
+func startTray(quitChan chan<- norduser.StopRequest) {
+	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
+	if !systray.IsAvailable() {
+		log.Println("Session tray not available, exiting")
+		return
+	}
+
+	conn, err := grpc.Dial(
+		daemonURL,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	var client daemonpb.DaemonClient
+	if err == nil {
+		client = daemonpb.NewDaemonClient(conn)
+	} else {
+		fmt.Printf("Error connecting to the NordVPN daemon: %s", err)
+		return
+	}
+
+	onExit := func() {
+		now := time.Now()
+		log.Println("Exit at", now.String())
+	}
+
+	ti := tray.NewTrayInstance(client, quitChan)
+	onReady := func() {
+		log.Println("Tray ready")
+		tray.OnReady(ti)
+	}
+
+	systray.Run(onReady, onExit)
 }
 
 func shouldEnableFileshare(uid uint32) (bool, error) {
@@ -152,6 +190,8 @@ func startSnap() {
 		}
 	}()
 
+	go startTray(stopChan)
+
 	signals := internal.GetSignalChan()
 
 	log.Println(internal.InfoPrefix, "Daemon has started")
@@ -225,6 +265,8 @@ func start() {
 			log.Fatalln(internal.ErrorPrefix+"Failed to start accept on grpc server: ", err)
 		}
 	}()
+
+	go startTray(stopChan)
 
 	signals := internal.GetSignalChan()
 
