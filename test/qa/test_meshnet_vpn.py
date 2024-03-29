@@ -1,3 +1,5 @@
+import time
+
 import pytest
 import sh
 import timeout_decorator
@@ -188,3 +190,79 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     assert "Status: Disconnected" in sh.nordvpn.status()
 
     assert settings.app_has_defaults_settings()
+
+
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(60)
+def test_route_to_peer_that_is_connected_to_vpn():
+    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    local_hostname = peer_list.get_this_device().hostname
+    peer_hostname = peer_list.get_external_peer().hostname
+
+    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
+    ssh_client_mesh.connect()
+
+    ssh_client_mesh.exec_command("nordvpn connect")
+
+    my_ip = network.get_external_device_ip()
+    output = sh.nordvpn.mesh.peer.connect(peer_hostname)
+    assert meshnet.is_connect_successful(output, peer_hostname)
+    assert my_ip != network.get_external_device_ip()
+
+    lib.is_disconnect_successful(sh.nordvpn.disconnect())
+    ssh_client_mesh.exec_command("nordvpn disconnect")
+
+    time.sleep(1) # Other way around
+
+    sh.nordvpn.connect()
+
+    peer_ip = ssh_client_mesh.network.get_external_device_ip()
+    output = ssh_client_mesh.exec_command(f"nordvpn mesh peer connect {local_hostname}")
+    assert meshnet.is_connect_successful(output, local_hostname)
+    assert peer_ip != ssh_client_mesh.network.get_external_device_ip()
+
+    ssh_client_mesh.exec_command("nordvpn disconnect")
+    lib.is_disconnect_successful(sh.nordvpn.disconnect())
+
+    ssh_client_mesh.disconnect()
+
+
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(60)
+def test_route_to_peer_that_disconnects_from_vpn():
+    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    local_hostname = peer_list.get_this_device().hostname
+    peer_hostname = peer_list.get_external_peer().hostname
+
+    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
+    ssh_client_mesh.connect()
+
+    ssh_client_mesh.exec_command("nordvpn connect")
+
+    my_ip = network.get_external_device_ip()
+    output = sh.nordvpn.mesh.peer.connect(peer_hostname)
+    assert meshnet.is_connect_successful(output, peer_hostname)
+    assert my_ip != network.get_external_device_ip()
+
+    ssh_client_mesh.exec_command("nordvpn disconnect")
+    assert my_ip == network.get_external_device_ip()
+
+    lib.is_disconnect_successful(sh.nordvpn.disconnect())
+
+
+    time.sleep(1) # Other way around
+
+    sh.nordvpn.connect()
+
+    peer_ip = ssh_client_mesh.network.get_external_device_ip()
+    output = ssh_client_mesh.exec_command(f"nordvpn mesh peer connect {local_hostname}")
+    assert meshnet.is_connect_successful(output, local_hostname)
+    assert peer_ip != ssh_client_mesh.network.get_external_device_ip()
+
+    sh.nordvpn.disconnect()
+    assert peer_ip == ssh_client_mesh.network.get_external_device_ip()
+
+    lib.is_disconnect_successful(ssh_client_mesh.exec_command("nordvpn disconnect"))
+
+    ssh_client_mesh.disconnect()
+
