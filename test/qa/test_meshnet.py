@@ -1,10 +1,15 @@
+import json
+import re
+import time
+from datetime import datetime
+
 import pytest
 import requests
 import sh
 import timeout_decorator
 
 import lib
-from lib import login, meshnet, settings, ssh
+from lib import daemon, logging, login, meshnet, settings, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -203,3 +208,77 @@ def test_permission_messages_error(permission, permission_state, expected_messag
     expected_message = expected_message % peer_hostname
 
     assert expected_message in str(ex)
+
+
+def test_derp_server_selection_logic():
+    def has_duplicates(list):
+        return len(list) != len(set(list))
+
+    ssh_client.exec_command("sudo iptables -I OUTPUT 1 -p tcp -m tcp --sport 8765 -j DROP")
+    ssh_client.exec_command("sudo iptables -I OUTPUT 1 -p tcp -m tcp --dport 8765 -j DROP")
+
+    daemon.stop_peer(ssh_client)
+    ssh_client.exec_command("echo '' > /var/log/nordvpn/daemon.log")
+    daemon.start_peer(ssh_client)
+
+    derp_lines_from_logs = []
+
+    while len(derp_lines_from_logs) < 2:
+        daemonlog = ssh_client.exec_command("cat /var/log/nordvpn/daemon.log").split("\n")
+        derp_lines_from_logs = meshnet.get_lines_with_keywords(daemonlog, ["region_code", "connecting"])
+        time.sleep(5)
+
+    server_list = []
+    for line in derp_lines_from_logs:
+        json_match = re.search(r'\{.*\}', line)
+
+        if json_match:
+            json_data = json.loads(json_match.group())
+            hostname = json_data.get("body", {}).get("hostname", "")
+            server_list.append(hostname)
+
+    # Same server should not be contacted twice in a row
+    assert len(server_list) != 0
+    assert not has_duplicates(server_list)
+
+    ssh_client.exec_command("sudo iptables -D OUTPUT -p tcp -m tcp --sport 8765 -j DROP")
+    ssh_client.exec_command("sudo iptables -D OUTPUT -p tcp -m tcp --dport 8765 -j DROP")
+
+
+@pytest.mark.skip("LVPN-3428, need a discussion here")
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(80)
+def test_direct_connection_rtt_and_loss():
+    def get_loss(ping_output: str) -> float:
+        """ pass `ping_output`, and get loss returned. """
+        return float(ping_output.split("\n")[-3].split(", ")[2].split("%")[0])
+
+    def get_average_rtt(ping_output: str) -> float:
+        """ pass `ping_output`, and get average rtt returned. """
+        return float(ping_output.split("\n")[-2].split("/")[4])
+
+    def base_test(log: str, peer_hostname: str):
+        log = log.split("\n")
+        log_relay_events = meshnet.get_lines_with_keywords(log, [peer_hostname, "body", "relay", "connected"])
+        log_direct_events = meshnet.get_lines_with_keywords(log, [peer_hostname, "body", "direct", "connected"])
+
+        # Sometimes no relay lines show up, but direct ones do instead. If that happens, direct formed, so we can continue
+        if len(log_relay_events) != 0:
+            log_relay_event_time = datetime.strptime(log_relay_events[0].split(" ")[1], "%H:%M:%S")
+            log_direct_event_time = datetime.strptime(log_direct_events[0].split(" ")[1], "%H:%M:%S")
+
+            assert (log_direct_event_time - log_relay_event_time).total_seconds() < meshnet.TELIO_EXPECTED_RELAY_TO_DIRECT_TIME
+        elif len(log_relay_events) == 0 and len(log_direct_events) > 0:
+            pass
+
+        # RTT & loss
+        ping_output = sh.ping("-c", "20", peer_hostname)
+        assert get_average_rtt(ping_output) <= meshnet.TELIO_EXPECTED_RTT
+        assert get_loss(ping_output) <= meshnet.TELIO_EXPECTED_PACKET_LOSS
+
+    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+
+    with open(logging.FILE) as tester_log:
+        log_content = tester_log.read()
+        qapeer_hostname = peer_list.get_external_peer().hostname
+        base_test(log_content, qapeer_hostname)

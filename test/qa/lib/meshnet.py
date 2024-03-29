@@ -11,6 +11,10 @@ from . import daemon, info, logging, login, meshnet, ssh
 
 PEER_USERNAME = os.environ.get("QA_PEER_USERNAME")
 
+TELIO_EXPECTED_RELAY_TO_DIRECT_TIME = 5.0
+TELIO_EXPECTED_RTT = 5.0
+TELIO_EXPECTED_PACKET_LOSS = 0.0
+
 LANS = [
     "169.254.0.0/16",
     "192.168.0.0/16",
@@ -63,6 +67,9 @@ class TestUtils:
         sh.nordvpn.set.defaults()
         daemon.stop_peer(ssh_client)
         daemon.stop()
+        sh.sudo.iptables("-F")
+        ssh_client.exec_command("sudo iptables -F")
+
 
 
 class PeerName(Enum):
@@ -631,3 +638,7 @@ def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, retry: int = 5) -> bool:
 
 def is_connect_successful(output:str, peer_hostname: str):
     return (MSG_ROUTING_SUCCESS % peer_hostname) in output
+
+def get_lines_with_keywords(lines: list[str], keywords: list[str]) -> list:
+    """ returns list with elements, that contain specified `keywords`. """
+    return [line.strip() for line in lines if all(keyword in line for keyword in keywords)]
