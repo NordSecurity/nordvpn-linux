@@ -23,7 +23,7 @@ def teardown_function(function):  # noqa: ARG001
 
 
 def base_test_peer_list(filter_list: list[str] = None) -> None:
-    ssh_client.exec_command("nordvpn mesh peer list")
+    remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
 
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
@@ -50,7 +50,10 @@ def base_test_peer_list(filter_list: list[str] = None) -> None:
         assert local_formed_list == local_peer_list.split("\n")
 
     if "External Peers:" in "\n".join(local_formed_list) and "External Peers:\n[no peers]" not in "\n".join(local_formed_list):
-        assert "Status: connected" in local_formed_list
+        peer_lists = [local_formed_list, remote_peer_list]
+        
+        for list in peer_lists:
+            assert "Status: connected" in list, "Status: connected not found in peer list"
 
 
 @pytest.mark.parametrize("external", [True, False], ids=lambda value: "external" if value else "")
