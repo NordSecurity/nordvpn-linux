@@ -326,6 +326,11 @@ MESHNET_ALIAS = [
     "mesh"
 ]
 
+MSG_PEER_UNKNOWN = "Peer '%s' is unknown."
+MSG_PEER_OFFLINE = "Connect to other mesh peer failed - check if peer '%s' is online."
+MSG_ROUTING_NEED_NORDLYNX = "NordLynx technology must be set to use this feature."
+MSG_ROUTING_SUCCESS = "You are connected to Meshnet exit node '%s'."
+
 def add_peer(ssh_client: ssh.Ssh,
              tester_allow_fileshare: bool = True,
              tester_allow_routing: bool = True,
@@ -574,3 +579,6 @@ def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, retry: int = 5) -> bool:
     output = ssh_client.exec_command("nordvpn mesh peer list")
     print(output)
     return False
+
+def is_connect_successful(output:str, peer_hostname: str):
+    return (MSG_ROUTING_SUCCESS % peer_hostname) in output
