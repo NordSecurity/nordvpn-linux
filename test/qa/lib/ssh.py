@@ -45,7 +45,7 @@ class Ssh:
 
     class Network:
         def __init__(self, ssh_class_instance):
-            self.ssh_class_instance = ssh_class_instance
+            self.ssh_class_instance: Ssh = ssh_class_instance
 
         def _is_internet_reachable(self, retry=5) -> bool:
             """ returns True when remote host is reachable by it's public IP. """
@@ -75,6 +75,16 @@ class Ssh:
         def is_not_available(self, retry=5) -> bool:
             """ returns True when network access is not available. """
             return not self._is_internet_reachable(retry) and self._is_dns_not_resolvable(retry)
+
+        def ping(self, target: str, retry=5) -> bool:
+            i = 0
+            while i < retry:
+                try:
+                    return "icmp_seq=" in self.ssh_class_instance.exec_command(f"ping -c 1 -w 1 {target}")
+                except RuntimeError:
+                    time.sleep(1)
+                    i += 1
+            return False
 
         def get_external_device_ip(self) -> str:
             """Returns external device IP."""

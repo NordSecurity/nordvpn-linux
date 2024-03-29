@@ -282,3 +282,15 @@ def test_direct_connection_rtt_and_loss():
         log_content = tester_log.read()
         qapeer_hostname = peer_list.get_external_peer().hostname
         base_test(log_content, qapeer_hostname)
+
+
+def test_incoming_connections():
+    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    local_hostname = peer_list.get_this_device().hostname
+    peer_hostname = peer_list.get_external_peer().hostname
+
+    sh.nordvpn.mesh.peer.incoming.deny(peer_hostname)
+    assert not ssh_client.network.ping(local_hostname, retry=1)
+
+    ssh_client.exec_command(f"nordvpn mesh peer incoming deny {local_hostname}")
+    assert not meshnet.is_peer_reachable(ssh_client, peer_list.get_external_peer(), retry=1)
