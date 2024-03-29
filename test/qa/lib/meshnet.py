@@ -76,6 +76,7 @@ class PeerName(Enum):
     Hostname = 0
     Ip = 1
     Pubkey = 2
+    Nickname = 3
 
 
 class Peer:
@@ -618,10 +619,18 @@ def get_clean_peer_list(peer_list: str):
     return output
 
 
-def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, retry: int = 5) -> bool:
+def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, peer_name: PeerName = PeerName.Hostname, retry: int = 5) -> bool:
     """Returns True when ping to peer succeeds."""
+
     output = ssh_client.exec_command("nordvpn mesh peer list")
-    peer_hostname = peer.hostname
+
+    if peer_name == PeerName.Hostname:
+        peer_hostname = peer.hostname
+    elif peer_name == PeerName.Ip:
+        peer_hostname = peer.ip
+    elif peer_name == PeerName.Nickname:
+        peer_hostname = peer.nickname
+
     i = 0
     while i < retry:
         try:

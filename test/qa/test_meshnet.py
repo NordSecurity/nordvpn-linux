@@ -31,10 +31,28 @@ def teardown_function(function):  # noqa: ARG001
 
 
 def test_meshnet_connect():
-    # Ideally peer update should happen through Notification Center, but that doesn't work often
-    sh.nordvpn.meshnet.peer.refresh()
     peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer()
-    assert meshnet.is_peer_reachable(ssh_client, peer)
+    this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer()
+
+    nickname = "remote-machine"
+    sh.nordvpn.mesh.peer.nick.set(peer.hostname, nickname)
+
+    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer() # Refresh nickname
+
+    assert meshnet.is_peer_reachable(ssh_client, peer, meshnet.PeerName.Hostname)
+    assert meshnet.is_peer_reachable(ssh_client, peer, meshnet.PeerName.Ip)
+    assert meshnet.is_peer_reachable(ssh_client, peer, meshnet.PeerName.Nickname)
+    assert nickname == peer.nickname
+
+    nickname = "local-machine"
+    ssh_client.exec_command(f"nordvpn mesh peer nick set {this_device.hostname} {nickname}")
+
+    this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer() # Refresh nickname
+
+    assert ssh_client.network.ping(this_device.hostname)
+    assert ssh_client.network.ping(this_device.ip)
+    assert ssh_client.network.ping(this_device.nickname)
+    assert nickname == this_device.nickname
 
 
 def test_mesh_removed_machine_by_other():
