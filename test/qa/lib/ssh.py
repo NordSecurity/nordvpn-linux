@@ -5,7 +5,7 @@ import time
 import paramiko
 import pytest
 
-from . import network
+import lib
 
 
 class Ssh:
@@ -78,7 +78,7 @@ class Ssh:
 
         def get_external_device_ip(self) -> str:
             """Returns external device IP."""
-            cmd = f"wget -qO- {network.API_EXTERNAL_IP}"
+            cmd = f"wget -qO- {lib.API_EXTERNAL_IP}"
             output = self.ssh_class_instance.exec_command(cmd)
 
             try:

@@ -89,7 +89,7 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
     assert network.is_connected()
     assert my_ip != network.get_external_device_ip()
 
-    ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
+    ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
@@ -108,7 +108,7 @@ def test_allowlist_subnet_connect(tech, proto, obfuscated):
 
     my_ip = network.get_external_device_ip()
 
-    ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
+    ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
@@ -165,7 +165,7 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
 def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
+    ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
@@ -186,7 +186,7 @@ def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
     sh.nordvpn.connect()
     assert my_ip != network.get_external_device_ip()
 
-    ip_provider_addresses = socket.gethostbyname_ex(urlparse(network.API_EXTERNAL_IP).netloc)[2]
+    ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
