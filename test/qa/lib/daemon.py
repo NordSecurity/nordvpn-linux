@@ -156,3 +156,21 @@ def is_peer_running(ssh_client: ssh.Ssh) -> bool:
         return True
     except Exception:  # noqa: BLE001
         return False
+
+
+def get_unavailable_groups():
+    """Returns groups that are not available with current connection settings."""
+    all_groups = ['Africa_The_Middle_East_And_India',
+                  'Asia_Pacific',
+                  'Dedicated_IP',
+                  'Double_VPN',
+                  'Europe',
+                  'Obfuscated_Servers',
+                  'Onion_Over_VPN',
+                  'P2P',
+                  'Standard_VPN_Servers',
+                  'The_Americas']
+
+    current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split(", ")
+
+    return set(all_groups) - set(current_groups)

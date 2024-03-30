@@ -376,24 +376,6 @@ def test_connect_to_city(tech, proto, obfuscated, city):
     disconnect_base_test()
 
 
-def get_unavailable_groups():
-    """Returns groups that are not available with current connection settings."""
-    all_groups = ['Africa_The_Middle_East_And_India',
-                  'Asia_Pacific',
-                  'Dedicated_IP',
-                  'Double_VPN',
-                  'Europe',
-                  'Obfuscated_Servers',
-                  'Onion_Over_VPN',
-                  'P2P',
-                  'Standard_VPN_Servers',
-                  'The_Americas']
-
-    current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split(", ")
-
-    return set(all_groups) - set(current_groups)
-
-
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -403,7 +385,7 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    unavailable_groups = get_unavailable_groups()
+    unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -422,7 +404,7 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    unavailable_groups = get_unavailable_groups()
+    unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
         name = server.get_hostname_by(group_id=group)[1].split(".")[0]
