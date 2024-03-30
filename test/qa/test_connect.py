@@ -378,7 +378,7 @@ def test_connect_to_city(tech, proto, obfuscated, city):
 
 def get_unavailable_groups():
     """Returns groups that are not available with current connection settings."""
-    ALL_GROUPS = ['Africa_The_Middle_East_And_India',  # noqa: N806
+    all_groups = ['Africa_The_Middle_East_And_India',
                   'Asia_Pacific',
                   'Dedicated_IP',
                   'Double_VPN',
@@ -389,9 +389,9 @@ def get_unavailable_groups():
                   'Standard_VPN_Servers',
                   'The_Americas']
 
-    CURRENT_GROUPS = str(sh.nordvpn.groups(_tty_out=False)).strip().split(", ")  # noqa: B005, N806
+    current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split(", ")
 
-    return set(ALL_GROUPS) - set(CURRENT_GROUPS)
+    return set(all_groups) - set(current_groups)
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -403,11 +403,9 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    UNAVAILABLE_GROUPS = get_unavailable_groups()  # noqa: N806
-    logging.log("UNAVAILABLE_GROUPS: " + str(UNAVAILABLE_GROUPS))
+    unavailable_groups = get_unavailable_groups()
 
-    for group in UNAVAILABLE_GROUPS:
-        logging.log("CHECKING_GROUP: " + group)
+    for group in unavailable_groups:
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.connect(group)
 
@@ -424,12 +422,11 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    UNAVAILABLE_GROUPS = get_unavailable_groups()  # noqa: N806
-    logging.log("UNAVAILABLE_GROUPS: " + str(UNAVAILABLE_GROUPS))
+    unavailable_groups = get_unavailable_groups()
 
-    for group in UNAVAILABLE_GROUPS:
+    for group in unavailable_groups:
         name = server.get_hostname_by(group_id=group)[1].split(".")[0]
-        logging.log("CHECKING_GROUP: " + group)
+
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.connect(name)
 
