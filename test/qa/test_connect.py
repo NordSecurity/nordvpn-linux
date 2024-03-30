@@ -389,8 +389,7 @@ def get_unavailable_groups():
                   'Standard_VPN_Servers',
                   'The_Americas']
 
-    # TODO: Fix .strip("%-\r  ")
-    CURRENT_GROUPS = str(sh.nordvpn.groups()).strip("%-\r  ").strip().split(", ")  # noqa: B005, N806
+    CURRENT_GROUPS = str(sh.nordvpn.groups(_tty_out=False)).strip().split(", ")  # noqa: B005, N806
 
     return set(ALL_GROUPS) - set(CURRENT_GROUPS)
 
@@ -457,8 +456,7 @@ def test_status_connected(tech, proto, obfuscated):
 
     status_time = time.monotonic()
 
-    # TODO: Fix .lstrip('\r-\r  \r\r-\r  \r')
-    status_output = sh.nordvpn.status().lstrip('\r-\r  \r\r-\r  \r')  # noqa: B005
+    status_output = sh.nordvpn.status(_tty_out=False)
     status_info = {a.strip().lower(): b.strip()
                     for a, b in (element.split(':')
                                 for element in
