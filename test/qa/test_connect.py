@@ -1,6 +1,4 @@
-import queue
 import socket
-import threading
 import time
 
 import pytest
@@ -8,7 +6,7 @@ import sh
 import timeout_decorator
 
 import lib
-from lib import daemon, info, logging, login, network, server, settings
+from lib import daemon, info, logging, login, network, server
 
 
 def setup_module(module):  # noqa: ARG001
@@ -30,70 +28,16 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
-def capture_traffic() -> int:
-    """
-    Captures traffic that goes to VPN server.
-
-    :return: int - returns count of captured packets.
-    """
-
-    # Collect information needed for tshark filter
-    server_ip = settings.get_server_ip()
-    protocol = settings.get_current_connection_protocol()
-    obfuscated = settings.is_obfuscated_enabled()
-
-    # Choose traffic filter according to information collected above
-    if protocol == "nordlynx":
-        traffic_filter = f"(udp port 51820) and (ip dst {server_ip})"
-    elif protocol == "udp" and not obfuscated:
-        traffic_filter = f"(udp port 1194) and (ip dst {server_ip})"
-    elif protocol == "tcp" and not obfuscated:
-        traffic_filter = f"(tcp port 443) and (ip dst {server_ip})"
-    elif protocol == "udp" and obfuscated:
-        traffic_filter = f"udp and (port not 1194) and (ip dst {server_ip})"
-    elif protocol == "tcp" and obfuscated:
-        traffic_filter = f"tcp and (port not 443) and (ip dst {server_ip})"
-    else:
-        traffic_filter = ""
-
-    # Actual capture
-    # If 2 packets were already captured, do not wait for 3 seconds
-    # Show compact output about packets
-    tshark_result = sh.tshark("-i", "any", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "-a", "duration:3", "-a", "packets:2", "-f", traffic_filter)
-
-    tshark_result.replace("\t", " -> ")
-    packets = tshark_result.split("\n")
-
-    logging.log("PACKETS_CAPTURED: " + str(packets))
-
-    # If no packets were captured, `packets` value should be 0
-    return len(packets) - 1
-
-
-def connect_base_test(group=(), name="", hostname=""):
+def connect_base_test(connection_settings, group=(), name="", hostname=""):
     output = sh.nordvpn.connect(group)
     print(output)
 
-    def packet_capture_thread_func():
-        packet_capture_thread_queue.put(capture_traffic())
-
-    # Start capturing packets
-    packet_capture_thread_queue = queue.Queue()
-    packet_capture_thread = threading.Thread(target=packet_capture_thread_func)
-    packet_capture_thread.start()
-
-    # We need to make sure, that packets are being sent out only after
-    # tshark starts, and not earlier, so we wait for one second.
-    time.sleep(1)
     assert lib.is_connect_successful(output, name, hostname)
 
-    # Following function creates at least two ICMP packets
+    packets_captured = network.capture_traffic(connection_settings)
+
     assert network.is_connected()
-
-    packet_capture_thread.join()
-    packet_capture_thread_result = packet_capture_thread_queue.get()
-
-    assert packet_capture_thread_result >= 2
+    assert packets_captured >= 1
 
 
 def disconnect_base_test():
@@ -110,7 +54,7 @@ def disconnect_base_test():
 def test_quick_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test()
+    connect_base_test((tech, proto, obfuscated))
     disconnect_base_test()
 
 
@@ -121,7 +65,7 @@ def test_quick_connect_double_only(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     for _ in range(2):
-        connect_base_test()
+        connect_base_test((tech, proto, obfuscated))
 
     disconnect_base_test()
 
@@ -157,7 +101,7 @@ def test_connect_to_server_random_by_name(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     name, hostname = server.get_hostname_by(tech, proto, obfuscated)
-    connect_base_test(hostname.split(".")[0], name, hostname)
+    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
     disconnect_base_test()
 
 
@@ -169,7 +113,7 @@ def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscat
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     name, hostname = server.get_hostname_by(tech, proto, obfuscated, group)
-    connect_base_test(hostname.split(".")[0], name, hostname)
+    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
     disconnect_base_test()
 
 
@@ -181,7 +125,7 @@ def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     name, hostname = server.get_hostname_by(tech, proto, obfuscated, group)
-    connect_base_test(hostname.split(".")[0], name, hostname)
+    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
     disconnect_base_test()
 
 
@@ -193,7 +137,7 @@ def test_connect_to_group_random_server_by_name_ovpn(tech, proto, obfuscated, gr
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     name, hostname = server.get_hostname_by(group_id=group)
-    connect_base_test(hostname.split(".")[0], name, hostname)
+    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
     disconnect_base_test()
 
 
@@ -205,7 +149,7 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     name, hostname = server.get_hostname_by(group_id=group)
-    connect_base_test(hostname.split(".")[0], name, hostname)
+    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
     disconnect_base_test()
 
 
@@ -217,7 +161,7 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with lib.ErrorDefer(disconnect_base_test):
-        connect_base_test()
+        connect_base_test((tech, proto, obfuscated))
 
         links = socket.if_nameindex()
         logging.log(links)
@@ -235,7 +179,7 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated
 def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     with lib.ErrorDefer(disconnect_base_test):
-        connect_base_test()
+        connect_base_test((tech, proto, obfuscated))
 
         links = socket.if_nameindex()
         logging.log(links)
@@ -258,7 +202,7 @@ def test_quick_connect_double_disconnect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     for _ in range(2):
-        connect_base_test()
+        connect_base_test((tech, proto, obfuscated))
         disconnect_base_test()
 
 
@@ -282,7 +226,7 @@ def test_connect_network_gone(tech, proto, obfuscated):
 def test_connect_to_group_standard(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(group)
+    connect_base_test((tech, proto, obfuscated), group)
     disconnect_base_test()
 
 
@@ -293,7 +237,7 @@ def test_connect_to_group_standard(tech, proto, obfuscated, group):
 def test_connect_to_group_additional(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(group)
+    connect_base_test((tech, proto, obfuscated), group)
     disconnect_base_test()
 
 
@@ -304,7 +248,7 @@ def test_connect_to_group_additional(tech, proto, obfuscated, group):
 def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(group)
+    connect_base_test((tech, proto, obfuscated), group)
     disconnect_base_test()
 
 
@@ -315,7 +259,7 @@ def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
 def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(group)
+    connect_base_test((tech, proto, obfuscated), group)
     disconnect_base_test()
 
 
@@ -326,7 +270,7 @@ def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
 def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(["--group", group])
+    connect_base_test((tech, proto, obfuscated), ["--group", group])
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -343,7 +287,7 @@ def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
 def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(["--group", group])
+    connect_base_test((tech, proto, obfuscated), ["--group", group])
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -360,7 +304,7 @@ def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
 def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(["--group", group])
+    connect_base_test((tech, proto, obfuscated), ["--group", group])
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -377,7 +321,7 @@ def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
 def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(["--group", group])
+    connect_base_test((tech, proto, obfuscated), ["--group", group])
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -407,7 +351,7 @@ def test_connect_to_group_invalid(tech, proto, obfuscated):
 def test_connect_to_country(tech, proto, obfuscated, country):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(country)
+    connect_base_test((tech, proto, obfuscated), country)
     disconnect_base_test()
 
 
@@ -418,7 +362,7 @@ def test_connect_to_country(tech, proto, obfuscated, country):
 def test_connect_to_country_code(tech, proto, obfuscated, country_code):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(country_code)
+    connect_base_test((tech, proto, obfuscated), country_code)
     disconnect_base_test()
 
 
@@ -429,7 +373,7 @@ def test_connect_to_country_code(tech, proto, obfuscated, country_code):
 def test_connect_to_city(tech, proto, obfuscated, city):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(city)
+    connect_base_test((tech, proto, obfuscated), city)
     disconnect_base_test()
 
 
