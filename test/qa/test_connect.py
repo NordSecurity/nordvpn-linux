@@ -9,23 +9,19 @@ import lib
 from lib import daemon, info, logging, login, network, server
 
 
-def setup_module(module):  # noqa: ARG001
+def setup_function(function):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
+
+    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.set.defaults()
+    daemon.stop()
 
 
 def connect_base_test(connection_settings, group=(), name="", hostname=""):
@@ -160,16 +156,17 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
 def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    with lib.ErrorDefer(disconnect_base_test):
-        connect_base_test((tech, proto, obfuscated))
+    connect_base_test((tech, proto, obfuscated))
 
-        links = socket.if_nameindex()
-        logging.log(links)
-        default_gateway = network.stop()
-        network.start(default_gateway)
-        daemon.wait_for_reconnect(links)
-        assert network.is_connected()
-        logging.log(info.collect())
+    links = socket.if_nameindex()
+    logging.log(links)
+    default_gateway = network.stop()
+    network.start(default_gateway)
+    daemon.wait_for_reconnect(links)
+    assert network.is_connected()
+    logging.log(info.collect())
+
+    disconnect_base_test()
 
 
 # for Nordlynx normally the tunnel is not recreated
@@ -178,21 +175,23 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated
 @timeout_decorator.timeout(40)
 def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    with lib.ErrorDefer(disconnect_base_test):
-        connect_base_test((tech, proto, obfuscated))
 
-        links = socket.if_nameindex()
-        logging.log(links)
-        default_gateway = network.stop()
-        network.start(default_gateway)
+    connect_base_test((tech, proto, obfuscated))
 
-        # wait for internet
-        network.is_available(10)
+    links = socket.if_nameindex()
+    logging.log(links)
+    default_gateway = network.stop()
+    network.start(default_gateway)
 
-        assert network.is_connected()
-        assert links == socket.if_nameindex()
+    # wait for internet
+    network.is_available(10)
 
-        logging.log(info.collect())
+    assert network.is_connected()
+    assert links == socket.if_nameindex()
+
+    logging.log(info.collect())
+
+    disconnect_base_test()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -448,56 +447,55 @@ def test_status_connected(tech, proto, obfuscated):
     assert network.is_disconnected()
     assert "Disconnected" in sh.nordvpn.status()
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        name, hostname = server.get_hostname_by(technology=tech, protocol=proto, obfuscated=obfuscated)
-        sh.nordvpn.connect(hostname.split(".")[0])
+    name, hostname = server.get_hostname_by(technology=tech, protocol=proto, obfuscated=obfuscated)
+    sh.nordvpn.connect(hostname.split(".")[0])
 
-        connect_time = time.monotonic()
+    connect_time = time.monotonic()
 
-        time.sleep(15)
-        sh.ping("-c", "1", "-w", "1", "1.1.1.1")
+    time.sleep(15)
+    sh.ping("-c", "1", "-w", "1", "1.1.1.1")
 
-        status_time = time.monotonic()
+    status_time = time.monotonic()
 
-        # TODO: Fix .lstrip('\r-\r  \r\r-\r  \r')
-        status_output = sh.nordvpn.status().lstrip('\r-\r  \r\r-\r  \r')  # noqa: B005
-        status_info = {a.strip().lower(): b.strip()
-                       for a, b in (element.split(':')
-                                    for element in
-                                    filter(lambda line: len(line.split(':')) == 2, status_output.split('\n')))}
+    # TODO: Fix .lstrip('\r-\r  \r\r-\r  \r')
+    status_output = sh.nordvpn.status().lstrip('\r-\r  \r\r-\r  \r')  # noqa: B005
+    status_info = {a.strip().lower(): b.strip()
+                    for a, b in (element.split(':')
+                                for element in
+                                filter(lambda line: len(line.split(':')) == 2, status_output.split('\n')))}
 
-        print("status_info: " + str(status_info))
-        print("status_info: " + str(sh.nordvpn.status()))
+    print("status_info: " + str(status_info))
+    print("status_info: " + str(sh.nordvpn.status()))
 
-        assert "Connected" in status_info['status']
+    assert "Connected" in status_info['status']
 
-        assert hostname in status_info['hostname']
+    assert hostname in status_info['hostname']
 
-        assert socket.gethostbyname(hostname) in status_info['ip']
+    assert socket.gethostbyname(hostname) in status_info['ip']
 
-        city, country = server.get_server_info(name)
-        assert country in status_info['country']
-        assert city in status_info['city']
+    city, country = server.get_server_info(name)
+    assert country in status_info['country']
+    assert city in status_info['city']
 
-        assert tech.upper() in status_info['current technology']
+    assert tech.upper() in status_info['current technology']
 
-        if tech == "openvpn":
-            assert proto.upper() in status_info['current protocol']
-        else:
-            assert "UDP" in status_info['current protocol']
+    if tech == "openvpn":
+        assert proto.upper() in status_info['current protocol']
+    else:
+        assert "UDP" in status_info['current protocol']
 
-        transfer_received = float(status_info['transfer'].split(" ")[0])
-        transfer_sent = float(status_info['transfer'].split(" ")[3])
+    transfer_received = float(status_info['transfer'].split(" ")[0])
+    transfer_sent = float(status_info['transfer'].split(" ")[3])
 
-        assert transfer_received >= 0
-        assert transfer_sent > 0
+    assert transfer_received >= 0
+    assert transfer_sent > 0
 
-        time_connected = int(status_info['uptime'].split(" ")[0])
-        time_passed = status_time - connect_time
-        if "minute" in status_info["uptime"]:
-            time_connected_seconds = int(status_info['uptime'].split(" ")[2])
-            assert time_passed - 1 <= time_connected * 60 + time_connected_seconds <= time_passed + 1
-        else:
-            assert time_passed - 1 <= time_connected <= time_passed + 1
+    time_connected = int(status_info['uptime'].split(" ")[0])
+    time_passed = status_time - connect_time
+    if "minute" in status_info["uptime"]:
+        time_connected_seconds = int(status_info['uptime'].split(" ")[2])
+        assert time_passed - 1 <= time_connected * 60 + time_connected_seconds <= time_passed + 1
+    else:
+        assert time_passed - 1 <= time_connected <= time_passed + 1
 
-    assert network.is_disconnected()
+    disconnect_base_test()
