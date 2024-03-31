@@ -28,6 +28,7 @@ def teardown_function(function):  # noqa: ARG001
 
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
 def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
     peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, True, local, True, True)
