@@ -174,3 +174,10 @@ def get_unavailable_groups():
     current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split(", ")
 
     return set(all_groups) - set(current_groups)
+
+
+def get_status_data() -> dict:
+    lines = sh.nordvpn.status(_tty_out=False).strip().split('\n')
+    colon_separated_pairs = (element.split(':') for element in lines)
+    formatted_pairs = {(key.lower(), value.strip()) for key, value in colon_separated_pairs}
+    return dict(formatted_pairs)

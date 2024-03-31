@@ -434,15 +434,10 @@ def test_status_connected(tech, proto, obfuscated):
     sh.ping("-c", "1", "-w", "1", "1.1.1.1")
 
     status_time = time.monotonic()
-
-    status_output = sh.nordvpn.status(_tty_out=False)
-    status_info = {a.strip().lower(): b.strip()
-                    for a, b in (element.split(':')
-                                for element in
-                                filter(lambda line: len(line.split(':')) == 2, status_output.split('\n')))}
+    status_info = daemon.get_status_data()
 
     print("status_info: " + str(status_info))
-    print("status_info: " + str(sh.nordvpn.status()))
+    print("actual_status: " + str(sh.nordvpn.status()))
 
     assert "Connected" in status_info['status']
 
