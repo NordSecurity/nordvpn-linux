@@ -76,7 +76,6 @@ def connect_and_capture_notifications(tech, proto, obfuscated) -> NotificationCa
     t_connect.join()
 
     return t_connect.value
-    # Return types, reikia koki structa pakurt ir returnint
 
 
 def disconnect_and_capture_notifications() -> NotificationCaptureThreadResult:
