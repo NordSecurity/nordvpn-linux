@@ -115,7 +115,7 @@ def test_logout_disconnects():
     output = login.login_as("default")
     print(output)
 
-    output = sh.nordvpn.connect()
+    output = sh.nordvpn.connect(_tty_out=False)
     print(output)
 
     assert lib.is_connect_successful(output)

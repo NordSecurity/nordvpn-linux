@@ -38,7 +38,7 @@ def teardown_function(function):  # noqa: ARG001
 def test_connect_to_standard_group(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    output = sh.nordvpn.connect(group)
+    output = sh.nordvpn.connect(group, _tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()
@@ -56,7 +56,7 @@ def test_connect_to_standard_group(tech, proto, obfuscated, group):
 def test_connect_to_additional_group(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    output = sh.nordvpn.connect(group)
+    output = sh.nordvpn.connect(group, _tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()
@@ -81,14 +81,14 @@ def test_reconnect_matrix_standard(
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    output = sh.nordvpn.connect()
+    output = sh.nordvpn.connect(_tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    output = sh.nordvpn.connect()
+    output = sh.nordvpn.connect(_tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()
@@ -113,14 +113,14 @@ def test_reconnect_matrix_obfuscated(
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    output = sh.nordvpn.connect()
+    output = sh.nordvpn.connect(_tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    output = sh.nordvpn.connect()
+    output = sh.nordvpn.connect(_tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()
@@ -137,17 +137,17 @@ def test_reconnect_matrix_obfuscated(
 def test_connect_country_and_city(country, city):
     lib.set_technology_and_protocol("nordlynx", "", "")
 
-    output = sh.nordvpn.connect(country)
+    output = sh.nordvpn.connect(country, _tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()
 
-    output = sh.nordvpn.connect(city)
+    output = sh.nordvpn.connect(city, _tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()
 
-    output = sh.nordvpn.connect(country, city)
+    output = sh.nordvpn.connect(country, city, _tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()

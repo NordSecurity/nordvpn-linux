@@ -38,7 +38,7 @@ def test_api_call_after_vpn_connect():
     print(output)
     assert "Account Information:" in output
     # connect vpn
-    output = sh.nordvpn.connect()
+    output = sh.nordvpn.connect(_tty_out=False)
     print(output)
     assert lib.is_connect_successful(output)
     assert network.is_connected()

@@ -25,7 +25,7 @@ def teardown_function(function):  # noqa: ARG001
 
 
 def connect_base_test(connection_settings, group=(), name="", hostname=""):
-    output = sh.nordvpn.connect(group)
+    output = sh.nordvpn.connect(group, _tty_out=False)
     print(output)
 
     assert lib.is_connect_successful(output, name, hostname)
