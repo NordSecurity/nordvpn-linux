@@ -19,8 +19,23 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y tshark \
     # make sure, that Docker does not hang during installation, when we get TUI screen
     && yes yes | DEBIAN_FRONTEND=teletype dpkg-reconfigure wireshark-common \
+    # install add-apt-repository, to easily add repos to apt
+    && apt-get -y install software-properties-common \
+    # ensure PPA/deb/apt version of Firefox is preferred & install Firefox
+    && sudo add-apt-repository ppa:mozillateam/ppa \
+    && echo 'Package: *\nPin: release o=LP-PPA-mozillateam\nPin-Priority: 1001' > /etc/apt/preferences.d/mozilla-firefox \
+    && apt-get -y install firefox \
+    # install jq
+    && apt-get -y install jq \
     # cleanup
     && apt-get clean
+
+# Install geckodriver for selenium tests
+RUN url=$(curl -s https://api.github.com/repos/mozilla/geckodriver/releases/latest | jq -r \
+    ' .assets[].browser_download_url | select(contains("linux64")) | select(endswith("tar.gz"))') \
+    && curl -L -o geckodriver.tar.gz "$url" \
+    && tar -xvzf geckodriver.tar.gz -C /usr/bin \
+    && rm geckodriver.tar.gz
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
