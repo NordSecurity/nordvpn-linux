@@ -56,11 +56,11 @@ func (ti *Instance) ping() bool {
 	if !ti.state.daemonAvailable && daemonAvailable {
 		ti.state.daemonAvailable = true
 		changed = true
-		defer ti.notify(pInfo, "Connected to NordVPN daemon")
+		defer ti.notify("Connected to NordVPN daemon")
 	} else if ti.state.daemonAvailable && !daemonAvailable {
 		ti.state.daemonAvailable = false
 		changed = true
-		defer ti.notify(pInfo, "Disconnected from NordVPN daemon")
+		defer ti.notify("Disconnected from NordVPN daemon")
 	}
 
 	if ti.state.daemonError != daemonError {
@@ -82,11 +82,11 @@ func (ti *Instance) updateLoginStatus() bool {
 	if !ti.state.loggedIn && loggedIn {
 		ti.state.loggedIn = true
 		changed = true
-		defer ti.notify(pInfo, "Logged in")
+		defer ti.notify("Logged in")
 	} else if ti.state.loggedIn && !loggedIn {
 		ti.state.loggedIn = false
 		changed = true
-		defer ti.notify(pInfo, "Logged out")
+		defer ti.notify("Logged out")
 	}
 
 	ti.state.mu.Unlock()
@@ -112,10 +112,10 @@ func (ti *Instance) updateVpnStatus() bool {
 	if ti.state.vpnStatus != vpnStatus {
 		if vpnStatus == "Connected" {
 			systray.SetIconName(ti.iconConnected)
-			defer ti.notify(pInfo, "Connected to VPN server: %s", vpnHostname)
+			defer ti.notify("Connected to VPN server: %s", vpnHostname)
 		} else {
 			systray.SetIconName(ti.iconDisconnected)
-			defer ti.notify(pInfo, "Disconnected from VPN server")
+			defer ti.notify("Disconnected from VPN server")
 		}
 		ti.state.vpnStatus = vpnStatus
 		changed = true
@@ -162,7 +162,7 @@ func (ti *Instance) updateSettings() bool {
 	if !ti.state.notifyEnabled && settings.Notify {
 		ti.state.notifyEnabled = true
 		changed = true
-		defer ti.notify(pInfo, "Notifications enabled")
+		defer ti.notify("Notifications enabled")
 	}
 	if ti.state.notifyEnabled && !settings.Notify {
 		ti.state.notifyEnabled = false

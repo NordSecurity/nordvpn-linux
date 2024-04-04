@@ -58,7 +58,7 @@ func addDebugSection(ti *Instance) {
 	}()
 }
 
-func addQuitItem(quitChan chan<- norduser.StopRequest) {
+func addQuitItem(ti *Instance) {
 	systray.AddSeparator()
 	m := systray.AddMenuItem("Quit", "Quit")
 	m.Enable()
@@ -69,7 +69,7 @@ func addQuitItem(quitChan chan<- norduser.StopRequest) {
 		}
 		systray.Quit()
 		select {
-		case quitChan <- norduser.StopRequest{}:
+		case ti.quitChan <- norduser.StopRequest{}:
 		default:
 		}
 	}()

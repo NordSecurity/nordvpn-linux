@@ -81,7 +81,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 
 	onExit := func() {
 		now := time.Now()
-		log.Println("Exit at", now.String())
+		log.Println("Tray exit at", now.String())
 	}
 
 	ti := tray.NewTrayInstance(client, quitChan)

@@ -18,7 +18,7 @@ import (
 func (ti *Instance) login() {
 	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
 	if err != nil || resp.GetValue() {
-		ti.notify(pWarning, "You are already logged in")
+		ti.notify("You are already logged in")
 		return
 	}
 
@@ -27,7 +27,7 @@ func (ti *Instance) login() {
 		&pb.Empty{},
 	)
 	if err != nil {
-		ti.notify(pError, "Login error: %s", err)
+		ti.notify("Login error: %s", err)
 		return
 	}
 
@@ -37,7 +37,7 @@ func (ti *Instance) login() {
 			if err == io.EOF {
 				break
 			}
-			ti.notify(pError, "Login error: %s", err)
+			ti.notify("Login error: %s", err)
 			return
 		}
 
@@ -46,13 +46,13 @@ func (ti *Instance) login() {
 			cmd := exec.Command("xdg-open", url)
 			err = cmd.Start()
 			if err != nil {
-				ti.notify(pWarning, "Failed to start xdg-open: %v", err)
+				ti.notify("Failed to start xdg-open: %v", err)
 			}
 			err = cmd.Wait()
 
 			if err != nil {
-				ti.notify(pWarning, "Failed to open the web browser: %v", err)
-				ti.notify(pInfo, "Continue log in in the browser: %s", url)
+				ti.notify("Failed to open the web browser: %v", err)
+				ti.notify("Continue log in in the browser: %s", url)
 			}
 		}
 	}
@@ -63,7 +63,7 @@ func (ti *Instance) logout(persistToken bool) bool {
 		PersistToken: persistToken,
 	})
 	if err != nil {
-		ti.notify(pError, "Logout error: %s", err)
+		ti.notify("Logout error: %s", err)
 		return false
 	}
 
@@ -73,7 +73,7 @@ func (ti *Instance) logout(persistToken bool) bool {
 	case internal.CodeTokenInvalidated:
 		return true
 	default:
-		ti.notify(pError, cli.CheckYourInternetConnMessage)
+		ti.notify(cli.CheckYourInternetConnMessage)
 		return false
 	}
 }
@@ -94,7 +94,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		ServerGroup: serverGroup,
 	})
 	if err != nil {
-		ti.notify(pError, "Connect error: %s", err)
+		ti.notify("Connect error: %s", err)
 		return false
 	}
 
@@ -104,35 +104,35 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 			if err == io.EOF {
 				break
 			}
-			ti.notify(pError, "Connect error: %s", err)
+			ti.notify("Connect error: %s", err)
 			return false
 		}
 
 		switch out.Type {
 		case internal.CodeFailure:
-			ti.notify(pError, "Connect error: %s", nordclient.ConnectCantConnect)
+			ti.notify("Connect error: %s", nordclient.ConnectCantConnect)
 		case internal.CodeExpiredRenewToken:
-			ti.notify(pWarning, nordclient.RelogRequest)
+			ti.notify(nordclient.RelogRequest)
 			ti.login()
 			return ti.connect(serverTag, serverGroup)
 		case internal.CodeTokenRenewError:
-			ti.notify(pError, nordclient.AccountTokenRenewError)
+			ti.notify(nordclient.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
-			ti.notify(pError, cli.ErrAccountExpired.Error())
+			ti.notify(cli.ErrAccountExpired.Error())
 		case internal.CodeDisconnected:
-			ti.notify(pInfo, internal.DisconnectSuccess)
+			ti.notify(internal.DisconnectSuccess)
 		case internal.CodeTagNonexisting:
-			ti.notify(pError, internal.TagNonexistentErrorMessage)
+			ti.notify(internal.TagNonexistentErrorMessage)
 		case internal.CodeGroupNonexisting:
-			ti.notify(pError, internal.GroupNonexistentErrorMessage)
+			ti.notify(internal.GroupNonexistentErrorMessage)
 		case internal.CodeServerUnavailable:
-			ti.notify(pError, internal.ServerUnavailableErrorMessage)
+			ti.notify(internal.ServerUnavailableErrorMessage)
 		case internal.CodeDoubleGroupError:
-			ti.notify(pError, internal.DoubleGroupErrorMessage)
+			ti.notify(internal.DoubleGroupErrorMessage)
 		case internal.CodeVPNRunning:
-			ti.notify(pWarning, nordclient.ConnectConnected)
+			ti.notify(nordclient.ConnectConnected)
 		case internal.CodeUFWDisabled:
-			ti.notify(pWarning, nordclient.UFWDisabledMessage)
+			ti.notify(nordclient.UFWDisabledMessage)
 		case internal.CodeConnecting:
 		case internal.CodeConnected:
 			return true
@@ -145,7 +145,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 func (ti *Instance) disconnect() bool {
 	resp, err := ti.client.Disconnect(context.Background(), &pb.Empty{})
 	if err != nil {
-		ti.notify(pError, "Disconnect error: %s", err)
+		ti.notify("Disconnect error: %s", err)
 		return false
 	}
 
@@ -155,13 +155,13 @@ func (ti *Instance) disconnect() bool {
 			if err == io.EOF {
 				break
 			}
-			ti.notify(pError, "Disconnect error: %s", err)
+			ti.notify("Disconnect error: %s", err)
 			return false
 		}
 
 		switch out.Type {
 		case internal.CodeVPNNotRunning:
-			ti.notify(pWarning, cli.DisconnectNotConnected)
+			ti.notify(cli.DisconnectNotConnected)
 		case internal.CodeDisconnected:
 		}
 	}

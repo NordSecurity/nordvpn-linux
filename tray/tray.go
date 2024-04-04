@@ -110,7 +110,7 @@ func OnReady(ti *Instance) {
 			if ti.debugMode {
 				addDebugSection(ti)
 			}
-			addQuitItem(ti.quitChan)
+			addQuitItem(ti)
 			systray.Refresh()
 			<-ti.redrawChan
 			if ti.debugMode {

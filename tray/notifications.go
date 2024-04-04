@@ -18,7 +18,7 @@ const (
 	pError
 )
 
-func (ti *Instance) notify(mode logPriority, text string, a ...any) {
+func (ti *Instance) notify(text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
 	ti.state.mu.RLock()
 	notifyEnabled := ti.state.notifyEnabled
