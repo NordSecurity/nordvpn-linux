@@ -70,8 +70,6 @@ apps:
       - network-bind
       - norduser-autostart
       - desktop-legacy
-      - desktop
-      - unity7
     completer: usr/share/bash-completion/completions/nordvpn
     # Snap does not support zsh autocompletions. In order to enable them, after installing snap,
     # execute:
