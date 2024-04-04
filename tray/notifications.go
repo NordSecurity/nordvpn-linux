@@ -10,14 +10,6 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
-type logPriority int
-
-const (
-	pInfo logPriority = iota
-	pWarning
-	pError
-)
-
 func (ti *Instance) notify(text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
 	ti.state.mu.RLock()
