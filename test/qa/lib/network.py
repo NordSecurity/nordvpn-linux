@@ -1,17 +1,75 @@
 import socket
 import time
 from itertools import cycle
+from threading import Thread
 
 import pytest
 import requests
 import sh
 
-from . import daemon, firewall, info, logging
+from . import daemon, firewall, info, logging, settings
 
 # private variable for storing routes
 _blackholes = []
 
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
+
+TSHARK_FILTER_NORDLYNX = "(udp port 51820) and (ip dst %s)"
+TSHARK_FILTER_UDP = "(udp port 1194) and (ip dst %s)"
+TSHARK_FILTER_TCP = "(tcp port 443) and (ip dst %s)"
+TSHARK_FILTER_UDP_OBFUSCATED = "udp and (port not 1194) and (ip dst %s)"
+TSHARK_FILTER_TCP_OBFUSCATED = "tcp and (port not 443) and (ip dst %s)"
+
+class PacketCaptureThread(Thread):
+    def __init__(self, connection_settings):
+        Thread.__init__(self)
+        self.packets_captured: int = -1
+        self.connection_settings = connection_settings
+
+    def run(self):
+        self.packets_captured = _capture_packets(self.connection_settings)
+
+
+def _capture_packets(connection_settings: (str, str, str)) -> int:
+    technology = connection_settings[0]
+    protocol = connection_settings[1]
+    obfuscated = connection_settings[2]
+
+    # Collect information needed for tshark filter
+    server_ip = settings.get_server_ip()
+
+    # Choose traffic filter according to information collected above
+    if technology == "nordlynx" and protocol == "" and obfuscated == "":
+        traffic_filter = TSHARK_FILTER_NORDLYNX % server_ip
+    elif technology == "openvpn" and protocol == "udp" and obfuscated == "off":
+        traffic_filter = TSHARK_FILTER_UDP % server_ip
+    elif technology == "openvpn" and protocol == "tcp" and obfuscated == "off":
+        traffic_filter = TSHARK_FILTER_TCP % server_ip
+    elif technology == "openvpn" and protocol == "udp" and obfuscated == "on":
+        traffic_filter = TSHARK_FILTER_UDP_OBFUSCATED % server_ip
+    elif technology == "openvpn" and protocol == "tcp" and obfuscated == "on":
+        traffic_filter = TSHARK_FILTER_TCP_OBFUSCATED % server_ip
+
+    # If enough packets are captured, do not wait the duration time, exit early, show compact output
+    tshark_result: str = sh.tshark("-i", "any", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "-a", "duration:3", "-a", "packets:1", "-f", traffic_filter)
+
+    packets = tshark_result.strip().split("\n")
+
+    return len(packets)
+
+
+def capture_traffic(connection_settings) -> int:
+    """ Returns count of captured packets. """
+
+    # We try to capture packets using other thread
+    t_connect = PacketCaptureThread(connection_settings)
+    t_connect.start()
+
+    sh.ping("-c", "1", "-w", "1", "1.1.1.1")
+
+    t_connect.join()
+
+    return t_connect.packets_captured
 
 
 def _is_internet_reachable(retry=5) -> bool:

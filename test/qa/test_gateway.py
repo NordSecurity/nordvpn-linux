@@ -79,7 +79,7 @@ def test_default_gateway_is_detected():
                     with lib.ErrorDefer(remove_iface):
                         print(sh.ip.route())
                         # Connect to VPN
-                        output = sh.nordvpn.connect()
+                        output = sh.nordvpn.connect(_tty_out=False)
                         print(output)
                         assert lib.is_connect_successful(output)
                         assert network.is_connected()

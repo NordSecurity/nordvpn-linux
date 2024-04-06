@@ -42,7 +42,7 @@ def test_ipv6_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
+        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS), _tty_out=False)
         print(output)
         assert lib.is_connect_successful(output)
         assert network.is_ipv4_and_ipv6_connected(20)
@@ -62,7 +62,7 @@ def test_ipv6_enabled_ipv4_connect():
     lib.set_technology_and_protocol("openvpn", "udp", "off")
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect("pl128")
+        output = sh.nordvpn.connect("pl128", _tty_out=False)
         print(output)
         assert lib.is_connect_successful(output)
         assert network.is_connected()
@@ -87,7 +87,7 @@ def test_ipv6_double_connect_without_disconnect():
     lib.set_technology_and_protocol("openvpn", "udp", "off")
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect("pl128")
+        output = sh.nordvpn.connect("pl128", _tty_out=False)
         print(output)
         assert lib.is_connect_successful(output)
         assert network.is_connected()
@@ -98,7 +98,7 @@ def test_ipv6_double_connect_without_disconnect():
     assert "Cannot assign requested address" in str(ex.value)
 
     with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS))
+        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS), _tty_out=False)
         print(output)
         assert lib.is_connect_successful(output)
         assert network.is_ipv4_and_ipv6_connected(20)

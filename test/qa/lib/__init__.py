@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from enum import Enum
 from typing import Callable, Union
@@ -271,13 +272,19 @@ def flush_allowlist():
 
 
 # returns True when successfully connected
-def is_connect_successful(output, name="", hostname=""):
-    if name and hostname:
-        return (
-                f"Connecting to {name} ({hostname})"
-                and f"You are connected to {name} ({hostname})!" in output
-        )
-    return "Connecting to" and "You are connected to" in output
+def is_connect_successful(output: str, name: str = "", hostname: str = ""):
+    if not name and not hostname:
+        pattern = r'Connecting to (.*?) \((.*?)\)'
+        match = re.match(pattern, str(output))
+
+        if match:
+            name = match.group(1)
+            hostname = match.group(2)
+
+    return (
+        f"Connecting to {name} ({hostname})" in output
+        and f"You are connected to {name} ({hostname})!" in output
+    )
 
 
 # returns True when failed to connect
