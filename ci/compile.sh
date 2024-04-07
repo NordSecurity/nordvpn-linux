@@ -4,6 +4,7 @@ set -euxo pipefail
 source "${WORKDIR}"/ci/env.sh
 source "${WORKDIR}"/ci/archs.sh
 
+
 # Since race detector has huge performance price and it works only on amd64 and does not
 # work with pie executables, its enabled only for development builds.
 # shellcheck disable=SC2153
@@ -30,8 +31,11 @@ declare -A names_map=(
 	[norduser]=norduserd
 )
 
+declare -A cross_compiler_map
+declare -A cross_compiler_map_openwrt
+
 # shellcheck disable=SC2034
-declare -A cross_compiler_map=(
+cross_compiler_map=(
     [i386]=i686-linux-gnu-gcc
     [amd64]=x86_64-linux-gnu-gcc
     [armel]=arm-linux-gnueabi-gcc
@@ -39,13 +43,23 @@ declare -A cross_compiler_map=(
     [aarch64]=aarch64-linux-gnu-gcc
 )
 
+cross_compiler_map_openwrt=(
+    [amd64]="x86_64-openwrt-linux-musl-gcc"
+  	[aarch64]="aarch64-openwrt-linux-musl-gcc"
+)
+
 # Required by Go when cross-compiling
 export CGO_ENABLED=1
-GOARCH="${ARCHS_GO["${ARCH}"]}"
-export GOARCH="${GOARCH}"
+
+if [[ "${OS}" == "openwrt" ]]; then
+	mkdir -p "$GO_BUILD_DIR/bin" "$GO_BUILD_CACHE_DIR" "$GO_MOD_CACHE_DIR" "$GO_BUILD_BIN_DIR"
+else
+	GOARCH="${ARCHS_GO["${ARCH}"]}"
+	export GOARCH
+fi
 
 # C compiler flags for binary hardening.
-export CGO_CFLAGS="-g -O2 -D_FORTIFY_SOURCE=2"
+export CGO_CFLAGS="${CGO_CFLAGS:-""} -g -O2 -D_FORTIFY_SOURCE=2"
 
 # These C linker flags get appended to the ones specified in the source code
 export CGO_LDFLAGS="${CGO_LDFLAGS:-""} -Wl,-z,relro,-z,now"
@@ -83,12 +97,20 @@ fi
 
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
-	# BUILDMODE can be no value and `go` does not like empty parameter ''
-	# this is why surrounding double quotes are removed to not cause empty parameter i.e. ''
-	# shellcheck disable=SC2086
-	CC="${cross_compiler_map[${ARCH}]}" \
-		go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} ${BUILDMODE:-} -tags "${tags}" \
-		-ldflags "-linkmode=external ${ldflags}" \
-		-o "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}"
+	if [[ "${OS}" == "openwrt" ]]; then
+		CC="${cross_compiler_map_openwrt[${ARCH}]}" \
+			go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} ${BUILDMODE:-} -tags "${tags}" \
+				-ldflags "-linkmode=external ${ldflags}" \
+				-o "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}"
+		cp -r "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}" "${GO_BUILD_BIN_DIR}"
+	else
+		# BUILDMODE can be no value and `go` does not like empty parameter ''
+		# this is why surrounding double quotes are removed to not cause empty parameter i.e. ''
+		# shellcheck disable=SC2086
+		CC="${cross_compiler_map[${ARCH}]}" \
+			go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} ${BUILDMODE:-}-tags "${tags}" \
+				-ldflags "-linkmode=external ${ldflags}" \
+				-o "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}"
+	fi
 	popd
 done

@@ -68,43 +68,63 @@ declare -A cross_compiler_map=(
     [aarch64]=aarch64-linux-gnu-gcc
 )
 
+declare -A cross_compiler_map_openwrt=(
+    [amd64]="x86_64-openwrt-linux-musl-gcc"
+    [aarch64]="aarch64-openwrt-linux-musl-gcc"
+)
+
 pushd "${current_dir}"
   target=""
+  compiler=""
   openssl_cflags=""
   openssl_ldflags=""
   lzo_cflags="-g -O2"
   lzo_ldflags=""
   openvpn_cflags="-Wall -Wno-unused-parameter -Wno-unused-function -g -O2 -D_FORTIFY_SOURCE=2 -std=c99 -fstack-protector"
   openvpn_ldflags="-Wl,-z,relro,-z,now -Wl,--as-needed"
-  compiler="${cross_compiler_map[${ARCH}]}"
-  case "${ARCH}" in
-    "i386")
-      target="i686-linux-gnu"
-      prefix="$target-"
-      openssl_cflags+=" -m32"
-      openssl_ldflags+=" -m32"
-      lzo_cflags+=" -m32"
-      lzo_ldflags+=" -m32"
-      openvpn_cflags+=" -m32"
-      openvpn_ldflags+=" -m32"
-    ;;
-    "amd64")
-      target="x86_64-linux-gnu"
-      prefix="$target-"
-    ;;
-    "armel")
-      target="arm-linux-gnueabi"
-      prefix="$target-"
-    ;;
-    "armhf")
-      target="arm-linux-gnueabihf"
-      prefix="$target-"
-    ;;
-    "aarch64")
-      target="aarch64-linux-gnu"
-      prefix="$target-"
-    ;;
-  esac
+
+  if [[ "${OS}" == "openwrt" ]]; then
+    compiler="${cross_compiler_map_openwrt[${ARCH}]}"
+    case "${ARCH}" in
+      "amd64")
+        target="x86_64-openwrt-linux-musl"
+      ;;
+      "aarch64")
+        target="aarch64-openwrt-linux-musl"
+      ;;
+    esac
+    prefix="$target-"
+  else
+    compiler="${cross_compiler_map[${ARCH}]}"
+    case "${ARCH}" in
+      "i386")
+        target="i686-linux-gnu"
+        prefix="$target-"
+        openssl_cflags+=" -m32"
+        openssl_ldflags+=" -m32"
+        lzo_cflags+=" -m32"
+        lzo_ldflags+=" -m32"
+        openvpn_cflags+=" -m32"
+        openvpn_ldflags+=" -m32"
+      ;;
+      "amd64")
+        target="x86_64-linux-gnu"
+        prefix="$target-"
+      ;;
+      "armel")
+        target="arm-linux-gnueabi"
+        prefix="$target-"
+      ;;
+      "armhf")
+        target="arm-linux-gnueabihf"
+        prefix="$target-"
+      ;;
+      "aarch64")
+        target="aarch64-linux-gnu"
+        prefix="$target-"
+      ;;
+    esac
+  fi
 
   pushd "${sources}/openssl-${OPENSSL_VERSION}"
     configure_openssl "${compiler}"
