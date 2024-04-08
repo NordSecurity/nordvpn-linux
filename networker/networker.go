@@ -28,6 +28,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
+	"github.com/NordSecurity/nordvpn-linux/state"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
 
@@ -122,6 +123,7 @@ type Combined struct {
 	mesh               meshnet.Mesh
 	gateway            routes.GatewayRetriever
 	publisher          events.Publisher[string]
+	statePublisher     events.Publisher[state.Event]
 	allowlistRouter    routes.Service
 	dnsSetter          dns.Setter
 	ipv6               ipv6.Blocker
@@ -168,6 +170,7 @@ func NewCombined(
 	mesh meshnet.Mesh,
 	gateway routes.GatewayRetriever,
 	publisher events.Publisher[string],
+	statePublisher events.Publisher[state.Event],
 	allowlistRouter routes.Service,
 	dnsSetter dns.Setter,
 	ipv6 ipv6.Blocker,
@@ -187,6 +190,7 @@ func NewCombined(
 		mesh:               mesh,
 		gateway:            gateway,
 		publisher:          publisher,
+		statePublisher:     statePublisher,
 		allowlistRouter:    allowlistRouter,
 		dnsSetter:          dnsSetter,
 		ipv6:               ipv6,
@@ -298,6 +302,8 @@ func (netw *Combined) start(
 	if err := netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
 		return err
 	}
+
+	netw.statePublisher.Publish(state.VPNConnected)
 
 	netw.isVpnSet = true
 	netw.lastServer = serverData
@@ -508,6 +514,8 @@ func (netw *Combined) stop() error {
 			return fmt.Errorf("unsetting network: %w", err)
 		}
 	}
+
+	netw.statePublisher.Publish(state.VPNDisconnected)
 
 	netw.switchToNextVpn()
 	netw.isVpnSet = false

@@ -57,6 +57,7 @@ import (
 	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/state"
 	"golang.org/x/net/netutil"
 
 	"google.golang.org/grpc"
@@ -343,11 +344,17 @@ func main() {
 		cfg.Routing.Get(),
 	)
 
+	stateManager := state.NewState()
+
+	stateSubject := &subs.Subject[state.Event]{}
+	stateSubject.Subscribe(stateManager.NotifyEvent)
+
 	netw := networker.NewCombined(
 		vpn,
 		mesh,
 		gwret,
 		infoSubject,
+		stateSubject,
 		allowlistRouter,
 		dnsSetter,
 		ipv6.NewIpv6(),
