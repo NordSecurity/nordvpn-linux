@@ -7,9 +7,9 @@ FROM debian:buster-slim
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
-# Based on: https://github.com/docker-library/golang/blob/343f83dbad29bb3b6f8c8eb8fa0459b6f2ea6aec/1.20/bookworm/Dockerfile
-ENV GOLANG_VERSION 1.20.13
-ENV GOLANG_SHA256 9a9d3dcae2b6a638b1f2e9bd4db08ffb39c10e55d9696914002742d90f0047b5
+# Based on: https://github.com/docker-library/golang/blob/master/1.22/bookworm/Dockerfile
+ENV GOLANG_VERSION 1.22.2
+ENV GOLANG_SHA256 5901c52b7a78002aeff14a21f93e0f064f74ce1360fce51c6ee68cd471216a17
 
 RUN apt-get update && \
     apt-get -y --no-install-recommends upgrade && \

@@ -9,6 +9,9 @@ source "${WORKDIR}"/ci/archs.sh
 # shellcheck disable=SC2153
 [ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
 
+#TODO/FIXME: just to verify, to be removed
+BUILDMODE="-buildmode=pie"
+
 ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Environment=${ENVIRONMENT}' \
 	-X 'main.Hash=${HASH}' \
