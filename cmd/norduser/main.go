@@ -75,7 +75,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	if err == nil {
 		client = daemonpb.NewDaemonClient(conn)
 	} else {
-		fmt.Printf("Error connecting to the NordVPN daemon: %s", err)
+		log.Println("Error connecting to the NordVPN daemon: ", err)
 		return
 	}
 
