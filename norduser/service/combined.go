@@ -40,15 +40,21 @@ func (c *Combined) Enable(uid uint32, gid uint32, home string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	logFunc := log.Printf
+	// Only log failures for the first time for any given uid for the first enable attempt
+	if _, ok := c.uidToProcessType[uid]; ok {
+		logFunc = func(format string, v ...any) {}
+	}
+
 	err := c.systemd.Enable(uid)
 	if err == nil {
 		c.uidToProcessType[uid] = systemd
 		return nil
 	}
 
-	log.Printf("failed to enable norduserd via systemd: %s, will fallback to fork implementation", err)
+	logFunc("failed to enable norduserd via systemd, will fallback to fork implementation: %s", err)
 	if err := c.systemd.Disable(uid); err != nil {
-		log.Println("failed to disable norduser sytemd after enable has failed")
+		logFunc("failed to disable norduser sytemd after enable has failed: %s", err)
 	}
 
 	if err := c.childProcess.Enable(uid, gid, home); err != nil {
