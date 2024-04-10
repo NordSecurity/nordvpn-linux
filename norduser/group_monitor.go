@@ -77,8 +77,9 @@ func getNordvpnGroupMembers() (userSet, error) {
 }
 
 type userIDs struct {
-	uid uint32
-	gid uint32
+	uid  uint32
+	gid  uint32
+	home string
 }
 
 func getUID(username string) (userIDs, error) {
@@ -98,8 +99,9 @@ func getUID(username string) (userIDs, error) {
 	}
 
 	return userIDs{
-		uid: uint32(uid),
-		gid: uint32(gid),
+		uid:  uint32(uid),
+		gid:  uint32(gid),
+		home: user.HomeDir,
 	}, nil
 }
 
@@ -139,7 +141,7 @@ func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 			continue
 		}
 
-		if err := n.norduserd.Enable(userID.uid, userID.gid); err != nil {
+		if err := n.norduserd.Enable(userID.uid, userID.gid, userID.home); err != nil {
 			log.Println("enabling norduserd for member:", err)
 		}
 	}
@@ -153,7 +155,7 @@ func (n *NordvpnGroupMonitor) startForEveryGroupMember(groupMembers userSet) {
 			continue
 		}
 
-		if err := n.norduserd.Enable(user.uid, user.gid); err != nil {
+		if err := n.norduserd.Enable(user.uid, user.gid, user.home); err != nil {
 			log.Println("failed to start norduser for group member:", err)
 		}
 	}

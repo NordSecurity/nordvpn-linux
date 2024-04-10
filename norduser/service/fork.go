@@ -53,7 +53,7 @@ func isRunning(uid uint32) (bool, error) {
 }
 
 // Enable starts norduser process
-func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32) (err error) {
+func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err error) {
 	running, err := isRunning(uid)
 	if err != nil {
 		return fmt.Errorf("failed to determine if the process is already running: %w", err)
@@ -76,6 +76,10 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32) (err error) {
 		Groups: []uint32{uint32(nordvpnGid)},
 	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{Credential: credential}
+	// os.UserHomeDir always returns value of $HOME and spawning child process copies
+	// environment variables from a parent process, therefore value of $HOME will be root home
+	// dir, where user usually does not have access.
+	cmd.Env = append(cmd.Env, "HOME="+home)
 	f.commandHandles[uid] = cmd
 
 	return cmd.Start()

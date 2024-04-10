@@ -7,7 +7,7 @@ import (
 )
 
 type NorduserService interface {
-	Enable(uid uint32, gid uint32) error
+	Enable(uid uint32, gid uint32, home string) error
 	Disable(uid uint32) error
 	Stop(uid uint32) error
 	StopAll()
@@ -36,7 +36,7 @@ func NewNorduserService() *Combined {
 	}
 }
 
-func (c *Combined) Enable(uid uint32, gid uint32) error {
+func (c *Combined) Enable(uid uint32, gid uint32, home string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -51,7 +51,7 @@ func (c *Combined) Enable(uid uint32, gid uint32) error {
 		log.Println("failed to disable norduser sytemd after enable has failed")
 	}
 
-	if err := c.childProcess.Enable(uid, gid); err != nil {
+	if err := c.childProcess.Enable(uid, gid, home); err != nil {
 		return fmt.Errorf("enabling norduserd via fork: %w", err)
 	}
 
