@@ -3,6 +3,8 @@ package norduser
 import (
 	"context"
 	"log"
+	"os/user"
+	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
@@ -31,12 +33,16 @@ func (n *StartNorduserdMiddleware) middleware(ctx context.Context) {
 		var err error
 		ucred, err = internal.StringToUcred(peer.AuthInfo.AuthType())
 		if err != nil {
-			log.Println("failed to convert auth info to user credentials: ", err.Error())
+			log.Println("failed to convert auth info to user credentials:", err.Error())
 		}
 	}
 
-	if err := n.nodruserd.Enable(ucred.Uid, ucred.Gid); err != nil {
-		log.Println("failed to enable norduserd: ", err)
+	u, err := user.LookupId(strconv.FormatInt(int64(ucred.Uid), 10))
+	if err != nil {
+		log.Println("failed to find user by UID:", err)
+	}
+	if err := n.nodruserd.Enable(ucred.Uid, ucred.Gid, u.HomeDir); err != nil {
+		log.Println("failed to enable norduserd:", err)
 	}
 }
 

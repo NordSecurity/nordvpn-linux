@@ -17,7 +17,7 @@ func NewNorduserSnapService() NorduserSnap {
 	return NorduserSnap{}
 }
 
-func (n NorduserSnap) Enable(uint32, uint32) error {
+func (n NorduserSnap) Enable(uint32, uint32, string) error {
 	return nil
 }
 
