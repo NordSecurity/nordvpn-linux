@@ -82,7 +82,13 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	cmd.Env = append(cmd.Env, "HOME="+home)
 	f.commandHandles[uid] = cmd
 
-	return cmd.Start()
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("starting the process: %w", err)
+	}
+
+	go cmd.Wait()
+
+	return nil
 }
 
 // Stop teminates norduser process
@@ -96,5 +102,5 @@ func (f *ChildProcessNorduser) Stop(uid uint32) error {
 		return fmt.Errorf("sending SIGTERM to norduser process: %w", err)
 	}
 
-	return commandHandle.Wait()
+	return nil
 }
