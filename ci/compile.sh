@@ -7,10 +7,11 @@ source "${WORKDIR}"/ci/archs.sh
 # Since race detector has huge performance price and it works only on amd64 and does not
 # work with pie executables, its enabled only for development builds.
 # shellcheck disable=SC2153
-[ "${ENVIRONMENT}" = "dev" ] && [ "${ARCH}" = "amd64" ] && BUILDMODE="-race" || BUILDMODE="-buildmode=pie"
-
-#TODO/FIXME: just to verify, to be removed
-BUILDMODE="-buildmode=pie"
+if [ "${ENVIRONMENT}" = "dev" ]; then
+	[ "${ARCH}" = "amd64" ] && [ "${RACE_DETECTOR_ENABLED:-""}" == "1" ] && BUILDMODE="-race" 
+else
+	BUILDMODE="-buildmode=pie"
+fi
 
 ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Environment=${ENVIRONMENT}' \
@@ -82,8 +83,11 @@ fi
 
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
+	# BUILDMODE can be no value and `go` does not like empty parameter '' 
+	# this is why surrounding double quotes are removed to not cause empty parameter i.e. ''
+	# shellcheck disable=SC2086
 	CC="${cross_compiler_map[${ARCH}]}" \
-		go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} "${BUILDMODE}" -tags "${tags}" \
+		go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} ${BUILDMODE:-} -tags "${tags}" \
 		-ldflags "-linkmode=external ${ldflags}" \
 		-o "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}"
 	popd
