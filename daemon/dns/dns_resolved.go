@@ -81,7 +81,7 @@ func setDNSWithSystemdResolve(ifname string, addresses []string) error {
 		"org.freedesktop.resolve1",
 		"/org/freedesktop/resolve1",
 		"org.freedesktop.resolve1.Manager",
-		"SetLinkDomains", "ia(sb)", fmt.Sprintf("%d", iface.Index), "1", "~.", "true",
+		"SetLinkDomains", "ia(sb)", fmt.Sprintf("%d", iface.Index), "1", ".", "true",
 	).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("setting link routing domains for %s via dbus: %s: %w", iface.Name, strings.TrimSpace(string(out)), err)
