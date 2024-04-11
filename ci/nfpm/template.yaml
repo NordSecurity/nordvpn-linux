@@ -118,7 +118,7 @@ contents:
   - src: ${BASEDIR}/usr/bin/nordvpn
     dst: /usr/bin/nordvpn
   - src: ${BASEDIR}/usr/bin/nordfileshare
-    dst: /var/lib/${NAME}/nordfileshare
+    dst: /usr/bin/nordfileshare
   - src: ${BASEDIR}/usr/bin/norduserd
     dst: /usr/bin/norduserd
 

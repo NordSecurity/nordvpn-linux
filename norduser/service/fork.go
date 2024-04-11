@@ -69,7 +69,7 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	}
 
 	// #nosec G204 -- no input comes from user
-	cmd := exec.Command("/usr/bin/"+internal.Norduserd, "fork")
+	cmd := exec.Command(internal.NorduserBinaryPath, "fork")
 	credential := &syscall.Credential{
 		Uid:    uid,
 		Gid:    gid,
