@@ -28,13 +28,12 @@ const (
 type Interface string
 
 const (
-	InterfaceNetwork           Interface = "network"
-	InterfaceNetworkBind       Interface = "network-bind"
-	InterfaceNetworkControl    Interface = "network-control"
-	InterfaceFirewallControl   Interface = "firewall-control"
-	InterfaceNetworkObserve    Interface = "network-observe"
-	InterfaceNorduserAutostart Interface = "norduser-autostart"
-	InterfaceHome              Interface = "home"
+	InterfaceNetwork         Interface = "network"
+	InterfaceNetworkBind     Interface = "network-bind"
+	InterfaceNetworkControl  Interface = "network-control"
+	InterfaceFirewallControl Interface = "firewall-control"
+	InterfaceNetworkObserve  Interface = "network-observe"
+	InterfaceHome            Interface = "home"
 )
 
 // IsUnderSnap defines whether the current process is executed under snapd
