@@ -38,7 +38,7 @@ func openLogFile(path string) (*os.File, error) {
 	return logFile, nil
 }
 
-func addAutostart(userHomeDir string) (string, error) {
+func addAutostart() (string, error) {
 	autostartDesktopFileContents := "[Desktop Entry]" +
 		"\nName=NordVPN" +
 		"\nExec=nordvpn user" +
@@ -51,7 +51,8 @@ func addAutostart(userHomeDir string) (string, error) {
 		"\nComment=This is an autostart for NordVPN user daemon" +
 		"\nCategories=Utility;"
 
-	path := path.Join(userHomeDir, ".config", "autostart", "nordvpn.desktop")
+	dataDir := os.Getenv("SNAP_USER_DATA")
+	path := path.Join(dataDir, ".config", "autostart", "nordvpn.desktop")
 	if err := internal.EnsureDir(path); err != nil {
 		return "", fmt.Errorf("ensuring path: %w", err)
 	}
@@ -145,7 +146,7 @@ func startSnap() {
 	}
 
 	// Always use real home dir here regardless of `$HOME` value
-	autostartFile, err := addAutostart(usr.HomeDir)
+	autostartFile, err := addAutostart()
 	if err != nil {
 		log.Println("Failed to add autostart: ", err)
 	}
