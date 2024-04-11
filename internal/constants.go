@@ -108,6 +108,8 @@ var (
 	// stored. Normally it is the same as AppDataPath
 	AppDataPathStatic = PrefixStaticPath("/var/lib/nordvpn")
 
+	UsrBinPathStatic = PrefixStaticPath("/usr/bin")
+
 	DatFilesPath = filepath.Join(AppDataPath, "data")
 
 	DatFilesPathCommon = filepath.Join(AppDataPathCommon, "data")
@@ -129,9 +131,9 @@ var (
 	// DaemonPid defines daemon PID file location
 	DaemonPid = filepath.Join(RunDir, "/nordvpnd.pid")
 
-	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
+	FileshareBinaryPath = filepath.Join(UsrBinPathStatic, Fileshare)
 
-	NorduserBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
+	NorduserBinaryPath = filepath.Join(UsrBinPathStatic, Norduserd)
 )
 
 func GetSupportedIPTables() []string {
