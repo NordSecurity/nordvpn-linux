@@ -606,7 +606,6 @@ func snapChecker(publisherErr events.Publisher[error]) *snapconf.ConnChecker {
 			snapconf.InterfaceFirewallControl,
 			snapconf.InterfaceNorduserAutostart,
 			snapconf.InterfaceHome,
-			snapconf.InterfaceDesktopLegacy,
 		},
 		publisherErr,
 	)

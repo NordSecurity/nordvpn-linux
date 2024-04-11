@@ -35,7 +35,6 @@ const (
 	InterfaceNetworkObserve    Interface = "network-observe"
 	InterfaceNorduserAutostart Interface = "norduser-autostart"
 	InterfaceHome              Interface = "home"
-	InterfaceDesktopLegacy     Interface = "desktop-legacy"
 )
 
 // IsUnderSnap defines whether the current process is executed under snapd
