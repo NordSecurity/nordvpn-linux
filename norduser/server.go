@@ -88,8 +88,9 @@ func (s *Server) StopFileshare(context.Context, *pb.Empty) (*pb.StopFileshareRes
 }
 
 func (s *Server) Stop(_ context.Context, req *pb.StopNorduserRequest) (*pb.Empty, error) {
-	s.stopChan <- StopRequest{
-		DisableAutostart: req.Disable,
+	select {
+	case s.stopChan <- StopRequest{DisableAutostart: req.Disable}:
+	default:
 	}
 	return &pb.Empty{}, nil
 }

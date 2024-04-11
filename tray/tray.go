@@ -3,11 +3,15 @@ package tray
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/norduser"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"github.com/NordSecurity/systray"
 )
@@ -27,6 +31,7 @@ type Instance struct {
 	iconConnected    string
 	iconDisconnected string
 	state            trayState
+	quitChan         chan<- norduser.StopRequest
 }
 
 type trayState struct {
@@ -43,8 +48,17 @@ type trayState struct {
 	mu              sync.RWMutex
 }
 
-func NewTrayInstance(client pb.DaemonClient) *Instance {
-	return &Instance{client: client}
+func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopRequest) *Instance {
+	return &Instance{client: client, quitChan: quitChan}
+}
+
+func getIconPath(name string) string {
+	const iconPath = "/usr/share/icons/hicolor/scalable/apps"
+	if snapconf.IsUnderSnap() {
+		return internal.PrefixStaticPath(path.Join(iconPath, name+".svg"))
+	}
+
+	return name
 }
 
 func OnReady(ti *Instance) {
@@ -57,16 +71,16 @@ func OnReady(ti *Instance) {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
 
-	ti.iconConnected = "nordvpn-tray-blue"
-	ti.iconDisconnected = "nordvpn-tray-white"
+	ti.iconConnected = getIconPath("nordvpn-tray-blue")
+	ti.iconDisconnected = getIconPath("nordvpn-tray-white")
 
 	currentDesktop := strings.ToLower(os.Getenv("XDG_CURRENT_DESKTOP"))
 	if strings.Contains(currentDesktop, "kde") {
 		// TODO: Kubuntu uses dark tray background instead KDE default white
-		ti.iconDisconnected = "nordvpn-tray-black"
+		ti.iconDisconnected = getIconPath("nordvpn-tray-black")
 	}
 	if strings.Contains(currentDesktop, "mate") {
-		ti.iconDisconnected = "nordvpn-tray-gray"
+		ti.iconDisconnected = getIconPath("nordvpn-tray-gray")
 	}
 
 	systray.SetIconName(ti.iconDisconnected)
@@ -96,7 +110,7 @@ func OnReady(ti *Instance) {
 			if ti.debugMode {
 				addDebugSection(ti)
 			}
-			addQuitItem()
+			addQuitItem(ti)
 			systray.Refresh()
 			<-ti.redrawChan
 			if ti.debugMode {

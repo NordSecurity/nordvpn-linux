@@ -3,6 +3,7 @@ package tray
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -55,11 +56,11 @@ func (ti *Instance) ping() bool {
 	if !ti.state.daemonAvailable && daemonAvailable {
 		ti.state.daemonAvailable = true
 		changed = true
-		defer ti.notify(pInfo, "Connected to NordVPN daemon")
+		defer ti.notify("Connected to NordVPN daemon")
 	} else if ti.state.daemonAvailable && !daemonAvailable {
 		ti.state.daemonAvailable = false
 		changed = true
-		defer ti.notify(pInfo, "Disconnected from NordVPN daemon")
+		defer ti.notify("Disconnected from NordVPN daemon")
 	}
 
 	if ti.state.daemonError != daemonError {
@@ -81,11 +82,11 @@ func (ti *Instance) updateLoginStatus() bool {
 	if !ti.state.loggedIn && loggedIn {
 		ti.state.loggedIn = true
 		changed = true
-		defer ti.notify(pInfo, "Logged in")
+		defer ti.notify("Logged in")
 	} else if ti.state.loggedIn && !loggedIn {
 		ti.state.loggedIn = false
 		changed = true
-		defer ti.notify(pInfo, "Logged out")
+		defer ti.notify("Logged out")
 	}
 
 	ti.state.mu.Unlock()
@@ -111,10 +112,10 @@ func (ti *Instance) updateVpnStatus() bool {
 	if ti.state.vpnStatus != vpnStatus {
 		if vpnStatus == "Connected" {
 			systray.SetIconName(ti.iconConnected)
-			defer ti.notify(pInfo, "Connected to VPN server: %s", vpnHostname)
+			defer ti.notify("Connected to VPN server: %s", vpnHostname)
 		} else {
 			systray.SetIconName(ti.iconDisconnected)
-			defer ti.notify(pInfo, "Disconnected from VPN server")
+			defer ti.notify("Disconnected from VPN server")
 		}
 		ti.state.vpnStatus = vpnStatus
 		changed = true
@@ -133,6 +134,7 @@ func (ti *Instance) updateVpnStatus() bool {
 }
 
 func (ti *Instance) updateSettings() bool {
+	const errorRetrievingSettingsLog = "Error retrieving settings:"
 	changed := false
 
 	resp, err := ti.client.Settings(context.Background(), &pb.SettingsRequest{
@@ -141,15 +143,15 @@ func (ti *Instance) updateSettings() bool {
 	var settings *pb.Settings
 
 	if err != nil {
-		log(pError, "Error retrieving settings: %s", err)
+		log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, err)
 	} else {
 		switch resp.Type {
 		case internal.CodeConfigError:
-			log(pError, "Error retrieving settings: %s", client.ConfigMessage)
+			log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, client.ConfigMessage)
 		case internal.CodeSuccess:
 			settings = resp.GetData()
 		default:
-			log(pError, "Error retrieving settings: %s", internal.ErrUnhandled)
+			log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, internal.ErrUnhandled)
 		}
 	}
 
@@ -161,12 +163,12 @@ func (ti *Instance) updateSettings() bool {
 	if !ti.state.notifyEnabled && settings.Notify {
 		ti.state.notifyEnabled = true
 		changed = true
-		defer ti.notify(pInfo, "Notifications enabled")
+		defer ti.notify("Notifications enabled")
 	}
 	if ti.state.notifyEnabled && !settings.Notify {
 		ti.state.notifyEnabled = false
 		changed = true
-		defer log(pInfo, "Notifications disabled")
+		defer log.Println(internal.InfoPrefix + " Notifications disabled")
 	}
 	ti.state.mu.Unlock()
 
@@ -182,16 +184,16 @@ func (ti *Instance) updateAccountInfo() bool {
 	payload, err := ti.client.AccountInfo(context.Background(), &pb.Empty{})
 	if err != nil {
 		if status.Convert(err).Message() != internal.ErrNotLoggedIn.Error() {
-			log(pError, "Error retrieving account info: %s", err)
+			log.Println(internal.ErrorPrefix+" Error retrieving account info: ", err)
 		}
 	} else {
 		switch payload.Type {
 		case internal.CodeUnauthorized:
-			log(pError, cli.AccountTokenUnauthorizedError)
+			log.Println(internal.ErrorPrefix + " " + cli.AccountTokenUnauthorizedError)
 		case internal.CodeExpiredRenewToken:
-			log(pError, "CodeExpiredRenewToken")
+			log.Println(internal.ErrorPrefix + " CodeExpiredRenewToken")
 		case internal.CodeTokenRenewError:
-			log(pError, "CodeTokenRenewError")
+			log.Println(internal.ErrorPrefix + " CodeTokenRenewError")
 		default:
 			loggedIn = true
 		}
