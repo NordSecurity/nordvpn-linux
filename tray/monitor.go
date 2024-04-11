@@ -134,6 +134,7 @@ func (ti *Instance) updateVpnStatus() bool {
 }
 
 func (ti *Instance) updateSettings() bool {
+	const errorRetrievingSettingsLog = "Error retrieving settings:"
 	changed := false
 
 	resp, err := ti.client.Settings(context.Background(), &pb.SettingsRequest{
@@ -142,15 +143,15 @@ func (ti *Instance) updateSettings() bool {
 	var settings *pb.Settings
 
 	if err != nil {
-		log.Println(internal.ErrorPrefix+" Error retrieving settings: ", err)
+		log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, err)
 	} else {
 		switch resp.Type {
 		case internal.CodeConfigError:
-			log.Println(internal.ErrorPrefix+" Error retrieving settings: ", client.ConfigMessage)
+			log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, client.ConfigMessage)
 		case internal.CodeSuccess:
 			settings = resp.GetData()
 		default:
-			log.Println(internal.ErrorPrefix+" Error retrieving settings: ", internal.ErrUnhandled)
+			log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, internal.ErrUnhandled)
 		}
 	}
 
