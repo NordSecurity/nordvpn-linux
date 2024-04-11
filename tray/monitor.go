@@ -142,15 +142,15 @@ func (ti *Instance) updateSettings() bool {
 	var settings *pb.Settings
 
 	if err != nil {
-		log.Println("Error retrieving settings: ", err)
+		log.Println(internal.ErrorPrefix+" Error retrieving settings: ", err)
 	} else {
 		switch resp.Type {
 		case internal.CodeConfigError:
-			log.Println("Error retrieving settings: ", client.ConfigMessage)
+			log.Println(internal.ErrorPrefix+" Error retrieving settings: ", client.ConfigMessage)
 		case internal.CodeSuccess:
 			settings = resp.GetData()
 		default:
-			log.Println("Error retrieving settings: ", internal.ErrUnhandled)
+			log.Println(internal.ErrorPrefix+" Error retrieving settings: ", internal.ErrUnhandled)
 		}
 	}
 
@@ -167,7 +167,7 @@ func (ti *Instance) updateSettings() bool {
 	if ti.state.notifyEnabled && !settings.Notify {
 		ti.state.notifyEnabled = false
 		changed = true
-		defer log.Println("Notifications disabled")
+		defer log.Println(internal.InfoPrefix + " Notifications disabled")
 	}
 	ti.state.mu.Unlock()
 
@@ -183,16 +183,16 @@ func (ti *Instance) updateAccountInfo() bool {
 	payload, err := ti.client.AccountInfo(context.Background(), &pb.Empty{})
 	if err != nil {
 		if status.Convert(err).Message() != internal.ErrNotLoggedIn.Error() {
-			log.Println("Error retrieving account info: ", err)
+			log.Println(internal.ErrorPrefix+" Error retrieving account info: ", err)
 		}
 	} else {
 		switch payload.Type {
 		case internal.CodeUnauthorized:
-			log.Println(cli.AccountTokenUnauthorizedError)
+			log.Println(internal.ErrorPrefix + " " + cli.AccountTokenUnauthorizedError)
 		case internal.CodeExpiredRenewToken:
-			log.Println("CodeExpiredRenewToken")
+			log.Println(internal.ErrorPrefix + " CodeExpiredRenewToken")
 		case internal.CodeTokenRenewError:
-			log.Println("CodeTokenRenewError")
+			log.Println(internal.ErrorPrefix + " CodeTokenRenewError")
 		default:
 			loggedIn = true
 		}
