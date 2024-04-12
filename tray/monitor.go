@@ -177,15 +177,17 @@ func (ti *Instance) updateSettings() bool {
 
 func (ti *Instance) updateAccountInfo() bool {
 	changed := false
-	loggedIn := false
-	vpnActive := false
-	accountName := ""
+	loggedIn := ti.state.loggedIn
+	vpnActive := ti.state.vpnActive
+	accountName := ti.state.accountName
 
-	payload, err := ti.client.AccountInfo(context.Background(), &pb.Empty{})
+	payload, err := ti.accountInfo.getAccountInfo(ti.client)
 	if err != nil {
 		if status.Convert(err).Message() != internal.ErrNotLoggedIn.Error() {
 			log.Println(internal.ErrorPrefix+" Error retrieving account info: ", err)
+			return false
 		}
+		loggedIn = false
 	} else {
 		switch payload.Type {
 		case internal.CodeUnauthorized:
