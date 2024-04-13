@@ -3,7 +3,7 @@ black==24.3.0
 certifi>=2022.12.07
 chardet==4.0.0
 click==8.0.3
-idna==2.10
+idna==3.7
 iniconfig==1.1.1
 isort==5.9.3
 jedi==0.17.2
@@ -40,5 +40,5 @@ urllib3==1.26.18
 paramiko==3.4.0
 psutil==5.9.4
 pyshark==0.6
-dnspython==2.4.2
+dnspython==2.6.1
 selenium==4.19.0
