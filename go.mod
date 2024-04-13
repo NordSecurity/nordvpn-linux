@@ -7,7 +7,7 @@ toolchain go1.22.2
 require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
 	github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948
-	github.com/NordSecurity/libtelio v0.0.0-20240227161636-29680450e9b9
+	github.com/NordSecurity/libtelio v0.0.0-20240412122320-157263e48f69
 	github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.6.0
