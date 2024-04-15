@@ -119,7 +119,7 @@ func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 			continue
 		}
 
-		if err := n.norduserd.Disable(userIDs.uid); err != nil {
+		if err := n.norduserd.Stop(userIDs.uid); err != nil {
 			log.Println("disabling norduserd for user:", err.Error())
 		}
 	}

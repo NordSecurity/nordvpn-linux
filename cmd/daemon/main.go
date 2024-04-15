@@ -388,7 +388,7 @@ func main() {
 	if snapconf.IsUnderSnap() {
 		norduserService = norduserservice.NewNorduserSnapService()
 	} else {
-		norduserService = norduserservice.NewNorduserService()
+		norduserService = norduserservice.NewChildProcessNorduser()
 	}
 
 	norduserClient := norduserservice.NewNorduserGRPCClient()

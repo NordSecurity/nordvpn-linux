@@ -224,39 +224,27 @@ func startSnap() {
 	log.Println("Norduser process has stopped")
 }
 
-func isFork() bool {
-	if len(os.Args) > 1 {
-		if os.Args[1] == "fork" {
-			return true
-		}
-	}
-
-	return false
-}
-
 func start() {
 	listenerFunction := internal.SystemDListener
 
-	if isFork() {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			log.Fatalln("failed to find home dir", err)
-		}
-
-		configDirPath, err := internal.GetConfigDirPath(homeDir)
-		if err == nil {
-			if logFile, err := openLogFile(filepath.Join(configDirPath, internal.NorduserLogFile)); err == nil {
-				log.SetOutput(logFile)
-				log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-			}
-		}
-
-		connURL := internal.GetNorduserSocketFork(os.Geteuid())
-		if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
-			log.Println("Failed to remove old socket file: ", err)
-		}
-		listenerFunction = internal.ManualListener(connURL, internal.PermUserRWX)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalln("failed to find home dir", err)
 	}
+
+	configDirPath, err := internal.GetConfigDirPath(homeDir)
+	if err == nil {
+		if logFile, err := openLogFile(filepath.Join(configDirPath, internal.NorduserLogFile)); err == nil {
+			log.SetOutput(logFile)
+			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+		}
+	}
+
+	connURL := internal.GetNorduserSocketFork(os.Geteuid())
+	if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Println("Failed to remove old socket file: ", err)
+	}
+	listenerFunction = internal.ManualListener(connURL, internal.PermUserRWX)
 
 	listener, err := listenerFunction()
 	if err != nil {

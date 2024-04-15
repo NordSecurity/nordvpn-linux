@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -16,6 +17,7 @@ var ErrNotStarted = errors.New("norduserd wasn't started")
 
 // ChildProcessNorduser manages norduser service through exec.Command
 type ChildProcessNorduser struct {
+	mu             sync.Mutex
 	commandHandles map[uint32]*exec.Cmd
 }
 
@@ -53,7 +55,10 @@ func isRunning(uid uint32) (bool, error) {
 }
 
 // Enable starts norduser process
-func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err error) {
+func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	running, err := isRunning(uid)
 	if err != nil {
 		return fmt.Errorf("failed to determine if the process is already running: %w", err)
@@ -69,7 +74,7 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	}
 
 	// #nosec G204 -- no input comes from user
-	cmd := exec.Command(internal.NorduserBinaryPath, "fork")
+	cmd := exec.Command("/usr/bin/" + internal.Norduserd)
 	credential := &syscall.Credential{
 		Uid:    uid,
 		Gid:    gid,
@@ -80,7 +85,7 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	// environment variables from a parent process, therefore value of $HOME will be root home
 	// dir, where user usually does not have access.
 	cmd.Env = append(cmd.Env, "HOME="+home)
-	f.commandHandles[uid] = cmd
+	c.commandHandles[uid] = cmd
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("starting the process: %w", err)
@@ -92,8 +97,11 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 }
 
 // Stop teminates norduser process
-func (f *ChildProcessNorduser) Stop(uid uint32) error {
-	commandHandle, ok := f.commandHandles[uid]
+func (c *ChildProcessNorduser) Stop(uid uint32) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	commandHandle, ok := c.commandHandles[uid]
 	if !ok {
 		return fmt.Errorf("command handle not found for given uid")
 	}
@@ -103,4 +111,16 @@ func (f *ChildProcessNorduser) Stop(uid uint32) error {
 	}
 
 	return nil
+}
+
+func (c *ChildProcessNorduser) StopAll() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for _, commandHandle := range c.commandHandles {
+		if err := commandHandle.Process.Signal(unix.SIGTERM); err != nil {
+			fmt.Println("sending SIGTERM to norduser process: ", err)
+			continue
+		}
+	}
 }
