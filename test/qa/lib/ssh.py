@@ -16,6 +16,7 @@ class Ssh:
         self.password = password
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+        self.daemon = self.Daemon(self)
         self.meshnet = self.Meshnet(self)
         self.network = self.Network(self)
 
@@ -42,6 +43,18 @@ class Ssh:
 
     def disconnect(self):
         self.client.close()
+
+    class Daemon:
+        def __init__(self, ssh_class_instance):
+            self.ssh_class_instance: Ssh = ssh_class_instance
+
+        def is_running(self):
+            try:
+                self.ssh_class_instance.exec_command("nordvpn status")
+            except RuntimeError:
+                return False
+            else:
+                return True
 
     class Network:
         def __init__(self, ssh_class_instance):

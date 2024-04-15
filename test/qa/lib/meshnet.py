@@ -46,6 +46,11 @@ class TestUtils:
     @staticmethod
     def setup_function(ssh_client: ssh.Ssh):
         logging.log()
+
+        # if setup_function fails, teardown won't be executed, so daemon is not stopped
+        if daemon.is_running():
+            daemon.stop()
+
         daemon.start()
         daemon.start_peer(ssh_client)
         login.login_as("default")

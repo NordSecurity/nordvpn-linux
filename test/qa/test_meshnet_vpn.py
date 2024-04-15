@@ -266,4 +266,3 @@ def test_route_to_peer_that_disconnects_from_vpn():
     lib.is_disconnect_successful(ssh_client_mesh.exec_command("nordvpn disconnect"))
 
     ssh_client_mesh.disconnect()
-
