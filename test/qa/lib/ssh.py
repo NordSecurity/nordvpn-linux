@@ -1,6 +1,11 @@
 import contextlib
+import json
+import time
 
 import paramiko
+import pytest
+
+import lib
 
 
 class Ssh:
@@ -11,7 +16,9 @@ class Ssh:
         self.password = password
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
+        self.daemon = self.Daemon(self)
         self.meshnet = self.Meshnet(self)
+        self.network = self.Network(self)
 
     def connect(self):
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
@@ -37,6 +44,72 @@ class Ssh:
     def disconnect(self):
         self.client.close()
 
+    class Daemon:
+        def __init__(self, ssh_class_instance):
+            self.ssh_class_instance: Ssh = ssh_class_instance
+
+        def is_running(self):
+            try:
+                self.ssh_class_instance.exec_command("nordvpn status")
+            except RuntimeError:
+                return False
+            else:
+                return True
+
+    class Network:
+        def __init__(self, ssh_class_instance):
+            self.ssh_class_instance: Ssh = ssh_class_instance
+
+        def _is_internet_reachable(self, retry=5) -> bool:
+            """ returns True when remote host is reachable by it's public IP. """
+            i = 0
+            while i < retry:
+                try:
+                    return "icmp_seq=" in self.ssh_class_instance.exec_command("ping -c 1 -w 1 1.1.1.1")
+                except RuntimeError:
+                    time.sleep(1)
+                    i += 1
+            return False
+
+        def _is_dns_not_resolvable(self, retry=5) -> bool:
+            """ returns True when domain resolution is not working. """
+            for _ in range(retry):
+                try:
+                    with pytest.raises(RuntimeError) as ex:
+                        self.ssh_class_instance.exec_command("ping -c 1 -w 1 nordvpn.com")
+
+                    return "Network is unreachable" in str(ex) or \
+                        "Name or service not known" in str(ex) or \
+                        "Temporary failure in name resolution" in str(ex)
+                except RuntimeError as ex:
+                    time.sleep(1)
+            return False
+
+        def is_not_available(self, retry=5) -> bool:
+            """ returns True when network access is not available. """
+            return not self._is_internet_reachable(retry) and self._is_dns_not_resolvable(retry)
+
+        def ping(self, target: str, retry=5) -> bool:
+            i = 0
+            while i < retry:
+                try:
+                    return "icmp_seq=" in self.ssh_class_instance.exec_command(f"ping -c 1 -w 1 {target}")
+                except RuntimeError:
+                    time.sleep(1)
+                    i += 1
+            return False
+
+        def get_external_device_ip(self) -> str:
+            """Returns external device IP."""
+            cmd = f"wget -qO- {lib.API_EXTERNAL_IP}"
+            output = self.ssh_class_instance.exec_command(cmd)
+
+            try:
+                json_data = json.loads(output)
+                external_ip = json_data.get("ip", "")
+                return external_ip
+            except json.JSONDecodeError as e:
+                print("Error decoding JSON:", e)
 
     class Meshnet:
         def __init__(self, ssh_class_instance):

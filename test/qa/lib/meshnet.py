@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import subprocess
@@ -9,6 +10,10 @@ import sh
 from . import daemon, info, logging, login, meshnet, ssh
 
 PEER_USERNAME = os.environ.get("QA_PEER_USERNAME")
+
+TELIO_EXPECTED_RELAY_TO_DIRECT_TIME = 5.0
+TELIO_EXPECTED_RTT = 5.0
+TELIO_EXPECTED_PACKET_LOSS = 0.0
 
 LANS = [
     "169.254.0.0/16",
@@ -41,6 +46,11 @@ class TestUtils:
     @staticmethod
     def setup_function(ssh_client: ssh.Ssh):
         logging.log()
+
+        # if setup_function fails, teardown won't be executed, so daemon is not stopped
+        if daemon.is_running():
+            daemon.stop()
+
         daemon.start()
         daemon.start_peer(ssh_client)
         login.login_as("default")
@@ -62,12 +72,16 @@ class TestUtils:
         sh.nordvpn.set.defaults()
         daemon.stop_peer(ssh_client)
         daemon.stop()
+        sh.sudo.iptables("-F")
+        ssh_client.exec_command("sudo iptables -F")
+
 
 
 class PeerName(Enum):
     Hostname = 0
     Ip = 1
     Pubkey = 2
+    Nickname = 3
 
 
 class Peer:
@@ -326,6 +340,53 @@ MESHNET_ALIAS = [
     "mesh"
 ]
 
+MSG_PEER_UNKNOWN = "Peer '%s' is unknown."
+MSG_PEER_OFFLINE = "Connect to other mesh peer failed - check if peer '%s' is online."
+MSG_ROUTING_NEED_NORDLYNX = "NordLynx technology must be set to use this feature."
+MSG_ROUTING_SUCCESS = "You are connected to Meshnet exit node '%s'."
+
+MSG_PEER_ROUTING_ALLOW_SUCCESS = "Traffic routing for '%s' has been allowed."
+MSG_PEER_ROUTING_ALLOW_ERROR = "Traffic routing for '%s' is already allowed."
+MSG_PEER_ROUTING_DENY_SUCCESS =  "Traffic routing for '%s' has been denied."
+MSG_PEER_ROUTING_DENY_ERROR = "Traffic routing for '%s' is already denied."
+
+MSG_PEER_INCOMING_ALLOW_SUCCESS = "Incoming traffic for '%s' has been allowed."
+MSG_PEER_INCOMING_ALLOW_ERROR = "Incoming traffic for '%s' is already allowed."
+MSG_PEER_INCOMING_DENY_SUCCESS = "Incoming traffic for '%s' has been denied."
+MSG_PEER_INCOMING_DENY_ERROR = "Incoming traffic for '%s' is already denied."
+
+MSG_PEER_LOCAL_ALLOW_SUCCESS = "Local network access for '%s' has been allowed."
+MSG_PEER_LOCAL_ALLOW_ERROR = "Local network access for '%s' is already allowed."
+MSG_PEER_LOCAL_DENY_SUCCESS = "Local network access for '%s' has been denied."
+MSG_PEER_LOCAL_DENY_ERROR = "Local network access for '%s' is already denied."
+
+MSG_PEER_FILESHARE_ALLOW_SUCCESS = "Fileshare for '%s' has been allowed."
+MSG_PEER_FILESHARE_ALLOW_ERROR = "Fileshare for '%s' is already allowed."
+MSG_PEER_FILESHARE_DENY_SUCCESS = "Fileshare for '%s' has been denied."
+MSG_PEER_FILESHARE_DENY_ERROR = "Fileshare for '%s' is already denied."
+
+PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET = [
+    ("routing", "allow", MSG_PEER_ROUTING_ALLOW_SUCCESS),
+    ("routing", "deny", MSG_PEER_ROUTING_DENY_SUCCESS),
+    ("incoming", "allow", MSG_PEER_INCOMING_ALLOW_SUCCESS),
+    ("incoming", "deny", MSG_PEER_INCOMING_DENY_SUCCESS),
+    ("local", "allow", MSG_PEER_LOCAL_ALLOW_SUCCESS),
+    ("local", "deny", MSG_PEER_LOCAL_DENY_SUCCESS),
+    ("fileshare", "allow", MSG_PEER_FILESHARE_ALLOW_SUCCESS),
+    ("fileshare", "deny", MSG_PEER_FILESHARE_DENY_SUCCESS),
+]
+
+PERMISSION_ERROR_MESSAGE_PARAMETER_SET = [
+    ("routing", "allow", MSG_PEER_ROUTING_ALLOW_ERROR),
+    ("routing", "deny", MSG_PEER_ROUTING_DENY_ERROR),
+    ("incoming", "allow", MSG_PEER_INCOMING_ALLOW_ERROR),
+    ("incoming", "deny", MSG_PEER_INCOMING_DENY_ERROR),
+    ("local", "allow", MSG_PEER_LOCAL_ALLOW_ERROR),
+    ("local", "deny", MSG_PEER_LOCAL_DENY_ERROR),
+    ("fileshare", "allow", MSG_PEER_FILESHARE_ALLOW_ERROR),
+    ("fileshare", "deny", MSG_PEER_FILESHARE_DENY_ERROR),
+]
+
 def add_peer(ssh_client: ssh.Ssh,
              tester_allow_fileshare: bool = True,
              tester_allow_routing: bool = True,
@@ -531,6 +592,12 @@ def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: b
     return True, ""
 
 
+def set_permission(peer: str, permission: bool, permission_state: bool):
+    """ Tries to set permission to specified state. Ignores any error messages. """
+    with contextlib.suppress(sh.ErrorReturnCode_1):
+        sh.nordvpn.mesh.peer(permission, permission_state, peer)
+
+
 def set_permissions(peer: str, routing: bool = None, local: bool = None, incoming: bool = None, fileshare: bool = None):
     def bool_to_permission(permission: bool) -> str:
         if permission:
@@ -557,10 +624,18 @@ def get_clean_peer_list(peer_list: str):
     return output
 
 
-def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, retry: int = 5) -> bool:
+def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, peer_name: PeerName = PeerName.Hostname, retry: int = 5) -> bool:
     """Returns True when ping to peer succeeds."""
+
     output = ssh_client.exec_command("nordvpn mesh peer list")
-    peer_hostname = peer.hostname
+
+    if peer_name == PeerName.Hostname:
+        peer_hostname = peer.hostname
+    elif peer_name == PeerName.Ip:
+        peer_hostname = peer.ip
+    elif peer_name == PeerName.Nickname:
+        peer_hostname = peer.nickname
+
     i = 0
     while i < retry:
         try:
@@ -574,3 +649,10 @@ def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, retry: int = 5) -> bool:
     output = ssh_client.exec_command("nordvpn mesh peer list")
     print(output)
     return False
+
+def is_connect_successful(output:str, peer_hostname: str):
+    return (MSG_ROUTING_SUCCESS % peer_hostname) in output
+
+def get_lines_with_keywords(lines: list[str], keywords: list[str]) -> list:
+    """ returns list with elements, that contain specified `keywords`. """
+    return [line.strip() for line in lines if all(keyword in line for keyword in keywords)]

@@ -188,7 +188,7 @@ def test_accept(accept_directories):
 
 
 @pytest.mark.parametrize("background", [True, False])
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
+@pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
@@ -242,7 +242,7 @@ def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
 
 
 @pytest.mark.parametrize("background", [True, False])
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
+@pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.PeerName):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
@@ -635,7 +635,7 @@ def format_time(nanoseconds):
         return f'{int(nanoseconds / 1000000000)}s'
 
 
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
+@pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_send_allowed(peer_name):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
@@ -652,7 +652,7 @@ def test_permissions_send_allowed(peer_name):
     assert peer_transfer_id is not None
 
 
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
+@pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_send_forbidden(peer_name):
     tester_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().get_peer_name(peer_name)
 
@@ -672,7 +672,7 @@ def test_permissions_send_forbidden(peer_name):
     ssh_client.exec_command(f"nordvpn mesh peer fileshare allow {tester_address}")
 
 
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName))
+@pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_meshnet_receive_forbidden(peer_name):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 

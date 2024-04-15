@@ -6,6 +6,8 @@ from typing import Callable, Union
 
 import sh
 
+API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
+
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 STANDARD_TECHNOLOGIES = [
     # technology, protocol, obfuscation,
