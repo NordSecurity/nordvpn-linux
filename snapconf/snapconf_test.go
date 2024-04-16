@@ -1,6 +1,7 @@
 package snapconf
 
 import (
+	"os"
 	"strconv"
 	"testing"
 
@@ -42,6 +43,75 @@ func TestContainsAll(t *testing.T) {
 	} {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			assert.Equal(t, tt.res, containsAll(tt.s1, tt.s2))
+		})
+	}
+}
+
+func TestRealUserHomeDir(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		env      map[string]string
+		expected string
+	}{
+		{
+			name:     "Not running in snap",
+			expected: "",
+		},
+		{
+			name:     "$SNAP_REAL_HOME is set",
+			env:      map[string]string{"SNAP_REAL_HOME": "/home/user"},
+			expected: "/home/user",
+		},
+		{
+			name:     "$SNAP_REAL_HOME is not set, $SNAP_USER_DATA != $HOME",
+			env:      map[string]string{"SNAP_USER_DATA": "/home/user/"},
+			expected: "",
+		},
+		{
+			name: "$SNAP_REAL_HOME is not set, $SNAP_USER_DATA is equal to $HOME",
+			env: map[string]string{
+				"SNAP_USER_DATA": "/home/user/snap/nordvpn/1",
+				"HOME":           "/home/user/snap/nordvpn/1",
+			},
+			expected: "/home/user",
+		},
+		{
+			name: "$SNAP_REAL_HOME and $HOME are not set",
+			env: map[string]string{
+				"HOME": "",
+			},
+			expected: "",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			originalEnvValues := make(map[string]*string)
+			for key, value := range test.env {
+				existingValue, ok := os.LookupEnv(key)
+				if ok {
+					originalEnvValues[key] = &existingValue
+				} else {
+					originalEnvValues[key] = nil
+				}
+
+				os.Setenv(key, value)
+			}
+
+			defer func() {
+				for key, value := range originalEnvValues {
+					if value != nil {
+						os.Setenv(key, *value)
+					} else {
+						os.Unsetenv(key)
+					}
+				}
+			}()
+
+			dir := RealUserHomeDir()
+			assert.Equal(t, test.expected, dir)
 		})
 	}
 }

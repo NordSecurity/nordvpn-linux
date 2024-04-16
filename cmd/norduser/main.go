@@ -51,7 +51,7 @@ func addAutostart() (string, error) {
 		"\nComment=This is an autostart for NordVPN user daemon" +
 		"\nCategories=Utility;"
 
-	dataDir := os.Getenv("SNAP_USER_DATA")
+	dataDir := os.Getenv(snapconf.EnvSnapUserData)
 	path := path.Join(dataDir, ".config", "autostart", "nordvpn.desktop")
 	if err := internal.EnsureDir(path); err != nil {
 		return "", fmt.Errorf("ensuring path: %w", err)

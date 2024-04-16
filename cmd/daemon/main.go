@@ -597,6 +597,7 @@ func snapChecker(publisherErr events.Publisher[error]) *snapconf.ConnChecker {
 			snapconf.InterfaceNetworkControl,
 			snapconf.InterfaceNetworkObserve,
 			snapconf.InterfaceFirewallControl,
+			snapconf.InterfaceHome,
 		},
 		[]snapconf.Interface{
 			snapconf.InterfaceNetwork,

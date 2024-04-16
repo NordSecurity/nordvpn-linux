@@ -36,7 +36,6 @@ func NewServer(fileshareProcessManager childprocess.ChildProcessManager, stopCha
 }
 
 func (s *Server) Ping(context.Context, *pb.Empty) (*pb.Empty, error) {
-	log.Println("ping request")
 	return &pb.Empty{}, nil
 }
 
