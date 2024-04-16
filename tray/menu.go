@@ -75,10 +75,6 @@ func addQuitItem(ti *Instance) {
 	}()
 }
 
-func addAppSection() {
-	systray.AddMenuItem("NordVPN", "NordVPN")
-}
-
 func addDaemonSection(ti *Instance) {
 	systray.AddSeparator()
 	m := systray.AddMenuItem("Daemon not available", "Daemon not available")

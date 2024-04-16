@@ -1,6 +1,7 @@
 package tray
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -20,10 +21,30 @@ const (
 	NotifierStartDelay        = 3 * time.Second
 	PollingUpdateInterval     = 1 * time.Second
 	PollingFullUpdateInterval = 60 * time.Second
+	AccountInfoUpdateInterval = 24 * time.Hour
 )
+
+type accountInfo struct {
+	accountInfo *pb.AccountResponse
+	updateTime  time.Time
+}
+
+// getAccountInfo use cache to not query API every time
+func (ai *accountInfo) getAccountInfo(client pb.DaemonClient) (*pb.AccountResponse, error) {
+	if time.Since(ai.updateTime) > AccountInfoUpdateInterval {
+		var err error
+		ai.accountInfo, err = client.AccountInfo(context.Background(), &pb.Empty{})
+		if err != nil {
+			return &pb.AccountResponse{}, fmt.Errorf("retrvieving account info: %w", err)
+		}
+		ai.updateTime = time.Now()
+	}
+	return ai.accountInfo, nil
+}
 
 type Instance struct {
 	client           pb.DaemonClient
+	accountInfo      accountInfo
 	debugMode        bool
 	notifier         dbusNotifier
 	redrawChan       chan struct{}
@@ -97,7 +118,6 @@ func OnReady(ti *Instance) {
 	go func() {
 		for {
 			ti.state.mu.RLock()
-			addAppSection()
 			if ti.state.daemonAvailable {
 				if ti.state.loggedIn {
 					addVpnSection(ti)
