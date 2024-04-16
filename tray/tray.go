@@ -19,7 +19,7 @@ import (
 
 const (
 	NotifierStartDelay        = 3 * time.Second
-	PollingUpdateInterval     = 1 * time.Second
+	PollingUpdateInterval     = 5 * time.Second
 	PollingFullUpdateInterval = 60 * time.Second
 	AccountInfoUpdateInterval = 24 * time.Hour
 )
