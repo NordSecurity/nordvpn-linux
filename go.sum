@@ -15,8 +15,8 @@ github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4 h1:2ozEjYEw4
 github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4/go.mod h1:tguhorMSnkMcQExNIHWBX6TRhFeGYlERzbeAWZ4j9Uw=
 github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948 h1:stDWDEyqQwjw/o3SQvqfBXTGj4c0tgthB8f4JHTHlLs=
 github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948/go.mod h1:uWQP1L7e1CCtg1VYvm4/zjUNR7Oyw/EDjQfo8qO1nM4=
-github.com/NordSecurity/libtelio v0.0.0-20240227161636-29680450e9b9 h1:P9qHOEndqPx0EW8ik9Iv385t5cQbjrLTmQiAIUMpa+0=
-github.com/NordSecurity/libtelio v0.0.0-20240227161636-29680450e9b9/go.mod h1:gWS9UWU2FSEixmSWdm1MsIoacVttKykO0mgPec2uBVc=
+github.com/NordSecurity/libtelio v0.0.0-20240412122320-157263e48f69 h1:uc7IHbJTshw2R9f+8s8FBUF0tdj6TqzCUdv+DnZSfmg=
+github.com/NordSecurity/libtelio v0.0.0-20240412122320-157263e48f69/go.mod h1:gWS9UWU2FSEixmSWdm1MsIoacVttKykO0mgPec2uBVc=
 github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d h1:oUEFXgFRa9Svcjr+O1stzR3vEXZ5OfQxLUcDjqFcOuo=
 github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d/go.mod h1:PqJ9YgQXNUYUuoLvVrbMmZACufI5xM8JJ5aSuRX5ljg=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=

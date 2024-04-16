@@ -3,7 +3,7 @@ set -euo pipefail
 
 source "${WORKDIR}/ci/env.sh"
 
-libnord_version="0.5.2"
+libnord_version="0.5.4"
 libnord_id="6385"
 
 if [[ "${FEATURES:-""}" == *internal* ]]; then
