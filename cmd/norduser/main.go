@@ -70,7 +70,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 
 		if try == 5 {
 			log.Println("Session tray not available, exiting")
-			break
+			return
 		}
 
 		try++
