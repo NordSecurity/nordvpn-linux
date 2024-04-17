@@ -217,16 +217,38 @@ func cleanPidFile(pidFile string) {
 	}
 }
 
+// EnsureDir creates all directories along the path excluding the last element.
 func EnsureDir(path string) error {
 	dir, err := filepath.Abs(filepath.Dir(path))
 	if err != nil {
+		return fmt.Errorf("getting absolute path: %w", err)
+	}
+	if err := ensureDir(dir); err != nil {
+		return fmt.Errorf("ensuring dir: %w", err)
+	}
+	return nil
+}
+
+// EnsureDirAll creates all directories along the path.
+func EnsureDirFull(path string) error {
+	dir, err := filepath.Abs(path)
+	if err != nil {
 		return err
 	}
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err = os.MkdirAll(dir, PermUserRWX)
+	if err := ensureDir(dir); err != nil {
+		return fmt.Errorf("ensuring dir: %w", err)
+	}
+	return nil
+}
+
+func ensureDir(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = os.MkdirAll(path, PermUserRWX)
 		if err != nil {
 			return err
 		}
+	} else if err != nil {
+		return fmt.Errorf("stating path: %w", err)
 	}
 	return nil
 }
