@@ -3,6 +3,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 )
@@ -10,7 +12,7 @@ import (
 type noopConfigGetter struct{}
 
 func (noopConfigGetter) GetConfig(string) (string, error) {
-	return `{"direct": {}}`, nil
+	return "", fmt.Errorf("config is not available")
 }
 
 func vpnLibConfigGetterImplementation(_ config.Manager) vpn.LibConfigGetter {
