@@ -196,7 +196,8 @@ func startSnap() {
 
 	go func() {
 		if err := grpcServer.Serve(limitedListener); err != nil {
-			log.Fatalln("failed to start accept on grpc server: ", err)
+			log.Println("failed to start accept on grpc server: ", err)
+			os.Exit(int(childprocess.CodeFailedToEnable))
 		}
 	}()
 
@@ -229,7 +230,8 @@ func start() {
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatalln("failed to find home dir", err)
+		log.Println("failed to find home dir: ", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	configDirPath, err := internal.GetConfigDirPath(homeDir)
@@ -260,7 +262,8 @@ func start() {
 
 	go func() {
 		if err := grpcServer.Serve(listener); err != nil {
-			log.Fatalln(internal.ErrorPrefix+"Failed to start accept on grpc server: ", err)
+			log.Println(internal.ErrorPrefix+"Failed to start accept on grpc server: ", err)
+			os.Exit(int(childprocess.CodeFailedToEnable))
 		}
 	}()
 

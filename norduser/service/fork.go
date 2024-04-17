@@ -117,10 +117,10 @@ func (c *ChildProcessNorduser) StopAll() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, commandHandle := range c.commandHandles {
+	for uid, commandHandle := range c.commandHandles {
 		if err := commandHandle.Process.Signal(unix.SIGTERM); err != nil {
 			fmt.Println("sending SIGTERM to norduser process: ", err)
-			continue
 		}
+		delete(c.commandHandles, uid)
 	}
 }
