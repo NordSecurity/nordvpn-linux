@@ -40,7 +40,7 @@ func (tc *TelioConfig) GetConfig(version string) (string, error) {
 			return c.Fetch(version)
 		}
 	}
-	return `{"direct": {}}`, nil
+	return "", fmt.Errorf("telio config is not available")
 }
 
 type TelioLocalConfigFetcher struct{}
