@@ -51,6 +51,10 @@ case "${pattern}" in
         ;;
 esac
 
+# Generate pytest junit report when running in CI
+if [[ -n "$CI" ]]; then
+    args+=("--junitxml=${WORKDIR}/pytest-result-$category.xml")
+fi
 
 mkdir -p "${WORKDIR}"/"${COVERDIR}" 
 
