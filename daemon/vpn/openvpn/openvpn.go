@@ -313,6 +313,7 @@ func (ovpn *OpenVPN) setState(arg string) {
 	defer ovpn.Unlock()
 	ovpn.state, _ = vpn.StringToState(arg)
 
+	//exhaustive:ignore
 	switch ovpn.state {
 	case vpn.ConnectedState:
 		ovpn.publishConnected()

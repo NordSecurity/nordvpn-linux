@@ -682,7 +682,6 @@ func monitorConnection(
 	isConnected chan<- bool,
 	connParameters connParameters,
 	eventsPublisher *vpn.Events) {
-
 	connectedPublished := false
 
 	for {
