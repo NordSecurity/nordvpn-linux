@@ -80,37 +80,3 @@ func Test_findPIDOfUID(t *testing.T) {
 		})
 	}
 }
-
-func Test_isUIDPresent(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name           string
-		uids           []string
-		expectedResult bool
-	}{
-		{
-			name:           "empty list",
-			uids:           []string{},
-			expectedResult: false,
-		},
-		{
-			name:           "uid not present",
-			uids:           []string{" 1002", " 1003", " 1004"},
-			expectedResult: false,
-		},
-		{
-			name:           "uid present",
-			uids:           []string{" 1001", " 1002", " 1003", " 1004"},
-			expectedResult: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			uids := strings.Join(test.uids, "\n")
-			result := isUIDPresent(uids, 1001)
-			assert.Equal(t, test.expectedResult, result)
-		})
-	}
-}

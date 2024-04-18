@@ -68,34 +68,24 @@ func getRunningNorduserPIDs() ([]int, error) {
 	return parseNorduserPIDs(string(output)), nil
 }
 
-func findPIDOfUID(uids string, uid uint32) int {
-	desiredUID := fmt.Sprint(uid)
+func findPIDOfUID(uids string, desiredUID uint32) int {
 	for _, pidUid := range strings.Split(uids, "\n") {
-		pidUidSplit := strings.Split(strings.TrimSpace(pidUid), " ")
-		if len(pidUidSplit) != 2 {
-			log.Println("unexpected ps output: ", pidUid)
-		}
-
-		uid := pidUidSplit[0]
-		if uid != desiredUID {
-			continue
-		}
-
-		pid := pidUidSplit[1]
-		pidInt, err := strconv.Atoi(pid)
+		var pid, uid int
+		_, err := fmt.Sscanf(pidUid, " %d %d", &uid, &pid)
 		if err != nil {
-			log.Println("failed to parse pid: ", err)
+			log.Println("error when scanning ps output line: ", err)
 			continue
 		}
 
-		return pidInt
+		if uid == int(desiredUID) {
+			return pid
+		}
 	}
 
 	return -1
 }
 
 func getPIDForNorduserUID(uid uint32) (int, error) {
-	// list all norduserd processes, restrict output to uid of the owner
 	// #nosec G204 -- arguments are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=", "-o", "pid=").CombinedOutput()
 	if err := handlePsError(err); err != nil {
@@ -105,39 +95,17 @@ func getPIDForNorduserUID(uid uint32) (int, error) {
 	return findPIDOfUID(string(output), uid), nil
 }
 
-func isUIDPresent(uids string, uid uint32) bool {
-	desiredUID := fmt.Sprint(uid)
-	for _, uid := range strings.Split(uids, "\n") {
-		if strings.Trim(uid, " ") == desiredUID {
-			return true
-		}
-	}
-
-	return false
-}
-
-func isRunning(uid uint32) (bool, error) {
-	// list all norduserd processes, restrict output to uid of the owner
-	// #nosec G204 -- arguments are constant
-	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
-	if err := handlePsError(err); err != nil {
-		return false, fmt.Errorf("listing norduser uids: %w", err)
-	}
-
-	return isUIDPresent(string(output), uid), nil
-}
-
 // Enable starts norduser process
 func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	running, err := isRunning(uid)
+	pid, err := getPIDForNorduserUID(uid)
 	if err != nil {
 		return fmt.Errorf("failed to determine if the process is already running: %w", err)
 	}
 
-	if running {
+	if pid != -1 {
 		return nil
 	}
 
