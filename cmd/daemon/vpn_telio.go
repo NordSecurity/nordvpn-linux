@@ -14,14 +14,14 @@ import (
 )
 
 func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
-	cfg vpn.LibConfigGetter, deviceID, appVersion string) daemon.FactoryFunc {
-	var telio = libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, deviceID, appVersion)
+	cfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events) daemon.FactoryFunc {
+	var telio = libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, deviceID, appVersion, eventsPublisher)
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {
 		case config.Technology_NORDLYNX:
 			return telio, nil
 		case config.Technology_OPENVPN:
-			return openvpn.New(fwmark), nil
+			return openvpn.New(fwmark, eventsPublisher), nil
 		default:
 			return nil, errors.New("no such technology")
 		}

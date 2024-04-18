@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -71,7 +72,7 @@ func TestIsConnected(t *testing.T) {
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 			defer cancel()
-			isConnectedC := isConnected(ctx, ch, test.publicKey)
+			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, &vpn.Events{})
 
 			assert.Equal(t, test.expected, <-isConnectedC)
 		})
