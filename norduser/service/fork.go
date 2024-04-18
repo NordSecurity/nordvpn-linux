@@ -25,17 +25,17 @@ func NewChildProcessNorduser() *ChildProcessNorduser {
 	return &ChildProcessNorduser{}
 }
 
-// handlePsError returns nil if err is nil or error code 1(no processes listed). It returns unmodified err in any other
+// handlePsError returns nil if err is nil or if there is no output. It returns unmodified err in any other
 // case.
-func handlePsError(err error) error {
+func handlePsError(out []byte, err error) error {
 	if err == nil {
 		return nil
 	}
 
 	var exiterr *exec.ExitError
 	if errors.As(err, &exiterr) {
-		// ps returns 1 when no processes are shown
-		if exiterr.ExitCode() == 1 {
+		// ps returns error when no processes are shown. We do not treat such cases as errors.
+		if len(out) == 0 {
 			return nil
 		}
 	}
@@ -61,7 +61,7 @@ func parseNorduserPIDs(psOutput string) []int {
 func getRunningNorduserPIDs() ([]int, error) {
 	// #nosec G204 -- arguments are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "pid=").CombinedOutput()
-	if err := handlePsError(err); err != nil {
+	if err := handlePsError(output, err); err != nil {
 		return []int{}, fmt.Errorf("listing norduser pids: %w", err)
 	}
 
@@ -88,7 +88,7 @@ func findPIDOfUID(uids string, desiredUID uint32) int {
 func getPIDForNorduserUID(uid uint32) (int, error) {
 	// #nosec G204 -- arguments are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=", "-o", "pid=").CombinedOutput()
-	if err := handlePsError(err); err != nil {
+	if err := handlePsError(output, err); err != nil {
 		return -1, fmt.Errorf("listing norduser uids/pids: %w", err)
 	}
 
