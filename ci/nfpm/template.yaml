@@ -59,14 +59,6 @@ contents:
     dst: /usr/lib/systemd/system/nordvpnd.service
     file_info:
       mode: 0644
-  - src: ${WORKDIR}/contrib/systemd/user/norduserd.socket
-    dst: /usr/lib/systemd/user/norduserd.socket
-    file_info:
-      mode: 0644
-  - src: ${WORKDIR}/contrib/systemd/user/norduserd.service
-    dst: /usr/lib/systemd/user/norduserd.service
-    file_info:
-      mode: 0644
   - src: ${WORKDIR}/contrib/systemd/tmpfiles.d/nordvpn.conf
     dst: /usr/lib/tmpfiles.d/nordvpn.conf
     file_info:

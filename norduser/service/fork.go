@@ -3,12 +3,14 @@ package service
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os/exec"
+	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"golang.org/x/sys/unix"
 )
 
 // ErrNotStarted when disabling norduser
@@ -16,50 +18,94 @@ var ErrNotStarted = errors.New("norduserd wasn't started")
 
 // ChildProcessNorduser manages norduser service through exec.Command
 type ChildProcessNorduser struct {
-	commandHandles map[uint32]*exec.Cmd
+	mu sync.Mutex
 }
 
 func NewChildProcessNorduser() *ChildProcessNorduser {
-	return &ChildProcessNorduser{
-		commandHandles: make(map[uint32]*exec.Cmd),
-	}
+	return &ChildProcessNorduser{}
 }
 
-func isRunning(uid uint32) (bool, error) {
-	// list all norduserd processes, restrict output to uid of the owner
+// handlePsError returns nil if err is nil or if there is no output. It returns unmodified err in any other
+// case.
+func handlePsError(out []byte, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var exiterr *exec.ExitError
+	if errors.As(err, &exiterr) {
+		// ps returns error when no processes are shown. We do not treat such cases as errors.
+		if len(out) == 0 {
+			return nil
+		}
+	}
+
+	return err
+}
+
+func parseNorduserPIDs(psOutput string) []int {
+	pids := []int{}
+	for _, pidStr := range strings.Split(psOutput, "\n") {
+		pid, err := strconv.Atoi(strings.TrimSpace(pidStr))
+		if err != nil {
+			log.Println("failed to parse pid string: ", err)
+			continue
+		}
+
+		pids = append(pids, pid)
+	}
+
+	return pids
+}
+
+func getRunningNorduserPIDs() ([]int, error) {
 	// #nosec G204 -- arguments are constant
-	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
-	if err != nil {
-		var exiterr *exec.ExitError
-		if errors.As(err, &exiterr) {
-			// ps returns 1 when no processes are shown
-			if exiterr.ExitCode() == 1 {
-				return false, nil
-			}
-		}
-
-		return false, fmt.Errorf("listing processes: %w", err)
+	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "pid=").CombinedOutput()
+	if err := handlePsError(output, err); err != nil {
+		return []int{}, fmt.Errorf("listing norduser pids: %w", err)
 	}
 
-	desiredUID := fmt.Sprint(uid)
-	uids := string(output)
-	for _, uid := range strings.Split(uids, "\n") {
-		if strings.Trim(uid, " ") == desiredUID {
-			return true, nil
+	return parseNorduserPIDs(string(output)), nil
+}
+
+func findPIDOfUID(uids string, desiredUID uint32) int {
+	for _, pidUid := range strings.Split(uids, "\n") {
+		var pid, uid int
+		_, err := fmt.Sscanf(pidUid, " %d %d", &uid, &pid)
+		if err != nil {
+			log.Println("error when scanning ps output line: ", err)
+			continue
+		}
+
+		if uid == int(desiredUID) {
+			return pid
 		}
 	}
 
-	return false, nil
+	return -1
+}
+
+func getPIDForNorduserUID(uid uint32) (int, error) {
+	// #nosec G204 -- arguments are constant
+	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=", "-o", "pid=").CombinedOutput()
+	if err := handlePsError(output, err); err != nil {
+		return -1, fmt.Errorf("listing norduser uids/pids: %w", err)
+	}
+
+	return findPIDOfUID(string(output), uid), nil
 }
 
 // Enable starts norduser process
-func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err error) {
-	running, err := isRunning(uid)
+func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	pid, err := getPIDForNorduserUID(uid)
 	if err != nil {
 		return fmt.Errorf("failed to determine if the process is already running: %w", err)
 	}
 
-	if running {
+	if pid != -1 {
 		return nil
 	}
 
@@ -69,7 +115,7 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	}
 
 	// #nosec G204 -- no input comes from user
-	cmd := exec.Command(internal.NorduserBinaryPath, "fork")
+	cmd := exec.Command("/usr/bin/" + internal.Norduserd)
 	credential := &syscall.Credential{
 		Uid:    uid,
 		Gid:    gid,
@@ -80,7 +126,6 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	// environment variables from a parent process, therefore value of $HOME will be root home
 	// dir, where user usually does not have access.
 	cmd.Env = append(cmd.Env, "HOME="+home)
-	f.commandHandles[uid] = cmd
 
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("starting the process: %w", err)
@@ -92,15 +137,43 @@ func (f *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 }
 
 // Stop teminates norduser process
-func (f *ChildProcessNorduser) Stop(uid uint32) error {
-	commandHandle, ok := f.commandHandles[uid]
-	if !ok {
-		return fmt.Errorf("command handle not found for given uid")
+func (c *ChildProcessNorduser) Stop(uid uint32) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	pid, err := getPIDForNorduserUID(uid)
+	if err != nil {
+		return fmt.Errorf("looking up norduser pid: %w", err)
 	}
 
-	if err := commandHandle.Process.Signal(unix.SIGTERM); err != nil {
+	if pid == -1 {
+		return nil
+	}
+
+	if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+		if errno, ok := err.(syscall.Errno); ok {
+			if errno == syscall.ESRCH {
+				return nil
+			}
+		}
 		return fmt.Errorf("sending SIGTERM to norduser process: %w", err)
 	}
 
 	return nil
+}
+
+func (c *ChildProcessNorduser) StopAll() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	pids, err := getRunningNorduserPIDs()
+	if err != nil {
+		return
+	}
+
+	for _, pid := range pids {
+		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+			log.Println("failed to send a signal to norduser process: ", err)
+		}
+	}
 }
