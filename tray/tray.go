@@ -106,7 +106,7 @@ func OnReady(ti *Instance) {
 
 	systray.SetIconName(ti.iconDisconnected)
 	ti.state.vpnStatus = "Disconnected"
-	ti.state.notifyEnabled = true
+	ti.state.notifyEnabled = false
 	ti.redrawChan = make(chan struct{})
 	ti.updateChan = make(chan bool)
 
