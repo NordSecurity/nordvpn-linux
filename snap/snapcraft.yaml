@@ -129,9 +129,9 @@ parts:
       - on armhf: ./bin/armhf
       - on aarch64: ./bin/aarch64
     organize:
-      nordfileshare: var/lib/nordvpn/nordfileshare
+      nordfileshare: usr/bin/nordfileshare
     stage:
-      - var/lib/nordvpn/nordfileshare
+      - usr/bin/nordfileshare
 
   norduser:
     plugin: dump
@@ -143,9 +143,9 @@ parts:
       - on armhf: ./bin/armhf
       - on aarch64: ./bin/aarch64
     organize:
-      norduserd: var/lib/nordvpn/norduserd
+      norduserd: usr/bin/norduserd
     stage:
-      - var/lib/nordvpn/norduserd
+      - usr/bin/norduserd
 
   openvpn-bin:
     plugin: dump
