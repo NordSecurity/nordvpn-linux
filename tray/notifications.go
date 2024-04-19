@@ -16,12 +16,18 @@ func (ti *Instance) notify(text string, a ...any) {
 	ti.state.mu.RLock()
 	notifyEnabled := ti.state.notifyEnabled
 	ti.state.mu.RUnlock()
-	err := errors.New("notifications disabled")
 	if notifyEnabled {
-		_, err = ti.notifier.sendNotification("NordVPN", text)
+		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
+			fmt.Println(internal.ErrorPrefix+" failed to send notification: ", err)
+		}
 	}
-	if err != nil {
-		log.Println(internal.ErrorPrefix+" failed to send notification: ", err)
+}
+
+// notifyForce sends a notification, ignoring users notify setting
+func (ti *Instance) notifyForce(text string, a ...any) {
+	text = fmt.Sprintf(text, a...)
+	if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
+		log.Println(internal.ErrorPrefix+" failed to send forced notification: ", err)
 	}
 }
 
@@ -44,7 +50,7 @@ func (n *dbusNotifier) start() {
 }
 
 // sendNotification sends notification via dbus. Thread safe.
-func (n *dbusNotifier) sendNotification(summary string, body string) (uint32, error) {
+func (n *dbusNotifier) sendNotification(summary string, body string) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -59,9 +65,12 @@ func (n *dbusNotifier) sendNotification(summary string, body string) (uint32, er
 				"transient": dbus.MakeVariant(1),
 			},
 		}
-		return n.notifier.SendNotification(notification)
+		if _, err := n.notifier.SendNotification(notification); err != nil {
+			return err
+		}
+		return nil
 	} else {
-		return 0, errors.New("dbus notifier not connected")
+		return errors.New("dbus notifier not connected")
 	}
 }
 
