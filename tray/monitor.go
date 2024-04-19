@@ -242,7 +242,10 @@ func (ti *Instance) maybeRedraw(result bool, previous bool) bool {
 	return result || previous
 }
 
-func (ti *Instance) pollingMonitor(ticker <-chan time.Time) {
+func (ti *Instance) pollingMonitor() {
+	ticker := time.NewTicker(PollingUpdateInterval)
+	defer ticker.Stop()
+
 	fullUpdate := true
 	fullUpdateLast := time.Time{}
 	for {
@@ -267,8 +270,8 @@ func (ti *Instance) pollingMonitor(ticker <-chan time.Time) {
 		case fullUpdate = <-ti.updateChan:
 		case <-systray.TrayOpenedCh:
 			fullUpdate = true
-		case ts := <-ticker:
-			if ts.Sub(fullUpdateLast) > PollingFullUpdateInterval {
+		case ts := <-ticker.C:
+			if ts.Sub(fullUpdateLast) >= PollingFullUpdateInterval {
 				fullUpdate = true
 			} else {
 				fullUpdate = false

@@ -112,8 +112,7 @@ func OnReady(ti *Instance) {
 
 	time.AfterFunc(NotifierStartDelay, func() { ti.notifier.start() })
 
-	ticker := time.Tick(PollingUpdateInterval)
-	go ti.pollingMonitor(ticker)
+	go ti.pollingMonitor()
 
 	go func() {
 		for {
