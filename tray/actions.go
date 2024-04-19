@@ -51,7 +51,6 @@ func (ti *Instance) login() {
 			err = cmd.Wait()
 
 			if err != nil {
-				ti.notify("Failed to open the web browser: %v", err)
 				ti.notify("Continue log in in the browser: %s", url)
 			}
 		}
