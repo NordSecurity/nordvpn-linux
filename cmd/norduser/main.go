@@ -61,20 +61,11 @@ func addAutostart() (string, error) {
 }
 
 func startTray(quitChan chan<- norduser.StopRequest) {
-	try := 0
-	// Retry checking systray availability, as it might not be availalble on startup.
 	for {
 		if systray.IsAvailable() {
 			break
 		}
-
-		if try == 5 {
-			log.Println("Session tray not available, exiting")
-			return
-		}
-
-		try++
-		<-time.After(10)
+		<-time.After(10 * time.Second)
 	}
 
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
