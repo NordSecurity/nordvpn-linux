@@ -49,16 +49,13 @@ def test_selenium_login(login_flag):
         browser.get(login_link)
         print(f"Browser URL: {browser.current_url}\n")
 
-        # User credentials, that we will use in order to log in to NordAccount
-        user_info = os.environ.get("DEFAULT_LOGIN_USERNAME") + ":" + os.environ.get("DEFAULT_LOGIN_PASSWORD")
-
         try:
             # Username page
-            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, user_info.split(':')[0])
+            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, os.environ.get("DEFAULT_LOGIN_USERNAME"))
             selenium.browser_element_interact(login.NA_USERNAME_PAGE_BUTTON_XPATH)
 
             # Password page
-            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, user_info.split(':')[1])
+            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, os.environ.get("DEFAULT_LOGIN_PASSWORD"))
             selenium.browser_element_interact(login.NA_PASSWORD_PAGE_BUTTON_XPATH)
 
             # Continue to app page
@@ -87,16 +84,13 @@ def test_selenium_login_callback(login_flag):
         browser.get(login_link)
         print(f"Browser URL: {browser.current_url}\n")
 
-        # User credentials, that we will use in order to log in to NordAccount
-        user_info = os.environ.get("DEFAULT_LOGIN_USERNAME") + ":" + os.environ.get("DEFAULT_LOGIN_PASSWORD")
-
         try:
             # Username page
-            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, user_info.split(':')[0])
+            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, os.environ.get("DEFAULT_LOGIN_USERNAME"))
             selenium.browser_element_interact(login.NA_USERNAME_PAGE_BUTTON_XPATH)
 
             # Password page
-            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, user_info.split(':')[1])
+            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, os.environ.get("DEFAULT_LOGIN_PASSWORD"))
             selenium.browser_element_interact(login.NA_PASSWORD_PAGE_BUTTON_XPATH)
 
             # Continue to app page
