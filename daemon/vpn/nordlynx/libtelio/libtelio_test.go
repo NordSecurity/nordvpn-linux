@@ -72,7 +72,7 @@ func TestIsConnected(t *testing.T) {
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 			defer cancel()
-			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, &vpn.Events{})
+			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents())
 
 			assert.Equal(t, test.expected, <-isConnectedC)
 		})
