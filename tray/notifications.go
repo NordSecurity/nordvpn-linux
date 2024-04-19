@@ -25,6 +25,15 @@ func (ti *Instance) notify(text string, a ...any) {
 	}
 }
 
+// notifyForce sends a notification, ignoring users notify setting
+func (ti *Instance) notifyForce(text string, a ...any) {
+	text = fmt.Sprintf(text, a...)
+	_, err := ti.notifier.sendNotification("NordVPN", text)
+	if err != nil {
+		log.Println(internal.ErrorPrefix+" failed to send notification: ", err)
+	}
+}
+
 // dbusNotifier wraps github.com/esiqveland/notify notifier implementation
 type dbusNotifier struct {
 	mu       sync.Mutex

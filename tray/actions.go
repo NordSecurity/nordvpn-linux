@@ -48,7 +48,8 @@ func (ti *Instance) login() {
 			err = cmd.Run()
 			if err != nil {
 				log.Println("Failed to open login webpage: ", err)
-				ti.notify("Continue log in in the browser: %s", url)
+				// we want to force a notification here, otherwise there will be no reaction to user action
+				ti.notifyForce("Continue log in in the browser: %s", url)
 			}
 		}
 	}
