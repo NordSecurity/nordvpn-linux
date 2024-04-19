@@ -43,9 +43,11 @@ def test_selenium_login(login_flag):
     with lib.Defer(selenium.browser_kill):
         # Get login link from NordVPN app, trim all spaces & chars after link itself
         login_link = sh.nordvpn.login(login_flag, _tty_out=False).strip().split(": ")[1]
+        print(f"Login link: {login_link}\n")
 
         # Open login link from NordVPN app
         browser.get(login_link)
+        print(f"Browser URL: {browser.current_url}\n")
 
         # User credentials, that we will use in order to log in to NordAccount
         user_info = os.environ.get("DEFAULT_LOGIN_USERNAME") + ":" + os.environ.get("DEFAULT_LOGIN_PASSWORD")
@@ -65,7 +67,9 @@ def test_selenium_login(login_flag):
             browser.save_screenshot(login.BROWSER_LOGS_PATH + "Screenshot.png")
             pytest.fail()
 
-        assert login.LOGOUT_MSG_SUCCESS in sh.nordvpn.logout()
+        output = sh.nordvpn.logout(_tty_out=False)
+        print(f"Logout action output: {output}\n")
+        assert login.LOGOUT_MSG_SUCCESS in output
 
 
 @pytest.mark.parametrize("login_flag", login.LOGIN_FLAG)
@@ -77,9 +81,11 @@ def test_selenium_login_callback(login_flag):
     with lib.Defer(selenium.browser_kill):
         # Get login link from NordVPN app, trim all spaces & chars after link itself
         login_link = sh.nordvpn.login(login_flag, _tty_out=False).strip().split(": ")[1]
+        print(f"Login link: {login_link}\n")
 
         # Open login link from NordVPN app
         browser.get(login_link)
+        print(f"Browser URL: {browser.current_url}\n")
 
         # User credentials, that we will use in order to log in to NordAccount
         user_info = os.environ.get("DEFAULT_LOGIN_USERNAME") + ":" + os.environ.get("DEFAULT_LOGIN_PASSWORD")
@@ -96,8 +102,11 @@ def test_selenium_login_callback(login_flag):
             # Continue to app page
             # preferences not set in constructor, so when we click link it does not redirect us to app.
             callback_link = selenium.browser_element_interact(login.NA_CONTINUE_PAGE_LINK_BUTTON, return_attribute='href')
+            print(f"Callback URL: {callback_link}\n")
         except:  # noqa: E722
             browser.save_screenshot(login.BROWSER_LOGS_PATH + "Screenshot.png")
             pytest.fail()
 
-        assert login.LOGIN_MSG_SUCCESS in sh.nordvpn.login("--callback", callback_link)
+        output = sh.nordvpn.login("--callback", callback_link, _tty_out=False)
+        print(f"Callback login action output: {output}\n")
+        assert login.LOGIN_MSG_SUCCESS in output
