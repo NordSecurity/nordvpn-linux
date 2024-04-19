@@ -3,6 +3,7 @@ package tray
 import (
 	"context"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -44,13 +45,9 @@ func (ti *Instance) login() {
 		if url := resp.GetData(); url != "" {
 			// #nosec G204 -- user input is not passed in
 			cmd := exec.Command("xdg-open", url)
-			err = cmd.Start()
+			err = cmd.Run()
 			if err != nil {
-				ti.notify("Failed to start xdg-open: %v", err)
-			}
-			err = cmd.Wait()
-
-			if err != nil {
+				log.Println("Failed to open login webpage: ", err)
 				ti.notify("Continue log in in the browser: %s", url)
 			}
 		}
