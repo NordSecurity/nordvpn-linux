@@ -106,14 +106,13 @@ func OnReady(ti *Instance) {
 
 	systray.SetIconName(ti.iconDisconnected)
 	ti.state.vpnStatus = "Disconnected"
-	ti.state.notifyEnabled = true
+	ti.state.notifyEnabled = false
 	ti.redrawChan = make(chan struct{})
 	ti.updateChan = make(chan bool)
 
 	time.AfterFunc(NotifierStartDelay, func() { ti.notifier.start() })
 
-	ticker := time.Tick(PollingUpdateInterval)
-	go ti.pollingMonitor(ticker)
+	go ti.pollingMonitor()
 
 	go func() {
 		for {
