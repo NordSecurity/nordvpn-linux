@@ -17,6 +17,7 @@ Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames")
 
 
 def create_directory(file_count: int, name_suffix: str = "", parent_dir: str = None) -> Directory:
+    # for snap testing make directories to be created from current path e.g. dir="./"
     dir_path = tempfile.mkdtemp(dir=parent_dir)
     paths = []
     transfer_paths = []

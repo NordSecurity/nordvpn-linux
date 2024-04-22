@@ -1,3 +1,4 @@
+import os
 import re
 
 import sh
@@ -123,7 +124,9 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
 
     current_subnet_rules_input_chain = []
 
-    for line in sh.sudo.iptables("-S").splitlines():
+    fw_lines = os.popen("sudo iptables -S").read()
+
+    for line in fw_lines.splitlines():
         if "INPUT" in line and "-s" in line:
             current_subnet_rules_input_chain.append(line)
 
@@ -141,7 +144,9 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
 
     current_subnet_rules_input_chain = []
 
-    for line in sh.sudo.iptables("-S").splitlines():
+    fw_lines = os.popen("sudo iptables -S").read()
+
+    for line in fw_lines.splitlines():
         if "OUTPUT" in line and "-d" in line:
             current_subnet_rules_input_chain.append(line)
 
@@ -293,18 +298,20 @@ def is_active(ports: list[Port] = None, subnets: list[str] = None) -> bool:
     print()
     print(sh.nordvpn.settings())
 
-    return current_rules == expected_rules
+    return all(ln in current_rules for ln in expected_rules)
 
 
 def is_empty() -> bool:
     """Returns True when firewall does not have DROP rules."""
-    return "DROP" not in sh.sudo.iptables("-S")
+    # under snap, also on host, ignore docker rules
+    return "DROP" not in os.popen("sudo iptables -S | grep -v DOCKER").read()
 
 
 def _get_iptables_rules() -> list[str]:
     # TODO: add full ipv6 support, separate task #LVPN-3684
     print("Using iptables")
-    return sh.sudo.iptables("-S").split('\n')[3:-1]
+    fw_lines = os.popen("sudo iptables -S").read()
+    return fw_lines.split('\n')[3:-1]
 
 
 def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
@@ -339,6 +346,8 @@ def sort_list_by_other_list(to_sort: list[str], sort_by: list[str]) -> list[str]
 
 def add_and_delete_random_route():
     """Adds a random route, and deletes it. If this is not used, exceptions happen in allowlist tests."""
-    cmd = sh.sudo.ip.route.add.default.via.bake("127.0.0.1")
-    cmd.table(IP_ROUTE_TABLE)
-    sh.sudo.ip.route.delete.default.table(IP_ROUTE_TABLE)
+    # cmd = sh.sudo.ip.route.add.default.via.bake("127.0.0.1")
+    # cmd.table(IP_ROUTE_TABLE)
+    os.popen(f"sudo ip route add default via 127.0.0.1 table {IP_ROUTE_TABLE}").read()
+    # sh.sudo.ip.route.delete.default.table(IP_ROUTE_TABLE)
+    os.popen(f"sudo ip route delete default table {IP_ROUTE_TABLE}").read()

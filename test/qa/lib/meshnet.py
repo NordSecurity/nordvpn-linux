@@ -515,15 +515,16 @@ def deny_meshnet_invite(ssh_client: ssh.Ssh):
     return output
 
 def validate_input_chain(peer_ip: str, routing: bool, local: bool, incoming: bool, fileshare: bool) -> (bool, str):
-    rules = sh.sudo.iptables("-S", "INPUT")
+    #rules = sh.sudo.iptables("-S", "INPUT")
+    rules = os.popen("sudo iptables -S INPUT").read()
 
     fileshare_rule = f"-A INPUT -s {peer_ip}/32 -p tcp -m tcp --dport 49111 -m comment --comment nordvpn -j ACCEPT"
     if (fileshare_rule in rules) != fileshare:
-        return False, f"Fileshare permissions configured incorrectly, rule expected: {fileshare}\nrules:{rules}"
+        return False, f"Fileshare permissions configured incorrectly, rule expected: {fileshare_rule}\nrules:{rules}"
 
     incoming_rule = f"-A INPUT -s {peer_ip}/32 -m comment --comment nordvpn -j ACCEPT"
     if (incoming_rule in rules) != incoming:
-        return False, f"Incoming permissions configured incorrectly, rule expected: {incoming}\nrules:{rules}"
+        return False, f"Incoming permissions configured incorrectly, rule expected: {incoming_rule}\nrules:{rules}"
 
     # If incoming is not enabled, no rules other than fileshare(if enabled) for that peer should be added
     if not incoming:
@@ -550,7 +551,8 @@ def validate_input_chain(peer_ip: str, routing: bool, local: bool, incoming: boo
 
 def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: bool, fileshare: bool) -> (bool, str):
     _, _ = incoming, fileshare
-    rules = sh.sudo.iptables("-S", "FORWARD")
+    #rules = sh.sudo.iptables("-S", "FORWARD")
+    rules = os.popen("sudo iptables -S FORWARD").read()
 
     # This rule is added above the LAN denial rules if both local and routing is allowed to peer, or bellow LAN denial
     # if only routing is allowed.

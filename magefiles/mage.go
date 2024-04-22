@@ -28,6 +28,9 @@ const (
 
 	dockerWorkDir  = "/opt"
 	devPackageType = "source"
+
+	qaPeerAddress = "http://qa-peer:8000/exec"
+	covDir        = "covdatafiles"
 )
 
 // Build is used for native builds.
@@ -539,10 +542,27 @@ func (Test) Hardening(ctx context.Context) error {
 	)
 }
 
+// Run QA tests (arguments: {testGroup} {testPattern})
+func (Test) QA(ctx context.Context, testGroup, testPattern string) error {
+	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
+	return qa(ctx, testGroup, testPattern)
+}
+
+// Run QA tests (arguments: {testGroup} {testPattern})
+func (Test) QASnap(ctx context.Context, testGroup, testPattern string) error {
+	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
+	return qaSnap(ctx, testGroup, testPattern)
+}
+
+// Run QA tests (arguments: {testGroup} {testPattern})
+func (Test) QASnapFast(ctx context.Context, testGroup, testPattern string) error {
+	return qaSnap(ctx, testGroup, testPattern)
+}
+
 // Run QA tests in Docker container (arguments: {testGroup} {testPattern})
 func (Test) QADocker(ctx context.Context, testGroup, testPattern string) error {
 	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
-	return qa(ctx, testGroup, testPattern)
+	return qaDocker(ctx, testGroup, testPattern)
 }
 
 // Run QA tests in Docker container, builds the package locally and skips the build if it is already
@@ -555,17 +575,17 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 		mg.Deps(mg.F(buildPackage, "deb", "-cover"))
 	}
 
-	return qa(ctx, testGroup, testPattern)
+	return qaDocker(ctx, testGroup, testPattern)
 }
 
-func qa(ctx context.Context, testGroup, testPattern string) error {
+func qaDocker(ctx context.Context, testGroup, testPattern string) error {
 	env, err := getEnv()
 	if err != nil {
 		return err
 	}
 	env["WORKDIR"] = dockerWorkDir
-	env["QA_PEER_ADDRESS"] = "http://qa-peer:8000/exec"
-	env["COVERDIR"] = "covdatafiles"
+	env["QA_PEER_ADDRESS"] = qaPeerAddress
+	env["COVERDIR"] = covDir
 
 	dir := env["WORKDIR"] + "/" + env["COVERDIR"]
 	_ = os.RemoveAll(dir)
@@ -602,6 +622,50 @@ func qa(ctx context.Context, testGroup, testPattern string) error {
 		[]string{"ci/test_deb.sh", testGroup, testPattern},
 		DockerSettings{Privileged: true, Network: networkID},
 	)
+}
+
+func qa(_ context.Context, testGroup, testPattern string) error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+	env["QA_PEER_ADDRESS"] = qaPeerAddress
+	env["COVERDIR"] = covDir
+
+	dir := env["WORKDIR"] + "/" + env["COVERDIR"]
+	_ = os.RemoveAll(dir)
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	env["ARCH"] = build.Default.GOARCH
+	env["WORKDIR"] = cwd
+
+	return sh.RunWith(env, "ci/test_deb.sh", testGroup, testPattern)
+}
+
+func qaSnap(_ context.Context, testGroup, testPattern string) error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+	env["QA_PEER_ADDRESS"] = qaPeerAddress
+	env["COVERDIR"] = covDir
+
+	dir := env["WORKDIR"] + "/" + env["COVERDIR"]
+	_ = os.RemoveAll(dir)
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	env["ARCH"] = build.Default.GOARCH
+	env["WORKDIR"] = cwd
+
+	return sh.RunWith(env, "ci/test_snap.sh", testGroup, testPattern)
 }
 
 // Performs linter check against Go codebase

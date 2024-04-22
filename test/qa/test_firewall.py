@@ -1,3 +1,5 @@
+import os
+
 import pytest
 import sh
 import timeout_decorator
@@ -230,21 +232,25 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
             if not before_connect:
                 sh.nordvpn.set("lan-discovery", "on")
 
-            rules = sh.sudo.iptables("-S", "INPUT")
+            rules = os.popen("sudo iptables -S INPUT").read()
+            #rules = sh.sudo.iptables("-S", "INPUT")
             for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
                 assert rule in rules, f"{rule} input rule not found in iptables."
 
-            rules = sh.sudo.iptables("-S", "OUTPUT")
+            rules = os.popen("sudo iptables -S OUTPUT").read()
+            #rules = sh.sudo.iptables("-S", "OUTPUT")
             for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
                 assert rule in rules, f"{rule} output rule not found in iptables"
 
             sh.nordvpn.set("lan-discovery", "off")
 
-            rules = sh.sudo.iptables("-S", "INPUT")
+            rules = os.popen("sudo iptables -S INPUT").read()
+            #rules = sh.sudo.iptables("-S", "INPUT")
             for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} input rule not found in iptables."
 
-            rules = sh.sudo.iptables("-S", "OUTPUT")
+            rules = os.popen("sudo iptables -S OUTPUT").read()
+            #rules = sh.sudo.iptables("-S", "OUTPUT")
             for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} output rule not found in iptables"
 
@@ -264,18 +270,22 @@ def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
             sh.nordvpn.allowlist.add.subnet(subnet)
             sh.nordvpn.set("lan-discovery", "on")
 
-            rules = sh.sudo.iptables("-S", "INPUT")
+            rules = os.popen("sudo iptables -S INPUT").read()
+            #rules = sh.sudo.iptables("-S", "INPUT")
             assert f"-A INPUT -s {subnet} -i eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the INPUT chain when LAN discovery was enabled."
 
-            rules = sh.sudo.iptables("-S", "OUTPUT")
+            rules = os.popen("sudo iptables -S OUTPUT").read()
+            #rules = sh.sudo.iptables("-S", "OUTPUT")
             assert f"-A OUTPUT -s {subnet} -o eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the OUTPUT chain when LAN discovery was enabled."
 
             sh.nordvpn.set("lan-discovery", "off")
 
-            rules = sh.sudo.iptables("-S", "INPUT")
+            rules = os.popen("sudo iptables -S INPUT").read()
+            #rules = sh.sudo.iptables("-S", "INPUT")
             for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} input rule not found in iptables."
 
-            rules = sh.sudo.iptables("-S", "OUTPUT")
+            rules = os.popen("sudo iptables -S OUTPUT").read()
+            #rules = sh.sudo.iptables("-S", "OUTPUT")
             for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} output rule not found in iptables"

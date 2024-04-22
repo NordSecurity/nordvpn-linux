@@ -14,6 +14,7 @@ from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
+# for snap testing, make this path from current folder e.g. ./tmp/testfiles
 workdir = "/tmp/testfiles"
 test_files = ["testing_fileshare_0.txt", "testing_fileshare_1.txt", "testing_fileshare_2.txt", "testing_fileshare_3.txt"]
 
@@ -28,7 +29,7 @@ def setup_module(module):  # noqa: ARG001
 
     # temporary hack for autoaccept tests, we create a default download directory
     # will be remove once default download directory setting is implemented
-    os.system(f"sudo mkdir -m 0777 {default_download_directory}")
+    os.system(f"sudo mkdir -p -m 0777 {default_download_directory}")
 
     sh.nordvpn.set.meshnet.on()
     # Ensure clean starting state
@@ -56,7 +57,7 @@ def setup_module(module):  # noqa: ARG001
         with open(filepath, "w") as f:
             f.write(message)
 
-    ssh_client.exec_command("mkdir /root/Downloads")
+    ssh_client.exec_command("mkdir -p /root/Downloads")
 
 
 def teardown_module(module):  # noqa: ARG001

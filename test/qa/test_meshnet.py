@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import time
 from datetime import datetime
@@ -106,7 +107,8 @@ def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, filesh
     (result, message) = meshnet.validate_forward_chain(peer_ip, routing, local, incoming, fileshare)
     assert result, message
 
-    rules = sh.sudo.iptables("-S", "POSTROUTING", "-t", "nat")
+    #rules = sh.sudo.iptables("-S", "POSTROUTING", "-t", "nat")
+    rules = os.popen("sudo iptables -S POSTROUTING -t nat").read()
 
     if routing:
         assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" in rules
@@ -122,7 +124,8 @@ def test_remove_peer_firewall_update():
     sh.nordvpn.mesh.peer.refresh()
 
     def all_peer_permissions_removed() -> (bool, str):
-        rules = sh.sudo.iptables("-S")
+        #rules = sh.sudo.iptables("-S")
+        rules = os.popen("sudo iptables -S").read()
         if peer_ip not in rules:
             return True, ""
         return False, f"Rules for peer were not removed from firewall\nPeer IP: {peer_ip}\nrules:\n{rules}"
