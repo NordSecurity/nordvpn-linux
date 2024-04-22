@@ -3,6 +3,7 @@ import time
 import pytest
 import sh
 import timeout_decorator
+import time
 
 import lib
 from lib import allowlist, daemon, firewall, info, logging, login, network, settings
@@ -13,7 +14,8 @@ def setup_module(module):  # noqa: ARG001
 
 
 def setup_function(function):  # noqa: ARG001
-    daemon.start()
+    #daemon.start()
+    time.sleep(1)
     login.login_as("default")
 
     logging.log()
@@ -25,7 +27,7 @@ def teardown_function(function):  # noqa: ARG001
 
     sh.nordvpn.logout("--persist-token")
     sh.nordvpn.set.defaults()
-    daemon.stop()
+    #daemon.stop()
 
 
 SUBNET_1 = "2.2.2.2"

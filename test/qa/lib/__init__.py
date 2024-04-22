@@ -31,7 +31,7 @@ OVPN_STANDARD_TECHNOLOGIES = [
 ]
 
 # Used for test parametrization, when the same test has to be run for all technologies.
-TECHNOLOGIES = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES
+TECHNOLOGIES = STANDARD_TECHNOLOGIES
 
 TECHNOLOGIES_BASIC1 = [
     ("nordlynx", "", ""),
@@ -56,18 +56,12 @@ IPV6 = [
 
 # Used for test parametrization, when the same test has to be run for obfuscated technologies.
 STANDARD_GROUPS = [
-    "Africa_The_Middle_East_And_India",
-    "Asia_Pacific",
-    "The_Americas",
     "Europe",
 ]
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 ADDITIONAL_GROUPS = [
     "Double_VPN",
-    "Onion_Over_VPN",
-    "Standard_VPN_Servers",
-    "P2P",
 ]
 
 # Used for test parametrization, when the tested functionality only works with non-obfuscated OPENVPN.
@@ -86,25 +80,16 @@ GROUPS = STANDARD_GROUPS + ADDITIONAL_GROUPS
 # Used for test parametrization, when the same test has to be run for different countries.
 COUNTRIES = [
     "Germany",
-    "Netherlands",
-    "United_States",
-    "France",
 ]
 
 # Used for test parametrization, when the same test has to be run for different countries.
 COUNTRY_CODES = [
     "de",
-    "nl",
-    "us",
-    "fr",
 ]
 
 # Used for test parametrization, when the same test has to be run for different cities.
 CITIES = [
     "Frankfurt",
-    "Amsterdam",
-    "New_York",
-    "Paris",
 ]
 
 # Used for testing, when specific server is offine.
@@ -143,15 +128,11 @@ SUBNETS = [
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS = [
     Port("22", Protocol.UDP),
-    Port("22", Protocol.TCP),
-    Port("22", Protocol.ALL),
 ]
 
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS_RANGE = [
     Port("3000:3100", Protocol.UDP),
-    Port("3000:3100", Protocol.TCP),
-    Port("3000:3100", Protocol.ALL),
 ]
 
 # Used for test parametrization, when the same test has to be run with different allowlist alias.

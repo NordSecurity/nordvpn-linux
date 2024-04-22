@@ -13,12 +13,17 @@ from . import ssh
 def _rewrite_log_path():
     project_root = os.environ["WORKDIR"].replace("/", "\\/")
     pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
-    sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
+    #sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
+    os.popen("sudo sed -i {} /etc/init.d/nordvpn".format(pattern)).read()
 
 
 # returns True on SystemD distros
 def is_init_systemd():
     return "systemd" in sh.ps("--no-headers", "-o", "comm", "1")
+
+
+def is_under_snap():
+    return "snap" in sh.which("nordvpn")
 
 
 def is_connected() -> bool:
@@ -71,12 +76,15 @@ def uninstall_peer(ssh_client: ssh.Ssh):
 
 def start():
     """Starts daemon and blocks until it is actually started."""
-    if is_init_systemd():
+    if is_under_snap():
+        #sh.sudo.snap("start", "nordvpn")
+        os.popen("sudo snap start nordvpn").read()
+    elif is_init_systemd():
         sh.sudo.systemctl.start.nordvpnd()
-        return
-    # call to init.d returns before the daemon is actually started
-    _rewrite_log_path()
-    sh.sudo("/etc/init.d/nordvpn", "start")
+    else:
+        # call to init.d returns before the daemon is actually started
+        _rewrite_log_path()
+        sh.sudo("/etc/init.d/nordvpn", "start")
     while not is_running():
         time.sleep(1)
 
@@ -91,11 +99,14 @@ def start_peer(ssh_client: ssh.Ssh):
 
 def stop():
     """Stops the daemon and blocks until it is actually stopped."""
-    if is_init_systemd():
+    if is_under_snap():
+        #sh.sudo.snap("stop", "nordvpn")
+        os.popen("sudo snap stop nordvpn").read()
+    elif is_init_systemd():
         sh.sudo.systemctl.stop.nordvpnd()
-        return
-    # call to init.d returns before the daemon is actually stopped
-    sh.sudo("/etc/init.d/nordvpn", "stop")
+    else:
+        # call to init.d returns before the daemon is actually stopped
+        sh.sudo("/etc/init.d/nordvpn", "stop")
     while is_running():
         time.sleep(1)
 

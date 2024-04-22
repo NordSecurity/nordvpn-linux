@@ -1,5 +1,5 @@
 import pytest
-import sh
+import sh, os
 import timeout_decorator
 
 import lib
@@ -55,4 +55,10 @@ def test_api_call_after_vpn_connect():
 
 def test_daemon_socket_permissions():
     socket_dir = "/run/nordvpn"
-    assert "nordvpn 750" in sh.sudo.stat(socket_dir, "-c", "%G %a")
+    check_info = "nordvpn 750"
+    if daemon.is_under_snap():
+        socket_dir = "/var/snap/nordvpn/common/run/nordvpn"
+        check_info = "root 755"
+    cmd_str = "sudo stat -c '%G %a' {}".format(socket_dir)
+    out = os.popen(cmd_str).read()
+    assert check_info in out

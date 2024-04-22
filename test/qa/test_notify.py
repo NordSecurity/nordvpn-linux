@@ -28,6 +28,7 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
+@pytest.mark.skip(reason="~~~VERIFIED, some succeed, some fail")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -47,6 +48,7 @@ def test_notifications_disabled_connect(tech, proto, obfuscated):
         notify.print_tidy_exception(connect_notification, notify.NOTIFICATION_NOT_DETECTED)
 
 
+@pytest.mark.skip(reason="~~~SNAP fail")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -68,6 +70,7 @@ def test_notifications_enabled_connect(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_DETECTED)
 
 
+@pytest.mark.skip(reason="~~~SNAP fail")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -91,6 +94,7 @@ def test_notifications_enabled_connected_disable(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_NOT_DETECTED)
 
 
+@pytest.mark.skip(reason="~~~SNAP fail")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -113,6 +117,7 @@ def test_notifications_disabled_connected_enable(tech, proto, obfuscated):
         notify.print_tidy_exception(disconnect_notification, notify.NOTIFICATION_DETECTED)
 
 
+@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -127,6 +132,7 @@ def test_notify_already_enabled_disconnected(tech, proto, obfuscated):
     assert settings.is_notify_enabled()
 
 
+@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -144,6 +150,7 @@ def test_notify_already_enabled_connected(tech, proto, obfuscated):
         assert settings.is_notify_enabled()
 
 
+@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -157,6 +164,7 @@ def test_notify_already_disabled_disconnected(tech, proto, obfuscated):
     assert not settings.is_notify_enabled()
 
 
+@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)

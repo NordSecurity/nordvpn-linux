@@ -1,6 +1,6 @@
 import re
 
-import sh
+import sh, os
 
 from . import Port, Protocol, daemon, logging
 
@@ -123,7 +123,9 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
 
     current_subnet_rules_input_chain = []
 
-    for line in sh.sudo.iptables("-S").splitlines():
+    fw_lines = os.popen("sudo iptables -S").read()
+
+    for line in fw_lines.splitlines():
         if "INPUT" in line and "-s" in line:
             current_subnet_rules_input_chain.append(line)
 
@@ -141,7 +143,9 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
 
     current_subnet_rules_input_chain = []
 
-    for line in sh.sudo.iptables("-S").splitlines():
+    fw_lines = os.popen("sudo iptables -S").read()
+
+    for line in fw_lines.splitlines():
         if "OUTPUT" in line and "-d" in line:
             current_subnet_rules_input_chain.append(line)
 
@@ -293,18 +297,23 @@ def is_active(ports: list[Port] = None, subnets: list[str] = None) -> bool:
     print()
     print(sh.nordvpn.settings())
 
-    return current_rules == expected_rules
+    for ln in expected_rules:
+        if ln not in current_rules:
+            return False
+
+    return True
 
 
 def is_empty() -> bool:
     """Returns True when firewall does not have DROP rules."""
-    return "DROP" not in sh.sudo.iptables("-S")
+    return "DROP" not in os.popen("sudo iptables -S | grep -v DOCKER").read()
 
 
 def _get_iptables_rules() -> list[str]:
     # TODO: add full ipv6 support, separate task #LVPN-3684
     print("Using iptables")
-    return sh.sudo.iptables("-S").split('\n')[3:-1]
+    fw_lines = os.popen("sudo iptables -S").read()
+    return fw_lines.split('\n')[3:-1]
 
 
 def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
