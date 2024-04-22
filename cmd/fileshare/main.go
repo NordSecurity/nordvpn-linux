@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_startup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -36,7 +37,7 @@ func main() {
 
 	configDirPath, err := internal.GetConfigDirPath(homeDir)
 	if err == nil {
-		if logFile, err := openLogFile(filepath.Join(configDirPath + "/" + internal.FileshareLogFileName)); err == nil {
+		if logFile, err := openLogFile(filepath.Join(configDirPath, internal.FileshareLogFileName)); err == nil {
 			log.SetOutput(logFile)
 			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 		}
@@ -62,8 +63,13 @@ func main() {
 		// In case of snap, if default directory is determined to be under $HOME and that
 		// is translated to $SNAP_USER_DATA, during the first execution Downloads directory
 		// will not be created yet
-		if err := internal.EnsureDir(filepath.Join(homeDir, "Downloads", "a")); err != nil {
-			log.Println("Failed to ensure default downloads directory:", err)
+		downloadsDir, err := fileshare.GetDefaultDownloadDirectory()
+		if err != nil {
+			log.Println("Failed to get the default downloads directory:", err)
+		} else {
+			if err := internal.EnsureDir(filepath.Join(downloadsDir, "a")); err != nil {
+				log.Println("Failed to ensure default downloads directory:", err)
+			}
 		}
 		drainStart(eventsDBPath)
 	}

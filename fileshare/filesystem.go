@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"golang.org/x/sys/unix"
 )
 
@@ -68,9 +69,18 @@ func GetDefaultDownloadDirectory() (string, error) {
 		return downloads, nil
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to obtain user home directory: %s", err.Error())
+	homeDir := ""
+	var err error
+
+	if snapconf.IsUnderSnap() {
+		homeDir = snapconf.RealUserHomeDir()
+	}
+
+	if homeDir == "" {
+		homeDir, err = os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("failed to obtain user home directory: %s", err.Error())
+		}
 	}
 
 	path := filepath.Join(homeDir, "Downloads")

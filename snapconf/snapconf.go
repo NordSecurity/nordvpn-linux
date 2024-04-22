@@ -20,7 +20,10 @@ import (
 )
 
 const (
-	EnvSnapName = "SNAP_NAME"
+	EnvSnapName       = "SNAP_NAME"
+	EnvSnapRealHome   = "SNAP_REAL_HOME" // from snapd version 2.46
+	EnvSnapUserCommon = "SNAP_USER_COMMON"
+	EnvSnapUserData   = "SNAP_USER_DATA"
 )
 
 // Interface defines a snap interface as described in
@@ -212,4 +215,29 @@ func boolToBytes(val bool) []byte {
 		return []byte{'1'}
 	}
 	return []byte{'0'}
+}
+
+func RealUserHomeDir() string {
+	dir := os.Getenv(EnvSnapRealHome)
+	if dir != "" {
+		return dir
+	}
+
+	// for snapd before version 2.46 try to "guess" the home dir based on SNAP_USER_DATA variable
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	dir = os.Getenv(EnvSnapUserData)
+	if homeDir == dir {
+		// For non-classic snaps, HOME environment variable is re-written to SNAP_USER_DATA
+		// Typical value: /home/_user_name_/snap/_snap_name_/_snap_revision_
+		for i := 0; i < 3; i++ {
+			dir = filepath.Dir(dir)
+		}
+		return dir
+	}
+
+	return ""
 }
