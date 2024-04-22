@@ -1,3 +1,4 @@
+import os
 import socket
 import time
 from itertools import cycle
@@ -52,7 +53,8 @@ def _capture_packets(connection_settings: (str, str, str)) -> int:
         traffic_filter = TSHARK_FILTER_TCP_OBFUSCATED % server_ip
 
     # If enough packets are captured, do not wait the duration time, exit early, show compact output
-    tshark_result: str = sh.tshark("-i", "any", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "-a", "duration:3", "-a", "packets:1", "-f", traffic_filter)
+    #tshark_result: str = sh.tshark("-i", "any", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "-a", "duration:3", "-a", "packets:1", "-f", traffic_filter)
+    tshark_result: str = os.popen(f"sudo tshark -i any -T fields -e ip.src -e ip.dst -a duration:3 -a packets:1 -f {traffic_filter}").read()
 
     packets = tshark_result.strip().split("\n")
 

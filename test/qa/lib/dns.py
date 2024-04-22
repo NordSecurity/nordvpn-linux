@@ -1,4 +1,5 @@
 import dns.resolver
+import sh
 
 # Used for test parametrization.
 DNS_NORD = ["103.86.96.100", "103.86.99.100"]
@@ -54,10 +55,25 @@ def is_unset() -> bool:
 def is_set_for(dns_set_in_app: list) -> bool:
     """Returns True, if NordVPN application has successfully set and overriden DNS servers in Resolver."""
 
-    # DNS Addresses set in Resolver:
-    dns_set_in_os_addresses = dns.resolver.Resolver().nameservers
+    dns_set_in_os_addresses = get_dns_servers()
 
-    # Make sure, that:
-    # 1. All DNS from NordVPN app were successfully set in Resolver
-    # 2. All DNS Addresses in Resolver were overriden with DNS from NordVPN app
-    return sorted(dns_set_in_app) == sorted(dns_set_in_os_addresses)
+    return all(item in dns_set_in_os_addresses for item in dns_set_in_app)
+
+
+# get list of dns servers for all/any interfaces
+def get_dns_servers():
+    dns_status = ""
+    try:
+        dns_status = sh.resolvectl("status")
+    except sh.ErrorReturnCode_1:
+        dns_status = ""
+
+    if dns_status != "":
+        servers = []
+        for line in dns_status:
+            if "DNS Servers" in line:
+                for item in line.strip().split(":")[1].strip().split(" "):
+                    servers.append(item)
+        return servers
+    else:
+        return dns.resolver.Resolver().nameservers

@@ -1,13 +1,15 @@
+import os
+
 import sh
 
 
 def collect():
     """Collect system information and return as multiline string."""
-    link_layer_info = sh.sudo.ip.link()
-    network_interface_info = sh.sudo.ip.addr()
-    routing_info = sh.sudo.ip.route()
-    firewall_info = sh.sudo.iptables("-S")
-    nameserver_info = sh.sudo.cat("/etc/resolv.conf")
+    link_layer_info = os.popen("sudo ip link").read() #sh.sudo.ip.link()
+    network_interface_info = os.popen("sudo ip addr").read() #sh.sudo.ip.addr()
+    routing_info = os.popen("sudo ip route").read() #sh.sudo.ip.route()
+    firewall_info = os.popen("sudo iptables -S").read() #sh.sudo.iptables("-S")
+    nameserver_info = os.popen("sudo cat /etc/resolve.conf").read() #sh.sudo.cat("/etc/resolv.conf")
 
     # without `ww` we cannot see full process lines, as it is cut off early
     processes = sh.ps("-ef", "ww")
