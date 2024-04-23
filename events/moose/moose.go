@@ -117,11 +117,11 @@ func (s *Subscriber) mooseInit() error {
 		}
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationName(applicationName)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappName(applicationName)); err != nil {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationVersion(s.Version)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.Version)); err != nil {
 		return fmt.Errorf("setting application version: %w", err)
 	}
 
