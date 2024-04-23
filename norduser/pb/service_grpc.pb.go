@@ -24,9 +24,9 @@ const _ = grpc.SupportPackageIsVersion7
 type NorduserClient interface {
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// StartsFileshare starts fileshare process
-	StartFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StartFileshareResponse, error)
+	StartFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// StopFileshare stops fileshare process
-	StopFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StopFileshareResponse, error)
+	StopFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// Stop stops norduser process
 	Stop(ctx context.Context, in *StopNorduserRequest, opts ...grpc.CallOption) (*Empty, error)
 }
@@ -48,8 +48,8 @@ func (c *norduserClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallO
 	return out, nil
 }
 
-func (c *norduserClient) StartFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StartFileshareResponse, error) {
-	out := new(StartFileshareResponse)
+func (c *norduserClient) StartFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/norduserpb.Norduser/StartFileshare", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -57,8 +57,8 @@ func (c *norduserClient) StartFileshare(ctx context.Context, in *Empty, opts ...
 	return out, nil
 }
 
-func (c *norduserClient) StopFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StopFileshareResponse, error) {
-	out := new(StopFileshareResponse)
+func (c *norduserClient) StopFileshare(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	out := new(Empty)
 	err := c.cc.Invoke(ctx, "/norduserpb.Norduser/StopFileshare", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -81,9 +81,9 @@ func (c *norduserClient) Stop(ctx context.Context, in *StopNorduserRequest, opts
 type NorduserServer interface {
 	Ping(context.Context, *Empty) (*Empty, error)
 	// StartsFileshare starts fileshare process
-	StartFileshare(context.Context, *Empty) (*StartFileshareResponse, error)
+	StartFileshare(context.Context, *Empty) (*Empty, error)
 	// StopFileshare stops fileshare process
-	StopFileshare(context.Context, *Empty) (*StopFileshareResponse, error)
+	StopFileshare(context.Context, *Empty) (*Empty, error)
 	// Stop stops norduser process
 	Stop(context.Context, *StopNorduserRequest) (*Empty, error)
 	mustEmbedUnimplementedNorduserServer()
@@ -96,10 +96,10 @@ type UnimplementedNorduserServer struct {
 func (UnimplementedNorduserServer) Ping(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedNorduserServer) StartFileshare(context.Context, *Empty) (*StartFileshareResponse, error) {
+func (UnimplementedNorduserServer) StartFileshare(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StartFileshare not implemented")
 }
-func (UnimplementedNorduserServer) StopFileshare(context.Context, *Empty) (*StopFileshareResponse, error) {
+func (UnimplementedNorduserServer) StopFileshare(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StopFileshare not implemented")
 }
 func (UnimplementedNorduserServer) Stop(context.Context, *StopNorduserRequest) (*Empty, error) {

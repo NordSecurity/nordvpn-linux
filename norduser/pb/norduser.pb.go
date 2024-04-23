@@ -20,67 +20,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type StartFileshareStatus int32
-
-const (
-	StartFileshareStatus_SUCCESS                        StartFileshareStatus = 0
-	StartFileshareStatus_ALREADY_RUNNING                StartFileshareStatus = 1
-	StartFileshareStatus_ALREADY_RUNNING_FOR_OTHER_USER StartFileshareStatus = 2
-	StartFileshareStatus_FAILED_TO_CREATE_UNIX_SOCKET   StartFileshareStatus = 3
-	StartFileshareStatus_MESHNET_NOT_ENABLED            StartFileshareStatus = 4
-	StartFileshareStatus_ADDRESS_ALREADY_IN_USE         StartFileshareStatus = 5
-	StartFileshareStatus_FAILED_TO_ENABLE               StartFileshareStatus = 6
-)
-
-// Enum value maps for StartFileshareStatus.
-var (
-	StartFileshareStatus_name = map[int32]string{
-		0: "SUCCESS",
-		1: "ALREADY_RUNNING",
-		2: "ALREADY_RUNNING_FOR_OTHER_USER",
-		3: "FAILED_TO_CREATE_UNIX_SOCKET",
-		4: "MESHNET_NOT_ENABLED",
-		5: "ADDRESS_ALREADY_IN_USE",
-		6: "FAILED_TO_ENABLE",
-	}
-	StartFileshareStatus_value = map[string]int32{
-		"SUCCESS":                        0,
-		"ALREADY_RUNNING":                1,
-		"ALREADY_RUNNING_FOR_OTHER_USER": 2,
-		"FAILED_TO_CREATE_UNIX_SOCKET":   3,
-		"MESHNET_NOT_ENABLED":            4,
-		"ADDRESS_ALREADY_IN_USE":         5,
-		"FAILED_TO_ENABLE":               6,
-	}
-)
-
-func (x StartFileshareStatus) Enum() *StartFileshareStatus {
-	p := new(StartFileshareStatus)
-	*p = x
-	return p
-}
-
-func (x StartFileshareStatus) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (StartFileshareStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_norduser_proto_enumTypes[0].Descriptor()
-}
-
-func (StartFileshareStatus) Type() protoreflect.EnumType {
-	return &file_norduser_proto_enumTypes[0]
-}
-
-func (x StartFileshareStatus) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use StartFileshareStatus.Descriptor instead.
-func (StartFileshareStatus) EnumDescriptor() ([]byte, []int) {
-	return file_norduser_proto_rawDescGZIP(), []int{0}
-}
-
 type Empty struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -119,100 +58,6 @@ func (*Empty) Descriptor() ([]byte, []int) {
 	return file_norduser_proto_rawDescGZIP(), []int{0}
 }
 
-type StartFileshareResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	StartFileshareStatus StartFileshareStatus `protobuf:"varint,1,opt,name=start_fileshare_status,json=startFileshareStatus,proto3,enum=norduserpb.StartFileshareStatus" json:"start_fileshare_status,omitempty"`
-}
-
-func (x *StartFileshareResponse) Reset() {
-	*x = StartFileshareResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_norduser_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *StartFileshareResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StartFileshareResponse) ProtoMessage() {}
-
-func (x *StartFileshareResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_norduser_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StartFileshareResponse.ProtoReflect.Descriptor instead.
-func (*StartFileshareResponse) Descriptor() ([]byte, []int) {
-	return file_norduser_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *StartFileshareResponse) GetStartFileshareStatus() StartFileshareStatus {
-	if x != nil {
-		return x.StartFileshareStatus
-	}
-	return StartFileshareStatus_SUCCESS
-}
-
-type StopFileshareResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-}
-
-func (x *StopFileshareResponse) Reset() {
-	*x = StopFileshareResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_norduser_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *StopFileshareResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StopFileshareResponse) ProtoMessage() {}
-
-func (x *StopFileshareResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_norduser_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StopFileshareResponse.ProtoReflect.Descriptor instead.
-func (*StopFileshareResponse) Descriptor() ([]byte, []int) {
-	return file_norduser_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *StopFileshareResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
 type StopNorduserRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -224,7 +69,7 @@ type StopNorduserRequest struct {
 func (x *StopNorduserRequest) Reset() {
 	*x = StopNorduserRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_norduser_proto_msgTypes[3]
+		mi := &file_norduser_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -237,7 +82,7 @@ func (x *StopNorduserRequest) String() string {
 func (*StopNorduserRequest) ProtoMessage() {}
 
 func (x *StopNorduserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_norduser_proto_msgTypes[3]
+	mi := &file_norduser_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -250,7 +95,7 @@ func (x *StopNorduserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopNorduserRequest.ProtoReflect.Descriptor instead.
 func (*StopNorduserRequest) Descriptor() ([]byte, []int) {
-	return file_norduser_proto_rawDescGZIP(), []int{3}
+	return file_norduser_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *StopNorduserRequest) GetDisable() bool {
@@ -265,37 +110,14 @@ var File_norduser_proto protoreflect.FileDescriptor
 var file_norduser_proto_rawDesc = []byte{
 	0x0a, 0x0e, 0x6e, 0x6f, 0x72, 0x64, 0x75, 0x73, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x12, 0x0a, 0x6e, 0x6f, 0x72, 0x64, 0x75, 0x73, 0x65, 0x72, 0x70, 0x62, 0x22, 0x07, 0x0a, 0x05,
-	0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x70, 0x0a, 0x16, 0x53, 0x74, 0x61, 0x72, 0x74, 0x46, 0x69,
-	0x6c, 0x65, 0x73, 0x68, 0x61, 0x72, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0x56, 0x0a, 0x16, 0x73, 0x74, 0x61, 0x72, 0x74, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x68, 0x61,
-	0x72, 0x65, 0x5f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32,
-	0x20, 0x2e, 0x6e, 0x6f, 0x72, 0x64, 0x75, 0x73, 0x65, 0x72, 0x70, 0x62, 0x2e, 0x53, 0x74, 0x61,
-	0x72, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x68, 0x61, 0x72, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x52, 0x14, 0x73, 0x74, 0x61, 0x72, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x68, 0x61, 0x72,
-	0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x31, 0x0a, 0x15, 0x53, 0x74, 0x6f, 0x70, 0x46,
-	0x69, 0x6c, 0x65, 0x73, 0x68, 0x61, 0x72, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x18, 0x0a, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x08, 0x52, 0x07, 0x73, 0x75, 0x63, 0x63, 0x65, 0x73, 0x73, 0x22, 0x2f, 0x0a, 0x13, 0x53, 0x74,
-	0x6f, 0x70, 0x4e, 0x6f, 0x72, 0x64, 0x75, 0x73, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x12, 0x18, 0x0a, 0x07, 0x64, 0x69, 0x73, 0x61, 0x62, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x08, 0x52, 0x07, 0x64, 0x69, 0x73, 0x61, 0x62, 0x6c, 0x65, 0x2a, 0xc9, 0x01, 0x0a, 0x14,
-	0x53, 0x74, 0x61, 0x72, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x68, 0x61, 0x72, 0x65, 0x53, 0x74,
-	0x61, 0x74, 0x75, 0x73, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x55, 0x43, 0x43, 0x45, 0x53, 0x53, 0x10,
-	0x00, 0x12, 0x13, 0x0a, 0x0f, 0x41, 0x4c, 0x52, 0x45, 0x41, 0x44, 0x59, 0x5f, 0x52, 0x55, 0x4e,
-	0x4e, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x22, 0x0a, 0x1e, 0x41, 0x4c, 0x52, 0x45, 0x41, 0x44,
-	0x59, 0x5f, 0x52, 0x55, 0x4e, 0x4e, 0x49, 0x4e, 0x47, 0x5f, 0x46, 0x4f, 0x52, 0x5f, 0x4f, 0x54,
-	0x48, 0x45, 0x52, 0x5f, 0x55, 0x53, 0x45, 0x52, 0x10, 0x02, 0x12, 0x20, 0x0a, 0x1c, 0x46, 0x41,
-	0x49, 0x4c, 0x45, 0x44, 0x5f, 0x54, 0x4f, 0x5f, 0x43, 0x52, 0x45, 0x41, 0x54, 0x45, 0x5f, 0x55,
-	0x4e, 0x49, 0x58, 0x5f, 0x53, 0x4f, 0x43, 0x4b, 0x45, 0x54, 0x10, 0x03, 0x12, 0x17, 0x0a, 0x13,
-	0x4d, 0x45, 0x53, 0x48, 0x4e, 0x45, 0x54, 0x5f, 0x4e, 0x4f, 0x54, 0x5f, 0x45, 0x4e, 0x41, 0x42,
-	0x4c, 0x45, 0x44, 0x10, 0x04, 0x12, 0x1a, 0x0a, 0x16, 0x41, 0x44, 0x44, 0x52, 0x45, 0x53, 0x53,
-	0x5f, 0x41, 0x4c, 0x52, 0x45, 0x41, 0x44, 0x59, 0x5f, 0x49, 0x4e, 0x5f, 0x55, 0x53, 0x45, 0x10,
-	0x05, 0x12, 0x14, 0x0a, 0x10, 0x46, 0x41, 0x49, 0x4c, 0x45, 0x44, 0x5f, 0x54, 0x4f, 0x5f, 0x45,
-	0x4e, 0x41, 0x42, 0x4c, 0x45, 0x10, 0x06, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75,
-	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x4e, 0x6f, 0x72, 0x64, 0x53, 0x65, 0x63, 0x75, 0x72, 0x69,
-	0x74, 0x79, 0x2f, 0x6e, 0x6f, 0x72, 0x64, 0x76, 0x70, 0x6e, 0x2d, 0x6c, 0x69, 0x6e, 0x75, 0x78,
-	0x2f, 0x6e, 0x6f, 0x72, 0x64, 0x75, 0x73, 0x65, 0x72, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x33,
+	0x45, 0x6d, 0x70, 0x74, 0x79, 0x22, 0x2f, 0x0a, 0x13, 0x53, 0x74, 0x6f, 0x70, 0x4e, 0x6f, 0x72,
+	0x64, 0x75, 0x73, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07,
+	0x64, 0x69, 0x73, 0x61, 0x62, 0x6c, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x64,
+	0x69, 0x73, 0x61, 0x62, 0x6c, 0x65, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x4e, 0x6f, 0x72, 0x64, 0x53, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74,
+	0x79, 0x2f, 0x6e, 0x6f, 0x72, 0x64, 0x76, 0x70, 0x6e, 0x2d, 0x6c, 0x69, 0x6e, 0x75, 0x78, 0x2f,
+	0x6e, 0x6f, 0x72, 0x64, 0x75, 0x73, 0x65, 0x72, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -310,22 +132,17 @@ func file_norduser_proto_rawDescGZIP() []byte {
 	return file_norduser_proto_rawDescData
 }
 
-var file_norduser_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_norduser_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_norduser_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_norduser_proto_goTypes = []interface{}{
-	(StartFileshareStatus)(0),      // 0: norduserpb.StartFileshareStatus
-	(*Empty)(nil),                  // 1: norduserpb.Empty
-	(*StartFileshareResponse)(nil), // 2: norduserpb.StartFileshareResponse
-	(*StopFileshareResponse)(nil),  // 3: norduserpb.StopFileshareResponse
-	(*StopNorduserRequest)(nil),    // 4: norduserpb.StopNorduserRequest
+	(*Empty)(nil),               // 0: norduserpb.Empty
+	(*StopNorduserRequest)(nil), // 1: norduserpb.StopNorduserRequest
 }
 var file_norduser_proto_depIdxs = []int32{
-	0, // 0: norduserpb.StartFileshareResponse.start_fileshare_status:type_name -> norduserpb.StartFileshareStatus
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_norduser_proto_init() }
@@ -347,30 +164,6 @@ func file_norduser_proto_init() {
 			}
 		}
 		file_norduser_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StartFileshareResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_norduser_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StopFileshareResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_norduser_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*StopNorduserRequest); i {
 			case 0:
 				return &v.state
@@ -388,14 +181,13 @@ func file_norduser_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_norduser_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   4,
+			NumEnums:      0,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_norduser_proto_goTypes,
 		DependencyIndexes: file_norduser_proto_depIdxs,
-		EnumInfos:         file_norduser_proto_enumTypes,
 		MessageInfos:      file_norduser_proto_msgTypes,
 	}.Build()
 	File_norduser_proto = out.File
