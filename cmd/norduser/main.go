@@ -18,7 +18,6 @@ import (
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
@@ -104,7 +103,7 @@ func shouldEnableFileshare(uid uint32) (bool, error) {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		return false, fmt.Errorf("can't connect to daemon: %w", err)
+		return false, fmt.Errorf("connecting to main daemon: %w", err)
 	}
 
 	defer func() {
@@ -125,17 +124,10 @@ func shouldEnableFileshare(uid uint32) (bool, error) {
 	return meshStatus.GetUid() == uid && meshStatus.GetValue(), nil
 }
 
-func startSnap() {
-	usr, err := user.Current()
-	if err != nil {
-		log.Println("Unable to retrieve current user:", err)
-		os.Exit(int(childprocess.CodeFailedToEnable))
-	}
-
+func setupLog() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		log.Println("Unable to retrieve user home directory:", err)
-		os.Exit(int(childprocess.CodeFailedToEnable))
+		return
 	}
 
 	configDirPath, err := internal.GetConfigDirPath(homeDir)
@@ -145,7 +137,54 @@ func startSnap() {
 			log.SetOutput(logFile)
 			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 		}
+	} else {
+		log.SetOutput(os.Stdout)
 	}
+}
+
+func waitForShutdown(stopChan <-chan norduser.StopRequest,
+	fileshareManagementChan chan<- norduser.FileshareManagementMsg,
+	fileshareShutdownChan <-chan interface{},
+	grpcServer *grpc.Server,
+	onShutdown func(bool)) {
+	signals := internal.GetSignalChan()
+
+	select {
+	case sig := <-signals:
+		log.Println("Received signal: ", sig)
+	case stopRequest := <-stopChan:
+		if stopRequest.DisableAutostart {
+			onShutdown(stopRequest.DisableAutostart)
+		}
+	}
+
+	grpcServer.GracefulStop()
+	fileshareManagementChan <- norduser.Shutdown
+	// shutdownChan will be closed once the shutdown operation is finished
+	<-fileshareShutdownChan
+
+	log.Println("Norduser process has stopped")
+}
+
+func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan interface{}) {
+	fileshareManagementChan, fileshareShutdownChan := norduser.StartFileshareManagementLoop()
+	if enable, err := shouldEnableFileshare(uid); err != nil {
+		log.Println("Failed to determine if fileshare should be enabled on startup: ", err)
+	} else if enable {
+		fileshareManagementChan <- norduser.Start
+	}
+
+	return fileshareManagementChan, fileshareShutdownChan
+}
+
+func startSnap() {
+	usr, err := user.Current()
+	if err != nil {
+		log.Println("Unable to retrieve current user:", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
+	setupLog()
 
 	// Always use real home dir here regardless of `$HOME` value
 	autostartFile, err := addAutostart()
@@ -175,22 +214,12 @@ func startSnap() {
 		log.Printf("Failed to open unix socket: %s", err)
 		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
 	}
-
 	limitedListener := netutil.LimitListener(listener, 100)
 
-	stopChan := make(chan norduser.StopRequest)
-	fileshareProcessManager := fileshare_process.NewFileshareGRPCProcessManager()
-	if enable, err := shouldEnableFileshare(uint32(uid)); err != nil {
-		log.Println("Failed to determine if fileshare should be enabled on startup: ", err)
-	} else if enable {
-		if startupCode, err := fileshareProcessManager.StartProcess(); err != nil {
-			log.Println("Failed to enable fileshare at startup: ", err)
-		} else {
-			log.Println("Fileshare enable status at startup: ", startupCode)
-		}
-	}
+	fileshareManagementChan, fileshareShutdownChan := startFileshare(uint32(uid))
 
-	server := norduser.NewServer(fileshareProcessManager, stopChan)
+	stopChan := make(chan norduser.StopRequest)
+	server := norduser.NewServer(fileshareManagementChan, stopChan)
 
 	grpcServer := grpc.NewServer(
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewFileshareAuthenticator(uint32(uid)))))
@@ -205,44 +234,24 @@ func startSnap() {
 
 	go startTray(stopChan)
 
-	signals := internal.GetSignalChan()
-
 	log.Println(internal.InfoPrefix, "Daemon has started")
-	select {
-	case sig := <-signals:
-		log.Println("Received signal: ", sig)
-	case stopRequest := <-stopChan:
-		if stopRequest.DisableAutostart {
-			if err := os.Remove(autostartFile); err != nil {
-				log.Println("Failed to remove autostart file: ", err)
+
+	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, grpcServer,
+		func(disable bool) {
+			if !disable {
+				return
 			}
-		}
-	}
 
-	if _, err := server.StopFileshare(context.Background(), &pb.Empty{}); err != nil {
-		log.Println(internal.ErrorPrefix+"Failed to stop fileshare: ", err)
-	}
-
-	grpcServer.GracefulStop()
-	log.Println("Norduser process has stopped")
+			if err := os.Remove(autostartFile); err != nil {
+				log.Println("failed to remove autostart file: ", err)
+			}
+		})
 }
 
 func start() {
 	listenerFunction := internal.SystemDListener
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Println("failed to find home dir: ", err)
-		os.Exit(int(childprocess.CodeFailedToEnable))
-	}
-
-	configDirPath, err := internal.GetConfigDirPath(homeDir)
-	if err == nil {
-		if logFile, err := openLogFile(filepath.Join(configDirPath, internal.NorduserLogFile)); err == nil {
-			log.SetOutput(logFile)
-			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-		}
-	}
+	setupLog()
 
 	connURL := internal.GetNorduserSocketFork(os.Geteuid())
 	if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
@@ -256,8 +265,22 @@ func start() {
 	}
 	listener = netutil.LimitListener(listener, 100)
 
+	usr, err := user.Current()
+	if err != nil {
+		log.Println("Unable to retrieve current user:", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
+	uid, err := strconv.Atoi(usr.Uid)
+	if err != nil {
+		log.Println("Failed to parse user id: ", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
+	fileshareManagementChan, fileshareShutdownChan := startFileshare(uint32(uid))
+
 	stopChan := make(chan norduser.StopRequest)
-	server := norduser.NewServer(fileshare_process.NewFileshareGRPCProcessManager(), stopChan)
+	server := norduser.NewServer(fileshareManagementChan, stopChan)
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterNorduserServer(grpcServer, server)
@@ -271,25 +294,9 @@ func start() {
 
 	go startTray(stopChan)
 
-	signals := internal.GetSignalChan()
-
 	log.Println(internal.InfoPrefix, "Daemon has started")
-	select {
-	case sig := <-signals:
-		log.Println("Received signal: ", sig)
-	case <-stopChan:
-		log.Println("Received stop request")
-	}
 
-	log.Println("Stopping fileshare")
-
-	if _, err := server.StopFileshare(context.Background(), &pb.Empty{}); err != nil {
-		log.Println(internal.ErrorPrefix+"Failed to stop fileshare: ", err)
-	}
-
-	grpcServer.GracefulStop()
-
-	log.Println("Norduser process has stopped")
+	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, grpcServer, func(disable bool) {})
 }
 
 func main() {

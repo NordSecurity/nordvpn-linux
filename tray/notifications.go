@@ -18,7 +18,7 @@ func (ti *Instance) notify(text string, a ...any) {
 	ti.state.mu.RUnlock()
 	if notifyEnabled {
 		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
-			fmt.Println(internal.ErrorPrefix+" failed to send notification: ", err)
+			log.Println(internal.ErrorPrefix+" failed to send notification: ", err)
 		}
 	}
 }

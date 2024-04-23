@@ -52,14 +52,9 @@ func (n NorduserGRPCClient) StartFileshare(uid uint32) error {
 		return fmt.Errorf("getting norduser client: %s", err)
 	}
 
-	resp, err := client.StartFileshare(context.Background(), &pb.Empty{})
+	_, err = client.StartFileshare(context.Background(), &pb.Empty{})
 	if err != nil {
 		return fmt.Errorf("failed to start fileshare: %w", err)
-	}
-
-	if resp.StartFileshareStatus != pb.StartFileshareStatus_SUCCESS &&
-		resp.StartFileshareStatus != pb.StartFileshareStatus_ALREADY_RUNNING {
-		return fmt.Errorf("failed to stat fileshare, error code: %d", resp.StartFileshareStatus)
 	}
 
 	return nil
@@ -71,13 +66,9 @@ func (n NorduserGRPCClient) StopFileshare(uid uint32) error {
 		return fmt.Errorf("getting norduser client: %s", err)
 	}
 
-	resp, err := client.StopFileshare(context.Background(), &pb.Empty{})
+	_, err = client.StopFileshare(context.Background(), &pb.Empty{})
 	if err != nil {
 		return fmt.Errorf("failed to stop fileshare: %w", err)
-	}
-
-	if !resp.Success {
-		return fmt.Errorf("fileshare not stopped")
 	}
 
 	return nil

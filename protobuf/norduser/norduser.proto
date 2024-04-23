@@ -4,25 +4,7 @@ package norduserpb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/norduser/pb";
 
-enum StartFileshareStatus {
-	SUCCESS = 0;
-	ALREADY_RUNNING = 1;
-	ALREADY_RUNNING_FOR_OTHER_USER = 2;
-	FAILED_TO_CREATE_UNIX_SOCKET = 3;
-	MESHNET_NOT_ENABLED = 4;
-	ADDRESS_ALREADY_IN_USE = 5;
-	FAILED_TO_ENABLE = 6;
-}
-
 message Empty{}
-
-message StartFileshareResponse {
-    StartFileshareStatus start_fileshare_status = 1;
-}
-
-message StopFileshareResponse {
-    bool success = 1;
-}
 
 message StopNorduserRequest {
 	bool disable = 1;

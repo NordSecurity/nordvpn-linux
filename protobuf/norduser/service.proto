@@ -9,9 +9,9 @@ import "norduser.proto";
 service Norduser {
     rpc Ping(Empty) returns (Empty);
     // StartsFileshare starts fileshare process
-    rpc StartFileshare(Empty) returns (StartFileshareResponse);
+    rpc StartFileshare(Empty) returns (Empty);
     // StopFileshare stops fileshare process
-    rpc StopFileshare(Empty) returns (StopFileshareResponse);
+    rpc StopFileshare(Empty) returns (Empty);
     // Stop stops norduser process
     rpc Stop(StopNorduserRequest) returns (Empty);
 }
