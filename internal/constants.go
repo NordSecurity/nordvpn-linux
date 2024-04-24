@@ -122,9 +122,6 @@ var (
 	// OvpnObfsTemplatePath defines filename of ovpn obfuscated template file
 	OvpnObfsTemplatePath = filepath.Join(DatFilesPathCommon, "ovpn_xor_template.xslt")
 
-	// LogFilePath defines CLI log path
-	LogFilePath = filepath.Join("nordvpn", "cli.log")
-
 	// DaemonSocket defines system daemon socket file location
 	DaemonSocket = filepath.Join(RunDir, "/nordvpnd.sock")
 
