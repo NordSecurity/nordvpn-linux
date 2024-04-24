@@ -125,6 +125,8 @@ func shouldEnableFileshare(uid uint32) (bool, error) {
 }
 
 func setupLog() {
+	log.SetOutput(os.Stdout)
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return
@@ -137,8 +139,6 @@ func setupLog() {
 			log.SetOutput(logFile)
 			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 		}
-	} else {
-		log.SetOutput(os.Stdout)
 	}
 }
 
