@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus/v5"
 )
@@ -74,7 +75,7 @@ func (n *DbusNotifier) SendNotification(summary string, body string, actions []A
 	notification := notify.Notification{
 		AppName:       "NordVPN",
 		Summary:       summary,
-		AppIcon:       "nordvpn",
+		AppIcon:       inotify.GetIconPath("nordvpn"),
 		Body:          body,
 		ExpireTimeout: notify.ExpireTimeoutSetByNotificationServer,
 		Actions:       notifyActions,

@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
-	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/notify"
 
 	"github.com/NordSecurity/systray"
 )
@@ -75,15 +73,6 @@ func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopReques
 	return &Instance{client: client, quitChan: quitChan}
 }
 
-func getIconPath(name string) string {
-	const iconPath = "/usr/share/icons/hicolor/scalable/apps"
-	if snapconf.IsUnderSnap() {
-		return internal.PrefixStaticPath(path.Join(iconPath, name+".svg"))
-	}
-
-	return name
-}
-
 func OnReady(ti *Instance) {
 	if os.Getenv("NORDVPN_TRAY_DEBUG") == "1" {
 		ti.debugMode = true
@@ -94,16 +83,16 @@ func OnReady(ti *Instance) {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
 
-	ti.iconConnected = getIconPath("nordvpn-tray-blue")
-	ti.iconDisconnected = getIconPath("nordvpn-tray-white")
+	ti.iconConnected = notify.GetIconPath("nordvpn-tray-blue")
+	ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-white")
 
 	currentDesktop := strings.ToLower(os.Getenv("XDG_CURRENT_DESKTOP"))
 	if strings.Contains(currentDesktop, "kde") {
 		// TODO: Kubuntu uses dark tray background instead KDE default white
-		ti.iconDisconnected = getIconPath("nordvpn-tray-black")
+		ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-black")
 	}
 	if strings.Contains(currentDesktop, "mate") {
-		ti.iconDisconnected = getIconPath("nordvpn-tray-gray")
+		ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-gray")
 	}
 
 	systray.SetIconName(ti.iconDisconnected)
