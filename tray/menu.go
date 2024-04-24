@@ -91,12 +91,20 @@ func addVpnSection(ti *Instance) {
 	mStatus.Disable()
 
 	if ti.state.vpnStatus == "Connected" {
-		mHostname := systray.AddMenuItem("Server: "+ti.state.vpnHostname, "Server: "+ti.state.vpnHostname)
-		mHostname.Disable()
-		mCity := systray.AddMenuItem("City: "+ti.state.vpnCity, "City: "+ti.state.vpnCity)
-		mCity.Disable()
-		mCountry := systray.AddMenuItem("Country: "+ti.state.vpnCountry, "Country: "+ti.state.vpnCountry)
-		mCountry.Disable()
+		if ti.state.vpnHostname != "" {
+			mHostname := systray.AddMenuItem("Server: "+ti.state.vpnHostname, "Server: "+ti.state.vpnHostname)
+			mHostname.Disable()
+		}
+
+		if ti.state.vpnCity != "" {
+			mCity := systray.AddMenuItem("City: "+ti.state.vpnCity, "City: "+ti.state.vpnCity)
+			mCity.Disable()
+		}
+
+		if ti.state.vpnCountry != "" {
+			mCountry := systray.AddMenuItem("Country: "+ti.state.vpnCountry, "Country: "+ti.state.vpnCountry)
+			mCountry.Disable()
+		}
 		mDisconnect := systray.AddMenuItem("Disconnect", "Disconnect")
 		go func() {
 			success := false
