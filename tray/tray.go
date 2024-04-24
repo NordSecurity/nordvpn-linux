@@ -64,6 +64,7 @@ type trayState struct {
 	daemonError     string
 	accountName     string
 	vpnStatus       string
+	vpnName         string
 	vpnHostname     string
 	vpnCity         string
 	vpnCountry      string

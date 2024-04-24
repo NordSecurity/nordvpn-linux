@@ -36,6 +36,7 @@ func (c Credentials) IsOpenVPNDefined() bool {
 type ServerData struct {
 	IP                netip.Addr
 	Hostname          string // used in openvpn server certificate validation
+	Name              string // status display only
 	Country           string // status display only
 	City              string // status display only
 	Protocol          config.Protocol

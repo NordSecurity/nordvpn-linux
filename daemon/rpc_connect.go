@@ -142,6 +142,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	serverData := vpn.ServerData{
 		IP:                subnet.Addr(),
 		Hostname:          server.Hostname,
+		Name:              server.Name,
 		Country:           country.Name,
 		City:              city,
 		Protocol:          cfg.AutoConnectData.Protocol,

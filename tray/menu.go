@@ -84,8 +84,6 @@ func addDaemonSection(ti *Instance) {
 }
 
 func addVpnSection(ti *Instance) {
-	systray.AddSeparator()
-
 	mStatus := systray.AddMenuItem("VPN "+strings.ToLower(ti.state.vpnStatus), "VPN "+strings.ToLower(ti.state.vpnStatus))
 	mStatus.Disable()
 
