@@ -14,7 +14,7 @@ func (c *cmd) Ping() error {
 		if strings.Contains(err.Error(), "no such file or directory") {
 			return internal.ErrSocketNotFound
 		}
-		if strings.Contains(err.Error(), "permission denied") {
+		if strings.Contains(err.Error(), "permission denied") || strings.Contains(err.Error(), "connection reset by peer") {
 			return internal.ErrSocketAccessDenied
 		}
 		if snapErr := RetrieveSnapConnsError(err); snapErr != nil {
