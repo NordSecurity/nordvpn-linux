@@ -2971,6 +2971,7 @@ func (s *Server) Connect(
 		vpn.ServerData{
 			IP:                peer.Address,
 			Hostname:          peer.Hostname,
+			Name:              peer.Nickname,
 			Protocol:          config.Protocol_UDP,
 			NordLynxPublicKey: peer.PublicKey,
 		},

@@ -66,6 +66,8 @@ type ConnectionStatus struct {
 	Protocol config.Protocol
 	// IP of the other end of the connection
 	IP netip.Addr
+	// Name in a human readable form of the other end of the connection
+	Name string
 	// Hostname of the other end of the connection
 	Hostname string
 	// Country of the other end of the connection
@@ -551,6 +553,7 @@ func (netw *Combined) ConnectionStatus() (ConnectionStatus, error) {
 		Technology: tech,
 		Protocol:   netw.lastServer.Protocol,
 		IP:         netw.lastServer.IP,
+		Name:       netw.lastServer.Name,
 		Hostname:   netw.lastServer.Hostname,
 		Country:    netw.lastServer.Country,
 		City:       netw.lastServer.City,

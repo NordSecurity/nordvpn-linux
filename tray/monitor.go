@@ -97,12 +97,17 @@ func (ti *Instance) updateVpnStatus() bool {
 	changed := false
 	vpnStatus := ""
 	vpnHostname := ""
+	vpnName := ""
 	vpnCity := ""
 	vpnCountry := ""
 	resp, err := ti.client.Status(context.Background(), &pb.Empty{})
 	if err == nil {
 		vpnStatus = resp.State
 		vpnHostname = resp.Hostname
+		vpnName = resp.Name
+		if vpnName == "" {
+			vpnName = vpnHostname
+		}
 		vpnCity = resp.City
 		vpnCountry = resp.Country
 	}
@@ -112,10 +117,10 @@ func (ti *Instance) updateVpnStatus() bool {
 	if ti.state.vpnStatus != vpnStatus {
 		if vpnStatus == "Connected" {
 			systray.SetIconName(ti.iconConnected)
-			defer ti.notify("Connected to VPN server: %s", vpnHostname)
+			defer ti.notify("Connected to %s", vpnName)
 		} else {
 			systray.SetIconName(ti.iconDisconnected)
-			defer ti.notify("Disconnected from VPN server")
+			defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.vpnName))
 		}
 		ti.state.vpnStatus = vpnStatus
 		changed = true
@@ -126,6 +131,7 @@ func (ti *Instance) updateVpnStatus() bool {
 		changed = true
 	}
 
+	ti.state.vpnName = vpnName
 	ti.state.vpnCity = vpnCity
 	ti.state.vpnCountry = vpnCountry
 
