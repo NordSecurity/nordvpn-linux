@@ -9,6 +9,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"time"
 
@@ -178,13 +179,29 @@ func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan 
 }
 
 func startSnap() {
-	usr, err := user.Current()
+	setupLog()
+	group, err := user.LookupGroup(internal.NordvpnGroup)
 	if err != nil {
-		log.Println("Unable to retrieve current user:", err)
+		log.Println("Unable to retrieve nordvpn group: ", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	setupLog()
+	usr, err := user.Current()
+	if err != nil {
+		log.Println("Unable to retrieve current user: ", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
+	gids, err := usr.GroupIds()
+	if err != nil {
+		log.Println("Unable to retrieve group ids: ", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
+	if slices.Index(gids, group.Gid) == -1 {
+		log.Println("User does not belong to the nordvpn group.")
+		os.Exit(int(childprocess.CodeUserNotInGroup))
+	}
 
 	// Always use real home dir here regardless of `$HOME` value
 	autostartFile, err := addAutostart()

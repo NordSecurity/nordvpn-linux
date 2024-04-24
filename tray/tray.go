@@ -3,6 +3,7 @@ package tray
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"strings"
@@ -133,7 +134,7 @@ func OnReady(ti *Instance) {
 			systray.Refresh()
 			<-ti.redrawChan
 			if ti.debugMode {
-				fmt.Println(time.Now().String(), "Redraw")
+				log.Println(time.Now().String(), "Redraw")
 			}
 			systray.ResetMenu()
 		}
