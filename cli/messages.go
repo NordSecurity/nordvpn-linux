@@ -329,5 +329,7 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareProgressCanceled       = "File transfer [%s] canceled by other process."
 	MsgFileshareStartedByOtherUser     = "A file sharing session is already in progress under another user account. To use the feature, restart Meshnet and enter your file sharing command again. "
 
-	MsgNoSnapPermissions = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\n%s\nAfter doing so, continue using the application."
+	MsgNoSnapPermissions = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\n%s\n\nAfter doing so, continue using the application."
+
+	MsgSnapPermissionsErrorForTray = "Please grant necessary permissions for the snap using this command:\n\n%s"
 )

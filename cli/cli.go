@@ -945,12 +945,17 @@ func RetrieveSnapConnsError(err error) *snappb.ErrMissingConnections {
 	return nil
 }
 
-func FormatSnapMissingConnsErr(err *snappb.ErrMissingConnections) string {
-	permissionStr := ""
-	for _, permission := range err.MissingConnections {
-		permissionStr += fmt.Sprintf("sudo snap connect nordvpn:%s\n", permission)
+// Concatenate snap missing connections and returns a string
+func JoinSnapMissingPermissions(err *snappb.ErrMissingConnections) string {
+	if len(err.MissingConnections) == 0 {
+		return ""
 	}
-	return fmt.Sprintf(MsgNoSnapPermissions, permissionStr)
+
+	return "sudo snap connect nordvpn:" + strings.Join(err.MissingConnections, "\nsudo snap connect nordvpn:")
+}
+
+func FormatSnapMissingConnsErr(err *snappb.ErrMissingConnections) string {
+	return fmt.Sprintf(MsgNoSnapPermissions, JoinSnapMissingPermissions(err))
 }
 
 type loaderStream struct {

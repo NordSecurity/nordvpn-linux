@@ -75,10 +75,6 @@ func addQuitItem(ti *Instance) {
 }
 
 func addDaemonSection(ti *Instance) {
-	systray.AddSeparator()
-	m := systray.AddMenuItem("Daemon not available", "Daemon not available")
-	m.Disable()
-
 	mError := systray.AddMenuItem(ti.state.daemonError, ti.state.daemonError)
 	mError.Disable()
 }
