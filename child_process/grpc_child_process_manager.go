@@ -30,7 +30,7 @@ func (g *GRPCChildProcessManager) StartProcess() (StartupErrorCode, error) {
 	errChan := make(chan error)
 	go func() {
 		// #nosec G204 -- arg values are known before even running the program
-		_, err := exec.Command(g.processBinaryPath).Output()
+		err := exec.Command(g.processBinaryPath).Run()
 		errChan <- err
 	}()
 

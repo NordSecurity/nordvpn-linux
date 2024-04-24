@@ -11,6 +11,7 @@ const (
 	CodeMeshnetNotEnabled
 	CodeAddressAlreadyInUse
 	CodeFailedToEnable
+	CodeUserNotInGroup
 )
 
 type ProcessStatus int

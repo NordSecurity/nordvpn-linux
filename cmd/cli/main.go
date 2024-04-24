@@ -69,10 +69,6 @@ func main() {
 		}
 	}()
 
-	// nolint:errcheck // we want to suppress errors in the cli app, as starting norduser is not strictly related to the
-	// running command. For startup details norduser logs could be checked.
-	getNorduserManager().StartProcess()
-
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		log.Fatalln(err)
@@ -115,6 +111,10 @@ func main() {
 	for _, arg := range os.Args {
 		args = append(args, clearFormatting(arg))
 	}
+
+	// nolint:errcheck // we want to suppress errors in the cli app, as starting norduser is not strictly related to the
+	// running command. For startup details norduser logs could be checked.
+	getNorduserManager().StartProcess()
 
 	if err := cmd.Run(args); err != nil {
 		color.Red(err.Error())
