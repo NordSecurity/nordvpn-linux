@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus/v5"
 )
@@ -58,7 +59,7 @@ func (n *dbusNotifier) sendNotification(summary string, body string) error {
 		notification := notify.Notification{
 			AppName:       "NordVPN",
 			Summary:       summary,
-			AppIcon:       getIconPath("nordvpn"),
+			AppIcon:       inotify.GetIconPath("nordvpn"),
 			Body:          body,
 			ExpireTimeout: notify.ExpireTimeoutSetByNotificationServer,
 			Hints: map[string]dbus.Variant{
