@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -19,6 +20,7 @@ var ErrNotStarted = errors.New("norduserd wasn't started")
 // ChildProcessNorduser manages norduser service through exec.Command
 type ChildProcessNorduser struct {
 	mu sync.Mutex
+	wg sync.WaitGroup
 }
 
 func NewChildProcessNorduser() *ChildProcessNorduser {
@@ -131,7 +133,11 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 		return fmt.Errorf("starting the process: %w", err)
 	}
 
-	go cmd.Wait()
+	c.wg.Add(1)
+	go func() {
+		cmd.Wait()
+		c.wg.Done()
+	}()
 
 	return nil
 }
@@ -175,5 +181,16 @@ func (c *ChildProcessNorduser) StopAll() {
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
 			log.Println("failed to send a signal to norduser process: ", err)
 		}
+	}
+
+	doneChan := make(chan interface{})
+	go func() {
+		c.wg.Wait()
+		doneChan <- struct{}{}
+	}()
+
+	select {
+	case <-doneChan:
+	case <-time.After(10 * time.Second):
 	}
 }

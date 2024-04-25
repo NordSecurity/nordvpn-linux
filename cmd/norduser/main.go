@@ -164,6 +164,11 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	// shutdownChan will be closed once the shutdown operation is finished
 	<-fileshareShutdownChan
 
+	systray.Quit()
+	// We need to give systray some time to clean up after quting. Otherwise, when the main app is restarted
+	// two trays will be visible for a split second.
+	<-time.After(500 * time.Millisecond)
+
 	log.Println("Norduser process has stopped")
 }
 
