@@ -67,7 +67,6 @@ func addQuitItem(ti *Instance) {
 		if !open {
 			return
 		}
-		systray.Quit()
 		select {
 		case ti.quitChan <- norduser.StopRequest{}:
 		default:
