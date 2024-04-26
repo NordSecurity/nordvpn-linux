@@ -12,13 +12,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"github.com/NordSecurity/systray"
 	"google.golang.org/grpc/status"
 )
 
 // The pattern is to return 'true' if something has changed and 'false' when no changes were detected
-
 func (ti *Instance) ping() bool {
 	changed := false
 	daemonAvailable := false
@@ -26,16 +26,7 @@ func (ti *Instance) ping() bool {
 
 	resp, err := ti.client.Ping(context.Background(), &pb.Empty{})
 	if err != nil {
-		daemonError = internal.ErrDaemonConnectionRefused.Error()
-		if strings.Contains(err.Error(), "no such file or directory") {
-			daemonError = "nordvpnd is not running"
-		}
-		if strings.Contains(err.Error(), "permission denied") {
-			daemonError = "add a user to the nordvpn group"
-		}
-		if snapErr := cli.RetrieveSnapConnsError(err); snapErr != nil {
-			daemonError = cli.FormatSnapMissingConnsErr(snapErr)
-		}
+		daemonError = messageForDaemonError(err)
 	} else {
 		switch resp.Type {
 		case internal.CodeOffline:
@@ -53,14 +44,14 @@ func (ti *Instance) ping() bool {
 
 	ti.state.mu.Lock()
 
-	if !ti.state.daemonAvailable && daemonAvailable {
-		ti.state.daemonAvailable = true
+	if ti.state.daemonAvailable != daemonAvailable {
+		ti.state.daemonAvailable = daemonAvailable
 		changed = true
-		defer ti.notify("Connected to NordVPN daemon")
-	} else if ti.state.daemonAvailable && !daemonAvailable {
-		ti.state.daemonAvailable = false
-		changed = true
-		defer ti.notify("Disconnected from NordVPN daemon")
+		if daemonAvailable {
+			defer ti.notify("Connected to NordVPN daemon")
+		} else {
+			defer ti.notify("Disconnected from NordVPN daemon")
+		}
 	}
 
 	if ti.state.daemonError != daemonError {
@@ -291,4 +282,32 @@ func (ti *Instance) pollingMonitor() {
 			}
 		}
 	}
+}
+
+func messageForDaemonError(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	errorMessage := err.Error()
+
+	if strings.Contains(errorMessage, "no such file or directory") {
+		message := "Nordvpn daemon is not running\n\n"
+		if snapconf.IsUnderSnap() {
+			message += "sudo snap start nordvpn"
+		} else {
+			message += "sudo systemctl enable --now nordvpnd"
+		}
+		return message
+	}
+
+	if strings.Contains(errorMessage, "permission denied") || strings.Contains(errorMessage, "connection reset by peer") {
+		return "Add the user to the nordvpn group and reboot the system\n\nsudo usermod -aG nordvpn $USER"
+	}
+
+	if snapErr := cli.RetrieveSnapConnsError(err); snapErr != nil {
+		return fmt.Sprintf(cli.MsgSnapPermissionsErrorForTray, cli.JoinSnapMissingPermissions(snapErr))
+	}
+
+	return internal.ErrDaemonConnectionRefused.Error()
 }
