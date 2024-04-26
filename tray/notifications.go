@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	inotify "github.com/NordSecurity/nordvpn-linux/notify"
@@ -13,12 +14,21 @@ import (
 )
 
 func (ti *Instance) notify(text string, a ...any) {
+	ti.sendNotification(notify.ExpireTimeoutSetByNotificationServer, text, a...)
+}
+
+func (ti *Instance) notifyWithShortDuration(text string, a ...any) {
+	// on Ubuntu 22.04 the duration seams to be ignored by the OS
+	ti.sendNotification(3*time.Second, text, a...)
+}
+
+func (ti *Instance) sendNotification(duration time.Duration, text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
 	ti.state.mu.RLock()
 	notificationsStatus := ti.state.notificationsStatus
 	ti.state.mu.RUnlock()
 	if notificationsStatus == Enabled {
-		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
+		if err := ti.notifier.sendNotification("NordVPN", text, duration); err != nil {
 			log.Println(internal.ErrorPrefix+" failed to send notification: ", err)
 		}
 	}
@@ -27,7 +37,7 @@ func (ti *Instance) notify(text string, a ...any) {
 // notifyForce sends a notification, ignoring users notify setting
 func (ti *Instance) notifyForce(text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
-	if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
+	if err := ti.notifier.sendNotification("NordVPN", text, notify.ExpireTimeoutSetByNotificationServer); err != nil {
 		log.Println(internal.ErrorPrefix+" failed to send forced notification: ", err)
 	}
 }
@@ -51,7 +61,7 @@ func (n *dbusNotifier) start() {
 }
 
 // sendNotification sends notification via dbus. Thread safe.
-func (n *dbusNotifier) sendNotification(summary string, body string) error {
+func (n *dbusNotifier) sendNotification(summary string, body string, duration time.Duration) error {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -61,7 +71,7 @@ func (n *dbusNotifier) sendNotification(summary string, body string) error {
 			Summary:       summary,
 			AppIcon:       inotify.GetIconPath("nordvpn"),
 			Body:          body,
-			ExpireTimeout: notify.ExpireTimeoutSetByNotificationServer,
+			ExpireTimeout: duration,
 			Hints: map[string]dbus.Variant{
 				"transient": dbus.MakeVariant(1),
 			},
