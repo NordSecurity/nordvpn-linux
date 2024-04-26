@@ -68,20 +68,19 @@ func (ti *Instance) updateLoginStatus() bool {
 
 func (ti *Instance) updateVpnStatus(fullUpdate bool) bool {
 	changed := false
-	vpnStatus := ""
-	vpnHostname := ""
-	vpnName := ""
-	vpnCity := ""
-	vpnCountry := ""
 	resp, err := ti.client.Status(context.Background(), &pb.Empty{})
 	if err != nil {
 		return ti.updateDaemonConnectionStatus(messageForDaemonError(err))
 	}
 
-	vpnStatus = resp.State
-	vpnHostname = resp.Hostname
-	vpnCity = resp.City
-	vpnCountry = resp.Country
+	vpnStatus := resp.State
+	vpnHostname := resp.Hostname
+	vpnCity := resp.City
+	vpnCountry := resp.Country
+	vpnName := resp.Name
+	if vpnName == "" {
+		vpnName = vpnHostname
+	}
 
 	shouldDisplayNotification := (ti.state.vpnStatus != vpnStatus) || (ti.state.vpnHostname != vpnHostname)
 
