@@ -29,8 +29,13 @@ func Status(resp *pb.StatusResponse) string {
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf("Status: %s\n", resp.State))
 
-	if resp.Hostname != "" {
-		b.WriteString(fmt.Sprintf("Hostname: %s\n", resp.Hostname))
+	hostname := resp.Name
+	if hostname == "" {
+		hostname = resp.Hostname
+	}
+
+	if hostname != "" {
+		b.WriteString(fmt.Sprintf("Hostname: %s\n", hostname))
 	}
 
 	if resp.Ip != "" {

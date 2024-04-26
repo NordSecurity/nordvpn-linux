@@ -84,8 +84,12 @@ func addVpnSection(ti *Instance) {
 	mStatus.Disable()
 
 	if ti.state.vpnStatus == "Connected" {
-		if ti.state.vpnHostname != "" {
-			mHostname := systray.AddMenuItem("Server: "+ti.state.vpnHostname, "Server: "+ti.state.vpnHostname)
+		vpnServerName := ti.state.vpnName
+		if vpnServerName == "" {
+			vpnServerName = ti.state.vpnHostname
+		}
+		if vpnServerName != "" {
+			mHostname := systray.AddMenuItem("Server: "+vpnServerName, "Server: "+vpnServerName)
 			mHostname.Disable()
 		}
 
@@ -127,14 +131,16 @@ func addVpnSection(ti *Instance) {
 }
 
 func addAccountSection(ti *Instance) {
-	systray.AddSeparator()
-
 	if ti.state.loggedIn {
-		m := systray.AddMenuItem("Logged in as:", "Logged in as:")
-		m.Disable()
+		systray.AddSeparator()
 
-		mName := systray.AddMenuItem(ti.state.accountName, ti.state.accountName)
-		mName.Disable()
+		if ti.state.accountName != "" {
+			m := systray.AddMenuItem("Logged in as:", "Logged in as:")
+			m.Disable()
+
+			mName := systray.AddMenuItem(ti.state.accountName, ti.state.accountName)
+			mName.Disable()
+		}
 
 		mLogout := systray.AddMenuItem("Log out", "Log out")
 
