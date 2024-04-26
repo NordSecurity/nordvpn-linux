@@ -131,9 +131,9 @@ func addVpnSection(ti *Instance) {
 }
 
 func addAccountSection(ti *Instance) {
-	systray.AddSeparator()
-
 	if ti.state.loggedIn {
+		systray.AddSeparator()
+
 		if ti.state.accountName != "" {
 			m := systray.AddMenuItem("Logged in as:", "Logged in as:")
 			m.Disable()
