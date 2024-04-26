@@ -32,13 +32,13 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vishvananda/netlink v1.1.0
-	golang.org/x/crypto v0.18.0
+	golang.org/x/crypto v0.21.0
 	golang.org/x/exp v0.0.0-20230310171629-522b1b587ee0
 	golang.org/x/mod v0.11.0
-	golang.org/x/net v0.20.0
+	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.7.0
-	golang.org/x/sys v0.16.0
-	golang.org/x/term v0.16.0
+	golang.org/x/sys v0.18.0
+	golang.org/x/term v0.18.0
 	golang.zx2c4.com/wireguard v0.0.0-20230313165553-0ad14a89f5f9
 	google.golang.org/api v0.114.0
 	google.golang.org/grpc v1.56.3
