@@ -156,16 +156,26 @@ func (ti *Instance) updateSettings() bool {
 		return false
 	}
 
-	ti.state.mu.Lock()
-	if !ti.state.notifyEnabled && settings.Notify {
-		ti.state.notifyEnabled = true
-		changed = true
-		defer ti.notify("Notifications enabled")
+	var newNotificationsStatus Status
+	if settings.Notify {
+		newNotificationsStatus = Enabled
+	} else {
+		newNotificationsStatus = Disabled
 	}
-	if ti.state.notifyEnabled && !settings.Notify {
-		ti.state.notifyEnabled = false
+
+	ti.state.mu.Lock()
+	if ti.state.notificationsStatus == Invalid {
 		changed = true
-		defer log.Println(internal.InfoPrefix + " Notifications disabled")
+		ti.state.notificationsStatus = newNotificationsStatus
+	} else if ti.state.notificationsStatus != newNotificationsStatus {
+		changed = true
+		ti.state.notificationsStatus = newNotificationsStatus
+
+		if newNotificationsStatus == Enabled {
+			defer ti.notify("Notifications enabled")
+		} else {
+			defer log.Println(internal.InfoPrefix, " Notifications disabled")
+		}
 	}
 	ti.state.mu.Unlock()
 

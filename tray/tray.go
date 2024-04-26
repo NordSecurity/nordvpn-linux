@@ -23,6 +23,14 @@ const (
 	AccountInfoUpdateInterval = 24 * time.Hour
 )
 
+type Status int
+
+const (
+	Invalid Status = iota
+	Enabled
+	Disabled
+)
+
 type accountInfo struct {
 	accountInfo *pb.AccountResponse
 	updateTime  time.Time
@@ -55,18 +63,18 @@ type Instance struct {
 }
 
 type trayState struct {
-	daemonAvailable bool
-	loggedIn        bool
-	vpnActive       bool
-	notifyEnabled   bool
-	daemonError     string
-	accountName     string
-	vpnStatus       string
-	vpnName         string
-	vpnHostname     string
-	vpnCity         string
-	vpnCountry      string
-	mu              sync.RWMutex
+	daemonAvailable     bool
+	loggedIn            bool
+	vpnActive           bool
+	notificationsStatus Status
+	daemonError         string
+	accountName         string
+	vpnStatus           string
+	vpnName             string
+	vpnHostname         string
+	vpnCity             string
+	vpnCountry          string
+	mu                  sync.RWMutex
 }
 
 func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopRequest) *Instance {
@@ -97,7 +105,7 @@ func OnReady(ti *Instance) {
 
 	systray.SetIconName(ti.iconDisconnected)
 	ti.state.vpnStatus = "Disconnected"
-	ti.state.notifyEnabled = false
+	ti.state.notificationsStatus = Invalid
 	ti.redrawChan = make(chan struct{})
 	ti.updateChan = make(chan bool)
 
