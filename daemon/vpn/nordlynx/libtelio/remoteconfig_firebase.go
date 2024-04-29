@@ -22,7 +22,6 @@ func (c *TelioRemoteConfigFetcher) IsAvailable() bool {
 func (c *TelioRemoteConfigFetcher) Fetch(firebaseToken string, appVer string) (string, error) {
 	if c.rc == nil {
 		log.Println(internal.InfoPrefix, "Initialize firebase")
-		log.Println("token", firebaseToken)
 		c.rc = remote.NewRConfig(remote.UpdatePeriod, remote.NewFirebaseService(firebaseToken), c.cm)
 	}
 	log.Println(internal.InfoPrefix, "Fetch libtelio remote config")
