@@ -72,7 +72,7 @@ var (
 	Port          = 6960
 	ConnType      = "unix"
 	ConnURL       = internal.DaemonSocket
-	FirebaseToken = "" // If this is moved to another the scripts need to be updated
+	FirebaseToken = "" // If this is moved to another package the scripts need to be updated
 )
 
 // Environment constants
