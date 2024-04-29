@@ -64,14 +64,15 @@ import (
 
 // Values set when building the application
 var (
-	Salt        = ""
-	Version     = "0.0.0"
-	Environment = ""
-	PackageType = ""
-	Arch        = ""
-	Port        = 6960
-	ConnType    = "unix"
-	ConnURL     = internal.DaemonSocket
+	Salt          = ""
+	Version       = "0.0.0"
+	Environment   = ""
+	PackageType   = ""
+	Arch          = ""
+	Port          = 6960
+	ConnType      = "unix"
+	ConnURL       = internal.DaemonSocket
+	FirebaseToken = "" // If this is moved to another the scripts need to be updated
 )
 
 // Environment constants
