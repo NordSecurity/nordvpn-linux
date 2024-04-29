@@ -13,9 +13,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 )
 
+var FirebaseToken = ""
+
 func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
 	cfg vpn.LibConfigGetter, deviceID, appVersion string) daemon.FactoryFunc {
-	var telio = libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, deviceID, appVersion)
+	var telio = libtelio.New(FirebaseToken, !envIsDev, eventsDbPath, fwmark, cfg, deviceID, appVersion)
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {
 		case config.Technology_NORDLYNX:

@@ -18,7 +18,7 @@ const (
 // TelioConfigFetcher is abstract interface to cover local and remote config
 type TelioConfigFetcher interface {
 	IsAvailable() bool
-	Fetch(appVer string) (string, error)
+	Fetch(firebaseToken string, appVer string) (string, error)
 }
 
 type TelioConfig struct {
@@ -34,10 +34,10 @@ func NewTelioConfig(cm config.Manager) *TelioConfig {
 	}
 }
 
-func (tc *TelioConfig) GetConfig(version string) (string, error) {
+func (tc *TelioConfig) GetConfig(firebaseToken string, version string) (string, error) {
 	for _, c := range tc.fetchers {
 		if c.IsAvailable() {
-			return c.Fetch(version)
+			return c.Fetch(firebaseToken, version)
 		}
 	}
 	return "", fmt.Errorf("telio config is not available")
@@ -50,7 +50,7 @@ func (c *TelioLocalConfigFetcher) IsAvailable() bool {
 	return ok && strings.TrimSpace(val) != ""
 }
 
-func (c *TelioLocalConfigFetcher) Fetch(string) (string, error) {
+func (c *TelioLocalConfigFetcher) Fetch(string, string) (string, error) {
 	val, ok := os.LookupEnv(telioLocalConfigName)
 	val = strings.TrimSpace(val)
 	if !ok || val == "" {

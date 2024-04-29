@@ -12,6 +12,6 @@ func (c *TelioRemoteConfigFetcher) IsAvailable() bool {
 	return false
 }
 
-func (c *TelioRemoteConfigFetcher) Fetch(appVer string) (string, error) {
+func (c *TelioRemoteConfigFetcher) Fetch(firebaseToken string, appVer string) (string, error) {
 	return "", nil
 }

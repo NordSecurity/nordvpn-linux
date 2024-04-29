@@ -145,9 +145,9 @@ type persistentKeepAliveConfig struct {
 	Stun     int `json:"stun,omitempty"`
 }
 
-func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) ([]byte, error) {
+func handleTelioConfig(firebaseToken string, eventPath, deviceID, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) ([]byte, error) {
 	telioConfig := &telioFeatures{}
-	cfgString, err := vpnLibCfg.GetConfig(version)
+	cfgString, err := vpnLibCfg.GetConfig(firebaseToken, version)
 	if err != nil {
 		return nil, fmt.Errorf("getting telio config json string: %w", err)
 	} else {
@@ -168,13 +168,13 @@ func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg
 	return json.Marshal(telioConfig)
 }
 
-func New(prod bool, eventPath string, fwmark uint32,
+func New(firebaseToken string, prod bool, eventPath string, fwmark uint32,
 	vpnLibCfg vpn.LibConfigGetter, deviceID, appVersion string) *Libtelio {
 	events := make(chan state)
 	logLevel := teliogo.TELIOLOGINFO
 
 	var telioConfigString string
-	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, vpnLibCfg)
+	cfg, err := handleTelioConfig(firebaseToken, eventPath, deviceID, appVersion, prod, vpnLibCfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "Failed to get telio config:", err)
 

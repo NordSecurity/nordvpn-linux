@@ -10,8 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-var FirebaseToken = ""
-
 type TelioRemoteConfigFetcher struct {
 	rc *remote.RConfig
 	cm config.Manager
@@ -21,10 +19,11 @@ func (c *TelioRemoteConfigFetcher) IsAvailable() bool {
 	return true
 }
 
-func (c *TelioRemoteConfigFetcher) Fetch(appVer string) (string, error) {
+func (c *TelioRemoteConfigFetcher) Fetch(firebaseToken string, appVer string) (string, error) {
 	if c.rc == nil {
 		log.Println(internal.InfoPrefix, "Initialize firebase")
-		c.rc = remote.NewRConfig(remote.UpdatePeriod, remote.NewFirebaseService(FirebaseToken), c.cm)
+		log.Println("token", firebaseToken)
+		c.rc = remote.NewRConfig(remote.UpdatePeriod, remote.NewFirebaseService(firebaseToken), c.cm)
 	}
 	log.Println(internal.InfoPrefix, "Fetch libtelio remote config")
 	return c.rc.GetTelioConfig(appVer)
