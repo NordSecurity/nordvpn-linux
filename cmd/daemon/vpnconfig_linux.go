@@ -11,7 +11,7 @@ import (
 
 type noopConfigGetter struct{}
 
-func (noopConfigGetter) GetConfig(string) (string, error) {
+func (noopConfigGetter) GetConfig(string, string) (string, error) {
 	return "", fmt.Errorf("config is not available")
 }
 
