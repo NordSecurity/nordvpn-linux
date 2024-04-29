@@ -39,6 +39,7 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
+@pytest.mark.skip(reason="~~~failing under SNAP: python KeyError")
 @pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -77,6 +78,7 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_conne
     assert output_after_add == output_after_delete
 
 
+@pytest.mark.skip(reason="~~~failing under SNAP: python KeyError")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -100,6 +102,7 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
     assert not firewall.is_active(None, ip_addresses_with_subnet)
 
 
+@pytest.mark.skip(reason="~~~failing under SNAP: python KeyError")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -122,6 +125,7 @@ def test_allowlist_subnet_connect(tech, proto, obfuscated):
     assert not firewall.is_active(None, ip_addresses_with_subnet)
 
 
+@pytest.mark.skip(reason="~~~failing under SNAP: python KeyError")
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):

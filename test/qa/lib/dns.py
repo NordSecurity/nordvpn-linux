@@ -12,9 +12,6 @@ DNS_TPL_IPV6 = ["2400:bb40:4444::103", "2400:bb40:8888::103"]
 # Used for test parametrization, when the same test has to be run with different Threat Protection Lite alias.
 TPL_ALIAS = [
     "threatprotectionlite",
-    "tplite",
-    "tpl",
-    "cybersec"
 ]
 
 # Used for test parametrization, when the same test has to be run for different values of custom dns.

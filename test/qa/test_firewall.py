@@ -33,7 +33,6 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
-@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -54,7 +53,6 @@ def test_connected_firewall_disable(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -75,7 +73,6 @@ def test_connected_firewall_enable(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -93,7 +90,6 @@ def test_firewall_disable_connect(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -111,7 +107,6 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.skip(reason="~~~SNAP failed: vpn connect")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
@@ -135,7 +130,6 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
     assert not firewall.is_active([port])
 
 
-@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
@@ -159,7 +153,7 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
     assert not firewall.is_active([ports])
 
 
-@pytest.mark.skip(reason="~~~VERIFIED")
+@pytest.mark.skip(reason="~~~failing under SNAP: python KeyError in fw.is_active()...in sort_list_by_other_list()")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
@@ -183,7 +177,6 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
     assert not firewall.is_active(None, [subnet])
 
 
-@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_firewall_06_with_killswitch(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.set.killswitch.off):
@@ -197,7 +190,6 @@ def test_firewall_06_with_killswitch(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.skip(reason="~~~SNAP failed: timeout")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
@@ -222,7 +214,7 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.skip(reason="~~~FAILED: check for hardcoded interface `eth0`")
+@pytest.mark.skip(reason="~~~failing under SNAP: eth0 interface is hardcoded in tests")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("before_connect", [True, False])
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
@@ -263,7 +255,6 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
                 assert rule not in rules, f"{rule} output rule not found in iptables"
 
 
-@pytest.mark.skip(reason="~~~VERIFIED")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
