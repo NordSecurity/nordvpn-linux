@@ -3,6 +3,7 @@ import time
 from itertools import cycle
 from threading import Thread
 
+import dns.resolver
 import pytest
 import requests
 import sh
@@ -111,23 +112,24 @@ def _is_dns_resolvable(retry=5) -> bool:
     return False
 
 
-def _is_dns_not_resolvable(retry=5) -> bool:
-    """Returns True when domain resolution is not working."""
-    for _ in range(retry):
+def _is_dns_not_resolvable(retry: int = 5) -> bool:
+    """ returns True when domain resolution is not working. """
+    i = 0
+    while i < retry:
         try:
-            with pytest.raises(sh.ErrorReturnCode_2) as ex:
-                sh.ping("-4", "-c", "1", "-w", "1", "nordvpn.com")
-
-            return "Network is unreachable" in str(ex) or \
-                "Name or service not known" in str(ex) or \
-                "Temporary failure in name resolution" in str(ex)
-        except Exception:  # noqa: BLE001
+            with pytest.raises((dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout)):
+                resolver = dns.resolver.Resolver()
+                resolver.lifetime = 1
+                resolver.resolve("nordvpn.com")
+            return True
+        except:  # noqa: E722
             time.sleep(1)
+            i += 1
     return False
 
 
 def is_not_available(retry=5) -> bool:
-    """Returns True when network access is not available."""
+    """ returns True when network access is not available. """
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
     return not _is_internet_reachable(retry) and _is_dns_not_resolvable(retry)
