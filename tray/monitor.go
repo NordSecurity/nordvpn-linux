@@ -302,7 +302,7 @@ func messageForDaemonError(err error) string {
 	errorMessage := err.Error()
 
 	if strings.Contains(errorMessage, "no such file or directory") {
-		message := "Nordvpn daemon is not running\n\n"
+		message := "NordVPN daemon is not running\n\n"
 		if snapconf.IsUnderSnap() {
 			message += "sudo snap start nordvpn"
 		} else {
