@@ -2,10 +2,10 @@
 
 package libtelio
 
-import "github.com/NordSecurity/nordvpn-linux/config"
+import "github.com/NordSecurity/nordvpn-linux/config/remote"
 
 type TelioRemoteConfigFetcher struct {
-	cm config.Manager
+	rc remote.RemoteConfigGetter
 }
 
 func (c *TelioRemoteConfigFetcher) IsAvailable() bool {
