@@ -48,6 +48,11 @@ func (ti *Instance) updateLoginStatus() bool {
 
 	loggedIn := resp.GetValue()
 
+	if !loggedIn && ti.state.loggedIn && ti.state.vpnStatus == ConnectedString {
+		// reset the VPN info if the user logs out while connected to VPN
+		ti.setVpnStatus("Disconnected", "", "", "", "")
+	}
+
 	ti.state.mu.Lock()
 
 	if !ti.state.loggedIn && loggedIn {
@@ -90,34 +95,7 @@ func (ti *Instance) updateVpnStatus(fullUpdate bool) bool {
 		changed = ti.updateSettings() || changed
 	}
 
-	ti.state.mu.Lock()
-
-	if ti.state.vpnStatus != vpnStatus {
-		if vpnStatus == "Connected" {
-			systray.SetIconName(ti.iconConnected)
-			defer ti.notify("Connected to %s", vpnName)
-		} else {
-			systray.SetIconName(ti.iconDisconnected)
-			defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.vpnName))
-		}
-		ti.state.vpnStatus = vpnStatus
-		changed = true
-	}
-
-	if ti.state.vpnHostname != vpnHostname {
-		if ti.state.vpnHostname != "" && vpnHostname != "" {
-			defer ti.notify("Connected to %s", vpnName)
-		}
-		ti.state.vpnHostname = vpnHostname
-		changed = true
-	}
-
-	ti.state.vpnName = vpnName
-	ti.state.vpnCity = vpnCity
-	ti.state.vpnCountry = vpnCountry
-
-	ti.state.mu.Unlock()
-	return changed
+	return ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry) || changed
 }
 
 func (ti *Instance) updateSettings() bool {
@@ -236,6 +214,9 @@ func (ti *Instance) pollingMonitor() {
 	fullUpdate := true
 	fullUpdateLast := time.Time{}
 	for {
+		if ti.state.notificationsStatus == Invalid {
+			ti.updateSettings()
+		}
 		ti.redraw(ti.ping())
 		if ti.state.daemonAvailable {
 			ti.redraw(ti.updateLoginStatus())
@@ -282,7 +263,7 @@ func messageForDaemonError(err error) string {
 	}
 
 	if strings.Contains(errorMessage, "no such file or directory") {
-		message := "Nordvpn daemon is not running\n\n"
+		message := "NordVPN daemon is not running\n\n"
 		if snapconf.IsUnderSnap() {
 			message += "sudo snap start nordvpn"
 		} else {
@@ -325,6 +306,38 @@ func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 		ti.state.daemonError = errorMessage
 		changed = true
 	}
+
+	ti.state.mu.Unlock()
+	return changed
+}
+
+func (ti *Instance) setVpnStatus(vpnStatus string, vpnName string, vpnHostname string, vpnCity string, vpnCountry string) bool {
+	changed := false
+	ti.state.mu.Lock()
+
+	if ti.state.vpnStatus != vpnStatus {
+		if vpnStatus == ConnectedString {
+			systray.SetIconName(ti.iconConnected)
+			defer ti.notify("Connected to %s", vpnName)
+		} else {
+			systray.SetIconName(ti.iconDisconnected)
+			defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.vpnName))
+		}
+		ti.state.vpnStatus = vpnStatus
+		changed = true
+	}
+
+	if ti.state.vpnHostname != vpnHostname {
+		if ti.state.vpnHostname != "" && vpnHostname != "" {
+			defer ti.notify("Connected to %s", vpnName)
+		}
+		ti.state.vpnHostname = vpnHostname
+		changed = true
+	}
+
+	ti.state.vpnName = vpnName
+	ti.state.vpnCity = vpnCity
+	ti.state.vpnCountry = vpnCountry
 
 	ti.state.mu.Unlock()
 	return changed

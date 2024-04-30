@@ -83,7 +83,7 @@ func addVpnSection(ti *Instance) {
 	mStatus := systray.AddMenuItem("VPN "+strings.ToLower(ti.state.vpnStatus), "VPN "+strings.ToLower(ti.state.vpnStatus))
 	mStatus.Disable()
 
-	if ti.state.vpnStatus == "Connected" {
+	if ti.state.vpnStatus == ConnectedString {
 		vpnServerName := ti.state.vpnName
 		if vpnServerName == "" {
 			vpnServerName = ti.state.vpnHostname

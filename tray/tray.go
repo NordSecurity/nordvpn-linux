@@ -20,6 +20,7 @@ const (
 	PollingUpdateInterval     = 5 * time.Second
 	PollingFullUpdateInterval = 60 * time.Second
 	AccountInfoUpdateInterval = 24 * time.Hour
+	ConnectedString           = "Connected"
 )
 
 type Status int
