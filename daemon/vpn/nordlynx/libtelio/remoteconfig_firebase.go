@@ -3,18 +3,13 @@
 package libtelio
 
 import (
-	"log"
+	"fmt"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-var FirebaseToken = ""
-
 type TelioRemoteConfigFetcher struct {
-	rc *remote.RConfig
-	cm config.Manager
+	rc remote.RemoteConfigGetter
 }
 
 func (c *TelioRemoteConfigFetcher) IsAvailable() bool {
@@ -23,9 +18,7 @@ func (c *TelioRemoteConfigFetcher) IsAvailable() bool {
 
 func (c *TelioRemoteConfigFetcher) Fetch(appVer string) (string, error) {
 	if c.rc == nil {
-		log.Println(internal.InfoPrefix, "Initialize firebase")
-		c.rc = remote.NewRConfig(remote.UpdatePeriod, remote.NewFirebaseService(FirebaseToken), c.cm)
+		return "", fmt.Errorf("missing remote config")
 	}
-	log.Println(internal.InfoPrefix, "Fetch libtelio remote config")
 	return c.rc.GetTelioConfig(appVer)
 }

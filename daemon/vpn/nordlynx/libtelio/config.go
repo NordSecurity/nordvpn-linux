@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -25,11 +25,11 @@ type TelioConfig struct {
 	fetchers []TelioConfigFetcher
 }
 
-func NewTelioConfig(cm config.Manager) *TelioConfig {
+func NewTelioConfig(rc remote.RemoteConfigGetter) *TelioConfig {
 	return &TelioConfig{
 		fetchers: []TelioConfigFetcher{
 			&TelioLocalConfigFetcher{},
-			&TelioRemoteConfigFetcher{cm: cm},
+			&TelioRemoteConfigFetcher{rc},
 		},
 	}
 }

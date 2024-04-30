@@ -232,6 +232,9 @@ type FirebaseService struct {
 }
 
 func NewFirebaseService(st string) *FirebaseService {
+	if st == "" {
+		log.Println(internal.WarningPrefix, "no firebase token provided")
+	}
 	return &FirebaseService{st}
 }
 
