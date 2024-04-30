@@ -512,7 +512,11 @@ func NewApp(version, environment, hash, salt string,
 	app.Commands = append(app.Commands, meshnetCommand(cmd))
 
 	if pingErr == nil {
-		app.Commands = append(app.Commands, fileshareCommand(cmd))
+		fsCommand := fileshareCommand(cmd)
+		// TODO: This will currently result in Ping executed twice for every fileshare
+		// command but it helps to properly display errors.
+		fsCommand.Before = cmd.action(pingErr, fsCommand.Before)
+		app.Commands = append(app.Commands, fsCommand)
 	}
 
 	app.Commands = addLoaderToActions(cmd, pingErr, app.Commands)
