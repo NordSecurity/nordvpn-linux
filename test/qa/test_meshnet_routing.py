@@ -174,9 +174,6 @@ def test_route_to_nonexistant_node():
 
     assert expected_message in str(ex)
 
-
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(90)
 def test_route_to_peer_status_valid():
     peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
@@ -186,7 +183,7 @@ def test_route_to_peer_status_valid():
     peer_nick = "a-A-a"
     sh.nordvpn.mesh.peer.nick.set(peer_hostname, peer_nick)
     output = sh.nordvpn.mesh.peer.connect(peer_nick)
-    assert meshnet.is_connect_successful(output, peer_hostname)
+    assert meshnet.is_connect_successful(output, peer_nick)
 
     connect_time = time.monotonic()
 
@@ -210,8 +207,8 @@ def test_route_to_peer_status_valid():
     logging.log("status_info: " + str(sh.nordvpn.status()))
 
     assert "Connected" in status_info['status']
-    assert peer_hostname in status_info['hostname']
-    assert socket.gethostbyname(peer_hostname) in status_info['ip']
+    assert peer_nick in status_info['hostname']
+    assert socket.gethostbyname(peer_nick) in status_info['ip']
     assert "NORDLYNX" in status_info['current technology']
     assert "UDP" in status_info['current protocol']
 
@@ -235,7 +232,7 @@ def test_route_to_peer_status_valid():
 
 @pytest.mark.skip(reason="Test suit exits, before test can be completed.")
 def test_route_to_peer_that_is_disconnected():
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
+    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().name()
 
     ssh_client.exec_command("nordvpn set mesh off")
 
@@ -255,7 +252,7 @@ def test_route_to_peer_that_is_disconnected():
 def test_route_traffic_to_peer_wrong_tech(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
+    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().name()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.mesh.peer.connect(peer_hostname)

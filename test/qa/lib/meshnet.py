@@ -207,6 +207,12 @@ class Peer:
 
         return output
 
+    def name(self) -> str:
+        ''' Returns nickname if not empty and hostname otherwise. '''
+        if not self.nickname:
+            return self.nickname
+        
+        return self.hostname
 
 class PeerList:
     def __init__(self):

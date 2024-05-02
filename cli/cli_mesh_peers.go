@@ -557,14 +557,18 @@ func (c *cmd) MeshPeerConnect(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
+	peerName := peer.Nickname
+	if peerName == "" {
+		peerName = peer.Hostname
+	}
 	if err := connectResponseToError(
 		removeResp,
-		peer.Hostname,
+		peerName,
 	); err != nil {
 		return formatError(err)
 	}
 
-	color.Green(MsgMeshnetPeerConnectSuccess, peer.Hostname)
+	color.Green(MsgMeshnetPeerConnectSuccess, peerName)
 	return nil
 }
 

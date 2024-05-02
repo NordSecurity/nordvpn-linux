@@ -2,7 +2,6 @@ package tray
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -21,6 +20,7 @@ const (
 	PollingUpdateInterval     = 5 * time.Second
 	PollingFullUpdateInterval = 60 * time.Second
 	AccountInfoUpdateInterval = 24 * time.Hour
+	ConnectedString           = "Connected"
 )
 
 type Status int
@@ -42,11 +42,16 @@ func (ai *accountInfo) getAccountInfo(client pb.DaemonClient) (*pb.AccountRespon
 		var err error
 		ai.accountInfo, err = client.AccountInfo(context.Background(), &pb.Empty{})
 		if err != nil {
-			return &pb.AccountResponse{}, fmt.Errorf("retrvieving account info: %w", err)
+			return nil, err
 		}
 		ai.updateTime = time.Now()
 	}
 	return ai.accountInfo, nil
+}
+
+func (ai *accountInfo) reset() {
+	ai.updateTime = time.Time{}
+	ai.accountInfo = nil
 }
 
 type Instance struct {
