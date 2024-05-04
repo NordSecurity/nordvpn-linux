@@ -50,6 +50,70 @@ QA tests cover base app functionality and integrations. As they run slower than 
 
 It is recommended to run these tests in Docker container, because they might change operating system environment unexpectedly. No persistent changes should be made though, so nothing that a reboot wouldn't fix.
 
+### Running QA tests
+In order to run QA tests, run `test:qaDocker` or `test:qaDockerFast`. It requires two arguments:
+* name of the test category;
+* pattern for test functions to run.
+For test category names, check out [test/qa](test/qa) directory. Name of the test suite would be
+the name of the desired test file with *test* omitted. For test name, simply provide the desired
+function name from that file. Test names are selected by pattern matching. Since all test function
+names start with `test_`, simply use `test` as an argument to run every test in the suite.
+
+For example, to run every test from the `test_fileshare.py` category:
+
+`mage test:qaDocker fileshare test`
+
+And to run a single test:
+
+`mage test:qaDocker fileshare test_accept`
+
+To run tests without rebuilding everything each time use `test:qaDockerFast` instead of
+`test:qaDocker`.
+
+### Test credentials for QA tests
+`NA_TESTS_CREDENTIALS` environment variable is used to configure test credentials. It is a JSON
+object containing a key(string):value(credentials) map.
+
+#### key
+QA tests use a list of the following keys:
+* `default` - default account used for most of tests. In meshnet and fileshare tests is used as an
+account for "this" device.
+* `qa-peer` - account used for fileshare and meshnet tests for "another peer". This account will be
+invited by the `default` account to its' meshnet. Check out [qa peer README](ci/docker/qa-peer/README.md)
+for more details.
+* `valid` - valid account used in login tests. It has to be different than default account.
+* `expired` - expired account is an account whose subscription has expired. Used in login tests.
+
+Any of the used keys can be extended with `NA_CREDENTIALS_KEY` environment variable which will be
+appended to the used key.
+E. g. when `NA_CREDENTIALS_KEY` is set to `my_key`, `default_my_key` and `qa-peer-my_key` will be
+used instead of `default` and `qa-peer` in the executed tests.
+
+#### credentials
+Credentials structure consists of the following fields:
+* `token *` - token to be used to log in during the QA test execution. It can be acquired in the
+[nordvpn account dashboard](https://my.nordaccount.com/dashboard/nordvpn/).
+* `email` - email of the account to run tests with. In meshnet tests it is used to send and accept
+invitations. In other cases it is used for logging.
+* `password` - password of the account used in the login tests.
+
+#### Note about meshnet tests
+In case of meshnet tests(`test_meshnet_*.py`), two NordVPN accounts might be required(`qa-peer` and
+`default`). Meshnet functionality does not require a subscription, so a secondary free account can
+be used in this case.
+
+## Running unit tests
+You can run unit tests for a single package as you would run uts for any other go project, for
+example:
+```
+cd nordvpn-app/meshnet
+go test
+```
+We also have a mage targets for running tests for all of the packages:
+* `test:cgoDocker` runs cgo tests.
+* `test:go` runs regular unit tests.
+
+
 ### Coverage
 
 QA tests should generally cover app's use cases without necessarily covering all of the edge cases.

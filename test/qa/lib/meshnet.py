@@ -9,7 +9,7 @@ import sh
 
 from . import daemon, info, logging, login, meshnet, ssh
 
-PEER_USERNAME = os.environ.get("QA_PEER_USERNAME")
+PEER_USERNAME = login.get_credentials("qa-peer").email
 
 TELIO_EXPECTED_RELAY_TO_DIRECT_TIME = 5.0
 TELIO_EXPECTED_RTT = 5.0
@@ -418,7 +418,7 @@ def add_peer(ssh_client: ssh.Ssh,
     peer_allow_incoming_arg = f"--allow-incoming-traffic={str(peer_allow_incoming).lower()}"
 
     sh.nordvpn.mesh.inv.send(tester_allow_incoming_arg, tester_allow_local_arg, tester_allow_routing_arg, tester_allow_fileshare_arg, PEER_USERNAME)
-    local_user, _ = login.get_default_credentials()
+    local_user = login.get_credentials("default").email
     ssh_client.exec_command(f"yes | nordvpn mesh inv accept {peer_allow_local_arg} {peer_allow_incoming_arg} {peer_allow_routing_arg} {peer_allow_fileshare_arg} {local_user}")
 
     sh.nordvpn.mesh.peer.refresh()
@@ -500,7 +500,7 @@ def accept_meshnet_invite(ssh_client: ssh.Ssh,
     peer_allow_local_arg = f"--allow-local-network-access={str(peer_allow_local).lower()}"
     peer_allow_incoming_arg = f"--allow-incoming-traffic={str(peer_allow_incoming).lower()}"
 
-    local_user, _ = login.get_default_credentials()
+    local_user = login.get_credentials("default").email
     output = ssh_client.exec_command(f"yes | nordvpn mesh inv accept {peer_allow_local_arg} {peer_allow_incoming_arg} {peer_allow_routing_arg} {peer_allow_fileshare_arg} {local_user}")
     sh.nordvpn.mesh.peer.refresh()
 
@@ -509,7 +509,7 @@ def accept_meshnet_invite(ssh_client: ssh.Ssh,
 
 def deny_meshnet_invite(ssh_client: ssh.Ssh):
 
-    local_user, _ = login.get_default_credentials()
+    local_user = login.get_credentials("default").email
     output = ssh_client.exec_command(f"yes | nordvpn mesh inv deny {local_user}")
     
     return output

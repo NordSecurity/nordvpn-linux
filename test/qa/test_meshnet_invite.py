@@ -1,9 +1,7 @@
-import os
-
 import pytest
 import sh
 
-from lib import meshnet, ssh
+from lib import login, meshnet, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -42,7 +40,7 @@ def test_invite_send_repeated():
 
 def test_invite_send_own_email():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        meshnet.send_meshnet_invite(os.environ.get("DEFAULT_LOGIN_USERNAME"))
+        meshnet.send_meshnet_invite(login.get_credentials("default").email)
 
     assert "Email should belong to a different user." in str(ex.value)
 
@@ -122,10 +120,11 @@ def test_invite_deny():
     meshnet.revoke_all_invites()
     meshnet.revoke_all_invites_in_peer(ssh_client)
 
-    meshnet.send_meshnet_invite(os.environ.get("QA_PEER_USERNAME"))
+    meshnet.send_meshnet_invite(login.get_credentials("qa-peer").email)
 
-    assert os.environ.get("DEFAULT_LOGIN_USERNAME") in ssh_client.exec_command("nordvpn meshnet invite list")
-    assert f"Meshnet invitation from '{os.environ.get('DEFAULT_LOGIN_USERNAME')}' was denied." in meshnet.deny_meshnet_invite(ssh_client)
+    email = login.get_credentials("default").email
+    assert email in ssh_client.exec_command("nordvpn meshnet invite list")
+    assert f"Meshnet invitation from '{email}' was denied." in meshnet.deny_meshnet_invite(ssh_client)
 
 
 def test_invite_deny_non_existent():
@@ -158,10 +157,11 @@ def test_invite_accept():
     meshnet.revoke_all_invites()
     meshnet.revoke_all_invites_in_peer(ssh_client)
 
-    meshnet.send_meshnet_invite(os.environ.get("QA_PEER_USERNAME"))
+    meshnet.send_meshnet_invite(login.get_credentials("qa-peer").email)
 
-    assert os.environ.get("DEFAULT_LOGIN_USERNAME") in ssh_client.exec_command("nordvpn meshnet invite list")
-    assert f"Meshnet invitation from '{os.environ.get('DEFAULT_LOGIN_USERNAME')}' was accepted." in meshnet.accept_meshnet_invite(ssh_client)
+    email = login.get_credentials("default").email
+    assert email in ssh_client.exec_command("nordvpn meshnet invite list")
+    assert f"Meshnet invitation from '{email}' was accepted." in meshnet.accept_meshnet_invite(ssh_client)
 
 
 def test_invite_accept_non_existent():
