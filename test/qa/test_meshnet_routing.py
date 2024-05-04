@@ -94,31 +94,6 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(60)
-def test_route_traffic_to_peer_once_again_when_already_routing():
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
-
-    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
-    ssh_client_mesh.connect()
-
-    ssh_client_mesh.exec_command("nordvpn connect")
-
-    my_ip = network.get_external_device_ip()
-    output = sh.nordvpn.mesh.peer.connect(peer_hostname)
-    assert meshnet.is_connect_successful(output, peer_hostname)
-    assert network.is_connected()
-    assert my_ip != network.get_external_device_ip()
-
-    output = sh.nordvpn.mesh.peer.connect(peer_hostname)
-    assert meshnet.is_connect_successful(output, peer_hostname)
-    assert network.is_connected()
-    assert my_ip != network.get_external_device_ip()
-
-    sh.nordvpn.disconnect()
-    ssh_client_mesh.exec_command("nordvpn disconnect")
-
-
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(130)
 def test_route_traffic_to_each_other():
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())

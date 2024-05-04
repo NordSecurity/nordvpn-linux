@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"go/build"
 	"os"
@@ -785,12 +786,37 @@ func docker() error {
 		return err
 	}
 
+	token, err := getDefaultLoginToken([]byte(env["NA_TESTS_CREDENTIALS"]))
+	if err != nil {
+		return err
+	}
+
 	// RunDocker has problems with allowing interactivity, so running it this way
 	// #nosec G204 -- used only during development/testing
-	cmd := exec.Command("docker", "run", "-e", "NORDVPN_LOGIN_TOKEN="+env["DEFAULT_LOGIN_TOKEN"],
-		"--cap-add=NET_ADMIN", "-it", "--rm", tag)
+	cmd := exec.Command(
+		"docker",
+		"run",
+		"-e",
+		"NORDVPN_LOGIN_TOKEN="+token,
+		"--cap-add=NET_ADMIN",
+		"-it",
+		"--rm",
+		tag,
+	)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+func getDefaultLoginToken(testsCredentials []byte) (string, error) {
+	type credentials struct {
+		Token string `json:"token"`
+	}
+	var c map[string]credentials
+	err := json.Unmarshal(testsCredentials, &c)
+	if err != nil {
+		return "", fmt.Errorf("parsing tests credentials: %w", err)
+	}
+	return c["default"].Token, nil
 }

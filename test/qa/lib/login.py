@@ -87,52 +87,39 @@ class SeleniumBrowser:
         else:
             return None
 
+class Credentials:
+    def __init__(self, email, token, password):
+        self.email = email
+        self.token = token
+        self.password = password
 
-def get_default_credentials():
-    """Returns tuple[username,token]."""
-    default_username = os.environ.get("DEFAULT_LOGIN_USERNAME")
-    default_token = os.environ.get("DEFAULT_LOGIN_TOKEN")
-    ci_credentials = os.environ.get("NA_TESTS_CREDENTIALS")
-    if ci_credentials is not None:
-        devs = json.loads(ci_credentials)
-        dev_email = os.environ.get("GITLAB_USER_EMAIL")
-        if dev_email in devs:
-            default_username = devs[dev_email]["username"]
-            default_token = devs[dev_email]["token"]
-    return default_username, default_token
+def get_credentials(key) -> Credentials:
+    """Returns token by a given key."""
+    na_credentials = os.environ.get("NA_TESTS_CREDENTIALS")
+    na_credentials_key = os.environ.get("NA_CREDENTIALS_KEY")
+    full_key = key if na_credentials_key is None else f"{key}_{na_credentials_key}"
+
+    if na_credentials is None:
+        raise Exception("environment variable 'NA_TESTS_CREDENTIALS' is not set")
+    creds = json.loads(na_credentials)
+
+    key = key if creds.get(full_key) is None else full_key
+
+    creds = creds[key]
+
+    return Credentials(
+            email=creds.get("email", None),
+            token=creds.get("token", None),
+            password=creds.get("password", None))
 
 
 def login_as(username, ssh_client: ssh.Ssh = None):
     """login_as specified user with optional delay before calling login."""
+    token = get_credentials(username).token
 
-    default_username, default_token = get_default_credentials()
-    users = {
-        "default": [
-            default_username,
-            default_token,
-        ],
-        "invalid": [
-            os.environ.get("DEFAULT_LOGIN_USERNAME"),
-            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-        ],
-        "valid": [
-            os.environ.get("VALID_LOGIN_USERNAME"),
-            os.environ.get("VALID_LOGIN_TOKEN"),
-        ],
-        "expired": [
-            os.environ.get("EXPIRED_LOGIN_USERNAME"),
-            os.environ.get("EXPIRED_LOGIN_TOKEN"),
-        ],
-        "qa-peer": [
-            os.environ.get("QA_PEER_USERNAME"),
-            os.environ.get("QA_PEER_TOKEN"),
-        ],
-    }
-
-    user = users[username]
-    logging.log(f"logging in as {user[0]}")
+    logging.log(f"logging in as {token}")
 
     if ssh_client is not None:
-        return ssh_client.exec_command(f"nordvpn login --token {user[1]}")
+        return ssh_client.exec_command(f"nordvpn login --token {token}")
     else:
-        return sh.nordvpn.login("--token", user[1])
+        return sh.nordvpn.login("--token", token)

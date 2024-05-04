@@ -1,5 +1,3 @@
-import os
-
 import pytest
 import sh
 import timeout_decorator
@@ -50,12 +48,13 @@ def test_selenium_login(login_flag):
         print(f"Browser URL: {browser.current_url}\n")
 
         try:
+            credentials = login.get_credentials("default")
             # Username page
-            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, os.environ.get("DEFAULT_LOGIN_USERNAME"))
+            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, credentials.email)
             selenium.browser_element_interact(login.NA_USERNAME_PAGE_BUTTON_XPATH)
 
             # Password page
-            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, os.environ.get("DEFAULT_LOGIN_PASSWORD"))
+            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, credentials.password)
             selenium.browser_element_interact(login.NA_PASSWORD_PAGE_BUTTON_XPATH)
 
             # Continue to app page
@@ -85,12 +84,13 @@ def test_selenium_login_callback(login_flag):
         print(f"Browser URL: {browser.current_url}\n")
 
         try:
+            credentials = login.get_credentials("default")
             # Username page
-            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, os.environ.get("DEFAULT_LOGIN_USERNAME"))
+            selenium.browser_element_interact(login.NA_USERNAME_PAGE_TEXTBOX_XPATH, credentials.email)
             selenium.browser_element_interact(login.NA_USERNAME_PAGE_BUTTON_XPATH)
 
             # Password page
-            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, os.environ.get("DEFAULT_LOGIN_PASSWORD"))
+            selenium.browser_element_interact(login.NA_PASSWORD_PAGE_TEXTBOX_XPATH, credentials.password)
             selenium.browser_element_interact(login.NA_PASSWORD_PAGE_BUTTON_XPATH)
 
             # Continue to app page
