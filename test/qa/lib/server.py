@@ -4,13 +4,13 @@ from urllib.parse import quote
 
 import requests
 
+
 class ServerInfo:
     def __init__(self, server_info):
         self.name = server_info["name"]
         self.hostname = server_info["hostname"]
         self.city = server_info["locations"][0]["country"]["city"]["name"]
         self.country = server_info["locations"][0]["country"]["name"]
-
 
 
 def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
@@ -46,7 +46,7 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
         "Europe": "19",
         "The_Americas": "21",
         "Asia_Pacific": "23",
-        "Africa_The_Middle_East_And_India": "25"
+        "Africa_The_Middle_East_And_India": "25",
     }
 
     if group_id != "":

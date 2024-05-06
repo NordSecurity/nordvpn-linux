@@ -64,7 +64,6 @@ def connect_and_capture_notifications(tech, proto, obfuscated) -> NotificationCa
     """Returns [True, True, True] if notification with all expected contents from NordVPN was captured while connecting to VPN server."""
 
     # Choose server for test, so we know the full expected message
-
     server_info = server.get_hostname_by(tech, proto, obfuscated)
     expected_msg = f"You are connected to {server_info.name} ({server_info.hostname})!"
 
