@@ -42,10 +42,13 @@ var (
 )
 
 type OpenVPN struct {
-	process         *exec.Cmd
-	manager         *gopenvpn.MgmtClient
-	state           vpn.State
-	substate        vpn.Substate
+	process  *exec.Cmd
+	manager  *gopenvpn.MgmtClient
+	state    vpn.State
+	substate vpn.Substate
+	// publishedState tracks latest state that was published, in order to avoid sending multiple
+	// notifications for same type of event.
+	publishedState  vpn.State
 	tun             *tunnel.Tunnel
 	active          bool
 	fwmark          uint32
@@ -316,13 +319,22 @@ func (ovpn *OpenVPN) setState(arg string) {
 	//exhaustive:ignore
 	switch ovpn.state {
 	case vpn.ConnectedState:
-		ovpn.publishConnected()
+		if ovpn.publishedState != vpn.ConnectedState {
+			ovpn.publishConnected()
+			ovpn.publishedState = vpn.ConnectedState
+		}
 	case vpn.ExitingState:
-		fallthrough
+		// ignore ExitingState, as we do not want to notify about intermediate stages for disconnection
 	case vpn.ExitedState:
-		ovpn.publishDisconnected()
+		if ovpn.publishedState != vpn.ExitedState {
+			ovpn.publishDisconnected()
+			ovpn.publishedState = vpn.ExitedState
+		}
 	default:
-		ovpn.publishConnecting()
+		if ovpn.publishedState != vpn.ConnectingState {
+			ovpn.publishConnecting()
+			ovpn.publishedState = vpn.ConnectingState
+		}
 	}
 }
 

@@ -32,8 +32,10 @@ const (
 )
 
 type state struct {
+	Nickname  string `json:"nickname"`
 	State     string `json:"state"`
 	PublicKey string `json:"public_key"`
+	IsVPN     bool   `json:"is_vpn"`
 }
 
 type event struct {
@@ -263,7 +265,7 @@ func (l *Libtelio) Start(
 
 // connect to the VPN server
 func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithCancel(context.Background())
 	l.cancelConnectionMonitor = cancel
 
 	// Start monitoring connection events before connecting to not miss any
@@ -286,8 +288,10 @@ func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
 
 	// Check if the connection actually happened. Disconnect if
 	// no actual connection was created within the timeout
-	isConnected := <-isConnectedC
-	if !isConnected {
+	select {
+	case <-isConnectedC: // isConnectedC will be closed once connection is established
+	case <-time.After(time.Second * 30):
+		cancel()
 		// #nosec G104 -- errors.Join would be useful here
 		l.disconnect()
 		return errors.New("connected to nordlynx server but there is no internet as a result")
@@ -630,12 +634,12 @@ func (l *Libtelio) Public(private string) string {
 func isConnected(ctx context.Context,
 	stateCh <-chan state,
 	connParams connParameters,
-	eventsPublisher *vpn.Events) <-chan bool {
+	eventsPublisher *vpn.Events) <-chan interface{} {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	connectedCh := make(chan bool)
+	connectedCh := make(chan interface{})
 	go func() {
 		wg.Done() // signal that goroutine has started
 		monitorConnection(ctx, stateCh, connectedCh, connParams, eventsPublisher)
@@ -646,31 +650,25 @@ func isConnected(ctx context.Context,
 	return connectedCh
 }
 
-func publishConnecting(publisher *vpn.Events, server vpn.ServerData) {
-	publisher.Connected.Publish(events.DataConnect{
-		Type:                events.ConnectAttempt,
-		TargetServerIP:      server.IP.String(),
-		TargetServerCountry: server.Country,
-		TargetServerCity:    server.City,
-	})
-}
-
-func publishConnected(publisher *vpn.Events, server vpn.ServerData) {
-	publisher.Connected.Publish(events.DataConnect{
-		Type:                events.ConnectSuccess,
-		TargetServerIP:      server.IP.String(),
-		TargetServerCountry: server.Country,
-		TargetServerCity:    server.City,
-	})
-}
-
-func publishDisconnected(publisher *vpn.Events) {
-	publisher.Disconnected.Publish(events.DataDisconnect{})
-}
-
 type connParameters struct {
 	pubKey string
 	server vpn.ServerData
+}
+
+func publishConnectEvent(publisher *vpn.Events, connectType events.TypeConnect, server vpn.ServerData, state state) {
+	publisher.Connected.Publish(events.DataConnect{
+		Type:                 connectType,
+		TargetServerIP:       server.IP.String(),
+		TargetServerCountry:  server.Country,
+		TargetServerCity:     server.City,
+		TargetServerDomain:   server.Hostname,
+		TargetServerNickname: state.Nickname,
+		IsMeshnetPeer:        !state.IsVPN,
+	})
+}
+
+func publishDisconnectedEvent(publisher *vpn.Events) {
+	publisher.Disconnected.Publish(events.DataDisconnect{})
 }
 
 // monitorConnection awaits for incoming state changes from the states chan and publishes appropriate events. Upon
@@ -679,34 +677,50 @@ type connParameters struct {
 func monitorConnection(
 	ctx context.Context,
 	states <-chan state,
-	isConnected chan<- bool,
+	isConnected chan<- interface{},
 	connParameters connParameters,
 	eventsPublisher *vpn.Events) {
-	connectedPublished := false
+	type notifyState int
+	const (
+		disconnected notifyState = iota
+		connecting
+		connected
+	)
 
+	currentNotifyState := disconnected
+	initialConnection := true
 	for {
 		select {
 		case state := <-states:
 			switch state.State {
 			case "connecting":
-				publishConnecting(eventsPublisher, connParameters.server)
+				if currentNotifyState != connecting {
+					currentNotifyState = connecting
+					publishConnectEvent(eventsPublisher, events.ConnectAttempt, connParameters.server, state)
+				}
 			case "connected":
 				if state.PublicKey == connParameters.pubKey &&
 					state.State == "connected" {
-					if !connectedPublished {
-						isConnected <- true
-						connectedPublished = true
+					if initialConnection {
 						close(isConnected)
+						initialConnection = false
+					}
+
+					if currentNotifyState != connected {
+						currentNotifyState = connected
+						publishConnectEvent(eventsPublisher, events.ConnectSuccess, connParameters.server, state)
 					}
 				}
-				publishConnected(eventsPublisher, connParameters.server)
 			case "disconnected":
-				publishDisconnected(eventsPublisher)
+				if currentNotifyState != disconnected {
+					currentNotifyState = disconnected
+					publishDisconnectedEvent(eventsPublisher)
+				}
 			}
 		case <-ctx.Done():
-			publishDisconnected(eventsPublisher)
-			if !connectedPublished {
-				isConnected <- false
+			if currentNotifyState != disconnected {
+				currentNotifyState = disconnected
+				publishDisconnectedEvent(eventsPublisher)
 			}
 			return
 		}

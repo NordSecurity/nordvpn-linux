@@ -5,13 +5,7 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
-)
-
-type Event int
-
-const (
-	VPNConnected Event = iota
-	VPNDisconnected
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 type subscriber struct {
@@ -54,6 +48,7 @@ func (s *StatePublisher) NotifyConnect(e events.DataConnect) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	log.Printf(internal.DebugPrefix+" notifying about connect event: %+v", e)
 	s.notify(e)
 
 	return nil
@@ -63,6 +58,7 @@ func (s *StatePublisher) NotifyDisconnect(e events.DataDisconnect) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	log.Println(internal.DebugPrefix + " notifying about disconnect event")
 	s.notify(e)
 
 	return nil
@@ -76,7 +72,6 @@ func (s *StatePublisher) AddSubscriber() (<-chan interface{}, chan<- struct{}) {
 	for _, sub := range s.subscribers {
 		select {
 		case <-sub.stopChan:
-			log.Println("[DEBUG] remove subscriber")
 			close(sub.stateChan)
 		default:
 			newSubs = append(newSubs, sub)

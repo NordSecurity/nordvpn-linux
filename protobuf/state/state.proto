@@ -17,6 +17,9 @@ message ConnectionStatus {
     string server_ip = 2;
     string server_country = 3;
     string server_city = 4;
+    string server_hostname = 5;
+    string server_nickname = 6;
+    bool is_mesh_peer = 7;
 }
 
 message AppState {
