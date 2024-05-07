@@ -442,32 +442,33 @@ def test_status_connected(tech, proto, obfuscated):
     print("status_info: " + str(status_info))
     print("actual_status: " + str(sh.nordvpn.status()))
 
-    assert "Connected" in status_info['status']
+    assert "Connected" in status_info["status"]
 
-    assert server_info.name in status_info['hostname']
+    assert server_info.hostname in status_info["hostname"]
+    assert server_info.name in status_info["server"]
 
-    assert socket.gethostbyname(server_info.hostname) in status_info['ip']
+    assert socket.gethostbyname(server_info.hostname) in status_info["ip"]
 
-    assert server_info.country in status_info['country']
-    assert server_info.city in status_info['city']
+    assert server_info.country in status_info["country"]
+    assert server_info.city in status_info["city"]
 
-    assert tech.upper() in status_info['current technology']
+    assert tech.upper() in status_info["current technology"]
 
     if tech == "openvpn":
-        assert proto.upper() in status_info['current protocol']
+        assert proto.upper() in status_info["current protocol"]
     else:
-        assert "UDP" in status_info['current protocol']
+        assert "UDP" in status_info["current protocol"]
 
-    transfer_received = float(status_info['transfer'].split(" ")[0])
-    transfer_sent = float(status_info['transfer'].split(" ")[3])
+    transfer_received = float(status_info["transfer"].split(" ")[0])
+    transfer_sent = float(status_info["transfer"].split(" ")[3])
 
     assert transfer_received >= 0
     assert transfer_sent > 0
 
-    time_connected = int(status_info['uptime'].split(" ")[0])
+    time_connected = int(status_info["uptime"].split(" ")[0])
     time_passed = status_time - connect_time
     if "minute" in status_info["uptime"]:
-        time_connected_seconds = int(status_info['uptime'].split(" ")[2])
+        time_connected_seconds = int(status_info["uptime"].split(" ")[2])
         assert time_passed - 1 <= time_connected * 60 + time_connected_seconds <= time_passed + 1
     else:
         assert time_passed - 1 <= time_connected <= time_passed + 1

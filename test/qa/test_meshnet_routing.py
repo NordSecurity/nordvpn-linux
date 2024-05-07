@@ -174,6 +174,7 @@ def test_route_to_nonexistant_node():
 
     assert expected_message in str(ex)
 
+
 def test_route_to_peer_status_valid():
     peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
@@ -191,37 +192,38 @@ def test_route_to_peer_status_valid():
     sh.ping("-c", "1", "-w", "1", "103.86.96.100")
 
     status_time = time.monotonic()
-    status_output = sh.nordvpn.status().lstrip('\r -')
+    status_output = sh.nordvpn.status().lstrip("\r -")
 
     # Split the data into lines, filter out lines that don't contain ':',
     # split each line into key-value pairs, strip whitespace, and convert keys to lowercase
     status_info = {
         a.strip().lower(): b.strip()
         for a, b in (
-            element.split(':')  # Split each line into key-value pair
-            for element in filter(lambda line: len(line.split(':')) == 2, status_output.split('\n'))  # Filter lines containing ':'
+            element.split(":")  # Split each line into key-value pair
+            for element in filter(lambda line: len(line.split(":")) == 2, status_output.split("\n"))  # Filter lines containing ':'
         )
     }
 
     logging.log("status_info: " + str(status_info))
     logging.log("status_info: " + str(sh.nordvpn.status()))
 
-    assert "Connected" in status_info['status']
-    assert peer_nick in status_info['hostname']
-    assert socket.gethostbyname(peer_nick) in status_info['ip']
-    assert "NORDLYNX" in status_info['current technology']
-    assert "UDP" in status_info['current protocol']
+    assert "Connected" in status_info["status"]
+    assert peer_hostname in status_info["hostname"]
+    assert peer_nick in status_info["server"]
+    assert socket.gethostbyname(peer_nick) in status_info["ip"]
+    assert "NORDLYNX" in status_info["current technology"]
+    assert "UDP" in status_info["current protocol"]
 
-    transfer_data = status_info['transfer'].split(" ")
+    transfer_data = status_info["transfer"].split(" ")
     transfer_received = float(transfer_data[0])
     transfer_sent = float(transfer_data[3])
     assert transfer_received >= 0
     assert transfer_sent > 0
 
-    time_connected = int(status_info['uptime'].split(" ")[0])
+    time_connected = int(status_info["uptime"].split(" ")[0])
     time_passed = status_time - connect_time
     if "minute" in status_info["uptime"]:
-        time_connected_seconds = int(status_info['uptime'].split(" ")[2])
+        time_connected_seconds = int(status_info["uptime"].split(" ")[2])
         assert time_connected * 60 + time_connected_seconds >= time_passed - 1 and time_connected * 60 + time_connected_seconds <= time_passed + 1
     else:
         assert time_connected >= time_passed - 1 and time_connected <= time_passed + 1
