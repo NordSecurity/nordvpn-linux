@@ -1,7 +1,8 @@
+import time
+
 import pytest
 import sh
 import timeout_decorator
-import time
 
 from lib import meshnet, ssh
 
