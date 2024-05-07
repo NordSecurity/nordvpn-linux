@@ -1,6 +1,7 @@
 import pytest
 import sh
 import timeout_decorator
+import time
 
 from lib import meshnet, ssh
 
@@ -81,8 +82,10 @@ def test_meshnet_peer_list_permission_filters(allows_incoming_traffic, allows_ro
     base_test_peer_list(filter_list)
 
 
-@pytest.mark.skip("LVPN-4860")
 def test_meshnet_peer_list_peer_connected():
+    # Sleep is needed because there is a delay between when peer comes online and when it affect its status when listing peers.
+    time.sleep(1)
+
     local_peer_list = sh.nordvpn.mesh.peer.list(_tty_out=False)
     remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
 
