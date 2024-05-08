@@ -165,7 +165,7 @@ type workingRoutingSetup struct {
 	EnableLocalTraffic bool
 }
 
-func (r *workingRoutingSetup) SetupRoutingRules(_ net.Interface, _ bool, enableLan bool) error {
+func (r *workingRoutingSetup) SetupRoutingRules(_ bool, enableLan bool, _ bool) error {
 	r.EnableLocalTraffic = enableLan
 	return nil
 }

@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"net"
 	"sync"
 )
 
@@ -16,7 +15,7 @@ func TableID() uint { return defaultCustomRoutingTableID }
 //
 // Used by implementers.
 type PolicyAgent interface {
-	SetupRoutingRules(net.Interface, bool, bool) error
+	SetupRoutingRules(bool, bool, bool) error
 	CleanupRouting() error
 	TableID() uint
 }
@@ -26,7 +25,7 @@ type PolicyAgent interface {
 //
 // Used by callers.
 type PolicyService interface {
-	SetupRoutingRules(net.Interface, bool, bool) error
+	SetupRoutingRules(bool, bool, bool) error
 	CleanupRouting() error
 	// TableID of the routing table.
 	TableID() uint
@@ -45,9 +44,9 @@ type PolicyRouter struct {
 	noop        PolicyAgent
 	working     PolicyAgent
 	appliedRule *struct {
-		iface       net.Interface
-		ipv6        bool
-		enableLocal bool
+		ipv6         bool
+		enableLocal  bool
+		lanDiscovery bool
 	}
 	isEnabled bool
 	mu        sync.Mutex
@@ -68,17 +67,21 @@ func NewPolicyRouter(noop, working PolicyAgent, enabled bool) *PolicyRouter {
 	}
 }
 
-func (p *PolicyRouter) SetupRoutingRules(iface net.Interface, ipv6, enableLocal bool) error {
+func (p *PolicyRouter) SetupRoutingRules(
+	ipv6,
+	enableLocal,
+	lanDiscovery bool,
+) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if err := p.current.SetupRoutingRules(iface, ipv6, enableLocal); err != nil {
+	if err := p.current.SetupRoutingRules(ipv6, enableLocal, lanDiscovery); err != nil {
 		return err
 	}
 	p.appliedRule = &struct {
-		iface       net.Interface
-		ipv6        bool
-		enableLocal bool
-	}{iface, ipv6, enableLocal}
+		ipv6         bool
+		enableLocal  bool
+		lanDiscovery bool
+	}{ipv6, enableLocal, lanDiscovery}
 	return nil
 }
 
@@ -103,7 +106,7 @@ func (p *PolicyRouter) Enable() error {
 	defer p.mu.Unlock()
 	if !p.isEnabled {
 		if p.appliedRule != nil {
-			if err := p.working.SetupRoutingRules(p.appliedRule.iface, p.appliedRule.ipv6, p.appliedRule.enableLocal); err != nil {
+			if err := p.working.SetupRoutingRules(p.appliedRule.ipv6, p.appliedRule.enableLocal, p.appliedRule.lanDiscovery); err != nil {
 				return err
 			}
 		}

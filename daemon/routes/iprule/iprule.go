@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
@@ -43,9 +42,9 @@ func NewRouter(
 
 // SetupRoutingRules setup or adjust policy based routing rules
 func (r *Router) SetupRoutingRules(
-	vpnInterface net.Interface,
 	ipv6Enabled bool,
 	enableLocal bool,
+	lanDiscovery bool,
 ) (err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -69,7 +68,7 @@ func (r *Router) SetupRoutingRules(
 		}
 
 		for _, ipv6 := range ipv6EnabledList {
-			if err := removeSuppressprefixLengthRule(ipv6); err != nil {
+			if err := removeSuppressRule(ipv6); err != nil {
 				log.Println(internal.DeferPrefix, err)
 			}
 
@@ -110,11 +109,11 @@ func (r *Router) SetupRoutingRules(
 		// if PeerB allows its LAN access when used as Exit node
 		// then PeerB LAN access is the priority over PeerA LAN
 		if enableLocal {
-			if err := enableLocalTraffic(ipv6); err != nil {
+			if err := enableLocalTraffic(ipv6, lanDiscovery); err != nil {
 				return err
 			}
 		} else {
-			if err := removeSuppressprefixLengthRule(ipv6); err != nil {
+			if err := removeSuppressRule(ipv6); err != nil {
 				// in case of cleanup - do not propagate error if rule does not exist
 				log.Println(internal.WarningPrefix, err)
 			}
@@ -124,19 +123,25 @@ func (r *Router) SetupRoutingRules(
 	return nil
 }
 
-func enableLocalTraffic(ipv6Enabled bool) error {
-	rulePresent, err := checkSuppressprefixLengthRule(ipv6Enabled)
+func enableLocalTraffic(ipv6Enabled bool, skipGroup bool) error {
+	rulePresent, err := checkSuppressRule(ipv6Enabled)
 	if err != nil {
 		return err
 	}
 	if rulePresent {
-		return nil
+		if err := removeSuppressRule(ipv6Enabled); err != nil {
+			log.Println(
+				internal.WarningPrefix,
+				"error on removing suppress rule:",
+				err,
+			)
+		}
 	}
 	ruleID, err := calculateRulePriority(ipv6Enabled)
 	if err != nil {
 		return nil
 	}
-	if err = addSuppressprefixLengthRule(ruleID, ipv6Enabled); err != nil {
+	if err = addSuppressRule(ruleID, ipv6Enabled, skipGroup); err != nil {
 		return err
 	}
 	return nil
@@ -148,7 +153,7 @@ func (r *Router) CleanupRouting() error {
 	defer r.mu.Unlock()
 
 	for _, ipv6 := range []bool{false, true} {
-		if err := removeSuppressprefixLengthRule(ipv6); err != nil {
+		if err := removeSuppressRule(ipv6); err != nil {
 			log.Println(internal.WarningPrefix, err)
 		}
 
@@ -191,7 +196,7 @@ func (r *Router) TableID() uint {
 // with VPN connected would result in such ip rule table:
 //
 // 0:      from all lookup local
-// 1:      from all lookup main suppress_prefixlength 0
+// 1:      from all lookup main suppress_prefixlength 0 suppress_ifgroup 57841
 // 2:      not from all fwmark 0xca6c lookup 51820
 // 3:      from all to 82.102.16.235 lookup main
 // 4:      from 1.1.1.1 lookup main # problematic rule
@@ -338,21 +343,21 @@ func removeFwmarkRule(fwMarkVal uint32, ipv6 bool) error {
 	return nil
 }
 
-// addSuppressprefixLengthRule create/add suppress_prefixlength rule
-func addSuppressprefixLengthRule(prioID uint, ipv6 bool) error {
-	// CMD: ip rule add priority $PRIOID from all lookup main suppress_prefix 0
-	if err := netlink.RuleAdd(suppressPrefixRule(int(prioID), ipv6)); err != nil {
-		return fmt.Errorf("adding suppress_prefix rule: %s", err)
+// addSuppressRule create/add suppress rule
+func addSuppressRule(prioID uint, ipv6 bool, skipGroup bool) error {
+	// CMD: ip rule add priority $PRIOID from all lookup main suppress_prefixlength 0 suppress_ifgroup 444
+	if err := netlink.RuleAdd(suppressRule(int(prioID), ipv6, skipGroup)); err != nil {
+		return fmt.Errorf("adding suppress rule: %s", err)
 	}
 	return nil
 }
 
-// checkSuppressprefixLengthRule check suppress_prefixlength rule
-func checkSuppressprefixLengthRule(ipv6 bool) (bool, error) {
+// checkSuppressRule check suppress rule
+func checkSuppressRule(ipv6 bool) (bool, error) {
 	// CMD: ip rule show
 	// # sample output:
-	// 	0:	from all lookup local
-	// 222:	from all lookup main suppress_prefixlength 0
+	// 0:	from all lookup local
+	// 222:	from all lookup main suppress_prefixlength 0 suppress_ifgroup 444
 	// 333:	from all fwmark 0x14d lookup 222
 	// 32766:	from all lookup main
 	// 32767:	from all lookup default
@@ -364,7 +369,8 @@ func checkSuppressprefixLengthRule(ipv6 bool) (bool, error) {
 
 	// parse ip cmd output line-by-line
 	for _, rule := range rules {
-		if isRuleSame(rule, *suppressPrefixRule(-1, ipv6)) {
+		// skipGroup has no effect here
+		if isRuleSame(rule, *suppressRule(-1, ipv6, false)) {
 			return true, nil
 		}
 	}
@@ -372,9 +378,9 @@ func checkSuppressprefixLengthRule(ipv6 bool) (bool, error) {
 	return false, nil
 }
 
-// removeSuppressprefixLengthRule remove suppress_prefixlength rule
-func removeSuppressprefixLengthRule(ipv6 bool) error {
-	rule := suppressPrefixRule(-1, ipv6)
+// removeSuppressRule removes suppress rule
+func removeSuppressRule(ipv6 bool) error {
+	rule := suppressRule(-1, ipv6, true)
 	if err := netlink.RuleDel(rule); err != nil {
 		return fmt.Errorf("removing suppress prefix rule: %w", err)
 	}
@@ -382,12 +388,14 @@ func removeSuppressprefixLengthRule(ipv6 bool) error {
 	return nil
 }
 
-// isRuleSame compares that rule invert, mark, table and suppress_prefixlength match
+// isRuleSame compares that rule invert, mark, table, and one of suppress_ifgroup or
+// suppress_prefixlength match
 func isRuleSame(rule netlink.Rule, target netlink.Rule) bool {
 	return rule.Invert == target.Invert &&
 		rule.Mark == target.Mark &&
 		rule.Table == target.Table &&
-		rule.SuppressPrefixlen == target.SuppressPrefixlen
+		(rule.SuppressIfgroup == target.SuppressIfgroup ||
+			rule.SuppressPrefixlen == target.SuppressPrefixlen)
 }
 
 func fwmarkRule(prioID int, fwmark uint32, tableID int, ipv6 bool) *netlink.Rule {
@@ -400,12 +408,15 @@ func fwmarkRule(prioID int, fwmark uint32, tableID int, ipv6 bool) *netlink.Rule
 	return rule
 }
 
-func suppressPrefixRule(prioID int, ipv6 bool) *netlink.Rule {
+func suppressRule(prioID int, ipv6 bool, skipGroup bool) *netlink.Rule {
 	rule := netlink.NewRule()
 	rule.Priority = prioID
 	rule.Table = mainRoutingTableID
-	rule.SuppressPrefixlen = 0
 	rule.Family = toNetlinkFamily(ipv6)
+	rule.SuppressPrefixlen = 0
+	if !skipGroup {
+		rule.SuppressIfgroup = ifgroup.Group
+	}
 	return rule
 }
 
