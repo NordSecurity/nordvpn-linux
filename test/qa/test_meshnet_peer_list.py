@@ -4,7 +4,7 @@ import pytest
 import sh
 import timeout_decorator
 
-from lib import meshnet, ssh
+from lib import meshnet, poll, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -84,13 +84,16 @@ def test_meshnet_peer_list_permission_filters(allows_incoming_traffic, allows_ro
 
 
 def test_meshnet_peer_list_peer_connected():
-    # Sleep is needed because there is a delay between when peer comes online and when it affect its status when listing peers.
-    time.sleep(1)
+    def is_peer_connected():
+        local_peer_list = sh.nordvpn.mesh.peer.list(_tty_out=False)
+        remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
 
-    local_peer_list = sh.nordvpn.mesh.peer.list(_tty_out=False)
-    remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
+        peer_lists = [local_peer_list, remote_peer_list]
+        return ("Status: connected" in list for list in peer_lists)
 
-    peer_lists = [local_peer_list, remote_peer_list]
+    # There is a delay between when peer comes online and when it affect its status when listing peers.
+    for result in poll(is_peer_connected):
+        if result:
+            break
 
-    for list in peer_lists:
-        assert "Status: connected" in list, "Status: connected not found in peer list"
+    assert result, "Status: connected not found in peer list"
