@@ -2,12 +2,14 @@
 package iprule
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
+	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/vishvananda/netlink"
 )
@@ -20,14 +22,23 @@ const (
 // Router uses `ip rule` under the hood
 type Router struct {
 	rpFilterManager routes.RPFilterManager
+	ifgroupManager  ifgroup.Manager
 	tableID         uint
 	fwmark          uint32
 	mu              sync.Mutex
 }
 
 // NewRouter is a default constructor for Router
-func NewRouter(rpFilterManager routes.RPFilterManager, fwmark uint32) *Router {
-	return &Router{rpFilterManager: rpFilterManager, fwmark: fwmark}
+func NewRouter(
+	rpFilterManager routes.RPFilterManager,
+	ifgroupManager ifgroup.Manager,
+	fwmark uint32,
+) *Router {
+	return &Router{
+		rpFilterManager: rpFilterManager,
+		ifgroupManager:  ifgroupManager,
+		fwmark:          fwmark,
+	}
 }
 
 // SetupRoutingRules setup or adjust policy based routing rules
@@ -41,6 +52,10 @@ func (r *Router) SetupRoutingRules(
 
 	if err := r.rpFilterManager.Set(); err != nil {
 		return fmt.Errorf("setting rp filter: %w", err)
+	}
+
+	if err := r.ifgroupManager.Set(); err != nil && !errors.Is(err, ifgroup.ErrAlreadySet) {
+		return fmt.Errorf("setting ifgroups: %w", err)
 	}
 
 	ipv6EnabledList := []bool{false}
@@ -144,6 +159,10 @@ func (r *Router) CleanupRouting() error {
 
 	if err := r.rpFilterManager.Unset(); err != nil {
 		return fmt.Errorf("unsetting rp filter: %w", err)
+	}
+
+	if err := r.ifgroupManager.Unset(); err != nil {
+		return fmt.Errorf("unsetting ifgroups: %w", err)
 	}
 
 	return nil
@@ -257,7 +276,7 @@ func calculateCustomTableID(ipv6 bool) (uint, error) {
 			return 0, fmt.Errorf("unable to calculate custom table id")
 		}
 	}
-	return uint(tblID), nil
+	return tblID, nil
 }
 
 // addFwmarkRule create/add fwmark rule
@@ -395,11 +414,4 @@ func toNetlinkFamily(val bool) int {
 		return netlink.FAMILY_V6
 	}
 	return netlink.FAMILY_V4
-}
-
-func boolToProtoFlag(val bool) string {
-	if val {
-		return "-6"
-	}
-	return "-4"
 }
