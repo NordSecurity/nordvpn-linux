@@ -1,5 +1,3 @@
-import time
-
 import pytest
 import sh
 import timeout_decorator
