@@ -563,3 +563,7 @@ func DrainStart(dbPath string) uint {
 		false,
 	)
 }
+
+func (s *Subscriber) NotifyLANDiscovery(enabled bool) error {
+	return nil
+}

@@ -85,6 +85,11 @@ func (l *DaemonSettingsSubscriber) NotifyDefaults(any) error {
 	return nil
 }
 
+func (l *DaemonSettingsSubscriber) NotifyLANDiscovery(data bool) error {
+	printSettingsChange("LAN Discovery", boolToString(data))
+	return nil
+}
+
 func printSettingsChange(settingName string, val string) {
 	log.Printf("%s set to: %s", settingName, val)
 }
