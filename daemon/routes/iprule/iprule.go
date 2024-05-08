@@ -2,17 +2,19 @@
 package iprule
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net"
-	"os/exec"
-	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/vishvananda/netlink"
+)
+
+const (
+	// mainRoutingTableID as defined in `man ip route`
+	mainRoutingTableID = 254
 )
 
 // Router uses `ip rule` under the hood
@@ -187,48 +189,20 @@ func calculateRulePriority(ipv6 bool) (uint, error) {
 
 	var prioID uint
 
-	allID := make(map[string]bool)
-
-	cmdStr := "ip"
-	cmdParams := []string{
-		boolToProtoFlag(ipv6),
-		"rule",
-		"show",
-	}
-
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput()
+	rules, err := netlink.RuleList(toNetlinkFamily(ipv6))
 	if err != nil {
-		return 0, fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
+		return 0, fmt.Errorf("listing ip rules: %w", err)
 	}
+	allID := make(map[uint]bool, len(rules))
 
-	lookupStr := "from all lookup main"
-
-	// parse ip cmd output line-by-line
-	for _, line := range bytes.Split(out, []byte{'\n'}) {
-		if len(line) == 0 {
+	for _, rule := range rules {
+		mainRule := netlink.NewRule()
+		mainRule.Table = mainRoutingTableID
+		allID[uint(rule.Priority)] = true
+		if isRuleSame(rule, *mainRule) {
 			continue
 		}
-		// 32766:	from all lookup main
-		lineParts := strings.Fields(string(line[:]))
-		if len(lineParts) <= 1 {
-			return 0, fmt.Errorf("ip rule cmd output unexpected line format '%s'", line)
-		}
-
-		prioIDStr := strings.Trim(lineParts[0], ":")
-		// memorize all ids
-		allID[prioIDStr] = true
-
-		if !bytes.Contains(line, []byte(lookupStr)) {
-			continue
-		}
-
-		// found target line, but not break the loop
-		u64, err := strconv.ParseUint(prioIDStr, 10, 32)
-		if err != nil {
-			return 0, fmt.Errorf("converting '%s' to uint: %w", prioIDStr, err)
-		}
-		prioID = uint(u64)
+		prioID = uint(rule.Priority)
 	}
 
 	if prioID == 0 {
@@ -241,7 +215,7 @@ func calculateRulePriority(ipv6 bool) (uint, error) {
 			return 0, fmt.Errorf("unable to calculate rule priority id")
 		}
 		// check if such priority id is not in use by other rule
-		if !allID[strconv.Itoa(int(prioID))] {
+		if !allID[prioID] {
 			break
 		}
 	}
@@ -257,47 +231,25 @@ func calculateCustomTableID(ipv6 bool) (uint, error) {
 	// default via 192.168.111.1 dev eth0
 	// 10.0.0.0/16 via 192.168.111.254 dev eth0
 	// 192.168.111.0/24 dev eth0 proto kernel scope link src 192.168.111.11
-
-	allID := make(map[string]bool)
-
-	cmdStr := "ip"
-	cmdParams := []string{
-		boolToProtoFlag(ipv6),
-		"route",
-		"show",
-		"table",
-		"all",
-	}
-
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput()
+	routeList, err := netlink.RouteListFiltered(
+		toNetlinkFamily(ipv6),
+		&netlink.Route{},
+		netlink.RT_FILTER_TABLE,
+	)
 	if err != nil {
-		return 0, fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
+		return 0, fmt.Errorf("listing ip rules: %w", err)
 	}
 
-	lookupStr := " table "
+	allID := make(map[uint]bool)
 
-	// parse ip cmd output line-by-line
-	for _, line := range bytes.Split(out, []byte{'\n'}) {
-		if len(line) == 0 || !bytes.Contains(line, []byte(lookupStr)) {
-			continue
-		}
-		// default via 192.168.111.1 dev eth0 table 222
-		lineParts := strings.Fields(string(line[:]))
-		if len(lineParts) <= 1 {
-			return 0, fmt.Errorf("ip route cmd output unexpected line format '%s'", line)
-		}
-		for idx, val := range lineParts {
-			if val == strings.Trim(lookupStr, " ") && idx+1 < len(lineParts) {
-				allID[lineParts[idx+1]] = true
-			}
-		}
+	for _, route := range routeList {
+		allID[uint(route.Table)] = true
 	}
 
 	// find table id not in use by others
-	tblID := int(routes.TableID())
+	tblID := routes.TableID()
 	for {
-		if !allID[strconv.Itoa(tblID)] {
+		if !allID[tblID] {
 			break
 		}
 		tblID = tblID + 1
@@ -315,32 +267,14 @@ func addFwmarkRule(
 	tbldID uint,
 	ipv6 bool,
 ) error {
-	// # need fwmark value, rule priority id & custom table id
 	// CMD: ip rule add priority $PRIOID not from all fwmark $FWMRK lookup $TBLID
 
 	if fwMarkVal == 0 {
 		return fmt.Errorf("fwmark cannot be 0")
 	}
 
-	cmdStr := "ip"
-	cmdParams := []string{
-		boolToProtoFlag(ipv6),
-		"rule",
-		"add",
-		"priority",
-		strconv.Itoa(int(prioID)),
-		"not",
-		"from",
-		"all",
-		"fwmark",
-		strconv.Itoa(int(fwMarkVal)),
-		"lookup",
-		strconv.Itoa(int(tbldID)),
-	}
-
-	// #nosec G204 -- input is properly sanitized
-	if out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput(); err != nil {
-		return fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
+	if err := netlink.RuleAdd(fwmarkRule(int(prioID), fwMarkVal, int(tbldID), ipv6)); err != nil {
+		return fmt.Errorf("adding fwmark rule: %w", err)
 	}
 
 	return nil
@@ -359,36 +293,15 @@ func findFwmarkRule(fwMarkVal uint32, ipv6 bool) (uint, error) {
 		return 0, fmt.Errorf("fwmark cannot be 0")
 	}
 
-	cmdStr := "ip"
-	cmdParams := []string{
-		boolToProtoFlag(ipv6),
-		"rule",
-		"show",
-	}
-
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput()
+	rules, err := netlink.RuleList(toNetlinkFamily(ipv6))
 	if err != nil {
-		return 0, fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
+		return 0, fmt.Errorf("listing ip rules: %w", err)
 	}
 
-	lookupStr := fmt.Sprintf("not from all fwmark 0x%x lookup", fwMarkVal)
-
-	// parse ip cmd output line-by-line
-	for _, line := range bytes.Split(out, []byte{'\n'}) {
-		if len(line) == 0 {
-			continue
-		}
-		if strings.Contains(string(line), lookupStr) {
-			words := strings.Split(strings.Trim(string(line), " "), " ")
-			if len(words) < 7 || words[len(words)-2] != "lookup" {
-				return 0, fmt.Errorf("failed to find fwmark rule: '%s'", line)
-			}
-			tbldID, err := strconv.ParseUint(words[len(words)-1], 10, 64)
-			if err != nil {
-				return 0, fmt.Errorf("converting '%s' to uint: %w", words[len(words)-1], err)
-			}
-			return uint(tbldID), nil
+	for _, rule := range rules {
+		// Ignore table value
+		if isRuleSame(rule, *fwmarkRule(-1, fwMarkVal, rule.Table, ipv6)) {
+			return uint(rule.Table), nil
 		}
 	}
 
@@ -400,67 +313,18 @@ func removeFwmarkRule(fwMarkVal uint32, ipv6 bool) error {
 	if fwMarkVal == 0 {
 		return fmt.Errorf("fwmark cannot be 0")
 	}
-
-	// 1st clear custom table(-s) referred by fwmark rule(-s)
-	cmdStr := "ip"
-	cmdParams := []string{
-		boolToProtoFlag(ipv6),
-		"rule",
-		"show",
+	if err := netlink.RuleDel(fwmarkRule(-1, fwMarkVal, -1, ipv6)); err != nil {
+		return fmt.Errorf("removing fwmark rule: %w", err)
 	}
-
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
-	}
-
-	// clear fwmark rule(-s)
-	cmdStr = "ip"
-	cmdParams = []string{
-		boolToProtoFlag(ipv6),
-		"rule",
-		"del",
-		"not",
-		"from",
-		"all",
-		"fwmark",
-		strconv.Itoa(int(fwMarkVal)),
-	}
-
-	// #nosec G204 -- input is properly sanitized
-	if out, err = exec.Command(cmdStr, cmdParams...).CombinedOutput(); err != nil {
-		return fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
-	}
-
 	return nil
 }
 
 // addSuppressprefixLengthRule create/add suppress_prefixlength rule
 func addSuppressprefixLengthRule(prioID uint, ipv6 bool) error {
-	// # need rule priority id
-	// CMD: ip rule add priority $PRIOID from all lookup main suppress_prefixlength 0
-
-	cmdStr := "ip"
-	cmdParams := []string{
-		boolToProtoFlag(ipv6),
-		"rule",
-		"add",
-		"priority",
-		strconv.Itoa(int(prioID)),
-		"from",
-		"all",
-		"lookup",
-		"main",
-		"suppress_prefixlength",
-		"0",
+	// CMD: ip rule add priority $PRIOID from all lookup main suppress_prefix 0
+	if err := netlink.RuleAdd(suppressPrefixRule(int(prioID), ipv6)); err != nil {
+		return fmt.Errorf("adding suppress_prefix rule: %s", err)
 	}
-
-	// #nosec G204 -- input is properly sanitized
-	if out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput(); err != nil {
-		return fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
-	}
-
 	return nil
 }
 
@@ -474,27 +338,14 @@ func checkSuppressprefixLengthRule(ipv6 bool) (bool, error) {
 	// 32766:	from all lookup main
 	// 32767:	from all lookup default
 
-	cmdStr := "ip"
-	cmdParams := []string{
-		boolToProtoFlag(ipv6),
-		"rule",
-		"show",
-	}
-
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput()
+	rules, err := netlink.RuleList(toNetlinkFamily(ipv6))
 	if err != nil {
-		return false, fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
+		return false, fmt.Errorf("listing ip rules: %w", err)
 	}
-
-	lookupStr := "from all lookup main suppress_prefixlength 0"
 
 	// parse ip cmd output line-by-line
-	for _, line := range bytes.Split(out, []byte{'\n'}) {
-		if len(line) == 0 {
-			continue
-		}
-		if strings.Contains(string(line), lookupStr) {
+	for _, rule := range rules {
+		if isRuleSame(rule, *suppressPrefixRule(-1, ipv6)) {
 			return true, nil
 		}
 	}
@@ -504,27 +355,46 @@ func checkSuppressprefixLengthRule(ipv6 bool) (bool, error) {
 
 // removeSuppressprefixLengthRule remove suppress_prefixlength rule
 func removeSuppressprefixLengthRule(ipv6 bool) error {
-	// CMD: ip rule del from all lookup main suppress_prefixlength 0
-
-	cmdStr := "ip"
-	cmdParams := []string{
-		boolToProtoFlag(ipv6),
-		"rule",
-		"del",
-		"from",
-		"all",
-		"lookup",
-		"main",
-		"suppress_prefixlength",
-		"0",
-	}
-
-	// #nosec G204 -- input is properly sanitized
-	if out, err := exec.Command(cmdStr, cmdParams...).CombinedOutput(); err != nil {
-		return fmt.Errorf("executing '%s %s' command: %w: %s", cmdStr, strings.Join(cmdParams, " "), err, string(out))
+	rule := suppressPrefixRule(-1, ipv6)
+	if err := netlink.RuleDel(rule); err != nil {
+		return fmt.Errorf("removing suppress prefix rule: %w", err)
 	}
 
 	return nil
+}
+
+// isRuleSame compares that rule invert, mark, table and suppress_prefixlength match
+func isRuleSame(rule netlink.Rule, target netlink.Rule) bool {
+	return rule.Invert == target.Invert &&
+		rule.Mark == target.Mark &&
+		rule.Table == target.Table &&
+		rule.SuppressPrefixlen == target.SuppressPrefixlen
+}
+
+func fwmarkRule(prioID int, fwmark uint32, tableID int, ipv6 bool) *netlink.Rule {
+	rule := netlink.NewRule()
+	rule.Priority = prioID
+	rule.Invert = true
+	rule.Mark = int(fwmark)
+	rule.Table = tableID
+	rule.Family = toNetlinkFamily(ipv6)
+	return rule
+}
+
+func suppressPrefixRule(prioID int, ipv6 bool) *netlink.Rule {
+	rule := netlink.NewRule()
+	rule.Priority = prioID
+	rule.Table = mainRoutingTableID
+	rule.SuppressPrefixlen = 0
+	rule.Family = toNetlinkFamily(ipv6)
+	return rule
+}
+
+func toNetlinkFamily(val bool) int {
+	if val {
+		return netlink.FAMILY_V6
+	}
+	return netlink.FAMILY_V4
 }
 
 func boolToProtoFlag(val bool) string {
