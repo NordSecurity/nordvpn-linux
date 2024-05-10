@@ -28,6 +28,9 @@ const (
 	// notificationTokenURL defines url to retrieve Notification Center credentials
 	notificationTokenURL = "/v1/notifications/tokens"
 
+	// notificationTokenRevokeURL defines url to revoke Notification Center credentials
+	notificationTokenRevokeURL = "/v1/notifications/tokens/revoke"
+
 	// UsersURL defines url to create a new user
 	UsersURL = "/v1/users"
 
