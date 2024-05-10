@@ -1,6 +1,10 @@
 name: nordvpn
 title: NordVPN
 base: core22
+# NOTE: Snapcraft doesn't support armel.
+architectures:
+  - build-on: [amd64]
+    build-for: [TARGET_ARCH_4SNAP]
 
 website: https://nordvpn.com
 license: GPL-3.0
@@ -102,11 +106,7 @@ parts:
   nordvpn-bin:
     plugin: dump
     source-type: local
-    source:
-      - on i386: ./bin/i386
-      - on amd64: ./bin/amd64
-      - on armhf: ./bin/armhf
-      - on arm64: ./bin/aarch64
+    source: ./bin/TARGET_ARCH_4APP
     stage-packages:
       - wireguard-tools
       - libxml2
@@ -121,11 +121,7 @@ parts:
   nordfileshare:
     plugin: dump
     source-type: local
-    source:
-      - on i386: ./bin/i386
-      - on amd64: ./bin/amd64
-      - on armhf: ./bin/armhf
-      - on arm64: ./bin/aarch64
+    source: ./bin/TARGET_ARCH_4APP
     organize:
       nordfileshare: usr/bin/nordfileshare
     stage:
@@ -134,11 +130,7 @@ parts:
   norduser:
     plugin: dump
     source-type: local
-    source:
-      - on i386: ./bin/i386
-      - on amd64: ./bin/amd64
-      - on armhf: ./bin/armhf
-      - on arm64: ./bin/aarch64
+    source: ./bin/TARGET_ARCH_4APP
     organize:
       norduserd: usr/bin/norduserd
     stage:
@@ -147,11 +139,7 @@ parts:
   openvpn-bin:
     plugin: dump
     source-type: local
-    source:
-      - on i386: ./bin/deps/openvpn/i386/latest/
-      - on amd64: ./bin/deps/openvpn/amd64/latest/
-      - on armhf: ./bin/deps/openvpn/armhf/latest/
-      - on arm64: ./bin/deps/openvpn/aarch64/latest/
+    source: ./bin/deps/openvpn/TARGET_ARCH_4APP/latest/
     organize:
       openvpn: var/lib/nordvpn/openvpn
     stage:
