@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -12,14 +14,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
-	"github.com/stretchr/testify/assert"
 )
 
 type mockNC struct {
 	nc.NotificationClient
 }
 
-func (mockNC) Stop() error { return nil }
+func (mockNC) Stop() error      { return nil }
+func (mockNC) Revoke(bool) bool { return true }
 
 type mockApi struct {
 	core.CombinedAPI

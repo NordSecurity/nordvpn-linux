@@ -35,12 +35,20 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
+	if err := r.ncClient.Stop(); err != nil {
+		log.Println(internal.WarningPrefix, err)
+	}
+
 	tokenData, ok := cfg.TokensData[cfg.AutoConnectData.ID]
 	if !ok {
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
 	if !in.GetPersistToken() {
+		if !r.ncClient.Revoke(internal.IsDevEnv(string(r.environment))) {
+			log.Println(internal.WarningPrefix, "error revoking NC token")
+		}
+
 		if err := r.api.DeleteToken(tokenData.Token); err != nil {
 			log.Println(internal.ErrorPrefix, "deleting token: ", err)
 			switch {
@@ -87,9 +95,6 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		return nil, err
 	}
 
-	if err := r.ncClient.Stop(); err != nil {
-		log.Println(internal.WarningPrefix, err)
-	}
 	r.publisher.Publish("user logged out")
 
 	// RenewToken being empty means user logged in using Access Token

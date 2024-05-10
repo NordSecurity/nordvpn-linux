@@ -26,6 +26,16 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error
 		log.Println(internal.WarningPrefix, err)
 	}
 
+	if err := r.ncClient.Stop(); err != nil {
+		log.Println(internal.WarningPrefix, err)
+	}
+
+	if internal.IsDevEnv(string(r.environment)) {
+		if !r.ncClient.Revoke(true) {
+			log.Println(internal.WarningPrefix, "error revoking token")
+		}
+	}
+
 	if err := r.cm.Reset(); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return &pb.Payload{
@@ -48,9 +58,6 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error
 
 	r.events.Settings.Defaults.Publish(nil)
 	r.events.Settings.Publish(cfg)
-	if err := r.ncClient.Stop(); err != nil {
-		log.Println(internal.WarningPrefix, err)
-	}
 
 	return &pb.Payload{
 		Type: internal.CodeSuccess,

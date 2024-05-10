@@ -25,6 +25,7 @@ const (
 
 type CredentialsAPI interface {
 	NotificationCredentials(token, appUserID string) (NotificationCredentialsResponse, error)
+	NotificationCredentialsRevoke(token, appUserID string, purgeSession bool) (NotificationCredentialsRevokeResponse, error)
 	ServiceCredentials(string) (*CredentialsResponse, error)
 	TokenRenew(string) (*TokenRenewResponse, error)
 	Services(string) (ServicesResponse, error)
@@ -406,6 +407,15 @@ type NotificationCredentialsResponse struct {
 	Password string `json:"password"`
 }
 
+type NotificationCredentialsRevokeRequest struct {
+	AppUserID    string `json:"app_user_uid"`
+	PurgeSession bool   `json:"purge_session"`
+}
+
+type NotificationCredentialsRevokeResponse struct {
+	Status string `json:"status"`
+}
+
 // NotificationCredentials retrieves the credentials for notification center appUserID
 func (api *DefaultAPI) NotificationCredentials(token, appUserID string) (NotificationCredentialsResponse, error) {
 	data, err := json.Marshal(NotificationCredentialsRequest{
@@ -432,6 +442,50 @@ func (api *DefaultAPI) NotificationCredentials(token, appUserID string) (Notific
 	var resp NotificationCredentialsResponse
 	if err := json.Unmarshal(out, &resp); err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("unmarshalling HTTP response: %w", err)
+	}
+	return resp, nil
+}
+
+// NotificationCredentialsRevoke revokes the credentials for notification center appUserID
+func (api *DefaultAPI) NotificationCredentialsRevoke(token, appUserID string, purgeSession bool) (NotificationCredentialsRevokeResponse, error) {
+	// Calling tokens/revoke endpoint with just bearer token will revoke user credentials for every user device.
+	// For example, if user has VPN app for android/iOS/mac, whatever, all of his/her devices will be disconnected.
+	// If you provide additionally app_user_id, then only credential for specific app/device will be revoked.
+	// Connection on other devices will stay unaffected.
+	// The purge_session param make sense only in cases when you definitely know, that app_user_id was generated
+	// just for one time usage and after this usage it is not needed anymore. The good example is exactly tests,
+	// where on each run you generate different app_user_id. In usual scenarios in ideal case, app_user_id on the
+	// same device for the same user and same app should stay constant, even if app were reinstalled. So there is no
+	// need to use purge_session at all, and it even can have a bad consequences.
+
+	if appUserID == "" {
+		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("refusing to send a request with empty appUserID")
+	}
+
+	data, err := json.Marshal(NotificationCredentialsRevokeRequest{
+		AppUserID:    appUserID,
+		PurgeSession: purgeSession,
+	})
+	if err != nil {
+		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("marshaling the request data: %w", err)
+	}
+	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, notificationTokenRevokeURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	if err != nil {
+		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("creating nc credentials revoke request: %w", err)
+	}
+	rawResp, err := api.do(req)
+	if err != nil {
+		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
+	}
+	defer rawResp.Body.Close()
+	out, err := io.ReadAll(rawResp.Body)
+	if err != nil {
+		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("reading HTTP response body: %w", err)
+	}
+
+	var resp NotificationCredentialsRevokeResponse
+	if err := json.Unmarshal(out, &resp); err != nil {
+		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("unmarshalling HTTP response: %w", err)
 	}
 	return resp, nil
 }

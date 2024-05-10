@@ -2,10 +2,12 @@ package nc
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/google/uuid"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/google/uuid"
 )
 
 type CredentialsGetter struct {
@@ -86,4 +88,29 @@ func (cf *CredentialsGetter) GetCredentialsFromAPI() (config.NCData, error) {
 
 		return c
 	})
+}
+
+// RevokeCredentials revokes credentials
+func (cf *CredentialsGetter) RevokeCredentials(purgeSession bool) (bool, error) {
+	var cfg config.Config
+	if err := cf.cm.Load(&cfg); err != nil {
+		return false, fmt.Errorf("reading cfg: %w", err)
+	}
+	userID := cfg.AutoConnectData.ID
+	tokenData := cfg.TokensData[userID]
+	ncData := tokenData.NCData
+
+	if !areNCCredentialsValid(ncData) {
+		return false, ErrInvalidCredentials
+	}
+
+	resp, err := cf.api.NotificationCredentialsRevoke(tokenData.Token, tokenData.NCData.UserID.String(), purgeSession)
+	if err != nil {
+		return false, fmt.Errorf("error revoking token: %w", err)
+	}
+	if strings.ToLower(resp.Status) == "ok" {
+		return true, nil
+	} else {
+		return false, fmt.Errorf("response status: %s", resp.Status)
+	}
 }

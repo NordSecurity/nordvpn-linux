@@ -51,6 +51,10 @@ func (validCredentialsAPI) NotificationCredentials(token, appUserID string) (cor
 	return core.NotificationCredentialsResponse{}, nil
 }
 
+func (v validCredentialsAPI) NotificationCredentialsRevoke(token, appUserID string, purgeSession bool) (core.NotificationCredentialsRevokeResponse, error) {
+	return core.NotificationCredentialsRevokeResponse{}, nil
+}
+
 func (validCredentialsAPI) ServiceCredentials(string) (*core.CredentialsResponse, error) {
 	return &core.CredentialsResponse{
 		NordlynxPrivateKey: "nordpriv",
