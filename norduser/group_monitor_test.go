@@ -76,6 +76,16 @@ func Test_getGroupMembers(t *testing.T) {
 			groupEntry:     "nordvpn:x:996:",
 			expectedResult: userSet{},
 		},
+		{
+			name:           "group name starts with nordvpn",
+			groupEntry:     "nordvpn_ddd:x:996:",
+			expectedResult: userSet{},
+		},
+		{
+			name:           "group name starts with nordvpn",
+			groupEntry:     "nordvpn:",
+			expectedResult: userSet{},
+		},
 	}
 
 	for _, test := range tests {

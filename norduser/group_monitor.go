@@ -108,14 +108,14 @@ func getUID(username string) (userIDs, error) {
 func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, newGroupMembers userSet) {
 	for member := range currentGroupMembers {
 		// member not modified, do nothing
-		if ok := newGroupMembers[member]; ok {
+		if _, ok := newGroupMembers[member]; ok {
 			newGroupMembers[member] = true
 			continue
 		}
 
 		userIDs, err := getUID(member)
 		if err != nil {
-			log.Println("failed to look up UID/GID of deleted group member:", err)
+			log.Println("failed to look up UID/GID of deleted group member: ", err)
 			continue
 		}
 
@@ -144,6 +144,8 @@ func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 		if err := n.norduserd.Enable(userID.uid, userID.gid, userID.home); err != nil {
 			log.Println("enabling norduserd for member:", err)
 		}
+
+		newGroupMembers[member] = true
 	}
 }
 
@@ -158,6 +160,8 @@ func (n *NordvpnGroupMonitor) startForEveryGroupMember(groupMembers userSet) {
 		if err := n.norduserd.Enable(user.uid, user.gid, user.home); err != nil {
 			log.Println("failed to start norduser for group member:", err)
 		}
+
+		groupMembers[member] = true
 	}
 }
 
@@ -209,11 +213,7 @@ func (n *NordvpnGroupMonitor) Start() error {
 				newGroupMembers, err := getNordvpnGroupMembers()
 				if err == nil {
 					n.handleGroupUpdate(currentGrupMembers, newGroupMembers)
-					if err != nil {
-						log.Println("Failed to read new group members after groupfile has changed:", err)
-					} else {
-						currentGrupMembers = newGroupMembers
-					}
+					currentGrupMembers = newGroupMembers
 				} else {
 					log.Println("Failed to get new group members:", err)
 				}
