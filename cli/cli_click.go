@@ -24,6 +24,8 @@ func (c *cmd) Click(ctx *cli.Context) error {
 			if err != nil {
 				return formatError(err)
 			}
+
+			return nil
 		}
 	}
 

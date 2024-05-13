@@ -12,10 +12,11 @@ func (r *RPC) ClaimOnlinePurchase(ctx context.Context, in *pb.Empty) (*pb.Empty,
 	isExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
 		log.Println(internal.ErrorPrefix+" failed to determine if user is registered: ", err)
+		return &pb.Empty{}, nil
 	}
 
 	if isExpired {
-		log.Println(internal.DebugPrefix + " user is expired when caliming online purchase.")
+		log.Println(internal.DebugPrefix + " user is expired when claiming online purchase.")
 		return &pb.Empty{}, nil
 	}
 
