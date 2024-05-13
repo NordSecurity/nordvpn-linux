@@ -70,11 +70,5 @@ func (c *cmd) Register(ctx *cli.Context) error {
 		fmt.Printf("%d) %s\n", i+1, description)
 	}
 
-	input, err := ReadPlanFromTerminal()
-	if err != nil {
-		return formatError(err)
-	}
-
-	url := fmt.Sprintf(client.SubscriptionURL, plans[input-1].GetId())
-	return browse(url)
+	return browse(client.SubscriptionURL)
 }
