@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -71,15 +72,18 @@ func getRunningNorduserPIDs() ([]int, error) {
 }
 
 func findPIDOfUID(uids string, desiredUID uint32) int {
-	for _, pidUid := range strings.Split(uids, "\n") {
-		var pid, uid int
-		_, err := fmt.Sscanf(pidUid, " %d %d", &uid, &pid)
-		if err != nil {
-			log.Println("error when scanning ps output line: ", err)
+	re := regexp.MustCompile(`\s*(\d+)\s+(\d+)\s*`)
+
+	for _, uidPid := range strings.Split(uids, "\n") {
+		match := re.FindStringSubmatch(uidPid)
+		if len(match) != 3 {
+			log.Println(internal.ErrorPrefix+" invalid input line: ", uidPid)
 			continue
 		}
 
+		uid, _ := strconv.Atoi(match[1])
 		if uid == int(desiredUID) {
+			pid, _ := strconv.Atoi(match[2])
 			return pid
 		}
 	}
