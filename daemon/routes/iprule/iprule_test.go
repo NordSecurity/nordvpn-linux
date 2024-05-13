@@ -96,7 +96,7 @@ func TestMultiFwmarkRule(t *testing.T) {
 	assert.Equal(t, uint(0), fndTblID)
 }
 
-func TestSuppressprefixLengthRule(t *testing.T) {
+func TestSuppressRule(t *testing.T) {
 	category.Set(t, category.Route)
 
 	prioID, err := calculateRulePriority(false)
@@ -121,21 +121,31 @@ func TestSuppressprefixLengthRule(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Greater(t, prioID2, uint(0))
 
-	fnd, err := checkSuppressprefixLengthRule(false)
+	fnd, err := checkSuppressRule(false)
 	assert.NoError(t, err)
 	assert.False(t, fnd)
 
-	err = addSuppressprefixLengthRule(prioID2, false)
+	err = addSuppressRule(prioID2, false, true)
 	assert.NoError(t, err)
 
-	fnd, err = checkSuppressprefixLengthRule(false)
+	fnd, err = checkSuppressRule(false)
 	assert.NoError(t, err)
 	assert.True(t, fnd)
 
-	err = removeSuppressprefixLengthRule(false)
+	err = removeSuppressRule(false)
 	assert.NoError(t, err)
 
-	fnd, err = checkSuppressprefixLengthRule(false)
+	err = addSuppressRule(prioID2, false, false)
+	assert.NoError(t, err)
+
+	fnd, err = checkSuppressRule(false)
+	assert.NoError(t, err)
+	assert.True(t, fnd)
+
+	err = removeSuppressRule(false)
+	assert.NoError(t, err)
+
+	fnd, err = checkSuppressRule(false)
 	assert.NoError(t, err)
 	assert.False(t, fnd)
 

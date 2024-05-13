@@ -89,8 +89,8 @@ def test_autoconnect_to_city(tech, proto, obfuscated, group):
 def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    _, hostname = server.get_hostname_by(tech, proto, obfuscated)
-    name = hostname.split(".")[0]
+    server_info = server.get_hostname_by(tech, proto, obfuscated)
+    name = server_info.hostname.split(".")[0]
 
     autoconnect_base_test(name)
 

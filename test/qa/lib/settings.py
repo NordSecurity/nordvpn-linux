@@ -3,7 +3,7 @@ import sh
 
 def get_server_ip() -> str:
     """Returns str with IP Address of the server from `nordvpn status`, that NordVPN client is currently connected to."""
-    return sh.nordvpn.status().split('\n')[2].replace('IP: ', '')
+    return sh.nordvpn.status().split('\n')[3].replace('IP: ', '')
 
 
 def get_current_connection_protocol():

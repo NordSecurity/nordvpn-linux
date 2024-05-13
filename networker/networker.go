@@ -290,9 +290,9 @@ func (netw *Combined) start(
 
 	// if routing rules were set - they will be adjusted as needed
 	if err = netw.policyRouter.SetupRoutingRules(
-		netw.vpnet.Tun().Interface(),
 		serverData.IP.Is6(),
 		netw.enableLocalTraffic,
+		netw.lanDiscovery,
 	); err != nil {
 		return err
 	}
@@ -487,9 +487,9 @@ func (netw *Combined) stop() error {
 	} else {
 		// if routing rules were set - they will be adjusted as needed
 		if err = netw.policyRouter.SetupRoutingRules(
-			netw.vpnet.Tun().Interface(),
 			false,
 			true, // by default, enableLocalTraffic=true
+			netw.lanDiscovery,
 		); err != nil {
 			return fmt.Errorf("netw stop, adjusting routing rules: %w", err)
 		}
@@ -1192,9 +1192,9 @@ func (netw *Combined) setMesh(
 	}
 
 	if err = netw.policyRouter.SetupRoutingRules(
-		netw.mesh.Tun().Interface(),
 		false,
 		netw.enableLocalTraffic,
+		netw.lanDiscovery,
 	); err != nil {
 		return fmt.Errorf(
 			"setting routing rules: %w",
@@ -1640,9 +1640,25 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 	netw.lanDiscovery = enabled
 
 	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
+
+	// if routing rules were set - they will be adjusted as needed
+	if netw.isMeshnetSet || netw.isVpnSet {
+		if err := netw.policyRouter.SetupRoutingRules(
+			netw.lastServer.IP.Is6(),
+			netw.enableLocalTraffic,
+			netw.lanDiscovery,
+		); err != nil {
+			log.Println(
+				internal.ErrorPrefix,
+				"failed to set routing rules up after enabling lan discovery:",
+				err,
+			)
+		}
+	}
+
 	if err := netw.exitNode.ResetFirewall(lanAvailable, netw.isKillSwitchSet); err != nil {
 		log.Println(internal.ErrorPrefix,
-			"failed to reset peers firewall rules after enabling lan discovery: ",
+			"failed to reset peers firewall rules after enabling lan discovery:",
 			err)
 	}
 }

@@ -30,6 +30,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
+	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/iprouter"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/iprule"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norouter"
@@ -361,6 +362,7 @@ func main() {
 			&norule.Facade{},
 			iprule.NewRouter(
 				routes.NewSysctlRPFilterManager(),
+				ifgroup.NewNetlinkManager(device.ListPhysical),
 				cfg.FirewallMark,
 			),
 			cfg.Routing.Get(),

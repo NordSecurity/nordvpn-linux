@@ -96,8 +96,8 @@ def test_mistype_connect(tech, proto, obfuscated):
 def test_connect_to_server_random_by_name(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    name, hostname = server.get_hostname_by(tech, proto, obfuscated)
-    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
+    server_info = server.get_hostname_by(tech, proto, obfuscated)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
     disconnect_base_test()
 
 
@@ -108,8 +108,9 @@ def test_connect_to_server_random_by_name(tech, proto, obfuscated):
 def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    name, hostname = server.get_hostname_by(tech, proto, obfuscated, group)
-    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
+    server_info = server.get_hostname_by(tech, proto, obfuscated, group)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
     disconnect_base_test()
 
 
@@ -120,8 +121,9 @@ def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscat
 def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    name, hostname = server.get_hostname_by(tech, proto, obfuscated, group)
-    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
+    server_info = server.get_hostname_by(tech, proto, obfuscated, group)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
     disconnect_base_test()
 
 
@@ -132,8 +134,8 @@ def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated
 def test_connect_to_group_random_server_by_name_ovpn(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    name, hostname = server.get_hostname_by(group_id=group)
-    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
+    server_info = server.get_hostname_by(group_id=group)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
     disconnect_base_test()
 
 
@@ -144,8 +146,8 @@ def test_connect_to_group_random_server_by_name_ovpn(tech, proto, obfuscated, gr
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    name, hostname = server.get_hostname_by(group_id=group)
-    connect_base_test((tech, proto, obfuscated), hostname.split(".")[0], name, hostname)
+    server_info = server.get_hostname_by(group_id=group)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
     disconnect_base_test()
 
 
@@ -407,7 +409,8 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
-        name = server.get_hostname_by(group_id=group)[1].split(".")[0]
+        server_info = server.get_hostname_by(group_id=group)
+        name = server_info.hostname.split(".")[0]
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.connect(name)
@@ -425,8 +428,8 @@ def test_status_connected(tech, proto, obfuscated):
     assert network.is_disconnected()
     assert "Disconnected" in sh.nordvpn.status()
 
-    name, hostname = server.get_hostname_by(technology=tech, protocol=proto, obfuscated=obfuscated)
-    sh.nordvpn.connect(hostname.split(".")[0])
+    server_info = server.get_hostname_by(technology=tech, protocol=proto, obfuscated=obfuscated)
+    sh.nordvpn.connect(server_info.hostname.split(".")[0])
 
     connect_time = time.monotonic()
 
@@ -439,33 +442,33 @@ def test_status_connected(tech, proto, obfuscated):
     print("status_info: " + str(status_info))
     print("actual_status: " + str(sh.nordvpn.status()))
 
-    assert "Connected" in status_info['status']
+    assert "Connected" in status_info["status"]
 
-    assert hostname in status_info['hostname']
+    assert server_info.hostname in status_info["hostname"]
+    assert server_info.name in status_info["server"]
 
-    assert socket.gethostbyname(hostname) in status_info['ip']
+    assert socket.gethostbyname(server_info.hostname) in status_info["ip"]
 
-    city, country = server.get_server_info(name)
-    assert country in status_info['country']
-    assert city in status_info['city']
+    assert server_info.country in status_info["country"]
+    assert server_info.city in status_info["city"]
 
-    assert tech.upper() in status_info['current technology']
+    assert tech.upper() in status_info["current technology"]
 
     if tech == "openvpn":
-        assert proto.upper() in status_info['current protocol']
+        assert proto.upper() in status_info["current protocol"]
     else:
-        assert "UDP" in status_info['current protocol']
+        assert "UDP" in status_info["current protocol"]
 
-    transfer_received = float(status_info['transfer'].split(" ")[0])
-    transfer_sent = float(status_info['transfer'].split(" ")[3])
+    transfer_received = float(status_info["transfer"].split(" ")[0])
+    transfer_sent = float(status_info["transfer"].split(" ")[3])
 
     assert transfer_received >= 0
     assert transfer_sent > 0
 
-    time_connected = int(status_info['uptime'].split(" ")[0])
+    time_connected = int(status_info["uptime"].split(" ")[0])
     time_passed = status_time - connect_time
     if "minute" in status_info["uptime"]:
-        time_connected_seconds = int(status_info['uptime'].split(" ")[2])
+        time_connected_seconds = int(status_info["uptime"].split(" ")[2])
         assert time_passed - 1 <= time_connected * 60 + time_connected_seconds <= time_passed + 1
     else:
         assert time_passed - 1 <= time_connected <= time_passed + 1
