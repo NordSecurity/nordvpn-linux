@@ -40,8 +40,8 @@ func statusStream(stateChan <-chan interface{}, stopChan chan<- struct{}, srv pb
 					ServerIp:       e.TargetServerIP,
 					ServerCountry:  e.TargetServerCountry,
 					ServerCity:     e.TargetServerCity,
+					ServerName:     e.TargetServerName,
 					ServerHostname: e.TargetServerDomain,
-					ServerNickname: e.TargetServerNickname,
 					IsMeshPeer:     e.IsMeshnetPeer,
 				}
 				if err := srv.Send(

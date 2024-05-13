@@ -36,6 +36,7 @@ type state struct {
 	State     string `json:"state"`
 	PublicKey string `json:"public_key"`
 	IsVPN     bool   `json:"is_vpn"`
+	IsExit    bool   `json:"is_exit"`
 }
 
 type event struct {
@@ -656,14 +657,18 @@ type connParameters struct {
 }
 
 func publishConnectEvent(publisher *vpn.Events, connectType events.TypeConnect, server vpn.ServerData, state state) {
+	name := server.Name
+	if !state.IsVPN {
+		name = state.Nickname
+	}
 	publisher.Connected.Publish(events.DataConnect{
-		Type:                 connectType,
-		TargetServerIP:       server.IP.String(),
-		TargetServerCountry:  server.Country,
-		TargetServerCity:     server.City,
-		TargetServerDomain:   server.Hostname,
-		TargetServerNickname: state.Nickname,
-		IsMeshnetPeer:        !state.IsVPN,
+		Type:                connectType,
+		TargetServerIP:      server.IP.String(),
+		TargetServerCountry: server.Country,
+		TargetServerCity:    server.City,
+		TargetServerDomain:  server.Hostname,
+		TargetServerName:    name,
+		IsMeshnetPeer:       !state.IsVPN,
 	})
 }
 
@@ -692,6 +697,10 @@ func monitorConnection(
 	for {
 		select {
 		case state := <-states:
+			if !state.IsExit {
+				break
+			}
+
 			switch state.State {
 			case "connecting":
 				if currentNotifyState != connecting {
@@ -699,8 +708,7 @@ func monitorConnection(
 					publishConnectEvent(eventsPublisher, events.ConnectAttempt, connParameters.server, state)
 				}
 			case "connected":
-				if state.PublicKey == connParameters.pubKey &&
-					state.State == "connected" {
+				if state.PublicKey == connParameters.pubKey {
 					if initialConnection {
 						close(isConnected)
 						initialConnection = false
