@@ -244,12 +244,10 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 	}
 	go s.meshClient.NotifyNewTransfer(context.Background(), &meshpb.NewTransferNotification{
 		Identifier: peer.Identifier,
-		// This is needed because currently nordvpnd queries API every time when looking
-		// for a specific peer. Since this is currently needed only for iOS, this will
-		// allows not to call API on every new transfer
-		Os:        peer.Os,
-		FileName:  fileName,
-		FileCount: int32(len(req.Paths)),
+		Os:         peer.Os,
+		FileName:   fileName,
+		FileCount:  int32(len(req.Paths)),
+		TransferId: transferID,
 	})
 
 	if err := srv.Send(&pb.StatusResponse{TransferId: transferID, Status: pb.Status_REQUESTED}); err != nil {

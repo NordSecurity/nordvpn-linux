@@ -35,6 +35,7 @@ type Registry interface {
 		peer uuid.UUID,
 		fileName string,
 		fileCount int,
+		transferID string,
 	) error
 }
 

@@ -2828,6 +2828,7 @@ func (s *Server) NotifyNewTransfer(
 		peers[index].ID,
 		req.FileName,
 		int(req.FileCount),
+		req.TransferId,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("notifying peer about new transfer: %w", err))
 		return &pb.NotifyNewTransferResponse{
