@@ -4,6 +4,8 @@ const (
 	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s --help' to see the options."
 	ArgumentParsingError = "The command you entered is not valid. Enter '%s --help' to see the options."
 
+	ClaimOnlinePurchaseSuccess = "Purchase successfull, you can now connect to VPN by using '%s connect."
+
 	LoginSuccess          = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
 	LogoutSuccess         = "You are logged out."
 	LogoutTokenSuccess    = "You have been logged out. To keep your account secure, we've revoked your current access token. If you want to reuse your next access token despite the potential risks, use the --" + flagPersistToken + " option when logging out."

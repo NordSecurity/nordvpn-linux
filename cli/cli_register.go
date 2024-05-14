@@ -51,7 +51,7 @@ func (c *cmd) Register(ctx *cli.Context) error {
 	planResp, err := c.client.Plans(context.Background(), &pb.Empty{})
 	if err != nil {
 		color.Red("Failed to retrieve subscription plans. Please finish the registration in NordVPN website.")
-		return browse(client.SubscriptionNoPlanURL)
+		return browse(client.SubscriptionURL)
 	}
 
 	plans := planResp.GetPlans()

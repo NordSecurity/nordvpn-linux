@@ -58,7 +58,7 @@ type DaemonClient interface {
 	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
 	SetIpv6(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
-	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
 }
 
 type daemonClient struct {
@@ -462,8 +462,8 @@ func (c *daemonClient) SetIpv6(ctx context.Context, in *SetGenericRequest, opts 
 	return out, nil
 }
 
-func (c *daemonClient) ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *daemonClient) ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error) {
+	out := new(ClaimOnlinePurchaseResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/ClaimOnlinePurchase", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -511,7 +511,7 @@ type DaemonServer interface {
 	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
 	Status(context.Context, *Empty) (*StatusResponse, error)
 	SetIpv6(context.Context, *SetGenericRequest) (*Payload, error)
-	ClaimOnlinePurchase(context.Context, *Empty) (*Empty, error)
+	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -627,7 +627,7 @@ func (UnimplementedDaemonServer) Status(context.Context, *Empty) (*StatusRespons
 func (UnimplementedDaemonServer) SetIpv6(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetIpv6 not implemented")
 }
-func (UnimplementedDaemonServer) ClaimOnlinePurchase(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedDaemonServer) ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimOnlinePurchase not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}

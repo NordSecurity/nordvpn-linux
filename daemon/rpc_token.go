@@ -27,6 +27,7 @@ func (r *RPC) TokenInfo(ctx context.Context, _ *pb.Empty) (*pb.TokenInfoResponse
 		Type:      internal.CodeSuccess,
 		Token:     tokenData.Token,
 		ExpiresAt: tokenData.TokenExpiry,
+		Id:        cfg.AutoConnectData.ID,
 	}
 
 	return tokenInfo, nil

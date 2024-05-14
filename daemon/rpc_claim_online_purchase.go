@@ -8,20 +8,20 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-func (r *RPC) ClaimOnlinePurchase(ctx context.Context, in *pb.Empty) (*pb.Empty, error) {
+func (r *RPC) ClaimOnlinePurchase(ctx context.Context, in *pb.Empty) (*pb.ClaimOnlinePurchaseResponse, error) {
 	isExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
 		log.Println(internal.ErrorPrefix+" failed to determine if user is registered: ", err)
-		return &pb.Empty{}, nil
+		return &pb.ClaimOnlinePurchaseResponse{Success: false}, nil
 	}
 
 	if isExpired {
 		log.Println(internal.DebugPrefix + " user is expired when claiming online purchase.")
-		return &pb.Empty{}, nil
+		return &pb.ClaimOnlinePurchaseResponse{Success: false}, nil
 	}
 
 	log.Println(internal.DebugPrefix + " send user subscribed notification.")
 	// notify state subscribers
 
-	return &pb.Empty{}, nil
+	return &pb.ClaimOnlinePurchaseResponse{Success: true}, nil
 }
