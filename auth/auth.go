@@ -20,6 +20,8 @@ type Checker interface {
 	IsLoggedIn() bool
 	// IsVPNExpired is used to check whether the user is allowed to use VPN
 	IsVPNExpired() (bool, error)
+	// IsDedicatedIPExpired is used to check whether the user is allowed to use dedicated IP servers
+	IsDedicatedIPExpired() (bool, error)
 }
 
 // RenewingChecker does both authentication checks and renewals in case of expiration.
@@ -77,6 +79,29 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 	}
 
 	return isTokenExpired(data.ServiceExpiry), nil
+}
+
+// IsDedicatedIPExpired is used to check whether the user is allowed to use dedicated IP servers
+func (r *RenewingChecker) IsDedicatedIPExpired() (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		return true, fmt.Errorf("loading config: %w", err)
+	}
+
+	data := cfg.TokensData[cfg.AutoConnectData.ID]
+	if isTokenExpired(data.DedicatedIPExpiry) {
+		if err := r.updateVpnExpirationDate(&data); err != nil {
+			return true, fmt.Errorf("updating service expiry token: %w", err)
+		}
+		if err := r.cm.SaveWith(saveVpnExpirationDate(cfg.AutoConnectData.ID, data)); err != nil {
+			return true, fmt.Errorf("saving config: %w", err)
+		}
+	}
+
+	return isTokenExpired(data.DedicatedIPExpiry), nil
 }
 
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
@@ -159,9 +184,17 @@ func (r *RenewingChecker) updateVpnExpirationDate(data *config.TokenData) error 
 		return err
 	}
 
+	const VPNServiceID = 1
+	const DedicatedIPServiceID = 11
+
 	for _, service := range services {
-		if service.Service.ID == 1 { // VPN service
+		if service.Service.ID == VPNServiceID { // VPN service
 			data.ServiceExpiry = service.ExpiresAt
+			return nil
+		}
+
+		if service.Service.ID == DedicatedIPServiceID {
+			data.DedicatedIPExpiry = service.ExpiresAt
 			return nil
 		}
 	}

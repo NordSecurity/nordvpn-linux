@@ -50,4 +50,5 @@ const (
 	CodeAutoConnectServerObfuscated    int64 = 3038
 	CodeTokenInvalid                   int64 = 3039
 	CodePrivateSubnetLANDiscovery      int64 = 3040
+	CodeDedicatedIPRenewError          int64 = 3041
 )

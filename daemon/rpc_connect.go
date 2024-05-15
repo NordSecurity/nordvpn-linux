@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -14,6 +15,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
+
+func isDedicatedIP(server core.Server) bool {
+	index := slices.IndexFunc(server.Groups, func(group core.Group) bool {
+		return group.ID == config.DedicatedIP
+	})
+
+	return index != -1
+}
 
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
@@ -82,6 +91,18 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		in.GetServerTag(),
 		in.GetServerGroup(),
 	)
+
+	if isDedicatedIP(server) {
+		expired, err := r.ac.IsDedicatedIPExpired()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, " checking dedicated IP expiration: ", err)
+			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
+		}
+
+		if expired {
+			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
+		}
+	}
 
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "picking servers:", err)

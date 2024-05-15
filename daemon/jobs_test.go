@@ -36,6 +36,9 @@ func (failingLoginChecker) IsLoggedIn() bool { return false }
 func (failingLoginChecker) IsVPNExpired() (bool, error) {
 	return true, errors.New("IsVPNExpired error")
 }
+func (failingLoginChecker) IsDedicatedIPExpired() (bool, error) {
+	return true, errors.New("IsDedicatedIPExipred error")
+}
 
 func TestStartAutoConnect(t *testing.T) {
 	category.Set(t, category.Unit)

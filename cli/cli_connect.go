@@ -33,14 +33,14 @@ Provide a <group> argument to connect to a specific servers group. For example: 
 Press the Tab key to see auto-suggestions for countries and cities.`
 )
 
-func (c *cmd) browseToSubscriptionPage() {
+func (c *cmd) browseToSubscriptionPage(url string, loginURL string) {
 	resp, err := c.client.TokenInfo(context.Background(), &pb.Empty{})
 	if err != nil {
-		browse(client.SubscriptionURL)
+		browse(url)
 		return
 	}
 
-	browse(fmt.Sprintf(client.SubscriptionURLLogin, resp.Token, resp.Id))
+	browse(fmt.Sprintf(loginURL, resp.Token, resp.Id))
 }
 
 func (c *cmd) Connect(ctx *cli.Context) error {
@@ -102,7 +102,11 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeTokenRenewError:
 			rpcErr = errors.New(client.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
-			c.browseToSubscriptionPage()
+			c.browseToSubscriptionPage(client.SubscriptionURL, client.SubscriptionDedicatedIPURLLogin)
+			rpcErr = ErrAccountExpired
+		case internal.CodeDedicatedIPRenewError:
+			// #nosec G104 -- the user gets URL in case of failure
+			c.browseToSubscriptionPage(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin)
 			rpcErr = ErrAccountExpired
 		case internal.CodeDisconnected:
 			rpcErr = errors.New(internal.DisconnectSuccess)
