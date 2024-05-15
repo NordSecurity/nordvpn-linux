@@ -102,8 +102,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeTokenRenewError:
 			rpcErr = errors.New(client.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
-			// #nosec G104 -- the user gets URL in case of failure
-			browse(client.SubscriptionURL)
+			c.browseToSubscriptionPage()
 			rpcErr = ErrAccountExpired
 		case internal.CodeDisconnected:
 			rpcErr = errors.New(internal.DisconnectSuccess)
