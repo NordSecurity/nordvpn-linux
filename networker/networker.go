@@ -297,7 +297,7 @@ func (netw *Combined) start(
 		return err
 	}
 
-	if err := netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
+	if err = netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
 		return err
 	}
 
@@ -982,7 +982,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 
 func (netw *Combined) unsetAllowlist() error {
 	if err := netw.allowlistRouter.Flush(); err != nil {
-		return fmt.Errorf("flushing the allowlist router: %w", err)
+		log.Println(internal.WarningPrefix, "flushing allowlist router:", err)
 	}
 
 	for _, rule := range []string{
@@ -1371,7 +1371,7 @@ func (netw *Combined) unSetMesh() error {
 	}
 
 	if err := netw.peerRouter.Flush(); err != nil {
-		return fmt.Errorf("clearing peer routes: %w", err)
+		log.Println(internal.WarningPrefix, "clearing peer routes:", err)
 	}
 
 	// If network is started, default might (in libtelio case will)
