@@ -71,12 +71,17 @@ func getRunningNorduserPIDs() ([]int, error) {
 }
 
 func findPIDOfUID(uids string, desiredUID uint32) int {
-	for _, pidUid := range strings.Split(uids, "\n") {
-		var pid, uid int
-		_, err := fmt.Sscanf(pidUid, " %d %d", &uid, &pid)
+	for _, uidPid := range strings.Split(uids, "\n") {
+		var pid int
+		var uid int
+		n, err := fmt.Sscanf(uidPid, "%d%d", &uid, &pid)
 		if err != nil {
-			log.Println("error when scanning ps output line: ", err)
+			log.Println(internal.ErrorPrefix+" failed to parse uid pid line: ", err)
 			continue
+		}
+
+		if n != 2 {
+			log.Println(internal.ErrorPrefix+" invalid input line, expected <uid> <pid> format: ", uidPid)
 		}
 
 		if uid == int(desiredUID) {
