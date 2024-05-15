@@ -20,7 +20,6 @@ func (r *RPC) ClaimOnlinePurchase(ctx context.Context, in *pb.Empty) (*pb.ClaimO
 		return &pb.ClaimOnlinePurchaseResponse{Success: false}, nil
 	}
 
-	log.Println(internal.DebugPrefix + " send user subscribed notification.")
 	// notify state subscribers
 
 	return &pb.ClaimOnlinePurchaseResponse{Success: true}, nil
