@@ -588,9 +588,9 @@ func main() {
 	if err := netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
 		log.Println(internal.ErrorPrefix, "disconnecting from meshnet:", err)
 	}
-	if err := rpc.StopKillSwitch(); err != nil {
-		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
-	}
+	// if err := rpc.StopKillSwitch(); err != nil {
+	// 	log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
+	// }
 }
 
 func snapChecker(publisherErr events.Publisher[error]) *snapconf.ConnChecker {

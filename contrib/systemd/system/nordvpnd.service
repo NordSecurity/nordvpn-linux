@@ -1,7 +1,7 @@
 [Unit]
 Description=NordVPN Daemon
 Requires=nordvpnd.socket
-After=network-online.target
+Before=network.target
 Wants=network-online.target
 
 [Service]
