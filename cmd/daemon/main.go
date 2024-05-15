@@ -31,8 +31,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
-	"github.com/NordSecurity/nordvpn-linux/daemon/routes/iprouter"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/iprule"
+	netlinkrouter "github.com/NordSecurity/nordvpn-linux/daemon/routes/netlink"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norouter"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norule"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -332,17 +332,17 @@ func main() {
 
 	allowlistRouter := routes.NewRouter(
 		&norouter.Facade{},
-		&iprouter.Router{},
+		&netlinkrouter.Router{},
 		cfg.Routing.Get(),
 	)
 	vpnRouter := routes.NewRouter(
 		&norouter.Facade{},
-		&iprouter.Router{},
+		&netlinkrouter.Router{},
 		cfg.Routing.Get(),
 	)
 	meshRouter := routes.NewRouter(
 		&norouter.Facade{},
-		&iprouter.Router{},
+		&netlinkrouter.Router{},
 		cfg.Routing.Get(),
 	)
 

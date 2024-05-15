@@ -1,22 +1,19 @@
-package iprouter
+package netlink
 
 import (
-	"fmt"
-	"log"
 	"net"
 	"net/netip"
-	"os/exec"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
-	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/vishvananda/netlink"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestIPRouter_Add(t *testing.T) {
+func TestRouter_Add(t *testing.T) {
 	category.Set(t, category.Route)
 
 	gateway, iface, err := routes.IPGatewayRetriever{}.Default(false)
@@ -56,7 +53,7 @@ func TestIPRouter_Add(t *testing.T) {
 			preExistingRoutes: []routes.Route{
 				{
 					Subnet: defaultRoute.Subnet,
-					Device: net.Interface{Name: "lo"},
+					Device: iface,
 				},
 			},
 			routes: []routes.Route{
@@ -71,18 +68,16 @@ func TestIPRouter_Add(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			preRouter := Router{}
 			for _, route := range test.preExistingRoutes {
-				exec.Command("ip", "route", "delete", route.Subnet.String(), "via", route.Gateway.String()).Run()
-				err := preRouter.Add(route)
-
-				assert.NoError(t, err)
-				out, err := exec.Command("ip", "route").CombinedOutput()
-				log.Println(string(out))
+				err = preRouter.Add(route)
+				require.NoError(t, err)
 			}
 			router := Router{}
 			for i, route := range test.routes {
-				// Ignore errors here. This is just for test preparation
 				if test.errOn != i {
-					exec.Command("ip", "route", "delete", route.Subnet.String(), "via", route.Gateway.String()).Run()
+					// Remove route in case it already exists. Error can be
+					// ignored here
+					netlinkRoute := toNetlinkRoute(route)
+					netlink.RouteDel(&netlinkRoute)
 				}
 				err := router.Add(route)
 				assert.True(t, (test.errOn == i) == (err != nil), err)
@@ -92,10 +87,12 @@ func TestIPRouter_Add(t *testing.T) {
 					}
 					continue
 				}
-				///
-				out, err := exec.Command("ip", "route").CombinedOutput()
-				assert.NoError(t, err, string(out))
-				assert.Contains(t, string(out), fmt.Sprintf("%s via %s dev", route.Subnet.String(), route.Gateway.String()))
+				checkRouter := Router{}
+				assert.ErrorIs(
+					t,
+					checkRouter.Add(route),
+					routes.ErrRouteToOtherDestinationExists,
+				)
 				assert.True(t, router.has(route))
 				assert.Equal(t, i+1, len(router.routes))
 			}
@@ -108,30 +105,35 @@ func TestIPRouter_Add(t *testing.T) {
 	}
 }
 
-func TestIPRouterAddIPv6(t *testing.T) {
+func TestRouterAddIPv6(t *testing.T) {
 	//@TODO gitlab runner sysctl flag has no effect
 	category.Set(t, category.Link)
 
-	ip := "2a01:7e00::f13c:92ff:fe7d:d4d"
-	name := "iprouterdummy1"
-	iface := net.Interface{Name: name}
-	out, err := exec.Command("ip", "link", "add", name, "type", "dummy").CombinedOutput()
-	assert.NoError(t, err, string(out))
-	out, err = exec.Command("ip", "address", "add", ip, "dev", name).CombinedOutput()
-	assert.NoError(t, err, string(out))
-	out, err = exec.Command("ip", "link", "set", name, "up").CombinedOutput()
-	assert.NoError(t, err, string(out))
-	defer exec.Command("ip", "link", "delete", name).CombinedOutput()
+	ip := "2a01:7e00::f13c:92ff:fe7d:d4d/128"
+	name := "netlinkdummy1"
+	link := &netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: name}}
+	addr, err := netlink.ParseAddr(ip)
+	require.NoError(t, err)
+
+	// Assert here on setup as failure in `require` would cause defer to be skipped
+	assert.NoError(t, netlink.LinkAdd(link))
+	defer netlink.LinkDel(link)
+
+	require.NoError(t, netlink.AddrAdd(link, addr))
+	require.NoError(t, netlink.LinkSetUp(link))
+	iface, err := net.InterfaceByIndex(link.Index)
+	require.NoError(t, err)
+	require.NotNil(t, iface)
 
 	newRoutes := []routes.Route{
 		{
 			Subnet: netip.MustParsePrefix("2000::/3"),
-			Device: iface,
+			Device: *iface,
 		},
 		{
 			Gateway: netip.MustParseAddr("fe80::1"),
 			Subnet:  netip.MustParsePrefix("2606:4700:4700::1111/128"),
-			Device:  iface,
+			Device:  *iface,
 		},
 	}
 
@@ -141,13 +143,9 @@ func TestIPRouterAddIPv6(t *testing.T) {
 	for _, route := range newRoutes {
 		err = router.Add(route)
 		assert.NoError(t, err)
-		out, err = exec.Command("ip", "-6", "route").CombinedOutput()
+		routeList, err := netlink.RouteList(link, netlink.FAMILY_V6)
 		assert.NoError(t, err)
-		if route.Gateway == (netip.Addr{}) {
-			assert.Contains(t, string(out), fmt.Sprintf("%s via %s dev", network.ToRouteString(route.Subnet), route.Gateway.String()))
-		} else {
-			assert.Contains(t, string(out), fmt.Sprintf("%s dev %s", network.ToRouteString(route.Subnet), route.Device.Name))
-		}
+		assert.Contains(t, routeList, toNetlinkRoute(route))
 	}
 
 	// missing interface/destination
@@ -158,7 +156,7 @@ func TestIPRouterAddIPv6(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestIPRouter_Has(t *testing.T) {
+func TestRouter_Has(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	exRoute := route(t, netip.MustParseAddr("1.2.3.4"), netip.MustParseAddr("1.2.0.0"), 16)
@@ -249,105 +247,4 @@ func route(t *testing.T, destination netip.Addr, maskIP netip.Addr, cidrMask int
 		Gateway: destination,
 		Subnet:  netip.PrefixFrom(maskIP, cidrMask),
 	}
-}
-
-func routeInterface(t *testing.T, interfaceName string, network string) routes.Route {
-	t.Helper()
-	return routes.Route{
-		Subnet: netip.MustParsePrefix(network),
-		Device: net.Interface{Name: interfaceName},
-	}
-}
-
-func TestExistsInRoutingTableOutput(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	exRoute := route(t, netip.MustParseAddr("1.2.3.4"), netip.MustParseAddr("1.2.0.0"), 16)
-	exOut := `default via 1.2.3.4 dev wlan0 proto dhcp metric 600
-1.2.0.0/16 via 1.2.3.4 dev wlan0`
-	exOutNotFound := `default via 1.2.3.4 dev wlan0 proto dhcp metric 600
-1.2.0.0/16 via 1.2.3.5 dev wlan0`
-
-	tests := []struct {
-		out    string
-		route  routes.Route
-		exists bool
-	}{
-		{
-			out:    exOut,
-			route:  exRoute,
-			exists: true,
-		},
-		{
-			out:    exOutNotFound,
-			route:  exRoute,
-			exists: false,
-		},
-		{
-			out:    "1.1.1.1 via 192.168.0.101 dev enp39s0 proto static metric 100",
-			route:  route(t, netip.MustParseAddr("1.1.1.1"), netip.MustParseAddr("1.1.1.1"), 32),
-			exists: true,
-		},
-		{
-			out:    "::1 dev lo proto kernel metric 256 pref medium",
-			route:  routeInterface(t, "lo", "::1/128"),
-			exists: true,
-		},
-		{
-			out:    "2606:4700:4700::1111 dev enp39s0 metric 1024 pref medium",
-			route:  routeInterface(t, "enp39s0", "2606:4700:4700::1111/128"),
-			exists: true,
-		},
-		{
-			out:    "fe80::/64 dev tun0 proto kernel metric 256 pref medium",
-			route:  routeInterface(t, "enp39s0", "fe80::/64"),
-			exists: false,
-		},
-		{
-			out:    "fe80::/64 dev enp39s0 proto kernel metric 256 pref medium",
-			route:  routeInterface(t, "enp39s0", "fe80::/64"),
-			exists: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.out, func(t *testing.T) {
-			assert.Equal(t, test.exists,
-				existsInRoutingTableOutput([]byte(test.out), test.route),
-			)
-		})
-	}
-}
-
-func TestExistsInRoutingTable(t *testing.T) {
-	category.Set(t, category.Route)
-
-	gateway, iface, err := routes.IPGatewayRetriever{}.Default(false)
-	require.NoError(t, err)
-
-	bits := gateway.As4()
-
-	route := route(t, gateway, netip.AddrFrom4([4]byte{bits[0], bits[1], bits[2], 0}), 24)
-	route.Device = iface
-	router := Router{}
-
-	// Cleanup before the execution
-	_ = exec.Command("ip", "route", "delete", route.Subnet.String(), "via", route.Gateway.String()).Run()
-	require.NoError(t, err)
-
-	// Just assume that such route does not exist in current system
-	exists, err := existsInRoutingTable(route)
-	require.NoError(t, err)
-	require.False(t, exists)
-	err = router.Add(route)
-	require.NoError(t, err)
-
-	// Route should have appeared in the system
-	exists, err = existsInRoutingTable(route)
-	require.NoError(t, err)
-	require.True(t, exists)
-
-	// Cleanup
-	err = router.Flush()
-	require.NoError(t, err)
 }

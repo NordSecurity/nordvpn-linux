@@ -11,11 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/vishvananda/netlink"
-)
-
-const (
-	// mainRoutingTableID as defined in `man ip route`
-	mainRoutingTableID = 254
+	"golang.org/x/sys/unix"
 )
 
 // Router uses `ip rule` under the hood
@@ -221,7 +217,7 @@ func calculateRulePriority(ipv6 bool) (uint, error) {
 
 	for _, rule := range rules {
 		mainRule := netlink.NewRule()
-		mainRule.Table = mainRoutingTableID
+		mainRule.Table = unix.RT_TABLE_MAIN
 		allID[uint(rule.Priority)] = true
 		if isRuleSame(rule, *mainRule) {
 			continue
@@ -411,7 +407,7 @@ func fwmarkRule(prioID int, fwmark uint32, tableID int, ipv6 bool) *netlink.Rule
 func suppressRule(prioID int, ipv6 bool, skipGroup bool) *netlink.Rule {
 	rule := netlink.NewRule()
 	rule.Priority = prioID
-	rule.Table = mainRoutingTableID
+	rule.Table = unix.RT_TABLE_MAIN
 	rule.Family = toNetlinkFamily(ipv6)
 	rule.SuppressPrefixlen = 0
 	if !skipGroup {
