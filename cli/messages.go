@@ -55,6 +55,9 @@ Example: nordvpn set %s on`
 	SetNotifySuccess      = "Notifications are set to '%s' successfully."
 	SetNotifyNothingToSet = "Notifications are already set to '%s'."
 
+	SetTraySuccess      = "Tray set to '%s' successfully."
+	SetTrayNothingToSet = "Tray is already set to '%s'."
+
 	SetObfuscateUnavailable = "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation."
 
 	SetProtocolUnavailable = "Protocol setting is not available when the set technology is not OpenVPN"

@@ -13,8 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/google/uuid"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 var (
@@ -207,6 +208,11 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 
 	if c.MachineID == [16]byte{} {
 		c.MachineID = f.machineIDGetter.GetMachineID()
+	}
+
+	if c.UsersData.TrayOff == nil {
+		// in order not to crash when a user has an old config
+		c.UsersData.TrayOff = UidBoolMap{}
 	}
 	return nil
 }

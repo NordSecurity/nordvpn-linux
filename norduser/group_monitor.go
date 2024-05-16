@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
+
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
-	"github.com/fsnotify/fsnotify"
 )
 
 const (
@@ -119,7 +120,7 @@ func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 			continue
 		}
 
-		if err := n.norduserd.Stop(userIDs.uid); err != nil {
+		if err := n.norduserd.Stop(userIDs.uid, false); err != nil {
 			log.Println("disabling norduserd for user:", err.Error())
 		}
 	}

@@ -41,6 +41,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 			AutoConnect:          cfg.AutoConnect,
 			Ipv6:                 cfg.IPv6,
 			Notify:               cfg.UsersData.Notify[in.GetUid()],
+			Tray:                 !cfg.UsersData.TrayOff[in.GetUid()],
 			Meshnet:              cfg.Mesh,
 			Dns:                  cfg.AutoConnectData.DNS,
 			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,

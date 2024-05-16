@@ -48,6 +48,7 @@ service Daemon {
   rpc SetAnalytics(SetGenericRequest) returns (Payload);
   rpc SetKillSwitch(SetKillSwitchRequest) returns (Payload);
   rpc SetNotify(SetNotifyRequest) returns (Payload);
+  rpc SetTray(SetTrayRequest) returns (Payload);
   rpc SetObfuscate(SetGenericRequest) returns (Payload);
   rpc SetProtocol(SetProtocolRequest) returns (SetProtocolResponse);
   rpc SetTechnology(SetTechnologyRequest) returns (Payload);

@@ -6,7 +6,9 @@ func (m *MockNorduserCombinedService) Enable(uint32, uint32, string) error { ret
 
 func (m *MockNorduserCombinedService) Disable(uint32) error { return nil }
 
-func (m *MockNorduserCombinedService) Stop(uint32) error { return nil }
+func (m *MockNorduserCombinedService) Stop(uint32, bool) error { return nil }
+
+func (m *MockNorduserCombinedService) Restart(uint32) error { return nil }
 
 func (m *MockNorduserCombinedService) StopAll() {}
 

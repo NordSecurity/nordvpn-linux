@@ -28,7 +28,7 @@ func (n NorduserSnap) Disable(uid uint32) error {
 	return nil
 }
 
-func (n NorduserSnap) Stop(uid uint32) error {
+func (n NorduserSnap) Stop(uid uint32, wait bool) error {
 	if err := process.NewNorduserGRPCProcessManager(uid).StopProcess(false); err != nil {
 		return fmt.Errorf("stopping norduser process: %w", err)
 	}
@@ -67,4 +67,8 @@ func (n NorduserSnap) StopAll() {
 
 func (n NorduserSnap) DisableAll() {
 	n.stopAll(true)
+}
+
+func (n NorduserSnap) Restart(uid uint32) error {
+	return nil
 }

@@ -16,6 +16,8 @@ import (
 	"runtime"
 	"strconv"
 
+	"golang.org/x/net/netutil"
+
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -61,7 +63,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/state"
 	statepb "github.com/NordSecurity/nordvpn-linux/state/pb"
-	"golang.org/x/net/netutil"
 
 	"google.golang.org/grpc"
 )
