@@ -3,13 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"os"
+	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/pb"
-	"github.com/NordSecurity/nordvpn-linux/snapconf"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 )
 
 type NorduserFileshareClient interface {
@@ -24,34 +22,19 @@ func NewNorduserGRPCClient() NorduserGRPCClient {
 	return NorduserGRPCClient{}
 }
 
-func getNorduserClient(uid int) (pb.NorduserClient, error) {
-	socket := internal.GetNorduserdSocket(uid)
-	if _, err := os.Stat(socket); os.IsNotExist(err) {
-		socket = internal.GetNorduserSocketFork(uid)
-	}
-	if snapconf.IsUnderSnap() {
-		socket = internal.GetNorduserSocketSnap(uint32(uid))
-	}
-
-	if socket == "" {
-		return nil, fmt.Errorf("norduser socket not found")
-	}
-
-	url := fmt.Sprintf("%s://%s", internal.Proto, socket)
-	norduserConn, err := grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("dialing norduser socket: %w", err)
-	}
-
-	return pb.NewNorduserClient(norduserConn), nil
-}
-
 func (n NorduserGRPCClient) StartFileshare(uid uint32) error {
-	client, err := getNorduserClient(int(uid))
+	clientConn, err := process.GetNorduserClientConnection(int(uid))
 	if err != nil {
-		return fmt.Errorf("getting norduser client: %s", err)
+		return fmt.Errorf("connecting to norduser client: %w", err)
 	}
 
+	defer func() {
+		if err := clientConn.Close(); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to close client connection to nord user: ", err)
+		}
+	}()
+
+	client := pb.NewNorduserClient(clientConn)
 	_, err = client.StartFileshare(context.Background(), &pb.Empty{})
 	if err != nil {
 		return fmt.Errorf("failed to start fileshare: %w", err)
@@ -61,10 +44,18 @@ func (n NorduserGRPCClient) StartFileshare(uid uint32) error {
 }
 
 func (n NorduserGRPCClient) StopFileshare(uid uint32) error {
-	client, err := getNorduserClient(int(uid))
+	clientConn, err := process.GetNorduserClientConnection(int(uid))
 	if err != nil {
-		return fmt.Errorf("getting norduser client: %s", err)
+		return fmt.Errorf("connecting to norduser client: %w", err)
 	}
+
+	defer func() {
+		if err := clientConn.Close(); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to close client connection to nord user: ", err)
+		}
+	}()
+
+	client := pb.NewNorduserClient(clientConn)
 
 	_, err = client.StopFileshare(context.Background(), &pb.Empty{})
 	if err != nil {
