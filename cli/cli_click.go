@@ -64,7 +64,7 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 				return errors.New(ClaimOnlinePurchaseFailure)
 			}
 
-			color.Green(ClaimOnlinePurchaseSuccess, ctx.App.Name)
+			color.Green(ClaimOnlinePurchaseSuccess)
 			return nil
 		} else if url.Scheme == "nordvpn" {
 			// if arg is given
