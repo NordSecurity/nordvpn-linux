@@ -147,6 +147,7 @@ type NotificationNewTransactionRequest struct {
 	ReceiverMachineIdentifier string `json:"receiver_machine_identifier"`
 	FileName                  string `json:"file_name"`
 	FileCount                 int    `json:"file_count"`
+	TransferID                string `json:"file_transfer_id"`
 }
 
 // DNS defines mapping between peer name and ip used by magic DNS within the mesh network.

@@ -594,6 +594,7 @@ func (api *DefaultAPI) NotifyNewTransfer(
 	peer uuid.UUID,
 	fileName string,
 	fileCount int,
+	transferID string,
 ) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
@@ -601,6 +602,7 @@ func (api *DefaultAPI) NotifyNewTransfer(
 	dataUnmarshaled := mesh.NotificationNewTransactionRequest{
 		ReceiverMachineIdentifier: peer.String(),
 		FileCount:                 fileCount,
+		TransferID:                transferID,
 	}
 	dataUnmarshaled.FileName = fileName // We must not log filenames, so setting it after log
 	data, err := json.Marshal(dataUnmarshaled)

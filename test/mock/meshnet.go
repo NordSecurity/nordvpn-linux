@@ -94,6 +94,7 @@ func (*RegistryMock) NotifyNewTransfer(
 	peer uuid.UUID,
 	fileName string,
 	fileCount int,
+	transferID string,
 ) error {
 	return nil
 }

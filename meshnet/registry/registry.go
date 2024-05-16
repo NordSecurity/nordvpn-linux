@@ -94,6 +94,7 @@ func (r *Registry) NotifyNewTransfer(
 	peer uuid.UUID,
 	fileName string,
 	fileCount int,
+	transferID string,
 ) error {
-	return r.inner.NotifyNewTransfer(token, self, peer, fileName, fileCount)
+	return r.inner.NotifyNewTransfer(token, self, peer, fileName, fileCount, transferID)
 }
