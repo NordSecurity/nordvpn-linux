@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"os/user"
 	"strconv"
 	"strings"
 	"sync"
@@ -98,7 +100,6 @@ func getPIDForNorduserUID(uid uint32) (int, error) {
 	if err := handlePsError(output, err); err != nil {
 		return -1, fmt.Errorf("listing norduser uids/pids: %w", err)
 	}
-
 	return findPIDOfUID(string(output), uid), nil
 }
 
@@ -148,7 +149,7 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 }
 
 // Stop teminates norduser process
-func (c *ChildProcessNorduser) Stop(uid uint32) error {
+func (c *ChildProcessNorduser) Stop(uid uint32, wait bool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -168,6 +169,13 @@ func (c *ChildProcessNorduser) Stop(uid uint32) error {
 			}
 		}
 		return fmt.Errorf("sending SIGTERM to norduser process: %w", err)
+	}
+
+	if wait {
+		proc, err := os.FindProcess(pid)
+		if err == nil {
+			_, _ = proc.Wait()
+		}
 	}
 
 	return nil
@@ -198,4 +206,24 @@ func (c *ChildProcessNorduser) StopAll() {
 	case <-doneChan:
 	case <-time.After(10 * time.Second):
 	}
+}
+
+func (c *ChildProcessNorduser) Restart(uid uint32) error {
+	err := c.Stop(uid, true)
+	if err != nil {
+		return fmt.Errorf("failed to stop norduser process: %w", err)
+	}
+	u, err := user.LookupId(strconv.FormatInt(int64(uid), 10))
+	if err != nil {
+		return fmt.Errorf("failed to find user by UID: %w", err)
+	}
+	gid, err := strconv.Atoi(u.Gid)
+	if err != nil {
+		return fmt.Errorf("failed to convert GID: %w", err)
+	}
+	err = c.Enable(uid, uint32(gid), u.HomeDir)
+	if err != nil {
+		return fmt.Errorf("failed to enable norduser process: %w", err)
+	}
+	return nil
 }

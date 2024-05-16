@@ -74,6 +74,11 @@ message SetNotifyRequest {
   bool notify = 3;
 }
 
+message SetTrayRequest {
+  int64 uid = 2;
+  bool tray = 3;
+}
+
 message SetProtocolRequest {
   config.Protocol protocol = 2;
 }

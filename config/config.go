@@ -14,9 +14,11 @@ const defaultFWMarkValue uint32 = 0xe1f1
 
 func newConfig() *Config {
 	ids, _ := internal.SystemUsersIDs()
-	users := make(map[int64]bool, len(ids))
+	notifyUsers := make(map[int64]bool, len(ids))
+	trayOffUsers := make(map[int64]bool, len(ids))
 	for _, id := range ids {
-		users[id] = true
+		notifyUsers[id] = true
+		trayOffUsers[id] = true
 	}
 
 	return &Config{
@@ -27,7 +29,7 @@ func newConfig() *Config {
 			Protocol: Protocol_UDP,
 		},
 		MachineID:  internal.MachineID(),
-		UsersData:  &UsersData{Notify: users},
+		UsersData:  &UsersData{Notify: notifyUsers, TrayOff: trayOffUsers},
 		TokensData: map[int64]TokenData{},
 	}
 }

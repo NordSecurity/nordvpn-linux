@@ -23,15 +23,16 @@ message Settings {
   bool kill_switch = 3;
   bool auto_connect = 4;
   bool notify = 5;
-  bool ipv6 = 6;
-  bool meshnet = 7;
-  bool routing = 8;
-  uint32 fwmark = 9;
-  bool analytics = 10;
-  repeated string dns = 11;
-  bool threat_protection_lite = 12;
-  config.Protocol protocol = 13;
-  bool lan_discovery = 14;
-  Allowlist allowlist = 15;
-  bool obfuscate = 16;
+  bool tray = 6;
+  bool ipv6 = 7;
+  bool meshnet = 8;
+  bool routing = 9;
+  uint32 fwmark = 10;
+  bool analytics = 11;
+  repeated string dns = 12;
+  bool threat_protection_lite = 13;
+  config.Protocol protocol = 14;
+  bool lan_discovery = 15;
+  Allowlist allowlist = 16;
+  bool obfuscate = 17;
 }

@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 )
 
-// UsersData stores users which will receive notifications.
+// UsersData stores users which will receive notifications and see the tray icon.
 type UsersData struct {
-	Notify Notify `json:"notify"`
+	Notify  UidBoolMap `json:"notify"`
+	TrayOff UidBoolMap `json:"tray_off"`
 }
 
-// Notify is a set of user ids.
-type Notify map[int64]bool
+// UidBoolMap is a set of user ids.
+type UidBoolMap map[int64]bool
 
 // MarshalJSON into []float64
-func (n *Notify) MarshalJSON() ([]byte, error) {
+func (n *UidBoolMap) MarshalJSON() ([]byte, error) {
 	var ids []float64
 	for id := range *n {
 		ids = append(ids, float64(id))
@@ -24,7 +25,7 @@ func (n *Notify) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON into map[int64]bool
-func (n *Notify) UnmarshalJSON(b []byte) error {
+func (n *UidBoolMap) UnmarshalJSON(b []byte) error {
 	var ids []float64
 	d := json.NewDecoder(bytes.NewReader(b))
 	if err := d.Decode(&ids); err != nil {

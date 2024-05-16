@@ -47,6 +47,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.GetObfuscate()))
 	}
 	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.Notify))
+	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.Tray))
 	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.AutoConnect))
 	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Ipv6))
 	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))

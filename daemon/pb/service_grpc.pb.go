@@ -48,6 +48,7 @@ type DaemonClient interface {
 	SetAnalytics(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetKillSwitch(ctx context.Context, in *SetKillSwitchRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetTray(ctx context.Context, in *SetTrayRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error)
 	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -372,6 +373,15 @@ func (c *daemonClient) SetNotify(ctx context.Context, in *SetNotifyRequest, opts
 	return out, nil
 }
 
+func (c *daemonClient) SetTray(ctx context.Context, in *SetTrayRequest, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/SetTray", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *daemonClient) SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/SetObfuscate", in, out, opts...)
@@ -501,6 +511,7 @@ type DaemonServer interface {
 	SetAnalytics(context.Context, *SetGenericRequest) (*Payload, error)
 	SetKillSwitch(context.Context, *SetKillSwitchRequest) (*Payload, error)
 	SetNotify(context.Context, *SetNotifyRequest) (*Payload, error)
+	SetTray(context.Context, *SetTrayRequest) (*Payload, error)
 	SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error)
 	SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error)
 	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
@@ -596,6 +607,9 @@ func (UnimplementedDaemonServer) SetKillSwitch(context.Context, *SetKillSwitchRe
 }
 func (UnimplementedDaemonServer) SetNotify(context.Context, *SetNotifyRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetNotify not implemented")
+}
+func (UnimplementedDaemonServer) SetTray(context.Context, *SetTrayRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetTray not implemented")
 }
 func (UnimplementedDaemonServer) SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetObfuscate not implemented")
@@ -1120,6 +1134,24 @@ func _Daemon_SetNotify_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_SetTray_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetTrayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetTray(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/SetTray",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetTray(ctx, req.(*SetTrayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Daemon_SetObfuscate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetGenericRequest)
 	if err := dec(in); err != nil {
@@ -1416,6 +1448,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetNotify",
 			Handler:    _Daemon_SetNotify_Handler,
+		},
+		{
+			MethodName: "SetTray",
+			Handler:    _Daemon_SetTray_Handler,
 		},
 		{
 			MethodName: "SetObfuscate",

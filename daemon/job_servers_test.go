@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -187,7 +188,7 @@ func newMockConfigManager() *mockConfigManager {
 
 	return &mockConfigManager{c: config.Config{
 		Firewall:  true,
-		UsersData: &config.UsersData{Notify: users},
+		UsersData: &config.UsersData{Notify: users, TrayOff: users},
 		TokensData: map[int64]config.TokenData{
 			1337: {
 				OpenVPNUsername: "bad",
