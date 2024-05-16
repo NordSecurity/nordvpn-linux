@@ -7,7 +7,7 @@ const (
 	ClaimOnlinePurchaseSuccess = `You’re all set!
 You’ve successfully purchased the NordVPN subscription.
 You can use NordVPN on 10 devices at the same time.`
-	ClaimOnlinePurchaseFailure = `Payment failed
+	ClaimOnlinePurchaseFailure = `Payment failed.
 We couldn’t process your payment. Please try again.`
 
 	LoginSuccess          = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
