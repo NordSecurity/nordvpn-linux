@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -62,7 +61,7 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 			}
 
 			if !resp.Success {
-				return errors.New(internal.UnhandledMessage)
+				return errors.New(ClaimOnlinePurchaseFailure)
 			}
 
 			color.Green(ClaimOnlinePurchaseSuccess, ctx.App.Name)

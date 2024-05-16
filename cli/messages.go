@@ -4,7 +4,11 @@ const (
 	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s --help' to see the options."
 	ArgumentParsingError = "The command you entered is not valid. Enter '%s --help' to see the options."
 
-	ClaimOnlinePurchaseSuccess = "Purchase successful, you can now connect to VPN by using '%s connect."
+	ClaimOnlinePurchaseSuccess = `You’re all set!
+You’ve successfully purchased the NordVPN subscription.
+You can use NordVPN on 10 devices at the same time.`
+	ClaimOnlinePurchaseFailure = `Payment failed
+We couldn’t process your payment. Please try again.`
 
 	LoginSuccess          = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
 	LogoutSuccess         = "You are logged out."
