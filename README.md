@@ -2,6 +2,8 @@
 
 ![icon](./assets/icon.svg)
 
+bamboozled
+
 ---
 
 The [NordVPN](https://nordvpn.com/features/) Linux application provides a simple and user-friendly command line interface for accessing all the different features of NordVPN.
