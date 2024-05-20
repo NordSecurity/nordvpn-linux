@@ -108,15 +108,15 @@ func (ti *Instance) updateSettings() bool {
 	var settings *pb.Settings
 
 	if err != nil {
-		log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, err)
+		log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, err)
 	} else {
 		switch resp.Type {
 		case internal.CodeConfigError:
-			log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, client.ConfigMessage)
+			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, client.ConfigMessage)
 		case internal.CodeSuccess:
 			settings = resp.GetData()
 		default:
-			log.Println(internal.ErrorPrefix+errorRetrievingSettingsLog, internal.ErrUnhandled)
+			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, internal.ErrUnhandled)
 		}
 	}
 
@@ -141,9 +141,9 @@ func (ti *Instance) updateSettings() bool {
 		ti.state.notificationsStatus = newNotificationsStatus
 
 		if newNotificationsStatus == Enabled {
-			defer log.Println(internal.InfoPrefix, " Notifications enabled")
+			defer log.Println(internal.InfoPrefix, "Notifications enabled")
 		} else {
-			defer log.Println(internal.InfoPrefix, " Notifications disabled")
+			defer log.Println(internal.InfoPrefix, "Notifications disabled")
 		}
 	}
 
@@ -179,7 +179,7 @@ func (ti *Instance) updateAccountInfo() bool {
 		if errMessage := messageForDaemonError(err); errMessage != internal.ErrDaemonConnectionRefused.Error() {
 			ti.updateDaemonConnectionStatus(errMessage)
 		}
-		log.Println(internal.ErrorPrefix+" Error retrieving account info: ", err)
+		log.Println(internal.ErrorPrefix, "Error retrieving account info:", err)
 		return true
 	}
 	changed := false
@@ -188,11 +188,11 @@ func (ti *Instance) updateAccountInfo() bool {
 
 	switch payload.Type {
 	case internal.CodeUnauthorized:
-		log.Println(internal.ErrorPrefix + " " + cli.AccountTokenUnauthorizedError)
+		log.Println(internal.ErrorPrefix, cli.AccountTokenUnauthorizedError)
 	case internal.CodeExpiredRenewToken:
-		log.Println(internal.ErrorPrefix + " CodeExpiredRenewToken")
+		log.Println(internal.ErrorPrefix, "CodeExpiredRenewToken")
 	case internal.CodeTokenRenewError:
-		log.Println(internal.ErrorPrefix + " CodeTokenRenewError")
+		log.Println(internal.ErrorPrefix, "CodeTokenRenewError")
 	}
 
 	if payload.Username != "" {
@@ -273,9 +273,9 @@ func (ti *Instance) pollingMonitor() {
 		}
 		if ti.debugMode {
 			if fullUpdate {
-				fmt.Println(time.Now().String(), "Full update")
+				log.Println(internal.DebugPrefix, "Full update")
 			} else {
-				fmt.Println(time.Now().String(), "Update")
+				log.Println(internal.DebugPrefix, "Update")
 			}
 		}
 	}
