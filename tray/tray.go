@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/notify"
 
@@ -158,7 +159,7 @@ func (ti *Instance) OnReady() {
 			systray.Refresh()
 			<-ti.redrawChan
 			if ti.debugMode {
-				log.Println(time.Now().String(), "Redraw")
+				log.Println(internal.DebugPrefix, "Redraw")
 			}
 			systray.ResetMenu()
 		}

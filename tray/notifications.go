@@ -6,11 +6,14 @@ import (
 	"log"
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
-	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus/v5"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 )
+
+var dbusNotifierNotConnectedError = errors.New("dbus notifier not connected")
 
 func (ti *Instance) notify(text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
@@ -19,7 +22,9 @@ func (ti *Instance) notify(text string, a ...any) {
 	ti.state.mu.RUnlock()
 	if notificationsStatus == Enabled {
 		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
-			log.Println(internal.ErrorPrefix+" failed to send notification: ", err)
+			if !errors.Is(err, dbusNotifierNotConnectedError) {
+				log.Println(internal.ErrorPrefix, "Failed to send notification:", err)
+			}
 		}
 	}
 }
@@ -28,7 +33,9 @@ func (ti *Instance) notify(text string, a ...any) {
 func (ti *Instance) notifyForce(text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
 	if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
-		log.Println(internal.ErrorPrefix+" failed to send forced notification: ", err)
+		if !errors.Is(err, dbusNotifierNotConnectedError) {
+			log.Println(internal.ErrorPrefix, "Failed to send forced notification:", err)
+		}
 	}
 }
 
@@ -41,12 +48,12 @@ type dbusNotifier struct {
 func (n *dbusNotifier) start() {
 	ntf, err := newNotifier()
 	if err == nil {
-		log.Println(internal.InfoPrefix + " Started dbus notifier")
+		log.Println(internal.InfoPrefix, "Started dbus notifier")
 		n.mu.Lock()
 		n.notifier = ntf
 		n.mu.Unlock()
 	} else {
-		log.Println(internal.ErrorPrefix+" Failed to start dbus notifier: ", err)
+		log.Println(internal.ErrorPrefix, "Failed to start dbus notifier:", err)
 	}
 }
 
@@ -71,7 +78,7 @@ func (n *dbusNotifier) sendNotification(summary string, body string) error {
 		}
 		return nil
 	} else {
-		return errors.New("dbus notifier not connected")
+		return dbusNotifierNotConnectedError
 	}
 }
 
@@ -85,7 +92,7 @@ func newNotifier() (notify.Notifier, error) {
 	defer func() {
 		if err != nil {
 			if err := dbusConn.Close(); err != nil {
-				log.Println(internal.ErrorPrefix+" Failed to close dbus connection: ", err)
+				log.Println(internal.ErrorPrefix, "Failed to close dbus connection:", err)
 			}
 		}
 	}()
@@ -107,7 +114,7 @@ func newNotifier() (notify.Notifier, error) {
 	defer func() {
 		if err != nil {
 			if err := ntf.Close(); err != nil {
-				log.Println(internal.ErrorPrefix+" Failed to close notifier: ", err)
+				log.Println(internal.ErrorPrefix, "Failed to close notifier:", err)
 			}
 		}
 	}()

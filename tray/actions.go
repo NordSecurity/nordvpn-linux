@@ -49,7 +49,7 @@ func (ti *Instance) login() {
 			cmd := exec.Command("xdg-open", url)
 			err = cmd.Run()
 			if err != nil {
-				log.Println(internal.ErrorPrefix+" Failed to open login webpage: ", err)
+				log.Println(internal.ErrorPrefix, "Failed to open login webpage:", err)
 				// we want to force a notification here, otherwise there will be no reaction to user action
 				ti.notifyForce("Continue log in in the browser: %s", url)
 			}

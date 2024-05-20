@@ -72,7 +72,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	if err == nil {
 		client = daemonpb.NewDaemonClient(conn)
 	} else {
-		log.Println("Error connecting to the NordVPN daemon: ", err)
+		log.Println(internal.ErrorPrefix, "Error connecting to the NordVPN daemon:", err)
 		return
 	}
 
@@ -80,12 +80,11 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	ti.Start()
 
 	onExit := func() {
-		now := time.Now()
-		log.Println("Tray exit at", now.String())
+		log.Println(internal.InfoPrefix, "Exiting systray")
 	}
 
 	onReady := func() {
-		log.Println("Tray ready")
+		log.Println(internal.InfoPrefix, "Starting systray")
 		ti.OnReady()
 	}
 
@@ -114,7 +113,7 @@ func shouldEnableFileshare(uid uint32) (bool, error) {
 
 	defer func() {
 		if err := grpcConn.Close(); err != nil {
-			log.Println("failed to close grpc connection")
+			log.Println(internal.ErrorPrefix, "Failed to close grpc connection")
 		}
 	}()
 
@@ -157,7 +156,7 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 
 	select {
 	case sig := <-signals:
-		log.Println("Received signal: ", sig)
+		log.Println(internal.InfoPrefix, "Received signal:", sig)
 	case stopRequest := <-stopChan:
 		if stopRequest.DisableAutostart {
 			onShutdown(stopRequest.DisableAutostart)
@@ -174,13 +173,13 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	// two trays will be visible for a split second.
 	<-time.After(500 * time.Millisecond)
 
-	log.Println("Norduser process has stopped")
+	log.Println(internal.InfoPrefix, "Norduser daemon has stopped")
 }
 
 func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan interface{}) {
 	fileshareManagementChan, fileshareShutdownChan := norduser.StartFileshareManagementLoop()
 	if enable, err := shouldEnableFileshare(uid); err != nil {
-		log.Println("Failed to determine if fileshare should be enabled on startup: ", err)
+		log.Println(internal.ErrorPrefix, "Failed to determine if fileshare should be enabled on startup:", err)
 	} else if enable {
 		fileshareManagementChan <- norduser.Start
 	}
@@ -192,36 +191,36 @@ func startSnap() {
 	setupLog()
 	group, err := user.LookupGroup(internal.NordvpnGroup)
 	if err != nil {
-		log.Println("Unable to retrieve nordvpn group: ", err)
+		log.Println(internal.ErrorPrefix, "Unable to retrieve nordvpn group:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	usr, err := user.Current()
 	if err != nil {
-		log.Println("Unable to retrieve current user: ", err)
+		log.Println(internal.ErrorPrefix, "Unable to retrieve current user:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	gids, err := usr.GroupIds()
 	if err != nil {
-		log.Println("Unable to retrieve group ids: ", err)
+		log.Println(internal.ErrorPrefix, "Unable to retrieve group ids:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	if slices.Index(gids, group.Gid) == -1 {
-		log.Println("User does not belong to the nordvpn group.")
+		log.Println(internal.ErrorPrefix, "User does not belong to the nordvpn group")
 		os.Exit(int(childprocess.CodeUserNotInGroup))
 	}
 
 	// Always use real home dir here regardless of `$HOME` value
 	autostartFile, err := addAutostart()
 	if err != nil {
-		log.Println("Failed to add autostart: ", err)
+		log.Println(internal.ErrorPrefix, "Failed to add autostart:", err)
 	}
 
 	uid, err := strconv.Atoi(usr.Uid)
 	if err != nil {
-		log.Printf("Invalid unix user id, failed to convert from string: %s", usr.Uid)
+		log.Printf("%s Invalid unix user id, failed to convert from string: %s", internal.ErrorPrefix, usr.Uid)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
@@ -233,12 +232,12 @@ func startSnap() {
 	socketPath := internal.GetNorduserSocketSnap(uid)
 
 	if err := os.Remove(socketPath); err != nil && !errors.Is(err, os.ErrNotExist) {
-		log.Println("Failed to remove old socket file: ", err)
+		log.Println(internal.ErrorPrefix, "Failed to remove old socket file:", err)
 	}
 
 	listener, err := internal.ManualListener(socketPath, internal.PermUserRWGroupRWOthersRW)()
 	if err != nil {
-		log.Printf("Failed to open unix socket: %s", err)
+		log.Printf("%s Failed to open unix socket: %s", internal.ErrorPrefix, err)
 		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
 	}
 	limitedListener := netutil.LimitListener(listener, 100)
@@ -254,7 +253,7 @@ func startSnap() {
 
 	go func() {
 		if err := grpcServer.Serve(limitedListener); err != nil {
-			log.Println("failed to start accept on grpc server: ", err)
+			log.Println(internal.ErrorPrefix, "failed to start accept on grpc server:", err)
 			os.Exit(int(childprocess.CodeFailedToEnable))
 		}
 	}()
@@ -270,7 +269,7 @@ func startSnap() {
 			}
 
 			if err := os.Remove(autostartFile); err != nil {
-				log.Println("failed to remove autostart file: ", err)
+				log.Println(internal.ErrorPrefix, "Failed to remove autostart file:", err)
 			}
 		})
 }
@@ -282,25 +281,25 @@ func start() {
 
 	connURL := internal.GetNorduserSocketFork(os.Geteuid())
 	if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
-		log.Println("Failed to remove old socket file: ", err)
+		log.Println(internal.ErrorPrefix, "Failed to remove old socket file:", err)
 	}
 	listenerFunction = internal.ManualListener(connURL, internal.PermUserRWX)
 
 	listener, err := listenerFunction()
 	if err != nil {
-		log.Fatalf(internal.ErrorPrefix+"Error on listening to UNIX domain socket: %s\n", err)
+		log.Fatalf("%s Error on listening to UNIX domain socket: %s\n", internal.ErrorPrefix, err)
 	}
 	listener = netutil.LimitListener(listener, 100)
 
 	usr, err := user.Current()
 	if err != nil {
-		log.Println("Unable to retrieve current user:", err)
+		log.Println(internal.ErrorPrefix, "Unable to retrieve current user:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	uid, err := strconv.Atoi(usr.Uid)
 	if err != nil {
-		log.Println("Failed to parse user id: ", err)
+		log.Println(internal.ErrorPrefix, "Failed to parse user id:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
@@ -314,14 +313,14 @@ func start() {
 
 	go func() {
 		if err := grpcServer.Serve(listener); err != nil {
-			log.Println(internal.ErrorPrefix+"Failed to start accept on grpc server: ", err)
+			log.Println(internal.ErrorPrefix, "Failed to start accept on grpc server:", err)
 			os.Exit(int(childprocess.CodeFailedToEnable))
 		}
 	}()
 
 	go startTray(stopChan)
 
-	log.Println(internal.InfoPrefix, "Daemon has started")
+	log.Println(internal.InfoPrefix, "Norduser daemon has started")
 
 	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, grpcServer, func(disable bool) {})
 }
