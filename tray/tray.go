@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/notify"
@@ -57,6 +58,7 @@ func (ai *accountInfo) reset() {
 
 type Instance struct {
 	client           pb.DaemonClient
+	fileshareClient  filesharepb.FileshareClient
 	accountInfo      accountInfo
 	debugMode        bool
 	notifier         dbusNotifier
@@ -86,8 +88,8 @@ type trayState struct {
 	mu                  sync.RWMutex
 }
 
-func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopRequest) *Instance {
-	return &Instance{client: client, quitChan: quitChan}
+func NewTrayInstance(client pb.DaemonClient, fileshareClient filesharepb.FileshareClient, quitChan chan<- norduser.StopRequest) *Instance {
+	return &Instance{client: client, fileshareClient: fileshareClient, quitChan: quitChan}
 }
 
 func (ti *Instance) WaitInitialTrayStatus() Status {
@@ -147,6 +149,7 @@ func (ti *Instance) OnReady() {
 				if ti.state.loggedIn {
 					addVpnSection(ti)
 				}
+				addSettingsSection(ti)
 				addAccountSection(ti)
 			} else {
 				addDaemonSection(ti)

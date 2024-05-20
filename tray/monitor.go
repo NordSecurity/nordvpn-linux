@@ -225,11 +225,13 @@ func (ti *Instance) updateAccountInfo() bool {
 }
 
 func (ti *Instance) redraw(result bool) {
-	ti.state.mu.RLock()
-	systrayStarted := ti.state.systrayStarted
-	ti.state.mu.RUnlock()
-	if result && systrayStarted {
-		ti.redrawChan <- struct{}{}
+	if result {
+		ti.state.mu.RLock()
+		systrayStarted := ti.state.systrayStarted
+		ti.state.mu.RUnlock()
+		if systrayStarted {
+			ti.redrawChan <- struct{}{}
+		}
 	}
 }
 

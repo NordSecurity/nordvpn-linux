@@ -2,12 +2,15 @@ package tray
 
 import (
 	"fmt"
+	"log"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/systray"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/norduser"
 )
 
 func addDebugSection(ti *Instance) {
@@ -67,6 +70,8 @@ func addQuitItem(ti *Instance) {
 		if !open {
 			return
 		}
+		log.Printf("%s Exiting the norduserd. To start it run the 'nordvpn set tray on' command", internal.InfoPrefix)
+		ti.notifyForce("Exiting the norduserd. To start it run the 'nordvpn set tray on' command.")
 		select {
 		case ti.quitChan <- norduser.StopRequest{}:
 		default:
@@ -171,4 +176,61 @@ func addAccountSection(ti *Instance) {
 			}
 		}()
 	}
+}
+
+func addSettingsSection(ti *Instance) {
+	systray.AddSeparator()
+	mSettings := systray.AddMenuItem("Settings", "Settings")
+	// Workaround over the dbus issue described here: https://github.com/fyne-io/systray/issues/12
+	// (It affects not only XFCE, but also other desktop environments.)
+	time.AfterFunc(100*time.Millisecond, func() { addSettingsSubitems(ti, mSettings) })
+}
+
+func addSettingsSubitems(ti *Instance, mSettings *systray.MenuItem) {
+	ti.state.mu.RLock()
+	mNotifications := mSettings.AddSubMenuItemCheckbox("Notifications", "Notifications", ti.state.notificationsStatus == Enabled)
+	mTray := mSettings.AddSubMenuItemCheckbox("Tray icon", "Tray icon", ti.state.trayStatus == Enabled)
+	ti.state.mu.RUnlock()
+
+	go func() {
+		success := false
+		for !success {
+			_, open := <-mNotifications.ClickedCh
+			if !open {
+				return
+			}
+			action := !mNotifications.Checked()
+			success = ti.setNotify(action)
+			if success {
+				if action {
+					mNotifications.Check()
+				} else {
+					mNotifications.Uncheck()
+				}
+			}
+		}
+		ti.updateChan <- true
+	}()
+
+	go func() {
+		success := false
+		for !success {
+			_, open := <-mTray.ClickedCh
+			if !open {
+				return
+			}
+			action := !mTray.Checked()
+			success = ti.setTray(action)
+			if success {
+				if action {
+					mTray.Check()
+				} else {
+					mTray.Uncheck()
+				}
+			}
+		}
+		ti.updateChan <- true
+	}()
+
+	systray.Refresh()
 }
