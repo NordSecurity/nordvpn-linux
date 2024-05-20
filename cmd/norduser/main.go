@@ -21,6 +21,8 @@ import (
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
+	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
@@ -76,7 +78,20 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 		return
 	}
 
-	ti := tray.NewTrayInstance(client, quitChan)
+	fileshareConn, err := grpc.Dial(
+		fileshare_process.FileshareURL,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+
+	var fileshareClient filesharepb.FileshareClient
+	if err == nil {
+		fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
+	} else {
+		log.Println(internal.ErrorPrefix, "Error connecting to the NordVPN fileshare daemon:", err)
+		return
+	}
+
+	ti := tray.NewTrayInstance(client, fileshareClient, quitChan)
 	ti.Start()
 
 	onExit := func() {

@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	nordclient "github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -58,7 +59,7 @@ func (ti *Instance) login() {
 }
 
 func (ti *Instance) logout(persistToken bool) bool {
-	payload, err := ti.client.Logout(context.Background(), &pb.LogoutRequest{
+	resp, err := ti.client.Logout(context.Background(), &pb.LogoutRequest{
 		PersistToken: persistToken,
 	})
 	if err != nil {
@@ -66,7 +67,7 @@ func (ti *Instance) logout(persistToken bool) bool {
 		return false
 	}
 
-	switch payload.Type {
+	switch resp.Type {
 	case internal.CodeSuccess:
 		return true
 	case internal.CodeTokenInvalidated:
@@ -177,5 +178,75 @@ func (ti *Instance) disconnect() bool {
 		case internal.CodeDisconnected:
 		}
 	}
+	return true
+}
+
+func (ti *Instance) setNotify(flag bool) bool {
+	flagText := "off"
+	if flag {
+		flagText = "on"
+	}
+	resp, err := ti.client.SetNotify(context.Background(), &pb.SetNotifyRequest{
+		Uid:    int64(os.Getuid()),
+		Notify: flag,
+	})
+	if err != nil {
+		log.Printf("%s Setting notifications %s error: %s", internal.ErrorPrefix, flagText, err)
+		ti.notify("Setting notifications %s error: %s", flagText, err)
+		return false
+	}
+
+	switch resp.Type {
+	case internal.CodeConfigError:
+		log.Printf("%s Setting notifications %s error: %s", internal.ErrorPrefix, flagText, "Config file error")
+		ti.notify("Setting notifications %s error: %s", flagText, "Config file error")
+		return false
+	case internal.CodeNothingToDo:
+	case internal.CodeSuccess:
+	}
+
+	_, err = ti.fileshareClient.SetNotifications(context.Background(), &filesharepb.SetNotificationsRequest{Enable: flag})
+	if err != nil {
+		log.Printf("%s Setting fileshare notifications %s error: %s", internal.ErrorPrefix, flagText, err)
+	}
+
+	if resp.Type == internal.CodeNothingToDo {
+		ti.notify("Notifications already %s", flagText)
+	}
+
+	return true
+}
+
+func (ti *Instance) setTray(flag bool) bool {
+	flagText := "off"
+	if flag {
+		flagText = "on"
+	}
+
+	if !flag {
+		log.Printf("%s Turning off the tray icon. To turn it back run the 'nordvpn set tray on' command", internal.InfoPrefix)
+		ti.notifyForce("Turning off the tray icon. To turn it back run the 'nordvpn set tray on' command.")
+	}
+
+	resp, err := ti.client.SetTray(context.Background(), &pb.SetTrayRequest{
+		Uid:  int64(os.Getuid()),
+		Tray: flag,
+	})
+	if err != nil {
+		log.Printf("%s Setting tray %s error: %s", internal.ErrorPrefix, flagText, err)
+		ti.notify("Setting tray %s error: %s", flagText, err)
+		return false
+	}
+
+	switch resp.Type {
+	case internal.CodeConfigError:
+		log.Printf("%s Setting tray %s error: %s", internal.ErrorPrefix, flagText, "Config file error")
+		ti.notify("Setting tray %s error: %s", flagText, "Config file error")
+		return false
+	case internal.CodeNothingToDo:
+		ti.notify("Tray already %s", flagText)
+	case internal.CodeSuccess:
+	}
+
 	return true
 }
