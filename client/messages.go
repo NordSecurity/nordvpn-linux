@@ -17,6 +17,6 @@ const (
 	MsgTryAgain            = "We're having trouble reaching our servers. Please try again later. If the issue persists, please contact our customer support."
 	UFWDisabledMessage     = "The active UFW firewall on your system prevents us from setting up our firewall properly. We have disabled UFW for the duration of your VPN connection and enabled our firewall to ensure your online security. Your custom UFW rules are imported to our firewall ruleset."
 
-	SubscriptionURL       = "https://join.nordvpn.com/order/?utm_campaign=%s&utm_medium=app&utm_source=linux"
-	SubscriptionNoPlanURL = "https://join.nordvpn.com/order/?utm_medium=app&utm_source=linux"
+	SubscriptionURL      = "https://my.nordaccount.com/plans/?utm_source=linux&utm_medium=app&utm_campaign=desktop-app&redirect_uri=nordvpn-sl://claim-online-purchase"
+	SubscriptionURLLogin = "https://my.nordaccount.com/plans/?utm_source=linux&utm_medium=app&utm_campaign=desktop-app&trusted_pass_token=%s&owner_id=%d&redirect_uri=nordvpn-sl://claim-online-purchase"
 )

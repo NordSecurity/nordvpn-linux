@@ -58,6 +58,7 @@ type DaemonClient interface {
 	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
 	SetIpv6(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
 }
 
 type daemonClient struct {
@@ -461,6 +462,15 @@ func (c *daemonClient) SetIpv6(ctx context.Context, in *SetGenericRequest, opts 
 	return out, nil
 }
 
+func (c *daemonClient) ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error) {
+	out := new(ClaimOnlinePurchaseResponse)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/ClaimOnlinePurchase", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
@@ -501,6 +511,7 @@ type DaemonServer interface {
 	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
 	Status(context.Context, *Empty) (*StatusResponse, error)
 	SetIpv6(context.Context, *SetGenericRequest) (*Payload, error)
+	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -615,6 +626,9 @@ func (UnimplementedDaemonServer) Status(context.Context, *Empty) (*StatusRespons
 }
 func (UnimplementedDaemonServer) SetIpv6(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetIpv6 not implemented")
+}
+func (UnimplementedDaemonServer) ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimOnlinePurchase not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -1286,6 +1300,24 @@ func _Daemon_SetIpv6_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_ClaimOnlinePurchase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).ClaimOnlinePurchase(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/ClaimOnlinePurchase",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).ClaimOnlinePurchase(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1424,6 +1456,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetIpv6",
 			Handler:    _Daemon_SetIpv6_Handler,
+		},
+		{
+			MethodName: "ClaimOnlinePurchase",
+			Handler:    _Daemon_ClaimOnlinePurchase_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
