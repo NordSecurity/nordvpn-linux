@@ -17,6 +17,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/NordSecurity/systray"
+
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -26,7 +28,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/tray"
-	"github.com/NordSecurity/systray"
 )
 
 func openLogFile(path string) (*os.File, error) {
@@ -61,13 +62,6 @@ func addAutostart() (string, error) {
 }
 
 func startTray(quitChan chan<- norduser.StopRequest) {
-	for {
-		if systray.IsAvailable() {
-			break
-		}
-		<-time.After(10 * time.Second)
-	}
-
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 	conn, err := grpc.Dial(
 		daemonURL,
@@ -82,18 +76,29 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 		return
 	}
 
+	ti := tray.NewTrayInstance(client, quitChan)
+	ti.Start()
+
 	onExit := func() {
 		now := time.Now()
 		log.Println("Tray exit at", now.String())
 	}
 
-	ti := tray.NewTrayInstance(client, quitChan)
 	onReady := func() {
 		log.Println("Tray ready")
-		tray.OnReady(ti)
+		ti.OnReady()
 	}
 
-	systray.Run(onReady, onExit)
+	trayStatus := ti.WaitInitialTrayStatus()
+	if trayStatus == tray.Enabled {
+		for {
+			if systray.IsAvailable() {
+				systray.Run(onReady, onExit)
+				break
+			}
+			<-time.After(10 * time.Second)
+		}
+	}
 }
 
 func shouldEnableFileshare(uid uint32) (bool, error) {

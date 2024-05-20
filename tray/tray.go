@@ -60,6 +60,7 @@ type Instance struct {
 	debugMode        bool
 	notifier         dbusNotifier
 	redrawChan       chan struct{}
+	initialChan      chan struct{}
 	updateChan       chan bool
 	iconConnected    string
 	iconDisconnected string
@@ -68,10 +69,12 @@ type Instance struct {
 }
 
 type trayState struct {
+	systrayStarted      bool
 	daemonAvailable     bool
 	loggedIn            bool
 	vpnActive           bool
 	notificationsStatus Status
+	trayStatus          Status
 	daemonError         string
 	accountName         string
 	vpnStatus           string
@@ -86,15 +89,19 @@ func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopReques
 	return &Instance{client: client, quitChan: quitChan}
 }
 
-func OnReady(ti *Instance) {
+func (ti *Instance) WaitInitialTrayStatus() Status {
+	<-ti.initialChan
+	ti.state.mu.RLock()
+	defer ti.state.mu.RUnlock()
+	return ti.state.trayStatus
+}
+
+func (ti *Instance) Start() {
 	if os.Getenv("NORDVPN_TRAY_DEBUG") == "1" {
 		ti.debugMode = true
 	} else {
 		ti.debugMode = false
 	}
-
-	systray.SetTitle("NordVPN")
-	systray.SetTooltip("NordVPN")
 
 	ti.iconConnected = notify.GetIconPath("nordvpn-tray-blue")
 	ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-white")
@@ -108,15 +115,29 @@ func OnReady(ti *Instance) {
 		ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-gray")
 	}
 
-	systray.SetIconName(ti.iconDisconnected)
 	ti.state.vpnStatus = "Disconnected"
 	ti.state.notificationsStatus = Invalid
 	ti.redrawChan = make(chan struct{})
+	ti.initialChan = make(chan struct{})
 	ti.updateChan = make(chan bool)
 
 	time.AfterFunc(NotifierStartDelay, func() { ti.notifier.start() })
 
 	go ti.pollingMonitor()
+}
+
+func (ti *Instance) OnReady() {
+	systray.SetTitle("NordVPN")
+	systray.SetTooltip("NordVPN")
+
+	ti.state.mu.Lock()
+	if ti.state.vpnStatus == "Disconnected" {
+		systray.SetIconName(ti.iconDisconnected)
+	} else {
+		systray.SetIconName(ti.iconConnected)
+	}
+	ti.state.systrayStarted = true
+	ti.state.mu.Unlock()
 
 	go func() {
 		for {

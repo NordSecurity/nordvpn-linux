@@ -124,6 +124,8 @@ func (ti *Instance) updateSettings() bool {
 		return false
 	}
 
+	ti.state.mu.Lock()
+
 	var newNotificationsStatus Status
 	if settings.Notify {
 		newNotificationsStatus = Enabled
@@ -131,7 +133,6 @@ func (ti *Instance) updateSettings() bool {
 		newNotificationsStatus = Disabled
 	}
 
-	ti.state.mu.Lock()
 	if ti.state.notificationsStatus == Invalid {
 		changed = true
 		ti.state.notificationsStatus = newNotificationsStatus
@@ -145,6 +146,28 @@ func (ti *Instance) updateSettings() bool {
 			defer log.Println(internal.InfoPrefix, " Notifications disabled")
 		}
 	}
+
+	var newTrayStatus Status
+	if settings.Tray {
+		newTrayStatus = Enabled
+	} else {
+		newTrayStatus = Disabled
+	}
+
+	if ti.state.trayStatus == Invalid {
+		changed = true
+		ti.state.trayStatus = newTrayStatus
+	} else if ti.state.trayStatus != newTrayStatus {
+		changed = true
+		ti.state.trayStatus = newTrayStatus
+
+		if newTrayStatus == Enabled {
+			defer log.Println(internal.InfoPrefix, "Tray enabled")
+		} else {
+			defer log.Println(internal.InfoPrefix, "Tray disabled")
+		}
+	}
+
 	ti.state.mu.Unlock()
 
 	return changed
@@ -202,12 +225,16 @@ func (ti *Instance) updateAccountInfo() bool {
 }
 
 func (ti *Instance) redraw(result bool) {
-	if result {
+	ti.state.mu.RLock()
+	systrayStarted := ti.state.systrayStarted
+	ti.state.mu.RUnlock()
+	if result && systrayStarted {
 		ti.redrawChan <- struct{}{}
 	}
 }
 
 func (ti *Instance) pollingMonitor() {
+	initialChan := ti.initialChan
 	ticker := time.NewTicker(PollingUpdateInterval)
 	defer ticker.Stop()
 
@@ -225,6 +252,15 @@ func (ti *Instance) pollingMonitor() {
 				if fullUpdate {
 					fullUpdateLast = time.Now()
 				}
+			}
+		}
+
+		if initialChan != nil {
+			initialChan <- struct{}{}
+			close(initialChan)
+			initialChan = nil
+			if ti.debugMode {
+				log.Println(internal.DebugPrefix, "Initial retrieve")
 			}
 		}
 
@@ -317,10 +353,14 @@ func (ti *Instance) setVpnStatus(vpnStatus string, vpnName string, vpnHostname s
 
 	if ti.state.vpnStatus != vpnStatus {
 		if vpnStatus == ConnectedString {
-			systray.SetIconName(ti.iconConnected)
+			if ti.state.systrayStarted {
+				systray.SetIconName(ti.iconConnected)
+			}
 			defer ti.notify("Connected to %s", vpnName)
 		} else {
-			systray.SetIconName(ti.iconDisconnected)
+			if ti.state.systrayStarted {
+				systray.SetIconName(ti.iconDisconnected)
+			}
 			defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.vpnName))
 		}
 		ti.state.vpnStatus = vpnStatus
