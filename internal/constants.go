@@ -144,7 +144,7 @@ func GetSupportedIPTables() []string {
 	return iptables
 }
 
-func GetNorduserSocketSnap(uid uint32) string {
+func GetNorduserSocketSnap(uid int) string {
 	return fmt.Sprintf("%s%d-%s.sock", TmpDir, uid, Norduserd)
 }
 

@@ -105,14 +105,14 @@ const (
 
 func main() {
 	// pprof
-	go func() {
-		if internal.IsDevEnv(Environment) {
+	if internal.IsDevEnv(Environment) {
+		go func() {
 			// #nosec G114 -- not used in production
 			if err := http.ListenAndServe(fmt.Sprintf(":%d", Port), nil); err != nil {
 				log.Println(internal.ErrorPrefix, err)
 			}
-		}
-	}()
+		}()
+	}
 
 	// Logging
 

@@ -225,7 +225,7 @@ func startSnap() {
 		os.Exit(int(childprocess.CodeAlreadyRunning))
 	}
 
-	socketPath := internal.GetNorduserSocketSnap(uint32(uid))
+	socketPath := internal.GetNorduserSocketSnap(uid)
 
 	if err := os.Remove(socketPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Println("Failed to remove old socket file: ", err)

@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -103,7 +102,7 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 
 	switch req.Method {
 	case http.MethodHead:
-		resp.Body = ioutil.NopCloser(bytes.NewReader(nil))
+		resp.Body = io.NopCloser(bytes.NewReader(nil))
 	default:
 		// Decode response body if it is encoded
 		switch resp.Header.Get("Content-Encoding") {
@@ -116,14 +115,15 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 		}
 	}
 
+	defer resp.Body.Close()
+
 	var body []byte
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	resp.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+	resp.Body = io.NopCloser(bytes.NewBuffer(body))
 	if err := api.validator.Validate(resp.StatusCode, resp.Header, body); err != nil {
 		return nil, fmt.Errorf("validating headers: %w", err)
 	}
