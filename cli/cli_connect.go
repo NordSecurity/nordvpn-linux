@@ -36,11 +36,11 @@ Press the Tab key to see auto-suggestions for countries and cities.`
 func (c *cmd) browseToSubscriptionPage(url string, loginURL string) {
 	resp, err := c.client.TokenInfo(context.Background(), &pb.Empty{})
 	if err != nil {
-		browse(url)
+		browse(url, url)
 		return
 	}
 
-	browse(fmt.Sprintf(loginURL, resp.Token, resp.Id))
+	browse(fmt.Sprintf(loginURL, resp.Token, resp.Id), url)
 }
 
 func (c *cmd) Connect(ctx *cli.Context) error {
@@ -107,7 +107,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeDedicatedIPRenewError:
 			// #nosec G104 -- the user gets URL in case of failure
 			c.browseToSubscriptionPage(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin)
-			rpcErr = ErrAccountExpired
+			rpcErr = ErrNoDedicatedIP
 		case internal.CodeDisconnected:
 			rpcErr = errors.New(internal.DisconnectSuccess)
 		case internal.CodeTagNonexisting:
