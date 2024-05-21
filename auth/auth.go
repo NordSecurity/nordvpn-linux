@@ -129,6 +129,33 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 			}
 			return nil
 		}
+		if data.IsOAuth {
+			if err := r.renewTrustedPassToken(&data); err != nil {
+				if errors.Is(err, core.ErrUnauthorized) ||
+					errors.Is(err, core.ErrNotFound) ||
+					errors.Is(err, core.ErrBadRequest) {
+					return r.cm.SaveWith(Logout(uid))
+				}
+			}
+		}
+		if err := r.cm.SaveWith(saveLoginToken(uid, data)); err != nil {
+			return err
+		}
+	}
+
+	// TrustedPass was introduced later on, so it's possible that valid data is not stored even though renew token
+	// is still valid. In such cases we need to hit the api to get the initial value.
+	isTrustedPassNotValid := (data.TrustedPassToken == "" || data.TrustedPassOwnerID == "")
+	// TrustedPass is viable only in case of OAuth login.
+	if data.IsOAuth && isTrustedPassNotValid {
+		if err := r.renewTrustedPassToken(&data); err != nil {
+			if errors.Is(err, core.ErrUnauthorized) ||
+				errors.Is(err, core.ErrNotFound) ||
+				errors.Is(err, core.ErrBadRequest) {
+				return r.cm.SaveWith(Logout(uid))
+			}
+		}
+
 		if err := r.cm.SaveWith(saveLoginToken(uid, data)); err != nil {
 			return err
 		}
@@ -168,6 +195,18 @@ func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
 	data.NCData.Endpoint = resp.Endpoint
 	data.NCData.Username = resp.Username
 	data.NCData.Password = resp.Password
+	return nil
+}
+
+func (r *RenewingChecker) renewTrustedPassToken(data *config.TokenData) error {
+	resp, err := r.creds.TrustedPassToken(data.Token)
+	if err != nil {
+		return fmt.Errorf("getting trusted pass token data: %w", err)
+	}
+
+	data.TrustedPassOwnerID = resp.OwnerID
+	data.TrustedPassToken = resp.Token
+
 	return nil
 }
 
@@ -215,6 +254,8 @@ func saveLoginToken(userID int64, data config.TokenData) config.SaveFunc {
 		user.NCData.Endpoint = data.NCData.Endpoint
 		user.NCData.Username = data.NCData.Username
 		user.NCData.Password = data.NCData.Password
+		user.TrustedPassOwnerID = data.TrustedPassOwnerID
+		user.TrustedPassToken = data.TrustedPassToken
 		return c
 	}
 }

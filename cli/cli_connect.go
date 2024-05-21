@@ -35,12 +35,13 @@ Press the Tab key to see auto-suggestions for countries and cities.`
 
 func (c *cmd) browseToSubscriptionPage(url string, loginURL string) {
 	resp, err := c.client.TokenInfo(context.Background(), &pb.Empty{})
-	if err != nil {
+	isTrustedPassTokenInvalid := (resp.TrustedPassOwnerId == "" || resp.TrustedPassToken == "")
+	if err != nil || isTrustedPassTokenInvalid {
 		browse(url, url)
 		return
 	}
 
-	browse(fmt.Sprintf(loginURL, resp.Token, resp.Id), url)
+	browse(fmt.Sprintf(loginURL, resp.TrustedPassToken, resp.TrustedPassOwnerId), url)
 }
 
 func (c *cmd) Connect(ctx *cli.Context) error {

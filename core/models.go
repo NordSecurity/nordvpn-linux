@@ -134,6 +134,11 @@ type TokenRenewResponse struct {
 	ExpiresAt  string `json:"expires_at"`
 }
 
+type TrustedPassTokenResponse struct {
+	OwnerID string `json:"owner_id"`
+	Token   string `json:"token"`
+}
+
 type Plans []Plan
 
 type Plan struct {

@@ -18,7 +18,7 @@ const (
 	UFWDisabledMessage     = "The active UFW firewall on your system prevents us from setting up our firewall properly. We have disabled UFW for the duration of your VPN connection and enabled our firewall to ensure your online security. Your custom UFW rules are imported to our firewall ruleset."
 
 	SubscriptionURL                 = "https://my.nordaccount.com/plans/?utm_source=linux&utm_medium=app&utm_campaign=desktop-app&redirect_uri=nordvpn-sl://claim-online-purchase"
-	SubscriptionURLLogin            = "https://my.nordaccount.com/plans/?utm_source=linux&utm_medium=app&utm_campaign=desktop-app&trusted_pass_token=%s&owner_id=%d&redirect_uri=nordvpn-sl://claim-online-purchase"
+	SubscriptionURLLogin            = "https://my.nordaccount.com/plans/?utm_source=linux&utm_medium=app&utm_campaign=desktop-app&trusted_pass_token=%s&owner_id=%s&redirect_uri=nordvpn-sl://claim-online-purchase"
 	SubscriptionDedicatedIPURL      = "https://my.nordaccount.com/dashboard/nordvpn/dedicatedip/?utm_source=linux&utm_medium=in-app&utm_campaign=desktop-app"
-	SubscriptionDedicatedIPURLLogin = "https://my.nordaccount.com/dashboard/nordvpn/dedicatedip/?utm_source=linux&utm_medium=in-app&utm_campaign=desktop-app&trusted_pass_token=%s&owner_id=%d"
+	SubscriptionDedicatedIPURLLogin = "https://my.nordaccount.com/dashboard/nordvpn/dedicatedip/?utm_source=linux&utm_medium=in-app&utm_campaign=desktop-app&trusted_pass_token=%s&owner_id=%s"
 )

@@ -73,6 +73,10 @@ func (validCredentialsAPI) DeleteToken(token string) error {
 	return nil
 }
 
+func (validCredentialsAPI) TrustedPassToken(token string) (*core.TrustedPassTokenResponse, error) {
+	return nil, nil
+}
+
 func (validCredentialsAPI) Services(string) (core.ServicesResponse, error) {
 	return core.ServicesResponse{
 		{

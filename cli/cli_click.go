@@ -35,7 +35,7 @@ func waitForInput(timeout bool) {
 // Click is hidden cmd used to open some info when clicking on desktop icon
 func (c *cmd) Click(ctx *cli.Context) (err error) {
 	defer func() {
-		inputTimeout := true
+		inputTimeout := false
 		if err != nil {
 			inputTimeout = false
 			color.Red(err.Error())
