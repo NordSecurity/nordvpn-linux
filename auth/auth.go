@@ -24,6 +24,11 @@ type Checker interface {
 	IsDedicatedIPExpired() (bool, error)
 }
 
+const (
+	VPNServiceID         = 1
+	DedicatedIPServiceID = 11
+)
+
 // RenewingChecker does both authentication checks and renewals in case of expiration.
 type RenewingChecker struct {
 	cm    config.Manager
@@ -184,18 +189,13 @@ func (r *RenewingChecker) updateVpnExpirationDate(data *config.TokenData) error 
 		return err
 	}
 
-	const VPNServiceID = 1
-	const DedicatedIPServiceID = 11
-
 	for _, service := range services {
 		if service.Service.ID == VPNServiceID { // VPN service
 			data.ServiceExpiry = service.ExpiresAt
-			return nil
 		}
 
 		if service.Service.ID == DedicatedIPServiceID {
 			data.DedicatedIPExpiry = service.ExpiresAt
-			return nil
 		}
 	}
 
