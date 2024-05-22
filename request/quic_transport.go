@@ -36,6 +36,9 @@ func (m *QuicTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			strings.Contains(err.Error(), "no recent network activity") ||
 			strings.Contains(err.Error(), "Timeout exceeded while awaiting headers")) {
 		// connection closed, need to reconnect
+		if inner != nil {
+			inner.Close()
+		}
 		inner := m.createFn()
 		m.inner.Store(inner)
 		resp, err = inner.RoundTrip(req)
@@ -44,6 +47,10 @@ func (m *QuicTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func (m *QuicTransport) NotifyConnect(events.DataConnect) error {
+	inner := m.inner.Load()
+	if inner != nil {
+		inner.Close()
+	}
 	m.inner.Store(m.createFn())
 	return nil
 }
