@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
+	"github.com/NordSecurity/nordvpn-linux/daemon/routes/netlink"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -37,8 +37,7 @@ func TestFiltering(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, rc)
 
-	var gwret = routes.IPGatewayRetriever{}
-	_, intf, err := gwret.Default(false)
+	_, intf, err := netlink.Retriever{}.Retrieve(netip.Prefix{}, 0)
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, intf.Name)

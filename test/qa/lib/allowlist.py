@@ -1,5 +1,3 @@
-import ipaddress
-
 import sh
 
 from . import Port, Protocol, daemon, firewall
@@ -17,22 +15,6 @@ MSG_ALLOWLIST_PORT_REMOVE_ERROR = "Port %s (%s) is not allowlisted."
 MSG_ALLOWLIST_PORT_RANGE_ADD_SUCCESS = "Ports %s (%s) are allowlisted successfully."
 MSG_ALLOWLIST_PORT_RANGE_REMOVE_SUCCESS = "Ports %s (%s) are removed from the allowlist successfully."
 MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR = "Ports %s (%s) are not allowlisted."
-
-_PRIVATE_NETWORKS = [
-    ipaddress.IPv4Network('10.0.0.0/8'),
-    ipaddress.IPv4Network('172.16.0.0/12'),
-    ipaddress.IPv4Network('192.168.0.0/16')
-]
-
-
-def _is_private_subnet(subnet_str):
-    try:
-        subnet = ipaddress.IPv4Network(subnet_str)
-        return any(subnet.overlaps(private_net) for private_net in _PRIVATE_NETWORKS)
-    except ValueError:
-        # Handle the case where an invalid subnet string is provided
-        return False
-
 
 def add_ports_to_allowlist(ports_list: list[Port], allowlist_alias="allowlist"):
     for port in ports_list:
@@ -111,12 +93,9 @@ def add_subnet_to_allowlist(subnet_list: list[str], allowlist_alias="allowlist")
         if "/32" in subnet:
             subnet = subnet.replace("/32", "")  # noqa: PLW2901
 
-        if daemon.is_connected() and not _is_private_subnet(subnet):
+        if daemon.is_connected():
             assert subnet in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), \
                 f"Subnet {subnet} not found in `ip route show table {firewall.IP_ROUTE_TABLE}`\n{sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)}"
-        else:
-            assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), \
-                f"Subnet found in `ip route show table {firewall.IP_ROUTE_TABLE}`"
 
 
 def remove_subnet_from_allowlist(subnet_list: list[str], allowlist_alias="allowlist"):
@@ -134,6 +113,5 @@ def remove_subnet_from_allowlist(subnet_list: list[str], allowlist_alias="allowl
         if "/32" in subnet:
             subnet = subnet.replace("/32", "")  # noqa: PLW2901
 
-        if not _is_private_subnet(subnet):
-            assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), \
-                f"Subnet found in `ip route show table {firewall.IP_ROUTE_TABLE}`"
+        assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), \
+            f"Subnet found in `ip route show table {firewall.IP_ROUTE_TABLE}`"

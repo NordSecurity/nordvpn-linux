@@ -57,26 +57,6 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disco
     assert output_after_add == output_after_delete
 
 
-@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
-@pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_connected(allowlist_alias, tech, proto, obfuscated, subnet):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    sh.nordvpn.connect()
-
-    output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    allowlist.add_subnet_to_allowlist([subnet], allowlist_alias)
-    output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    allowlist.remove_subnet_from_allowlist([subnet], allowlist_alias)
-    output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-
-    assert output_before_add == output_after_add
-    assert output_after_add == output_after_delete
-
-
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)

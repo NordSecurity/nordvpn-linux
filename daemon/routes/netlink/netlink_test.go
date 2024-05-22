@@ -16,7 +16,7 @@ import (
 func TestRouter_Add(t *testing.T) {
 	category.Set(t, category.Route)
 
-	gateway, iface, err := routes.IPGatewayRetriever{}.Default(false)
+	gateway, iface, err := Retriever{}.Retrieve(netip.Prefix{}, 0)
 	require.NoError(t, err)
 
 	bits := gateway.As4()

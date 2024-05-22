@@ -8,9 +8,7 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"net"
 	"net/netip"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,8 +28,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
-
-	"github.com/kofalt/go-memoize"
 )
 
 var (
@@ -884,12 +880,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	rules := []firewall.Rule{}
 	var subnets []netip.Prefix
 
-	cache := memoize.NewMemoizer(30*time.Second, 1*time.Minute)
-	type cachedGateway struct {
-		gatewayIP        netip.Addr
-		defaultInterface net.Interface
-	}
-
 	for cidr := range allowlist.Subnets {
 		subnet, err := netip.ParsePrefix(cidr)
 		if err != nil {
@@ -897,18 +887,13 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			return fmt.Errorf("parsing subnet CIDR: %w", err)
 		}
 
-		// for private network we add only firewall exception
-		if subnet.Addr().IsPrivate() || subnet.Addr().IsLinkLocalUnicast() {
+		// For local unicast addresses only firewall rules are added
+		if subnet.Addr().IsLinkLocalUnicast() {
 			subnets = append(subnets, subnet)
 			continue
 		}
 
-		gatewayRoute, err, _ := cache.Memoize(strconv.FormatBool(subnet.Addr().Is6()),
-			func() (interface{}, error) {
-				gwIP, gwName, gwErr := netw.gateway.Default(subnet.Addr().Is6())
-				return cachedGateway{gwIP, gwName}, gwErr
-			})
-
+		gw, gwIface, err := netw.gateway.Retrieve(subnet, netw.policyRouter.TableID())
 		if err != nil {
 			// if gateway does not exist, we still honour users choice
 			subnets = append(subnets, subnet)
@@ -917,9 +902,9 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		}
 
 		route := routes.Route{
-			Gateway: gatewayRoute.(cachedGateway).gatewayIP,
+			Gateway: gw,
 			Subnet:  subnet,
-			Device:  gatewayRoute.(cachedGateway).defaultInterface,
+			Device:  gwIface,
 			TableID: netw.policyRouter.TableID(),
 		}
 

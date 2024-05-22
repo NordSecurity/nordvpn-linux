@@ -1,74 +1,34 @@
 package routes
 
 import (
-	"bytes"
-	"fmt"
+	"errors"
 	"net"
 	"net/netip"
-	"os/exec"
-	"regexp"
-	"strings"
-
-	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 )
 
-// GatewayRetriever is responsible for retrieving default gateway in current system
+var (
+	// ErrNotFound defines that gateway is not found for a given address
+	ErrNotFound = errors.New("gateway not found")
+)
+
+// GatewayRetriever is responsible for retrieving gateways for the given networks in current
+// system.
 type GatewayRetriever interface {
-	// Default retrieves a default gateway
-	Default(ipv6 bool) (netip.Addr, net.Interface, error)
-}
-
-// IPGatewayRetriever retrieves default gateway using ip command
-type IPGatewayRetriever struct{}
-
-// Default retrieves a default gateway using ip route command
-func (r IPGatewayRetriever) Default(ipv6 bool) (netip.Addr, net.Interface, error) {
-	version := "-4"
-	if ipv6 {
-		version = "-6"
-	}
-
-	out, err := exec.Command("ip", version, "route").CombinedOutput()
-	if err != nil {
-		return netip.Addr{}, net.Interface{}, fmt.Errorf("executing 'ip %s route' command: %w: %s", version, err, string(out))
-	}
-
-	dev, err := device.DefaultGateway(ipv6)
-	if err != nil {
-		return netip.Addr{}, net.Interface{}, err
-	}
-
-	ip, err := netip.ParseAddr(string(grepDefaultGatewayIPFromOutput(out, []string{dev.Name})))
-	if err != nil {
-		return netip.Addr{}, net.Interface{}, fmt.Errorf("default gateway was not found: %w", err)
-	}
-	return ip, dev, nil
-}
-
-// grepDefaultGatewayIPFromOutput finds and returns default gateway from ip route output
-// if gateway was not found, returns an empty slice
-func grepDefaultGatewayIPFromOutput(output []byte, devNames []string) []byte {
-	reg := regexp.MustCompile(`via ([a-fA-F0-9:.]+?) dev`)
-	for _, line := range bytes.Split(output, []byte{'\n'}) {
-		// if no dev names were provided, choose any default gateway
-		if (strContainsAny(string(line), devNames)) && bytes.HasPrefix(line, []byte("default")) {
-			matches := reg.FindSubmatch(line)
-			if len(matches) > 1 {
-				if net.ParseIP(string(matches[1])) != nil {
-					return matches[1]
-				}
-			}
-			return nil
-		}
-	}
-	return nil
-}
-
-func strContainsAny(str string, list []string) bool {
-	for _, substr := range list {
-		if strings.Contains(str, substr) {
-			return true
-		}
-	}
-	return false
+	// Retrieve a gateway to a given prefix while ignoring the given routing table.
+	//
+	// `ignoreTable` is used in order to not receive actual gateway due to the following
+	// reasons:
+	// 1. In case VPN connection is active, retrieved gateway will be default route to VPN
+	//    tunnel interface, which is useless for allowlisting functionality.
+	// 2. Assuming main routing table and default gateway is an incorrect way to determine
+	//    gateway before VPN in environments with multiple physical interfaces.
+	//    Conditional route adding for non-private IPs is not viable solution because IP rule
+	//    setup blocks any traffic for physical network interfaces. `192.168.0.0/16` is
+	//    considered a private IP range and is usually routed through a physical network
+	//    interface.
+	//
+	// Default gateway can be retrieved with such `prefix` values:
+	// * IPv4: `netip.Prefix{}` or `0.0.0.0/0`
+	// * IPv6: `::/0`
+	Retrieve(prefix netip.Prefix, ignoreTable uint) (netip.Addr, net.Interface, error)
 }
