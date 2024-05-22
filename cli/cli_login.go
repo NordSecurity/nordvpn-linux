@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/url"
 
@@ -107,7 +106,6 @@ func (c *cmd) oauth2(ctx *cli.Context) error {
 		return formatError(errors.New("expected a url"))
 	}
 
-	fmt.Println(ctx.Args())
 	url, err := url.Parse(ctx.Args().First())
 	if err != nil {
 		return formatError(err)
