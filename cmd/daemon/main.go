@@ -262,7 +262,7 @@ func main() {
 		Arch,
 		httpClientSimple,
 	)
-	gwret := routes.IPGatewayRetriever{}
+	gwret := netlinkrouter.Retriever{}
 	dnsSetter := dns.NewSetter(infoSubject)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 

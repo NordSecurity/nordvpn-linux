@@ -49,7 +49,7 @@ func GetTestCombined() *Combined {
 
 type workingGateway struct{}
 
-func (w workingGateway) Default(bool) (netip.Addr, net.Interface, error) {
+func (w workingGateway) Retrieve(netip.Prefix, uint) (netip.Addr, net.Interface, error) {
 	return netip.MustParseAddr("1.1.1.1"), mock.En0Interface, nil
 }
 
@@ -986,7 +986,6 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 			fw:        &workingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			rt:        failingRouter{},
-			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "success",
@@ -1130,7 +1129,6 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 			fw:        &workingFirewall{},
 			allowlist: workingAllowlistRouting{},
 			rt:        failingRouter{},
-			err:       mock.ErrOnPurpose,
 		},
 		{
 			name:      "success",

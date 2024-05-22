@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 	"sync"
 
@@ -66,11 +67,6 @@ func (r *Router) has(route routes.Route) bool {
 
 // toNetlinkRoute converts from routes.Route to netlink.Route.
 func toNetlinkRoute(route routes.Route) netlink.Route {
-	isIPv6 := route.Gateway.Is6()
-	bits := net.IPv4len * 8
-	if isIPv6 {
-		bits = net.IPv6len * 8
-	}
 	scope := netlink.SCOPE_UNIVERSE
 	if !route.Gateway.IsValid() || route.Gateway.IsUnspecified() {
 		scope = netlink.SCOPE_LINK
@@ -83,11 +79,20 @@ func toNetlinkRoute(route routes.Route) netlink.Route {
 	return netlink.Route{
 		LinkIndex: route.Device.Index,
 		Gw:        route.Gateway.AsSlice(),
-		Dst: &net.IPNet{
-			IP:   route.Subnet.Addr().AsSlice(),
-			Mask: net.CIDRMask(route.Subnet.Bits(), bits),
-		},
-		Table: int(tableID),
-		Scope: scope,
+		Dst:       prefixToIPNet(route.Subnet),
+		Table:     int(tableID),
+		Scope:     scope,
+	}
+}
+
+func prefixToIPNet(prefix netip.Prefix) *net.IPNet {
+	addr := prefix.Addr()
+	bits := net.IPv4len * 8
+	if addr.Is6() {
+		bits = net.IPv6len * 8
+	}
+	return &net.IPNet{
+		IP:   addr.AsSlice(),
+		Mask: net.CIDRMask(prefix.Bits(), bits),
 	}
 }
