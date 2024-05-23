@@ -561,6 +561,7 @@ func main() {
 	go rpc.StartJobs()
 	go meshService.StartJobs()
 	rpc.StartKillSwitch()
+	go rpc.RunSystemShutdownMonitor()
 
 	if cfg.AutoConnect {
 		go rpc.StartAutoConnect(network.ExponentialBackoff)
@@ -598,12 +599,6 @@ func main() {
 	if err := netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
 		log.Println(internal.ErrorPrefix, "disconnecting from meshnet:", err)
 	}
-
-	if internal.IsSystemShutdown() {
-		log.Println(internal.InfoPrefix, "System is going into shutdown or reboot.")
-		return
-	}
-
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}

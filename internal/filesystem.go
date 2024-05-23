@@ -442,6 +442,15 @@ func CliDimensions() ([]string, error) {
 	return strings.Split(strings.Trim(string(out), "\n"), " "), nil
 }
 
+// IsServiceActive check if given service is active
+func IsServiceActive(service string) bool {
+	out, err := exec.Command(SystemctlExec, "is-active", service).Output()
+	if err != nil {
+		return false
+	}
+	return "active" == strings.Trim(strings.Trim(string(out), "\n"), " ")
+}
+
 // MachineID return unique machine identification id
 func MachineID() uuid.UUID {
 	// systemd machine id

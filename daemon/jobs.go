@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
+	"github.com/godbus/dbus/v5"
 
 	"google.golang.org/grpc/metadata"
 )
@@ -80,12 +82,70 @@ func (r *RPC) StopKillSwitch() error {
 		return fmt.Errorf("loading daemon config: %w", err)
 	}
 
-	if cfg.KillSwitch {
+	// do not unset killswitch rules if system is in shutdown or reboot
+	if cfg.KillSwitch && !r.systemShutdown.Load() {
 		if err := r.netw.UnsetKillSwitch(); err != nil {
 			return fmt.Errorf("unsetting killswitch: %w", err)
 		}
 	}
 	return nil
+}
+
+// RunSystemShutdownMonitor to be run on separate goroutine
+func (r *RPC) RunSystemShutdownMonitor() {
+	// get connection to system dbus
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		fmt.Println(internal.ErrorPrefix, "getting system dbus:", err)
+		return
+	}
+	defer conn.Close()
+
+	// register dbus signal monitor
+	err = conn.AddMatchSignal(
+		dbus.WithMatchInterface("org.freedesktop.systemd1.Manager"),
+		dbus.WithMatchObjectPath("/org/freedesktop/systemd1"),
+		dbus.WithMatchMember("JobNew"),
+	)
+	if err != nil {
+		fmt.Println(internal.ErrorPrefix, "registering dbus signal monitor:", err)
+		return
+	}
+
+	/* expected signal example:
+	signal time=1716379735.997938 sender=:1.3 -> destination=(null destination) serial=610 path=/org/freedesktop/systemd1; interface=org.freedesktop.systemd1.Manager; member=JobNew
+	   uint32 1541
+	   object path "/org/freedesktop/systemd1/job/1541"
+	   string "reboot.target"
+	*/
+
+	fmt.Println(internal.InfoPrefix, "dbus monitor started, waiting for signals...")
+
+	dbusSignalCh := make(chan *dbus.Signal, 1)
+	conn.Signal(dbusSignalCh)
+	for signal := range dbusSignalCh {
+		if isSystemShutdownSignal(signal) {
+			fmt.Println(internal.InfoPrefix, "got dbus signal - shutdown detected!")
+			r.systemShutdown.Store(true)
+			return
+		}
+	}
+}
+
+func isSystemShutdownSignal(sig *dbus.Signal) bool {
+	if sig.Name == "org.freedesktop.systemd1.Manager.JobNew" {
+		for _, bodyItem := range sig.Body {
+			str, ok := bodyItem.(string)
+			if !ok { // skip non string items
+				continue
+			}
+			switch strings.ToLower(str) {
+			case "poweroff.target", "halt.target", "reboot.target":
+				return true
+			}
+		}
+	}
+	return false
 }
 
 type autoconnectServer struct {

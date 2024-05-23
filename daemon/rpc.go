@@ -3,6 +3,7 @@
 package daemon
 
 import (
+	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
@@ -51,6 +52,7 @@ type RPC struct {
 	analytics        events.Analytics
 	norduser         service.NorduserService
 	meshRegistry     mesh.Registry
+	systemShutdown   atomic.Bool
 	pb.UnimplementedDaemonServer
 }
 
