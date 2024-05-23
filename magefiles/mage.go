@@ -579,7 +579,7 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 	return qaDocker(ctx, testGroup, testPattern)
 }
 
-func qaDocker(ctx context.Context, testGroup, testPattern string) error {
+func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	env, err := getEnv()
 	if err != nil {
 		return err
@@ -602,7 +602,11 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
 		cancel()
-		<-containerStoppedChan
+		if err == nil {
+			<-containerStoppedChan
+		} else {
+			fmt.Println(err)
+		}
 		err = RemoveDockerNetwork(context.Background(), networkID)
 		if err != nil {
 			fmt.Println(err)
