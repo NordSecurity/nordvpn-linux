@@ -112,7 +112,7 @@ Example: nordvpn set %s on`
 	CitiesNotFoundError = "Servers by city are not available for this country."
 
 	CheckYourInternetConnMessage = "Please check your internet connection and try again."
-	ExpiredAccountMessage        = "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN. %s"
+	ExpiredAccountMessage        = "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN. %s" // TODO: update once we get new error message.
 	NoDedicatedIPMessage         = "You don’t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser: %s"
 	NoSuchCommand                = "Command '%s' doesn't exist."
 	MsgListIsEmpty               = "We couldn’t load the list of %s. Please try again later."
