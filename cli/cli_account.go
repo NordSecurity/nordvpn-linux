@@ -18,6 +18,24 @@ import (
 // AccountUsageText is shown next to account command by nordvpn --help
 const AccountUsageText = "Shows account information"
 
+func displayServiceStatus(serviceName string, serviceStatus int64, expiry string) error {
+	switch serviceStatus {
+	case internal.CodeSuccess:
+		expiryTime, err := time.Parse(internal.ServerDateFormat, expiry)
+		if err != nil {
+			return formatError(errors.New(AccountCantFetchVPNService))
+		}
+
+		expiryString := fmt.Sprintf("%s %s, %d",
+			expiryTime.Month().String()[0:3], ordinal(expiryTime.Day()), expiryTime.Year())
+		fmt.Printf("%s: Active (Expires on %s)\n", serviceName, expiryString)
+	case internal.CodeNoService:
+		fmt.Printf("%s: Inactive\n", serviceName)
+	}
+
+	return nil
+}
+
 func (c *cmd) Account(ctx *cli.Context) error {
 	payload, err := c.client.AccountInfo(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -44,18 +62,14 @@ func (c *cmd) Account(ctx *cli.Context) error {
 	}
 	fmt.Println("Email Address:", payload.Email)
 
-	switch payload.Type {
-	case internal.CodeSuccess:
-		expiryTime, err := time.Parse(internal.ServerDateFormat, payload.ExpiresAt)
-		if err != nil {
-			return formatError(errors.New(AccountCantFetchVPNService))
-		}
+	if err := displayServiceStatus("VPN Service", payload.Type, payload.ExpiresAt); err != nil {
+		return err
+	}
 
-		expiryString := fmt.Sprintf("%s %s, %d",
-			expiryTime.Month().String()[0:3], ordinal(expiryTime.Day()), expiryTime.Year())
-		fmt.Printf("VPN Service: Active (Expires on %s)\n", expiryString)
-	case internal.CodeNoVPNService:
-		fmt.Println("VPN Service: Inactive")
+	if err := displayServiceStatus("Dedicated IP Service",
+		payload.DedicatedIpStatus,
+		payload.DedicatedIpExpiresAt); err != nil {
+		return err
 	}
 
 	return nil

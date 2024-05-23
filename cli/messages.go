@@ -1,7 +1,5 @@
 package cli
 
-import "github.com/NordSecurity/nordvpn-linux/client"
-
 const (
 	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s --help' to see the options."
 	ArgumentParsingError = "The command you entered is not valid. Enter '%s --help' to see the options."
@@ -114,8 +112,8 @@ Example: nordvpn set %s on`
 	CitiesNotFoundError = "Servers by city are not available for this country."
 
 	CheckYourInternetConnMessage = "Please check your internet connection and try again."
-	ExpiredAccountMessage        = "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN."
-	NoDedicatedIPMessage         = "You don’t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser: " + client.SubscriptionDedicatedIPURL
+	ExpiredAccountMessage        = "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN. %s"
+	NoDedicatedIPMessage         = "You don’t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser: %s"
 	NoSuchCommand                = "Command '%s' doesn't exist."
 	MsgListIsEmpty               = "We couldn’t load the list of %s. Please try again later."
 

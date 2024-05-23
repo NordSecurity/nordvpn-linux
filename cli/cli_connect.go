@@ -33,15 +33,22 @@ Provide a <group> argument to connect to a specific servers group. For example: 
 Press the Tab key to see auto-suggestions for countries and cities.`
 )
 
-func (c *cmd) browseToSubscriptionPage(url string, loginURL string) {
+type trustedPassTokenData struct {
+	token    string
+	owner_id string
+}
+
+func (c *cmd) getTrustedPassTokenData() (trustedPassTokenData, error) {
 	resp, err := c.client.TokenInfo(context.Background(), &pb.Empty{})
-	isTrustedPassTokenInvalid := (resp.TrustedPassOwnerId == "" || resp.TrustedPassToken == "")
-	if err != nil || isTrustedPassTokenInvalid {
-		browse(url, url)
-		return
+	if err != nil {
+		return trustedPassTokenData{}, err
 	}
 
-	browse(fmt.Sprintf(loginURL, resp.TrustedPassToken, resp.TrustedPassOwnerId), url)
+	if resp.TrustedPassOwnerId == "" || resp.TrustedPassToken == "" {
+		return trustedPassTokenData{}, fmt.Errorf("invalid trusted pass token")
+	}
+
+	return trustedPassTokenData{token: resp.TrustedPassToken, owner_id: resp.TrustedPassOwnerId}, nil
 }
 
 func (c *cmd) Connect(ctx *cli.Context) error {
@@ -103,12 +110,19 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeTokenRenewError:
 			rpcErr = errors.New(client.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
-			c.browseToSubscriptionPage(client.SubscriptionURL, client.SubscriptionURLLogin)
-			rpcErr = ErrAccountExpired
+			link := client.SubscriptionURL
+			tokenData, err := c.getTrustedPassTokenData()
+			if err == nil {
+				link = fmt.Sprintf(client.SubscriptionDedicatedIPURLLogin, tokenData.token, tokenData.owner_id)
+			}
+			rpcErr = fmt.Errorf(ExpiredAccountMessage, link)
 		case internal.CodeDedicatedIPRenewError:
-			// #nosec G104 -- the user gets URL in case of failure
-			c.browseToSubscriptionPage(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin)
-			rpcErr = ErrNoDedicatedIP
+			link := client.SubscriptionDedicatedIPURL
+			tokenData, err := c.getTrustedPassTokenData()
+			if err == nil {
+				link = fmt.Sprintf(client.SubscriptionDedicatedIPURLLogin, tokenData.token, tokenData.owner_id)
+			}
+			rpcErr = fmt.Errorf(NoDedicatedIPMessage, link)
 		case internal.CodeDisconnected:
 			rpcErr = errors.New(internal.DisconnectSuccess)
 		case internal.CodeTagNonexisting:
