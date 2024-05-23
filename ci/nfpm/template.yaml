@@ -59,6 +59,9 @@ contents:
     dst: /usr/lib/systemd/system/nordvpnd.service
     file_info:
       mode: 0644
+  - src: /dev/null
+    dst: /usr/lib/systemd/system/nordvpn.service
+    type: symlink
   - src: ${WORKDIR}/contrib/systemd/tmpfiles.d/nordvpn.conf
     dst: /usr/lib/tmpfiles.d/nordvpn.conf
     file_info:
