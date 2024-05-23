@@ -77,7 +77,7 @@ func (ti *Instance) logout(persistToken bool) bool {
 	}
 }
 
-func (ti *Instance) notifyServiceExpired(url string, trustedPassURL string) {
+func (ti *Instance) notifyServiceExpired(url string, trustedPassURL string, message string) {
 	resp, err := ti.client.TokenInfo(context.Background(), &pb.Empty{})
 	isTokenDataValid := resp.TrustedPassToken != "" && resp.TrustedPassOwnerId != ""
 
@@ -85,7 +85,7 @@ func (ti *Instance) notifyServiceExpired(url string, trustedPassURL string) {
 	if err == nil && isTokenDataValid {
 		link = fmt.Sprintf(trustedPassURL, resp.TrustedPassToken, resp.TrustedPassOwnerId)
 	}
-	ti.notify(fmt.Sprintf(cli.ExpiredAccountMessage, link))
+	ti.notify(message, link)
 }
 
 func (ti *Instance) connect(serverTag string, serverGroup string) bool {
@@ -128,9 +128,9 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		case internal.CodeTokenRenewError:
 			ti.notify(nordclient.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
-			ti.notifyServiceExpired(client.SubscriptionURL, client.SubscriptionDedicatedIPURLLogin)
+			ti.notifyServiceExpired(client.SubscriptionURL, client.SubscriptionDedicatedIPURLLogin, cli.ExpiredAccountMessage)
 		case internal.CodeDedicatedIPRenewError:
-			ti.notifyServiceExpired(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin)
+			ti.notifyServiceExpired(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, cli.NoDedicatedIPMessage)
 		case internal.CodeDisconnected:
 			ti.notify(internal.DisconnectSuccess)
 		case internal.CodeTagNonexisting:
