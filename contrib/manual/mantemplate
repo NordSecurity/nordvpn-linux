@@ -556,7 +556,7 @@ If you want to specify the location on your system where downloaded files will b
 $ \fBnordvpn fileshare accept --path </path/to/directory> <id>\fR
 .RE
 .P
-If you need to cancel a transfer while it is still in progress, press \fBCtrl + C\fR or use the \fIccancel\fR command.
+If you need to cancel a transfer while it is still in progress, press \fBCtrl + C\fR or use the \fIcancel\fR command.
 .P
 The \fIcancel\fR command is typically used when the transfer is running in the background (\fI--background\fR option) or when you are canceling from a different terminal session. To cancel a file transfer, enter the following command, replacing \fI<id>\fR with the ID of the transfer you want to cancel.
 .P
