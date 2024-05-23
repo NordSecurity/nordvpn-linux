@@ -58,13 +58,13 @@ func (ti *Instance) updateLoginStatus() bool {
 	if !ti.state.loggedIn && loggedIn {
 		ti.state.loggedIn = true
 		changed = true
-		defer ti.notify("Logged in")
+		defer ti.notify("You've successfully logged in")
 	} else if ti.state.loggedIn && !loggedIn {
 		ti.state.loggedIn = false
 		ti.accountInfo.reset()
 		ti.state.accountName = ""
 		changed = true
-		defer ti.notify("Logged out")
+		defer ti.notify("You've logged out")
 	}
 
 	ti.state.mu.Unlock()
@@ -334,9 +334,9 @@ func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 		changed = true
 		ti.state.daemonAvailable = daemonAvailable
 		if daemonAvailable {
-			defer ti.notify("Connected to NordVPN daemon")
+			defer ti.notify("Reconnected to NordVPN's background service")
 		} else {
-			defer ti.notify("Disconnected from NordVPN daemon")
+			defer ti.notify("Couldn't connect to NordVPN's background service. Please ensure the service is running.")
 		}
 	}
 
