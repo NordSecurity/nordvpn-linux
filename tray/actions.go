@@ -79,13 +79,13 @@ func (ti *Instance) logout(persistToken bool) bool {
 
 func (ti *Instance) notifyServiceExpired(url string, trustedPassURL string, message string) {
 	resp, err := ti.client.TokenInfo(context.Background(), &pb.Empty{})
-	isTokenDataValid := resp.TrustedPassToken != "" && resp.TrustedPassOwnerId != ""
 
 	link := url
-	if err == nil && isTokenDataValid {
+	if err == nil && (resp.TrustedPassToken != "" && resp.TrustedPassOwnerId != "") {
 		link = fmt.Sprintf(trustedPassURL, resp.TrustedPassToken, resp.TrustedPassOwnerId)
 	}
-	ti.notify(message, link)
+
+	ti.notifyForce(message, link)
 }
 
 func (ti *Instance) connect(serverTag string, serverGroup string) bool {

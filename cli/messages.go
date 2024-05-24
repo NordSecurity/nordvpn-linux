@@ -104,7 +104,7 @@ Example: nordvpn set %s on`
 	// AccountInternalError is returned when backend returns internal error (500)
 	AccountInternalError          = "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support."
 	AccountTokenUnauthorizedError = "There was a problem with your credentials. Please try to log out and log back in again. If the issue persists, please contact our customer support."
-	AccountCantFetchVPNService    = "We were not able to fetch your VPN service data. If the issue persists, please contact our customer support."
+	AccountCantFetchVPNService    = "We were not able to fetch your %s service data. If the issue persists, please contact our customer support."
 	UpdateAvailableMessage        = "A new version of NordVPN is available! Please update the application."
 	DisconnectNotConnected        = "You are not connected to NordVPN."
 	DisconnectConnectionRating    = "How would you rate your connection quality on a scale from 1 (poor) to 5 (excellent)? Type '%s rate [1-5]'."
@@ -113,7 +113,7 @@ Example: nordvpn set %s on`
 
 	CheckYourInternetConnMessage = "Please check your internet connection and try again."
 	ExpiredAccountMessage        = "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN. %s" // TODO: update once we get new error message.
-	NoDedicatedIPMessage         = "You don’t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser: %s"
+	NoDedicatedIPMessage         = "You don’t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser: \n%s"
 	NoSuchCommand                = "Command '%s' doesn't exist."
 	MsgListIsEmpty               = "We couldn’t load the list of %s. Please try again later."
 

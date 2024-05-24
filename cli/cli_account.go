@@ -23,12 +23,12 @@ func displayServiceStatus(serviceName string, serviceStatus int64, expiry string
 	case internal.CodeSuccess:
 		expiryTime, err := time.Parse(internal.ServerDateFormat, expiry)
 		if err != nil {
-			return formatError(errors.New(AccountCantFetchVPNService))
+			return formatError(fmt.Errorf(AccountCantFetchVPNService, serviceName))
 		}
 
 		expiryString := fmt.Sprintf("%s %s, %d",
 			expiryTime.Month().String()[0:3], ordinal(expiryTime.Day()), expiryTime.Year())
-		fmt.Printf("%s: Active (Expires on %s)\n", serviceName, expiryString)
+		fmt.Printf("%s Service: Active (Expires on %s)\n", serviceName, expiryString)
 	case internal.CodeNoService:
 		fmt.Printf("%s: Inactive\n", serviceName)
 	}
@@ -62,11 +62,11 @@ func (c *cmd) Account(ctx *cli.Context) error {
 	}
 	fmt.Println("Email Address:", payload.Email)
 
-	if err := displayServiceStatus("VPN Service", payload.Type, payload.ExpiresAt); err != nil {
+	if err := displayServiceStatus("VPN", payload.Type, payload.ExpiresAt); err != nil {
 		return err
 	}
 
-	if err := displayServiceStatus("Dedicated IP Service",
+	if err := displayServiceStatus("Dedicated IP",
 		payload.DedicatedIpStatus,
 		payload.DedicatedIpExpiresAt); err != nil {
 		return err
