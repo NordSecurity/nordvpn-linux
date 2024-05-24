@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -25,16 +26,17 @@ func TestIsConnected(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name      string
-		state     state
-		publicKey string
-		expected  bool
+		name          string
+		state         state
+		publicKey     string
+		channelClosed bool // channel will be closed when connection is established
 	}{
 		{
 			name: "connecting",
 			state: state{
 				State:     "connecting",
 				PublicKey: "123",
+				IsExit:    true,
 			},
 			publicKey: "123",
 		},
@@ -43,15 +45,17 @@ func TestIsConnected(t *testing.T) {
 			state: state{
 				State:     "connected",
 				PublicKey: "123",
+				IsExit:    true,
 			},
-			publicKey: "123",
-			expected:  true,
+			publicKey:     "123",
+			channelClosed: true,
 		},
 		{
 			name: "misbehaving",
 			state: state{
 				State:     "misbehaving",
 				PublicKey: "123",
+				IsExit:    true,
 			},
 			publicKey: "123",
 		},
@@ -60,6 +64,7 @@ func TestIsConnected(t *testing.T) {
 			state: state{
 				State:     "connected",
 				PublicKey: "321",
+				IsExit:    true,
 			},
 			publicKey: "123",
 		},
@@ -68,13 +73,24 @@ func TestIsConnected(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ch := make(chan state)
-			go func() { ch <- test.state }()
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go func() {
+				ch <- test.state
+				wg.Done()
+			}()
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 			defer cancel()
 			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents())
 
-			assert.Equal(t, test.expected, <-isConnectedC)
+			wg.Wait()
+			select {
+			case _, ok := <-isConnectedC:
+				assert.Equal(t, test.channelClosed, !ok)
+			case <-time.After(1 * time.Second):
+				assert.False(t, test.channelClosed, "Channel was not closed when state changed to connected")
+			}
 		})
 	}
 }
