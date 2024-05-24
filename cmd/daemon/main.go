@@ -561,7 +561,9 @@ func main() {
 	go rpc.StartJobs()
 	go meshService.StartJobs()
 	rpc.StartKillSwitch()
-	go rpc.RunSystemShutdownMonitor()
+	if internal.IsSystemd() {
+		go rpc.StartSystemShutdownMonitor()
+	}
 
 	if cfg.AutoConnect {
 		go rpc.StartAutoConnect(network.ExponentialBackoff)

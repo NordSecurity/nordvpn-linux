@@ -82,21 +82,26 @@ func (r *RPC) StopKillSwitch() error {
 		return fmt.Errorf("loading daemon config: %w", err)
 	}
 
-	// do not unset killswitch rules if system is in shutdown or reboot
-	if cfg.KillSwitch && !r.systemShutdown.Load() {
-		if err := r.netw.UnsetKillSwitch(); err != nil {
-			return fmt.Errorf("unsetting killswitch: %w", err)
+	if cfg.KillSwitch {
+		// do not unset killswitch rules if system is in shutdown or reboot
+		systemd := internal.IsSystemd()
+		shutdownIsActive := (systemd && r.systemShutdown.Load()) ||
+			(!systemd && internal.IsSystemShutdown())
+		if !shutdownIsActive {
+			if err := r.netw.UnsetKillSwitch(); err != nil {
+				return fmt.Errorf("unsetting killswitch: %w", err)
+			}
 		}
 	}
 	return nil
 }
 
-// RunSystemShutdownMonitor to be run on separate goroutine
-func (r *RPC) RunSystemShutdownMonitor() {
+// StartSystemShutdownMonitor to be run on separate goroutine
+func (r *RPC) StartSystemShutdownMonitor() {
 	// get connection to system dbus
 	conn, err := dbus.SystemBus()
 	if err != nil {
-		fmt.Println(internal.ErrorPrefix, "getting system dbus:", err)
+		log.Println(internal.ErrorPrefix, "getting system dbus:", err)
 		return
 	}
 	defer conn.Close()
@@ -108,7 +113,7 @@ func (r *RPC) RunSystemShutdownMonitor() {
 		dbus.WithMatchMember("JobNew"),
 	)
 	if err != nil {
-		fmt.Println(internal.ErrorPrefix, "registering dbus signal monitor:", err)
+		log.Println(internal.ErrorPrefix, "registering dbus signal monitor:", err)
 		return
 	}
 
@@ -119,13 +124,13 @@ func (r *RPC) RunSystemShutdownMonitor() {
 	   string "reboot.target"
 	*/
 
-	fmt.Println(internal.InfoPrefix, "dbus monitor started, waiting for signals...")
+	log.Println(internal.InfoPrefix, "dbus monitor started, waiting for signals...")
 
 	dbusSignalCh := make(chan *dbus.Signal, 1)
 	conn.Signal(dbusSignalCh)
 	for signal := range dbusSignalCh {
 		if isSystemShutdownSignal(signal) {
-			fmt.Println(internal.InfoPrefix, "got dbus signal - shutdown detected!")
+			log.Println(internal.InfoPrefix, "got dbus signal - shutdown detected!")
 			r.systemShutdown.Store(true)
 			return
 		}
