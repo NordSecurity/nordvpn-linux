@@ -338,4 +338,8 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgNoSnapPermissions = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\n%s\n\nAfter doing so, continue using the application."
 
 	MsgSnapPermissionsErrorForTray = "Please grant necessary permissions for the snap using this command:\n\n%s"
+
+	SetPqUnavailable = "Postqauntum VPN is not available with the current technology. Change the technology to Nordlynx to use postqauntum VPN."
+	SetPqAndMeshnet  = "Cannot use Postqauntum VPN and Meshnet simultaneously. The features are incompatible."
+	SetPqUsageText   = "Enables or disables postquantum VPN. When enabled, the VPN connection will use resistant quantum computer resistant cryptography."
 )
