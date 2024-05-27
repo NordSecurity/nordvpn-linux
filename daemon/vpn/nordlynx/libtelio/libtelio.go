@@ -21,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
@@ -31,8 +32,11 @@ const (
 )
 
 type state struct {
+	Nickname  string `json:"nickname"`
 	State     string `json:"state"`
 	PublicKey string `json:"public_key"`
+	IsVPN     bool   `json:"is_vpn"`
+	IsExit    bool   `json:"is_exit"`
 }
 
 type event struct {
@@ -78,21 +82,22 @@ func eventCallback(states chan<- state) eventFn {
 // 7. VPN connected, calling Disable - tunnel must be re-initiated with the originally saved values provided to Start
 // 8. VPN disconnected, calling Disable - tunnel must be destroyed
 type Libtelio struct {
-	state  vpn.State
-	lib    teliogo.Telio
-	events <-chan state
-	active bool
-	tun    *tunnel.Tunnel
+	state                   vpn.State
+	lib                     teliogo.Telio
+	events                  <-chan state
+	cancelConnectionMonitor func()
+	active                  bool
+	tun                     *tunnel.Tunnel
 	// This must be the one given from the public interface and
 	// retrieved from the API
-	currentPrivateKey      string
-	currentServerIP        netip.Addr
-	currentServerPublicKey string
-	isMeshEnabled          bool
-	meshnetMap             string
-	isKernelDisabled       bool
-	fwmark                 uint32
-	mu                     sync.Mutex
+	currentServer     vpn.ServerData
+	currentPrivateKey string
+	isMeshEnabled     bool
+	meshnetMap        string
+	isKernelDisabled  bool
+	fwmark            uint32
+	eventsPublisher   *vpn.Events
+	mu                sync.Mutex
 }
 
 var defaultIP = netip.MustParseAddr("10.5.0.2")
@@ -169,7 +174,7 @@ func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg
 }
 
 func New(prod bool, eventPath string, fwmark uint32,
-	vpnLibCfg vpn.LibConfigGetter, deviceID, appVersion string) *Libtelio {
+	vpnLibCfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events) *Libtelio {
 	events := make(chan state)
 	logLevel := teliogo.TELIOLOGINFO
 
@@ -209,9 +214,10 @@ func New(prod bool, eventPath string, fwmark uint32,
 					"TELIO("+teliogo.TelioGetVersionTag()+"): "+s,
 				)
 			}),
-		events: events,
-		state:  vpn.ExitedState,
-		fwmark: fwmark,
+		events:          events,
+		state:           vpn.ExitedState,
+		fwmark:          fwmark,
+		eventsPublisher: eventsPublisher,
 	}
 }
 
@@ -247,6 +253,7 @@ func (l *Libtelio) Start(
 		return fmt.Errorf("opening the tunnel: %w", err)
 	}
 
+	l.currentServer = serverData
 	if err = l.connect(serverData.IP, serverData.NordLynxPublicKey); err != nil {
 		return err
 	}
@@ -254,17 +261,16 @@ func (l *Libtelio) Start(
 	// Remember the values used for connection. This is necessary
 	// in case meshnet is enabled and disabled before calling Stop
 	l.currentPrivateKey = creds.NordLynxPrivateKey
-	l.currentServerIP = serverData.IP
-	l.currentServerPublicKey = serverData.NordLynxPublicKey
 	return nil
 }
 
 // connect to the VPN server
 func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
-	defer cancel()
+	ctx, cancel := context.WithCancel(context.Background())
+	l.cancelConnectionMonitor = cancel
+
 	// Start monitoring connection events before connecting to not miss any
-	isConnectedC := isConnected(ctx, l.events, serverPublicKey)
+	isConnectedC := isConnected(ctx, l.events, connParameters{pubKey: serverPublicKey, server: l.currentServer}, l.eventsPublisher)
 
 	if err := toError(l.lib.ConnectToExitNode(
 		serverPublicKey,
@@ -277,13 +283,16 @@ func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
 			// #nosec G104 -- errors.Join would be useful here
 			l.closeTunnel()
 		}
+		cancel()
 		return fmt.Errorf("libtelio connect: %w", err)
 	}
 
 	// Check if the connection actually happened. Disconnect if
 	// no actual connection was created within the timeout
-	isConnected := <-isConnectedC
-	if !isConnected {
+	select {
+	case <-isConnectedC: // isConnectedC will be closed once connection is established
+	case <-time.After(time.Second * 30):
+		cancel()
 		// #nosec G104 -- errors.Join would be useful here
 		l.disconnect()
 		return errors.New("connected to nordlynx server but there is no internet as a result")
@@ -315,6 +324,10 @@ func (l *Libtelio) Stop() error {
 
 // disconnect from all the exit nodes, including VPN server
 func (l *Libtelio) disconnect() error {
+	if l.cancelConnectionMonitor != nil {
+		l.cancelConnectionMonitor()
+	}
+
 	if err := toError(l.lib.DisconnectFromExitNodes()); err != nil {
 		return fmt.Errorf("stopping libtelio: %w", err)
 	}
@@ -382,7 +395,7 @@ func (l *Libtelio) Enable(ip netip.Addr, privateKey string) (err error) {
 		}
 
 		// Re-connect to the VPN server
-		if err = l.connect(l.currentServerIP, l.currentServerPublicKey); err != nil {
+		if err = l.connect(l.currentServer.IP, l.currentServer.NordLynxPublicKey); err != nil {
 			return fmt.Errorf("reconnecting to server: %w", err)
 		}
 	}
@@ -427,8 +440,8 @@ func (l *Libtelio) NetworkChanged() error {
 		log.Println(internal.ErrorPrefix, "failed to notify network change:", toError(result))
 
 		if l.active {
-			serverIP := l.currentServerIP
-			serverPublicKey := l.currentServerPublicKey
+			serverIP := l.currentServer.IP
+			serverPublicKey := l.currentServer.NordLynxPublicKey
 			if err := l.disconnect(); err != nil {
 				return err
 			}
@@ -619,30 +632,105 @@ func (l *Libtelio) Public(private string) string {
 // There was a problem observed on VM (Fedora36 and Ubuntu22) when event from libtelio function
 // is not caught, because receiving goroutine is not started yet. So, extra WaitGroup is used
 // to make sure this function is exited only after event receiving goroutine has started.
-func isConnected(ctx context.Context, ch <-chan state, pubKey string) <-chan bool {
+func isConnected(ctx context.Context,
+	stateCh <-chan state,
+	connParams connParameters,
+	eventsPublisher *vpn.Events) <-chan interface{} {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	connectedC := make(chan bool)
+	connectedCh := make(chan interface{})
 	go func() {
 		wg.Done() // signal that goroutine has started
-		for {
-			select {
-			case state := <-ch:
-				if state.PublicKey == pubKey &&
-					state.State == "connected" {
-					connectedC <- true
-					return
-				}
-			case <-ctx.Done():
-				connectedC <- false
-				return
-			}
-		}
+		monitorConnection(ctx, stateCh, connectedCh, connParams, eventsPublisher)
 	}()
 
 	wg.Wait() // wait until goroutine is started
 
-	return connectedC
+	return connectedCh
+}
+
+type connParameters struct {
+	pubKey string
+	server vpn.ServerData
+}
+
+func publishConnectEvent(publisher *vpn.Events, connectType events.TypeConnect, server vpn.ServerData, state state) {
+	name := server.Name
+	if !state.IsVPN {
+		name = state.Nickname
+	}
+	publisher.Connected.Publish(events.DataConnect{
+		Type:                connectType,
+		TargetServerIP:      server.IP.String(),
+		TargetServerCountry: server.Country,
+		TargetServerCity:    server.City,
+		TargetServerDomain:  server.Hostname,
+		TargetServerName:    name,
+		IsMeshnetPeer:       !state.IsVPN,
+	})
+}
+
+func publishDisconnectedEvent(publisher *vpn.Events) {
+	publisher.Disconnected.Publish(events.DataDisconnect{})
+}
+
+// monitorConnection awaits for incoming state changes from the states chan and publishes appropriate events. Upon
+// detecting the 'connected' state for the first time it will send true via isConnected channel and close it afterwards.
+// If goroutine is canceled before detecting 'connected', false will be sent via isConnected channel.
+func monitorConnection(
+	ctx context.Context,
+	states <-chan state,
+	isConnected chan<- interface{},
+	connParameters connParameters,
+	eventsPublisher *vpn.Events) {
+	type notifyState int
+	const (
+		disconnected notifyState = iota
+		connecting
+		connected
+	)
+
+	currentNotifyState := disconnected
+	initialConnection := true
+	for {
+		select {
+		case state := <-states:
+			if !state.IsExit {
+				break
+			}
+
+			switch state.State {
+			case "connecting":
+				if currentNotifyState != connecting {
+					currentNotifyState = connecting
+					publishConnectEvent(eventsPublisher, events.ConnectAttempt, connParameters.server, state)
+				}
+			case "connected":
+				if state.PublicKey == connParameters.pubKey {
+					if initialConnection {
+						close(isConnected)
+						initialConnection = false
+					}
+
+					if currentNotifyState != connected {
+						currentNotifyState = connected
+						publishConnectEvent(eventsPublisher, events.ConnectSuccess, connParameters.server, state)
+					}
+				}
+			case "disconnected":
+				if currentNotifyState != disconnected {
+					currentNotifyState = disconnected
+					publishDisconnectedEvent(eventsPublisher)
+				}
+			}
+		case <-ctx.Done():
+			if currentNotifyState != disconnected {
+				currentNotifyState = disconnected
+				publishDisconnectedEvent(eventsPublisher)
+			}
+			return
+		}
+	}
 }

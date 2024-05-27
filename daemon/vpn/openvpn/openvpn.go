@@ -18,6 +18,7 @@ import (
 
 	gopenvpn "github.com/NordSecurity/gopenvpn/openvpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
@@ -45,9 +46,14 @@ type OpenVPN struct {
 	manager  *gopenvpn.MgmtClient
 	state    vpn.State
 	substate vpn.Substate
-	tun      *tunnel.Tunnel
-	active   bool
-	fwmark   uint32
+	// publishedState tracks latest state that was published, in order to avoid sending multiple
+	// notifications for same type of event.
+	publishedState  vpn.State
+	tun             *tunnel.Tunnel
+	active          bool
+	fwmark          uint32
+	eventsPublisher *vpn.Events
+	serverData      vpn.ServerData
 	// sync.Mutex is used all over the place due to how OpenVPN
 	// is managed over the management interface.
 	// Simple Lock(); defer Unlock() results in deadlocks, since
@@ -55,11 +61,12 @@ type OpenVPN struct {
 	sync.Mutex
 }
 
-func New(fwmark uint32) *OpenVPN {
+func New(fwmark uint32, eventsPublisher *vpn.Events) *OpenVPN {
 	return &OpenVPN{
-		state:    vpn.ExitedState,
-		substate: vpn.UnknownSubstate,
-		fwmark:   fwmark,
+		state:           vpn.ExitedState,
+		substate:        vpn.UnknownSubstate,
+		fwmark:          fwmark,
+		eventsPublisher: eventsPublisher,
 	}
 }
 
@@ -69,6 +76,8 @@ func (ovpn *OpenVPN) Start(
 	serverData vpn.ServerData,
 ) error {
 	ovpn.Lock()
+	ovpn.serverData = serverData
+
 	if ovpn.active {
 		ovpn.Unlock()
 		return vpn.ErrVPNAIsAlreadyStarted
@@ -175,6 +184,7 @@ func (ovpn *OpenVPN) Start(
 // Stop stops openvpn process
 func (ovpn *OpenVPN) Stop() error {
 	ovpn.Lock()
+	ovpn.publishDisconnected()
 	if ovpn.active {
 		ovpn.Unlock()
 		return ovpn.stop()
@@ -305,6 +315,27 @@ func (ovpn *OpenVPN) setState(arg string) {
 	ovpn.Lock()
 	defer ovpn.Unlock()
 	ovpn.state, _ = vpn.StringToState(arg)
+
+	//exhaustive:ignore
+	switch ovpn.state {
+	case vpn.ConnectedState:
+		if ovpn.publishedState != vpn.ConnectedState {
+			ovpn.publishConnected()
+			ovpn.publishedState = vpn.ConnectedState
+		}
+	case vpn.ExitingState:
+		// ignore ExitingState, as we do not want to notify about intermediate stages for disconnection
+	case vpn.ExitedState:
+		if ovpn.publishedState != vpn.ExitedState {
+			ovpn.publishDisconnected()
+			ovpn.publishedState = vpn.ExitedState
+		}
+	default:
+		if ovpn.publishedState != vpn.ConnectingState {
+			ovpn.publishConnecting()
+			ovpn.publishedState = vpn.ConnectingState
+		}
+	}
 }
 
 func (ovpn *OpenVPN) setSubstate(substate vpn.Substate) {
@@ -317,6 +348,31 @@ func (ovpn *OpenVPN) getSubstate() vpn.Substate {
 	ovpn.Lock()
 	defer ovpn.Unlock()
 	return ovpn.substate
+}
+
+// publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
+func (ovpn *OpenVPN) publishConnecting() {
+	ovpn.eventsPublisher.Connected.Publish(events.DataConnect{
+		Type:                events.ConnectAttempt,
+		TargetServerIP:      ovpn.serverData.IP.String(),
+		TargetServerCountry: ovpn.serverData.Country,
+		TargetServerCity:    ovpn.serverData.City,
+	})
+}
+
+// publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
+func (ovpn *OpenVPN) publishConnected() {
+	ovpn.eventsPublisher.Connected.Publish(events.DataConnect{
+		Type:                events.ConnectSuccess,
+		TargetServerIP:      ovpn.serverData.IP.String(),
+		TargetServerCountry: ovpn.serverData.Country,
+		TargetServerCity:    ovpn.serverData.City,
+	})
+}
+
+// publishDisconnected publishes Connecting event using current stored server data. Thread unsafe.
+func (ovpn *OpenVPN) publishDisconnected() {
+	ovpn.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
 }
 
 // stage1Handler handles events until first successful connection or timeout

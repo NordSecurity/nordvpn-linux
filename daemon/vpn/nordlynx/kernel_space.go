@@ -10,34 +10,54 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
 type KernelSpace struct {
-	state  vpn.State
-	active bool
-	fwmark uint32
-	tun    *tunnel.Tunnel
+	state           vpn.State
+	active          bool
+	fwmark          uint32
+	tun             *tunnel.Tunnel
+	eventsPublisher *vpn.Events
 	sync.Mutex
 }
 
-func NewKernelSpace(fwmark uint32) *KernelSpace {
+func NewKernelSpace(fwmark uint32, eventsPublisher *vpn.Events) *KernelSpace {
 	return &KernelSpace{
-		state:  vpn.ExitedState,
-		fwmark: fwmark,
+		state:           vpn.ExitedState,
+		fwmark:          fwmark,
+		eventsPublisher: eventsPublisher,
 	}
 }
 
 func (k *KernelSpace) Start(
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
-) error {
+) (err error) {
 	k.Lock()
 	defer k.Unlock()
 	if k.active {
 		return vpn.ErrVPNAIsAlreadyStarted
 	}
+
+	event := events.DataConnect{
+		Type:                events.ConnectAttempt,
+		TargetServerIP:      serverData.IP.String(),
+		TargetServerCountry: serverData.Country,
+		TargetServerCity:    serverData.City,
+	}
+
+	k.eventsPublisher.Connected.Publish(event)
+	defer func() {
+		if err != nil {
+			k.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
+			return
+		}
+		event.Type = events.ConnectSuccess
+		k.eventsPublisher.Connected.Publish(event)
+	}()
 
 	conf := wgQuickConfig(
 		creds.NordLynxPrivateKey,
@@ -109,6 +129,7 @@ func (k *KernelSpace) Start(
 func (k *KernelSpace) Stop() error {
 	k.Lock()
 	defer k.Unlock()
+	k.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
 	if k.state == vpn.ConnectingState {
 		k.state = vpn.ExitingState
 		return nil

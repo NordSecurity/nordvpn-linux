@@ -35,6 +35,7 @@ import (
 	netlinkrouter "github.com/NordSecurity/nordvpn-linux/daemon/routes/netlink"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norouter"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norule"
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
 	"github.com/NordSecurity/nordvpn-linux/distro"
@@ -58,6 +59,8 @@ import (
 	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/state"
+	statepb "github.com/NordSecurity/nordvpn-linux/state/pb"
 	"golang.org/x/net/netutil"
 
 	"google.golang.org/grpc"
@@ -307,9 +310,11 @@ func main() {
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem)
 
+	internalVpnEvents := vpn.NewInternalVPNEvents()
+
 	// Networker
 	vpnFactory := getVpnFactory(eventsDbPath, cfg.FirewallMark,
-		internal.IsDevEnv(Environment), vpnLibConfigGetter, deviceID, Version)
+		internal.IsDevEnv(Environment), vpnLibConfigGetter, deviceID, Version, internalVpnEvents)
 
 	vpn, err := vpnFactory(cfg.Technology)
 	if err != nil {
@@ -345,6 +350,10 @@ func main() {
 		&netlinkrouter.Router{},
 		cfg.Routing.Get(),
 	)
+
+	statePublisher := state.NewState()
+	stateServer := state.NewServer(&statePublisher)
+	internalVpnEvents.Subscribe(&statePublisher)
 
 	netw := networker.NewCombined(
 		vpn,
@@ -499,7 +508,7 @@ func main() {
 
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
-
+	statepb.RegisterStateServer(s, &stateServer)
 	// Start jobs
 
 	go func() {

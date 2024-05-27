@@ -73,6 +73,7 @@ type DataConnect struct {
 	TargetServerIP             string
 	TargetServerPick           string
 	TargetServerPickerResponse string
+	TargetServerName           string
 }
 
 type DataDisconnect struct {

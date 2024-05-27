@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package statepb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/state/pb";
+
+message Empty {}
+
+enum ConnectionState {
+    DISCONNECTED = 0;
+    CONNECTING = 1;
+    CONNECTED = 2;
+}
+
+message ConnectionStatus {
+    ConnectionState state = 1;
+    string server_ip = 2;
+    string server_country = 3;
+    string server_city = 4;
+    string server_hostname = 5;
+    string server_name = 6;
+    bool is_mesh_peer = 7;
+}
+
+message AppState {
+    oneof state {
+        ConnectionStatus connection_status = 1;
+    }
+}
