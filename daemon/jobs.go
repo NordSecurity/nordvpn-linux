@@ -87,10 +87,12 @@ func (r *RPC) StopKillSwitch() error {
 		systemd := internal.IsSystemd()
 		shutdownIsActive := (systemd && r.systemShutdown.Load()) ||
 			(!systemd && internal.IsSystemShutdown())
-		if !shutdownIsActive {
-			if err := r.netw.UnsetKillSwitch(); err != nil {
-				return fmt.Errorf("unsetting killswitch: %w", err)
-			}
+		if shutdownIsActive {
+			log.Println(internal.InfoPrefix, "detected system reboot - do not remove killswitch protection.")
+			return nil
+		}
+		if err := r.netw.UnsetKillSwitch(); err != nil {
+			return fmt.Errorf("unsetting killswitch: %w", err)
 		}
 	}
 	return nil

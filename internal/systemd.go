@@ -16,15 +16,12 @@ func IsServiceActive(service string) bool {
 
 // IsSystemShutdown detect if system is being shutdown
 func IsSystemShutdown() bool {
-	return FileExists("/run/nologin") || FileExists("/var/run/nologin")
+	// https://www.freedesktop.org/software/systemd/man/latest/shutdown.html
+	return FileExists("/run/nologin")
 }
 
 // IsSystemd detect if system is running systemd
 func IsSystemd() bool {
-	// check name of PID1 process: "ps -p 1 -o comm="
-	out, err := exec.Command("ps", "-p", "1", "-o", "comm=").Output()
-	if err != nil {
-		return false
-	}
-	return strings.Contains(strings.ToLower(string(out)), "systemd")
+	// https://www.freedesktop.org/software/systemd/man/latest/sd_booted.html
+	return FileExists("/run/systemd/system")
 }
