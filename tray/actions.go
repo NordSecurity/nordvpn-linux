@@ -2,6 +2,7 @@ package tray
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"os/signal"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
+	"github.com/NordSecurity/nordvpn-linux/client"
 	nordclient "github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -75,6 +77,17 @@ func (ti *Instance) logout(persistToken bool) bool {
 	}
 }
 
+func (ti *Instance) notifyServiceExpired(url string, trustedPassURL string, message string) {
+	resp, err := ti.client.TokenInfo(context.Background(), &pb.Empty{})
+
+	link := url
+	if err == nil && (resp.TrustedPassToken != "" && resp.TrustedPassOwnerId != "") {
+		link = fmt.Sprintf(trustedPassURL, resp.TrustedPassToken, resp.TrustedPassOwnerId)
+	}
+
+	ti.notifyForce(message, link)
+}
+
 func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
@@ -115,7 +128,9 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		case internal.CodeTokenRenewError:
 			ti.notify(nordclient.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
-			ti.notify(cli.ErrAccountExpired.Error())
+			ti.notifyServiceExpired(client.SubscriptionURL, client.SubscriptionDedicatedIPURLLogin, cli.ExpiredAccountMessage)
+		case internal.CodeDedicatedIPRenewError:
+			ti.notifyServiceExpired(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, cli.NoDedicatedIPMessage)
 		case internal.CodeDisconnected:
 			ti.notify(internal.DisconnectSuccess)
 		case internal.CodeTagNonexisting:

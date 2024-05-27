@@ -24,10 +24,11 @@ func (r *RPC) TokenInfo(ctx context.Context, _ *pb.Empty) (*pb.TokenInfoResponse
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 
 	tokenInfo := &pb.TokenInfoResponse{
-		Type:      internal.CodeSuccess,
-		Token:     tokenData.Token,
-		ExpiresAt: tokenData.TokenExpiry,
-		Id:        cfg.AutoConnectData.ID,
+		Type:               internal.CodeSuccess,
+		Token:              tokenData.Token,
+		ExpiresAt:          tokenData.TokenExpiry,
+		TrustedPassToken:   tokenData.TrustedPassToken,
+		TrustedPassOwnerId: tokenData.TrustedPassOwnerID,
 	}
 
 	return tokenInfo, nil

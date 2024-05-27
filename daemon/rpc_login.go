@@ -160,6 +160,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (*pb.Empty
 			NordLynxPrivateKey: credentials.NordlynxPrivateKey,
 			OpenVPNUsername:    credentials.Username,
 			OpenVPNPassword:    credentials.Password,
+			IsOAuth:            true,
 		}
 		c.AutoConnectData.ID = credentials.ID
 		return c

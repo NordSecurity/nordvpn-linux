@@ -181,7 +181,7 @@ func (ti *Instance) updateAccountInfo() bool {
 	switch payload.Type {
 	case internal.CodeSuccess:
 		vpnActive = true
-	case internal.CodeNoVPNService:
+	case internal.CodeNoService:
 		vpnActive = false
 	}
 

@@ -33,7 +33,7 @@ const (
 	CodeOutdated                       int64 = 3015
 	CodeDependencyError                int64 = 3017
 	CodeNoNewDataError                 int64 = 3019
-	CodeNoVPNService                   int64 = 3020
+	CodeNoService                      int64 = 3020
 	CodeExpiredRenewToken              int64 = 3021
 	CodeTokenRenewError                int64 = 3022
 	CodeKillSwitchError                int64 = 3023
@@ -50,4 +50,5 @@ const (
 	CodeAutoConnectServerObfuscated    int64 = 3038
 	CodeTokenInvalid                   int64 = 3039
 	CodePrivateSubnetLANDiscovery      int64 = 3040
+	CodeDedicatedIPRenewError          int64 = 3041
 )

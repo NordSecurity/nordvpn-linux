@@ -53,6 +53,8 @@ const (
 	// TokenRenewURL defines url to renew user's token
 	TokenRenewURL = UsersURL + "/tokens/renew" // #nosec
 
+	TrustedPassTokenURL = UsersURL + "/oauth/tokens/trusted"
+
 	// ServersURLConnectQuery is all servers query optimized
 	// for minimal dm size required
 	// to create servers maps and calculate their penalty scores

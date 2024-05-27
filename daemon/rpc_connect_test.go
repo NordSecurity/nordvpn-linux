@@ -73,6 +73,10 @@ func (validCredentialsAPI) DeleteToken(token string) error {
 	return nil
 }
 
+func (validCredentialsAPI) TrustedPassToken(token string) (*core.TrustedPassTokenResponse, error) {
+	return nil, nil
+}
+
 func (validCredentialsAPI) Services(string) (core.ServicesResponse, error) {
 	return core.ServicesResponse{
 		{
@@ -87,12 +91,17 @@ func (validCredentialsAPI) CurrentUser(string) (*core.CurrentUserResponse, error
 }
 
 type workingLoginChecker struct {
-	isVPNExpired bool
-	vpnErr       error
+	isVPNExpired         bool
+	vpnErr               error
+	isDedicatedIPExpired bool
+	dedicatedIPErr       error
 }
 
 func (*workingLoginChecker) IsLoggedIn() bool              { return true }
 func (c *workingLoginChecker) IsVPNExpired() (bool, error) { return c.isVPNExpired, c.vpnErr }
+func (c *workingLoginChecker) IsDedicatedIPExpired() (bool, error) {
+	return c.isDedicatedIPExpired, c.dedicatedIPErr
+}
 
 type mockAnalytics struct{}
 
@@ -104,15 +113,17 @@ func TestRpcConnect(t *testing.T) {
 
 	defer testsCleanup()
 	tests := []struct {
-		name    string
-		factory FactoryFunc
-		netw    networker.Networker
-		fw      firewall.Service
-		checker auth.Checker
-		resp    int64
+		name        string
+		serverGroup string
+		factory     FactoryFunc
+		netw        networker.Networker
+		fw          firewall.Service
+		checker     auth.Checker
+		resp        int64
 	}{
 		{
-			name: "successful connect",
+			name:        "successful connect",
+			serverGroup: "",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
@@ -122,7 +133,8 @@ func TestRpcConnect(t *testing.T) {
 			resp:    internal.CodeConnected,
 		},
 		{
-			name: "failed connect",
+			name:        "failed connect",
+			serverGroup: "",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.FailingVPN{}, nil
 			},
@@ -132,7 +144,8 @@ func TestRpcConnect(t *testing.T) {
 			resp:    internal.CodeFailure,
 		},
 		{
-			name: "VPN expired",
+			name:        "VPN expired",
+			serverGroup: "",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
@@ -142,7 +155,8 @@ func TestRpcConnect(t *testing.T) {
 			resp:    internal.CodeAccountExpired,
 		},
 		{
-			name: "VPN expiration check fails",
+			name:        "VPN expiration check fails",
+			serverGroup: "",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
@@ -150,6 +164,39 @@ func TestRpcConnect(t *testing.T) {
 			fw:      &workingFirewall{},
 			checker: &workingLoginChecker{vpnErr: errors.New("test error")},
 			resp:    internal.CodeTokenRenewError,
+		},
+		{
+			name:        "Dedicated IP succesfull connect",
+			serverGroup: "Dedicated_IP",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{isDedicatedIPExpired: false},
+			resp:    internal.CodeConnected,
+		},
+		{
+			name:        "Dedicated IP expired",
+			serverGroup: "Dedicated_IP",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{isDedicatedIPExpired: true},
+			resp:    internal.CodeDedicatedIPRenewError,
+		},
+		{
+			name:        "Dedicated IP check fails",
+			serverGroup: "Dedicated_IP",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{isDedicatedIPExpired: true, dedicatedIPErr: errors.New("test error")},
+			resp:    internal.CodeDedicatedIPRenewError,
 		},
 	}
 
@@ -215,7 +262,7 @@ func TestRpcConnect(t *testing.T) {
 				&RegistryMock{},
 			)
 			server := &mockRPCServer{}
-			err := rpc.Connect(&pb.ConnectRequest{}, server)
+			err := rpc.Connect(&pb.ConnectRequest{ServerGroup: "Dedicated_IP"}, server)
 			assert.NoError(t, err)
 			assert.Equal(t, server.msg.Type, test.resp)
 		})

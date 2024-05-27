@@ -15,8 +15,9 @@ import (
 type mockAutoconnectAuthChecker struct {
 }
 
-func (mockAutoconnectAuthChecker) IsLoggedIn() bool            { return true }
-func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error) { return false, nil }
+func (mockAutoconnectAuthChecker) IsLoggedIn() bool                    { return true }
+func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error)         { return false, nil }
+func (mockAutoconnectAuthChecker) IsDedicatedIPExpired() (bool, error) { return false, nil }
 
 type mockAutoconnectConfigManager struct {
 	c config.Config

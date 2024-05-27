@@ -20,7 +20,14 @@ type Checker interface {
 	IsLoggedIn() bool
 	// IsVPNExpired is used to check whether the user is allowed to use VPN
 	IsVPNExpired() (bool, error)
+	// IsDedicatedIPExpired is used to check whether the user is allowed to use dedicated IP servers
+	IsDedicatedIPExpired() (bool, error)
 }
+
+const (
+	VPNServiceID         = 1
+	DedicatedIPServiceID = 11
+)
 
 // RenewingChecker does both authentication checks and renewals in case of expiration.
 type RenewingChecker struct {
@@ -79,6 +86,29 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 	return isTokenExpired(data.ServiceExpiry), nil
 }
 
+// IsDedicatedIPExpired is used to check whether the user is allowed to use dedicated IP servers
+func (r *RenewingChecker) IsDedicatedIPExpired() (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		return true, fmt.Errorf("loading config: %w", err)
+	}
+
+	data := cfg.TokensData[cfg.AutoConnectData.ID]
+	if isTokenExpired(data.DedicatedIPExpiry) {
+		if err := r.updateVpnExpirationDate(&data); err != nil {
+			return true, fmt.Errorf("updating service expiry token: %w", err)
+		}
+		if err := r.cm.SaveWith(saveVpnExpirationDate(cfg.AutoConnectData.ID, data)); err != nil {
+			return true, fmt.Errorf("saving config: %w", err)
+		}
+	}
+
+	return isTokenExpired(data.DedicatedIPExpiry), nil
+}
+
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	// We are renewing token if it is expired because we need to make some API calls later
 	if isTokenExpired(data.TokenExpiry) {
@@ -99,6 +129,33 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 			}
 			return nil
 		}
+		if data.IsOAuth {
+			if err := r.renewTrustedPassToken(&data); err != nil {
+				if errors.Is(err, core.ErrUnauthorized) ||
+					errors.Is(err, core.ErrNotFound) ||
+					errors.Is(err, core.ErrBadRequest) {
+					return r.cm.SaveWith(Logout(uid))
+				}
+			}
+		}
+		if err := r.cm.SaveWith(saveLoginToken(uid, data)); err != nil {
+			return err
+		}
+	}
+
+	// TrustedPass was introduced later on, so it's possible that valid data is not stored even though renew token
+	// is still valid. In such cases we need to hit the api to get the initial value.
+	isTrustedPassNotValid := (data.TrustedPassToken == "" || data.TrustedPassOwnerID == "")
+	// TrustedPass is viable only in case of OAuth login.
+	if data.IsOAuth && isTrustedPassNotValid {
+		if err := r.renewTrustedPassToken(&data); err != nil {
+			if errors.Is(err, core.ErrUnauthorized) ||
+				errors.Is(err, core.ErrNotFound) ||
+				errors.Is(err, core.ErrBadRequest) {
+				return r.cm.SaveWith(Logout(uid))
+			}
+		}
+
 		if err := r.cm.SaveWith(saveLoginToken(uid, data)); err != nil {
 			return err
 		}
@@ -141,6 +198,18 @@ func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
 	return nil
 }
 
+func (r *RenewingChecker) renewTrustedPassToken(data *config.TokenData) error {
+	resp, err := r.creds.TrustedPassToken(data.Token)
+	if err != nil {
+		return fmt.Errorf("getting trusted pass token data: %w", err)
+	}
+
+	data.TrustedPassOwnerID = resp.OwnerID
+	data.TrustedPassToken = resp.Token
+
+	return nil
+}
+
 func (r *RenewingChecker) renewVpnCredentials(data *config.TokenData) error {
 	credentials, err := r.creds.ServiceCredentials(data.Token)
 	if err != nil {
@@ -160,9 +229,12 @@ func (r *RenewingChecker) updateVpnExpirationDate(data *config.TokenData) error 
 	}
 
 	for _, service := range services {
-		if service.Service.ID == 1 { // VPN service
+		if service.Service.ID == VPNServiceID { // VPN service
 			data.ServiceExpiry = service.ExpiresAt
-			return nil
+		}
+
+		if service.Service.ID == DedicatedIPServiceID {
+			data.DedicatedIPExpiry = service.ExpiresAt
 		}
 	}
 
@@ -182,6 +254,8 @@ func saveLoginToken(userID int64, data config.TokenData) config.SaveFunc {
 		user.NCData.Endpoint = data.NCData.Endpoint
 		user.NCData.Username = data.NCData.Username
 		user.NCData.Password = data.NCData.Password
+		user.TrustedPassOwnerID = data.TrustedPassOwnerID
+		user.TrustedPassToken = data.TrustedPassToken
 		return c
 	}
 }

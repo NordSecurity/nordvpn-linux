@@ -30,6 +30,7 @@ type CredentialsAPI interface {
 	Services(string) (ServicesResponse, error)
 	CurrentUser(string) (*CurrentUserResponse, error)
 	DeleteToken(string) error
+	TrustedPassToken(string) (*TrustedPassTokenResponse, error)
 }
 
 type InsightsAPI interface {
@@ -236,6 +237,22 @@ func (api *DefaultAPI) DeleteToken(token string) error {
 	}
 	defer resp.Body.Close()
 	return nil
+}
+
+// TokenRenew queries the renew token and returns new token data
+func (api *DefaultAPI) TrustedPassToken(token string) (*TrustedPassTokenResponse, error) {
+	resp, err := api.request(TrustedPassTokenURL, http.MethodPost, nil, token)
+	if err != nil {
+		return nil, fmt.Errorf("making api request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var ret *TrustedPassTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ret); err != nil {
+		return nil, fmt.Errorf("decoding response body: %w", err)
+	}
+
+	return ret, nil
 }
 
 // TokenRenew queries the renew token and returns new token data

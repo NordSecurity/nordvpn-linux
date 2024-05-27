@@ -25,9 +25,19 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	} else if vpnExpired {
-		accountInfo.Type = internal.CodeNoVPNService
+		accountInfo.Type = internal.CodeNoService
 	} else {
 		accountInfo.Type = internal.CodeSuccess
+	}
+
+	dedicatedIPExpired, err := r.ac.IsDedicatedIPExpired()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "checking dedicated IP expiration: ", err)
+		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+	} else if dedicatedIPExpired {
+		accountInfo.DedicatedIpStatus = internal.CodeNoService
+	} else {
+		accountInfo.DedicatedIpStatus = internal.CodeSuccess
 	}
 
 	var cfg config.Config
@@ -39,6 +49,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	accountInfo.ExpiresAt = tokenData.ServiceExpiry
+	accountInfo.DedicatedIpExpiresAt = tokenData.DedicatedIPExpiry
 
 	currentUser, err := r.credentialsAPI.CurrentUser(tokenData.Token)
 	if err != nil {
