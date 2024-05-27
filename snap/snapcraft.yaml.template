@@ -54,6 +54,12 @@ description: |
 adopt-info: nordvpn
 confinement: strict
 
+plugs:
+  sys-dbus:
+    interface: dbus
+    bus: system
+    name: org.freedesktop.systemd1.Manager
+
 apps:
   nordvpn:
     command: bin/nordvpn
@@ -89,6 +95,7 @@ apps:
       - network-control
       - network-observe
       - firewall-control
+      - sys-dbus
 parts:
   nordvpn:
     plugin: nil
@@ -111,6 +118,7 @@ parts:
       - wireguard-tools
       - libxml2
       - e2fsprogs
+      - dbus-x11
     organize:
       nordvpn: bin/nordvpn
       nordvpnd: bin/nordvpnd

@@ -84,9 +84,7 @@ func (r *RPC) StopKillSwitch() error {
 
 	if cfg.KillSwitch {
 		// do not unset killswitch rules if system is in shutdown or reboot
-		systemd := internal.IsSystemd()
-		shutdownIsActive := (systemd && r.systemShutdown.Load()) ||
-			(!systemd && internal.IsSystemShutdown())
+		shutdownIsActive := r.systemShutdown.Load() || internal.IsSystemShutdown()
 		if shutdownIsActive {
 			log.Println(internal.InfoPrefix, "detected system reboot - do not remove killswitch protection.")
 			return nil
