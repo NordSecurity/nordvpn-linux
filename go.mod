@@ -14,7 +14,7 @@ require (
 	github.com/docker/docker v24.0.9+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
-	github.com/esiqveland/notify v0.11.2
+	github.com/esiqveland/notify v0.13.2
 	github.com/fatih/color v1.15.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-co-op/gocron v1.18.1
