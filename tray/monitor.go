@@ -71,7 +71,7 @@ func (ti *Instance) updateLoginStatus() bool {
 	return changed
 }
 
-func (ti *Instance) updateVpnStatus(fullUpdate bool) bool {
+func (ti *Instance) updateVpnStatus() bool {
 	changed := false
 	resp, err := ti.client.Status(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -89,7 +89,7 @@ func (ti *Instance) updateVpnStatus(fullUpdate bool) bool {
 
 	shouldDisplayNotification := (ti.state.vpnStatus != vpnStatus) || (ti.state.vpnHostname != vpnHostname)
 
-	if fullUpdate || shouldDisplayNotification {
+	if shouldDisplayNotification {
 		// update daemon settings before notifications are shown
 		changed = ti.updateAccountInfo()
 		changed = ti.updateSettings() || changed
@@ -241,14 +241,17 @@ func (ti *Instance) pollingMonitor() {
 	fullUpdate := true
 	fullUpdateLast := time.Time{}
 	for {
-		if ti.state.notificationsStatus == Invalid {
-			ti.updateSettings()
-		}
 		ti.redraw(ti.ping())
 		if ti.state.daemonAvailable {
 			ti.redraw(ti.updateLoginStatus())
+			if fullUpdate {
+				ti.redraw(ti.updateSettings())
+			}
 			if ti.state.loggedIn {
-				ti.redraw(ti.updateVpnStatus(fullUpdate))
+				if fullUpdate {
+					ti.redraw(ti.updateAccountInfo())
+				}
+				ti.redraw(ti.updateVpnStatus())
 				if fullUpdate {
 					fullUpdateLast = time.Now()
 				}
