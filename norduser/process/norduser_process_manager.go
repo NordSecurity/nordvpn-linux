@@ -6,12 +6,13 @@ import (
 	"log"
 	"os"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/pb"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type NorduserProcessClient struct {
@@ -69,7 +70,24 @@ func (n *NorduserProcessClient) Stop(disable bool) error {
 	}()
 
 	client := pb.NewNorduserClient(clientConn)
-	_, err = client.Stop(context.Background(), &pb.StopNorduserRequest{Disable: disable})
+	_, err = client.Stop(context.Background(), &pb.StopNorduserRequest{Disable: disable, Restart: false})
+
+	return err
+}
+
+func (n *NorduserProcessClient) Restart() error {
+	clientConn, err := GetNorduserClientConnection(int(n.uid))
+	if err != nil {
+		return fmt.Errorf("failed to initialize the connection: %w", err)
+	}
+	defer func() {
+		if err := clientConn.Close(); err != nil {
+			log.Println("Failed to close client connection after a failed gRPC call: ", err)
+		}
+	}()
+
+	client := pb.NewNorduserClient(clientConn)
+	_, err = client.Stop(context.Background(), &pb.StopNorduserRequest{Disable: false, Restart: true})
 
 	return err
 }

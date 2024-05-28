@@ -11,13 +11,14 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"syscall"
 	"time"
 
+	"github.com/NordSecurity/systray"
 	"golang.org/x/net/netutil"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	"github.com/NordSecurity/systray"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -96,6 +97,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 
 	onExit := func() {
 		log.Println(internal.InfoPrefix, "Exiting systray")
+		ti.OnExit()
 	}
 
 	onReady := func() {
@@ -167,14 +169,21 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	fileshareShutdownChan <-chan interface{},
 	grpcServer *grpc.Server,
 	onShutdown func(bool)) {
+	restart := false
 	signals := internal.GetSignalChan()
 
 	select {
 	case sig := <-signals:
 		log.Println(internal.InfoPrefix, "Received signal:", sig)
+		if sig == unix.SIGHUP {
+			restart = true
+		}
 	case stopRequest := <-stopChan:
 		if stopRequest.DisableAutostart {
 			onShutdown(stopRequest.DisableAutostart)
+		}
+		if stopRequest.Restart {
+			restart = true
 		}
 	}
 
@@ -184,11 +193,22 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	<-fileshareShutdownChan
 
 	systray.Quit()
-	// We need to give systray some time to clean up after quting. Otherwise, when the main app is restarted
+	// We need to give systray some time to clean up after quiting. Otherwise, when the main app is restarted
 	// two trays will be visible for a split second.
 	<-time.After(500 * time.Millisecond)
 
 	log.Println(internal.InfoPrefix, "Norduser daemon has stopped")
+
+	if restart {
+		log.Println(internal.InfoPrefix, "Norduser daemon restarting")
+		execpath, err := os.Executable()
+		if err == nil {
+			err = syscall.Exec(execpath, os.Args, os.Environ())
+			if err != nil {
+				log.Println(internal.InfoPrefix, "Norduser daemon restart error:", err)
+			}
+		}
+	}
 }
 
 func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan interface{}) {

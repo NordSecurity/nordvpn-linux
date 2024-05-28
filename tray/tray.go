@@ -72,7 +72,7 @@ type Instance struct {
 }
 
 type trayState struct {
-	systrayStarted      bool
+	systrayRunning      bool
 	daemonAvailable     bool
 	loggedIn            bool
 	vpnActive           bool
@@ -129,6 +129,12 @@ func (ti *Instance) Start() {
 	go ti.pollingMonitor()
 }
 
+func (ti *Instance) OnExit() {
+	ti.state.mu.Lock()
+	ti.state.systrayRunning = false
+	ti.state.mu.Unlock()
+}
+
 func (ti *Instance) OnReady() {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
@@ -139,7 +145,7 @@ func (ti *Instance) OnReady() {
 	} else {
 		systray.SetIconName(ti.iconConnected)
 	}
-	ti.state.systrayStarted = true
+	ti.state.systrayRunning = true
 	ti.state.mu.Unlock()
 
 	go func() {
@@ -161,6 +167,12 @@ func (ti *Instance) OnReady() {
 			addQuitItem(ti)
 			systray.Refresh()
 			<-ti.redrawChan
+			ti.state.mu.RLock()
+			if !ti.state.systrayRunning {
+				ti.state.mu.RUnlock()
+				break
+			}
+			ti.state.mu.RUnlock()
 			if ti.debugMode {
 				log.Println(internal.DebugPrefix, "Redraw")
 			}

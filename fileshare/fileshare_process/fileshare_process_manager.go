@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 var FileshareURL = fmt.Sprintf("%s://%s", internal.Proto, internal.FileshareSocket)
@@ -67,6 +68,10 @@ func (f *FileshareProcessClient) Stop(bool) error {
 	_, err = client.Stop(context.Background(), &pb.Empty{})
 
 	return err
+}
+
+func (f *FileshareProcessClient) Restart() error {
+	return nil
 }
 
 func NewFileshareGRPCProcessManager() *childprocess.GRPCChildProcessManager {

@@ -226,11 +226,9 @@ func (ti *Instance) updateAccountInfo() bool {
 
 func (ti *Instance) redraw(result bool) {
 	if result {
-		ti.state.mu.RLock()
-		systrayStarted := ti.state.systrayStarted
-		ti.state.mu.RUnlock()
-		if systrayStarted {
-			ti.redrawChan <- struct{}{}
+		select {
+		case ti.redrawChan <- struct{}{}:
+		default:
 		}
 	}
 }
@@ -355,12 +353,12 @@ func (ti *Instance) setVpnStatus(vpnStatus string, vpnName string, vpnHostname s
 
 	if ti.state.vpnStatus != vpnStatus {
 		if vpnStatus == ConnectedString {
-			if ti.state.systrayStarted {
+			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconConnected)
 			}
 			defer ti.notify("Connected to %s", vpnName)
 		} else {
-			if ti.state.systrayStarted {
+			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconDisconnected)
 			}
 			defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.vpnName))

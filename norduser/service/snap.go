@@ -23,14 +23,14 @@ func (n NorduserSnap) Enable(uint32, uint32, string) error {
 
 func (n NorduserSnap) Disable(uid uint32) error {
 	if err := process.NewNorduserGRPCProcessManager(uid).StopProcess(true); err != nil {
-		return fmt.Errorf("stopping norduser process: %w", err)
+		return fmt.Errorf("stopping norduserd: %w", err)
 	}
 	return nil
 }
 
 func (n NorduserSnap) Stop(uid uint32, wait bool) error {
 	if err := process.NewNorduserGRPCProcessManager(uid).StopProcess(false); err != nil {
-		return fmt.Errorf("stopping norduser process: %w", err)
+		return fmt.Errorf("stopping norduserd: %w", err)
 	}
 	return nil
 }
@@ -39,7 +39,7 @@ func (n NorduserSnap) stopAll(disable bool) {
 	// #nosec G204 -- arg values are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
 	if err != nil {
-		log.Println("Failed to list running norduser instances: ", err)
+		log.Println("Failed to list running norduserd instances: ", err)
 	}
 
 	uids := string(output)
@@ -56,7 +56,7 @@ func (n NorduserSnap) stopAll(disable bool) {
 		}
 
 		if err := process.NewNorduserGRPCProcessManager(uint32(uidInt)).StopProcess(disable); err != nil {
-			log.Println("Failed to stop norduser for uid: ", uid)
+			log.Println("Failed to stop norduserd for uid: ", uid)
 		}
 	}
 }
@@ -70,5 +70,8 @@ func (n NorduserSnap) DisableAll() {
 }
 
 func (n NorduserSnap) Restart(uid uint32) error {
+	if err := process.NewNorduserGRPCProcessManager(uid).RestartProcess(); err != nil {
+		return fmt.Errorf("restarting norduserd: %w", err)
+	}
 	return nil
 }

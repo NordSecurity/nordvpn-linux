@@ -23,10 +23,12 @@ const (
 )
 
 type ChildProcessManager interface {
-	// StartProcess starts the fileshare process
+	// StartProcess starts the process
 	StartProcess() (StartupErrorCode, error)
-	// StopProcess stops the fileshare process
+	// StopProcess stops the process
 	StopProcess(disable bool) error
-	// ProcessStatus checks the status of fileshare process
+	// RestartProcess restarts the process
+	RestartProcess() error
+	// ProcessStatus checks the status of process
 	ProcessStatus() ProcessStatus
 }
