@@ -129,7 +129,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		case internal.CodeTokenRenewError:
 			ti.notify(nordclient.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
-			ti.notifyServiceExpired(client.SubscriptionURL, client.SubscriptionDedicatedIPURLLogin, cli.ExpiredAccountMessage)
+			ti.notifyServiceExpired(client.SubscriptionURL, client.SubscriptionURLLogin, cli.ExpiredAccountMessage)
 		case internal.CodeDedicatedIPRenewError:
 			ti.notifyServiceExpired(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, cli.NoDedicatedIPMessage)
 		case internal.CodeDisconnected:

@@ -113,7 +113,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			link := client.SubscriptionURL
 			tokenData, err := c.getTrustedPassTokenData()
 			if err == nil {
-				link = fmt.Sprintf(client.SubscriptionDedicatedIPURLLogin, tokenData.token, tokenData.owner_id)
+				link = fmt.Sprintf(client.SubscriptionURLLogin, tokenData.token, tokenData.owner_id)
 			}
 			rpcErr = fmt.Errorf(ExpiredAccountMessage, link)
 		case internal.CodeDedicatedIPRenewError:
