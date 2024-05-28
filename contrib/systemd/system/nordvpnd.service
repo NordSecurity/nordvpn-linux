@@ -1,8 +1,7 @@
 [Unit]
 Description=NordVPN Daemon
 Requires=nordvpnd.socket
-After=network-online.target
-Wants=network-online.target
+After=network-pre.target
 
 [Service]
 ExecStart=/usr/sbin/nordvpnd
