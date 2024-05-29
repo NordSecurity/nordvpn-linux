@@ -266,6 +266,7 @@ func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc 
 		defer func() { c.TokensData[userID] = user }()
 
 		user.ServiceExpiry = data.ServiceExpiry
+		user.DedicatedIPExpiry = data.DedicatedIPExpiry
 		return c
 	}
 }
