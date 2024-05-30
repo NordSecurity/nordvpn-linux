@@ -39,7 +39,7 @@ func (n NorduserSnap) stopAll(disable bool) {
 	// #nosec G204 -- arg values are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
 	if err != nil {
-		log.Println("Failed to list running norduserd instances: ", err)
+		log.Println(internal.ErrorPrefix, "Failed to list running norduserd instances: ", err)
 	}
 
 	uids := string(output)
@@ -56,7 +56,7 @@ func (n NorduserSnap) stopAll(disable bool) {
 		}
 
 		if err := process.NewNorduserGRPCProcessManager(uint32(uidInt)).StopProcess(disable); err != nil {
-			log.Println("Failed to stop norduserd for uid: ", uid)
+			log.Println(internal.ErrorPrefix, "Failed to stop norduserd for uid: ", uid)
 		}
 	}
 }

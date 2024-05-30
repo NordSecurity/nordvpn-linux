@@ -42,7 +42,7 @@ func (f *FileshareProcessClient) Ping(nowait bool) error {
 	defer func() {
 		if clientConn != nil {
 			if err := clientConn.Close(); err != nil {
-				log.Println("Failed to close client connection after a failed gRPC call: ", err)
+				log.Println(internal.ErrorPrefix, "Failed to close client connection after a failed gRPC call: ", err)
 			}
 		}
 	}()

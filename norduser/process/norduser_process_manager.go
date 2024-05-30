@@ -48,7 +48,7 @@ func (n *NorduserProcessClient) Ping(nowait bool) error {
 	}
 	defer func() {
 		if err := clientConn.Close(); err != nil {
-			log.Println("Failed to close client connection after a failed gRPC call: ", err)
+			log.Println(internal.ErrorPrefix, "Failed to close client connection after a failed gRPC call: ", err)
 		}
 	}()
 
@@ -65,7 +65,7 @@ func (n *NorduserProcessClient) Stop(disable bool) error {
 	}
 	defer func() {
 		if err := clientConn.Close(); err != nil {
-			log.Println("Failed to close client connection after a failed gRPC call: ", err)
+			log.Println(internal.ErrorPrefix, "Failed to close client connection after a failed gRPC call: ", err)
 		}
 	}()
 
@@ -82,7 +82,7 @@ func (n *NorduserProcessClient) Restart() error {
 	}
 	defer func() {
 		if err := clientConn.Close(); err != nil {
-			log.Println("Failed to close client connection after a failed gRPC call: ", err)
+			log.Println(internal.ErrorPrefix, "Failed to close client connection after a failed gRPC call: ", err)
 		}
 	}()
 

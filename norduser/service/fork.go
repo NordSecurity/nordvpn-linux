@@ -191,7 +191,7 @@ func (c *ChildProcessNorduser) StopAll() {
 
 	for _, pid := range pids {
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
-			log.Println("failed to send a signal to norduserd: ", err)
+			log.Println(internal.ErrorPrefix, "failed to send a signal to norduserd: ", err)
 		}
 	}
 
