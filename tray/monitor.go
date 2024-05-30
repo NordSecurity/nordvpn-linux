@@ -241,6 +241,10 @@ func (ti *Instance) pollingMonitor() {
 	fullUpdate := true
 	fullUpdateLast := time.Time{}
 	for {
+		if ti.state.notificationsStatus == Invalid {
+			ti.updateSettings()
+		}
+
 		ti.redraw(ti.ping())
 		if ti.state.daemonAvailable {
 			ti.redraw(ti.updateLoginStatus())
@@ -258,12 +262,15 @@ func (ti *Instance) pollingMonitor() {
 			}
 		}
 
-		if initialChan != nil {
-			initialChan <- struct{}{}
-			close(initialChan)
-			initialChan = nil
-			if ti.debugMode {
-				log.Println(internal.DebugPrefix, "Initial retrieve")
+		// while the settings were not fetch don't unblock the tray loop
+		if ti.state.trayStatus != Invalid {
+			if initialChan != nil {
+				initialChan <- struct{}{}
+				close(initialChan)
+				initialChan = nil
+				if ti.debugMode {
+					log.Println(internal.DebugPrefix, "Initial retrieve")
+				}
 			}
 		}
 
