@@ -13,9 +13,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events/logger"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	snappb "github.com/NordSecurity/nordvpn-linux/snapconf/pb"
 
 	"github.com/fatih/color"
@@ -975,6 +978,10 @@ func FormatSnapMissingConnsErr(err *snappb.ErrMissingConnections) string {
 	return fmt.Sprintf(MsgNoSnapPermissions, JoinSnapMissingPermissions(err))
 }
 
+func FormatSnapMissingConnsExtErr(err *snappb.ErrMissingConnections) string {
+	return fmt.Sprintf(MsgNoSnapPermissionsExt, JoinSnapMissingPermissions(err))
+}
+
 type loaderStream struct {
 	grpc.ClientStream
 	loaderEnabled bool
@@ -1001,6 +1008,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 		}
 		err = c.Ping()
 		if err != nil {
+			// this is snap-check is performed on daemon side
 			if snapErr := RetrieveSnapConnsError(err); snapErr != nil {
 				color.Red(FormatSnapMissingConnsErr(snapErr))
 				os.Exit(1)
@@ -1012,8 +1020,19 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 				color.Red(ErrInternetConnection.Error())
 				os.Exit(1)
 			case errors.Is(err, internal.ErrSocketAccessDenied):
-				color.Red(formatError(internal.ErrSocketAccessDenied).Error())
-				color.Red("Run 'sudo usermod -aG nordvpn $USER' to fix this issue and reboot your device afterwards for this to take an effect.")
+				if snapconf.IsUnderSnap() {
+					// this is additional snap-check on client side to minimize user actions
+					errSubject := &subs.Subject[error]{}
+					errSubject.Subscribe(logger.Subscriber{}.NotifyError)
+					err := snapconf.NewSnapChecker(errSubject).PermissionCheck()
+					if snapErr := RetrieveSnapConnsError(err); snapErr != nil {
+						color.Red(FormatSnapMissingConnsExtErr(snapErr))
+					} else {
+						color.Red(MsgSnapNoSocketPermissions)
+					}
+				} else {
+					color.Red(MsgNoSocketPermissions)
+				}
 				os.Exit(1)
 			case errors.Is(err, internal.ErrDaemonConnectionRefused):
 				color.Red(formatError(internal.ErrDaemonConnectionRefused).Error())

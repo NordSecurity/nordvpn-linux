@@ -55,6 +55,29 @@ type ConnChecker struct {
 	publisherErr    events.Publisher[error]
 }
 
+// NewSnapChecker snap permission checker with specific setup
+func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
+	return NewConnChecker(
+		[]Interface{
+			InterfaceNetwork,
+			InterfaceNetworkBind,
+			InterfaceNetworkControl,
+			InterfaceNetworkObserve,
+			InterfaceFirewallControl,
+			InterfaceHome,
+		},
+		[]Interface{
+			InterfaceNetwork,
+			InterfaceNetworkBind,
+			InterfaceNetworkControl,
+			InterfaceNetworkObserve,
+			InterfaceFirewallControl,
+			InterfaceHome,
+		},
+		publisherErr,
+	)
+}
+
 // NewConnChecker is a constructor for the [ConnChecker]. It constructs it with a set of hardcoded
 // pre-defined requirement list. It is assumed that constructor is called once in the beginning of
 // the process and it defines whether it makes sense to suggest snap to recommend process restart
@@ -94,7 +117,7 @@ func (c *ConnChecker) StreamInterceptor(
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo,
 ) error {
-	if err := c.permissionCheck(); err != nil {
+	if err := c.PermissionCheck(); err != nil {
 		return err
 	}
 	return nil
@@ -105,7 +128,7 @@ func (c *ConnChecker) UnaryInterceptor(
 	req interface{},
 	info *grpc.UnaryServerInfo,
 ) (interface{}, error) {
-	if err := c.permissionCheck(); err != nil {
+	if err := c.PermissionCheck(); err != nil {
 		return nil, err
 	}
 	return nil, nil
@@ -135,7 +158,7 @@ func storeInitialConnections(connections []Interface) error {
 	return nil
 }
 
-func (c *ConnChecker) permissionCheck() error {
+func (c *ConnChecker) PermissionCheck() error {
 	connectedInterfaces, err := getConnectedInterfaces()
 	if err != nil {
 		// If listing interfaces fails, it is OK to log error and try to execute gRPC
