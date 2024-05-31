@@ -12,6 +12,7 @@ import (
 type ProcessClient interface {
 	Ping(nowait bool) error
 	Stop(disable bool) error
+	Restart() error
 }
 
 type GRPCChildProcessManager struct {
@@ -66,7 +67,15 @@ func (g *GRPCChildProcessManager) StartProcess() (StartupErrorCode, error) {
 func (g *GRPCChildProcessManager) StopProcess(disable bool) error {
 	err := g.processClient.Stop(disable)
 	if err != nil {
-		return fmt.Errorf("stopping fileshare client: %w", err)
+		return fmt.Errorf("stopping process: %w", err)
+	}
+
+	return nil
+}
+func (g *GRPCChildProcessManager) RestartProcess() error {
+	err := g.processClient.Restart()
+	if err != nil {
+		return fmt.Errorf("restarting process: %w", err)
 	}
 
 	return nil

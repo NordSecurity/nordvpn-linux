@@ -10,6 +10,10 @@ func (c NoopChildProcessManager) StopProcess(bool) error {
 	return nil
 }
 
+func (c NoopChildProcessManager) RestartProcess() error {
+	return nil
+}
+
 func (c NoopChildProcessManager) ProcessStatus() ProcessStatus {
 	return NotRunning
 }

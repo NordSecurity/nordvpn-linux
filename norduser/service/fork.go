@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"os/user"
 	"strconv"
 	"strings"
 	"sync"
@@ -66,7 +65,7 @@ func getRunningNorduserPIDs() ([]int, error) {
 	// #nosec G204 -- arguments are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "pid=").CombinedOutput()
 	if err := handlePsError(output, err); err != nil {
-		return []int{}, fmt.Errorf("listing norduser pids: %w", err)
+		return []int{}, fmt.Errorf("listing norduserd pids: %w", err)
 	}
 
 	return parseNorduserPIDs(string(output)), nil
@@ -155,7 +154,7 @@ func (c *ChildProcessNorduser) Stop(uid uint32, wait bool) error {
 
 	pid, err := getPIDForNorduserUID(uid)
 	if err != nil {
-		return fmt.Errorf("looking up norduser pid: %w", err)
+		return fmt.Errorf("looking up norduserd pid: %w", err)
 	}
 
 	if pid == -1 {
@@ -168,7 +167,7 @@ func (c *ChildProcessNorduser) Stop(uid uint32, wait bool) error {
 				return nil
 			}
 		}
-		return fmt.Errorf("sending SIGTERM to norduser process: %w", err)
+		return fmt.Errorf("sending SIGTERM to norduserd: %w", err)
 	}
 
 	if wait {
@@ -192,7 +191,7 @@ func (c *ChildProcessNorduser) StopAll() {
 
 	for _, pid := range pids {
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
-			log.Println("failed to send a signal to norduser process: ", err)
+			log.Println(internal.ErrorPrefix, "failed to send a signal to norduserd:", err)
 		}
 	}
 
@@ -209,21 +208,26 @@ func (c *ChildProcessNorduser) StopAll() {
 }
 
 func (c *ChildProcessNorduser) Restart(uid uint32) error {
-	err := c.Stop(uid, true)
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	pid, err := getPIDForNorduserUID(uid)
 	if err != nil {
-		return fmt.Errorf("failed to stop norduser process: %w", err)
+		return fmt.Errorf("looking up norduserd pid: %w", err)
 	}
-	u, err := user.LookupId(strconv.FormatInt(int64(uid), 10))
-	if err != nil {
-		return fmt.Errorf("failed to find user by UID: %w", err)
+
+	if pid == -1 {
+		return nil
 	}
-	gid, err := strconv.Atoi(u.Gid)
-	if err != nil {
-		return fmt.Errorf("failed to convert GID: %w", err)
+
+	if err := syscall.Kill(pid, syscall.SIGHUP); err != nil {
+		if errno, ok := err.(syscall.Errno); ok {
+			if errno == syscall.ESRCH {
+				return nil
+			}
+		}
+		return fmt.Errorf("sending SIGHUP to norduserd: %w", err)
 	}
-	err = c.Enable(uid, uint32(gid), u.HomeDir)
-	if err != nil {
-		return fmt.Errorf("failed to enable norduser process: %w", err)
-	}
+
 	return nil
 }

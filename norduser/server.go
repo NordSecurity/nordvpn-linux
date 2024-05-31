@@ -8,6 +8,7 @@ import (
 
 type StopRequest struct {
 	DisableAutostart bool
+	Restart          bool
 }
 
 type Server struct {
@@ -41,7 +42,7 @@ func (s *Server) StopFileshare(context.Context, *pb.Empty) (*pb.Empty, error) {
 
 func (s *Server) Stop(_ context.Context, req *pb.StopNorduserRequest) (*pb.Empty, error) {
 	select {
-	case s.stopChan <- StopRequest{DisableAutostart: req.Disable}:
+	case s.stopChan <- StopRequest{DisableAutostart: req.Disable, Restart: req.Restart}:
 	default:
 	}
 	return &pb.Empty{}, nil

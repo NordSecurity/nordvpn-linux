@@ -133,12 +133,13 @@ func addVpnSection(ti *Instance) {
 			ti.updateChan <- true
 		}()
 	}
+	systray.AddSeparator()
 }
 
 func addAccountSection(ti *Instance) {
-	if ti.state.loggedIn {
-		systray.AddSeparator()
+	systray.AddSeparator()
 
+	if ti.state.loggedIn {
 		if ti.state.accountName != "" {
 			m := systray.AddMenuItem("Logged in as:", "Logged in as:")
 			m.Disable()
@@ -179,7 +180,6 @@ func addAccountSection(ti *Instance) {
 }
 
 func addSettingsSection(ti *Instance) {
-	systray.AddSeparator()
 	mSettings := systray.AddMenuItem("Settings", "Settings")
 	// Workaround over the dbus issue described here: https://github.com/fyne-io/systray/issues/12
 	// (It affects not only XFCE, but also other desktop environments.)
