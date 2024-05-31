@@ -341,5 +341,11 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgNoSnapPermissions = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\n%s\n\nAfter doing so, continue using the application."
 
+	MsgNoSnapPermissionsExt = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\n%s\n\nAfter doing so, continue using the application."
+
+	MsgSnapNoSocketPermissions = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\nAfter doing so, continue using the application."
+
+	MsgNoSocketPermissions = "Permission denied. Please grant necessary permissions before using the application by executing the following commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\nAfter doing so, reboot your device afterwards for this to take an effect."
+
 	MsgSnapPermissionsErrorForTray = "Please grant necessary permissions for the snap using this command:\n\n%s"
 )

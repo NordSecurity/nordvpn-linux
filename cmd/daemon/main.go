@@ -493,7 +493,7 @@ func main() {
 
 	middleware := grpcmiddleware.Middleware{}
 	if snapconf.IsUnderSnap() {
-		checker := snapChecker(errSubject)
+		checker := snapconf.NewSnapChecker(errSubject)
 		middleware.AddStreamMiddleware(checker.StreamInterceptor)
 		middleware.AddUnaryMiddleware(checker.UnaryInterceptor)
 	} else {
@@ -604,26 +604,4 @@ func main() {
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
-}
-
-func snapChecker(publisherErr events.Publisher[error]) *snapconf.ConnChecker {
-	return snapconf.NewConnChecker(
-		[]snapconf.Interface{
-			snapconf.InterfaceNetwork,
-			snapconf.InterfaceNetworkBind,
-			snapconf.InterfaceNetworkControl,
-			snapconf.InterfaceNetworkObserve,
-			snapconf.InterfaceFirewallControl,
-			snapconf.InterfaceHome,
-		},
-		[]snapconf.Interface{
-			snapconf.InterfaceNetwork,
-			snapconf.InterfaceNetworkBind,
-			snapconf.InterfaceNetworkControl,
-			snapconf.InterfaceNetworkObserve,
-			snapconf.InterfaceFirewallControl,
-			snapconf.InterfaceHome,
-		},
-		publisherErr,
-	)
 }
