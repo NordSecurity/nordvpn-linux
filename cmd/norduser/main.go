@@ -154,10 +154,10 @@ func setupLog() {
 		return
 	}
 
-	configDirPath, err := internal.GetConfigDirPath(homeDir)
+	cacheDirPath, err := internal.GetCacheDirPath(homeDir)
 
 	if err == nil {
-		if logFile, err := openLogFile(filepath.Join(configDirPath, internal.NorduserLogFile)); err == nil {
+		if logFile, err := openLogFile(filepath.Join(cacheDirPath, internal.NorduserdLogFileName)); err == nil {
 			log.SetOutput(logFile)
 			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 		}

@@ -25,6 +25,7 @@ export BASEDIR=${APP_DIR}/packages/${NAME}_${VERSION}_${ARCH}
 
 # make build dirs
 mkdir -p "${BASEDIR}"/usr/{bin,sbin}
+mkdir -p "${BASEDIR}"/usr/lib/${NAME}
 mkdir -p "${BASEDIR}"/usr/share/man/man1
 
 # shellcheck disable=SC2153
@@ -35,8 +36,8 @@ export PKG_VERSION=${VERSION}
 
 cp "${WORKDIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
 cp "${WORKDIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
-cp "${WORKDIR}/bin/${ARCH}/nordfileshare" "${BASEDIR}"/usr/bin/nordfileshare
-cp "${WORKDIR}/bin/${ARCH}/norduserd" "${BASEDIR}"/usr/bin/norduserd
+cp "${WORKDIR}/bin/${ARCH}/nordfileshare" "${BASEDIR}"/usr/lib/${NAME}/nordfileshare
+cp "${WORKDIR}/bin/${ARCH}/norduserd" "${BASEDIR}"/usr/lib/${NAME}/norduserd
 cd "${WORKDIR}"
 
 # extract symbols into files
@@ -49,10 +50,10 @@ cd "${WORKDIR}"
 	"${BASEDIR}"/usr/bin/nordvpn
 # shellcheck disable=SC2153
 "${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/nordfileshare-${ARCH}.debug" \
-	"${BASEDIR}"/usr/bin/nordfileshare
+	"${BASEDIR}"/usr/lib/${NAME}/nordfileshare
 # shellcheck disable=SC2153
 "${STRIP}" -f "${SYMBOL_DIR}/${PKG_TO_BUILD}/norduserd-${ARCH}.debug" \
-	"${BASEDIR}"/usr/bin/norduserd
+	"${BASEDIR}"/usr/lib/${NAME}/norduserd
 
 # pack
 case "$PKG_TO_BUILD" in

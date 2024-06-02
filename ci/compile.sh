@@ -8,7 +8,7 @@ source "${WORKDIR}"/ci/archs.sh
 # work with pie executables, its enabled only for development builds.
 # shellcheck disable=SC2153
 if [ "${ENVIRONMENT}" = "dev" ]; then
-	[ "${ARCH}" = "amd64" ] && [ "${RACE_DETECTOR_ENABLED:-""}" == "1" ] && BUILDMODE="-race" 
+	[ "${ARCH}" = "amd64" ] && [ "${RACE_DETECTOR_ENABLED:-""}" == "1" ] && BUILDMODE="-race"
 else
 	BUILDMODE="-buildmode=pie"
 fi
@@ -83,7 +83,7 @@ fi
 
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
-	# BUILDMODE can be no value and `go` does not like empty parameter '' 
+	# BUILDMODE can be no value and `go` does not like empty parameter ''
 	# this is why surrounding double quotes are removed to not cause empty parameter i.e. ''
 	# shellcheck disable=SC2086
 	CC="${cross_compiler_map[${ARCH}]}" \

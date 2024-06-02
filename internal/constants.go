@@ -70,13 +70,12 @@ const (
 	// Fileshared defines filesharing process name
 	Fileshare = "nordfileshare"
 
-	Norduser  = "norduser"
 	Norduserd = "norduserd"
 
-	NorduserLogFile = "norduser" + LogFileExtension
+	NorduserdLogFileName = "norduserd" + LogFileExtension
 
 	// FileshareHistoryFile is the storage file used by libdrop
-	FileshareHistoryFile = "fileshare_history.db"
+	FileshareHistoryFileName = "fileshare_history.db"
 
 	FileshareSocket = TmpDir + "fileshare.sock"
 
@@ -104,11 +103,8 @@ var (
 	// be removed after every app update
 	AppDataPathCommon = PrefixCommonPath("/var/lib/nordvpn")
 
-	// AppDataPathStatic defines path where static app data (such as helper executables) are
-	// stored. Normally it is the same as AppDataPath
-	AppDataPathStatic = PrefixStaticPath("/var/lib/nordvpn")
-
-	UsrBinPathStatic = PrefixStaticPath("/usr/bin")
+	// AppDataPathStatic defines path where static app data (such as helper executables) are stored
+	AppDataPathStatic = PrefixStaticPath("/usr/lib/nordvpn")
 
 	DatFilesPath = filepath.Join(AppDataPath, "data")
 
@@ -128,9 +124,9 @@ var (
 	// DaemonPid defines daemon PID file location
 	DaemonPid = filepath.Join(RunDir, "/nordvpnd.pid")
 
-	FileshareBinaryPath = filepath.Join(UsrBinPathStatic, Fileshare)
+	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
-	NorduserBinaryPath = filepath.Join(UsrBinPathStatic, Norduserd)
+	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
 )
 
 func GetSupportedIPTables() []string {
@@ -169,8 +165,7 @@ func GetFilesharedPid(uid int) string {
 	return fmt.Sprintf("/run/user/%d/%s/%s.pid", uid, Fileshare, Fileshare)
 }
 
-// GetConfigDirPath returns the directory used to store local user config and logs
-func GetConfigDirPath(homeDirectory string) (string, error) {
+func getHomeDirPath(homeDirectory string) (string, error) {
 	snapUserDataDir := os.Getenv("SNAP_USER_COMMON")
 	if snapUserDataDir != "" {
 		homeDirectory = snapUserDataDir
@@ -181,12 +176,39 @@ func GetConfigDirPath(homeDirectory string) (string, error) {
 		return "", errors.New("user does not have a home directory")
 	}
 
+	return homeDirectory, nil
+}
+
+// GetConfigDirPath returns the directory used to store local user config
+func GetConfigDirPath(homeDirectory string) (string, error) {
+	homeDirectory, err := getHomeDirPath(homeDirectory)
+
+	if err != nil {
+		return "", err
+	}
+
 	userConfigPath := filepath.Join(homeDirectory, ".config", "nordvpn")
 
 	if err := EnsureDirFull(userConfigPath); err != nil {
 		return "", fmt.Errorf("ensuring config dir: %w", err)
 	}
 	return userConfigPath, nil
+}
+
+// GetCacheDirPath returns the directory used to store local user logs
+func GetCacheDirPath(homeDirectory string) (string, error) {
+	homeDirectory, err := getHomeDirPath(homeDirectory)
+
+	if err != nil {
+		return "", err
+	}
+
+	userCachePath := filepath.Join(homeDirectory, ".cache", "nordvpn")
+
+	if err := EnsureDirFull(userCachePath); err != nil {
+		return "", fmt.Errorf("ensuring cache dir: %w", err)
+	}
+	return userCachePath, nil
 }
 
 // GetNordvpnGid returns id of group defined in NordvpnGroup

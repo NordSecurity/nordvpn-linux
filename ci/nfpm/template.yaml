@@ -71,7 +71,7 @@ contents:
   - src: ${WORKDIR}/dist/autocomplete/zsh_autocomplete
     dst: /usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete
   - src: ${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn
-    dst: /var/lib/${NAME}/openvpn
+    dst: /usr/lib/${NAME}/openvpn
   - src: ${WORKDIR}/contrib/desktop/nordvpn.desktop
     dst: /usr/share/applications/nordvpn.desktop
     file_info:
@@ -112,10 +112,10 @@ contents:
     dst: /usr/sbin/nordvpnd
   - src: ${BASEDIR}/usr/bin/nordvpn
     dst: /usr/bin/nordvpn
-  - src: ${BASEDIR}/usr/bin/nordfileshare
-    dst: /usr/bin/nordfileshare
-  - src: ${BASEDIR}/usr/bin/norduserd
-    dst: /usr/bin/norduserd
+  - src: ${BASEDIR}/usr/lib/${NAME}/nordfileshare
+    dst: /usr/lib/${NAME}/nordfileshare
+  - src: ${BASEDIR}/usr/lib/${NAME}/norduserd
+    dst: /usr/lib/${NAME}/norduserd
 
   - src: ${WORKDIR}/contrib/initd/nordvpn
     dst: /etc/init.d/nordvpn

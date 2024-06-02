@@ -131,27 +131,27 @@ parts:
     source-type: local
     source: ./bin/TARGET_ARCH_4APP
     organize:
-      nordfileshare: usr/bin/nordfileshare
+      nordfileshare: usr/lib/nordvpn/nordfileshare
     stage:
-      - usr/bin/nordfileshare
+      - usr/lib/nordvpn/nordfileshare
 
-  norduser:
+  norduserd:
     plugin: dump
     source-type: local
     source: ./bin/TARGET_ARCH_4APP
     organize:
-      norduserd: usr/bin/norduserd
+      norduserd: usr/lib/nordvpn/norduserd
     stage:
-      - usr/bin/norduserd
+      - usr/lib/nordvpn/norduserd
 
   openvpn-bin:
     plugin: dump
     source-type: local
     source: ./bin/deps/openvpn/TARGET_ARCH_4APP/latest/
     organize:
-      openvpn: var/lib/nordvpn/openvpn
+      openvpn: usr/lib/nordvpn/openvpn
     stage:
-      - var/lib/nordvpn/openvpn
+      - usr/lib/nordvpn/openvpn
 
   autocomplete:
     plugin: dump

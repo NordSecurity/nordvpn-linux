@@ -35,9 +35,9 @@ func main() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	configDirPath, err := internal.GetConfigDirPath(homeDir)
+	cacheDirPath, err := internal.GetCacheDirPath(homeDir)
 	if err == nil {
-		if logFile, err := openLogFile(filepath.Join(configDirPath, internal.FileshareLogFileName)); err == nil {
+		if logFile, err := openLogFile(filepath.Join(cacheDirPath, internal.FileshareLogFileName)); err == nil {
 			log.SetOutput(logFile)
 			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 		}
@@ -51,9 +51,11 @@ func main() {
 		os.Exit(int(childprocess.CodeAlreadyRunningForOtherUser))
 	}
 
+	configDirPath, err := internal.GetConfigDirPath(homeDir)
+
 	storagePath := filepath.Join(
 		configDirPath,
-		internal.FileshareHistoryFile,
+		internal.FileshareHistoryFileName,
 	)
 
 	eventsDBPath := filepath.Join(internal.DatFilesPath, "moose.db")
