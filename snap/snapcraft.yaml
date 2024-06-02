@@ -135,11 +135,11 @@ parts:
       - on armhf: ./bin/armhf
       - on arm64: ./bin/aarch64
     organize:
-      nordfileshare: usr/bin/nordfileshare
+      nordfileshare: usr/lib/nordvpn/nordfileshare
     stage:
-      - usr/bin/nordfileshare
+      - usr/lib/nordvpn/nordfileshare
 
-  norduser:
+  norduserd:
     plugin: dump
     source-type: local
     source:
@@ -148,9 +148,9 @@ parts:
       - on armhf: ./bin/armhf
       - on arm64: ./bin/aarch64
     organize:
-      norduserd: usr/bin/norduserd
+      norduserd: usr/lib/nordvpn/norduserd
     stage:
-      - usr/bin/norduserd
+      - usr/lib/nordvpn/norduserd
 
   openvpn-bin:
     plugin: dump
@@ -161,9 +161,9 @@ parts:
       - on armhf: ./bin/deps/openvpn/armhf/latest/
       - on arm64: ./bin/deps/openvpn/aarch64/latest/
     organize:
-      openvpn: var/lib/nordvpn/openvpn
+      openvpn: usr/lib/nordvpn/openvpn
     stage:
-      - var/lib/nordvpn/openvpn
+      - usr/lib/nordvpn/openvpn
 
   autocomplete:
     plugin: dump

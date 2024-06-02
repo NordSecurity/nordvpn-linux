@@ -29,6 +29,7 @@ class TestUtils:
     @staticmethod
     def setup_module(ssh_client: ssh.Ssh):
         os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
+        os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
         ssh_client.connect()
         daemon.install_peer(ssh_client)
 
@@ -124,7 +125,7 @@ class Peer:
         self.allows_lan_access = self._convert_to_bool(allows_lan_access)
         self.allows_sending_files = self._convert_to_bool(allows_sending_files)
         self.accept_fileshare_automatically = self._convert_to_bool(accept_fileshare_automatically)
-    
+
     @classmethod
     def from_str(cls, data: str):
         # Split the data into lines, filter out lines that don't contain ':',
@@ -211,7 +212,7 @@ class Peer:
         ''' Returns nickname if not empty and hostname otherwise. '''
         if not self.nickname:
             return self.nickname
-        
+
         return self.hostname
 
 class PeerList:
@@ -511,7 +512,7 @@ def deny_meshnet_invite(ssh_client: ssh.Ssh):
 
     local_user = login.get_credentials("default").email
     output = ssh_client.exec_command(f"yes | nordvpn mesh inv deny {local_user}")
-    
+
     return output
 
 def validate_input_chain(peer_ip: str, routing: bool, local: bool, incoming: bool, fileshare: bool) -> (bool, str):

@@ -93,5 +93,5 @@ func (n *NorduserProcessClient) Restart() error {
 }
 
 func NewNorduserGRPCProcessManager(uid uint32) *childprocess.GRPCChildProcessManager {
-	return childprocess.NewGRPCChildProcessManager(NewNorduserProcessClient(uid), internal.NorduserBinaryPath)
+	return childprocess.NewGRPCChildProcessManager(NewNorduserProcessClient(uid), internal.NorduserdBinaryPath)
 }

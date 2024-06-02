@@ -5,8 +5,8 @@ case "$1" in
         usrInfo=$(awk -F: '{if ($3 >= 1000 && $3 <= 2000) print $6}' < /etc/passwd)
         IFS=$'\n'
         for usrLine in $usrInfo; do
-            # for each user remove user settings dir
-            rm -rf $usrLine/.config/nordvpn
+            # for each user remove user settings and logs dirs
+            rm -rf $usrLine/.{cache,config}/nordvpn
         done
     ;&  # fallthrough
     remove)
@@ -17,10 +17,9 @@ case "$1" in
         rm -f /usr/lib/systemd/system/nordvpnd.*
         rm -f /usr/lib/systemd/tmpfiles.d/nordvpn.conf
         rm -f /etc/init.d/nordvpn
-        rm -rf /root/.config/nordvpn
+        rm -rf /root/.{cache,config}/nordvpn
         rm -rf /usr/share/doc/nordvpn
-        rm -rf /var/lib/nordvpn
-        rm -rf /var/log/nordvpn
+        rm -rf /var/{lib,log}/nordvpn
         rm -rf /run/nordvpn
     ;;
     disappear|upgrade|failed-upgrade|abort-install|abort-upgrade)

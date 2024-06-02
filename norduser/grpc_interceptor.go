@@ -15,12 +15,12 @@ import (
 
 // StartNorduserdMiddleware provides a way to start/stop norduserd when handling nordvpnd gRPCs.
 type StartNorduserdMiddleware struct {
-	nodruserd service.NorduserService
+	norduserd service.NorduserService
 }
 
-func NewStartNorduserMiddleware(norduserd service.NorduserService) StartNorduserdMiddleware {
+func NewStartNorduserMiddleware(norduserd_service service.NorduserService) StartNorduserdMiddleware {
 	return StartNorduserdMiddleware{
-		nodruserd: norduserd,
+		norduserd: norduserd_service,
 	}
 }
 
@@ -41,7 +41,7 @@ func (n *StartNorduserdMiddleware) middleware(ctx context.Context) {
 	if err != nil {
 		log.Println("failed to find user by UID:", err)
 	}
-	if err := n.nodruserd.Enable(ucred.Uid, ucred.Gid, u.HomeDir); err != nil {
+	if err := n.norduserd.Enable(ucred.Uid, ucred.Gid, u.HomeDir); err != nil {
 		log.Println("failed to enable norduserd:", err)
 	}
 }

@@ -9,10 +9,9 @@ case "$1" in
         rm -f /usr/lib/systemd/system/nordvpnd.*
         rm -f /usr/lib/systemd/tmpfiles.d/nordvpn.conf
         rm -f /etc/init.d/nordvpn
-        rm -rf /root/.config/nordvpn
+        rm -rf /root/.{cache,config}/nordvpn
         rm -rf /usr/share/doc/nordvpn
-        rm -rf /var/lib/nordvpn
-        rm -rf /var/log/nordvpn
+        rm -rf /var/{lib,log}/nordvpn
         rm -rf /run/nordvpn
     ;;
 esac

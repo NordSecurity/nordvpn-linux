@@ -708,20 +708,13 @@ func (Install) Binaries() error {
 		return err
 	}
 
-	filesharedDst := internal.FileshareBinaryPath
-
 	filesharedSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Fileshare)
-	if err := cp(filesharedSrc, filesharedDst); err != nil {
+	if err := cp(filesharedSrc, internal.FileshareBinaryPath); err != nil {
 		return err
 	}
 
-	norduserDst, err := sh.Output("which", internal.Norduserd)
-	if err != nil {
-		norduserDst = fmt.Sprintf("/usr/bin/%s", internal.Norduserd)
-	}
-
 	norduserSrc := fmt.Sprintf("bin/%s/%s", build.Default.GOARCH, internal.Norduserd)
-	if err := cp(norduserSrc, norduserDst); err != nil {
+	if err := cp(norduserSrc, internal.NorduserdBinaryPath); err != nil {
 		return err
 	}
 
