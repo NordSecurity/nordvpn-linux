@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
-set -euxo
 
 case "$1" in
     centos) yum -y install yum-utils createrepo ;;
     fedora) dnf -y install dnf-plugins-core createrepo ;;
-    opensuse) zypper -n install curl createrepo ;;
+    opensuse) zypper -n install curl createrepo_c ;;
     *) echo "Can't recognise the OS" && exit 1 ;;
 esac
 
-mkdir -p "${REPO_DIR}/$(arch)" && cp -t "${REPO_DIR}/$(arch)" "${WORKDIR}/dist/app/rpm/*.$(arch).rpm"
+mkdir -p "${REPO_DIR}/$(arch)" && cp -t "${REPO_DIR}/$(arch)" "${WORKDIR}/dist/app/rpm/"*".$(arch).rpm"
 createrepo "${REPO_DIR}/$(arch)"
 echo "[nordvpn]
 name=nordvpn

@@ -74,9 +74,9 @@ get_install_opts_for() {
     if $ASSUME_YES; then
         case "$1" in
             zypper)
-                echo " -n";;
+                echo "-n";;
             *)
-                echo " -y";;
+                echo "-y";;
         esac
     fi
     echo ""
@@ -94,8 +94,8 @@ install_apt() {
         get_install_opts_for_apt
         install_opts="$RETVAL"
         # Ensure apt is set up to work with https sources
-        "${SUDO}" apt-get "${install_opts}" update
-        "${SUDO}" apt-get "${install_opts}" install apt-transport-https
+        $SUDO apt-get "${install_opts}" update
+        $SUDO apt-get "${install_opts}" install apt-transport-https
 
         # Add the repository key with either wget or curl
         if check_cmd wget; then
@@ -108,8 +108,8 @@ install_apt() {
         fi
 
         echo "deb ${REPO_URL_DEB} ${RELEASE}" | $SUDO tee /etc/apt/sources.list.d/nordvpn.list
-        "${SUDO}" apt-get "${install_opts}" update
-        "${SUDO}" apt-get "${install_opts}" install nordvpn
+        $SUDO apt-get "${install_opts}" update
+        $SUDO apt-get "${install_opts}" install nordvpn
         exit
     fi
 }
@@ -128,7 +128,7 @@ install_yum() {
 
         $SUDO rpm -v --import "${PUB_KEY}"
         $SUDO yum-config-manager --add-repo "${repo}"
-        "${SUDO}" yum "${install_opts}" install nordvpn
+        $SUDO yum "${install_opts}" install nordvpn
         exit
     fi
 }
@@ -147,7 +147,7 @@ install_dnf() {
 
         $SUDO rpm -v --import "${PUB_KEY}"
         $SUDO dnf config-manager --add-repo "${repo}"
-        "${SUDO}" dnf "${install_opts}" install nordvpn
+        $SUDO dnf "${install_opts}" install nordvpn
         exit
     fi
 }
@@ -169,7 +169,7 @@ install_zypper() {
         else 
             $SUDO zypper addrepo -g -f "${REPO_URL_RPM}/${ARCH}" nordvpn
         fi
-        "${SUDO}" zypper "${install_opts}" install nordvpn
+        $SUDO zypper $install_opts install -y nordvpn
         exit
     fi
 }
