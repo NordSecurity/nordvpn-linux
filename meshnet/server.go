@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/peer"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -22,7 +24,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -50,7 +51,7 @@ type Server struct {
 	lastPeers          string
 	lastConnectedPeer  string
 	norduser           service.NorduserFileshareClient
-	scheduler          *gocron.Scheduler
+	scheduler          gocron.Scheduler
 	pb.UnimplementedMeshnetServer
 }
 
@@ -69,6 +70,7 @@ func NewServer(
 	subjectConnect events.Publisher[events.DataConnect],
 	norduser service.NorduserFileshareClient,
 ) *Server {
+	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &Server{
 		ac:                 ac,
 		cm:                 cm,
@@ -82,7 +84,7 @@ func NewServer(
 		subjectMeshSetting: subjectMeshSetting,
 		subjectConnect:     subjectConnect,
 		norduser:           norduser,
-		scheduler:          gocron.NewScheduler(time.UTC),
+		scheduler:          scheduler,
 	}
 }
 

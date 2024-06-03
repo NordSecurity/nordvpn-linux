@@ -2,16 +2,25 @@ package meshnet
 
 import (
 	"log"
+	"time"
+
+	"github.com/go-co-op/gocron/v2"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 func (s *Server) StartJobs() {
-	if _, err := s.scheduler.Every(2).Hours().Do(JobRefreshMeshnet(s)); err != nil {
-		log.Println(internal.WarningPrefix, "starting job refresh meshnet", err)
+	if _, err := s.scheduler.NewJob(gocron.DurationJob(2*time.Hour), gocron.NewTask(JobRefreshMeshnet(s)), gocron.WithName("job refresh meshnet")); err != nil {
+		log.Println(internal.WarningPrefix, "job refresh meshnet schedule error:", err)
 	}
-	s.scheduler.RunAll()
-	s.scheduler.StartBlocking()
+
+	s.scheduler.Start()
+	for _, job := range s.scheduler.Jobs() {
+		err := job.RunNow()
+		if err != nil {
+			log.Println(internal.WarningPrefix, job.Name(), "first run error:", err)
+		}
+	}
 }
 
 func JobRefreshMeshnet(s *Server) func() error {
