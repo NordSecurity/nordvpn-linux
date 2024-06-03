@@ -8,11 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-co-op/gocron/v2"
+	"github.com/godbus/dbus/v5"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
-	"github.com/godbus/dbus/v5"
 
 	"google.golang.org/grpc/metadata"
 )
@@ -21,37 +23,42 @@ func (r *RPC) StartJobs() {
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
 	// TODO what if configs file is deleted just before servers job or disk is full?
-	if _, err := r.scheduler.Every(6).Hours().Do(JobCountries(r.dm, r.api)); err != nil {
-		log.Println(internal.WarningPrefix, "job countries", err)
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(6*time.Hour), gocron.NewTask(JobCountries(r.dm, r.api)), gocron.WithName("job countries")); err != nil {
+		log.Println(internal.WarningPrefix, "job countries schedule error:", err)
 	}
 
-	if _, err := r.scheduler.Every(30).Minutes().Do(JobInsights(r.dm, r.api, r.netw, false)); err != nil {
-		log.Println(internal.WarningPrefix, "job insights", err)
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(30*time.Minute), gocron.NewTask(JobInsights(r.dm, r.api, r.netw, false)), gocron.WithName("job insights")); err != nil {
+		log.Println(internal.WarningPrefix, "job insights schedule error:", err)
 	}
 
-	if _, err := r.scheduler.Every(1).Hour().Do(JobServers(r.dm, r.cm, r.api, true)); err != nil {
-		log.Println(internal.WarningPrefix, "job servers", err)
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(1*time.Hour), gocron.NewTask(JobServers(r.dm, r.cm, r.api, true)), gocron.WithName("job servers")); err != nil {
+		log.Println(internal.WarningPrefix, "job servers schedule error:", err)
 	}
 	// TODO if autoconnect runs before servers job, it will return zero servers list
 
-	if _, err := r.scheduler.Every(15).Minutes().Do(JobServerCheck(r.dm, r.api, r.netw, r.lastServer)); err != nil {
-		log.Println(internal.WarningPrefix, "job servers", err)
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(15*time.Minute), gocron.NewTask(JobServerCheck(r.dm, r.api, r.netw, r.lastServer)), gocron.WithName("job servers check")); err != nil {
+		log.Println(internal.WarningPrefix, "job servers check schedule error:", err)
 	}
 
-	if _, err := r.scheduler.Every(1).Day().Do(JobTemplates(r.cdn)); err != nil {
-		log.Println(internal.WarningPrefix, "job templates", err)
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour), gocron.NewTask(JobTemplates(r.cdn)), gocron.WithName("job templates")); err != nil {
+		log.Println(internal.WarningPrefix, "job templates schedule error:", err)
 	}
 
-	if _, err := r.scheduler.Every(3).Hours().Do(JobVersionCheck(r.dm, r.repo)); err != nil {
-		log.Println(internal.WarningPrefix, "job version", err)
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Hour), gocron.NewTask(JobVersionCheck(r.dm, r.repo)), gocron.WithName("job version")); err != nil {
+		log.Println(internal.WarningPrefix, "job version schedule error:", err)
 	}
 
-	if _, err := r.scheduler.Every(1).Day().Do(JobHeartBeat(1*24*60 /*minutes*/, r.events)); err != nil {
-		log.Println(internal.WarningPrefix, "job heart beat", err)
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour), gocron.NewTask(JobHeartBeat(1*24*60 /*minutes*/, r.events)), gocron.WithName("job heart beat")); err != nil {
+		log.Println(internal.WarningPrefix, "job heart beat schedule error:", err)
 	}
 
-	r.scheduler.RunAll()
-	r.scheduler.StartBlocking()
+	r.scheduler.Start()
+	for _, job := range r.scheduler.Jobs() {
+		err := job.RunNow()
+		if err != nil {
+			log.Println(internal.WarningPrefix, job.Name(), "first run error:", err)
+		}
+	}
 }
 
 func (r *RPC) StartKillSwitch() {

@@ -558,8 +558,8 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}()
-	go rpc.StartJobs()
-	go meshService.StartJobs()
+	rpc.StartJobs()
+	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {
 		go rpc.StartSystemShutdownMonitor()

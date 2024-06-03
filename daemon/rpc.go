@@ -20,7 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
 
-	"github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 )
 
 // RPC is a gRPC server.
@@ -44,7 +44,7 @@ type RPC struct {
 	factory          FactoryFunc
 	endpointResolver network.EndpointResolver
 	endpoint         network.Endpoint
-	scheduler        *gocron.Scheduler
+	scheduler        gocron.Scheduler
 	netw             networker.Networker
 	publisher        events.Publisher[string]
 	nameservers      dns.Getter
@@ -80,6 +80,7 @@ func NewRPC(
 	norduser service.NorduserService,
 	meshRegistry mesh.Registry,
 ) *RPC {
+	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
 		environment:      environment,
 		ac:               ac,
@@ -97,7 +98,7 @@ func NewRPC(
 		factory:          factory,
 		events:           events,
 		endpointResolver: endpointResolver,
-		scheduler:        gocron.NewScheduler(time.UTC),
+		scheduler:        scheduler,
 		netw:             netw,
 		publisher:        publisher,
 		nameservers:      nameservers,
