@@ -35,13 +35,12 @@ func waitForInput(timeout bool) {
 // Click is hidden cmd used to open some info when clicking on desktop icon
 func (c *cmd) Click(ctx *cli.Context) (err error) {
 	defer func() {
-		inputTimeout := true
+		inputTimeout := false
 		if err != nil {
 			inputTimeout = false
 			color.Red(err.Error())
 		}
 
-		fmt.Println()
 		fmt.Println("Press 'Enter' to close this window.")
 		fmt.Println("To use nordvpn - open new terminal and type command e.g. nordvpn connect")
 
@@ -54,7 +53,7 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 			return formatError(err)
 		}
 
-		if url.Scheme == "nordvpn-sl" && url.Host == "claim-online-purchase" {
+		if url.Scheme == "nordvpn" && url.Host == "claim-online-purchase" {
 			resp, err := c.client.ClaimOnlinePurchase(context.Background(), &pb.Empty{})
 			if err != nil {
 				return formatError(err)
