@@ -54,7 +54,7 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 			return formatError(err)
 		}
 
-		if url.Scheme == "nordvpn-sl" && url.Host == "claim-online-purchase" {
+		if url.Scheme == "nordvpn" && url.Host == "claim-online-purchase" {
 			resp, err := c.client.ClaimOnlinePurchase(context.Background(), &pb.Empty{})
 			if err != nil {
 				return formatError(err)
