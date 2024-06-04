@@ -423,10 +423,44 @@ func Columns(input []string) (string, error) {
 
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errors.New(strings.Trim(string(result), "\n"))
+		size, _ := strconv.Atoi(cliSize[1])
+		if output, err := splitInColumns(input, size); err == nil {
+			return output, nil
+		}
+
+		return "", errors.Join(err, errors.New(strings.Trim(string(result), "\n")))
 	}
 
 	return strings.Trim(string(result), "\n"), nil
+}
+
+// Generate column output when command column is missing
+func splitInColumns(input []string, cliSize int) (string, error) {
+	maxLength := 0
+	for _, value := range input {
+		valueLen := len(value)
+		if valueLen > maxLength {
+			maxLength = len(value)
+		}
+	}
+	maxLength += 2 // add space between columns
+
+	// Determine the number of columns per line
+	columns := cliSize / maxLength
+
+	var builder strings.Builder
+	for i, value := range input {
+		builder.WriteString(fmt.Sprintf("%-*s", maxLength, value))
+		if (i+1)%columns == 0 {
+			builder.WriteString("\n")
+		}
+	}
+
+	if len(input)%columns != 0 {
+		builder.WriteString("\n")
+	}
+
+	return builder.String(), nil
 }
 
 // Gets the size of CLI window
