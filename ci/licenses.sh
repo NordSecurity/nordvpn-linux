@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-source "${WORKDIR}/ci/env.sh"
-
 exclude_self() {
   grep -P -v "github.com/NordSecurity/(?!systray)|moose"
 }

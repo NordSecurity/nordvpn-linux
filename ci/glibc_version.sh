@@ -1,9 +1,6 @@
 #!/bin/bash
 set -euxo pipefail
 
-source "${WORKDIR}/ci/env.sh"
-source "${WORKDIR}/build/openvpn/env.sh"
-
 glibc_version=$1
 
 # implemented it this way, because expansion did not work
