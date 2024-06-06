@@ -2,7 +2,6 @@
 set -euox
 
 source "${WORKDIR}/ci/archs.sh"
-source "${WORKDIR}/ci/env.sh"
 
 declare -A targets=(
   [amd64]=x86_64-unknown-linux-gnu

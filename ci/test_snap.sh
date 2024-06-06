@@ -4,7 +4,7 @@ pattern="${2}"
 
 set -ux
 
-source "${WORKDIR}"/ci/env.sh
+export COVERDIR="covdatafiles"
 
 if ! "${WORKDIR}"/ci/install_snap.sh; then
     echo "failed to install snap"

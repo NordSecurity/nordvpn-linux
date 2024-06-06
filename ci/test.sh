@@ -14,8 +14,6 @@ excluded_categories="root,link,firewall,route,file,integration"
 # In case 'full' was specified, do not exclude anything and run
 # everything
 if [ "${1:-""}" = "full" ]; then
-	source "${WORKDIR}"/ci/env.sh
-
 	# Apply moose patch in case compiling with moose
 	git apply "${WORKDIR}"/contrib/patches/add_moose.diff
 	function revert_moose_patch {
