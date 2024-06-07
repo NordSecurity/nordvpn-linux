@@ -181,8 +181,7 @@ func (a *autoconnectServer) Send(data *pb.Payload) error {
 type GetTimeoutFunc func(tries int) time.Duration
 
 func connectErrorCheck(err error) bool {
-	return err == nil ||
-		errors.Is(err, internal.ErrNotLoggedIn)
+	return err == nil
 }
 
 // StartAutoConnect connect to VPN server if autoconnect is enabled
@@ -207,7 +206,7 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 			log.Println(internal.InfoPrefix, "auto-connect success")
 			return nil
 		}
-		log.Println(internal.ErrorPrefix, "err1:", server.err, "| err2:", err)
+		log.Println(internal.ErrorPrefix, "auto-connect failed, err1:", server.err, "| err2:", err)
 		tryAfterDuration := timeoutFn(tries)
 		tries++
 		log.Println(internal.WarningPrefix, "will retry(", tries, ") auto-connect after:", tryAfterDuration)
