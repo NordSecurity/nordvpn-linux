@@ -196,7 +196,7 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 		var cfg config.Config
 		err := r.cm.Load(&cfg)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "auto-connect failed with error:", err)
+			log.Println(internal.ErrorPrefix, "auto-connect failed:", err)
 			return err
 		}
 

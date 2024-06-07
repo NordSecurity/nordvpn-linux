@@ -589,9 +589,6 @@ func main() {
 	s.GracefulStop()
 	norduserService.StopAll()
 
-	if err := dnsSetter.Unset(""); err != nil {
-		log.Printf("unsetting dns: %s", err)
-	}
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)
 	}
