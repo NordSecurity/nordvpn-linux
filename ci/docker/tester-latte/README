@@ -1,0 +1,3 @@
+In order to build the image you have to be able to connect to GitLab and provide GitLab latte proxy repository url and your private SSH key:
+
+    DOCKER_BUILDKIT=1 docker build --build-arg PROXY_URL=ssh://git@${URL_TO_GITLAB_REPO} --secret id=gitlab_ssh_key,src=${ABSOLUTE_PATH_TO_GITLAB_PRIVATE_SSH_KEY} -t ghcr.io/nordsecurity/nordvpn-linux/tester-latte:${VERSION} ci/docker/tester-latte
