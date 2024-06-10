@@ -54,19 +54,21 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 			return formatError(err)
 		}
 
-		if url.Scheme == "nordvpn-sl" && url.Host == "claim-online-purchase" {
-			resp, err := c.client.ClaimOnlinePurchase(context.Background(), &pb.Empty{})
-			if err != nil {
-				return formatError(err)
+		if url.Scheme == "nordvpn" {
+			if url.Host == "claim-online-purchase" {
+				resp, err := c.client.ClaimOnlinePurchase(context.Background(), &pb.Empty{})
+				if err != nil {
+					return formatError(err)
+				}
+
+				if !resp.Success {
+					return errors.New(ClaimOnlinePurchaseFailure)
+				}
+
+				color.Green(ClaimOnlinePurchaseSuccess)
+				return nil
 			}
 
-			if !resp.Success {
-				return errors.New(ClaimOnlinePurchaseFailure)
-			}
-
-			color.Green(ClaimOnlinePurchaseSuccess)
-			return nil
-		} else if url.Scheme == "nordvpn" {
 			// if arg is given
 			// run the same as: login --callback %arg
 			if err := c.oauth2(ctx); err != nil {
