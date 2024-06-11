@@ -48,7 +48,7 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 		return formatError(errors.New(CitiesNotFoundError))
 	}
 
-	formattedList, err := internal.Columns(resp.Data)
+	formattedList, err := columns(resp.Data)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		fmt.Println(strings.Join(resp.Data, ", "))

@@ -154,7 +154,7 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 		if err != nil {
 			return
 		}
-		groupList, err := internal.Columns(resp.Data)
+		groupList, err := columns(resp.Data)
 		if err != nil {
 			log.Println(err)
 		}
@@ -162,7 +162,7 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 		if err != nil {
 			return
 		}
-		countryList, err := internal.Columns(resp.Data)
+		countryList, err := columns(resp.Data)
 		if err != nil {
 			log.Println(err)
 		}
@@ -174,7 +174,7 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 		if err != nil {
 			return
 		}
-		cityList, err := internal.Columns(resp.Data)
+		cityList, err := columns(resp.Data)
 		if err != nil {
 			log.Println(err)
 		}
