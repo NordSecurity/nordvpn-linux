@@ -400,9 +400,15 @@ version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91e195e091a93c46f7102ec7818a2aa394e1e1771c3ab4825963fa03e45afb8f"
 dependencies = [
- "core-foundation-sys",
+ "core-foundation-sys 0.8.6",
  "libc",
 ]
+
+[[package]]
+name = "core-foundation-sys"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3a71ab494c0b5b860bdc8407ae08978052417070c2ced38573a9157ad75b8ac"
 
 [[package]]
 name = "core-foundation-sys"
@@ -649,6 +655,11 @@ dependencies = [
  "crypto-common",
  "subtle",
 ]
+
+[[package]]
+name = "dispatch"
+version = "0.2.0"
+source = "git+https://github.com/NordSecurity/rust-dispatch.git?rev=13447cd7221a74ebcce1277ae0cfc9a421a28ec5#13447cd7221a74ebcce1277ae0cfc9a421a28ec5"
 
 [[package]]
 name = "drop-analytics"
@@ -1305,7 +1316,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7ffbb5a1b541ea2561f8c41c087286cc091e21e556a4f09a8f6cbf17b69b141"
 dependencies = [
  "android_system_properties",
- "core-foundation-sys",
+ "core-foundation-sys 0.8.6",
  "iana-time-zone-haiku",
  "js-sys",
  "wasm-bindgen",
@@ -1709,6 +1720,16 @@ checksum = "8f18857289379de670867542caa2923f46596e04cdeceed178d9cab723dc60e3"
 dependencies = [
  "buffering",
  "byteorder",
+ "libc",
+]
+
+[[package]]
+name = "network-framework-sys"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12a0b02d3ddff8bdf9e3a6f151b20f2b022c394b02a9fccb506ebcbc74db2185"
+dependencies = [
+ "core-foundation-sys 0.7.0",
  "libc",
 ]
 
@@ -2460,7 +2481,7 @@ version = "0.1.0"
 source = "git+https://github.com/tomaszklak/rustls-platform-verifier.git?rev=2db68dd17d76eadb062176b913040341b99ef4f3#2db68dd17d76eadb062176b913040341b99ef4f3"
 dependencies = [
  "core-foundation",
- "core-foundation-sys",
+ "core-foundation-sys 0.8.6",
  "jni",
  "log",
  "once_cell",
@@ -2551,7 +2572,7 @@ source = "git+https://github.com/kornelski/rust-security-framework.git?rev=67a61
 dependencies = [
  "bitflags 1.3.2",
  "core-foundation",
- "core-foundation-sys",
+ "core-foundation-sys 0.8.6",
  "libc",
  "num-bigint",
  "security-framework-sys 2.9.1",
@@ -2565,7 +2586,7 @@ checksum = "770452e37cad93e0a50d5abc3990d2bc351c36d0328f86cefec2f2fb206eaef6"
 dependencies = [
  "bitflags 1.3.2",
  "core-foundation",
- "core-foundation-sys",
+ "core-foundation-sys 0.8.6",
  "libc",
  "security-framework-sys 2.10.0",
 ]
@@ -2575,7 +2596,7 @@ name = "security-framework-sys"
 version = "2.9.1"
 source = "git+https://github.com/kornelski/rust-security-framework.git?rev=67a610ec215d207cd158664ab5cf6eca9552ff9f#67a610ec215d207cd158664ab5cf6eca9552ff9f"
 dependencies = [
- "core-foundation-sys",
+ "core-foundation-sys 0.8.6",
  "libc",
 ]
 
@@ -2585,7 +2606,7 @@ version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41f3cc463c0ef97e11c3461a9d3787412d30e8e7eb907c79180c4a57bf7c04ef"
 dependencies = [
- "core-foundation-sys",
+ "core-foundation-sys 0.8.6",
  "libc",
 ]
 
@@ -2992,7 +3013,7 @@ name = "system-configuration-sys"
 version = "0.5.0"
 source = "git+https://github.com/NordSecurity/system-configuration-rs.git#39f80cdfa4785b785f368354d6946111b7774e00"
 dependencies = [
- "core-foundation-sys",
+ "core-foundation-sys 0.8.6",
  "libc",
 ]
 
@@ -3004,8 +3025,8 @@ checksum = "b4e17d8598067a8c134af59cd33c1c263470e089924a11ab61cf61690919fe3b"
 
 [[package]]
 name = "telio"
-version = "4.3.2"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+version = "4.3.3"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3057,7 +3078,7 @@ dependencies = [
 [[package]]
 name = "telio-crypto"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "base64 0.13.1",
  "crypto_box",
@@ -3073,7 +3094,7 @@ dependencies = [
 [[package]]
 name = "telio-dns"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
@@ -3099,7 +3120,7 @@ dependencies = [
 [[package]]
 name = "telio-firewall"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "hashlink",
  "pnet_packet 0.28.0",
@@ -3112,7 +3133,7 @@ dependencies = [
 [[package]]
 name = "telio-lana"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "anyhow",
  "serde",
@@ -3126,7 +3147,7 @@ dependencies = [
 [[package]]
 name = "telio-model"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "ipnetwork",
  "itertools",
@@ -3146,7 +3167,7 @@ dependencies = [
 [[package]]
 name = "telio-nat-detect"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "nat-detect",
  "tokio",
@@ -3155,7 +3176,7 @@ dependencies = [
 [[package]]
 name = "telio-nurse"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "async-trait",
  "bitflags 1.3.2",
@@ -3189,13 +3210,16 @@ dependencies = [
 [[package]]
 name = "telio-pq"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
+ "blake2",
  "boringtun",
+ "hmac",
  "pnet_packet 0.28.0",
  "pqcrypto-kyber",
  "pqcrypto-traits",
  "rand",
+ "sha2",
  "telio-crypto",
  "telio-model",
  "telio-sockets",
@@ -3204,12 +3228,13 @@ dependencies = [
  "thiserror",
  "tokio",
  "tracing",
+ "x25519-dalek 2.0.1",
 ]
 
 [[package]]
 name = "telio-proto"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "bytes",
  "protobuf",
@@ -3225,7 +3250,7 @@ dependencies = [
 [[package]]
 name = "telio-proxy"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "async-trait",
  "crypto_box",
@@ -3244,7 +3269,7 @@ dependencies = [
 [[package]]
 name = "telio-relay"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "async-trait",
  "bytes",
@@ -3280,15 +3305,19 @@ dependencies = [
 [[package]]
 name = "telio-sockets"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
+ "block",
  "boringtun",
  "debug_panic",
+ "dispatch",
  "futures",
  "libc",
+ "network-framework-sys",
  "nix 0.26.4",
  "objc",
  "objc-foundation",
+ "once_cell",
  "parking_lot",
  "socket2",
  "system-configuration",
@@ -3304,7 +3333,7 @@ dependencies = [
 [[package]]
 name = "telio-task"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "async-trait",
  "futures",
@@ -3317,7 +3346,7 @@ dependencies = [
 [[package]]
 name = "telio-traversal"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "async-trait",
  "base64 0.13.1",
@@ -3354,7 +3383,7 @@ dependencies = [
 [[package]]
 name = "telio-utils"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "futures",
  "hashlink",
@@ -3369,7 +3398,7 @@ dependencies = [
 [[package]]
 name = "telio-wg"
 version = "0.1.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "async-trait",
  "boringtun",
@@ -3946,7 +3975,7 @@ checksum = "5f20c57d8d7db6d3b86154206ae5d8fba62dd39573114de97c2cb0578251f8e1"
 [[package]]
 name = "wg-go-rust-wrapper"
 version = "1.0.0"
-source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.2#157263e48f69fac93cf752347309c17c84d02fed"
+source = "git+https://github.com/NordSecurity/libtelio?tag=v4.3.3#e7a8f6b2018766d7b9623370f2189d1480987dea"
 dependencies = [
  "cc",
  "libc",
