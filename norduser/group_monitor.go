@@ -223,14 +223,12 @@ func (n *NordVPNGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 func (n *NordVPNGroupMonitor) handleGropuFileUpdate(currentGrupMembers userSet) (userSet, error) {
 	newGroupMembers, err := getNordVPNGroupMembers()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get new group members: ", err)
-		return nil, nil
+		return nil, fmt.Errorf("failed to get new group members: %w", err)
 	}
 
 	activeUsers, err := getActiveUsers()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get active users after group file update: ", err)
-		return nil, nil
+		return nil, fmt.Errorf("failed to get active users after group file update: %w", err)
 	}
 	newGroupMembers = updateGroupMembersState(newGroupMembers, activeUsers)
 
