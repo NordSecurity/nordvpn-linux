@@ -32,10 +32,6 @@ func (m *ResolvConfFile) Unset(iface string) error {
 	return unsetDNSinResolvconfFile()
 }
 
-func (m *ResolvConfFile) IsAvailable() bool {
-	return internal.FileExists(resolvconfFilePath)
-}
-
 func (m *ResolvConfFile) Name() string {
 	return "resolv.conf, default"
 }

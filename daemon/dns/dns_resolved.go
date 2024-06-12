@@ -9,12 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// Daemons and Services
-const (
-	// serviceSystemdResolved defines resolved service managed by systemd
-	serviceSystemdResolved = "systemd-resolved"
-)
-
 // Executables
 const (
 	// execBusctl defines busctl executable
@@ -30,10 +24,6 @@ func (m *Resolved) Set(iface string, nameservers []string) error {
 
 func (m *Resolved) Unset(iface string) error {
 	return unsetDNSWithSystemdResolve(iface)
-}
-
-func (m *Resolved) IsAvailable() bool {
-	return internal.IsServiceActive(serviceSystemdResolved)
 }
 
 func (m *Resolved) Name() string {

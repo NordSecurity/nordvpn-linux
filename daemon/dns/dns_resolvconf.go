@@ -36,10 +36,6 @@ func (m *Resolvconf) Unset(iface string) error {
 	return unsetDNSWithResolvconf(iface)
 }
 
-func (m *Resolvconf) IsAvailable() bool {
-	return internal.IsCommandAvailable(execResolvconf)
-}
-
 func (m *Resolvconf) Name() string {
 	return "resolvconf"
 }
