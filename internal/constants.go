@@ -52,9 +52,6 @@ const (
 	// ChattrExec is the chattr command executable name
 	ChattrExec = "chattr"
 
-	// Column is a tool to format data into columns for neater display in CLI
-	ColumnExec = "column"
-
 	// SttyExec is a tool to change or print CLI settings
 	SttyExec = "stty"
 

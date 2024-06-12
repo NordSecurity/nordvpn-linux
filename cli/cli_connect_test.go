@@ -140,7 +140,7 @@ func TestConnectAutoComplete(t *testing.T) {
 
 			assert.Nil(t, err)
 
-			list, _ := internal.Columns(test.expected)
+			list, _ := columns(test.expected)
 			assert.NotEmpty(t, list)
 			assert.Equal(t, list, result)
 		})

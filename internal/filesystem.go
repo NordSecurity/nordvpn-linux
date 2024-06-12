@@ -3,7 +3,6 @@ package internal
 import (
 	"crypto/sha256"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -388,58 +387,6 @@ func FileSha256(filepath string) (sum []byte, err error) {
 func IsCommandAvailable(command string) bool {
 	_, err := exec.LookPath(command)
 	return err == nil
-}
-
-// Columns formats a list of strings to a tidy column representation
-func Columns(input []string) (string, error) {
-	cliSize, err := CliDimensions()
-	if err != nil {
-		// workaround for tests: while running tests stty fails
-		// TODO: find a better way
-		if flag.Lookup("test.v") != nil {
-			return strings.Join(input, " "), err
-		}
-		return "", err
-	}
-
-	// #nosec G204 -- input is properly sanitized
-	cmd := exec.Command(ColumnExec, "-c", cliSize[1])
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return "", err
-	}
-
-	for _, arg := range input {
-		_, err = stdin.Write([]byte(arg + "\n"))
-		if err != nil {
-			return "", err
-		}
-	}
-
-	err = stdin.Close()
-	if err != nil {
-		return "", err
-	}
-
-	result, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", errors.New(strings.Trim(string(result), "\n"))
-	}
-
-	return strings.Trim(string(result), "\n"), nil
-}
-
-// Gets the size of CLI window
-func CliDimensions() ([]string, error) {
-	cmd := exec.Command(SttyExec, "size")
-	cmd.Stdin = os.Stdin
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, errors.New(strings.Trim(string(out), "\n"))
-	}
-
-	return strings.Split(strings.Trim(string(out), "\n"), " "), nil
 }
 
 // MachineID return unique machine identification id

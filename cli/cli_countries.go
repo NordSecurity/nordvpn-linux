@@ -28,7 +28,7 @@ func (c *cmd) Countries(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	countryList, err := internal.Columns(resp.Data)
+	countryList, err := columns(resp.Data)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		fmt.Println(strings.Join(resp.Data, ", "))
