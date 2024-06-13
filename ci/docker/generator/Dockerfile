@@ -16,11 +16,4 @@ RUN apt-get update && \
     ln -s /usr/bin/protoc-gen-go-grpc /usr/bin/protoc-gen-go_grpc && \
     go clean -cache -modcache
 
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-
-RUN groupadd -g ${GROUP_ID} generator && useradd -l -m -u ${USER_ID} -g generator generator && echo "generator ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-USER generator
-
 CMD ["exec", "$@"]
