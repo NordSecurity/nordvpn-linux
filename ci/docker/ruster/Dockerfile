@@ -76,10 +76,3 @@ RUN set -eux; \
 
 RUN pip3 install typing; \
 	pip3 install requests==2.21.0
-
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-
-RUN groupadd -g ${GROUP_ID} ruster && useradd -l -m -u ${USER_ID} -g ruster ruster && echo "ruster ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-USER ruster

@@ -5,7 +5,6 @@ LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-li
 RUN dpkg --add-architecture i386 && \
     dpkg --add-architecture arm64 && \
     dpkg --add-architecture armhf && \
-    dpkg --add-architecture armel && \
     apt-get update && \
     apt-get -y --no-install-recommends install \
         make \
@@ -21,7 +20,6 @@ RUN dpkg --add-architecture i386 && \
         # libxml2-dev:armel \
         # Install libc6-dev-armel-cross instead of libxml2-dev:armel to provide libc6-dev for armel
         libc6-dev-armel-cross \
-        sudo \
         procps && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
@@ -39,14 +37,5 @@ RUN dpkg --add-architecture i386 && \
     # Install gocover-cobertura which is used for test coverage visualization in the diff view
     go install github.com/boumenot/gocover-cobertura@latest && \
     go clean -cache -modcache
-
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-
-RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} builder && useradd -l -m -u ${USER_ID} -g builder -G nordvpn builder && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-    # Enable `go` in sudo mode
-    echo "Defaults secure_path=\"$(dirname $(which go)):$PATH\"" | sudo tee --append /etc/sudoers.d/env_keep
-
-USER builder
 
 CMD ["exec", "$@"]

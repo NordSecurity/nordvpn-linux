@@ -96,6 +96,15 @@ func runDocker(
 	if err != nil {
 		return err
 	}
+
+	if !isPrivileged {
+		cmd = []string{"/bin/sh", "-c", fmt.Sprintf(
+			"groupadd -g %d hostg; useradd -lmu %d -g hostg hostu; su hostu -c '%s'",
+			os.Getgid(),
+			os.Getuid(),
+			strings.Join(cmd, " "))}
+	}
+
 	resp, err := docker.ContainerCreate(ctx, &container.Config{
 		Image:      image,
 		Cmd:        cmd,

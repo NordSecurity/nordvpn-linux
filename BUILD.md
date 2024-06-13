@@ -54,7 +54,7 @@ mage build:binariesDocker
 Below steps can be used to build the app without mage and build scripts.
 ### Dependencies
 #### Compile time
-- Go 1.20+
+- Go 1.22+
 - libxml2
 #### Runtime
 - iptables
@@ -175,12 +175,15 @@ Released packages of Linux App can be found in https://repo.nordvpn.com/deb and 
 ### Building images
 The following images can be built:
 - builder
+- generator
+- notifier
 - packager
+- qa-peer
+- ruster
 - scanner
+- snaper
 - tester
 - uploader
-- notifier
-- qa-peer
 
 Images are stored in `ghcr.io/nordsecurity/nordvpn-linux` registry.
 
