@@ -5,13 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
 
+	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -34,7 +36,7 @@ func TestIsConnected(t *testing.T) {
 		{
 			name: "connecting",
 			state: state{
-				State:     "connecting",
+				State:     teliogo.NodeStateConnecting,
 				PublicKey: "123",
 				IsExit:    true,
 			},
@@ -43,7 +45,7 @@ func TestIsConnected(t *testing.T) {
 		{
 			name: "connected",
 			state: state{
-				State:     "connected",
+				State:     teliogo.NodeStateConnected,
 				PublicKey: "123",
 				IsExit:    true,
 			},
@@ -51,18 +53,9 @@ func TestIsConnected(t *testing.T) {
 			channelClosed: true,
 		},
 		{
-			name: "misbehaving",
-			state: state{
-				State:     "misbehaving",
-				PublicKey: "123",
-				IsExit:    true,
-			},
-			publicKey: "123",
-		},
-		{
 			name: "different pubkey",
 			state: state{
-				State:     "connected",
+				State:     teliogo.NodeStateConnected,
 				PublicKey: "321",
 				IsExit:    true,
 			},
@@ -98,12 +91,11 @@ func TestIsConnected(t *testing.T) {
 func TestEventCallback_DoesntBlock(t *testing.T) {
 	stateC := make(chan state)
 	cb := eventCallback(stateC)
-	event, err := json.Marshal(state{})
-	assert.NoError(t, err)
+	var event teliogo.Event
 
 	returnedC := make(chan any)
 	go func() {
-		cb(string(event))
+		cb(event)
 		returnedC <- nil
 	}()
 
@@ -121,7 +113,7 @@ func TestEventCallback_DoesntBlock(t *testing.T) {
 func Test_TelioDefaultConfig(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	telioCfg := &telioFeatures{}
+	telioCfg := &teliogo.Features{}
 	jsn, err := json.Marshal(telioCfg)
 	if err != nil {
 		fmt.Println(err)
@@ -137,28 +129,31 @@ func Test_TelioDefaultConfig(t *testing.T) {
 func Test_TelioConfig(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	expectedCfg := telioRemoteTestConfig
+	expectedCfg := toTelioFeatures(t, telioRemoteTestConfig)
 
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfig}
 
-	cfg, err := handleTelioConfig(exampleEventPath, exampleDeviceID, exampleAppVersion, true, &remoteConfigGetter)
+	actualCfg, err := handleTelioConfig(exampleEventPath, exampleDeviceID, exampleAppVersion, true, &remoteConfigGetter)
 
 	assert.NoError(t, err)
 
-	var j1, j2 telioFeatures
-	err1 := json.Unmarshal([]byte(expectedCfg), &j1)
-	err2 := json.Unmarshal(cfg, &j2)
+	if diff := cmp.Diff(actualCfg, &expectedCfg, cmpopts.SortSlices(func(a, b teliogo.EndpointProvider) bool {
+		return a < b
+	})); diff != "" {
+		t.Errorf("Telio Config mismatch (-want +got):\n%s", diff)
+	}
+}
 
-	assert.NoError(t, err1)
-	assert.NoError(t, err2)
-
-	assert.True(t, reflect.DeepEqual(j1, j2))
+func toTelioFeatures(t *testing.T, cfg string) teliogo.Features {
+	features, err := teliogo.DeserializeFeatureConfig(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return features
 }
 
 func Test_TelioConfigLanaDisabled(t *testing.T) {
 	category.Set(t, category.Integration)
-
-	expectedCfg := telioRemoteTestConfigLanaDisabled
 
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfigLanaDisabled}
 
@@ -166,21 +161,12 @@ func Test_TelioConfigLanaDisabled(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	var j1, j2 telioFeatures
-	err1 := json.Unmarshal([]byte(expectedCfg), &j1)
-	err2 := json.Unmarshal(cfg, &j2)
-
-	assert.NoError(t, err1)
-	assert.NoError(t, err2)
-
-	assert.Nil(t, j2.Lana)
-	assert.Nil(t, j2.Nurse)
+	assert.Nil(t, cfg.Lana)
+	assert.Nil(t, cfg.Nurse)
 }
 
 func Test_TelioConfigAllDisabled(t *testing.T) {
 	category.Set(t, category.Integration)
-
-	expectedCfg := telioRemoteTestConfigAllDisabled
 
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfigAllDisabled}
 
@@ -188,18 +174,25 @@ func Test_TelioConfigAllDisabled(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	var j1, j2 telioFeatures
-	err1 := json.Unmarshal([]byte(expectedCfg), &j1)
-	err2 := json.Unmarshal(cfg, &j2)
+	assert.Nil(t, cfg.Lana)
+	assert.Nil(t, cfg.Nurse)
+	assert.Nil(t, cfg.Derp)
+	assert.Nil(t, cfg.Direct)
 
-	assert.NoError(t, err1)
-	assert.NoError(t, err2)
+	// defaults from libtelio
+	assert.NotNil(t, cfg.Wireguard)
+	assert.NotNil(t, cfg.Wireguard.PersistentKeepalive)
 
-	assert.Nil(t, j2.Lana)
-	assert.Nil(t, j2.Nurse)
-	assert.Nil(t, j2.Derp)
-	assert.Nil(t, j2.Direct)
-	assert.Nil(t, j2.Wireguard)
+	assert.NotNil(t, cfg.Wireguard.PersistentKeepalive.Vpn)
+	assert.Equal(t, uint32(25), *cfg.Wireguard.PersistentKeepalive.Vpn)
+
+	assert.Equal(t, uint32(5), cfg.Wireguard.PersistentKeepalive.Direct)
+
+	assert.NotNil(t, cfg.Wireguard.PersistentKeepalive.Proxying)
+	assert.Equal(t, uint32(25), *cfg.Wireguard.PersistentKeepalive.Proxying)
+
+	assert.NotNil(t, cfg.Wireguard.PersistentKeepalive.Stun)
+	assert.Equal(t, uint32(25), *cfg.Wireguard.PersistentKeepalive.Stun)
 }
 
 const telioRemoteTestConfig string = `
@@ -242,6 +235,7 @@ const telioRemoteTestConfig string = `
 	"exit-dns": "1.1.1.1"
 }
 `
+
 const telioRemoteTestConfigLanaDisabled string = `
 {
 	"nurse": {
