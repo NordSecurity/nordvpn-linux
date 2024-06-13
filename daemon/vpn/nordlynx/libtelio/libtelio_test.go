@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
@@ -34,7 +35,7 @@ func TestIsConnected(t *testing.T) {
 		{
 			name: "connecting",
 			state: state{
-				State:     "connecting",
+				State:     teliogo.NodeStateConnecting,
 				PublicKey: "123",
 				IsExit:    true,
 			},
@@ -43,7 +44,7 @@ func TestIsConnected(t *testing.T) {
 		{
 			name: "connected",
 			state: state{
-				State:     "connected",
+				State:     teliogo.NodeStateConnected,
 				PublicKey: "123",
 				IsExit:    true,
 			},
@@ -51,18 +52,9 @@ func TestIsConnected(t *testing.T) {
 			channelClosed: true,
 		},
 		{
-			name: "misbehaving",
-			state: state{
-				State:     "misbehaving",
-				PublicKey: "123",
-				IsExit:    true,
-			},
-			publicKey: "123",
-		},
-		{
 			name: "different pubkey",
 			state: state{
-				State:     "connected",
+				State:     teliogo.NodeStateConnected,
 				PublicKey: "321",
 				IsExit:    true,
 			},
@@ -98,12 +90,11 @@ func TestIsConnected(t *testing.T) {
 func TestEventCallback_DoesntBlock(t *testing.T) {
 	stateC := make(chan state)
 	cb := eventCallback(stateC)
-	event, err := json.Marshal(state{})
-	assert.NoError(t, err)
+	var event teliogo.Event
 
 	returnedC := make(chan any)
 	go func() {
-		cb(string(event))
+		cb(event)
 		returnedC <- nil
 	}()
 
@@ -242,6 +233,7 @@ const telioRemoteTestConfig string = `
 	"exit-dns": "1.1.1.1"
 }
 `
+
 const telioRemoteTestConfigLanaDisabled string = `
 {
 	"nurse": {
