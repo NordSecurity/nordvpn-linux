@@ -170,7 +170,8 @@ func newMockedServer(
 	saveConfigErr error,
 	configureErr error,
 	isMeshOn bool,
-	peers []mesh.MachinePeer) *Server {
+	peers []mesh.MachinePeer,
+) *Server {
 	t.Helper()
 
 	registryApi := mock.RegistryMock{}
@@ -262,20 +263,20 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			assert.Equal(t, test.cm, mserver.cm)
 			assert.Equal(t, test.netw, mserver.netw)
 
-			//Check server configuration
+			// Check server configuration
 			var cfg config.Config
 			err := mserver.cm.Load(&cfg)
 			assert.NoError(t, err)
 			assert.False(t, cfg.Mesh)
 
-			//Enable Mesh
+			// Enable Mesh
 			peerCtx := peer.NewContext(context.Background(), &peer.Peer{AuthInfo: internal.UcredAuth{}})
 			resp, err := mserver.EnableMeshnet(peerCtx, &pb.Empty{})
 			assert.NoError(t, err)
 			_, ok := resp.GetResponse().(*pb.MeshnetResponse_Empty)
 			assert.Equal(t, test.success, ok)
 
-			//Check new server configuration
+			// Check new server configuration
 			err = mserver.cm.Load(&cfg)
 			assert.NoError(t, err)
 			assert.Equal(t, test.success, cfg.Mesh)
@@ -340,17 +341,17 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			assert.Equal(t, test.cm, mserver.cm)
 			assert.Equal(t, test.netw, mserver.netw)
 
-			//Set server configuration
+			// Set server configuration
 			var cfg config.Config
 			mserver.cm.SaveWith(func(c config.Config) config.Config { c.Mesh = true; return c })
 
-			//Disable Mesh
+			// Disable Mesh
 			resp, err := mserver.DisableMeshnet(context.Background(), &pb.Empty{})
 			assert.NoError(t, err)
 			_, ok := resp.GetResponse().(*pb.MeshnetResponse_Empty)
 			assert.Equal(t, true, ok)
 
-			//Check new server configuration
+			// Check new server configuration
 			err = mserver.cm.Load(&cfg)
 			assert.NoError(t, err)
 			assert.Equal(t, false, cfg.Mesh)
