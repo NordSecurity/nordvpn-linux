@@ -57,6 +57,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
+	fmt.Printf("Virtual location: %+v\n", nstrings.GetBoolLabel(settings.VirtualLocation))
 
 	displayAllowlist(settings.Allowlist)
 	return nil
