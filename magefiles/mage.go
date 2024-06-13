@@ -102,11 +102,6 @@ func (View) Docs() error {
 
 // Clean is used to clean build results.
 func Clean() error {
-	env, err := getEnv()
-	if err != nil {
-		return err
-	}
-
 	// cleanup regular build folders
 	buildFolders := []string{"./bin", "./dist"}
 	for _, folder := range buildFolders {
@@ -148,14 +143,6 @@ func Clean() error {
 			return err
 		}
 	}
-
-	// cleanup rust dependencies
-	if !strings.Contains(env["FEATURES"], "internal") {
-		if err := sh.Run("cargo", "clean", "--manifest-path", "./build/foss/Cargo.toml"); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
