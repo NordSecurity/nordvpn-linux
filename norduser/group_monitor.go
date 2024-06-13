@@ -122,21 +122,6 @@ func (osGetter) getUserID(username string) (userIDs, error) {
 	}, nil
 }
 
-func parseSessions(sessions string) []string {
-	re := regexp.MustCompile(`(?m)^(\S+)`)
-	matches := re.FindAllStringSubmatch(sessions, -1)
-	if matches == nil {
-		return []string{}
-	}
-
-	activeUsers := []string{}
-	for _, match := range matches {
-		activeUsers = append(activeUsers, match[1])
-	}
-
-	return activeUsers
-}
-
 func updateGroupMembersState(groupMembers userSet, activeUsers []string) userSet {
 	for member := range groupMembers {
 		if idx := slices.Index(activeUsers, member); idx != -1 {

@@ -4,7 +4,7 @@ package norduser
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <utmp.h>
+#include <utmpx.h>
 
 const int ERROR_REALLOC = -1;
 const int ERROR_MALLOC_USERNAME = -2;
@@ -13,23 +13,25 @@ void free_users_table(char*** users, int size) {
   for (int index = 0; index < size; index++) {
     if ((*users)[index] != NULL) {
       free((*users)[index]);
+      (*users)[index] = NULL;
     }
   }
 
   if (*users != NULL) {
     free(*users);
+    *users = NULL;
   }
 }
 
 int get_utmp_user_processes(char*** users) {
   int index = 0;
   int size = 0;
-  setutent();
+  setutxent();
 
   *users = NULL;
 
-  struct utmp* u;
-  while ((u = getutent()) != NULL) {
+  struct utmpx* u;
+  while ((u = getutxent()) != NULL) {
     if (u->ut_type != USER_PROCESS) {
       continue;
     }
@@ -39,6 +41,7 @@ int get_utmp_user_processes(char*** users) {
       tmp = realloc(*users, (size + 1) * sizeof(char*));
       if (tmp == NULL) {
         free_users_table(users, index);
+        endutxent();
         return ERROR_REALLOC;
       }
       *users = tmp;
@@ -46,17 +49,19 @@ int get_utmp_user_processes(char*** users) {
       size++;
     }
 
-    (*users)[index] = malloc(UT_NAMESIZE);
+    (*users)[index] = malloc(__UT_NAMESIZE + 1);
+    (*users)[index][__UT_NAMESIZE]='\0';
     if ((*users)[index] == NULL) {
       free_users_table(users, size);
+      endutxent();
       return ERROR_MALLOC_USERNAME;
     }
 
-    strcpy((*users)[index], u->ut_user);
+    strncpy((*users)[index], u->ut_user, __UT_NAMESIZE);
     index++;
   }
 
-  endutent();
+  endutxent();
 
   return size;
 }

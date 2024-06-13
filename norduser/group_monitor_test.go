@@ -122,51 +122,6 @@ func Test_getGroupMembers(t *testing.T) {
 	}
 }
 
-func Test_parseSessions(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name           string
-		activeSessions string
-		expectedResult []string
-	}{
-		{
-			name:           "single row",
-			activeSessions: "user1 :1       :1               09:32   ?xdm?   2:27m  0.00s /usr/libexec/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --session=ubuntu",
-			expectedResult: []string{"user1"},
-		},
-		{
-			name:           "no sessions",
-			activeSessions: "",
-			expectedResult: []string{},
-		},
-		{
-			name: "multiple sessions",
-			activeSessions: "user1 :1       :1               09:32   ?xdm?   2:27m  0.00s /usr/libexec/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --session=ubuntu" +
-				"\nuser2 :1       :1               09:32   ?xdm?   2:27m  0.00s /usr/libexec/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --session=ubuntu" +
-				"\nuser3 :1       :1               09:32   ?xdm?   2:27m  0.00s /usr/libexec/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --session=ubuntu",
-			expectedResult: []string{"user1", "user2", "user3"},
-		},
-		{
-			name:           "valid characters",
-			activeSessions: "us.er-1 :1       :1               09:32   ?xdm?   2:27m  0.00s /usr/libexec/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --session=ubuntu",
-			expectedResult: []string{"us.er-1"},
-		},
-		{
-			name:           "max username length",
-			activeSessions: "lkwkdsF77Z2diQyD95RycbaLpYFuXEIf :1       :1               09:32   ?xdm?   2:27m  0.00s /usr/libexec/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --session=ubuntu",
-			expectedResult: []string{"lkwkdsF77Z2diQyD95RycbaLpYFuXEIf"},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			sessions := parseSessions(test.activeSessions)
-			assert.Equal(t, test.expectedResult, sessions)
-		})
-	}
-}
-
 func Test_handleGroupUpdate(t *testing.T) {
 	category.Set(t, category.Unit)
 
