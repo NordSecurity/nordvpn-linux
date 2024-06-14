@@ -50,12 +50,12 @@ int get_utmp_user_processes(char*** users) {
     }
 
     (*users)[index] = malloc(__UT_NAMESIZE + 1);
-    (*users)[index][__UT_NAMESIZE]='\0';
     if ((*users)[index] == NULL) {
       free_users_table(users, size);
       endutxent();
       return ERROR_MALLOC_USERNAME;
     }
+    (*users)[index][__UT_NAMESIZE]='\0';
 
     strncpy((*users)[index], u->ut_user, __UT_NAMESIZE);
     index++;

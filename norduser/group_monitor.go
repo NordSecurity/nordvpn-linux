@@ -205,7 +205,7 @@ func (n *NordVPNGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, new
 	return newGroupMembers
 }
 
-func (n *NordVPNGroupMonitor) handleGropuFileUpdate(currentGrupMembers userSet) (userSet, error) {
+func (n *NordVPNGroupMonitor) handleGropuFileUpdate(currentGroupMembers userSet) (userSet, error) {
 	newGroupMembers, err := getNordVPNGroupMembers()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get new group members: %w", err)
@@ -217,7 +217,7 @@ func (n *NordVPNGroupMonitor) handleGropuFileUpdate(currentGrupMembers userSet) 
 	}
 	newGroupMembers = updateGroupMembersState(newGroupMembers, activeUsers)
 
-	return n.handleGroupUpdate(currentGrupMembers, newGroupMembers), nil
+	return n.handleGroupUpdate(currentGroupMembers, newGroupMembers), nil
 }
 
 func (n *NordVPNGroupMonitor) startForEveryGroupMember(groupMembers userSet) {
