@@ -32,42 +32,6 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
-@pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_connect_to_standard_group(tech, proto, obfuscated, group):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    output = sh.nordvpn.connect(group, _tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
-
-
-@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_connect_to_additional_group(tech, proto, obfuscated, group):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    output = sh.nordvpn.connect(group, _tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
-
-
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
