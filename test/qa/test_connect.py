@@ -140,7 +140,7 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
 
 
 # the tun interface is recreated only for OpenVPN
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated):
