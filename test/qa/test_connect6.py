@@ -15,26 +15,21 @@ from lib import (
 from test_connect import connect_base_test, disconnect_base_test
 
 
-def setup_module(module):  # noqa: ARG001
+def setup_function(function):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
     logging.log()
     print(sh.nordvpn.set.ipv6.on())
 
 
 def teardown_function(function):  # noqa: ARG001
-    sh.nordvpn.set.ipv6.off()
-
     logging.log(data=info.collect())
     logging.log()
+
+    print(sh.nordvpn.set.ipv6.off())
+    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.set.defaults()
+    daemon.stop()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_WITH_IPV6)

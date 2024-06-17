@@ -12,23 +12,19 @@ from lib import (
 from test_connect import connect_base_test, disconnect_base_test
 
 
-def setup_module(module):  # noqa: ARG001
+def setup_function(function):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
     logging.log()
 
 
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
+
+    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.set.defaults()
+    daemon.stop()
 
 
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.TECHNOLOGIES)
@@ -80,22 +76,21 @@ def test_status_change_technology_and_protocol(
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    sh.nordvpn.connect()
+    assert source_tech.upper() in sh.nordvpn.status()
+
+    if source_tech == "openvpn":
+        assert source_proto.upper() in sh.nordvpn.status()
+    else:
+        assert "UDP" in sh.nordvpn.status()
+
+    lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+    assert source_tech.upper() in sh.nordvpn.status()
+
+    if source_tech == "openvpn":
         assert source_tech.upper() in sh.nordvpn.status()
-
-        if source_tech == "openvpn":
-            assert source_proto.upper() in sh.nordvpn.status()
-        else:
-            assert "UDP" in sh.nordvpn.status()
-
-        lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-        assert source_tech.upper() in sh.nordvpn.status()
-
-        if source_tech == "openvpn":
-            assert source_tech.upper() in sh.nordvpn.status()
-        else:
-            assert "UDP" in sh.nordvpn.status()
+    else:
+        assert "UDP" in sh.nordvpn.status()
 
     disconnect_base_test()
 
@@ -113,20 +108,18 @@ def test_status_change_technology_and_protocol_reconnect(
         target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
-
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
+    sh.nordvpn.connect()
+    disconnect_base_test()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+    sh.nordvpn.connect()
 
-    with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
-        assert target_tech.upper() in sh.nordvpn.status()
+    assert target_tech.upper() in sh.nordvpn.status()
 
-        if target_tech == "openvpn":
-            assert target_proto.upper() in sh.nordvpn.status()
-        else:
-            assert "UDP" in sh.nordvpn.status()
+    if target_tech == "openvpn":
+        assert target_proto.upper() in sh.nordvpn.status()
+    else:
+        assert "UDP" in sh.nordvpn.status()
 
     disconnect_base_test()
 
