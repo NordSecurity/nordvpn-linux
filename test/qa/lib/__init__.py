@@ -41,7 +41,7 @@ TECHNOLOGIES_BASIC2 = [
 ]
 
 # no obfuscated servers with ipv6 2021/05/24
-TECHNOLOGIES_WITH_IPV6 = STANDARD_TECHNOLOGIES
+TECHNOLOGIES_WITH_IPV6 = STANDARD_TECHNOLOGIES[:-1]
 
 # Used for test parametrization, when the same test has to be run for different threat protection lite settings.
 THREAT_PROTECTION_LITE = [

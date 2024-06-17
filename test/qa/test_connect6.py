@@ -12,6 +12,7 @@ from lib import (
     login,
     network,
 )
+from test_connect import connect_base_test, disconnect_base_test
 
 
 def setup_module(module):  # noqa: ARG001
@@ -26,85 +27,50 @@ def teardown_module(module):  # noqa: ARG001
 
 def setup_function(function):  # noqa: ARG001
     logging.log()
+    print(sh.nordvpn.set.ipv6.on())
 
 
 def teardown_function(function):  # noqa: ARG001
+    sh.nordvpn.set.ipv6.off()
+
     logging.log(data=info.collect())
     logging.log()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_WITH_IPV6[:-1])
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_WITH_IPV6)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_ipv6_connect(tech, proto, obfuscated):
-    output = sh.nordvpn.set.ipv6.on()
-    print(output)
+def test_ipv6_connect(tech, proto, obfuscated) -> None:
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS), _tty_out=False)
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    sh.nordvpn.set.ipv6.off()
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    connect_base_test((tech, proto, obfuscated), random.choice(lib.IPV6_SERVERS), ipv6 = True)
+    disconnect_base_test()
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_ipv6_enabled_ipv4_connect():
-    output = sh.nordvpn.set.ipv6.on()
-    print(output)
-    lib.set_technology_and_protocol("openvpn", "udp", "off")
-
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect("pl128", _tty_out=False)
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_connected()
+    lib.set_technology_and_protocol(*lib.STANDARD_TECHNOLOGIES[0])
+    connect_base_test(lib.STANDARD_TECHNOLOGIES[0], "pl128")
 
     with pytest.raises(sh.ErrorReturnCode_2) as ex:
         network.is_ipv6_connected(2)
 
     assert "Cannot assign requested address" in str(ex.value)
 
-    output = sh.nordvpn.disconnect()
-    print(output)
-    sh.nordvpn.set.ipv6.off()
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    disconnect_base_test()
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_ipv6_double_connect_without_disconnect():
-    output = sh.nordvpn.set.ipv6.on()
-    print(output)
-    lib.set_technology_and_protocol("openvpn", "udp", "off")
-
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect("pl128", _tty_out=False)
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_connected()
+    lib.set_technology_and_protocol(*lib.STANDARD_TECHNOLOGIES[0])
+    connect_base_test(lib.STANDARD_TECHNOLOGIES[0], "pl128")
 
     with pytest.raises(sh.ErrorReturnCode_2) as ex:
         network.is_ipv6_connected(2)
 
     assert "Cannot assign requested address" in str(ex.value)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS), _tty_out=False)
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    sh.nordvpn.set.ipv6.off()
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    connect_base_test(lib.STANDARD_TECHNOLOGIES[0], random.choice(lib.IPV6_SERVERS), ipv6 = True)
+    disconnect_base_test()

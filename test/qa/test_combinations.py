@@ -8,7 +8,6 @@ from lib import (
     info,
     logging,
     login,
-    network,
 )
 from test_connect import connect_base_test, disconnect_base_test
 
@@ -45,23 +44,12 @@ def test_reconnect_matrix_standard(
         target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
-
-    output = sh.nordvpn.connect(_tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
+    connect_base_test(ipv6 = False)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+    connect_base_test(ipv6 = False)
 
-    output = sh.nordvpn.connect(_tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    disconnect_base_test()
 
 
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
@@ -77,50 +65,26 @@ def test_reconnect_matrix_obfuscated(
         target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
-
-    output = sh.nordvpn.connect(_tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
+    connect_base_test(ipv6 = False)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+    connect_base_test(ipv6 = False)
 
-    output = sh.nordvpn.connect(_tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    disconnect_base_test()
 
 
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize(("country", "city"), list(zip(lib.COUNTRIES, lib.CITIES, strict=False)))
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_connect_country_and_city(country, city):
-    lib.set_technology_and_protocol("nordlynx", "", "")
+def test_connect_country_and_city(tech, proto, obfuscated, country, city):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    output = sh.nordvpn.connect(country, _tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
+    connect_base_test(country, ipv6 = False)
+    connect_base_test(city, ipv6 = False)
+    connect_base_test(f"{country} {city}", ipv6 = False)
 
-    output = sh.nordvpn.connect(city, _tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
-
-    output = sh.nordvpn.connect(country, city, _tty_out=False)
-    print(output)
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    disconnect_base_test()
 
 
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
@@ -154,7 +118,7 @@ def test_status_change_technology_and_protocol(
         else:
             assert "UDP" in sh.nordvpn.status()
 
-    assert network.is_disconnected()
+    disconnect_base_test()
 
 
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
@@ -185,7 +149,7 @@ def test_status_change_technology_and_protocol_reconnect(
         else:
             assert "UDP" in sh.nordvpn.status()
 
-    assert network.is_disconnected()
+    disconnect_base_test()
 
 
 @pytest.mark.parametrize("source_group", lib.STANDARD_GROUPS[-2:])
@@ -206,11 +170,11 @@ def test_reconnect_to_standard_group(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test((source_tech, source_proto, source_obfuscated), source_group)
+    connect_base_test(source_group)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test((target_tech, target_proto, target_obfuscated), target_group)
+    connect_base_test(target_group)
 
     disconnect_base_test()
 
@@ -233,11 +197,11 @@ def test_reconnect_to_additional_group(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test((source_tech, source_proto, source_obfuscated), source_group)
+    connect_base_test(source_group)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test((target_tech, target_proto, target_obfuscated), target_group)
+    connect_base_test(target_group)
 
     disconnect_base_test()
 
@@ -260,10 +224,10 @@ def test_reconnect_to_server_by_country_name(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test((source_tech, source_proto, source_obfuscated), source_country)
+    connect_base_test(source_country)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test((target_tech, target_proto, target_obfuscated), target_country)
+    connect_base_test(target_country)
 
     disconnect_base_test()
