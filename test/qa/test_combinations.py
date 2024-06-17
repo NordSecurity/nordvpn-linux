@@ -31,32 +31,11 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
-@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_reconnect_matrix_standard(
-        source_tech,
-        target_tech,
-        source_proto,
-        target_proto,
-        source_obfuscated,
-        target_obfuscated,
-):
-    lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
-    connect_base_test(ipv6 = False)
-
-    lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-    connect_base_test(ipv6 = False)
-
-    disconnect_base_test()
-
-
-@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
-@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_reconnect_matrix_obfuscated(
+def test_reconnect_matrix(
         source_tech,
         target_tech,
         source_proto,
