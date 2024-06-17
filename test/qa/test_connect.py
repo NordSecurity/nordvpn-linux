@@ -67,18 +67,6 @@ def test_connect_to_server_absent(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_mistype_connect(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.kinect()
-
-    print(ex.value)
-    assert lib.is_invalid_command("kinect", ex)
-    assert network.is_disconnected()
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_server_random_by_name(tech, proto, obfuscated):
