@@ -161,7 +161,6 @@ func TestConfigDefaultValues(t *testing.T) {
 			assert.Equal(t, test.autoconnect, cfg.AutoConnect)
 			assert.False(t, cfg.IPv6)
 			assert.True(t, cfg.VirtualLocation.Get())
-
 		})
 	}
 }
