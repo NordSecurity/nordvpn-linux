@@ -9,7 +9,8 @@ from lib import (
     logging,
     login,
 )
-from test_connect import connect_base_test, disconnect_base_test
+from test_connect import disconnect_base_test
+from test_connect6 import connect_base_test
 
 
 def setup_function(function):  # noqa: ARG001
@@ -142,11 +143,11 @@ def test_reconnect_to_standard_group(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test(source_group)
+    connect_base_test(source_group, ipv6 = False)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test(target_group)
+    connect_base_test(target_group, ipv6 = False)
 
     disconnect_base_test()
 
@@ -169,11 +170,11 @@ def test_reconnect_to_additional_group(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test(source_group)
+    connect_base_test(source_group, ipv6 = False)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test(target_group)
+    connect_base_test(target_group, ipv6 = False)
 
     disconnect_base_test()
 
@@ -196,10 +197,10 @@ def test_reconnect_to_server_by_country_name(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test(source_country)
+    connect_base_test(source_country, ipv6 = False)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test(target_country)
+    connect_base_test(target_country, ipv6 = False)
 
     disconnect_base_test()
