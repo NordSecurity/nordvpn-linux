@@ -6,9 +6,11 @@ package dns
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // Setter is responsible for configuring DNS.
@@ -21,20 +23,18 @@ type Setter interface {
 type Method interface {
 	Set(iface string, nameservers []string) error
 	Unset(iface string) error
-	IsAvailable() bool
 	Name() string
 }
 
 /*
 DefaultSetter handleds DNS in this order:
 
-1. If systemd-resolve command is available and systemd-resolved.service is
-running, systemd-resolve DBUS API is used.
+1. Try to use systemd-resolved DBUS API.
 
-2. In case of systemd-resolve is not accessible, resolvectl (which is part of
-systemd-resolve package) command line utility is used.
+2. In case of systemd-resolved service is not accessible, resolvectl (which is part of
+systemd-resolved package) command line utility is used. (snap case)
 
-3. In absence of systemd-resolve, resolvconf command line utility is used, which
+3. In case of systemd-resolved failure, resolvconf command line utility is used, which
 modifies /etc/resolv.conf by adding or removing lines.
 
 4. In case the resolvconf command line utility fails, /etc/resolv.conf is
@@ -51,6 +51,7 @@ func NewSetter(publisher events.Publisher[string]) *DefaultSetter {
 		methods:   []Method{},
 	}
 	ds.methods = append(ds.methods, &Resolved{})
+	// Resolvectl is part of systemd-resolved, but is used under Snap, where some restrictions apply
 	ds.methods = append(ds.methods, &Resolvectl{})
 	ds.methods = append(ds.methods, &Resolvconf{})
 	ds.methods = append(ds.methods, &ResolvConfFile{})
@@ -70,13 +71,12 @@ func (d *DefaultSetter) Set(iface string, nameservers []string) error {
 	}
 
 	for _, method := range d.methods {
-		if method.IsAvailable() {
-			d.publisher.Publish("set dns for interface [" + iface + "] using: " + method.Name())
-			if err := method.Set(iface, nameservers); err != nil {
-				return fmt.Errorf("setting dns with %s: %w", method.Name(), err)
-			}
-			return nil
+		d.publisher.Publish("set dns for interface [" + iface + "] using: " + method.Name())
+		if err := method.Set(iface, nameservers); err != nil {
+			log.Println(internal.ErrorPrefix, fmt.Errorf("setting dns with %s: %w", method.Name(), err))
+			continue
 		}
+		return nil
 	}
 
 	return fmt.Errorf("dns not set, no dns setting method is available")
@@ -88,13 +88,12 @@ func (d *DefaultSetter) Unset(iface string) error {
 	d.publisher.Publish("unsetting DNS")
 
 	for _, method := range d.methods {
-		if method.IsAvailable() {
-			d.publisher.Publish("unset dns for interface [" + iface + "] using: " + method.Name())
-			if err := method.Unset(iface); err != nil {
-				return fmt.Errorf("unsetting dns with %s: %w", method.Name(), err)
-			}
-			return nil
+		d.publisher.Publish("unset dns for interface [" + iface + "] using: " + method.Name())
+		if err := method.Unset(iface); err != nil {
+			log.Println(internal.ErrorPrefix, fmt.Errorf("unsetting dns with %s: %w", method.Name(), err))
+			continue
 		}
+		return nil
 	}
 
 	return nil

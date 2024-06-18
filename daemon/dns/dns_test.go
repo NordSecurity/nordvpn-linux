@@ -11,8 +11,7 @@ import (
 )
 
 type MockMethod struct {
-	avail bool
-	err   error
+	err error
 }
 
 func (m *MockMethod) Set(iface string, nameservers []string) error {
@@ -20,9 +19,6 @@ func (m *MockMethod) Set(iface string, nameservers []string) error {
 }
 func (m *MockMethod) Unset(iface string) error {
 	return m.err
-}
-func (m *MockMethod) IsAvailable() bool {
-	return m.avail
 }
 func (m *MockMethod) Name() string {
 	return "mock"
@@ -33,8 +29,8 @@ func newDnsSetterGood() Setter {
 		publisher: &subs.Subject[string]{},
 		methods:   []Method{},
 	}
-	ds.methods = append(ds.methods, &MockMethod{avail: true, err: nil})
-	ds.methods = append(ds.methods, &MockMethod{avail: false, err: errors.New("err1")})
+	ds.methods = append(ds.methods, &MockMethod{err: nil})
+	ds.methods = append(ds.methods, &MockMethod{err: errors.New("err1")})
 	return &ds
 }
 func newDnsSetterError() Setter {
@@ -42,8 +38,8 @@ func newDnsSetterError() Setter {
 		publisher: &subs.Subject[string]{},
 		methods:   []Method{},
 	}
-	ds.methods = append(ds.methods, &MockMethod{avail: false, err: nil})
-	ds.methods = append(ds.methods, &MockMethod{avail: true, err: errors.New("err1")})
+	ds.methods = append(ds.methods, &MockMethod{err: nil})
+	ds.methods = append(ds.methods, &MockMethod{err: errors.New("err1")})
 	return &ds
 }
 func newDnsSetterNotAvailable() Setter {
@@ -51,8 +47,8 @@ func newDnsSetterNotAvailable() Setter {
 		publisher: &subs.Subject[string]{},
 		methods:   []Method{},
 	}
-	ds.methods = append(ds.methods, &MockMethod{avail: false, err: nil})
-	ds.methods = append(ds.methods, &MockMethod{avail: false, err: errors.New("err1")})
+	ds.methods = append(ds.methods, &MockMethod{err: errors.New("set-err")})
+	ds.methods = append(ds.methods, &MockMethod{err: errors.New("unset-err")})
 	return &ds
 }
 func newDnsSetterNoMethods() Setter {
@@ -96,7 +92,7 @@ func Test_Method(t *testing.T) {
 			intf:     "nordvpn",
 			dnss:     []string{},
 			setErr:   true,
-			unsetErr: true,
+			unsetErr: false,
 		},
 		{
 			name:     "dns methods all unavailable",
