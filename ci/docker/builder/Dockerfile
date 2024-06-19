@@ -22,8 +22,11 @@ RUN dpkg --add-architecture i386 && \
         libxml2-dev:armhf \
         # libxml2-dev:armel \
         # Install libc6-dev-armel-cross instead of libxml2-dev:armel to provide libc6-dev for armel
+        libc6-dev \
         libc6-dev-armel-cross \
-        procps && \
+        procps \
+        sqlite3 \
+        libsqlite3-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

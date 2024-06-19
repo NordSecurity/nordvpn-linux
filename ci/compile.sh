@@ -46,6 +46,15 @@ export CGO_ENABLED=1
 GOARCH="${ARCHS_GO["${ARCH}"]}"
 export GOARCH="${GOARCH}"
 
+if [[ "${#}" -ge 1 ]]; then
+  if [[ "${1}" == "docker" ]]; then
+    # Inside container, go tried to put cache under HOME, and it's owned
+    # by root so go command fails while running commands as different user
+    # than root in docker
+    export GOCACHE="/tmp/go-build-cache"
+  fi
+fi
+
 # C compiler flags for binary hardening.
 export CGO_CFLAGS="-g -O2 -D_FORTIFY_SOURCE=2"
 
