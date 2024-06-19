@@ -127,6 +127,7 @@ func TestStartAutoConnect(t *testing.T) {
 					&subs.Subject[events.ServerRating]{},
 					&subs.Subject[int]{},
 					&subs.Subject[bool]{},
+					&subs.Subject[bool]{},
 				),
 				func(config.Technology) (vpn.VPN, error) {
 					return &mock.WorkingVPN{}, nil
@@ -313,6 +314,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 					&subs.Subject[core.ServicesResponse]{},
 					&subs.Subject[events.ServerRating]{},
 					&subs.Subject[int]{},
+					&subs.Subject[bool]{},
 					&subs.Subject[bool]{},
 				),
 				func(config.Technology) (vpn.VPN, error) {
