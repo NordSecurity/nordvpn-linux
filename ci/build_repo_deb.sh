@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euox
+set -euxo pipefail
 
 # clean build dir
 rm -rf "${WORKDIR}"/dist/repo/deb

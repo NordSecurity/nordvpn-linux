@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo
+set -euxo pipefail
 
 # Excluded packages are directly related to C packages, therefore they
 # complicate the compilation process. It is fine to exclude them for

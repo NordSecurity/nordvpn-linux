@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo
+set -euxo pipefail
 
 default_tool=curl
 

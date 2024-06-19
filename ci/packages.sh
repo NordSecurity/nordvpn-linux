@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo
+set -euxo pipefail
 
 APT_GET="$(which apt-get 2> /dev/null)"
 

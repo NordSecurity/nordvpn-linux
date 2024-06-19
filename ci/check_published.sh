@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo
+set -euxo pipefail
 
 source "${WORKDIR}/ci/archs.sh"
 

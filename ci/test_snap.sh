@@ -1,8 +1,8 @@
 #!/bin/bash
+set -euxo pipefail
+
 category="${1}"
 pattern="${2}"
-
-set -ux
 
 export COVERDIR="covdatafiles"
 
