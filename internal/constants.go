@@ -52,6 +52,9 @@ const (
 	// ChattrExec is the chattr command executable name
 	ChattrExec = "chattr"
 
+	// LsattrExec is the lsattr command executable name
+	LsattrExec = "lsattr"
+
 	// SttyExec is a tool to change or print CLI settings
 	SttyExec = "stty"
 

@@ -206,6 +206,8 @@ func TestFileLock(t *testing.T) {
 	err := FileLock(filePath)
 	assert.Nil(t, err)
 
+	assert.True(t, IsFileLocked(filePath))
+
 	err = os.Remove(filePath)
 	assert.Error(t, err, filePath)
 }
@@ -221,8 +223,15 @@ func TestFileUnlock(t *testing.T) {
 	}()
 
 	exec.Command(ChattrExec, "+i", filePath).Run()
-	FileUnlock(filePath)
-	err := os.Remove(filePath)
+
+	assert.True(t, IsFileLocked(filePath))
+
+	err := FileUnlock(filePath)
+	assert.Nil(t, err)
+
+	assert.False(t, IsFileLocked(filePath))
+
+	err = os.Remove(filePath)
 	assert.NoError(t, err)
 }
 
@@ -401,6 +410,7 @@ func TestOpenLogFile(t *testing.T) {
 				assert.NotNil(t, file)
 				assert.NoError(t, err)
 				assert.NoError(t, file.Close())
+				assert.False(t, IsSymLink(testFilename))
 			}
 
 			test.cleanup()

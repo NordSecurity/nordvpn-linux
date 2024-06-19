@@ -8,6 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDiscoverNameserverIp(t *testing.T) {
+	ip, err := discoverNameserverIp()
+	assert.NoError(t, err)
+	assert.NotNil(t, ip)
+}
+
 func TestNameservers(t *testing.T) {
 	category.Set(t, category.Unit)
 	tpNameservers := []string{threatProtectionLitePrimaryNameserver4, threatProtectionLiteSecondaryNameserver4}

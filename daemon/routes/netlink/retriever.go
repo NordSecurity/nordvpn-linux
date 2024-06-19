@@ -41,7 +41,10 @@ func (Retriever) Retrieve(prefix netip.Prefix, ignoreTable uint) (netip.Addr, ne
 	}
 
 	// If not ok, Gw is likely not set
-	ip, _ := netip.AddrFromSlice(route.Gw)
+	ip, ok := netip.AddrFromSlice(route.Gw)
+	if !ok {
+		return netip.Addr{}, net.Interface{}, fmt.Errorf("failed retrieving gateway ip")
+	}
 	return ip, *iface, nil
 }
 

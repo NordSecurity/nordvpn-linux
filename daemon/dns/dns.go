@@ -98,3 +98,8 @@ func (d *DefaultSetter) Unset(iface string) error {
 
 	return nil
 }
+
+// RestoreResolvConfFile try to restore resolv.conf if target file contains Nordvpn changes
+func RestoreResolvConfFile() {
+	tryToRestoreDNS()
+}

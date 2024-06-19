@@ -310,6 +310,16 @@ func IsFile(fileName string) bool {
 	return fileInfo.Mode().IsRegular()
 }
 
+// IsSymLink check if file name is sym link
+func IsSymLink(fileName string) bool {
+	fileInfo, err := os.Lstat(fileName)
+	if err != nil {
+		return false
+	}
+
+	return fileInfo.Mode().Type() == fs.ModeSymlink
+}
+
 // FileDelete deletes file from system
 func FileDelete(path string) error {
 	return os.Remove(path)
@@ -325,6 +335,15 @@ func FileUnlock(filepath string) error {
 func FileLock(filepath string) error {
 	_, err := exec.Command(ChattrExec, "+i", filepath).CombinedOutput()
 	return err
+}
+
+// IsFileLocked checks if file is immutable
+func IsFileLocked(filepath string) bool {
+	out, err := exec.Command(LsattrExec, "-l", filepath).CombinedOutput()
+	if err != nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(string(out)), "immutable")
 }
 
 // FileCopy copies a file in path src to path dst
