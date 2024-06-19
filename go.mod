@@ -7,7 +7,6 @@ toolchain go1.22.2
 require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
 	github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948
-	github.com/NordSecurity/libtelio v0.0.0-20240412122320-157263e48f69
 	github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.6.0
@@ -45,10 +44,13 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
+replace github.com/NordSecurity/libtelio-go/v5 => ../libtelio-go/v5
+
 require (
 	cloud.google.com/go/compute v1.19.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
+	github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
