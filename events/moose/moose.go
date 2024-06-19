@@ -3,13 +3,14 @@
 // Package moose provides convenient wrappers for event sending.
 package moose
 
-// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/amd64/latest -lnord
-// #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/i386/latest -lnord
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/armel/latest -lnord
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/armhf/latest -lnord
-// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/aarch64/latest -lnord
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/amd64/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/i386/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armel/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armhf/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/aarch64/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
 // #cgo LDFLAGS: -ldl -lm
 import "C"
+
 import (
 	"errors"
 	"fmt"
@@ -139,12 +140,11 @@ func (s *Subscriber) mooseInit() error {
 		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
 	}
 	sendEvents := true
-	var batchSize uint = 20
+	var batchSize uint32 = 20
 	compressRequest := true
 
 	if err := s.response(uint32(worker.Start(
 		s.EventsDbPath,
-		workerVersion,
 		s.currentDomain,
 		uint64(timeBetweenEvents.Milliseconds()),
 		uint64(timeBetweenBatchesOfEvents.Milliseconds()),
@@ -628,10 +628,9 @@ func (s *Subscriber) updateEventDomain() error {
 	return nil
 }
 
-func DrainStart(dbPath string) uint {
+func DrainStart(dbPath string) uint32 {
 	return worker.Start(
 		dbPath,
-		workerVersion,
 		"http://localhost",
 		100,
 		1000,
