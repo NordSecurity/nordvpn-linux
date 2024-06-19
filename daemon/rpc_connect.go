@@ -90,19 +90,8 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		cfg.AutoConnectData.Obfuscate,
 		in.GetServerTag(),
 		in.GetServerGroup(),
+		cfg.VirtualLocation.Get(),
 	)
-
-	if isDedicatedIP(server) {
-		expired, err := r.ac.IsDedicatedIPExpired()
-		if err != nil {
-			log.Println(internal.ErrorPrefix, " checking dedicated IP expiration: ", err)
-			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
-		}
-
-		if expired {
-			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
-		}
-	}
 
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "picking servers:", err)
@@ -115,10 +104,26 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		case errors.Is(err, internal.ErrTagDoesNotExist),
 			errors.Is(err, internal.ErrGroupDoesNotExist),
 			errors.Is(err, internal.ErrServerIsUnavailable),
-			errors.Is(err, internal.ErrDoubleGroup):
+			errors.Is(err, internal.ErrDoubleGroup),
+			errors.Is(err, internal.ErrVirtualServer):
 			return err
+
 		default:
 			return internal.ErrUnhandled
+		}
+	}
+
+	log.Println(internal.InfoPrefix, "server", server.Hostname, "remote", remote)
+
+	if isDedicatedIP(server) {
+		expired, err := r.ac.IsDedicatedIPExpired()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, " checking dedicated IP expiration: ", err)
+			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
+		}
+
+		if expired {
+			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
 		}
 	}
 
