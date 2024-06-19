@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -28,10 +27,16 @@ func (c *cmd) Countries(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	countryList, err := columns(resp.Data)
+	footer := footerForServerGroupsList(resp.Servers)
+	countryList, err := columns(resp.Servers,
+		serverNameLen,
+		formatServerName,
+		footer,
+	)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		fmt.Println(strings.Join(resp.Data, ", "))
+		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
+		fmt.Println(countries)
 	} else {
 		fmt.Println(countryList)
 	}

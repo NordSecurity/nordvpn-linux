@@ -1,9 +1,15 @@
 package internal
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
+
+var notAlphanumeric = regexp.MustCompile(`[^0-9a-zA-Z \-_]+`)
 
 func StringsToInterfaces(strings []string) []interface{} {
 	interfaces := make([]interface{}, len(strings))
@@ -14,15 +20,10 @@ func StringsToInterfaces(strings []string) []interface{} {
 }
 
 func Title(name string) string {
-	splits := strings.Split(name, " ")
-	titled := ""
-	for _, v := range splits {
-		if len(v) == 0 {
-			continue
-		}
-		titled += strings.Title(v) + "_"
-	}
-	return strings.TrimRight(titled, "_")
+	name = notAlphanumeric.ReplaceAllString(name, "")
+	name = strings.Join(strings.Fields(name), " ")
+	titled := cases.Title(language.English, cases.NoLower).String(name)
+	return strings.ReplaceAll(titled, " ", "_")
 }
 
 func SnakeCase(name string) string {
