@@ -18,7 +18,7 @@ import (
 var alphanumeric = regexp.MustCompile(`[^0-9a-zA-Z ]+`)
 
 // JobServers is responsible for population of local server cache which is needed
-// to avoid excees requests to the backend API.
+// to avoid excess requests to the backend API.
 func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validate bool) func() error {
 	return func() error {
 		var cfg config.Config

@@ -20,4 +20,6 @@ var (
 	// ErrNotLoggedIn is returned when the caller is expected to be logged in
 	// but is not
 	ErrNotLoggedIn = errors.New("you are not logged in")
+	// Error returned when user specifies a server that is virtual, but virtual location is off
+	ErrVirtualServer = errors.New("TODO: A virtual server is specified, but virtual location is off")
 )

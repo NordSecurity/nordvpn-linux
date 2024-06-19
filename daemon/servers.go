@@ -29,6 +29,7 @@ func PickServer(
 	obfuscated bool,
 	tag string,
 	groupFlag string,
+	allowVirtualServer bool,
 ) (core.Server, bool, error) {
 	result, remote, err := getServers(
 		api,
@@ -42,6 +43,7 @@ func PickServer(
 		tag,
 		groupFlag,
 		1,
+		allowVirtualServer,
 	)
 	if err != nil {
 		return core.Server{}, remote, err
@@ -63,23 +65,52 @@ func getServers(
 	tag string,
 	groupFlag string,
 	count int,
+	allowVirtualServer bool,
 ) ([]core.Server, bool, error) {
-	var remote bool
+	var remote = true
 	var err error
 	ret := []core.Server{}
 
 	serverGroup, err := resolveServerGroup(groupFlag, tag)
 	if err != nil {
-		return ret, remote, err
+		return ret, false, err
 	}
 
 	isGroupFlagSet := groupFlag != ""
 	serverTag, err := serverTagFromString(countries, api, tag, serverGroup, servers, isGroupFlagSet)
 	if errors.Is(err, internal.ErrTagDoesNotExist) {
-		return ret, remote, err
+		return ret, false, err
 	}
+	if err == nil {
+		if serverTag.Action == core.ServerByName {
+			ret, err = getSpecificServerRemote(
+				api,
+				tech,
+				protocol,
+				obfuscated,
+				serverTag,
+				serverGroup,
+				tag,
+			)
+		} else {
+			ret, err = getServersRemote(
+				api,
+				longitude,
+				latitude,
+				tech,
+				protocol,
+				obfuscated,
+				serverTag,
+				serverGroup,
+				count,
+			)
+		}
+	}
+
 	if err != nil {
-		log.Println(internal.WarningPrefix, err)
+		// if server cannot be selected from the API, try from locally cached servers
+		remote = false
+		log.Println(internal.ErrorPrefix, "failed to select server from remote", err)
 		ret, err = filterServers(
 			servers,
 			tech,
@@ -88,44 +119,26 @@ func getServers(
 			serverGroup,
 			obfuscated,
 		)
-		return ret, remote, err
 	}
-	if serverTag.Action == core.ServerByName {
-		ret, err = getSpecificServerRemote(
-			api,
-			tech,
-			protocol,
-			obfuscated,
-			serverTag,
-			serverGroup,
-			tag,
-		)
-	} else {
-		ret, err = getServersRemote(
-			api,
-			longitude,
-			latitude,
-			tech,
-			protocol,
-			obfuscated,
-			serverTag,
-			serverGroup,
-			count,
-		)
-	}
+
 	if err != nil {
-		log.Println(internal.WarningPrefix, err)
-		ret, err = filterServers(
-			servers,
-			tech,
-			protocol,
-			tag,
-			serverGroup,
-			obfuscated,
-		)
-		return ret, remote, err
+		return ret, false, err
 	}
-	remote = true
+
+	if !allowVirtualServer && len(ret) > 0 {
+		ret = slices.DeleteFunc(ret, func(s core.Server) bool { return s.IsVirtualLocation() })
+		if len(ret) == 0 {
+			// if the selected servers are only virtual, but user has this disabled return an error
+			return ret, false, internal.ErrVirtualServer
+		}
+	}
+
+	if count == 1 && len(ret) > 0 {
+		// #nosec G404 -- not used for cryptographic purposes
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		ret = []core.Server{ret[rng.Int63n(int64(len(ret)))]}
+	}
+
 	return ret, remote, nil
 }
 
@@ -211,14 +224,6 @@ func getServersRemote(
 
 	if len(servers) == 0 {
 		return nil, fmt.Errorf("recommended: empty list")
-	}
-
-	var ret []core.Server
-	if count == 1 {
-		// #nosec G404 -- not used for cryptographic purposes
-		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-		ret = append(ret, servers[rng.Int63n(int64(len(servers)))])
-		return ret, nil
 	}
 
 	return servers, nil
