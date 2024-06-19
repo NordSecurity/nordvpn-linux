@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	teliogo "github.com/NordSecurity/libtelio/ffi/bindings/linux/go"
+	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -28,40 +28,63 @@ import (
 
 const (
 	// TelioLocalConfigName defines env key for local config value
-	TelioLocalConfigName = "TELIO_LOCAL_CFG"
+	TelioLocalConfigName     = "TELIO_LOCAL_CFG"
+	defaultHeartbeatInterval = 60 * 60
 )
 
 type state struct {
-	Nickname  string `json:"nickname"`
-	State     string `json:"state"`
-	PublicKey string `json:"public_key"`
-	IsVPN     bool   `json:"is_vpn"`
-	IsExit    bool   `json:"is_exit"`
+	Nickname  string
+	State     teliogo.NodeState
+	PublicKey string
+	IsVPN     bool
+	IsExit    bool
 }
-
-type event struct {
-	Body state `json:"body"`
-}
-
-type eventFn func(string)
 
 func maskPublicKey(event string) string {
-	expr := regexp.MustCompile(`"public_key":(\s)*"(.*?)"`)
-	return expr.ReplaceAllString(event, `"public_key":"***"`)
+	expr := regexp.MustCompile(`"PublicKey":(\s)*"(.*?)"`)
+	return expr.ReplaceAllString(event, `"PublicKey":"***"`)
 }
 
-func eventCallback(states chan<- state) eventFn {
-	return func(s string) {
-		log.Println(internal.InfoPrefix + maskPublicKey(s))
-		var e event
-		if err := json.Unmarshal([]byte(s), &e); err != nil {
-			return
+type eventCb func(teliogo.Event) *teliogo.TelioError
+
+func (cb eventCb) Event(payload teliogo.Event) *teliogo.TelioError {
+	return cb(payload)
+}
+
+func eventCallback(states chan<- state) eventCb {
+	return func(e teliogo.Event) *teliogo.TelioError {
+		eventBytes, err := json.Marshal(&e)
+		if err != nil {
+			log.Printf(internal.WarningPrefix+" can't marshal telio Event %T: %s\n", e, err)
+		} else {
+			log.Printf(internal.InfoPrefix+" received event %T: %s\n", e, maskPublicKey(string(eventBytes)))
+		}
+
+		var st state
+		switch evt := e.(type) {
+		case teliogo.EventNode:
+			var nickname string
+			if evt.Body.Nickname != nil {
+				nickname = *evt.Body.Nickname
+			}
+			st = state{
+				Nickname:  nickname,
+				State:     evt.Body.State,
+				PublicKey: evt.Body.PublicKey,
+				IsVPN:     evt.Body.IsVpn,
+				IsExit:    evt.Body.IsExit,
+			}
+		default:
+			// ignore
+			return nil
 		}
 
 		select {
-		case states <- e.Body:
+		case states <- st:
 		default: // drop if nobody is listening
 		}
+
+		return nil
 	}
 }
 
@@ -83,7 +106,7 @@ func eventCallback(states chan<- state) eventFn {
 // 8. VPN disconnected, calling Disable - tunnel must be destroyed
 type Libtelio struct {
 	state                   vpn.State
-	lib                     teliogo.Telio
+	lib                     *teliogo.Telio
 	events                  <-chan state
 	cancelConnectionMonitor func()
 	active                  bool
@@ -93,7 +116,7 @@ type Libtelio struct {
 	currentServer     vpn.ServerData
 	currentPrivateKey string
 	isMeshEnabled     bool
-	meshnetMap        string
+	meshnetConfig     teliogo.Config
 	isKernelDisabled  bool
 	fwmark            uint32
 	eventsPublisher   *vpn.Events
@@ -102,92 +125,17 @@ type Libtelio struct {
 
 var defaultIP = netip.MustParseAddr("10.5.0.2")
 
-type telioFeatures struct {
-	Lana                            *lanaConfig           `json:"lana,omitempty"`
-	Nurse                           *nurseConfig          `json:"nurse,omitempty"`
-	Direct                          *directConfig         `json:"direct,omitempty"`
-	Derp                            *derpConfig           `json:"derp,omitempty"`
-	Wireguard                       *wireguardConfig      `json:"wireguard,omitempty"`
-	ExitDns                         string                `json:"exit-dns,omitempty"`
-	ValidateKeys                    bool                  `json:"validate_keys,omitempty"`
-	Nicknames                       bool                  `json:"nicknames,omitempty"`
-	Ipv6                            bool                  `json:"ipv6,omitempty"`
-	BoringtunResetConnections       bool                  `json:"boringtun_reset_connections,omitempty"`
-	FlushEventsOnStopTimeoutSeconds int                   `json:"flush_events_on_stop_timeout_seconds,omitempty"`
-	PostQuantumVPN                  *postQuantumVPNConfig `json:"post_quantum_vpn,omitempty"`
-	LinkDetection                   *linkDetectionConfig  `json:"link_detection,omitempty"`
-}
-
-type lanaConfig struct {
-	EventPath string `json:"event_path"`
-	Prod      bool   `json:"prod"`
-}
-
-type directConfig struct {
-	EndpointIntervalSecs  int                          `json:"endpoint_interval_secs,omitempty"`
-	SkipUnresponsivePeers *skipUnresponsivePeersConfig `json:"skip_unresponsive_peers,omitempty"`
-	Providers             []string                     `json:"providers,omitempty"`
-}
-
-type skipUnresponsivePeersConfig struct {
-	NoRxThresholdSecs int `json:"no_rx_threshold_secs,omitempty"`
-}
-
-type nurseConfig struct {
-	Fingerprint                string     `json:"fingerprint"`
-	HeartbeatInterval          int        `json:"heartbeat_interval,omitempty"`
-	InitialHeartbeatInterval   int        `json:"initial_heartbeat_interval,omitempty"`
-	EnableNatTypeCollection    bool       `json:"enable_nat_type_collection,omitempty"`
-	EnableRelayConnData        bool       `json:"enable_relay_conn_data,omitempty"`
-	EnableNatTraversalConnData bool       `json:"enable_nat_traversal_conn_data,omitempty"`
-	Qos                        *qosConfig `json:"qos,omitempty"`
-}
-
-type qosConfig struct {
-	RttInterval int      `json:"rtt_interval,omitempty"`
-	RttTries    int      `json:"rtt_tries,omitempty"`
-	RttTypes    []string `json:"rtt_types,omitempty"`
-	Buckets     int      `json:"buckets,omitempty"`
-}
-
-type derpConfig struct {
-	TcpKeepalive               int  `json:"tcp_keepalive,omitempty"`
-	DerpKeepalive              int  `json:"derp_keepalive,omitempty"`
-	EnablePolling              bool `json:"enable_polling,omitempty"`
-	UseBuiltInRootCertificates bool `json:"use_built_in_root_certificates,omitempty"`
-}
-
-type wireguardConfig struct {
-	PersistentKeepAlive *persistentKeepAliveConfig `json:"persistent_keepalive,omitempty"`
-}
-
-type persistentKeepAliveConfig struct {
-	Proxying int `json:"proxying,omitempty"`
-	Direct   int `json:"direct,omitempty"`
-	Vpn      int `json:"vpn,omitempty"`
-	Stun     int `json:"stun,omitempty"`
-}
-
-type postQuantumVPNConfig struct {
-	HandshakeRetryIntervalS int `json:"handshake_retry_interval_s,omitempty"`
-	RekeyIntervalS          int `json:"rekey_interval_s,omitempty"`
-}
-
-type linkDetectionConfig struct {
-	RttSeconds int `json:"rtt_seconds,omitempty"`
-}
-
-func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) ([]byte, error) {
-	telioConfig := &telioFeatures{}
+func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) (*teliogo.Features, error) {
 	cfgString, err := vpnLibCfg.GetConfig(version)
 	if err != nil {
 		return nil, fmt.Errorf("getting telio config json string: %w", err)
-	} else {
-		err := json.Unmarshal([]byte(cfgString), &telioConfig)
-		if err != nil {
-			return nil, fmt.Errorf("unmarshaling telio config json string: %w", err)
-		}
 	}
+
+	telioConfig, err := teliogo.DeserializeFeatureConfig(cfgString)
+	if err != nil {
+		return nil, fmt.Errorf("deserializing telio config json string: %w", err)
+	}
+
 	if telioConfig.Lana != nil {
 		telioConfig.Lana.EventPath = eventPath
 		telioConfig.Lana.Prod = prod
@@ -197,65 +145,73 @@ func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg
 	} else {
 		telioConfig.Nurse = nil
 	}
-	return json.Marshal(telioConfig)
+
+	return &telioConfig, nil
+}
+
+type telioLoggerCb struct{}
+
+func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) *teliogo.TelioError {
+	log.Println(logLevelToPrefix(logLevel), "TELIO("+teliogo.GetVersionTag()+"): "+payload)
+	return nil
 }
 
 func New(prod bool, eventPath string, fwmark uint32,
-	vpnLibCfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events) *Libtelio {
+	vpnLibCfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events,
+) (*Libtelio, error) {
 	events := make(chan state)
-	logLevel := teliogo.TELIOLOGINFO
-
-	var telioConfigString string
-	cfg, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, vpnLibCfg)
+	features, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, vpnLibCfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "Failed to get telio config:", err)
+		log.Println(internal.ErrorPrefix, "failed to get telio config:", err)
 
-		defaultTelioConfig := &telioFeatures{}
-		defaultTelioConfig.Lana = &lanaConfig{
+		defaultTelioConfig := teliogo.GetDefaultFeatureConfig()
+		defaultTelioConfig.Lana = &teliogo.FeatureLana{
 			Prod:      prod,
 			EventPath: eventPath,
 		}
-		defaultTelioConfig.Direct = &directConfig{}
-		defaultTelioConfig.Nurse = &nurseConfig{
-			Fingerprint: deviceID,
+		defaultTelioConfig.Nurse = &teliogo.FeatureNurse{
+			Fingerprint:       deviceID,
+			HeartbeatInterval: defaultHeartbeatInterval,
 		}
 
-		fallbackTelioConfig, err := json.Marshal(defaultTelioConfig)
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "Couldn't encode default telio config:", err)
-			fallbackTelioConfig = []byte(`{"direct":{}}`)
-		}
-		cfg = fallbackTelioConfig
+		features = &defaultTelioConfig
 	}
-	telioConfigString = string(cfg)
 
-	log.Println(internal.InfoPrefix, "Telio final config:", telioConfigString)
+	featuresString, err := json.Marshal(features)
+	if err != nil {
+		log.Println(internal.WarningPrefix, "failed to encode telio config:", err)
+		// pass through - encoding is for the logging purposes
+	} else {
+		log.Println(internal.InfoPrefix, "telio final config:", string(featuresString))
+	}
+
+	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
+	teliogo.SetGlobalLogger(teliogo.TelioLogLevelInfo, loggerCb)
+	lib, err := teliogo.NewTelio(*features, eventCallback(events))
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to create telio instance:", err)
+		return nil, err
+	}
 
 	return &Libtelio{
-		lib: teliogo.NewTelio(
-			telioConfigString,
-			eventCallback(events),
-			logLevel, func(i int, s string) {
-				log.Println(
-					logLevelToPrefix(teliogo.Enum_SS_telio_log_level(i)),
-					"TELIO("+teliogo.TelioGetVersionTag()+"): "+s,
-				)
-			}),
+		lib:             lib,
 		events:          events,
 		state:           vpn.ExitedState,
 		fwmark:          fwmark,
 		eventsPublisher: eventsPublisher,
-	}
+	}, nil
 }
 
-func logLevelToPrefix(level teliogo.Enum_SS_telio_log_level) string {
+func logLevelToPrefix(level teliogo.TelioLogLevel) string {
 	switch level {
-	case teliogo.TELIOLOGCRITICAL, teliogo.TELIOLOGERROR:
+	case teliogo.TelioLogLevelError:
 		return internal.ErrorPrefix
-	case teliogo.TELIOLOGWARNING:
+	case teliogo.TelioLogLevelWarning:
 		return internal.WarningPrefix
-	case teliogo.TELIOLOGDEBUG, teliogo.TELIOLOGTRACE:
+	case teliogo.TelioLogLevelDebug, teliogo.TelioLogLevelTrace:
 		return internal.DebugPrefix
+	case teliogo.TelioLogLevelInfo:
+		return internal.InfoPrefix
 	default:
 		return internal.InfoPrefix
 	}
@@ -274,7 +230,7 @@ func (l *Libtelio) Start(
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, "libtelio version:", teliogo.TelioGetVersionTag())
+	log.Println(internal.InfoPrefix, "libtelio version:", teliogo.GetVersionTag())
 
 	if err = l.openTunnel(defaultIP, creds.NordLynxPrivateKey); err != nil {
 		return fmt.Errorf("opening the tunnel: %w", err)
@@ -299,11 +255,12 @@ func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
 	// Start monitoring connection events before connecting to not miss any
 	isConnectedC := isConnected(ctx, l.events, connParameters{pubKey: serverPublicKey, server: l.currentServer}, l.eventsPublisher)
 
-	if err := toError(l.lib.ConnectToExitNode(
+	hostPort := net.JoinHostPort(serverIP.String(), "51820")
+	if err := l.lib.ConnectToExitNode(
 		serverPublicKey,
-		"0.0.0.0/0",
-		net.JoinHostPort(serverIP.String(), "51820"),
-	)); err != nil {
+		&[]string{"0.0.0.0/0"},
+		&hostPort,
+	); err != nil {
 		if !l.isMeshEnabled {
 			// only close the tunnel when there was VPN connect problem
 			// and meshnet is not active
@@ -355,7 +312,7 @@ func (l *Libtelio) disconnect() error {
 		l.cancelConnectionMonitor()
 	}
 
-	if err := toError(l.lib.DisconnectFromExitNodes()); err != nil {
+	if err := l.lib.DisconnectFromExitNodes(); err != nil {
 		return fmt.Errorf("stopping libtelio: %w", err)
 	}
 	l.active = false
@@ -445,7 +402,7 @@ func (l *Libtelio) Disable() error {
 }
 
 func (l *Libtelio) disable() error {
-	if err := toError(l.lib.SetMeshnetOff()); err != nil {
+	if err := l.lib.SetMeshnetOff(); err != nil {
 		return fmt.Errorf("disabling mesh: %w", err)
 	}
 	l.isMeshEnabled = false
@@ -463,8 +420,8 @@ func (l *Libtelio) NetworkChanged() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if result := l.lib.NotifyNetworkChange(""); result != teliogo.TELIORESOK {
-		log.Println(internal.ErrorPrefix, "failed to notify network change:", toError(result))
+	if err := l.lib.NotifyNetworkChange(""); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to notify network change:", err)
 
 		if l.active {
 			serverIP := l.currentServer.IP
@@ -479,11 +436,11 @@ func (l *Libtelio) NetworkChanged() error {
 		}
 
 		if l.isMeshEnabled {
-			if err := toError(l.lib.SetMeshnetOff()); err != nil {
+			if err := l.lib.SetMeshnetOff(); err != nil {
 				return err
 			}
 
-			if err := toError(l.lib.SetMeshnet(l.meshnetMap)); err != nil {
+			if err := l.lib.SetMeshnet(l.meshnetConfig); err != nil {
 				return err
 			}
 		}
@@ -498,37 +455,43 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 		return nil
 	}
 
-	meshnetMap := string(c.Raw)
+	config, err := teliogo.DeserializeMeshnetConfig(string(c.Raw))
+	if err != nil {
+		return fmt.Errorf("failed to deserialize meshnet config: %w", err)
+	}
 
-	result := teliogo.TELIORESOK
 	for i := 0; i < 10; i++ {
-		if result = l.lib.SetMeshnet(meshnetMap); result == teliogo.TELIORESOK {
+		if err = l.lib.SetMeshnet(config); err == nil {
 			break
 		}
 		time.Sleep(time.Millisecond * 100)
 	}
 
-	if result != teliogo.TELIORESOK {
-		return fmt.Errorf("failed to refresh meshnet: %d", result)
+	if err != nil {
+		return fmt.Errorf("failed to refresh meshnet %w", err)
 	}
 
-	l.meshnetMap = meshnetMap
+	l.meshnetConfig = config
 
 	return nil
 }
 
 type peer struct {
-	PublicKey string `json:"public_key"`
-	State     string `json:"state"`
+	PublicKey string
+	State     string
 }
 
 func (l *Libtelio) StatusMap() (map[string]string, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	var peers []peer
-	if err := json.Unmarshal([]byte(l.lib.GetStatusMap()), &peers); err != nil {
-		return nil, fmt.Errorf("unmarshalling peer list: %w", err)
+	statusMap := l.lib.GetStatusMap()
+	peers := make([]peer, len(statusMap))
+	for i, node := range statusMap {
+		peers[i] = peer{
+			PublicKey: node.PublicKey,
+			State:     nodeStateToString(node.State),
+		}
 	}
 
 	m := map[string]string{}
@@ -536,6 +499,20 @@ func (l *Libtelio) StatusMap() (map[string]string, error) {
 		m[p.PublicKey] = p.State
 	}
 	return m, nil
+}
+
+func nodeStateToString(state teliogo.NodeState) string {
+	switch state {
+	case teliogo.NodeStateConnected:
+		return "connected"
+	case teliogo.NodeStateConnecting:
+		return "connecting"
+	case teliogo.NodeStateDisconnected:
+		return "disconnected"
+	default:
+		log.Printf(internal.ErrorPrefix+" not supported node state: %T, returning 'unknown'\n", state)
+		return "unknown"
+	}
 }
 
 // openTunnel if not opened already
@@ -552,25 +529,17 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
 		}
 	}
 
-	adapter := teliogo.TELIOADAPTERLINUXNATIVETUN
+	adapter := teliogo.TelioAdapterTypeLinuxNativeTun
 	if l.isKernelDisabled {
-		adapter = teliogo.TELIOADAPTERBORINGTUN
+		adapter = teliogo.TelioAdapterTypeBoringTun
 	}
 
-	if err := toError(l.lib.StartNamed(
-		privateKey,
-		adapter,
-		nordlynx.InterfaceName,
-	)); err != nil {
+	if err := l.lib.StartNamed(privateKey, adapter, nordlynx.InterfaceName); err != nil {
 		if l.isKernelDisabled {
 			return fmt.Errorf("starting libtelio: %w", err)
 		}
-		adapter = teliogo.TELIOADAPTERBORINGTUN
-		if err := toError(l.lib.StartNamed(
-			privateKey,
-			adapter,
-			nordlynx.InterfaceName,
-		)); err != nil {
+		adapter = teliogo.TelioAdapterTypeBoringTun
+		if err := l.lib.StartNamed(privateKey, adapter, nordlynx.InterfaceName); err != nil {
 			return fmt.Errorf("starting libtelio on retry with boring-tun: %w", err)
 		}
 		l.isKernelDisabled = true
@@ -582,7 +551,7 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
 		}
 	}()
 
-	if err = toError(l.lib.SetFwmark(uint(l.fwmark))); err != nil {
+	if err = l.lib.SetFwmark(l.fwmark); err != nil {
 		return fmt.Errorf("setting fwmark: %w", err)
 	}
 
@@ -616,7 +585,7 @@ func (l *Libtelio) closeTunnel() error {
 	if l.tun == nil {
 		return nil
 	}
-	if err := toError(l.lib.Stop()); err != nil {
+	if err := l.lib.Stop(); err != nil {
 		return fmt.Errorf("stopping libtelio: %w", err)
 	}
 	l.tun = nil
@@ -632,9 +601,7 @@ func (l *Libtelio) updateTunnel(privateKey string, ip netip.Addr) error {
 		return fmt.Errorf("adding interface addrs: %w", err)
 	}
 
-	if err := toError(l.lib.SetPrivateKey(
-		privateKey,
-	)); err != nil {
+	if err := l.lib.SetSecretKey(privateKey); err != nil {
 		return fmt.Errorf("setting private key: %w", err)
 	}
 
@@ -644,12 +611,12 @@ func (l *Libtelio) updateTunnel(privateKey string, ip netip.Addr) error {
 
 // Private key generation.
 func (l *Libtelio) Private() string {
-	return l.lib.GenerateSecretKey()
+	return teliogo.GenerateSecretKey()
 }
 
 // Public key extraction from private.
 func (l *Libtelio) Public(private string) string {
-	return l.lib.GeneratePublicKey(private)
+	return teliogo.GeneratePublicKey(private)
 }
 
 // isConnected function designed to be called before performing an action which trigger events.
@@ -662,7 +629,8 @@ func (l *Libtelio) Public(private string) string {
 func isConnected(ctx context.Context,
 	stateCh <-chan state,
 	connParams connParameters,
-	eventsPublisher *vpn.Events) <-chan interface{} {
+	eventsPublisher *vpn.Events,
+) <-chan interface{} {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -711,7 +679,8 @@ func monitorConnection(
 	states <-chan state,
 	isConnected chan<- interface{},
 	connParameters connParameters,
-	eventsPublisher *vpn.Events) {
+	eventsPublisher *vpn.Events,
+) {
 	type notifyState int
 	const (
 		disconnected notifyState = iota
@@ -729,12 +698,12 @@ func monitorConnection(
 			}
 
 			switch state.State {
-			case "connecting":
+			case teliogo.NodeStateConnecting:
 				if currentNotifyState != connecting {
 					currentNotifyState = connecting
 					publishConnectEvent(eventsPublisher, events.ConnectAttempt, connParameters.server, state)
 				}
-			case "connected":
+			case teliogo.NodeStateConnected:
 				if state.PublicKey == connParameters.pubKey {
 					if initialConnection {
 						close(isConnected)
@@ -746,7 +715,7 @@ func monitorConnection(
 						publishConnectEvent(eventsPublisher, events.ConnectSuccess, connParameters.server, state)
 					}
 				}
-			case "disconnected":
+			case teliogo.NodeStateDisconnected:
 				if currentNotifyState != disconnected {
 					currentNotifyState = disconnected
 					publishDisconnectedEvent(eventsPublisher)
