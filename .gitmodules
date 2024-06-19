@@ -1,8 +1,6 @@
 [submodule "third-party/moose-events"]
 	path = third-party/moose-events
 	url = ../../../../moose/moose-events.git
-	branch = nordVpnApp
 [submodule "third-party/moose-worker"]
 	path = third-party/moose-worker
 	url = ../../../../moose/moose-events.git
-	branch = worker
