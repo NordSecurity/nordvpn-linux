@@ -33,7 +33,7 @@ def connect_base_test(connection_settings, group=(), name="", hostname=""):
     packets_captured = network.capture_traffic(connection_settings)
 
     assert network.is_connected()
-    assert packets_captured >= 1
+    assert packets_captured > 0
 
 
 def disconnect_base_test():
