@@ -1310,7 +1310,6 @@ func (s *Server) ChangePeerNickname(
 
 	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
-
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {

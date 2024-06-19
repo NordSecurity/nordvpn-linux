@@ -18,7 +18,8 @@ import (
 )
 
 func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
-	cfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events) daemon.FactoryFunc {
+	cfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events,
+) daemon.FactoryFunc {
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {
 		case config.Technology_NORDLYNX:
@@ -45,6 +46,7 @@ func (noopMesh) Tun() tunnel.T                   { return &tunnel.Tunnel{} }
 func (noopMesh) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
+
 func (noopMesh) NetworkChanged() error {
 	return fmt.Errorf("not supported")
 }

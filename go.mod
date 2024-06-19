@@ -4,10 +4,16 @@ go 1.21.1
 
 toolchain go1.22.2
 
+// Bindings
+// NOTE: If you are chaning the binding versions here, keep in mind that you
+// may also need to update versions in `./lib-versions.env` file.
+require (
+	github.com/NordSecurity/libdrop-go/v7 v7.0.0-rc1
+	github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc2
+)
+
 require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
-	github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948
-	github.com/NordSecurity/libtelio v0.0.0-20240412122320-157263e48f69
 	github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.6.0
@@ -20,6 +26,7 @@ require (
 	github.com/go-co-op/gocron/v2 v2.5.0
 	github.com/go-ping/ping v1.1.0
 	github.com/godbus/dbus/v5 v5.1.0
+	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.6.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
 	github.com/jbowtie/gokogiri v0.0.0-20190301021639-37f655d3078f

@@ -29,6 +29,7 @@ func (w *WorkingVPN) Start(vpn.Credentials, vpn.ServerData) error {
 	w.isActive = w.StartErr == nil
 	return w.StartErr
 }
+
 func (w *WorkingVPN) Stop() error {
 	w.ExecutionStats[StatsStop]++
 
