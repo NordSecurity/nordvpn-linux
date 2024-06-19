@@ -484,7 +484,7 @@ func main() {
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
 	}
 
-	norduserMonitor := norduser.NewNordvpnGroupMonitor(norduserService)
+	norduserMonitor := norduser.NewNordVPNGroupMonitor(norduserService)
 	go func() {
 		if err := norduserMonitor.Start(); err != nil {
 			log.Println("Error when starting norduser monitor: ", err.Error())

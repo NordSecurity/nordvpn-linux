@@ -5,6 +5,7 @@ import (
 	"log"
 	"os/user"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -16,10 +17,19 @@ import (
 )
 
 const (
-	groupfilePath = "/etc/group"
+	groupFilePath = "/etc/group"
+	utmpFilePath  = "/var/run/utmp"
 )
 
-type userSet map[string]bool
+type userState int
+
+const (
+	notActive = iota
+	userActive
+	norduserRunning
+)
+
+type userSet map[string]userState
 
 func findGroupEntry(groups string, groupName string) string {
 	r, _ := regexp.Compile(fmt.Sprintf("^%s:", groupName))
@@ -34,7 +44,7 @@ func findGroupEntry(groups string, groupName string) string {
 }
 
 func getGroupEntry(groupName string) (string, error) {
-	file, err := internal.FileRead(groupfilePath)
+	file, err := internal.FileRead(groupFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read group file: %w", err)
 	}
@@ -58,13 +68,13 @@ func getGroupMembers(groupEntry string) userSet {
 	}
 
 	for _, member := range strings.Split(groupMembers, ",") {
-		members[member] = false
+		members[member] = notActive
 	}
 
 	return members
 }
 
-func getNordvpnGroupMembers() (userSet, error) {
+func getNordVPNGroupMembers() (userSet, error) {
 	const nordvpnGroupName = "nordvpn"
 
 	groupEntry, err := getGroupEntry(nordvpnGroupName)
@@ -83,7 +93,13 @@ type userIDs struct {
 	home string
 }
 
-func getUID(username string) (userIDs, error) {
+type userIDGetter interface {
+	getUserID(username string) (userIDs, error)
+}
+
+type osGetter struct{}
+
+func (osGetter) getUserID(username string) (userIDs, error) {
 	user, err := user.Lookup(username)
 	if err != nil {
 		return userIDs{}, fmt.Errorf("looking up user: %w", err)
@@ -106,82 +122,127 @@ func getUID(username string) (userIDs, error) {
 	}, nil
 }
 
-func (n *NordvpnGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, newGroupMembers userSet) {
-	for member := range currentGroupMembers {
-		// member not modified, do nothing
-		if _, ok := newGroupMembers[member]; ok {
-			newGroupMembers[member] = true
+func updateGroupMembersState(groupMembers userSet, activeUsers []string) userSet {
+	for member := range groupMembers {
+		if idx := slices.Index(activeUsers, member); idx != -1 {
+			groupMembers[member] = userActive
+		}
+	}
+
+	return groupMembers
+}
+
+// NordVPNGroupMonitor monitors the nordvpn system group and starts/stops norduserd for users added/removed from the
+// group.
+type NordVPNGroupMonitor struct {
+	norduserd service.NorduserService
+	isSnap    bool
+	userIDGetter
+}
+
+func NewNordVPNGroupMonitor(service service.NorduserService) NordVPNGroupMonitor {
+	return NordVPNGroupMonitor{
+		norduserd:    service,
+		isSnap:       snapconf.IsUnderSnap(),
+		userIDGetter: osGetter{},
+	}
+}
+
+func (n *NordVPNGroupMonitor) handleGroupUpdate(currentGroupMembers userSet, newGroupMembers userSet) userSet {
+	for member, state := range currentGroupMembers {
+		// member is still in group and session is active, do nothing
+		if newState, ok := newGroupMembers[member]; ok && newState == userActive {
+			if state == norduserRunning {
+				newGroupMembers[member] = norduserRunning
+			}
 			continue
 		}
 
-		userIDs, err := getUID(member)
+		if state != norduserRunning {
+			continue
+		}
+
+		userIDs, err := n.getUserID(member)
 		if err != nil {
-			log.Println("failed to look up UID/GID of deleted group member: ", err)
+			// store the old state, since norduserd is still running for this member
+			newGroupMembers[member] = state
+			log.Println(internal.ErrorPrefix, "failed to look up UID/GID of deleted group member: ", err)
 			continue
 		}
 
 		if err := n.norduserd.Stop(userIDs.uid, false); err != nil {
-			log.Println("disabling norduserd for user:", err.Error())
+			newGroupMembers[member] = state
+			log.Println(internal.ErrorPrefix, "disabling norduserd for user:", err.Error())
 		}
 	}
 
 	if n.isSnap {
 		// in snap environment norduser is enabled on the cli side
-		return
+		return newGroupMembers
 	}
 
 	// enable norduserd for new members
-	for member, norduserdEnabled := range newGroupMembers {
-		if norduserdEnabled {
+	for member, status := range newGroupMembers {
+		// we only want to start norduser when user is active but norduser is not active
+		if status != userActive {
 			continue
 		}
 
-		userID, err := getUID(member)
+		userID, err := n.getUserID(member)
 		if err != nil {
 			log.Println("failed to lookup UID/GID for new group member:", err)
 			continue
 		}
 
 		if err := n.norduserd.Enable(userID.uid, userID.gid, userID.home); err != nil {
-			log.Println("enabling norduserd for member:", err)
+			log.Println(internal.ErrorPrefix, "enabling norduserd for member:", err)
+			continue
 		}
 
-		newGroupMembers[member] = true
+		newGroupMembers[member] = norduserRunning
 	}
+
+	return newGroupMembers
 }
 
-func (n *NordvpnGroupMonitor) startForEveryGroupMember(groupMembers userSet) {
-	for member := range groupMembers {
-		user, err := getUID(member)
+func (n *NordVPNGroupMonitor) handleGropuFileUpdate(currentGroupMembers userSet) (userSet, error) {
+	newGroupMembers, err := getNordVPNGroupMembers()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get new group members: %w", err)
+	}
+
+	activeUsers, err := getActiveUsers()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get active users after group file update: %w", err)
+	}
+	newGroupMembers = updateGroupMembersState(newGroupMembers, activeUsers)
+
+	return n.handleGroupUpdate(currentGroupMembers, newGroupMembers), nil
+}
+
+func (n *NordVPNGroupMonitor) startForEveryGroupMember(groupMembers userSet) {
+	for member, status := range groupMembers {
+		if status == notActive {
+			continue
+		}
+
+		user, err := n.getUserID(member)
 		if err != nil {
-			log.Println("failed to get UID/GID for group member:", err)
+			log.Println(internal.ErrorPrefix, "failed to get UID/GID for group member:", err)
 			continue
 		}
 
 		if err := n.norduserd.Enable(user.uid, user.gid, user.home); err != nil {
-			log.Println("failed to start norduser for group member:", err)
+			log.Println(internal.ErrorPrefix, "failed to start norduser for group member:", err)
+			continue
 		}
 
-		groupMembers[member] = true
-	}
-}
-
-// NordvpnGroupMonitor monitors the nordvpn system group and starts/stops norduserd for users added/removed from the
-// group.
-type NordvpnGroupMonitor struct {
-	norduserd service.NorduserService
-	isSnap    bool
-}
-
-func NewNordvpnGroupMonitor(service service.NorduserService) NordvpnGroupMonitor {
-	return NordvpnGroupMonitor{
-		norduserd: service,
-		isSnap:    snapconf.IsUnderSnap(),
+		groupMembers[member] = norduserRunning
 	}
 }
 
 // Start blocks the thread and starts monitoring for changes in the nordvpn group.
-func (n *NordvpnGroupMonitor) Start() error {
+func (n *NordVPNGroupMonitor) Start() error {
 	const etcPath = "/etc"
 
 	watcher, err := fsnotify.NewWatcher()
@@ -190,13 +251,25 @@ func (n *NordvpnGroupMonitor) Start() error {
 	}
 
 	if err := watcher.Add(etcPath); err != nil {
-		return fmt.Errorf("adding file to watcher: %w", err)
+		return fmt.Errorf("adding group file to watcher: %w", err)
 	}
 
-	currentGrupMembers, err := getNordvpnGroupMembers()
+	if err := watcher.Add(utmpFilePath); err != nil {
+		return fmt.Errorf("adding utmp file to watcher: %w", err)
+	}
+
+	currentGrupMembers, err := getNordVPNGroupMembers()
 	if err != nil {
 		return fmt.Errorf("getting initial group members: %w", err)
-	} else if !n.isSnap { // in snap environment norduser is enabled on the cli side
+	}
+
+	activeUsers, err := getActiveUsers()
+	if err != nil {
+		return fmt.Errorf("getting initial active users: %w", err)
+	}
+
+	currentGrupMembers = updateGroupMembersState(currentGrupMembers, activeUsers)
+	if !n.isSnap { // in snap environment norduser is enabled on the cli side
 		n.startForEveryGroupMember(currentGrupMembers)
 	}
 
@@ -208,15 +281,23 @@ func (n *NordvpnGroupMonitor) Start() error {
 				return fmt.Errorf("groupfile monitor channel closed")
 			}
 
-			// Because utilities used to modify the group do so atomically, we also need to monitor for creation of
-			// the file instead of modifications.
-			if (event.Has(fsnotify.Create) || event.Has(fsnotify.Write)) && event.Name == groupfilePath {
-				newGroupMembers, err := getNordvpnGroupMembers()
+			if event.Name == groupFilePath {
+				// Because utilities used to modify the group do so atomically, we also need to monitor for creation of
+				// the file instead of modifications.
+				if (event.Has(fsnotify.Create) || event.Has(fsnotify.Write)) && event.Name == groupFilePath {
+					if newGroupMembers, err := n.handleGropuFileUpdate(currentGrupMembers); err != nil {
+						log.Println(internal.ErrorPrefix, "failed to handle change of groupfile: ", err)
+					} else {
+						currentGrupMembers = newGroupMembers
+					}
+				}
+			} else if event.Name == utmpFilePath {
+				activeUsers, err := getActiveUsers()
 				if err == nil {
-					n.handleGroupUpdate(currentGrupMembers, newGroupMembers)
-					currentGrupMembers = newGroupMembers
+					newGroupMembers := updateGroupMembersState(currentGrupMembers, activeUsers)
+					currentGrupMembers = n.handleGroupUpdate(currentGrupMembers, newGroupMembers)
 				} else {
-					log.Println("Failed to get new group members:", err)
+					log.Println(internal.ErrorPrefix, "failed to get active users after utmp file update: ", err)
 				}
 			}
 		case err, ok := <-watcher.Errors:
