@@ -90,6 +90,11 @@ func (l *DaemonSettingsSubscriber) NotifyLANDiscovery(data bool) error {
 	return nil
 }
 
+func (l *DaemonSettingsSubscriber) NotifyVirtualLocation(data bool) error {
+	printSettingsChange("Virtual location", boolToString(data))
+	return nil
+}
+
 func printSettingsChange(settingName string, val string) {
 	log.Printf("%s set to: %s", settingName, val)
 }
