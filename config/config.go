@@ -12,10 +12,10 @@ import (
 
 const defaultFWMarkValue uint32 = 0xe1f1
 
-func newConfig() *Config {
+func newConfig(machineIDGetter MachineIDGetter) *Config {
 	ids, _ := internal.SystemUsersIDs()
 	notifyUsers := make(map[int64]bool, len(ids))
-	trayOffUsers := make(map[int64]bool, len(ids))
+	trayOffUsers := make(UidBoolMap, len(ids))
 	for _, id := range ids {
 		notifyUsers[id] = true
 		trayOffUsers[id] = true
@@ -28,7 +28,7 @@ func newConfig() *Config {
 		AutoConnectData: AutoConnectData{
 			Protocol: Protocol_UDP,
 		},
-		MachineID:  internal.MachineID(),
+		MachineID:  machineIDGetter.GetMachineID(),
 		UsersData:  &UsersData{Notify: notifyUsers, TrayOff: trayOffUsers},
 		TokensData: map[int64]TokenData{},
 	}
@@ -59,6 +59,8 @@ type Config struct {
 	LanDiscovery    bool                `json:"lan_discovery"`
 	RemoteConfig    string              `json:"remote_config,omitempty"`
 	RCLastUpdate    time.Time           `json:"rc_last_update,omitempty"`
+	// Indicates whether the virtual servers are used. True by default
+	VirtualLocation TrueField `json:"virtual_location,omitempty"`
 }
 
 type AutoConnectData struct {

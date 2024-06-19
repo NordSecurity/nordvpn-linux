@@ -127,7 +127,7 @@ func TestConfigDefaultValues(t *testing.T) {
 			settingsFile: "testdata/settings_3.10.0.dat",
 			installFile:  "testdata/install_3.10.0.dat",
 			autoconnect:  true,
-			technology:   Technology_UNKNOWN_TECHNOLOGY,
+			technology:   Technology_NORDLYNX,
 		},
 		{
 			settingsFile: "testdata/settings_3.12.0.dat",
@@ -160,6 +160,7 @@ func TestConfigDefaultValues(t *testing.T) {
 			assert.False(t, cfg.KillSwitch)
 			assert.Equal(t, test.autoconnect, cfg.AutoConnect)
 			assert.False(t, cfg.IPv6)
+			assert.True(t, cfg.VirtualLocation.Get())
 		})
 	}
 }

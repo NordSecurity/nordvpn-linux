@@ -164,6 +164,7 @@ func main() {
 		&subs.Subject[events.ServerRating]{},
 		&subs.Subject[int]{},
 		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
 	)
 	meshnetEvents := meshnet.NewEvents(
 		&subs.Subject[[]string]{},

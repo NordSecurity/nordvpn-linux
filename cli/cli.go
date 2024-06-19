@@ -301,6 +301,20 @@ func NewApp(version, environment, hash, salt string,
 				Action:       cmd.SetLANDiscovery,
 				BashComplete: cmd.SetBoolAutocomplete,
 			},
+			{
+				Name:      "virtuallocation",
+				Aliases:   []string{"virtual-location"},
+				Usage:     MsgSetVirtualLocationUsageText,
+				ArgsUsage: MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
+					MsgSetVirtualLocationDescription,
+					"virtuallocation",
+					"virtuallocation",
+				),
+				Action:       cmd.SetVirtualLocation,
+				BashComplete: cmd.SetBoolAutocomplete,
+			},
 		},
 	}
 
