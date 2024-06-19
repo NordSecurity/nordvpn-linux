@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euxo pipefail
 
 case "$1" in
     centos) yum -y install yum-utils createrepo ;;

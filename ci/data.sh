@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euox
+set -euxo pipefail
 
 source "${WORKDIR}"/ci/env.sh
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euxo pipefail
 
 # Usage: slackpost "<webhook_url>" "<channel>" "<username>" "<message>"
 # also (echo $RANDOM; echo $RANDOM) |slackpost "<channel>" "<username>"

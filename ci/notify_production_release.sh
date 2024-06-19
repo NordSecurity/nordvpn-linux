@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo
+set -euxo pipefail
 
 WEBHOOK=${SLACK_WEBHOOK_URL}
 CHANNELS="newsfeed"

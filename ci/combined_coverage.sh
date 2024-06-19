@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo
+set -euxo pipefail
 
 export COVERDIR="covdatafiles"
 

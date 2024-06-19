@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo
+set -euxo pipefail
 
 # if host does not have ip6table modules loaded, we must loaded it the docker
 if [[ ! $(sudo ip6tables -S) ]]; then

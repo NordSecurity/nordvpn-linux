@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euxo
+set -euxo pipefail
 
 PACKAGE="${1}"
 FILES=$(find "${WORKDIR}"/dist/app/"${PACKAGE}" -type f -name "*.${PACKAGE}")

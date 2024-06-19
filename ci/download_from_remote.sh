@@ -1,6 +1,6 @@
 #!/bin/bash
 # Download is idempotent and will not redownload if the file already exists
-set -eox
+set -exo pipefail
 
 source "${WORKDIR}"/ci/archs.sh
 
@@ -80,7 +80,7 @@ for arch in ${ARCHS} ; do
     curl \
         -fL \
         -o "$output_file" \
-        -u "${NVPN_LINUX_GL_DEPS_CREDS}" \
+        -u "${NVPN_LINUX_GL_DEPS_CREDS:-}" \
         "${CI_API_V4_URL}/projects/${PROJECT_ID}/packages/generic/${arch}/${PACKAGE_VERSION}/${FILE}"
 
 done

@@ -1,5 +1,5 @@
 #!/bin/sh
-set -euo
+set -euxo
 
 # Without + at the end, find will return 0 even when exec fails.
 for dir in ci contrib; do
