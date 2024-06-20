@@ -48,10 +48,7 @@ func NewRepoAPI(
 }
 
 func (api *RepoAPI) DebianFileList() ([]byte, error) {
-	repoType := core.RepoTypeTest
-	if internal.IsProdEnv(string(api.env)) {
-		repoType = core.RepoTypeProduction
-	}
+	repoType := core.RepoTypeProduction
 
 	resp, err := api.request(fmt.Sprintf(core.DebFileinfoURLFormat, repoType, api.arch))
 	if err != nil {
@@ -70,10 +67,7 @@ func (api *RepoAPI) DebianFileList() ([]byte, error) {
 }
 
 func (api *RepoAPI) RpmFileList() ([]byte, error) {
-	repoType := core.RepoTypeTest
-	if internal.IsProdEnv(string(api.env)) {
-		repoType = core.RepoTypeProduction
-	}
+	repoType := core.RepoTypeProduction
 
 	resp, err := api.request(fmt.Sprintf(core.RpmRepoMdURLFormat, repoType, api.arch, core.RpmRepoMdURL))
 	if err != nil {
