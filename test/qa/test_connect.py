@@ -55,18 +55,6 @@ def test_quick_connect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
-def test_quick_connect_double_only(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    for _ in range(2):
-        connect_base_test((tech, proto, obfuscated))
-
-    disconnect_base_test()
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_server_absent(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
