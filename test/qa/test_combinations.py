@@ -10,6 +10,7 @@ from lib import (
     login,
     network,
 )
+from test_connect import connect_base_test, disconnect_base_test
 
 
 def setup_module(module):  # noqa: ARG001
@@ -221,3 +222,84 @@ def test_status_change_technology_and_protocol_reconnect(
             assert "UDP" in sh.nordvpn.status()
 
     assert network.is_disconnected()
+
+
+@pytest.mark.parametrize("source_group", lib.STANDARD_GROUPS[-2:])
+@pytest.mark.parametrize("target_group", lib.STANDARD_GROUPS[-2:])
+@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@timeout_decorator.timeout(40)
+def test_reconnect_to_standard_group(
+    source_tech,
+    target_tech,
+    source_proto,
+    target_proto,
+    source_obfuscated,
+    target_obfuscated,
+    source_group,
+    target_group,
+):
+
+    lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
+
+    connect_base_test((source_tech, source_proto, source_obfuscated), source_group)
+
+    lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+
+    connect_base_test((target_tech, target_proto, target_obfuscated), target_group)
+
+    disconnect_base_test()
+
+
+@pytest.mark.parametrize("source_group", lib.ADDITIONAL_GROUPS[-2:])
+@pytest.mark.parametrize("target_group", lib.ADDITIONAL_GROUPS[-2:])
+@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@timeout_decorator.timeout(40)
+def test_reconnect_to_additional_group(
+    source_tech,
+    target_tech,
+    source_proto,
+    target_proto,
+    source_obfuscated,
+    target_obfuscated,
+    source_group,
+    target_group,
+):
+
+    lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
+
+    connect_base_test((source_tech, source_proto, source_obfuscated), source_group)
+
+    lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+
+    connect_base_test((target_tech, target_proto, target_obfuscated), target_group)
+
+    disconnect_base_test()
+
+
+@pytest.mark.parametrize("source_country", lib.COUNTRIES[-2:])
+@pytest.mark.parametrize("target_country", lib.COUNTRIES[-2:])
+@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@timeout_decorator.timeout(40)
+def test_reconnect_to_server_by_country_name(
+    source_tech,
+    target_tech,
+    source_proto,
+    target_proto,
+    source_obfuscated,
+    target_obfuscated,
+    source_country,
+    target_country,
+):
+
+    lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
+
+    connect_base_test((source_tech, source_proto, source_obfuscated), source_country)
+
+    lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
+
+    connect_base_test((target_tech, target_proto, target_obfuscated), target_country)
+
+    disconnect_base_test()
