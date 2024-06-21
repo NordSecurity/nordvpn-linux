@@ -64,3 +64,14 @@ def test_daemon_socket_permissions():
     cmd_str = f"sudo stat -c '%G %a' {socket_dir}"
     out = os.popen(cmd_str).read()
     assert check_info in out
+
+
+def test_cmd_not_found_error():
+    invalid_cmd = "kinect"
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn(invalid_cmd)
+
+    print(ex.value)
+    assert f"Command '{invalid_cmd}' doesn't exist." in ex.value.stdout.decode()
+    assert network.is_disconnected()

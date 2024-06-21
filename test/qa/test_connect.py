@@ -33,7 +33,7 @@ def connect_base_test(connection_settings, group=(), name="", hostname=""):
     packets_captured = network.capture_traffic(connection_settings)
 
     assert network.is_connected()
-    assert packets_captured >= 1
+    assert packets_captured > 0
 
 
 def disconnect_base_test():
@@ -63,18 +63,6 @@ def test_connect_to_server_absent(tech, proto, obfuscated):
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
-    assert network.is_disconnected()
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_mistype_connect(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.kinect()
-
-    print(ex.value)
-    assert lib.is_invalid_command("kinect", ex)
     assert network.is_disconnected()
 
 
@@ -140,7 +128,7 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
 
 
 # the tun interface is recreated only for OpenVPN
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated):

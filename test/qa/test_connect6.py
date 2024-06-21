@@ -12,99 +12,81 @@ from lib import (
     login,
     network,
 )
-
-
-def setup_module(module):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
+from test_connect import disconnect_base_test
 
 
 def setup_function(function):  # noqa: ARG001
+    daemon.start()
+    login.login_as("default")
     logging.log()
+    print(sh.nordvpn.set.ipv6.on())
 
 
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
+    print(sh.nordvpn.set.ipv6.off())
+    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.set.defaults()
+    daemon.stop()
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_WITH_IPV6[:-1])
+
+def connect_base_test(group: str = (), name: str = "", hostname: str = "", ipv6 = True):
+    """
+    Connects to a NordVPN server and performs a series of checks to ensure the connection is successful.
+
+    Parameters:
+    group (str): The specific server name or group name to connect to. Default is an empty string.
+    name (str): Used to verify the connection message. Default is an empty string.
+    hostname (str): Used to verify the connection message. Default is an empty string.
+    ipv6 (bool): If True, checks if IPv6 connection is available. Default is True.
+    """
+
+    output = sh.nordvpn.connect(group, _tty_out=False)
+    print(output)
+
+    assert lib.is_connect_successful(output, name, hostname)
+    assert network.is_connected()
+
+    if ipv6:
+        assert network.is_ipv6_connected()
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_WITH_IPV6)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
-def test_ipv6_connect(tech, proto, obfuscated):
-    output = sh.nordvpn.set.ipv6.on()
-    print(output)
+def test_ipv6_connect(tech, proto, obfuscated) -> None:
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS), _tty_out=False)
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    sh.nordvpn.set.ipv6.off()
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    connect_base_test(random.choice(lib.IPV6_SERVERS))
+    disconnect_base_test()
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_ipv6_enabled_ipv4_connect():
-    output = sh.nordvpn.set.ipv6.on()
-    print(output)
-    lib.set_technology_and_protocol("openvpn", "udp", "off")
-
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect("pl128", _tty_out=False)
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_connected()
+    lib.set_technology_and_protocol(*lib.STANDARD_TECHNOLOGIES[0])
+    connect_base_test("pl128", "Poland #128", "pl128.nordvpn.com", False)
 
     with pytest.raises(sh.ErrorReturnCode_2) as ex:
         network.is_ipv6_connected(2)
 
     assert "Cannot assign requested address" in str(ex.value)
 
-    output = sh.nordvpn.disconnect()
-    print(output)
-    sh.nordvpn.set.ipv6.off()
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    disconnect_base_test()
 
 
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_ipv6_double_connect_without_disconnect():
-    output = sh.nordvpn.set.ipv6.on()
-    print(output)
-    lib.set_technology_and_protocol("openvpn", "udp", "off")
-
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect("pl128", _tty_out=False)
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_connected()
+    lib.set_technology_and_protocol(*lib.STANDARD_TECHNOLOGIES[0])
+    connect_base_test("pl128", "Poland #128", "pl128.nordvpn.com", False)
 
     with pytest.raises(sh.ErrorReturnCode_2) as ex:
         network.is_ipv6_connected(2)
 
     assert "Cannot assign requested address" in str(ex.value)
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        output = sh.nordvpn.connect(random.choice(lib.IPV6_SERVERS), _tty_out=False)
-        print(output)
-        assert lib.is_connect_successful(output)
-        assert network.is_ipv4_and_ipv6_connected(20)
-
-    output = sh.nordvpn.disconnect()
-    print(output)
-    sh.nordvpn.set.ipv6.off()
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    connect_base_test(random.choice(lib.IPV6_SERVERS))
+    disconnect_base_test()

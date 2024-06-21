@@ -41,7 +41,7 @@ TECHNOLOGIES_BASIC2 = [
 ]
 
 # no obfuscated servers with ipv6 2021/05/24
-TECHNOLOGIES_WITH_IPV6 = STANDARD_TECHNOLOGIES
+TECHNOLOGIES_WITH_IPV6 = STANDARD_TECHNOLOGIES[:-1]
 
 # Used for test parametrization, when the same test has to be run for different threat protection lite settings.
 THREAT_PROTECTION_LITE = [
@@ -315,11 +315,6 @@ def is_connect_unsuccessful(exception):
 # returns True when successfully disconnected
 def is_disconnect_successful(output):
     return "You are disconnected from NordVPN" in output
-
-
-# returns True when command is invalid
-def is_invalid_command(command, exception):
-    return f"Command '{command}' doesn't exist." in str(exception.value)
 
 
 def poll(func, attempts: int = 3, sleep: float = 1.0):
