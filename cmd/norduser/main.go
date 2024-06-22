@@ -23,6 +23,7 @@ import (
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
+	_ "github.com/NordSecurity/nordvpn-linux/fileshare/libdrop" // this is required to make cgo symbols available during linking
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -168,7 +169,8 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	fileshareManagementChan chan<- norduser.FileshareManagementMsg,
 	fileshareShutdownChan <-chan interface{},
 	grpcServer *grpc.Server,
-	onShutdown func(bool)) {
+	onShutdown func(bool),
+) {
 	restart := false
 	signals := internal.GetSignalChan()
 

@@ -24,7 +24,7 @@ func (l *Libdrop) Load() (map[string]*pb.Transfer, error) {
 
 	transfers := map[string]*pb.Transfer{}
 	for _, libdropTransfer := range libdropTransfers {
-		transfers[libdropTransfer.ID] = fileshare.LibdropTransferToInternalTransfer(libdropTransfer)
+		transfers[libdropTransfer.Id] = fileshare.LibdropTransferToInternalTransfer(libdropTransfer)
 	}
 
 	return transfers, nil
