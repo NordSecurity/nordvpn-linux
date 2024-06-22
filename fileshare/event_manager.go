@@ -1,7 +1,6 @@
 package fileshare
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -13,7 +12,9 @@ import (
 	"sync"
 	"syscall"
 
+	norddrop "github.com/NordSecurity/libdrop-go/v7"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
 )
@@ -64,7 +65,8 @@ func NewEventManager(
 	meshClient meshpb.MeshnetClient,
 	osInfo OsInfo,
 	filesystem Filesystem,
-	defaultDownloadDir string) *EventManager {
+	defaultDownloadDir string,
+) *EventManager {
 	return &EventManager{
 		isProd:                isProd,
 		liveTransfers:         map[string]*LiveTransfer{},
@@ -125,61 +127,56 @@ func (em *EventManager) DisableNotifications() error {
 	return nil
 }
 
-// EventFunc processes events and handles live transfer state.
-// It should be passed directly to libdrop to be called on events.
-func (em *EventManager) EventFunc(eventJSON string) {
+// OnEvent processes events and handles live transfer state.
+func (em *EventManager) OnEvent(event norddrop.Event) {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
 	if !em.isProd {
-		log.Printf("DROP EVENT: %s", eventJSON)
+		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", internal.EventToString(event))
 	}
 
-	var genericEvent genericEvent
-	err := json.Unmarshal([]byte(eventJSON), &genericEvent)
-	if err != nil {
-		log.Printf("unmarshalling drop event: %s\n%s", err, eventJSON)
-		return
-	}
-
-	switch genericEvent.Type {
-	case requestReceived:
-		em.handleRequestReceivedEvent(genericEvent.Data)
-	case requestQueued:
-	case transferStarted:
-	case transferProgress:
-		em.handleTransferProgressEvent(genericEvent.Data)
-	case transferFinished:
-		em.handleTransferFinishedEvent(genericEvent.Data)
+	switch ev := event.Kind.(type) {
+	case norddrop.EventKindRequestReceived:
+		em.handleRequestReceivedEvent(ev)
+	case norddrop.EventKindRequestQueued: // ignore
+	case norddrop.EventKindFileStarted: // ignore
+	case norddrop.EventKindFileProgress:
+		em.handleFileProgressEvent(ev)
+	case norddrop.EventKindTransferFailed:
+		em.handleTransferFailedEvent(ev)
+	case norddrop.EventKindTransferFinalized:
+		em.handleTransferFinalizedEvent(ev)
+	case norddrop.EventKindFileDownloaded:
+		em.handleFileDownloadedEvent(ev)
+	case norddrop.EventKindFileUploaded:
+		em.handleFileUploadedEvent(ev)
+	case norddrop.EventKindFileRejected:
+		em.handleFileRejectedEvent(ev)
+	case norddrop.EventKindFileFailed:
+		em.handleFileFailedEvent(ev)
 	default:
-		log.Printf("Unknown libdrop event: %s", eventJSON)
+		log.Printf(internal.WarningPrefix+" unsupported libdrop event: %T\n", ev)
 	}
 }
 
-func (em *EventManager) handleRequestReceivedEvent(eventJson json.RawMessage) {
-	var event requestReceivedEvent
-	err := json.Unmarshal(eventJson, &event)
-	if err != nil {
-		log.Printf("unmarshalling drop event: %s", err)
-		return
-	}
-
+func (em *EventManager) handleRequestReceivedEvent(event norddrop.EventKindRequestReceived) {
 	peer, err := getPeerByIP(em.meshClient, event.Peer)
 	if err != nil {
-		log.Println("failed to retrieve peer requesting transfer: ", err.Error())
+		log.Println(internal.ErrorPrefix, "failed to retrieve peer requesting transfer:", err)
 		return
 	}
 	if !peer.DoIAllowFileshare {
 		// This can only happen in the case of abuse, since clients shouldn't allow sending transfers
 		// to peers which don't allow that.
-		if err := em.fileshare.Cancel(event.TransferID); err != nil {
-			log.Printf("failed to auto-reject transfer %s: %s", event.TransferID, err)
+		if err := em.fileshare.Finalize(event.TransferId); err != nil {
+			log.Printf(internal.WarningPrefix+" failed to auto-reject transfer %s: %s\n", event.TransferId, err)
 		}
 		return
 	}
 	if !peer.AlwaysAcceptFiles {
 		if em.notificationManager != nil {
-			em.notificationManager.NotifyNewTransfer(event.TransferID, peer.Hostname)
+			em.notificationManager.NotifyNewTransfer(event.TransferId, peer.Hostname)
 		}
 		return
 	}
@@ -189,45 +186,38 @@ func (em *EventManager) handleRequestReceivedEvent(eventJson json.RawMessage) {
 		return
 	}
 
-	transfer, err := em.acceptTransfer(event.TransferID, em.defaultDownloadDir, []string{})
+	transfer, err := em.acceptTransfer(event.TransferId, em.defaultDownloadDir, []string{})
 	if err != nil {
-		log.Println("failed to autoaccept transfer: ", err.Error())
+		log.Println(internal.ErrorPrefix, "failed to autoaccept transfer:", err)
 		if em.notificationManager != nil {
-			em.notificationManager.NotifyAutoacceptFailed(event.TransferID, peer.Hostname, err)
+			em.notificationManager.NotifyAutoacceptFailed(event.TransferId, peer.Hostname, err)
 		}
 		return
 	}
 
 	for _, file := range transfer.Files {
-		err = em.fileshare.Accept(event.TransferID, em.defaultDownloadDir, file.Id)
+		err = em.fileshare.Accept(event.TransferId, em.defaultDownloadDir, file.Id)
 		if err != nil {
-			log.Println("failed to autoaccept file: ", err)
+			log.Println(internal.WarningPrefix, "failed to autoaccept file:", err)
 		}
 	}
 
 	if em.notificationManager != nil {
-		em.notificationManager.NotifyNewAutoacceptTransfer(event.TransferID, peer.Hostname)
+		em.notificationManager.NotifyNewAutoacceptTransfer(event.TransferId, peer.Hostname)
 	}
 }
 
-func (em *EventManager) handleTransferProgressEvent(eventJSON json.RawMessage) {
-	// transfer progress per file
-	var event transferProgressEvent
-	err := json.Unmarshal(eventJSON, &event)
+func (em *EventManager) handleFileProgressEvent(event norddrop.EventKindFileProgress) {
+	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
-		log.Printf("unmarshalling drop event: %s", err)
+		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
 		return
 	}
 
-	transfer, err := em.getLiveTransfer(event.TransferID)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-
-	file, ok := transfer.Files[event.FileID]
+	file, ok := transfer.Files[event.FileId]
 	if !ok {
-		log.Printf("file %s from TransferProgress event not found in transfer %s", event.FileID, transfer.ID)
+		log.Printf(internal.ErrorPrefix+" file %s from FileProgress event not found in transfer %s\n",
+			event.FileId, transfer.ID)
 		return
 	}
 
@@ -240,90 +230,168 @@ func (em *EventManager) handleTransferProgressEvent(eventJSON json.RawMessage) {
 			progressPercent = uint32(float64(transfer.TotalTransferred) / float64(transfer.TotalSize) * 100)
 		}
 		progressCh <- TransferProgressInfo{
-			TransferID:  event.TransferID,
+			TransferID:  event.TransferId,
 			Transferred: progressPercent,
 			Status:      pb.Status_ONGOING,
 		}
 	}
 }
 
-func (em *EventManager) handleTransferFinishedEvent(eventJSON json.RawMessage) {
-	var event transferFinishedEvent
-	err := json.Unmarshal(eventJSON, &event)
+func (em *EventManager) handleFileDownloadedEvent(event norddrop.EventKindFileDownloaded) {
+	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
-		log.Printf("unmarshalling drop event: %s", err)
+		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
 		return
 	}
 
-	transfer, err := em.getLiveTransfer(event.TransferID)
-	if err != nil {
-		log.Print(err)
+	file, ok := transfer.Files[event.FileId]
+	if !ok {
+		log.Printf(internal.ErrorPrefix+" file %s from FileDownloaded event not found in transfer %s\n",
+			event.FileId, transfer.ID)
 		return
 	}
+	file.Finished = true
 
-	switch event.Reason {
-	case transferFailed:
-		em.finalizeTransfer(transfer, event.Data.Status)
-	case transferCanceled:
-		var status pb.Status
-		switch {
-		case isLiveTransferFinished(transfer):
-			// Automatic cancel due to transfer finalization
-			storageTransfer, err := getTransferFromStorage(event.TransferID, em.storage)
-			if err != nil {
-				log.Print(err)
-				return
-			}
-			status = storageTransfer.Status
-		case event.Data.ByPeer:
-			status = pb.Status_CANCELED_BY_PEER
-		default:
-			status = pb.Status_CANCELED
+	fileStatusInNotification := pb.Status_SUCCESS
+	if em.notificationManager != nil && file != nil {
+		em.notificationManager.NotifyFile(
+			event.FinalPath,
+			transfer.Direction,
+			fileStatusInNotification,
+		)
+	}
+
+	em.finalizeFinishedTransfer(transfer)
+}
+
+func (em *EventManager) finalizeFinishedTransfer(transfer *LiveTransfer) {
+	// Libdrop will not clean up the transfer after transferring all of the files, so we have to
+	// finalize it manually - after all of the files have finished downloading/uploading or are
+	// failed/rejected.
+	// This will generate a [norddrop.EventKindTransferFinalized] event, which is processed in
+	// [EventManager.handleTransferFinalizedEvent] and will trigger the finalization of transfer.
+	if isLiveTransferFinished(transfer) && transfer.Direction == pb.Direction_INCOMING {
+		if err := em.fileshare.Finalize(transfer.ID); err != nil {
+			log.Printf(internal.WarningPrefix+" failed to finalize transfer %s: %s\n", transfer.ID, err)
 		}
-		em.finalizeTransfer(transfer, status)
-	case fileDownloaded, fileUploaded, fileCanceled, fileFailed, fileRejected:
-		file, ok := transfer.Files[event.Data.File]
-		if !ok {
-			log.Printf("file %s from TransferFinished event not found in transfer %s",
-				event.Data.File, transfer.ID)
+	}
+}
+
+func (em *EventManager) handleFileUploadedEvent(event norddrop.EventKindFileUploaded) {
+	transfer, err := em.getLiveTransfer(event.TransferId)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		return
+	}
+
+	file, ok := transfer.Files[event.FileId]
+	if !ok {
+		log.Printf(internal.ErrorPrefix+" file %s from FileUploaded event not found in transfer %s\n",
+			event.FileId, transfer.ID)
+		return
+	}
+	file.Finished = true
+
+	fileStatusInNotification := pb.Status_SUCCESS
+	if em.notificationManager != nil && file != nil {
+		em.notificationManager.NotifyFile(
+			file.FullPath,
+			transfer.Direction,
+			fileStatusInNotification,
+		)
+	}
+
+	em.finalizeFinishedTransfer(transfer)
+}
+
+func (em *EventManager) handleFileFailedEvent(event norddrop.EventKindFileFailed) {
+	transfer, err := em.getLiveTransfer(event.TransferId)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		return
+	}
+
+	file, ok := transfer.Files[event.FileId]
+	if !ok {
+		log.Printf(internal.ErrorPrefix+" file %s from FileFailed event not found in transfer %s\n",
+			event.FileId, transfer.ID)
+		return
+	}
+	file.Finished = true
+
+	fileStatusInNotification := pb.Status(event.Status.Status)
+	removeFileFromLiveTransfer(transfer, file)
+	if em.notificationManager != nil && file != nil {
+		em.notificationManager.NotifyFile(
+			file.FullPath,
+			transfer.Direction,
+			fileStatusInNotification,
+		)
+	}
+
+	em.finalizeFinishedTransfer(transfer)
+}
+
+func (em *EventManager) handleFileRejectedEvent(event norddrop.EventKindFileRejected) {
+	transfer, err := em.getLiveTransfer(event.TransferId)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		return
+	}
+
+	file, ok := transfer.Files[event.FileId]
+	if !ok {
+		log.Printf(internal.ErrorPrefix+" file %s from FileRejected event not found in transfer %s\n",
+			event.FileId, transfer.ID)
+		return
+	}
+	file.Finished = true
+
+	fileStatusInNotification := pb.Status_CANCELED
+	removeFileFromLiveTransfer(transfer, file)
+	if em.notificationManager != nil && file != nil {
+		em.notificationManager.NotifyFile(
+			file.FullPath,
+			transfer.Direction,
+			fileStatusInNotification,
+		)
+	}
+
+	em.finalizeFinishedTransfer(transfer)
+}
+
+func (em *EventManager) handleTransferFailedEvent(event norddrop.EventKindTransferFailed) {
+	transfer, err := em.getLiveTransfer(event.TransferId)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		return
+	}
+	em.finalizeTransfer(transfer, pb.Status(event.Status.Status))
+}
+
+func (em *EventManager) handleTransferFinalizedEvent(event norddrop.EventKindTransferFinalized) {
+	transfer, err := em.getLiveTransfer(event.TransferId)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		return
+	}
+
+	var status pb.Status
+	switch {
+	case isLiveTransferFinished(transfer):
+		// Automatic cancel due to transfer finalization
+		storageTransfer, err := getTransferFromStorage(event.TransferId, em.storage)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to get transfer from storage:", err)
 			return
 		}
-		file.Finished = true
-
-		var fileStatusInNotification pb.Status
-		if event.Reason == fileDownloaded || event.Reason == fileUploaded {
-			fileStatusInNotification = pb.Status_SUCCESS
-		} else if event.Reason == fileCanceled || event.Reason == fileRejected {
-			fileStatusInNotification = pb.Status_CANCELED
-			removeFileFromLiveTransfer(transfer, file)
-		} else {
-			fileStatusInNotification = event.Data.Status
-			removeFileFromLiveTransfer(transfer, file)
-		}
-		if em.notificationManager != nil && file != nil {
-			displayPath := file.FullPath
-			if event.Reason == fileDownloaded {
-				displayPath = event.Data.FinalPath
-			}
-			em.notificationManager.NotifyFile(
-				displayPath,
-				transfer.Direction,
-				fileStatusInNotification,
-			)
-		}
-
-		// Libdrop will not clean up the transfer after transferring all of the files, so we have to
-		// cancel it manually after all of the files have finished downloading/uploading. This will generate
-		// a TransferCanceled event, which is processed in transferCanceled case and will trigger the
-		// finalization of transfer.
-		if isLiveTransferFinished(transfer) && transfer.Direction == pb.Direction_INCOMING {
-			if err := em.fileshare.Cancel(event.TransferID); err != nil {
-				log.Printf("failed to finalize transfer %s: %s", event.TransferID, err)
-			}
-		}
+		status = storageTransfer.Status
+	case event.ByPeer:
+		status = pb.Status_CANCELED_BY_PEER
 	default:
-		log.Printf("Unknown reason for transfer finished event: %s", event.Reason)
+		status = pb.Status_CANCELED
 	}
+	em.finalizeTransfer(transfer, status)
 }
 
 func (em *EventManager) finalizeTransfer(transfer *LiveTransfer, status pb.Status) {
@@ -370,9 +438,9 @@ func (em *EventManager) CancelLiveTransfers() {
 	defer em.mutex.Unlock()
 
 	for transferID := range em.liveTransfers {
-		err := em.fileshare.Cancel(transferID)
+		err := em.fileshare.Finalize(transferID)
 		if err != nil {
-			log.Printf("failed to cancel live transfer: %s", err)
+			log.Println(internal.WarningPrefix, "failed to cancel live transfer:", err)
 		}
 	}
 }
@@ -383,6 +451,7 @@ func (em *EventManager) GetTransfer(transferID string) (*pb.Transfer, error) {
 	defer em.mutex.Unlock()
 	return em.getTransfer(transferID)
 }
+
 func (em *EventManager) getTransfer(transferID string) (*pb.Transfer, error) {
 	transfer, err := getTransferFromStorage(transferID, em.storage)
 	if err != nil {
@@ -433,13 +502,13 @@ func (em *EventManager) AcceptTransfer(
 	defer em.mutex.Unlock()
 	return em.acceptTransfer(transferID, path, filePaths)
 }
+
 func (em *EventManager) acceptTransfer(
 	transferID string,
 	path string,
 	filePaths []string,
 ) (*pb.Transfer, error) {
 	fileInfo, err := em.filesystem.Lstat(path)
-
 	if err != nil {
 		return nil, ErrAcceptDirNotFound
 	}
@@ -454,13 +523,13 @@ func (em *EventManager) acceptTransfer(
 
 	userInfo, err := em.osInfo.CurrentUser()
 	if err != nil {
-		log.Printf("getting user info: %s", err)
+		log.Printf(internal.ErrorPrefix+" getting user info: %s\n", err)
 		return nil, ErrNoPermissionsToAcceptDirectory
 	}
 
 	userGroups, err := em.osInfo.GetGroupIds(userInfo)
 	if err != nil {
-		log.Printf("getting user groups: %s", err)
+		log.Printf(internal.ErrorPrefix+" getting user groups: %s\n", err)
 		return nil, ErrNoPermissionsToAcceptDirectory
 	}
 
@@ -505,7 +574,7 @@ func (em *EventManager) acceptTransfer(
 
 	statfs, err := em.filesystem.Statfs(path)
 	if err != nil {
-		log.Printf("doing statfs: %s", err)
+		log.Printf(internal.ErrorPrefix+" doing statfs: %s\n", err)
 		return nil, ErrSizeLimitExceeded
 	}
 
@@ -527,9 +596,8 @@ func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool 
 	}
 
 	uid, err := strconv.Atoi(user.Uid)
-
 	if err != nil {
-		log.Printf("Failed to convert uid %s to int: %s", user.Uid, err)
+		log.Printf(internal.ErrorPrefix+" failed to convert uid %s to int: %s\n", user.Uid, err)
 		return false
 	}
 

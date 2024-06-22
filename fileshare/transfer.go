@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	norddrop "github.com/NordSecurity/libdrop-go/v7"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -159,200 +160,255 @@ func GetTransferFileStatus(file *pb.File, in bool) (status string) {
 	return "-"
 }
 
-// LibdropTransfer as represented in libdrop storage
-type LibdropTransfer struct {
-	ID        string                 `json:"id"`
-	Peer      string                 `json:"peer_id"`
-	CreatedAt int64                  `json:"created_at"`
-	States    []LibdropTransferState `json:"states"`
-	Direction string                 `json:"type"`
-	Files     []LibdropFile          `json:"paths"`
+func LibdropTransferToInternalTransfer(ti norddrop.TransferInfo) *pb.Transfer {
+	allFiles := filesFromTransferInfo(&ti)
+	totalSize, totalTransferred := calculateTotalSizeAndTotalTransferred(allFiles)
+	out := &pb.Transfer{
+		Id:               ti.Id,
+		Direction:        directionFromTransferInfo(&ti),
+		Peer:             ti.Peer,
+		Created:          timestamppb.New(time.UnixMilli(ti.CreatedAt)),
+		Files:            allFiles,
+		TotalSize:        totalSize,
+		TotalTransferred: totalTransferred,
+		Status:           determineTransferStatusAndAdjustFileStatuses(&ti, allFiles),
+		Path:             determineTransferPath(&ti, allFiles),
+	}
+
+	return out
 }
 
-type LibdropTransferState struct {
-	CreatedAt  uint64 `json:"created_at"`
-	State      string `json:"state"`
-	ByPeer     bool   `json:"by_peer"`
-	StatusCode int    `json:"status_code"`
-}
-
-type LibdropFile struct {
-	ID           string             `json:"file_id"`
-	TransferID   string             `json:"transfer_id"`
-	BasePath     string             `json:"base_path"`
-	RelativePath string             `json:"relative_path"`
-	TotalSize    uint64             `json:"bytes"`
-	CreatedAt    uint64             `json:"created_at"`
-	States       []LibdropFileState `json:"states"`
-}
-
-type LibdropFileState struct {
-	CreatedAt     uint64 `json:"created_at"`
-	State         string `json:"state"`
-	BytesSent     uint64 `json:"bytes_sent"`
-	BytesReceived uint64 `json:"bytes_received"`
-	BasePath      string `json:"base_dir"`
-	FinalPath     string `json:"final_path"`
-	StatusCode    int    `json:"status_code"`
-}
-
-// LibdropTransferToInternalTransfer converts libdrop transfer to our own representation. We have to wait for version
-// 4.0.0(or other major version) to get rid of this, because it would cause breaking changes.
-func LibdropTransferToInternalTransfer(in LibdropTransfer) *pb.Transfer {
-	out := &pb.Transfer{}
-
-	out.Id = in.ID
-	out.Peer = in.Peer
-	out.Created = timestamppb.New(time.UnixMilli(in.CreatedAt))
-
-	switch in.Direction {
-	case "outgoing":
-		out.Direction = pb.Direction_OUTGOING
-	case "incoming":
-		out.Direction = pb.Direction_INCOMING
+func directionFromTransferInfo(ti *norddrop.TransferInfo) pb.Direction {
+	var direction pb.Direction
+	switch ti.Kind.(type) {
+	case norddrop.TransferKindOutgoing:
+		direction = pb.Direction_OUTGOING
+	case norddrop.TransferKindIncoming:
+		direction = pb.Direction_INCOMING
 	default:
-		log.Printf("%s unknown direction found when parsing libdrop transfers: %s",
-			internal.WarningPrefix, in.Direction)
-		out.Direction = pb.Direction_UNKNOWN_DIRECTION
+		log.Printf(internal.WarningPrefix+" unknown direction found when parsing libdrop transfers: %T\n", ti.Kind)
+		direction = pb.Direction_UNKNOWN_DIRECTION
 	}
+	return direction
+}
 
-	for _, file := range in.Files {
-		outFile := libdropFileToInternalFile(file)
-		out.Files = append(out.Files, outFile)
-		if isFileTransferred(outFile) {
-			out.TotalSize += outFile.Size
-			out.TotalTransferred += outFile.Transferred
+func filesFromTransferInfo(ti *norddrop.TransferInfo) []*pb.File {
+	switch ti := ti.Kind.(type) {
+	case norddrop.TransferKindIncoming:
+		files := make([]*pb.File, len(ti.Paths))
+		for i, path := range ti.Paths {
+			files[i] = norddropIncomingPathToInternalFile(path)
 		}
-
-		// Determine transfer path.
-
-		var fileBasePath string
-		// Base path is in different place for incoming and outgoing files
-		if file.BasePath != "" {
-			fileBasePath = file.BasePath
-		} else if len(file.States) != 0 && file.States[0].BasePath != "" {
-			fileBasePath = file.States[0].BasePath
+		return files
+	case norddrop.TransferKindOutgoing:
+		files := make([]*pb.File, len(ti.Paths))
+		for i, path := range ti.Paths {
+			files[i] = norddropOutgoingPathToInternalFile(path)
 		}
+		return files
+	default:
+		log.Printf(internal.WarningPrefix+" unknown transfer kind: %T\n", ti)
+		return []*pb.File{}
+	}
+}
 
-		if out.Direction == pb.Direction_OUTGOING {
-			if filepath.Base(file.RelativePath) == file.RelativePath {
-				// If relative path doesn't contain a directory - means user specified a single file
-				// We show the full path in that case for outgoing transfers
-				fileBasePath = outFile.FullPath
-			} else {
-				// If user is sending a directory - we add the directory itself to the path.
-				// Example: user sends /tmp/test, then file.BasePath would be "/tmp", while
-				// file.RelativePath would be "test/file". So we take the dir name from RelativePath
-				// and add it to BasePath to get "/tmp/test".
-				dir, _, ok := strings.Cut(file.RelativePath, string(filepath.Separator))
-				if ok {
-					fileBasePath = filepath.Join(file.BasePath, dir)
-				}
-			}
-		}
+func norddropOutgoingPathToInternalFile(outPath norddrop.OutgoingPath) *pb.File {
+	file := &pb.File{
+		Id:     outPath.FileId,
+		Path:   outPath.RelativePath,
+		Size:   outPath.Bytes,
+		Status: statusFromOutgoingPath(&outPath),
+		// This only shows the amount from the last status change.
+		// The only up to date source for data transferred are events.
+		// To show the correct value we track ongoing transfers in event manager,
+		// and event manager overwrites values of transferred fields if needed.
+		Transferred: transferredFromOutgoingPath(&outPath),
+		FullPath:    determineFullOutgoingPath(&outPath),
+	}
+	return file
+}
 
-		if out.Path == "" {
-			out.Path = fileBasePath
-		} else if out.Path != fileBasePath && fileBasePath != "" {
-			out.Path = "multiple files"
+func statusFromOutgoingPath(outPath *norddrop.OutgoingPath) pb.Status {
+	var status pb.Status
+
+	if len(outPath.States) == 0 {
+		status = pb.Status_REQUESTED
+	} else {
+		lastState := outPath.States[len(outPath.States)-1]
+		switch lastState := lastState.Kind.(type) {
+		case norddrop.OutgoingPathStateKindStarted:
+			status = pb.Status_ONGOING
+		case norddrop.OutgoingPathStateKindFailed:
+			status = pb.Status(lastState.Status)
+		case norddrop.OutgoingPathStateKindCompleted:
+			status = pb.Status_SUCCESS
+		case norddrop.OutgoingPathStateKindRejected:
+			status = pb.Status_CANCELED
+		case norddrop.OutgoingPathStateKindPaused:
+			status = pb.Status_PAUSED
+		default:
+			log.Printf(internal.WarningPrefix+" unknown file status in transfer: %T\n", lastState)
+			status = pb.Status_BAD_STATUS
 		}
 	}
+	return status
+}
 
-	if len(in.States) != 0 {
-		lastState := in.States[len(in.States)-1]
-		switch lastState.State {
-		case "cancel":
+func transferredFromOutgoingPath(outPath *norddrop.OutgoingPath) uint64 {
+	var transferred uint64
+	for _, state := range outPath.States {
+		switch st := state.Kind.(type) {
+		case norddrop.OutgoingPathStateKindStarted:
+			transferred = st.BytesSent
+		case norddrop.OutgoingPathStateKindCompleted:
+			transferred = outPath.Bytes
+		case norddrop.OutgoingPathStateKindFailed:
+			transferred = st.BytesSent
+		case norddrop.OutgoingPathStateKindRejected:
+			transferred = st.BytesSent
+		case norddrop.OutgoingPathStateKindPaused:
+			transferred = st.BytesSent
+		}
+	}
+	return transferred
+}
+
+func determineFullOutgoingPath(outPath *norddrop.OutgoingPath) string {
+	switch pathSource := outPath.Source.(type) {
+	case norddrop.OutgoingFileSourceBasePath:
+		return filepath.Join(pathSource.BasePath, outPath.RelativePath)
+	default:
+		log.Printf(internal.WarningPrefix+" unsupported path source: %T\n", outPath.Source)
+		return ""
+	}
+}
+
+func norddropIncomingPathToInternalFile(inPath norddrop.IncomingPath) *pb.File {
+	out := &pb.File{
+		Id:     inPath.FileId,
+		Path:   inPath.RelativePath,
+		Size:   inPath.Bytes,
+		Status: statusFromIncomingPath(&inPath),
+		// This only shows the amount from the last status change.
+		// The only up to date source for data transferred are events.
+		// To show the correct value we track ongoing transfers in event manager,
+		// and event manager overwrites values of transferred fields if needed.
+		Transferred: transferredFromIncomingPath(&inPath),
+		FullPath:    determineFullIncomingPath(&inPath),
+	}
+	return out
+}
+
+func statusFromIncomingPath(inPath *norddrop.IncomingPath) pb.Status {
+	var status pb.Status
+	if len(inPath.States) == 0 {
+		status = pb.Status_REQUESTED
+	} else {
+		lastState := inPath.States[len(inPath.States)-1]
+		switch lastState := lastState.Kind.(type) {
+		case norddrop.IncomingPathStateKindCompleted:
+			status = pb.Status_SUCCESS
+		case norddrop.IncomingPathStateKindFailed:
+			status = pb.Status(lastState.Status)
+		case norddrop.IncomingPathStateKindPaused:
+			status = pb.Status_PAUSED
+		case norddrop.IncomingPathStateKindPending:
+			status = pb.Status_PENDING
+		case norddrop.IncomingPathStateKindRejected:
+			status = pb.Status_CANCELED
+		case norddrop.IncomingPathStateKindStarted:
+			status = pb.Status_ONGOING
+		default:
+			log.Printf(internal.WarningPrefix+" unknown file status in transfer: %T\n", lastState)
+			status = pb.Status_BAD_STATUS
+		}
+	}
+	return status
+}
+
+func transferredFromIncomingPath(inPath *norddrop.IncomingPath) uint64 {
+	var transferred uint64
+	for _, state := range inPath.States {
+		switch st := state.Kind.(type) {
+		case norddrop.IncomingPathStateKindStarted:
+			transferred = st.BytesReceived
+		case norddrop.IncomingPathStateKindCompleted:
+			transferred = inPath.Bytes
+		case norddrop.IncomingPathStateKindFailed:
+			transferred = st.BytesReceived
+		case norddrop.IncomingPathStateKindRejected:
+			transferred = st.BytesReceived
+		case norddrop.IncomingPathStateKindPaused:
+			transferred = st.BytesReceived
+		}
+	}
+	return transferred
+}
+
+func determineFullIncomingPath(inPath *norddrop.IncomingPath) string {
+	fullPath := inPath.RelativePath
+	for _, state := range inPath.States {
+		switch st := state.Kind.(type) {
+		case norddrop.IncomingPathStateKindPending:
+			// BasePath is provided with the very first "pending" state
+			fullPath = filepath.Join(st.BaseDir, fullPath)
+		case norddrop.IncomingPathStateKindCompleted:
+			// FinalPath is provided with the very last "completed" state, so if it is present, then
+			// it will overwrite the previously constructed path
+			fullPath = st.FinalPath
+		}
+	}
+	return fullPath
+}
+
+func calculateTotalSizeAndTotalTransferred(allFiles []*pb.File) (uint64, uint64) {
+	var totalSize, totalTransferred uint64
+	for _, file := range allFiles {
+		if isFileTransferred(file) {
+			totalSize += file.Size
+			totalTransferred += file.Transferred
+		}
+	}
+	return totalSize, totalTransferred
+}
+
+func determineTransferStatusAndAdjustFileStatuses(transferInfo *norddrop.TransferInfo, allFiles []*pb.File) pb.Status {
+	var status pb.Status
+	if len(transferInfo.States) != 0 {
+		lastState := transferInfo.States[len(transferInfo.States)-1]
+		switch lastState := lastState.Kind.(type) {
+		case norddrop.TransferStateKindCancel:
 			// This is annoying. We have to "finalize" finished transfers by cancelling them,
 			// otherwise there's a resource leak in libdrop. Also, by doing that all finished
 			// transfers have cancel status, so we need to figure out the real status.
 			// So we try to determine status by files and see if the transfer was already finished
 			// when it was cancelled or not.
-			statusByFiles := getTransferStatus(out.Files)
+			statusByFiles := getTransferStatusByFiles(allFiles)
 			if statusByFiles == pb.Status_SUCCESS || statusByFiles == pb.Status_FINISHED_WITH_ERRORS {
-				out.Status = statusByFiles
+				status = statusByFiles
 			} else {
 				if lastState.ByPeer {
-					out.Status = pb.Status_CANCELED_BY_PEER
+					status = pb.Status_CANCELED_BY_PEER
 				} else {
-					out.Status = pb.Status_CANCELED
+					status = pb.Status_CANCELED
 				}
-				for _, file := range out.Files {
+				// adjust file statuses
+				for _, file := range allFiles {
 					if !isFileCompleted(file) {
 						file.Status = pb.Status_CANCELED
 					}
 				}
 			}
-		case "failed":
-			out.Status = pb.Status(lastState.StatusCode)
+		case norddrop.TransferStateKindFailed:
+			status = pb.Status(lastState.Status)
 		}
 	} else {
-		out.Status = getTransferStatus(out.Files)
+		status = getTransferStatusByFiles(allFiles)
 	}
-
-	return out
+	return status
 }
 
-func libdropFileToInternalFile(in LibdropFile) *pb.File {
-	out := &pb.File{
-		Id:       in.ID,
-		Path:     in.RelativePath,
-		FullPath: filepath.Join(in.BasePath, in.RelativePath),
-		Size:     in.TotalSize,
-		// This only shows the amount from the last status change.
-		// The only up to date source for data transferred are events.
-		// To show the correct value we track ongoing transfers in event manager,
-		// and event manager overwrites values of transferred fields if needed.
-		Transferred: 0,
-	}
-
-	for _, state := range in.States {
-		// BasePath is provided with the very first "pending" state
-		if state.BasePath != "" {
-			out.FullPath = filepath.Join(state.BasePath, out.FullPath)
-		}
-		// FinalPath is provided with the very last "completed" state, so if it is present, then
-		// it will overwrite the previously constructed path
-		if state.FinalPath != "" {
-			out.FullPath = state.FinalPath
-		}
-
-		if state.BytesReceived != 0 {
-			out.Transferred = state.BytesReceived
-		}
-		if state.BytesSent != 0 {
-			out.Transferred = state.BytesSent
-		}
-	}
-
-	if len(in.States) == 0 {
-		out.Status = pb.Status_REQUESTED
-	} else {
-		lastState := in.States[len(in.States)-1]
-		switch lastState.State {
-		case "completed":
-			out.Transferred = out.Size
-			out.Status = pb.Status_SUCCESS
-		case "failed":
-			out.Status = pb.Status(lastState.StatusCode)
-		case "paused":
-			out.Status = pb.Status_PAUSED
-		case "pending":
-			out.Status = pb.Status_PENDING
-		case "rejected":
-			out.Status = pb.Status_CANCELED
-		case "started":
-			out.Status = pb.Status_ONGOING
-		default:
-			log.Printf("%s unknown file status found when parsing libdrop transfers: %s",
-				internal.WarningPrefix, lastState.State)
-			out.Status = pb.Status_BAD_STATUS
-		}
-	}
-
-	return out
-}
-
-func getTransferStatus(files []*pb.File) pb.Status {
+func getTransferStatusByFiles(files []*pb.File) pb.Status {
 	allCanceled := true
 	allFinished := true
 	hasNoErrors := true
@@ -384,6 +440,61 @@ func getTransferStatus(files []*pb.File) pb.Status {
 	default:
 		return pb.Status_REQUESTED
 	}
+}
+
+func determineTransferPath(transferInfo *norddrop.TransferInfo, allFiles []*pb.File) string {
+	var result string
+	var transferPath string
+	// Base path is in different place for incoming and outgoing files
+	switch ti := transferInfo.Kind.(type) {
+	case norddrop.TransferKindIncoming:
+		for _, path := range ti.Paths {
+			for _, state := range path.States {
+				switch st := state.Kind.(type) {
+				case norddrop.IncomingPathStateKindPending:
+					transferPath = st.BaseDir
+				}
+			}
+
+			if result == "" {
+				result = transferPath
+			} else if result != transferPath && transferPath != "" {
+				result = "multiple files"
+			}
+		}
+		return transferPath
+	case norddrop.TransferKindOutgoing:
+		for i, path := range ti.Paths {
+			if filepath.Base(path.RelativePath) == path.RelativePath {
+				file := allFiles[i]
+				// If relative path doesn't contain a directory - means user specified a single file
+				// We show the full path in that case for outgoing transfers
+				transferPath = file.FullPath
+			} else {
+				// If user is sending a directory - we add the directory itself to the path.
+				// Example: user sends /tmp/test, then file.BasePath would be "/tmp", while
+				// file.RelativePath would be "test/file". So we take the dir name from RelativePath
+				// and add it to BasePath to get "/tmp/test".
+				dir, _, ok := strings.Cut(path.RelativePath, string(filepath.Separator))
+				if ok {
+					switch source := path.Source.(type) {
+					case norddrop.OutgoingFileSourceBasePath:
+						transferPath = filepath.Join(source.BasePath, dir)
+					default:
+						log.Printf(internal.WarningPrefix+" unsupported path source: %T\n", source)
+					}
+				}
+			}
+
+			if result == "" {
+				result = transferPath
+			} else if result != transferPath && transferPath != "" {
+				result = "multiple files"
+			}
+		}
+	}
+
+	return result
 }
 
 func checkFileHasErrors(file *pb.File) bool {

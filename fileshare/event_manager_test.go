@@ -15,6 +15,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	norddrop "github.com/NordSecurity/libdrop-go/v7"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -104,8 +105,8 @@ func (mfs *mockEventManagerFileshare) Accept(transferID, dstPath string, fileID 
 	return nil
 }
 
-// Cancel file transfer by ID.
-func (mfs *mockEventManagerFileshare) Cancel(transferID string) error {
+// Finalize file transfer by ID.
+func (mfs *mockEventManagerFileshare) Finalize(transferID string) error {
 	mfs.canceledTransferIDs = append(mfs.canceledTransferIDs, transferID)
 	return nil
 }
@@ -133,7 +134,7 @@ func (mfs *mockEventManagerFileshare) getLastCanceledTransferID() string {
 	return mfs.canceledTransferIDs[length-1]
 }
 
-func (*mockEventManagerFileshare) GetTransfersSince(t time.Time) ([]LibdropTransfer, error) {
+func (*mockEventManagerFileshare) GetTransfersSince(t time.Time) ([]norddrop.TransferInfo, error) {
 	return nil, nil
 }
 
@@ -278,100 +279,100 @@ func TestTransferProgress(t *testing.T) {
 	path := tmpDir
 	file1 := "testfile-small"
 	file1ID := "file1ID"
-	file1sz := 100
+	var file1sz uint64 = 100
 	file2 := "testfile-big"
 	file2ID := "file2ID"
-	file2sz := 1000
+	var file2sz uint64 = 1000
 	file3 := "file3.txt"
 	file3ID := "file3ID"
-	file3sz := 1000
+	var file3sz uint64 = 1000
 
 	storage.transfers[transferID] = &pb.Transfer{
 		Id:        transferID,
 		Peer:      peer,
 		Path:      path,
 		Status:    pb.Status_REQUESTED,
-		TotalSize: uint64(file1sz) + uint64(file2sz) + uint64(file3sz),
+		TotalSize: file1sz + file2sz + file3sz,
 		Files: []*pb.File{
 			{
 				Id:     file1ID,
 				Path:   file1,
-				Size:   uint64(file1sz),
+				Size:   file1sz,
 				Status: pb.Status_REQUESTED,
 			},
 			{
 				Id:     file2ID,
 				Path:   file2,
-				Size:   uint64(file2sz),
+				Size:   file2sz,
 				Status: pb.Status_REQUESTED,
 			},
 			{
 				Id:     file3ID,
 				Path:   file3,
-				Size:   uint64(file3sz),
+				Size:   file3sz,
 				Status: pb.Status_REQUESTED,
 			},
 		},
 	}
 
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-			"type": "RequestQueued",
-			"data": {
-				"peer": "%s",
-				"transfer": "%s",
-				"files": [
-				{
-					"id": "%s",
-					"path": "%s",
-					"size": %d
+	eventManager.OnEvent(
+		norddrop.Event{
+			Kind: norddrop.EventKindRequestQueued{
+				Peer:       peer,
+				TransferId: transferID,
+				Files: []norddrop.QueuedFile{
+					{
+						Id:   file1ID,
+						Path: file1,
+						Size: file1sz,
+					},
+					{
+						Id:   file2ID,
+						Path: file2,
+						Size: file2sz,
+					},
+					{
+						Id:   file3ID,
+						Path: file3,
+						Size: file3sz,
+					},
 				},
-				{
-					"id": "%s",
-					"path": "%s",
-					"size": %d
-				},
-				{
-					"id": "%s",
-					"path": "%s",
-					"size": %d
-				}
-				]
-			}
-		}`, peer, transferID, file1ID, file1, file1sz, file2ID, file2, file2sz, file3ID, file3, file3sz))
+			},
+		},
+	)
 
 	progCh := eventManager.Subscribe(transferID)
 
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-		"type": "TransferStarted",
-		"data": {
-			"transfer": "%s",
-			"file": "%s"
-		}
-		}`, transferID, file1ID))
+	eventManager.OnEvent(
+		norddrop.Event{
+			Kind: norddrop.EventKindFileStarted{
+				TransferId: transferID,
+				FileId:     file1ID,
+			},
+		},
+	)
 
-	eventManager.EventFunc(
-		fmt.Sprintf(`{
-		"type": "TransferStarted",
-		"data": {
-			"transfer": "%s",
-			"file": "%s"
-		}
-		}`, transferID, file2ID))
+	eventManager.OnEvent(
+		norddrop.Event{
+			Kind: norddrop.EventKindFileStarted{
+				TransferId:  transferID,
+				FileId:      file2ID,
+				Transferred: 0,
+			},
+		},
+	)
 
 	transferredBytes := file1sz
 	go func() {
-		eventManager.EventFunc(
-			// nolint:misspell // We receive this json from the library
-			fmt.Sprintf(`{
-			"type": "TransferProgress",
-			"data": {
-				"transfer": "%s",
-				"file": "%s",
-				"transfered": %d
-			}
-			}`, transferID, file1ID, transferredBytes))
+		eventManager.OnEvent(
+			norddrop.Event{
+				Kind: norddrop.EventKindFileProgress{
+					TransferId:  transferID,
+					FileId:      file1ID,
+					Transferred: transferredBytes,
+				},
+			},
+		)
 	}()
 
 	progressEvent := <-progCh
@@ -382,49 +383,46 @@ func TestTransferProgress(t *testing.T) {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
 	go func() {
-		eventManager.EventFunc(
-			fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "FileDownloaded",
-					"data": {
-							"file": "%s"
-					}
-				}
-				}`, transferID, file1ID))
-		eventManager.EventFunc(
-			fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "FileDownloaded",
-					"data": {
-							"file": "%s"
-					}
-				}
-				}`, transferID, file2ID))
-		eventManager.EventFunc(
-			fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "FileDownloaded",
-					"data": {
-						"file": "%s"
-					}
-				}
-				}`, transferID, file3ID))
+		eventManager.OnEvent(
+			norddrop.Event{
+				Kind: norddrop.EventKindFileDownloaded{
+					TransferId: transferID,
+					FileId:     file1ID,
+				},
+			},
+		)
+
+		eventManager.OnEvent(
+			norddrop.Event{
+				Kind: norddrop.EventKindFileDownloaded{
+					TransferId: transferID,
+					FileId:     file2ID,
+				},
+			},
+		)
+
+		eventManager.OnEvent(
+			norddrop.Event{
+				Kind: norddrop.EventKindFileDownloaded{
+					TransferId: transferID,
+					FileId:     file3ID,
+				},
+			},
+		)
+
 		// Final transfer state is determined from storage
 		storage.transfers[transferID].Status = pb.Status_SUCCESS
-		eventManager.EventFunc(
-			fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "TransferCanceled"
-				}
-				}`, transferID))
+
+		eventManager.OnEvent(
+			norddrop.Event{
+				Timestamp: 0,
+				Kind: norddrop.EventKindTransferFinalized{
+					TransferId: transferID,
+					ByPeer:     false,
+				},
+			},
+		)
+
 		waitGroup.Done()
 	}()
 
@@ -612,6 +610,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 
 	tests := []struct {
 		name            string
+		event           norddrop.Event
 		status          pb.Status
 		direction       pb.Direction
 		reason          string
@@ -620,7 +619,14 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		expectedActions []Action
 	}{
 		{
-			name:            "download finished success",
+			name: "download finished success",
+			event: norddrop.Event{
+				Kind: norddrop.EventKindFileDownloaded{
+					TransferId: transferID,
+					FileId:     fileID,
+					FinalPath:  filePath,
+				},
+			},
 			status:          pb.Status_SUCCESS,
 			direction:       pb.Direction_INCOMING,
 			reason:          "FileDownloaded",
@@ -628,7 +634,17 @@ func TestTransferFinishedNotifications(t *testing.T) {
 			expectedActions: []Action{{actionKeyOpenFile, "Open"}},
 		},
 		{
-			name:            "download finished failure",
+			name: "download finished failure",
+			event: norddrop.Event{
+				Kind: norddrop.EventKindFileFailed{
+					TransferId: transferID,
+					FileId:     fileID,
+					Status: norddrop.Status{
+						Status:      norddrop.StatusCodeBadTransfer,
+						OsErrorCode: new(int32),
+					},
+				},
+			},
 			status:          pb.Status_TRANSPORT,
 			direction:       pb.Direction_INCOMING,
 			reason:          "FileFailed",
@@ -636,7 +652,13 @@ func TestTransferFinishedNotifications(t *testing.T) {
 			expectedActions: nil,
 		},
 		{
-			name:            "download canceled",
+			name: "download canceled",
+			event: norddrop.Event{
+				Kind: norddrop.EventKindFileRejected{
+					TransferId: transferID,
+					FileId:     fileID,
+				},
+			},
 			status:          pb.Status_CANCELED,
 			direction:       pb.Direction_INCOMING,
 			reason:          "FileCanceled",
@@ -644,7 +666,13 @@ func TestTransferFinishedNotifications(t *testing.T) {
 			expectedActions: nil,
 		},
 		{
-			name:            "upload finished success",
+			name: "upload finished success",
+			event: norddrop.Event{
+				Kind: norddrop.EventKindFileUploaded{
+					TransferId: transferID,
+					FileId:     fileID,
+				},
+			},
 			status:          pb.Status_SUCCESS,
 			direction:       pb.Direction_OUTGOING,
 			reason:          "FileUploaded",
@@ -657,18 +685,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		eventManager, notifier := initializeEventManager(test.direction)
 
 		t.Run(test.name, func(t *testing.T) {
-			eventManager.EventFunc(fmt.Sprintf(`{
-				"type": "TransferFinished",
-				"data": {
-					"transfer": "%s",
-					"reason": "%s",
-					"data": {
-						"file": "%s",
-						"final_path": "%s",
-						"status": %d
-					}
-				}
-			}`, transferID, test.reason, fileID, filePath, test.status))
+			eventManager.OnEvent(test.event)
 
 			assert.Equal(t, 1, len(notifier.notifications),
 				"TransferFinished event was received, but EventManager did not send any notifications.")
@@ -724,18 +741,13 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		Direction:        pb.Direction_INCOMING,
 	}
 
-	eventManager.EventFunc(fmt.Sprintf(`{
-		"type": "TransferFinished",
-		"data": {
-			"transfer": "%s",
-			"reason": "FileDownloaded",
-			"data": {
-				"file": "%s",
-				"status": %d,
-				"final_path": "%s"
-			}
-		}
-	}`, transferID, fileID, pb.Status_SUCCESS, filePath))
+	eventManager.OnEvent(norddrop.Event{
+		Kind: norddrop.EventKindFileDownloaded{
+			TransferId: transferID,
+			FileId:     fileID,
+			FinalPath:  filePath,
+		},
+	})
 
 	notification := notifier.notifications[0]
 
@@ -782,21 +794,20 @@ func TestTransferRequestNotification(t *testing.T) {
 		},
 	}}
 
-	event := fmt.Sprintf(`{
-		"type": "RequestReceived",
-		"data": {
-			"peer": "%s",
-			"transfer": "%s",
-			"files": [
-			  {
-				"id": "testfile",
-				"size": 1048576
-			  }
-			]
-		}
-	}`, peer, transferID)
+	event := norddrop.Event{
+		Kind: norddrop.EventKindRequestReceived{
+			Peer:       peer,
+			TransferId: transferID,
+			Files: []norddrop.ReceivedFile{
+				{
+					Id:   "testfile",
+					Size: 1038576,
+				},
+			},
+		},
+	}
 
-	eventManager.EventFunc(event)
+	eventManager.OnEvent(event)
 
 	assert.Equal(t, 1, len(notifier.notifications),
 		"Transfer request notification was not sent after transfer request event was received.")
@@ -839,7 +850,8 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 	}
 
 	setup := func(
-		destinationDirectory string, freeSpace uint64) testEnv {
+		destinationDirectory string, freeSpace uint64,
+	) testEnv {
 		currentUserUID := uint32(1000)
 		currentUSerUIDString := strconv.Itoa(int(currentUserUID))
 		currentUserGID := uint32(1000)
@@ -1198,20 +1210,22 @@ func TestAutoaccept(t *testing.T) {
 	mockOsEnvironment := newMockSystemEnvironment(t)
 
 	symlinkDirectoryName := "symlink"
-	mockOsEnvironment.MapFS[symlinkDirectoryName] =
-		&fstest.MapFile{Mode: os.ModeSymlink | 0777,
-			Sys: &syscall.Stat_t{
-				Uid: mockOsEnvironment.currentUserUID,
-				Gid: mockOsEnvironment.currentUserGID,
-			}}
+	mockOsEnvironment.MapFS[symlinkDirectoryName] = &fstest.MapFile{
+		Mode: os.ModeSymlink | 0777,
+		Sys: &syscall.Stat_t{
+			Uid: mockOsEnvironment.currentUserUID,
+			Gid: mockOsEnvironment.currentUserGID,
+		},
+	}
 
 	fileDirectoryName := "not_dir"
-	mockOsEnvironment.MapFS[fileDirectoryName] =
-		&fstest.MapFile{Mode: 0777,
-			Sys: &syscall.Stat_t{
-				Uid: mockOsEnvironment.currentUserUID,
-				Gid: mockOsEnvironment.currentUserGID,
-			}}
+	mockOsEnvironment.MapFS[fileDirectoryName] = &fstest.MapFile{
+		Mode: 0777,
+		Sys: &syscall.Stat_t{
+			Uid: mockOsEnvironment.currentUserUID,
+			Gid: mockOsEnvironment.currentUserGID,
+		},
+	}
 
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
@@ -1262,19 +1276,18 @@ func TestAutoaccept(t *testing.T) {
 		},
 	}
 
-	event := fmt.Sprintf(`{
-		"type": "RequestReceived",
-		"data": {
-			"peer": "%s",
-			"transfer": "%s",
-			"files": [
-			  {
-				"id": "testfile",
-				"size": 1048576
-			  }
-			]
-		}
-	}`, peerAutoAcceptIP, transferID)
+	event := norddrop.Event{
+		Kind: norddrop.EventKindRequestReceived{
+			Peer:       peerAutoAcceptIP,
+			TransferId: transferID,
+			Files: []norddrop.ReceivedFile{
+				{
+					Id:   "testfile",
+					Size: 1048576,
+				},
+			},
+		},
+	}
 
 	tests := []struct {
 		name                        string
@@ -1328,7 +1341,7 @@ func TestAutoaccept(t *testing.T) {
 
 			eventManager.fileshare = &mockFileshare
 			eventManager.defaultDownloadDir = test.defaultDownloadDirectory
-			eventManager.EventFunc(event)
+			eventManager.OnEvent(event)
 
 			if test.acceptedTransferID != "" {
 				assert.NotEmpty(t, mockFileshare.acceptedTransferIDS,

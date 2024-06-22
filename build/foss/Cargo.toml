@@ -8,5 +8,4 @@ rust-version = "1.72.1"
 crate-type = ["staticlib"]
 
 [dependencies]
-norddrop = { git = "https://github.com/NordSecurity/libdrop", tag = "v5.4.0_moose_backport" }
-telio = { git = "https://github.com/NordSecurity/libtelio", tag= "v5.0.0-rc1" }
+telio = { git = "https://github.com/NordSecurity/libtelio", tag = "v4.3.3" }
