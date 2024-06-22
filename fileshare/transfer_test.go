@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	norddrop "github.com/NordSecurity/libdrop-go/v7"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/proto"
@@ -18,45 +19,46 @@ const (
 )
 
 func TestLibdropTransferToInternalTransfer(t *testing.T) {
-	var timestamp = timestamppb.New(time.Now().Truncate(time.Millisecond))
-	var timestampUnix = timestamp.AsTime().UnixMilli()
+	timestamp := timestamppb.New(time.Now().Truncate(time.Millisecond))
+	timestampUnix := timestamp.AsTime().UnixMilli()
 
 	// Outgoing transfer request with 3 files
 	// Defined as a function so that every test would get a clean newly initialized struct
-	getBasicLibdropTransfer := func() LibdropTransfer {
-		return LibdropTransfer{
-			ID:        "transfer_id",
-			Peer:      "1.2.3.4",
+	getBasicLibdropTransfer := func() norddrop.TransferInfo {
+		return norddrop.TransferInfo{
+			Id:        "transfer_id",
 			CreatedAt: timestampUnix,
-			Direction: "outgoing",
-			States:    []LibdropTransferState{},
-			Files: []LibdropFile{
-				{
-					ID:           "file1_id",
-					TransferID:   "transfer_id",
-					BasePath:     "/tmp",
-					RelativePath: "dir/file1",
-					TotalSize:    10,
-					CreatedAt:    uint64(timestampUnix),
-					States:       []LibdropFileState{},
-				},
-				{
-					ID:           "file2_id",
-					TransferID:   "transfer_id",
-					BasePath:     "/tmp",
-					RelativePath: "dir/file2",
-					TotalSize:    100,
-					CreatedAt:    uint64(timestampUnix),
-					States:       []LibdropFileState{},
-				},
-				{
-					ID:           "file3_id",
-					TransferID:   "transfer_id",
-					BasePath:     "/tmp",
-					RelativePath: exampleFileDir3,
-					TotalSize:    1000,
-					CreatedAt:    uint64(timestampUnix),
-					States:       []LibdropFileState{},
+			Peer:      "1.2.3.4",
+			States:    []norddrop.TransferState{},
+			Kind: norddrop.TransferKindOutgoing{
+				Paths: []norddrop.OutgoingPath{
+					{
+						FileId:       "file1_id",
+						RelativePath: "dir/file1",
+						Bytes:        10,
+						Source: norddrop.OutgoingFileSourceBasePath{
+							BasePath: "/tmp",
+						},
+						States: []norddrop.OutgoingPathState{},
+					},
+					{
+						FileId:       "file2_id",
+						RelativePath: "dir/file2",
+						Bytes:        100,
+						Source: norddrop.OutgoingFileSourceBasePath{
+							BasePath: "/tmp",
+						},
+						States: []norddrop.OutgoingPathState{},
+					},
+					{
+						FileId:       "file3_id",
+						RelativePath: exampleFileDir3,
+						Bytes:        1000,
+						Source: norddrop.OutgoingFileSourceBasePath{
+							BasePath: "/tmp",
+						},
+						States: []norddrop.OutgoingPathState{},
+					},
 				},
 			},
 		}
@@ -104,21 +106,40 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 
 	tests := []struct {
 		name string
-		in   func(*LibdropTransfer)
+		in   func(*norddrop.TransferInfo)
 		out  func(*pb.Transfer)
 	}{
 		{
 			name: "outgoing transfer request",
-			in:   func(in *LibdropTransfer) {},
+			in:   func(in *norddrop.TransferInfo) {},
 			out:  func(out *pb.Transfer) {},
 		},
 		{
 			name: "incoming transfer request",
-			in: func(in *LibdropTransfer) {
-				in.Direction = directionIncoming
-				in.Files[0].BasePath = ""
-				in.Files[1].BasePath = ""
-				in.Files[2].BasePath = ""
+			in: func(in *norddrop.TransferInfo) {
+				in.Kind = norddrop.TransferKindIncoming{
+					Paths: []norddrop.IncomingPath{
+						{
+							FileId:       "file1_id",
+							RelativePath: "dir/file1",
+							Bytes:        10,
+							States:       []norddrop.IncomingPathState{},
+						},
+
+						{
+							FileId:       "file2_id",
+							RelativePath: "dir/file2",
+							Bytes:        100,
+							States:       []norddrop.IncomingPathState{},
+						},
+						{
+							FileId:       "file3_id",
+							RelativePath: exampleFileDir3,
+							Bytes:        1000,
+							States:       []norddrop.IncomingPathState{},
+						},
+					},
+				}
 			},
 			out: func(out *pb.Transfer) {
 				out.Direction = pb.Direction_INCOMING
@@ -132,21 +153,52 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 		},
 		{
 			name: "incoming transfer in progress with one cancelled file",
-			in: func(in *LibdropTransfer) {
-				in.Direction = directionIncoming
-				in.Files[0].BasePath = ""
-				in.Files[0].States = []LibdropFileState{
-					{State: "pending", BasePath: "/tmp"},
-					{State: "started"},
-				}
-				in.Files[1].BasePath = ""
-				in.Files[1].States = []LibdropFileState{
-					{State: "pending", BasePath: "/tmp"},
-					{State: "started"},
-				}
-				in.Files[2].BasePath = ""
-				in.Files[2].States = []LibdropFileState{
-					{State: "rejected"},
+			in: func(in *norddrop.TransferInfo) {
+				in.Kind = norddrop.TransferKindIncoming{
+					Paths: []norddrop.IncomingPath{
+						{
+							FileId:       "file1_id",
+							RelativePath: "dir/file1",
+							Bytes:        10,
+							States: []norddrop.IncomingPathState{
+								{
+									Kind: norddrop.IncomingPathStateKindPending{
+										BaseDir: "/tmp",
+									},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindStarted{},
+								},
+							},
+						},
+						{
+							FileId:       "file2_id",
+							RelativePath: "dir/file2",
+							Bytes:        100,
+							States: []norddrop.IncomingPathState{
+								{
+									Kind: norddrop.IncomingPathStateKindPending{
+										BaseDir: "/tmp",
+									},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindStarted{},
+								},
+							},
+						},
+						{
+							FileId:       "file3_id",
+							RelativePath: "dir/file3",
+							Bytes:        1000,
+							States: []norddrop.IncomingPathState{
+								{
+									Kind: norddrop.IncomingPathStateKindRejected{
+										ByPeer: false,
+									},
+								},
+							},
+						},
+					},
 				}
 			},
 			out: func(out *pb.Transfer) {
@@ -164,13 +216,28 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 		},
 		{
 			name: "outgoing one file transfer with error",
-			in: func(in *LibdropTransfer) {
-				in.Files = []LibdropFile{in.Files[0]}
-				in.Files[0].BasePath = "/tmp/dir"
-				in.Files[0].RelativePath = "file1"
-				in.Files[0].States = []LibdropFileState{
-					{State: "started"},
-					{State: "failed", StatusCode: 33},
+			in: func(in *norddrop.TransferInfo) {
+				in.Kind = norddrop.TransferKindOutgoing{
+					Paths: []norddrop.OutgoingPath{
+						{
+							FileId:       "file1_id",
+							RelativePath: "file1",
+							Bytes:        10,
+							Source: norddrop.OutgoingFileSourceBasePath{
+								BasePath: "/tmp/dir",
+							},
+							States: []norddrop.OutgoingPathState{
+								{
+									Kind: norddrop.OutgoingPathStateKindStarted{},
+								},
+								{
+									Kind: norddrop.OutgoingPathStateKindFailed{
+										Status: 33,
+									},
+								},
+							},
+						},
+					},
 				}
 			},
 			out: func(out *pb.Transfer) {
@@ -184,20 +251,66 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 		},
 		{
 			name: "finalized outgoing transfer with one rejected file",
-			in: func(in *LibdropTransfer) {
-				in.States = []LibdropTransferState{
-					{State: "cancel", ByPeer: true},
+			in: func(in *norddrop.TransferInfo) {
+				in.States = []norddrop.TransferState{
+					{
+						Kind: norddrop.TransferStateKindCancel{
+							ByPeer: true,
+						},
+					},
 				}
-				in.Files[0].States = []LibdropFileState{
-					{State: "started"},
-					{State: "completed"},
-				}
-				in.Files[1].States = []LibdropFileState{
-					{State: "started"},
-					{State: "completed"},
-				}
-				in.Files[2].States = []LibdropFileState{
-					{State: "rejected"},
+				in.Kind = norddrop.TransferKindOutgoing{
+					Paths: []norddrop.OutgoingPath{
+						{
+							FileId:       "file1_id",
+							RelativePath: "dir/file1",
+							Bytes:        10,
+							Source: norddrop.OutgoingFileSourceBasePath{
+								BasePath: "/tmp",
+							},
+							States: []norddrop.OutgoingPathState{
+								{
+									Kind: norddrop.OutgoingPathStateKindStarted{
+										BytesSent: 10,
+									},
+								},
+								{
+									Kind: norddrop.OutgoingPathStateKindCompleted{},
+								},
+							},
+						},
+						{
+							FileId:       "file2_id",
+							RelativePath: "dir/file2",
+							Bytes:        100,
+							Source: norddrop.OutgoingFileSourceBasePath{
+								BasePath: "/tmp",
+							},
+							States: []norddrop.OutgoingPathState{
+								{
+									Kind: norddrop.OutgoingPathStateKindStarted{
+										BytesSent: 100,
+									},
+								},
+								{
+									Kind: norddrop.OutgoingPathStateKindCompleted{},
+								},
+							},
+						},
+						{
+							FileId:       "file3_id",
+							RelativePath: "dir/file3",
+							Bytes:        1000,
+							Source: norddrop.OutgoingFileSourceBasePath{
+								BasePath: "/tmp",
+							},
+							States: []norddrop.OutgoingPathState{
+								{
+									Kind: norddrop.OutgoingPathStateKindRejected{},
+								},
+							},
+						},
+					},
 				}
 			},
 			out: func(out *pb.Transfer) {
@@ -213,18 +326,56 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 		},
 		{
 			name: "cancelled outgoing transfer with one rejected file",
-			in: func(in *LibdropTransfer) {
-				in.States = []LibdropTransferState{
-					{State: "cancel", ByPeer: true},
+			in: func(in *norddrop.TransferInfo) {
+				in.States = []norddrop.TransferState{
+					{
+						Kind: norddrop.TransferStateKindCancel{
+							ByPeer: true,
+						},
+					},
 				}
-				in.Files[0].States = []LibdropFileState{
-					{State: "started"},
-				}
-				in.Files[1].States = []LibdropFileState{
-					{State: "started"},
-				}
-				in.Files[2].States = []LibdropFileState{
-					{State: "rejected"},
+				in.Kind = norddrop.TransferKindOutgoing{
+					Paths: []norddrop.OutgoingPath{
+						{
+							FileId:       "file1_id",
+							RelativePath: "dir/file1",
+							Bytes:        10,
+							Source: norddrop.OutgoingFileSourceBasePath{
+								BasePath: "/tmp",
+							},
+							States: []norddrop.OutgoingPathState{
+								{
+									Kind: norddrop.OutgoingPathStateKindStarted{},
+								},
+							},
+						},
+						{
+							FileId:       "file2_id",
+							RelativePath: "dir/file2",
+							Bytes:        100,
+							Source: norddrop.OutgoingFileSourceBasePath{
+								BasePath: "/tmp",
+							},
+							States: []norddrop.OutgoingPathState{
+								{
+									Kind: norddrop.OutgoingPathStateKindStarted{},
+								},
+							},
+						},
+						{
+							FileId:       "file3_id",
+							RelativePath: "dir/file3",
+							Bytes:        1000,
+							Source: norddrop.OutgoingFileSourceBasePath{
+								BasePath: "/tmp",
+							},
+							States: []norddrop.OutgoingPathState{
+								{
+									Kind: norddrop.OutgoingPathStateKindRejected{},
+								},
+							},
+						},
+					},
 				}
 			},
 			out: func(out *pb.Transfer) {
@@ -237,25 +388,68 @@ func TestLibdropTransferToInternalTransfer(t *testing.T) {
 		},
 		{
 			name: "incoming transfer in progress with some finished files",
-			in: func(in *LibdropTransfer) {
-				in.Direction = directionIncoming
-				in.Files[0].BasePath = ""
-				in.Files[1].BasePath = ""
-				in.Files[2].BasePath = ""
-				in.Files[0].States = []LibdropFileState{
-					{State: "pending", BasePath: "/tmp"},
-					{State: "started"},
-					{State: "paused"},
-					{State: "started", BytesReceived: 5},
+			in: func(in *norddrop.TransferInfo) {
+				in.Kind = norddrop.TransferKindIncoming{
+					Paths: []norddrop.IncomingPath{
+						{
+							FileId:       "file1_id",
+							RelativePath: "dir/file1",
+							Bytes:        10,
+							States: []norddrop.IncomingPathState{
+								{
+									Kind: norddrop.IncomingPathStateKindPending{
+										BaseDir: "/tmp",
+									},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindStarted{},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindPaused{},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindStarted{
+										BytesReceived: 5,
+									},
+								},
+							},
+						},
+						{
+							FileId:       "file2_id",
+							RelativePath: "dir/file2",
+							Bytes:        100,
+							States: []norddrop.IncomingPathState{
+								{
+									Kind: norddrop.IncomingPathStateKindPending{
+										BaseDir: "/tmp",
+									},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindStarted{},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindPaused{},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindStarted{
+										BytesReceived: 5,
+									},
+								},
+								{
+									Kind: norddrop.IncomingPathStateKindCompleted{
+										FinalPath: "/tmp/dir/file2_(1)",
+									},
+								},
+							},
+						},
+						{
+							FileId:       "file3_id",
+							RelativePath: "dir/file3",
+							Bytes:        1000,
+							States:       []norddrop.IncomingPathState{},
+						},
+					},
 				}
-				in.Files[1].States = []LibdropFileState{
-					{State: "pending", BasePath: "/tmp"},
-					{State: "started"},
-					{State: "paused"},
-					{State: "started", BytesReceived: 5},
-					{State: "completed", FinalPath: "/tmp/dir/file2_(1)"},
-				}
-				in.Files[2].States = []LibdropFileState{}
 			},
 			out: func(out *pb.Transfer) {
 				out.Direction = pb.Direction_INCOMING
