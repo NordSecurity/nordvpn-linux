@@ -56,6 +56,13 @@ func (netw *Combined) handleNetworkChanged() error {
 		if err := netw.fixForLinuxMint20(); err != nil {
 			return err
 		}
+
+		// at network changes, even if the same interfaces still exist in the system,
+		// the routes might not be configured anymore, because the OS will delete them when interfaces are gone.
+		// Reset the allow list to be sure that allowed routes still work.
+		if err := netw.resetAllowlist(); err != nil {
+			return err
+		}
 	}
 
 	return nil
