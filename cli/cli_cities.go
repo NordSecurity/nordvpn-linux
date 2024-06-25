@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -44,16 +43,23 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	if len(resp.Data) == 0 {
+	if len(resp.Servers) == 0 {
 		return formatError(errors.New(CitiesNotFoundError))
 	}
 
-	formattedList, err := columns(resp.Data)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
-		fmt.Println(strings.Join(resp.Data, ", "))
-	} else {
+	footer := footerForServerGroupsList(resp.Servers)
+	formattedList, err := columns(resp.Servers,
+		serverNameLen,
+		formatServerName,
+		footer,
+	)
+	if err == nil {
 		fmt.Println(formattedList)
+	} else {
+		log.Println(internal.ErrorPrefix, err)
+
+		columns, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
+		fmt.Println(columns)
 	}
 	return nil
 }
@@ -64,7 +70,7 @@ func (c *cmd) CitiesAutoComplete(ctx *cli.Context) {
 		return
 	}
 
-	for _, country := range resp.Data {
-		fmt.Println(country)
+	for _, server := range resp.Servers {
+		fmt.Println(server.Name)
 	}
 }

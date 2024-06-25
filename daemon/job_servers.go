@@ -3,7 +3,6 @@ package daemon
 import (
 	"errors"
 	"log"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -11,11 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-
-	mapset "github.com/deckarep/golang-set/v2"
 )
-
-var alphanumeric = regexp.MustCompile(`[^0-9a-zA-Z ]+`)
 
 // JobServers is responsible for population of local server cache which is needed
 // to avoid excess requests to the backend API.
@@ -26,14 +21,9 @@ func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validat
 		if err != nil {
 			log.Println(internal.ErrorPrefix, err)
 		}
-		if validate && dm.ServerDataExists() {
-			// always fill app data even if db file is outdated
-			SetAppData(dm, cfg.Technology, dm.GetServersData().Servers)
-
-			// if db is still valid, make sure it's locked and do nothing
-			if dm.IsServersDataValid() {
-				return nil
-			}
+		// if db is still valid, make sure it's locked and do nothing
+		if validate && dm.ServerDataExists() && dm.IsServersDataValid() {
+			return nil
 		}
 
 		// save execution start time
@@ -151,102 +141,10 @@ func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validat
 			return servers[i].Penalty < servers[j].Penalty
 		})
 
-		SetAppData(dm, cfg.Technology, servers)
 		err = dm.SetServersData(currentTime, servers, headers.Get(core.HeaderDigest))
 		if err != nil {
 			return err
 		}
 		return nil
 	}
-}
-
-func SetAppData(dm *DataManager, tech config.Technology, servers core.Servers) {
-	countryNames := map[bool]map[config.Protocol]mapset.Set[string]{
-		false: {
-			config.Protocol_UDP: mapset.NewSet[string](),
-			config.Protocol_TCP: mapset.NewSet[string](),
-		},
-		true: {
-			config.Protocol_UDP: mapset.NewSet[string](),
-			config.Protocol_TCP: mapset.NewSet[string](),
-		},
-	}
-	cityNames := map[bool]map[config.Protocol]map[string]mapset.Set[string]{
-		false: {
-			config.Protocol_UDP: make(map[string]mapset.Set[string], 0),
-			config.Protocol_TCP: make(map[string]mapset.Set[string], 0),
-		},
-		true: {
-			config.Protocol_UDP: make(map[string]mapset.Set[string], 0),
-			config.Protocol_TCP: make(map[string]mapset.Set[string], 0),
-		},
-	}
-	groupNames := map[bool]map[config.Protocol]mapset.Set[string]{
-		false: {
-			config.Protocol_UDP: mapset.NewSet[string](),
-			config.Protocol_TCP: mapset.NewSet[string](),
-		},
-		true: {
-			config.Protocol_UDP: mapset.NewSet[string](),
-			config.Protocol_TCP: mapset.NewSet[string](),
-		},
-	}
-
-	for _, server := range servers {
-		var (
-			hasUDP bool
-			hasTCP bool
-		)
-
-		switch tech {
-		case config.Technology_OPENVPN:
-			if core.IsConnectableVia(core.OpenVPNUDP)(server) ||
-				core.IsConnectableVia(core.OpenVPNUDPObfuscated)(server) {
-				hasUDP = true
-			}
-			if core.IsConnectableVia(core.OpenVPNTCP)(server) ||
-				core.IsConnectableVia(core.OpenVPNTCPObfuscated)(server) {
-				hasTCP = true
-			}
-		case config.Technology_NORDLYNX:
-			if core.IsConnectableVia(core.WireguardTech)(server) {
-				hasUDP = true
-			}
-		case config.Technology_UNKNOWN_TECHNOLOGY:
-			fallthrough
-		default:
-			continue
-		}
-
-		countryTitle := internal.Title(server.Locations[0].Country.Name)
-		loweredCountryTitle := strings.ToLower(countryTitle)
-		cityTitle := internal.Title(server.Locations[0].Country.City.Name)
-		groupTitles := make([]string, len(server.Groups))
-		for idx, group := range server.Groups {
-			groupTitles[idx] = internal.Title(alphanumeric.ReplaceAllString(group.Title, ""))
-		}
-
-		var protos []config.Protocol
-		if hasUDP {
-			protos = append(protos, config.Protocol_UDP)
-		}
-		if hasTCP {
-			protos = append(protos, config.Protocol_TCP)
-		}
-
-		for _, proto := range protos {
-			obfuscated := core.IsObfuscated()(server)
-			countryNames[obfuscated][proto].Add(countryTitle)
-			if _, ok := cityNames[obfuscated][proto][loweredCountryTitle]; ok {
-				cityNames[obfuscated][proto][loweredCountryTitle].Add(cityTitle)
-			} else {
-				cityNames[obfuscated][proto][loweredCountryTitle] = mapset.NewSet(cityTitle)
-			}
-			for _, group := range groupTitles {
-				groupNames[obfuscated][proto].Add(group)
-			}
-		}
-	}
-
-	dm.SetAppData(countryNames, cityNames, groupNames)
 }

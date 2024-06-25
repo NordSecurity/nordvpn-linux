@@ -24,11 +24,11 @@ const _ = grpc.SupportPackageIsVersion7
 type DaemonClient interface {
 	AccountInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AccountResponse, error)
 	TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error)
-	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*Payload, error)
+	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (Daemon_ConnectClient, error)
-	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_DisconnectClient, error)
-	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	LoginOAuth2(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_LoginOAuth2Client, error)
@@ -89,8 +89,8 @@ func (c *daemonClient) TokenInfo(ctx context.Context, in *Empty, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *daemonClient) Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error) {
+	out := new(ServerGroupsList)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Cities", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -130,8 +130,8 @@ func (x *daemonConnectClient) Recv() (*Payload, error) {
 	return m, nil
 }
 
-func (c *daemonClient) Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
+	out := new(ServerGroupsList)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Countries", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -171,8 +171,8 @@ func (x *daemonDisconnectClient) Recv() (*Payload, error) {
 	return m, nil
 }
 
-func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
+	out := new(ServerGroupsList)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Groups", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -497,11 +497,11 @@ func (c *daemonClient) SetVirtualLocation(ctx context.Context, in *SetGenericReq
 type DaemonServer interface {
 	AccountInfo(context.Context, *Empty) (*AccountResponse, error)
 	TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error)
-	Cities(context.Context, *CitiesRequest) (*Payload, error)
+	Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error)
 	Connect(*ConnectRequest, Daemon_ConnectServer) error
-	Countries(context.Context, *Empty) (*Payload, error)
+	Countries(context.Context, *Empty) (*ServerGroupsList, error)
 	Disconnect(*Empty, Daemon_DisconnectServer) error
-	Groups(context.Context, *Empty) (*Payload, error)
+	Groups(context.Context, *Empty) (*ServerGroupsList, error)
 	IsLoggedIn(context.Context, *Empty) (*Bool, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
 	LoginOAuth2(*Empty, Daemon_LoginOAuth2Server) error
@@ -547,19 +547,19 @@ func (UnimplementedDaemonServer) AccountInfo(context.Context, *Empty) (*AccountR
 func (UnimplementedDaemonServer) TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TokenInfo not implemented")
 }
-func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*Payload, error) {
+func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Cities not implemented")
 }
 func (UnimplementedDaemonServer) Connect(*ConnectRequest, Daemon_ConnectServer) error {
 	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
 }
-func (UnimplementedDaemonServer) Countries(context.Context, *Empty) (*Payload, error) {
+func (UnimplementedDaemonServer) Countries(context.Context, *Empty) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Countries not implemented")
 }
 func (UnimplementedDaemonServer) Disconnect(*Empty, Daemon_DisconnectServer) error {
 	return status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
 }
-func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*Payload, error) {
+func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Groups not implemented")
 }
 func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*Bool, error) {

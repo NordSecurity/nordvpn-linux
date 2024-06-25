@@ -11,7 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,10 +31,10 @@ func TestRPCCities(t *testing.T) {
 			statusCode: internal.CodeConfigError,
 		},
 		{
-			name:       "app data is empty",
+			name:       "return no results when no servers are loaded",
 			dm:         testNewDataManager(),
 			cm:         newMockConfigManager(),
-			statusCode: internal.CodeEmptyPayloadError,
+			statusCode: internal.CodeSuccess,
 		},
 	}
 
@@ -63,18 +62,7 @@ func TestRPCCities_Successful(t *testing.T) {
 	defer testsCleanup()
 
 	dm := testNewDataManager()
-
-	cityNames := map[bool]map[config.Protocol]map[string]mapset.Set[string]{
-		false: {
-			config.Protocol_UDP: {
-				"lt": mapset.NewSet("Vilnius"),
-			},
-			config.Protocol_TCP: {
-				"de": mapset.NewSet("Berlin"),
-			},
-		},
-	}
-	dm.SetAppData(nil, cityNames, nil)
+	dm.serversData.Servers = serversList()
 
 	cm := newMockConfigManager()
 	cm.c.AutoConnectData.Protocol = config.Protocol_UDP
@@ -95,5 +83,7 @@ func TestRPCCities_Successful(t *testing.T) {
 
 	payload, _ := rpc.Cities(context.Background(), request)
 	assert.Equal(t, internal.CodeSuccess, payload.GetType())
-	assert.Equal(t, []string{"Vilnius"}, payload.GetData())
+	assert.Equal(t, 1, len(payload.Servers))
+
+	assert.Equal(t, &pb.ServerGroup{Name: "Vilnius", VirtualLocation: true}, payload.Servers[0])
 }
