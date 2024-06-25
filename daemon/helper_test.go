@@ -232,3 +232,134 @@ func testNewRepoAPI() *RepoAPI {
 		http.DefaultClient,
 	)
 }
+
+func serversList() core.Servers {
+	obfuscatedTechnologies := core.Technologies{
+		core.Technology{
+			ID:    core.OpenVPNTCPObfuscated,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+		core.Technology{
+			ID:    core.OpenVPNUDPObfuscated,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+	}
+
+	technologies := core.Technologies{
+		core.Technology{
+			ID:    core.OpenVPNTCPObfuscated,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+		core.Technology{
+			ID:    core.OpenVPNUDPObfuscated,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+		core.Technology{
+			ID:    core.OpenVPNUDP,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+		core.Technology{
+			ID:    core.OpenVPNUDP,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+		core.Technology{
+			ID:    core.WireguardTech,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+	}
+
+	groups := core.Groups{
+		core.Group{Title: "P2P"},
+		core.Group{Title: "Double VPN"},
+	}
+
+	return core.Servers{
+		core.Server{
+			ID:           1,
+			Name:         "France #1",
+			Hostname:     "fr1.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "France",
+						Code: "FR",
+						City: core.City{Name: "Paris"},
+					},
+				},
+			},
+			Groups: groups,
+		},
+		core.Server{
+			ID:       2,
+			Hostname: "lt16.nordvpn.com",
+			Technologies: core.Technologies{
+				core.Technology{
+					ID:    core.WireguardTech,
+					Pivot: core.Pivot{Status: core.Online},
+				},
+			},
+			Status: core.Online,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Lithuania",
+						Code: "LT",
+						City: core.City{Name: "Vilnius"},
+					},
+				},
+			},
+			Specifications: []core.Specification{
+				{
+					Identifier: core.VirtualLocation,
+					Values: []struct {
+						Value string "json:\"value\""
+					}{
+						{Value: "true"},
+					},
+				},
+			},
+			Groups: groups,
+		},
+		core.Server{
+			ID:           3,
+			Hostname:     "lt15.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Lithuania",
+						Code: "LT",
+						City: core.City{Name: "Vilnius"},
+					},
+				},
+			},
+			Specifications: []core.Specification{
+				{
+					Identifier: core.VirtualLocation,
+					Values: []struct {
+						Value string "json:\"value\""
+					}{
+						{Value: "true"},
+					},
+				},
+			},
+			Groups: groups,
+		},
+		core.Server{
+			ID:           929912,
+			Name:         "Canada #944",
+			Hostname:     "ca944.nordvpn.com",
+			Status:       core.Offline,
+			Technologies: obfuscatedTechnologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Canada",
+						Code: "LT",
+						City: core.City{Name: "Vilnius"},
+					},
+				},
+			},
+			Groups: groups,
+		},
+	}
+}

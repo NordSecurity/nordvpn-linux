@@ -110,10 +110,19 @@ func (c *cmd) SetAutoConnectAutoComplete(ctx *cli.Context) {
 
 			// create config after auth
 			args := ctx.Args()
-			resp, err := func(args []string) (*pb.Payload, error) {
+			resp, err := func(args []string) (*pb.ServerGroupsList, error) {
 				switch len(args) {
 				case 1:
-					return c.client.Countries(context.Background(), &pb.Empty{})
+					countries, err := c.client.Countries(context.Background(), &pb.Empty{})
+					if err != nil {
+						return nil, err
+					}
+					groups, err := c.client.Groups(context.Background(), &pb.Empty{})
+					if err != nil {
+						return nil, err
+					}
+					countries.Servers = append(countries.Servers, groups.Servers...)
+					return countries, nil
 				case 2:
 					return c.client.Cities(context.Background(), &pb.CitiesRequest{
 						Country: args[1],
@@ -121,12 +130,13 @@ func (c *cmd) SetAutoConnectAutoComplete(ctx *cli.Context) {
 				}
 				return nil, errors.New("bad args")
 			}(args.Slice())
+
 			if err != nil {
 				return
 			}
 
-			for _, item := range resp.Data {
-				fmt.Println(item)
+			for _, item := range resp.Servers {
+				fmt.Println(item.Name)
 			}
 		}
 	}

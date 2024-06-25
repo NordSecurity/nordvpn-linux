@@ -65,9 +65,10 @@ type ServersFilter struct {
 type Status string
 
 const (
-	Online      = "online"
-	Offline     = "offline"
-	Maintenance = "maintenance"
+	Online          = "online"
+	Offline         = "offline"
+	Maintenance     = "maintenance"
+	VirtualLocation = "virtual_location"
 )
 
 type UserCreateRequest struct {
@@ -310,7 +311,7 @@ func (s *Server) Version() string {
 }
 
 func (s *Server) IsVirtualLocation() bool {
-	virtualLocation := s.getSpecificationsForIdentifier("virtual_location")
+	virtualLocation := s.getSpecificationsForIdentifier(VirtualLocation)
 
 	if len(virtualLocation) > 0 {
 		value, err := nstrings.BoolFromString(virtualLocation[0])
@@ -320,6 +321,13 @@ func (s *Server) IsVirtualLocation() bool {
 		log.Println(internal.DebugPrefix, "cannot convert server virtual location", s.Hostname, virtualLocation, err)
 	}
 	return false
+}
+
+func (s *Server) Country() *Country {
+	if len(s.Locations) > 0 {
+		return &s.Locations[0].Country
+	}
+	return nil
 }
 
 func (s *Server) getSpecificationsForIdentifier(identifier string) []string {
