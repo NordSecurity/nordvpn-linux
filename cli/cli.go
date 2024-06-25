@@ -1186,3 +1186,36 @@ func commandFullName(ctx *cli.Context, args []string) string {
 
 	return strings.Join(fullCommand, " ")
 }
+
+func (c *cmd) printServersForAutoComplete(country string) {
+	if country == "" {
+		resp, err := c.client.Groups(context.Background(), &pb.Empty{})
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to get the groups", err)
+			return
+		}
+		for _, server := range resp.Servers {
+			fmt.Println(server.Name)
+		}
+
+		resp, err = c.client.Countries(context.Background(), &pb.Empty{})
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to get the countries", err)
+			return
+		}
+		for _, server := range resp.Servers {
+			fmt.Println(server.Name)
+		}
+	} else {
+		resp, err := c.client.Cities(context.Background(), &pb.CitiesRequest{
+			Country: country,
+		})
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to get the cities", err)
+			return
+		}
+		for _, server := range resp.Servers {
+			fmt.Println(server.Name)
+		}
+	}
+}
