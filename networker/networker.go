@@ -777,8 +777,8 @@ func (netw *Combined) stopAllowedIPv6Traffic() error {
 }
 
 func (netw *Combined) resetAllowlist() error {
-	// this is done in order to maintain the order of the firewall
-	// rules
+	// this is done in order to maintain the order of the firewall rules
+	log.Println(internal.InfoPrefix, "reset allow list")
 	if err := netw.unsetAllowlist(); err != nil {
 		return fmt.Errorf("unsetting allowlist: %w", err)
 	}
@@ -883,8 +883,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	for cidr := range allowlist.Subnets {
 		subnet, err := netip.ParsePrefix(cidr)
 		if err != nil {
-			// TODO: after Go 1.20, rewrite using error joining
-			return fmt.Errorf("parsing subnet CIDR: %w", err)
+			return errors.Join(fmt.Errorf("parsing subnet CIDR"), err)
 		}
 
 		// For local unicast addresses only firewall rules are added
@@ -908,13 +907,13 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			TableID: netw.policyRouter.TableID(),
 		}
 
+		log.Println(internal.InfoPrefix, "add route", route)
 		err = netw.allowlistRouter.Add(route)
 		if errors.Is(err, routes.ErrRouteToOtherDestinationExists) {
 			log.Println(internal.WarningPrefix, "route(s) for allowlisted subnet(s) via non-default gateway already exist in the system")
 		}
 		if err != nil {
-			// TODO: after Go 1.20, rewrite using error joining
-			return fmt.Errorf("adding route for subnet %s: %w", route.Subnet, err)
+			return errors.Join(fmt.Errorf("adding route for subnet: %s", route.Subnet), err)
 		}
 
 		subnets = append(subnets, subnet)
@@ -953,7 +952,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 				Allow:      true,
 			})
 			if err := netw.allowlistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
-				return fmt.Errorf("enabling allowlist routing: %w", err)
+				return errors.Join(fmt.Errorf("enabling allowlist routing"), err)
 			}
 		}
 	}
@@ -966,6 +965,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 }
 
 func (netw *Combined) unsetAllowlist() error {
+	log.Println(internal.InfoPrefix, "unset allow list")
 	if err := netw.allowlistRouter.Flush(); err != nil {
 		log.Println(internal.WarningPrefix, "flushing allowlist router:", err)
 	}
@@ -977,7 +977,6 @@ func (netw *Combined) unsetAllowlist() error {
 	} {
 		err := netw.fw.Delete([]string{rule})
 		if err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
-			// TODO: after Go 1.20, rewrite using error joining
 			return err
 		}
 	}
