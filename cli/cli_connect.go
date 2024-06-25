@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -149,24 +148,22 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 
 func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 	args := ctx.Args()
-	if args.Len() == 0 {
+	if args.Len() == 0 || args.First() == "" {
 		resp, err := c.client.Groups(context.Background(), &pb.Empty{})
 		if err != nil {
 			return
 		}
-		groupList, err := columns(resp.Data)
-		if err != nil {
-			log.Println(err)
+		for _, server := range resp.Servers {
+			fmt.Println(server.Name)
 		}
+
 		resp, err = c.client.Countries(context.Background(), &pb.Empty{})
 		if err != nil {
 			return
 		}
-		countryList, err := columns(resp.Data)
-		if err != nil {
-			log.Println(err)
+		for _, server := range resp.Servers {
+			fmt.Println(server.Name)
 		}
-		fmt.Println(countryList + " " + groupList)
 	} else if args.Len() == 1 {
 		resp, err := c.client.Cities(context.Background(), &pb.CitiesRequest{
 			Country: ctx.Args().First(),
@@ -174,10 +171,8 @@ func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 		if err != nil {
 			return
 		}
-		cityList, err := columns(resp.Data)
-		if err != nil {
-			log.Println(err)
+		for _, server := range resp.Servers {
+			fmt.Println(server.Name)
 		}
-		fmt.Println(cityList)
 	}
 }

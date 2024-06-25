@@ -97,7 +97,12 @@ func TestSplitDataInColumns(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			output, err := formatTable(test.data, test.width)
+			output, err := formatTable(test.data,
+				func(item string) int { return len(item) },
+				func(item string) string { return item },
+				test.width,
+				"",
+			)
 			if test.expectsError {
 				assert.Error(t, err)
 			} else {

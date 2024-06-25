@@ -2,7 +2,6 @@ package cli
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -11,10 +10,39 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/fatih/color"
 	"golang.org/x/term"
 )
+
+func isStdoutATerminal() bool {
+	return term.IsTerminal(int(os.Stdout.Fd()))
+}
+
+func serverNameLen(server *pb.ServerGroup) int {
+	return len(server.Name)
+}
+
+func formatServerName(server *pb.ServerGroup) string {
+	if server.VirtualLocation && isStdoutATerminal() {
+		return color.YellowString(server.Name)
+	}
+	return server.Name
+}
+
+func footerForServerGroupsList(servers []*pb.ServerGroup) string {
+	if !isStdoutATerminal() {
+		return ""
+	}
+
+	for _, server := range servers {
+		if server.VirtualLocation {
+			return color.YellowString("* TODO:Virtual location servers")
+		}
+	}
+	return ""
+}
 
 func checkUsernamePasswordIsEmpty(username, password string) error {
 	if username == "" {
@@ -39,12 +67,12 @@ func ReadCredentialsFromTerminal() (string, string, error) {
 	if !term.IsTerminal(0) || !term.IsTerminal(1) {
 		return username, password, fmt.Errorf("Stdin/Stdout should be terminal")
 	}
-	oldState, err := terminal.MakeRaw(0)
+	oldState, err := term.MakeRaw(0)
 	if err != nil {
 		return username, password, err
 	}
 	defer func() {
-		if err := terminal.Restore(0, oldState); err != nil {
+		if err := term.Restore(0, oldState); err != nil {
 			log.Println(internal.DeferPrefix, err)
 		}
 	}()
@@ -53,7 +81,7 @@ func ReadCredentialsFromTerminal() (string, string, error) {
 		io.Reader
 		io.Writer
 	}{os.Stdin, os.Stdout}
-	term := terminal.NewTerminal(screen, "")
+	term := term.NewTerminal(screen, "")
 	term.SetPrompt("Email: ")
 	username, err = term.ReadLine()
 	if err != nil {
@@ -83,16 +111,16 @@ func ReadCredentialsFromTerminal() (string, string, error) {
 
 func ReadPlanFromTerminal() (int, error) {
 	var planID int
-	if !terminal.IsTerminal(0) || !terminal.IsTerminal(1) {
+	if !term.IsTerminal(0) || !term.IsTerminal(1) {
 		return planID, fmt.Errorf("Stdin/Stdout should be terminal")
 	}
 
-	oldState, err := terminal.MakeRaw(0)
+	oldState, err := term.MakeRaw(0)
 	if err != nil {
 		return planID, err
 	}
 	defer func() {
-		if err := terminal.Restore(0, oldState); err != nil {
+		if err := term.Restore(0, oldState); err != nil {
 			log.Println(internal.DeferPrefix, err)
 		}
 	}()
@@ -101,7 +129,7 @@ func ReadPlanFromTerminal() (int, error) {
 		io.Reader
 		io.Writer
 	}{os.Stdin, os.Stdout}
-	term := terminal.NewTerminal(screen, "")
+	term := term.NewTerminal(screen, "")
 
 	for {
 		term.SetPrompt("Plan number: ")
@@ -124,20 +152,27 @@ func ReadPlanFromTerminal() (int, error) {
 }
 
 // formats a list of strings to a tidy column representation
-func columns(data []string) (string, error) {
+func columns[T any](
+	data []T,
+	length func(T) int,
+	display func(T) string,
+	footer string,
+) (string, error) {
 	width, _, err := cliDimensions()
 	if err != nil {
-		// workaround for tests because terminal size cannot be calculated
-		if flag.Lookup("test.v") != nil {
-			return strings.Join(data, " "), err
-		}
 		return "", err
 	}
 
-	return formatTable(data, width)
+	return formatTable(data, length, display, width, footer)
 }
 
-func formatTable(data []string, width int) (string, error) {
+func formatTable[T any](
+	data []T,
+	length func(T) int,
+	display func(T) string,
+	width int,
+	footer string,
+) (string, error) {
 	if width <= 0 {
 		return "", fmt.Errorf("invalid width size")
 	}
@@ -149,8 +184,9 @@ func formatTable(data []string, width int) (string, error) {
 	// Calculate the maximum width of an item
 	maxItemWidth := 0
 	for _, item := range data {
-		if len(item) > maxItemWidth {
-			maxItemWidth = len(item)
+		itemSize := length(item)
+		if itemSize > maxItemWidth {
+			maxItemWidth = itemSize
 		}
 	}
 
@@ -164,7 +200,7 @@ func formatTable(data []string, width int) (string, error) {
 	}
 
 	var builder strings.Builder
-	for i, value := range data {
+	for i, item := range data {
 		itemWidth := columnWidth
 		isLastElementOnLine := ((i+1)%columns == 0)
 		isLast := (i == len(data)-1)
@@ -173,12 +209,18 @@ func formatTable(data []string, width int) (string, error) {
 			itemWidth = 0
 		}
 
-		builder.WriteString(fmt.Sprintf("%-*s", itemWidth, value))
+		value := display(item)
+		diff := len(value) - length(item)
+		builder.WriteString(fmt.Sprintf("%-*s", itemWidth+diff, value))
 
 		if isLastElementOnLine && !isLast {
 			// add new line for rows, except last one
 			builder.WriteString("\n")
 		}
+	}
+
+	if len(footer) > 0 {
+		builder.WriteString("\n\n" + footer)
 	}
 
 	return builder.String(), nil

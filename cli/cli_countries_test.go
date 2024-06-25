@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -18,7 +19,7 @@ func TestCountriesList(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		countries     []string
+		countries     []*pb.ServerGroup
 		expected      string
 		input         string
 		expectedError error
@@ -29,8 +30,8 @@ func TestCountriesList(t *testing.T) {
 		},
 		{
 			name:      "countries list",
-			expected:  "France, Germany",
-			countries: []string{"France", "Germany"},
+			expected:  "France\nGermany",
+			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}, {Name: "Germany", VirtualLocation: false}},
 		},
 	}
 

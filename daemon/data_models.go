@@ -5,18 +5,13 @@ import (
 	"encoding/gob"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
 	"github.com/coreos/go-semver/semver"
-	mapset "github.com/deckarep/golang-set/v2"
 )
 
 type AppData struct {
-	CountryNames map[bool]map[config.Protocol]mapset.Set[string]
-	CityNames    map[bool]map[config.Protocol]map[string]mapset.Set[string]
-	GroupNames   map[bool]map[config.Protocol]mapset.Set[string]
 }
 
 type VersionData struct {

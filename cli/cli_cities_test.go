@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -18,7 +19,7 @@ func TestCitiesList(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		cities        []string
+		cities        []*pb.ServerGroup
 		country       string
 		expected      string
 		expectedError error
@@ -33,10 +34,16 @@ func TestCitiesList(t *testing.T) {
 			expectedError: formatError(fmt.Errorf("We couldn’t load the list of cities. Please try again later.")),
 		},
 		{
-			name:     "cities list",
+			name:     "cities list without virtual servers",
 			country:  "France",
-			expected: "Marseille, Paris",
-			cities:   []string{"Marseille", "Paris"},
+			cities:   []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
+			expected: "Paris",
+		},
+		{
+			name:     "cities list with virtual servers",
+			country:  "France",
+			cities:   []*pb.ServerGroup{{Name: "Paris", VirtualLocation: true}},
+			expected: "Paris",
 		},
 	}
 

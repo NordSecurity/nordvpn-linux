@@ -11,7 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,10 +31,10 @@ func TestRPCGroups(t *testing.T) {
 			statusCode: internal.CodeConfigError,
 		},
 		{
-			name:       "app data is empty",
+			name:       "no results when servers list is empty",
 			dm:         testNewDataManager(),
 			cm:         newMockConfigManager(),
-			statusCode: internal.CodeEmptyPayloadError,
+			statusCode: internal.CodeSuccess,
 		},
 	}
 
@@ -63,17 +62,11 @@ func TestRPCGroups_Successful(t *testing.T) {
 	defer testsCleanup()
 
 	dm := testNewDataManager()
-
-	groupNames := map[bool]map[config.Protocol]mapset.Set[string]{
-		false: {
-			config.Protocol_UDP: mapset.NewSet("false_Protocol_UDP"),
-			config.Protocol_TCP: mapset.NewSet("false_Protocol_TCP"),
-		},
-	}
-	dm.SetAppData(nil, nil, groupNames)
+	dm.serversData.Servers = serversList()
 
 	cm := newMockConfigManager()
 	cm.c.AutoConnectData.Protocol = config.Protocol_TCP
+	cm.c.Technology = config.Technology_NORDLYNX
 
 	rpc := RPC{
 		ac:        &workingLoginChecker{},
@@ -88,5 +81,8 @@ func TestRPCGroups_Successful(t *testing.T) {
 
 	payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 	assert.Equal(t, internal.CodeSuccess, payload.GetType())
-	assert.Equal(t, []string{"false_Protocol_TCP"}, payload.GetData())
+	assert.Equal(t, 2, len(payload.Servers))
+
+	assert.Equal(t, &pb.ServerGroup{Name: "Double_VPN", VirtualLocation: false}, payload.Servers[0])
+	assert.Equal(t, &pb.ServerGroup{Name: "P2P", VirtualLocation: false}, payload.Servers[1])
 }
