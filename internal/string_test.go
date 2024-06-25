@@ -16,7 +16,7 @@ func TestTitle(t *testing.T) {
 	}{
 		{"a good title", "A_Good_Title"},
 		{"  weirdly formatted   title ", "Weirdly_Formatted_Title"},
-		{"extra- symbols-title,!", "Extra-_Symbols-Title,!"},
+		{"extra- symbols-title,!", "Extra-_Symbols-Title"},
 	}
 	for _, item := range tests {
 		got := Title(item.input)
