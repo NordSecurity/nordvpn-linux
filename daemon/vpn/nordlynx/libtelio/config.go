@@ -56,6 +56,15 @@ func (c *TelioLocalConfigFetcher) Fetch(string) (string, error) {
 	if !ok || val == "" {
 		return "", fmt.Errorf("telio local config is not available")
 	}
+	if strings.HasPrefix(val, "/") {
+		// libtelio config is given as a path to json file
+		log.Println(internal.InfoPrefix, "Fetch libtelio local config from file:", val)
+		cfg, err := internal.FileRead(val)
+		if err != nil {
+			return "", fmt.Errorf("telio local config failed to read from file, err: %w", err)
+		}
+		return string(cfg), nil
+	}
 	log.Println(internal.InfoPrefix, "Fetch libtelio local config")
 	return val, nil
 }

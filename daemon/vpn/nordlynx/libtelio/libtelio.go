@@ -103,12 +103,19 @@ type Libtelio struct {
 var defaultIP = netip.MustParseAddr("10.5.0.2")
 
 type telioFeatures struct {
-	Lana      *lanaConfig      `json:"lana,omitempty"`
-	Nurse     *nurseConfig     `json:"nurse,omitempty"`
-	Direct    *directConfig    `json:"direct,omitempty"`
-	Derp      *derpConfig      `json:"derp,omitempty"`
-	Wireguard *wireguardConfig `json:"wireguard,omitempty"`
-	ExitDns   string           `json:"exit-dns,omitempty"`
+	Lana                            *lanaConfig           `json:"lana,omitempty"`
+	Nurse                           *nurseConfig          `json:"nurse,omitempty"`
+	Direct                          *directConfig         `json:"direct,omitempty"`
+	Derp                            *derpConfig           `json:"derp,omitempty"`
+	Wireguard                       *wireguardConfig      `json:"wireguard,omitempty"`
+	ExitDns                         string                `json:"exit-dns,omitempty"`
+	ValidateKeys                    bool                  `json:"validate_keys,omitempty"`
+	Nicknames                       bool                  `json:"nicknames,omitempty"`
+	Ipv6                            bool                  `json:"ipv6,omitempty"`
+	BoringtunResetConnections       bool                  `json:"boringtun_reset_connections,omitempty"`
+	FlushEventsOnStopTimeoutSeconds int                   `json:"flush_events_on_stop_timeout_seconds,omitempty"`
+	PostQuantumVPN                  *postQuantumVPNConfig `json:"post_quantum_vpn,omitempty"`
+	LinkDetection                   *linkDetectionConfig  `json:"link_detection,omitempty"`
 }
 
 type lanaConfig struct {
@@ -117,14 +124,23 @@ type lanaConfig struct {
 }
 
 type directConfig struct {
-	EndpointIntervalSecs int      `json:"endpoint_interval_secs,omitempty"`
-	Providers            []string `json:"providers,omitempty"`
+	EndpointIntervalSecs  int                          `json:"endpoint_interval_secs,omitempty"`
+	SkipUnresponsivePeers *skipUnresponsivePeersConfig `json:"skip_unresponsive_peers,omitempty"`
+	Providers             []string                     `json:"providers,omitempty"`
+}
+
+type skipUnresponsivePeersConfig struct {
+	NoRxThresholdSecs int `json:"no_rx_threshold_secs,omitempty"`
 }
 
 type nurseConfig struct {
-	Fingerprint       string     `json:"fingerprint"`
-	HeartbeatInterval int        `json:"heartbeat_interval,omitempty"`
-	Qos               *qosConfig `json:"qos,omitempty"`
+	Fingerprint                string     `json:"fingerprint"`
+	HeartbeatInterval          int        `json:"heartbeat_interval,omitempty"`
+	InitialHeartbeatInterval   int        `json:"initial_heartbeat_interval,omitempty"`
+	EnableNatTypeCollection    bool       `json:"enable_nat_type_collection,omitempty"`
+	EnableRelayConnData        bool       `json:"enable_relay_conn_data,omitempty"`
+	EnableNatTraversalConnData bool       `json:"enable_nat_traversal_conn_data,omitempty"`
+	Qos                        *qosConfig `json:"qos,omitempty"`
 }
 
 type qosConfig struct {
@@ -135,8 +151,10 @@ type qosConfig struct {
 }
 
 type derpConfig struct {
-	TcpKeepalive  int `json:"tcp_keepalive,omitempty"`
-	DerpKeepalive int `json:"derp_keepalive,omitempty"`
+	TcpKeepalive               int  `json:"tcp_keepalive,omitempty"`
+	DerpKeepalive              int  `json:"derp_keepalive,omitempty"`
+	EnablePolling              bool `json:"enable_polling,omitempty"`
+	UseBuiltInRootCertificates bool `json:"use_built_in_root_certificates,omitempty"`
 }
 
 type wireguardConfig struct {
@@ -148,6 +166,15 @@ type persistentKeepAliveConfig struct {
 	Direct   int `json:"direct,omitempty"`
 	Vpn      int `json:"vpn,omitempty"`
 	Stun     int `json:"stun,omitempty"`
+}
+
+type postQuantumVPNConfig struct {
+	HandshakeRetryIntervalS int `json:"handshake_retry_interval_s,omitempty"`
+	RekeyIntervalS          int `json:"rekey_interval_s,omitempty"`
+}
+
+type linkDetectionConfig struct {
+	RttSeconds int `json:"rtt_seconds,omitempty"`
 }
 
 func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) ([]byte, error) {
