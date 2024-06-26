@@ -62,6 +62,7 @@ type DataConnect struct {
 	Protocol                   config.Protocol
 	ResponseServersCount       int
 	ResponseTime               int
+	DurationMs                 int
 	ServerFromAPI              bool
 	Type                       TypeConnect
 	TargetServerSelection      string

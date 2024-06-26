@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"slices"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -49,6 +50,9 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 
 	insights := r.dm.GetInsightsData().Insights
 
+	// Measure the time it takes to obtain recommended servers list as the connection attempt event duration
+	connectingStartTime := time.Now()
+
 	event := events.DataConnect{
 		APIHostname:                r.api.Base(),
 		Auto:                       false,
@@ -57,6 +61,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		ThreatProtectionLite:       cfg.AutoConnectData.ThreatProtectionLite,
 		ResponseServersCount:       1,
 		ResponseTime:               0,
+		DurationMs:                 -1,
 		Type:                       events.ConnectAttempt,
 		ServerFromAPI:              true,
 		TargetServerCity:           "",
@@ -67,16 +72,6 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		TargetServerPick:           "",
 		TargetServerPickerResponse: "",
 	}
-	r.events.Service.Connect.Publish(event)
-
-	defer func() {
-		// send failure event if the function returns an error
-		// and no connected or failure event was sent
-		if retErr != nil && event.Type == events.ConnectAttempt {
-			event.Type = events.ConnectFailure
-			r.events.Service.Connect.Publish(event)
-		}
-	}()
 
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology")
 	server, remote, err := PickServer(
@@ -182,6 +177,24 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	event.TargetServerCountry = country.Name
 	event.TargetServerDomain = server.Hostname
 	event.TargetServerIP = subnet.Addr().String()
+	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+
+	// Send the connection attempt event
+	r.events.Service.Connect.Publish(event)
+
+	// Reset the connecting start timer, as the connect success and failure events should not include time taken
+	// for getting the recommended servers, which was already reported as the attempt event duration.
+	connectingStartTime = time.Now()
+
+	defer func() {
+		// Send connect failure event if this function will return an error
+		// and no connect success or connect failure event was sent.
+		if retErr != nil && event.Type == events.ConnectAttempt {
+			event.Type = events.ConnectFailure
+			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+			r.events.Service.Connect.Publish(event)
+		}
+	}()
 
 	go Connect(
 		eventCh,
@@ -207,6 +220,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 				}
 			}
 			event.Type = events.ConnectSuccess
+			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 			r.events.Service.Connect.Publish(event)
 
 			if err := srv.Send(&pb.Payload{Type: ev.Code, Data: data}); err != nil {
@@ -225,6 +239,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 			r.publisher.Publish(fmt.Sprintf("failed to connect to %s", server.Hostname))
 			r.publisher.Publish(ev.Message)
 			event.Type = events.ConnectFailure
+			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 			r.events.Service.Connect.Publish(event)
 		case internal.CodeDisconnected:
 		case internal.CodeVPNNotRunning:
