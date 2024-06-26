@@ -27,6 +27,7 @@ func TestFind(t *testing.T) {
 	defer tenus.DeleteLink(tunnelName)
 	iface, err := tenus.NewLink(tunnelName)
 	assert.NoError(t, err)
+	assert.NotNil(t, iface)
 	err = iface.SetLinkIp(ips[0], &ipnet)
 	assert.NoError(t, err)
 

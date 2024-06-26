@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
@@ -98,46 +99,21 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 func (c *cmd) SetAutoConnectAutoComplete(ctx *cli.Context) {
 	switch ctx.NArg() {
 	case 0:
-		for _, v := range nstrings.GetBools() {
+		booleans := nstrings.GetBools()
+		sort.Strings(booleans)
+
+		for _, v := range booleans {
 			fmt.Println(v)
 		}
 	default:
-		if ctx.NArg() > 0 {
+		args := ctx.Args()
+		if args.Len() > 0 {
 			//check first arg
-			if !nstrings.CanParseTrueFromString(ctx.Args().First()) {
+			if !nstrings.CanParseTrueFromString(args.First()) {
 				return
 			}
 
-			// create config after auth
-			args := ctx.Args()
-			resp, err := func(args []string) (*pb.ServerGroupsList, error) {
-				switch len(args) {
-				case 1:
-					countries, err := c.client.Countries(context.Background(), &pb.Empty{})
-					if err != nil {
-						return nil, err
-					}
-					groups, err := c.client.Groups(context.Background(), &pb.Empty{})
-					if err != nil {
-						return nil, err
-					}
-					countries.Servers = append(countries.Servers, groups.Servers...)
-					return countries, nil
-				case 2:
-					return c.client.Cities(context.Background(), &pb.CitiesRequest{
-						Country: args[1],
-					})
-				}
-				return nil, errors.New("bad args")
-			}(args.Slice())
-
-			if err != nil {
-				return
-			}
-
-			for _, item := range resp.Servers {
-				fmt.Println(item.Name)
-			}
+			c.printServersForAutoComplete(args.Get(1))
 		}
 	}
 }

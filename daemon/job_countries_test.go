@@ -32,16 +32,7 @@ func (mockCountriesAPI) Server(int64) (*core.Server, error) {
 }
 
 func (m mockCountriesAPI) ServersCountries() (core.Countries, http.Header, error) {
-	countries := core.Countries{
-		{Name: "Latvia", Cities: []core.City{
-			{Name: "Riga"},
-		}},
-		{Name: "United Kingdom", Cities: []core.City{
-			{Name: "London"},
-			{Name: "Liverpool"},
-		}},
-	}
-	return countries, nil, nil
+	return countriesList(), nil, nil
 }
 
 func (mockCountriesAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {

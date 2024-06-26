@@ -109,7 +109,7 @@ func TestConnectAutoComplete(t *testing.T) {
 			expected:  "P2P\nFrance",
 		},
 		{
-			name:      "called with country name",
+			name:      "cities autocomplete works with country name",
 			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}},
 			cities:    []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
 			groups:    []*pb.ServerGroup{{Name: "P2P", VirtualLocation: false}},
@@ -117,7 +117,7 @@ func TestConnectAutoComplete(t *testing.T) {
 			input:     "FrAnCe",
 		},
 		{
-			name:      "works with country code",
+			name:      "cities autocomplete works with country code",
 			cities:    []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
 			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}},
 			groups:    []*pb.ServerGroup{{Name: "P2P", VirtualLocation: false}},

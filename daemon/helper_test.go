@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -247,14 +248,6 @@ func serversList() core.Servers {
 
 	technologies := core.Technologies{
 		core.Technology{
-			ID:    core.OpenVPNTCPObfuscated,
-			Pivot: core.Pivot{Status: core.Online},
-		},
-		core.Technology{
-			ID:    core.OpenVPNUDPObfuscated,
-			Pivot: core.Pivot{Status: core.Online},
-		},
-		core.Technology{
 			ID:    core.OpenVPNUDP,
 			Pivot: core.Pivot{Status: core.Online},
 		},
@@ -269,11 +262,32 @@ func serversList() core.Servers {
 	}
 
 	groups := core.Groups{
-		core.Group{Title: "P2P"},
-		core.Group{Title: "Double VPN"},
+		core.Group{
+			ID:    config.P2P,
+			Title: "P2P",
+		},
+		core.Group{
+			ID:    config.DoubleVPN,
+			Title: "Double VPN",
+		},
+		core.Group{
+			ID:    config.StandardVPNServers,
+			Title: "Standard VPN Servers",
+		},
 	}
 
-	return core.Servers{
+	virtualServer := []core.Specification{
+		{
+			Identifier: core.VirtualLocation,
+			Values: []struct {
+				Value string "json:\"value\""
+			}{
+				{Value: "true"},
+			},
+		},
+	}
+
+	servers := core.Servers{
 		core.Server{
 			ID:           1,
 			Name:         "France #1",
@@ -289,6 +303,23 @@ func serversList() core.Servers {
 				},
 			},
 			Groups: groups,
+		},
+		core.Server{
+			ID:           3,
+			Name:         "Germany #3",
+			Hostname:     "de3.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Germany",
+						Code: "DE",
+						City: core.City{Name: "Berlin"},
+					},
+				},
+			},
+			Groups:         groups,
+			Specifications: virtualServer,
 		},
 		core.Server{
 			ID:       2,
@@ -308,17 +339,8 @@ func serversList() core.Servers {
 					},
 				},
 			},
-			Specifications: []core.Specification{
-				{
-					Identifier: core.VirtualLocation,
-					Values: []struct {
-						Value string "json:\"value\""
-					}{
-						{Value: "true"},
-					},
-				},
-			},
-			Groups: groups,
+			Specifications: virtualServer,
+			Groups:         groups,
 		},
 		core.Server{
 			ID:           3,
@@ -329,21 +351,12 @@ func serversList() core.Servers {
 				core.Location{
 					Country: core.Country{Name: "Lithuania",
 						Code: "LT",
-						City: core.City{Name: "Vilnius"},
+						City: core.City{Name: "Kaunas"},
 					},
 				},
 			},
-			Specifications: []core.Specification{
-				{
-					Identifier: core.VirtualLocation,
-					Values: []struct {
-						Value string "json:\"value\""
-					}{
-						{Value: "true"},
-					},
-				},
-			},
-			Groups: groups,
+			Specifications: virtualServer,
+			Groups:         groups,
 		},
 		core.Server{
 			ID:           929912,
@@ -354,12 +367,81 @@ func serversList() core.Servers {
 			Locations: core.Locations{
 				core.Location{
 					Country: core.Country{Name: "Canada",
-						Code: "LT",
-						City: core.City{Name: "Vilnius"},
+						Code: "CA",
+						City: core.City{Name: "Toronto"},
 					},
 				},
 			},
 			Groups: groups,
+		},
+	}
+
+	for i, server := range servers {
+		loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
+		loweredCountryName := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.Name, " "), "_"))
+		loweredCountryCode := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.Code, " "), "_"))
+		loweredCityName := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.City.Name, " "), "_"))
+		loweredGroupTitles := make([]string, len(server.Groups))
+		for idx, group := range server.Groups {
+			loweredGroupTitles[idx] = strings.ToLower(strings.Join(strings.Split(group.Title, " "), "_"))
+		}
+
+		if loweredCountryCode == "gb" {
+			loweredCountryCode = "uk"
+		}
+
+		servers[i].Keys = append([]string{
+			loweredCountryName,
+			loweredCountryCode,
+			loweredCountryName + loweredCityName,
+			loweredCountryCode + loweredCityName,
+			loweredCityName,
+			loweredHostnameID,
+		}, loweredGroupTitles...)
+	}
+
+	return servers
+}
+
+func countriesList() core.Countries {
+	return core.Countries{
+		{
+			Name: "Latvia",
+			Code: "LV",
+			Cities: []core.City{
+				{Name: "Riga"},
+			},
+		},
+		{
+			Name: "United Kingdom",
+			Code: "GB",
+			Cities: []core.City{
+				{Name: "London"},
+				{Name: "Liverpool"},
+			},
+		},
+		{
+			Name: "France",
+			Code: "FR",
+			Cities: []core.City{
+				{Name: "Paris"},
+				{Name: "Nice"},
+			},
+		},
+		{
+			Name: "Lithuania",
+			Code: "LT",
+			Cities: []core.City{
+				{Name: "Vilnius"},
+				{Name: "Kaunas"},
+			},
+		},
+		{
+			Name: "Germany",
+			Code: "DE",
+			Cities: []core.City{
+				{Name: "Berlin"},
+			},
 		},
 	}
 }
