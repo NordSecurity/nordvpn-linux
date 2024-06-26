@@ -148,31 +148,5 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 
 func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 	args := ctx.Args()
-	if args.Len() == 0 || args.First() == "" {
-		resp, err := c.client.Groups(context.Background(), &pb.Empty{})
-		if err != nil {
-			return
-		}
-		for _, server := range resp.Servers {
-			fmt.Println(server.Name)
-		}
-
-		resp, err = c.client.Countries(context.Background(), &pb.Empty{})
-		if err != nil {
-			return
-		}
-		for _, server := range resp.Servers {
-			fmt.Println(server.Name)
-		}
-	} else if args.Len() == 1 {
-		resp, err := c.client.Cities(context.Background(), &pb.CitiesRequest{
-			Country: ctx.Args().First(),
-		})
-		if err != nil {
-			return
-		}
-		for _, server := range resp.Servers {
-			fmt.Println(server.Name)
-		}
-	}
+	c.printServersForAutoComplete(args.First())
 }

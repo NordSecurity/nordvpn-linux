@@ -33,18 +33,19 @@ func TestRPCCountries(t *testing.T) {
 			statusCode: internal.CodeConfigError,
 		},
 		{
-			name:       "return no results when no servers are loaded",
+			name:       "no results when no servers exist",
 			cm:         newMockConfigManager(),
 			statusCode: internal.CodeSuccess,
 			expected:   []*pb.ServerGroup{},
 		},
 		{
-			name:       "return virtual and physical servers",
+			name:       "virtual and physical servers",
 			cm:         newMockConfigManager(),
 			servers:    serversList(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
 				{Name: "France", VirtualLocation: false},
+				{Name: "Germany", VirtualLocation: true},
 				{Name: "Lithuania", VirtualLocation: true},
 			},
 		},
