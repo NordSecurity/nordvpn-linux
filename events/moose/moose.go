@@ -220,6 +220,10 @@ func (s *Subscriber) NotifyRouting(data bool) error {
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesRoutingEnabledValue(data))
 }
 
+func (s *Subscriber) NotifyLANDiscovery(data bool) error {
+	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesLocalNetworkDiscoveryAllowedValue(data))
+}
+
 func (s *Subscriber) NotifyIpv6(data bool) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIpv6EnabledValue(data)); err != nil {
 		return err
@@ -562,8 +566,4 @@ func DrainStart(dbPath string) uint {
 		20,
 		false,
 	)
-}
-
-func (s *Subscriber) NotifyLANDiscovery(enabled bool) error {
-	return nil
 }
