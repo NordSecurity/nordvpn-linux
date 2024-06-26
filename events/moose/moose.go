@@ -45,7 +45,6 @@ const (
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	connectionStartTime time.Time
 	EventsDbPath        string
 	Config              config.Manager
 	Version             string
@@ -54,6 +53,7 @@ type Subscriber struct {
 	Subdomain           string
 	DeviceID            string
 	currentDomain       string
+	connectionStartTime time.Time
 	enabled             bool
 	mux                 sync.RWMutex
 }
@@ -322,18 +322,15 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		threatProtection = moose.NordvpnappOptBoolFalse
 	}
 
-	eventDurationMs := -1
 	var eventStatus moose.NordvpnappEventStatus
 	switch data.Type {
 	case events.ConnectAttempt:
 		eventStatus = moose.NordvpnappEventStatusAttempt
-		s.connectionStartTime = time.Now()
 	case events.ConnectSuccess:
 		eventStatus = moose.NordvpnappEventStatusSuccess
-		eventDurationMs = int(time.Since(s.connectionStartTime).Milliseconds())
+		s.connectionStartTime = time.Now()
 	case events.ConnectFailure:
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
-		eventDurationMs = int(time.Since(s.connectionStartTime).Milliseconds())
 	default:
 		eventStatus = moose.NordvpnappEventStatusAttempt
 	}
@@ -375,7 +372,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		rule = moose.NordvpnappServerSelectionRuleRecommended
 	}
 	return s.response(moose.NordvpnappSendServiceQualityServersConnect(
-		int32(eventDurationMs), // milliseconds
+		int32(data.DurationMs), // milliseconds
 		eventStatus,
 		moose.NordvpnappEventTriggerUser,
 		moose.NordvpnappVpnConnectionTriggerNone,
