@@ -27,6 +27,7 @@ func Title(name string) string {
 }
 
 func SnakeCase(name string) string {
+	name = notAlphanumeric.ReplaceAllString(name, "")
 	splits := strings.Split(name, " ")
 	lower := ""
 	for _, v := range splits {

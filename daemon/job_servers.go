@@ -68,12 +68,13 @@ func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validat
 		for idx, server := range servers {
 			// store keys to find server easier
 			loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
-			loweredCountryName := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.Name, " "), "_"))
-			loweredCountryCode := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.Code, " "), "_"))
-			loweredCityName := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.City.Name, " "), "_"))
+			country := server.Country()
+			loweredCountryName := internal.SnakeCase(country.Name)
+			loweredCountryCode := internal.SnakeCase(country.Code)
+			loweredCityName := internal.SnakeCase(country.City.Name)
 			loweredGroupTitles := make([]string, len(server.Groups))
 			for idx, group := range server.Groups {
-				loweredGroupTitles[idx] = strings.ToLower(strings.Join(strings.Split(group.Title, " "), "_"))
+				loweredGroupTitles[idx] = internal.SnakeCase(group.Title)
 			}
 
 			if loweredCountryCode == "gb" {
@@ -98,8 +99,8 @@ func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validat
 			dist := distance(
 				geoInfoData.Insights.Latitude,
 				geoInfoData.Insights.Longitude,
-				server.Locations[0].Country.City.Latitude,
-				server.Locations[0].Country.City.Longitude,
+				country.City.Latitude,
+				country.City.Longitude,
 			)
 			servers[idx].Timestamp = timestamp
 			servers[idx].Distance = dist
