@@ -20,14 +20,14 @@ func StringsToInterfaces(strings []string) []interface{} {
 }
 
 func Title(name string) string {
-	name = notAlphanumeric.ReplaceAllString(name, "")
+	name = RemoveNonAlphanumeric(name)
 	name = strings.Join(strings.Fields(name), " ")
 	titled := cases.Title(language.English, cases.NoLower).String(name)
 	return strings.ReplaceAll(titled, " ", "_")
 }
 
 func SnakeCase(name string) string {
-	name = notAlphanumeric.ReplaceAllString(name, "")
+	name = RemoveNonAlphanumeric(name)
 	splits := strings.Split(name, " ")
 	lower := ""
 	for _, v := range splits {
@@ -37,6 +37,10 @@ func SnakeCase(name string) string {
 		lower += strings.ToLower(v) + "_"
 	}
 	return strings.TrimRight(lower, "_")
+}
+
+func RemoveNonAlphanumeric(name string) string {
+	return notAlphanumeric.ReplaceAllString(name, "")
 }
 
 func StringsContains(haystack []string, needle string) bool {

@@ -78,8 +78,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		}
 	}()
 
-	inputServerTag := internal.SnakeCase(in.GetServerTag())
-	inputServerGroup := internal.SnakeCase(in.GetServerGroup())
+	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
@@ -93,7 +92,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		cfg.AutoConnectData.Protocol,
 		cfg.AutoConnectData.Obfuscate,
 		inputServerTag,
-		inputServerGroup,
+		in.GetServerGroup(),
 		cfg.VirtualLocation.Get(),
 	)
 

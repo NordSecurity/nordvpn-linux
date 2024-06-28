@@ -67,28 +67,9 @@ func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validat
 		// first iteration to filter "bad" servers and find minmax values
 		for idx, server := range servers {
 			// store keys to find server easier
-			loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
 			country := server.Country()
-			loweredCountryName := internal.SnakeCase(country.Name)
-			loweredCountryCode := internal.SnakeCase(country.Code)
-			loweredCityName := internal.SnakeCase(country.City.Name)
-			loweredGroupTitles := make([]string, len(server.Groups))
-			for idx, group := range server.Groups {
-				loweredGroupTitles[idx] = internal.SnakeCase(group.Title)
-			}
 
-			if loweredCountryCode == "gb" {
-				loweredCountryCode = "uk"
-			}
-
-			servers[idx].Keys = append([]string{
-				loweredCountryName,
-				loweredCountryCode,
-				loweredCountryName + loweredCityName,
-				loweredCountryCode + loweredCityName,
-				loweredCityName,
-				loweredHostnameID,
-			}, loweredGroupTitles...)
+			servers[idx].Keys = generateKeys(server)
 
 			// calculate minmax distance and timestamp
 			parsedTime, err := time.Parse(internal.ServerDateFormat, server.CreatedAt)
@@ -148,4 +129,30 @@ func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validat
 		}
 		return nil
 	}
+}
+
+// Compute a list of keys for each server to speedup the server picking process at connect
+func generateKeys(server core.Server) []string {
+	loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
+	country := server.Country()
+	loweredCountryName := internal.SnakeCase(country.Name)
+	loweredCountryCode := internal.SnakeCase(country.Code)
+	loweredCityName := internal.SnakeCase(country.City.Name)
+	loweredGroupTitles := make([]string, len(server.Groups))
+	for idx, group := range server.Groups {
+		loweredGroupTitles[idx] = internal.SnakeCase(group.Title)
+	}
+
+	if loweredCountryCode == "gb" {
+		loweredCountryCode = "uk"
+	}
+
+	return append([]string{
+		loweredCountryName,
+		loweredCountryCode,
+		loweredCountryName + loweredCityName,
+		loweredCountryCode + loweredCityName,
+		loweredCityName,
+		loweredHostnameID,
+	}, loweredGroupTitles...)
 }

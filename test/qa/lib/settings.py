@@ -20,11 +20,6 @@ class Settings:
         key = key.lower()
         return self.settings.get(key, "")
 
-    # convenient to get a value from settings only once
-    @staticmethod
-    def get_value(key: str) -> str:
-        return Settings().get(key)
-
 
 def get_server_ip() -> str:
     """Returns str with IP Address of the server from `nordvpn status`, that NordVPN client is currently connected to."""
@@ -42,63 +37,63 @@ def get_current_connection_protocol():
 
 def is_obfuscated_enabled():
     """Returns True, if Obfuscate is enabled in application settings."""
-    return Settings.get_value("Obfuscate") == "enabled"
+    return Settings().get("Obfuscate") == "enabled"
 
 
 def is_meshnet_enabled():
     """Return True when Meshnet is enabled."""
-    return Settings.get_value("Meshnet") == "enabled"
+    return Settings().get("Meshnet") == "enabled"
 
 
 def dns_visible_in_settings(dns: list) -> bool:
     """Return True, if DNS that were passed as parameter are visible in app settings."""
-    current_dns_settings = Settings.get_value("DNS")
+    current_dns_settings = Settings().get("DNS")
     return all(entry in current_dns_settings for entry in dns)
 
 
 def is_tpl_enabled():
     """Returns True, if Threat Protection Lite is enabled in application settings."""
-    return Settings.get_value("Threat Protection Lite") == "enabled"
+    return Settings().get("Threat Protection Lite") == "enabled"
 
 
 def is_notify_enabled():
     """Returns True, if Threat Protection Lite is enabled in application settings."""
-    return Settings.get_value("Notify") == "enabled"
+    return Settings().get("Notify") == "enabled"
 
 
 def is_routing_enabled():
     """Returns True, if Routing is enabled in application settings."""
-    return Settings.get_value("Routing") == "enabled"
+    return Settings().get("Routing") == "enabled"
 
 
 def is_autoconnect_enabled():
     """Returns True, if Auto-connect is enabled in application settings."""
-    return Settings.get_value("Auto-connect") == "enabled"
+    return Settings().get("Auto-connect") == "enabled"
 
 
 def is_lan_discovery_enabled():
     """Returns True, if LAN Discovery is enabled in application settings."""
-    return Settings.get_value("LAN Discovery") == "enabled"
+    return Settings().get("LAN Discovery") == "enabled"
 
 
 def is_firewall_enabled():
     """Returns True, if Firewall is enabled in application settings."""
-    return Settings.get_value("Firewall") == "enabled"
+    return Settings().get("Firewall") == "enabled"
 
 
 def is_dns_disabled():
     """Returns True, if DNS is disabled in application settings."""
-    return Settings.get_value("DNS") == "disabled"
+    return Settings().get("DNS") == "disabled"
 
 
 def are_analytics_enabled():
     """Returns True, if Analytics are enabled in application settings."""
-    return Settings.get_value("Analytics") == "enabled"
+    return Settings().get("Analytics") == "enabled"
 
 
 def is_ipv6_enabled():
     """Returns True, if IPv6 is enabled in application settings."""
-    return Settings.get_value("IPv6") == "enabled"
+    return Settings().get("IPv6") == "enabled"
 
 
 def app_has_defaults_settings():

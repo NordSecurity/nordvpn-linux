@@ -377,27 +377,7 @@ func serversList() core.Servers {
 	}
 
 	for i, server := range servers {
-		loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
-		loweredCountryName := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.Name, " "), "_"))
-		loweredCountryCode := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.Code, " "), "_"))
-		loweredCityName := strings.ToLower(strings.Join(strings.Split(server.Locations[0].Country.City.Name, " "), "_"))
-		loweredGroupTitles := make([]string, len(server.Groups))
-		for idx, group := range server.Groups {
-			loweredGroupTitles[idx] = strings.ToLower(strings.Join(strings.Split(group.Title, " "), "_"))
-		}
-
-		if loweredCountryCode == "gb" {
-			loweredCountryCode = "uk"
-		}
-
-		servers[i].Keys = append([]string{
-			loweredCountryName,
-			loweredCountryCode,
-			loweredCountryName + loweredCityName,
-			loweredCountryCode + loweredCityName,
-			loweredCityName,
-			loweredHostnameID,
-		}, loweredGroupTitles...)
+		servers[i].Keys = generateKeys(server)
 	}
 
 	return servers

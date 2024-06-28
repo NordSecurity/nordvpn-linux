@@ -300,13 +300,17 @@ func serverTagFromString(
 		}
 	}
 	for _, country := range countries {
-		if strings.EqualFold(serverTag, internal.SnakeCase(country.Name)) || strings.EqualFold(serverTag, country.Code) {
+		countryName := internal.SnakeCase(country.Name)
+		countryCode := internal.SnakeCase(country.Code)
+
+		if strings.EqualFold(serverTag, countryName) || strings.EqualFold(serverTag, countryCode) {
 			return core.ServerTag{Action: core.ServerByCountry, ID: country.ID}, nil
 		}
 		for _, city := range country.Cities {
-			if strings.EqualFold(serverTag, internal.SnakeCase(city.Name)) ||
-				strings.EqualFold(serverTag, internal.SnakeCase(country.Name)+" "+internal.SnakeCase(city.Name)) ||
-				strings.EqualFold(serverTag, internal.SnakeCase(country.Code)+" "+internal.SnakeCase(city.Name)) {
+			cityName := internal.SnakeCase(city.Name)
+			if strings.EqualFold(serverTag, cityName) ||
+				strings.EqualFold(serverTag, countryName+" "+cityName) ||
+				strings.EqualFold(serverTag, countryCode+" "+cityName) {
 				return core.ServerTag{Action: core.ServerByCity, ID: city.ID}, nil
 			}
 		}
