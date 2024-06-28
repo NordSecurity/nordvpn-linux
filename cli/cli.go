@@ -306,6 +306,7 @@ func NewApp(version, environment, hash, salt string,
 
 	app := cli.NewApp()
 	app.EnableBashCompletion = true
+	app.Suggest = true
 	status.Code(err)
 	cmd.loaderInterceptor = loaderInterceptor
 	app.After = func(*cli.Context) error {
@@ -536,11 +537,6 @@ func NewApp(version, environment, hash, salt string,
 	}
 
 	app.Commands = addLoaderToActions(cmd, pingErr, app.Commands)
-	// Unknown command handler
-	app.CommandNotFound = func(c *cli.Context, command string) {
-		color.Red(fmt.Sprintf(NoSuchCommand, command))
-		os.Exit(1)
-	}
 
 	return app, nil
 }
