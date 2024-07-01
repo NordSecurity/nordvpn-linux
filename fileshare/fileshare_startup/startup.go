@@ -23,9 +23,10 @@ import (
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 )
 
+var ErrLAddressAlreadyInUse = errors.New("address already in use")
+
 // Values set when building the application
 var (
-	version   = "0.0.0"
 	daemonURL = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 )
 
@@ -89,7 +90,8 @@ func Startup(storagePath string,
 	eventsDBPath string,
 	serverListener net.Listener,
 	environment string,
-	grpcAuthenticator internal.SocketAuthenticator) (FileshareHandle, error) {
+	grpcAuthenticator internal.SocketAuthenticator,
+) (FileshareHandle, error) {
 	// Connection to Meshnet gRPC server
 	grpcConn, err := grpc.Dial(
 		daemonURL,
@@ -102,7 +104,7 @@ func Startup(storagePath string,
 	defer func() {
 		if err != nil {
 			if err := grpcConn.Close(); err != nil {
-				log.Println("failed to close grpc connection on failure")
+				log.Println(internal.ErrorPrefix, "failed to close grpc connection on failure")
 			}
 		}
 	}()
@@ -118,7 +120,7 @@ func Startup(storagePath string,
 	// Libdrop init
 	defaultDownloadDirectory, err := fileshare.GetDefaultDownloadDirectory()
 	if err != nil {
-		log.Println("failed to find default download directory: ", err.Error())
+		log.Println(internal.ErrorPrefix, "failed to find default download directory:", err)
 	}
 
 	eventManager := fileshare.NewEventManager(
@@ -143,15 +145,17 @@ func Startup(storagePath string,
 		return FileshareHandle{}, fmt.Errorf("failed to ensure dir for transfer history: %w", err)
 	}
 
-	fileshareImplementation := libdrop.New(
-		eventManager.EventFunc,
+	fileshareImplementation, err := libdrop.New(
+		eventManager,
 		eventsDBPath,
-		version,
 		internal.IsProdEnv(environment),
 		fileshare.NewPubkeyProvider(meshClient).PubkeyFunc,
 		string(meshPrivKey),
 		storagePath,
 	)
+	if err != nil {
+		return FileshareHandle{}, fmt.Errorf("can't create fileshare implementation: %w", err)
+	}
 
 	eventManager.SetFileshare(fileshareImplementation)
 
@@ -181,7 +185,7 @@ func Startup(storagePath string,
 
 	err = fileshareImplementation.Enable(meshnetIP)
 	if err != nil {
-		if errors.Is(err, libdrop.ErrLAddressAlreadyInUse) {
+		if errors.Is(err, ErrLAddressAlreadyInUse) {
 			return FileshareHandle{}, ErrMeshAddressAlreadyInUse
 		}
 		return FileshareHandle{}, fmt.Errorf("failed to enable libdrop: %w", err)

@@ -36,14 +36,14 @@ func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutd
 		case Start:
 			fileshareStartupLoop(fileshareProcessManager, managementChan, shutdownChan)
 		case Stop:
-			log.Println(internal.InfoPrefix + " Stopping fileshare")
+			log.Println(internal.InfoPrefix, "stopping fileshare")
 			if err := fileshareProcessManager.StopProcess(true); err != nil {
-				log.Println(internal.ErrorPrefix+" failed to stop fileshare: ", err)
+				log.Println(internal.ErrorPrefix, "failed to stop fileshare:", err)
 			}
 		case Shutdown:
-			log.Println(internal.InfoPrefix + " Stopping fileshare")
+			log.Println(internal.InfoPrefix, "stopping fileshare")
 			if err := fileshareProcessManager.StopProcess(true); err != nil {
-				log.Println(internal.ErrorPrefix+" failed to stop fileshare on shutdown: ", err)
+				log.Println(internal.ErrorPrefix, "failed to stop fileshare on shutdown:", err)
 			}
 			close(shutdownChan)
 		}
@@ -53,7 +53,7 @@ func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutd
 func startFileshare(fileshareProcessManager *childprocess.GRPCChildProcessManager) bool {
 	result, err := fileshareProcessManager.StartProcess()
 	if err != nil {
-		log.Println(internal.ErrorPrefix+" error when starting fileshare: ", err)
+		log.Println(internal.ErrorPrefix, "error when starting fileshare:", err)
 		return false
 	}
 
@@ -68,17 +68,18 @@ func startFileshare(fileshareProcessManager *childprocess.GRPCChildProcessManage
 	case childprocess.CodeFailedToCreateUnixScoket:
 		fallthrough
 	case childprocess.CodeAlreadyRunning:
-		log.Println(internal.InfoPrefix+" fileshare started, final result: ", result)
+		log.Println(internal.InfoPrefix, "fileshare started, final result:", result)
 		return true
 	}
 
-	log.Printf(internal.ErrorPrefix+" failed to start fileshare: %d, will retry", result)
+	log.Printf(internal.ErrorPrefix+" failed to start fileshare: %d, will retry\n", result)
 	return false
 }
 
 func fileshareStartupLoop(fileshareProcessManager *childprocess.GRPCChildProcessManager,
 	managementChan <-chan FileshareManagementMsg,
-	shutdownChan chan interface{}) {
+	shutdownChan chan interface{},
+) {
 	if startFileshare(fileshareProcessManager) {
 		return
 	}

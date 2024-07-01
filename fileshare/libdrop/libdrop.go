@@ -2,70 +2,101 @@
 package libdrop
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/netip"
 	"sync"
 	"time"
 
-	norddropgo "github.com/NordSecurity/libdrop/norddrop/ffi/bindings/linux/go"
-	"github.com/NordSecurity/nordvpn-linux/fileshare"
+	norddrop "github.com/NordSecurity/libdrop-go/v7"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+)
+
+const (
+	DirDepthLimit     = 5
+	TransferFileLimit = 1000
 )
 
 // Fileshare is the main functional filesharing implementation using norddrop library.
 // Thread safe.
 type Fileshare struct {
-	norddrop     norddropgo.Norddrop
+	norddrop     *norddrop.NordDrop
 	eventsDbPath string
-	appVersion   string
 	storagePath  string
 	isProd       bool
 	mutex        sync.Mutex
 }
 
-func logLevelToPrefix(level norddropgo.Enum_SS_norddrop_log_level) string {
+func logLevelToPrefix(level norddrop.LogLevel) string {
 	switch level {
-	case norddropgo.NORDDROPLOGCRITICAL, norddropgo.NORDDROPLOGERROR:
+	case norddrop.LogLevelCritical, norddrop.LogLevelError:
 		return internal.ErrorPrefix
-	case norddropgo.NORDDROPLOGWARNING:
+	case norddrop.LogLevelWarning:
 		return internal.WarningPrefix
-	case norddropgo.NORDDROPLOGDEBUG, norddropgo.NORDDROPLOGTRACE:
+	case norddrop.LogLevelDebug, norddrop.LogLevelTrace:
 		return internal.DebugPrefix
 	default:
 		return internal.InfoPrefix
 	}
 }
 
-func logCB(level int, message string) {
-	log.Println(
-		logLevelToPrefix(norddropgo.Enum_SS_norddrop_log_level(level)),
-		"DROP("+norddropgo.NorddropVersion()+"): "+message,
-	)
+type DefaultKeyStore struct {
+	pubkeyFunc func(string) []byte
+	privKey    string
+}
+
+func (dks DefaultKeyStore) OnPubkey(peer string) *[]byte {
+	pubKey := dks.pubkeyFunc(peer)
+	return &pubKey
+}
+
+func (dks DefaultKeyStore) Privkey() []byte {
+	return []byte(dks.privKey)
+}
+
+type DefaultLogger struct {
+	logLevel norddrop.LogLevel
+}
+
+func (dl DefaultLogger) OnLog(level norddrop.LogLevel, msg string) {
+	log.Println(logLevelToPrefix(level), "DROP("+norddrop.Version()+"): "+msg)
+}
+
+func (dl DefaultLogger) Level() norddrop.LogLevel {
+	return dl.logLevel
 }
 
 // New initializes norddrop library.
 func New(
-	eventFunc func(string),
+	eventFunc norddrop.EventCallback,
 	eventsDbPath string,
-	appVersion string,
 	isProd bool,
 	pubkeyFunc func(string) []byte,
 	privKey string,
 	storagePath string,
-) *Fileshare {
-	logLevel := norddropgo.NORDDROPLOGTRACE
-	if isProd {
-		logLevel = norddropgo.NORDDROPLOGERROR
+) (*Fileshare, error) {
+	keyStore := DefaultKeyStore{
+		pubkeyFunc: pubkeyFunc,
+		privKey:    privKey,
 	}
+	logLevel := norddrop.LogLevelTrace
+	if isProd {
+		logLevel = norddrop.LogLevelError
+	}
+
+	logger := DefaultLogger{logLevel}
+
+	norddrop, err := norddrop.NewNordDrop(eventFunc, keyStore, logger)
+	if err != nil {
+		return nil, fmt.Errorf("creating norddrop instance: %w", err)
+	}
+
 	return &Fileshare{
-		norddrop:     norddropgo.NewNorddrop(eventFunc, logLevel, logCB, pubkeyFunc, privKey),
+		norddrop:     norddrop,
 		eventsDbPath: eventsDbPath,
-		appVersion:   appVersion,
 		storagePath:  storagePath,
 		isProd:       isProd,
-	}
+	}, nil
 }
 
 // Enable executes Start in norddrop library. Has to be called before using other Fileshare methods.
@@ -73,9 +104,9 @@ func (f *Fileshare) Enable(listenAddr netip.Addr) (err error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	log.Println(internal.InfoPrefix, "libdrop version:", norddropgo.NorddropVersion())
+	log.Println(internal.InfoPrefix, "libdrop version:", norddrop.Version())
 
-	if err = f.start(listenAddr, f.eventsDbPath, f.appVersion, f.isProd, f.storagePath); err != nil {
+	if err = f.start(listenAddr, f.eventsDbPath, f.isProd, f.storagePath); err != nil {
 		return fmt.Errorf("starting drop: %w", err)
 	}
 
@@ -94,22 +125,18 @@ type libdropStartConfig struct {
 func (f *Fileshare) start(
 	listenAddr netip.Addr,
 	eventsDbPath string,
-	appVersion string,
 	isProd bool,
 	storagePath string,
 ) error {
-	configJSON, err := json.Marshal(libdropStartConfig{
-		DirDepthLimit:     fileshare.DirDepthLimit,
-		TransferFileLimit: fileshare.TransferFileLimit,
+	config := norddrop.Config{
+		DirDepthLimit:     DirDepthLimit,
+		TransferFileLimit: TransferFileLimit,
 		MooseEventPath:    eventsDbPath,
-		LinuxAppVersion:   appVersion,
-		IsProd:            isProd,
+		MooseProd:         isProd,
 		StoragePath:       storagePath,
-	})
-	if err != nil {
-		return fmt.Errorf("marshalling libdrop config: %w", err)
 	}
-	return toError(f.norddrop.Start(listenAddr.String(), string(configJSON)))
+
+	return f.norddrop.Start(listenAddr.String(), config)
 }
 
 // Disable executes Stop in norddrop library. Other Fileshare methods can't be called until
@@ -126,7 +153,7 @@ func (f *Fileshare) Disable() error {
 }
 
 func (f *Fileshare) stop() error {
-	return toError(f.norddrop.Stop())
+	return f.norddrop.Stop()
 }
 
 // Send file or dir to peer.
@@ -140,24 +167,17 @@ func (f *Fileshare) Send(peer netip.Addr, paths []string) (string, error) {
 		return "", fmt.Errorf("peer %s must be an IPv4 address", peer.String())
 	}
 
-	type transferDescriptor struct {
-		Path string `json:"path"`
+	transferDescriptors := make([]norddrop.TransferDescriptor, len(paths))
+
+	for i, path := range paths {
+		transferDescriptors[i] = norddrop.TransferDescriptorPath{Path: path}
 	}
 
-	transferDescriptors := []transferDescriptor{}
-	for _, path := range paths {
-		transferDescriptors = append(transferDescriptors, transferDescriptor{Path: path})
-	}
-
-	json, err := json.Marshal(transferDescriptors)
+	transfer, err := f.norddrop.NewTransfer(peer.String(), transferDescriptors)
 	if err != nil {
-		return "", err
-	}
-
-	transfer := f.norddrop.NewTransfer(peer.String(), string(json))
-	if transfer == "" {
 		return "", fmt.Errorf("transfer wasn't created")
 	}
+
 	return transfer, nil
 }
 
@@ -167,8 +187,7 @@ func (f *Fileshare) Accept(transferID, dstPath string, fileID string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	res := f.norddrop.Download(transferID, fileID, dstPath)
-	if err := toError(res); err != nil {
+	if err := f.norddrop.DownloadFile(transferID, fileID, dstPath); err != nil {
 		return err
 	}
 
@@ -179,9 +198,7 @@ func (f *Fileshare) Accept(transferID, dstPath string, fileID string) error {
 func (f *Fileshare) Cancel(transferID string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-
-	res := f.norddrop.CancelTransfer(transferID)
-	return toError(res)
+	return f.norddrop.FinalizeTransfer(transferID)
 }
 
 // CancelFile id in a transfer
@@ -189,8 +206,7 @@ func (f *Fileshare) CancelFile(transferID string, fileID string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	res := f.norddrop.RejectFile(transferID, fileID)
-	if err := toError(res); err != nil {
+	if err := f.norddrop.RejectFile(transferID, fileID); err != nil {
 		return err
 	}
 
@@ -198,15 +214,14 @@ func (f *Fileshare) CancelFile(transferID string, fileID string) error {
 }
 
 // GetTransfersSince provided time from fileshare implementation storage
-func (f *Fileshare) GetTransfersSince(t time.Time) ([]fileshare.LibdropTransfer, error) {
+func (f *Fileshare) GetTransfersSince(t time.Time) ([]norddrop.TransferInfo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	transfers := []fileshare.LibdropTransfer{}
-	rawTransfers := f.norddrop.GetTransfersSince(t.Unix())
-	err := json.Unmarshal([]byte(rawTransfers), &transfers)
+	since := t.Unix()
+	transfers, err := f.norddrop.TransfersSince(since)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshalling libdrop transfers JSON: %w", err)
+		return nil, fmt.Errorf("getting transfers since %d: %w", since, err)
 	}
 
 	return transfers, nil
@@ -216,7 +231,5 @@ func (f *Fileshare) GetTransfersSince(t time.Time) ([]fileshare.LibdropTransfer,
 func (f *Fileshare) PurgeTransfersUntil(until time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-
-	res := f.norddrop.PurgeTransfersUntil(until.Unix())
-	return toError(res)
+	return f.norddrop.PurgeTransfersUntil(until.Unix())
 }

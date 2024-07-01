@@ -15,6 +15,7 @@ import (
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
+	_ "github.com/NordSecurity/nordvpn-linux/fileshare/libdrop" // this is required to make cgo symbols available during linking
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
