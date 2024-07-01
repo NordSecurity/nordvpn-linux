@@ -113,7 +113,8 @@ func (c *cmd) SetAutoConnectAutoComplete(ctx *cli.Context) {
 				return
 			}
 
-			c.printServersForAutoComplete(args.Get(1))
+			groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+			c.printServersForAutoComplete(args.Get(1), hasGroupFlag, groupName)
 		}
 	}
 }
