@@ -78,7 +78,10 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		}
 	}()
 
-	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology")
+	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
+
+	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
+		in.GetServerTag(), in.GetServerGroup())
 	server, remote, err := PickServer(
 		r.serversAPI,
 		r.dm.GetCountryData().Countries,
@@ -88,7 +91,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
 		cfg.AutoConnectData.Obfuscate,
-		in.GetServerTag(),
+		inputServerTag,
 		in.GetServerGroup(),
 		cfg.VirtualLocation.Get(),
 	)
