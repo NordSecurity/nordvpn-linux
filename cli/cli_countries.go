@@ -11,9 +11,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// CountriesUsageText is shown next to countries command by nordvpn --help
-const CountriesUsageText = "Shows a list of countries where servers are available"
-
 func (c *cmd) Countries(ctx *cli.Context) error {
 	resp, err := c.client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
