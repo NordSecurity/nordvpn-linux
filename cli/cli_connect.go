@@ -148,5 +148,6 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 
 func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
 	args := ctx.Args()
-	c.printServersForAutoComplete(args.First())
+	groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+	c.printServersForAutoComplete(args.First(), hasGroupFlag, groupName)
 }
