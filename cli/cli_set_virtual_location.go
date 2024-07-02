@@ -11,12 +11,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const (
-	// SetVirtualLocationUsageText is shown next to defaults command by nordvpn set --help and for autocomplete
-	MsgSetVirtualLocationUsageText   = "TODO: MsgSetVirtualLocationUsageText"
-	MsgSetVirtualLocationDescription = "TODO: MsgSetVirtualLocationDescription"
-)
-
 func (c *cmd) SetVirtualLocation(ctx *cli.Context) error {
 	if ctx.NArg() != 1 {
 		return formatError(argsCountError(ctx))

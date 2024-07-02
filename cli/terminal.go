@@ -26,7 +26,7 @@ func serverNameLen(server *pb.ServerGroup) int {
 
 func formatServerName(server *pb.ServerGroup) string {
 	if server.VirtualLocation && isStdoutATerminal() {
-		return color.YellowString(server.Name)
+		return color.HiBlueString(server.Name)
 	}
 	return server.Name
 }
@@ -38,7 +38,7 @@ func footerForServerGroupsList(servers []*pb.ServerGroup) string {
 
 	for _, server := range servers {
 		if server.VirtualLocation {
-			return color.YellowString("* TODO:Virtual location servers")
+			return color.HiBlueString(MsgFooterVirtualLocationNote)
 		}
 	}
 	return ""
