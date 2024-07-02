@@ -24,11 +24,11 @@ const _ = grpc.SupportPackageIsVersion7
 type DaemonClient interface {
 	AccountInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AccountResponse, error)
 	TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error)
-	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*Payload, error)
+	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (Daemon_ConnectClient, error)
-	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_DisconnectClient, error)
-	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	LoginOAuth2(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_LoginOAuth2Client, error)
@@ -60,6 +60,7 @@ type DaemonClient interface {
 	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
 	SetIpv6(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
+	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 }
 
 type daemonClient struct {
@@ -88,8 +89,8 @@ func (c *daemonClient) TokenInfo(ctx context.Context, in *Empty, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *daemonClient) Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error) {
+	out := new(ServerGroupsList)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Cities", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -129,8 +130,8 @@ func (x *daemonConnectClient) Recv() (*Payload, error) {
 	return m, nil
 }
 
-func (c *daemonClient) Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
+	out := new(ServerGroupsList)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Countries", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -170,8 +171,8 @@ func (x *daemonDisconnectClient) Recv() (*Payload, error) {
 	return m, nil
 }
 
-func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
+	out := new(ServerGroupsList)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Groups", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -481,17 +482,26 @@ func (c *daemonClient) ClaimOnlinePurchase(ctx context.Context, in *Empty, opts 
 	return out, nil
 }
 
+func (c *daemonClient) SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/SetVirtualLocation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
 type DaemonServer interface {
 	AccountInfo(context.Context, *Empty) (*AccountResponse, error)
 	TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error)
-	Cities(context.Context, *CitiesRequest) (*Payload, error)
+	Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error)
 	Connect(*ConnectRequest, Daemon_ConnectServer) error
-	Countries(context.Context, *Empty) (*Payload, error)
+	Countries(context.Context, *Empty) (*ServerGroupsList, error)
 	Disconnect(*Empty, Daemon_DisconnectServer) error
-	Groups(context.Context, *Empty) (*Payload, error)
+	Groups(context.Context, *Empty) (*ServerGroupsList, error)
 	IsLoggedIn(context.Context, *Empty) (*Bool, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
 	LoginOAuth2(*Empty, Daemon_LoginOAuth2Server) error
@@ -523,6 +533,7 @@ type DaemonServer interface {
 	Status(context.Context, *Empty) (*StatusResponse, error)
 	SetIpv6(context.Context, *SetGenericRequest) (*Payload, error)
 	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
+	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -536,19 +547,19 @@ func (UnimplementedDaemonServer) AccountInfo(context.Context, *Empty) (*AccountR
 func (UnimplementedDaemonServer) TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TokenInfo not implemented")
 }
-func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*Payload, error) {
+func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Cities not implemented")
 }
 func (UnimplementedDaemonServer) Connect(*ConnectRequest, Daemon_ConnectServer) error {
 	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
 }
-func (UnimplementedDaemonServer) Countries(context.Context, *Empty) (*Payload, error) {
+func (UnimplementedDaemonServer) Countries(context.Context, *Empty) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Countries not implemented")
 }
 func (UnimplementedDaemonServer) Disconnect(*Empty, Daemon_DisconnectServer) error {
 	return status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
 }
-func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*Payload, error) {
+func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Groups not implemented")
 }
 func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*Bool, error) {
@@ -643,6 +654,9 @@ func (UnimplementedDaemonServer) SetIpv6(context.Context, *SetGenericRequest) (*
 }
 func (UnimplementedDaemonServer) ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimOnlinePurchase not implemented")
+}
+func (UnimplementedDaemonServer) SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetVirtualLocation not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -1350,6 +1364,24 @@ func _Daemon_ClaimOnlinePurchase_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_SetVirtualLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetVirtualLocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/SetVirtualLocation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetVirtualLocation(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1496,6 +1528,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ClaimOnlinePurchase",
 			Handler:    _Daemon_ClaimOnlinePurchase_Handler,
+		},
+		{
+			MethodName: "SetVirtualLocation",
+			Handler:    _Daemon_SetVirtualLocation_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

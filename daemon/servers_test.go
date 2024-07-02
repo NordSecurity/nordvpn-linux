@@ -670,3 +670,68 @@ func TestGetNetworkInfo(t *testing.T) {
 	assert.Contains(t, str, "IP tables for ipv4")
 	assert.Contains(t, str, "IP tables for ipv6")
 }
+
+func TestPickServer(t *testing.T) {
+	category.Set(t, category.Unit)
+	tests := []struct {
+		name                 string
+		api                  core.ServersAPI
+		servers              core.Servers
+		longitude            float64
+		latitude             float64
+		tech                 config.Technology
+		protocol             config.Protocol
+		obfuscated           bool
+		tag                  string
+		groupFlag            string
+		onlyPhysicServers    bool
+		expectedServerName   string
+		expectedRemoteServer bool
+		expectedError        error
+	}{
+		{
+			name:               "find server using country code",
+			api:                mockFailingServersAPI{},
+			servers:            serversList(),
+			tech:               config.Technology_NORDLYNX,
+			tag:                "de",
+			expectedServerName: "Germany #3",
+		},
+		{
+			name:               "find server using country name",
+			api:                mockFailingServersAPI{},
+			servers:            serversList(),
+			tech:               config.Technology_NORDLYNX,
+			tag:                "germany",
+			expectedServerName: "Germany #3",
+		},
+		{
+			name:               "find server using city name",
+			api:                mockFailingServersAPI{},
+			servers:            serversList(),
+			tech:               config.Technology_NORDLYNX,
+			tag:                "berlin",
+			expectedServerName: "Germany #3",
+		},
+		{
+			name:               "find server when virtual locations are disabled",
+			api:                mockFailingServersAPI{},
+			servers:            serversList(),
+			tech:               config.Technology_NORDLYNX,
+			onlyPhysicServers:  true,
+			tag:                "",
+			expectedServerName: "France #1",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			server, remote, err := PickServer(test.api,
+				countriesList(), test.servers, test.longitude, test.latitude, test.tech, test.protocol, test.obfuscated, test.tag, test.groupFlag, !test.onlyPhysicServers)
+
+			assert.Equal(t, test.expectedError, err)
+			assert.Equal(t, test.expectedRemoteServer, remote)
+			assert.Equal(t, test.expectedServerName, server.Name)
+		})
+	}
+}

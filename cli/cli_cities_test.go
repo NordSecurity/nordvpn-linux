@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -18,25 +19,31 @@ func TestCitiesList(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		cities        []string
+		cities        []*pb.ServerGroup
 		country       string
 		expected      string
 		expectedError error
 	}{
 		{
-			name:          "missing country name",
-			expectedError: formatError(fmt.Errorf("The command you entered is not valid. Enter 'cli.test --help' to see the options.")),
+			name:          "error message when missing country name",
+			expectedError: formatError(fmt.Errorf(ArgumentParsingError, "cli.test")),
 		},
 		{
-			name:          "no cities data",
+			name:          "error message when no cities are found",
 			country:       "France",
-			expectedError: formatError(fmt.Errorf("We couldn’t load the list of cities. Please try again later.")),
+			expectedError: formatError(fmt.Errorf(MsgListIsEmpty, "cities")),
 		},
 		{
-			name:     "cities list",
+			name:     "return physical cities",
 			country:  "France",
-			expected: "Marseille, Paris",
-			cities:   []string{"Marseille", "Paris"},
+			cities:   []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
+			expected: "Paris",
+		},
+		{
+			name:     "return virtual cities",
+			country:  "France",
+			cities:   []*pb.ServerGroup{{Name: "Paris", VirtualLocation: true}},
+			expected: "Paris",
 		},
 	}
 

@@ -19,5 +19,6 @@ var (
 	ErrAlreadyLoggedIn = errors.New("you are already logged in")
 	// ErrNotLoggedIn is returned when the caller is expected to be logged in
 	// but is not
-	ErrNotLoggedIn = errors.New("you are not logged in")
+	ErrNotLoggedIn           = errors.New("you are not logged in")
+	ErrVirtualServerSelected = errors.New(SpecifiedServerIsVirtualLocation)
 )

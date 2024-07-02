@@ -34,6 +34,7 @@ func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error   { return 
 func (*dummyAnalytics) NotifyRate(events.ServerRating) error           { return nil }
 func (*dummyAnalytics) NotifyHeartBeat(int) error                      { return nil }
 func (*dummyAnalytics) NotifyLANDiscovery(bool) error                  { return nil }
+func (*dummyAnalytics) NotifyVirtualLocation(bool) error               { return nil }
 
 func newAnalytics(eventsDbPath string, fs *config.FilesystemConfigManager,
 	version, env, id string) *dummyAnalytics {

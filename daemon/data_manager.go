@@ -1,14 +1,17 @@
 package daemon
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
 	"github.com/coreos/go-semver/semver"
@@ -156,18 +159,6 @@ func (dm *DataManager) SetServerStatus(s core.Server, status core.Status) error 
 	return dm.serversData.save()
 }
 
-func (dm *DataManager) SetAppData(
-	countryNames map[bool]map[config.Protocol]mapset.Set[string],
-	cityNames map[bool]map[config.Protocol]map[string]mapset.Set[string],
-	groupNames map[bool]map[config.Protocol]mapset.Set[string],
-) {
-	dm.mu.Lock()
-	defer dm.mu.Unlock()
-	dm.appData.CountryNames = countryNames
-	dm.appData.CityNames = cityNames
-	dm.appData.GroupNames = groupNames
-}
-
 func (dm *DataManager) GetAppData() AppData {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
@@ -188,4 +179,172 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 	if err := dm.versionData.save(); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}
+}
+
+func toServerTechnology(
+	technology config.Technology,
+	protocol config.Protocol,
+	obfuscated bool,
+) (core.ServerTechnology, error) {
+	var serverTechnology core.ServerTechnology
+	switch technology {
+	case config.Technology_NORDLYNX:
+		serverTechnology = core.WireguardTech
+	case config.Technology_OPENVPN:
+		switch protocol {
+		case config.Protocol_TCP:
+			if obfuscated {
+				serverTechnology = core.OpenVPNTCPObfuscated
+			} else {
+				serverTechnology = core.OpenVPNTCP
+			}
+		case config.Protocol_UDP:
+			if obfuscated {
+				serverTechnology = core.OpenVPNUDPObfuscated
+			} else {
+				serverTechnology = core.OpenVPNUDP
+			}
+		case config.Protocol_UNKNOWN_PROTOCOL:
+			return 0, errors.New("invalid protocol")
+		}
+	case config.Technology_UNKNOWN_TECHNOLOGY:
+		return 0, errors.New("invalid technology")
+	}
+	return serverTechnology, nil
+}
+
+func (dm *DataManager) Countries(
+	technology config.Technology,
+	protocol config.Protocol,
+	obfuscated bool,
+	virtualLocation bool,
+) ([]*pb.ServerGroup, error) {
+	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	if err != nil {
+		return nil, err
+	}
+
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	countriesSet := mapset.NewSet[string]()
+	result := []*pb.ServerGroup{}
+
+	for _, server := range dm.serversData.Servers {
+		if !core.IsConnectableVia(serverTechnology)(server) {
+			continue
+		}
+
+		if !virtualLocation && server.IsVirtualLocation() {
+			continue
+		}
+
+		country := server.Country()
+		if country == nil {
+			continue
+		}
+
+		if countriesSet.Contains(country.Code) {
+			continue
+		}
+
+		countriesSet.Add(country.Code)
+		group := &pb.ServerGroup{Name: internal.Title(country.Name), VirtualLocation: server.IsVirtualLocation()}
+		result = append(result, group)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Name < result[j].Name
+	})
+	return result, nil
+}
+
+func (dm *DataManager) Cities(
+	countryName string,
+	technology config.Technology,
+	protocol config.Protocol,
+	obfuscated bool,
+	virtualLocation bool,
+) ([]*pb.ServerGroup, error) {
+	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	if err != nil {
+		return nil, err
+	}
+	countryCode := strings.ToUpper(countryName)
+	countryName = strings.ToLower(countryName)
+
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	citiesSet := mapset.NewSet[string]()
+	result := []*pb.ServerGroup{}
+	for _, server := range dm.serversData.Servers {
+		if !core.IsConnectableVia(serverTechnology)(server) {
+			continue
+		}
+
+		if !virtualLocation && server.IsVirtualLocation() {
+			continue
+		}
+
+		country := server.Country()
+		if country == nil {
+			continue
+		}
+
+		if citiesSet.Contains(country.City.Name) {
+			continue
+		}
+
+		if countryCode == country.Code || countryName == strings.ToLower(internal.Title(country.Name)) {
+			citiesSet.Add(country.City.Name)
+			group := &pb.ServerGroup{Name: internal.Title(country.City.Name), VirtualLocation: server.IsVirtualLocation()}
+			result = append(result, group)
+		}
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Name < result[j].Name
+	})
+	return result, nil
+}
+
+func (dm *DataManager) Groups(
+	technology config.Technology,
+	protocol config.Protocol,
+	obfuscated bool,
+	virtualLocation bool,
+) ([]*pb.ServerGroup, error) {
+	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	if err != nil {
+		return nil, err
+	}
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	groupsSet := mapset.NewSet[string]()
+	result := []*pb.ServerGroup{}
+	for _, server := range dm.serversData.Servers {
+		if !core.IsConnectableVia(serverTechnology)(server) {
+			continue
+		}
+
+		if !virtualLocation && server.IsVirtualLocation() {
+			continue
+		}
+
+		for _, group := range server.Groups {
+			if groupsSet.Contains(group.Title) {
+				continue
+			}
+
+			groupsSet.Add(group.Title)
+			// special server groups contain both virtual and physical
+			// display them always as physical servers
+			item := &pb.ServerGroup{Name: internal.Title(group.Title), VirtualLocation: false}
+			result = append(result, item)
+		}
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Name < result[j].Name
+	})
+	return result, nil
 }

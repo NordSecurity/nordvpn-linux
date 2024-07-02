@@ -73,7 +73,10 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		TargetServerPickerResponse: "",
 	}
 
-	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology")
+	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
+
+	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
+		in.GetServerTag(), in.GetServerGroup())
 	server, remote, err := PickServer(
 		r.serversAPI,
 		r.dm.GetCountryData().Countries,
@@ -83,21 +86,10 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
 		cfg.AutoConnectData.Obfuscate,
-		in.GetServerTag(),
+		inputServerTag,
 		in.GetServerGroup(),
+		cfg.VirtualLocation.Get(),
 	)
-
-	if isDedicatedIP(server) {
-		expired, err := r.ac.IsDedicatedIPExpired()
-		if err != nil {
-			log.Println(internal.ErrorPrefix, " checking dedicated IP expiration: ", err)
-			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
-		}
-
-		if expired {
-			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
-		}
-	}
 
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "picking servers:", err)
@@ -110,10 +102,26 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		case errors.Is(err, internal.ErrTagDoesNotExist),
 			errors.Is(err, internal.ErrGroupDoesNotExist),
 			errors.Is(err, internal.ErrServerIsUnavailable),
-			errors.Is(err, internal.ErrDoubleGroup):
+			errors.Is(err, internal.ErrDoubleGroup),
+			errors.Is(err, internal.ErrVirtualServerSelected):
 			return err
+
 		default:
 			return internal.ErrUnhandled
+		}
+	}
+
+	log.Println(internal.InfoPrefix, "server", server.Hostname, "remote", remote)
+
+	if isDedicatedIP(server) {
+		expired, err := r.ac.IsDedicatedIPExpired()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, " checking dedicated IP expiration: ", err)
+			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
+		}
+
+		if expired {
+			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
 		}
 	}
 

@@ -24,3 +24,13 @@ message Ports {
   repeated int64 udp = 1;
   repeated int64 tcp = 2;
 }
+
+message ServerGroup {
+  string name = 1;
+  bool virtualLocation = 2;
+}
+
+message ServerGroupsList {
+  int64 type = 1;
+  repeated ServerGroup servers = 2;
+}

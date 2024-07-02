@@ -348,4 +348,10 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgNoSocketPermissions = "Permission denied. Please grant necessary permissions before using the application by executing the following commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\nAfter doing so, reboot your device afterwards for this to take an effect."
 
 	MsgSnapPermissionsErrorForTray = "Please grant necessary permissions for the snap using this command:\n\n%s"
+
+	MsgSetVirtualLocationUsageText   = "Enables or disables access to virtual locations. Virtual location servers let you access more locations worldwide."
+	MsgSetVirtualLocationDescription = "Enables or disables access to virtual locations."
+	MsgFooterVirtualLocationNote     = "* Virtual location servers"
+
+	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
 )

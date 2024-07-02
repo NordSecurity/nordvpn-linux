@@ -684,7 +684,7 @@ func TestServerVersion(t *testing.T) {
 	var server Server
 	err := json.Unmarshal([]byte(inputTest), &server)
 	assert.NoError(t, err)
-	assert.Equal(t, "version", server.Version())
+	assert.Equal(t, "2.1.0", server.Version())
 }
 
 func TestLocationsCountry(t *testing.T) {

@@ -61,8 +61,6 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 
 	r.events.Settings.Technology.Publish(in.GetTechnology())
 
-	SetAppData(r.dm, in.GetTechnology(), r.dm.GetServersData().Servers)
-
 	payload.Data = []string{strconv.FormatBool(r.netw.IsVPNActive()), in.GetTechnology().String()}
 	return payload, nil
 }

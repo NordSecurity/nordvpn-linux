@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -231,4 +232,196 @@ func testNewRepoAPI() *RepoAPI {
 		"",
 		http.DefaultClient,
 	)
+}
+
+func serversList() core.Servers {
+	obfuscatedTechnologies := core.Technologies{
+		core.Technology{
+			ID:    core.OpenVPNTCPObfuscated,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+		core.Technology{
+			ID:    core.OpenVPNUDPObfuscated,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+	}
+
+	technologies := core.Technologies{
+		core.Technology{
+			ID:    core.OpenVPNUDP,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+		core.Technology{
+			ID:    core.OpenVPNUDP,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+		core.Technology{
+			ID:    core.WireguardTech,
+			Pivot: core.Pivot{Status: core.Online},
+		},
+	}
+
+	groups := core.Groups{
+		core.Group{
+			ID:    config.P2P,
+			Title: "P2P",
+		},
+		core.Group{
+			ID:    config.DoubleVPN,
+			Title: "Double VPN",
+		},
+		core.Group{
+			ID:    config.StandardVPNServers,
+			Title: "Standard VPN Servers",
+		},
+	}
+
+	virtualServer := []core.Specification{
+		{
+			Identifier: core.VirtualLocation,
+			Values: []struct {
+				Value string "json:\"value\""
+			}{
+				{Value: "true"},
+			},
+		},
+	}
+
+	servers := core.Servers{
+		core.Server{
+			ID:           1,
+			Name:         "France #1",
+			Hostname:     "fr1.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "France",
+						Code: "FR",
+						City: core.City{Name: "Paris"},
+					},
+				},
+			},
+			Groups: groups,
+		},
+		core.Server{
+			ID:           3,
+			Name:         "Germany #3",
+			Hostname:     "de3.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Germany",
+						Code: "DE",
+						City: core.City{Name: "Berlin"},
+					},
+				},
+			},
+			Groups:         groups,
+			Specifications: virtualServer,
+		},
+		core.Server{
+			ID:       2,
+			Hostname: "lt16.nordvpn.com",
+			Technologies: core.Technologies{
+				core.Technology{
+					ID:    core.WireguardTech,
+					Pivot: core.Pivot{Status: core.Online},
+				},
+			},
+			Status: core.Online,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Lithuania",
+						Code: "LT",
+						City: core.City{Name: "Vilnius"},
+					},
+				},
+			},
+			Specifications: virtualServer,
+			Groups:         groups,
+		},
+		core.Server{
+			ID:           3,
+			Hostname:     "lt15.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Lithuania",
+						Code: "LT",
+						City: core.City{Name: "Kaunas"},
+					},
+				},
+			},
+			Specifications: virtualServer,
+			Groups:         groups,
+		},
+		core.Server{
+			ID:           929912,
+			Name:         "Canada #944",
+			Hostname:     "ca944.nordvpn.com",
+			Status:       core.Offline,
+			Technologies: obfuscatedTechnologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Canada",
+						Code: "CA",
+						City: core.City{Name: "Toronto"},
+					},
+				},
+			},
+			Groups: groups,
+		},
+	}
+
+	for i, server := range servers {
+		servers[i].Keys = generateKeys(server)
+	}
+
+	return servers
+}
+
+func countriesList() core.Countries {
+	return core.Countries{
+		{
+			Name: "Latvia",
+			Code: "LV",
+			Cities: []core.City{
+				{Name: "Riga"},
+			},
+		},
+		{
+			Name: "United Kingdom",
+			Code: "GB",
+			Cities: []core.City{
+				{Name: "London"},
+				{Name: "Liverpool"},
+			},
+		},
+		{
+			Name: "France",
+			Code: "FR",
+			Cities: []core.City{
+				{Name: "Paris"},
+				{Name: "Nice"},
+			},
+		},
+		{
+			Name: "Lithuania",
+			Code: "LT",
+			Cities: []core.City{
+				{Name: "Vilnius"},
+				{Name: "Kaunas"},
+			},
+		},
+		{
+			Name: "Germany",
+			Code: "DE",
+			Cities: []core.City{
+				{Name: "Berlin"},
+			},
+		},
+	}
 }

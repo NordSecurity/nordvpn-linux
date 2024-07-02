@@ -27,4 +27,7 @@ const (
 
 	// UnhandledMessage represents the default message for unhandled errors
 	UnhandledMessage = "Something went wrong. Please try again. If the problem persists, contact our customer support."
+
+	// Error message when the server is a virtual location, but user has virtual-location off
+	SpecifiedServerIsVirtualLocation = "Please enable virtual location access to connect to this server."
 )

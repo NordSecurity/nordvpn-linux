@@ -35,4 +35,5 @@ message Settings {
   bool lan_discovery = 15;
   Allowlist allowlist = 16;
   bool obfuscate = 17;
+  bool virtualLocation = 18;
 }

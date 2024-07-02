@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -17,12 +16,9 @@ import (
 const (
 	CitiesUsageText     = "Shows a list of cities where servers are available"
 	CitiesArgsUsageText = `<country>`
-	CitiesDescription   = `Use this command to show cities where servers are available.
-
-Example: 'nordvpn cities United_States'
-
-Press the Tab key to see auto-suggestions for countries.`
 )
+
+var CitiesDescription = fmt.Sprintf(MsgShowListOfServers, "cities") + "\n\nExample: 'nordvpn cities United_States'\n\nPress the Tab key to see auto-suggestions for countries.'"
 
 func (c *cmd) Cities(ctx *cli.Context) error {
 	args := ctx.Args()
@@ -44,16 +40,23 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	if len(resp.Data) == 0 {
+	if len(resp.Servers) == 0 {
 		return formatError(errors.New(CitiesNotFoundError))
 	}
 
-	formattedList, err := columns(resp.Data)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
-		fmt.Println(strings.Join(resp.Data, ", "))
-	} else {
+	footer := footerForServerGroupsList(resp.Servers)
+	formattedList, err := columns(resp.Servers,
+		serverNameLen,
+		formatServerName,
+		footer,
+	)
+	if err == nil {
 		fmt.Println(formattedList)
+	} else {
+		log.Println(internal.ErrorPrefix, err)
+
+		columns, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
+		fmt.Println(columns)
 	}
 	return nil
 }
@@ -64,7 +67,7 @@ func (c *cmd) CitiesAutoComplete(ctx *cli.Context) {
 		return
 	}
 
-	for _, country := range resp.Data {
-		fmt.Println(country)
+	for _, server := range resp.Servers {
+		fmt.Println(server.Name)
 	}
 }

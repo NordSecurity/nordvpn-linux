@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -18,7 +19,7 @@ func TestGroupsList(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		groups        []string
+		groups        []*pb.ServerGroup
 		expected      string
 		input         string
 		expectedError error
@@ -29,8 +30,8 @@ func TestGroupsList(t *testing.T) {
 		},
 		{
 			name:     "groups list",
-			expected: "group1, group2",
-			groups:   []string{"group1", "group2"},
+			expected: "P2P\nDouble_VPN",
+			groups:   []*pb.ServerGroup{{Name: "P2P", VirtualLocation: false}, {Name: "Double_VPN", VirtualLocation: false}},
 		},
 	}
 

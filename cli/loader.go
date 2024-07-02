@@ -2,13 +2,11 @@ package cli
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/mattn/go-isatty"
 )
 
 // loader defines loader's every frame
@@ -45,7 +43,7 @@ type LoaderConfig struct {
 }
 
 func NewLoader() Loader {
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	if isStdoutATerminal() {
 		return &TerminalLoader{
 			active:   false,
 			stopChan: make(chan struct{}, 1),
