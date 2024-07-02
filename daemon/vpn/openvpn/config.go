@@ -13,8 +13,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
-	"github.com/jbowtie/gokogiri/xml"
-	"github.com/jbowtie/ratago/xslt"
+	"github.com/NordSecurity/gokogiri/xml"
+	"github.com/NordSecurity/ratago/xslt"
 )
 
 const ovpnConfig = `<?xml version="1.0"?>
