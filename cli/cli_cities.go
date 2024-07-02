@@ -16,12 +16,9 @@ import (
 const (
 	CitiesUsageText     = "Shows a list of cities where servers are available"
 	CitiesArgsUsageText = `<country>`
-	CitiesDescription   = `Use this command to show cities where servers are available.
-
-Example: 'nordvpn cities United_States'
-
-Press the Tab key to see auto-suggestions for countries.`
 )
+
+var CitiesDescription = fmt.Sprintf(MsgShowListOfServers, "cities") + "\n\nExample: 'nordvpn cities United_States'\n\nPress the Tab key to see auto-suggestions for countries.'"
 
 func (c *cmd) Cities(ctx *cli.Context) error {
 	args := ctx.Args()

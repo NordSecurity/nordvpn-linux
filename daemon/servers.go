@@ -129,7 +129,7 @@ func getServers(
 		ret = slices.DeleteFunc(ret, func(s core.Server) bool { return s.IsVirtualLocation() })
 		if len(ret) == 0 {
 			// if the selected servers are only virtual, but user has this disabled return an error
-			return ret, false, internal.ErrVirtualServer
+			return ret, false, internal.ErrVirtualServerSelected
 		}
 	}
 

@@ -103,7 +103,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 			errors.Is(err, internal.ErrGroupDoesNotExist),
 			errors.Is(err, internal.ErrServerIsUnavailable),
 			errors.Is(err, internal.ErrDoubleGroup),
-			errors.Is(err, internal.ErrVirtualServer):
+			errors.Is(err, internal.ErrVirtualServerSelected):
 			return err
 
 		default:
