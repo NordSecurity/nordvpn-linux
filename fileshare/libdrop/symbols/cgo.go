@@ -1,13 +1,9 @@
-//go:build !internal
-
 package symbols
 
-// TODO: Fix paths
-
-// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../../libdrop/target/release -lnorddrop
-// #cgo 386 LDFLAGS: -L${SRCDIR}/../../../../libdrop/target/release -lnorddrop
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../libdrop/target/release -lnorddrop
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../libdrop/target/release -lnorddrop
-// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../../../libdrop/target/release -lnorddrop
-// #cgo LDFLAGS: -L/usr/local/lib -L${SRCDIR}/../../../libdrop/target/release -lnorddrop
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/amd64/latest -lnorddrop -lsqlite3
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/i386/latest -lnorddrop -lsqlite3
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/armel/latest -lnorddrop -lsqlite3
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/armhf/latest -lnorddrop -lsqlite3
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/arm64/latest -lnorddrop -lsqlite3
+// #cgo LDFLAGS: -ldl -lm
 import "C"

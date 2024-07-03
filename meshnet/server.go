@@ -14,12 +14,14 @@ import (
 
 	"golang.org/x/exp/slices"
 
+	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -1068,12 +1070,12 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 		peers.Self = cfg.MeshDevice.ToProtobuf()
 		peerMap, err := s.netw.StatusMap()
 		if err != nil {
-			peerMap = map[string]string{}
+			peerMap = map[string]teliogo.NodeState{}
 		}
 		for _, peer := range resp {
 			protoPeer := peer.ToProtobuf()
 			status := pb.PeerStatus_DISCONNECTED
-			if peerMap[peer.PublicKey] == "connected" {
+			if peerMap[peer.PublicKey] == teliogo.NodeStateConnected {
 				status = pb.PeerStatus_CONNECTED
 			}
 			protoPeer.Status = status

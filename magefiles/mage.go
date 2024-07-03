@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
-
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -153,14 +152,21 @@ func Download() error {
 		return err
 	}
 
+	versions, err := getVersions()
+	if err != nil {
+		return err
+	}
+
+	environment := mergeMaps(env, versions)
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	env["ARCH"] = build.Default.GOARCH
-	env["WORKDIR"] = cwd
-	return sh.RunWith(env, "ci/check_dependencies.sh")
+	environment["ARCH"] = build.Default.GOARCH
+	environment["WORKDIR"] = cwd
+	return sh.RunWith(environment, "ci/download_dependencies.sh")
 }
 
 // Download OpenVPN external dependencies
@@ -186,6 +192,8 @@ func (Build) Data() error {
 		return nil
 	}
 
+	mg.Deps(Download)
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -210,6 +218,18 @@ func (Build) Notices() error {
 }
 
 func buildPackage(packageType string, buildFlags string) error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+	env["ARCH"] = build.Default.GOARCH
+	env["GOPATH"] = build.Default.GOPATH
+	env["LD_LIBRARY_PATH"] = fmt.Sprintf("./bin/deps/lib/%s/latest", build.Default.GOARCH)
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 	mg.Deps(Build.Data)
 	mg.Deps(mg.F(buildBinaries, buildFlags))
 	mg.Deps(Build.Notices)
@@ -219,16 +239,6 @@ func buildPackage(packageType string, buildFlags string) error {
 		mg.Deps(Build.Openvpn)
 	}
 
-	env, err := getEnv()
-	if err != nil {
-		return err
-	}
-	env["ARCH"] = build.Default.GOARCH
-	env["GOPATH"] = build.Default.GOPATH
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
 	env["WORKDIR"] = cwd
 	if packageType == "snap" {
 		return sh.RunWith(env, "snapcraft")
