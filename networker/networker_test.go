@@ -902,7 +902,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 			allowlist: config.NewAllowlist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
-			err: mock.ErrOnPurpose,
+			err: nil, // not connected - router is not invoked, no error
 		},
 		{
 			name:             "firewall failure",
@@ -1053,7 +1053,7 @@ func TestCombined_SetNetwork(t *testing.T) {
 			rt:        failingRouter{},
 			devices:   workingDeviceList,
 			routing:   &workingRoutingSetup{},
-			err:       mock.ErrOnPurpose,
+			err:       nil, // not connected - router is not invoked, no error
 		},
 		{
 			name:      "device listing failure",
