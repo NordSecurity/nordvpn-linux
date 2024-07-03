@@ -1,4 +1,4 @@
-package daemon
+package networker
 
 import (
 	"github.com/NordSecurity/nordvpn-linux/config"

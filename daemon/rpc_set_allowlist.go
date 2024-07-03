@@ -46,9 +46,6 @@ func (r *RPC) SetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*pb
 	// If LAN discovery is enabled, we want to append LANs to the new allowlist and modify the
 	// firewall. We do not want to add LANs to the configuration, so we have to create a copy.
 	firewallAllowlist := allowlist
-	if cfg.LanDiscovery {
-		firewallAllowlist = addLANPermissions(firewallAllowlist)
-	}
 
 	if err := r.netw.SetAllowlist(firewallAllowlist); err != nil {
 		log.Println(internal.ErrorPrefix, err)

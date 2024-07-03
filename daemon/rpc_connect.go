@@ -139,9 +139,6 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
-	if cfg.LanDiscovery {
-		allowlist = addLANPermissions(allowlist)
-	}
 
 	event.ServerFromAPI = remote
 	event.TargetServerCity = country.City.Name
