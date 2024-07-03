@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -15,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -112,8 +114,8 @@ func (n *workingNetworker) ResetRouting(changedPeer mesh.MachinePeer, peer mesh.
 
 func (*workingNetworker) BlockRouting(UniqueAddress) error { return nil }
 func (*workingNetworker) Refresh(mesh.MachineMap) error    { return nil }
-func (*workingNetworker) StatusMap() (map[string]string, error) {
-	return map[string]string{}, nil
+func (*workingNetworker) StatusMap() (map[string]teliogo.NodeState, error) {
+	return map[string]teliogo.NodeState{}, nil
 }
 func (*workingNetworker) LastServerName() string { return "" }
 
@@ -168,7 +170,8 @@ func newMockedServer(
 	saveConfigErr error,
 	configureErr error,
 	isMeshOn bool,
-	peers []mesh.MachinePeer) *Server {
+	peers []mesh.MachinePeer,
+) *Server {
 	t.Helper()
 
 	registryApi := mock.RegistryMock{}
@@ -260,20 +263,20 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			assert.Equal(t, test.cm, mserver.cm)
 			assert.Equal(t, test.netw, mserver.netw)
 
-			//Check server configuration
+			// Check server configuration
 			var cfg config.Config
 			err := mserver.cm.Load(&cfg)
 			assert.NoError(t, err)
 			assert.False(t, cfg.Mesh)
 
-			//Enable Mesh
+			// Enable Mesh
 			peerCtx := peer.NewContext(context.Background(), &peer.Peer{AuthInfo: internal.UcredAuth{}})
 			resp, err := mserver.EnableMeshnet(peerCtx, &pb.Empty{})
 			assert.NoError(t, err)
 			_, ok := resp.GetResponse().(*pb.MeshnetResponse_Empty)
 			assert.Equal(t, test.success, ok)
 
-			//Check new server configuration
+			// Check new server configuration
 			err = mserver.cm.Load(&cfg)
 			assert.NoError(t, err)
 			assert.Equal(t, test.success, cfg.Mesh)
@@ -338,17 +341,17 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			assert.Equal(t, test.cm, mserver.cm)
 			assert.Equal(t, test.netw, mserver.netw)
 
-			//Set server configuration
+			// Set server configuration
 			var cfg config.Config
 			mserver.cm.SaveWith(func(c config.Config) config.Config { c.Mesh = true; return c })
 
-			//Disable Mesh
+			// Disable Mesh
 			resp, err := mserver.DisableMeshnet(context.Background(), &pb.Empty{})
 			assert.NoError(t, err)
 			_, ok := resp.GetResponse().(*pb.MeshnetResponse_Empty)
 			assert.Equal(t, true, ok)
 
-			//Check new server configuration
+			// Check new server configuration
 			err = mserver.cm.Load(&cfg)
 			assert.NoError(t, err)
 			assert.Equal(t, false, cfg.Mesh)

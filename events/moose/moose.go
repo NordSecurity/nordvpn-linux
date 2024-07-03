@@ -3,11 +3,12 @@
 // Package moose provides convenient wrappers for event sending.
 package moose
 
-// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/amd64/latest -lnord
-// #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/i386/latest -lnord
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/armel/latest -lnord
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/armhf/latest -lnord
-// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/nord/aarch64/latest -lnord
+
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/amd64/latest -lmooseworker -lmoosenordvpnapp
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/i386/latest -lmooseworker -lmoosenordvpnapp
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/armel/latest -lmooseworker -lmoosenordvpnapp
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/armhf/latest -lmooseworker -lmoosenordvpnapp
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../../bin/deps/lib/arm64/latest -lmooseworker -lmoosenordvpnapp
 // #cgo LDFLAGS: -ldl -lm
 import "C"
 

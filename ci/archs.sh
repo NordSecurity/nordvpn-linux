@@ -52,13 +52,16 @@ declare -A ARCHS_GO=(
     [aarch64]=arm64
 )
 
-# Key is one of ARCHS
-declare -A ARCHS_RUST=(
-    [i386]=i686
-    [amd64]=x86_64
-    [armel]=armv5_eabi
-    [armhf]=armv7_eabihf
-    [aarch64]=aarch64
+# for .so files comming from libtelio, libdrop and libmoose
+declare -A ARCHS_SO_REVERSE=(
+    [i686]=i386
+    [x86_64]=amd64
+    [aarch64]=arm64
+    [armv5]=armel
+    [armv5_eabi]=armel
+    [armv7hf]=armhf
+    [armv7]=armhf
+    [armv7_eabihf]=armhf
 )
 
 export ARCHS
@@ -66,4 +69,4 @@ export ARCHS_REVERSE
 export ARCHS_DEB
 export ARCHS_RPM
 export ARCHS_GO
-export ARCHS_RUST
+export ARCHS_SO_REVERSE

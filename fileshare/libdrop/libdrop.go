@@ -9,13 +9,8 @@ import (
 	"time"
 
 	norddrop "github.com/NordSecurity/libdrop-go/v7"
-	_ "github.com/NordSecurity/nordvpn-linux/fileshare/libdrop/symbols" // required for linking process
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-)
-
-const (
-	DirDepthLimit     = 5
-	TransferFileLimit = 1000
 )
 
 // Fileshare is the main functional filesharing implementation using norddrop library.
@@ -43,29 +38,29 @@ func logLevelToPrefix(level norddrop.LogLevel) string {
 	}
 }
 
-type DefaultKeyStore struct {
+type defaultKeyStore struct {
 	pubkeyFunc func(string) []byte
 	privKey    string
 }
 
-func (dks DefaultKeyStore) OnPubkey(peer string) *[]byte {
+func (dks defaultKeyStore) OnPubkey(peer string) *[]byte {
 	pubKey := dks.pubkeyFunc(peer)
 	return &pubKey
 }
 
-func (dks DefaultKeyStore) Privkey() []byte {
+func (dks defaultKeyStore) Privkey() []byte {
 	return []byte(dks.privKey)
 }
 
-type DefaultLogger struct {
+type defaultLogger struct {
 	logLevel norddrop.LogLevel
 }
 
-func (dl DefaultLogger) OnLog(level norddrop.LogLevel, msg string) {
+func (dl defaultLogger) OnLog(level norddrop.LogLevel, msg string) {
 	log.Println(logLevelToPrefix(level), "DROP("+norddrop.Version()+"): "+msg)
 }
 
-func (dl DefaultLogger) Level() norddrop.LogLevel {
+func (dl defaultLogger) Level() norddrop.LogLevel {
 	return dl.logLevel
 }
 
@@ -78,7 +73,7 @@ func New(
 	privKey string,
 	storagePath string,
 ) (*Fileshare, error) {
-	keyStore := DefaultKeyStore{
+	keyStore := defaultKeyStore{
 		pubkeyFunc: pubkeyFunc,
 		privKey:    privKey,
 	}
@@ -87,7 +82,7 @@ func New(
 		logLevel = norddrop.LogLevelError
 	}
 
-	logger := DefaultLogger{logLevel}
+	logger := defaultLogger{logLevel}
 
 	norddrop, err := norddrop.NewNordDrop(eventFunc, keyStore, logger)
 	if err != nil {
@@ -123,8 +118,8 @@ func (f *Fileshare) start(
 	storagePath string,
 ) error {
 	config := norddrop.Config{
-		DirDepthLimit:     DirDepthLimit,
-		TransferFileLimit: TransferFileLimit,
+		DirDepthLimit:     fileshare.DirDepthLimit,
+		TransferFileLimit: fileshare.TransferFileLimit,
 		MooseEventPath:    eventsDbPath,
 		MooseProd:         isProd,
 		StoragePath:       storagePath,
@@ -225,5 +220,11 @@ func (f *Fileshare) GetTransfersSince(t time.Time) ([]norddrop.TransferInfo, err
 func (f *Fileshare) PurgeTransfersUntil(until time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-	return f.norddrop.PurgeTransfersUntil(until.Unix())
+	// TODO: In the calculation below: `until.Unix() * 100` it should be
+	// multiplied by 1000 to get number of milliseconds. The issue is that there
+	// is a bug on the libdrop side here: https://github.com/NordSecurity/libdrop/blob/v7.0.0/norddrop/src/uni.rs#L100
+	// It converts milliseconds to seconds by dividing by 100 instead of 1000
+	// resulting in incorrect dates in the year ~2515 and purgin of all transfers.
+	// This will be fixed with migration to v8.0.0 of libdrop.
+	return f.norddrop.PurgeTransfersUntil(until.Unix() * 100)
 }

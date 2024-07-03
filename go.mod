@@ -4,10 +4,16 @@ go 1.21.1
 
 toolchain go1.22.2
 
+// Bindings
+// NOTE: If you are chaning the binding versions here, keep in mind that you
+// may also need to update versions in `./lib-versions.env` file.
+require (
+	github.com/NordSecurity/libdrop-go/v7 v7.0.0-rc1
+	github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc2
+)
+
 require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
-	github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc1
-	github.com/NordSecurity/libdrop-go/v7 v7.0.0-rc1
 	github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.6.0
@@ -45,8 +51,6 @@ require (
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
-
-replace github.com/NordSecurity/libtelio-go/v5 => ../libtelio-go/v5
 
 require (
 	cloud.google.com/go/compute v1.19.1 // indirect

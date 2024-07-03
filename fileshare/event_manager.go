@@ -1,6 +1,7 @@
 package fileshare
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -133,7 +134,7 @@ func (em *EventManager) OnEvent(event norddrop.Event) {
 	defer em.mutex.Unlock()
 
 	if !em.isProd {
-		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", internal.EventToString(event))
+		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", toString(event))
 	}
 
 	switch ev := event.Kind.(type) {
@@ -702,4 +703,29 @@ func removeFileFromLiveTransfer(transfer *LiveTransfer, file *LiveFile) {
 	transfer.TotalSize -= file.Size
 	transfer.TotalTransferred -= file.Transferred
 	delete(transfer.Files, file.ID)
+}
+
+var defaultMarshaler = jsonMarshaler{}
+
+func toString(event norddrop.Event) string {
+	return eventToString(event, defaultMarshaler)
+}
+
+func eventToString(event norddrop.Event, m marshaler) string {
+	json, err := m.Marshal(event)
+	if err != nil {
+		log.Printf(internal.WarningPrefix+" failed to marshall event: %T, returning just its type\n", event.Kind)
+		return fmt.Sprintf("%T", event.Kind)
+	}
+	return string(json)
+}
+
+type marshaler interface {
+	Marshal(v any) ([]byte, error)
+}
+
+type jsonMarshaler struct{}
+
+func (jm jsonMarshaler) Marshal(v any) ([]byte, error) {
+	return json.Marshal(v)
 }

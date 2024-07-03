@@ -29,7 +29,8 @@ import (
 
 const (
 	// TelioLocalConfigName defines env key for local config value
-	TelioLocalConfigName = "TELIO_LOCAL_CFG"
+	TelioLocalConfigName    = "TELIO_LOCAL_CFG"
+	defaultHeartbitInterval = 60 * 60
 )
 
 type state struct {
@@ -58,7 +59,6 @@ func eventCallback(states chan<- state) eventCb {
 		switch evt := e.(type) {
 		case teliogo.EventNode:
 			var nickname string
-			// NOTE: Body will be mandatory in new telio, so I'm not checking it here
 			if evt.Body.Nickname != nil {
 				nickname = *evt.Body.Nickname
 			} else {
@@ -67,7 +67,7 @@ func eventCallback(states chan<- state) eventCb {
 			st = state{
 				Nickname:  nickname,
 				State:     evt.Body.State,
-				PublicKey: string( /* TODO: This will be changed to be string again */ evt.Body.PublicKey),
+				PublicKey: evt.Body.PublicKey,
 				IsVPN:     evt.Body.IsVpn,
 				IsExit:    evt.Body.IsExit,
 			}
@@ -161,16 +161,16 @@ func New(prod bool, eventPath string, fwmark uint32,
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "Failed to get telio config:", err)
 
-		defaultTelioConfig := teliogo.Features{
-			Lana: &teliogo.FeatureLana{
-				Prod:      prod,
-				EventPath: eventPath,
-			},
-			Direct: &teliogo.FeatureDirect{},
-			Nurse: &teliogo.FeatureNurse{
-				Fingerprint: deviceID,
-			},
+		defaultTelioConfig := teliogo.GetDefaultFeatureConfig()
+		defaultTelioConfig.Lana = &teliogo.FeatureLana{
+			Prod:      prod,
+			EventPath: eventPath,
 		}
+		defaultTelioConfig.Nurse = &teliogo.FeatureNurse{
+			Fingerprint:       deviceID,
+			HeartbeatInterval: defaultHeartbitInterval,
+		}
+
 		features = &defaultTelioConfig
 	}
 
@@ -252,8 +252,7 @@ func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string) error {
 
 	hostPort := net.JoinHostPort(serverIP.String(), "51820")
 	if err := l.lib.ConnectToExitNode(
-		// TODO: Just to satisfy the interface. Conversion will be gone with new telio.
-		[]byte(serverPublicKey),
+		serverPublicKey,
 		&[]string{"0.0.0.0/0"},
 		&hostPort,
 	); err != nil {
@@ -451,12 +450,12 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 		return nil
 	}
 
-	var config teliogo.Config
-	if err := json.Unmarshal(c.Raw, &config); err != nil {
-		return fmt.Errorf("failed to unmarshall config: %d", err)
+	config, err := teliogo.DeserializeMeshnetConfig(string(c.Raw))
+	if err != nil {
+		return fmt.Errorf("failed to deserialize meshnet config: %w", err)
 	}
 
-	var err error = nil
+	err = nil
 	for i := 0; i < 10; i++ {
 		if err = l.lib.SetMeshnet(config); err == nil {
 			break
@@ -465,7 +464,7 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("failed to refresh meshnet: %d", err)
+		return fmt.Errorf("failed to refresh meshnet %w", err)
 	}
 
 	l.meshnetConfig = config
@@ -475,10 +474,10 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 
 type peer struct {
 	PublicKey string
-	State     string
+	State     teliogo.NodeState
 }
 
-func (l *Libtelio) StatusMap() (map[string]string, error) {
+func (l *Libtelio) StatusMap() (map[string]teliogo.NodeState, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -486,12 +485,12 @@ func (l *Libtelio) StatusMap() (map[string]string, error) {
 	peers := make([]peer, len(statusMap))
 	for i, node := range statusMap {
 		peers[i] = peer{
-			PublicKey: string(node.PublicKey),
-			State:     fmt.Sprintf("%d", node.State),
+			PublicKey: node.PublicKey,
+			State:     node.State,
 		}
 	}
 
-	m := map[string]string{}
+	m := map[string]teliogo.NodeState{}
 	for _, p := range peers {
 		m[p.PublicKey] = p.State
 	}
@@ -517,21 +516,12 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
 		adapter = teliogo.TelioAdapterTypeBoringTun
 	}
 
-	if err := l.lib.StartNamed(
-		// TODO: Just to satisfy the interface. Conversion will be gone with new telio.
-		[]byte(privateKey),
-		adapter,
-		nordlynx.InterfaceName,
-	); err != nil {
+	if err := l.lib.StartNamed(privateKey, adapter, nordlynx.InterfaceName); err != nil {
 		if l.isKernelDisabled {
 			return fmt.Errorf("starting libtelio: %w", err)
 		}
 		adapter = teliogo.TelioAdapterTypeBoringTun
-		if err := l.lib.StartNamed(
-			[]byte(privateKey),
-			adapter,
-			nordlynx.InterfaceName,
-		); err != nil {
+		if err := l.lib.StartNamed(privateKey, adapter, nordlynx.InterfaceName); err != nil {
 			return fmt.Errorf("starting libtelio on retry with boring-tun: %w", err)
 		}
 		l.isKernelDisabled = true
@@ -593,10 +583,7 @@ func (l *Libtelio) updateTunnel(privateKey string, ip netip.Addr) error {
 		return fmt.Errorf("adding interface addrs: %w", err)
 	}
 
-	if err := l.lib.SetSecretKey(
-		// TODO: Just to satisfy the interface. Conversion will be gone with new telio.
-		[]byte(privateKey),
-	); err != nil {
+	if err := l.lib.SetSecretKey(privateKey); err != nil {
 		return fmt.Errorf("setting private key: %w", err)
 	}
 
@@ -606,14 +593,12 @@ func (l *Libtelio) updateTunnel(privateKey string, ip netip.Addr) error {
 
 // Private key generation.
 func (l *Libtelio) Private() string {
-	// TODO: Just to satisfy the interface. Conversion will be gone with new telio.
-	return string(teliogo.GenerateSecretKey())
+	return teliogo.GenerateSecretKey()
 }
 
 // Public key extraction from private.
 func (l *Libtelio) Public(private string) string {
-	// TODO: Just to satisfy the interface. Conversion will be gone with new telio.
-	return string(teliogo.GeneratePublicKey([]byte(private)))
+	return teliogo.GeneratePublicKey(private)
 }
 
 // isConnected function designed to be called before performing an action which trigger events.

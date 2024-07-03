@@ -3,8 +3,10 @@ package mock
 import (
 	"net/netip"
 
+	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
@@ -29,6 +31,7 @@ func (w *WorkingVPN) Start(vpn.Credentials, vpn.ServerData) error {
 	w.isActive = w.StartErr == nil
 	return w.StartErr
 }
+
 func (w *WorkingVPN) Stop() error {
 	w.ExecutionStats[StatsStop]++
 
@@ -85,6 +88,6 @@ type MeshnetAndVPN struct {
 func (w *MeshnetAndVPN) Enable(netip.Addr, string) error { return w.MeshEnableError }
 func (*MeshnetAndVPN) Disable() error                    { return nil }
 func (*MeshnetAndVPN) Refresh(mesh.MachineMap) error     { return nil }
-func (*MeshnetAndVPN) StatusMap() (map[string]string, error) {
-	return map[string]string{}, nil
+func (*MeshnetAndVPN) StatusMap() (map[string]teliogo.NodeState, error) {
+	return map[string]teliogo.NodeState{}, nil
 }

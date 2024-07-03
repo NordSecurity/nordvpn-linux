@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -21,6 +22,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -362,7 +364,6 @@ func (netw *Combined) addDefaultRoute() error {
 		Device:  netw.vpnet.Tun().Interface(),
 		TableID: netw.policyRouter.TableID(),
 	})
-
 	if err != nil {
 		return fmt.Errorf("adding the default route: %w", err)
 	}
@@ -771,7 +772,6 @@ func (netw *Combined) stopAllowedIPv6Traffic() error {
 		"vpn_allowlist_dhcp6_in",
 		"vpn_allowlist_dhcp6_out",
 	})
-
 	if err != nil {
 		return err
 	}
@@ -1269,7 +1269,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 			}
 		}
 
-		//TODO (LVPN-4031): detect which peer we are connected (if connected)
+		// TODO (LVPN-4031): detect which peer we are connected (if connected)
 		// to and check if maybe allowLocalAccess permission has changed and
 		// if so, change routing to route to local LAN
 	}
@@ -1386,7 +1386,7 @@ func (netw *Combined) unSetMesh() error {
 	return nil
 }
 
-func (netw *Combined) StatusMap() (map[string]string, error) {
+func (netw *Combined) StatusMap() (map[string]teliogo.NodeState, error) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 	return netw.mesh.StatusMap()

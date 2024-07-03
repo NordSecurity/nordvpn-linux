@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	libdrop "github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
+	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -111,7 +111,7 @@ func TestLargeSaveLoad(t *testing.T) {
 
 	for i := range [transfersCount]byte{} {
 		transferID = fmt.Sprintf("%s-%d", transferID, i)
-		transfers[transferID] = makeTransfer(transferID, libdrop.TransferFileLimit, true)
+		transfers[transferID] = makeTransfer(transferID, fileshare.TransferFileLimit, true)
 	}
 
 	fmt.Printf("transfers count before: %d\n", len(transfers))

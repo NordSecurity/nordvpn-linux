@@ -5,7 +5,9 @@ package meshnet
 import (
 	"net/netip"
 
+	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
@@ -24,7 +26,7 @@ type Mesh interface {
 	Tun() tunnel.T
 	// StatusMap retrieves the current status map for the related
 	// meshnet peers
-	StatusMap() (map[string]string, error)
+	StatusMap() (map[string]teliogo.NodeState, error)
 	// NetworkChanged is called at network changes
 	NetworkChanged() error
 }

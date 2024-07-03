@@ -6,7 +6,13 @@ import (
 	"time"
 
 	norddrop "github.com/NordSecurity/libdrop-go/v7"
+	_ "github.com/NordSecurity/nordvpn-linux/fileshare/libdrop/symbols" // this is required to make cgo symbols available during linking
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+)
+
+const (
+	DirDepthLimit     = 5
+	TransferFileLimit = 1000
 )
 
 // Fileshare defines a set of operations that any type that wants to act as a fileshare service
