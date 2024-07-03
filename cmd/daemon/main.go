@@ -488,10 +488,16 @@ func main() {
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
 	}
 
-	norduserMonitor := norduser.NewNordVPNGroupMonitor(norduserService)
+	norduserMonitor := norduser.NewNorduserProcessMonitor(norduserService)
 	go func() {
-		if err := norduserMonitor.Start(); err != nil {
-			log.Println("Error when starting norduser monitor: ", err.Error())
+		if snapconf.IsUnderSnap() {
+			if err := norduserMonitor.StartSnap(); err != nil {
+				log.Println("Error when starting norduser monitor for snap: ", err.Error())
+			}
+		} else {
+			if err := norduserMonitor.Start(); err != nil {
+				log.Println("Error when starting norduser monitor: ", err.Error())
+			}
 		}
 	}()
 

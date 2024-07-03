@@ -9,21 +9,12 @@ package norduser
 const int ERROR_REALLOC = -1;
 const int ERROR_MALLOC_USERNAME = -2;
 
-void free_users_table(char*** users, int size) {
-  for (int index = 0; index < size; index++) {
-    if ((*users)[index] != NULL) {
-      free((*users)[index]);
-      (*users)[index] = NULL;
-    }
-  }
+typedef struct user {
+  pid_t login_pid;
+  char username[__UT_NAMESIZE + 1];
+} user;
 
-  if (*users != NULL) {
-    free(*users);
-    *users = NULL;
-  }
-}
-
-int get_utmp_user_processes(char*** users) {
+int get_utmp_user_processes(user** users) {
   int index = 0;
   int size = 0;
   setutxent();
@@ -37,10 +28,10 @@ int get_utmp_user_processes(char*** users) {
     }
 
     if (index == size) {
-      char** tmp;
-      tmp = realloc(*users, (size + 1) * sizeof(char*));
+      user* tmp;
+      tmp = realloc(*users, (size + 1) * sizeof(user));
       if (tmp == NULL) {
-        free_users_table(users, index);
+        free(*users);
         endutxent();
         return ERROR_REALLOC;
       }
@@ -49,15 +40,8 @@ int get_utmp_user_processes(char*** users) {
       size++;
     }
 
-    (*users)[index] = malloc(__UT_NAMESIZE + 1);
-    if ((*users)[index] == NULL) {
-      free_users_table(users, size);
-      endutxent();
-      return ERROR_MALLOC_USERNAME;
-    }
-    (*users)[index][__UT_NAMESIZE]='\0';
-
-    strncpy((*users)[index], u->ut_user, __UT_NAMESIZE);
+	(*users)[index].login_pid = u->ut_pid;
+    strncpy((*users)[index].username, u->ut_user, __UT_NAMESIZE + 1);
     index++;
   }
 
@@ -75,25 +59,51 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-func getActiveUsers() ([]string, error) {
-	var usersCArray **C.char
+type userData map[string]norduserState
+
+// getActiveUsers returns a map of [username]userType where type can be text or gui. If any of the given users login
+// processes will be detected to have a gui(done based on the environment), user type will be gui. Otherwise user type
+// will be text.
+func getActiveUsers() (userData, error) {
+	var usersCArray *C.user
 	size := C.get_utmp_user_processes(&usersCArray)
+	defer C.free(unsafe.Pointer(usersCArray))
 
 	if size == C.ERROR_REALLOC {
-		return []string{}, fmt.Errorf("failed to reallocate space for the users table")
+		return userData{}, fmt.Errorf("failed to reallocate space for the users table")
 	} else if size == C.ERROR_MALLOC_USERNAME {
-		return []string{}, fmt.Errorf("failed to allocate space for new user in the users table")
+		return userData{}, fmt.Errorf("failed to allocate space for new user in the users table")
 	}
 
 	log.Printf("%s %d active user processes found", internal.DebugPrefix, size)
 
-	users := []string{}
-	for i := 0; i < int(size); i++ {
-		usernameCStr := (**C.char)(unsafe.Pointer(uintptr(unsafe.Pointer(usersCArray)) + uintptr(i)*unsafe.Sizeof(*usersCArray)))
-		username := C.GoString(*usernameCStr)
-		users = append(users, username)
+	users := make(userData)
+	for index := 0; index < int(size); index++ {
+		userC := (*C.user)(unsafe.Pointer(uintptr(unsafe.Pointer(usersCArray)) +
+			uintptr(index)*unsafe.Sizeof(*usersCArray)))
+		usernameC := (*C.char)(unsafe.Pointer(&userC.username))
+		username := C.GoString(usernameC)
+
+		// userType was determined to be gui for any of the users login processes, so we skip this user.
+		if userType, ok := users[username]; ok && userType == loginGUI {
+			continue
+		}
+
+		loginPID := uint32(userC.login_pid)
+
+		desktopSession, err := findEnvVariableForPID(loginPID, "XDG_CURRENT_DESKTOP")
+		if err != nil {
+			log.Printf("%s looking up XDG_CURRENT_DESKTOP for %s: %s", internal.ErrorPrefix, username, err)
+			continue
+		}
+
+		userType := loginText
+		if desktopSession != "" {
+			userType = loginGUI
+		}
+
+		users[username] = userType
 	}
 
-	C.free_users_table(&usersCArray, size)
 	return users, nil
 }
