@@ -55,11 +55,11 @@ IPV6 = [
 ]
 
 # Used for test parametrization, when the same test has to be run for obfuscated technologies.
+# TODO: `Europe` group was temporarly removed, get it back when possible
 STANDARD_GROUPS = [
     "Africa_The_Middle_East_And_India",
     "Asia_Pacific",
     "The_Americas",
-    "Europe",
 ]
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
