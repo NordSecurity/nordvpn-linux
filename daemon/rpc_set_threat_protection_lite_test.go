@@ -96,7 +96,7 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 
 			networker := networker.Mock{}
 			dnsGetter := mock.DNSGetter{}
-			tplPublisher := &mockPublisherSubcriber{}
+			tplPublisher := &mockPublisherSubscriber[bool]{}
 			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
 
 			rpc := RPC{
@@ -198,7 +198,7 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 				SetDNSErr: test.setDnsErr,
 			}
 			dnsGetter := mock.DNSGetter{}
-			tplPublisher := &mockPublisherSubcriber{}
+			tplPublisher := &mockPublisherSubscriber[bool]{}
 			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
 
 			rpc := RPC{

@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
@@ -113,10 +114,19 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 				Allowlist: test.currentAllowlist,
 			}
 
+			lanDiscoveryPublisher := mockPublisherSubscriber[bool]{}
+			allowListPublisher := mockPublisherSubscriber[events.DataAllowlist]{}
+			mockEvents := Events{Settings: &SettingsEvents{
+				LANDiscovery: &lanDiscoveryPublisher,
+				Allowlist:    &allowListPublisher,
+			}}
+
 			rpc := RPC{
 				cm:           configManager,
 				netw:         &networker,
-				meshRegistry: &RegistryMock{}}
+				events:       &mockEvents,
+				meshRegistry: &RegistryMock{},
+			}
 			resp, err := rpc.SetLANDiscovery(context.Background(), &pb.SetLANDiscoveryRequest{
 				Enabled: test.enabled,
 			})
@@ -134,6 +144,8 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 			assert.Equal(t, test.expectedConfigAllowlist, cfg.AutoConnectData.Allowlist,
 				"Invalid allowlist saved in the config.")
 			assert.Equal(t, test.enabled, networker.LanDiscovery)
+			assert.True(t, lanDiscoveryPublisher.eventPublished)
+			assert.Equal(t, allowListPublisher.eventPublished, test.enabled) // only fired when LAN is on
 		})
 	}
 }

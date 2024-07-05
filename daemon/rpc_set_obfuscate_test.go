@@ -35,7 +35,7 @@ func (*mockObfuscateConfigManager) Reset() error {
 func TestSetObfuscate(t *testing.T) {
 	mockConfigManager := mockObfuscateConfigManager{c: config.Config{AutoConnect: false}}
 
-	mockPublisherSubscriber := mockPublisherSubcriber{}
+	mockPublisherSubscriber := mockPublisherSubscriber[bool]{}
 	mockEvents := Events{Settings: &SettingsEvents{Obfuscate: &mockPublisherSubscriber}}
 
 	obfuscatedTechnologies := core.Technologies{

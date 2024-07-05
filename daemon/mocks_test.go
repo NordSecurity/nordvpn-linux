@@ -9,14 +9,14 @@ import (
 	"github.com/google/uuid"
 )
 
-type mockPublisherSubcriber struct {
+type mockPublisherSubscriber[T any] struct {
 	eventPublished bool
 }
 
-func (mp *mockPublisherSubcriber) Publish(message bool) {
+func (mp *mockPublisherSubscriber[T]) Publish(message T) {
 	mp.eventPublished = true
 }
-func (*mockPublisherSubcriber) Subscribe(handler events.Handler[bool]) {}
+func (*mockPublisherSubscriber[T]) Subscribe(handler events.Handler[T]) {}
 
 type filesystemMock struct {
 	files    map[string][]byte
