@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -25,11 +24,18 @@ func (c *cmd) Groups(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(MsgListIsEmpty, "server groups"))
 	}
 
-	groupList, err := columns(resp.Data)
+	footer := footerForServerGroupsList(resp.Servers)
+	groupList, err := columns(
+		resp.Servers,
+		serverNameLen,
+		formatServerName,
+		footer,
+	)
 
 	if err != nil {
 		log.Println(err)
-		fmt.Println(strings.Join(resp.Data, ", "))
+		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
+		fmt.Println(countries)
 	} else {
 		fmt.Println(groupList)
 	}

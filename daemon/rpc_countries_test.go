@@ -5,13 +5,13 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
-	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,31 +20,62 @@ func TestRPCCountries(t *testing.T) {
 	defer testsCleanup()
 
 	tests := []struct {
-		name       string
-		dm         *DataManager
-		cm         config.Manager
-		statusCode int64
+		name                  string
+		cm                    config.Manager
+		servers               core.Servers
+		disableVirtualServers bool
+		statusCode            int64
+		expected              []*pb.ServerGroup
 	}{
 		{
 			name:       "missing configuration file",
-			dm:         testNewDataManager(),
 			cm:         failingConfigManager{},
 			statusCode: internal.CodeConfigError,
 		},
 		{
-			name:       "app data is empty",
-			dm:         testNewDataManager(),
+			name:       "no results when no servers exist",
 			cm:         newMockConfigManager(),
-			statusCode: internal.CodeEmptyPayloadError,
+			statusCode: internal.CodeSuccess,
+			expected:   []*pb.ServerGroup{},
+		},
+		{
+			name:       "virtual and physical servers",
+			cm:         newMockConfigManager(),
+			servers:    serversList(),
+			statusCode: internal.CodeSuccess,
+			expected: []*pb.ServerGroup{
+				{Name: "France", VirtualLocation: false},
+				{Name: "Germany", VirtualLocation: true},
+				{Name: "Lithuania", VirtualLocation: true},
+			},
+		},
+		{
+			name:                  "return physical servers only",
+			cm:                    newMockConfigManager(),
+			servers:               serversList(),
+			disableVirtualServers: true,
+			statusCode:            internal.CodeSuccess,
+			expected: []*pb.ServerGroup{
+				{Name: "France", VirtualLocation: false},
+			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			dm := testNewDataManager()
+			dm.serversData.Servers = test.servers
+
+			if cm, ok := test.cm.(*mockConfigManager); ok {
+				cm.c.AutoConnectData.Protocol = config.Protocol_UDP
+				cm.c.Technology = config.Technology_NORDLYNX
+				cm.c.VirtualLocation.Set(!test.disableVirtualServers)
+			}
+
 			rpc := RPC{
 				ac:        &workingLoginChecker{},
 				cm:        test.cm,
-				dm:        test.dm,
+				dm:        dm,
 				norduser:  &testnorduser.MockNorduserCombinedService{},
 				netw:      &networker.Mock{},
 				ncClient:  mockNC{},
@@ -54,39 +85,8 @@ func TestRPCCountries(t *testing.T) {
 			payload, _ := rpc.Countries(context.Background(), &pb.Empty{})
 
 			assert.Equal(t, test.statusCode, payload.Type)
+			assert.Equal(t, len(test.expected), len(payload.Servers))
+			assert.Equal(t, test.expected, payload.Servers)
 		})
 	}
-}
-
-func TestRPCCountries_Successful(t *testing.T) {
-	category.Set(t, category.Unit)
-	defer testsCleanup()
-
-	dm := testNewDataManager()
-
-	countryNames := map[bool]map[config.Protocol]mapset.Set[string]{
-		false: {
-			config.Protocol_UDP: mapset.NewSet("LT"),
-			config.Protocol_TCP: mapset.NewSet("DE"),
-		},
-	}
-	dm.SetAppData(countryNames, nil, nil)
-
-	cm := newMockConfigManager()
-	cm.c.AutoConnectData.Protocol = config.Protocol_UDP
-
-	rpc := RPC{
-		ac:        &workingLoginChecker{},
-		cm:        cm,
-		dm:        dm,
-		norduser:  &testnorduser.MockNorduserCombinedService{},
-		netw:      &networker.Mock{},
-		ncClient:  mockNC{},
-		publisher: &subs.Subject[string]{},
-		api:       mockApi{},
-	}
-
-	payload, _ := rpc.Countries(context.Background(), &pb.Empty{})
-	assert.Equal(t, internal.CodeSuccess, payload.GetType())
-	assert.Equal(t, []string{"LT"}, payload.GetData())
 }

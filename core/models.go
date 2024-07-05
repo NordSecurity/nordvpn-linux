@@ -3,10 +3,13 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/netip"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/nstrings"
 	"golang.org/x/exp/slices"
 )
 
@@ -62,9 +65,10 @@ type ServersFilter struct {
 type Status string
 
 const (
-	Online      = "online"
-	Offline     = "offline"
-	Maintenance = "maintenance"
+	Online          = "online"
+	Offline         = "offline"
+	Maintenance     = "maintenance"
+	VirtualLocation = "virtual_location"
 )
 
 type UserCreateRequest struct {
@@ -298,12 +302,45 @@ func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Pr
 }
 
 func (s *Server) Version() string {
-	for _, spec := range s.Specifications {
-		if spec.Identifier == "version" {
-			return spec.Identifier
-		}
+	version := s.getSpecificationsForIdentifier("version")
+
+	if len(version) > 0 {
+		return version[0]
 	}
 	return ""
+}
+
+func (s *Server) IsVirtualLocation() bool {
+	virtualLocation := s.getSpecificationsForIdentifier(VirtualLocation)
+
+	if len(virtualLocation) > 0 {
+		value, err := nstrings.BoolFromString(virtualLocation[0])
+		if err == nil {
+			return value
+		}
+		log.Println(internal.DebugPrefix, "cannot convert server virtual location", s.Hostname, virtualLocation, err)
+	}
+	return false
+}
+
+func (s *Server) Country() *Country {
+	if len(s.Locations) > 0 {
+		return &s.Locations[0].Country
+	}
+	return nil
+}
+
+func (s *Server) getSpecificationsForIdentifier(identifier string) []string {
+	for _, spec := range s.Specifications {
+		if spec.Identifier == identifier {
+			values := []string{}
+			for _, value := range spec.Values {
+				values = append(values, value.Value)
+			}
+			return values
+		}
+	}
+	return nil
 }
 
 func (s *Server) SupportsIPv6() bool {

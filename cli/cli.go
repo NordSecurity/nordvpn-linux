@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
@@ -130,6 +131,13 @@ func NewApp(version, environment, hash, salt string,
 				BashComplete: cmd.SetAutoConnectAutoComplete,
 				ArgsUsage:    SetAutoConnectArgsUsageText,
 				Description:  SetAutoConnectDescription,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "group",
+						Aliases: []string{"g"},
+						Usage:   ConnectFlagGroupUsageText,
+					},
+				},
 			},
 			{
 				Name:         "threatprotectionlite",
@@ -301,6 +309,19 @@ func NewApp(version, environment, hash, salt string,
 				Action:       cmd.SetLANDiscovery,
 				BashComplete: cmd.SetBoolAutocomplete,
 			},
+			{
+				Name:      "virtual-location",
+				Usage:     MsgSetVirtualLocationUsageText,
+				ArgsUsage: MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
+					MsgSetVirtualLocationDescription,
+					"virtual-location",
+					"virtual-location",
+				),
+				Action:       cmd.SetVirtualLocation,
+				BashComplete: cmd.SetBoolAutocomplete,
+			},
 		},
 	}
 
@@ -344,14 +365,15 @@ func NewApp(version, environment, hash, salt string,
 			Description:  ConnectDescription,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
-					Name:  "group, g",
-					Usage: ConnectFlagGroupUsageText,
+					Name:    "group",
+					Aliases: []string{"g"},
+					Usage:   ConnectFlagGroupUsageText,
 				},
 			},
 		},
 		{
 			Name:               "countries",
-			Usage:              CountriesUsageText,
+			Usage:              fmt.Sprintf(MsgShowListOfServers, "countries"),
 			Action:             cmd.Countries,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 		},
@@ -1171,4 +1193,80 @@ func commandFullName(ctx *cli.Context, args []string) string {
 	}
 
 	return strings.Join(fullCommand, " ")
+}
+
+// Get the value for a flag from the command line arguments
+// if the flag exists but it doesn't have value will return empty string and found = true
+func getFlagValue(name string, ctx *cli.Context) (value string, found bool) {
+	if ctx.IsSet(name) {
+		// value exists and has value
+		return ctx.String(name), true
+	}
+
+	for _, flag := range ctx.Command.Flags {
+		if slices.Index(flag.Names(), name) == -1 {
+			continue
+		}
+
+		for _, s := range flag.Names() {
+			for _, v := range os.Args {
+				if v == "-"+s || v == "--"+s {
+					// flag exists into the command line arguments, but without value
+					return "", true
+				}
+			}
+		}
+		break
+	}
+
+	return "", false
+}
+
+func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, groupName string) {
+	// if no country name or --group flag exists don't show cities
+	if hasGroupFlag || country == "" {
+		resp, err := c.client.Groups(context.Background(), &pb.Empty{})
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to get the groups", err)
+			return
+		}
+
+		output := ""
+		for _, server := range resp.Servers {
+			if hasGroupFlag && groupName == server.Name {
+				// if the group is equal to one of the group names then exists don't return anything
+				return
+			}
+			output += server.Name + "\n"
+		}
+
+		fmt.Print(output)
+
+		if hasGroupFlag {
+			// if --group flag exists don't show the countries
+			return
+		}
+
+		resp, err = c.client.Countries(context.Background(), &pb.Empty{})
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to get the countries", err)
+			return
+		}
+		for _, server := range resp.Servers {
+			fmt.Println(server.Name)
+		}
+	} else {
+		// get the cities from the given country
+		resp, err := c.client.Cities(context.Background(), &pb.CitiesRequest{
+			Country: country,
+		})
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to get the cities", err)
+			return
+		}
+
+		for _, server := range resp.Servers {
+			fmt.Println(server.Name)
+		}
+	}
 }

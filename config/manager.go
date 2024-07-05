@@ -148,7 +148,7 @@ func (f *FilesystemConfigManager) save(c Config) error {
 func (f *FilesystemConfigManager) Reset() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.save(*newConfig())
+	return f.save(*newConfig(f.machineIDGetter))
 }
 
 // Load encrypted config from the filesystem.
@@ -161,9 +161,10 @@ func (f *FilesystemConfigManager) Load(c *Config) error {
 }
 
 func (f *FilesystemConfigManager) load(c *Config) error {
+	// always init with default settings and override later with the values from the file
+	*c = *newConfig(f.machineIDGetter)
+
 	if !f.fsHandle.FileExists(f.location) {
-		// reasigning value behind the pointer
-		*c = *newConfig()
 		return nil
 	}
 
@@ -174,16 +175,10 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 
 	var data []byte
 
-	if f.fsHandle.FileExists(f.location) {
-		// #nosec G304 -- no input comes from the user
-		data, err = f.fsHandle.ReadFile(f.location)
-		if err != nil {
-			return err
-		}
-	} else {
-		if err := f.fsHandle.CreateFile(f.location, internal.PermUserRW); err != nil {
-			return err
-		}
+	// #nosec G304 -- no input comes from the user
+	data, err = f.fsHandle.ReadFile(f.location)
+	if err != nil {
+		return err
 	}
 
 	decrypted, err := internal.Decrypt(data, pass)
@@ -196,24 +191,6 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 		return err
 	}
 
-	if c.FirewallMark == 0 {
-		// without this users need to reset their configs
-		c.FirewallMark = defaultFWMarkValue
-	}
-
-	if c.TokensData == nil {
-		// in order not to crash when a user has an old config
-		c.TokensData = map[int64]TokenData{}
-	}
-
-	if c.MachineID == [16]byte{} {
-		c.MachineID = f.machineIDGetter.GetMachineID()
-	}
-
-	if c.UsersData.TrayOff == nil {
-		// in order not to crash when a user has an old config
-		c.UsersData.TrayOff = UidBoolMap{}
-	}
 	return nil
 }
 

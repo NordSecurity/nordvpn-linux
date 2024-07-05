@@ -43,48 +43,48 @@ func captureOutput(f func()) (string, error) {
 
 type mockDaemonClient struct {
 	pb.DaemonClient
-	cities    []string
-	groups    []string
-	countries []string
+	cities    []*pb.ServerGroup
+	groups    []*pb.ServerGroup
+	countries []*pb.ServerGroup
 }
 
-func (c mockDaemonClient) Cities(ctx context.Context, in *pb.CitiesRequest, opts ...grpc.CallOption) (*pb.Payload, error) {
+func (c mockDaemonClient) Cities(ctx context.Context, in *pb.CitiesRequest, opts ...grpc.CallOption) (*pb.ServerGroupsList, error) {
 	if c.cities != nil {
-		return &pb.Payload{
-			Type: internal.CodeSuccess,
-			Data: c.cities,
+		return &pb.ServerGroupsList{
+			Type:    internal.CodeSuccess,
+			Servers: c.cities,
 		}, nil
 	} else {
-		return &pb.Payload{
-			Type: internal.CodeEmptyPayloadError,
-			Data: nil,
+		return &pb.ServerGroupsList{
+			Type:    internal.CodeEmptyPayloadError,
+			Servers: nil,
 		}, nil
 	}
 }
 
-func (c mockDaemonClient) Countries(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.Payload, error) {
+func (c mockDaemonClient) Countries(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.ServerGroupsList, error) {
 	if c.countries != nil {
-		return &pb.Payload{
-			Type: internal.CodeSuccess,
-			Data: c.countries,
+		return &pb.ServerGroupsList{
+			Type:    internal.CodeSuccess,
+			Servers: c.countries,
 		}, nil
 	} else {
-		return &pb.Payload{
-			Type: internal.CodeEmptyPayloadError,
-			Data: nil,
+		return &pb.ServerGroupsList{
+			Type:    internal.CodeEmptyPayloadError,
+			Servers: nil,
 		}, nil
 	}
 }
-func (c mockDaemonClient) Groups(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.Payload, error) {
+func (c mockDaemonClient) Groups(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.ServerGroupsList, error) {
 	if c.groups != nil {
-		return &pb.Payload{
-			Type: internal.CodeSuccess,
-			Data: c.groups,
+		return &pb.ServerGroupsList{
+			Type:    internal.CodeSuccess,
+			Servers: c.groups,
 		}, nil
 	} else {
-		return &pb.Payload{
-			Type: internal.CodeEmptyPayloadError,
-			Data: nil,
+		return &pb.ServerGroupsList{
+			Type:    internal.CodeEmptyPayloadError,
+			Servers: nil,
 		}, nil
 	}
 }
@@ -95,32 +95,34 @@ func TestConnectAutoComplete(t *testing.T) {
 	c := cmd{&mockClient, nil, nil, "", nil}
 	tests := []struct {
 		name      string
-		countries []string
-		groups    []string
-		expected  []string
-		input     []string
+		countries []*pb.ServerGroup
+		groups    []*pb.ServerGroup
+		cities    []*pb.ServerGroup
+		expected  string
+		input     string
 	}{
 		{
-			name:     "France",
-			expected: []string{"Paris"},
-			input:    []string{"France"},
+			name:      "autocomplete without input returns groups first plus countries second",
+			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}},
+			cities:    []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
+			groups:    []*pb.ServerGroup{{Name: "P2P", VirtualLocation: false}},
+			expected:  "P2P\nFrance",
 		},
 		{
-			name:     "Spain",
-			expected: []string{"Madrid"},
-			input:    []string{"Spain"},
+			name:      "cities autocomplete works with country name",
+			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}},
+			cities:    []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
+			groups:    []*pb.ServerGroup{{Name: "P2P", VirtualLocation: false}},
+			expected:  "Paris",
+			input:     "FrAnCe",
 		},
 		{
-			name:     "United_States",
-			expected: []string{"Atlanta", "Chicago", "Los_Angeles", "Miami", "New_York"},
-			input:    []string{"United_States"},
-		},
-		{ // in this case because input is empty, countries and groups will be displayed
-			name:      "Groups and Countries",
-			groups:    []string{"Europe", "Obfuscated_Servers", "The_Americas"},
-			countries: []string{"Canada", "France", "Germany"},
-			expected:  []string{"Canada", "France", "Germany", "Europe", "Obfuscated_Servers", "The_Americas"},
-			input:     []string{},
+			name:      "cities autocomplete works with country code",
+			cities:    []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
+			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}},
+			groups:    []*pb.ServerGroup{{Name: "P2P", VirtualLocation: false}},
+			expected:  "Paris",
+			input:     "fR",
 		},
 	}
 
@@ -128,10 +130,10 @@ func TestConnectAutoComplete(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
-			mockClient.cities = test.expected
+			mockClient.cities = test.cities
 			mockClient.countries = test.countries
 			mockClient.groups = test.groups
-			set.Parse(test.input)
+			set.Parse([]string{test.input})
 			ctx := cli.NewContext(app, set, &cli.Context{Context: context.Background()})
 
 			result, err := captureOutput(func() {
@@ -140,9 +142,7 @@ func TestConnectAutoComplete(t *testing.T) {
 
 			assert.Nil(t, err)
 
-			list, _ := columns(test.expected)
-			assert.NotEmpty(t, list)
-			assert.Equal(t, list, result)
+			assert.Equal(t, test.expected, result)
 		})
 	}
 }

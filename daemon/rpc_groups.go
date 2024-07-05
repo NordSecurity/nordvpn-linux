@@ -3,7 +3,6 @@ package daemon
 import (
 	"context"
 	"log"
-	"sort"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -11,29 +10,30 @@ import (
 )
 
 // Groups provides endpoint and autocompletion.
-func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.Payload, error) {
+func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return &pb.Payload{
+		return &pb.ServerGroupsList{
 			Type: internal.CodeConfigError,
 		}, nil
 	}
 
-	if groups, ok := r.dm.GetAppData().GroupNames[cfg.AutoConnectData.Obfuscate][cfg.AutoConnectData.Protocol]; ok {
-		var groupNames []string
-		for group := range groups.Iter() {
-			groupNames = append(groupNames, group)
-		}
-
-		sort.Strings(groupNames)
-		return &pb.Payload{
-			Type: internal.CodeSuccess,
-			Data: groupNames,
+	groups, err := r.dm.Groups(
+		cfg.Technology,
+		cfg.AutoConnectData.Protocol,
+		cfg.AutoConnectData.Obfuscate,
+		cfg.VirtualLocation.Get(),
+	)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get group names", err)
+		return &pb.ServerGroupsList{
+			Type: internal.CodeEmptyPayloadError,
 		}, nil
 	}
-	log.Println(internal.ErrorPrefix, "group list is empty")
-	return &pb.Payload{
-		Type: internal.CodeEmptyPayloadError,
+
+	return &pb.ServerGroupsList{
+		Type:    internal.CodeSuccess,
+		Servers: groups,
 	}, nil
 }
