@@ -166,6 +166,8 @@ func (r *Router) CleanupRouting() error {
 		return fmt.Errorf("unsetting ifgroups: %w", err)
 	}
 
+	r.tableID = 0
+
 	return nil
 }
 

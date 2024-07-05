@@ -892,28 +892,31 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			continue
 		}
 
-		gw, gwIface, err := netw.gateway.Retrieve(subnet, netw.policyRouter.TableID())
-		if err != nil {
-			// if gateway does not exist, we still honour users choice
-			subnets = append(subnets, subnet)
-			log.Println(internal.WarningPrefix, "allowlisting routes gateway not found for", subnet.String(), err)
-			continue
-		}
+		if netw.policyRouter.TableID() > 0 {
+			gw, gwIface, err := netw.gateway.Retrieve(subnet, netw.policyRouter.TableID())
+			if err != nil {
+				// if gateway does not exist, we still honour users choice
+				subnets = append(subnets, subnet)
+				log.Println(internal.WarningPrefix, "allowlisting routes gateway not found for", subnet.String(), err)
+				continue
+			}
 
-		route := routes.Route{
-			Gateway: gw,
-			Subnet:  subnet,
-			Device:  gwIface,
-			TableID: netw.policyRouter.TableID(),
-		}
+			// TableID is determined only after SetupRoutingRules
+			route := routes.Route{
+				Gateway: gw,
+				Subnet:  subnet,
+				Device:  gwIface,
+				TableID: netw.policyRouter.TableID(),
+			}
 
-		log.Println(internal.InfoPrefix, "add route", route)
-		err = netw.allowlistRouter.Add(route)
-		if errors.Is(err, routes.ErrRouteToOtherDestinationExists) {
-			log.Println(internal.WarningPrefix, "route(s) for allowlisted subnet(s) via non-default gateway already exist in the system")
-		}
-		if err != nil {
-			return errors.Join(fmt.Errorf("adding route for subnet: %s", route.Subnet), err)
+			log.Println(internal.InfoPrefix, "add route", route)
+			err = netw.allowlistRouter.Add(route)
+			if errors.Is(err, routes.ErrRouteToOtherDestinationExists) {
+				log.Println(internal.WarningPrefix, "route(s) for allowlisted subnet(s) via non-default gateway already exist in the system")
+			}
+			if err != nil {
+				return errors.Join(fmt.Errorf("adding route for subnet: %s", route.Subnet), err)
+			}
 		}
 
 		subnets = append(subnets, subnet)
