@@ -71,8 +71,8 @@ ADDITIONAL_GROUPS = [
 ]
 
 # Used for test parametrization, when the tested functionality only works with non-obfuscated OPENVPN.
+# TODO: removed "Dedicated_IP" - get it back when possible
 OVPN_GROUPS = [
-    "Dedicated_IP"
 ]
 
 # Used for test parametrization, when the tested functionality only works with obfuscated OPENVPN.
