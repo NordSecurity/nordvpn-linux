@@ -121,6 +121,12 @@ func (c *cmd) SetAutoConnectAutoComplete(ctx *cli.Context) {
 			}
 
 			groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+
+			if !hasGroupFlag && strings.HasPrefix(args.Get(args.Len()-1), "-") {
+				// if the group flag is not set, but the last argument starts with "-" then give as suggestions --group
+				fmt.Println("--" + flagGroup)
+				return
+			}
 			c.printServersForAutoComplete(args.Get(1), hasGroupFlag, groupName)
 		}
 	}
