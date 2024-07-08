@@ -41,7 +41,8 @@ int get_utmp_user_processes(user** users) {
     }
 
 	(*users)[index].login_pid = u->ut_pid;
-    strncpy((*users)[index].username, u->ut_user, __UT_NAMESIZE + 1);
+    strncpy((*users)[index].username, u->ut_user, __UT_NAMESIZE);
+	(*users)[index].username[__UT_NAMESIZE] = '\0';
     index++;
   }
 
@@ -67,13 +68,12 @@ type userData map[string]norduserState
 func getActiveUsers() (userData, error) {
 	var usersCArray *C.user
 	size := C.get_utmp_user_processes(&usersCArray)
-	defer C.free(unsafe.Pointer(usersCArray))
-
 	if size == C.ERROR_REALLOC {
 		return userData{}, fmt.Errorf("failed to reallocate space for the users table")
 	} else if size == C.ERROR_MALLOC_USERNAME {
 		return userData{}, fmt.Errorf("failed to allocate space for new user in the users table")
 	}
+	defer C.free(unsafe.Pointer(usersCArray))
 
 	log.Printf("%s %d active user processes found", internal.DebugPrefix, size)
 

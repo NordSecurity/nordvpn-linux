@@ -38,7 +38,7 @@ const (
 //   - runningGUI 	=> 	loginText - restart application, update state to runningText
 //   - runningText 	=> 	loginGUI - update state to runningGUI
 //
-// Other sate transitions should result in a noop.
+// Other state transitions should result in a noop.
 //
 // More on runningGUI to loginText transition:
 // Due to library limitations, when user doesn't have any GUI sessions, tray will be disabled. In order to enable it on
@@ -49,7 +49,7 @@ const (
 func (s *norduserState) changeState(newState norduserState,
 	username string,
 	userIDGetter userIDGetter,
-	norduserSrevice service.NorduserService) {
+	norduserSrevice service.Service) {
 	if *s == notActive &&
 		(newState == loginGUI || newState == loginText) { // user logged in, start norduserd
 		userIDs, err := userIDGetter.getUserID(username)
@@ -108,12 +108,12 @@ type userSet map[string]norduserState
 // NorduserProcessMonitor monitors the nordvpn system group and starts/stops norduserd for users added/removed from the
 // group.
 type NorduserProcessMonitor struct {
-	norduserd service.NorduserService
+	norduserd service.Service
 	isSnap    bool
 	userIDGetter
 }
 
-func NewNorduserProcessMonitor(service service.NorduserService) NorduserProcessMonitor {
+func NewNorduserProcessMonitor(service service.Service) NorduserProcessMonitor {
 	return NorduserProcessMonitor{
 		norduserd:    service,
 		isSnap:       snapconf.IsUnderSnap(),

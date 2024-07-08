@@ -402,7 +402,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	var norduserService norduserservice.NorduserService
+	var norduserService norduserservice.Service
 	if snapconf.IsUnderSnap() {
 		norduserService = norduserservice.NewNorduserSnapService()
 	} else {
@@ -492,11 +492,11 @@ func main() {
 	go func() {
 		if snapconf.IsUnderSnap() {
 			if err := norduserMonitor.StartSnap(); err != nil {
-				log.Println("Error when starting norduser monitor for snap: ", err.Error())
+				log.Println(internal.ErrorPrefix, "Error when starting norduser monitor for snap:", err.Error())
 			}
 		} else {
 			if err := norduserMonitor.Start(); err != nil {
-				log.Println("Error when starting norduser monitor: ", err.Error())
+				log.Println(internal.ErrorPrefix, "Error when starting norduser monitor:", err.Error())
 			}
 		}
 	}()

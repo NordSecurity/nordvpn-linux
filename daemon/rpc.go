@@ -50,7 +50,7 @@ type RPC struct {
 	nameservers      dns.Getter
 	ncClient         nc.NotificationClient
 	analytics        events.Analytics
-	norduser         service.NorduserService
+	norduser         service.Service
 	meshRegistry     mesh.Registry
 	systemShutdown   atomic.Bool
 	pb.UnimplementedDaemonServer
@@ -77,7 +77,7 @@ func NewRPC(
 	nameservers dns.Getter,
 	ncClient nc.NotificationClient,
 	analytics events.Analytics,
-	norduser service.NorduserService,
+	norduser service.Service,
 	meshRegistry mesh.Registry,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))

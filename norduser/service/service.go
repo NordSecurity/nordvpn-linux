@@ -1,6 +1,6 @@
 package service
 
-type NorduserService interface {
+type Service interface {
 	Enable(uid uint32, gid uint32, home string) error
 	Stop(uid uint32, wait bool) error
 	StopAll()

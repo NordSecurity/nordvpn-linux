@@ -49,9 +49,7 @@ func getGroupMembers(groupEntry string) []string {
 }
 
 func getNordVPNGroupMembers() ([]string, error) {
-	const nordvpnGroupName = "nordvpn"
-
-	groupEntry, err := getGroupEntry(nordvpnGroupName)
+	groupEntry, err := getGroupEntry(internal.NordvpnGroup)
 	if err != nil {
 		return nil, fmt.Errorf("getting group entry: %w", err)
 	}
