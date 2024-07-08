@@ -50,9 +50,16 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	// generate server tag from given args
 	var serverTag string
 	if args.Len() > 1 {
-		serverTag = strings.Join(args.Slice()[1:], "")
-		serverTag = strings.Trim(serverTag, " ")
-		serverTag = strings.ToLower(serverTag)
+		groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+		if hasGroupFlag {
+			if groupName == "" {
+				return formatError(argsCountError(ctx))
+			}
+			serverTag = groupName
+		} else {
+			serverTag = strings.Join(args.Slice()[1:], " ")
+			serverTag = strings.ToLower(serverTag)
+		}
 	}
 
 	settings, err := c.getSettings()

@@ -57,6 +57,14 @@ func TestAutoConnectAutoComplete(t *testing.T) {
 			expected:  "",
 		},
 		{
+			name:      "autocomplete works for groups",
+			cities:    []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
+			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}},
+			groups:    []*pb.ServerGroup{{Name: "P2P", VirtualLocation: false}},
+			input:     []string{"1", "--group", "P2"},
+			expected:  "P2P",
+		},
+		{
 			name:      "give bool suggestions for no parameters",
 			cities:    []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
 			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}},
