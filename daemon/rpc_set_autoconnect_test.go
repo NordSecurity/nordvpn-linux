@@ -5,93 +5,177 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
 )
 
 type mockAutoconnectAuthChecker struct {
+	dedicatedIPExpired bool
 }
 
-func (mockAutoconnectAuthChecker) IsLoggedIn() bool                    { return true }
-func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error)         { return false, nil }
-func (mockAutoconnectAuthChecker) IsDedicatedIPExpired() (bool, error) { return false, nil }
-
-type mockAutoconnectConfigManager struct {
-	c config.Config
+func (mockAutoconnectAuthChecker) IsLoggedIn() bool            { return true }
+func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error) { return false, nil }
+func (m mockAutoconnectAuthChecker) IsDedicatedIPExpired() (bool, error) {
+	return m.dedicatedIPExpired, nil
 }
 
-func (*mockAutoconnectConfigManager) SaveWith(f config.SaveFunc) error {
-	return nil
-}
-
-func (m *mockAutoconnectConfigManager) Load(c *config.Config) error {
-	c.AutoConnect = m.c.AutoConnect
-	c.AutoConnectData = m.c.AutoConnectData
-	return nil
-}
-
-func (*mockAutoconnectConfigManager) Reset() error {
-	return nil
-}
-
-func TestAutoconnectObfuscateInteraction(t *testing.T) {
-	mockAuthChecker := mockAutoconnectAuthChecker{}
-
-	mockConfigManager := mockAutoconnectConfigManager{}
-
-	mockPublisherSubscriber := mockPublisherSubscriber[bool]{}
-	mockEvents := Events{Settings: &SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
-
-	obfuscatedTechnologies := core.Technologies{
-		core.Technology{
-			ID:    core.OpenVPNTCPObfuscated,
-			Pivot: core.Pivot{Status: core.Online},
-		},
-		core.Technology{
-			ID:    core.OpenVPNUDPObfuscated,
-			Pivot: core.Pivot{Status: core.Online},
-		},
-	}
-	servers := core.Servers{
-		core.Server{Hostname: "lt16.nordvpn.com", Technologies: obfuscatedTechnologies, Status: core.Online},
-		core.Server{Hostname: "lt15.nordvpn.com", Status: core.Online}}
-	dm := DataManager{serversData: ServersData{Servers: servers}}
-
-	r := RPC{cm: &mockConfigManager, ac: mockAuthChecker, events: &mockEvents, dm: &dm}
-
-	request := pb.SetAutoconnectRequest{AutoConnect: true}
+func TestAutoconnect(t *testing.T) {
+	category.Set(t, category.Unit)
 
 	tests := []struct {
-		testName         string
-		server           string
-		obfuscateEnabled bool
-		returnCode       int64
-		eventPublished   bool
+		testName             string
+		server               string
+		config               config.Config
+		isDedicatedIPExpired bool
+		returnCode           int64
+		eventPublished       bool
+		expectedError        error
 	}{
-		{"obfuscate is off", "", false, internal.CodeSuccess, true},
-		{"obfuscate is on unknown server", "lt", true, internal.CodeSuccess, true},
-		{"obfuscate is on server is obfuscated", "lt16", true, internal.CodeSuccess, true},
-		{"obfuscate is on server is not obfuscated", "lt15", true, internal.CodeAutoConnectServerNotObfuscated, false},
-		{"obfuscate is off server is obfuscated", "lt16", false, internal.CodeAutoConnectServerObfuscated, false},
-		{"obfuscate is off server is not obfuscated", "lt15", false, internal.CodeSuccess, true},
+		{
+			testName:       "autoconnect works for OpenVPN, obfuscate = off",
+			server:         "",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "autoconnect works for OpenVPN, obfuscate = on",
+			server:         "",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "autoconnect works for NordLynx",
+			server:         "",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works for country code using Nordlynx",
+			server:         "de",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "autoconnect works for country code using OpenVPN and obfuscate = off",
+			server:         "de",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "autoconnect works for country code using OpenVPN and obfuscate = on",
+			server:         "de",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works for country name using Nordlynx",
+			server:         "germany",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works for city name using Nordlynx",
+			server:         "berlin",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works for country and city name using Nordlynx",
+			server:         "germany berlin",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works for group name using Nordlynx",
+			server:         "double_vpn",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works for server name using Nordlynx",
+			server:         "fr1",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works for server name using OpenVPN, obfuscate = off",
+			server:         "fr1",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works for server name using OpenVPN, obfuscate = on",
+			server:         "lt17",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "fails for invalid name server name using Nordlynx",
+			server:         "invalid_name",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			eventPublished: false,
+			expectedError:  internal.ErrTagDoesNotExist,
+		},
+		{
+			testName:       "fails when connecting to obfuscated OpenVPN server using OpenVPN and obfuscate = off",
+			server:         "lt17",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeAutoConnectServerObfuscated,
+			eventPublished: false,
+		},
+		{
+			testName:       "fails when connecting to regular OpenVPN server using OpenVPN and obfuscate = on",
+			server:         "lt15",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			returnCode:     internal.CodeAutoConnectServerNotObfuscated,
+			eventPublished: false,
+		},
+		{
+			testName:             "fails to connect dedicated IP when subscription expired",
+			server:               "dedicated_ip",
+			config:               config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			isDedicatedIPExpired: true,
+			returnCode:           internal.CodeDedicatedIPRenewError,
+			eventPublished:       false,
+		},
 	}
 
 	for _, test := range tests {
+		mockAuthChecker := mockAutoconnectAuthChecker{dedicatedIPExpired: test.isDedicatedIPExpired}
+		mockConfigManager := newMockConfigManager()
+		mockPublisherSubscriber := mockPublisherSubscriber[bool]{}
+		mockEvents := Events{Settings: &SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
+		dm := DataManager{serversData: ServersData{Servers: serversList()}}
+		r := RPC{cm: mockConfigManager, ac: mockAuthChecker, events: &mockEvents, dm: &dm, serversAPI: &mockServersAPI{}}
+		request := pb.SetAutoconnectRequest{AutoConnect: true}
+
 		request.ServerTag = test.server
-		mockConfigManager.c.AutoConnectData.Obfuscate = test.obfuscateEnabled
+		mockConfigManager.c = test.config
 
 		t.Run(test.testName, func(t *testing.T) {
 			resp, err := r.SetAutoConnect(context.Background(), &request)
 
-			assert.NoError(t, err)
-			assert.Equal(t, &pb.Payload{
-				Type: test.returnCode,
-			}, resp)
+			assert.Equal(t, test.expectedError, err)
+			if err == nil {
+				assert.Equal(t, test.returnCode, resp.Type)
+			}
 			assert.Equal(t, test.eventPublished, mockPublisherSubscriber.eventPublished)
-			mockPublisherSubscriber.eventPublished = false
 		})
 	}
 }

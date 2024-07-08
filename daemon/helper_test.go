@@ -248,7 +248,7 @@ func serversList() core.Servers {
 
 	technologies := core.Technologies{
 		core.Technology{
-			ID:    core.OpenVPNUDP,
+			ID:    core.OpenVPNTCP,
 			Pivot: core.Pivot{Status: core.Online},
 		},
 		core.Technology{
@@ -305,7 +305,7 @@ func serversList() core.Servers {
 			Groups: groups,
 		},
 		core.Server{
-			ID:           3,
+			ID:           2,
 			Name:         "Germany #3",
 			Hostname:     "de3.nordvpn.com",
 			Status:       core.Online,
@@ -322,7 +322,7 @@ func serversList() core.Servers {
 			Specifications: virtualServer,
 		},
 		core.Server{
-			ID:       2,
+			ID:       3,
 			Hostname: "lt16.nordvpn.com",
 			Technologies: core.Technologies{
 				core.Technology{
@@ -343,7 +343,7 @@ func serversList() core.Servers {
 			Groups:         groups,
 		},
 		core.Server{
-			ID:           3,
+			ID:           4,
 			Hostname:     "lt15.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
@@ -359,7 +359,22 @@ func serversList() core.Servers {
 			Groups:         groups,
 		},
 		core.Server{
-			ID:           929912,
+			ID:           5,
+			Hostname:     "lt17.nordvpn.com",
+			Status:       core.Online,
+			Technologies: obfuscatedTechnologies,
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Lithuania",
+						Code: "LT",
+						City: core.City{Name: "Vilnius"},
+					},
+				},
+			},
+			Groups: groups,
+		},
+		core.Server{
+			ID:           6,
 			Name:         "Canada #944",
 			Hostname:     "ca944.nordvpn.com",
 			Status:       core.Offline,
