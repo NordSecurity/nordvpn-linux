@@ -54,7 +54,7 @@ func (s *norduserState) changeState(newState norduserState,
 		(newState == loginGUI || newState == loginText) { // user logged in, start norduserd
 		userIDs, err := userIDGetter.getUserID(username)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "getting user IDs when enabling norduser: ", err)
+			log.Println(internal.ErrorPrefix, "getting user IDs when enabling norduser:", err)
 			return
 		}
 
@@ -72,7 +72,7 @@ func (s *norduserState) changeState(newState norduserState,
 		newState == notActive { // user logged out when norduser was running, stop norduserd
 		userIDs, err := userIDGetter.getUserID(username)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "getting user IDs when disabling norduser: ", err)
+			log.Println(internal.ErrorPrefix, "getting user IDs when disabling norduser:", err)
 			return
 		}
 
@@ -86,12 +86,12 @@ func (s *norduserState) changeState(newState norduserState,
 		// to restart norduserd in order to re-enable tray when user logs back in to GUI
 		userIDs, err := userIDGetter.getUserID(username)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "getting user IDs when restarting norduser: ", err)
+			log.Println(internal.ErrorPrefix, "getting user IDs when restarting norduser:", err)
 			return
 		}
 
 		if err := norduserSrevice.Restart(userIDs.uid); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to restart norduserd: ", err)
+			log.Println(internal.ErrorPrefix, "failed to restart norduserd:", err)
 			return
 		}
 
@@ -224,14 +224,14 @@ func (n *NorduserProcessMonitor) Start() error {
 				// the file instead of modifications.
 				if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 					if newGroupMembers, err := n.handleGroupFileUpdate(currentGrupMembers); err != nil {
-						log.Println(internal.ErrorPrefix, "failed to handle change of groupfile: ", err)
+						log.Println(internal.ErrorPrefix, "failed to handle change of groupfile:", err)
 					} else {
 						currentGrupMembers = newGroupMembers
 					}
 				}
 			} else if event.Name == utmpFilePath {
 				if newGroupMembers, err := n.handleUTMPFileUpdate(currentGrupMembers); err != nil {
-					log.Println(internal.ErrorPrefix, "failed to handle change of utmp file: ", err)
+					log.Println(internal.ErrorPrefix, "failed to handle change of utmp file:", err)
 				} else {
 					currentGrupMembers = newGroupMembers
 				}
@@ -240,7 +240,7 @@ func (n *NorduserProcessMonitor) Start() error {
 			if !ok {
 				return fmt.Errorf("groupfile monitor error channel closed")
 			}
-			log.Println(internal.ErrorPrefix, "group monitor error: ", err)
+			log.Println(internal.ErrorPrefix, "group monitor error:", err)
 		}
 	}
 }

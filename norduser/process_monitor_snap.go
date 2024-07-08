@@ -20,14 +20,14 @@ func (n *NorduserProcessMonitor) stopForDeletedGroupMembers(currentGroupMembers 
 
 		userIDs, err := n.userIDGetter.getUserID(username)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "getting users ID: ", err)
+			log.Println(internal.ErrorPrefix, "getting users ID:", err)
 			groupMembersUpdate = append(groupMembersUpdate, username)
 			continue
 		}
 
 		if err := n.norduserd.Stop(userIDs.uid, false); err != nil {
 			groupMembersUpdate = append(groupMembersUpdate, username)
-			log.Println(internal.ErrorPrefix, "stopping norduser: ", err)
+			log.Println(internal.ErrorPrefix, "stopping norduser:", err)
 		}
 	}
 
@@ -62,7 +62,7 @@ func (n *NorduserProcessMonitor) StartSnap() error {
 				if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
 					newGroupMembers, err := getNordVPNGroupMembers()
 					if err != nil {
-						log.Println(internal.ErrorPrefix, "getting new group members: ", err)
+						log.Println(internal.ErrorPrefix, "getting new group members:", err)
 					} else {
 						groupMembers = n.stopForDeletedGroupMembers(groupMembers, newGroupMembers)
 					}
@@ -72,7 +72,7 @@ func (n *NorduserProcessMonitor) StartSnap() error {
 			if !ok {
 				return fmt.Errorf("groupfile monitor error channel closed")
 			}
-			log.Println(internal.ErrorPrefix, "group monitor error: ", err)
+			log.Println(internal.ErrorPrefix, "group monitor error:", err)
 		}
 	}
 }
