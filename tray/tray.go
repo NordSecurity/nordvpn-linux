@@ -85,7 +85,22 @@ type trayState struct {
 	vpnHostname         string
 	vpnCity             string
 	vpnCountry          string
+	vpnVirtualLocation  bool
 	mu                  sync.RWMutex
+}
+
+// Not thread safe. Lock mu before using
+func (state *trayState) serverName() string {
+	vpnServerName := state.vpnName
+	if vpnServerName == "" {
+		vpnServerName = state.vpnHostname
+	}
+	if vpnServerName != "" {
+		if state.vpnVirtualLocation {
+			vpnServerName += " - Virtual"
+		}
+	}
+	return vpnServerName
 }
 
 func NewTrayInstance(client pb.DaemonClient, fileshareClient filesharepb.FileshareClient, quitChan chan<- norduser.StopRequest) *Instance {

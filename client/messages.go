@@ -9,7 +9,7 @@ const (
 	TokenInvalid       = "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support."
 
 	AccountTokenRenewError = "We were not able to fetch your account data. Please check your internet connection and try again. If the issue persists, please contact our customer support."
-	ConnectStart           = "Connecting to %v (%v)"
+	ConnectStart           = "Connecting to %v (%v)%v"
 	ConnectTimeoutError    = "It's not you, it's us. We're having trouble reaching our servers. If the issue persists, please contact our customer support."
 	ConnectCantConnect     = "The VPN connection has failed. Please check your internet connection and try connecting to the VPN again. If the issue persists, contact our customer support."
 	ConnectConnected       = "You are already connected to NordVPN."

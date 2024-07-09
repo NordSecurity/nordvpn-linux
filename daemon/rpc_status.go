@@ -38,16 +38,17 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 	}
 
 	return &pb.StatusResponse{
-		State:      string(status.State),
-		Technology: status.Technology,
-		Protocol:   status.Protocol,
-		Ip:         status.IP.String(),
-		Hostname:   status.Hostname,
-		Name:       status.Name,
-		Country:    status.Country,
-		City:       status.City,
-		Download:   status.Download,
-		Upload:     status.Upload,
-		Uptime:     uptime,
+		State:           string(status.State),
+		Technology:      status.Technology,
+		Protocol:        status.Protocol,
+		Ip:              status.IP.String(),
+		Hostname:        status.Hostname,
+		Name:            status.Name,
+		Country:         status.Country,
+		City:            status.City,
+		Download:        status.Download,
+		Upload:          status.Upload,
+		Uptime:          uptime,
+		VirtualLocation: status.VirtualLocation,
 	}, nil
 }

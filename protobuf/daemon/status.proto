@@ -19,4 +19,5 @@ message StatusResponse {
   uint64 upload = 9;
   int64 uptime = 10;
   string name = 11;
+  bool virtualLocation = 12;
 }

@@ -1,7 +1,7 @@
 package internal
 
 const (
-	ConnectSuccess    = "You are connected to %s (%s)!"
+	ConnectSuccess    = "You are connected to %s (%s)%s!"
 	ReconnectSuccess  = "You have been reconnected to %s (%s)"
 	DisconnectSuccess = "You are disconnected from NordVPN."
 
