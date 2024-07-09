@@ -185,7 +185,7 @@ func getWatcher(pathsToMonitor ...string) (watcher *fsnotify.Watcher, err error)
 	}
 
 	defer func() {
-		if err != nil {
+		if err != nil && watcher != nil {
 			watcher.Close()
 		}
 	}()
