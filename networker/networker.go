@@ -76,6 +76,8 @@ type ConnectionStatus struct {
 	Upload uint64
 	// Uptime since the connection start
 	Uptime *time.Duration
+	// Is virtual server
+	VirtualLocation bool
 }
 
 // Networker configures networking for connections.
@@ -545,17 +547,18 @@ func (netw *Combined) ConnectionStatus() (ConnectionStatus, error) {
 	}
 
 	return ConnectionStatus{
-		State:      vpn.ConnectedState,
-		Technology: tech,
-		Protocol:   netw.lastServer.Protocol,
-		IP:         netw.lastServer.IP,
-		Name:       netw.lastServer.Name,
-		Hostname:   netw.lastServer.Hostname,
-		Country:    netw.lastServer.Country,
-		City:       netw.lastServer.City,
-		Download:   stats.Rx,
-		Upload:     stats.Tx,
-		Uptime:     uptime,
+		State:           vpn.ConnectedState,
+		Technology:      tech,
+		Protocol:        netw.lastServer.Protocol,
+		IP:              netw.lastServer.IP,
+		Name:            netw.lastServer.Name,
+		Hostname:        netw.lastServer.Hostname,
+		Country:         netw.lastServer.Country,
+		City:            netw.lastServer.City,
+		Download:        stats.Rx,
+		Upload:          stats.Tx,
+		Uptime:          uptime,
+		VirtualLocation: netw.lastServer.VirtualLocation,
 	}, nil
 }
 

@@ -30,7 +30,11 @@ func Status(resp *pb.StatusResponse) string {
 	b.WriteString(fmt.Sprintf("Status: %s\n", resp.State))
 
 	if resp.Name != "" {
-		b.WriteString(fmt.Sprintf("Server: %s\n", resp.Name))
+		serverName := resp.Name
+		if resp.VirtualLocation {
+			serverName += " - Virtual"
+		}
+		b.WriteString(fmt.Sprintf("Server: %s\n", serverName))
 	}
 
 	if resp.Hostname != "" {

@@ -50,7 +50,7 @@ func (ti *Instance) updateLoginStatus() bool {
 
 	if !loggedIn && ti.state.loggedIn && ti.state.vpnStatus == ConnectedString {
 		// reset the VPN info if the user logs out while connected to VPN
-		ti.setVpnStatus("Disconnected", "", "", "", "")
+		ti.setVpnStatus("Disconnected", "", "", "", "", false)
 	}
 
 	ti.state.mu.Lock()
@@ -95,7 +95,7 @@ func (ti *Instance) updateVpnStatus() bool {
 		changed = ti.updateSettings() || changed
 	}
 
-	return ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry) || changed
+	return ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation) || changed
 }
 
 func (ti *Instance) updateSettings() bool {
@@ -351,21 +351,33 @@ func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 	return changed
 }
 
-func (ti *Instance) setVpnStatus(vpnStatus string, vpnName string, vpnHostname string, vpnCity string, vpnCountry string) bool {
+func (ti *Instance) setVpnStatus(
+	vpnStatus string,
+	vpnName string,
+	vpnHostname string,
+	vpnCity string,
+	vpnCountry string,
+	virtualLocation bool,
+) bool {
 	changed := false
 	ti.state.mu.Lock()
+
+	notifyConnected := func() {
+		// use this helper function to ensure that the connected notification is displaying the latest info from ti.state on defer
+		ti.notify("Connected to %s", ti.state.serverName())
+	}
 
 	if ti.state.vpnStatus != vpnStatus {
 		if vpnStatus == ConnectedString {
 			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconConnected)
 			}
-			defer ti.notify("Connected to %s", vpnName)
+			defer notifyConnected()
 		} else {
 			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconDisconnected)
 			}
-			defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.vpnName))
+			defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.serverName()))
 		}
 		ti.state.vpnStatus = vpnStatus
 		changed = true
@@ -373,7 +385,7 @@ func (ti *Instance) setVpnStatus(vpnStatus string, vpnName string, vpnHostname s
 
 	if ti.state.vpnHostname != vpnHostname {
 		if ti.state.vpnHostname != "" && vpnHostname != "" {
-			defer ti.notify("Connected to %s", vpnName)
+			defer notifyConnected()
 		}
 		ti.state.vpnHostname = vpnHostname
 		changed = true
@@ -382,6 +394,7 @@ func (ti *Instance) setVpnStatus(vpnStatus string, vpnName string, vpnHostname s
 	ti.state.vpnName = vpnName
 	ti.state.vpnCity = vpnCity
 	ti.state.vpnCountry = vpnCountry
+	ti.state.vpnVirtualLocation = virtualLocation
 
 	ti.state.mu.Unlock()
 	return changed

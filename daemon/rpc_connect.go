@@ -173,6 +173,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		NordLynxPublicKey: server.NordLynxPublicKey,
 		Obfuscated:        cfg.AutoConnectData.Obfuscate,
 		OpenVPNVersion:    server.Version(),
+		VirtualLocation:   server.IsVirtualLocation(),
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
@@ -215,7 +216,12 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		r.netw,
 	)
 
-	data := []string{r.lastServer.Name, r.lastServer.Hostname}
+	virtualServer := ""
+	if server.IsVirtualLocation() {
+		virtualServer = " - Virtual"
+	}
+	data := []string{r.lastServer.Name, r.lastServer.Hostname, virtualServer}
+
 	for ev := range eventCh {
 		switch ev.Code {
 		case internal.CodeConnected:
