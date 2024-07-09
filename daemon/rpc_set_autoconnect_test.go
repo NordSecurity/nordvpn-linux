@@ -42,7 +42,7 @@ func TestAutoconnectObfuscateInteraction(t *testing.T) {
 
 	mockConfigManager := mockAutoconnectConfigManager{}
 
-	mockPublisherSubscriber := mockPublisherSubcriber{}
+	mockPublisherSubscriber := mockPublisherSubscriber[bool]{}
 	mockEvents := Events{Settings: &SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
 
 	obfuscatedTechnologies := core.Technologies{

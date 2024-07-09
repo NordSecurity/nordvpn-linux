@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
 func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest) (*pb.SetLANDiscoveryResponse, error) {
@@ -68,6 +69,16 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 			Response: &pb.SetLANDiscoveryResponse_ErrorCode{
 				ErrorCode: pb.SetErrorCode_CONFIG_ERROR,
 			}}, nil
+	}
+
+	r.events.Settings.LANDiscovery.Publish(in.GetEnabled())
+	if in.GetEnabled() {
+		// when LAN discovery is enabled notify that allow list changed
+		r.events.Settings.Allowlist.Publish(events.DataAllowlist{
+			TCPPorts: cfg.AutoConnectData.Allowlist.Ports.TCP.ToSlice(),
+			UDPPorts: cfg.AutoConnectData.Allowlist.Ports.UDP.ToSlice(),
+			Subnets:  subnets.ToSlice(),
+		})
 	}
 
 	return &pb.SetLANDiscoveryResponse{
