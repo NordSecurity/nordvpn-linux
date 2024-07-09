@@ -294,6 +294,8 @@ func serversList() core.Servers {
 			Hostname:     "fr1.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
 					Country: core.Country{Name: "France",
@@ -310,6 +312,8 @@ func serversList() core.Servers {
 			Hostname:     "de3.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
 					Country: core.Country{Name: "Germany",
@@ -322,8 +326,10 @@ func serversList() core.Servers {
 			Specifications: virtualServer,
 		},
 		core.Server{
-			ID:       3,
-			Hostname: "lt16.nordvpn.com",
+			ID:        3,
+			Hostname:  "lt16.nordvpn.com",
+			CreatedAt: "2006-01-02 15:04:05",
+			Station:   "127.0.0.1",
 			Technologies: core.Technologies{
 				core.Technology{
 					ID:    core.WireguardTech,
@@ -347,6 +353,8 @@ func serversList() core.Servers {
 			Hostname:     "lt15.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
 					Country: core.Country{Name: "Lithuania",
@@ -363,6 +371,8 @@ func serversList() core.Servers {
 			Hostname:     "lt17.nordvpn.com",
 			Status:       core.Online,
 			Technologies: obfuscatedTechnologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
 					Country: core.Country{Name: "Lithuania",
@@ -379,6 +389,8 @@ func serversList() core.Servers {
 			Hostname:     "ca944.nordvpn.com",
 			Status:       core.Offline,
 			Technologies: obfuscatedTechnologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
 					Country: core.Country{Name: "Canada",
