@@ -50,9 +50,16 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	// generate server tag from given args
 	var serverTag string
 	if args.Len() > 1 {
-		serverTag = strings.Join(args.Slice()[1:], "")
-		serverTag = strings.Trim(serverTag, " ")
-		serverTag = strings.ToLower(serverTag)
+		groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+		if hasGroupFlag {
+			if groupName == "" {
+				return formatError(argsCountError(ctx))
+			}
+			serverTag = groupName
+		} else {
+			serverTag = strings.Join(args.Slice()[1:], " ")
+			serverTag = strings.ToLower(serverTag)
+		}
 	}
 
 	settings, err := c.getSettings()
@@ -114,6 +121,12 @@ func (c *cmd) SetAutoConnectAutoComplete(ctx *cli.Context) {
 			}
 
 			groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+
+			if !hasGroupFlag && strings.HasPrefix(args.Get(args.Len()-1), "-") {
+				// if the group flag is not set, but the last argument starts with "-" then give as suggestions --group
+				fmt.Println("--" + flagGroup)
+				return
+			}
 			c.printServersForAutoComplete(args.Get(1), hasGroupFlag, groupName)
 		}
 	}

@@ -22,54 +22,19 @@ import (
 type mockServersAPI struct{}
 
 func (mockServersAPI) Servers() (core.Servers, http.Header, error) {
-	return core.Servers{
-		{
-			Name:      "fake",
-			Status:    core.Online,
-			Station:   "127.0.0.1",
-			CreatedAt: "2006-01-02 15:04:05",
-			Locations: core.Locations{
-				{
-					Country: core.Country{Name: "Italy"},
-				},
-			},
-			Technologies: core.Technologies{
-				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
-				{ID: core.OpenVPNUDPObfuscated, Pivot: core.Pivot{Status: core.Online}},
-				{ID: core.OpenVPNTCPObfuscated, Pivot: core.Pivot{Status: core.Online}},
-			},
-			IPRecords: []core.ServerIPRecord{
-				{
-					ServerIP: core.ServerIP{IP: "127.0.0.1", Version: 4},
-					Type:     "some type",
-				},
-			},
-		},
-		{
-			Name:      "rake",
-			Status:    core.Online,
-			Station:   "127.0.0.1",
-			CreatedAt: "2006-01-02 15:04:05",
-			Locations: core.Locations{
-				{
-					Country: core.Country{Name: "Romania"},
-				},
-			},
-			Technologies: core.Technologies{
-				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
-				{ID: core.OpenVPNUDP, Pivot: core.Pivot{Status: core.Online}},
-			},
-			IPRecords: []core.ServerIPRecord{
-				{
-					ServerIP: core.ServerIP{IP: "127.0.0.1", Version: 4},
-					Type:     "some type",
-				},
-			},
-		},
-	}, nil, nil
+	return serversList(), nil, nil
 }
 
 func (mockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _ float64) (core.Servers, http.Header, error) {
+	var servers core.Servers
+	for _, server := range serversList() {
+		if server.Status != core.Online || isDedicatedIP(server) {
+			continue
+		}
+
+		servers = append(servers, server)
+	}
+
 	if filter.Group == config.DedicatedIP {
 		return core.Servers{{
 			Name:      "dedicated-ip",
@@ -94,59 +59,21 @@ func (mockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _
 			Groups: core.Groups{core.Group{ID: config.DedicatedIP, Title: "DedicatedIP"}},
 		}}, nil, nil
 	}
-	return core.Servers{
-		{
-			Name:      "fake",
-			Status:    core.Online,
-			Station:   "127.0.0.1",
-			CreatedAt: "2006-01-02 15:04:05",
-			Locations: core.Locations{
-				{
-					Country: core.Country{Name: "Italy"},
-				},
-			},
-			Technologies: core.Technologies{
-				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
-				{ID: core.OpenVPNUDPObfuscated, Pivot: core.Pivot{Status: core.Online}},
-				{ID: core.OpenVPNTCPObfuscated, Pivot: core.Pivot{Status: core.Online}},
-			},
-			IPRecords: []core.ServerIPRecord{
-				{
-					ServerIP: core.ServerIP{IP: "127.0.0.1", Version: 4},
-					Type:     "some type",
-				},
-			},
-		},
-		{
-			Name:      "rake",
-			Status:    core.Online,
-			Station:   "127.0.0.1",
-			CreatedAt: "2006-01-02 15:04:05",
-			Locations: core.Locations{
-				{
-					Country: core.Country{Name: "Romania"},
-				},
-			},
-			Technologies: core.Technologies{
-				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
-				{ID: core.OpenVPNUDP, Pivot: core.Pivot{Status: core.Online}},
-			},
-			IPRecords: []core.ServerIPRecord{
-				{
-					ServerIP: core.ServerIP{IP: "127.0.0.1", Version: 4},
-					Type:     "some type",
-				},
-			},
-		},
-	}, nil, nil
+	return servers, nil, nil
 }
 
-func (mockServersAPI) Server(int64) (*core.Server, error) {
-	return nil, nil
+func (mockServersAPI) Server(serverID int64) (*core.Server, error) {
+	for _, server := range serversList() {
+		if server.ID == serverID {
+			return &server, nil
+		}
+	}
+
+	return nil, fmt.Errorf("not found")
 }
 
 func (mockServersAPI) ServersCountries() (core.Countries, http.Header, error) {
-	return nil, nil, nil
+	return countriesList(), nil, nil
 }
 
 func (mockServersAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {

@@ -1203,20 +1203,40 @@ func getFlagValue(name string, ctx *cli.Context) (value string, found bool) {
 		return ctx.String(name), true
 	}
 
+	names := []string{name}
 	for _, flag := range ctx.Command.Flags {
 		if slices.Index(flag.Names(), name) == -1 {
 			continue
 		}
 
-		for _, s := range flag.Names() {
-			for _, v := range os.Args {
-				if v == "-"+s || v == "--"+s {
-					// flag exists into the command line arguments, but without value
-					return "", true
+		names = flag.Names()
+		break
+	}
+
+	searchFn := func(args []string, argName string) (string, bool) {
+		for index, v := range args {
+			if v == "-"+argName || v == "--"+argName {
+				if index <= len(os.Args)-1 && os.Args[index+1][0] != '-' {
+					// if there is another argument after
+					return os.Args[index+1], true
 				}
+				return "", true
 			}
 		}
-		break
+		return "", false
+	}
+
+	for _, name := range names {
+		value, found := searchFn(os.Args, name)
+		if found {
+			return value, found
+		}
+
+		// this is normally used for tests where ctx has the test arguments instead of os.Args
+		value, found = searchFn(ctx.Args().Slice(), name)
+		if found {
+			return value, found
+		}
 	}
 
 	return "", false
