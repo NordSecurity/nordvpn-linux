@@ -1,18 +1,57 @@
 package service
 
-type MockNorduserCombinedService struct {
-	Enabled   []uint32
-	EnableErr error
+import "slices"
 
-	Disabled    []uint32
-	DeisableErr error
+type Action int
+
+const (
+	Enable Action = iota
+	Stop
+	Restart
+)
+
+// ActionToUIDs maps particular action to UIDs for which this action was executed
+type ActionToUIDs map[Action][]uint32
+
+type MockNorduserCombinedService struct {
+	ActionToUIDs ActionToUIDs
+
+	EnableErr  error
+	StopErr    error
+	RestartErr error
 }
 
 func NewMockNorduserCombinedService() MockNorduserCombinedService {
+	actionToUIDs := make(ActionToUIDs)
+	actionToUIDs[Enable] = []uint32{}
+	actionToUIDs[Stop] = []uint32{}
+	actionToUIDs[Restart] = []uint32{}
+
 	return MockNorduserCombinedService{
-		Enabled:  []uint32{},
-		Disabled: []uint32{},
+		ActionToUIDs: actionToUIDs,
 	}
+}
+
+// CheckNoAction is a helper method for test callers, it returns true if no action was taken by the mock in its
+// lifetime. Actions provided in the optional filters parameter will be ingored when checking.
+func (m *MockNorduserCombinedService) CheckNoAction(filters ...Action) bool {
+	for action, actionUIDs := range m.ActionToUIDs {
+		if slices.Contains(filters, action) {
+			continue
+		}
+
+		if len(actionUIDs) > 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (m *MockNorduserCombinedService) addUIDToActon(uid uint32, action Action) {
+	uids := m.ActionToUIDs[action]
+	uids = append(uids, uid)
+	m.ActionToUIDs[action] = uids
 }
 
 func (m *MockNorduserCombinedService) Enable(uid uint32, _ uint32, _ string) error {
@@ -20,23 +59,31 @@ func (m *MockNorduserCombinedService) Enable(uid uint32, _ uint32, _ string) err
 		return m.EnableErr
 	}
 
-	m.Enabled = append(m.Enabled, uid)
+	m.addUIDToActon(uid, Enable)
 	return nil
 }
 
-func (m *MockNorduserCombinedService) Disable(uid uint32) error {
-	if m.DeisableErr != nil {
-		return m.DeisableErr
+func (m *MockNorduserCombinedService) Disable(uid uint32) error { return nil }
+
+func (m *MockNorduserCombinedService) Stop(uid uint32, wait bool) error {
+	if m.StopErr != nil {
+		return m.StopErr
 	}
 
-	m.Disabled = append(m.Disabled, uid)
+	m.addUIDToActon(uid, Stop)
 
 	return nil
 }
 
-func (m *MockNorduserCombinedService) Stop(uint32, bool) error { return nil }
+func (m *MockNorduserCombinedService) Restart(uid uint32) error {
+	if m.RestartErr != nil {
+		return m.RestartErr
+	}
 
-func (m *MockNorduserCombinedService) Restart(uint32) error { return nil }
+	m.addUIDToActon(uid, Restart)
+
+	return nil
+}
 
 func (m *MockNorduserCombinedService) StopAll() {}
 
