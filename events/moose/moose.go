@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -244,6 +245,22 @@ func (s *Subscriber) NotifyRate(data events.ServerRating) error {
 
 func (s *Subscriber) NotifyHeartBeat(timePeriodMinutes int) error {
 	return s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(timePeriodMinutes)))
+}
+
+func (s *Subscriber) NotifyDeviceLocation(insights core.Insights) error {
+	if err := s.response(moose.NordvpnappSetContextDeviceLocationCity(insights.City)); err != nil {
+		return fmt.Errorf("setting moose device location city: %w", err)
+	}
+	if err := s.response(moose.NordvpnappSetContextDeviceLocationCountry(insights.Country)); err != nil {
+		return fmt.Errorf("setting moose device location country: %w", err)
+	}
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIspValue(insights.Isp)); err != nil {
+		return fmt.Errorf("setting moose ISP value: %w", err)
+	}
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIspAsnValue(strconv.Itoa(insights.IspAsn))); err != nil {
+		return fmt.Errorf("setting moose ISP ASN value: %w", err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyNotify(bool) error { return nil }

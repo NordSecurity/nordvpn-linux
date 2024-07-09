@@ -38,6 +38,7 @@ func TestNewDaemonSubjects(t *testing.T) {
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.ServerRating]{},
 		&subs.Subject[int]{},
+		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
 	))
@@ -68,6 +69,7 @@ func TestDaemonSubjectsSubscribe(t *testing.T) {
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.ServerRating]{},
 		&subs.Subject[int]{},
+		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
 	)
@@ -98,6 +100,7 @@ func (mockDaemonSubscriber) NotifyDefaults(any) error                       { re
 func (mockDaemonSubscriber) NotifyMeshnet(bool) error                       { return nil }
 func (mockDaemonSubscriber) NotifyRate(events.ServerRating) error           { return nil }
 func (mockDaemonSubscriber) NotifyHeartBeat(int) error                      { return nil }
+func (mockDaemonSubscriber) NotifyDeviceLocation(core.Insights) error       { return nil }
 func (mockDaemonSubscriber) NotifyLANDiscovery(bool) error                  { return nil }
 func (mockDaemonSubscriber) NotifyVirtualLocation(bool) error               { return nil }
 

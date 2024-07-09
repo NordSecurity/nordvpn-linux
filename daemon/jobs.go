@@ -13,13 +13,15 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
+	"github.com/NordSecurity/nordvpn-linux/state"
 
 	"google.golang.org/grpc/metadata"
 )
 
-func (r *RPC) StartJobs() {
+func (r *RPC) StartJobs(statePublisher *state.StatePublisher) {
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
 	// TODO what if configs file is deleted just before servers job or disk is full?
@@ -27,7 +29,8 @@ func (r *RPC) StartJobs() {
 		log.Println(internal.WarningPrefix, "job countries schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(30*time.Minute), gocron.NewTask(JobInsights(r.dm, r.api, r.netw, false)), gocron.WithName("job insights")); err != nil {
+	jobInsights, err := r.scheduler.NewJob(gocron.DurationJob(30*time.Minute), gocron.NewTask(JobInsights(r.dm, r.api, r.netw, r.events, false)), gocron.WithName("job insights"))
+	if err != nil {
 		log.Println(internal.WarningPrefix, "job insights schedule error:", err)
 	}
 
@@ -59,6 +62,27 @@ func (r *RPC) StartJobs() {
 			log.Println(internal.WarningPrefix, job.Name(), "first run error:", err)
 		}
 	}
+
+	go func() {
+		stateChan, _ := statePublisher.AddSubscriber()
+		for ev := range stateChan {
+			switch ev.(type) {
+			case events.DataConnect:
+			case events.DataDisconnect:
+				last, err := jobInsights.LastRun()
+				if err != nil {
+					log.Println(internal.WarningPrefix, jobInsights.Name(), "getting last run time error:", err)
+				}
+				if time.Since(last).Minutes() > 1 {
+					err = jobInsights.RunNow()
+					if err != nil {
+						log.Println(internal.WarningPrefix, jobInsights.Name(), "after event run error:", err)
+					}
+				}
+			default:
+			}
+		}
+	}()
 }
 
 func (r *RPC) StartKillSwitch() {

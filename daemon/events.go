@@ -33,6 +33,7 @@ func NewEvents(
 	accountCheck events.PublishSubcriber[core.ServicesResponse],
 	rate events.PublishSubcriber[events.ServerRating],
 	heartBeat events.PublishSubcriber[int],
+	deviceLocation events.PublishSubcriber[core.Insights],
 	lanDiscovery events.PublishSubcriber[bool],
 	virtualLocation events.PublishSubcriber[bool],
 ) *Events {
@@ -56,12 +57,13 @@ func NewEvents(
 			VirtualLocation:      virtualLocation,
 		},
 		Service: &ServiceEvents{
-			Connect:      connect,
-			Disconnect:   disconnect,
-			Login:        login,
-			AccountCheck: accountCheck,
-			Rate:         rate,
-			HeartBeat:    heartBeat,
+			Connect:        connect,
+			Disconnect:     disconnect,
+			Login:          login,
+			AccountCheck:   accountCheck,
+			Rate:           rate,
+			HeartBeat:      heartBeat,
+			DeviceLocation: deviceLocation,
 		},
 	}
 }
@@ -140,15 +142,17 @@ type ServicePublisher interface {
 	NotifyAccountCheck(core.ServicesResponse) error
 	NotifyRate(events.ServerRating) error
 	NotifyHeartBeat(int) error
+	NotifyDeviceLocation(core.Insights) error
 }
 
 type ServiceEvents struct {
-	Connect      events.PublishSubcriber[events.DataConnect]
-	Disconnect   events.PublishSubcriber[events.DataDisconnect]
-	Login        events.PublishSubcriber[any]
-	AccountCheck events.PublishSubcriber[core.ServicesResponse]
-	Rate         events.PublishSubcriber[events.ServerRating]
-	HeartBeat    events.PublishSubcriber[int]
+	Connect        events.PublishSubcriber[events.DataConnect]
+	Disconnect     events.PublishSubcriber[events.DataDisconnect]
+	Login          events.PublishSubcriber[any]
+	AccountCheck   events.PublishSubcriber[core.ServicesResponse]
+	Rate           events.PublishSubcriber[events.ServerRating]
+	HeartBeat      events.PublishSubcriber[int]
+	DeviceLocation events.PublishSubcriber[core.Insights]
 }
 
 func (s *ServiceEvents) Subscribe(to ServicePublisher) {
@@ -158,6 +162,7 @@ func (s *ServiceEvents) Subscribe(to ServicePublisher) {
 	s.AccountCheck.Subscribe(to.NotifyAccountCheck)
 	s.Rate.Subscribe(to.NotifyRate)
 	s.HeartBeat.Subscribe(to.NotifyHeartBeat)
+	s.DeviceLocation.Subscribe(to.NotifyDeviceLocation)
 }
 
 func (s *SettingsEvents) Publish(cfg config.Config) {
