@@ -163,6 +163,7 @@ func main() {
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.ServerRating]{},
 		&subs.Subject[int]{},
+		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
 	)
@@ -568,7 +569,7 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}()
-	rpc.StartJobs()
+	rpc.StartJobs(&statePublisher)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {

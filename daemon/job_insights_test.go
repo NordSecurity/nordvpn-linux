@@ -83,6 +83,8 @@ func TestJobInsights(t *testing.T) {
 			isDownloader: true,
 			expected: InsightsData{
 				Insights: core.Insights{
+					City:        "None",
+					Country:     "United States",
 					CountryCode: "US",
 					Latitude:    32.77859397576304,
 					Longitude:   -96.80300999652735,
@@ -97,6 +99,7 @@ func TestJobInsights(t *testing.T) {
 				test.dm,
 				workingInsightsAPI{},
 				test.networker,
+				nil,
 				test.isDownloader,
 			)()
 			assert.Equal(t, test.expected, test.dm.GetInsightsData())

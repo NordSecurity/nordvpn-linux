@@ -57,7 +57,7 @@ func main() {
 		0,
 		false,
 	)
-	daemon.JobInsights(dm, api, netw, true)()
+	daemon.JobInsights(dm, api, netw, nil, true)()
 	if err := daemon.JobCountries(dm, api)(); err != nil {
 		log.Fatalln("producing countries cache", err)
 	}

@@ -7,10 +7,11 @@ import (
 	"net/netip"
 	"strings"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
-	"golang.org/x/exp/slices"
 )
 
 // ServerTechnology represents the nordvpn server technology
@@ -463,9 +464,14 @@ type Pivot struct {
 }
 
 type Insights struct {
+	City        string  `json:"city"`
+	Country     string  `json:"country"`
+	Isp         string  `json:"isp"`
+	IspAsn      int     `json:"isp_asn"`
 	CountryCode string  `json:"country_code"`
 	Longitude   float64 `json:"longitude"`
 	Latitude    float64 `json:"latitude"`
+	Protected   bool    `json:"protected"`
 }
 
 type NameServers struct {

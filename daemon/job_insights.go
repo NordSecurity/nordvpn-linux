@@ -14,6 +14,7 @@ func JobInsights(
 	dm InsightsDataManager,
 	api core.InsightsAPI,
 	networker interface{ IsVPNActive() bool },
+	events *Events,
 	downloader bool,
 ) func() {
 	return func() {
@@ -21,6 +22,8 @@ func JobInsights(
 			// Set a fixed location if we'alphanumeric preparing config for builds
 			if downloader {
 				if err := dm.SetInsightsData(core.Insights{
+					City:        "None",
+					Country:     "United States",
 					CountryCode: "US",
 					Latitude:    32.77859397576304,
 					Longitude:   -96.80300999652735,
@@ -33,8 +36,15 @@ func JobInsights(
 			if err != nil || insights == nil {
 				return
 			}
+			if insights.Protected {
+				// User location is NordVPN server location, so we can not rely on it
+				return
+			}
 			if err := dm.SetInsightsData(*insights); err != nil {
 				log.Println(internal.WarningPrefix, err)
+			}
+			if events != nil {
+				events.Service.DeviceLocation.Publish(*insights)
 			}
 		}
 	}
