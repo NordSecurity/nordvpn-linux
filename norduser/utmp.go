@@ -62,6 +62,28 @@ import (
 
 type userData map[string]norduserState
 
+func isUserLoggedIn(username string) (bool, error) {
+	var usersCArray *C.user
+	size := C.get_utmp_user_processes(&usersCArray)
+	if size == C.ERROR_REALLOC {
+		return false, fmt.Errorf("failed to reallocate space for the users table")
+	} else if size == C.ERROR_MALLOC_USERNAME {
+		return false, fmt.Errorf("failed to allocate space for new user in the users table")
+	}
+	defer C.free(unsafe.Pointer(usersCArray))
+
+	for index := 0; index < int(size); index++ {
+		userC := (*C.user)(unsafe.Pointer(uintptr(unsafe.Pointer(usersCArray)) +
+			uintptr(index)*unsafe.Sizeof(*usersCArray)))
+		usernameC := (*C.char)(unsafe.Pointer(&userC.username))
+		if username == C.GoString(usernameC) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // getActiveUsers returns a map of [username]userType where type can be text or gui. If any of the given users login
 // processes will be detected to have a gui(done based on the environment), user type will be gui. Otherwise user type
 // will be text.

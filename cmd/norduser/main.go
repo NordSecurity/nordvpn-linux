@@ -167,6 +167,7 @@ func setupLog() {
 func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	fileshareManagementChan chan<- norduser.FileshareManagementMsg,
 	fileshareShutdownChan <-chan interface{},
+	logoutChan <-chan interface{},
 	grpcServer *grpc.Server,
 	onShutdown func(bool)) {
 	restart := false
@@ -185,6 +186,8 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 		if stopRequest.Restart {
 			restart = true
 		}
+	case <-logoutChan:
+		log.Println(internal.InfoPrefix, "User has logged out")
 	}
 
 	grpcServer.GracefulStop()
@@ -259,6 +262,13 @@ func startSnap() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
+	logoutChan := make(chan interface{})
+	go func() {
+		if err := norduser.WaitForLogout(usr.Username, logoutChan); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to start logout monitor:", err)
+		}
+	}()
+
 	processStatus := process.NewNorduserGRPCProcessManager(uint32(uid)).ProcessStatus()
 	if processStatus == childprocess.Running {
 		os.Exit(int(childprocess.CodeAlreadyRunning))
@@ -297,7 +307,7 @@ func startSnap() {
 
 	log.Println(internal.InfoPrefix, "Daemon has started")
 
-	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, grpcServer,
+	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, logoutChan, grpcServer,
 		func(disable bool) {
 			if !disable {
 				return
@@ -357,7 +367,10 @@ func start() {
 
 	log.Println(internal.InfoPrefix, "Norduser daemon has started")
 
-	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, grpcServer, func(disable bool) {})
+	// logoutChan is not needed in non-snap environment, as startup/shutdown on login/logout is managed by the main daemon
+	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, make(<-chan interface{}),
+		grpcServer,
+		func(disable bool) {})
 }
 
 func main() {
