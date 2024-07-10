@@ -31,12 +31,13 @@ const (
 type Interface string
 
 const (
-	InterfaceNetwork         Interface = "network"
-	InterfaceNetworkBind     Interface = "network-bind"
-	InterfaceNetworkControl  Interface = "network-control"
-	InterfaceFirewallControl Interface = "firewall-control"
-	InterfaceNetworkObserve  Interface = "network-observe"
-	InterfaceHome            Interface = "home"
+	InterfaceNetwork             Interface = "network"
+	InterfaceNetworkBind         Interface = "network-bind"
+	InterfaceNetworkControl      Interface = "network-control"
+	InterfaceFirewallControl     Interface = "firewall-control"
+	InterfaceNetworkObserve      Interface = "network-observe"
+	InterfaceHome                Interface = "home"
+	InterfaceLoginSessionObserve Interface = "login-session-observe"
 )
 
 // IsUnderSnap defines whether the current process is executed under snapd
@@ -65,6 +66,7 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceNetworkObserve,
 			InterfaceFirewallControl,
 			InterfaceHome,
+			InterfaceLoginSessionObserve,
 		},
 		[]Interface{
 			InterfaceNetwork,
@@ -73,6 +75,7 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceNetworkObserve,
 			InterfaceFirewallControl,
 			InterfaceHome,
+			InterfaceLoginSessionObserve,
 		},
 		publisherErr,
 	)
