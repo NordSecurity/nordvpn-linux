@@ -293,7 +293,7 @@ def is_connect_successful(output: str, name: str = "", hostname: str = ""):
     else:
             return (
         f"Connecting to {name} ({hostname})" in output
-        and f"You are connected to {name} ({hostname})!" in output
+        and f"You are connected to {name} ({hostname})" in output
         )
 
 
