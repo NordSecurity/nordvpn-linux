@@ -190,7 +190,6 @@ func main() {
 	errSubject.Subscribe(loggerSubscriber.NotifyError)
 
 	daemonEvents.Settings.Subscribe(logger.NewSubscriber())
-	daemonEvents.Settings.Publish(cfg)
 
 	// try to restore resolv.conf if target file contains Nordvpn changes
 	dns.RestoreResolvConfFile()
@@ -313,6 +312,7 @@ func main() {
 		}
 	}
 	daemonEvents.Subscribe(analytics)
+	daemonEvents.Settings.Publish(cfg)
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem)
 
