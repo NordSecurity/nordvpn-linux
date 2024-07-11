@@ -100,3 +100,8 @@ type meshnet struct {
 func (d *NCData) IsUserIDEmpty() bool {
 	return d.UserID == uuid.Nil
 }
+
+type Services struct {
+	CachedDate time.Time `json:"cached_date,omitempty"`
+	Servers    []int64   `json:"servers,omitempty"`
+}

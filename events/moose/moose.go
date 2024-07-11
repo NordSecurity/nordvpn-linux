@@ -13,6 +13,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os/exec"
@@ -221,6 +222,7 @@ func (s *Subscriber) NotifyRouting(data bool) error {
 }
 
 func (s *Subscriber) NotifyLANDiscovery(data bool) error {
+	log.Println("xxxx", data)
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesLocalNetworkDiscoveryAllowedValue(data))
 }
 

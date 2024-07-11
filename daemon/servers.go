@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -53,6 +54,8 @@ func PickServer(
 	return result[rand.Intn(len(result))], remote, nil
 }
 
+var ErrDedicated = fmt.Errorf("selected dedicated ip")
+
 func getServers(
 	api core.ServersAPI,
 	countries core.Countries,
@@ -74,6 +77,11 @@ func getServers(
 	serverGroup, err := resolveServerGroup(groupFlag, tag)
 	if err != nil {
 		return ret, false, err
+	}
+
+	if serverGroup == config.DedicatedIP {
+		// DIP servers are taken from the user data
+		return nil, false, ErrDedicated
 	}
 
 	isGroupFlagSet := groupFlag != ""
@@ -140,6 +148,10 @@ func getServers(
 	}
 
 	return ret, remote, nil
+}
+
+func getDedicatedIPServer() ([]core.Server, bool, error) {
+	return nil, false, fmt.Errorf("not implemented")
 }
 
 func resolveServerGroup(flag, tag string) (config.ServerGroup, error) {
@@ -401,4 +413,49 @@ func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Pr
 		}
 		return slices.ContainsFunc(s.Groups, core.ByGroup(getGroup()))
 	}
+}
+
+func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
+	index := slices.IndexFunc(servers, func(server core.Server) bool {
+		return server.ID == serverID
+	})
+
+	if index == -1 {
+		return nil, fmt.Errorf("server not found")
+	}
+
+	return &servers[index], nil
+}
+
+func selectDedicatedIPServer(auth auth.Checker, servers core.Servers) (*core.Server, error) {
+	expired, err := auth.IsDedicatedIPExpired()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "checking dedicated IP expiration: ", err)
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+	}
+
+	if expired {
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+	}
+
+	services, err := auth.Services()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "getting user services", err)
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+	}
+
+	if len(services.Servers) == 0 {
+		// TODO: DIP - error message when no server are selected by the user
+		log.Println(internal.ErrorPrefix, "no servers assigned to the account")
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+	}
+
+	serverId := services.Servers[len(services.Servers)]
+	s, err := getServerByID(servers, serverId)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "DIP server not found", err)
+		return nil, internal.ErrServerIsUnavailable
+	}
+
+	return s, nil
 }

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"sync"
 
@@ -179,10 +180,20 @@ func (api *DefaultAPI) Services(token string) (ServicesResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	var ret ServicesResponse
-	if err = json.NewDecoder(resp.Body).Decode(&ret); err != nil {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
+
+	log.Println("xxx response: ", string(body))
+
+	var ret ServicesResponse
+	if err = json.Unmarshal(body, &ret); err != nil {
+		return nil, err
+	}
+
+	log.Println("xxx parsed", ret)
+
 	return ret, nil
 }
 

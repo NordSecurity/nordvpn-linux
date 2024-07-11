@@ -77,10 +77,12 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
+
+	serversList := r.dm.GetServersData().Servers
 	server, remote, err := PickServer(
 		r.serversAPI,
 		r.dm.GetCountryData().Countries,
-		r.dm.GetServersData().Servers,
+		serversList,
 		insights.Longitude,
 		insights.Latitude,
 		cfg.Technology,
@@ -106,6 +108,18 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 			errors.Is(err, internal.ErrVirtualServerSelected):
 			return err
 
+		case errors.Is(err, ErrDedicated):
+			s, err := selectDedicatedIPServer(r.ac, serversList)
+			if err != nil {
+				var errorCode internal.ErrorWithCode
+				if errors.As(err, &errorCode) {
+					return srv.Send(&pb.Payload{Type: errorCode.Code})
+				}
+
+				return err
+			}
+			server = *s
+
 		default:
 			return internal.ErrUnhandled
 		}
@@ -116,7 +130,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	if isDedicatedIP(server) {
 		expired, err := r.ac.IsDedicatedIPExpired()
 		if err != nil {
-			log.Println(internal.ErrorPrefix, " checking dedicated IP expiration: ", err)
+			log.Println(internal.ErrorPrefix, "checking dedicated IP expiration", err)
 			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
 		}
 

@@ -117,14 +117,23 @@ type CredentialsResponse struct {
 type ServicesResponse []ServiceData
 
 type ServiceData struct {
-	ID        int64   `json:"ID"`
-	ExpiresAt string  `json:"expires_at"`
-	Service   Service `json:"service"`
+	ID        int64          `json:"ID"`
+	ExpiresAt string         `json:"expires_at"`
+	Service   Service        `json:"service"`
+	Details   ServiceDetails `json:"details,omitempty"`
 }
 
 type Service struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+type ServiceDetails struct {
+	Servers []ServiceServer `json:"servers"`
+}
+
+type ServiceServer struct {
+	ID int64 `json:"id"`
 }
 
 type CurrentUserResponse struct {
