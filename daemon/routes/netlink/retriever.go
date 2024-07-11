@@ -32,7 +32,18 @@ func (Retriever) Retrieve(prefix netip.Prefix, ignoreTable uint) (netip.Addr, ne
 	if len(routeList) == 0 {
 		return netip.Addr{}, net.Interface{}, routes.ErrNotFound
 	}
-	route := routeList[0]
+	var route *netlink.Route
+	for _, rt := range routeList {
+		if rt.Gw != nil {
+			route = &rt
+			break
+		}
+	}
+	if route == nil {
+		return netip.Addr{},
+			net.Interface{},
+			fmt.Errorf("retrieving route with gateway: %w", err)
+	}
 	iface, err := net.InterfaceByIndex(route.LinkIndex)
 	if err != nil || iface == nil {
 		return netip.Addr{},
