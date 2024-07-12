@@ -339,11 +339,11 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareProgressCanceled       = "File transfer [%s] canceled by other process."
 	MsgFileshareStartedByOtherUser     = "A file sharing session is already in progress under another user account. To use the feature, restart Meshnet and enter your file sharing command again. "
 
-	MsgNoSnapPermissions = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\n%s\n\nAfter doing so, continue using the application."
+	MsgNoSnapPermissions = "Permission needed. To ensure NordVPN runs smoothly, grant the necessary permissions for the snap using these commands:\n\n%s\n\nTo start using the app, log in to your Nord Account by entering nordvpn login."
 
-	MsgNoSnapPermissionsExt = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\n%s\n\nAfter doing so, continue using the application."
+	MsgNoSnapPermissionsExt = "Permission needed. To ensure NordVPN runs smoothly, grant the necessary permissions for the snap using these commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\n%s\n\nTo start using the app, log in to your Nord Account by entering nordvpn login."
 
-	MsgSnapNoSocketPermissions = "Permission denied. Please grant necessary permissions for the snap before using the application by executing the following commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\nAfter doing so, continue using the application."
+	MsgSnapNoSocketPermissions = "Permission needed. To ensure NordVPN runs smoothly, grant the necessary permissions for the snap using these commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\nTo start using the app, log in to your Nord Account by entering nordvpn login."
 
 	MsgNoSocketPermissions = "Permission denied. Please grant necessary permissions before using the application by executing the following commands:\n\nsudo groupadd nordvpn\nsudo usermod -aG nordvpn $USER\n\nAfter doing so, reboot your device afterwards for this to take an effect."
 
