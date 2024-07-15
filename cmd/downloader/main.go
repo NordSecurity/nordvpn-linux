@@ -37,6 +37,8 @@ func main() {
 		daemon.BaseURL,
 		client,
 		validator,
+		request.NewRequest,
+		request.NewRequestWithBearerToken,
 	)
 	netw := networker.NewCombined(
 		nil,

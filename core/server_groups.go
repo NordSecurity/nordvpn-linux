@@ -1,4 +1,4 @@
-package config
+package core
 
 // ServerGroup represents a server group type
 //

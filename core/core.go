@@ -13,9 +13,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/request"
 )
 
 const (
@@ -55,12 +53,25 @@ type CombinedAPI interface {
 	CreateUser(email, password string) (*UserCreateResponse, error)
 }
 
+type CreateRequestType func(
+	method, agent, baseURL, pathURL, contentType, contentLength, encoding string,
+	body io.Reader,
+) (*http.Request, error)
+
+type CreateRequestWithTokenType func(
+	method, agent, baseURL, pathURL, contentType, contentLength, encoding string,
+	body io.Reader,
+	token string,
+) (*http.Request, error)
+
 type DefaultAPI struct {
-	agent     string
-	baseURL   string
-	client    *http.Client
-	validator response.Validator
-	mu        sync.Mutex
+	agent                string
+	baseURL              string
+	client               *http.Client
+	validator            response.Validator
+	mu                   sync.Mutex
+	createReqFn          CreateRequestType
+	createReqWithTokenFn CreateRequestWithTokenType
 }
 
 func NewDefaultAPI(
@@ -68,12 +79,16 @@ func NewDefaultAPI(
 	baseURL string,
 	client *http.Client,
 	validator response.Validator,
+	createRequest CreateRequestType,
+	createRequestWithToken CreateRequestWithTokenType,
 ) *DefaultAPI {
 	return &DefaultAPI{
-		agent:     agent,
-		baseURL:   baseURL,
-		client:    client,
-		validator: validator,
+		agent:                agent,
+		baseURL:              baseURL,
+		client:               client,
+		validator:            validator,
+		createReqFn:          createRequest,
+		createReqWithTokenFn: createRequestWithToken,
 	}
 }
 
@@ -84,7 +99,7 @@ func (api *DefaultAPI) Base() string {
 }
 
 func (api *DefaultAPI) request(path, method string, data []byte, token string) (*http.Response, error) {
-	req, err := request.NewRequestWithBearerToken(method, api.agent, api.baseURL, path, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	req, err := api.createReqWithTokenFn(method, api.agent, api.baseURL, path, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +155,7 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 
 func (api *DefaultAPI) Plans() (*Plans, error) {
 	var ret *Plans
-	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, PlanURL, "application/json", "", "gzip, deflate", nil)
+	req, err := api.createReqFn(http.MethodGet, api.agent, api.baseURL, PlanURL, "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +223,7 @@ func (api *DefaultAPI) CreateUser(email, password string) (*UserCreateResponse, 
 		return nil, err
 	}
 
-	req, err := request.NewRequest(http.MethodPost, api.agent, api.baseURL, UsersURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data))
+	req, err := api.createReqFn(http.MethodPost, api.agent, api.baseURL, UsersURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +295,7 @@ func (api *DefaultAPI) TokenRenew(token string) (*TokenRenewResponse, error) {
 		return nil, err
 	}
 
-	req, err := request.NewRequest(http.MethodPost, api.agent, api.baseURL, TokenRenewURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data))
+	req, err := api.createReqFn(http.MethodPost, api.agent, api.baseURL, TokenRenewURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data))
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +315,7 @@ func (api *DefaultAPI) TokenRenew(token string) (*TokenRenewResponse, error) {
 
 // Servers returns servers list
 func (api *DefaultAPI) Servers() (Servers, http.Header, error) {
-	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, ServersURL+ServersURLConnectQuery, "application/json", "", "gzip, deflate", nil)
+	req, err := api.createReqFn(http.MethodGet, api.agent, api.baseURL, ServersURL+ServersURLConnectQuery, "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -320,7 +335,7 @@ func (api *DefaultAPI) Servers() (Servers, http.Header, error) {
 
 // ServersCountries returns server countries list
 func (api *DefaultAPI) ServersCountries() (Countries, http.Header, error) {
-	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, ServersCountriesURL, "application/json", "", "gzip, deflate", nil)
+	req, err := api.createReqFn(http.MethodGet, api.agent, api.baseURL, ServersCountriesURL, "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -344,7 +359,7 @@ func (api *DefaultAPI) RecommendedServers(filter ServersFilter, longitude, latit
 	switch filter.Tag.Action { //nolint:exhaustive // libmoose deprecates this
 	case ServerBySpeed:
 		// Set group filter from tag only if group flag is not defined
-		if filter.Group == config.UndefinedGroup {
+		if filter.Group == UndefinedGroup {
 			filterQuery = fmt.Sprintf(RecommendedServersGroupsFilter, filter.Tag.ID)
 		}
 	case ServerByCountry:
@@ -356,12 +371,12 @@ func (api *DefaultAPI) RecommendedServers(filter ServersFilter, longitude, latit
 	}
 
 	// When flag is defined append it to filter query
-	if filter.Group != config.UndefinedGroup {
+	if filter.Group != UndefinedGroup {
 		filterQuery += fmt.Sprintf(RecommendedServersGroupsFilter, filter.Group)
 	}
 
 	url := RecommendedServersURL + fmt.Sprintf(RecommendedServersURLConnectQuery, filter.Limit, filter.Tech, longitude, latitude) + filterQuery
-	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, url, "application/json", "", "gzip, deflate", nil)
+	req, err := api.createReqFn(http.MethodGet, api.agent, api.baseURL, url, "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -382,7 +397,7 @@ func (api *DefaultAPI) RecommendedServers(filter ServersFilter, longitude, latit
 
 // Server returns specific server
 func (api *DefaultAPI) Server(id int64) (*Server, error) {
-	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, ServersURL+fmt.Sprintf(ServersURLSpecificQuery, id), "application/json", "", "gzip, deflate", nil)
+	req, err := api.createReqFn(http.MethodGet, api.agent, api.baseURL, ServersURL+fmt.Sprintf(ServersURLSpecificQuery, id), "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -406,7 +421,7 @@ func (api *DefaultAPI) Server(id int64) (*Server, error) {
 
 // Insights returns insights about user
 func (api *DefaultAPI) Insights() (*Insights, error) {
-	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, InsightsURL, "application/json", "", "gzip, deflate", nil)
+	req, err := api.createReqFn(http.MethodGet, api.agent, api.baseURL, InsightsURL, "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +468,7 @@ func (api *DefaultAPI) NotificationCredentials(token, appUserID string) (Notific
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("marshaling the request data: %w", err)
 	}
-	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, notificationTokenURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	req, err := api.createReqWithTokenFn(http.MethodPost, api.agent, api.baseURL, notificationTokenURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
 	}
@@ -497,7 +512,7 @@ func (api *DefaultAPI) NotificationCredentialsRevoke(token, appUserID string, pu
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("marshaling the request data: %w", err)
 	}
-	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, notificationTokenRevokeURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	req, err := api.createReqWithTokenFn(http.MethodPost, api.agent, api.baseURL, notificationTokenRevokeURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("creating nc credentials revoke request: %w", err)
 	}

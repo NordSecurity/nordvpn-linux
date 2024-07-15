@@ -21,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/networker"
+	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
@@ -87,6 +88,8 @@ func TestStartAutoConnect(t *testing.T) {
 				"",
 				http.DefaultClient,
 				response.NoopValidator{},
+				request.NewRequest,
+				request.NewRequestWithBearerToken,
 			)
 
 			netw := &testnetworker.Mock{}
@@ -277,6 +280,8 @@ func TestStartAutoMeshnet(t *testing.T) {
 				"",
 				http.DefaultClient,
 				response.NoopValidator{},
+				request.NewRequest,
+				request.NewRequestWithBearerToken,
 			)
 
 			rpc := NewRPC(

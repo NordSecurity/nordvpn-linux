@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/request"
 )
 
 // CDN provides methods to interact with Nord's Content Delivery Network
@@ -21,10 +20,11 @@ type CDN interface {
 }
 
 type CDNAPI struct {
-	agent     string
-	baseURL   string
-	client    *http.Client
-	validator response.Validator
+	agent       string
+	baseURL     string
+	client      *http.Client
+	validator   response.Validator
+	createReqFn CreateRequestType
 	sync.Mutex
 }
 
@@ -38,17 +38,19 @@ func NewCDNAPI(
 	baseURL string,
 	client *http.Client,
 	validator response.Validator,
+	createRequest CreateRequestType,
 ) *CDNAPI {
 	return &CDNAPI{
-		baseURL:   baseURL,
-		agent:     agent,
-		client:    client,
-		validator: validator,
+		baseURL:     baseURL,
+		agent:       agent,
+		client:      client,
+		validator:   validator,
+		createReqFn: createRequest,
 	}
 }
 
 func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
-	req, err := request.NewRequest(method, api.agent, api.baseURL, path, "", "", "gzip, deflate", nil)
+	req, err := api.createReqFn(method, api.agent, api.baseURL, path, "", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, err
 	}

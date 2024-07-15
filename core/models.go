@@ -7,7 +7,6 @@ import (
 	"net/netip"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
 	"golang.org/x/exp/slices"
@@ -57,7 +56,7 @@ type ServerTag struct {
 type ServersFilter struct {
 	Limit int
 	Tech  ServerTechnology
-	Group config.ServerGroup
+	Group ServerGroup
 	Tag   ServerTag
 }
 
@@ -248,7 +247,7 @@ type Predicate func(Server) bool
 
 // ByGroup is a Comparison function meant for use with
 // github.com/NordSecurity/nordvpn-linux/slices.ContainsFunc function.
-func ByGroup(s config.ServerGroup) func(Group) bool {
+func ByGroup(s ServerGroup) func(Group) bool {
 	return func(g Group) bool { return g.ID == s }
 }
 
@@ -285,28 +284,6 @@ func IsObfuscated() Predicate {
 	return func(s Server) bool {
 		return IsConnectableVia(OpenVPNUDPObfuscated)(s) &&
 			IsConnectableVia(OpenVPNTCPObfuscated)(s)
-	}
-}
-
-// IsConnectableWithProtocol behaves like IsConnectableVia, but also includes protocol.
-func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Predicate {
-	return func(s Server) bool {
-		switch tech {
-		case config.Technology_NORDLYNX:
-			return IsConnectableVia(WireguardTech)(s)
-		case config.Technology_OPENVPN:
-			if proto == config.Protocol_UDP {
-				return IsConnectableVia(OpenVPNUDP)(s) ||
-					IsConnectableVia(OpenVPNUDPObfuscated)(s)
-			}
-			if proto == config.Protocol_TCP {
-				return IsConnectableVia(OpenVPNTCP)(s) ||
-					IsConnectableVia(OpenVPNTCPObfuscated)(s)
-			}
-		case config.Technology_UNKNOWN_TECHNOLOGY:
-			break
-		}
-		return false
 	}
 }
 
@@ -417,8 +394,8 @@ func (s *Server) UnmarshalJSON(b []byte) error {
 type Groups []Group
 
 type Group struct {
-	ID    config.ServerGroup `json:"id"`
-	Title string             `json:"title"`
+	ID    ServerGroup `json:"id"`
+	Title string      `json:"title"`
 }
 
 type Specification struct {

@@ -79,7 +79,7 @@ func getServers(
 		return ret, false, err
 	}
 
-	if serverGroup == config.DedicatedIP {
+	if serverGroup == core.DedicatedIP {
 		// DIP servers are taken from the user data
 		return nil, false, ErrDedicated
 	}
@@ -154,16 +154,16 @@ func getDedicatedIPServer() ([]core.Server, bool, error) {
 	return nil, false, fmt.Errorf("not implemented")
 }
 
-func resolveServerGroup(flag, tag string) (config.ServerGroup, error) {
+func resolveServerGroup(flag, tag string) (core.ServerGroup, error) {
 	tagServerGroup := groupConvert(tag)
 	flagServerGroup := groupConvert(flag)
 
-	if tagServerGroup != config.UndefinedGroup && flagServerGroup != config.UndefinedGroup {
-		return config.UndefinedGroup, internal.ErrDoubleGroup
+	if tagServerGroup != core.UndefinedGroup && flagServerGroup != core.UndefinedGroup {
+		return core.UndefinedGroup, internal.ErrDoubleGroup
 	}
 	if flag != "" {
-		if flagServerGroup == config.UndefinedGroup {
-			return config.UndefinedGroup, internal.ErrGroupDoesNotExist
+		if flagServerGroup == core.UndefinedGroup {
+			return core.UndefinedGroup, internal.ErrGroupDoesNotExist
 		}
 
 		return flagServerGroup, nil
@@ -178,7 +178,7 @@ func getSpecificServerRemote(
 	protocol config.Protocol,
 	obfuscated bool,
 	serverTag core.ServerTag,
-	group config.ServerGroup,
+	group core.ServerGroup,
 	tag string,
 ) ([]core.Server, error) {
 	server, err := api.Server(serverTag.ID)
@@ -187,7 +187,7 @@ func getSpecificServerRemote(
 	}
 
 	filteredServers := internal.Filter(core.Servers{*server}, func(s core.Server) bool {
-		return core.IsConnectableWithProtocol(tech, protocol)(s) &&
+		return config.IsConnectableWithProtocol(tech, protocol)(s) &&
 			(core.IsObfuscated()(s) == obfuscated)
 	})
 
@@ -206,7 +206,7 @@ func getServersRemote(
 	protocol config.Protocol,
 	obfuscated bool,
 	tag core.ServerTag,
-	group config.ServerGroup,
+	group core.ServerGroup,
 	count int,
 ) ([]core.Server, error) {
 	serverTech := techToServerTech(tech, protocol, obfuscated)
@@ -218,8 +218,8 @@ func getServersRemote(
 		limit = count
 	}
 
-	if group == config.UndefinedGroup && obfuscated {
-		group = config.Obfuscated
+	if group == core.UndefinedGroup && obfuscated {
+		group = core.Obfuscated
 	}
 
 	filter := core.ServersFilter{
@@ -246,7 +246,7 @@ func filterServers(
 	tech config.Technology,
 	protocol config.Protocol,
 	serverTag string,
-	group config.ServerGroup,
+	group core.ServerGroup,
 	obfuscated bool,
 ) ([]core.Server, error) {
 	ret := internal.Filter(servers, canConnect(tech, protocol, serverTag, group, obfuscated))
@@ -288,7 +288,7 @@ func serverTagFromString(
 	countries core.Countries,
 	api core.ServersAPI,
 	serverTag string,
-	group config.ServerGroup,
+	group core.ServerGroup,
 	servers core.Servers,
 	isGroupFlagSet bool,
 ) (core.ServerTag, error) {
@@ -296,7 +296,7 @@ func serverTagFromString(
 		return core.ServerTag{Action: core.ServerByUnknown, ID: 0}, nil
 	}
 
-	if group != config.UndefinedGroup && !isGroupFlagSet {
+	if group != core.UndefinedGroup && !isGroupFlagSet {
 		return core.ServerTag{Action: core.ServerBySpeed, ID: int64(group)}, nil
 	}
 
@@ -338,12 +338,12 @@ func serverTagFromString(
 	return core.ServerTag{}, fmt.Errorf("could not determine server tag from %q", serverTag)
 }
 
-func groupConvert(group string) config.ServerGroup {
+func groupConvert(group string) core.ServerGroup {
 	key := internal.SnakeCase(group)
-	if _, ok := config.GroupMap[key]; ok {
-		return config.GroupMap[key]
+	if _, ok := core.GroupMap[key]; ok {
+		return core.GroupMap[key]
 	}
-	return config.UndefinedGroup
+	return core.UndefinedGroup
 }
 
 func techToServerTech(tech config.Technology, protocol config.Protocol, obfuscated bool) core.ServerTechnology {
@@ -375,24 +375,24 @@ func canConnect(
 	tech config.Technology,
 	protocol config.Protocol,
 	serverTag string,
-	group config.ServerGroup,
+	group core.ServerGroup,
 	obfuscated bool,
 ) core.Predicate {
 	return func(s core.Server) bool {
-		return core.IsConnectableWithProtocol(tech, protocol)(s) &&
+		return config.IsConnectableWithProtocol(tech, protocol)(s) &&
 			(core.IsObfuscated()(s) == obfuscated) &&
 			selectFilter(serverTag, group, obfuscated)(s)
 	}
 }
 
-func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Predicate {
-	if tag != "" && group != config.UndefinedGroup {
+func selectFilter(tag string, group core.ServerGroup, obfuscated bool) core.Predicate {
+	if tag != "" && group != core.UndefinedGroup {
 		return func(s core.Server) bool {
 			return slices.ContainsFunc(s.Groups, core.ByGroup(group)) && slices.Contains(s.Keys, tag)
 		}
 	}
 
-	if group != config.UndefinedGroup {
+	if group != core.UndefinedGroup {
 		return func(s core.Server) bool {
 			return slices.ContainsFunc(s.Groups, core.ByGroup(group))
 		}
@@ -405,11 +405,11 @@ func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Pr
 	}
 
 	return func(s core.Server) bool {
-		getGroup := func() config.ServerGroup {
+		getGroup := func() core.ServerGroup {
 			if obfuscated {
-				return config.Obfuscated
+				return core.Obfuscated
 			}
-			return config.StandardVPNServers
+			return core.StandardVPNServers
 		}
 		return slices.ContainsFunc(s.Groups, core.ByGroup(getGroup()))
 	}
@@ -427,8 +427,8 @@ func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
 	return &servers[index], nil
 }
 
-func selectDedicatedIPServer(auth auth.Checker, servers core.Servers) (*core.Server, error) {
-	expired, err := auth.IsDedicatedIPExpired()
+func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*core.Server, error) {
+	expired, err := authChecker.IsDedicatedIPExpired()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking dedicated IP expiration: ", err)
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
@@ -438,24 +438,24 @@ func selectDedicatedIPServer(auth auth.Checker, servers core.Servers) (*core.Ser
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 	}
 
-	services, err := auth.Services()
+	service, err := authChecker.ServiceData(auth.DedicatedIPServiceID)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting user services", err)
+		log.Println(internal.ErrorPrefix, "getting dedicated IP service data", err)
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 	}
 
-	if len(services.Servers) == 0 {
+	if len(service.Details.Servers) == 0 {
 		// TODO: DIP - error message when no server are selected by the user
 		log.Println(internal.ErrorPrefix, "no servers assigned to the account")
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 	}
 
-	serverId := services.Servers[len(services.Servers)]
-	s, err := getServerByID(servers, serverId)
+	serverID := service.Details.Servers[len(service.Details.Servers)].ID
+	server, err := getServerByID(servers, serverID)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "DIP server not found", err)
 		return nil, internal.ErrServerIsUnavailable
 	}
 
-	return s, nil
+	return server, nil
 }

@@ -4,6 +4,7 @@ package config
 import (
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -102,6 +103,28 @@ func (d *NCData) IsUserIDEmpty() bool {
 }
 
 type Services struct {
-	CachedDate time.Time `json:"cached_date,omitempty"`
-	Servers    []int64   `json:"servers,omitempty"`
+	CachedDate   time.Time          `json:"cached_date,omitempty"`
+	ServicesData []core.ServiceData `json:"services_data,omitempty"`
+}
+
+// IsConnectableWithProtocol behaves like IsConnectableVia, but also includes protocol.
+func IsConnectableWithProtocol(tech Technology, proto Protocol) core.Predicate {
+	return func(s core.Server) bool {
+		switch tech {
+		case Technology_NORDLYNX:
+			return core.IsConnectableVia(core.WireguardTech)(s)
+		case Technology_OPENVPN:
+			if proto == Protocol_UDP {
+				return core.IsConnectableVia(core.OpenVPNUDP)(s) ||
+					core.IsConnectableVia(core.OpenVPNUDPObfuscated)(s)
+			}
+			if proto == Protocol_TCP {
+				return core.IsConnectableVia(core.OpenVPNTCP)(s) ||
+					core.IsConnectableVia(core.OpenVPNTCPObfuscated)(s)
+			}
+		case Technology_UNKNOWN_TECHNOLOGY:
+			break
+		}
+		return false
+	}
 }

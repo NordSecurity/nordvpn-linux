@@ -232,6 +232,7 @@ func main() {
 		core.CDNURL,
 		httpClientSimple,
 		validator,
+		request.NewRequest,
 	)
 
 	var threatProtectionLiteServers *dns.NameServers
@@ -256,6 +257,8 @@ func main() {
 		daemon.BaseURL,
 		httpClientWithRotator,
 		validator,
+		request.NewRequest,
+		request.NewRequestWithBearerToken,
 	)
 	meshAPIex := registry.NewRegistry(
 		defaultAPI,

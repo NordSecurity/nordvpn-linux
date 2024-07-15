@@ -19,7 +19,7 @@ import (
 
 func isDedicatedIP(server core.Server) bool {
 	index := slices.IndexFunc(server.Groups, func(group core.Group) bool {
-		return group.ID == config.DedicatedIP
+		return group.ID == core.DedicatedIP
 	})
 
 	return index != -1
@@ -135,6 +135,19 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		}
 
 		if expired {
+			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
+		}
+
+		service, err := r.ac.ServiceData(auth.DedicatedIPServiceID)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "getting dedicated IP service data", err)
+			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
+		}
+		index := slices.IndexFunc(service.Details.Servers, func(s core.ServiceServer) bool {
+			return s.ID == server.ID
+		})
+		if index == -1 {
+			// TODO: DIP - error message when the server is not into the list of servers
 			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
 		}
 	}

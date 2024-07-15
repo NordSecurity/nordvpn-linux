@@ -27,8 +27,8 @@ type Checker interface {
 	IsVPNExpired() (bool, error)
 	// IsDedicatedIPExpired is used to check whether the user is allowed to use dedicated IP servers
 	IsDedicatedIPExpired() (bool, error)
-	// Services is used to get user services.
-	Services() (*config.Services, error)
+	// Get the service data if the user has it and nil otherwise
+	ServiceData(serviceID int64) (*core.ServiceData, error)
 }
 
 const (
@@ -99,11 +99,11 @@ func (r *RenewingChecker) IsDedicatedIPExpired() (bool, error) {
 	if err := r.cm.Load(&cfg); err != nil {
 		return true, fmt.Errorf("loading config: %w", err)
 	}
-
+	//DedicatedIPServiceID
 	data := cfg.TokensData[cfg.AutoConnectData.ID]
 	if isTokenExpired(data.DedicatedIPExpiry) ||
-		len(data.Services.Servers) == 0 ||
-		time.Now().Before(data.Services.CachedDate.Add(getDipCacheValidity())) {
+		len(dedicatedIPServers(data.Services.ServicesData)) == 0 ||
+		time.Now().After(data.Services.CachedDate.Add(getDipCacheValidity())) {
 		// if token expired or services need to be fetched in case DIP servers changed
 		if err := r.fetchServices(cfg.AutoConnectData.ID, &data); err != nil {
 			return true, fmt.Errorf("updating service expiry token: %w", err)
@@ -113,7 +113,46 @@ func (r *RenewingChecker) IsDedicatedIPExpired() (bool, error) {
 	return isTokenExpired(data.DedicatedIPExpiry), nil
 }
 
-func (r *RenewingChecker) Services() (*config.Services, error) {
+func dedicatedIPServers(services []core.ServiceData) []core.ServiceServer {
+	for _, serviceData := range services {
+		if serviceData.ID == DedicatedIPServiceID {
+			return serviceData.Details.Servers
+		}
+	}
+
+	return nil
+}
+
+// func (r *RenewingChecker) serviceData(services []core.ServiceData, serviceID int64) (*core.ServiceData, error) {
+// 	for _, serviceData := range services {
+// 		if serviceData.ID == serviceID {
+// 			return &serviceData, nil
+// 		}
+// 	}
+
+// 	return nil, nil
+// }
+
+// func (r *RenewingChecker) Services() (*config.Services, error) {
+// 	r.mu.Lock()
+// 	defer r.mu.Unlock()
+
+// 	var cfg config.Config
+// 	if err := r.cm.Load(&cfg); err != nil {
+// 		return nil, fmt.Errorf("loading config: %w", err)
+// 	}
+
+// 	data := cfg.TokensData[cfg.AutoConnectData.ID]
+// 	if isTokenExpired(data.DedicatedIPExpiry) {
+// 		if err := r.fetchServices(cfg.AutoConnectData.ID, &data); err != nil {
+// 			return nil, fmt.Errorf("updating service expiry token: %w", err)
+// 		}
+// 	}
+
+// 	return &data.Services, nil
+// }
+
+func (r *RenewingChecker) ServiceData(serviceID int64) (*core.ServiceData, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -123,14 +162,22 @@ func (r *RenewingChecker) Services() (*config.Services, error) {
 	}
 
 	data := cfg.TokensData[cfg.AutoConnectData.ID]
-	if isTokenExpired(data.DedicatedIPExpiry) {
-		if err := r.fetchServices(cfg.AutoConnectData.ID, &data); err != nil {
-			return nil, fmt.Errorf("updating service expiry token: %w", err)
+	for _, service := range data.Services.ServicesData {
+		if service.ID == serviceID {
+			if isTokenExpired(service.ExpiresAt) ||
+				(serviceID == DedicatedIPServiceID &&
+					time.Now().After(data.Services.CachedDate.Add(getDipCacheValidity()))) {
+				// for DIP refresh the service because the servers list can change
+				if err := r.fetchServices(cfg.AutoConnectData.ID, &data); err != nil {
+					return nil, fmt.Errorf("updating service expiry token: %w", err)
+				}
+			}
+
+			return &service, nil
 		}
 	}
 
-	return &data.Services, nil
-
+	return nil, fmt.Errorf("service not found")
 }
 
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
@@ -252,25 +299,20 @@ func (r *RenewingChecker) fetchServices(userId int64, data *config.TokenData) er
 		return err
 	}
 
-	servicesList := config.Services{
-		CachedDate: time.Now(),
-	}
-	// store only the services that are important for the app
 	for _, service := range services {
 		if service.Service.ID == VPNServiceID { // VPN service
 			data.ServiceExpiry = service.ExpiresAt
 		}
 
 		if service.Service.ID == DedicatedIPServiceID {
-			log.Println("XXX DIP found", service.Details.Servers)
 			data.DedicatedIPExpiry = service.ExpiresAt
-			for _, server := range service.Details.Servers {
-				servicesList.Servers = append(servicesList.Servers, server.ID)
-			}
 		}
 	}
 
-	data.Services = servicesList
+	data.Services = config.Services{
+		CachedDate:   time.Now(),
+		ServicesData: services,
+	}
 
 	if err := r.cm.SaveWith(saveVpnExpirationDate(userId, *data)); err != nil {
 		return fmt.Errorf("saving config: %w", err)
