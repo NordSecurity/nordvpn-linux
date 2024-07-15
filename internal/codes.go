@@ -1,5 +1,7 @@
 package internal
 
+import "fmt"
+
 const (
 	// Success
 	CodeSuccess          int64 = 1000
@@ -52,3 +54,15 @@ const (
 	CodePrivateSubnetLANDiscovery      int64 = 3040
 	CodeDedicatedIPRenewError          int64 = 3041
 )
+
+type ErrorWithCode struct {
+	Code int64
+}
+
+func NewErrorWithCode(code int64) error {
+	return &ErrorWithCode{Code: code}
+}
+
+func (e *ErrorWithCode) Error() string {
+	return fmt.Sprintf("Error with code %d", e.Code)
+}

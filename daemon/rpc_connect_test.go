@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/netip"
 	"testing"
@@ -81,7 +82,7 @@ func (validCredentialsAPI) Services(string) (core.ServicesResponse, error) {
 	return core.ServicesResponse{
 		{
 			ExpiresAt: "2029-12-27 00:00:00",
-			Service:   core.Service{ID: 1},
+			Service:   config.Service{ID: 1},
 		},
 	}, nil
 }
@@ -101,6 +102,9 @@ func (*workingLoginChecker) IsLoggedIn() bool              { return true }
 func (c *workingLoginChecker) IsVPNExpired() (bool, error) { return c.isVPNExpired, c.vpnErr }
 func (c *workingLoginChecker) IsDedicatedIPExpired() (bool, error) {
 	return c.isDedicatedIPExpired, c.dedicatedIPErr
+}
+func (*workingLoginChecker) ServiceData(serviceID int64) (*config.ServiceData, error) {
+	return nil, fmt.Errorf("Not implemented")
 }
 
 type mockAnalytics struct{}

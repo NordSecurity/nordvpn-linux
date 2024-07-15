@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/netip"
 	"testing"
@@ -39,6 +40,9 @@ func (failingLoginChecker) IsVPNExpired() (bool, error) {
 }
 func (failingLoginChecker) IsDedicatedIPExpired() (bool, error) {
 	return true, errors.New("IsDedicatedIPExipred error")
+}
+func (failingLoginChecker) ServiceData(serviceID int64) (*config.ServiceData, error) {
+	return nil, fmt.Errorf("Not implemented")
 }
 
 func TestStartAutoConnect(t *testing.T) {

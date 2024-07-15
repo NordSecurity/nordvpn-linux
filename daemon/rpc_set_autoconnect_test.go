@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -21,6 +22,9 @@ func (mockAutoconnectAuthChecker) IsLoggedIn() bool            { return true }
 func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error) { return false, nil }
 func (m mockAutoconnectAuthChecker) IsDedicatedIPExpired() (bool, error) {
 	return m.dedicatedIPExpired, nil
+}
+func (mockAutoconnectAuthChecker) ServiceData(serviceID int64) (*config.ServiceData, error) {
+	return nil, fmt.Errorf("Not implemented")
 }
 
 func TestAutoconnect(t *testing.T) {

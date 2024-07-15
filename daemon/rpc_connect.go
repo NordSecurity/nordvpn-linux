@@ -7,7 +7,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -77,52 +76,15 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
-	server, remote, err := PickServer(
-		r.serversAPI,
-		r.dm.GetCountryData().Countries,
-		r.dm.GetServersData().Servers,
-		insights.Longitude,
-		insights.Latitude,
-		cfg.Technology,
-		cfg.AutoConnectData.Protocol,
-		cfg.AutoConnectData.Obfuscate,
-		inputServerTag,
-		in.GetServerGroup(),
-		cfg.VirtualLocation.Get(),
-	)
 
+	server, remote, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "picking servers:", err)
-		switch {
-		case errors.Is(err, core.ErrUnauthorized):
-			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
-				return err
-			}
-			return internal.ErrNotLoggedIn
-		case errors.Is(err, internal.ErrTagDoesNotExist),
-			errors.Is(err, internal.ErrGroupDoesNotExist),
-			errors.Is(err, internal.ErrServerIsUnavailable),
-			errors.Is(err, internal.ErrDoubleGroup),
-			errors.Is(err, internal.ErrVirtualServerSelected):
-			return err
-
-		default:
-			return internal.ErrUnhandled
-		}
-	}
-
-	log.Println(internal.InfoPrefix, "server", server.Hostname, "remote", remote)
-
-	if isDedicatedIP(server) {
-		expired, err := r.ac.IsDedicatedIPExpired()
-		if err != nil {
-			log.Println(internal.ErrorPrefix, " checking dedicated IP expiration: ", err)
-			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
+		var errorCode *internal.ErrorWithCode
+		if errors.As(err, &errorCode) {
+			return srv.Send(&pb.Payload{Type: errorCode.Code})
 		}
 
-		if expired {
-			return srv.Send(&pb.Payload{Type: internal.CodeDedicatedIPRenewError})
-		}
+		return err
 	}
 
 	country, err := server.Locations.Country()
@@ -149,7 +111,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		log.Println(internal.ErrorPrefix, err)
 		return internal.ErrUnhandled
 	}
-	r.lastServer = server
+	r.lastServer = *server
 
 	eventCh := make(chan ConnectEvent)
 

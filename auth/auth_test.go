@@ -92,12 +92,12 @@ func TestIsVPNExpired(t *testing.T) {
 		{
 			name: "update successful",
 			cm:   &authConfigManager{serviceExpiry: "1990-01-01 09:18:53"},
-			api:  &authAPI{resp: []core.ServiceData{{Service: core.Service{ID: 1}, ExpiresAt: "2990-01-01 09:18:53"}}},
+			api:  &authAPI{resp: []config.ServiceData{{Service: config.Service{ID: 1}, ExpiresAt: "2990-01-01 09:18:53"}}},
 		},
 		{
 			name:      "expired",
 			cm:        &authConfigManager{serviceExpiry: "1990-01-01 09:18:53"},
-			api:       &authAPI{resp: []core.ServiceData{{Service: core.Service{ID: 1}, ExpiresAt: "1990-01-01 09:18:53"}}},
+			api:       &authAPI{resp: []config.ServiceData{{Service: config.Service{ID: 1}, ExpiresAt: "1990-01-01 09:18:53"}}},
 			isExpired: true,
 		},
 		{

@@ -91,3 +91,30 @@ type meshnet struct {
 func (d *NCData) IsUserIDEmpty() bool {
 	return d.UserID == uuid.Nil
 }
+
+// TODO: the bellow structures need to be in core package,
+// but it would create circular dep. for now put them here are refactor project later
+type Services struct {
+	CachedDate   time.Time     `json:"cached_date,omitempty"`
+	ServicesData []ServiceData `json:"services_data,omitempty"`
+}
+
+type ServiceData struct {
+	ID        int64          `json:"ID"`
+	ExpiresAt string         `json:"expires_at"`
+	Service   Service        `json:"service"`
+	Details   ServiceDetails `json:"details,omitempty"`
+}
+
+type Service struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type ServiceDetails struct {
+	Servers []ServiceServer `json:"servers"`
+}
+
+type ServiceServer struct {
+	ID int64 `json:"id"`
+}

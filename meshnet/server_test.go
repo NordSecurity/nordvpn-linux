@@ -45,6 +45,9 @@ func (m meshRenewChecker) IsLoggedIn() bool {
 }
 func (meshRenewChecker) IsVPNExpired() (bool, error)         { return false, nil }
 func (meshRenewChecker) IsDedicatedIPExpired() (bool, error) { return false, nil }
+func (meshRenewChecker) ServiceData(serviceID int64) (*config.ServiceData, error) {
+	return nil, fmt.Errorf("Not implemented")
+}
 
 type registrationChecker struct {
 	registrationErr error
