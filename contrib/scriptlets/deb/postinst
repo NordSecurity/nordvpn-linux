@@ -17,6 +17,7 @@ if [[ "$DEFAULT_USER" ]]; then
 fi
 quickTutorial="To get started${userShowMessage}, type 'nordvpn login' and enter your NordVPN account details. Then type 'nordvpn connect' and you’re all set! $userModMessage If you need help using the app, use the command 'nordvpn --help'."
 
+ldconfig # update shared library cache
 groupadd --system "$NORDVPN_GROUP" 1>/dev/null 2> /dev/null
 installSuccess="NordVPN for Linux successfully installed!"
 userModMessage="To allow other users to use the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
