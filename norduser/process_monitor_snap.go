@@ -34,6 +34,47 @@ func (n *NorduserProcessMonitor) stopForDeletedGroupMembers(currentGroupMembers 
 	return groupMembersUpdate
 }
 
+// WaitForLogout will send over logoutChan when user under the username logs out(i.e there are no remaining user
+// processes for that user).
+func WaitForLogout(username string, logoutChan chan<- interface{}) error {
+	watcher, err := getWatcher(utmpFilePath)
+	if err != nil {
+		return fmt.Errorf("creating a fsnotify watcher for utmp file: %w", err)
+	}
+
+	userLoggedIn, err := isUserLoggedIn(username)
+	if err != nil {
+		return fmt.Errorf("checking if user is logged in: %w", err)
+	}
+
+	if !userLoggedIn {
+		return fmt.Errorf("user is not logged in: %w", err)
+	}
+
+	for {
+		select {
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return fmt.Errorf("utmp monitor events channel closed")
+			}
+
+			if event.Name == utmpFilePath {
+				userLoggedIn, err := isUserLoggedIn(username)
+				if err != nil {
+					log.Println(internal.ErrorPrefix, "failed to determine if user is logged in:", err)
+				} else if !userLoggedIn {
+					logoutChan <- true
+				}
+			}
+		case error, ok := <-watcher.Errors:
+			if !ok {
+				return fmt.Errorf("utmp monitor error channel closed")
+			}
+			log.Println(internal.ErrorPrefix, "watcher error:", error)
+		}
+	}
+}
+
 // StartSnap starts a simplified norduser process monitor routine. norduser processes will be stopped for users removed
 // form the nordvpn group, no other actions will be taken. Because of snap, starting/restarting the process has to be
 // handled in the process itself.
