@@ -10,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
@@ -227,7 +228,7 @@ func TestRpcConnect(t *testing.T) {
 				&mockAuthenticationAPI{},
 				"1.0.0",
 				test.fw,
-				NewEvents(
+				daemonevents.NewEvents(
 					&subs.Subject[bool]{},
 					&subs.Subject[bool]{},
 					&subs.Subject[events.DataDNS]{},
@@ -248,6 +249,7 @@ func TestRpcConnect(t *testing.T) {
 					&subs.Subject[any]{},
 					&subs.Subject[core.ServicesResponse]{},
 					&subs.Subject[events.ServerRating]{},
+					&subs.Subject[any]{},
 					&subs.Subject[int]{},
 					&subs.Subject[core.Insights]{},
 					&subs.Subject[bool]{},
@@ -309,7 +311,7 @@ func TestRpcReconnect(t *testing.T) {
 		&mockAuthenticationAPI{},
 		"1.0.0",
 		&workingFirewall{},
-		NewEvents(
+		daemonevents.NewEvents(
 			&subs.Subject[bool]{},
 			&subs.Subject[bool]{},
 			&subs.Subject[events.DataDNS]{},
@@ -330,6 +332,7 @@ func TestRpcReconnect(t *testing.T) {
 			&subs.Subject[any]{},
 			&subs.Subject[core.ServicesResponse]{},
 			&subs.Subject[events.ServerRating]{},
+			&subs.Subject[any]{},
 			&subs.Subject[int]{},
 			&subs.Subject[core.Insights]{},
 			&subs.Subject[bool]{},

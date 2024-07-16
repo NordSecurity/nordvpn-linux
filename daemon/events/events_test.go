@@ -1,4 +1,4 @@
-package daemon
+package events
 
 import (
 	"math"
@@ -37,6 +37,7 @@ func TestNewDaemonSubjects(t *testing.T) {
 		&subs.Subject[any]{},
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.ServerRating]{},
+		&subs.Subject[any]{},
 		&subs.Subject[int]{},
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
@@ -68,14 +69,15 @@ func TestDaemonSubjectsSubscribe(t *testing.T) {
 		&subs.Subject[any]{},
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.ServerRating]{},
+		&subs.Subject[any]{},
 		&subs.Subject[int]{},
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
 	)
 	subjects.Subscribe(&mockDaemonSubscriber{})
-	_, min := isValid(subjects)
-	assert.Equal(t, 1, min)
+	_, minimum := isValid(subjects)
+	assert.Equal(t, 1, minimum)
 }
 
 type mockDaemonSubscriber struct{}
@@ -99,6 +101,7 @@ func (mockDaemonSubscriber) NotifyIpv6(bool) error                          { re
 func (mockDaemonSubscriber) NotifyDefaults(any) error                       { return nil }
 func (mockDaemonSubscriber) NotifyMeshnet(bool) error                       { return nil }
 func (mockDaemonSubscriber) NotifyRate(events.ServerRating) error           { return nil }
+func (mockDaemonSubscriber) NotifySendInvitation(any) error                 { return nil }
 func (mockDaemonSubscriber) NotifyHeartBeat(int) error                      { return nil }
 func (mockDaemonSubscriber) NotifyDeviceLocation(core.Insights) error       { return nil }
 func (mockDaemonSubscriber) NotifyLANDiscovery(bool) error                  { return nil }

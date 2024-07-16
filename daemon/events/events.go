@@ -1,4 +1,4 @@
-package daemon
+package events
 
 import (
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -32,6 +32,7 @@ func NewEvents(
 	login events.PublishSubcriber[any],
 	accountCheck events.PublishSubcriber[core.ServicesResponse],
 	rate events.PublishSubcriber[events.ServerRating],
+	sendInvitation events.PublishSubcriber[any],
 	heartBeat events.PublishSubcriber[int],
 	deviceLocation events.PublishSubcriber[core.Insights],
 	lanDiscovery events.PublishSubcriber[bool],
@@ -62,6 +63,7 @@ func NewEvents(
 			Login:          login,
 			AccountCheck:   accountCheck,
 			Rate:           rate,
+			SendInvitation: sendInvitation,
 			HeartBeat:      heartBeat,
 			DeviceLocation: deviceLocation,
 		},
@@ -141,6 +143,7 @@ type ServicePublisher interface {
 	NotifyLogin(any) error
 	NotifyAccountCheck(core.ServicesResponse) error
 	NotifyRate(events.ServerRating) error
+	NotifySendInvitation(any) error
 	NotifyHeartBeat(int) error
 	NotifyDeviceLocation(core.Insights) error
 }
@@ -151,6 +154,7 @@ type ServiceEvents struct {
 	Login          events.PublishSubcriber[any]
 	AccountCheck   events.PublishSubcriber[core.ServicesResponse]
 	Rate           events.PublishSubcriber[events.ServerRating]
+	SendInvitation events.PublishSubcriber[any]
 	HeartBeat      events.PublishSubcriber[int]
 	DeviceLocation events.PublishSubcriber[core.Insights]
 }
@@ -161,6 +165,7 @@ func (s *ServiceEvents) Subscribe(to ServicePublisher) {
 	s.Login.Subscribe(to.NotifyLogin)
 	s.AccountCheck.Subscribe(to.NotifyAccountCheck)
 	s.Rate.Subscribe(to.NotifyRate)
+	s.SendInvitation.Subscribe(to.NotifySendInvitation)
 	s.HeartBeat.Subscribe(to.NotifyHeartBeat)
 	s.DeviceLocation.Subscribe(to.NotifyDeviceLocation)
 }
@@ -186,3 +191,12 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.VirtualLocation.Publish(cfg.VirtualLocation.Get())
 }
+
+type MockPublisherSubscriber[T any] struct {
+	EventPublished bool
+}
+
+func (mp *MockPublisherSubscriber[T]) Publish(message T) {
+	mp.EventPublished = true
+}
+func (*MockPublisherSubscriber[T]) Subscribe(handler events.Handler[T]) {}

@@ -19,6 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -37,21 +38,20 @@ var (
 // Server is an implementation of pb.MeshnetServer. It represents the
 // part of meshnet in a daemon side
 type Server struct {
-	ac                 auth.Checker
-	cm                 config.Manager
-	mc                 Checker
-	invitationAPI      mesh.Inviter
-	netw               Networker
-	reg                mesh.Registry
-	nameservers        dns.Getter
-	pub                events.Publisher[error]
-	subjectPeerUpdate  events.Publisher[[]string]
-	subjectMeshSetting events.Publisher[bool]
-	subjectConnect     events.Publisher[events.DataConnect]
-	lastPeers          string
-	lastConnectedPeer  string
-	norduser           service.NorduserFileshareClient
-	scheduler          gocron.Scheduler
+	ac                auth.Checker
+	cm                config.Manager
+	mc                Checker
+	invitationAPI     mesh.Inviter
+	netw              Networker
+	reg               mesh.Registry
+	nameservers       dns.Getter
+	pub               events.Publisher[error]
+	subjectPeerUpdate events.Publisher[[]string]
+	daemonEvents      *daemonevents.Events
+	lastPeers         string
+	lastConnectedPeer string
+	norduser          service.NorduserFileshareClient
+	scheduler         gocron.Scheduler
 	pb.UnimplementedMeshnetServer
 }
 
@@ -66,25 +66,23 @@ func NewServer(
 	nameservers dns.Getter,
 	pub events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
-	subjectMeshSetting events.PublishSubcriber[bool],
-	subjectConnect events.Publisher[events.DataConnect],
+	deemonEvents *daemonevents.Events,
 	norduser service.NorduserFileshareClient,
 ) *Server {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &Server{
-		ac:                 ac,
-		cm:                 cm,
-		mc:                 mc,
-		invitationAPI:      invitationAPI,
-		netw:               netw,
-		reg:                reg,
-		nameservers:        nameservers,
-		pub:                pub,
-		subjectPeerUpdate:  subjectPeerUpdate,
-		subjectMeshSetting: subjectMeshSetting,
-		subjectConnect:     subjectConnect,
-		norduser:           norduser,
-		scheduler:          scheduler,
+		ac:                ac,
+		cm:                cm,
+		mc:                mc,
+		invitationAPI:     invitationAPI,
+		netw:              netw,
+		reg:               reg,
+		nameservers:       nameservers,
+		pub:               pub,
+		subjectPeerUpdate: subjectPeerUpdate,
+		daemonEvents:      deemonEvents,
+		norduser:          norduser,
+		scheduler:         scheduler,
 	}
 }
 
@@ -203,7 +201,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
-	s.subjectMeshSetting.Publish(true)
+	s.daemonEvents.Settings.Meshnet.Publish(true)
 
 	// We want to enable filesharing only after setting config to avoid race condition
 	// because filesharing daemon checks whether meshnet is enabled.
@@ -352,7 +350,7 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 			},
 		}, nil
 	}
-	s.subjectMeshSetting.Publish(false)
+	s.daemonEvents.Settings.Meshnet.Publish(false)
 
 	return &pb.MeshnetResponse{
 		Response: &pb.MeshnetResponse_Empty{},
@@ -440,6 +438,8 @@ func (s *Server) Invite(
 	ctx context.Context,
 	req *pb.InviteRequest,
 ) (*pb.InviteResponse, error) {
+	s.daemonEvents.Service.SendInvitation.Publish(nil)
+
 	if !s.ac.IsLoggedIn() {
 		return &pb.InviteResponse{
 			Response: &pb.InviteResponse_ServiceErrorCode{
@@ -2997,7 +2997,7 @@ func (s *Server) Connect(
 		}, nil
 	}
 	s.lastConnectedPeer = peer.Hostname
-	s.subjectConnect.Publish(events.DataConnect{
+	s.daemonEvents.Service.Connect.Publish(events.DataConnect{
 		IsMeshnetPeer: true,
 	})
 

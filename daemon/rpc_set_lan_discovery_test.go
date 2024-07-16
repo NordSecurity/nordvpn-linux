@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 func getEmptyAllowlist(t *testing.T) config.Allowlist {
@@ -114,9 +116,9 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 				Allowlist: test.currentAllowlist,
 			}
 
-			lanDiscoveryPublisher := mockPublisherSubscriber[bool]{}
-			allowListPublisher := mockPublisherSubscriber[events.DataAllowlist]{}
-			mockEvents := Events{Settings: &SettingsEvents{
+			lanDiscoveryPublisher := daemonevents.MockPublisherSubscriber[bool]{}
+			allowListPublisher := daemonevents.MockPublisherSubscriber[events.DataAllowlist]{}
+			mockEvents := daemonevents.Events{Settings: &daemonevents.SettingsEvents{
 				LANDiscovery: &lanDiscoveryPublisher,
 				Allowlist:    &allowListPublisher,
 			}}
@@ -144,8 +146,8 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 			assert.Equal(t, test.expectedConfigAllowlist, cfg.AutoConnectData.Allowlist,
 				"Invalid allowlist saved in the config.")
 			assert.Equal(t, test.enabled, networker.LanDiscovery)
-			assert.True(t, lanDiscoveryPublisher.eventPublished)
-			assert.Equal(t, allowListPublisher.eventPublished, test.enabled) // only fired when LAN is on
+			assert.True(t, lanDiscoveryPublisher.EventPublished)
+			assert.Equal(t, allowListPublisher.EventPublished, test.enabled) // only fired when LAN is on
 		})
 	}
 }

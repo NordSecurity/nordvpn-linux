@@ -6,15 +6,17 @@ import (
 	"net/netip"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 var dnsMock config.DNS = config.DNS{"0.0.0.0", "8.8.8.8", "1.1.1.1"}
@@ -162,7 +164,7 @@ func TestSetDNS_Success(t *testing.T) {
 				cm:          configManager,
 				netw:        &networker,
 				nameservers: &dnsGetter,
-				events:      &Events{Settings: &SettingsEvents{DNS: &publisher}},
+				events:      &daemonevents.Events{Settings: &daemonevents.SettingsEvents{DNS: &publisher}},
 				endpoint:    endpoint,
 			}
 
@@ -262,7 +264,7 @@ func TestSetDNS_Errors(t *testing.T) {
 				cm:          configManager,
 				netw:        &networker,
 				nameservers: &dnsGetter,
-				events:      &Events{Settings: &SettingsEvents{DNS: &publisher}},
+				events:      &daemonevents.Events{Settings: &daemonevents.SettingsEvents{DNS: &publisher}},
 			}
 
 			resp, err := rpc.SetDNS(context.Background(),

@@ -24,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
@@ -141,7 +142,7 @@ func main() {
 
 	// Events
 
-	daemonEvents := daemon.NewEvents(
+	daemonEvents := daemonevents.NewEvents(
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataDNS]{},
@@ -162,6 +163,7 @@ func main() {
 		&subs.Subject[any]{},
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.ServerRating]{},
+		&subs.Subject[any]{},
 		&subs.Subject[int]{},
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
@@ -480,8 +482,7 @@ func main() {
 		threatProtectionLiteServers,
 		errSubject,
 		meshnetEvents.PeerUpdate,
-		daemonEvents.Settings.Meshnet,
-		daemonEvents.Service.Connect,
+		daemonEvents,
 		norduserClient,
 	)
 

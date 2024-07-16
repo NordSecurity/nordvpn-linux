@@ -243,6 +243,15 @@ func (s *Subscriber) NotifyRate(data events.ServerRating) error {
 	))
 }
 
+func (s *Subscriber) NotifySendInvitation(any) error {
+	return s.response(moose.NordvpnappSendUserInterfaceUiItemsClick(
+		"send_invitation",
+		moose.NordvpnappUserInterfaceItemTypeTextBox,
+		"send_invitation",
+		"cli",
+	))
+}
+
 func (s *Subscriber) NotifyHeartBeat(timePeriodMinutes int) error {
 	return s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(timePeriodMinutes)))
 }
