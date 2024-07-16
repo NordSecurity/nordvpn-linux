@@ -15,7 +15,6 @@ import (
 	"testing/fstest"
 	"time"
 
-	norddrop "github.com/NordSecurity/libdrop-go/v7"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -134,7 +133,7 @@ func (mfs *mockEventManagerFileshare) getLastCanceledTransferID() string {
 	return mfs.canceledTransferIDs[length-1]
 }
 
-func (*mockEventManagerFileshare) GetTransfersSince(t time.Time) ([]norddrop.TransferInfo, error) {
+func (*mockEventManagerFileshare) GetTransfersSince(t time.Time) ([]LibdropTransfer, error) {
 	return nil, nil
 }
 
@@ -316,11 +315,11 @@ func TestTransferProgress(t *testing.T) {
 	}
 
 	eventManager.OnEvent(
-		norddrop.Event{
-			Kind: norddrop.EventKindRequestQueued{
+		Event{
+			Kind: EventKindRequestQueued{
 				Peer:       peer,
 				TransferId: transferID,
-				Files: []norddrop.QueuedFile{
+				Files: []QueuedFile{
 					{
 						Id:   file1ID,
 						Path: file1,
@@ -344,8 +343,8 @@ func TestTransferProgress(t *testing.T) {
 	progCh := eventManager.Subscribe(transferID)
 
 	eventManager.OnEvent(
-		norddrop.Event{
-			Kind: norddrop.EventKindFileStarted{
+		Event{
+			Kind: EventKindFileStarted{
 				TransferId: transferID,
 				FileId:     file1ID,
 			},
@@ -353,8 +352,8 @@ func TestTransferProgress(t *testing.T) {
 	)
 
 	eventManager.OnEvent(
-		norddrop.Event{
-			Kind: norddrop.EventKindFileStarted{
+		Event{
+			Kind: EventKindFileStarted{
 				TransferId:  transferID,
 				FileId:      file2ID,
 				Transferred: 0,
@@ -365,8 +364,8 @@ func TestTransferProgress(t *testing.T) {
 	transferredBytes := file1sz
 	go func() {
 		eventManager.OnEvent(
-			norddrop.Event{
-				Kind: norddrop.EventKindFileProgress{
+			Event{
+				Kind: EventKindFileProgress{
 					TransferId:  transferID,
 					FileId:      file1ID,
 					Transferred: transferredBytes,
@@ -384,8 +383,8 @@ func TestTransferProgress(t *testing.T) {
 	waitGroup.Add(1)
 	go func() {
 		eventManager.OnEvent(
-			norddrop.Event{
-				Kind: norddrop.EventKindFileDownloaded{
+			Event{
+				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file1ID,
 				},
@@ -393,8 +392,8 @@ func TestTransferProgress(t *testing.T) {
 		)
 
 		eventManager.OnEvent(
-			norddrop.Event{
-				Kind: norddrop.EventKindFileDownloaded{
+			Event{
+				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file2ID,
 				},
@@ -402,8 +401,8 @@ func TestTransferProgress(t *testing.T) {
 		)
 
 		eventManager.OnEvent(
-			norddrop.Event{
-				Kind: norddrop.EventKindFileDownloaded{
+			Event{
+				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file3ID,
 				},
@@ -414,9 +413,9 @@ func TestTransferProgress(t *testing.T) {
 		storage.transfers[transferID].Status = pb.Status_SUCCESS
 
 		eventManager.OnEvent(
-			norddrop.Event{
+			Event{
 				Timestamp: 0,
-				Kind: norddrop.EventKindTransferFinalized{
+				Kind: EventKindTransferFinalized{
 					TransferId: transferID,
 					ByPeer:     false,
 				},
@@ -610,7 +609,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 
 	tests := []struct {
 		name            string
-		event           norddrop.Event
+		event           Event
 		status          pb.Status
 		direction       pb.Direction
 		reason          string
@@ -620,8 +619,8 @@ func TestTransferFinishedNotifications(t *testing.T) {
 	}{
 		{
 			name: "download finished success",
-			event: norddrop.Event{
-				Kind: norddrop.EventKindFileDownloaded{
+			event: Event{
+				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     fileID,
 					FinalPath:  filePath,
@@ -635,12 +634,12 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		},
 		{
 			name: "download finished failure",
-			event: norddrop.Event{
-				Kind: norddrop.EventKindFileFailed{
+			event: Event{
+				Kind: EventKindFileFailed{
 					TransferId: transferID,
 					FileId:     fileID,
-					Status: norddrop.Status{
-						Status:      norddrop.StatusCodeBadTransfer,
+					Status: Status{
+						Status:      StatusCodeBadTransfer,
 						OsErrorCode: new(int32),
 					},
 				},
@@ -653,8 +652,8 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		},
 		{
 			name: "download canceled",
-			event: norddrop.Event{
-				Kind: norddrop.EventKindFileRejected{
+			event: Event{
+				Kind: EventKindFileRejected{
 					TransferId: transferID,
 					FileId:     fileID,
 				},
@@ -667,8 +666,8 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		},
 		{
 			name: "upload finished success",
-			event: norddrop.Event{
-				Kind: norddrop.EventKindFileUploaded{
+			event: Event{
+				Kind: EventKindFileUploaded{
 					TransferId: transferID,
 					FileId:     fileID,
 				},
@@ -741,8 +740,8 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		Direction:        pb.Direction_INCOMING,
 	}
 
-	eventManager.OnEvent(norddrop.Event{
-		Kind: norddrop.EventKindFileDownloaded{
+	eventManager.OnEvent(Event{
+		Kind: EventKindFileDownloaded{
 			TransferId: transferID,
 			FileId:     fileID,
 			FinalPath:  filePath,
@@ -794,11 +793,11 @@ func TestTransferRequestNotification(t *testing.T) {
 		},
 	}}
 
-	event := norddrop.Event{
-		Kind: norddrop.EventKindRequestReceived{
+	event := Event{
+		Kind: EventKindRequestReceived{
 			Peer:       peer,
 			TransferId: transferID,
-			Files: []norddrop.ReceivedFile{
+			Files: []ReceivedFile{
 				{
 					Id:   "testfile",
 					Size: 1038576,
@@ -1276,11 +1275,11 @@ func TestAutoaccept(t *testing.T) {
 		},
 	}
 
-	event := norddrop.Event{
-		Kind: norddrop.EventKindRequestReceived{
+	event := Event{
+		Kind: EventKindRequestReceived{
 			Peer:       peerAutoAcceptIP,
 			TransferId: transferID,
-			Files: []norddrop.ReceivedFile{
+			Files: []ReceivedFile{
 				{
 					Id:   "testfile",
 					Size: 1048576,
@@ -1363,96 +1362,4 @@ func TestAutoaccept(t *testing.T) {
 				"Unexpected actions found in autoaccepted transfer notification")
 		})
 	}
-}
-
-func TestEventToStringWithWorkingMarshaller(t *testing.T) {
-	event := norddrop.Event{
-		Kind: norddrop.EventKindRequestQueued{
-			Peer:       "12.12.12.12",
-			TransferId: "c13c619c-c70b-49b8-9396-72de88155c43",
-			Files: []norddrop.QueuedFile{
-				{
-					Id:   "file1ID",
-					Path: "testfile-small",
-					Size: 100,
-				},
-				{
-					Id:   "file2ID",
-					Path: "testfile-big",
-					Size: 1000,
-				},
-				{
-					Id:   "file3ID",
-					Path: "file3.txt",
-					Size: 1000,
-				},
-			},
-		},
-	}
-
-	expected := `{
-    "Timestamp": 0,
-    "Kind": {
-      "Peer": "12.12.12.12",
-      "TransferId": "c13c619c-c70b-49b8-9396-72de88155c43",
-      "Files": [
-        {
-          "Id": "file1ID",
-          "Path": "testfile-small",
-          "Size": 100,
-          "BaseDir": null
-        },
-        {
-          "Id": "file2ID",
-          "Path": "testfile-big",
-          "Size": 1000,
-          "BaseDir": null
-        },
-        {
-          "Id": "file3ID",
-          "Path": "file3.txt",
-          "Size": 1000,
-          "BaseDir": null
-        }
-      ]
-    }
-  }`
-
-	assert.JSONEq(t, expected, eventToString(event, jsonMarshaler{}))
-}
-
-func TestEventToStringWithBrokenMarshaler(t *testing.T) {
-	event := norddrop.Event{
-		Kind: norddrop.EventKindRequestQueued{
-			Peer:       "12.12.12.12",
-			TransferId: "c13c619c-c70b-49b8-9396-72de88155c43",
-			Files: []norddrop.QueuedFile{
-				{
-					Id:   "file1ID",
-					Path: "testfile-small",
-					Size: 100,
-				},
-				{
-					Id:   "file2ID",
-					Path: "testfile-big",
-					Size: 1000,
-				},
-				{
-					Id:   "file3ID",
-					Path: "file3.txt",
-					Size: 1000,
-				},
-			},
-		},
-	}
-
-	expected := "norddrop.EventKindRequestQueued"
-
-	assert.Equal(t, expected, eventToString(event, brokenMarshaler{}))
-}
-
-type brokenMarshaler struct{}
-
-func (bm brokenMarshaler) Marshal(v any) ([]byte, error) {
-	return nil, fmt.Errorf("broken marshaler")
 }

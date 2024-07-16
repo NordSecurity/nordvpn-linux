@@ -1,7 +1,6 @@
 package fileshare
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -13,7 +12,6 @@ import (
 	"sync"
 	"syscall"
 
-	norddrop "github.com/NordSecurity/libdrop-go/v7"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -129,39 +127,39 @@ func (em *EventManager) DisableNotifications() error {
 }
 
 // OnEvent processes events and handles live transfer state.
-func (em *EventManager) OnEvent(event norddrop.Event) {
+func (em *EventManager) OnEvent(event Event) {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
 	if !em.isProd {
-		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", toString(event))
+		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", EventToString(event))
 	}
 
 	switch ev := event.Kind.(type) {
-	case norddrop.EventKindRequestReceived:
+	case EventKindRequestReceived:
 		em.handleRequestReceivedEvent(ev)
-	case norddrop.EventKindRequestQueued: // ignore
-	case norddrop.EventKindFileStarted: // ignore
-	case norddrop.EventKindFileProgress:
+	case EventKindRequestQueued: // ignore
+	case EventKindFileStarted: // ignore
+	case EventKindFileProgress:
 		em.handleFileProgressEvent(ev)
-	case norddrop.EventKindTransferFailed:
+	case EventKindTransferFailed:
 		em.handleTransferFailedEvent(ev)
-	case norddrop.EventKindTransferFinalized:
+	case EventKindTransferFinalized:
 		em.handleTransferFinalizedEvent(ev)
-	case norddrop.EventKindFileDownloaded:
+	case EventKindFileDownloaded:
 		em.handleFileDownloadedEvent(ev)
-	case norddrop.EventKindFileUploaded:
+	case EventKindFileUploaded:
 		em.handleFileUploadedEvent(ev)
-	case norddrop.EventKindFileRejected:
+	case EventKindFileRejected:
 		em.handleFileRejectedEvent(ev)
-	case norddrop.EventKindFileFailed:
+	case EventKindFileFailed:
 		em.handleFileFailedEvent(ev)
 	default:
 		log.Printf(internal.WarningPrefix+" unsupported libdrop event: %T\n", ev)
 	}
 }
 
-func (em *EventManager) handleRequestReceivedEvent(event norddrop.EventKindRequestReceived) {
+func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceived) {
 	peer, err := getPeerByIP(em.meshClient, event.Peer)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to retrieve peer requesting transfer:", err)
@@ -208,7 +206,7 @@ func (em *EventManager) handleRequestReceivedEvent(event norddrop.EventKindReque
 	}
 }
 
-func (em *EventManager) handleFileProgressEvent(event norddrop.EventKindFileProgress) {
+func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
@@ -238,7 +236,7 @@ func (em *EventManager) handleFileProgressEvent(event norddrop.EventKindFileProg
 	}
 }
 
-func (em *EventManager) handleFileDownloadedEvent(event norddrop.EventKindFileDownloaded) {
+func (em *EventManager) handleFileDownloadedEvent(event EventKindFileDownloaded) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
@@ -278,7 +276,7 @@ func (em *EventManager) finalizeFinishedTransfer(transfer *LiveTransfer) {
 	}
 }
 
-func (em *EventManager) handleFileUploadedEvent(event norddrop.EventKindFileUploaded) {
+func (em *EventManager) handleFileUploadedEvent(event EventKindFileUploaded) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
@@ -305,7 +303,7 @@ func (em *EventManager) handleFileUploadedEvent(event norddrop.EventKindFileUplo
 	em.finalizeFinishedTransfer(transfer)
 }
 
-func (em *EventManager) handleFileFailedEvent(event norddrop.EventKindFileFailed) {
+func (em *EventManager) handleFileFailedEvent(event EventKindFileFailed) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
@@ -333,7 +331,7 @@ func (em *EventManager) handleFileFailedEvent(event norddrop.EventKindFileFailed
 	em.finalizeFinishedTransfer(transfer)
 }
 
-func (em *EventManager) handleFileRejectedEvent(event norddrop.EventKindFileRejected) {
+func (em *EventManager) handleFileRejectedEvent(event EventKindFileRejected) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
@@ -361,7 +359,7 @@ func (em *EventManager) handleFileRejectedEvent(event norddrop.EventKindFileReje
 	em.finalizeFinishedTransfer(transfer)
 }
 
-func (em *EventManager) handleTransferFailedEvent(event norddrop.EventKindTransferFailed) {
+func (em *EventManager) handleTransferFailedEvent(event EventKindTransferFailed) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
@@ -370,7 +368,7 @@ func (em *EventManager) handleTransferFailedEvent(event norddrop.EventKindTransf
 	em.finalizeTransfer(transfer, pb.Status(event.Status.Status))
 }
 
-func (em *EventManager) handleTransferFinalizedEvent(event norddrop.EventKindTransferFinalized) {
+func (em *EventManager) handleTransferFinalizedEvent(event EventKindTransferFinalized) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
@@ -703,29 +701,4 @@ func removeFileFromLiveTransfer(transfer *LiveTransfer, file *LiveFile) {
 	transfer.TotalSize -= file.Size
 	transfer.TotalTransferred -= file.Transferred
 	delete(transfer.Files, file.ID)
-}
-
-var defaultMarshaler = jsonMarshaler{}
-
-func toString(event norddrop.Event) string {
-	return eventToString(event, defaultMarshaler)
-}
-
-func eventToString(event norddrop.Event, m marshaler) string {
-	json, err := m.Marshal(event)
-	if err != nil {
-		log.Printf(internal.WarningPrefix+" failed to marshall event: %T, returning just its type\n", event.Kind)
-		return fmt.Sprintf("%T", event.Kind)
-	}
-	return string(json)
-}
-
-type marshaler interface {
-	Marshal(v any) ([]byte, error)
-}
-
-type jsonMarshaler struct{}
-
-func (jm jsonMarshaler) Marshal(v any) ([]byte, error) {
-	return json.Marshal(v)
 }

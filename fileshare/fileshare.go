@@ -5,8 +5,6 @@ import (
 	"net/netip"
 	"time"
 
-	norddrop "github.com/NordSecurity/libdrop-go/v7"
-	_ "github.com/NordSecurity/nordvpn-linux/fileshare/libdrop/symbols" // this is required to make cgo symbols available during linking
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 )
 
@@ -31,7 +29,7 @@ type Fileshare interface {
 	// CancelFile id in a transfer
 	CancelFile(transferID string, fileID string) error
 	// GetTransfersSince provided time from fileshare implementation storage
-	GetTransfersSince(t time.Time) ([]norddrop.TransferInfo, error)
+	GetTransfersSince(t time.Time) ([]LibdropTransfer, error)
 	// PurgeTransfersUntil provided time from fileshare implementation storage
 	PurgeTransfersUntil(until time.Time) error
 }
