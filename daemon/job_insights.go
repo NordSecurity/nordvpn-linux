@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -14,7 +15,7 @@ func JobInsights(
 	dm InsightsDataManager,
 	api core.InsightsAPI,
 	networker interface{ IsVPNActive() bool },
-	events *Events,
+	events *events.Events,
 	downloader bool,
 ) func() {
 	return func() {

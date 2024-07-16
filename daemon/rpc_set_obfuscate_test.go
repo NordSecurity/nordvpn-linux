@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	mockN "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
@@ -35,8 +36,8 @@ func (*mockObfuscateConfigManager) Reset() error {
 func TestSetObfuscate(t *testing.T) {
 	mockConfigManager := mockObfuscateConfigManager{c: config.Config{AutoConnect: false}}
 
-	mockPublisherSubscriber := mockPublisherSubscriber[bool]{}
-	mockEvents := Events{Settings: &SettingsEvents{Obfuscate: &mockPublisherSubscriber}}
+	mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
+	mockEvents := events.Events{Settings: &events.SettingsEvents{Obfuscate: &mockPublisherSubscriber}}
 
 	obfuscatedTechnologies := core.Technologies{
 		core.Technology{
@@ -158,8 +159,8 @@ func TestSetObfuscate(t *testing.T) {
 
 			assert.NoError(t, err)
 			assert.Equal(t, test.payload, resp)
-			assert.Equal(t, test.eventPublished, mockPublisherSubscriber.eventPublished)
-			mockPublisherSubscriber.eventPublished = false
+			assert.Equal(t, test.eventPublished, mockPublisherSubscriber.EventPublished)
+			mockPublisherSubscriber.EventPublished = false
 		})
 	}
 }

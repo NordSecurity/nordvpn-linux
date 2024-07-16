@@ -11,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -39,7 +40,7 @@ type RPC struct {
 	version         string
 	systemInfoFunc  func(string) string
 	networkInfoFunc func() string
-	events          *Events
+	events          *daemonevents.Events
 	// factory picks which VPN implementation to use
 	factory          FactoryFunc
 	endpointResolver network.EndpointResolver
@@ -69,7 +70,7 @@ func NewRPC(
 	authentication core.Authentication,
 	version string,
 	fw firewall.Service,
-	events *Events,
+	events *daemonevents.Events,
 	factory FactoryFunc,
 	endpointResolver network.EndpointResolver,
 	netw networker.Networker,

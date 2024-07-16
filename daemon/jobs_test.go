@@ -14,6 +14,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -104,7 +105,7 @@ func TestStartAutoConnect(t *testing.T) {
 				&mockAuthenticationAPI{},
 				"1.0.0",
 				&workingFirewall{},
-				NewEvents(
+				daemonevents.NewEvents(
 					&subs.Subject[bool]{},
 					&subs.Subject[bool]{},
 					&subs.Subject[events.DataDNS]{},
@@ -125,6 +126,7 @@ func TestStartAutoConnect(t *testing.T) {
 					&subs.Subject[any]{},
 					&subs.Subject[core.ServicesResponse]{},
 					&subs.Subject[events.ServerRating]{},
+					&subs.Subject[any]{},
 					&subs.Subject[int]{},
 					&subs.Subject[core.Insights]{},
 					&subs.Subject[bool]{},
@@ -293,7 +295,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&mockAuthenticationAPI{},
 				"1.0.0",
 				&workingFirewall{},
-				NewEvents(
+				daemonevents.NewEvents(
 					&subs.Subject[bool]{},
 					&subs.Subject[bool]{},
 					&subs.Subject[events.DataDNS]{},
@@ -314,6 +316,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 					&subs.Subject[any]{},
 					&subs.Subject[core.ServicesResponse]{},
 					&subs.Subject[events.ServerRating]{},
+					&subs.Subject[any]{},
 					&subs.Subject[int]{},
 					&subs.Subject[core.Insights]{},
 					&subs.Subject[bool]{},
@@ -342,8 +345,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&mock.DNSGetter{},
 				&subs.Subject[error]{},
 				nil,
-				&subs.Subject[bool]{},
-				&subs.Subject[events.DataConnect]{},
+				&daemonevents.Events{},
 				&testnorduser.MockNorduserClient{},
 			)
 

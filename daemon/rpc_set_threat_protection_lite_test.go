@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSetThreatProtectionLite_Success(t *testing.T) {
@@ -96,14 +98,14 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 
 			networker := networker.Mock{}
 			dnsGetter := mock.DNSGetter{}
-			tplPublisher := &mockPublisherSubscriber[bool]{}
-			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
+			tplPublisher := &events.MockPublisherSubscriber[bool]{}
+			publisher := events.SettingsEvents{ThreatProtectionLite: tplPublisher}
 
 			rpc := RPC{
 				cm:          configManager,
 				netw:        &networker,
 				nameservers: &dnsGetter,
-				events:      &Events{Settings: &publisher},
+				events:      &events.Events{Settings: &publisher},
 			}
 
 			resp, err := rpc.SetThreatProtectionLite(context.Background(),
@@ -125,7 +127,7 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 
 			assert.Equal(t, test.desiredTpl, config.AutoConnectData.ThreatProtectionLite,
 				"Threat protection lite was not saved in the config.")
-			assert.Equal(t, true, tplPublisher.eventPublished, "TPL set event was not published.")
+			assert.Equal(t, true, tplPublisher.EventPublished, "TPL set event was not published.")
 		})
 	}
 }
@@ -198,14 +200,14 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 				SetDNSErr: test.setDnsErr,
 			}
 			dnsGetter := mock.DNSGetter{}
-			tplPublisher := &mockPublisherSubscriber[bool]{}
-			publisher := SettingsEvents{ThreatProtectionLite: tplPublisher}
+			tplPublisher := &events.MockPublisherSubscriber[bool]{}
+			publisher := events.SettingsEvents{ThreatProtectionLite: tplPublisher}
 
 			rpc := RPC{
 				cm:          configManager,
 				netw:        &networker,
 				nameservers: &dnsGetter,
-				events:      &Events{Settings: &publisher},
+				events:      &events.Events{Settings: &publisher},
 			}
 
 			resp, err := rpc.SetThreatProtectionLite(context.Background(),

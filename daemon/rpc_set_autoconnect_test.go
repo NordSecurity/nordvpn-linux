@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -159,8 +160,8 @@ func TestAutoconnect(t *testing.T) {
 	for _, test := range tests {
 		mockAuthChecker := mockAutoconnectAuthChecker{dedicatedIPExpired: test.isDedicatedIPExpired}
 		mockConfigManager := newMockConfigManager()
-		mockPublisherSubscriber := mockPublisherSubscriber[bool]{}
-		mockEvents := Events{Settings: &SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
+		mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
+		mockEvents := events.Events{Settings: &events.SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
 		dm := DataManager{serversData: ServersData{Servers: serversList()}}
 		r := RPC{cm: mockConfigManager, ac: mockAuthChecker, events: &mockEvents, dm: &dm, serversAPI: &mockServersAPI{}}
 		request := pb.SetAutoconnectRequest{AutoConnect: true}
@@ -175,7 +176,7 @@ func TestAutoconnect(t *testing.T) {
 			if err == nil {
 				assert.Equal(t, test.returnCode, resp.Type)
 			}
-			assert.Equal(t, test.eventPublished, mockPublisherSubscriber.eventPublished)
+			assert.Equal(t, test.eventPublished, mockPublisherSubscriber.EventPublished)
 		})
 	}
 }

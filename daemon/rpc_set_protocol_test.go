@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
-	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 )
 
 type mockProtocolPublisherSubcriber struct {
@@ -74,14 +76,14 @@ func TestSetProtocol_Success(t *testing.T) {
 			})
 
 			protocolPublisher := &mockProtocolPublisherSubcriber{}
-			publisher := SettingsEvents{Protocol: protocolPublisher}
+			publisher := daemonevents.SettingsEvents{Protocol: protocolPublisher}
 			networker := networker.Mock{
 				VpnActive: test.vpnActive,
 			}
 
 			rpc := RPC{
 				cm:     configManager,
-				events: &Events{Settings: &publisher},
+				events: &daemonevents.Events{Settings: &publisher},
 				netw:   &networker,
 			}
 
@@ -168,12 +170,12 @@ func TestSetProtocol_Error(t *testing.T) {
 			filesystem.WriteErr = test.writeConfigErr
 
 			protocolPublisher := &mockProtocolPublisherSubcriber{}
-			publisher := SettingsEvents{Protocol: protocolPublisher}
+			publisher := daemonevents.SettingsEvents{Protocol: protocolPublisher}
 			networker := networker.Mock{}
 
 			rpc := RPC{
 				cm:     configManager,
-				events: &Events{Settings: &publisher},
+				events: &daemonevents.Events{Settings: &publisher},
 				netw:   &networker,
 			}
 
