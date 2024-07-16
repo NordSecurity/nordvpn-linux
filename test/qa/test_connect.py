@@ -1,5 +1,7 @@
 import socket
 import time
+import re
+import random
 
 import pytest
 import sh
@@ -24,11 +26,11 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
-def connect_base_test(connection_settings, group=(), name="", hostname=""):
+def connect_base_test(connection_settings, group=(), name="", hostname="", virtual=False):
     output = sh.nordvpn.connect(group, _tty_out=False)
     print(output)
 
-    assert lib.is_connect_successful(output, name, hostname)
+    assert lib.is_connect_successful(output, name, hostname, virtual)
 
     packets_captured = network.capture_traffic(connection_settings)
 
@@ -373,7 +375,7 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
         assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_unavailable_servers(tech, proto, obfuscated):
@@ -449,4 +451,26 @@ def test_status_connected(tech, proto, obfuscated):
     else:
         assert time_passed - 1 <= time_connected <= time_passed + 1
 
+    disconnect_base_test()
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+def test_connect_to_virtual_server(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    sh.nordvpn.set("virtual-location", "on")
+    output = sh.nordvpn.countries().stdout.decode("utf-8")
+
+    # This pattern captures all substring starting with \x1b\[94m[ that are single words. It should capture all of the
+    # virtual server names, as in the terminal output they are colored blue.
+    pattern = r'\x1b\[94m\w+\x1b\[0m'
+    matches = re.findall(pattern, output)
+
+    assert len(matches) > 0
+
+    server = random.choice(matches)
+    # Strip color formatting so we can connect to a server.
+    server = server.strip("\x1b[94m").strip("\x1b[0m")
+    connect_base_test((tech, proto, obfuscated), server, virtual=True)
     disconnect_base_test()

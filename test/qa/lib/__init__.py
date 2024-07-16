@@ -274,7 +274,7 @@ def flush_allowlist():
 
 
 # returns True when successfully connected
-def is_connect_successful(output: str, name: str = "", hostname: str = ""):
+def is_connect_successful(output: str, name: str = "", hostname: str = "", virtual: bool = False):
     if not name and not hostname:
         pattern = r'Connecting to (.*?) \((.*?)\)'
         match = re.match(pattern, str(output))
@@ -289,6 +289,11 @@ def is_connect_successful(output: str, name: str = "", hostname: str = ""):
         return (
             "Connecting to" in output
             and "You are connected to" in output
+        )
+    elif virtual:
+                    return (
+        f"Connecting to {name} ({hostname}) - Virtual" in output
+        and f"You are connected to {name} ({hostname}) - Virtual!" in output
         )
     else:
             return (
