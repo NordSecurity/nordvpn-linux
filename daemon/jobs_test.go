@@ -17,7 +17,6 @@ import (
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
@@ -105,33 +104,7 @@ func TestStartAutoConnect(t *testing.T) {
 				&mockAuthenticationAPI{},
 				"1.0.0",
 				&workingFirewall{},
-				daemonevents.NewEvents(
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[events.DataDNS]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[config.Protocol]{},
-					&subs.Subject[events.DataAllowlist]{},
-					&subs.Subject[config.Technology]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[any]{},
-					&subs.Subject[events.DataConnect]{},
-					&subs.Subject[events.DataDisconnect]{},
-					&subs.Subject[any]{},
-					&subs.Subject[core.ServicesResponse]{},
-					&subs.Subject[events.ServerRating]{},
-					&subs.Subject[any]{},
-					&subs.Subject[int]{},
-					&subs.Subject[core.Insights]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-				),
+				daemonevents.NewEventsEmpty(),
 				func(config.Technology) (vpn.VPN, error) {
 					return &mock.WorkingVPN{}, nil
 				},
@@ -295,33 +268,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&mockAuthenticationAPI{},
 				"1.0.0",
 				&workingFirewall{},
-				daemonevents.NewEvents(
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[events.DataDNS]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[config.Protocol]{},
-					&subs.Subject[events.DataAllowlist]{},
-					&subs.Subject[config.Technology]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[any]{},
-					&subs.Subject[events.DataConnect]{},
-					&subs.Subject[events.DataDisconnect]{},
-					&subs.Subject[any]{},
-					&subs.Subject[core.ServicesResponse]{},
-					&subs.Subject[events.ServerRating]{},
-					&subs.Subject[any]{},
-					&subs.Subject[int]{},
-					&subs.Subject[core.Insights]{},
-					&subs.Subject[bool]{},
-					&subs.Subject[bool]{},
-				),
+				daemonevents.NewEventsEmpty(),
 				func(config.Technology) (vpn.VPN, error) {
 					return &mock.WorkingVPN{}, nil
 				},

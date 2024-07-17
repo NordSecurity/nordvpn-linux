@@ -1,6 +1,9 @@
 package meshnet
 
-import "github.com/NordSecurity/nordvpn-linux/events"
+import (
+	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
+)
 
 // Publisher defines receiver methods for meshnet related notifications
 type Publisher interface {
@@ -12,6 +15,13 @@ type Publisher interface {
 type Events struct {
 	PeerUpdate  events.PublishSubcriber[[]string]
 	SelfRemoved events.PublishSubcriber[any]
+}
+
+func NewEventsEmpty() *Events {
+	return NewEvents(
+		&subs.Subject[[]string]{},
+		&subs.Subject[any]{},
+	)
 }
 
 func NewEvents(
