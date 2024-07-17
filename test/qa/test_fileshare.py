@@ -31,6 +31,7 @@ def setup_module(module):  # noqa: ARG001
     # will be remove once default download directory setting is implemented
     os.system(f"sudo mkdir -p -m 0777 {default_download_directory}")
 
+    sh.nordvpn.set.notify.off()
     sh.nordvpn.set.meshnet.on()
     # Ensure clean starting state
     meshnet.remove_all_peers()
@@ -42,6 +43,7 @@ def setup_module(module):  # noqa: ARG001
 
     ssh_client.exec_command(f"mkdir -p {workdir}")
     ssh_client.exec_command(f"chmod 0777 {workdir}")
+    ssh_client.exec_command("nordvpn set notify off")
     ssh_client.exec_command("nordvpn set mesh on")
 
     ssh_client.exec_command("nordvpn mesh peer refresh")
@@ -69,12 +71,14 @@ def teardown_module(module):  # noqa: ARG001
     shutil.copy("/home/qa/.cache/nordvpn/norduserd.log", dest_logs_path)
     shutil.copy("/home/qa/.cache/nordvpn/nordfileshare.log", dest_logs_path)
     ssh_client.exec_command("nordvpn set mesh off")
+    ssh_client.exec_command("nordvpn set notify on")
     ssh_client.exec_command("nordvpn logout --persist-token")
     daemon.stop_peer(ssh_client)
     daemon.uninstall_peer(ssh_client)
     ssh_client.disconnect()
 
     sh.nordvpn.set.meshnet.off()
+    sh.nordvpn.set.notify.on()
     sh.nordvpn.logout("--persist-token")
     daemon.stop()
 

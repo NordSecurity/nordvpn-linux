@@ -107,7 +107,8 @@ def app_has_defaults_settings():
         "Analytics: enabled" in settings and
         "Kill Switch: disabled" in settings and
         "Threat Protection Lite: disabled" in settings and
-        "Notify: disabled" in settings and
+        "Notify: enabled" in settings and
+        "Tray: enabled" in settings and
         "Auto-connect: disabled" in settings and
         "IPv6: disabled" in settings and
         "Meshnet: disabled" in settings and
