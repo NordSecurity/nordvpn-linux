@@ -107,15 +107,9 @@ type mockConfigManager struct {
 }
 
 func newMockConfigManager() *mockConfigManager {
-	ids, _ := internal.SystemUsersIDs()
-	users := make(map[int64]bool, len(ids))
-	for _, id := range ids {
-		users[id] = true
-	}
-
 	return &mockConfigManager{c: config.Config{
 		Firewall:  true,
-		UsersData: &config.UsersData{Notify: users, TrayOff: users},
+		UsersData: &config.UsersData{Notify: config.UidBoolMap{}, NotifyOff: config.UidBoolMap{}, TrayOff: config.UidBoolMap{}},
 		TokensData: map[int64]config.TokenData{
 			1337: {
 				OpenVPNUsername: "bad",

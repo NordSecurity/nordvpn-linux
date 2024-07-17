@@ -7,8 +7,9 @@ import (
 
 // UsersData stores users which will receive notifications and see the tray icon.
 type UsersData struct {
-	Notify  UidBoolMap `json:"notify"`
-	TrayOff UidBoolMap `json:"tray_off"`
+	Notify    UidBoolMap `json:"notify"` // To be removed in a net major version
+	NotifyOff UidBoolMap `json:"notify_off"`
+	TrayOff   UidBoolMap `json:"tray_off"`
 }
 
 // UidBoolMap is a set of user ids.
