@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -16,8 +15,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// How much time dedicated IP servers list is valid, before making a new API call
-const cacheValidityForDIPServer = 10 * time.Minute
+type DedicatedIPService struct {
+	ExpiresAt string
+	ServerID  int64
+}
 
 // Checker provides information about current authentication.
 type Checker interface {
@@ -25,10 +26,8 @@ type Checker interface {
 	IsLoggedIn() bool
 	// IsVPNExpired is used to check whether the user is allowed to use VPN
 	IsVPNExpired() (bool, error)
-	// IsDedicatedIPExpired is used to check whether the user is allowed to use dedicated IP servers
-	IsDedicatedIPExpired() (bool, error)
-	// Get the service data if the user has it and nil otherwise
-	ServiceData(serviceID int64) (*config.ServiceData, error)
+	// Get all available dedicated IP services
+	GetDedicatedIPServices() ([]DedicatedIPService, error)
 }
 
 const (
@@ -36,16 +35,38 @@ const (
 	DedicatedIPServiceID = 11
 )
 
+type expirationChecker interface {
+	// isExpired checks if date in '2006-01-02 15:04:05' format has passed
+	isExpired(date string) bool
+}
+
+type systemTimeExpirationChecker struct{}
+
+// isTokenExpired reports whether the token is expired or not.
+func (systemTimeExpirationChecker) isExpired(expiryTime string) bool {
+	if expiryTime == "" {
+		return true
+	}
+
+	expiry, err := time.Parse(internal.ServerDateFormat, expiryTime)
+	if err != nil {
+		return true
+	}
+
+	return time.Now().After(expiry)
+}
+
 // RenewingChecker does both authentication checks and renewals in case of expiration.
 type RenewingChecker struct {
-	cm    config.Manager
-	creds core.CredentialsAPI
-	mu    sync.Mutex
+	cm         config.Manager
+	creds      core.CredentialsAPI
+	expChecker expirationChecker
+	mu         sync.Mutex
 }
 
 // NewRenewingChecker is a default constructor for RenewingChecker.
 func NewRenewingChecker(cm config.Manager, creds core.CredentialsAPI) *RenewingChecker {
-	return &RenewingChecker{cm: cm, creds: creds}
+	return &RenewingChecker{cm: cm, creds: creds, expChecker: systemTimeExpirationChecker{}}
 }
 
 // IsLoggedIn reports user login status.
@@ -81,8 +102,8 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 	}
 
 	data := cfg.TokensData[cfg.AutoConnectData.ID]
-	if isTokenExpired(data.ServiceExpiry) {
-		if err := r.fetchServices(cfg.AutoConnectData.ID, &data); err != nil {
+	if r.expChecker.isExpired(data.ServiceExpiry) {
+		if err := r.fetchSaveServices(cfg.AutoConnectData.ID, &data); err != nil {
 			return true, fmt.Errorf("updating service expiry token: %w", err)
 		}
 		if err := r.cm.SaveWith(saveVpnExpirationDate(cfg.AutoConnectData.ID, data)); err != nil {
@@ -90,63 +111,38 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 		}
 	}
 
-	return isTokenExpired(data.ServiceExpiry), nil
+	return r.expChecker.isExpired(data.ServiceExpiry), nil
 }
 
-// IsDedicatedIPExpired is used to check whether the user is allowed to use dedicated IP servers
-func (r *RenewingChecker) IsDedicatedIPExpired() (bool, error) {
+func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	var cfg config.Config
-	if err := r.cm.Load(&cfg); err != nil {
-		return true, fmt.Errorf("loading config: %w", err)
+	services, err := r.fetchServices()
+	if err != nil {
+		return nil, fmt.Errorf("fetching available services: %w", err)
 	}
 
-	data := cfg.TokensData[cfg.AutoConnectData.ID]
-	if isTokenExpired(data.DedicatedIPExpiry) {
-		if err := r.fetchServices(cfg.AutoConnectData.ID, &data); err != nil {
-			return true, fmt.Errorf("updating service expiry token: %w", err)
-		}
-		if err := r.cm.SaveWith(saveVpnExpirationDate(cfg.AutoConnectData.ID, data)); err != nil {
-			return true, fmt.Errorf("saving config: %w", err)
-		}
-	}
-
-	return isTokenExpired(data.DedicatedIPExpiry), nil
-}
-
-func (r *RenewingChecker) ServiceData(serviceID int64) (*config.ServiceData, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	var cfg config.Config
-	if err := r.cm.Load(&cfg); err != nil {
-		return nil, fmt.Errorf("loading config: %w", err)
-	}
-
-	data := cfg.TokensData[cfg.AutoConnectData.ID]
-	for _, serviceData := range data.Services.ServicesData {
-		if serviceData.Service.ID == serviceID {
-			if isTokenExpired(serviceData.ExpiresAt) ||
-				(serviceID == DedicatedIPServiceID &&
-					time.Now().After(data.Services.CachedDate.Add(getDipCacheValidity()))) {
-				// for DIP refresh the service because the servers list can change
-				if err := r.fetchServices(cfg.AutoConnectData.ID, &data); err != nil {
-					return nil, fmt.Errorf("updating service expiry token: %w", err)
-				}
+	dipServerIDs := []DedicatedIPService{}
+	for _, service := range services {
+		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
+			serversLen := len(service.Details.Servers)
+			if serversLen != 1 {
+				log.Println(internal.ErrorPrefix,
+					"unexpected number of dedicated ip servers in service, expected 1, is", serversLen)
+				continue
 			}
-
-			return &serviceData, nil
+			dipServerIDs = append(dipServerIDs,
+				DedicatedIPService{ExpiresAt: service.ExpiresAt, ServerID: service.Details.Servers[0].ID})
 		}
 	}
 
-	return nil, fmt.Errorf("service not found")
+	return dipServerIDs, nil
 }
 
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	// We are renewing token if it is expired because we need to make some API calls later
-	if isTokenExpired(data.TokenExpiry) {
+	if r.expChecker.isExpired(data.TokenExpiry) {
 		if err := r.renewLoginToken(&data); err != nil {
 			if errors.Is(err, core.ErrUnauthorized) ||
 				errors.Is(err, core.ErrNotFound) ||
@@ -257,7 +253,8 @@ func (r *RenewingChecker) renewVpnCredentials(data *config.TokenData) error {
 	return nil
 }
 
-func (r *RenewingChecker) fetchServices(userId int64, data *config.TokenData) error {
+// fetchSaveServices fetches services and updates data appropriately
+func (r *RenewingChecker) fetchSaveServices(userId int64, data *config.TokenData) error {
 	services, err := r.creds.Services(data.Token)
 	if err != nil {
 		return err
@@ -267,15 +264,6 @@ func (r *RenewingChecker) fetchServices(userId int64, data *config.TokenData) er
 		if service.Service.ID == VPNServiceID { // VPN service
 			data.ServiceExpiry = service.ExpiresAt
 		}
-
-		if service.Service.ID == DedicatedIPServiceID {
-			data.DedicatedIPExpiry = service.ExpiresAt
-		}
-	}
-
-	data.Services = config.Services{
-		CachedDate:   time.Now(),
-		ServicesData: services,
 	}
 
 	if err := r.cm.SaveWith(saveVpnExpirationDate(userId, *data)); err != nil {
@@ -283,6 +271,22 @@ func (r *RenewingChecker) fetchServices(userId int64, data *config.TokenData) er
 	}
 
 	return nil
+}
+
+func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		return nil, fmt.Errorf("loading config: %w", err)
+	}
+
+	data := cfg.TokensData[cfg.AutoConnectData.ID]
+
+	services, err := r.creds.Services(data.Token)
+	if err != nil {
+		return nil, fmt.Errorf("fetching available services: %w", err)
+	}
+
+	return services, nil
 }
 
 // saveLoginToken persists only token related data,
@@ -310,8 +314,6 @@ func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc 
 		defer func() { c.TokensData[userID] = user }()
 
 		user.ServiceExpiry = data.ServiceExpiry
-		user.DedicatedIPExpiry = data.DedicatedIPExpiry
-		user.Services = data.Services
 		return c
 	}
 }
@@ -334,30 +336,4 @@ func Logout(user int64) config.SaveFunc {
 		delete(c.TokensData, user)
 		return c
 	}
-}
-
-// isTokenExpired reports whether the token is expired or not.
-func isTokenExpired(expiryTime string) bool {
-	if expiryTime == "" {
-		return true
-	}
-
-	expiry, err := time.Parse(internal.ServerDateFormat, expiryTime)
-	if err != nil {
-		return true
-	}
-
-	return time.Now().After(expiry)
-}
-
-func getDipCacheValidity() time.Duration {
-	if validity := os.Getenv("DIP_CACHE_VALIDITY"); validity != "" {
-		if duration, err := time.ParseDuration(validity); err != nil {
-			log.Println(internal.WarningPrefix, "cannot convert env DIP cache duration", validity, err)
-		} else {
-			return duration
-		}
-	}
-
-	return cacheValidityForDIPServer
 }

@@ -82,7 +82,7 @@ func (validCredentialsAPI) Services(string) (core.ServicesResponse, error) {
 	return core.ServicesResponse{
 		{
 			ExpiresAt: "2029-12-27 00:00:00",
-			Service:   config.Service{ID: 1},
+			Service:   core.Service{ID: 1},
 		},
 	}, nil
 }
@@ -100,10 +100,7 @@ type workingLoginChecker struct {
 
 func (*workingLoginChecker) IsLoggedIn() bool              { return true }
 func (c *workingLoginChecker) IsVPNExpired() (bool, error) { return c.isVPNExpired, c.vpnErr }
-func (c *workingLoginChecker) IsDedicatedIPExpired() (bool, error) {
-	return c.isDedicatedIPExpired, c.dedicatedIPErr
-}
-func (*workingLoginChecker) ServiceData(serviceID int64) (*config.ServiceData, error) {
+func (*workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
 

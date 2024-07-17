@@ -115,7 +115,27 @@ type CredentialsResponse struct {
 	NordlynxPrivateKey string `json:"nordlynx_private_key"`
 }
 
-type ServicesResponse []config.ServiceData
+type ServiceData struct {
+	ID        int64          `json:"ID"`
+	ExpiresAt string         `json:"expires_at"`
+	Service   Service        `json:"service"`
+	Details   ServiceDetails `json:"details,omitempty"`
+}
+
+type Service struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type ServiceServer struct {
+	ID int64 `json:"id"`
+}
+
+type ServiceDetails struct {
+	Servers []ServiceServer `json:"servers"`
+}
+
+type ServicesResponse []ServiceData
 
 type CurrentUserResponse struct {
 	Username string `json:"username"`

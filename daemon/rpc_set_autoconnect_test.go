@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -20,10 +21,7 @@ type mockAutoconnectAuthChecker struct {
 
 func (mockAutoconnectAuthChecker) IsLoggedIn() bool            { return true }
 func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error) { return false, nil }
-func (m mockAutoconnectAuthChecker) IsDedicatedIPExpired() (bool, error) {
-	return m.dedicatedIPExpired, nil
-}
-func (mockAutoconnectAuthChecker) ServiceData(serviceID int64) (*config.ServiceData, error) {
+func (mockAutoconnectAuthChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
 

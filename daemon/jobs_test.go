@@ -38,10 +38,7 @@ func (failingLoginChecker) IsLoggedIn() bool { return false }
 func (failingLoginChecker) IsVPNExpired() (bool, error) {
 	return true, errors.New("IsVPNExpired error")
 }
-func (failingLoginChecker) IsDedicatedIPExpired() (bool, error) {
-	return true, errors.New("IsDedicatedIPExipred error")
-}
-func (failingLoginChecker) ServiceData(serviceID int64) (*config.ServiceData, error) {
+func (failingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
 

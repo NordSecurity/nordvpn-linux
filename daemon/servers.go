@@ -456,23 +456,13 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 	log.Println(internal.InfoPrefix, "server", server.Hostname, "remote", remote)
 
 	if isDedicatedIP(server) {
-		// check if the user has DIP subscription and that the selected user is part of its DIP servers
-		expired, err := r.ac.IsDedicatedIPExpired()
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "checking dedicated IP expiration:", err)
-			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
-		}
-
-		if expired {
-			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
-		}
-		service, err := r.ac.ServiceData(auth.DedicatedIPServiceID)
+		dedicatedIPServices, err := r.ac.GetDedicatedIPServices()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "getting dedicated IP service data", err)
 			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 		}
-		index := slices.IndexFunc(service.Details.Servers, func(s config.ServiceServer) bool {
-			return s.ID == server.ID
+		index := slices.IndexFunc(dedicatedIPServices, func(s auth.DedicatedIPService) bool {
+			return s.ServerID == server.ID
 		})
 		if index == -1 {
 			log.Println(internal.ErrorPrefix, "server not into the DIP servers list")
@@ -497,30 +487,20 @@ func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
 }
 
 func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*core.Server, error) {
-	expired, err := authChecker.IsDedicatedIPExpired()
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking dedicated IP expiration:", err)
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
-	}
-
-	if expired {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
-	}
-
-	service, err := authChecker.ServiceData(auth.DedicatedIPServiceID)
+	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "getting dedicated IP service data", err)
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 	}
 
-	if len(service.Details.Servers) == 0 {
+	if len(dedicatedIPServices) == 0 {
 		// TODO: DIP - error message when no server are selected by the user
 		log.Println(internal.ErrorPrefix, "no servers assigned to the account")
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 	}
 
-	serverID := service.Details.Servers[rand.Intn(len(service.Details.Servers))].ID
-	server, err := getServerByID(servers, serverID)
+	service := dedicatedIPServices[rand.Intn(len(dedicatedIPServices))]
+	server, err := getServerByID(servers, service.ServerID)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "DIP server not found", err)
 		return nil, internal.ErrServerIsUnavailable
