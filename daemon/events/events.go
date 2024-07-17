@@ -4,11 +4,42 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 )
 
 type Publisher interface {
 	SettingsPublisher
 	ServicePublisher
+}
+
+func NewEventsEmpty() *Events {
+	return NewEvents(
+		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[events.DataDNS]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[config.Protocol]{},
+		&subs.Subject[events.DataAllowlist]{},
+		&subs.Subject[config.Technology]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[any]{},
+		&subs.Subject[events.DataConnect]{},
+		&subs.Subject[events.DataDisconnect]{},
+		&subs.Subject[any]{},
+		&subs.Subject[core.ServicesResponse]{},
+		&subs.Subject[events.ServerRating]{},
+		&subs.Subject[any]{},
+		&subs.Subject[int]{},
+		&subs.Subject[core.Insights]{},
+		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
+	)
 }
 
 func NewEvents(

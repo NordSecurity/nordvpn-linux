@@ -142,37 +142,8 @@ func main() {
 
 	// Events
 
-	daemonEvents := daemonevents.NewEvents(
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[events.DataDNS]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[config.Protocol]{},
-		&subs.Subject[events.DataAllowlist]{},
-		&subs.Subject[config.Technology]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[any]{},
-		&subs.Subject[events.DataConnect]{},
-		&subs.Subject[events.DataDisconnect]{},
-		&subs.Subject[any]{},
-		&subs.Subject[core.ServicesResponse]{},
-		&subs.Subject[events.ServerRating]{},
-		&subs.Subject[any]{},
-		&subs.Subject[int]{},
-		&subs.Subject[core.Insights]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-	)
-	meshnetEvents := meshnet.NewEvents(
-		&subs.Subject[[]string]{},
-		&subs.Subject[any]{},
-	)
+	daemonEvents := daemonevents.NewEventsEmpty()
+	meshnetEvents := meshnet.NewEventsEmpty()
 	debugSubject := &subs.Subject[string]{}
 	infoSubject := &subs.Subject[string]{}
 	errSubject := &subs.Subject[error]{}

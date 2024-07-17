@@ -8,7 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -16,65 +15,13 @@ import (
 
 func TestNewDaemonSubjects(t *testing.T) {
 	category.Set(t, category.Unit)
-	valid, _ := isValid(NewEvents(
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[events.DataDNS]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[config.Protocol]{},
-		&subs.Subject[events.DataAllowlist]{},
-		&subs.Subject[config.Technology]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[any]{},
-		&subs.Subject[events.DataConnect]{},
-		&subs.Subject[events.DataDisconnect]{},
-		&subs.Subject[any]{},
-		&subs.Subject[core.ServicesResponse]{},
-		&subs.Subject[events.ServerRating]{},
-		&subs.Subject[any]{},
-		&subs.Subject[int]{},
-		&subs.Subject[core.Insights]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-	))
+	valid, _ := isValid(NewEventsEmpty())
 	assert.True(t, valid)
 }
 
 func TestDaemonSubjectsSubscribe(t *testing.T) {
 	category.Set(t, category.Unit)
-	subjects := NewEvents(
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[events.DataDNS]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[config.Protocol]{},
-		&subs.Subject[events.DataAllowlist]{},
-		&subs.Subject[config.Technology]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[any]{},
-		&subs.Subject[events.DataConnect]{},
-		&subs.Subject[events.DataDisconnect]{},
-		&subs.Subject[any]{},
-		&subs.Subject[core.ServicesResponse]{},
-		&subs.Subject[events.ServerRating]{},
-		&subs.Subject[any]{},
-		&subs.Subject[int]{},
-		&subs.Subject[core.Insights]{},
-		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
-	)
+	subjects := NewEventsEmpty()
 	subjects.Subscribe(&mockDaemonSubscriber{})
 	_, minimum := isValid(subjects)
 	assert.Equal(t, 1, minimum)
