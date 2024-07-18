@@ -503,6 +503,10 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 		return nil, internal.ErrUnhandled
 	}
 
+	if len(dedicatedIPServices) == 0 {
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+	}
+
 	service := dedicatedIPServices[rand.Intn(len(dedicatedIPServices))]
 	server, err := getServerByID(servers, service.ServerID)
 	if err != nil {

@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
@@ -16,13 +15,12 @@ import (
 )
 
 type mockAutoconnectAuthChecker struct {
-	dedicatedIPExpired bool
 }
 
 func (mockAutoconnectAuthChecker) IsLoggedIn() bool            { return true }
 func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error) { return false, nil }
 func (mockAutoconnectAuthChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
-	return nil, fmt.Errorf("Not implemented")
+	return []auth.DedicatedIPService{}, nil
 }
 
 func TestAutoconnect(t *testing.T) {
@@ -160,7 +158,7 @@ func TestAutoconnect(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		mockAuthChecker := mockAutoconnectAuthChecker{dedicatedIPExpired: test.isDedicatedIPExpired}
+		mockAuthChecker := mockAutoconnectAuthChecker{}
 		mockConfigManager := newMockConfigManager()
 		mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
 		mockEvents := events.Events{Settings: &events.SettingsEvents{Autoconnect: &mockPublisherSubscriber}}

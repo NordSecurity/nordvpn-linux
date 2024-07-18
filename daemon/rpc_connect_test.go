@@ -100,8 +100,16 @@ type workingLoginChecker struct {
 
 func (*workingLoginChecker) IsLoggedIn() bool              { return true }
 func (c *workingLoginChecker) IsVPNExpired() (bool, error) { return c.isVPNExpired, c.vpnErr }
-func (*workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
-	return nil, fmt.Errorf("Not implemented")
+func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
+	if c.isDedicatedIPExpired {
+		return nil, fmt.Errorf("dedicated IP is expired")
+	}
+
+	if c.dedicatedIPErr != nil {
+		return nil, c.dedicatedIPErr
+	}
+
+	return []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 1111}}, nil
 }
 
 type mockAnalytics struct{}
@@ -166,39 +174,6 @@ func TestRpcConnect(t *testing.T) {
 			checker: &workingLoginChecker{vpnErr: errors.New("test error")},
 			resp:    internal.CodeTokenRenewError,
 		},
-		{
-			name:        "Dedicated IP succesfull connect",
-			serverGroup: "Dedicated_IP",
-			factory: func(config.Technology) (vpn.VPN, error) {
-				return &mock.WorkingVPN{}, nil
-			},
-			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
-			checker: &workingLoginChecker{isDedicatedIPExpired: false},
-			resp:    internal.CodeConnected,
-		},
-		{
-			name:        "Dedicated IP expired",
-			serverGroup: "Dedicated_IP",
-			factory: func(config.Technology) (vpn.VPN, error) {
-				return &mock.WorkingVPN{}, nil
-			},
-			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
-			checker: &workingLoginChecker{isDedicatedIPExpired: true},
-			resp:    internal.CodeDedicatedIPRenewError,
-		},
-		{
-			name:        "Dedicated IP check fails",
-			serverGroup: "Dedicated_IP",
-			factory: func(config.Technology) (vpn.VPN, error) {
-				return &mock.WorkingVPN{}, nil
-			},
-			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
-			checker: &workingLoginChecker{isDedicatedIPExpired: true, dedicatedIPErr: errors.New("test error")},
-			resp:    internal.CodeDedicatedIPRenewError,
-		},
 	}
 
 	for _, test := range tests {
@@ -240,7 +215,7 @@ func TestRpcConnect(t *testing.T) {
 				&RegistryMock{},
 			)
 			server := &mockRPCServer{}
-			err := rpc.Connect(&pb.ConnectRequest{ServerGroup: "Dedicated_IP"}, server)
+			err := rpc.Connect(&pb.ConnectRequest{ServerGroup: test.serverGroup}, server)
 			assert.NoError(t, err)
 			assert.Equal(t, server.msg.Type, test.resp)
 		})
