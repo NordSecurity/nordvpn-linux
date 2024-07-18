@@ -180,7 +180,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		},
 		Details: core.ServiceDetails{
 			Servers: []core.ServiceServer{
-				core.ServiceServer{ID: dipSercice2ServerID},
+				{ID: dipSercice2ServerID},
 			},
 		},
 	}
@@ -193,7 +193,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		},
 		Details: core.ServiceDetails{
 			Servers: []core.ServiceServer{
-				core.ServiceServer{ID: 33333},
+				{ID: 33333},
 			},
 		},
 	}
@@ -260,7 +260,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 			},
 		},
 		{
-			name: "mutliple service types",
+			name: "multiple service types",
 			servicesResponse: []core.ServiceData{
 				vpnService,
 				unknownService,
