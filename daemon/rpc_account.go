@@ -70,7 +70,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 
 	dedicatedIPExpirationDate, err := findLatestDIPExpirationData(dipServices)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting latest dedicated ip expiration date: %w", err)
+		log.Println(internal.ErrorPrefix, "getting latest dedicated ip expiration date: ", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	}
 

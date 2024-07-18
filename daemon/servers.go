@@ -458,16 +458,23 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 	if isDedicatedIP(server) {
 		dedicatedIPServices, err := r.ac.GetDedicatedIPServices()
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "getting dedicated IP service data", err)
+			log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
+			if errors.Is(err, auth.ErrNoDIPServers) {
+				return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
+			}
+			return nil, false, internal.ErrUnhandled
+		}
+
+		if len(dedicatedIPServices) == 0 {
 			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 		}
+
 		index := slices.IndexFunc(dedicatedIPServices, func(s auth.DedicatedIPService) bool {
 			return s.ServerID == server.ID
 		})
 		if index == -1 {
 			log.Println(internal.ErrorPrefix, "server not into the DIP servers list")
-			// TODO: DIP - error message when the server is not into the list of servers
-			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 		}
 	}
 
@@ -489,20 +496,17 @@ func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
 func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*core.Server, error) {
 	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated IP service data", err)
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
-	}
-
-	if len(dedicatedIPServices) == 0 {
-		// TODO: DIP - error message when no server are selected by the user
-		log.Println(internal.ErrorPrefix, "no servers assigned to the account")
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+		log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
+		if errors.Is(err, auth.ErrNoDIPServers) {
+			return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
+		}
+		return nil, internal.ErrUnhandled
 	}
 
 	service := dedicatedIPServices[rand.Intn(len(dedicatedIPServices))]
 	server, err := getServerByID(servers, service.ServerID)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "DIP server not found", err)
+		log.Println(internal.ErrorPrefix, "DIP server not found:", err)
 		return nil, internal.ErrServerIsUnavailable
 	}
 

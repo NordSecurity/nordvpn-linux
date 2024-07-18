@@ -53,6 +53,8 @@ const (
 	CodeTokenInvalid                   int64 = 3039
 	CodePrivateSubnetLANDiscovery      int64 = 3040
 	CodeDedicatedIPRenewError          int64 = 3041
+	CodeDedicatedIPNoServer            int64 = 3042
+	CodeDedicatedIPServiceButNoServers int64 = 3043
 )
 
 type ErrorWithCode struct {

@@ -198,6 +198,13 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		},
 	}
 
+	dipServiceNoServer := core.ServiceData{
+		ExpiresAt: "2050-08-22 00:00:00",
+		Service: core.Service{
+			ID: DedicatedIPServiceID,
+		},
+	}
+
 	vpnService := core.ServiceData{
 		ExpiresAt: "2050-08-22 00:00:00",
 		Service: core.Service{
@@ -287,6 +294,14 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		{
 			name:                "config error",
 			configLoadErr:       fmt.Errorf("config load error"),
+			expectedDIPSerivces: []DedicatedIPService{},
+			shouldBeErr:         true,
+		},
+		{
+			name: "no server associated with DIP service",
+			servicesResponse: []core.ServiceData{
+				dipServiceNoServer,
+			},
 			expectedDIPSerivces: []DedicatedIPService{},
 			shouldBeErr:         true,
 		},

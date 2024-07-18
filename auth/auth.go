@@ -15,6 +15,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
+// ErrNoDIPServers is returned when user has dedicated IP service but no server ID is assigned to that service
+var ErrNoDIPServers error = errors.New("no dedicated IP servers")
+
 type DedicatedIPService struct {
 	ExpiresAt string
 	ServerID  int64
@@ -123,21 +126,30 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 		return nil, fmt.Errorf("fetching available services: %w", err)
 	}
 
-	dipServerIDs := []DedicatedIPService{}
+	noDIPServers := true
+	noDIPServices := true
+	dipServices := []DedicatedIPService{}
 	for _, service := range services {
 		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
+			noDIPServices = false
 			serversLen := len(service.Details.Servers)
 			if serversLen != 1 {
 				log.Println(internal.ErrorPrefix,
 					"unexpected number of dedicated ip servers in service, expected 1, is", serversLen)
 				continue
 			}
-			dipServerIDs = append(dipServerIDs,
+			noDIPServers = false
+			dipServices = append(dipServices,
 				DedicatedIPService{ExpiresAt: service.ExpiresAt, ServerID: service.Details.Servers[0].ID})
 		}
 	}
 
-	return dipServerIDs, nil
+	// User has DIP services but no selected servers. We need to have a special error for this case, to let them know.
+	if noDIPServers && !noDIPServices {
+		return nil, ErrNoDIPServers
+	}
+
+	return dipServices, nil
 }
 
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
