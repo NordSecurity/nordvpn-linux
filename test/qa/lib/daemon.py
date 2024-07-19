@@ -184,7 +184,7 @@ def get_unavailable_groups():
                   'Standard_VPN_Servers',
                   'The_Americas']
 
-    current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split(", ")
+    current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split()
 
     return set(all_groups) - set(current_groups)
 
