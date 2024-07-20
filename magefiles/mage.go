@@ -17,14 +17,14 @@ import (
 
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
-	imageBuilder           = registryPrefix + "builder:1.2.0"
+	imageBuilder           = registryPrefix + "builder:1.3.0"
 	imagePackager          = registryPrefix + "packager:1.1.0"
 	imageSnapPackager      = registryPrefix + "snaper:0.0.2"
 	imageProtobufGenerator = registryPrefix + "generator:1.1.0"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.1.10"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.1.0"
+	imageRuster            = registryPrefix + "ruster:1.2.0"
 
 	dockerWorkDir  = "/opt"
 	devPackageType = "source"
@@ -78,7 +78,7 @@ func installHookIfNordsec() error {
 	}
 
 	if !strings.Contains(string(output), "llt-secrets") {
-		return fmt.Errorf("Secret provider was not configured.")
+		return fmt.Errorf("secret provider was not configured")
 	}
 
 	if _, err := exec.Command("git", "secrets", "--install", "--force").CombinedOutput(); err != nil {
@@ -142,6 +142,31 @@ func Clean() error {
 			return err
 		}
 	}
+
+	// cleanup rust for public builds
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+	if !strings.Contains(env["FEATURES"], "internal") {
+		fmt.Println("Cleanup rust dependencies...")
+		libtelioDir := "./build/foss/libtelio"
+		if internal.FileExists(libtelioDir) {
+			if err := os.RemoveAll(libtelioDir); err != nil {
+				fmt.Println("Failed to remove", libtelioDir, ":", err)
+				return err
+			}
+		}
+
+		libdropDir := "./build/foss/libdrop"
+		if internal.FileExists(libdropDir) {
+			if err := os.RemoveAll(libdropDir); err != nil {
+				fmt.Println("Failed to remove", libdropDir, ":", err)
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -323,8 +348,6 @@ func buildBinaries(buildFlags string) error {
 		return err
 	}
 
-	mg.Deps(Download)
-
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -335,7 +358,9 @@ func buildBinaries(buildFlags string) error {
 		return err
 	}
 
-	if !strings.Contains(env["FEATURES"], "internal") {
+	if strings.Contains(env["FEATURES"], "internal") {
+		mg.Deps(Download)
+	} else {
 		mg.Deps(Build.Rust)
 	}
 
@@ -364,13 +389,14 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		return err
 	}
 
-	mg.Deps(Download)
 	env, err := getEnv()
 	if err != nil {
 		return err
 	}
 
-	if !strings.Contains(env["FEATURES"], "internal") {
+	if strings.Contains(env["FEATURES"], "internal") {
+		mg.Deps(Download)
+	} else {
 		mg.Deps(Build.RustDocker)
 	}
 
@@ -390,7 +416,7 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"ci/compile.sh"},
+		[]string{"ci/compile.sh", "docker"},
 	)
 }
 
