@@ -64,9 +64,18 @@ declare -A ARCHS_SO_REVERSE=(
     [armv7_eabihf]=armhf
 )
 
+declare -A ARCHS_RUST=(
+    [i386]=i386
+    [amd64]=amd64
+    [armel]=armel
+    [armhf]=armhf
+    [aarch64]=arm64
+)
+
 export ARCHS
 export ARCHS_REVERSE
 export ARCHS_DEB
 export ARCHS_RPM
 export ARCHS_GO
 export ARCHS_SO_REVERSE
+export ARCHS_RUST
