@@ -4,14 +4,23 @@ package config
 import (
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+
+	"github.com/google/uuid"
 )
 
 const defaultFWMarkValue uint32 = 0xe1f1
 
 func newConfig(machineIDGetter MachineIDGetter) *Config {
+	ids, _ := internal.SystemUsersIDs()
+	notifyUsers := make(map[int64]bool, len(ids))
+	trayOffUsers := make(UidBoolMap, len(ids))
+	for _, id := range ids {
+		notifyUsers[id] = true
+		trayOffUsers[id] = true
+	}
+
 	return &Config{
 		Technology:   Technology_NORDLYNX,
 		Firewall:     true,
@@ -20,7 +29,7 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 			Protocol: Protocol_UDP,
 		},
 		MachineID:  machineIDGetter.GetMachineID(),
-		UsersData:  &UsersData{Notify: UidBoolMap{}, NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
+		UsersData:  &UsersData{Notify: notifyUsers, TrayOff: trayOffUsers},
 		TokensData: map[int64]TokenData{},
 	}
 }

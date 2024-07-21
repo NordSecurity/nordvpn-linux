@@ -191,14 +191,6 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 		return err
 	}
 
-	// Translate old 'notify' setting to the new 'notify_off'
-	// To be removed in a new major version
-	for uid, val := range c.UsersData.Notify {
-		if !val {
-			c.UsersData.NotifyOff[uid] = true
-		}
-	}
-
 	return nil
 }
 

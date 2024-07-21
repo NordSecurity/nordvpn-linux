@@ -182,7 +182,7 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Ipv6.Publish(cfg.IPv6)
 	s.Technology.Publish(cfg.Technology)
 	s.Obfuscate.Publish(cfg.AutoConnectData.Obfuscate)
-	s.Notify.Publish(!(cfg.UsersData.NotifyOff != nil && len(cfg.UsersData.NotifyOff) > 0))
+	s.Notify.Publish(cfg.UsersData.Notify != nil && len(cfg.UsersData.Notify) > 0)
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.VirtualLocation.Publish(cfg.VirtualLocation.Get())
 }

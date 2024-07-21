@@ -40,7 +40,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 			KillSwitch:           cfg.KillSwitch,
 			AutoConnect:          cfg.AutoConnect,
 			Ipv6:                 cfg.IPv6,
-			Notify:               !cfg.UsersData.NotifyOff[in.GetUid()],
+			Notify:               cfg.UsersData.Notify[in.GetUid()],
 			Tray:                 !cfg.UsersData.TrayOff[in.GetUid()],
 			Meshnet:              cfg.Mesh,
 			Dns:                  cfg.AutoConnectData.DNS,

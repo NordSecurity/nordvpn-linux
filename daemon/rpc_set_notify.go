@@ -15,9 +15,7 @@ func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Paylo
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	notifyStatus := !cfg.UsersData.NotifyOff[in.GetUid()]
-
-	if in.GetNotify() == notifyStatus {
+	if in.GetNotify() && cfg.UsersData.Notify[in.GetUid()] || !in.GetNotify() && !cfg.UsersData.Notify[in.GetUid()] {
 		getBool := func(label bool) string {
 			if label {
 				return "enabled"
@@ -26,13 +24,13 @@ func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Paylo
 		}
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
-			Data: []string{getBool(notifyStatus)},
+			Data: []string{getBool(in.GetNotify())},
 		}, nil
 	}
 
-	if !in.GetNotify() {
+	if in.GetNotify() {
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
-			c.UsersData.NotifyOff[in.GetUid()] = true
+			c.UsersData.Notify[in.GetUid()] = true
 			return c
 		}); err != nil {
 			log.Println(internal.ErrorPrefix, err)
@@ -42,7 +40,7 @@ func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Paylo
 		}
 	} else {
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
-			delete(c.UsersData.NotifyOff, in.GetUid())
+			delete(c.UsersData.Notify, in.GetUid())
 			return c
 		}); err != nil {
 			log.Println(internal.ErrorPrefix, err)
