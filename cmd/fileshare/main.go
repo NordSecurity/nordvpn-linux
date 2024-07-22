@@ -65,11 +65,10 @@ func main() {
 	}
 
 	processStatus := fileshare_process.NewFileshareGRPCProcessManager().ProcessStatus()
-	switch processStatus {
-	case childprocess.Running:
+	if processStatus == childprocess.Running {
 		os.Exit(int(childprocess.CodeAlreadyRunning))
-	case childprocess.RunningForOtherUser:
-		log.Println(internal.ErrorPrefix, "cannot start fileshare daemon, it is already running for another user")
+	} else if processStatus == childprocess.RunningForOtherUser {
+		log.Println("Cannot start fileshare daemon, it is already running for another user.")
 		os.Exit(int(childprocess.CodeAlreadyRunningForOtherUser))
 	}
 

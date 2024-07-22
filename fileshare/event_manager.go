@@ -702,3 +702,15 @@ func removeFileFromLiveTransfer(transfer *LiveTransfer, file *LiveFile) {
 	transfer.TotalTransferred -= file.Transferred
 	delete(transfer.Files, file.ID)
 }
+
+func isFileCompleted(file *pb.File) bool {
+	return file.Status != pb.Status_REQUESTED &&
+		file.Status != pb.Status_ONGOING &&
+		file.Status != pb.Status_PENDING
+}
+
+// Used to check if file's size should be part of transfer's total size
+// Basically we don't include files that are canceled or errored out
+func isFileTransferred(file *pb.File) bool {
+	return !isFileCompleted(file) || file.Status == pb.Status_SUCCESS
+}

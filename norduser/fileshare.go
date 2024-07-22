@@ -72,7 +72,7 @@ func startFileshare(fileshareProcessManager *childprocess.GRPCChildProcessManage
 		return true
 	}
 
-	log.Printf(internal.ErrorPrefix+" failed to start fileshare: %d, will retry\n", result)
+	log.Println(internal.ErrorPrefix, "failed to start fileshare (will retry):", result)
 	return false
 }
 

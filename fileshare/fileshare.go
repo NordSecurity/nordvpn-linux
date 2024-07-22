@@ -28,10 +28,6 @@ type Fileshare interface {
 	Finalize(transferID string) error
 	// CancelFile id in a transfer
 	CancelFile(transferID string, fileID string) error
-	// GetTransfersSince provided time from fileshare implementation storage
-	GetTransfersSince(t time.Time) ([]LibdropTransfer, error)
-	// PurgeTransfersUntil provided time from fileshare implementation storage
-	PurgeTransfersUntil(until time.Time) error
 }
 
 // Storage is used for filesharing history persistence

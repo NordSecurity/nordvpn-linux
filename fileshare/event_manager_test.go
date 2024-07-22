@@ -133,7 +133,7 @@ func (mfs *mockEventManagerFileshare) getLastCanceledTransferID() string {
 	return mfs.canceledTransferIDs[length-1]
 }
 
-func (*mockEventManagerFileshare) GetTransfersSince(t time.Time) ([]LibdropTransfer, error) {
+func (*mockEventManagerFileshare) Load() (map[string]*pb.Transfer, error) {
 	return nil, nil
 }
 
