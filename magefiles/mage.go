@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -23,7 +24,7 @@ const (
 	imageSnapPackager      = registryPrefix + "snaper:0.0.2"
 	imageProtobufGenerator = registryPrefix + "generator:1.1.0"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
-	imageTester            = registryPrefix + "tester:1.1.10"
+	imageTester            = registryPrefix + "tester:1.2.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
 	imageRuster            = registryPrefix + "ruster:1.1.0"
 
@@ -607,6 +608,7 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 		} else {
 			fmt.Println(err)
 		}
+		time.Sleep(3 * time.Second)
 		err = RemoveDockerNetwork(context.Background(), networkID)
 		if err != nil {
 			fmt.Println(err)
