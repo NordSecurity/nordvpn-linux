@@ -12,8 +12,8 @@ from . import logging, ssh
 def _rewrite_log_path():
     project_root = os.environ["WORKDIR"].replace("/", "\\/")
     pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
+    # this fn is executed only in docker (below line would not work under snap)
     sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
-    #os.popen(f"sudo sed -i {pattern} /etc/init.d/nordvpn").read()
 
 
 # returns True on SystemD distros
