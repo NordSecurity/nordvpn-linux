@@ -132,10 +132,8 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	for _, service := range services {
 		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
 			noDIPServices = false
-			serversLen := len(service.Details.Servers)
-			if serversLen != 1 {
-				log.Println(internal.ErrorPrefix,
-					"unexpected number of dedicated ip servers in service, expected 1, is", serversLen)
+			if len(service.Details.Servers) < 1 {
+				log.Println(internal.ErrorPrefix, "no servers for the service found in the api response")
 				continue
 			}
 			noDIPServers = false

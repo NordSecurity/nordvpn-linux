@@ -473,7 +473,7 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 			return s.ServerID == server.ID
 		})
 		if index == -1 {
-			log.Println(internal.ErrorPrefix, "server not into the DIP servers list")
+			log.Println(internal.ErrorPrefix, "server is not in the DIP servers list")
 			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 		}
 	}
