@@ -28,8 +28,8 @@ import (
 
 const (
 	// TelioLocalConfigName defines env key for local config value
-	TelioLocalConfigName    = "TELIO_LOCAL_CFG"
-	defaultHeartbitInterval = 60 * 60
+	TelioLocalConfigName     = "TELIO_LOCAL_CFG"
+	defaultHeartbeatInterval = 60 * 60
 )
 
 type state struct {
@@ -167,7 +167,7 @@ func New(prod bool, eventPath string, fwmark uint32,
 		}
 		defaultTelioConfig.Nurse = &teliogo.FeatureNurse{
 			Fingerprint:       deviceID,
-			HeartbeatInterval: defaultHeartbitInterval,
+			HeartbeatInterval: defaultHeartbeatInterval,
 		}
 
 		features = &defaultTelioConfig
@@ -498,7 +498,6 @@ func (l *Libtelio) StatusMap() (map[string]string, error) {
 
 func nodeStateToString(state teliogo.NodeState) string {
 	switch state {
-
 	case teliogo.NodeStateConnected:
 		return "connected"
 	case teliogo.NodeStateConnecting:
