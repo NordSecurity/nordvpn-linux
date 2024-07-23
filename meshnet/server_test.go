@@ -8,14 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -113,8 +111,8 @@ func (n *workingNetworker) ResetRouting(changedPeer mesh.MachinePeer, peer mesh.
 
 func (*workingNetworker) BlockRouting(UniqueAddress) error { return nil }
 func (*workingNetworker) Refresh(mesh.MachineMap) error    { return nil }
-func (*workingNetworker) StatusMap() (map[string]teliogo.NodeState, error) {
-	return map[string]teliogo.NodeState{}, nil
+func (*workingNetworker) StatusMap() (map[string]string, error) {
+	return map[string]string{}, nil
 }
 func (*workingNetworker) LastServerName() string { return "" }
 

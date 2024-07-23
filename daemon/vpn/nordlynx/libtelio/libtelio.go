@@ -21,7 +21,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
-	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
@@ -474,10 +473,10 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 
 type peer struct {
 	PublicKey string
-	State     teliogo.NodeState
+	State     string
 }
 
-func (l *Libtelio) StatusMap() (map[string]teliogo.NodeState, error) {
+func (l *Libtelio) StatusMap() (map[string]string, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -486,15 +485,29 @@ func (l *Libtelio) StatusMap() (map[string]teliogo.NodeState, error) {
 	for i, node := range statusMap {
 		peers[i] = peer{
 			PublicKey: node.PublicKey,
-			State:     node.State,
+			State:     nodeStateToString(node.State),
 		}
 	}
 
-	m := map[string]teliogo.NodeState{}
+	m := map[string]string{}
 	for _, p := range peers {
 		m[p.PublicKey] = p.State
 	}
 	return m, nil
+}
+
+func nodeStateToString(state teliogo.NodeState) string {
+	switch state {
+
+	case teliogo.NodeStateConnected:
+		return "connected"
+	case teliogo.NodeStateConnecting:
+		return "connecting"
+	case teliogo.NodeStateDisconnected:
+		return "disconnected"
+	default:
+		panic(fmt.Sprintf("unexpected telio.NodeState: %#v", state))
+	}
 }
 
 // openTunnel if not opened already

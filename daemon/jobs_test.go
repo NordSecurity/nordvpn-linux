@@ -10,14 +10,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -220,8 +218,8 @@ func (n *meshNetworker) BlockFileshare(address meshnet.UniqueAddress) error {
 func (*meshNetworker) ResetRouting(mesh.MachinePeer, mesh.MachinePeers) error { return nil }
 func (*meshNetworker) BlockRouting(meshnet.UniqueAddress) error               { return nil }
 func (*meshNetworker) Refresh(mesh.MachineMap) error                          { return nil }
-func (*meshNetworker) StatusMap() (map[string]teliogo.NodeState, error) {
-	return map[string]teliogo.NodeState{}, nil
+func (*meshNetworker) StatusMap() (map[string]string, error) {
+	return map[string]string{}, nil
 }
 func (*meshNetworker) LastServerName() string { return "" }
 

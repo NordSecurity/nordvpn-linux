@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -16,7 +15,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -222,8 +220,8 @@ func (*workingMesh) Disable() error                    { return nil }
 func (*workingMesh) IsActive() bool                    { return false }
 func (*workingMesh) Refresh(mesh.MachineMap) error     { return nil }
 func (*workingMesh) Tun() tunnel.T                     { return mock.WorkingT{} }
-func (*workingMesh) StatusMap() (map[string]teliogo.NodeState, error) {
-	return map[string]teliogo.NodeState{}, nil
+func (*workingMesh) StatusMap() (map[string]string, error) {
+	return map[string]string{}, nil
 }
 func (w *workingMesh) NetworkChanged() error { return w.networkChangedErr }
 

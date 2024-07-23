@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"net/netip"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	cesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
-	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
@@ -45,8 +43,8 @@ func (noopMesh) Disable() error                  { return nil }
 func (noopMesh) IsActive() bool                  { return false }
 func (noopMesh) Refresh(cesh.MachineMap) error   { return nil }
 func (noopMesh) Tun() tunnel.T                   { return &tunnel.Tunnel{} }
-func (noopMesh) StatusMap() (map[string]teliogo.NodeState, error) {
-	return map[string]teliogo.NodeState{}, nil
+func (noopMesh) StatusMap() (map[string]string, error) {
+	return map[string]string{}, nil
 }
 
 func (noopMesh) NetworkChanged() error {
