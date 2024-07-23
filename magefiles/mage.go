@@ -218,8 +218,6 @@ func (Build) Data() error {
 		return nil
 	}
 
-	mg.Deps(Download)
-
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -471,8 +469,9 @@ func (Build) Rust(ctx context.Context) error {
 		return err
 	}
 	env := map[string]string{
-		"ARCHS":   build.Default.GOARCH,
-		"WORKDIR": cwd,
+		// build only for host architecture by default
+		"ARCHS_RUST": build.Default.GOARCH,
+		"WORKDIR":    cwd,
 	}
 	return sh.RunWith(env, "build/foss/build.sh")
 }
@@ -484,7 +483,8 @@ func (Build) RustDocker(ctx context.Context) error {
 		return err
 	}
 
-	env["ARCHS"] = build.Default.GOARCH
+	// build only for host architecture by default
+	env["ARCHS_RUST"] = build.Default.GOARCH
 	env["WORKDIR"] = dockerWorkDir
 	if err := RunDocker(
 		ctx,

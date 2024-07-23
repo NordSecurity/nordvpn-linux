@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -22,7 +21,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -1386,7 +1384,7 @@ func (netw *Combined) unSetMesh() error {
 	return nil
 }
 
-func (netw *Combined) StatusMap() (map[string]teliogo.NodeState, error) {
+func (netw *Combined) StatusMap() (map[string]string, error) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 	return netw.mesh.StatusMap()

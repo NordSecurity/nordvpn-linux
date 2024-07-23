@@ -14,7 +14,6 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -22,7 +21,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	_ "github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio/symbols" // required for linking process
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -1070,12 +1068,12 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 		peers.Self = cfg.MeshDevice.ToProtobuf()
 		peerMap, err := s.netw.StatusMap()
 		if err != nil {
-			peerMap = map[string]teliogo.NodeState{}
+			peerMap = map[string]string{}
 		}
 		for _, peer := range resp {
 			protoPeer := peer.ToProtobuf()
 			status := pb.PeerStatus_DISCONNECTED
-			if peerMap[peer.PublicKey] == teliogo.NodeStateConnected {
+			if peerMap[peer.PublicKey] == "connected" {
 				status = pb.PeerStatus_CONNECTED
 			}
 			protoPeer.Status = status
@@ -1312,7 +1310,6 @@ func (s *Server) ChangePeerNickname(
 
 	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
-
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
