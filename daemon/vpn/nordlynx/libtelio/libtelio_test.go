@@ -19,9 +19,13 @@ import (
 )
 
 const (
-	exampleAppVersion = "3.16.3"
-	exampleDeviceID   = "11111"
-	exampleEventPath  = "/var/data.db"
+	exampleAppVersion                  = "3.16.3"
+	exampleDeviceID                    = "11111"
+	exampleEventPath                   = "/var/data.db"
+	vpnPeersPersistentKeepaliveSeconds = uint32(25)
+	directPersistentKeepaliveSeconds   = uint32(5)
+	proxyingPersistentKeepaliveSeconds = uint32(25)
+	stunPersistentKeepaliveSeconds     = uint32(25)
 )
 
 func TestIsConnected(t *testing.T) {
@@ -184,15 +188,15 @@ func Test_TelioConfigAllDisabled(t *testing.T) {
 	assert.NotNil(t, cfg.Wireguard.PersistentKeepalive)
 
 	assert.NotNil(t, cfg.Wireguard.PersistentKeepalive.Vpn)
-	assert.Equal(t, uint32(25), *cfg.Wireguard.PersistentKeepalive.Vpn)
+	assert.Equal(t, vpnPeersPersistentKeepaliveSeconds, *cfg.Wireguard.PersistentKeepalive.Vpn)
 
-	assert.Equal(t, uint32(5), cfg.Wireguard.PersistentKeepalive.Direct)
+	assert.Equal(t, directPersistentKeepaliveSeconds, cfg.Wireguard.PersistentKeepalive.Direct)
 
 	assert.NotNil(t, cfg.Wireguard.PersistentKeepalive.Proxying)
-	assert.Equal(t, uint32(25), *cfg.Wireguard.PersistentKeepalive.Proxying)
+	assert.Equal(t, proxyingPersistentKeepaliveSeconds, *cfg.Wireguard.PersistentKeepalive.Proxying)
 
 	assert.NotNil(t, cfg.Wireguard.PersistentKeepalive.Stun)
-	assert.Equal(t, uint32(25), *cfg.Wireguard.PersistentKeepalive.Stun)
+	assert.Equal(t, stunPersistentKeepaliveSeconds, *cfg.Wireguard.PersistentKeepalive.Stun)
 }
 
 const telioRemoteTestConfig string = `
