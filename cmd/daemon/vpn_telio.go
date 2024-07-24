@@ -4,6 +4,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
@@ -14,11 +15,15 @@ import (
 )
 
 func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
-	cfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events) daemon.FactoryFunc {
-	var telio = libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, deviceID, appVersion, eventsPublisher)
+	cfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events,
+) daemon.FactoryFunc {
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {
 		case config.Technology_NORDLYNX:
+			telio, err := libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, deviceID, appVersion, eventsPublisher)
+			if err != nil {
+				return nil, fmt.Errorf("libtelio creation failed: %w", err)
+			}
 			return telio, nil
 		case config.Technology_OPENVPN:
 			return openvpn.New(fwmark, eventsPublisher), nil

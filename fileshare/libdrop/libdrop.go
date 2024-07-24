@@ -311,12 +311,7 @@ func (f *Fileshare) Finalize(transferID string) error {
 func (f *Fileshare) CancelFile(transferID string, fileID string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-
-	if err := f.norddrop.RejectFile(transferID, fileID); err != nil {
-		return err
-	}
-
-	return nil
+	return f.norddrop.RejectFile(transferID, fileID)
 }
 
 // Load transfers from fileshare implementation storage
