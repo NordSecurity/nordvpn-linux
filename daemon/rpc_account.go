@@ -19,7 +19,7 @@ func findLatestDIPExpirationData(dipServices []auth.DedicatedIPService) (string,
 		return "", fmt.Errorf("no dip services found")
 	}
 
-	layout := "2006-01-02 15:04:05"
+	layout := internal.ServerDateFormat
 	latest, err := time.Parse(layout, dipServices[0].ExpiresAt)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse initial expiration date")
@@ -64,14 +64,17 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	}
 
-	if len(dipServices) == 0 {
+	if len(dipServices) < 1 {
 		accountInfo.DedicatedIpStatus = internal.CodeNoService
 	}
 
-	dedicatedIPExpirationDate, err := findLatestDIPExpirationData(dipServices)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting latest dedicated ip expiration date: ", err)
-		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+	dedicatedIPExpirationDate := ""
+	if len(dipServices) != 0 {
+		dedicatedIPExpirationDate, err = findLatestDIPExpirationData(dipServices)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "getting latest dedicated ip expiration date: ", err)
+			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		}
 	}
 
 	var cfg config.Config

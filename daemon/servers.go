@@ -410,6 +410,15 @@ func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Pr
 	}
 }
 
+// isAnyDIPServersAvailable returns true if dedicated IP server is selected for any of the provided services
+func isAnyDIPServersAvailable(dedicatedIPServices []auth.DedicatedIPService) bool {
+	index := slices.IndexFunc(dedicatedIPServices, func(dipService auth.DedicatedIPService) bool {
+		return dipService.ServerID != -1
+	})
+
+	return index != -1
+}
+
 func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string, groupFlag string) (*core.Server, bool, error) {
 	serversList := r.dm.GetServersData().Servers
 	server, remote, err := PickServer(
@@ -459,14 +468,15 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		dedicatedIPServices, err := r.ac.GetDedicatedIPServices()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
-			if errors.Is(err, auth.ErrNoDIPServers) {
-				return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
-			}
 			return nil, false, internal.ErrUnhandled
 		}
 
 		if len(dedicatedIPServices) == 0 {
 			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+		}
+
+		if !isAnyDIPServersAvailable(dedicatedIPServices) {
+			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
 		}
 
 		index := slices.IndexFunc(dedicatedIPServices, func(s auth.DedicatedIPService) bool {
@@ -497,14 +507,15 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
-		if errors.Is(err, auth.ErrNoDIPServers) {
-			return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
-		}
 		return nil, internal.ErrUnhandled
 	}
 
 	if len(dedicatedIPServices) == 0 {
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+	}
+
+	if !isAnyDIPServersAvailable(dedicatedIPServices) {
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
 	}
 
 	service := dedicatedIPServices[rand.Intn(len(dedicatedIPServices))]

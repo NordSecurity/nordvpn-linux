@@ -198,8 +198,9 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		},
 	}
 
+	dipServiceNoServerExpirationDate := "2050-08-22 00:00:00"
 	dipServiceNoServer := core.ServiceData{
-		ExpiresAt: "2050-08-22 00:00:00",
+		ExpiresAt: dipServiceNoServerExpirationDate,
 		Service: core.Service{
 			ID: DedicatedIPServiceID,
 		},
@@ -302,8 +303,9 @@ func TestGetDedicatedIPServices(t *testing.T) {
 			servicesResponse: []core.ServiceData{
 				dipServiceNoServer,
 			},
-			expectedDIPSerivces: []DedicatedIPService{},
-			shouldBeErr:         true,
+			expectedDIPSerivces: []DedicatedIPService{
+				{ExpiresAt: dipServiceNoServerExpirationDate, ServerID: -1},
+			},
 		},
 	}
 

@@ -6,7 +6,6 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
@@ -15,12 +14,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// ErrNoDIPServers is returned when user has dedicated IP service but no server ID is assigned to that service
-var ErrNoDIPServers error = errors.New("no dedicated IP servers")
-
 type DedicatedIPService struct {
 	ExpiresAt string
-	ServerID  int64
+	// ServerID will be set to -1 if server was not selected by the user
+	ServerID int64
 }
 
 // Checker provides information about current authentication.
@@ -29,7 +26,8 @@ type Checker interface {
 	IsLoggedIn() bool
 	// IsVPNExpired is used to check whether the user is allowed to use VPN
 	IsVPNExpired() (bool, error)
-	// Get all available dedicated IP services
+	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
+	// ServerID for that service to -1
 	GetDedicatedIPServices() ([]DedicatedIPService, error)
 }
 
@@ -109,9 +107,6 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 		if err := r.fetchSaveServices(cfg.AutoConnectData.ID, &data); err != nil {
 			return true, fmt.Errorf("updating service expiry token: %w", err)
 		}
-		if err := r.cm.SaveWith(saveVpnExpirationDate(cfg.AutoConnectData.ID, data)); err != nil {
-			return true, fmt.Errorf("saving config: %w", err)
-		}
 	}
 
 	return r.expChecker.isExpired(data.ServiceExpiry), nil
@@ -126,25 +121,16 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 		return nil, fmt.Errorf("fetching available services: %w", err)
 	}
 
-	noDIPServers := true
-	noDIPServices := true
 	dipServices := []DedicatedIPService{}
 	for _, service := range services {
 		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
-			noDIPServices = false
-			if len(service.Details.Servers) < 1 {
-				log.Println(internal.ErrorPrefix, "no servers for the service found in the api response")
-				continue
+			var serverID int64 = -1
+			if len(service.Details.Servers) != 0 {
+				serverID = service.Details.Servers[0].ID
 			}
-			noDIPServers = false
 			dipServices = append(dipServices,
-				DedicatedIPService{ExpiresAt: service.ExpiresAt, ServerID: service.Details.Servers[0].ID})
+				DedicatedIPService{ExpiresAt: service.ExpiresAt, ServerID: serverID})
 		}
-	}
-
-	// User has DIP services but no selected servers. We need to have a special error for this case, to let them know.
-	if noDIPServers && !noDIPServices {
-		return nil, ErrNoDIPServers
 	}
 
 	return dipServices, nil
