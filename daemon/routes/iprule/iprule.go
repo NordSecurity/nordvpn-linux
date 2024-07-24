@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
@@ -16,11 +17,12 @@ import (
 
 // Router uses `ip rule` under the hood
 type Router struct {
-	rpFilterManager routes.RPFilterManager
-	ifgroupManager  ifgroup.Manager
-	tableID         uint
-	fwmark          uint32
-	mu              sync.Mutex
+	rpFilterManager  routes.RPFilterManager
+	ifgroupManager   ifgroup.Manager
+	tableID          uint
+	fwmark           uint32
+	prevAllowSubnets []string
+	mu               sync.Mutex
 }
 
 // NewRouter is a default constructor for Router
@@ -41,6 +43,7 @@ func (r *Router) SetupRoutingRules(
 	ipv6Enabled bool,
 	enableLocal bool,
 	lanDiscovery bool,
+	allowSubnets []string,
 ) (err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -67,10 +70,10 @@ func (r *Router) SetupRoutingRules(
 			if err := removeSuppressRule(ipv6); err != nil {
 				log.Println(internal.DeferPrefix, err)
 			}
-
 			if err := removeFwmarkRule(r.fwmark, ipv6); err != nil {
 				log.Println(internal.DeferPrefix, err)
 			}
+			removeAllowSubnetRules(allowSubnets, ipv6)
 		}
 	}()
 
@@ -114,7 +117,28 @@ func (r *Router) SetupRoutingRules(
 				log.Println(internal.WarningPrefix, err)
 			}
 		}
+
+		// cleanup previous allow subnets
+		removeAllowSubnetRules(r.prevAllowSubnets, ipv6)
+
+		// on top, add allowlisted subnet routing rules
+		for _, subnet := range allowSubnets {
+			subnetRuleID, err := calculateRulePriority(ipv6)
+			if err != nil {
+				return err
+			}
+			_, subnetIPNet, err := net.ParseCIDR(subnet)
+			if err != nil {
+				return err
+			}
+			if err := addAllowSubnetRule(subnetRuleID, subnetIPNet, ipv6); err != nil {
+				return err
+			}
+		}
 	}
+
+	// remember what allow subnets are in use to be able to cleanup
+	r.prevAllowSubnets = internal.CopyStringSlice(allowSubnets)
 
 	return nil
 }
@@ -156,6 +180,9 @@ func (r *Router) CleanupRouting() error {
 		if err := removeFwmarkRule(r.fwmark, ipv6); err != nil {
 			log.Println(internal.WarningPrefix, err)
 		}
+
+		// Remove allowlist subnet routing rules
+		removeAllowSubnetRules(r.prevAllowSubnets, ipv6)
 	}
 
 	if err := r.rpFilterManager.Unset(); err != nil {
@@ -341,6 +368,38 @@ func removeFwmarkRule(fwMarkVal uint32, ipv6 bool) error {
 	return nil
 }
 
+// addAllowSubnetRule create/add allow subnet rule
+func addAllowSubnetRule(prioID uint, subnet *net.IPNet, ipv6 bool) error {
+	if err := netlink.RuleAdd(allowSubnetRule(int(prioID), subnet, ipv6)); err != nil {
+		return fmt.Errorf("adding allow subnet rule: %s", err)
+	}
+	return nil
+}
+
+// removeAllowSubnetRules remove all allow subnet rules
+func removeAllowSubnetRules(subnets []string, ipv6 bool) {
+	for _, subnet := range subnets {
+		_, subnetIPNet, err := net.ParseCIDR(subnet)
+		if err != nil {
+			continue
+		}
+		if err := removeAllowSubnetRule(subnetIPNet, ipv6); err != nil {
+			log.Println(internal.ErrorPrefix, err)
+		}
+	}
+}
+
+// removeAllowSubnetRule remove allow subnet rule
+func removeAllowSubnetRule(subnet *net.IPNet, ipv6 bool) error {
+	if subnet == nil {
+		return fmt.Errorf("subnet cannot be nil")
+	}
+	if err := netlink.RuleDel(allowSubnetRule(-1, subnet, ipv6)); err != nil {
+		return fmt.Errorf("removing allow subnet rule: %w", err)
+	}
+	return nil
+}
+
 // addSuppressRule create/add suppress rule
 func addSuppressRule(prioID uint, ipv6 bool, skipGroup bool) error {
 	// CMD: ip rule add priority $PRIOID from all lookup main suppress_prefixlength 0 suppress_ifgroup 444
@@ -394,6 +453,16 @@ func isRuleSame(rule netlink.Rule, target netlink.Rule) bool {
 		rule.Table == target.Table &&
 		(rule.SuppressIfgroup == target.SuppressIfgroup ||
 			rule.SuppressPrefixlen == target.SuppressPrefixlen)
+}
+
+func allowSubnetRule(prioID int, subnet *net.IPNet, ipv6 bool) *netlink.Rule {
+	rule := netlink.NewRule()
+	rule.Priority = prioID
+	rule.Invert = false
+	rule.Table = unix.RT_TABLE_MAIN
+	rule.Dst = subnet
+	rule.Family = toNetlinkFamily(ipv6)
+	return rule
 }
 
 func fwmarkRule(prioID int, fwmark uint32, tableID int, ipv6 bool) *netlink.Rule {

@@ -291,6 +291,7 @@ func (netw *Combined) start(
 		serverData.IP.Is6(),
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
+		allowlist.Subnets.ToSlice(),
 	); err != nil {
 		return err
 	}
@@ -315,6 +316,7 @@ func (netw *Combined) configureNetwork(
 	nameservers config.DNS,
 ) error {
 	netw.publisher.Publish("starting network configuration")
+
 	if err := netw.configureFirewall(allowlist); err != nil {
 		return err
 	}
@@ -488,6 +490,7 @@ func (netw *Combined) stop() error {
 			false,
 			true, // by default, enableLocalTraffic=true
 			netw.lanDiscovery,
+			netw.allowlist.Subnets.ToSlice(),
 		); err != nil {
 			return fmt.Errorf("netw stop, adjusting routing rules: %w", err)
 		}
@@ -895,33 +898,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			continue
 		}
 
-		if netw.policyRouter.TableID() > 0 {
-			gw, gwIface, err := netw.gateway.Retrieve(subnet, netw.policyRouter.TableID())
-			if err != nil {
-				// if gateway does not exist, we still honour users choice
-				subnets = append(subnets, subnet)
-				log.Println(internal.WarningPrefix, "allowlisting routes gateway not found for", subnet.String(), err)
-				continue
-			}
-
-			// TableID is determined only after SetupRoutingRules
-			route := routes.Route{
-				Gateway: gw,
-				Subnet:  subnet,
-				Device:  gwIface,
-				TableID: netw.policyRouter.TableID(),
-			}
-
-			log.Println(internal.InfoPrefix, "add route", route)
-			err = netw.allowlistRouter.Add(route)
-			if errors.Is(err, routes.ErrRouteToOtherDestinationExists) {
-				log.Println(internal.WarningPrefix, "route(s) for allowlisted subnet(s) via non-default gateway already exist in the system")
-			}
-			if err != nil {
-				return errors.Join(fmt.Errorf("adding route for subnet: %s", route.Subnet), err)
-			}
-		}
-
 		subnets = append(subnets, subnet)
 	}
 	if subnets != nil {
@@ -967,6 +943,20 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		return err
 	}
 	netw.allowlist = allowlist
+
+	// adjust allow subnet routing rules
+	if err = netw.policyRouter.SetupRoutingRules(
+		false,
+		netw.enableLocalTraffic,
+		netw.lanDiscovery,
+		netw.allowlist.Subnets.ToSlice(),
+	); err != nil {
+		return fmt.Errorf(
+			"setting routing rules: %w",
+			err,
+		)
+	}
+
 	return nil
 }
 
@@ -1185,6 +1175,7 @@ func (netw *Combined) setMesh(
 		false,
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
+		netw.allowlist.Subnets.ToSlice(),
 	); err != nil {
 		return fmt.Errorf(
 			"setting routing rules: %w",
@@ -1637,6 +1628,7 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 			netw.lastServer.IP.Is6(),
 			netw.enableLocalTraffic,
 			netw.lanDiscovery,
+			netw.allowlist.Subnets.ToSlice(),
 		); err != nil {
 			log.Println(
 				internal.ErrorPrefix,

@@ -15,7 +15,8 @@ func TableID() uint { return defaultCustomRoutingTableID }
 //
 // Used by implementers.
 type PolicyAgent interface {
-	SetupRoutingRules(bool, bool, bool) error
+	// ipv6Enabled, enableLocal, landDiscovery, allowlist subnets
+	SetupRoutingRules(bool, bool, bool, []string) error
 	CleanupRouting() error
 	TableID() uint
 }
@@ -25,7 +26,8 @@ type PolicyAgent interface {
 //
 // Used by callers.
 type PolicyService interface {
-	SetupRoutingRules(bool, bool, bool) error
+	// ipv6Enabled, enableLocal, landDiscovery, allowlist subnets
+	SetupRoutingRules(bool, bool, bool, []string) error
 	CleanupRouting() error
 	// TableID of the routing table.
 	TableID() uint
@@ -47,6 +49,7 @@ type PolicyRouter struct {
 		ipv6         bool
 		enableLocal  bool
 		lanDiscovery bool
+		allowSubnets []string
 	}
 	isEnabled bool
 	mu        sync.Mutex
@@ -71,17 +74,19 @@ func (p *PolicyRouter) SetupRoutingRules(
 	ipv6,
 	enableLocal,
 	lanDiscovery bool,
+	allowSubnets []string,
 ) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if err := p.current.SetupRoutingRules(ipv6, enableLocal, lanDiscovery); err != nil {
+	if err := p.current.SetupRoutingRules(ipv6, enableLocal, lanDiscovery, allowSubnets); err != nil {
 		return err
 	}
 	p.appliedRule = &struct {
 		ipv6         bool
 		enableLocal  bool
 		lanDiscovery bool
-	}{ipv6, enableLocal, lanDiscovery}
+		allowSubnets []string
+	}{ipv6, enableLocal, lanDiscovery, allowSubnets}
 	return nil
 }
 
@@ -106,7 +111,7 @@ func (p *PolicyRouter) Enable() error {
 	defer p.mu.Unlock()
 	if !p.isEnabled {
 		if p.appliedRule != nil {
-			if err := p.working.SetupRoutingRules(p.appliedRule.ipv6, p.appliedRule.enableLocal, p.appliedRule.lanDiscovery); err != nil {
+			if err := p.working.SetupRoutingRules(p.appliedRule.ipv6, p.appliedRule.enableLocal, p.appliedRule.lanDiscovery, p.appliedRule.allowSubnets); err != nil {
 				return err
 			}
 		}
