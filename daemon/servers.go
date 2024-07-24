@@ -413,7 +413,7 @@ func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Pr
 // isAnyDIPServersAvailable returns true if dedicated IP server is selected for any of the provided services
 func isAnyDIPServersAvailable(dedicatedIPServices []auth.DedicatedIPService) bool {
 	index := slices.IndexFunc(dedicatedIPServices, func(dipService auth.DedicatedIPService) bool {
-		return dipService.ServerID != -1
+		return dipService.ServerID != auth.NoServerSelected
 	})
 
 	return index != -1

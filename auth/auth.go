@@ -16,7 +16,7 @@ import (
 
 type DedicatedIPService struct {
 	ExpiresAt string
-	// ServerID will be set to -1 if server was not selected by the user
+	// ServerID will be set to NoServerSelected if server was not selected by the user
 	ServerID int64
 }
 
@@ -27,13 +27,14 @@ type Checker interface {
 	// IsVPNExpired is used to check whether the user is allowed to use VPN
 	IsVPNExpired() (bool, error)
 	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
-	// ServerID for that service to -1
+	// ServerID for that service to NoServerSelected
 	GetDedicatedIPServices() ([]DedicatedIPService, error)
 }
 
 const (
 	VPNServiceID         = 1
 	DedicatedIPServiceID = 11
+	NoServerSelected     = -1
 )
 
 type expirationChecker interface {
@@ -124,7 +125,7 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	dipServices := []DedicatedIPService{}
 	for _, service := range services {
 		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
-			var serverID int64 = -1
+			var serverID int64 = NoServerSelected
 			if len(service.Details.Servers) != 0 {
 				serverID = service.Details.Servers[0].ID
 			}

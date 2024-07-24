@@ -304,7 +304,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				dipServiceNoServer,
 			},
 			expectedDIPSerivces: []DedicatedIPService{
-				{ExpiresAt: dipServiceNoServerExpirationDate, ServerID: -1},
+				{ExpiresAt: dipServiceNoServerExpirationDate, ServerID: NoServerSelected},
 			},
 		},
 	}
