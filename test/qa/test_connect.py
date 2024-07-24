@@ -1,7 +1,7 @@
+import random
+import re
 import socket
 import time
-import re
-import random
 
 import pytest
 import sh
@@ -464,7 +464,7 @@ def test_connect_to_virtual_server(tech, proto, obfuscated):
 
     # This pattern captures all substring starting with \x1b\[94m[ that are single words. It should capture all of the
     # virtual server names, as in the terminal output they are colored blue.
-    pattern = r'\x1b\[94m\w+\x1b\[0m'
+    pattern = r"\x1b\[94m\w+\x1b\[0m"
     matches = re.findall(pattern, output)
 
     assert len(matches) > 0
