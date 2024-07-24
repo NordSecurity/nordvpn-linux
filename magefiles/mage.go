@@ -528,6 +528,7 @@ func (Test) Go() error {
 		return err
 	}
 	env["WORKDIR"] = cwd
+	env["ARCH"] = build.Default.GOARCH
 
 	return sh.RunWithV(env, "ci/test.sh")
 }
