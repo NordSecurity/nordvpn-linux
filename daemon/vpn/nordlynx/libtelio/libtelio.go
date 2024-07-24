@@ -41,8 +41,8 @@ type state struct {
 }
 
 func maskPublicKey(event string) string {
-	expr := regexp.MustCompile(`"public_key":(\s)*"(.*?)"`)
-	return expr.ReplaceAllString(event, `"public_key":"***"`)
+	expr := regexp.MustCompile(`"PublicKey":(\s)*"(.*?)"`)
+	return expr.ReplaceAllString(event, `"PublicKey":"***"`)
 }
 
 type eventCb func(teliogo.Event) *teliogo.TelioError
@@ -53,15 +53,19 @@ func (cb eventCb) Event(payload teliogo.Event) *teliogo.TelioError {
 
 func eventCallback(states chan<- state) eventCb {
 	return func(e teliogo.Event) *teliogo.TelioError {
-		var st state
+		eventBytes, err := json.Marshal(&e)
+		if err != nil {
+			log.Printf(internal.WarningPrefix+" can't marshal telio Event %T: %s\n", e, err)
+		} else {
+			log.Printf(internal.InfoPrefix+" received event %T: %s\n", e, maskPublicKey(string(eventBytes)))
+		}
 
+		var st state
 		switch evt := e.(type) {
 		case teliogo.EventNode:
 			var nickname string
 			if evt.Body.Nickname != nil {
 				nickname = *evt.Body.Nickname
-			} else {
-				log.Println(internal.WarningPrefix, "empty nickname")
 			}
 			st = state{
 				Nickname:  nickname,
@@ -154,11 +158,11 @@ func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) *te
 
 func New(prod bool, eventPath string, fwmark uint32,
 	vpnLibCfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events,
-) *Libtelio {
+) (*Libtelio, error) {
 	events := make(chan state)
 	features, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, vpnLibCfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "Failed to get telio config:", err)
+		log.Println(internal.ErrorPrefix, "failed to get telio config:", err)
 
 		defaultTelioConfig := teliogo.GetDefaultFeatureConfig()
 		defaultTelioConfig.Lana = &teliogo.FeatureLana{
@@ -177,14 +181,16 @@ func New(prod bool, eventPath string, fwmark uint32,
 	if err != nil {
 		log.Println(internal.WarningPrefix, "failed to encode telio config:", err)
 		// pass through - encoding is for the logging purposes
+	} else {
+		log.Println(internal.InfoPrefix, "telio final config:", string(featuresString))
 	}
-	log.Println(internal.InfoPrefix, "telio final config:", string(featuresString))
 
 	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
 	teliogo.SetGlobalLogger(teliogo.TelioLogLevelInfo, loggerCb)
 	lib, err := teliogo.NewTelio(*features, eventCallback(events))
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "couldn't create telio instance:", err)
+		log.Println(internal.ErrorPrefix, "failed to create telio instance:", err)
+		return nil, err
 	}
 
 	return &Libtelio{
@@ -193,7 +199,7 @@ func New(prod bool, eventPath string, fwmark uint32,
 		state:           vpn.ExitedState,
 		fwmark:          fwmark,
 		eventsPublisher: eventsPublisher,
-	}
+	}, nil
 }
 
 func logLevelToPrefix(level teliogo.TelioLogLevel) string {
@@ -454,7 +460,6 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 		return fmt.Errorf("failed to deserialize meshnet config: %w", err)
 	}
 
-	err = nil
 	for i := 0; i < 10; i++ {
 		if err = l.lib.SetMeshnet(config); err == nil {
 			break
@@ -505,7 +510,8 @@ func nodeStateToString(state teliogo.NodeState) string {
 	case teliogo.NodeStateDisconnected:
 		return "disconnected"
 	default:
-		panic(fmt.Sprintf("unexpected telio.NodeState: %#v", state))
+		log.Printf(internal.ErrorPrefix+" not supported node state: %T, returning 'unknown'\n", state)
+		return "unknown"
 	}
 }
 

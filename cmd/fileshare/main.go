@@ -138,6 +138,7 @@ func main() {
 	defaultDownloadDirectory, err := fileshare.GetDefaultDownloadDirectory()
 	if err != nil {
 		log.Println(internal.WarningPrefix, "failed to find default download directory:", err)
+		defaultDownloadDirectory = ""
 	}
 
 	eventManager := fileshare.NewEventManager(
@@ -160,7 +161,12 @@ func main() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	configDirPath, _ := internal.GetConfigDirPath(homeDir)
+	configDirPath, err := internal.GetConfigDirPath(homeDir)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get path to OS configuration directory:", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
 	storagePath := filepath.Join(configDirPath, internal.FileshareHistoryFileName)
 
 	if err := internal.EnsureDir(storagePath); err != nil {
