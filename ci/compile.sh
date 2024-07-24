@@ -90,6 +90,7 @@ if [[ $tags == *"moose"* ]]; then
 	trap revert_moose_patch EXIT
 fi
 
+export LIBRARY_PATH="${WORKDIR}/bin/deps/lib/${ARCH}/latest"
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
 	# BUILDMODE can be no value and `go` does not like empty parameter ''
