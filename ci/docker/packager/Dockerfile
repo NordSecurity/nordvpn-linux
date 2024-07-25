@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-buster-20240201
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20240725
 
 # Need to build nfpm with patch; expeting sometime
 # nfpm upstream will be fixed (issue submitted)
@@ -18,7 +18,7 @@ RUN cd && \
     ls -lh ./nfpm && \
     ./nfpm --version
 
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-buster-20240201
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20240725
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
@@ -33,5 +33,3 @@ RUN apt-get update && \
     go install github.com/goreleaser/chglog/cmd/chglog@v0.1.2 && \
     go clean -cache -modcache && \
     nfpm --version
-
-CMD ["exec", "$@"]

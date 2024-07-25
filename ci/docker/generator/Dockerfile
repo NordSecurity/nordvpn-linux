@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-buster-20240201
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20240725
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
@@ -15,5 +15,3 @@ RUN apt-get update && \
     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0 && \
     ln -s /usr/bin/protoc-gen-go-grpc /usr/bin/protoc-gen-go_grpc && \
     go clean -cache -modcache
-
-CMD ["exec", "$@"]

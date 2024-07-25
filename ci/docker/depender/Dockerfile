@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-buster-20240408
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20240725
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
