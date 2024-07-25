@@ -32,7 +32,7 @@ fi
 
 mkdir -p "${WORKDIR}"/coverage/unit
 # shellcheck disable=SC2046
-go test -tags internal -v -race $(go list ./... | grep -v "${excluded_packages}") \
+go test -tags internal -v -race $(go list -buildvcs=false ./... | grep -v "${excluded_packages}") \
 	-coverprofile "${WORKDIR}"/coverage.txt \
 	-exclude "${excluded_categories}" \
 	-args -test.gocoverdir="${WORKDIR}/coverage/unit"
