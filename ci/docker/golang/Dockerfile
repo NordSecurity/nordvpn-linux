@@ -19,7 +19,8 @@ RUN apt-get update && \
         wget \
         curl \
         ca-certificates \
-        git && \
+        git \
+        unzip && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
