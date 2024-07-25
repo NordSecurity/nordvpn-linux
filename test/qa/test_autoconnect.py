@@ -1,7 +1,8 @@
+import random
+
 import pytest
 import sh
 import timeout_decorator
-import random
 
 import lib
 from lib import daemon, info, logging, login, network, server
@@ -139,6 +140,6 @@ def test_autoconnect_virtual_country_disabled(tech, proto, obfuscated):
 
     sh.nordvpn.set("virtual-location", "off")
 
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+    with pytest.raises(sh.ErrorReturnCode_1) as _:
         output = sh.nordvpn.set.autoconnect.on(country).stdoud.decode("utf-8")
         assert "Please enable virtual location access to connect to this server." in output

@@ -2,7 +2,7 @@ import os
 import re
 import time
 from enum import Enum
-from typing import Callable, Union, List
+from typing import Callable, Union
 
 import sh
 

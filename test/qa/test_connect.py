@@ -1,5 +1,4 @@
 import random
-import re
 import socket
 import time
 
