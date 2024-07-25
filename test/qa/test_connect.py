@@ -25,11 +25,11 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
-def connect_base_test(connection_settings, group=(), name="", hostname="", virtual=False):
+def connect_base_test(connection_settings, group=(), name="", hostname=""):
     output = sh.nordvpn.connect(group, _tty_out=False)
     print(output)
 
-    assert lib.is_connect_successful(output, name, hostname, virtual)
+    assert lib.is_connect_successful(output, name, hostname)
 
     packets_captured = network.capture_traffic(connection_settings)
 
@@ -463,5 +463,5 @@ def test_connect_to_virtual_server(tech, proto, obfuscated):
     assert len(virtual_countries) > 0
     country = random.choice(virtual_countries)
 
-    connect_base_test((tech, proto, obfuscated), country, virtual=True)
+    connect_base_test((tech, proto, obfuscated), country)
     disconnect_base_test()
