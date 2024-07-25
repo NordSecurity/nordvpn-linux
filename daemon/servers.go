@@ -246,7 +246,7 @@ func filterServers(
 ) ([]core.Server, error) {
 	ret := internal.Filter(servers, canConnect(tech, protocol, serverTag, group, obfuscated))
 	if len(ret) == 0 {
-		log.Println(internal.DebugPrefix, "no servers found for:", tech, protocol, serverTag, group, obfuscated)
+		log.Println(internal.ErrorPrefix, "no servers found locally for:", tech, protocol, serverTag, group, obfuscated)
 		return nil, internal.ErrServerIsUnavailable
 	}
 	return ret, nil

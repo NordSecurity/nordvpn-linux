@@ -150,8 +150,8 @@ func generateKeys(server core.Server) []string {
 	return append([]string{
 		loweredCountryName,
 		loweredCountryCode,
-		loweredCountryName + loweredCityName,
-		loweredCountryCode + loweredCityName,
+		loweredCountryName + " " + loweredCityName,
+		loweredCountryCode + " " + loweredCityName,
 		loweredCityName,
 		loweredHostnameID,
 	}, loweredGroupTitles...)
