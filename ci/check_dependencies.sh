@@ -2,6 +2,7 @@
 set -euxo pipefail
 
 source "${WORKDIR}/ci/archs.sh"
+source "${WORKDIR}/lib-versions.env"
 
 temp_dir="${WORKDIR}/bin/deps/artifacts"
 lib_root="${WORKDIR}/bin/deps/lib"
