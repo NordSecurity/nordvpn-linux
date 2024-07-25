@@ -1,6 +1,7 @@
 import pytest
 import sh
 import timeout_decorator
+import random
 
 import lib
 from lib import daemon, info, logging, login, network, server
@@ -111,3 +112,33 @@ def test_autoconnect_to_standard_group(tech, proto, obfuscated, group):
 def test_autoconnect_to_additional_group(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     autoconnect_base_test(group)
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@timeout_decorator.timeout(40)
+def test_autoconnect_virtual_country(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    sh.nordvpn.set("virtual-location", "on")
+
+    virtual_countries = lib.get_virtual_countries()
+    assert len(virtual_countries) > 0
+    country = random.choice(virtual_countries)
+
+    autoconnect_base_test(country)
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@timeout_decorator.timeout(40)
+def test_autoconnect_virtual_country_disabled(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    sh.nordvpn.set("virtual-location", "on")
+
+    virtual_countries = lib.get_virtual_countries()
+    assert len(virtual_countries) > 0
+    country = random.choice(virtual_countries)
+
+    sh.nordvpn.set("virtual-location", "off")
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        output = sh.nordvpn.set.autoconnect.on(country).stdoud.decode("utf-8")
+        assert "Please enable virtual location access to connect to this server." in output

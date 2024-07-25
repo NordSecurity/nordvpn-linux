@@ -2,7 +2,7 @@ import os
 import re
 import time
 from enum import Enum
-from typing import Callable, Union
+from typing import Callable, Union, List
 
 import sh
 
@@ -326,3 +326,20 @@ def poll(func, attempts: int = 3, sleep: float = 1.0):
     for _ in range(attempts):
         yield func()
         time.sleep(sleep)
+
+
+def get_virtual_countries() -> list[str]:
+    """Returns all virtual in the output of `nordvpn countries` command."""
+    countries_output = sh.nordvpn.countries().stdout.decode("utf-8")
+
+    # This pattern captures all substring starting with \x1b\[94m[ that are single words. It should capture all of the
+    # virtual server names, as in the terminal output they are colored blue.
+    pattern = r"\x1b\[94m\w+\x1b\[0m"
+    matches = re.findall(pattern, countries_output)
+
+    countries = []
+    for match in matches:
+        country = match.replace("\x1b[94m","").replace("\x1b[0m","")
+        countries.append(country)
+
+    return countries
