@@ -1,20 +1,19 @@
 """Functions to make it easier to interact with nordvpnd."""
 import glob
-import logging
 import os
 import socket
 import time
 
 import sh
 
-from . import ssh
+from . import logging, ssh
 
 
 def _rewrite_log_path():
     project_root = os.environ["WORKDIR"].replace("/", "\\/")
     pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
-    #sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
-    os.popen(f"sudo sed -i {pattern} /etc/init.d/nordvpn").read()
+    # this fn is executed only in docker (below line would not work under snap)
+    sh.sudo.sed("-i", pattern, "/etc/init.d/nordvpn")
 
 
 # returns True on SystemD distros
@@ -133,13 +132,13 @@ def restart():
 # retrieving links inside this function creates a race condition,
 # therefore it is safer to provide them as arguments
 def wait_for_reconnect(links: list[tuple[int, str]]):
-    logging.info("waiting for reconnect")
+    logging.log("waiting for reconnect")
     while True:
         got = socket.if_nameindex()
         if len(got) != len(links):  # old tunnel is gone
             continue
         if got != links:  # new tunnel appeared
-            logging.debug(got)
+            logging.log(got)
             if list(filter(lambda x: "nordvpn-wg" in x, got)):
                 # not yet connected to actual VPN, this is just a test interface
                 continue

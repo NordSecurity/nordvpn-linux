@@ -11,6 +11,8 @@ tunnelblick_sha256sum="747aeed732f5303b408006d40736ef2ce276e0d99671b2110bb6b4f2f
 
 tunnelblick_url="https://github.com/Tunnelblick/Tunnelblick/raw/${tunnelblick_version}/third_party/sources"
 
+openssl_ver_tr=$(echo $OPENSSL_VERSION | tr . _)
+
 mkdir -p "${openvpn_tarbal_dir}"
 pushd "${openvpn_tarbal_dir}"
 	openvpn_tarbal="openvpn-${OPENVPN_VERSION}.tar.gz"
@@ -18,7 +20,7 @@ pushd "${openvpn_tarbal_dir}"
 	lzo_tarbal="lzo-${LZO_VERSION}.tar.gz"
 
 	wget -nv -nc "https://swupdate.openvpn.org/community/releases/${openvpn_tarbal}"
-	wget -nv -nc "https://www.openssl.org/source/${openssl_tarbal}"
+	wget -nv -nc "https://github.com/openssl/openssl/releases/download/OpenSSL_${openssl_ver_tr}/${openssl_tarbal}"
 	wget -nv -nc "https://www.oberhumer.com/opensource/lzo/download/${lzo_tarbal}"
 
 	echo "${OPENVPN_SHA256SUM} ${openvpn_tarbal}" | sha256sum -c -
