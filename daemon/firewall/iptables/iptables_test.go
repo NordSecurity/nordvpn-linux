@@ -9,9 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"golang.org/x/exp/slices"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -672,9 +673,9 @@ func containsSlice(t *testing.T, list, sublist []string) bool {
 func getSystemRules(supportedIPTables []string) (map[string][]string, error) {
 	rules := make(map[string][]string)
 	for _, cmd := range supportedIPTables {
-		out, err := exec.Command(cmd, "-S").CombinedOutput()
+		out, err := exec.Command(cmd, "-S", "-w", "10").CombinedOutput()
 		if err != nil {
-			return nil, fmt.Errorf("executing '%s -S': %w", cmd, err)
+			return nil, fmt.Errorf("executing '%s -S': %w: %s", cmd, err, out)
 		}
 		var res []string
 		for _, line := range strings.Split(string(out), "\n") {
