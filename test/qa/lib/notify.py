@@ -65,7 +65,7 @@ def connect_and_capture_notifications(tech, proto, obfuscated) -> NotificationCa
 
     # Choose server for test, so we know the full expected message
     server_info = server.get_hostname_by(tech, proto, obfuscated)
-    expected_msg = f"You are connected to {server_info.name} ({server_info.hostname})!"
+    expected_msg = f"You are connected to {server_info.name} ({server_info.hostname})"
 
     # We try to capture notifications using other thread when connecting to NordVPN server
     t_connect = NotificationCaptureThread(expected_msg)
