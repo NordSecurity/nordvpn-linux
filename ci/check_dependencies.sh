@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-libnord_version="0.5.7"
+libnord_version="0.5.8"
 libnord_id="6385"
 
 if [[ "${FEATURES:-""}" == *internal* ]]; then
