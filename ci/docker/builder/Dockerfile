@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-buster-20240408
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20240725
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
@@ -6,7 +6,8 @@ RUN dpkg --add-architecture i386 && \
     dpkg --add-architecture arm64 && \
     dpkg --add-architecture armhf && \
     apt-get update && \
-    apt-get -y --no-install-recommends install \
+    DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \
+        pkg-config \
         make \
         gcc \
         gcc-arm-linux-gnueabi \
@@ -22,12 +23,13 @@ RUN dpkg --add-architecture i386 && \
         libc6-dev-armel-cross \
         procps && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    # This is not a dangerous hack. `libxml2-dev:armel` package is broken on Debian 10. Therefore,
-    # this symlink fakes the existence of armel build. The expected symbols in `libxml.so` are no
-    # different than `armhf` and since real `libxml2.so` is loaded at runtime and package has a
-    # dependency for `libxml2`, a proper library is loaded
-    ln -s /usr/lib/arm-linux-gnueabihf/libxml2.so /usr/lib/arm-linux-gnueabi/libxml2.so && \
+    rm -rf /var/lib/apt/lists/*
+
+# This is not a dangerous hack. `libxml2-dev:armel` package is broken on Debian 10. Therefore,
+# this symlink fakes the existence of armel build. The expected symbols in `libxml.so` are no
+# different than `armhf` and since real `libxml2.so` is loaded at runtime and package has a
+# dependency for `libxml2`, a proper library is loaded
+RUN ln -s /usr/lib/arm-linux-gnueabihf/libxml2.so /usr/lib/arm-linux-gnueabi/libxml2.so && \
     # Download and install musl to PATH (/usr/bin)
     # Because i386 app compiled with Zig segfaults when linked against glibc during go runtime setup
     wget --progress=dot:giga "https://musl.cc/i686-linux-musl-cross.tgz" -O /tmp/musl.tar.gz && \
@@ -37,5 +39,3 @@ RUN dpkg --add-architecture i386 && \
     # Install gocover-cobertura which is used for test coverage visualization in the diff view
     go install github.com/boumenot/gocover-cobertura@latest && \
     go clean -cache -modcache
-
-CMD ["exec", "$@"]
