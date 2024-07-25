@@ -30,12 +30,6 @@ import (
 )
 
 var (
-	ErrMeshNotEnabled          = errors.New("meshnet not enabled")
-	ErrMeshAddressAlreadyInUse = errors.New("meshnet address is already in use, probably another fileshare instance is already running")
-	ErrLAddressAlreadyInUse    = errors.New("address already in use")
-)
-
-var (
 	// Value set when building the application
 	Environment = ""
 	daemonURL   = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
@@ -223,7 +217,7 @@ func main() {
 
 	err = fileshareImplementation.Enable(meshnetIP)
 	if err != nil {
-		if errors.Is(err, ErrLAddressAlreadyInUse) {
+		if errors.Is(err, libdrop.ErrLAddressAlreadyInUse) {
 			log.Println(internal.ErrorPrefix, "mesh already in use:", err)
 			os.Exit(int(childprocess.CodeAddressAlreadyInUse))
 		}
