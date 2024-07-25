@@ -191,7 +191,7 @@ func Download() error {
 
 	environment["ARCH"] = build.Default.GOARCH
 	environment["WORKDIR"] = cwd
-	return sh.RunWith(environment, "ci/download_dependencies.sh")
+	return sh.RunWith(environment, "ci/check_dependencies.sh")
 }
 
 // Download OpenVPN external dependencies
