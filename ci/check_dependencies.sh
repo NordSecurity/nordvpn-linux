@@ -101,12 +101,12 @@ fi
 
 # ====================[  Unzip files ]=========================
 
-tar xf "${libtelio_zipfile}" --directory="${temp_dir}" && mv "${temp_dir}/dist" "${libtelio_dst}"
-tar xf "${libdrop_zipfile}" --directory="${temp_dir}" && mv "${temp_dir}/libdrop" "${libdrop_dst}"
+unzip -o "${libtelio_zipfile}" -d "${temp_dir}" && mv "${temp_dir}/dist" "${libtelio_dst}"
+unzip -o "${libdrop_zipfile}" -d "${temp_dir}" && mv "${temp_dir}/libdrop" "${libdrop_dst}"
 
 if [[ "${FEATURES:-""}" == *internal* ]]; then
-  tar xf "${libmoose_nordvpnapp_zipfile}" --directory="${temp_dir}" && mv "${temp_dir}/out" "${libmoose_nordvpnapp_dst}"
-  tar xf "${libmoose_worker_zipfile}" --directory="${temp_dir}" && mv "${temp_dir}/out" "${libmoose_worker_dst}"
+  unzip -o "${libmoose_nordvpnapp_zipfile}" -d "${temp_dir}" && mv "${temp_dir}/out" "${libmoose_nordvpnapp_dst}"
+  unzip -o "${libmoose_worker_zipfile}" -d "${temp_dir}" && mv "${temp_dir}/out" "${libmoose_worker_dst}"
 fi
 
 # ====================[  Copy to bin/deps/libs ]=========================
