@@ -3,11 +3,11 @@
 // Package moose provides convenient wrappers for event sending.
 package moose
 
-// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/amd64/latest -lmoosenordvpnapp -lsqlite3
-// #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/i386/latest -lmoosenordvpnapp -lsqlite3
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armel/latest -lmoosenordvpnapp -lsqlite3
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armhf/latest -lmoosenordvpnapp -lsqlite3
-// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/aarch64/latest -lmoosenordvpnapp -lsqlite3
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/amd64/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/i386/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armel/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armhf/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/arm64/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
 // #cgo LDFLAGS: -ldl -lm
 import "C"
 
