@@ -32,6 +32,8 @@ fi
 
 mkdir -p "${WORKDIR}"/coverage/unit
 
+ARCH="amd64"
+
 # for compile-time
 export LIBRARY_PATH="${WORKDIR}/bin/deps/lib/${ARCH}/latest"
 # for run-time

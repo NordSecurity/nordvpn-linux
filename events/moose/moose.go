@@ -7,7 +7,7 @@ package moose
 // `LIBRARY_PATH` to point to the directory, containing *.so files during build
 // and `LD_LIBRARY_PATH` for runtime when running tests.
 
-// #cgo LDFLAGS: -lm -lmooseworker -lmoosenordvpnapp
+// #cgo LDFLAGS: -lm -lmooseworker -lmoosenordvpnapp -lsqlite3
 import "C"
 
 import (

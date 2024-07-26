@@ -528,6 +528,7 @@ func (Test) Go() error {
 	if err != nil {
 		return err
 	}
+	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 	env["ARCH"] = build.Default.GOARCH
 
