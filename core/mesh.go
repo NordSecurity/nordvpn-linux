@@ -152,13 +152,14 @@ func (api *DefaultAPI) Register(token string, peer mesh.Machine) (*mesh.Machine,
 	}
 
 	return &mesh.Machine{
-		ID:        raw.Identifier,
-		Hostname:  raw.Hostname,
-		OS:        peer.OS,
-		PublicKey: peer.PublicKey,
-		Endpoints: raw.Endpoints,
-		Address:   addr,
-		Nickname:  raw.Nickname,
+		ID:              raw.Identifier,
+		Hostname:        raw.Hostname,
+		OS:              peer.OS,
+		PublicKey:       peer.PublicKey,
+		Endpoints:       raw.Endpoints,
+		Address:         addr,
+		Nickname:        raw.Nickname,
+		SupportsRouting: raw.SupportsRouting,
 	}, nil
 }
 
@@ -337,12 +338,13 @@ func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, erro
 
 	return &mesh.MachineMap{
 		Machine: mesh.Machine{
-			ID:        raw.ID,
-			Hostname:  raw.Hostname,
-			PublicKey: raw.PublicKey,
-			Endpoints: raw.Endpoints,
-			Address:   addr,
-			Nickname:  raw.Nickname,
+			ID:              raw.ID,
+			Hostname:        raw.Hostname,
+			PublicKey:       raw.PublicKey,
+			Endpoints:       raw.Endpoints,
+			Address:         addr,
+			Nickname:        raw.Nickname,
+			SupportsRouting: raw.SupportsRouting,
 		},
 		Hosts: raw.DNS.Hosts,
 		Peers: peers,

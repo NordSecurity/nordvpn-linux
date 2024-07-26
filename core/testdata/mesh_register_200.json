@@ -11,5 +11,6 @@
   "os": "android",
   "os_version": "Arch Linux; kernel=5.11.13-arch1-1",
   "public_key": "YyeQW3xNdTHUa3ip8wt0ksiw8HJh3c3u4hsuDVK9mS0=",
-  "relay_address": "disco.nordmesh:12345"
+  "relay_address": "disco.nordmesh:12345",
+  "traffic_routing_supported": true
 }
