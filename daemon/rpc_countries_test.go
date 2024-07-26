@@ -44,9 +44,10 @@ func TestRPCCountries(t *testing.T) {
 			servers:    serversList(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
+				{Name: "Algeria", VirtualLocation: true},
 				{Name: "France", VirtualLocation: false},
-				{Name: "Germany", VirtualLocation: true},
-				{Name: "Lithuania", VirtualLocation: true},
+				{Name: "Germany", VirtualLocation: false},
+				{Name: "Lithuania", VirtualLocation: false},
 			},
 		},
 		{
@@ -57,6 +58,8 @@ func TestRPCCountries(t *testing.T) {
 			statusCode:            internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
 				{Name: "France", VirtualLocation: false},
+				{Name: "Germany", VirtualLocation: false},
+				{Name: "Lithuania", VirtualLocation: false},
 			},
 		},
 	}

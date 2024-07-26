@@ -87,6 +87,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 			servers:    serversList(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
+				{Name: "Dedicated_IP", VirtualLocation: false},
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
@@ -99,6 +100,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 			disableVirtualServers: true,
 			statusCode:            internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
+				{Name: "Dedicated_IP", VirtualLocation: false},
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},

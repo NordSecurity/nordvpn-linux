@@ -26,6 +26,10 @@ func (mockServersAPI) Servers() (core.Servers, http.Header, error) {
 }
 
 func (mockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _ float64) (core.Servers, http.Header, error) {
+	if filter.Group == config.DedicatedIP {
+		return nil, nil, fmt.Errorf("API must not be called for Dedicated IP")
+	}
+
 	var servers core.Servers
 	for _, server := range serversList() {
 		if server.Status != core.Online || isDedicatedIP(server) {
@@ -35,30 +39,6 @@ func (mockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _
 		servers = append(servers, server)
 	}
 
-	if filter.Group == config.DedicatedIP {
-		return core.Servers{{
-			Name:      "dedicated-ip",
-			Status:    core.Online,
-			Station:   "127.0.0.1",
-			CreatedAt: "2006-01-02 15:04:05",
-			Locations: core.Locations{
-				{
-					Country: core.Country{Name: "Romania"},
-				},
-			},
-			Technologies: core.Technologies{
-				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
-				{ID: core.OpenVPNUDP, Pivot: core.Pivot{Status: core.Online}},
-			},
-			IPRecords: []core.ServerIPRecord{
-				{
-					ServerIP: core.ServerIP{IP: "127.0.0.1", Version: 4},
-					Type:     "some type",
-				},
-			},
-			Groups: core.Groups{core.Group{ID: config.DedicatedIP, Title: "DedicatedIP"}},
-		}}, nil, nil
-	}
 	return servers, nil, nil
 }
 

@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/netip"
 	"testing"
@@ -96,20 +95,21 @@ type workingLoginChecker struct {
 	vpnErr               error
 	isDedicatedIPExpired bool
 	dedicatedIPErr       error
+	dedicatedIPService   []auth.DedicatedIPService
 }
 
 func (*workingLoginChecker) IsLoggedIn() bool              { return true }
 func (c *workingLoginChecker) IsVPNExpired() (bool, error) { return c.isVPNExpired, c.vpnErr }
 func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	if c.isDedicatedIPExpired {
-		return nil, fmt.Errorf("dedicated IP is expired")
+		return nil, nil
 	}
 
 	if c.dedicatedIPErr != nil {
 		return nil, c.dedicatedIPErr
 	}
 
-	return []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 1111}}, nil
+	return c.dedicatedIPService, nil
 }
 
 type mockAnalytics struct{}
@@ -122,17 +122,18 @@ func TestRpcConnect(t *testing.T) {
 
 	defer testsCleanup()
 	tests := []struct {
-		name        string
-		serverGroup string
-		factory     FactoryFunc
-		netw        networker.Networker
-		fw          firewall.Service
-		checker     auth.Checker
-		resp        int64
+		name          string
+		serverGroup   string
+		serverTag     string
+		factory       FactoryFunc
+		netw          networker.Networker
+		fw            firewall.Service
+		checker       auth.Checker
+		resp          int64
+		expectedError error
 	}{
 		{
-			name:        "successful connect",
-			serverGroup: "",
+			name: "Quick connect works",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
@@ -142,8 +143,7 @@ func TestRpcConnect(t *testing.T) {
 			resp:    internal.CodeConnected,
 		},
 		{
-			name:        "failed connect",
-			serverGroup: "",
+			name: "Fail for broken Networker and VPN",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.FailingVPN{}, nil
 			},
@@ -153,8 +153,7 @@ func TestRpcConnect(t *testing.T) {
 			resp:    internal.CodeFailure,
 		},
 		{
-			name:        "VPN expired",
-			serverGroup: "",
+			name: "fFail when VPN subscription is expired",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
@@ -164,8 +163,7 @@ func TestRpcConnect(t *testing.T) {
 			resp:    internal.CodeAccountExpired,
 		},
 		{
-			name:        "VPN expiration check fails",
-			serverGroup: "",
+			name: "Fail when VPN subscription API calls fails",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
@@ -174,51 +172,194 @@ func TestRpcConnect(t *testing.T) {
 			checker: &workingLoginChecker{vpnErr: errors.New("test error")},
 			resp:    internal.CodeTokenRenewError,
 		},
+		{
+			name:      "Connects using country name",
+			serverTag: "germany",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{},
+			resp:    internal.CodeConnected,
+		},
+		{
+			name:      "Connects using country name + city name",
+			serverTag: "germany berlin",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{},
+			resp:    internal.CodeConnected,
+		},
+		{
+			name:      "Connects for city name",
+			serverTag: "berlin",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{},
+			resp:    internal.CodeConnected,
+		},
+		{
+			name:      "Connects using country code + city name",
+			serverTag: "de berlin",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{},
+			resp:    internal.CodeConnected,
+		},
+		{
+			name:      "Connects using country code",
+			serverTag: "de",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{},
+			resp:    internal.CodeConnected,
+		},
+		{
+			name:        "Dedicated IP group connect works",
+			serverGroup: "Dedicated_IP",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw: &testnetworker.Mock{},
+			fw:   &workingFirewall{},
+			checker: &workingLoginChecker{
+				isDedicatedIPExpired: false,
+				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
+			},
+			resp: internal.CodeConnected,
+		},
+		{
+			name:      "Dedicated IP with server name works",
+			serverTag: "lt7",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw: &testnetworker.Mock{},
+			fw:   &workingFirewall{},
+			checker: &workingLoginChecker{
+				isDedicatedIPExpired: false,
+				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
+			},
+			resp: internal.CodeConnected,
+		},
+		{
+			name:      "fails when Dedicated IP subscription is expired",
+			serverTag: "lt7",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{isDedicatedIPExpired: true},
+			resp:    internal.CodeDedicatedIPRenewError,
+		},
+		{
+			name:      "fails for Dedicated IP when API fails",
+			serverTag: "lt7",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw:    &testnetworker.Mock{},
+			fw:      &workingFirewall{},
+			checker: &workingLoginChecker{isDedicatedIPExpired: true},
+			resp:    internal.CodeDedicatedIPRenewError,
+		},
+		{
+			name:      "fails when server not into Dedicated IP servers list",
+			serverTag: "lt8",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw: &testnetworker.Mock{},
+			fw:   &workingFirewall{},
+			checker: &workingLoginChecker{
+				isDedicatedIPExpired: false,
+				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
+			},
+			resp: internal.CodeDedicatedIPNoServer,
+		},
+		{
+			name:      "fails because Dedicated IP servers list is empty",
+			serverTag: "lt7",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			netw: &testnetworker.Mock{},
+			fw:   &workingFirewall{},
+			checker: &workingLoginChecker{
+				isDedicatedIPExpired: false,
+				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: auth.NoServerSelected}},
+			},
+			resp: internal.CodeDedicatedIPServiceButNoServers,
+		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cm := newMockConfigManager()
-			tokenData := cm.c.TokensData[cm.c.AutoConnectData.ID]
-			tokenData.TokenExpiry = time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat)
-			tokenData.ServiceExpiry = time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat)
-			cm.c.TokensData[cm.c.AutoConnectData.ID] = tokenData
-			dm := testNewDataManager()
-			api := core.NewDefaultAPI(
-				"",
-				"",
-				http.DefaultClient,
-				response.NoopValidator{},
-			)
-			rpc := NewRPC(
-				internal.Development,
-				test.checker,
-				cm,
-				dm,
-				api,
-				&mockServersAPI{},
-				&validCredentialsAPI{},
-				testNewCDNAPI(),
-				testNewRepoAPI(),
-				&mockAuthenticationAPI{},
-				"1.0.0",
-				test.fw,
-				daemonevents.NewEventsEmpty(),
-				test.factory,
-				newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
-				test.netw,
-				&subs.Subject[string]{},
-				&mock.DNSGetter{Names: []string{"1.1.1.1"}},
-				nil,
-				&mockAnalytics{},
-				&testnorduser.MockNorduserCombinedService{},
-				&RegistryMock{},
-			)
-			server := &mockRPCServer{}
-			err := rpc.Connect(&pb.ConnectRequest{ServerGroup: test.serverGroup}, server)
-			assert.NoError(t, err)
-			assert.Equal(t, server.msg.Type, test.resp)
-		})
+		// run each test using working API for servers list and using local cached servers list
+		servers := map[string]core.ServersAPI{
+			"Remote": mockServersAPI{},
+			"Local":  mockFailingServersAPI{},
+		}
+		for key, serversAPI := range servers {
+			t.Run(test.name+" "+key, func(t *testing.T) {
+				cm := newMockConfigManager()
+				tokenData := cm.c.TokensData[cm.c.AutoConnectData.ID]
+				tokenData.TokenExpiry = time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat)
+				tokenData.ServiceExpiry = time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat)
+				cm.c.TokensData[cm.c.AutoConnectData.ID] = tokenData
+				dm := testNewDataManager()
+				dm.SetServersData(time.Now(), serversList(), "")
+				api := core.NewDefaultAPI(
+					"",
+					"",
+					http.DefaultClient,
+					response.NoopValidator{},
+				)
+				rpc := NewRPC(
+					internal.Development,
+					test.checker,
+					cm,
+					dm,
+					api,
+					serversAPI,
+					&validCredentialsAPI{},
+					testNewCDNAPI(),
+					testNewRepoAPI(),
+					&mockAuthenticationAPI{},
+					"1.0.0",
+					test.fw,
+					daemonevents.NewEventsEmpty(),
+					test.factory,
+					newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
+					test.netw,
+					&subs.Subject[string]{},
+					&mock.DNSGetter{Names: []string{"1.1.1.1"}},
+					nil,
+					&mockAnalytics{},
+					&testnorduser.MockNorduserCombinedService{},
+					&RegistryMock{},
+				)
+				server := &mockRPCServer{}
+				err := rpc.Connect(&pb.ConnectRequest{ServerGroup: test.serverGroup, ServerTag: test.serverTag}, server)
+				assert.Equal(t, test.expectedError, err)
+				if err == nil {
+					assert.Equal(t, test.resp, server.msg.Type)
+				}
+			})
+		}
 	}
 }
 
