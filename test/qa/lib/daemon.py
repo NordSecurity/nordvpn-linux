@@ -85,8 +85,8 @@ def start():
         # call to init.d returns before the daemon is actually started
         _rewrite_log_path()
         sh.sudo("/etc/init.d/nordvpn", "start")
-        while not is_running():
-            time.sleep(1)
+    while not is_running():
+        time.sleep(1)
 
 
 def start_peer(ssh_client: ssh.Ssh):
