@@ -1,8 +1,9 @@
 package libtelio
 
-// NOTE: I'm not configuring the path to *.so files here. Instead, I'm setting
-// `LIBRARY_PATH` to point to the directory, containing *.so files during build
-// and `LD_LIBRARY_PATH` for runtime when running tests.
-
-// #cgo LDFLAGS: -lm -ltelio
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/amd64/latest -ltelio -lsqlite3
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/i386/latest -ltelio -lsqlite3
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/armel/latest -ltelio -lsqlite3
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/armhf/latest -ltelio -lsqlite3
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/aarch64/latest -ltelio -lsqlite3
+// #cgo LDFLAGS: -ldl -lm
 import "C"
