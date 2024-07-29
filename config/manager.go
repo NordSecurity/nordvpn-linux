@@ -91,6 +91,7 @@ type FilesystemConfigManager struct {
 	salt            string
 	machineIDGetter MachineIDGetter
 	fsHandle        FilesystemHandle
+	NewInstallation bool
 	mu              sync.Mutex
 }
 
@@ -165,7 +166,8 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 	*c = *newConfig(f.machineIDGetter)
 
 	if !f.fsHandle.FileExists(f.location) {
-		return nil
+		f.NewInstallation = true
+		return f.save(*c)
 	}
 
 	pass, err := f.getPassphrase()
@@ -231,6 +233,11 @@ func (f *FilesystemConfigManager) newKey() error {
 	buffer := &bytes.Buffer{}
 	encoder := gob.NewEncoder(buffer)
 	err = encoder.Encode(cipher)
+	if err != nil {
+		return err
+	}
+
+	err = f.fsHandle.CreateFile(f.vault, internal.PermUserRW)
 	if err != nil {
 		return err
 	}
