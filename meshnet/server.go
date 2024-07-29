@@ -1523,7 +1523,7 @@ func (s *Server) ChangeMachineNickname(
 	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
 	info := mesh.MachineUpdateRequest{
 		Nickname:        req.Nickname,
-		SupportsRouting: cfg.MeshDevice.SupportsRouting,
+		SupportsRouting: true,
 		Endpoints:       cfg.MeshDevice.Endpoints,
 	}
 

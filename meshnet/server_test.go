@@ -1679,19 +1679,19 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:             "set nickname successfully",
 			isMeshOn:         true,
 			newNickname:      machineNickname,
-			machine:          mesh.Machine{},
+			machine:          mesh.Machine{SupportsRouting: true},
 			expectedResponse: changedSuccessfully,
 		},
 		{
 			name:             "clear nickname",
 			isMeshOn:         true,
-			machine:          mesh.Machine{Nickname: strings.ToUpper(machineNickname)},
+			machine:          mesh.Machine{SupportsRouting: true, Nickname: strings.ToUpper(machineNickname)},
 			expectedResponse: changedSuccessfully,
 		},
 		{
 			name:     "clear nickname, when is already empty",
 			isMeshOn: true,
-			machine:  mesh.Machine{},
+			machine:  mesh.Machine{SupportsRouting: true},
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
 					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY,
@@ -1745,7 +1745,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "set same nickname",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{Nickname: machineNickname},
+			machine:     mesh.Machine{SupportsRouting: true, Nickname: machineNickname},
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
 					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_SAME_NICKNAME,
@@ -1756,14 +1756,14 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:             "set same nickname, but different caps",
 			isMeshOn:         true,
 			newNickname:      strings.ToUpper(machineNickname),
-			machine:          mesh.Machine{Nickname: machineNickname},
+			machine:          mesh.Machine{SupportsRouting: true, Nickname: machineNickname},
 			expectedResponse: changedSuccessfully,
 		},
 		{
 			name:        "update API fails with ErrUnauthorized",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrUnauthorized,
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
@@ -1775,7 +1775,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "update API fails",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   fmt.Errorf("error"),
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
@@ -1787,7 +1787,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:          "config save fails",
 			isMeshOn:      true,
 			newNickname:   machineNickname,
-			machine:       mesh.Machine{},
+			machine:       mesh.Machine{SupportsRouting: true},
 			saveConfigErr: fmt.Errorf("error"),
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
@@ -1799,7 +1799,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:             "fails to register because of DNS conflict",
 			isMeshOn:         true,
 			newNickname:      "peer1",
-			machine:          mesh.Machine{},
+			machine:          mesh.Machine{SupportsRouting: true},
 			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.IPv4bcast}},
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1811,7 +1811,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "generic API error",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   fmt.Errorf("error"),
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
@@ -1823,7 +1823,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "API returns error rate limit reach",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrRateLimitReach,
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1835,7 +1835,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "API returns error nickname too long",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrNicknameTooLong,
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1847,7 +1847,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "API returns error duplicate nickname",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrDuplicateNickname,
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1859,7 +1859,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "API returns forbidden word",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrContainsForbiddenWord,
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1871,7 +1871,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "API returns invalid suffix or prefix",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrInvalidPrefixOrSuffix,
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1883,7 +1883,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "API error double hyphens",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrNicknameWithDoubleHyphens,
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1895,7 +1895,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			name:        "API error nickname contains invalid chars",
 			isMeshOn:    true,
 			newNickname: machineNickname,
-			machine:     mesh.Machine{},
+			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrContainsInvalidChars,
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
@@ -1960,6 +1960,8 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				}
 			} else {
 				assert.Equal(t, test.newNickname, registryApi.CurrentMachine.Nickname)
+				assert.True(t, configManager.Cfg.MeshDevice.SupportsRouting)
+				assert.True(t, registryApi.CurrentMachine.SupportsRouting)
 			}
 		})
 	}
