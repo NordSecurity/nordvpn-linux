@@ -101,8 +101,10 @@ type Analytics interface {
 	Disable() error
 }
 
-// ServerRating last used server rating info
-type ServerRating struct {
-	Rate   int
-	Server string
+// UiItemsAction stores arguments to moose.NordvpnappSendUserInterfaceUiItemsClick
+type UiItemsAction struct {
+	ItemName      string
+	ItemType      string
+	ItemValue     string
+	FormReference string
 }

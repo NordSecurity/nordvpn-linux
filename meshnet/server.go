@@ -438,7 +438,7 @@ func (s *Server) Invite(
 	ctx context.Context,
 	req *pb.InviteRequest,
 ) (*pb.InviteResponse, error) {
-	s.daemonEvents.Service.SendInvitation.Publish(nil)
+	s.daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "send_invitation", ItemType: "textbox", ItemValue: "send_invitation", FormReference: "cli"})
 
 	if !s.ac.IsLoggedIn() {
 		return &pb.InviteResponse{

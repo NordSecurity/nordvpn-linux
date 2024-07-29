@@ -234,21 +234,16 @@ func (s *Subscriber) NotifyIpv6(data bool) error {
 
 func (s *Subscriber) NotifyLogin(any) error { return nil }
 
-func (s *Subscriber) NotifyRate(data events.ServerRating) error {
+func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
+	itemType := moose.NordvpnappUserInterfaceItemTypeButton
+	if data.ItemType == "textbox" {
+		itemType = moose.NordvpnappUserInterfaceItemTypeTextBox
+	}
 	return s.response(moose.NordvpnappSendUserInterfaceUiItemsClick(
-		"server_speed_rating",
-		moose.NordvpnappUserInterfaceItemTypeButton,
-		data.Server,
-		fmt.Sprintf("%d", data.Rate),
-	))
-}
-
-func (s *Subscriber) NotifySendInvitation(any) error {
-	return s.response(moose.NordvpnappSendUserInterfaceUiItemsClick(
-		"send_invitation",
-		moose.NordvpnappUserInterfaceItemTypeTextBox,
-		"send_invitation",
-		"cli",
+		data.ItemName,
+		itemType,
+		data.ItemValue,
+		data.FormReference,
 	))
 }
 

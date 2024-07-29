@@ -33,8 +33,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[events.DataDisconnect]{},
 		&subs.Subject[any]{},
 		&subs.Subject[core.ServicesResponse]{},
-		&subs.Subject[events.ServerRating]{},
-		&subs.Subject[any]{},
+		&subs.Subject[events.UiItemsAction]{},
 		&subs.Subject[int]{},
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
@@ -62,8 +61,7 @@ func NewEvents(
 	disconnect events.PublishSubcriber[events.DataDisconnect],
 	login events.PublishSubcriber[any],
 	accountCheck events.PublishSubcriber[core.ServicesResponse],
-	rate events.PublishSubcriber[events.ServerRating],
-	sendInvitation events.PublishSubcriber[any],
+	uiItemsClick events.PublishSubcriber[events.UiItemsAction],
 	heartBeat events.PublishSubcriber[int],
 	deviceLocation events.PublishSubcriber[core.Insights],
 	lanDiscovery events.PublishSubcriber[bool],
@@ -93,8 +91,7 @@ func NewEvents(
 			Disconnect:     disconnect,
 			Login:          login,
 			AccountCheck:   accountCheck,
-			Rate:           rate,
-			SendInvitation: sendInvitation,
+			UiItemsClick:   uiItemsClick,
 			HeartBeat:      heartBeat,
 			DeviceLocation: deviceLocation,
 		},
@@ -173,8 +170,7 @@ type ServicePublisher interface {
 	NotifyDisconnect(events.DataDisconnect) error
 	NotifyLogin(any) error
 	NotifyAccountCheck(core.ServicesResponse) error
-	NotifyRate(events.ServerRating) error
-	NotifySendInvitation(any) error
+	NotifyUiItemsClick(events.UiItemsAction) error
 	NotifyHeartBeat(int) error
 	NotifyDeviceLocation(core.Insights) error
 }
@@ -184,8 +180,7 @@ type ServiceEvents struct {
 	Disconnect     events.PublishSubcriber[events.DataDisconnect]
 	Login          events.PublishSubcriber[any]
 	AccountCheck   events.PublishSubcriber[core.ServicesResponse]
-	Rate           events.PublishSubcriber[events.ServerRating]
-	SendInvitation events.PublishSubcriber[any]
+	UiItemsClick   events.PublishSubcriber[events.UiItemsAction]
 	HeartBeat      events.PublishSubcriber[int]
 	DeviceLocation events.PublishSubcriber[core.Insights]
 }
@@ -195,8 +190,7 @@ func (s *ServiceEvents) Subscribe(to ServicePublisher) {
 	s.Disconnect.Subscribe(to.NotifyDisconnect)
 	s.Login.Subscribe(to.NotifyLogin)
 	s.AccountCheck.Subscribe(to.NotifyAccountCheck)
-	s.Rate.Subscribe(to.NotifyRate)
-	s.SendInvitation.Subscribe(to.NotifySendInvitation)
+	s.UiItemsClick.Subscribe(to.NotifyUiItemsClick)
 	s.HeartBeat.Subscribe(to.NotifyHeartBeat)
 	s.DeviceLocation.Subscribe(to.NotifyDeviceLocation)
 }
