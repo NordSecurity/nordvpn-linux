@@ -118,7 +118,7 @@ func (*mockAnalytics) Enable() error  { return nil }
 func (*mockAnalytics) Disable() error { return nil }
 
 func TestRpcConnect(t *testing.T) {
-	category.Set(t, category.Route)
+	category.Set(t, category.Unit)
 
 	defer testsCleanup()
 	tests := []struct {
