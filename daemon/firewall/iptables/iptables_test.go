@@ -44,7 +44,7 @@ func TestConnectionStateToString(t *testing.T) {
 func TestGenerateIPTablesRule(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
-		input       bool
+		chain       ruleChain
 		target      ruleTarget
 		iface       string
 		remoteNet   string
@@ -66,96 +66,108 @@ func TestGenerateIPTablesRule(t *testing.T) {
 		mark        uint32
 	}{
 		{
-			input: false, target: drop, iface: "", remoteNet: "", protocol: "",
+			chain: chainOutput, target: drop, iface: "", remoteNet: "", protocol: "",
 			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
 			rule: "OUTPUT -m comment --comment nordvpn -j DROP",
 		}, {
-			input: true, target: accept, iface: "", remoteNet: "", protocol: "",
+			chain: chainInput, target: accept, iface: "", remoteNet: "", protocol: "",
 			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
 			rule: "INPUT -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: false, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			chain: chainForward, target: drop, iface: "", remoteNet: "", protocol: "",
+			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
+			rule: "FORWARD -m comment --comment nordvpn -j DROP",
+		}, {
+			chain: chainForward, target: accept, iface: "", remoteNet: "", protocol: "",
+			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
+			rule: "FORWARD -m comment --comment nordvpn -j ACCEPT",
+		}, {
+			chain: chainForward, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
+			rule: "FORWARD -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j DROP",
+		}, {
+			chain: chainOutput, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
 			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j DROP",
 		}, {
-			input: false, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			chain: chainOutput, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
 			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j DROP",
 		}, {
-			input: false, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			chain: chainOutput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
 			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: false, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			chain: chainOutput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
 			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
 			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
 			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "udp", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --sport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "udp", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
 			states: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}}, chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --sport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
 			states: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}}, chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
 			states: firewall.ConnectionStates{SrcAddr: netip.MustParseAddr("2.2.2.2"), States: []firewall.ConnectionState{firewall.Established, firewall.Related}}, chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED --ctorigsrc 2.2.2.2 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: false, target: drop, iface: "", remoteNet: "", protocol: "",
+			chain: chainOutput, target: drop, iface: "", remoteNet: "", protocol: "",
 			port: PortRange{0, 0}, module: "", stateFlag: "", states: firewall.ConnectionStates{}, chainPrefix: "PRIMITIVE_",
 			rule: "PRIMITIVE_OUTPUT -m comment --comment nordvpn -j DROP",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "2606:4700:4700::1111/128",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "2606:4700:4700::1111/128",
 			protocol:   "ipv6-icmp",
 			icmpv6Type: 133,
 			hopLimit:   255,
 			rule:       "INPUT -i lo -s 2606:4700:4700::1111/128 -p ipv6-icmp --icmpv6-type 133 -m hl --hl-eq 255 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: false, target: accept, iface: "lo", localNet: "::1/128",
+			chain: chainOutput, target: accept, iface: "lo", localNet: "::1/128",
 			protocol:   "ipv6-icmp",
 			icmpv6Type: 134,
 			hopLimit:   255,
 			rule:       "OUTPUT -o lo -s ::1/128 -p ipv6-icmp --icmpv6-type 134 -m hl --hl-eq 255 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: false, target: accept, iface: "lo", localNet: "::1/128",
+			chain: chainOutput, target: accept, iface: "lo", localNet: "::1/128",
 			protocol: "udp",
 			sports:   []int{570},
 			dports:   []int{546, 547},
 			rule:     "OUTPUT -o lo -s ::1/128 -p udp --sport 570 --dport 546,547 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, iface: "lo", remoteNet: "::1/128",
+			chain: chainInput, target: accept, iface: "lo", remoteNet: "::1/128",
 			rule: "INPUT -i lo -s ::1/128 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: false, target: accept, iface: "lo", localNet: "::1/128",
+			chain: chainOutput, target: accept, iface: "lo", localNet: "::1/128",
 			rule: "OUTPUT -o lo -s ::1/128 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: true, target: accept, mark: 0x123,
+			chain: chainInput, target: accept, mark: 0x123,
 			rule: "INPUT -m connmark --mark 0x123 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: false, target: accept, mark: 0x123,
+			chain: chainOutput, target: accept, mark: 0x123,
 			rule: "OUTPUT -m connmark --mark 0x123 -m comment --comment nordvpn -j ACCEPT",
 		}, {
-			input: false, target: connmark, mark: 0x123,
+			chain: chainOutput, target: connmark, mark: 0x123,
 			rule: "OUTPUT -m mark --mark 0x123 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
 		},
 	}
@@ -175,7 +187,7 @@ func TestGenerateIPTablesRule(t *testing.T) {
 				require.NoError(t, err)
 				localNetwork = netw
 			}
-			rule := generateIPTablesRule(tt.input, tt.target, net.Interface{Name: tt.iface},
+			rule := generateIPTablesRule(tt.chain, tt.target, net.Interface{Name: tt.iface},
 				remoteNetwork, localNetwork, tt.protocol, tt.port, tt.module, tt.stateFlag, tt.states, tt.chainPrefix,
 				tt.portFlag,
 				tt.icmpv6Type,
@@ -246,16 +258,17 @@ func TestToInputSlice(t *testing.T) {
 	tests := []struct {
 		name     string
 		ruleType firewall.Direction
-		out      []bool
+		out      []ruleChain
 	}{
-		{name: "inbound", ruleType: firewall.Inbound, out: []bool{true}},
-		{name: "outbound", ruleType: firewall.Outbound, out: []bool{false}},
-		{name: "two way", ruleType: firewall.TwoWay, out: []bool{true, false}},
+		{name: "inbound", ruleType: firewall.Inbound, out: []ruleChain{chainInput}},
+		{name: "outbound", ruleType: firewall.Outbound, out: []ruleChain{chainOutput}},
+		{name: "two way", ruleType: firewall.TwoWay, out: []ruleChain{chainInput, chainOutput}},
+		{name: "forward", ruleType: firewall.Forward, out: []ruleChain{chainForward}},
 		{name: "invalid type", ruleType: 500, out: nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out := toInputSlice(tt.ruleType)
+			out := toChainSlice(tt.ruleType)
 			assert.Equal(t, tt.out, out)
 		})
 	}
@@ -267,49 +280,49 @@ func TestToTargetSlice(t *testing.T) {
 	tests := []struct {
 		name         string
 		allowPackets bool
-		inputChain   bool
+		chain        ruleChain
 		marks        []uint32
 		out          []ruleTarget
 	}{
 		{
 			name:         "nil marks",
 			allowPackets: false,
-			inputChain:   false,
+			chain:        chainOutput,
 			marks:        nil,
 			out:          []ruleTarget{drop},
 		},
 		{
 			name:         "no marks",
 			allowPackets: true,
-			inputChain:   true,
+			chain:        chainInput,
 			marks:        []uint32{},
 			out:          []ruleTarget{accept},
 		},
 		{
 			name:         "allow incoming packets with mark",
 			allowPackets: true,
-			inputChain:   true,
+			chain:        chainInput,
 			marks:        []uint32{0x123},
 			out:          []ruleTarget{accept},
 		},
 		{
 			name:         "allow outgoing packets with mark",
 			allowPackets: true,
-			inputChain:   false,
+			chain:        chainOutput,
 			marks:        []uint32{0x123},
 			out:          []ruleTarget{accept, connmark},
 		},
 		{
 			name:         "drop incoming packets with mark",
 			allowPackets: false,
-			inputChain:   true,
+			chain:        chainInput,
 			marks:        []uint32{0x123},
 			out:          []ruleTarget{drop},
 		},
 		{
 			name:         "drop outgoing packets with mark",
 			allowPackets: false,
-			inputChain:   false,
+			chain:        chainOutput,
 			marks:        []uint32{0x123},
 			out:          []ruleTarget{drop, connmark},
 		},
@@ -317,7 +330,7 @@ func TestToTargetSlice(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			out := toTargetSlice(test.allowPackets, test.inputChain, test.marks)
+			out := toTargetSlice(test.allowPackets, test.chain, test.marks)
 			assert.Equal(t, test.out, out)
 		})
 	}
@@ -412,6 +425,24 @@ func TestRuleToIPTables(t *testing.T) {
 			ipv6TablesRules: []string{
 				"OUTPUT -o lo -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -o eth0 -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
+			name: "multi interfaces and networks forwarding rule",
+			rule: firewall.Rule{
+				Direction:      firewall.Forward,
+				RemoteNetworks: []netip.Prefix{net1111, net2220, netIpv6},
+				Interfaces:     []net.Interface{{Name: "lo"}, {Name: "eth0"}},
+			},
+			ipv4TablesRules: []string{
+				"FORWARD -o lo -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"FORWARD -o lo -d 2.2.2.0/24 -m comment --comment nordvpn -j DROP",
+				"FORWARD -o eth0 -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"FORWARD -o eth0 -d 2.2.2.0/24 -m comment --comment nordvpn -j DROP",
+			},
+			ipv6TablesRules: []string{
+				"FORWARD -o lo -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
+				"FORWARD -o eth0 -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
 			},
 		},
 		{
@@ -619,9 +650,7 @@ func TestFirewall_AddDeleteRules(t *testing.T) {
 			currRules, err := getSystemRules([]string{ipv4Table, ipv6Table})
 			assert.NoError(t, err)
 
-			var ruleNames []string
-			for name, rule := range tt.rules {
-				ruleNames = append(ruleNames, name)
+			for _, rule := range tt.rules {
 				allRules := ruleToIPTables(rule, f.stateModule, f.stateFlag, f.chainPrefix)
 				for key := range allRules {
 					assert.True(t, containsSlice(t, currRules[key], allRules[key]))

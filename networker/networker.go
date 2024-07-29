@@ -635,6 +635,20 @@ func (netw *Combined) blockTraffic() error {
 		return err
 	}
 
+	// block FORWARD as well !!!
+	err = netw.fw.Add([]firewall.Rule{
+		{
+			Name:       "drop-fw",
+			Direction:  firewall.Forward,
+			Interfaces: ifaces,
+			Allow:      false,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	// block INPUT & OUTPUT
 	return netw.fw.Add([]firewall.Rule{
 		{
 			Name:       "drop",
@@ -646,6 +660,9 @@ func (netw *Combined) blockTraffic() error {
 }
 
 func (netw *Combined) unblockTraffic() error {
+	if err := netw.fw.Delete([]string{"drop-fw"}); err != nil {
+		return err
+	}
 	return netw.fw.Delete([]string{"drop"})
 }
 
