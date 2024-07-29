@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -16,6 +17,7 @@ import (
 )
 
 var tag = regexp.MustCompile(`^[a-z]{2}[0-9]{2,4}$`)
+var ErrDedicatedIPServer = fmt.Errorf("selected dedicated IP servers group")
 
 // PickServer by the specified criteria.
 func PickServer(
@@ -74,6 +76,11 @@ func getServers(
 	serverGroup, err := resolveServerGroup(groupFlag, tag)
 	if err != nil {
 		return ret, false, err
+	}
+
+	if serverGroup == config.DedicatedIP {
+		// DIP servers are taken from the user subscription services
+		return nil, false, ErrDedicatedIPServer
 	}
 
 	isGroupFlagSet := groupFlag != ""
@@ -401,4 +408,122 @@ func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Pr
 		}
 		return slices.ContainsFunc(s.Groups, core.ByGroup(getGroup()))
 	}
+}
+
+// isAnyDIPServersAvailable returns true if dedicated IP server is selected for any of the provided services
+func isAnyDIPServersAvailable(dedicatedIPServices []auth.DedicatedIPService) bool {
+	index := slices.IndexFunc(dedicatedIPServices, func(dipService auth.DedicatedIPService) bool {
+		return dipService.ServerID != auth.NoServerSelected
+	})
+
+	return index != -1
+}
+
+func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string, groupFlag string) (*core.Server, bool, error) {
+	serversList := r.dm.GetServersData().Servers
+	server, remote, err := PickServer(
+		r.serversAPI,
+		r.dm.GetCountryData().Countries,
+		serversList,
+		insights.Longitude,
+		insights.Latitude,
+		cfg.Technology,
+		cfg.AutoConnectData.Protocol,
+		cfg.AutoConnectData.Obfuscate,
+		tag,
+		groupFlag,
+		cfg.VirtualLocation.Get(),
+	)
+
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "picking servers:", err)
+		switch {
+		case errors.Is(err, core.ErrUnauthorized):
+			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				return nil, false, err
+			}
+			return nil, false, internal.ErrNotLoggedIn
+		case errors.Is(err, internal.ErrTagDoesNotExist),
+			errors.Is(err, internal.ErrGroupDoesNotExist),
+			errors.Is(err, internal.ErrServerIsUnavailable),
+			errors.Is(err, internal.ErrDoubleGroup),
+			errors.Is(err, internal.ErrVirtualServerSelected):
+			return nil, false, err
+
+		case errors.Is(err, ErrDedicatedIPServer):
+			dedicatedIPServer, err := selectDedicatedIPServer(r.ac, serversList)
+			if err != nil {
+				return nil, false, err
+			}
+			server = *dedicatedIPServer
+
+		default:
+			return nil, false, internal.ErrUnhandled
+		}
+	}
+
+	log.Println(internal.InfoPrefix, "server", server.Hostname, "remote", remote)
+
+	if isDedicatedIP(server) {
+		dedicatedIPServices, err := r.ac.GetDedicatedIPServices()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
+			return nil, false, internal.ErrUnhandled
+		}
+
+		if len(dedicatedIPServices) == 0 {
+			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+		}
+
+		if !isAnyDIPServersAvailable(dedicatedIPServices) {
+			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
+		}
+
+		index := slices.IndexFunc(dedicatedIPServices, func(s auth.DedicatedIPService) bool {
+			return s.ServerID == server.ID
+		})
+		if index == -1 {
+			log.Println(internal.ErrorPrefix, "server is not in the DIP servers list")
+			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
+		}
+	}
+
+	return &server, remote, nil
+}
+
+func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
+	index := slices.IndexFunc(servers, func(server core.Server) bool {
+		return server.ID == serverID
+	})
+
+	if index == -1 {
+		return nil, fmt.Errorf("server not found")
+	}
+
+	return &servers[index], nil
+}
+
+func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*core.Server, error) {
+	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
+		return nil, internal.ErrUnhandled
+	}
+
+	if len(dedicatedIPServices) == 0 {
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+	}
+
+	if !isAnyDIPServersAvailable(dedicatedIPServices) {
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
+	}
+
+	service := dedicatedIPServices[rand.Intn(len(dedicatedIPServices))]
+	server, err := getServerByID(servers, service.ServerID)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "DIP server not found:", err)
+		return nil, internal.ErrServerIsUnavailable
+	}
+
+	return server, nil
 }

@@ -51,54 +51,20 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		if in.GetServerTag() != "" {
 			insights := r.dm.GetInsightsData().Insights
 
-			server, _, err := PickServer(
-				r.serversAPI,
-				r.dm.GetCountryData().Countries,
-				r.dm.GetServersData().Servers,
-				insights.Longitude,
-				insights.Latitude,
-				cfg.Technology,
-				cfg.AutoConnectData.Protocol,
-				cfg.AutoConnectData.Obfuscate,
-				in.GetServerTag(),
-				"",
-				cfg.VirtualLocation.Get(),
-			)
+			server, _, err := selectServer(r, &insights, cfg, in.GetServerTag(), "")
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "no server found for autoconnect", in.GetServerTag(), err)
-				switch {
-				case errors.Is(err, core.ErrUnauthorized):
-					return nil, internal.ErrNotLoggedIn
 
-				case errors.Is(err, internal.ErrTagDoesNotExist),
-					errors.Is(err, internal.ErrGroupDoesNotExist),
-					errors.Is(err, internal.ErrServerIsUnavailable),
-					errors.Is(err, internal.ErrDoubleGroup),
-					errors.Is(err, internal.ErrVirtualServerSelected):
-					return nil, err
-
-				default:
-					return nil, internal.ErrUnhandled
+				var errorCode *internal.ErrorWithCode
+				if errors.As(err, &errorCode) {
+					return &pb.Payload{
+						Type: errorCode.Code,
+					}, nil
 				}
-			}
 
+				return nil, err
+			}
 			log.Println(internal.InfoPrefix, "server for autoconnect found", server)
-
-			if isDedicatedIP(server) {
-				expired, err := r.ac.IsDedicatedIPExpired()
-				if err != nil {
-					log.Println(internal.ErrorPrefix, "checking dedicated IP expiration: ", err)
-					return &pb.Payload{
-						Type: internal.CodeDedicatedIPRenewError,
-					}, nil
-				}
-
-				if expired {
-					return &pb.Payload{
-						Type: internal.CodeDedicatedIPRenewError,
-					}, nil
-				}
-			}
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {

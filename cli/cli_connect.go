@@ -122,6 +122,10 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 				link = fmt.Sprintf(client.SubscriptionDedicatedIPURLLogin, tokenData.token, tokenData.owner_id)
 			}
 			rpcErr = fmt.Errorf(NoDedicatedIPMessage, link)
+		case internal.CodeDedicatedIPNoServer:
+			rpcErr = errors.New(NoDedidcatedIPServerMessage)
+		case internal.CodeDedicatedIPServiceButNoServers:
+			rpcErr = errors.New(NoPreferredDedicatedIPLocationSelected)
 		case internal.CodeDisconnected:
 			rpcErr = errors.New(internal.DisconnectSuccess)
 		case internal.CodeTagNonexisting:

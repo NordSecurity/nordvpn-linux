@@ -3,7 +3,9 @@ package daemon
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -11,6 +13,31 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
+
+func findLatestDIPExpirationData(dipServices []auth.DedicatedIPService) (string, error) {
+	if len(dipServices) == 0 {
+		return "", fmt.Errorf("no dip services found")
+	}
+
+	layout := internal.ServerDateFormat
+	latest, err := time.Parse(layout, dipServices[0].ExpiresAt)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse initial expiration date")
+	}
+
+	for _, dipService := range dipServices {
+		current, err := time.Parse(layout, dipService.ExpiresAt)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse expiration date")
+		}
+
+		if current.After(latest) {
+			latest = current
+		}
+	}
+
+	return latest.Format(layout), nil
+}
 
 // AccountInfo returns user account information.
 func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse, error) {
@@ -30,14 +57,24 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		accountInfo.Type = internal.CodeSuccess
 	}
 
-	dedicatedIPExpired, err := r.ac.IsDedicatedIPExpired()
+	accountInfo.DedicatedIpStatus = internal.CodeSuccess
+	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking dedicated IP expiration: ", err)
+		log.Println(internal.ErrorPrefix, "getting dedicated ip services: %w", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
-	} else if dedicatedIPExpired {
+	}
+
+	if len(dipServices) < 1 {
 		accountInfo.DedicatedIpStatus = internal.CodeNoService
-	} else {
-		accountInfo.DedicatedIpStatus = internal.CodeSuccess
+	}
+
+	dedicatedIPExpirationDate := ""
+	if len(dipServices) != 0 {
+		dedicatedIPExpirationDate, err = findLatestDIPExpirationData(dipServices)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "getting latest dedicated ip expiration date: ", err)
+			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		}
 	}
 
 	var cfg config.Config
@@ -49,7 +86,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	accountInfo.ExpiresAt = tokenData.ServiceExpiry
-	accountInfo.DedicatedIpExpiresAt = tokenData.DedicatedIPExpiry
+	accountInfo.DedicatedIpExpiresAt = dedicatedIPExpirationDate
 
 	currentUser, err := r.credentialsAPI.CurrentUser(tokenData.Token)
 	if err != nil {

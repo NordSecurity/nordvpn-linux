@@ -43,8 +43,10 @@ type meshRenewChecker struct {
 func (m meshRenewChecker) IsLoggedIn() bool {
 	return !m.IsNotLoggedIn
 }
-func (meshRenewChecker) IsVPNExpired() (bool, error)         { return false, nil }
-func (meshRenewChecker) IsDedicatedIPExpired() (bool, error) { return false, nil }
+func (meshRenewChecker) IsVPNExpired() (bool, error) { return false, nil }
+func (meshRenewChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
+	return nil, fmt.Errorf("Not implemented")
+}
 
 type registrationChecker struct {
 	registrationErr error
