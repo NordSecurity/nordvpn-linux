@@ -287,6 +287,10 @@ func main() {
 	daemonEvents.Subscribe(analytics)
 	daemonEvents.Settings.Publish(cfg)
 
+	if fsystem.NewInstallation {
+		daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "first_open", ItemType: "button", ItemValue: "first_open", FormReference: "daemon"})
+	}
+
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem)
 
 	internalVpnEvents := vpn.NewInternalVPNEvents()
