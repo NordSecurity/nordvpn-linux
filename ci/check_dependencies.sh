@@ -111,7 +111,7 @@ fi
 
 # ====================[  Copy to bin/deps/libs ]=========================
 
-mkdir -p "${lib_root}/"{amd64,arm64,armel,armhf,i386}/latest/
+mkdir -p "${lib_root}/"{amd64,aarch64,armel,armhf,i386}/latest/
 
 # libtelio
 copy_to_libs "${libtelio_dst}/linux/release" "libtelio.so"

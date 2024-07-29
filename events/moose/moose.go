@@ -7,7 +7,7 @@ package moose
 // #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/i386/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
 // #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armel/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
 // #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armhf/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
-// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/arm64/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/aarch64/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
 // #cgo LDFLAGS: -ldl -lm
 import "C"
 
