@@ -134,6 +134,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set.analytics("off")
     sh.nordvpn.set.ipv6("on")
     sh.nordvpn.set.notify("on")
+    sh.nordvpn.set("virtual-location", "off")
 
     assert not settings.is_firewall_enabled()
     assert not settings.is_routing_enabled()
@@ -141,6 +142,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     assert not settings.are_analytics_enabled()
     assert settings.is_ipv6_enabled()
     assert settings.is_notify_enabled()
+    assert not settings.is_virtual_location_enabled()
 
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
@@ -164,6 +166,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     sh.nordvpn.set.notify("on")
     sh.nordvpn.set.dns("1.1.1.1")
     sh.nordvpn.set.ipv6("on")
+    sh.nordvpn.set("virtual-location", "off")
 
     assert not settings.is_firewall_enabled()
     assert not settings.is_routing_enabled()
@@ -171,6 +174,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     assert settings.is_notify_enabled()
     assert not settings.is_dns_disabled()
     assert settings.is_ipv6_enabled()
+    assert not settings.is_virtual_location_enabled()
 
     if tech == "openvpn":
         assert not settings.is_obfuscated_enabled()
@@ -183,7 +187,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -192,6 +195,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set.dns("1.1.1.1")
     sh.nordvpn.set.analytics("off")
     sh.nordvpn.set("lan-discovery", "on")
+    sh.nordvpn.set("virtual-location", "off")
 
     sh.nordvpn.connect()
     assert "Status: Connected" in sh.nordvpn.status()
@@ -200,6 +204,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     assert not settings.is_dns_disabled()
     assert not settings.are_analytics_enabled()
     assert settings.is_lan_discovery_enabled()
+    assert not settings.is_virtual_location_enabled()
 
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
@@ -215,7 +220,6 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
 
 @pytest.mark.skip(reason="LVPN-265")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -244,7 +248,6 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
@@ -284,3 +287,20 @@ def test_set_analytics_on_off_repeated():
 
     sh.nordvpn.set.analytics("off")
     assert "Analytics is already set to 'disabled'." in sh.nordvpn.set.analytics("off")
+
+
+def test_set_virtual_location_off_on():
+
+    assert "Virtual location is set to 'disabled' successfully." in sh.nordvpn.set("virtual-location", "off")
+    assert not settings.is_virtual_location_enabled()
+
+    assert "Virtual location is set to 'enabled' successfully." in sh.nordvpn.set("virtual-location", "on")
+    assert settings.is_virtual_location_enabled()
+
+
+def test_set_virtual_location_on_off_repeated():
+
+    assert "Virtual location is already set to 'enabled'." in sh.nordvpn.set("virtual-location", "on")
+
+    sh.nordvpn.set("virtual-location", "off")
+    assert "Virtual location is already set to 'disabled'." in sh.nordvpn.set("virtual-location", "off")
