@@ -47,8 +47,7 @@ func (mockDaemonSubscriber) NotifyRouting(bool) error                       { re
 func (mockDaemonSubscriber) NotifyIpv6(bool) error                          { return nil }
 func (mockDaemonSubscriber) NotifyDefaults(any) error                       { return nil }
 func (mockDaemonSubscriber) NotifyMeshnet(bool) error                       { return nil }
-func (mockDaemonSubscriber) NotifyRate(events.ServerRating) error           { return nil }
-func (mockDaemonSubscriber) NotifySendInvitation(any) error                 { return nil }
+func (mockDaemonSubscriber) NotifyUiItemsClick(events.UiItemsAction) error  { return nil }
 func (mockDaemonSubscriber) NotifyHeartBeat(int) error                      { return nil }
 func (mockDaemonSubscriber) NotifyDeviceLocation(core.Insights) error       { return nil }
 func (mockDaemonSubscriber) NotifyLANDiscovery(bool) error                  { return nil }

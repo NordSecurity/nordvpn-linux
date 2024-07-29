@@ -391,7 +391,7 @@ func TestServer_Invite(t *testing.T) {
 				&subs.Subject[error]{},
 				&subs.Subject[[]string]{},
 				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}},
-					Service: &daemonevents.ServiceEvents{SendInvitation: &daemonevents.MockPublisherSubscriber[any]{}}},
+					Service: &daemonevents.ServiceEvents{UiItemsClick: &daemonevents.MockPublisherSubscriber[events.UiItemsAction]{}}},
 				testnorduser.NewMockNorduserClient(nil),
 			)
 			server.EnableMeshnet(context.Background(), &pb.Empty{})

@@ -31,8 +31,7 @@ func (*dummyAnalytics) NotifyDisconnect(events.DataDisconnect) error   { return 
 func (*dummyAnalytics) NotifyLogin(any) error                          { return nil }
 func (*dummyAnalytics) NotifyAccountCheck(core.ServicesResponse) error { return nil }
 func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error   { return nil }
-func (*dummyAnalytics) NotifyRate(events.ServerRating) error           { return nil }
-func (*dummyAnalytics) NotifySendInvitation(any) error                 { return nil }
+func (*dummyAnalytics) NotifyUiItemsClick(events.UiItemsAction) error  { return nil }
 func (*dummyAnalytics) NotifyHeartBeat(int) error                      { return nil }
 func (*dummyAnalytics) NotifyDeviceLocation(core.Insights) error       { return nil }
 func (*dummyAnalytics) NotifyLANDiscovery(bool) error                  { return nil }
