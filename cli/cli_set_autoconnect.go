@@ -97,6 +97,17 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		return c.SetAutoConnect(ctx)
 	case internal.CodeTokenRenewError:
 		return formatError(errors.New(client.AccountTokenRenewError))
+	case internal.CodeDedicatedIPRenewError:
+		link := client.SubscriptionDedicatedIPURL
+		tokenData, err := c.getTrustedPassTokenData()
+		if err == nil {
+			link = fmt.Sprintf(client.SubscriptionDedicatedIPURLLogin, tokenData.token, tokenData.owner_id)
+		}
+		return formatError(fmt.Errorf(NoDedicatedIPMessage, link))
+	case internal.CodeDedicatedIPNoServer:
+		return formatError(errors.New(NoDedidcatedIPServerMessage))
+	case internal.CodeDedicatedIPServiceButNoServers:
+		return formatError(errors.New(NoPreferredDedicatedIPLocationSelected))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	}
