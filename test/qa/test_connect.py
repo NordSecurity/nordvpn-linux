@@ -1,3 +1,4 @@
+import random
 import socket
 import time
 
@@ -373,7 +374,7 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
         assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.flaky(reruns=2, reruns_delay=90)
 @timeout_decorator.timeout(40)
 def test_connect_to_unavailable_servers(tech, proto, obfuscated):
@@ -449,4 +450,18 @@ def test_status_connected(tech, proto, obfuscated):
     else:
         assert time_passed - 1 <= time_connected <= time_passed + 1
 
+    disconnect_base_test()
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@timeout_decorator.timeout(40)
+def test_connect_to_virtual_server(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    sh.nordvpn.set("virtual-location", "on")
+    virtual_countries = lib.get_virtual_countries()
+
+    assert len(virtual_countries) > 0
+    country = random.choice(virtual_countries)
+
+    connect_base_test((tech, proto, obfuscated), country)
     disconnect_base_test()

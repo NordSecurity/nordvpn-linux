@@ -67,7 +67,7 @@ def capture_traffic(connection_settings) -> int:
     t_connect = PacketCaptureThread(connection_settings)
     t_connect.start()
 
-    sh.ping("-c", "1", "-w", "1", "1.1.1.1")
+    sh.ping("-c", "2", "-w", "2", "1.1.1.1")
 
     t_connect.join()
 
