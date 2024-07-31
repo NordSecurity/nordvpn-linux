@@ -39,7 +39,7 @@ const (
 	Outbound
 	// TwoWay defines that rule is applicable for both incoming and outgoing packets
 	TwoWay
-	// Forward new case, as Firewall does not only In/Out but alsow Forwarding control
+	// Forward new case, as Firewall does not only In/Out but also Forwarding control
 	Forward
 )
 

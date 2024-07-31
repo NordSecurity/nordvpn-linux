@@ -9,6 +9,7 @@ IP_ROUTE_TABLE = 205
 
 # Rules for killswitch
 # -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
+# -A FORWARD -o {iface} -m comment --comment nordvpn -j DROP
 # -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
 
 # Rules for firewall
@@ -24,6 +25,8 @@ IP_ROUTE_TABLE = 205
 # -A INPUT -i {iface} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
+# -A FORWARD -d {subnet_ip} -o {iface} -m comment --comment nordvpn -j ACCEPT
+# -A FORWARD -o {iface} -m comment --comment nordvpn -j DROP
 # -A OUTPUT -d {subnet_ip} -o {iface} -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
@@ -37,6 +40,7 @@ IP_ROUTE_TABLE = 205
 # -A INPUT -i {iface} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
+# -A FORWARD -o {iface} -m comment --comment nordvpn -j DROP
 # -A OUTPUT -o {iface} -p udp -m udp --dport {port} -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -p udp -m udp --sport {port} -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -p tcp -m tcp --dport {port} -m comment --comment nordvpn -j ACCEPT
@@ -53,6 +57,7 @@ IP_ROUTE_TABLE = 205
 # -A INPUT -i {iface} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
+# -A FORWARD -o {iface} -m comment --comment nordvpn -j DROP
 # -A OUTPUT -o {iface} -p udp -m udp --dport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -p udp -m udp --sport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -p tcp -m tcp --dport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
@@ -67,6 +72,7 @@ IP_ROUTE_TABLE = 205
 # -A INPUT -i {iface} -m connmark --mark 0xe1f1 -j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
+# -A FORWARD -o {iface} -m comment --comment nordvpn -j DROP
 # -A OUTPUT -o {iface} -p {protocol} -m {protocol} --dport {port} -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
@@ -91,6 +97,13 @@ INPUT_LAN_DISCOVERY_RULES = [
     "-A INPUT -s 10.0.0.0/8 -i eth0 -m comment --comment nordvpn -j ACCEPT",
 ]
 
+FORWARD_LAN_DISCOVERY_RULES = [
+    "-A FORWARD -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+]
+
 OUTPUT_LAN_DISCOVERY_RULES = [
     "-A OUTPUT -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A OUTPUT -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
@@ -104,6 +117,13 @@ def __rules_connmark_chain_input(interface: str):
         [
             f"-A INPUT -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
             f"-A INPUT -i {interface} -m comment --comment nordvpn -j DROP",
+        ]
+
+
+def __rules_connmark_chain_forward(interface: str):
+    return \
+        [
+            f"-A FORWARD -o {interface} -m comment --comment nordvpn -j DROP",
         ]
 
 
@@ -132,6 +152,26 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
 
     if current_subnet_rules_input_chain:
         return sort_list_by_other_list(result, current_subnet_rules_input_chain)
+    else:
+        return result
+
+
+def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
+    result = []
+
+    for subnet in subnets:
+        result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
+
+    current_subnet_rules_forward_chain = []
+
+    fw_lines = os.popen("sudo iptables -S").read()
+
+    for line in fw_lines.splitlines():
+        if "FORWARD" in line and "-d" in line:
+            current_subnet_rules_forward_chain.append(line)
+
+    if current_subnet_rules_forward_chain:
+        return sort_list_by_other_list(result, current_subnet_rules_forward_chain)
     else:
         return result
 
@@ -195,6 +235,8 @@ def _get_rules_killswitch_on(interface: str):
 
     result.extend(__rules_connmark_chain_input(interface))
 
+    result.extend(__rules_connmark_chain_forward(interface))
+
     result.extend(__rules_connmark_chain_output(interface))
 
     return result
@@ -209,6 +251,8 @@ def _get_rules_allowlist_subnet_on(interface: str, subnets: list[str]):
 
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
     result.extend(__rules_connmark_chain_input(interface))
+
+    result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
 
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
     result.extend(__rules_connmark_chain_output(interface))
@@ -240,6 +284,8 @@ def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], 
     result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
     result.extend(__rules_connmark_chain_input(interface))
+
+    result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
 
     result.extend(__rules_allowlist_port_chain_output(interface, ports_udp, ports_tcp))
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
