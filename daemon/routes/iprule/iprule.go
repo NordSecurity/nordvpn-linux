@@ -17,12 +17,12 @@ import (
 
 // Router uses `ip rule` under the hood
 type Router struct {
-	rpFilterManager  routes.RPFilterManager
-	ifgroupManager   ifgroup.Manager
-	tableID          uint
-	fwmark           uint32
-	prevAllowSubnets []string
-	mu               sync.Mutex
+	rpFilterManager routes.RPFilterManager
+	ifgroupManager  ifgroup.Manager
+	tableID         uint
+	fwmark          uint32
+	allowSubnets    []string
+	mu              sync.Mutex
 }
 
 // NewRouter is a default constructor for Router
@@ -119,7 +119,7 @@ func (r *Router) SetupRoutingRules(
 		}
 
 		// cleanup previous allow subnets
-		removeAllowSubnetRules(r.prevAllowSubnets, ipv6)
+		removeAllowSubnetRules(r.allowSubnets, ipv6)
 
 		// on top, add allowlisted subnet routing rules
 		for _, subnet := range allowSubnets {
@@ -138,7 +138,7 @@ func (r *Router) SetupRoutingRules(
 	}
 
 	// remember what allow subnets are in use to be able to cleanup
-	r.prevAllowSubnets = internal.CopyStringSlice(allowSubnets)
+	r.allowSubnets = internal.CopyStringSlice(allowSubnets)
 
 	return nil
 }
@@ -182,7 +182,7 @@ func (r *Router) CleanupRouting() error {
 		}
 
 		// Remove allowlist subnet routing rules
-		removeAllowSubnetRules(r.prevAllowSubnets, ipv6)
+		removeAllowSubnetRules(r.allowSubnets, ipv6)
 	}
 
 	if err := r.rpFilterManager.Unset(); err != nil {
@@ -371,7 +371,7 @@ func removeFwmarkRule(fwMarkVal uint32, ipv6 bool) error {
 // addAllowSubnetRule create/add allow subnet rule
 func addAllowSubnetRule(prioID uint, subnet *net.IPNet, ipv6 bool) error {
 	if err := netlink.RuleAdd(allowSubnetRule(int(prioID), subnet, ipv6)); err != nil {
-		return fmt.Errorf("adding allow subnet rule: %s", err)
+		return fmt.Errorf("adding allow subnet rule: %w", err)
 	}
 	return nil
 }

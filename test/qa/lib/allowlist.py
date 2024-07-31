@@ -1,6 +1,6 @@
 import sh
 
-from . import Port, Protocol, daemon, firewall
+from . import Port, Protocol, daemon
 
 MSG_ALLOWLIST_SUBNET_ADD_SUCCESS = "Subnet %s is allowlisted successfully."
 MSG_ALLOWLIST_SUBNET_ADD_ERROR = "Subnet %s is already allowlisted."
@@ -94,8 +94,8 @@ def add_subnet_to_allowlist(subnet_list: list[str], allowlist_alias="allowlist")
             subnet = subnet.replace("/32", "")  # noqa: PLW2901
 
         if daemon.is_connected():
-            assert subnet in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), \
-                f"Subnet {subnet} not found in `ip route show table {firewall.IP_ROUTE_TABLE}`\n{sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)}"
+            iprules = sh.ip.rule.show()
+            assert subnet in iprules, f"Subnet {subnet} not found in `ip rule show`"
 
 
 def remove_subnet_from_allowlist(subnet_list: list[str], allowlist_alias="allowlist"):
@@ -113,5 +113,5 @@ def remove_subnet_from_allowlist(subnet_list: list[str], allowlist_alias="allowl
         if "/32" in subnet:
             subnet = subnet.replace("/32", "")  # noqa: PLW2901
 
-        assert subnet not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE), \
-            f"Subnet found in `ip route show table {firewall.IP_ROUTE_TABLE}`"
+        iprules = sh.ip.rule.show()
+        assert subnet not in iprules, "Subnet found in `ip rule show`"

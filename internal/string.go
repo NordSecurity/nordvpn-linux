@@ -74,5 +74,5 @@ func IntsToStrings(numbers []int) []string {
 }
 
 func CopyStringSlice(src []string) []string {
-	return append(make([]string, 0), src...)
+	return append(make([]string, 0, len(src)), src...)
 }

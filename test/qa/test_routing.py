@@ -51,11 +51,13 @@ def test_routing_enabled_connect(tech, proto, obfuscated):
     assert network.is_available()
 
     assert "fwmark" in sh.ip.rule.show.table(firewall.IP_ROUTE_TABLE)
-    policy_routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    assert SUBNET_1 in policy_routes
-    assert SUBNET_2 in policy_routes
-    assert SUBNET_3 in policy_routes
 
+    policy_rules = sh.ip.rule.show()
+    assert SUBNET_1 in policy_rules
+    assert SUBNET_2 in policy_rules
+    assert SUBNET_3 in policy_rules
+
+    policy_routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
     assert network_interface in policy_routes
 
