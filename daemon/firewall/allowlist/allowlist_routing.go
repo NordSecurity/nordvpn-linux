@@ -63,7 +63,7 @@ func routePortsToIPTables(commandFunc runCommandFunc, port string, protocol stri
 	}
 	// iptables -t mangle -I PREROUTING -p tcp --dport 22 -j MARK --set-mark 0xe1f1 -m comment --comment "nordvpn"
 	args := fmt.Sprintf(
-		"-t mangle -I PREROUTING -p %s --dport %s -j MARK --set-mark %s -m comment --comment %s",
+		"-t mangle -I PREROUTING -p %s --dport %s -j MARK --set-mark %s -m comment --comment %s -w",
 		protocol,
 		port,
 		mark,
@@ -77,7 +77,7 @@ func routePortsToIPTables(commandFunc runCommandFunc, port string, protocol stri
 
 	// iptables -t mangle -I OUTPUT -p tcp --sport 22 -j MARK --set-mark 0xe1f1 -m comment --comment "nordvpn"
 	args = fmt.Sprintf(
-		"-t mangle -I OUTPUT -p %s --sport %s -j MARK --set-mark %s -m comment --comment %s",
+		"-t mangle -I OUTPUT -p %s --sport %s -j MARK --set-mark %s -m comment --comment %s -w",
 		protocol,
 		port,
 		mark,
@@ -92,7 +92,7 @@ func routePortsToIPTables(commandFunc runCommandFunc, port string, protocol stri
 }
 
 func getCleanupIPTablesRules(commandFunc runCommandFunc, chain string) error {
-	args := "-t mangle -L " + chain + " -v -n --line-numbers"
+	args := "-t mangle -L " + chain + " -v -n --line-numbers -w"
 
 	out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
 	if err != nil {
@@ -107,7 +107,7 @@ func getCleanupIPTablesRules(commandFunc runCommandFunc, chain string) error {
 		if strings.Contains(string(line), RuleComment) {
 			lineParts := strings.Fields(string(line[:]))
 			ruleno := lineParts[0]
-			args := "-t mangle -D " + chain + " %s"
+			args := "-t mangle -D " + chain + " %s -w"
 			args = fmt.Sprintf(args, ruleno)
 			// #nosec G204 -- input is properly sanitized
 			out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
@@ -133,7 +133,7 @@ func clearRouting(commandFunc runCommandFunc) error {
 
 // Check if rule exists
 func checkRouting(commandFunc runCommandFunc, ruleType string, mark string) (bool, error) {
-	args := "-t mangle -L PREROUTING -v -n"
+	args := "-t mangle -L PREROUTING -v -n -w"
 
 	// #nosec G204 -- input is properly sanitized
 	out, err := commandFunc(iptablesCmd, strings.Fields(args)...)
