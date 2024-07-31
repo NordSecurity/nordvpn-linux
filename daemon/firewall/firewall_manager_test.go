@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -65,26 +66,26 @@ const connmark uint32 = 0x55
 func TestTrafficBlocking(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	iface0InsertInputCommand := fmt.Sprintf("-I INPUT 1 -i %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name)
+	iface0InsertInputCommand := addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -i %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name))
 	iface0CommandsAfterBlocking := []string{
 		iface0InsertInputCommand,
-		fmt.Sprintf("-I OUTPUT 1 -o %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I OUTPUT 1 -o %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name)),
 	}
 
 	iface1CommandsAfterBlocking := []string{
-		fmt.Sprintf("-I INPUT 1 -i %s -j DROP -m comment --comment nordvpn-0", mock.En1Interface.Name),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -j DROP -m comment --comment nordvpn-0", mock.En1Interface.Name),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -i %s -j DROP -m comment --comment nordvpn-0", mock.En1Interface.Name)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I OUTPUT 1 -o %s -j DROP -m comment --comment nordvpn-0", mock.En1Interface.Name)),
 	}
 
-	iface0DeleteInputCommand := fmt.Sprintf("-D INPUT -i %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name)
+	iface0DeleteInputCommand := addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -i %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name))
 	iface0CommandsAfterUnblocking := []string{
 		iface0DeleteInputCommand,
-		fmt.Sprintf("-D OUTPUT -o %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D OUTPUT -o %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name)),
 	}
 
 	iface1CommandsAfterUnblocking := []string{
-		fmt.Sprintf("-D INPUT -i %s -j DROP -m comment --comment nordvpn-0", mock.En1Interface.Name),
-		fmt.Sprintf("-D OUTPUT -o %s -j DROP -m comment --comment nordvpn-0", mock.En1Interface.Name),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -i %s -j DROP -m comment --comment nordvpn-0", mock.En1Interface.Name)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D OUTPUT -o %s -j DROP -m comment --comment nordvpn-0", mock.En1Interface.Name)),
 	}
 
 	tests := []struct {
@@ -205,8 +206,8 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	iface0CommandsAfterBlocking := []string{
-		fmt.Sprintf("-I INPUT 1 -i %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -i %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I OUTPUT 1 -o %s -j DROP -m comment --comment nordvpn-0", mock.En0Interface.Name)),
 	}
 
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
@@ -344,14 +345,15 @@ func TestSetAllowlist(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 			if test.invalidCommand != "" {
-				commandRunnerMock.ErrCommand = test.invalidCommand
+				commandRunnerMock.ErrCommand = addWaitParamForIptablesCommand(test.invalidCommand)
 			}
 
 			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true, true)
 
 			err := firewallManager.SetAllowlist(udpPorts, tcpPorts, subnets)
+			assert.ErrorIs(t, err, test.expectedErrSet, "Invalid error returned by SetAllowlist.")
+
 			if test.expectedErrSet != nil {
-				assert.ErrorIs(t, err, test.expectedErrSet, "Invalid error returned by SetAllowlist.")
 				return
 			}
 
@@ -363,6 +365,7 @@ func TestSetAllowlist(t *testing.T) {
 				transformCommandsForPrinting(t, test.expectedCommandsAfterSet),
 				transformCommandsForPrinting(t, commandsAfterSet))
 			for _, expectedCommand := range test.expectedCommandsAfterSet {
+				expectedCommand = addWaitParamForIptablesCommand(expectedCommand)
 				assert.Contains(t,
 					commandsAfterSet,
 					expectedCommand,
@@ -387,6 +390,7 @@ func TestSetAllowlist(t *testing.T) {
 				transformCommandsForPrinting(t, expectedCommandsAfterUnset),
 				transformCommandsForPrinting(t, commandsAfterSet))
 			for _, expectedCommand := range transformCommandsToDelte(t, test.expectedCommandsAfterSet) {
+				expectedCommand = addWaitParamForIptablesCommand(expectedCommand)
 				assert.Contains(t,
 					commandsAfterUnset,
 					expectedCommand,
@@ -407,10 +411,10 @@ func TestSetAllowlist_IPv6(t *testing.T) {
 
 	// Both IPv4 and IPv6 commands should be executed for ports.
 	expectedCommandsAfterSet := []string{
-		fmt.Sprintf("-I INPUT 1 -i %s -p udp -m udp --dport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-		fmt.Sprintf("-I INPUT 1 -i %s -p udp -m udp --sport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -p udp -m udp --dport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -p udp -m udp --sport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -i %s -p udp -m udp --dport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -i %s -p udp -m udp --sport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I OUTPUT 1 -o %s -p udp -m udp --dport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I OUTPUT 1 -o %s -p udp -m udp --sport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name)),
 	}
 
 	subnets := []netip.Prefix{
@@ -418,8 +422,10 @@ func TestSetAllowlist_IPv6(t *testing.T) {
 	}
 
 	subnetCommands := []string{
-		fmt.Sprintf("-I INPUT 1 -s 7628:c55b:3450:b739:bb1f:6112:a544:9226/30 -i %s -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-		fmt.Sprintf("-I OUTPUT 1 -d 7628:c55b:3450:b739:bb1f:6112:a544:9226/30 -o %s -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
+		addWaitParamForIptablesCommand(
+			fmt.Sprintf("-I INPUT 1 -s 7628:c55b:3450:b739:bb1f:6112:a544:9226/30 -i %s -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name)),
+		addWaitParamForIptablesCommand(
+			fmt.Sprintf("-I OUTPUT 1 -d 7628:c55b:3450:b739:bb1f:6112:a544:9226/30 -o %s -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name)),
 	}
 
 	// Only IPv6 commands should be executed for subnets.
@@ -462,30 +468,32 @@ func TestSetAllowlist_IPv6(t *testing.T) {
 func TestApiAllowlist(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	allowlistCommand := fmt.Sprintf("-I INPUT 1 -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark)
+	allowlistCommand := addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark))
 	expectedAllowlistCommandsIf0 := []string{
 		allowlistCommand,
-		fmt.Sprintf("-I OUTPUT 1 -o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-2", mock.En0Interface.Name, connmark),
+		addWaitParamForIptablesCommand(
+			fmt.Sprintf("-I OUTPUT 1 -o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark)),
+		addWaitParamForIptablesCommand(
+			fmt.Sprintf("-I OUTPUT 1 -o %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-2", mock.En0Interface.Name, connmark)),
 	}
 
-	denylistCommand := fmt.Sprintf("-D INPUT -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark)
+	denylistCommand := addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark))
 	expectedDenylistCommandsIf0 := []string{
 		denylistCommand,
-		fmt.Sprintf("-D OUTPUT -o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark),
-		fmt.Sprintf("-D OUTPUT -o %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-2", mock.En0Interface.Name, connmark),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D OUTPUT -o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D OUTPUT -o %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-2", mock.En0Interface.Name, connmark)),
 	}
 
 	expectedAllowlistCommandsIf1 := []string{
-		fmt.Sprintf("-I INPUT 1 -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En1Interface.Name, connmark),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff -m comment --comment nordvpn-1", mock.En1Interface.Name, connmark),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-2", mock.En1Interface.Name, connmark),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En1Interface.Name, connmark)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I OUTPUT 1 -o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff -m comment --comment nordvpn-1", mock.En1Interface.Name, connmark)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I OUTPUT 1 -o %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-2", mock.En1Interface.Name, connmark)),
 	}
 
 	expectedDenylistCommandsIf1 := []string{
-		fmt.Sprintf("-D INPUT -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark),
-		fmt.Sprintf("-D OUTPUT -o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark),
-		fmt.Sprintf("-D OUTPUT -o %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-2", mock.En0Interface.Name, connmark),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -i %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D OUTPUT -o %s -m mark --mark %d -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff -m comment --comment nordvpn-1", mock.En0Interface.Name, connmark)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D OUTPUT -o %s -m connmark --mark %d -j ACCEPT -m comment --comment nordvpn-2", mock.En0Interface.Name, connmark)),
 	}
 
 	tests := []struct {
@@ -602,12 +610,12 @@ func TestAllowDenyFileshare(t *testing.T) {
 		Address: netip.MustParseAddr(peerIPAddress),
 	}
 
-	allowFileshareCommand := fmt.Sprintf(
+	allowFileshareCommand := addWaitParamForIptablesCommand(fmt.Sprintf(
 		"-I INPUT 1 -s %s/32 -p tcp -m tcp --dport 49111 -j ACCEPT -m comment --comment nordvpn-4",
-		peerIPAddress)
-	denyFileshareCommand := fmt.Sprintf(
+		peerIPAddress))
+	denyFileshareCommand := addWaitParamForIptablesCommand(fmt.Sprintf(
 		"-D INPUT -s %s/32 -p tcp -m tcp --dport 49111 -j ACCEPT -m comment --comment nordvpn-4",
-		peerIPAddress)
+		peerIPAddress))
 
 	tests := []struct {
 		name                       string
@@ -698,20 +706,20 @@ func TestAllowDenyIncoming(t *testing.T) {
 		Address: netip.MustParseAddr(peerIPAddress),
 	}
 
-	allowCommand := fmt.Sprintf("-I INPUT 1 -s %s/32 -j ACCEPT -m comment --comment nordvpn-5", peerIPAddress)
+	allowCommand := addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -s %s/32 -j ACCEPT -m comment --comment nordvpn-5", peerIPAddress))
 	blockLANCommands := []string{
-		fmt.Sprintf("-I INPUT 1 -s %s/32 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
-		fmt.Sprintf("-I INPUT 1 -s %s/32 -d 192.168.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
-		fmt.Sprintf("-I INPUT 1 -s %s/32 -d 172.16.0.0/12 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
-		fmt.Sprintf("-I INPUT 1 -s %s/32 -d 10.0.0.0/8 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -s %s/32 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -s %s/32 -d 192.168.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -s %s/32 -d 172.16.0.0/12 -j DROP -m comment --comment nordvpn-6", peerIPAddress)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-I INPUT 1 -s %s/32 -d 10.0.0.0/8 -j DROP -m comment --comment nordvpn-6", peerIPAddress)),
 	}
 
-	denyCommand := fmt.Sprintf("-D INPUT -s %s/32 -j ACCEPT -m comment --comment nordvpn-5", peerIPAddress)
+	denyCommand := addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -s %s/32 -j ACCEPT -m comment --comment nordvpn-5", peerIPAddress))
 	unblockLANCommands := []string{
-		fmt.Sprintf("-D INPUT -s %s/32 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
-		fmt.Sprintf("-D INPUT -s %s/32 -d 192.168.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
-		fmt.Sprintf("-D INPUT -s %s/32 -d 172.16.0.0/12 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
-		fmt.Sprintf("-D INPUT -s %s/32 -d 10.0.0.0/8 -j DROP -m comment --comment nordvpn-6", peerIPAddress),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -s %s/32 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -s %s/32 -d 192.168.0.0/16 -j DROP -m comment --comment nordvpn-6", peerIPAddress)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -s %s/32 -d 172.16.0.0/12 -j DROP -m comment --comment nordvpn-6", peerIPAddress)),
+		addWaitParamForIptablesCommand(fmt.Sprintf("-D INPUT -s %s/32 -d 10.0.0.0/8 -j DROP -m comment --comment nordvpn-6", peerIPAddress)),
 	}
 
 	tests := []struct {
@@ -858,4 +866,8 @@ func TestDenyFileshare_NotAllowed(t *testing.T) {
 	commands := commandRunnerMock.PopIPv4Commands()
 	assert.Empty(t, commands,
 		"Commands were executed when denying fileshare when it was not previously allowed.")
+}
+
+func addWaitParamForIptablesCommand(command string) string {
+	return command + " -w " + internal.SecondsToWaitForIptablesLock
 }

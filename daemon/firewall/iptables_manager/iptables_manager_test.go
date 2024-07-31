@@ -3,6 +3,7 @@ package iptablesmanager
 import (
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	iptablesmock "github.com/NordSecurity/nordvpn-linux/test/mock/firewall/iptables_manager"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-1 */",
 			},
 			newRulePriority: 0,
-			expectedCommand: "-I INPUT 4 -j DROP -m comment --comment nordvpn-0",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 4 -j DROP -m comment --comment nordvpn-0"),
 		},
 		{
 			name: "insert rule with highest priority",
@@ -35,7 +36,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-1 */",
 			},
 			newRulePriority: 4,
-			expectedCommand: "-I INPUT 1 -j DROP -m comment --comment nordvpn-4",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 1 -j DROP -m comment --comment nordvpn-4"),
 		},
 		{
 			name: "insert rule in between",
@@ -45,13 +46,13 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-1 */",
 			},
 			newRulePriority: 3,
-			expectedCommand: "-I INPUT 2 -j DROP -m comment --comment nordvpn-3",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 2 -j DROP -m comment --comment nordvpn-3"),
 		},
 		{
 			name:            "insert rule in empty iptables",
 			rules:           []string{},
 			newRulePriority: 3,
-			expectedCommand: "-I INPUT 1 -j DROP -m comment --comment nordvpn-3",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 1 -j DROP -m comment --comment nordvpn-3"),
 		},
 		{
 			name: "insert rule no nordvpn rules",
@@ -60,7 +61,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* other-1 */",
 				"DROP       all  --  anywhere             anywhere             /* other-2 */"},
 			newRulePriority: 3,
-			expectedCommand: "-I INPUT 1 -j DROP -m comment --comment nordvpn-3",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 1 -j DROP -m comment --comment nordvpn-3"),
 		},
 		{
 			name: "insert with highest priority non-nordvpn rules at the bottom",
@@ -71,7 +72,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* other-1 */",
 				"DROP       all  --  anywhere             anywhere             /* other-2 */"},
 			newRulePriority: 3,
-			expectedCommand: "-I INPUT 1 -j DROP -m comment --comment nordvpn-3",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 1 -j DROP -m comment --comment nordvpn-3"),
 		},
 		{
 			name: "insert with lowest priority non-nordvpn rules at the bottom",
@@ -83,7 +84,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* other-1 */",
 				"DROP       all  --  anywhere             anywhere             /* other-2 */"},
 			newRulePriority: 0,
-			expectedCommand: "-I INPUT 4 -j DROP -m comment --comment nordvpn-0",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 4 -j DROP -m comment --comment nordvpn-0"),
 		},
 		{
 			name: "insert in between non-nordvpn rules at the bottom",
@@ -95,7 +96,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* other-1 */",
 				"DROP       all  --  anywhere             anywhere             /* other-2 */"},
 			newRulePriority: 2,
-			expectedCommand: "-I INPUT 2 -j DROP -m comment --comment nordvpn-2",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 2 -j DROP -m comment --comment nordvpn-2"),
 		},
 		{
 			name: "insert with highest priority non-nordvpn in between",
@@ -111,7 +112,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-0 */", // nordvpn (9)
 			},
 			newRulePriority: 4,
-			expectedCommand: "-I INPUT 3 -j DROP -m comment --comment nordvpn-4",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 3 -j DROP -m comment --comment nordvpn-4"),
 		},
 		{
 			name: "insert with highest priority non-nordvpn in between",
@@ -127,7 +128,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-1 */", // nordvpn (9)
 			},
 			newRulePriority: 0,
-			expectedCommand: "-I INPUT 10 -j DROP -m comment --comment nordvpn-0",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 10 -j DROP -m comment --comment nordvpn-0"),
 		},
 		{
 			name: "insert in between non-nordvpn in between",
@@ -143,7 +144,7 @@ func TestIptablesManager(t *testing.T) {
 				"DROP       all  --  anywhere             anywhere             /* nordvpn-1 */", // nordvpn (9)
 			},
 			newRulePriority: 3,
-			expectedCommand: "-I INPUT 6 -j DROP -m comment --comment nordvpn-3",
+			expectedCommand: addWaitParamForIptablesCommand("-I INPUT 6 -j DROP -m comment --comment nordvpn-3"),
 		},
 	}
 
@@ -168,4 +169,8 @@ func TestIptablesManager(t *testing.T) {
 			assert.Equal(t, test.expectedCommand, commands[0], "Invalid command executed when inserting a rule.")
 		})
 	}
+}
+
+func addWaitParamForIptablesCommand(command string) string {
+	return command + " -w " + internal.SecondsToWaitForIptablesLock
 }

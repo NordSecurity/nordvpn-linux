@@ -245,9 +245,9 @@ func NewFwRule(chain iptablesChain, version IpVersion, params string, priority R
 // ToInsertAppendCommand returns the FwRule converted to insert command(-I <CHAIN> <ARGS>) or append command if index is
 // -1.
 func (f FwRule) ToInsertAppendCommand(index int) string {
-	return fmt.Sprintf("-I %s %d %s %s --wait "+internal.SecondsToWaitForIptablesLock, f.chain, index, f.params, f.priority.toCommentArgs())
+	return fmt.Sprintf("-I %s %d %s %s -w "+internal.SecondsToWaitForIptablesLock, f.chain, index, f.params, f.priority.toCommentArgs())
 }
 
 func (f FwRule) ToDeleteCommand() string {
-	return fmt.Sprintf("-D %s %s %s --wait "+internal.SecondsToWaitForIptablesLock, f.chain, f.params, f.priority.toCommentArgs())
+	return fmt.Sprintf("-D %s %s %s -w "+internal.SecondsToWaitForIptablesLock, f.chain, f.params, f.priority.toCommentArgs())
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
@@ -288,23 +289,23 @@ func TestSetAllowlist(t *testing.T) {
 			name:      "server enabled",
 			isEnabled: true,
 			expectedCommands: []string{
-				"iptables -D FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16",
-				"iptables -D FORWARD -s 192.168.0.3 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16",
-				"iptables -D FORWARD -s 202.242.38.68 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16",
-				"iptables -I FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32",
-				"iptables -I FORWARD -s 192.168.0.3 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32",
-				"iptables -I FORWARD -s 202.242.38.68 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32",
-				"iptables -I FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -p tcp -m tcp --dport 1000",
-				"iptables -I FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -p udp -m udp --dport 2000:2001",
+				addWaitParamForIptablesCommand("iptables -D FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16"),
+				addWaitParamForIptablesCommand("iptables -D FORWARD -s 192.168.0.3 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16"),
+				addWaitParamForIptablesCommand("iptables -D FORWARD -s 202.242.38.68 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16"),
+				addWaitParamForIptablesCommand("iptables -I FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32"),
+				addWaitParamForIptablesCommand("iptables -I FORWARD -s 192.168.0.3 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32"),
+				addWaitParamForIptablesCommand("iptables -I FORWARD -s 202.242.38.68 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.1/32"),
+				addWaitParamForIptablesCommand("iptables -I FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -p tcp -m tcp --dport 1000"),
+				addWaitParamForIptablesCommand("iptables -I FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -p udp -m udp --dport 2000:2001"),
 			},
 		},
 		{
 			name:      "server disabled",
 			isEnabled: false,
 			expectedCommands: []string{
-				"iptables -D FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16",
-				"iptables -D FORWARD -s 192.168.0.3 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16",
-				"iptables -D FORWARD -s 202.242.38.68 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16",
+				addWaitParamForIptablesCommand("iptables -D FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16"),
+				addWaitParamForIptablesCommand("iptables -D FORWARD -s 192.168.0.3 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16"),
+				addWaitParamForIptablesCommand("iptables -D FORWARD -s 202.242.38.68 -j ACCEPT -m comment --comment nordvpn-exitnode-allowlist -d 192.168.0.0/16"),
 			},
 		},
 		{
@@ -354,7 +355,7 @@ func TestDisable(t *testing.T) {
 	commandExecutor := newCommandExecutorMock(t)
 	// The contents of the rules is not so important. Basically, we want to make sure that Disable
 	// will remove every rule from filter FORWARD chain and nat POSTROUTING returned by querying commands.
-	commandExecutor.mockedOutputs["iptables -S"] = strings.Join(
+	commandExecutor.mockedOutputs[addWaitParamForIptablesCommand("iptables -S")] = strings.Join(
 		[]string{
 			"-A INPUT -s 230.191.4.88/32 -m comment --comment nordvpn-exitnode-transient -j ACCEPT",
 			"-A INPUT -s 22.232.81.241/32 -m comment --comment nordvpn-exitnode-transient -j ACCEPT",
@@ -392,7 +393,7 @@ func TestDisable(t *testing.T) {
 			"-A FORWARD -i docker0 -o docker0 -j ACCEPT",
 		}, "\n",
 	)
-	commandExecutor.mockedOutputs["iptables -t nat -S POSTROUTING"] = strings.Join(
+	commandExecutor.mockedOutputs[addWaitParamForIptablesCommand("iptables -t nat -S POSTROUTING")] = strings.Join(
 		[]string{
 			"iptables -t nat -D POSTROUTING -s 202.242.38.68/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn",
 			"iptables -t nat -D POSTROUTING -s 202.242.38.68/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn",
@@ -409,27 +410,31 @@ func TestDisable(t *testing.T) {
 	server.Disable()
 
 	expectedCommands := []string{
-		"iptables -S",
-		"iptables -D FORWARD -s 22.232.81.241/32 -d 169.254.0.0/16 -m comment --comment nordvpn-exitnode-transient -j ACCEPT",
-		"iptables -D FORWARD -s 22.232.81.241/32 -d 192.168.0.0/16 -m comment --comment nordvpn-exitnode-transient -j ACCEPT",
-		"iptables -D FORWARD -s 22.232.81.241/32 -d 172.16.0.0/12 -m comment --comment nordvpn-exitnode-transient -j ACCEPT",
-		"iptables -D FORWARD -s 22.232.81.241/32 -d 10.0.0.0/8 -m comment --comment nordvpn-exitnode-transient -j ACCEPT",
-		"iptables -D FORWARD -s 100.64.0.0/10 -d 169.254.0.0/16 -m comment --comment nordvpn-exitnode-transient -j DROP",
-		"iptables -D FORWARD -s 100.64.0.0/10 -d 192.168.0.0/16 -m comment --comment nordvpn-exitnode-transient -j DROP",
-		"iptables -D FORWARD -s 100.64.0.0/10 -d 172.16.0.0/12 -m comment --comment nordvpn-exitnode-transient -j DROP",
-		"iptables -D FORWARD -s 100.64.0.0/10 -d 10.0.0.0/8 -m comment --comment nordvpn-exitnode-transient -j DROP",
-		"iptables -D FORWARD -s 230.191.4.88/32 -m comment --comment nordvpn-exitnode-transient -j ACCEPT",
-		"iptables -D FORWARD -d 100.64.0.0/10 -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment nordvpn-exitnode-permanent -j ACCEPT",
-		"iptables -D FORWARD -d 100.64.0.0/10 -m comment --comment nordvpn-exitnode-permanent -j DROP",
-		"iptables -D FORWARD -s 100.64.0.0/10 -m comment --comment nordvpn-exitnode-permanent -j DROP",
-		"iptables -t nat -S POSTROUTING",
-		"iptables -t nat iptables -t nat -D POSTROUTING -s 202.242.38.68/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat iptables -t nat -D POSTROUTING -s 202.242.38.68/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat iptables -t nat -D POSTROUTING -s 230.191.4.88/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn",
-		"iptables -t nat iptables -t nat -D POSTROUTING -s 230.191.4.88/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn",
+		addWaitParamForIptablesCommand("iptables -S"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 22.232.81.241/32 -d 169.254.0.0/16 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 22.232.81.241/32 -d 192.168.0.0/16 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 22.232.81.241/32 -d 172.16.0.0/12 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 22.232.81.241/32 -d 10.0.0.0/8 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 100.64.0.0/10 -d 169.254.0.0/16 -m comment --comment nordvpn-exitnode-transient -j DROP"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 100.64.0.0/10 -d 192.168.0.0/16 -m comment --comment nordvpn-exitnode-transient -j DROP"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 100.64.0.0/10 -d 172.16.0.0/12 -m comment --comment nordvpn-exitnode-transient -j DROP"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 100.64.0.0/10 -d 10.0.0.0/8 -m comment --comment nordvpn-exitnode-transient -j DROP"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 230.191.4.88/32 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -d 100.64.0.0/10 -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment nordvpn-exitnode-permanent -j ACCEPT"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -d 100.64.0.0/10 -m comment --comment nordvpn-exitnode-permanent -j DROP"),
+		addWaitParamForIptablesCommand("iptables -D FORWARD -s 100.64.0.0/10 -m comment --comment nordvpn-exitnode-permanent -j DROP"),
+		addWaitParamForIptablesCommand("iptables -t nat -S POSTROUTING"),
+		addWaitParamForIptablesCommand("iptables -t nat iptables -t nat -D POSTROUTING -s 202.242.38.68/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn"),
+		addWaitParamForIptablesCommand("iptables -t nat iptables -t nat -D POSTROUTING -s 202.242.38.68/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn"),
+		addWaitParamForIptablesCommand("iptables -t nat iptables -t nat -D POSTROUTING -s 230.191.4.88/32 -o eth0 -j MASQUERADE -m comment --comment nordvpn"),
+		addWaitParamForIptablesCommand("iptables -t nat iptables -t nat -D POSTROUTING -s 230.191.4.88/32 -o eth1 -j MASQUERADE -m comment --comment nordvpn"),
 	}
 
 	assert.Equal(t, expectedCommands, commandExecutor.executedCommands,
 		"Firewall was configured incorrectly after exit node was disabled: \n EXPECTED: \n%s\n GOT: \n%s",
 		strings.Join(expectedCommands, "\n"), strings.Join(commandExecutor.executedCommands, "\n"))
+}
+
+func addWaitParamForIptablesCommand(command string) string {
+	return command + " -w " + internal.SecondsToWaitForIptablesLock
 }

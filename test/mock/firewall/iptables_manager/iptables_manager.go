@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 var ErrIptablesFailure = errors.New("iptables failure")
@@ -85,7 +87,7 @@ func (i *CommandRunnerMock) PopIPv6Commands() []string {
 }
 
 func (i *CommandRunnerMock) AddIptablesListOutput(chain string, output string) {
-	listCommand := fmt.Sprintf("-L %s --numeric", chain)
+	listCommand := fmt.Sprintf("-L %s --numeric"+" -w "+internal.SecondsToWaitForIptablesLock, chain)
 	i.outputs[listCommand] = output
 }
 
