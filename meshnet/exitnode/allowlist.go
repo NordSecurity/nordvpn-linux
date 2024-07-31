@@ -9,7 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 type operation bool
@@ -121,8 +120,6 @@ func allowlistRuleToFirewall(
 			"comment",
 			"--comment",
 			meshAllowlistRuleComment,
-			"-w",
-			internal.SecondsToWaitForIptablesLock,
 		}
 
 		if portType == "" {
