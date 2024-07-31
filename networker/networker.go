@@ -925,6 +925,13 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			Direction:      firewall.TwoWay,
 			Allow:          true,
 		})
+		rules = append(rules, firewall.Rule{
+			Name:           "allowlist_subnets_forward",
+			Interfaces:     ifaces,
+			RemoteNetworks: subnets,
+			Direction:      firewall.Forward,
+			Allow:          true,
+		})
 	}
 
 	for _, pair := range []struct {
@@ -985,6 +992,7 @@ func (netw *Combined) unsetAllowlist() error {
 
 	for _, rule := range []string{
 		"allowlist_subnets",
+		"allowlist_subnets_forward",
 		"allowlist_ports_tcp",
 		"allowlist_ports_udp",
 	} {
