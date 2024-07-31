@@ -124,7 +124,7 @@ func getNetworkInfo() string {
 		tableRules := ""
 		for _, table := range []string{"filter", "nat", "mangle", "raw", "security"} {
 			// #nosec G204 -- input is properly sanitized
-			out, err := exec.Command(iptableVersion, "-S", "-t", table).CombinedOutput()
+			out, err := exec.Command(iptableVersion, "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
 			if err == nil {
 				tableRules += table + ":\n" + string(out) + "\n"
 			}

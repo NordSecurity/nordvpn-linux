@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 const (
@@ -79,7 +81,7 @@ type IPTablesManager struct {
 // nolint:unused // Will be used once FirewallManager is integrated
 func AreIP6TablesSupported() bool {
 	// #nosec G204 -- input is properly sanitized
-	_, err := exec.Command(ip6tablesCommand, "-S").CombinedOutput()
+	_, err := exec.Command(ip6tablesCommand, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
 	return err != nil
 }
 
@@ -147,7 +149,7 @@ func (i IPTablesManager) executeCommand(insert bool, rule FwRule) error {
 func (i IPTablesManager) getRuleLine(command string, chain iptablesChain, priority RulePriority) (int, error) {
 	// Run command with --numeric to avoid reverse DNS lookup. This takes a long time and is unnecessary for the purpose
 	// of line number calculation(we ignore everything but the 'nordvpn-<priority>' comment or the lack of thereof).
-	args := "-L " + chain.String() + " --numeric"
+	args := "-L " + chain.String() + " --numeric" + " -w " + internal.SecondsToWaitForIptablesLock
 
 	output, err := i.cmdRunner.RunCommand(command, args)
 	if err != nil {
@@ -243,9 +245,9 @@ func NewFwRule(chain iptablesChain, version IpVersion, params string, priority R
 // ToInsertAppendCommand returns the FwRule converted to insert command(-I <CHAIN> <ARGS>) or append command if index is
 // -1.
 func (f FwRule) ToInsertAppendCommand(index int) string {
-	return fmt.Sprintf("-I %s %d %s %s", f.chain, index, f.params, f.priority.toCommentArgs())
+	return fmt.Sprintf("-I %s %d %s %s --wait "+internal.SecondsToWaitForIptablesLock, f.chain, index, f.params, f.priority.toCommentArgs())
 }
 
 func (f FwRule) ToDeleteCommand() string {
-	return fmt.Sprintf("-D %s %s %s", f.chain, f.params, f.priority.toCommentArgs())
+	return fmt.Sprintf("-D %s %s %s --wait "+internal.SecondsToWaitForIptablesLock, f.chain, f.params, f.priority.toCommentArgs())
 }

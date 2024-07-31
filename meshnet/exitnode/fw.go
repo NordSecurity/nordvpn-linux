@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/netip"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 const (
@@ -27,7 +29,7 @@ func enableMasquerading(peerAddress string, commandFunc runCommandFunc) error {
 	// read: what comes from meshnet and goes outside meshnet should be translated
 	// iptables -t nat -A POSTROUTING -s 100.64.0.0/10 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE
 	args := fmt.Sprintf(
-		"-t nat -A POSTROUTING -s %s ! -d %s -j MASQUERADE -m comment --comment %s",
+		"-t nat -A POSTROUTING -s %s ! -d %s -j MASQUERADE -m comment --comment %s -w "+internal.SecondsToWaitForIptablesLock,
 		peerAddress,
 		meshSrcSubnet,
 		msqRuleComment,
@@ -41,7 +43,7 @@ func enableMasquerading(peerAddress string, commandFunc runCommandFunc) error {
 }
 
 func clearMasquerading(commandFunc runCommandFunc) error {
-	args := "-t nat -S POSTROUTING"
+	args := "-t nat -S POSTROUTING -w " + internal.SecondsToWaitForIptablesLock
 	out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
 
 	if err != nil {
@@ -56,6 +58,7 @@ func clearMasquerading(commandFunc runCommandFunc) error {
 
 		args := strings.Split(strings.ReplaceAll(lineString, "-A", "-D"), " ")
 		args = append([]string{"-t", "nat"}, args...)
+		args = append(args, "-w", internal.SecondsToWaitForIptablesLock)
 		_, err := commandFunc(iptablesCmd, args...)
 
 		if err != nil {
@@ -72,7 +75,7 @@ func checkFilteringRule(cidrIP string, commandFunc runCommandFunc) (bool, error)
 
 // returns in which line of iptables output the rule is found or -1 if not found
 func checkFilteringRulesLine(cidrIPs []string, commandFunc runCommandFunc) (int, error) {
-	args := "-t filter -L FORWARD -v -n"
+	args := "-t filter -L FORWARD -v -n -w" + internal.SecondsToWaitForIptablesLock
 
 	out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
 	if err != nil {
@@ -134,7 +137,7 @@ func blockPhysicalForwarding(intfNames []string, commandFunc runCommandFunc) err
 	for _, intfName := range intfNames {
 		// iptables -t filter -I FORWARD -o eth0 -j DROP -m comment --comment "<linux-app identifier>"
 		args := fmt.Sprintf(
-			"-t filter -I FORWARD -o %s -j DROP -m comment --comment %s",
+			"-t filter -I FORWARD -o %s -j DROP -m comment --comment %s -w"+internal.SecondsToWaitForIptablesLock,
 			intfName,
 			transientFilterRuleComment,
 		)
@@ -155,7 +158,7 @@ func enableFiltering(commandFunc runCommandFunc) error {
 	// filter out all (insert rule as 1st), except who's allowed (insert rules above)
 	for _, flag := range []string{"-s", "-d"} {
 		args := fmt.Sprintf(
-			"-t filter -I FORWARD 1 %s %s -j DROP -m comment --comment %s",
+			"-t filter -I FORWARD 1 %s %s -j DROP -m comment --comment %s -w"+internal.SecondsToWaitForIptablesLock,
 			flag,
 			meshSrcSubnet,
 			filterRuleComment,
@@ -168,7 +171,7 @@ func enableFiltering(commandFunc runCommandFunc) error {
 	}
 
 	args := fmt.Sprintf(
-		"-t filter -I FORWARD 1 -d %s -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment %s",
+		"-t filter -I FORWARD 1 -d %s -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT -m comment --comment %s -w "+internal.SecondsToWaitForIptablesLock,
 		meshSrcSubnet,
 		filterRuleComment,
 	)
@@ -188,7 +191,7 @@ type TrafficPeer struct {
 }
 
 func clearExitnodeForwardRules(commandFunc runCommandFunc) error {
-	output, err := commandFunc("iptables", "-S", "FORWARD")
+	output, err := commandFunc(iptablesCmd, "-S", "FORWARD", "-w", internal.SecondsToWaitForIptablesLock)
 	if err != nil {
 		return fmt.Errorf("listing iptables: %w", err)
 	}
@@ -199,9 +202,9 @@ func clearExitnodeForwardRules(commandFunc runCommandFunc) error {
 			continue
 		}
 
-		deleteCommand := strings.Replace(rule, "-A", "-D", -1)
+		deleteCommand := strings.Replace(rule+" -w "+internal.SecondsToWaitForIptablesLock, "-A", "-D", -1)
 
-		if _, err := commandFunc("iptables", strings.Split(deleteCommand, " ")...); err != nil {
+		if _, err := commandFunc(iptablesCmd, strings.Split(deleteCommand, " ")...); err != nil {
 			return fmt.Errorf("deleting iptables rule: %w", err)
 		}
 	}
@@ -297,7 +300,7 @@ func allowLocalNetworkAccess(subnet netip.Prefix, flag string, commandFunc runCo
 		netip.MustParsePrefix("169.254.0.0/16"),
 	} {
 		args := fmt.Sprintf(
-			"-t filter %s FORWARD -s %s -d %s -j ACCEPT -m comment --comment %s",
+			"-t filter %s FORWARD -s %s -d %s -j ACCEPT -m comment --comment %s -w"+internal.SecondsToWaitForIptablesLock,
 			flag,
 			subnet.String(),
 			localSubnet.String(),
@@ -330,7 +333,7 @@ func modifyPeerTraffic(subnet netip.Prefix,
 
 	// iptables -t filter -I FORWARD -s 100.64.0.159 -j ACCEPT -m comment --comment "<linux-app identifier>"
 	args := fmt.Sprintf(
-		"-t filter %s FORWARD %s %s -j %s -m comment --comment %s",
+		"-t filter %s FORWARD %s %s -j %s -m comment --comment %s -w"+internal.SecondsToWaitForIptablesLock,
 		flag,
 		sourceFlag,
 		subnet.String(),
@@ -348,7 +351,7 @@ func modifyPeerTraffic(subnet netip.Prefix,
 // clearFiltering drops all the rules in the FORWARD chain containing
 // a comment
 func clearFiltering(commandFunc runCommandFunc) error {
-	out, err := commandFunc(iptablesCmd, "-S")
+	out, err := commandFunc(iptablesCmd, "-S", "-w", internal.SecondsToWaitForIptablesLock)
 	if err != nil {
 		return fmt.Errorf("listing iptables rules: %w", err)
 	}
@@ -359,8 +362,10 @@ func clearFiltering(commandFunc runCommandFunc) error {
 			!(isFilterRule || isTransientFilterRule) {
 			continue
 		}
+		args := strings.Split(strings.ReplaceAll(line, "-A ", "-D "), " ")
+		args = append(args, "-w", internal.SecondsToWaitForIptablesLock)
 
-		out, err := commandFunc(iptablesCmd, strings.Split(strings.ReplaceAll(line, "-A ", "-D "), " ")...)
+		out, err := commandFunc(iptablesCmd, args...)
 		if err != nil {
 			return fmt.Errorf(
 				"deleting FORWARD rule %s: %w: %s",

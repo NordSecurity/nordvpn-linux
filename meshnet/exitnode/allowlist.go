@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 type operation bool
@@ -120,6 +121,8 @@ func allowlistRuleToFirewall(
 			"comment",
 			"--comment",
 			meshAllowlistRuleComment,
+			"-w",
+			internal.SecondsToWaitForIptablesLock,
 		}
 
 		if portType == "" {
@@ -128,7 +131,7 @@ func allowlistRuleToFirewall(
 			command = append(command, "-p", portType, "-m", portType, "--dport", destination)
 		}
 
-		output, err := commandFunc("iptables", command...)
+		output, err := commandFunc(iptablesCmd, command...)
 		if err != nil && !strings.Contains(string(output), missingRuleMessage) {
 			return fmt.Errorf("calling iptables: %w, %s", err, output)
 		}
