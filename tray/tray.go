@@ -172,8 +172,9 @@ func (ti *Instance) OnReady() {
 				}
 				addSettingsSection(ti)
 				addAccountSection(ti)
-			} else {
-				addDaemonSection(ti)
+			}
+			if ti.state.daemonError != "" {
+				addDaemonErrorSection(ti)
 			}
 			ti.state.mu.RUnlock()
 			if ti.debugMode {

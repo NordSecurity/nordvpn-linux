@@ -108,7 +108,7 @@ Example: nordvpn set %s on`
 	AccountInternalError          = "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support."
 	AccountTokenUnauthorizedError = "There was a problem with your credentials. Please try to log out and log back in again. If the issue persists, please contact our customer support."
 	AccountCantFetchVPNService    = "We were not able to fetch your %s service data. If the issue persists, please contact our customer support."
-	UpdateAvailableMessage        = "A new version of NordVPN is available! Please update the application."
+	UpdateAvailableMessage        = "A new version of NordVPN is available!\nPlease update the application."
 	DisconnectNotConnected        = "You are not connected to NordVPN."
 	DisconnectConnectionRating    = "How would you rate your connection quality on a scale from 1 (poor) to 5 (excellent)? Type '%s rate [1-5]'."
 
