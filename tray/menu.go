@@ -79,7 +79,10 @@ func addQuitItem(ti *Instance) {
 	}()
 }
 
-func addDaemonSection(ti *Instance) {
+func addDaemonErrorSection(ti *Instance) {
+	if ti.state.daemonAvailable {
+		systray.AddSeparator()
+	}
 	mError := systray.AddMenuItem(ti.state.daemonError, ti.state.daemonError)
 	mError.Disable()
 }
