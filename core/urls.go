@@ -135,7 +135,7 @@ const (
 	RpmRepoMdURLFormat = "/yum/%s/centos/%s/repodata/%s"
 
 	// RpmRepoMdURL is the path to rpm repository's information file
-	RpmRepoMdURL = "/repomd.xml"
+	RpmRepoMdURL = "repomd.xml"
 
 	// RepoTypeProduction defines production repo type
 	RepoTypeProduction = "nordvpn"
