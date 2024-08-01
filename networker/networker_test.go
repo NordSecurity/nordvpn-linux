@@ -165,7 +165,7 @@ type workingRoutingSetup struct {
 	EnableLocalTraffic bool
 }
 
-func (r *workingRoutingSetup) SetupRoutingRules(_ bool, enableLan bool, _ bool) error {
+func (r *workingRoutingSetup) SetupRoutingRules(_ bool, enableLan bool, _ bool, _ []string) error {
 	r.EnableLocalTraffic = enableLan
 	return nil
 }
@@ -246,7 +246,6 @@ func (h *workingHostSetter) UnsetHosts() error {
 
 func TestCombined_Start(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		name            string
 		gateway         routes.GatewayRetriever

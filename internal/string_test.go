@@ -111,3 +111,34 @@ func TestIntsToStrings(t *testing.T) {
 	assert.Nil(t, IntsToStrings([]int{}))
 	assert.Nil(t, IntsToStrings(nil))
 }
+
+func TestCopyStringSlice(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	s1 := []string{"32", "56565656", "0", "1", "-1"}
+	assert.Equal(t, s1, CopyStringSlice(s1))
+
+	tests := []struct {
+		input []string
+	}{
+		{
+			input: []string{},
+		},
+		{
+			input: []string{"", ""},
+		},
+		{
+			input: []string{"32", "56565656", "0", "1", "-1"},
+		},
+	}
+
+	for _, tt := range tests {
+		copy1 := CopyStringSlice(tt.input)
+		assert.Equal(t, tt.input, copy1)
+		if len(copy1) > 0 {
+			// modify copy, source should stay unmodified
+			copy1[0] = "a!a#a$"
+			assert.NotEqual(t, tt.input, copy1)
+		}
+	}
+}
