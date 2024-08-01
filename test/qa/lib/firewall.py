@@ -26,6 +26,7 @@ IP_ROUTE_TABLE = 205
 # -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
 # -A FORWARD -d {subnet_ip} -o {iface} -m comment --comment nordvpn -j ACCEPT
+# -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment nordvpn -j ACCEPT
 # -A FORWARD -o {iface} -m comment --comment nordvpn -j DROP
 # -A OUTPUT -d {subnet_ip} -o {iface} -m comment --comment nordvpn -j ACCEPT
 # -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
@@ -102,6 +103,7 @@ FORWARD_LAN_DISCOVERY_RULES = [
     "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment nordvpn -j ACCEPT",
 ]
 
 OUTPUT_LAN_DISCOVERY_RULES = [

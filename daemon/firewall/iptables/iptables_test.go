@@ -123,6 +123,11 @@ func TestGenerateIPTablesRule(t *testing.T) {
 			states: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}}, chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --sport 555:555 -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment nordvpn -j ACCEPT",
 		}, {
+			chain: chainForward, target: accept,
+			module: "conntrack", stateFlag: "--ctstate",
+			states: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}},
+			rule:   "FORWARD -m conntrack --ctstate ESTABLISHED,RELATED -m comment --comment nordvpn -j ACCEPT",
+		}, {
 			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
 			states: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}}, chainPrefix: "", portFlag: "--dport",

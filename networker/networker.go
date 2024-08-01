@@ -926,6 +926,12 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			Allow:          true,
 		})
 		rules = append(rules, firewall.Rule{
+			Name:             "allowlist_forward_related",
+			Direction:        firewall.Forward,
+			Allow:            true,
+			ConnectionStates: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}},
+		})
+		rules = append(rules, firewall.Rule{
 			Name:           "allowlist_subnets_forward",
 			Interfaces:     ifaces,
 			RemoteNetworks: subnets,
@@ -993,6 +999,7 @@ func (netw *Combined) unsetAllowlist() error {
 	for _, rule := range []string{
 		"allowlist_subnets",
 		"allowlist_subnets_forward",
+		"allowlist_forward_related",
 		"allowlist_ports_tcp",
 		"allowlist_ports_udp",
 	} {
