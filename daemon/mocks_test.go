@@ -20,11 +20,6 @@ func (fm *filesystemMock) FileExists(location string) bool {
 	return ok
 }
 
-func (fm *filesystemMock) CreateFile(location string, mode fs.FileMode) error {
-	fm.files[location] = []byte{}
-	return nil
-}
-
 func (fm *filesystemMock) ReadFile(location string) ([]byte, error) {
 	return fm.files[location], nil
 }

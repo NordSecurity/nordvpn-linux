@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/fs"
-	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -42,7 +41,6 @@ type Manager interface {
 
 type FilesystemHandle interface {
 	FileExists(string) bool
-	CreateFile(string, fs.FileMode) error
 	ReadFile(string) ([]byte, error)
 	WriteFile(string, []byte, fs.FileMode) error
 }
@@ -54,20 +52,15 @@ func (StdFilesystemHandle) FileExists(location string) bool {
 	return internal.FileExists(location)
 }
 
-func (StdFilesystemHandle) CreateFile(location string, mode fs.FileMode) error {
-	file, err := internal.FileCreate(location, mode)
-	if closeErr := file.Close(); closeErr != nil {
-		log.Printf("Failed to close file: %v", closeErr)
-	}
-	return err
-}
-
 func (StdFilesystemHandle) ReadFile(location string) ([]byte, error) {
 	// #nosec G304 -- no input comes from the user
 	return os.ReadFile(location)
 }
 
 func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileMode) error {
+	if err := internal.EnsureDir(location); err != nil {
+		return err
+	}
 	return os.WriteFile(location, data, mode)
 }
 
@@ -233,11 +226,6 @@ func (f *FilesystemConfigManager) newKey() error {
 	buffer := &bytes.Buffer{}
 	encoder := gob.NewEncoder(buffer)
 	err = encoder.Encode(cipher)
-	if err != nil {
-		return err
-	}
-
-	err = f.fsHandle.CreateFile(f.vault, internal.PermUserRW)
 	if err != nil {
 		return err
 	}
