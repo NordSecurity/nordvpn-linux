@@ -899,6 +899,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		allowlist = addLANPermissions(allowlist)
 	}
 
+	// start adding set of rules
 	rules := []firewall.Rule{}
 	var subnets []netip.Prefix
 
@@ -923,12 +924,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			RemoteNetworks: subnets,
 			Direction:      firewall.TwoWay,
 			Allow:          true,
-		})
-		rules = append(rules, firewall.Rule{
-			Name:             "allowlist_forward_related",
-			Direction:        firewall.Forward,
-			Allow:            true,
-			ConnectionStates: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}},
 		})
 		rules = append(rules, firewall.Rule{
 			Name:           "allowlist_subnets_forward",
@@ -967,15 +962,17 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			}
 		}
 	}
-
 	if err := netw.fw.Add(rules); err != nil {
 		return err
 	}
 
-	// disable DNS traffic to private LAN ranges - to prevent DNS leaks
-	// when /etc/resolv.conf has nameserver default gateway
-	if err := netw.denyDNS(); err != nil {
-		return err
+	// if port 53 is whitelisted - do not add drop-dns rules
+	if !allowlist.Ports.TCP[53] && !allowlist.Ports.UDP[53] {
+		// disable DNS traffic to private LAN ranges - to prevent DNS leaks
+		// when /etc/resolv.conf has nameserver default gateway
+		if err := netw.denyDNS(); err != nil {
+			return err
+		}
 	}
 
 	netw.allowlist = allowlist
@@ -1005,13 +1002,12 @@ func (netw *Combined) unsetAllowlist() error {
 	for _, rule := range []string{
 		"allowlist_subnets",
 		"allowlist_subnets_forward",
-		"allowlist_forward_related",
 		"allowlist_ports_tcp",
 		"allowlist_ports_udp",
 	} {
 		err := netw.fw.Delete([]string{rule})
 		if err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
-			return err
+			return fmt.Errorf("disabling allowlist firewall rules: %w", err)
 		}
 	}
 
@@ -1019,8 +1015,10 @@ func (netw *Combined) unsetAllowlist() error {
 		return fmt.Errorf("disabling allowlist routing: %w", err)
 	}
 
-	if err := netw.undenyDNS(); err != nil {
-		return fmt.Errorf("unsetting deny dns: %w", err)
+	if !netw.allowlist.Ports.TCP[53] && !netw.allowlist.Ports.UDP[53] {
+		if err := netw.undenyDNS(); err != nil {
+			return fmt.Errorf("unsetting deny dns: %w", err)
+		}
 	}
 
 	return nil

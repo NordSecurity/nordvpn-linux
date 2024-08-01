@@ -103,7 +103,6 @@ FORWARD_LAN_DISCOVERY_RULES = [
     "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -j ACCEPT",
-    "-A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment nordvpn -j ACCEPT",
 ]
 
 OUTPUT_LAN_DISCOVERY_RULES = [
