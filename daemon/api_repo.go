@@ -68,8 +68,20 @@ func (api *RepoAPI) DebianFileList() ([]byte, error) {
 
 func (api *RepoAPI) RpmFileList() ([]byte, error) {
 	repoType := core.RepoTypeProduction
+	repoArch := "i386"
+	if api.arch == "amd64" {
+		repoArch = "x86_64"
+	} else if api.arch == "arm64" {
+		repoArch = "aarch64"
+	} else if api.arch == "armel" {
+		repoArch = "armv5f"
+	} else if api.arch == "armhf" {
+		repoArch = "armhfp"
+	} else {
+		return nil, fmt.Errorf("unsupported architecture: %s", api.arch)
+	}
 
-	resp, err := api.request(fmt.Sprintf(core.RpmRepoMdURLFormat, repoType, api.arch, core.RpmRepoMdURL))
+	resp, err := api.request(fmt.Sprintf(core.RpmRepoMdURLFormat, repoType, repoArch, core.RpmRepoMdURL))
 	if err != nil {
 		//log.Printf("RpmFileList failed to fetch repomd. Error: %v.\n", err)
 		return nil, err
@@ -85,7 +97,7 @@ func (api *RepoAPI) RpmFileList() ([]byte, error) {
 	filelistPattern := regexp.MustCompile(`/.*filelists\.xml\.gz`)
 	filepath := strings.TrimLeft(filelistPattern.FindString(string(body)), "/")
 
-	resp, err = api.request(fmt.Sprintf(core.RpmRepoMdURLFormat, repoType, api.arch, filepath))
+	resp, err = api.request(fmt.Sprintf(core.RpmRepoMdURLFormat, repoType, repoArch, filepath))
 	if err != nil {
 		//log.Printf("RpmFileList failed to fetch fileinfo. Error: %v.\n", err)
 		return nil, err
