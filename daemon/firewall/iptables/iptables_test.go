@@ -12,6 +12,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -673,7 +674,7 @@ func containsSlice(t *testing.T, list, sublist []string) bool {
 func getSystemRules(supportedIPTables []string) (map[string][]string, error) {
 	rules := make(map[string][]string)
 	for _, cmd := range supportedIPTables {
-		out, err := exec.Command(cmd, "-S", "-w", "10").CombinedOutput()
+		out, err := exec.Command(cmd, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
 		if err != nil {
 			return nil, fmt.Errorf("executing '%s -S': %w: %s", cmd, err, out)
 		}

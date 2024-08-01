@@ -82,6 +82,8 @@ const (
 	FileshareLogFileName = "nordfileshare" + LogFileExtension
 
 	LogFileExtension = ".log"
+
+	SecondsToWaitForIptablesLock = "5" // use string to easier concatenate into the command args
 )
 
 var (

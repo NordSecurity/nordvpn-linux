@@ -21,8 +21,8 @@ const (
 
 const (
 	accept   ruleTarget = "ACCEPT"
-	drop                = "DROP"
-	connmark            = "CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff"
+	drop     ruleTarget = "DROP"
+	connmark ruleTarget = "CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff"
 )
 
 // ruleTarget specifies what can be passed as an argument to `-j`
@@ -96,7 +96,7 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 		}
 		for _, ipTableRule := range ipTablesRules {
 			// -w does not accept arguments on older iptables versions
-			args := fmt.Sprintf("%s %s -w", flag, ipTableRule)
+			args := fmt.Sprintf("%s %s -w "+internal.SecondsToWaitForIptablesLock, flag, ipTableRule)
 			// #nosec G204 -- input is properly sanitized
 			out, err := exec.Command(iptableVersion, strings.Split(args, " ")...).CombinedOutput()
 			if err != nil {
@@ -115,7 +115,7 @@ func FilterSupportedIPTables(supportedIPTables []string) []string {
 	var supported []string
 	for _, cmd := range supportedIPTables {
 		// #nosec G204 -- input is properly sanitized
-		_, err := exec.Command(cmd, "-S").CombinedOutput()
+		_, err := exec.Command(cmd, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
 		if err != nil {
 			continue
 		}

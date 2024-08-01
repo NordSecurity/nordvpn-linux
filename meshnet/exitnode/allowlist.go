@@ -128,7 +128,7 @@ func allowlistRuleToFirewall(
 			command = append(command, "-p", portType, "-m", portType, "--dport", destination)
 		}
 
-		output, err := commandFunc("iptables", command...)
+		output, err := commandFunc(iptablesCmd, command...)
 		if err != nil && !strings.Contains(string(output), missingRuleMessage) {
 			return fmt.Errorf("calling iptables: %w, %s", err, output)
 		}

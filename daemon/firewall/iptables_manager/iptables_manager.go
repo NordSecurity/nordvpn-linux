@@ -76,13 +76,6 @@ type IPTablesManager struct {
 	cmdRunner          CommandRunner
 }
 
-// nolint:unused // Will be used once FirewallManager is integrated
-func AreIP6TablesSupported() bool {
-	// #nosec G204 -- input is properly sanitized
-	_, err := exec.Command(ip6tablesCommand, "-S").CombinedOutput()
-	return err != nil
-}
-
 func NewIPTablesManager(cmdRunner CommandRunner, enabled bool, ip6tablesSupported bool) IPTablesManager {
 	return IPTablesManager{
 		cmdRunner:          cmdRunner,

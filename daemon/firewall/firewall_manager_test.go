@@ -350,8 +350,9 @@ func TestSetAllowlist(t *testing.T) {
 			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true, true)
 
 			err := firewallManager.SetAllowlist(udpPorts, tcpPorts, subnets)
+			assert.ErrorIs(t, err, test.expectedErrSet, "Invalid error returned by SetAllowlist.")
+
 			if test.expectedErrSet != nil {
-				assert.ErrorIs(t, err, test.expectedErrSet, "Invalid error returned by SetAllowlist.")
 				return
 			}
 

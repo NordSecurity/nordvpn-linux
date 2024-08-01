@@ -188,7 +188,7 @@ type TrafficPeer struct {
 }
 
 func clearExitnodeForwardRules(commandFunc runCommandFunc) error {
-	output, err := commandFunc("iptables", "-S", "FORWARD")
+	output, err := commandFunc(iptablesCmd, "-S", "FORWARD")
 	if err != nil {
 		return fmt.Errorf("listing iptables: %w", err)
 	}
@@ -201,7 +201,7 @@ func clearExitnodeForwardRules(commandFunc runCommandFunc) error {
 
 		deleteCommand := strings.Replace(rule, "-A", "-D", -1)
 
-		if _, err := commandFunc("iptables", strings.Split(deleteCommand, " ")...); err != nil {
+		if _, err := commandFunc(iptablesCmd, strings.Split(deleteCommand, " ")...); err != nil {
 			return fmt.Errorf("deleting iptables rule: %w", err)
 		}
 	}

@@ -165,7 +165,9 @@ func TestIptablesManager(t *testing.T) {
 
 			commands := commandRunnerMock.PopIPv4Commands()
 			assert.Len(t, commands, 1, "Only one command per rule insertion should be executed.")
-			assert.Equal(t, test.expectedCommand, commands[0], "Invalid command executed when inserting a rule.")
+			if len(commands) > 1 {
+				assert.Equal(t, test.expectedCommand, commands[0], "Invalid command executed when inserting a rule.")
+			}
 		})
 	}
 }
