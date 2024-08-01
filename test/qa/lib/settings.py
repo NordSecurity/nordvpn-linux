@@ -96,6 +96,11 @@ def is_ipv6_enabled():
     return Settings().get("IPv6") == "enabled"
 
 
+def is_virtual_location_enabled():
+    """Returns True, if Virtual Location is enabled in application settings."""
+    return Settings().get("Virtual Location") == "enabled"
+
+
 def app_has_defaults_settings():
     """Returns True, if application settings match the default settings."""
     settings = sh.nordvpn.settings()
