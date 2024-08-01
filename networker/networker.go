@@ -635,6 +635,20 @@ func (netw *Combined) blockTraffic() error {
 		return err
 	}
 
+	// block FORWARD as well !!!
+	err = netw.fw.Add([]firewall.Rule{
+		{
+			Name:       "drop-fw",
+			Direction:  firewall.Forward,
+			Interfaces: ifaces,
+			Allow:      false,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	// block INPUT & OUTPUT
 	return netw.fw.Add([]firewall.Rule{
 		{
 			Name:       "drop",
@@ -646,6 +660,9 @@ func (netw *Combined) blockTraffic() error {
 }
 
 func (netw *Combined) unblockTraffic() error {
+	if err := netw.fw.Delete([]string{"drop-fw"}); err != nil {
+		return err
+	}
 	return netw.fw.Delete([]string{"drop"})
 }
 
@@ -908,6 +925,19 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			Direction:      firewall.TwoWay,
 			Allow:          true,
 		})
+		rules = append(rules, firewall.Rule{
+			Name:             "allowlist_forward_related",
+			Direction:        firewall.Forward,
+			Allow:            true,
+			ConnectionStates: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}},
+		})
+		rules = append(rules, firewall.Rule{
+			Name:           "allowlist_subnets_forward",
+			Interfaces:     ifaces,
+			RemoteNetworks: subnets,
+			Direction:      firewall.Forward,
+			Allow:          true,
+		})
 	}
 
 	for _, pair := range []struct {
@@ -968,6 +998,8 @@ func (netw *Combined) unsetAllowlist() error {
 
 	for _, rule := range []string{
 		"allowlist_subnets",
+		"allowlist_subnets_forward",
+		"allowlist_forward_related",
 		"allowlist_ports_tcp",
 		"allowlist_ports_udp",
 	} {

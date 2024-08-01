@@ -28,6 +28,14 @@ const (
 // ruleTarget specifies what can be passed as an argument to `-j`
 type ruleTarget string
 
+type ruleChain int
+
+const (
+	chainInput ruleChain = iota
+	chainOutput
+	chainForward
+)
+
 type PortRange struct {
 	Min int
 	Max int
@@ -156,14 +164,14 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 			for _, localNetwork := range rule.LocalNetworks {
 				for _, pRange := range PortsToPortRanges(rule.Ports) {
 					for _, protocol := range rule.Protocols {
-						for _, input := range toInputSlice(rule.Direction) {
+						for _, chain := range toChainSlice(rule.Direction) {
 							for _, icmpv6Type := range defaultIcmpv6(rule.Icmpv6Types) {
-								for _, target := range toTargetSlice(rule.Allow, input, rule.Marks) {
+								for _, target := range toTargetSlice(rule.Allow, chain, rule.Marks) {
 									for _, mark := range rule.Marks {
 										if pRange.Min != 0 {
 											for _, portFlag := range portsDirectionToPortsFlag(rule.PortsDirection) {
 												newRule := generateIPTablesRule(
-													input, target, iface, remoteNetwork, localNetwork, protocol, pRange,
+													chain, target, iface, remoteNetwork, localNetwork, protocol, pRange,
 													module, stateFlag, rule.ConnectionStates, chainPrefix, portFlag,
 													icmpv6Type, rule.HopLimit, nil, nil,
 													rule.Comment, mark,
@@ -179,7 +187,7 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 											}
 										} else {
 											newRule := generateIPTablesRule(
-												input, target, iface, remoteNetwork, localNetwork, protocol, pRange,
+												chain, target, iface, remoteNetwork, localNetwork, protocol, pRange,
 												module, stateFlag, rule.ConnectionStates, chainPrefix, "",
 												icmpv6Type, rule.HopLimit,
 												rule.SourcePorts, rule.DestinationPorts,
@@ -234,21 +242,23 @@ func PortsToPortRanges(ports []int) []PortRange {
 	return append(ranges, r)
 }
 
-// toInputSlice returns a slice of which iptables have to be created.
+// toChainSlice returns a slice of which iptables have to be created.
 // E. g. for inbound rule we create 1 rule in INPUT chain, for outbound - 1 rule in OUTPUT chain, For TwoWay - rule per both chains
-func toInputSlice(direction firewall.Direction) []bool {
+func toChainSlice(direction firewall.Direction) []ruleChain {
 	switch direction {
 	case firewall.Inbound:
-		return []bool{true}
+		return []ruleChain{chainInput}
 	case firewall.Outbound:
-		return []bool{false}
+		return []ruleChain{chainOutput}
 	case firewall.TwoWay:
-		return []bool{true, false}
+		return []ruleChain{chainInput, chainOutput}
+	case firewall.Forward:
+		return []ruleChain{chainForward}
 	}
 	return nil
 }
 
-func toTargetSlice(allowPackets bool, input bool, marks []uint32) []ruleTarget {
+func toTargetSlice(allowPackets bool, chain ruleChain, marks []uint32) []ruleTarget {
 	var targets []ruleTarget
 	if allowPackets {
 		targets = append(targets, accept)
@@ -256,7 +266,7 @@ func toTargetSlice(allowPackets bool, input bool, marks []uint32) []ruleTarget {
 		targets = append(targets, drop)
 	}
 
-	if input { // connmark is meant for OUTPUT chain only
+	if chain != chainOutput { // connmark is meant for OUTPUT chain only
 		return targets
 	}
 
@@ -291,7 +301,7 @@ func generateNonEmptyRule(rule firewall.Rule) firewall.Rule {
 
 // generateIPTablesRule converts input fields to a single IPTables rule string
 func generateIPTablesRule(
-	input bool,
+	direction ruleChain,
 	target ruleTarget,
 	iface net.Interface,
 	remoteNetwork netip.Prefix,
@@ -310,15 +320,24 @@ func generateIPTablesRule(
 	comment string,
 	mark uint32,
 ) string {
-	chain := "OUTPUT"
-	remoteAddrFlag := "-d"
-	localAddrFlag := "-s"
-	ifaceFlag := "-o"
-	if input {
+	var chain, remoteAddrFlag, localAddrFlag, ifaceFlag string
+
+	switch direction {
+	case chainInput:
 		chain = "INPUT"
 		remoteAddrFlag = "-s"
 		localAddrFlag = "-d"
 		ifaceFlag = "-i"
+	case chainOutput:
+		chain = "OUTPUT"
+		remoteAddrFlag = "-d"
+		localAddrFlag = "-s"
+		ifaceFlag = "-o"
+	case chainForward:
+		chain = "FORWARD"
+		remoteAddrFlag = "-d"
+		localAddrFlag = "-s"
+		ifaceFlag = "-o"
 	}
 
 	rule := chainPrefix + chain
