@@ -93,8 +93,6 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_available()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(130)
 def test_route_traffic_to_each_other():
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
