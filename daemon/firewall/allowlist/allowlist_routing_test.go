@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,6 +18,7 @@ const (
 )
 
 func workingCommandFunc(command string, arg ...string) ([]byte, error) {
+	arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
 	return exec.Command(command, arg...).CombinedOutput()
 }
 
