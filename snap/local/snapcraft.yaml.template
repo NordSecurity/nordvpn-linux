@@ -74,6 +74,7 @@ apps:
       - network-bind
       - desktop-legacy
       - desktop
+      - login-session-observe
     completer: usr/share/bash-completion/completions/nordvpn
     # Snap does not support zsh autocompletions. In order to enable them, after installing snap,
     # execute:
@@ -96,7 +97,6 @@ apps:
       - network-observe
       - firewall-control
       - sys-dbus
-      - login-session-observe
 parts:
   nordvpn:
     plugin: nil
