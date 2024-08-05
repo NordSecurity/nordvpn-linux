@@ -118,7 +118,7 @@ Example: nordvpn set %s on`
 	ExpiredAccountMessage                  = "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN. %s" // TODO: update once we get new error message.
 	NoDedicatedIPMessage                   = "You don’t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser: \n%s"
 	NoDedidcatedIPServerMessage            = "This server isn't currently included in your dedicated IP subscription."
-	NoPreferredDedicatedIPLocationSelected = "It looks like you haven’t selected the preferred location for your dedicated IP. Please head over to Nord Account and set up your dedicated IP."
+	NoPreferredDedicatedIPLocationSelected = "It looks like you haven’t selected the preferred server location for your dedicated IP. Please head over to Nord Account and set up your dedicated IP server."
 	NoSuchCommand                          = "Command '%s' doesn't exist."
 	MsgListIsEmpty                         = "We couldn’t load the list of %s. Please try again later."
 
