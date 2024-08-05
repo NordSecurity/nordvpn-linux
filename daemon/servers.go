@@ -127,7 +127,7 @@ func getServers(
 			obfuscated,
 		)
 
-		// remove all DIP servers from the list if the search wasn't made for a server name and there is more then 1 server found
+		// remove all DIP servers from the list if the search wasn't made for a server name and there is more than 1 server found
 		if err == nil && serverTag.Action != core.ServerByName && len(ret) > 1 {
 			ret = slices.DeleteFunc(ret, func(s core.Server) bool { return isDedicatedIP(s) })
 		}
