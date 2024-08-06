@@ -431,13 +431,7 @@ func (netw *Combined) restart(
 		return err
 	}
 
-	dnsGetter := &dns.NameServers{}
-	if netw.isMeshnetSet && defaultMeshSubnet.Contains(serverData.IP) {
-		err = netw.setDNS(dnsGetter.Get(false, false))
-	} else {
-		err = netw.setDNS(nameservers)
-	}
-	if err != nil {
+	if err := netw.configureDNS(serverData, nameservers); err != nil {
 		return err
 	}
 
@@ -900,6 +894,12 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		return err
 	}
 
+	// allow traffic to LAN - only when user enabled lan-discovery
+	if netw.lanDiscovery {
+		allowlist = addLANPermissions(allowlist)
+	}
+
+	// start adding set of rules
 	rules := []firewall.Rule{}
 	var subnets []netip.Prefix
 
@@ -924,12 +924,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			RemoteNetworks: subnets,
 			Direction:      firewall.TwoWay,
 			Allow:          true,
-		})
-		rules = append(rules, firewall.Rule{
-			Name:             "allowlist_forward_related",
-			Direction:        firewall.Forward,
-			Allow:            true,
-			ConnectionStates: firewall.ConnectionStates{States: []firewall.ConnectionState{firewall.Established, firewall.Related}},
 		})
 		rules = append(rules, firewall.Rule{
 			Name:           "allowlist_subnets_forward",
@@ -968,10 +962,19 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			}
 		}
 	}
-
 	if err := netw.fw.Add(rules); err != nil {
 		return err
 	}
+
+	// if port 53 is whitelisted - do not add drop-dns rules
+	if !allowlist.Ports.TCP[53] && !allowlist.Ports.UDP[53] {
+		// disable DNS traffic to private LAN ranges - to prevent DNS leaks
+		// when /etc/resolv.conf has nameserver default gateway
+		if err := netw.denyDNS(); err != nil {
+			return err
+		}
+	}
+
 	netw.allowlist = allowlist
 
 	// adjust allow subnet routing rules
@@ -999,18 +1002,23 @@ func (netw *Combined) unsetAllowlist() error {
 	for _, rule := range []string{
 		"allowlist_subnets",
 		"allowlist_subnets_forward",
-		"allowlist_forward_related",
 		"allowlist_ports_tcp",
 		"allowlist_ports_udp",
 	} {
 		err := netw.fw.Delete([]string{rule})
 		if err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
-			return err
+			return fmt.Errorf("disabling allowlist firewall rules: %w", err)
 		}
 	}
 
 	if err := netw.allowlistRouting.Disable(); err != nil {
 		return fmt.Errorf("disabling allowlist routing: %w", err)
+	}
+
+	if !netw.allowlist.Ports.TCP[53] && !netw.allowlist.Ports.UDP[53] {
+		if err := netw.undenyDNS(); err != nil {
+			return fmt.Errorf("unsetting deny dns: %w", err)
+		}
 	}
 
 	return nil
@@ -1499,6 +1507,54 @@ func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error
 
 	if err := netw.fw.Add(rules); err != nil {
 		return fmt.Errorf("adding allow-fileshare rule to firewall: %w", err)
+	}
+
+	netw.rules = append(netw.rules, ruleName)
+	return nil
+}
+
+func (netw *Combined) undenyDNS() error {
+	ruleName := "deny-private-dns"
+
+	ruleIndex := slices.Index(netw.rules, ruleName)
+
+	if ruleIndex == -1 {
+		return nil
+	}
+
+	if err := netw.fw.Delete([]string{ruleName}); err != nil {
+		return err
+	}
+	netw.rules = slices.Delete(netw.rules, ruleIndex, ruleIndex+1)
+
+	return nil
+}
+
+func (netw *Combined) denyDNS() error {
+	ruleName := "deny-private-dns"
+	rules := []firewall.Rule{{
+		Name:           ruleName,
+		Direction:      firewall.Outbound,
+		Protocols:      []string{"udp", "tcp"},
+		Ports:          []int{53},
+		PortsDirection: firewall.Destination,
+		RemoteNetworks: []netip.Prefix{
+			netip.MustParsePrefix("10.0.0.0/8"),
+			netip.MustParsePrefix("172.16.0.0/12"),
+			netip.MustParsePrefix("192.168.0.0/16"),
+			netip.MustParsePrefix("169.254.0.0/16"),
+		},
+		Allow: false,
+	}}
+
+	ruleIndex := slices.Index(netw.rules, ruleName)
+
+	if ruleIndex != -1 {
+		return nil
+	}
+
+	if err := netw.fw.Add(rules); err != nil {
+		return fmt.Errorf("adding deny-private-dns rule to firewall: %w", err)
 	}
 
 	netw.rules = append(netw.rules, ruleName)

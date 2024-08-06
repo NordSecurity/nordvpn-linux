@@ -103,7 +103,6 @@ FORWARD_LAN_DISCOVERY_RULES = [
     "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -j ACCEPT",
-    "-A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -m comment --comment nordvpn -j ACCEPT",
 ]
 
 OUTPUT_LAN_DISCOVERY_RULES = [
@@ -132,6 +131,14 @@ def __rules_connmark_chain_forward(interface: str):
 def __rules_connmark_chain_output(interface: str):
     return \
         [
+            "-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
             f"-A OUTPUT -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
             f"-A OUTPUT -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
             f"-A OUTPUT -o {interface} -m comment --comment nordvpn -j DROP"
@@ -164,15 +171,17 @@ def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
 
+    result += (f"-A FORWARD -o {interface} -m comment --comment nordvpn -j DROP", )
+
     current_subnet_rules_forward_chain = []
 
     fw_lines = os.popen("sudo iptables -S").read()
 
     for line in fw_lines.splitlines():
-        if "FORWARD" in line and "-d" in line:
+        if "FORWARD" in line and ("-d" in line or "DROP" in line):
             current_subnet_rules_forward_chain.append(line)
 
-    if current_subnet_rules_forward_chain:
+    if len(current_subnet_rules_forward_chain) > len(result):
         return sort_list_by_other_list(result, current_subnet_rules_forward_chain)
     else:
         return result
@@ -184,6 +193,15 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += (f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
 
+    result += ("-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
+
     current_subnet_rules_input_chain = []
 
     fw_lines = os.popen("sudo iptables -S").read()
@@ -192,7 +210,7 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
         if "OUTPUT" in line and "-d" in line:
             current_subnet_rules_input_chain.append(line)
 
-    if current_subnet_rules_input_chain:
+    if len(current_subnet_rules_input_chain) > len(result):
         return sort_list_by_other_list(result, current_subnet_rules_input_chain)
     else:
         return result

@@ -48,7 +48,7 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 		}
 
 		cfg.AutoConnectData.Allowlist.Subnets = subnets
-		allowlist = addLANPermissions(cfg.AutoConnectData.Allowlist)
+		allowlist = cfg.AutoConnectData.Allowlist
 	}
 
 	if err := r.netw.SetAllowlist(allowlist); err != nil {
