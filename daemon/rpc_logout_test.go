@@ -8,7 +8,9 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nc"
@@ -39,6 +41,7 @@ func TestLogout_Token(t *testing.T) {
 		ncClient:  mockNC{},
 		publisher: &subs.Subject[string]{},
 		api:       mockApi{},
+		events:    &daemonevents.Events{Service: &daemonevents.ServiceEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}}},
 	}
 
 	tests := []struct {
