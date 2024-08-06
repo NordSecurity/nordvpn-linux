@@ -232,7 +232,7 @@ func (s *Subscriber) NotifyIpv6(data bool) error {
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesIpv6EnabledValue(data))
 }
 
-func (s *Subscriber) NotifyLogin(any) error { return nil }
+func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { return nil }
 
 func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 	itemType := moose.NordvpnappUserInterfaceItemTypeButton
@@ -344,13 +344,13 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	var eventStatus moose.NordvpnappEventStatus
-	switch data.Type {
-	case events.ConnectAttempt:
+	switch data.EventStatus {
+	case events.StatusAttempt:
 		eventStatus = moose.NordvpnappEventStatusAttempt
-	case events.ConnectSuccess:
+	case events.StatusSuccess:
 		eventStatus = moose.NordvpnappEventStatusSuccess
 		s.connectionStartTime = time.Now()
-	case events.ConnectFailure:
+	case events.StatusFailure:
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	default:
 		eventStatus = moose.NordvpnappEventStatusAttempt
@@ -416,12 +416,12 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 
 func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	event := moose.NordvpnappEventStatusAttempt
-	switch data.Type {
-	case events.DisconnectAttempt:
+	switch data.EventStatus {
+	case events.StatusAttempt:
 		event = moose.NordvpnappEventStatusAttempt
-	case events.DisconnectSuccess:
+	case events.StatusSuccess:
 		event = moose.NordvpnappEventStatusSuccess
-	case events.DisconnectFailure:
+	case events.StatusFailure:
 		event = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	}
 

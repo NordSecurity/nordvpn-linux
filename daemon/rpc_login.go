@@ -10,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -107,7 +108,7 @@ func (r *RPC) loginCommon(customCB customCallbackType) (*pb.LoginResponse, error
 
 	go StartNC("[login]", r.ncClient)
 
-	r.events.Service.Login.Publish(nil)
+	r.events.Service.Login.Publish(events.DataAuthorization{})
 	r.publisher.Publish("user logged in")
 
 	return &pb.LoginResponse{
@@ -169,7 +170,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (*pb.Empty
 	}
 
 	go StartNC("[login callback]", r.ncClient)
-	r.events.Service.Login.Publish(nil)
+	r.events.Service.Login.Publish(events.DataAuthorization{})
 	return &pb.Empty{}, nil
 }
 

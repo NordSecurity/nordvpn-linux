@@ -43,7 +43,7 @@ func (k *KernelSpace) Start(
 	}
 
 	event := events.DataConnect{
-		Type:                events.ConnectAttempt,
+		EventStatus:         events.StatusAttempt,
 		TargetServerIP:      serverData.IP.String(),
 		TargetServerCountry: serverData.Country,
 		TargetServerCity:    serverData.City,
@@ -55,7 +55,7 @@ func (k *KernelSpace) Start(
 			k.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
 			return
 		}
-		event.Type = events.ConnectSuccess
+		event.EventStatus = events.StatusSuccess
 		k.eventsPublisher.Connected.Publish(event)
 	}()
 

@@ -28,7 +28,7 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 
 	r.events.Service.Disconnect.Publish(events.DataDisconnect{
 		Protocol:             cfg.AutoConnectData.Protocol,
-		Type:                 events.DisconnectSuccess,
+		EventStatus:          events.StatusSuccess,
 		Technology:           cfg.Technology,
 		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 	})

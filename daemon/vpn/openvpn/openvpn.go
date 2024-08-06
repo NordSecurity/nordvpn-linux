@@ -17,6 +17,7 @@ import (
 	"time"
 
 	gopenvpn "github.com/NordSecurity/gopenvpn/openvpn"
+
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -353,7 +354,7 @@ func (ovpn *OpenVPN) getSubstate() vpn.Substate {
 // publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
 func (ovpn *OpenVPN) publishConnecting() {
 	ovpn.eventsPublisher.Connected.Publish(events.DataConnect{
-		Type:                events.ConnectAttempt,
+		EventStatus:         events.StatusAttempt,
 		TargetServerIP:      ovpn.serverData.IP.String(),
 		TargetServerCountry: ovpn.serverData.Country,
 		TargetServerCity:    ovpn.serverData.City,
@@ -363,7 +364,7 @@ func (ovpn *OpenVPN) publishConnecting() {
 // publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
 func (ovpn *OpenVPN) publishConnected() {
 	ovpn.eventsPublisher.Connected.Publish(events.DataConnect{
-		Type:                events.ConnectSuccess,
+		EventStatus:         events.StatusSuccess,
 		TargetServerIP:      ovpn.serverData.IP.String(),
 		TargetServerCountry: ovpn.serverData.Country,
 		TargetServerCity:    ovpn.serverData.City,

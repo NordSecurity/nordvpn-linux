@@ -38,7 +38,7 @@ func (mockDaemonSubscriber) NotifyAllowlist(events.DataAllowlist) error     { re
 func (mockDaemonSubscriber) NotifyTechnology(config.Technology) error       { return nil }
 func (mockDaemonSubscriber) NotifyConnect(events.DataConnect) error         { return nil }
 func (mockDaemonSubscriber) NotifyDisconnect(events.DataDisconnect) error   { return nil }
-func (mockDaemonSubscriber) NotifyLogin(any) error                          { return nil }
+func (mockDaemonSubscriber) NotifyLogin(events.DataAuthorization) error     { return nil }
 func (mockDaemonSubscriber) NotifyAccountCheck(core.ServicesResponse) error { return nil }
 func (mockDaemonSubscriber) NotifyObfuscate(bool) error                     { return nil }
 func (mockDaemonSubscriber) NotifyNotify(bool) error                        { return nil }
