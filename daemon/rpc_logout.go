@@ -4,19 +4,32 @@ import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )
 
 // Logout erases user credentials and disconnects completely
-func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, error) {
+func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Payload, retErr error) {
 	if !r.ac.IsLoggedIn() {
 		return nil, internal.ErrNotLoggedIn
 	}
+
+	logoutStartTime := time.Now()
+	r.events.Service.Logout.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: events.StatusAttempt})
+
+	defer func() {
+		eventStatus := events.StatusSuccess
+		if retErr != nil {
+			eventStatus = events.StatusFailure
+		}
+		r.events.Service.Logout.Publish(events.DataAuthorization{DurationMs: max(int(time.Since(logoutStartTime).Milliseconds()), 1), EventTrigger: events.TriggerUser, EventStatus: eventStatus})
+	}()
 
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
