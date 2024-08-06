@@ -126,6 +126,11 @@ func getServers(
 			serverGroup,
 			obfuscated,
 		)
+
+		// remove all DIP servers from the list if the search wasn't made for a server name and there is more than 1 server found
+		if err == nil && serverTag.Action != core.ServerByName && len(ret) > 1 {
+			ret = slices.DeleteFunc(ret, func(s core.Server) bool { return isDedicatedIP(s) })
+		}
 	}
 
 	if err != nil {
@@ -246,7 +251,7 @@ func filterServers(
 ) ([]core.Server, error) {
 	ret := internal.Filter(servers, canConnect(tech, protocol, serverTag, group, obfuscated))
 	if len(ret) == 0 {
-		log.Println(internal.DebugPrefix, "no servers found for:", tech, protocol, serverTag, group, obfuscated)
+		log.Println(internal.ErrorPrefix, "no servers found locally for:", tech, protocol, serverTag, group, obfuscated)
 		return nil, internal.ErrServerIsUnavailable
 	}
 	return ret, nil

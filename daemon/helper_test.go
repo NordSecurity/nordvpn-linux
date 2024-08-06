@@ -276,6 +276,17 @@ func serversList() core.Servers {
 		},
 	}
 
+	dipGroups := core.Groups{
+		core.Group{
+			ID:    config.DedicatedIP,
+			Title: "Dedicated IP",
+		},
+		core.Group{
+			ID:    config.StandardVPNServers,
+			Title: "Standard VPN Servers",
+		},
+	}
+
 	virtualServer := []core.Specification{
 		{
 			Identifier: core.VirtualLocation,
@@ -322,8 +333,7 @@ func serversList() core.Servers {
 					},
 				},
 			},
-			Groups:         groups,
-			Specifications: virtualServer,
+			Groups: groups,
 		},
 		core.Server{
 			ID:        3,
@@ -345,8 +355,7 @@ func serversList() core.Servers {
 					},
 				},
 			},
-			Specifications: virtualServer,
-			Groups:         groups,
+			Groups: groups,
 		},
 		core.Server{
 			ID:           4,
@@ -384,18 +393,86 @@ func serversList() core.Servers {
 			Groups: groups,
 		},
 		core.Server{
-			ID:           6,
-			Name:         "Canada #944",
-			Hostname:     "ca944.nordvpn.com",
+			ID:           7,
+			Hostname:     "lt7.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Lithuania",
+						Code: "LT",
+						City: core.City{Name: "Vilnius"},
+					},
+				},
+			},
+			Groups: dipGroups,
+		},
+		core.Server{
+			ID:           8,
+			Hostname:     "lt8.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Lithuania",
+						Code: "LT",
+						City: core.City{Name: "Kaunas"},
+					},
+				},
+			},
+			Groups: dipGroups,
+		},
+		core.Server{
+			ID:           9,
+			Hostname:     "lt9.nordvpn.com",
 			Status:       core.Offline,
+			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Lithuania",
+						Code: "LT",
+						City: core.City{Name: "Kaunas"},
+					},
+				},
+			},
+			Groups: dipGroups,
+		},
+		core.Server{
+			ID:           10,
+			Hostname:     "dz1.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{Name: "Algeria",
+						Code: "DZ",
+						City: core.City{Name: "Algiers"},
+					},
+				},
+			},
+			Specifications: virtualServer,
+			Groups:         groups,
+		},
+		core.Server{
+			ID:           11,
+			Hostname:     "dz2.nordvpn.com",
+			Status:       core.Online,
 			Technologies: obfuscatedTechnologies,
 			CreatedAt:    "2006-01-02 15:04:05",
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Canada",
-						Code: "CA",
-						City: core.City{Name: "Toronto"},
+					Country: core.Country{Name: "Algeria",
+						Code: "DZ",
+						City: core.City{Name: "Algiers"},
 					},
 				},
 			},
@@ -448,6 +525,13 @@ func countriesList() core.Countries {
 			Code: "DE",
 			Cities: []core.City{
 				{Name: "Berlin"},
+			},
+		},
+		{
+			Name: "Algeria",
+			Code: "DZ",
+			Cities: []core.City{
+				{Name: "Algiers"},
 			},
 		},
 	}

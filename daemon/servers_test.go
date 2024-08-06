@@ -714,13 +714,27 @@ func TestPickServer(t *testing.T) {
 			expectedServerName: "Germany #3",
 		},
 		{
-			name:               "find server when virtual locations are disabled",
+			name:               "find server using country + city name",
 			api:                mockFailingServersAPI{},
 			servers:            serversList(),
 			tech:               config.Technology_NORDLYNX,
-			onlyPhysicServers:  true,
-			tag:                "",
-			expectedServerName: "France #1",
+			tag:                "germany berlin",
+			expectedServerName: "Germany #3",
+		},
+		{
+			name:               "find server using country code + city name",
+			api:                mockFailingServersAPI{},
+			servers:            serversList(),
+			tech:               config.Technology_NORDLYNX,
+			tag:                "de berlin",
+			expectedServerName: "Germany #3",
+		},
+		{
+			name:              "find server when virtual locations are disabled",
+			api:               mockFailingServersAPI{},
+			servers:           serversList(),
+			tech:              config.Technology_NORDLYNX,
+			onlyPhysicServers: true,
 		},
 	}
 
@@ -731,7 +745,9 @@ func TestPickServer(t *testing.T) {
 
 			assert.Equal(t, test.expectedError, err)
 			assert.Equal(t, test.expectedRemoteServer, remote)
-			assert.Equal(t, test.expectedServerName, server.Name)
+			if len(test.expectedServerName) > 0 {
+				assert.Equal(t, test.expectedServerName, server.Name)
+			}
 		})
 	}
 }
