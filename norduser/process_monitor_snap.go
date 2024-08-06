@@ -48,7 +48,7 @@ func WaitForLogout(username string, logoutChan chan<- interface{}) error {
 	}
 
 	if !userLoggedIn {
-		return fmt.Errorf("user is not logged in: %w", err)
+		return fmt.Errorf("user is not logged in")
 	}
 
 	for {
