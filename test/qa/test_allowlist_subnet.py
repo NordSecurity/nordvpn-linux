@@ -58,8 +58,6 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disco
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_connect_allowlist_subnet(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -81,8 +79,6 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_subnet_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -120,8 +116,6 @@ def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -156,8 +150,6 @@ def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -192,8 +184,6 @@ def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscate
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, obfuscated, subnet):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
