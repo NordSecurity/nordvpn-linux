@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-source "${WORKDIR}/ci/archs.sh"
 source "${WORKDIR}/lib-versions.env"
 
 declare -A targets=(
@@ -76,6 +75,6 @@ clone_if_absent "https://github.com/NordSecurity/libtelio.git" "${LIBTELIO_VERSI
 BYPASS_LLT_SECRETS=1 build_rust "${WORKDIR}/build/foss/libtelio"
 copy_so_files "${WORKDIR}/build/foss/libtelio" "libtelio.so"
 
-clone_if_absent "https://github.com/NordSecurity/libdrop.git" "${LIBDROP_VERSION}" "${WORKDIR}/build/foss"
+clone_if_absent "https://github.com/devzbysiu/libdrop.git" "${LIBDROP_VERSION}" "${WORKDIR}/build/foss"
 build_rust "${WORKDIR}/build/foss/libdrop"
 copy_so_files "${WORKDIR}/build/foss/libdrop" "libnorddrop.so"
