@@ -171,15 +171,17 @@ def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
 
+    result += (f"-A FORWARD -o {interface} -m comment --comment nordvpn -j DROP", )
+
     current_subnet_rules_forward_chain = []
 
     fw_lines = os.popen("sudo iptables -S").read()
 
     for line in fw_lines.splitlines():
-        if "FORWARD" in line and "-d" in line:
+        if "FORWARD" in line and ("-d" in line or "DROP" in line):
             current_subnet_rules_forward_chain.append(line)
 
-    if current_subnet_rules_forward_chain:
+    if len(current_subnet_rules_forward_chain) > len(result):
         return sort_list_by_other_list(result, current_subnet_rules_forward_chain)
     else:
         return result
@@ -191,6 +193,15 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += (f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
 
+    result += ("-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
+    result += ("-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
+
     current_subnet_rules_input_chain = []
 
     fw_lines = os.popen("sudo iptables -S").read()
@@ -199,7 +210,7 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
         if "OUTPUT" in line and "-d" in line:
             current_subnet_rules_input_chain.append(line)
 
-    if current_subnet_rules_input_chain:
+    if len(current_subnet_rules_input_chain) > len(result):
         return sort_list_by_other_list(result, current_subnet_rules_input_chain)
     else:
         return result
