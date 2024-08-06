@@ -38,20 +38,19 @@ type DataDNS struct {
 	Ips []string
 }
 
-type TypeConnect int
+type TypeEventStatus int
 
 const (
-	ConnectAttempt TypeConnect = iota
-	ConnectSuccess
-	ConnectFailure
+	StatusAttempt TypeEventStatus = iota
+	StatusSuccess
+	StatusFailure
 )
 
-type TypeDisconnect int
+type TypeEventTrigger int
 
 const (
-	DisconnectAttempt TypeDisconnect = iota
-	DisconnectSuccess
-	DisconnectFailure
+	TriggerApp TypeEventTrigger = iota
+	TriggerUser
 )
 
 type DataConnect struct {
@@ -64,7 +63,7 @@ type DataConnect struct {
 	ResponseTime               int
 	DurationMs                 int
 	ServerFromAPI              bool
-	Type                       TypeConnect
+	EventStatus                TypeEventStatus
 	TargetServerSelection      string
 	Technology                 config.Technology
 	TargetServerCity           string
@@ -80,10 +79,16 @@ type DataConnect struct {
 type DataDisconnect struct {
 	Protocol              config.Protocol
 	ServerFromAPI         bool
-	Type                  TypeDisconnect
+	EventStatus           TypeEventStatus
 	Technology            config.Technology
 	TargetServerSelection string
 	ThreatProtectionLite  bool
+}
+
+type DataAuthorization struct {
+	DurationMs   int
+	EventTrigger TypeEventTrigger
+	EventStatus  TypeEventStatus
 }
 
 type DataRequestAPI struct {

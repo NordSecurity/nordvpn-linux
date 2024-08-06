@@ -61,7 +61,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		ResponseServersCount:       1,
 		ResponseTime:               0,
 		DurationMs:                 -1,
-		Type:                       events.ConnectAttempt,
+		EventStatus:                events.StatusAttempt,
 		ServerFromAPI:              true,
 		TargetServerCity:           "",
 		TargetServerCountry:        "",
@@ -157,8 +157,8 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	defer func() {
 		// Send connect failure event if this function will return an error
 		// and no connect success or connect failure event was sent.
-		if retErr != nil && event.Type == events.ConnectAttempt {
-			event.Type = events.ConnectFailure
+		if retErr != nil && event.EventStatus == events.StatusAttempt {
+			event.EventStatus = events.StatusFailure
 			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 			r.events.Service.Connect.Publish(event)
 		}
@@ -192,7 +192,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 					log.Println(internal.ErrorPrefix, "failed to disable ipv6:", err)
 				}
 			}
-			event.Type = events.ConnectSuccess
+			event.EventStatus = events.StatusSuccess
 			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 			r.events.Service.Connect.Publish(event)
 
@@ -211,7 +211,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 			log.Println(internal.ErrorPrefix, ev.Message)
 			r.publisher.Publish(fmt.Sprintf("failed to connect to %s", server.Hostname))
 			r.publisher.Publish(ev.Message)
-			event.Type = events.ConnectFailure
+			event.EventStatus = events.StatusFailure
 			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 			r.events.Service.Connect.Publish(event)
 		case internal.CodeDisconnected:

@@ -28,7 +28,7 @@ func (*dummyAnalytics) NotifyIpv6(bool) error                          { return 
 func (*dummyAnalytics) NotifyDefaults(any) error                       { return nil }
 func (*dummyAnalytics) NotifyConnect(events.DataConnect) error         { return nil }
 func (*dummyAnalytics) NotifyDisconnect(events.DataDisconnect) error   { return nil }
-func (*dummyAnalytics) NotifyLogin(any) error                          { return nil }
+func (*dummyAnalytics) NotifyLogin(events.DataAuthorization) error     { return nil }
 func (*dummyAnalytics) NotifyAccountCheck(core.ServicesResponse) error { return nil }
 func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error   { return nil }
 func (*dummyAnalytics) NotifyUiItemsClick(events.UiItemsAction) error  { return nil }

@@ -31,7 +31,7 @@ func statusStream(stateChan <-chan interface{}, stopChan chan<- struct{}, srv pb
 			switch e := ev.(type) {
 			case events.DataConnect:
 				state := pb.ConnectionState_CONNECTING
-				if e.Type == events.ConnectSuccess {
+				if e.EventStatus == events.StatusSuccess {
 					state = pb.ConnectionState_CONNECTED
 				}
 

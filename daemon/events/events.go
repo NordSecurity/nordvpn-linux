@@ -31,7 +31,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[any]{},
 		&subs.Subject[events.DataConnect]{},
 		&subs.Subject[events.DataDisconnect]{},
-		&subs.Subject[any]{},
+		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.UiItemsAction]{},
 		&subs.Subject[int]{},
@@ -59,7 +59,7 @@ func NewEvents(
 	defaults events.PublishSubcriber[any],
 	connect events.PublishSubcriber[events.DataConnect],
 	disconnect events.PublishSubcriber[events.DataDisconnect],
-	login events.PublishSubcriber[any],
+	login events.PublishSubcriber[events.DataAuthorization],
 	accountCheck events.PublishSubcriber[core.ServicesResponse],
 	uiItemsClick events.PublishSubcriber[events.UiItemsAction],
 	heartBeat events.PublishSubcriber[int],
@@ -168,7 +168,8 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 type ServicePublisher interface {
 	NotifyConnect(events.DataConnect) error
 	NotifyDisconnect(events.DataDisconnect) error
-	NotifyLogin(any) error
+	NotifyLogin(events.DataAuthorization) error
+	NotifyLogout(events.DataAuthorization) error
 	NotifyAccountCheck(core.ServicesResponse) error
 	NotifyUiItemsClick(events.UiItemsAction) error
 	NotifyHeartBeat(int) error
@@ -178,7 +179,8 @@ type ServicePublisher interface {
 type ServiceEvents struct {
 	Connect        events.PublishSubcriber[events.DataConnect]
 	Disconnect     events.PublishSubcriber[events.DataDisconnect]
-	Login          events.PublishSubcriber[any]
+	Login          events.PublishSubcriber[events.DataAuthorization]
+	Logout         events.PublishSubcriber[events.DataAuthorization]
 	AccountCheck   events.PublishSubcriber[core.ServicesResponse]
 	UiItemsClick   events.PublishSubcriber[events.UiItemsAction]
 	HeartBeat      events.PublishSubcriber[int]
@@ -189,6 +191,7 @@ func (s *ServiceEvents) Subscribe(to ServicePublisher) {
 	s.Connect.Subscribe(to.NotifyConnect)
 	s.Disconnect.Subscribe(to.NotifyDisconnect)
 	s.Login.Subscribe(to.NotifyLogin)
+	s.Logout.Subscribe(to.NotifyLogout)
 	s.AccountCheck.Subscribe(to.NotifyAccountCheck)
 	s.UiItemsClick.Subscribe(to.NotifyUiItemsClick)
 	s.HeartBeat.Subscribe(to.NotifyHeartBeat)

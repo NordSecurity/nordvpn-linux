@@ -18,6 +18,7 @@ import (
 	"time"
 
 	teliogo "github.com/NordSecurity/libtelio/ffi/bindings/linux/go"
+
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -683,13 +684,13 @@ type connParameters struct {
 	server vpn.ServerData
 }
 
-func publishConnectEvent(publisher *vpn.Events, connectType events.TypeConnect, server vpn.ServerData, state state) {
+func publishConnectEvent(publisher *vpn.Events, connectType events.TypeEventStatus, server vpn.ServerData, state state) {
 	name := server.Name
 	if !state.IsVPN {
 		name = state.Nickname
 	}
 	publisher.Connected.Publish(events.DataConnect{
-		Type:                connectType,
+		EventStatus:         connectType,
 		TargetServerIP:      server.IP.String(),
 		TargetServerCountry: server.Country,
 		TargetServerCity:    server.City,
@@ -732,7 +733,7 @@ func monitorConnection(
 			case "connecting":
 				if currentNotifyState != connecting {
 					currentNotifyState = connecting
-					publishConnectEvent(eventsPublisher, events.ConnectAttempt, connParameters.server, state)
+					publishConnectEvent(eventsPublisher, events.StatusAttempt, connParameters.server, state)
 				}
 			case "connected":
 				if state.PublicKey == connParameters.pubKey {
@@ -743,7 +744,7 @@ func monitorConnection(
 
 					if currentNotifyState != connected {
 						currentNotifyState = connected
-						publishConnectEvent(eventsPublisher, events.ConnectSuccess, connParameters.server, state)
+						publishConnectEvent(eventsPublisher, events.StatusSuccess, connParameters.server, state)
 					}
 				}
 			case "disconnected":
