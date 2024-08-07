@@ -12,6 +12,8 @@ build/*/target/
 
 # Openvpn
 build/openvpn/*
+build/foss/libtelio/
+build/foss/libdrop/
 !build/openvpn/build.sh
 !build/openvpn/check_dependencies.sh
 !build/openvpn/env.sh
