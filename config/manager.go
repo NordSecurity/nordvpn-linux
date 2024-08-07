@@ -75,6 +75,10 @@ func (LinuxMachineIDGetter) GetMachineID() uuid.UUID {
 	return internal.MachineID()
 }
 
+type ConfigPublisher interface {
+	Publish(*Config)
+}
+
 // FilesystemConfigManager implements config persistence and retrieval from disk.
 //
 // Thread-safe.
@@ -85,19 +89,22 @@ type FilesystemConfigManager struct {
 	machineIDGetter MachineIDGetter
 	fsHandle        FilesystemHandle
 	NewInstallation bool
+	configPublisher ConfigPublisher
 	mu              sync.Mutex
 }
 
 // NewFilesystemConfigManager is constructed from a given location and salt.
 func NewFilesystemConfigManager(location, vault, salt string,
 	machineIDGetter MachineIDGetter,
-	fsHandle FilesystemHandle) *FilesystemConfigManager {
+	fsHandle FilesystemHandle,
+	conifgPublisher ConfigPublisher) *FilesystemConfigManager {
 	return &FilesystemConfigManager{
 		location:        location,
 		vault:           vault,
 		salt:            salt,
 		machineIDGetter: machineIDGetter,
 		fsHandle:        fsHandle,
+		configPublisher: conifgPublisher,
 	}
 }
 
@@ -114,7 +121,11 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	}
 
 	c = fn(c)
-	return f.save(c)
+	err := f.save(c)
+	if err == nil && f.configPublisher != nil {
+		f.configPublisher.Publish(&c)
+	}
+	return err
 }
 
 func (f *FilesystemConfigManager) save(c Config) error {

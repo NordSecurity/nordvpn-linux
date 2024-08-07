@@ -137,7 +137,8 @@ func TestSetDNS_Success(t *testing.T) {
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
-				&filesystem)
+				&filesystem,
+				nil)
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{
@@ -246,7 +247,8 @@ func TestSetDNS_Errors(t *testing.T) {
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
-				&filesystem)
+				&filesystem,
+				nil)
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{

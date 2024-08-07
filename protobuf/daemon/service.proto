@@ -19,6 +19,7 @@ import "settings.proto";
 import "status.proto";
 import "token.proto";
 import "purchase.proto";
+import "state.proto";
 
 service Daemon {
   rpc AccountInfo(Empty) returns (AccountResponse);
@@ -60,4 +61,5 @@ service Daemon {
   rpc SetIpv6(SetGenericRequest) returns (Payload);
   rpc ClaimOnlinePurchase(Empty) returns(ClaimOnlinePurchaseResponse);
   rpc SetVirtualLocation(SetGenericRequest) returns (Payload);
+  rpc SubscribeToStateChanges(Empty) returns (stream AppState);
 }

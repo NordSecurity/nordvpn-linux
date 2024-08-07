@@ -14,6 +14,7 @@ import (
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nc"
@@ -54,6 +55,7 @@ type RPC struct {
 	norduser         service.Service
 	meshRegistry     mesh.Registry
 	systemShutdown   atomic.Bool
+	statePublisher   *state.StatePublisher
 	pb.UnimplementedDaemonServer
 }
 
@@ -80,6 +82,7 @@ func NewRPC(
 	analytics events.Analytics,
 	norduser service.Service,
 	meshRegistry mesh.Registry,
+	statePublisher *state.StatePublisher,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
@@ -107,5 +110,6 @@ func NewRPC(
 		analytics:        analytics,
 		norduser:         norduser,
 		meshRegistry:     meshRegistry,
+		statePublisher:   statePublisher,
 	}
 }

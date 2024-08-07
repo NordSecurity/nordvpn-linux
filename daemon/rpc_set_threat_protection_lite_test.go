@@ -84,7 +84,8 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
-				&filesystem)
+				&filesystem,
+				nil)
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{
@@ -185,7 +186,8 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
-				&filesystem)
+				&filesystem,
+				nil)
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{

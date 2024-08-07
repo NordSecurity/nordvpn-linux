@@ -33,37 +33,37 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	fmt.Printf("Technology: %s\n", settings.GetTechnology())
-	if settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Protocol: %s\n", settings.GetProtocol())
+	fmt.Printf("Technology: %s\n", settings.Settings.GetTechnology())
+	if settings.Settings.Technology == config.Technology_OPENVPN {
+		fmt.Printf("Protocol: %s\n", settings.Settings.GetProtocol())
 	}
-	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.GetFirewall()))
-	fmt.Printf("Firewall Mark: 0x%x\n", settings.GetFwmark())
-	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
-	fmt.Printf("Analytics: %+v\n", nstrings.GetBoolLabel(settings.GetAnalytics()))
-	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
-	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
-	if settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.GetObfuscate()))
+	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetFirewall()))
+	fmt.Printf("Firewall Mark: 0x%x\n", settings.Settings.GetFwmark())
+	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetRouting()))
+	fmt.Printf("Analytics: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetAnalytics()))
+	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetKillSwitch()))
+	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.Settings.ThreatProtectionLite))
+	if settings.Settings.Technology == config.Technology_OPENVPN {
+		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetObfuscate()))
 	}
-	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.Notify))
-	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.Tray))
-	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.AutoConnect))
-	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Ipv6))
-	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))
-	if len(settings.Dns) == 0 {
+	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Notify))
+	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Tray))
+	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.Settings.AutoConnect))
+	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Settings.Ipv6))
+	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Settings.Meshnet))
+	if len(settings.Settings.Dns) == 0 {
 		fmt.Printf("DNS: %+v\n", nstrings.GetBoolLabel(false))
 	} else {
-		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
+		fmt.Printf("DNS: %+v\n", strings.Join(settings.Settings.Dns, ", "))
 	}
-	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
-	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.VirtualLocation))
+	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.Settings.LanDiscovery))
+	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.Settings.VirtualLocation))
 
-	displayAllowlist(settings.Allowlist)
+	displayAllowlist(settings.Settings.Allowlist)
 	return nil
 }
 
-func (c *cmd) getSettings() (*pb.Settings, error) {
+func (c *cmd) getSettings() (*pb.UserSettings, error) {
 	resp, err := c.client.Settings(context.Background(), &pb.SettingsRequest{
 		Uid: int64(os.Getuid()),
 	})

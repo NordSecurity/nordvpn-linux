@@ -67,7 +67,8 @@ func TestSetProtocol_Success(t *testing.T) {
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
-				&filesystem)
+				&filesystem,
+				nil)
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData.Protocol = test.currentProtocol
@@ -159,7 +160,8 @@ func TestSetProtocol_Error(t *testing.T) {
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
-				&filesystem)
+				&filesystem,
+				nil)
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData.Protocol = test.currentProtocol

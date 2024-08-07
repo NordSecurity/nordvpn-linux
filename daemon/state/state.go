@@ -4,6 +4,8 @@ import (
 	"log"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -25,8 +27,8 @@ type StatePublisher struct {
 	subscribers []subscriber
 }
 
-func NewState() StatePublisher {
-	return StatePublisher{}
+func NewState() *StatePublisher {
+	return &StatePublisher{}
 }
 
 func (s *StatePublisher) notify(e interface{}) {
@@ -58,7 +60,37 @@ func (s *StatePublisher) NotifyDisconnect(e events.DataDisconnect) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.DebugPrefix + " notifying about disconnect event")
+	log.Println(internal.DebugPrefix, "notifying about disconnect event")
+	s.notify(e)
+
+	return nil
+}
+
+func (s *StatePublisher) NotifyLogin(e events.DataAuthorization) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Println(internal.DebugPrefix, "notifying about login event")
+	s.notify(pb.LoginEventType_LOGIN)
+
+	return nil
+}
+
+func (s *StatePublisher) NotifyLogout(e events.DataAuthorization) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Println(internal.DebugPrefix, "notifying about logout event")
+	s.notify(pb.LoginEventType_LOGOUT)
+
+	return nil
+}
+
+func (s *StatePublisher) NotifyConfigChanged(e *config.Config) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Println(internal.DebugPrefix, "notifying about config change")
 	s.notify(e)
 
 	return nil
