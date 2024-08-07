@@ -131,6 +131,10 @@ def _is_dns_not_resolvable(retry: int = 5) -> bool:
 
 def is_not_available(retry=5) -> bool:
     """ returns True when network access is not available. """
+
+    if daemon.is_init_systemd():
+        sh.sudo("resolvectl", "flush-caches")
+
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
     return not _is_internet_reachable(retry) and _is_dns_not_resolvable(retry)
