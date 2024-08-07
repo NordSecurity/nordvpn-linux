@@ -21,6 +21,7 @@ import (
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	snappb "github.com/NordSecurity/nordvpn-linux/snapconf/pb"
+	statepb "github.com/NordSecurity/nordvpn-linux/state/pb"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -96,6 +97,9 @@ func NewApp(version, environment, hash, salt string,
 		cmd.client = pb.NewDaemonClient(conn)
 		cmd.meshClient = meshpb.NewMeshnetClient(conn)
 		cmd.fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
+		if internal.IsDevEnv(environment) {
+			cmd.stateClient = statepb.NewStateClient(conn)
+		}
 	}
 
 	cli.AppHelpTemplate = AppHelpTemplate
@@ -547,6 +551,14 @@ func NewApp(version, environment, hash, salt string,
 		},
 	}
 
+	if internal.IsDevEnv(environment) {
+		app.Commands = append(app.Commands, &cli.Command{
+			Name:   "state-backend-test",
+			Action: cmd.SubscribeToStatus,
+			Hidden: true,
+		})
+	}
+
 	app.Commands = append(app.Commands, meshnetCommand(cmd))
 
 	if pingErr == nil {
@@ -928,6 +940,7 @@ type cmd struct {
 	client            pb.DaemonClient
 	meshClient        meshpb.MeshnetClient
 	fileshareClient   filesharepb.FileshareClient
+	stateClient       statepb.StateClient
 	environment       internal.Environment
 	loaderInterceptor *LoaderInterceptor
 }

@@ -92,7 +92,7 @@ func (c mockDaemonClient) Groups(ctx context.Context, in *pb.Empty, opts ...grpc
 func TestConnectAutoComplete(t *testing.T) {
 	category.Set(t, category.Unit)
 	mockClient := mockDaemonClient{}
-	c := cmd{&mockClient, nil, nil, "", nil}
+	c := cmd{&mockClient, nil, nil, nil, "", nil}
 	tests := []struct {
 		name      string
 		countries []*pb.ServerGroup
