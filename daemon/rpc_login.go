@@ -108,7 +108,7 @@ func (r *RPC) loginCommon(customCB customCallbackType) (*pb.LoginResponse, error
 
 	go StartNC("[login]", r.ncClient)
 
-	r.events.Service.Login.Publish(events.DataAuthorization{})
+	r.events.User.Login.Publish(events.DataAuthorization{})
 	r.publisher.Publish("user logged in")
 
 	return &pb.LoginResponse{
@@ -170,7 +170,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (*pb.Empty
 	}
 
 	go StartNC("[login callback]", r.ncClient)
-	r.events.Service.Login.Publish(events.DataAuthorization{})
+	r.events.User.Login.Publish(events.DataAuthorization{})
 	return &pb.Empty{}, nil
 }
 

@@ -31,7 +31,7 @@ func initConfig() {
 }
 func getConfigManager() config.Manager {
 	salt, _ := os.LookupEnv("SALT")
-	return config.NewFilesystemConfigManager(configLocation, vaultLocation, salt, config.LinuxMachineIDGetter{}, config.StdFilesystemHandle{})
+	return config.NewFilesystemConfigManager(configLocation, vaultLocation, salt, config.LinuxMachineIDGetter{}, config.StdFilesystemHandle{}, nil)
 }
 
 func TestRemoteConfig_GetValue(t *testing.T) {

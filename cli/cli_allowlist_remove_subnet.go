@@ -38,7 +38,7 @@ func (c *cmd) AllowlistRemoveSubnet(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
-	allowlist := settings.GetAllowlist()
+	allowlist := settings.Settings.GetAllowlist()
 
 	subnetIndex := slices.Index(allowlist.Subnets, subnet.String())
 	if subnetIndex < 0 {
@@ -72,7 +72,7 @@ func (c *cmd) AllowlistRemoveSubnetAutoComplete(ctx *cli.Context) {
 	if err != nil {
 		return
 	}
-	allowlist := settings.GetData().GetAllowlist()
+	allowlist := settings.GetData().Settings.GetAllowlist()
 	for _, subnet := range allowlist.Subnets {
 		if !slices.Contains(ctx.Args().Slice(), subnet) {
 			fmt.Println(subnet)

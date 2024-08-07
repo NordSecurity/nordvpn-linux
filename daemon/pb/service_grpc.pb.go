@@ -61,6 +61,7 @@ type DaemonClient interface {
 	SetIpv6(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
 	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_SubscribeToStateChangesClient, error)
 }
 
 type daemonClient struct {
@@ -491,6 +492,38 @@ func (c *daemonClient) SetVirtualLocation(ctx context.Context, in *SetGenericReq
 	return out, nil
 }
 
+func (c *daemonClient) SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_SubscribeToStateChangesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[3], "/pb.Daemon/SubscribeToStateChanges", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &daemonSubscribeToStateChangesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Daemon_SubscribeToStateChangesClient interface {
+	Recv() (*AppState, error)
+	grpc.ClientStream
+}
+
+type daemonSubscribeToStateChangesClient struct {
+	grpc.ClientStream
+}
+
+func (x *daemonSubscribeToStateChangesClient) Recv() (*AppState, error) {
+	m := new(AppState)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
@@ -534,6 +567,7 @@ type DaemonServer interface {
 	SetIpv6(context.Context, *SetGenericRequest) (*Payload, error)
 	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
 	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
+	SubscribeToStateChanges(*Empty, Daemon_SubscribeToStateChangesServer) error
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -657,6 +691,9 @@ func (UnimplementedDaemonServer) ClaimOnlinePurchase(context.Context, *Empty) (*
 }
 func (UnimplementedDaemonServer) SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetVirtualLocation not implemented")
+}
+func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, Daemon_SubscribeToStateChangesServer) error {
+	return status.Errorf(codes.Unimplemented, "method SubscribeToStateChanges not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -1382,6 +1419,27 @@ func _Daemon_SetVirtualLocation_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_SubscribeToStateChanges_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DaemonServer).SubscribeToStateChanges(m, &daemonSubscribeToStateChangesServer{stream})
+}
+
+type Daemon_SubscribeToStateChangesServer interface {
+	Send(*AppState) error
+	grpc.ServerStream
+}
+
+type daemonSubscribeToStateChangesServer struct {
+	grpc.ServerStream
+}
+
+func (x *daemonSubscribeToStateChangesServer) Send(m *AppState) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1548,6 +1606,11 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "LoginOAuth2",
 			Handler:       _Daemon_LoginOAuth2_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SubscribeToStateChanges",
+			Handler:       _Daemon_SubscribeToStateChanges_Handler,
 			ServerStreams: true,
 		},
 	},
