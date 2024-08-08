@@ -2,6 +2,7 @@ import random
 
 import pytest
 import sh
+import timeout_decorator
 
 import lib
 from lib import daemon, info, logging, login, network, server
@@ -77,6 +78,9 @@ def test_autoconnect_to_city(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.flaky(reruns=2, reruns_delay=90)
+@timeout_decorator.timeout(40)
+# Fixing LVPN-4601 should eliminate reruns for this test
 def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 

@@ -50,7 +50,7 @@ esac
 #     fi
 # fi
 
-python3 -m pytest -v --disable-pytest-warnings --timeout 180 -x -rsx --timeout-method=thread -o log_cli=true "${args[@]}"
+python3 -m pytest -v --disable-pytest-warnings --timeout 180 -x -rsx --timeout-method=signal -o log_cli=true "${args[@]}"
 
 # if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
 #     sudo sed -i "2d" "/etc/init.d/nordvpn"
