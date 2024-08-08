@@ -309,7 +309,7 @@ func (Build) SnapDocker(ctx context.Context) error {
 	return buildPackageDocker(ctx, "snap", "")
 }
 
-func buildBinaries(buildFlags string) error {
+func buildBinaries(ctx context.Context, buildFlags string, goenvstr string, rustenvstr string, openwrt bool) error {
 	if err := installHookIfNordsec(); err != nil {
 		return err
 	}
@@ -327,7 +327,7 @@ func buildBinaries(buildFlags string) error {
 	}
 
 	if !strings.Contains(env["FEATURES"], "internal") {
-		mg.Deps(Build.Rust)
+		mg.Deps(mg.F(Build.RustCustom, rustenvstr, openwrt))
 	}
 
 	git, err := getGitInfo()
@@ -341,13 +341,42 @@ func buildBinaries(buildFlags string) error {
 	env["VERSION"] = git.versionTag
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["BUILD_FLAGS"] = buildFlags
+	if openwrt {
+		env["OS"] = "openwrt"
+	}
+
+	// Split the string by whitespace
+	goenv := strings.Split(goenvstr, " ")
+
+	// Iterate through the environment variables and set them
+	for _, v := range goenv {
+		// Split the variable by '=' to get the key-value pair
+		kv := strings.SplitN(v, "=", 2)
+		key := kv[0]
+		if len(kv) > 1 {
+			value := kv[1]
+			env[key] = value
+		} else {
+			fmt.Printf("Skipping environment variable '%s' as it has no value.\n", key)
+		}
+	}
 
 	return sh.RunWith(env, "ci/compile.sh")
 }
 
 // Binaries from cmd/* for the host architecture
-func (Build) Binaries() error {
-	return buildBinaries("")
+func (Build) Binaries(ctx context.Context, goenvstr string, rustenvstr string) error {
+	return buildBinaries(ctx, "", goenvstr, rustenvstr, false)
+}
+
+// Binaries from cmd/* for the host architecture (openwrt case)
+func (Build) Openwrt(ctx context.Context, goenvstr string, rustenvstr string) error {
+	return buildBinaries(ctx, "", goenvstr, rustenvstr, true)
+}
+
+// Binaries from cmd/* for the host architecture (openwrt case)
+func (Build) OpenwrtOpenvpn(ctx context.Context) error {
+	return buildOpenvpn(ctx, true)
 }
 
 func buildBinariesDocker(ctx context.Context, buildFlags string) error {
@@ -392,6 +421,10 @@ func (Build) BinariesDocker(ctx context.Context) error {
 
 // Openvpn binaries for the host architecture
 func (Build) Openvpn(ctx context.Context) error {
+	return buildOpenvpn(ctx, false)
+}
+
+func buildOpenvpn(ctx context.Context, openwrt bool) error {
 	mg.Deps(DownloadOpenvpn)
 
 	cwd, err := os.Getwd()
@@ -405,6 +438,9 @@ func (Build) Openvpn(ctx context.Context) error {
 
 	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
+	if openwrt {
+		env["OS"] = "openwrt"
+	}
 
 	return sh.RunWith(env, "build/openvpn/build.sh")
 }
@@ -438,6 +474,40 @@ func (Build) Rust(ctx context.Context) error {
 		"ARCHS":   build.Default.GOARCH,
 		"WORKDIR": cwd,
 	}
+	return sh.RunWith(env, "build/foss/build.sh")
+}
+
+// Rust dependencies for the host architecture
+func (Build) RustCustom(ctx context.Context, rustenvstr string, openwrt bool) error {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	env := map[string]string{
+		"ARCHS":   build.Default.GOARCH,
+		"WORKDIR": cwd,
+	}
+
+	// Split the string by whitespace
+	rustenv := strings.Split(rustenvstr, " ")
+
+	// Iterate through the environment variables and set them
+	for _, v := range rustenv {
+		// Split the variable by '=' to get the key-value pair
+		kv := strings.SplitN(v, "=", 2)
+		key := kv[0]
+		if len(kv) > 1 {
+			value := kv[1]
+			env[key] = value
+		} else {
+			fmt.Printf("Skipping environment variable '%s' as it has no value.\n", key)
+		}
+	}
+
+	if openwrt {
+		return sh.RunWith(env, "build/foss/build_openwrt.sh")
+	}
+
 	return sh.RunWith(env, "build/foss/build.sh")
 }
 

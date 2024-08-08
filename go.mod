@@ -7,7 +7,7 @@ toolchain go1.22.2
 require (
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
 	github.com/NordSecurity/libdrop v1.1.2-0.20240214140349-bc7d2cffb948
-	github.com/NordSecurity/libtelio v0.0.0-20240412122320-157263e48f69
+	github.com/NordSecurity/libtelio v0.0.0-20240408140328-b686c9a8c058
 	github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.6.0
@@ -22,9 +22,8 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/google/uuid v1.6.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
-	github.com/jbowtie/gokogiri v0.0.0-20190301021639-37f655d3078f
-	github.com/jbowtie/ratago v0.0.0-20200401224626-3140c0a9b186
 	github.com/magefile/mage v1.14.0
+	github.com/NordSecurity/ratago v0.0.0-20240614120605-6d41449322ed
 	github.com/milosgajdos/tenus v0.0.3
 	github.com/quic-go/quic-go v0.42.0
 	github.com/stretchr/testify v1.9.0
@@ -64,6 +63,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
+	github.com/NordSecurity/gokogiri v0.0.0-20240614112150-0f4833678724// indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
