@@ -139,9 +139,6 @@ func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg
 	if telioConfig.Lana != nil {
 		telioConfig.Lana.EventPath = eventPath
 		telioConfig.Lana.Prod = prod
-		if telioConfig.Nurse != nil { // nurse depends on lana
-			telioConfig.Nurse.Fingerprint = deviceID
-		}
 	} else {
 		telioConfig.Nurse = nil
 	}
@@ -170,7 +167,6 @@ func New(prod bool, eventPath string, fwmark uint32,
 			EventPath: eventPath,
 		}
 		defaultTelioConfig.Nurse = &teliogo.FeatureNurse{
-			Fingerprint:       deviceID,
 			HeartbeatInterval: defaultHeartbeatInterval,
 		}
 
