@@ -1,6 +1,5 @@
 import pytest
 import sh
-import timeout_decorator
 
 from lib import meshnet, poll, ssh
 
@@ -53,8 +52,6 @@ def base_test_peer_list(filter_list: list[str] = None) -> None:
 @pytest.mark.parametrize("internal", [True, False], ids=lambda value: "internal" if value else "")
 @pytest.mark.parametrize("offline", [True, False], ids=lambda value: "offline" if value else "")
 @pytest.mark.parametrize("online", [True, False], ids=lambda value: "online" if value else "")
-@pytest.mark.flaky(reruns=3, reruns_delay=20)
-@timeout_decorator.timeout(60)
 def test_meshnet_peer_list_state_filters(external, internal, offline, online):
     filter_list = ["external"] * external \
                 + ["internal"] * internal \
@@ -69,8 +66,6 @@ def test_meshnet_peer_list_state_filters(external, internal, offline, online):
 @pytest.mark.parametrize("allows_sending_files", [True, False], ids=lambda value: "allows_sending_files" if value else "")
 @pytest.mark.parametrize("incoming_traffic_allowed", [True, False], ids=lambda value: "incoming_traffic_allowed" if value else "")
 @pytest.mark.parametrize("routing_allowed", [True, False], ids=lambda value: "routing_allowed" if value else "")
-@pytest.mark.flaky(reruns=3, reruns_delay=20)
-@timeout_decorator.timeout(60)
 def test_meshnet_peer_list_permission_filters(allows_incoming_traffic, allows_routing, allows_sending_files, incoming_traffic_allowed, routing_allowed):
     filter_list = ["allows-incoming-traffic"] * allows_incoming_traffic \
                 + ["allows-routing"] * allows_routing \

@@ -1,6 +1,5 @@
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import daemon, dns, info, logging, login, settings
@@ -32,8 +31,6 @@ def teardown_function(function):  # noqa: ARG001
 
 @pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_set_tpl_on_off_connected(tpl_alias, tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -61,8 +58,6 @@ def test_set_tpl_on_off_connected(tpl_alias, tech, proto, obfuscated):
 
 @pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_set_tpl_on_and_connect(tpl_alias, tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -82,8 +77,6 @@ def test_set_tpl_on_and_connect(tpl_alias, tech, proto, obfuscated):
 
 @pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_set_tpl_off_and_connect(tpl_alias, tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -105,8 +98,6 @@ def test_set_tpl_off_and_connect(tpl_alias, tech, proto, obfuscated):
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
 
@@ -125,8 +116,6 @@ def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver)
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
 
@@ -148,8 +137,6 @@ def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
 
@@ -170,8 +157,6 @@ def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_custom_dns_off_connect(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
 
@@ -194,8 +179,6 @@ def test_custom_dns_off_connect(tech, proto, obfuscated, nameserver):
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
 
@@ -213,8 +196,6 @@ def test_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_set_custom_dns_off_connected(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
 
@@ -236,8 +217,6 @@ def test_set_custom_dns_off_connected(tech, proto, obfuscated, nameserver):
 
 @pytest.mark.parametrize(("nameserver", "expected_error"), dns.DNS_CASES_ERROR)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_custom_dns_errors_disconnected(tech, proto, obfuscated, nameserver, expected_error):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -251,8 +230,6 @@ def test_custom_dns_errors_disconnected(tech, proto, obfuscated, nameserver, exp
 
 @pytest.mark.parametrize(("nameserver", "expected_error"), dns.DNS_CASES_ERROR)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_custom_dns_errors_connected(tech, proto, obfuscated, nameserver, expected_error):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -271,8 +248,6 @@ def test_custom_dns_errors_connected(tech, proto, obfuscated, nameserver, expect
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_custom_dns_already_set_disconnected(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -292,8 +267,6 @@ def test_custom_dns_already_set_disconnected(tech, proto, obfuscated, nameserver
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_custom_dns_already_set_connected(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
 
@@ -317,8 +290,6 @@ def test_custom_dns_already_set_connected(tech, proto, obfuscated, nameserver):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_custom_dns_already_disabled_disconnected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -331,8 +302,6 @@ def test_custom_dns_already_disabled_disconnected(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_custom_dns_already_disabled_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 

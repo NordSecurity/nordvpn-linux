@@ -1,6 +1,5 @@
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import daemon, meshnet, settings, ssh
@@ -24,8 +23,6 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 # This doesn't directly test meshnet, but it uses it
 def test_allowlist_incoming_connection():
     my_ip = ssh_client.exec_command("echo $SSH_CLIENT").split()[0]

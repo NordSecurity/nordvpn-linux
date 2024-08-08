@@ -7,7 +7,6 @@ from datetime import datetime
 import pytest
 import requests
 import sh
-import timeout_decorator
 
 import lib
 from lib import daemon, logging, login, meshnet, settings, ssh
@@ -201,7 +200,6 @@ def test_set_meshnet_off_repeated(meshnet_allias):
 
 @pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET, \
                          ids=[f"{line[0]}-{line[1]}" for line in meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET])
-@timeout_decorator.timeout(25)
 def test_permission_messages_success(permission, permission_state, expected_message):
     peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
@@ -217,7 +215,6 @@ def test_permission_messages_success(permission, permission_state, expected_mess
 
 @pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_ERROR_MESSAGE_PARAMETER_SET, \
                          ids=[f"{line[0]}-{line[1]}" for line in meshnet.PERMISSION_ERROR_MESSAGE_PARAMETER_SET])
-@timeout_decorator.timeout(25)
 def test_permission_messages_error(permission, permission_state, expected_message):
     peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
@@ -267,8 +264,6 @@ def test_derp_server_selection_logic():
 
 
 @pytest.mark.skip("LVPN-3428, need a discussion here")
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(80)
 def test_direct_connection_rtt_and_loss():
     def get_loss(ping_output: str) -> float:
         """ pass `ping_output`, and get loss returned. """

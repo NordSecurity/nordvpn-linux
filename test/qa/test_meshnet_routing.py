@@ -3,7 +3,6 @@ import time
 
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import daemon, logging, meshnet, network, ssh
@@ -29,7 +28,6 @@ def teardown_function(function):  # noqa: ARG001
 
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
 def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     my_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
     peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
@@ -116,8 +114,6 @@ def test_route_traffic_to_each_other():
     ssh_client_mesh.disconnect()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(70)
 def test_routing_deny_for_peer_is_peer_no_netting():
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
@@ -222,8 +218,6 @@ def test_route_to_peer_that_is_disconnected():
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES[:-1])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_route_traffic_to_peer_wrong_tech(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 

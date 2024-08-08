@@ -2,7 +2,6 @@ import random
 
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import daemon, dns, info, logging, login, settings
@@ -34,8 +33,6 @@ def teardown_function(function):  # noqa: ARG001
 
 @pytest.mark.parametrize("threat_protection_lite", lib.THREAT_PROTECTION_LITE)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     lib.set_threat_protection_lite(threat_protection_lite)
@@ -59,8 +56,6 @@ def test_dns_connect(tech, proto, obfuscated, threat_protection_lite):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_set_dns_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 

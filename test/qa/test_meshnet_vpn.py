@@ -2,7 +2,6 @@ import time
 
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import daemon, meshnet, network, settings, ssh
@@ -28,7 +27,6 @@ def teardown_function(function):  # noqa: ARG001
 
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
 def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
     peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, True, local, True, True)
@@ -69,7 +67,6 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
 
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
 def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
     my_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
     peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
@@ -161,8 +158,6 @@ def test_connect_set_mesh_off():
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 # This doesn't directly test meshnet, but it uses it
 def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -193,8 +188,6 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     assert settings.app_has_defaults_settings()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(60)
 def test_route_to_peer_that_is_connected_to_vpn():
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
@@ -228,8 +221,6 @@ def test_route_to_peer_that_is_connected_to_vpn():
     ssh_client_mesh.disconnect()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(60)
 def test_route_to_peer_that_disconnects_from_vpn():
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
@@ -267,8 +258,6 @@ def test_route_to_peer_that_disconnects_from_vpn():
 
     ssh_client_mesh.disconnect()
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(60)
 def test_route_traffic_to_peer_once_again_when_already_routing():
     peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
 

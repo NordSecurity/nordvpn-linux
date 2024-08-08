@@ -2,7 +2,6 @@ import random
 
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import allowlist, daemon, firewall, info, logging, login
@@ -49,8 +48,6 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
 @pytest.mark.parametrize("port", lib.PORTS + lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS + lib.PORTS_RANGE])
 @pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connected(allowlist_alias, tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -89,8 +86,6 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -127,8 +122,6 @@ def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS + lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS + lib.PORTS_RANGE])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -158,8 +151,6 @@ def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated,
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -194,8 +185,6 @@ def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfus
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS_RANGE])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscated, port):
     port_range = port.value.split(":")
 
@@ -226,8 +215,6 @@ def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS_RANGE])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -257,8 +244,6 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnec
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS_RANGE, ids=[f"{port.protocol}-{port.value}" for port in lib.PORTS_RANGE])
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected(tech, proto, obfuscated, port):
     port_range = port.value.split(":")
     random_port_from_port_range = str(random.randint(int(port_range[0]), int(port_range[1])))

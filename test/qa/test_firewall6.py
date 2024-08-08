@@ -2,7 +2,6 @@ import random
 
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import (
@@ -36,8 +35,6 @@ def teardown_function(function):  # noqa: ARG001
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_connected_firewall_disable(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -57,8 +54,6 @@ def test_connected_firewall_disable(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_connected_firewall_enable(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -78,8 +73,6 @@ def test_connected_firewall_enable(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_firewall_disable_connect(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -96,8 +89,6 @@ def test_firewall_disable_connect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_firewall_enable_connect(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -115,8 +106,6 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_firewall_ipv6_02_allowlist_port(tech, proto, obfuscated, port):
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
@@ -140,8 +129,6 @@ def test_firewall_ipv6_02_allowlist_port(tech, proto, obfuscated, port):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_firewall_ipv6_03_allowlist_ports_range(tech, proto, obfuscated, ports):
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
@@ -165,8 +152,6 @@ def test_firewall_ipv6_03_allowlist_ports_range(tech, proto, obfuscated, ports):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_firewall_ipv6_04_allowlist_port_and_protocol(tech, proto, obfuscated, port):
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
@@ -190,8 +175,6 @@ def test_firewall_ipv6_04_allowlist_port_and_protocol(tech, proto, obfuscated, p
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_firewall_ipv6_05_allowlist_subnet(tech, proto, obfuscated, subnet):
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
@@ -214,7 +197,6 @@ def test_firewall_ipv6_05_allowlist_subnet(tech, proto, obfuscated, subnet):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-@timeout_decorator.timeout(40)
 def test_firewall_ipv6_06_with_killswitch(tech, proto, obfuscated):
     with lib.Defer(lambda: lib.set_killswitch("off")):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -229,8 +211,6 @@ def test_firewall_ipv6_06_with_killswitch(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_firewall_ipv6_07_with_killswitch_while_connected(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         with lib.Defer(lambda: lib.set_killswitch("off")):

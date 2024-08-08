@@ -2,7 +2,6 @@ import os
 
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import (
@@ -32,8 +31,6 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_api_call_after_vpn_connect():
     # call api
     output = sh.nordvpn.account()
