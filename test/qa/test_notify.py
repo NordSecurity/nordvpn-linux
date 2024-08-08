@@ -1,6 +1,5 @@
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import daemon, info, logging, login, notify, settings
@@ -29,8 +28,6 @@ def teardown_function(function):  # noqa: ARG001
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_notifications_disabled_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -48,8 +45,6 @@ def test_notifications_disabled_connect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_notifications_enabled_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -69,8 +64,6 @@ def test_notifications_enabled_connect(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_notifications_enabled_connected_disable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -92,8 +85,6 @@ def test_notifications_enabled_connected_disable(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_notifications_disabled_connected_enable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -114,8 +105,6 @@ def test_notifications_disabled_connected_enable(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_notify_already_enabled_disconnected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -128,8 +117,6 @@ def test_notify_already_enabled_disconnected(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_notify_already_enabled_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -145,8 +132,6 @@ def test_notify_already_enabled_connected(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_notify_already_disabled_disconnected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -158,8 +143,6 @@ def test_notify_already_disabled_disconnected(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_notify_already_disabled_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 

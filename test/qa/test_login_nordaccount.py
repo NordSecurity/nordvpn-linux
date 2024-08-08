@@ -1,6 +1,5 @@
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import (
@@ -28,7 +27,6 @@ def teardown_function(function):  # noqa: ARG001
 
 @pytest.mark.skip("Does not work on Docker")
 @pytest.mark.parametrize("login_flag", selenium.LOGIN_FLAG)
-@timeout_decorator.timeout(60)
 def test_selenium_login(login_flag):
     preferences = [
         ["network.protocol-handler.expose.nordvpn", True],
@@ -70,7 +68,6 @@ def test_selenium_login(login_flag):
 
 
 @pytest.mark.parametrize("login_flag", selenium.LOGIN_FLAG)
-@timeout_decorator.timeout(60)
 def test_selenium_login_callback(login_flag):
     sel = selenium.SeleniumBrowser()
     browser = sel.browser_get()

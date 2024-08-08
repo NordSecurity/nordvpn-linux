@@ -1,6 +1,5 @@
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import (
@@ -69,8 +68,6 @@ def test_expired_account_connect():
     sh.nordvpn.logout("--persist-token")
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_login_while_connected():
     login.login_as("default")
 
@@ -109,8 +106,6 @@ def test_logged_out_connect():
     assert "You are not logged in." in str(ex.value)
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_logout_disconnects():
     output = login.login_as("default")
     print(output)

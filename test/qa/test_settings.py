@@ -1,6 +1,5 @@
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
@@ -45,7 +44,6 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
 
 
 @pytest.mark.skip(reason="LVPN-2119")
-@timeout_decorator.timeout(40)
 @pytest.mark.parametrize(("server", "obfuscated", "error_message"), autoconnect_on_parameters)
 def test_autoconnect_on_server_obfuscation_mismatch(server, obfuscated, error_message):
     lib.set_technology_and_protocol("openvpn", "tcp", obfuscated)
@@ -70,7 +68,6 @@ set_obfuscate_parameters = [
 ]
 
 
-@timeout_decorator.timeout(40)
 @pytest.mark.skip(reason="LVPN-2119")
 @pytest.mark.parametrize(("obfuscate_initial_state", "server", "error_message"), set_obfuscate_parameters)
 def test_set_obfuscate_server_obfuscation_mismatch(obfuscate_initial_state, server, error_message):
@@ -187,7 +184,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@timeout_decorator.timeout(40)
 def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -220,7 +216,6 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
 
 @pytest.mark.skip(reason="LVPN-265")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@timeout_decorator.timeout(40)
 def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -248,7 +243,6 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
 
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@timeout_decorator.timeout(40)
 def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, nameserver):
     nameserver = nameserver.split(" ")
 

@@ -2,7 +2,6 @@ import random
 
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import (
@@ -54,8 +53,6 @@ def connect_base_test(group: str = (), name: str = "", hostname: str = "", ipv6 
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_WITH_IPV6)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_ipv6_connect(tech, proto, obfuscated) -> None:
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -63,8 +60,6 @@ def test_ipv6_connect(tech, proto, obfuscated) -> None:
     disconnect_base_test()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_ipv6_enabled_ipv4_connect():
     lib.set_technology_and_protocol(*lib.STANDARD_TECHNOLOGIES[0])
     connect_base_test("pl128", "Poland #128", "pl128.nordvpn.com", False)
@@ -77,8 +72,6 @@ def test_ipv6_enabled_ipv4_connect():
     disconnect_base_test()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_ipv6_double_connect_without_disconnect():
     lib.set_technology_and_protocol(*lib.STANDARD_TECHNOLOGIES[0])
     connect_base_test("pl128", "Poland #128", "pl128.nordvpn.com", False)

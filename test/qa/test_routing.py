@@ -2,7 +2,6 @@ import time
 
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import allowlist, daemon, firewall, info, logging, login, network, settings
@@ -40,8 +39,6 @@ MSG_ROUTING_USED_BY_MESH = "Routing is currently used by Meshnet. Disable it fir
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_routing_enabled_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -66,8 +63,6 @@ def test_routing_enabled_connect(tech, proto, obfuscated):
 
 @pytest.mark.skip("LVPN-3273; LVPN-1574")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_routing_disabled_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -92,8 +87,6 @@ def test_routing_disabled_connect(tech, proto, obfuscated):
 
 @pytest.mark.skip("LVPN-3273")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_connected_routing_disable_enable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -117,8 +110,6 @@ def test_connected_routing_disable_enable(tech, proto, obfuscated):
 
 @pytest.mark.skip("LVPN-3273; LVPN-1574")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_connected_routing_enable_disable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -173,8 +164,6 @@ def test_routing_already_disabled(tech, proto, obfuscated):
 
 @pytest.mark.skip("LVPN-3273")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -204,8 +193,6 @@ def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated)
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 

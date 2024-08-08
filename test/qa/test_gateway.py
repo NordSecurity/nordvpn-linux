@@ -1,6 +1,4 @@
-import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import (
@@ -33,8 +31,6 @@ def teardown_function(function):  # noqa: ARG001
 
 # Test for 3.8.10 hotfix. Default gateway is not detected when there is not a physical interface
 # Issue: 491
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_default_gateway_is_detected():
     # Create bridge interface
     sh.sudo.ip.link.add.br0.type.bridge()

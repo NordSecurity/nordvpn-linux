@@ -1,6 +1,5 @@
 import pytest
 import sh
-import timeout_decorator
 
 import lib
 from lib import (
@@ -30,8 +29,6 @@ def teardown_function(function):  # noqa: ARG001
 
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_reconnect_matrix(
         source_tech,
         target_tech,
@@ -51,8 +48,6 @@ def test_reconnect_matrix(
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize(("country", "city"), list(zip(lib.COUNTRIES, lib.CITIES, strict=False)))
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_connect_country_and_city(tech, proto, obfuscated, country, city):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -65,8 +60,6 @@ def test_connect_country_and_city(tech, proto, obfuscated, country, city):
 
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_status_change_technology_and_protocol(
         source_tech,
         target_tech,
@@ -98,8 +91,6 @@ def test_status_change_technology_and_protocol(
 
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.flaky(reruns=2, reruns_delay=90)
-@timeout_decorator.timeout(40)
 def test_status_change_technology_and_protocol_reconnect(
         source_tech,
         target_tech,
@@ -129,7 +120,6 @@ def test_status_change_technology_and_protocol_reconnect(
 @pytest.mark.parametrize("target_group", lib.STANDARD_GROUPS[-2:])
 @pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@timeout_decorator.timeout(40)
 def test_reconnect_to_standard_group(
     source_tech,
     target_tech,
@@ -156,7 +146,6 @@ def test_reconnect_to_standard_group(
 @pytest.mark.parametrize("target_group", lib.ADDITIONAL_GROUPS[-2:])
 @pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@timeout_decorator.timeout(40)
 def test_reconnect_to_additional_group(
     source_tech,
     target_tech,
@@ -183,7 +172,6 @@ def test_reconnect_to_additional_group(
 @pytest.mark.parametrize("target_country", lib.COUNTRIES[-2:])
 @pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@timeout_decorator.timeout(40)
 def test_reconnect_to_server_by_country_name(
     source_tech,
     target_tech,
