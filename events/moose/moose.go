@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -494,6 +495,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	} else {
 		threatProtection = moose.NordvpnappOptBoolFalse
 	}
+
+	connectionDuration := int32(time.Since(s.connectionStartTime).Seconds())
+	if connectionDuration < 0 {
+		os.Exit(1)
+	}
+
 	return s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
 		int32(-1),
 		event,
@@ -510,7 +517,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		protocol,
 		technology,
 		threatProtection,
-		int32(time.Since(s.connectionStartTime).Seconds()), // seconds
+		connectionDuration, // seconds
 		"",
 		int32(-1),
 	))
