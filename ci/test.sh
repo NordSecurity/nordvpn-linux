@@ -31,6 +31,10 @@ fi
 # as a single argument for 'go test'
 
 mkdir -p "${WORKDIR}"/coverage/unit
+
+# single architecture for tests
+export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/amd64/latest"
+
 # shellcheck disable=SC2046
 go test -tags internal -v -race $(go list -buildvcs=false ./... | grep -v "${excluded_packages}") \
 	-coverprofile "${WORKDIR}"/coverage.txt \
