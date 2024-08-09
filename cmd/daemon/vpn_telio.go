@@ -16,10 +16,9 @@ import (
 )
 
 func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
-	cfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events,
+	cfg vpn.LibConfigGetter, appVersion string, eventsPublisher *vpn.Events,
 ) daemon.FactoryFunc {
-	//
-	telio, err := libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, deviceID, appVersion, eventsPublisher)
+	telio, err := libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, appVersion, eventsPublisher)
 	if err != nil {
 		// don't exit with `err` here in case the factory will be called with
 		// technology different than `config.Technology_NORDLYNX`

@@ -18,7 +18,7 @@ import (
 )
 
 func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
-	cfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events,
+	cfg vpn.LibConfigGetter, appVersion string, eventsPublisher *vpn.Events,
 ) daemon.FactoryFunc {
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {

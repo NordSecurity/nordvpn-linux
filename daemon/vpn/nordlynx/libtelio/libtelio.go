@@ -125,7 +125,7 @@ type Libtelio struct {
 
 var defaultIP = netip.MustParseAddr("10.5.0.2")
 
-func handleTelioConfig(eventPath, deviceID, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) (*teliogo.Features, error) {
+func handleTelioConfig(eventPath, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) (*teliogo.Features, error) {
 	cfgString, err := vpnLibCfg.GetConfig(version)
 	if err != nil {
 		return nil, fmt.Errorf("getting telio config json string: %w", err)
@@ -154,10 +154,10 @@ func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) *te
 }
 
 func New(prod bool, eventPath string, fwmark uint32,
-	vpnLibCfg vpn.LibConfigGetter, deviceID, appVersion string, eventsPublisher *vpn.Events,
+	vpnLibCfg vpn.LibConfigGetter, appVersion string, eventsPublisher *vpn.Events,
 ) (*Libtelio, error) {
 	events := make(chan state)
-	features, err := handleTelioConfig(eventPath, deviceID, appVersion, prod, vpnLibCfg)
+	features, err := handleTelioConfig(eventPath, appVersion, prod, vpnLibCfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get telio config:", err)
 
