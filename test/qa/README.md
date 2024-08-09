@@ -28,7 +28,7 @@ source .venv/bin/activate # this should modify your shell prompt
 ```
 3. How to install Python dependencies from file.
 ```bash
-python3 -m pip install -r <path-to-requirements-txt> # requirements.txt is found in `ci/docker/requirements.txt`
+python3 -m pip install -r <path-to-requirements-txt> # requirements.txt is found in `ci/docker/tester/requirements.txt`
 ```
 4. How to install new packages.
 ```bash

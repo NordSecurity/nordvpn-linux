@@ -9,7 +9,7 @@ def collect():
     network_interface_info = os.popen("sudo ip addr").read() #sh.sudo.ip.addr()
     routing_info = os.popen("sudo ip route").read() #sh.sudo.ip.route()
     firewall_info = os.popen("sudo iptables -S").read() #sh.sudo.iptables("-S")
-    nameserver_info = os.popen("sudo cat /etc/resolve.conf").read() #sh.sudo.cat("/etc/resolv.conf")
+    nameserver_info = os.popen("sudo cat /etc/resolv.conf").read() #sh.sudo.cat("/etc/resolv.conf")
 
     # without `ww` we cannot see full process lines, as it is cut off early
     processes = sh.ps("-ef", "ww")
