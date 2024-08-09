@@ -472,28 +472,16 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 	return nil
 }
 
-type peer struct {
-	PublicKey string
-	State     string
-}
-
 func (l *Libtelio) StatusMap() (map[string]string, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	statusMap := l.lib.GetStatusMap()
-	peers := make([]peer, len(statusMap))
-	for i, node := range statusMap {
-		peers[i] = peer{
-			PublicKey: node.PublicKey,
-			State:     nodeStateToString(node.State),
-		}
+	m := map[string]string{}
+	for _, node := range statusMap {
+		m[node.PublicKey] = nodeStateToString(node.State)
 	}
 
-	m := map[string]string{}
-	for _, p := range peers {
-		m[p.PublicKey] = p.State
-	}
 	return m, nil
 }
 
