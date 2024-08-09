@@ -24,14 +24,10 @@ type Fileshare interface {
 	Send(peer netip.Addr, paths []string) (string, error)
 	// Accept accepts provided files from provided request and starts download process
 	Accept(transferID, dstPath string, fileID string) error
-	// Cancel file transfer by ID.
-	Cancel(transferID string) error
+	// Finalize file transfer by ID.
+	Finalize(transferID string) error
 	// CancelFile id in a transfer
 	CancelFile(transferID string, fileID string) error
-	// GetTransfersSince provided time from fileshare implementation storage
-	GetTransfersSince(t time.Time) ([]LibdropTransfer, error)
-	// PurgeTransfersUntil provided time from fileshare implementation storage
-	PurgeTransfersUntil(until time.Time) error
 }
 
 // Storage is used for filesharing history persistence

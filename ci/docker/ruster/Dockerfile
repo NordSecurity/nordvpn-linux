@@ -1,15 +1,19 @@
 FROM ubuntu:18.04
 
+ARG GL_ACCESS_TOKEN
+ARG SQLITE_DOWNLOAD_URL_PREFIX
+
 # Rust installation borrowed from https://github.com/rust-lang/docker-rust/blob/47a11a42c5a321d688fae525eaa7f1cf9940198b/1.64.0/buster/slim/Dockerfile
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.72.1
+    RUST_VERSION=1.77.2
 
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
         ca-certificates \
+        curl \
         gcc \
         libc6-dev \
         wget \
@@ -32,18 +36,32 @@ RUN set -eux; \
     chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
     rustup --version; \
     cargo --version; \
-    rustc --version; \
-    apt-get remove -y --auto-remove \
-        wget \
-        ; \
-    rm -rf /var/lib/apt/lists/*;
+    rustc --version
 
-RUN rustup target add \
-        x86_64-unknown-linux-gnu \
-        i686-unknown-linux-gnu \
-        armv7-unknown-linux-gnueabihf \
-        aarch64-unknown-linux-gnu \
-        arm-unknown-linux-gnueabi
+RUN set -eux; \
+  rustup target add \
+    x86_64-unknown-linux-gnu \
+    i686-unknown-linux-gnu \
+    armv7-unknown-linux-gnueabihf \
+    aarch64-unknown-linux-gnu \
+    arm-unknown-linux-gnueabi
+
+RUN set -eux; \
+  mkdir -p /usr/lib/i386-linux-gnu \
+    /usr/lib/x86_64-linux-gnu \
+    /usr/lib/arm-linux-gnueabihf \
+    /usr/lib/arm-linux-gnueabi \
+    /usr/lib/aarch64-linux-gnu
+
+RUN set -eux; \
+  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/i386-linux-gnu/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_i686_sqlite3.so; \
+  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/x86_64-linux-gnu/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_x86_64_sqlite3.so; \
+  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/arm-linux-gnueabihf/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_armv7_eabihf_sqlite3.so; \
+  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/arm-linux-gnueabi/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_armv5_eabi_sqlite3.so; \
+  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/aarch64-linux-gnu/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_aarch64_sqlite3.so; \
+  apt-get remove -y --auto-remove curl
+
+RUN echo "/usr/lib/i386-linux-gnu\n/usr/lib/x86_64-linux-gnu\n/usr/lib/arm-linux-gnueabihf\n/usr/lib/arm-linux-gnueabi\n/usr/lib/aarch64-linux-gnu" > /etc/ld.so.conf.d/sqlite3.conf
 
 RUN set -eux; \
     dpkg --add-architecture i386; \
@@ -73,6 +91,13 @@ RUN set -eux; \
 	unzip $protocZipFileName -d /usr; \
 	rm $protocZipFileName; \
  	rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+  dpkg --add-architecture i386;\
+  dpkg --add-architecture armhf;  \
+  dpkg --add-architecture armel; \
+  dpkg --add-architecture arm64; \
+  ldconfig
 
 RUN pip3 install typing; \
 	pip3 install requests==2.21.0

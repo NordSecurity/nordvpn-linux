@@ -97,20 +97,18 @@ func runDocker(
 		return err
 	}
 
-	if !isPrivileged {
-		cmd = []string{"/bin/sh", "-c", fmt.Sprintf(
-			"groupadd -g %d hostg; useradd -lmu %d -g hostg hostu; su hostu -c '%s'",
-			os.Getgid(),
-			os.Getuid(),
-			strings.Join(cmd, " "))}
-	}
-
-	resp, err := docker.ContainerCreate(ctx, &container.Config{
+	containerConfig := container.Config{
 		Image:      image,
 		Cmd:        cmd,
 		Env:        envMapToList(env),
 		WorkingDir: "/opt",
-	}, &container.HostConfig{
+	}
+
+	if !isPrivileged {
+		containerConfig.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
+	}
+
+	resp, err := docker.ContainerCreate(ctx, &containerConfig, &container.HostConfig{
 		AutoRemove: true,
 		Mounts: []mount.Mount{
 			{
