@@ -16,7 +16,7 @@ func (c *cmd) Except(tech config.Technology) bool {
 	if err != nil {
 		return false
 	}
-	return settings.GetData().Technology != tech
+	return settings.GetData().Settings.Technology != tech
 }
 
 // SetBoolAutocomplete shows booleans suggestions

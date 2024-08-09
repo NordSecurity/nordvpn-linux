@@ -105,7 +105,7 @@ func (ti *Instance) updateSettings() bool {
 	resp, err := ti.client.Settings(context.Background(), &pb.SettingsRequest{
 		Uid: int64(os.Getuid()),
 	})
-	var settings *pb.Settings
+	var settings *pb.UserSpecificSettings
 
 	if err != nil {
 		log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, err)
@@ -114,7 +114,7 @@ func (ti *Instance) updateSettings() bool {
 		case internal.CodeConfigError:
 			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, client.ConfigMessage)
 		case internal.CodeSuccess:
-			settings = resp.GetData()
+			settings = resp.Data.UserSpecificSettings
 		default:
 			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, internal.ErrUnhandled)
 		}

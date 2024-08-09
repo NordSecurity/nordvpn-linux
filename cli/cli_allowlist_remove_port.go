@@ -70,7 +70,7 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
-	allowlist := settings.GetAllowlist()
+	allowlist := settings.Settings.GetAllowlist()
 
 	var (
 		udpIndex int
@@ -130,7 +130,7 @@ func (c *cmd) AllowlistRemovePortAutoComplete(ctx *cli.Context) {
 	if err != nil {
 		return
 	}
-	allowlist := settings.GetData().GetAllowlist()
+	allowlist := settings.GetData().Settings.GetAllowlist()
 	switch ctx.NArg() {
 	case 0:
 		// create config after auth

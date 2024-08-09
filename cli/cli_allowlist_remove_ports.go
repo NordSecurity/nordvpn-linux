@@ -84,7 +84,7 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	allowlist := settings.GetAllowlist()
+	allowlist := settings.Settings.GetAllowlist()
 	slices.Sort(allowlist.Ports.Tcp)
 	slices.Sort(allowlist.Ports.Udp)
 
@@ -157,7 +157,7 @@ func (c *cmd) AllowlistRemovePortsAutoComplete(ctx *cli.Context) {
 	if err != nil {
 		return
 	}
-	allowlist := settings.GetData().GetAllowlist()
+	allowlist := settings.GetData().Settings.GetAllowlist()
 
 	switch ctx.NArg() {
 	case 0:

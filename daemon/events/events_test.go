@@ -38,8 +38,6 @@ func (mockDaemonSubscriber) NotifyAllowlist(events.DataAllowlist) error     { re
 func (mockDaemonSubscriber) NotifyTechnology(config.Technology) error       { return nil }
 func (mockDaemonSubscriber) NotifyConnect(events.DataConnect) error         { return nil }
 func (mockDaemonSubscriber) NotifyDisconnect(events.DataDisconnect) error   { return nil }
-func (mockDaemonSubscriber) NotifyLogin(events.DataAuthorization) error     { return nil }
-func (mockDaemonSubscriber) NotifyLogout(events.DataAuthorization) error    { return nil }
 func (mockDaemonSubscriber) NotifyAccountCheck(core.ServicesResponse) error { return nil }
 func (mockDaemonSubscriber) NotifyObfuscate(bool) error                     { return nil }
 func (mockDaemonSubscriber) NotifyNotify(bool) error                        { return nil }
@@ -53,6 +51,8 @@ func (mockDaemonSubscriber) NotifyHeartBeat(int) error                      { re
 func (mockDaemonSubscriber) NotifyDeviceLocation(core.Insights) error       { return nil }
 func (mockDaemonSubscriber) NotifyLANDiscovery(bool) error                  { return nil }
 func (mockDaemonSubscriber) NotifyVirtualLocation(bool) error               { return nil }
+func (mockDaemonSubscriber) NotifyLogin(events.DataAuthorization) error     { return nil }
+func (mockDaemonSubscriber) NotifyLogout(events.DataAuthorization) error    { return nil }
 
 // isValid returns true if given val is not nil. In case val is struct,
 // it checks if any of exported fields are not nil

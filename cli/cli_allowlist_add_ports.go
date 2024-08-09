@@ -84,7 +84,7 @@ func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
-	allowlist := settings.GetAllowlist()
+	allowlist := settings.Settings.GetAllowlist()
 	if isTCP {
 		allowlist.Ports.Tcp = append(allowlist.Ports.Tcp, ports...)
 	}

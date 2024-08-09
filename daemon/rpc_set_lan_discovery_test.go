@@ -104,7 +104,8 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: machineID},
-				&filesystem)
+				&filesystem,
+				nil)
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.LanDiscovery = test.currentEnabled
@@ -195,7 +196,8 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
-				&filesystem)
+				&filesystem,
+				nil)
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.LanDiscovery = test.currentEnabled
