@@ -491,6 +491,12 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 			log.Println(internal.ErrorPrefix, "server is not in the DIP servers list")
 			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 		}
+
+		if !core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(server) ||
+			(core.IsObfuscated()(server) != cfg.AutoConnectData.Obfuscate) {
+			log.Println(internal.ErrorPrefix, "failed to connect because the server doesn't support user settings")
+			return nil, false, internal.ErrServerIsUnavailable
+		}
 	}
 
 	return &server, remote, nil
