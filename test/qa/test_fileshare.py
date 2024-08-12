@@ -90,6 +90,10 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
+    try:
+        fileshare.cancel_all_ongoing_transfers()
+    except sh.ErrorReturnCode_1 as ex:
+        logging.log(f"all transfer cancellation failed: {ex}")
     ssh_client.exec_command(f"rm -rf {workdir}/*")
 
 

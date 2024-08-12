@@ -52,6 +52,16 @@ def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
 
 def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> Optional[str]:
     """Return last id of the last received or sent transfer."""
+    transfer_ids = get_all_transfers(outgoing, ssh_client)
+
+    if len(transfer_ids) == 0:
+        return None
+
+    return transfer_ids[-1]
+
+
+def get_all_transfers(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> list[str]:
+    """Return IDs of of all transfers."""
     if ssh_client is None:
         transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     else:
@@ -61,9 +71,9 @@ def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> Opti
     transfer_ids = re.findall("([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})", transfers)
 
     if len(transfer_ids) == 0:
-        return None
+        return []
 
-    return re.findall("([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})", transfers)[-1]
+    return transfer_ids
 
 
 def get_transfer(transfer_id: str, ssh_client: ssh.Ssh = None) -> Optional[str]:
@@ -116,3 +126,9 @@ def get_new_incoming_transfer(ssh_client: ssh.Ssh = None):
     if "completed" in transfer_status:
         return None, f"no new transfers found on receiver side after transfer has been initiated by the sender, last transfer is {local_transfer_id} but its status is completed"
     return local_transfer_id, ""
+
+
+def cancel_all_ongoing_transfers():
+    transfers = get_all_transfers()
+    for transfer_id in transfers:
+        sh.nordvpn.fileshare.cancel(transfer_id).stdout.decode("utf-8")
