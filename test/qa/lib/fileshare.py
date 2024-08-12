@@ -6,12 +6,13 @@ from typing import Callable, Optional
 
 import sh
 
-from . import ssh
+from . import logging, ssh
 
 SEND_NOWAIT_SUCCESS_MSG_PATTERN = r'File transfer ?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}) has started in the background.'
 SEND_CANCELED_BY_PEER_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})\] canceled by peer'
 SEND_CANCELED_BY_OTHER_PROCESS_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})\] canceled by other process'
 CANCEL_SUCCESS_SENDER_SIDE_MSG = "File transfer canceled"
+TRANSFER_ID_REGEX = r"[a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}"
 
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames")
 
@@ -52,28 +53,18 @@ def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
 
 def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> Optional[str]:
     """Return last id of the last received or sent transfer."""
-    transfer_ids = get_all_transfers(outgoing, ssh_client)
-
-    if len(transfer_ids) == 0:
-        return None
-
-    return transfer_ids[-1]
-
-
-def get_all_transfers(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> list[str]:
-    """Return IDs of of all transfers."""
     if ssh_client is None:
         transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     else:
         transfers = ssh_client.exec_command("nordvpn fileshare list")
     outgoing_index = transfers.index("Outgoing")
     transfers = transfers[outgoing_index:] if outgoing else transfers[:outgoing_index]
-    transfer_ids = re.findall("([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})", transfers)
+    transfer_ids = re.findall(f"({TRANSFER_ID_REGEX})", transfers)
 
     if len(transfer_ids) == 0:
-        return []
+        return None
 
-    return transfer_ids
+    return transfer_ids[-1]
 
 
 def get_transfer(transfer_id: str, ssh_client: ssh.Ssh = None) -> Optional[str]:
@@ -128,7 +119,25 @@ def get_new_incoming_transfer(ssh_client: ssh.Ssh = None):
     return local_transfer_id, ""
 
 
-def cancel_all_ongoing_transfers():
-    transfers = get_all_transfers()
+def cancel_not_finished_transfers():
+    transfers = get_not_finished_transfers()
     for transfer_id in transfers:
-        sh.nordvpn.fileshare.cancel(transfer_id).stdout.decode("utf-8")
+        try:
+            sh.nordvpn.fileshare.cancel(transfer_id).stdout.decode("utf-8")
+        except sh.ErrorReturnCode_1 as ex:
+            logging.log(f"failed to cancel transfer {transfer_id}: {ex}")
+
+
+def get_not_finished_transfers(ssh_client: ssh.Ssh = None) -> list[str]:
+    """Return IDs of of all transfers which are not: completed or  canceled."""
+    if ssh_client is None:
+        transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    else:
+        transfers = ssh_client.exec_command("nordvpn fileshare list")
+    # all transfer IDs without "completed" or "canceled" following the ID
+    transfer_ids = re.findall(f"({TRANSFER_ID_REGEX})(?!.*(?:completed|canceled))", transfers)
+
+    if len(transfer_ids) == 0:
+        return []
+
+    return transfer_ids
