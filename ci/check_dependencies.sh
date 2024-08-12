@@ -38,16 +38,12 @@ function fetch_gitlab_artifact() {
   out_file="${2}"
 
   echo "Downloading artifact from ${artifact_url} to ${out_file}"
-  # disable tracing - don't show the token
-  set +x
   curl \
     --retry 3 \
     --retry-delay 2 \
     --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" \
     -o "${out_file}" \
     -L "${artifact_url}"
-  # re-enable tracing
-  set -x
 }
 
 # This function makes a copy of .so file. It requires two parameters:
