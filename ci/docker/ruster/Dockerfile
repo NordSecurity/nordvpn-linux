@@ -1,7 +1,7 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
-ARG GL_ACCESS_TOKEN
 ARG SQLITE_DOWNLOAD_URL_PREFIX
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Rust installation borrowed from https://github.com/rust-lang/docker-rust/blob/47a11a42c5a321d688fae525eaa7f1cf9940198b/1.64.0/buster/slim/Dockerfile
 ENV RUSTUP_HOME=/usr/local/rustup \
@@ -53,7 +53,8 @@ RUN set -eux; \
     /usr/lib/arm-linux-gnueabi \
     /usr/lib/aarch64-linux-gnu
 
-RUN set -eux; \
+RUN --mount=type=secret,id=gl_access_token export GL_ACCESS_TOKEN="$(cat /run/secrets/gl_access_token)"; \
+  set -eux; \
   curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/i386-linux-gnu/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_i686_sqlite3.so; \
   curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/x86_64-linux-gnu/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_x86_64_sqlite3.so; \
   curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/arm-linux-gnueabihf/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_armv7_eabihf_sqlite3.so; \
@@ -74,8 +75,7 @@ RUN set -eux; \
 	gcc-arm-linux-gnueabihf \
 	gcc-i686-linux-gnu \
 	linux-libc-dev:i386 \
-	libc6-dev-i386 \
-	lib32gcc-7-dev; \
+	libc6-dev-i386; \
     rm -rf /var/lib/apt/lists/*;
 
 # Installing protoc manually because package available in Ubuntu 18.04 does not contain
