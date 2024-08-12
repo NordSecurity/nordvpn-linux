@@ -33,9 +33,8 @@ fi
 
 mkdir -p "${WORKDIR}"/coverage/unit
 
-ARCH="amd64"
-
-export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/${ARCH}/latest"
+# single architecture for tests
+export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/amd64/latest"
 
 # shellcheck disable=SC2046
 go test -tags internal -v -race $(go list -buildvcs=false ./... | grep -v "${excluded_packages}") \
