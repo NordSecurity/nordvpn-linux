@@ -7,19 +7,19 @@ source "${WORKDIR}/lib-versions.env"
 temp_dir="${WORKDIR}/bin/deps/artifacts"
 lib_root="${WORKDIR}/bin/deps/lib"
 
-libtelio_artifact_url="${LIBTELIO_ARTIFACTS_URL}/${LIBTELIO_VERSION}/downloads/linux.zip"
+libtelio_artifact_url="${LIBTELIO_ARTIFACTS_URL}/${LIBTELIO_VERSION}/linux.zip"
 libtelio_zipfile="${temp_dir}/libtelio-${LIBTELIO_VERSION}.zip"
 libtelio_dst="${temp_dir}/libtelio-${LIBTELIO_VERSION}"
 
-libdrop_artifact_url="${LIBDROP_ARTIFACTS_URL}/${LIBDROP_VERSION}/downloads/linux.zip"
+libdrop_artifact_url="${LIBDROP_ARTIFACTS_URL}/${LIBDROP_VERSION}/linux.zip"
 libdrop_zipfile="${temp_dir}/libdrop-${LIBDROP_VERSION}.zip"
 libdrop_dst="${temp_dir}/libdrop-${LIBDROP_VERSION}"
 
-libmoose_nordvpnapp_artifact_url="${LIBMOOSE_ARTIFACTS_URL}/${LIBMOOSE_NORDVPNAPP_VERSION}/downloads/linux.zip"
+libmoose_nordvpnapp_artifact_url="${LIBMOOSE_NORDVPNAPP_ARTIFACTS_URL}/${LIBMOOSE_NORDVPNAPP_VERSION}/linux.zip"
 libmoose_nordvpnapp_zipfile="${temp_dir}/libmoose-nordvpnapp-${LIBMOOSE_NORDVPNAPP_VERSION}.zip"
 libmoose_nordvpnapp_dst="${temp_dir}/libmoose-nordvpnapp-${LIBMOOSE_NORDVPNAPP_VERSION}"
 
-libmoose_worker_artifact_url="${LIBMOOSE_ARTIFACTS_URL}/${LIBMOOSE_WORKER_VERSION}/downloads/linux.zip"
+libmoose_worker_artifact_url="${LIBMOOSE_WORKER_ARTIFACTS_URL}/${LIBMOOSE_WORKER_VERSION}/linux.zip"
 libmoose_worker_zipfile="${temp_dir}/libmoose-worker-${LIBMOOSE_WORKER_VERSION}.zip"
 libmoose_worker_dst="${temp_dir}/libmoose-worker-${LIBMOOSE_WORKER_VERSION}"
 
