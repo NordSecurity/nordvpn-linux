@@ -90,6 +90,7 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
+    fileshare.cancel_not_finished_transfers()
     ssh_client.exec_command(f"rm -rf {workdir}/*")
 
 
