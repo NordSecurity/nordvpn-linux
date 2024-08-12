@@ -3,7 +3,7 @@ index 91d48c6..af74160 100644
 --- a/go.mod
 +++ b/go.mod
 @@ -12,6 +12,11 @@ require (
- 	github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc2
+ 	github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc3
  )
  
 +replace (
