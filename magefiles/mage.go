@@ -193,8 +193,6 @@ func (Build) Data() error {
 		return nil
 	}
 
-	mg.Deps(Download)
-
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
