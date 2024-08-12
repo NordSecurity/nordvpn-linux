@@ -131,6 +131,6 @@ if [[ "${FEATURES:-""}" == *internal* ]]; then
 fi
 
 # remove leftovers
-# rm -rf "${temp_dir}"
+rm -rf "${temp_dir}"
 
 touch "${lib_root}/checkout-completed-flag"
