@@ -161,7 +161,7 @@ parts:
       - on i386: ./bin/deps/openvpn/i386/latest/
       - on amd64: ./bin/deps/openvpn/amd64/latest/
       - on armhf: ./bin/deps/openvpn/armhf/latest/
-      - on arm64: ./bin/deps/openvpn/arm64/latest/
+      - on arm64: ./bin/deps/openvpn/aarch64/latest/
     organize:
       openvpn: usr/lib/nordvpn/openvpn
     stage:
