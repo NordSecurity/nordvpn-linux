@@ -46,17 +46,18 @@ const (
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	EventsDbPath        string
-	Config              config.Manager
-	Version             string
-	Environment         string
-	Domain              string
-	Subdomain           string
-	DeviceID            string
-	currentDomain       string
-	connectionStartTime time.Time
-	enabled             bool
-	mux                 sync.RWMutex
+	EventsDbPath            string
+	Config                  config.Manager
+	Version                 string
+	Environment             string
+	Domain                  string
+	Subdomain               string
+	DeviceID                string
+	currentDomain           string
+	connectionStartTime     time.Time
+	connectionToMeshnetPeer bool
+	enabled                 bool
+	mux                     sync.RWMutex
 }
 
 // Enable moose analytics engine
@@ -358,17 +359,6 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 }
 
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
-	if data.IsMeshnetPeer {
-		return nil
-	}
-
-	var threatProtection moose.NordvpnappOptBool
-	if data.ThreatProtectionLite {
-		threatProtection = moose.NordvpnappOptBoolTrue
-	} else {
-		threatProtection = moose.NordvpnappOptBoolFalse
-	}
-
 	var eventStatus moose.NordvpnappEventStatus
 	switch data.EventStatus {
 	case events.StatusAttempt:
@@ -376,68 +366,86 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	case events.StatusSuccess:
 		eventStatus = moose.NordvpnappEventStatusSuccess
 		s.connectionStartTime = time.Now()
+		s.connectionToMeshnetPeer = data.IsMeshnetPeer
 	case events.StatusFailure:
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	default:
 		eventStatus = moose.NordvpnappEventStatusAttempt
 	}
 
-	var protocol moose.NordvpnappVpnConnectionProtocol
-	switch data.Protocol {
-	case config.Protocol_TCP:
-		protocol = moose.NordvpnappVpnConnectionProtocolTcp
-	case config.Protocol_UDP:
-		protocol = moose.NordvpnappVpnConnectionProtocolUdp
-	case config.Protocol_UNKNOWN_PROTOCOL:
-		protocol = moose.NordvpnappVpnConnectionProtocolNone
-	default:
-		protocol = moose.NordvpnappVpnConnectionProtocolRecommended
-	}
-
-	var technology moose.NordvpnappVpnConnectionTechnology
-	switch data.Technology {
-	case config.Technology_OPENVPN:
-		technology = moose.NordvpnappVpnConnectionTechnologyOpenvpn
-	case config.Technology_NORDLYNX:
-		technology = moose.NordvpnappVpnConnectionTechnologyNordlynx
-	case config.Technology_UNKNOWN_TECHNOLOGY:
-		technology = moose.NordvpnappVpnConnectionTechnologyNone
-	default:
-		technology = moose.NordvpnappVpnConnectionTechnologyRecommended
-	}
-
-	var server moose.NordvpnappServerListSource
-	if data.ServerFromAPI {
-		server = moose.NordvpnappServerListSourceRecommendedByApi
+	if data.IsMeshnetPeer {
+		return s.response(moose.NordvpnappSendServiceQualityServersConnectToMeshnetDevice(
+			int32(data.DurationMs),
+			eventStatus,
+			moose.NordvpnappEventTriggerUser,
+			int32(-1),
+			int32(-1),
+		))
 	} else {
-		server = moose.NordvpnappServerListSourceLocallyCachedServerList
-	}
+		var threatProtection moose.NordvpnappOptBool
+		if data.ThreatProtectionLite {
+			threatProtection = moose.NordvpnappOptBoolTrue
+		} else {
+			threatProtection = moose.NordvpnappOptBoolFalse
+		}
 
-	var rule moose.NordvpnappServerSelectionRule
-	switch data.TargetServerSelection {
-	default:
-		rule = moose.NordvpnappServerSelectionRuleRecommended
+		var protocol moose.NordvpnappVpnConnectionProtocol
+		switch data.Protocol {
+		case config.Protocol_TCP:
+			protocol = moose.NordvpnappVpnConnectionProtocolTcp
+		case config.Protocol_UDP:
+			protocol = moose.NordvpnappVpnConnectionProtocolUdp
+		case config.Protocol_UNKNOWN_PROTOCOL:
+			protocol = moose.NordvpnappVpnConnectionProtocolNone
+		default:
+			protocol = moose.NordvpnappVpnConnectionProtocolRecommended
+		}
+
+		var technology moose.NordvpnappVpnConnectionTechnology
+		switch data.Technology {
+		case config.Technology_OPENVPN:
+			technology = moose.NordvpnappVpnConnectionTechnologyOpenvpn
+		case config.Technology_NORDLYNX:
+			technology = moose.NordvpnappVpnConnectionTechnologyNordlynx
+		case config.Technology_UNKNOWN_TECHNOLOGY:
+			technology = moose.NordvpnappVpnConnectionTechnologyNone
+		default:
+			technology = moose.NordvpnappVpnConnectionTechnologyRecommended
+		}
+
+		var server moose.NordvpnappServerListSource
+		if data.ServerFromAPI {
+			server = moose.NordvpnappServerListSourceRecommendedByApi
+		} else {
+			server = moose.NordvpnappServerListSourceLocallyCachedServerList
+		}
+
+		var rule moose.NordvpnappServerSelectionRule
+		switch data.TargetServerSelection {
+		default:
+			rule = moose.NordvpnappServerSelectionRuleRecommended
+		}
+		return s.response(moose.NordvpnappSendServiceQualityServersConnect(
+			int32(data.DurationMs),
+			eventStatus,
+			moose.NordvpnappEventTriggerUser,
+			moose.NordvpnappVpnConnectionTriggerNone,
+			moose.NordvpnappVpnConnectionPresetNone,
+			rule,
+			server,
+			data.TargetServerGroup,
+			data.TargetServerDomain,
+			data.TargetServerIP,
+			data.TargetServerCountry,
+			data.TargetServerCity,
+			protocol,
+			technology,
+			threatProtection,
+			int32(-1),
+			"",
+			int32(-1),
+		))
 	}
-	return s.response(moose.NordvpnappSendServiceQualityServersConnect(
-		int32(data.DurationMs), // milliseconds
-		eventStatus,
-		moose.NordvpnappEventTriggerUser,
-		moose.NordvpnappVpnConnectionTriggerNone,
-		moose.NordvpnappVpnConnectionPresetNone,
-		rule,
-		server,
-		data.TargetServerGroup,
-		data.TargetServerDomain,
-		data.TargetServerIP,
-		data.TargetServerCountry,
-		data.TargetServerCity,
-		protocol,
-		technology,
-		threatProtection,
-		int32(-1),
-		"",
-		int32(-1),
-	))
 }
 
 func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
