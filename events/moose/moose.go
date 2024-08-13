@@ -27,6 +27,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	moose "moose/events"
 	worker "moose/worker"
@@ -41,7 +42,6 @@ const (
 	errCodeRequestCreationFailed = 2
 	errCodeRequestDoFailed       = 3
 	errCodeResponseStatus        = 4
-	applicationName              = "linux-app"
 )
 
 // Subscriber listen events, send to moose engine
@@ -117,6 +117,11 @@ func (s *Subscriber) mooseInit() error {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
 		}
+	}
+
+	applicationName := "linux-app"
+	if snapconf.IsUnderSnap() {
+		applicationName = "linux-app-snap"
 	}
 
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappName(applicationName)); err != nil {
