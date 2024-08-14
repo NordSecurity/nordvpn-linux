@@ -2892,6 +2892,14 @@ func (s *Server) Connect(
 		}, nil
 	}
 
+	// Measure the time it takes to obtain tokens as the connection attempt event duration
+	connectingStartTime := time.Now()
+	event := events.DataConnect{
+		IsMeshnetPeer: true,
+		DurationMs:    -1,
+		EventStatus:   events.StatusAttempt,
+	}
+
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
@@ -2967,6 +2975,13 @@ func (s *Server) Connect(
 		)
 	}
 
+	// Send the connection attempt event
+	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+	s.daemonEvents.Service.Connect.Publish(event)
+
+	// Reset the connecting start timer
+	connectingStartTime = time.Now()
+
 	if err := s.netw.Start(
 		vpn.Credentials{
 			NordLynxPrivateKey: cfg.MeshPrivateKey,
@@ -2982,6 +2997,10 @@ func (s *Server) Connect(
 		nameservers,
 		!peer.DoesPeerAllowLocalNetwork, // enableLocalTraffic if target peer does not permit its LAN access
 	); err != nil {
+		// Send the connection failure event
+		event.EventStatus = events.StatusFailure
+		event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+		s.daemonEvents.Service.Connect.Publish(event)
 		if strings.Contains(err.Error(), "already started") {
 			return &pb.ConnectResponse{
 				Response: &pb.ConnectResponse_ConnectErrorCode{
@@ -2997,9 +3016,10 @@ func (s *Server) Connect(
 		}, nil
 	}
 	s.lastConnectedPeer = peer.Hostname
-	s.daemonEvents.Service.Connect.Publish(events.DataConnect{
-		IsMeshnetPeer: true,
-	})
+	// Send the connection success event
+	event.EventStatus = events.StatusSuccess
+	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+	s.daemonEvents.Service.Connect.Publish(event)
 
 	return &pb.ConnectResponse{
 		Response: &pb.ConnectResponse_Empty{},
