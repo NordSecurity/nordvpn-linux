@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -10,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
@@ -417,3 +420,199 @@ func TestOpenLogFile(t *testing.T) {
 		})
 	}
 }
+
+func TestIsProcessRunning(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	execPath := "/usr/lib/nordvpn/nordfileshare"
+	tests := []struct {
+		name             string
+		expectedExecPath string
+		readdir          readdirFunc
+		readlink         readlinkFunc
+		expected         bool
+		withError        bool
+	}{
+		{
+			name:             "returns false for empty process list",
+			expectedExecPath: "/not/important",
+			readdir:          func(string) ([]os.DirEntry, error) { return []os.DirEntry{}, nil },
+			readlink:         defaultReadlink,
+			expected:         false,
+			withError:        false,
+		},
+		{
+			name:             "returns true with exactly one process on the list",
+			expectedExecPath: execPath,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "12",
+					},
+				}, nil
+			},
+			readlink:  func(string) (string, error) { return execPath, nil },
+			expected:  true,
+			withError: false,
+		},
+		{
+			name:             "returns true with same path but in non-canonical form",
+			expectedExecPath: "/../../..//usr//lib/nordvpn/some/dirs/../..//nordfileshare",
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "12",
+					},
+				}, nil
+			},
+			readlink:  func(string) (string, error) { return execPath, nil },
+			expected:  true,
+			withError: false,
+		},
+		{
+			name:             "returns true with multiple processes and at least one is valid",
+			expectedExecPath: execPath,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "wrong-dir-name",
+					},
+					&MockDirEntry{
+						name: "9365",
+					},
+					&MockDirEntry{
+						name: "42",
+					},
+				}, nil
+			},
+			readlink:  func(string) (string, error) { return execPath, nil },
+			expected:  true,
+			withError: false,
+		},
+		{
+			name:             "returns false with multiple processes and none is valid",
+			expectedExecPath: execPath,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "wrong-dir-name",
+					},
+					&MockDirEntry{
+						name: "another-wrong",
+					},
+					&MockDirEntry{
+						name: "42",
+					},
+				}, nil
+			},
+			readlink:  func(string) (string, error) { return "/different/path", nil },
+			expected:  false,
+			withError: false,
+		},
+		{
+			name:             "returns false when directory is not a pid",
+			expectedExecPath: "/not/important",
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "not-a-pid",
+					},
+				}, nil
+			},
+			readlink:  func(string) (string, error) { return "/also/not/important", nil },
+			expected:  false,
+			withError: false,
+		},
+		{
+			name:             "returns false when no process has expected executable path",
+			expectedExecPath: execPath,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "not-a-pid",
+					},
+				}, nil
+			},
+			readlink:  func(string) (string, error) { return "/some/other/path", nil },
+			expected:  false,
+			withError: false,
+		},
+		{
+			name:             "returns error when  readdir fails to read directories",
+			expectedExecPath: execPath,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{}, errors.New("test error")
+			},
+			readlink:  func(string) (string, error) { return "", nil },
+			expected:  false,
+			withError: true,
+		},
+		{
+			name:             "skip the entry when it cannot follow symlink",
+			expectedExecPath: execPath,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "12",
+					},
+				}, nil
+			},
+			readlink:  func(string) (string, error) { return "", errors.New("test error") },
+			expected:  false,
+			withError: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			isRunning, err := isProcessRunning(test.expectedExecPath, test.readdir, test.readlink)
+			if test.withError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+			assert.Equal(t, test.expected, isRunning)
+		})
+	}
+}
+
+type MockDirEntry struct {
+	name string
+}
+
+func (m *MockDirEntry) Name() string {
+	return m.name
+}
+
+func (m *MockDirEntry) IsDir() bool {
+	return true
+}
+
+func (m *MockDirEntry) Type() fs.FileMode {
+	return os.ModeSymlink
+}
+
+func (m *MockDirEntry) Info() (fs.FileInfo, error) {
+	return &MockFileInfo{
+		name:    m.name,
+		size:    1024,
+		mode:    os.FileMode(0644),
+		modTime: time.Now(),
+		sys:     &syscall.Stat_t{},
+	}, nil
+}
+
+type MockFileInfo struct {
+	modTime time.Time
+	sys     any
+	name    string
+	size    int64
+	mode    fs.FileMode
+}
+
+func (m *MockFileInfo) Name() string       { return m.name }
+func (m *MockFileInfo) Size() int64        { return m.size }
+func (m *MockFileInfo) Mode() fs.FileMode  { return m.mode }
+func (m *MockFileInfo) ModTime() time.Time { return m.modTime }
+func (m *MockFileInfo) IsDir() bool        { return m.mode.IsDir() }
+func (m *MockFileInfo) Sys() any           { return m.sys }
