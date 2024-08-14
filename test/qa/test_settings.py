@@ -151,7 +151,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     assert settings.app_has_defaults_settings()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES) # Only using standard technologies here because of "LVPN-4601 - Enabling Auto-connect disables Obfuscation"
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -173,7 +173,9 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     assert settings.is_ipv6_enabled()
     assert not settings.is_virtual_location_enabled()
 
-    if tech == "openvpn":
+    if obfuscated == "on":
+        assert settings.is_obfuscated_enabled()
+    else:
         assert not settings.is_obfuscated_enabled()
 
     sh.nordvpn.logout("--persist-token")
