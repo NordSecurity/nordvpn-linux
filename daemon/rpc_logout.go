@@ -25,7 +25,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 
 	defer func() {
 		eventStatus := events.StatusSuccess
-		if retErr != nil {
+		if retErr != nil || payload != nil && payload.Type != internal.CodeSuccess && payload.Type != internal.CodeTokenInvalidated {
 			eventStatus = events.StatusFailure
 		}
 		r.events.Service.Logout.Publish(events.DataAuthorization{DurationMs: max(int(time.Since(logoutStartTime).Milliseconds()), 1), EventTrigger: events.TriggerUser, EventStatus: eventStatus})
