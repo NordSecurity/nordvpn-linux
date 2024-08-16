@@ -911,3 +911,25 @@ def test_clear():
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert fileshare.find_transfer_by_id(transfers, peer_transfer_id0) is None
     assert fileshare.find_transfer_by_id(transfers, peer_transfer_id1) is None
+
+
+def test_fileshare_process_monitoring():
+    # port is open when fileshare is running
+    rules = os.popen("sudo iptables -S").read()
+    assert "49111 -m comment --comment nordvpn -j ACCEPT" in rules
+
+    sh.pkill("nordfileshare")
+    # at the time of writing, the monitoring job is executed periodically every 5 seconds,
+    # wait for 10 to be sure the job executed
+    time.sleep(10)
+
+    # port is not allowed when fileshare is down
+    rules = os.popen("sudo iptables -S").read()
+    assert "49111 -m comment --comment nordvpn -j ACCEPT" not in rules
+
+    os.popen("/usr/lib/nordvpn/nordfileshare &")
+    time.sleep(10)
+
+    # port is allowed again when fileshare process is up
+    rules = os.popen("sudo iptables -S").read()
+    assert "49111 -m comment --comment nordvpn -j ACCEPT" in rules
