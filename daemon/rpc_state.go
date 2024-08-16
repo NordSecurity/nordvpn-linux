@@ -35,6 +35,11 @@ func configToProtobuf(cfg *config.Config) *pb.GlobalSettings {
 		if userSettings, ok := userSet[uid]; ok {
 			userSettings.Tray = !trayOff
 			userSet[uid] = userSettings
+		} else {
+			userSet[uid] = &pb.UserSpecificSettings{
+				Uid:  uid,
+				Tray: !trayOff,
+			}
 		}
 	}
 

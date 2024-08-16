@@ -97,14 +97,14 @@ type FilesystemConfigManager struct {
 func NewFilesystemConfigManager(location, vault, salt string,
 	machineIDGetter MachineIDGetter,
 	fsHandle FilesystemHandle,
-	conifgPublisher ConfigPublisher) *FilesystemConfigManager {
+	configPublisher ConfigPublisher) *FilesystemConfigManager {
 	return &FilesystemConfigManager{
 		location:        location,
 		vault:           vault,
 		salt:            salt,
 		machineIDGetter: machineIDGetter,
 		fsHandle:        fsHandle,
-		configPublisher: conifgPublisher,
+		configPublisher: configPublisher,
 	}
 }
 
