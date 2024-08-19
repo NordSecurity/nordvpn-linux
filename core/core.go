@@ -31,6 +31,7 @@ type CredentialsAPI interface {
 	CurrentUser(string) (*CurrentUserResponse, error)
 	DeleteToken(string) error
 	TrustedPassToken(string) (*TrustedPassTokenResponse, error)
+	MultiFactorAuthStatus(string) (*MultiFactorAuthStatusResponse, error)
 }
 
 type InsightsAPI interface {
@@ -248,6 +249,22 @@ func (api *DefaultAPI) TrustedPassToken(token string) (*TrustedPassTokenResponse
 	defer resp.Body.Close()
 
 	var ret *TrustedPassTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&ret); err != nil {
+		return nil, fmt.Errorf("decoding response body: %w", err)
+	}
+
+	return ret, nil
+}
+
+// MultiFactorAuthStatus queries and returns the status of MFA
+func (api *DefaultAPI) MultiFactorAuthStatus(token string) (*MultiFactorAuthStatusResponse, error) {
+	resp, err := api.request(MFAStatusURL, http.MethodGet, nil, token)
+	if err != nil {
+		return nil, fmt.Errorf("making api request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var ret *MultiFactorAuthStatusResponse
 	if err := json.NewDecoder(resp.Body).Decode(&ret); err != nil {
 		return nil, fmt.Errorf("decoding response body: %w", err)
 	}

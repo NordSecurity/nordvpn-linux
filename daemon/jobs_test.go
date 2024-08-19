@@ -34,7 +34,8 @@ func mockTimeout(tries int) time.Duration {
 
 type failingLoginChecker struct{}
 
-func (failingLoginChecker) IsLoggedIn() bool { return false }
+func (failingLoginChecker) IsLoggedIn() bool            { return false }
+func (failingLoginChecker) IsMFAEnabled() (bool, error) { return false, nil }
 func (failingLoginChecker) IsVPNExpired() (bool, error) {
 	return true, errors.New("IsVPNExpired error")
 }

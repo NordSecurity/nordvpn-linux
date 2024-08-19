@@ -77,6 +77,10 @@ func (validCredentialsAPI) TrustedPassToken(token string) (*core.TrustedPassToke
 	return nil, nil
 }
 
+func (validCredentialsAPI) MultiFactorAuthStatus(token string) (*core.MultiFactorAuthStatusResponse, error) {
+	return nil, nil
+}
+
 func (validCredentialsAPI) Services(string) (core.ServicesResponse, error) {
 	return core.ServicesResponse{
 		{
@@ -99,6 +103,7 @@ type workingLoginChecker struct {
 }
 
 func (*workingLoginChecker) IsLoggedIn() bool              { return true }
+func (*workingLoginChecker) IsMFAEnabled() (bool, error)   { return false, nil }
 func (c *workingLoginChecker) IsVPNExpired() (bool, error) { return c.isVPNExpired, c.vpnErr }
 func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	if c.isDedicatedIPExpired {

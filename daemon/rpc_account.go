@@ -39,6 +39,19 @@ func findLatestDIPExpirationData(dipServices []auth.DedicatedIPService) (string,
 	return latest.Format(layout), nil
 }
 
+// dipServicesToProtobuf converts internal DedicatedIPService structure to the protobuf generated structure.
+func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.DedidcatedIPService {
+	dipServicesProtobuf := []*pb.DedidcatedIPService{}
+	for _, dipService := range dipServices {
+		dipServicesProtobuf = append(dipServicesProtobuf, &pb.DedidcatedIPService{
+			ServerId:             dipService.ServerID,
+			DedicatedIpExpiresAt: dipService.ExpiresAt,
+		})
+	}
+
+	return dipServicesProtobuf
+}
+
 // AccountInfo returns user account information.
 func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse, error) {
 	if !r.ac.IsLoggedIn() {
@@ -72,10 +85,21 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 	if len(dipServices) != 0 {
 		dedicatedIPExpirationDate, err = findLatestDIPExpirationData(dipServices)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "getting latest dedicated ip expiration date: ", err)
+			log.Println(internal.ErrorPrefix, "getting latest dedicated ip expiration date:", err)
 			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 		}
 	}
+	accountInfo.DedicatedIpServices = dipServicesToProtobuf(dipServices)
+
+	mfaStatus := pb.MFAStatus_DISABLED
+	mfaEnabled, err := r.ac.IsMFAEnabled()
+	if err != nil {
+		mfaStatus = pb.MFAStatus_UNKNOWN
+		log.Println(internal.ErrorPrefix, "getting MFA status:", err)
+	} else if mfaEnabled {
+		mfaStatus = pb.MFAStatus_ENABLED
+	}
+	accountInfo.MfaStatus = mfaStatus
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
@@ -86,7 +110,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	accountInfo.ExpiresAt = tokenData.ServiceExpiry
-	accountInfo.DedicatedIpExpiresAt = dedicatedIPExpirationDate
+	accountInfo.LastDedicatedIpExpiresAt = dedicatedIPExpirationDate
 
 	currentUser, err := r.credentialsAPI.CurrentUser(tokenData.Token)
 	if err != nil {
