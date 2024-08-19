@@ -9,6 +9,7 @@ set -euxo pipefail
 excluded_packages="moose\|cmd\/daemon\|telio\|daemon\/vpn\/openvpn"
 excluded_packages=$excluded_packages"\|meshnet\/mesh\/nordlynx\|fileshare\/drop"
 excluded_packages=$excluded_packages"\|events\/moose"
+excluded_packages=$excluded_packages"\|pb\|magefiles"
 excluded_categories="root,link,firewall,route,file,integration"
 
 # In case 'full' was specified, do not exclude anything and run
@@ -36,6 +37,9 @@ go test -tags internal -v -race $(go list -buildvcs=false ./... | grep -v "${exc
 	-coverprofile "${WORKDIR}"/coverage.txt \
 	-exclude "${excluded_categories}" \
 	-args -test.gocoverdir="${WORKDIR}/coverage/unit"
+
+grep -v "$excluded_packages" < "${WORKDIR}/coverage.txt" > "${WORKDIR}/cov.txt"
+mv "${WORKDIR}/cov.txt" "${WORKDIR}/coverage.txt"
 
 # Display code coverage report
 go tool cover -func="${WORKDIR}"/coverage.txt
