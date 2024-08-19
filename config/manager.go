@@ -112,19 +112,27 @@ func NewFilesystemConfigManager(location, vault, salt string,
 //
 // Thread-safe.
 func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
+	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
+	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
+	// published. The assumption here is that publisher is protected with it's own lock.
+	var c Config
+	var err error
+	defer func() {
+		if err == nil && f.configPublisher != nil {
+			f.configPublisher.Publish(&c)
+		}
+	}()
+
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	var c Config
 	if err := f.load(&c); err != nil {
 		return err
 	}
 
 	c = fn(c)
-	err := f.save(c)
-	if err == nil && f.configPublisher != nil {
-		f.configPublisher.Publish(&c)
-	}
+	err = f.save(c)
+
 	return err
 }
 
