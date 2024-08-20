@@ -104,7 +104,7 @@ func (View) Docs() error {
 // Clean is used to clean build results.
 func Clean() error {
 	// cleanup regular build folders
-	buildFolders := []string{"./bin", "./dist"}
+	buildFolders := []string{"./bin", "./dist", "./build/foss/target"}
 	for _, folder := range buildFolders {
 		if internal.FileExists(folder) {
 			fmt.Println("Cleanup build folder:", folder)
