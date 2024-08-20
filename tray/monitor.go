@@ -141,8 +141,10 @@ func (ti *Instance) updateSettings() bool {
 		ti.state.notificationsStatus = newNotificationsStatus
 
 		if newNotificationsStatus == Enabled {
+			defer ti.notifyForce("Notifications enabled")
 			defer log.Println(internal.InfoPrefix, "Notifications enabled")
 		} else {
+			defer ti.notifyForce("Notifications disabled")
 			defer log.Println(internal.InfoPrefix, "Notifications disabled")
 		}
 	}
