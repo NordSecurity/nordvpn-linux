@@ -4,15 +4,11 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
+import "common.proto";
+
 message DedidcatedIPService {
   int64 server_id = 1;
   string dedicated_ip_expires_at = 2;
-}
-
-enum MFAStatus {
-  UNKNOWN = 0;
-  DISABLED = 1;
-  ENABLED = 2;
 }
 
 message AccountResponse {
@@ -23,5 +19,5 @@ message AccountResponse {
   int64 dedicated_ip_status = 5;
   string last_dedicated_ip_expires_at = 6;
   repeated DedidcatedIPService dedicated_ip_services = 7;
-  MFAStatus mfa_status = 8;
+  TriState mfa_status = 8;
 }

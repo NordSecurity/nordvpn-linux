@@ -34,3 +34,9 @@ message ServerGroupsList {
   int64 type = 1;
   repeated ServerGroup servers = 2;
 }
+
+enum TriState {
+  UNKNOWN = 0;
+  DISABLED = 1;
+  ENABLED = 2;
+}

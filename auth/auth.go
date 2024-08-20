@@ -111,7 +111,7 @@ func (r *RenewingChecker) IsMFAEnabled() (bool, error) {
 		return false, fmt.Errorf("querying MFA status: %w", err)
 	}
 
-	return resp.Status == "enabled", nil
+	return resp.Status == internal.MFAEnabledStatusName, nil
 }
 
 // IsVPNExpired is used to check whether the user is allowed to use VPN

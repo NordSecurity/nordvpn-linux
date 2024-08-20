@@ -84,6 +84,10 @@ const (
 	LogFileExtension = ".log"
 
 	SecondsToWaitForIptablesLock = "5" // use string to easier concatenate into the command args
+
+	// MFAEnabledStatusName is a string value used to denote enabled multifactor authentication in a response to the
+	// /v1/users/oauth/mfa/status by the core API
+	MFAEnabledStatusName = "enabled"
 )
 
 var (

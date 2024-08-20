@@ -91,13 +91,13 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		}
 	}
 
-	mfaStatus := pb.MFAStatus_DISABLED
+	mfaStatus := pb.TriState_DISABLED
 	mfaEnabled, err := r.ac.IsMFAEnabled()
 	if err != nil {
-		mfaStatus = pb.MFAStatus_UNKNOWN
+		mfaStatus = pb.TriState_ENABLED
 		log.Println(internal.ErrorPrefix, "getting MFA status:", err)
 	} else if mfaEnabled {
-		mfaStatus = pb.MFAStatus_ENABLED
+		mfaStatus = pb.TriState_UNKNOWN
 	}
 	accountInfo.MfaStatus = mfaStatus
 
