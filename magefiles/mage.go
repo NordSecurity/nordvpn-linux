@@ -232,7 +232,7 @@ func buildPackage(packageType string, buildFlags string) error {
 	}
 	env["WORKDIR"] = cwd
 	if packageType == "snap" {
-		return sh.RunWith(env, "snapcraft")
+		return sh.RunWith(env, "ci/build_snap.sh")
 	}
 	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", packageType)
 }
@@ -283,7 +283,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 			ctx,
 			env,
 			imageSnapPackager,
-			[]string{"snapcraft", "--destructive-mode"},
+			[]string{"ci/build_snap.sh"},
 		)
 	}
 	return RunDocker(
