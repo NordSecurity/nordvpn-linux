@@ -45,6 +45,9 @@ COPY --from=builder /snap/core22 /snap/core22
 COPY --from=builder /snap/snapcraft /snap/snapcraft
 COPY --from=builder /snap/bin/snapcraft /snap/bin/snapcraft
 
+RUN mkdir -p /.cache && chmod -R 777 /.cache
+RUN mkdir -p /.local/state && chmod -R 777 /.local/state
+
 # Generate locale and install dependencies.
 RUN apt-get update && apt-get dist-upgrade --yes \
         && apt-get install --yes snapd locales \

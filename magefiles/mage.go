@@ -21,7 +21,7 @@ const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.3.1"
 	imagePackager          = registryPrefix + "packager:1.3.0"
-	imageSnapPackager      = registryPrefix + "snaper:0.0.2"
+	imageSnapPackager      = registryPrefix + "snaper:0.0.3"
 	imageProtobufGenerator = registryPrefix + "generator:1.3.0"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.2.0"
