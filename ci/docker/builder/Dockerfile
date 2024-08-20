@@ -2,6 +2,8 @@ FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20240725
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
+RUN mkdir -p /.cache && chmod -R 777 /.cache
+
 RUN dpkg --add-architecture i386 && \
     dpkg --add-architecture arm64 && \
     dpkg --add-architecture armhf && \
