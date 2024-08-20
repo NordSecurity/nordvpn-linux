@@ -1310,7 +1310,6 @@ func (s *Server) ChangePeerNickname(
 
 	// TODO: sometimes IsRegistrationInfoCorrect() re-registers the device => cfg.MeshDevice.ID can be different.
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
-
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
@@ -3067,6 +3066,20 @@ func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh
 	}
 
 	return &peers[index]
+}
+
+func (s *Server) listPeers() (mesh.MachinePeers, error) {
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		return nil, fmt.Errorf("reading configuration when listing peers: %w", err)
+	}
+
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
+	if err != nil {
+		return nil, fmt.Errorf("listing peers: %w", err)
+	}
+	return peers, nil
 }
 
 func MakePeerMaps(peers *pb.PeerList) (map[string]*pb.Peer, map[string]*pb.Peer) {
