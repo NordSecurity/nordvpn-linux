@@ -54,6 +54,8 @@ type DaemonClient interface {
 	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error)
 	SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
+	UnsetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
+	UnsetAllAllowlist(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error)
 	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
@@ -430,6 +432,24 @@ func (c *daemonClient) SetAllowlist(ctx context.Context, in *SetAllowlistRequest
 	return out, nil
 }
 
+func (c *daemonClient) UnsetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/UnsetAllowlist", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) UnsetAllAllowlist(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/UnsetAllAllowlist", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *daemonClient) Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error) {
 	out := new(SettingsResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Settings", in, out, opts...)
@@ -570,6 +590,8 @@ type DaemonServer interface {
 	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
 	SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error)
 	SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
+	UnsetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
+	UnsetAllAllowlist(context.Context, *Empty) (*Payload, error)
 	Settings(context.Context, *SettingsRequest) (*SettingsResponse, error)
 	SettingsProtocols(context.Context, *Empty) (*Payload, error)
 	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
@@ -681,6 +703,12 @@ func (UnimplementedDaemonServer) SetLANDiscovery(context.Context, *SetLANDiscove
 }
 func (UnimplementedDaemonServer) SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAllowlist not implemented")
+}
+func (UnimplementedDaemonServer) UnsetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsetAllowlist not implemented")
+}
+func (UnimplementedDaemonServer) UnsetAllAllowlist(context.Context, *Empty) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsetAllAllowlist not implemented")
 }
 func (UnimplementedDaemonServer) Settings(context.Context, *SettingsRequest) (*SettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Settings not implemented")
@@ -1307,6 +1335,42 @@ func _Daemon_SetAllowlist_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_UnsetAllowlist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAllowlistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).UnsetAllowlist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/UnsetAllowlist",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).UnsetAllowlist(ctx, req.(*SetAllowlistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_UnsetAllAllowlist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).UnsetAllAllowlist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/UnsetAllAllowlist",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).UnsetAllAllowlist(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Daemon_Settings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SettingsRequest)
 	if err := dec(in); err != nil {
@@ -1594,6 +1658,14 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetAllowlist",
 			Handler:    _Daemon_SetAllowlist_Handler,
+		},
+		{
+			MethodName: "UnsetAllowlist",
+			Handler:    _Daemon_UnsetAllowlist_Handler,
+		},
+		{
+			MethodName: "UnsetAllAllowlist",
+			Handler:    _Daemon_UnsetAllAllowlist_Handler,
 		},
 		{
 			MethodName: "Settings",

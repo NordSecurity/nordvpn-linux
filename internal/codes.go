@@ -55,6 +55,10 @@ const (
 	CodeDedicatedIPRenewError          int64 = 3041
 	CodeDedicatedIPNoServer            int64 = 3042
 	CodeDedicatedIPServiceButNoServers int64 = 3043
+	CodeAllowlistInvalidSubnet         int64 = 3044
+	CodeAllowlistSubnetNoop            int64 = 3045
+	CodeAllowlistPortOutOfRange        int64 = 3046
+	CodeAllowlistPortNoop              int64 = 3047
 )
 
 type ErrorWithCode struct {

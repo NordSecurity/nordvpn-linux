@@ -98,8 +98,26 @@ message SetTechnologyRequest {
   config.Technology technology = 2;
 }
 
+message PortRange {
+  int64 start = 1;
+  int64 stop = 2;
+}
+
+message SetAllowlistSubnetRequest {
+  string subnet = 1;
+}
+
+message SetAllowlistPortsRequest {
+  bool is_udp = 1;
+  bool is_tcp = 2;
+  PortRange port_range = 3;
+}
+
 message SetAllowlistRequest {
-  Allowlist allowlist = 2;
+  oneof request {
+    SetAllowlistSubnetRequest set_allowlist_subnet_request = 1;
+    SetAllowlistPortsRequest set_allowlist_ports_request = 2;
+  }
 }
 
 message SetLANDiscoveryRequest {

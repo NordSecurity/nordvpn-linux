@@ -3,11 +3,9 @@ package cli
 import (
 	"context"
 	"fmt"
-	"net"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"golang.org/x/exp/slices"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -32,25 +30,12 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 		return formatError(argsCountError(ctx))
 	}
 
-	_, subnet, err := net.ParseCIDR(args.First())
-	if err != nil {
-		return formatError(argsParseError(ctx))
-	}
-
-	settings, err := c.getSettings()
-	if err != nil {
-		return formatError(err)
-	}
-	allowlist := settings.Settings.GetAllowlist()
-
-	if slices.Contains(allowlist.Subnets, subnet.String()) {
-		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet.String()))
-	}
-
-	allowlist.Subnets = append(allowlist.Subnets, subnet.String())
+	subnet := args.First()
 
 	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: allowlist,
+		Request: &pb.SetAllowlistRequest_SetAllowlistSubnetRequest{
+			SetAllowlistSubnetRequest: &pb.SetAllowlistSubnetRequest{Subnet: subnet},
+		},
 	})
 	if err != nil {
 		return formatError(err)
@@ -65,6 +50,10 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 		return formatError(internal.ErrUnhandled)
 	case internal.CodePrivateSubnetLANDiscovery:
 		return formatError(fmt.Errorf(AllowlistAddSubnetLANDiscovery))
+	case internal.CodeAllowlistInvalidSubnet:
+		return formatError(argsParseError(ctx))
+	case internal.CodeAllowlistSubnetNoop:
+		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(AllowlistAddSubnetSuccess, subnet))
 	}

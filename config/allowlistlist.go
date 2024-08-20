@@ -36,6 +36,65 @@ type Allowlist struct {
 	Subnets Subnets `json:"subnets"`
 }
 
+func (a *Allowlist) UpdateUDPPorts(ports []int64, remove bool) {
+	for _, port := range ports {
+		if remove {
+			delete(a.Ports.UDP, port)
+		} else {
+			a.Ports.UDP[port] = true
+		}
+	}
+
+}
+
+func (a *Allowlist) UpdateTCPPorts(ports []int64, remove bool) {
+	for _, port := range ports {
+		if remove {
+			delete(a.Ports.TCP, port)
+		} else {
+			a.Ports.TCP[port] = true
+		}
+	}
+}
+
+func (a *Allowlist) UpdateSubnets(subnet string, remove bool) {
+	if remove {
+		delete(a.Subnets, subnet)
+	} else {
+		a.Subnets[subnet] = true
+	}
+}
+
+// GetUDPPorts returns a slice of all UDP ports within the allowlist
+func (a *Allowlist) GetUDPPorts() []int64 {
+	ports := []int64{}
+	for port := range a.Ports.UDP {
+		ports = append(ports, port)
+	}
+
+	return ports
+}
+
+// GetTCPPorts returns a slice of all TCP ports within the allowlist
+func (a *Allowlist) GetTCPPorts() []int64 {
+	ports := []int64{}
+	for port := range a.Ports.TCP {
+		ports = append(ports, port)
+	}
+
+	return ports
+}
+
+// GetSubnets returns a slice of all subnets within the allowlist
+func (a *Allowlist) GetSubnets() []string {
+	subnets := []string{}
+	for subnet := range a.Subnets {
+		subnets = append(subnets, subnet)
+	}
+
+	return subnets
+}
+
 // Subnets is a set of subnets.
 type Subnets map[string]bool
 

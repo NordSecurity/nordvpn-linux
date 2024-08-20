@@ -8,7 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"golang.org/x/exp/slices"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -39,15 +38,6 @@ func (c *cmd) AllowlistAddPort(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if port < AllowlistMinPort || port > AllowlistMaxPort {
-		return formatError(fmt.Errorf(
-			AllowlistPortRangeError,
-			port,
-			AllowlistMinPort,
-			AllowlistMaxPort,
-		))
-	}
-
 	isUDP := false
 	isTCP := false
 	if args.Len() == 1 {
@@ -64,28 +54,20 @@ func (c *cmd) AllowlistAddPort(ctx *cli.Context) error {
 		}
 	}
 
-	settings, err := c.getSettings()
-	if err != nil {
-		return formatError(err)
+	request := pb.SetAllowlistRequest{
+		Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+			SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+				IsUdp: isUDP,
+				IsTcp: isTCP,
+				PortRange: &pb.PortRange{
+					Start: port,
+					Stop:  0,
+				},
+			},
+		},
 	}
-	allowlist := settings.Settings.GetAllowlist()
-	if isTCP && slices.Contains(allowlist.Ports.Tcp, port) ||
-		isUDP && slices.Contains(allowlist.Ports.Udp, port) {
-		return formatError(fmt.Errorf(
-			AllowlistAddPortExistsError,
-			port,
-			getProtocolStr(isTCP, isUDP),
-		))
-	}
-	if isTCP {
-		allowlist.Ports.Tcp = append(allowlist.Ports.Tcp, port)
-	}
-	if isUDP {
-		allowlist.Ports.Udp = append(allowlist.Ports.Udp, port)
-	}
-	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: allowlist,
-	})
+
+	resp, err := c.client.SetAllowlist(context.Background(), &request)
 	if err != nil {
 		return formatError(err)
 	}
@@ -101,6 +83,19 @@ func (c *cmd) AllowlistAddPort(ctx *cli.Context) error {
 		))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
+	case internal.CodeAllowlistPortOutOfRange:
+		return formatError(fmt.Errorf(
+			AllowlistPortRangeError,
+			port,
+			internal.AllowlistMinPort,
+			internal.AllowlistMaxPort,
+		))
+	case internal.CodeAllowlistPortNoop:
+		return formatError(fmt.Errorf(
+			AllowlistAddPortExistsError,
+			port,
+			getProtocolStr(isTCP, isUDP),
+		))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(
 			AllowlistAddPortSuccess,

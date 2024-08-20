@@ -43,24 +43,8 @@ func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if startPort > endPort {
-		return formatError(argsParseError(ctx))
-	}
-
-	if startPort < AllowlistMinPort || startPort > AllowlistMaxPort ||
-		endPort < AllowlistMinPort || endPort > AllowlistMaxPort {
-		return formatError(fmt.Errorf(
-			AllowlistPortsRangeError,
-			startPort,
-			endPort,
-			AllowlistMinPort,
-			AllowlistMaxPort,
-		))
-	}
-
 	isUDP := false
 	isTCP := false
-	ports := []int64{}
 
 	if args.Len() == 2 {
 		isUDP = true
@@ -76,23 +60,17 @@ func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 		}
 	}
 
-	for port := startPort; port <= endPort; port++ {
-		ports = append(ports, port)
-	}
-
-	settings, err := c.getSettings()
-	if err != nil {
-		return formatError(err)
-	}
-	allowlist := settings.Settings.GetAllowlist()
-	if isTCP {
-		allowlist.Ports.Tcp = append(allowlist.Ports.Tcp, ports...)
-	}
-	if isUDP {
-		allowlist.Ports.Udp = append(allowlist.Ports.Udp, ports...)
-	}
 	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: allowlist,
+		Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+			SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+				IsUdp: isUDP,
+				IsTcp: isTCP,
+				PortRange: &pb.PortRange{
+					Start: startPort,
+					Stop:  endPort,
+				},
+			},
+		},
 	})
 	if err != nil {
 		return formatError(err)
@@ -110,6 +88,14 @@ func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 		))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
+	case internal.CodeAllowlistPortOutOfRange:
+		return formatError(fmt.Errorf(
+			AllowlistPortsRangeError,
+			startPort,
+			endPort,
+			internal.AllowlistMinPort,
+			internal.AllowlistMaxPort,
+		))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(
 			AllowlistAddPortsSuccess,
