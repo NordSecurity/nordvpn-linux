@@ -73,9 +73,9 @@ func (c *cmd) Account(ctx *cli.Context) error {
 	}
 
 	mfa := "enabled"
-	if payload.MfaStatus == pb.MFAStatus_DISABLED {
+	if payload.MfaStatus == pb.TriState_DISABLED {
 		mfa = "disabled"
-	} else if payload.MfaStatus == pb.MFAStatus_UNKNOWN {
+	} else if payload.MfaStatus == pb.TriState_UNKNOWN {
 		mfa = "unknown"
 	}
 
