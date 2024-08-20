@@ -246,9 +246,7 @@ func (ti *Instance) pollingMonitor() {
 		ti.redraw(ti.ping())
 		if ti.state.daemonAvailable {
 			ti.redraw(ti.updateLoginStatus())
-			if fullUpdate {
-				ti.redraw(ti.updateSettings())
-			}
+			ti.redraw(ti.updateSettings())
 			if ti.state.loggedIn {
 				if fullUpdate {
 					ti.redraw(ti.updateAccountInfo())
@@ -275,7 +273,7 @@ func (ti *Instance) pollingMonitor() {
 		case <-systray.TrayOpenedCh:
 			fullUpdate = true
 		case ts := <-ticker.C:
-			fullUpdate = (ts.Sub(fullUpdateLast) >= PollingFullUpdateInterval)
+			fullUpdate = ts.Sub(fullUpdateLast) >= PollingFullUpdateInterval
 		}
 		if ti.debugMode {
 			if fullUpdate {
