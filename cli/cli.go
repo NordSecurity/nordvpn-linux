@@ -459,12 +459,9 @@ func NewApp(version, environment, hash, salt string,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 		},
 		{
-			Name:  "version",
-			Usage: "Shows the app version",
-			Action: func(c *cli.Context) error {
-				cli.VersionPrinter(c)
-				return nil
-			},
+			Name:               "version",
+			Usage:              "Shows daemon version",
+			Action:             cmd.Version,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 		},
 		{
