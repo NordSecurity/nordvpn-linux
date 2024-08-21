@@ -11,6 +11,7 @@ import "connect.proto";
 import "login.proto";
 import "logout.proto";
 import "login_with_token.proto";
+import "ping.proto";
 import "plans.proto";
 import "rate.proto";
 import "register.proto";
@@ -35,7 +36,7 @@ service Daemon {
   rpc LoginOAuth2Callback(String) returns (Empty);
   rpc Logout(LogoutRequest) returns (Payload);
   rpc Plans(Empty) returns (PlansResponse);
-  rpc Ping(Empty) returns (Payload);
+  rpc Ping(Empty) returns (PingResponse);
   rpc RateConnection(RateRequest) returns (Payload);
   rpc Register(RegisterRequest) returns (Payload);
   rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
