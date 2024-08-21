@@ -33,6 +33,14 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 		Type: internal.CodeSuccess,
 		Data: &pb.UserSettings{
 			Settings: &pb.Settings{
+				Technology:           cfg.Technology,
+				Firewall:             cfg.Firewall,
+				Fwmark:               cfg.FirewallMark,
+				Routing:              cfg.Routing.Get(),
+				Analytics:            cfg.Analytics.Get(),
+				KillSwitch:           cfg.KillSwitch,
+				AutoConnect:          cfg.AutoConnect,
+				Ipv6:                 cfg.IPv6,
 				Meshnet:              cfg.Mesh,
 				Dns:                  cfg.AutoConnectData.DNS,
 				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
