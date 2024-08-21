@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+message PingResponse {
+  int64 type = 1;
+  int64 major = 2;
+  int64 minor = 3;
+  int64 patch = 4;
+  string metadata = 5;
+}

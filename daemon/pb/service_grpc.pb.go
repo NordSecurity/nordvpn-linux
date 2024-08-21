@@ -35,7 +35,7 @@ type DaemonClient interface {
 	LoginOAuth2Callback(ctx context.Context, in *String, opts ...grpc.CallOption) (*Empty, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Payload, error)
 	Plans(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PlansResponse, error)
-	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -258,8 +258,8 @@ func (c *daemonClient) Plans(ctx context.Context, in *Empty, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *daemonClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error) {
+	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -541,7 +541,7 @@ type DaemonServer interface {
 	LoginOAuth2Callback(context.Context, *String) (*Empty, error)
 	Logout(context.Context, *LogoutRequest) (*Payload, error)
 	Plans(context.Context, *Empty) (*PlansResponse, error)
-	Ping(context.Context, *Empty) (*Payload, error)
+	Ping(context.Context, *Empty) (*PingResponse, error)
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
 	Register(context.Context, *RegisterRequest) (*Payload, error)
 	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
@@ -614,7 +614,7 @@ func (UnimplementedDaemonServer) Logout(context.Context, *LogoutRequest) (*Paylo
 func (UnimplementedDaemonServer) Plans(context.Context, *Empty) (*PlansResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Plans not implemented")
 }
-func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*Payload, error) {
+func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedDaemonServer) RateConnection(context.Context, *RateRequest) (*Payload, error) {
