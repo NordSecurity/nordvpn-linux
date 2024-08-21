@@ -24,6 +24,10 @@ func (*CredentialsAPIMock) TokenRenew(string) (*core.TokenRenewResponse, error) 
 	return nil, nil
 }
 
+func (*CredentialsAPIMock) MultifactorAuthStatus(string) (*core.MultifactorAuthStatusResponse, error) {
+	return nil, nil
+}
+
 func (*CredentialsAPIMock) Services(string) (core.ServicesResponse, error) {
 	return core.ServicesResponse{}, nil
 }

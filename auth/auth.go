@@ -24,6 +24,8 @@ type DedicatedIPService struct {
 type Checker interface {
 	// IsLoggedIn returns true when the user is logged in.
 	IsLoggedIn() bool
+	// IsMFAEnabled returns true if Multifactor Authentication is enabled.
+	IsMFAEnabled() (bool, error)
 	// IsVPNExpired is used to check whether the user is allowed to use VPN
 	IsVPNExpired() (bool, error)
 	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
@@ -91,6 +93,25 @@ func (r *RenewingChecker) IsLoggedIn() bool {
 	}
 
 	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0 && isLoggedIn
+}
+
+func (r *RenewingChecker) IsMFAEnabled() (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		return false, fmt.Errorf("loading config: %w", err)
+	}
+
+	data := cfg.TokensData[cfg.AutoConnectData.ID]
+
+	resp, err := r.creds.MultifactorAuthStatus(data.Token)
+	if err != nil {
+		return false, fmt.Errorf("querying MFA status: %w", err)
+	}
+
+	return resp.Status == internal.MFAEnabledStatusName, nil
 }
 
 // IsVPNExpired is used to check whether the user is allowed to use VPN

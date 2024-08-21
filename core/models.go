@@ -153,6 +153,10 @@ type TrustedPassTokenResponse struct {
 	Token   string `json:"token"`
 }
 
+type MultifactorAuthStatusResponse struct {
+	Status string `json:"status"`
+}
+
 type Plans []Plan
 
 type Plan struct {

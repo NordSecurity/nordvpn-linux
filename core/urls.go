@@ -55,6 +55,8 @@ const (
 
 	TrustedPassTokenURL = UsersURL + "/oauth/tokens/trusted"
 
+	MFAStatusURL = UsersURL + "/oauth/mfa/status"
+
 	// ServersURLConnectQuery is all servers query optimized
 	// for minimal dm size required
 	// to create servers maps and calculate their penalty scores

@@ -43,6 +43,9 @@ type meshRenewChecker struct {
 func (m meshRenewChecker) IsLoggedIn() bool {
 	return !m.IsNotLoggedIn
 }
+func (m meshRenewChecker) IsMFAEnabled() (bool, error) {
+	return false, nil
+}
 func (meshRenewChecker) IsVPNExpired() (bool, error) { return false, nil }
 func (meshRenewChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")

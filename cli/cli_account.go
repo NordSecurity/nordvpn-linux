@@ -68,9 +68,18 @@ func (c *cmd) Account(ctx *cli.Context) error {
 
 	if err := displayServiceStatus("Dedicated IP",
 		payload.DedicatedIpStatus,
-		payload.DedicatedIpExpiresAt); err != nil {
+		payload.LastDedicatedIpExpiresAt); err != nil {
 		return err
 	}
+
+	mfa := "enabled"
+	if payload.MfaStatus == pb.TriState_DISABLED {
+		mfa = "disabled"
+	} else if payload.MfaStatus == pb.TriState_UNKNOWN {
+		mfa = "unknown"
+	}
+
+	fmt.Println("MultifactorAuthentication:", mfa)
 
 	return nil
 }
