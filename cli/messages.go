@@ -360,7 +360,7 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
 
-	SetPqUnavailable = "Postqauntum VPN is not available with the current technology. Change the technology to Nordlynx to use postqauntum VPN."
-	SetPqAndMeshnet  = "Cannot use Postqauntum VPN and Meshnet simultaneously. The features are incompatible."
-	SetPqUsageText   = "Enables or disables postquantum VPN. When enabled, the VPN connection will use resistant quantum computer resistant cryptography."
+	SetPqUnavailable = "The post-quantum VPN is unavailable with OpenVPN. Switch to NordLynx to enable post-quantum VPN capabilities."
+	SetPqAndMeshnet  = "The post-quantum VPN and Meshnet cannot operate simultaneously. Please disable one feature to enable the other."
+	SetPqUsageText   = "Enables or disables post-quantum VPN. When enabled, your VPN connection uses new post-quantum cryptography, resistant to quantum computer attacks. Not compatible with Meshnet."
 )

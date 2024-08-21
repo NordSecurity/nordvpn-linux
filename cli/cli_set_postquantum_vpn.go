@@ -30,7 +30,7 @@ func (c *cmd) SetPostquantumVpn(ctx *cli.Context) error {
 
 	switch resp.Type {
 	case internal.CodeNothingToDo:
-		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Postqantum VPN", nstrings.GetBoolLabel(flag)))
+		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Post-quantum VPN", nstrings.GetBoolLabel(flag)))
 		return nil
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
@@ -39,7 +39,7 @@ func (c *cmd) SetPostquantumVpn(ctx *cli.Context) error {
 	case internal.CodePqWithoutNordlynx:
 		return formatError(errors.New(SetPqUnavailable))
 	case internal.CodeSuccess:
-		color.Green(fmt.Sprintf(MsgSetSuccess, "Postquantum VPN", nstrings.GetBoolLabel(flag)))
+		color.Green(fmt.Sprintf(MsgSetSuccess, "Post-quantum VPN", nstrings.GetBoolLabel(flag)))
 		flag, _ := strconv.ParseBool(resp.Data[0])
 		if flag {
 			color.Yellow(SetReconnect)
