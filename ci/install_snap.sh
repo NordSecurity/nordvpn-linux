@@ -20,5 +20,6 @@ echo "~~~GRANT permissions - connect snap interfaces"
 sudo snap connect nordvpn:network-control
 sudo snap connect nordvpn:network-observe
 sudo snap connect nordvpn:firewall-control
+sudo snap connect nordvpn:system-observe
 
 echo "~~~INSTALL Snap DONE."
