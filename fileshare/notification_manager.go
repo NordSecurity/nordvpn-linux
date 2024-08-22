@@ -228,7 +228,6 @@ type NotificationManager struct {
 // NewNotificationManager creates a new notification
 func NewNotificationManager(fileshare Fileshare, eventManager *EventManager) (*NotificationManager, error) {
 	defaultDownloadDir, err := GetDefaultDownloadDirectory()
-
 	if err != nil {
 		log.Println("Failed to find default download directory: ", err.Error())
 	}
@@ -314,8 +313,7 @@ func (nm *NotificationManager) NotifyFile(filename string, direction pb.Directio
 	summary := fileStatusToNotificationSummary(direction, status)
 
 	if direction == pb.Direction_INCOMING && status == pb.Status_SUCCESS {
-		if notificationID, err :=
-			nm.notifier.SendNotification(summary, filename, []Action{{actionKeyOpenFile, "Open"}}); err == nil {
+		if notificationID, err := nm.notifier.SendNotification(summary, filename, []Action{{actionKeyOpenFile, "Open"}}); err == nil {
 			nm.notifications.AddFileNotification(notificationID, filename)
 		} else {
 			log.Printf("failed to send notification for file %s: %s", filename, err)
@@ -379,7 +377,6 @@ func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
 	}
 
 	transfer, err := nm.eventManager.GetTransfer(transferID)
-
 	if err != nil {
 		log.Println("Failed to cancel transfer from notification manager: ", err)
 		nm.sendGenericNotification(cancelFailedNotificationSummary, genericError)
@@ -395,7 +392,7 @@ func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
 		return
 	}
 
-	if err := nm.fileshare.Cancel(transferID); err != nil {
+	if err := nm.fileshare.Finalize(transferID); err != nil {
 		log.Println("Failed to cancel transfer from notification manager: ", err)
 		nm.sendGenericNotification(cancelFailedNotificationSummary, err.Error())
 	}
@@ -410,8 +407,8 @@ func (nm *NotificationManager) NotifyNewTransfer(transferID string, peer string)
 		body,
 		[]Action{
 			{actionKeyAcceptTransfer, transferAcceptAction},
-			{actionKeyCancelTransfer, transferCancelAction}})
-
+			{actionKeyCancelTransfer, transferCancelAction},
+		})
 	if err != nil {
 		log.Println("failed to send notification for new transfer: ", err)
 	}
