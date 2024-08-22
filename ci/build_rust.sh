@@ -75,6 +75,8 @@ function copy_so_files() {
   done
 }
 
+mkdir -p "${WORKDIR}/build/foss"
+
 # ====================[  Build libtelio from source ]=========================
 clone_if_absent "https://github.com/NordSecurity/libtelio.git" "${LIBTELIO_VERSION}" "${WORKDIR}/build/foss"
 # BYPASS_LLT_SECRETS is needed for libtelio builds
