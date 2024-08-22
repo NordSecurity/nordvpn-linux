@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -176,7 +175,7 @@ func TestFileCreate(t *testing.T) {
 func TestFileRead(t *testing.T) {
 	category.Set(t, category.File)
 
-	expected, err := ioutil.ReadFile(TestDataPath + TestFileReadFile)
+	expected, err := os.ReadFile(TestDataPath + TestFileReadFile)
 	assert.NoError(t, err)
 	got, err := FileRead(TestDataPath + TestFileReadFile)
 	assert.NoError(t, err)
@@ -429,7 +428,7 @@ func TestIsProcessRunning(t *testing.T) {
 		name             string
 		expectedExecPath string
 		readdir          readdirFunc
-		readlink         readlinkFunc
+		readfile         readfileFunc
 		expected         bool
 		withError        bool
 	}{
@@ -437,7 +436,7 @@ func TestIsProcessRunning(t *testing.T) {
 			name:             "returns false for empty process list",
 			expectedExecPath: "/not/important",
 			readdir:          func(string) ([]os.DirEntry, error) { return []os.DirEntry{}, nil },
-			readlink:         defaultReadlink,
+			readfile:         defaultReadfile,
 			expected:         false,
 			withError:        false,
 		},
@@ -451,7 +450,21 @@ func TestIsProcessRunning(t *testing.T) {
 					},
 				}, nil
 			},
-			readlink:  func(string) (string, error) { return execPath, nil },
+			readfile:  func(string) ([]byte, error) { return []byte(execPath), nil },
+			expected:  true,
+			withError: false,
+		},
+		{
+			name:             "returns true for running snap process",
+			expectedExecPath: "/snap/nordvpn/x1/usr/lib/nordvpn/nordfileshare",
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "1208910",
+					},
+				}, nil
+			},
+			readfile:  func(string) ([]byte, error) { return []byte("/snap/nordvpn/x1/usr/lib/nordvpn/nordfileshare"), nil },
 			expected:  true,
 			withError: false,
 		},
@@ -465,7 +478,7 @@ func TestIsProcessRunning(t *testing.T) {
 					},
 				}, nil
 			},
-			readlink:  func(string) (string, error) { return execPath, nil },
+			readfile:  func(string) ([]byte, error) { return []byte(execPath), nil },
 			expected:  true,
 			withError: false,
 		},
@@ -485,7 +498,7 @@ func TestIsProcessRunning(t *testing.T) {
 					},
 				}, nil
 			},
-			readlink:  func(string) (string, error) { return execPath, nil },
+			readfile:  func(string) ([]byte, error) { return []byte(execPath), nil },
 			expected:  true,
 			withError: false,
 		},
@@ -505,7 +518,7 @@ func TestIsProcessRunning(t *testing.T) {
 					},
 				}, nil
 			},
-			readlink:  func(string) (string, error) { return "/different/path", nil },
+			readfile:  func(string) ([]byte, error) { return []byte("/different/path"), nil },
 			expected:  false,
 			withError: false,
 		},
@@ -519,7 +532,35 @@ func TestIsProcessRunning(t *testing.T) {
 					},
 				}, nil
 			},
-			readlink:  func(string) (string, error) { return "/also/not/important", nil },
+			readfile:  func(string) ([]byte, error) { return []byte("/also/not/important"), nil },
+			expected:  false,
+			withError: false,
+		},
+		{
+			name:             "returns false when unable to read cmdline file",
+			expectedExecPath: "/not/important",
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "42",
+					},
+				}, nil
+			},
+			readfile:  func(string) ([]byte, error) { return nil, errors.New("test error") },
+			expected:  false,
+			withError: false,
+		},
+		{
+			name:             "returns false when cmdline is empty",
+			expectedExecPath: "/not/important",
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&MockDirEntry{
+						name: "42",
+					},
+				}, nil
+			},
+			readfile:  func(string) ([]byte, error) { return []byte(""), nil },
 			expected:  false,
 			withError: false,
 		},
@@ -533,7 +574,7 @@ func TestIsProcessRunning(t *testing.T) {
 					},
 				}, nil
 			},
-			readlink:  func(string) (string, error) { return "/some/other/path", nil },
+			readfile:  func(string) ([]byte, error) { return []byte("/some/other/path"), nil },
 			expected:  false,
 			withError: false,
 		},
@@ -543,7 +584,7 @@ func TestIsProcessRunning(t *testing.T) {
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{}, errors.New("test error")
 			},
-			readlink:  func(string) (string, error) { return "", nil },
+			readfile:  func(string) ([]byte, error) { return []byte(""), nil },
 			expected:  false,
 			withError: true,
 		},
@@ -557,7 +598,7 @@ func TestIsProcessRunning(t *testing.T) {
 					},
 				}, nil
 			},
-			readlink:  func(string) (string, error) { return "", errors.New("test error") },
+			readfile:  func(string) ([]byte, error) { return []byte(""), errors.New("test error") },
 			expected:  false,
 			withError: false,
 		},
@@ -565,7 +606,7 @@ func TestIsProcessRunning(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			isRunning, err := isProcessRunning(test.expectedExecPath, test.readdir, test.readlink)
+			isRunning, err := isProcessRunning(test.expectedExecPath, test.readdir, test.readfile)
 			if test.withError {
 				assert.NotNil(t, err)
 			} else {

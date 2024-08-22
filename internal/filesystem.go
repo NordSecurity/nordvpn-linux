@@ -595,18 +595,18 @@ func OpenOrCreateRegularFile(fileName string, flags int, permission fs.FileMode)
 }
 
 type (
-	readlinkFunc func(name string) (string, error)
+	readfileFunc func(name string) ([]byte, error)
 	readdirFunc  func(name string) ([]os.DirEntry, error)
 )
 
 var (
-	defaultReadlink readlinkFunc = os.Readlink
+	defaultReadfile readfileFunc = os.ReadFile
 	defaultReaddir  readdirFunc  = os.ReadDir
 )
 
 // IsProcessRunning returns `true` if the executable specified as an argument is being executed, `false` otherwise.
 func IsProcessRunning(execPath string) bool {
-	isRunning, err := isProcessRunning(execPath, defaultReaddir, defaultReadlink)
+	isRunning, err := isProcessRunning(execPath, defaultReaddir, defaultReadfile)
 	if err != nil {
 		log.Println(WarningPrefix, "failed to check if process is running, returning false:", err)
 		return false
@@ -614,24 +614,24 @@ func IsProcessRunning(execPath string) bool {
 	return isRunning
 }
 
-func isProcessRunning(executablePath string, readdir readdirFunc, readlink readlinkFunc) (bool, error) {
+func isProcessRunning(executablePath string, readdir readdirFunc, readfile readfileFunc) (bool, error) {
 	procDirs, err := readdir("/proc")
 	if err != nil {
 		return false, fmt.Errorf("error while reading /proc directories: %w", err)
 	}
 
 	for _, dir := range procDirs {
-		if _, err := strconv.Atoi(dir.Name()); err != nil {
-			continue
-		}
-		exePath := filepath.Join("/proc", dir.Name(), "exe")
-		resolvedPath, err := readlink(exePath)
+		cmdlinePath := filepath.Join("/proc", dir.Name(), "cmdline")
+
+		cmdline, err := readfile(cmdlinePath)
 		if err != nil {
 			continue
 		}
-		if filepath.Clean(resolvedPath) == filepath.Clean(executablePath) {
+		args := strings.Split(string(cmdline), "\x00")
+		if len(args) > 0 && args[0] == filepath.Clean(executablePath) {
 			return true, nil
 		}
 	}
+
 	return false, nil
 }
