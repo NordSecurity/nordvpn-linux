@@ -9,27 +9,22 @@ import (
 )
 
 type Libdrop struct {
-	fileshare fileshare.Fileshare
+	storage fileshare.Storage
 }
 
-func NewLibdrop(fileshare fileshare.Fileshare) *Libdrop {
-	return &Libdrop{fileshare: fileshare}
+func NewLibdrop(storage fileshare.Storage) *Libdrop {
+	return &Libdrop{storage: storage}
 }
 
 func (l *Libdrop) Load() (map[string]*pb.Transfer, error) {
-	libdropTransfers, err := l.fileshare.GetTransfersSince(time.Time{})
+	transfers, err := l.storage.Load()
 	if err != nil {
 		return nil, fmt.Errorf("getting transfers from libdrop: %w", err)
-	}
-
-	transfers := map[string]*pb.Transfer{}
-	for _, libdropTransfer := range libdropTransfers {
-		transfers[libdropTransfer.ID] = fileshare.LibdropTransferToInternalTransfer(libdropTransfer)
 	}
 
 	return transfers, nil
 }
 
 func (l *Libdrop) PurgeTransfersUntil(until time.Time) error {
-	return l.fileshare.PurgeTransfersUntil(until)
+	return l.storage.PurgeTransfersUntil(until)
 }
