@@ -141,11 +141,11 @@ func (ti *Instance) updateSettings() bool {
 		ti.state.notificationsStatus = newNotificationsStatus
 
 		if newNotificationsStatus == Enabled {
-			defer ti.notifyForce("Notifications enabled")
-			defer log.Println(internal.InfoPrefix, "Notifications enabled")
+			defer ti.notifyForce("Notifications for NordVPN turned on")
+			defer log.Println(internal.InfoPrefix, "Notifications for NordVPN turned on")
 		} else {
-			defer ti.notifyForce("Notifications disabled")
-			defer log.Println(internal.InfoPrefix, "Notifications disabled")
+			defer ti.notifyForce("Notifications for NordVPN turned off")
+			defer log.Println(internal.InfoPrefix, "Notifications for NordVPN turned off")
 		}
 	}
 
