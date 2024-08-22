@@ -52,7 +52,7 @@ RUN mkdir -p /.local/state && chmod -R 777 /.local/state
 RUN apt-get update && apt-get dist-upgrade --yes \
         && apt-get install --yes snapd locales \
         && locale-gen en_US.UTF-8 \
-        && apt-get install --yes git 
+        && apt-get install --yes git elfutils
 
 # Set the proper environment.
 ENV LANG="en_US.UTF-8"

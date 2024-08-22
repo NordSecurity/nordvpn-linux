@@ -104,7 +104,7 @@ func (View) Docs() error {
 // Clean is used to clean build results.
 func Clean() error {
 	// cleanup regular build folders
-	buildFolders := []string{"./bin", "./dist"}
+	buildFolders := []string{"./bin", "./dist", "./build/foss/target"}
 	for _, folder := range buildFolders {
 		if internal.FileExists(folder) {
 			fmt.Println("Cleanup build folder:", folder)
@@ -232,7 +232,7 @@ func buildPackage(packageType string, buildFlags string) error {
 	}
 	env["WORKDIR"] = cwd
 	if packageType == "snap" {
-		return sh.RunWith(env, "snapcraft")
+		return sh.RunWith(env, "ci/build_snap.sh")
 	}
 	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", packageType)
 }
@@ -283,7 +283,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 			ctx,
 			env,
 			imageSnapPackager,
-			[]string{"snapcraft", "--destructive-mode"},
+			[]string{"ci/build_snap.sh"},
 		)
 	}
 	return RunDocker(
