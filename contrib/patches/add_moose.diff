@@ -7,7 +7,7 @@ index 2446a1e4..419164db 100644
  toolchain go1.22.2
  
 +replace (
-+	moose/events => ./third-party/moose-events/moosenordvpnappgo
++	moose/events => ./third-party/moose-events/moosenordvpnappgo/v9
 +	moose/worker => ./third-party/moose-worker/mooseworkergo
 +)
 +
