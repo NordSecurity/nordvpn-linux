@@ -103,11 +103,11 @@ func (View) Docs() error {
 // Clean is used to clean build results.
 func Clean() error {
 	// cleanup regular build folders
-	buildFolders := []string{"./bin", "./dist", "./build/foss/target"}
+	buildFolders := []string{"./bin", "./dist", "./build"}
 	for _, folder := range buildFolders {
 		if internal.FileExists(folder) {
 			fmt.Println("Cleanup build folder:", folder)
-			if err := sh.Run("rm", "-r", folder); err != nil {
+			if err := sh.Run("rm", "-rf", folder); err != nil {
 				return err
 			}
 		}
@@ -141,30 +141,6 @@ func Clean() error {
 		fmt.Println("Cleanup snapcraft internals...")
 		if err := sh.Run("snapcraft", "clean"); err != nil {
 			return err
-		}
-	}
-
-	// cleanup rust for public builds
-	env, err := getEnv()
-	if err != nil {
-		return err
-	}
-	if !strings.Contains(env["FEATURES"], "internal") {
-		fmt.Println("Cleanup rust dependencies...")
-		libtelioDir := "./build/foss/libtelio"
-		if internal.FileExists(libtelioDir) {
-			if err := os.RemoveAll(libtelioDir); err != nil {
-				fmt.Println("Failed to remove", libtelioDir, ":", err)
-				return err
-			}
-		}
-
-		libdropDir := "./build/foss/libdrop"
-		if internal.FileExists(libdropDir) {
-			if err := os.RemoveAll(libdropDir); err != nil {
-				fmt.Println("Failed to remove", libdropDir, ":", err)
-				return err
-			}
 		}
 	}
 
