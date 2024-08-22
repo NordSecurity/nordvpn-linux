@@ -29,7 +29,12 @@ function clone_if_absent() {
 
   if [[ ! -d "${dst_arch_dir}/${repo_name}" ]]; then
     pushd "${dst_arch_dir}"
-    git clone --branch "${version}" "${repo_url}"
+    git clone "${repo_url}"
+
+    pushd "${repo_name}"
+    git checkout "${version}"
+    popd
+
     popd
   fi
 }
@@ -69,6 +74,8 @@ function copy_so_files() {
       "${WORKDIR}/bin/deps/lib/${arch}/latest/${file_name}"
   done
 }
+
+mkdir -p "${WORKDIR}/build/foss"
 
 # ====================[  Build libtelio from source ]=========================
 clone_if_absent "https://github.com/NordSecurity/libtelio.git" "${LIBTELIO_VERSION}" "${WORKDIR}/build/foss"
