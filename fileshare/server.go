@@ -85,7 +85,6 @@ func (s *Server) getNumberOfFiles(path string, maxDepth int) (int, error) {
 	}
 
 	files, err := s.filesystem.ReadDir(path)
-
 	if err != nil {
 		return 0, err
 	}
@@ -116,7 +115,8 @@ func (s *Server) startTransferStatusStream(srv pb.Fileshare_SendServer, transfer
 			if err := srv.Send(&pb.StatusResponse{
 				TransferId: ev.TransferID,
 				Progress:   ev.Transferred,
-				Status:     pb.Status_ONGOING}); err != nil {
+				Status:     pb.Status_ONGOING,
+			}); err != nil {
 				log.Printf("error while streaming transfer %s status: %s", transferID, err)
 			}
 		case pb.Status_SUCCESS:
@@ -135,7 +135,6 @@ func (s *Server) startTransferStatusStream(srv pb.Fileshare_SendServer, transfer
 // getPeers returns maps where peer pubkey or ip/hostname/nickname maps to *meshpb.Peer
 func (s *Server) getPeers() (map[string]*meshpb.Peer, map[string]*meshpb.Peer, error) {
 	resp, err := s.meshClient.GetPeers(context.Background(), &meshpb.Empty{})
-
 	if err != nil {
 		log.Printf("GetPeers failed: %s", err)
 		return nil, nil, errGetPeersFailed
@@ -178,7 +177,6 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 	fileCount := 0
 	for _, path := range req.Paths {
 		isDirectory, err := s.isDirectory(path)
-
 		if err != nil {
 			return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_FILE_NOT_FOUND)})
 		}
@@ -363,7 +361,7 @@ func (s *Server) Cancel(
 		return fileshareError(pb.FileshareErrorCode_TRANSFER_INVALIDATED), nil
 	}
 
-	if err := s.fileshare.Cancel(transfer.Id); err != nil {
+	if err := s.fileshare.Finalize(transfer.Id); err != nil {
 		return fileshareError(pb.FileshareErrorCode_LIB_FAILURE), nil
 	}
 

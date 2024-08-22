@@ -19,8 +19,8 @@ type Combined struct {
 	libdrop fileshare.Storage
 }
 
-func NewCombined(storagePath string, fileshare fileshare.Fileshare) *Combined {
-	return &Combined{NewJsonFile(storagePath), NewLibdrop(fileshare)}
+func NewCombined(storagePath string, storage fileshare.Storage) *Combined {
+	return &Combined{NewJsonFile(storagePath), NewLibdrop(storage)}
 }
 
 func (c *Combined) Load() (map[string]*pb.Transfer, error) {
