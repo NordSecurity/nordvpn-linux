@@ -1,5 +1,5 @@
 diff --git a/go.mod b/go.mod
-index d413d20..63e696a 100644
+index 91d48c6..af74160 100644
 --- a/go.mod
 +++ b/go.mod
 @@ -12,6 +12,11 @@ require (
@@ -15,8 +15,8 @@ index d413d20..63e696a 100644
  	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
  	github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d
 @@ -50,6 +55,8 @@ require (
- 	google.golang.org/grpc v1.56.3
- 	google.golang.org/protobuf v1.33.0
+ 	google.golang.org/grpc v1.64.0
+ 	google.golang.org/protobuf v1.34.2
  	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 +	moose/events v0.0.0
 +	moose/worker v0.0.0
