@@ -64,7 +64,7 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 		}
 	}
 
-	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+	resp, err := c.client.UnsetAllowlist(context.Background(), &pb.SetAllowlistRequest{
 		Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
 			SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
 				IsUdp: isUDP,
