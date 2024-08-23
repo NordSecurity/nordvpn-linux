@@ -50,6 +50,18 @@ func configToProtobuf(cfg *config.Config) *pb.GlobalSettings {
 
 	settings := pb.GlobalSettings{
 		Settings: &pb.Settings{
+			Technology: cfg.Technology,
+			Firewall:   cfg.Firewall,
+			Fwmark:     cfg.FirewallMark,
+			Routing:    cfg.Routing.Get(),
+			Analytics:  cfg.Analytics.Get(),
+			KillSwitch: cfg.KillSwitch,
+			AutoConnectData: &pb.AutoconnectData{
+				Enabled:       cfg.AutoConnect,
+				ServerTag:     cfg.AutoConnectData.ServerTag,
+				ServerTagType: cfg.AutoConnectData.ServerTagType,
+			},
+			Ipv6:                 cfg.IPv6,
 			Meshnet:              cfg.Mesh,
 			Dns:                  cfg.AutoConnectData.DNS,
 			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,

@@ -284,6 +284,28 @@ func serverTagToServerBy(serverTag string, srv core.Server) core.ServerBy {
 	return by
 }
 
+// serverLocationTagFromString returns appropriate tag and true if provided tag string is a country, country code or a
+// city and false if it isn't.
+func serverLocationTagFromString(serverTag string, countries core.Countries) (core.ServerTag, bool) {
+	for _, country := range countries {
+		countryName := internal.SnakeCase(country.Name)
+		countryCode := internal.SnakeCase(country.Code)
+
+		if strings.EqualFold(serverTag, countryName) || strings.EqualFold(serverTag, countryCode) {
+			return core.ServerTag{Action: core.ServerByCountry, ID: country.ID}, true
+		}
+		for _, city := range country.Cities {
+			cityName := internal.SnakeCase(city.Name)
+			if strings.EqualFold(serverTag, cityName) ||
+				strings.EqualFold(serverTag, countryName+" "+cityName) ||
+				strings.EqualFold(serverTag, countryCode+" "+cityName) {
+				return core.ServerTag{Action: core.ServerByCity, ID: city.ID}, true
+			}
+		}
+	}
+	return core.ServerTag{}, false
+}
+
 func serverTagFromString(
 	countries core.Countries,
 	api core.ServersAPI,
@@ -311,22 +333,11 @@ func serverTagFromString(
 			return core.ServerTag{Action: core.ServerByUnknown, ID: 0}, err
 		}
 	}
-	for _, country := range countries {
-		countryName := internal.SnakeCase(country.Name)
-		countryCode := internal.SnakeCase(country.Code)
 
-		if strings.EqualFold(serverTag, countryName) || strings.EqualFold(serverTag, countryCode) {
-			return core.ServerTag{Action: core.ServerByCountry, ID: country.ID}, nil
-		}
-		for _, city := range country.Cities {
-			cityName := internal.SnakeCase(city.Name)
-			if strings.EqualFold(serverTag, cityName) ||
-				strings.EqualFold(serverTag, countryName+" "+cityName) ||
-				strings.EqualFold(serverTag, countryCode+" "+cityName) {
-				return core.ServerTag{Action: core.ServerByCity, ID: city.ID}, nil
-			}
-		}
+	if locationTag, locationFound := serverLocationTagFromString(serverTag, countries); locationFound {
+		return locationTag, nil
 	}
+
 	for _, server := range servers {
 		if strings.EqualFold(serverTag, strings.Split(server.Hostname, ".")[0]) {
 			return core.ServerTag{Action: core.ServerByName, ID: server.ID}, nil
@@ -537,4 +548,23 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 	}
 
 	return server, nil
+}
+
+func GetServerTagType(serverTag string, countries core.Countries) config.ServerTagType {
+	group := groupConvert(serverTag)
+	if group != config.UndefinedGroup {
+		return config.ServerTagType_GROUP
+	}
+
+	if tag, ok := serverLocationTagFromString(serverTag, countries); ok {
+		if tag.Action == core.ServerByCountry {
+			return config.ServerTagType_COUNTRY
+		}
+
+		if tag.Action == core.ServerByCity {
+			return config.ServerTagType_CITY
+		}
+	}
+
+	return config.ServerTagType_UNKNOWN
 }

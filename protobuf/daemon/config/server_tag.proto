@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package config;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/config";
+
+enum ServerTagType {
+  UNKNOWN = 0;
+  NONE = 1;
+  COUNTRY = 2;
+  COUNTRY_CODE = 3;
+  CITY = 4;
+  GROUP = 5;
+}

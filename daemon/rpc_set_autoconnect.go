@@ -21,7 +21,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	if cfg.AutoConnect == in.GetAutoConnect() {
+	if !cfg.AutoConnect && !in.GetAutoConnect() {
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
 		}, nil
@@ -47,13 +47,15 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 	}
 
+	serverTagType := config.ServerTagType_UNKNOWN
+	serverTag := in.GetServerTag()
 	if in.GetAutoConnect() {
-		if in.GetServerTag() != "" {
+		if serverTag != "" {
 			insights := r.dm.GetInsightsData().Insights
 
-			server, _, err := selectServer(r, &insights, cfg, in.GetServerTag(), "")
+			server, _, err := selectServer(r, &insights, cfg, serverTag, "")
 			if err != nil {
-				log.Println(internal.ErrorPrefix, "no server found for autoconnect", in.GetServerTag(), err)
+				log.Println(internal.ErrorPrefix, "no server found for autoconnect", serverTag, err)
 
 				var errorCode *internal.ErrorWithCode
 				if errors.As(err, &errorCode) {
@@ -65,13 +67,26 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				return nil, err
 			}
 			log.Println(internal.InfoPrefix, "server for autoconnect found", server)
+
+			serverTagType = GetServerTagType(serverTag, r.dm.countryData.Countries)
+			if serverTagType == config.ServerTagType_UNKNOWN {
+				log.Println(internal.ErrorPrefix, "failed to determine server tag type:", serverTag)
+			}
+
+			// If serverTagType is country, the provided server could be either a country name or country code.
+			if serverTagType == config.ServerTagType_COUNTRY {
+				serverTag = server.Country().Name
+			}
+		} else {
+			serverTagType = config.ServerTagType_NONE
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
 			c.AutoConnect = in.GetAutoConnect()
 			c.AutoConnectData = config.AutoConnectData{
 				ID:                   cfg.AutoConnectData.ID,
-				ServerTag:            in.GetServerTag(),
+				ServerTag:            serverTag,
+				ServerTagType:        serverTagType,
 				Protocol:             cfg.AutoConnectData.Protocol,
 				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 				Obfuscate:            cfg.AutoConnectData.Obfuscate,

@@ -48,7 +48,13 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Notify))
 	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Tray))
-	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.Settings.AutoConnect))
+	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.Settings.AutoConnectData.Enabled))
+	if settings.Settings.AutoConnectData.Enabled && internal.IsDevEnv(string(c.environment)) {
+		fmt.Printf("Server tag (%d): %s\n",
+			settings.Settings.AutoConnectData.ServerTagType,
+			settings.Settings.AutoConnectData.ServerTag)
+	}
+
 	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Settings.Ipv6))
 	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Settings.Meshnet))
 	if len(settings.Settings.Dns) == 0 {
