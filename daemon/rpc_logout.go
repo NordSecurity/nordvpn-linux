@@ -21,14 +21,14 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 	}
 
 	logoutStartTime := time.Now()
-	r.events.Service.Logout.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: events.StatusAttempt})
+	r.events.User.Logout.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: events.StatusAttempt})
 
 	defer func() {
 		eventStatus := events.StatusSuccess
 		if retErr != nil || payload != nil && payload.Type != internal.CodeSuccess && payload.Type != internal.CodeTokenInvalidated {
 			eventStatus = events.StatusFailure
 		}
-		r.events.Service.Logout.Publish(events.DataAuthorization{DurationMs: max(int(time.Since(logoutStartTime).Milliseconds()), 1), EventTrigger: events.TriggerUser, EventStatus: eventStatus})
+		r.events.User.Logout.Publish(events.DataAuthorization{DurationMs: max(int(time.Since(logoutStartTime).Milliseconds()), 1), EventTrigger: events.TriggerUser, EventStatus: eventStatus})
 	}()
 
 	var cfg config.Config

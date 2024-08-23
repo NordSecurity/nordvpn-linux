@@ -75,6 +75,10 @@ func (LinuxMachineIDGetter) GetMachineID() uuid.UUID {
 	return internal.MachineID()
 }
 
+type ConfigPublisher interface {
+	Publish(*Config)
+}
+
 // FilesystemConfigManager implements config persistence and retrieval from disk.
 //
 // Thread-safe.
@@ -85,19 +89,22 @@ type FilesystemConfigManager struct {
 	machineIDGetter MachineIDGetter
 	fsHandle        FilesystemHandle
 	NewInstallation bool
+	configPublisher ConfigPublisher
 	mu              sync.Mutex
 }
 
 // NewFilesystemConfigManager is constructed from a given location and salt.
 func NewFilesystemConfigManager(location, vault, salt string,
 	machineIDGetter MachineIDGetter,
-	fsHandle FilesystemHandle) *FilesystemConfigManager {
+	fsHandle FilesystemHandle,
+	configPublisher ConfigPublisher) *FilesystemConfigManager {
 	return &FilesystemConfigManager{
 		location:        location,
 		vault:           vault,
 		salt:            salt,
 		machineIDGetter: machineIDGetter,
 		fsHandle:        fsHandle,
+		configPublisher: configPublisher,
 	}
 }
 
@@ -105,16 +112,28 @@ func NewFilesystemConfigManager(location, vault, salt string,
 //
 // Thread-safe.
 func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
+	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
+	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
+	// published. The assumption here is that publisher is protected with it's own lock.
+	var c Config
+	var err error
+	defer func() {
+		if err == nil && f.configPublisher != nil {
+			f.configPublisher.Publish(&c)
+		}
+	}()
+
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	var c Config
 	if err := f.load(&c); err != nil {
 		return err
 	}
 
 	c = fn(c)
-	return f.save(c)
+	err = f.save(c)
+
+	return err
 }
 
 func (f *FilesystemConfigManager) save(c Config) error {

@@ -38,6 +38,7 @@ import (
 	netlinkrouter "github.com/NordSecurity/nordvpn-linux/daemon/routes/netlink"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norouter"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norule"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
@@ -62,8 +63,6 @@ import (
 	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
-	"github.com/NordSecurity/nordvpn-linux/state"
-	statepb "github.com/NordSecurity/nordvpn-linux/state/pb"
 
 	"google.golang.org/grpc"
 )
@@ -125,12 +124,14 @@ func main() {
 	log.Println(internal.InfoPrefix, "Daemon has started")
 
 	// Config
+	configEvents := daemonevents.NewConfigEvents()
 	fsystem := config.NewFilesystemConfigManager(
 		config.SettingsDataFilePath,
 		config.InstallFilePath,
 		Salt,
 		config.LinuxMachineIDGetter{},
 		config.StdFilesystemHandle{},
+		configEvents.Config,
 	)
 	var cfg config.Config
 	if err := fsystem.Load(&cfg); err != nil {
@@ -335,8 +336,9 @@ func main() {
 	)
 
 	statePublisher := state.NewState()
-	stateServer := state.NewServer(&statePublisher)
-	internalVpnEvents.Subscribe(&statePublisher)
+	internalVpnEvents.Subscribe(statePublisher)
+	daemonEvents.User.Subscribe(statePublisher)
+	configEvents.Subscribe(statePublisher)
 
 	netw := networker.NewCombined(
 		vpn,
@@ -448,6 +450,7 @@ func main() {
 		analytics,
 		norduserService,
 		meshAPIex,
+		statePublisher,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
@@ -498,7 +501,6 @@ func main() {
 
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
-	statepb.RegisterStateServer(s, &stateServer)
 	// Start jobs
 
 	go func() {
@@ -547,7 +549,6 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}()
-	rpc.StartJobs(&statePublisher)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {

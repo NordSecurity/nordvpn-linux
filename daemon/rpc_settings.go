@@ -31,28 +31,33 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 
 	return &pb.SettingsResponse{
 		Type: internal.CodeSuccess,
-		Data: &pb.Settings{
-			Technology:           cfg.Technology,
-			Firewall:             cfg.Firewall,
-			Fwmark:               cfg.FirewallMark,
-			Routing:              cfg.Routing.Get(),
-			Analytics:            cfg.Analytics.Get(),
-			KillSwitch:           cfg.KillSwitch,
-			AutoConnect:          cfg.AutoConnect,
-			Ipv6:                 cfg.IPv6,
-			Notify:               !cfg.UsersData.NotifyOff[in.GetUid()],
-			Tray:                 !cfg.UsersData.TrayOff[in.GetUid()],
-			Meshnet:              cfg.Mesh,
-			Dns:                  cfg.AutoConnectData.DNS,
-			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-			Protocol:             cfg.AutoConnectData.Protocol,
-			LanDiscovery:         cfg.LanDiscovery,
-			Allowlist: &pb.Allowlist{
-				Ports:   &ports,
-				Subnets: subnets,
+		Data: &pb.UserSettings{
+			Settings: &pb.Settings{
+				Technology:           cfg.Technology,
+				Firewall:             cfg.Firewall,
+				Fwmark:               cfg.FirewallMark,
+				Routing:              cfg.Routing.Get(),
+				Analytics:            cfg.Analytics.Get(),
+				KillSwitch:           cfg.KillSwitch,
+				AutoConnect:          cfg.AutoConnect,
+				Ipv6:                 cfg.IPv6,
+				Meshnet:              cfg.Mesh,
+				Dns:                  cfg.AutoConnectData.DNS,
+				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+				Protocol:             cfg.AutoConnectData.Protocol,
+				LanDiscovery:         cfg.LanDiscovery,
+				Allowlist: &pb.Allowlist{
+					Ports:   &ports,
+					Subnets: subnets,
+				},
+				Obfuscate:       cfg.AutoConnectData.Obfuscate,
+				VirtualLocation: cfg.VirtualLocation.Get(),
 			},
-			Obfuscate:       cfg.AutoConnectData.Obfuscate,
-			VirtualLocation: cfg.VirtualLocation.Get(),
+			UserSpecificSettings: &pb.UserSpecificSettings{
+				Uid:    in.GetUid(),
+				Notify: !cfg.UsersData.NotifyOff[in.GetUid()],
+				Tray:   !cfg.UsersData.TrayOff[in.GetUid()],
+			},
 		},
 	}, nil
 }

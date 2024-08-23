@@ -118,6 +118,7 @@ func TestStartAutoConnect(t *testing.T) {
 				&mockAnalytics{},
 				&testnorduser.MockNorduserCombinedService{},
 				&RegistryMock{},
+				nil,
 			)
 
 			err := rpc.StartAutoConnect(mockTimeout)
@@ -282,6 +283,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&mockAnalytics{},
 				&testnorduser.MockNorduserCombinedService{},
 				&RegistryMock{},
+				nil,
 			)
 
 			meshService := meshnet.NewServer(

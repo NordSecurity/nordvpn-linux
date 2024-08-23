@@ -167,7 +167,7 @@ func Startup(storagePath string,
 	if err != nil {
 		return FileshareHandle{}, fmt.Errorf("failed to retrieve daemon setting: %w", err)
 	}
-	if settings != nil && settings.Data.Notify {
+	if settings != nil && settings.Data.UserSpecificSettings.Notify {
 		err = eventManager.EnableNotifications(fileshareImplementation)
 		if err != nil {
 			return FileshareHandle{}, fmt.Errorf("failed to enable notifications: %w", err)

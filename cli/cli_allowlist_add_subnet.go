@@ -41,7 +41,7 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
-	allowlist := settings.GetAllowlist()
+	allowlist := settings.Settings.GetAllowlist()
 
 	if slices.Contains(allowlist.Subnets, subnet.String()) {
 		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet.String()))

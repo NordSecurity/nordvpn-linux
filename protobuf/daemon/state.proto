@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-package statepb;
+package pb;
 
-option go_package = "github.com/NordSecurity/nordvpn-linux/state/pb";
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-message Empty {}
+import "settings.proto";
 
 enum ConnectionState {
     DISCONNECTED = 0;
@@ -22,8 +22,19 @@ message ConnectionStatus {
     bool is_mesh_peer = 7;
 }
 
+enum LoginEventType {
+    LOGIN = 0;
+    LOGOUT = 1;
+}
+
+message LoginEvent {
+    LoginEventType type = 1;
+}
+
 message AppState {
     oneof state {
         ConnectionStatus connection_status = 1;
+        LoginEvent login_event = 2;
+        GlobalSettings settings_change = 3;
     }
 }

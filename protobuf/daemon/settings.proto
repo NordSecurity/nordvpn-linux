@@ -14,7 +14,7 @@ message SettingsRequest {
 
 message SettingsResponse {
   int64 type = 1;
-  Settings data = 2;
+  UserSettings data = 2;
 }
 
 message Settings {
@@ -22,18 +22,32 @@ message Settings {
   bool firewall = 2;
   bool kill_switch = 3;
   bool auto_connect = 4;
-  bool notify = 5;
-  bool tray = 6;
-  bool ipv6 = 7;
-  bool meshnet = 8;
-  bool routing = 9;
-  uint32 fwmark = 10;
-  bool analytics = 11;
-  repeated string dns = 12;
-  bool threat_protection_lite = 13;
-  config.Protocol protocol = 14;
-  bool lan_discovery = 15;
-  Allowlist allowlist = 16;
-  bool obfuscate = 17;
-  bool virtualLocation = 18;
+  bool ipv6 = 5;
+  bool meshnet = 6;
+  bool routing = 7;
+  uint32 fwmark = 8;
+  bool analytics = 9;
+  repeated string dns = 10;
+  bool threat_protection_lite = 11;
+  config.Protocol protocol = 12;
+  bool lan_discovery = 13;
+  Allowlist allowlist = 14;
+  bool obfuscate = 15;
+  bool virtualLocation = 16;
+}
+
+message UserSpecificSettings {
+  int64 uid = 1;
+  bool notify = 2;
+  bool tray = 3;
+}
+
+message UserSettings {
+  Settings settings = 1;
+  UserSpecificSettings user_specific_settings = 2;
+}
+
+message GlobalSettings {
+  Settings settings = 1;
+  repeated UserSpecificSettings user_specific_settings = 2;
 }

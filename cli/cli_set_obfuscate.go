@@ -73,7 +73,7 @@ func (c *cmd) BeforeSetObfuscate(ctx *cli.Context) error {
 		return internal.ErrUnhandled
 	}
 
-	if resp.Data.Technology != config.Technology_OPENVPN {
+	if resp.Data.Settings.Technology != config.Technology_OPENVPN {
 		return formatError(errors.New(SetObfuscateUnavailable))
 	}
 	return nil

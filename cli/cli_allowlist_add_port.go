@@ -68,7 +68,7 @@ func (c *cmd) AllowlistAddPort(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
-	allowlist := settings.GetAllowlist()
+	allowlist := settings.Settings.GetAllowlist()
 	if isTCP && slices.Contains(allowlist.Ports.Tcp, port) ||
 		isUDP && slices.Contains(allowlist.Ports.Udp, port) {
 		return formatError(fmt.Errorf(

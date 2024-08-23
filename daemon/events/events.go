@@ -10,6 +10,7 @@ import (
 type Publisher interface {
 	SettingsPublisher
 	ServicePublisher
+	LoginPublisher
 }
 
 func NewEventsEmpty() *Events {
@@ -31,14 +32,14 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[any]{},
 		&subs.Subject[events.DataConnect]{},
 		&subs.Subject[events.DataDisconnect]{},
-		&subs.Subject[events.DataAuthorization]{},
-		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[core.ServicesResponse]{},
 		&subs.Subject[events.UiItemsAction]{},
 		&subs.Subject[int]{},
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
+		&subs.Subject[events.DataAuthorization]{},
+		&subs.Subject[events.DataAuthorization]{},
 	)
 }
 
@@ -60,14 +61,14 @@ func NewEvents(
 	defaults events.PublishSubcriber[any],
 	connect events.PublishSubcriber[events.DataConnect],
 	disconnect events.PublishSubcriber[events.DataDisconnect],
-	login events.PublishSubcriber[events.DataAuthorization],
-	logout events.PublishSubcriber[events.DataAuthorization],
 	accountCheck events.PublishSubcriber[core.ServicesResponse],
 	uiItemsClick events.PublishSubcriber[events.UiItemsAction],
 	heartBeat events.PublishSubcriber[int],
 	deviceLocation events.PublishSubcriber[core.Insights],
 	lanDiscovery events.PublishSubcriber[bool],
 	virtualLocation events.PublishSubcriber[bool],
+	login events.PublishSubcriber[events.DataAuthorization],
+	logout events.PublishSubcriber[events.DataAuthorization],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -91,12 +92,14 @@ func NewEvents(
 		Service: &ServiceEvents{
 			Connect:        connect,
 			Disconnect:     disconnect,
-			Login:          login,
-			Logout:         logout,
 			AccountCheck:   accountCheck,
 			UiItemsClick:   uiItemsClick,
 			HeartBeat:      heartBeat,
 			DeviceLocation: deviceLocation,
+		},
+		User: &LoginEvents{
+			Login:  login,
+			Logout: logout,
 		},
 	}
 }
@@ -104,11 +107,13 @@ func NewEvents(
 type Events struct {
 	Settings *SettingsEvents
 	Service  *ServiceEvents
+	User     *LoginEvents
 }
 
 func (e *Events) Subscribe(to Publisher) {
 	e.Settings.Subscribe(to)
 	e.Service.Subscribe(to)
+	e.User.Subscribe(to)
 }
 
 type SettingsPublisher interface {
@@ -171,8 +176,6 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 type ServicePublisher interface {
 	NotifyConnect(events.DataConnect) error
 	NotifyDisconnect(events.DataDisconnect) error
-	NotifyLogin(events.DataAuthorization) error
-	NotifyLogout(events.DataAuthorization) error
 	NotifyAccountCheck(core.ServicesResponse) error
 	NotifyUiItemsClick(events.UiItemsAction) error
 	NotifyHeartBeat(int) error
@@ -182,8 +185,6 @@ type ServicePublisher interface {
 type ServiceEvents struct {
 	Connect        events.PublishSubcriber[events.DataConnect]
 	Disconnect     events.PublishSubcriber[events.DataDisconnect]
-	Login          events.PublishSubcriber[events.DataAuthorization]
-	Logout         events.PublishSubcriber[events.DataAuthorization]
 	AccountCheck   events.PublishSubcriber[core.ServicesResponse]
 	UiItemsClick   events.PublishSubcriber[events.UiItemsAction]
 	HeartBeat      events.PublishSubcriber[int]
@@ -193,8 +194,6 @@ type ServiceEvents struct {
 func (s *ServiceEvents) Subscribe(to ServicePublisher) {
 	s.Connect.Subscribe(to.NotifyConnect)
 	s.Disconnect.Subscribe(to.NotifyDisconnect)
-	s.Login.Subscribe(to.NotifyLogin)
-	s.Logout.Subscribe(to.NotifyLogout)
 	s.AccountCheck.Subscribe(to.NotifyAccountCheck)
 	s.UiItemsClick.Subscribe(to.NotifyUiItemsClick)
 	s.HeartBeat.Subscribe(to.NotifyHeartBeat)
@@ -221,6 +220,39 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Notify.Publish(!(cfg.UsersData.NotifyOff != nil && len(cfg.UsersData.NotifyOff) > 0))
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.VirtualLocation.Publish(cfg.VirtualLocation.Get())
+}
+
+type LoginPublisher interface {
+	NotifyLogin(events.DataAuthorization) error
+	NotifyLogout(events.DataAuthorization) error
+}
+
+type LoginEvents struct {
+	Login  events.PublishSubcriber[events.DataAuthorization]
+	Logout events.PublishSubcriber[events.DataAuthorization]
+}
+
+func (l *LoginEvents) Subscribe(to LoginPublisher) {
+	l.Login.Subscribe(to.NotifyLogin)
+	l.Logout.Subscribe(to.NotifyLogout)
+}
+
+type ConfigPublisher interface {
+	NotifyConfigChanged(cfg *config.Config) error
+}
+
+type ConfigEvents struct {
+	Config events.PublishSubcriber[*config.Config]
+}
+
+func (c *ConfigEvents) Subscribe(to ConfigPublisher) {
+	c.Config.Subscribe(to.NotifyConfigChanged)
+}
+
+func NewConfigEvents() *ConfigEvents {
+	return &ConfigEvents{
+		Config: &subs.Subject[*config.Config]{},
+	}
 }
 
 type MockPublisherSubscriber[T any] struct {
