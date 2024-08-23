@@ -44,7 +44,6 @@ func (a *Allowlist) UpdateUDPPorts(ports []int64, remove bool) {
 			a.Ports.UDP[port] = true
 		}
 	}
-
 }
 
 func (a *Allowlist) UpdateTCPPorts(ports []int64, remove bool) {

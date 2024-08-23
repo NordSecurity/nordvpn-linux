@@ -22,7 +22,7 @@ func containsPrivateNetwork(subnet string) bool {
 	return false
 }
 
-// isSubnetValid returns true if subnet is valid and false and appropirate error code when it's invalid.
+// isSubnetValid returns true if subnet is valid and false and appropriate error code when it's invalid.
 func isSubnetValid(subnet string, currentSubnets config.Subnets, remove bool) (bool, int64) {
 	_, _, err := net.ParseCIDR(subnet)
 	if err != nil {
