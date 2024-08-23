@@ -29,8 +29,8 @@ function clone_if_absent() {
 
   if [[ ! -d "${dst_arch_dir}/${repo_name}" ]]; then
     pushd "${dst_arch_dir}"
-
     git clone "${repo_url}"
+
     pushd "${repo_name}"
     git checkout "${version}"
     popd
