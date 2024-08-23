@@ -12,8 +12,8 @@ github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4 h1:2ozEjYEw4
 github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4/go.mod h1:tguhorMSnkMcQExNIHWBX6TRhFeGYlERzbeAWZ4j9Uw=
 github.com/NordSecurity/libdrop-go/v7 v7.0.0-rc1 h1:YnMQXlt/nG4Gy1MX7uAhU3OdaDPWW3aCiAGTkUSJ7Cc=
 github.com/NordSecurity/libdrop-go/v7 v7.0.0-rc1/go.mod h1:RtQP2i5NfKk5kcTnT2kDJ7s6Um2pgIoudXFZ8SLYREc=
-github.com/NordSecurity/libtelio v0.0.0-20240412122320-157263e48f69 h1:uc7IHbJTshw2R9f+8s8FBUF0tdj6TqzCUdv+DnZSfmg=
-github.com/NordSecurity/libtelio v0.0.0-20240412122320-157263e48f69/go.mod h1:gWS9UWU2FSEixmSWdm1MsIoacVttKykO0mgPec2uBVc=
+github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc4 h1:WpQ1Beixw6zqeJmrGnXBgdfE28tGwNc4ka8LLY/IyMM=
+github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc4/go.mod h1:mnoTGgXOu8dBQgPxG8MBju4d9C+ljKIT2p8OX5GFom4=
 github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d h1:oUEFXgFRa9Svcjr+O1stzR3vEXZ5OfQxLUcDjqFcOuo=
 github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d/go.mod h1:PqJ9YgQXNUYUuoLvVrbMmZACufI5xM8JJ5aSuRX5ljg=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=

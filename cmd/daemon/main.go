@@ -298,7 +298,7 @@ func main() {
 
 	// Networker
 	vpnFactory := getVpnFactory(eventsDbPath, cfg.FirewallMark,
-		internal.IsDevEnv(Environment), vpnLibConfigGetter, deviceID, Version, internalVpnEvents)
+		internal.IsDevEnv(Environment), vpnLibConfigGetter, Version, internalVpnEvents)
 
 	vpn, err := vpnFactory(cfg.Technology)
 	if err != nil {
@@ -511,7 +511,7 @@ func main() {
 		switch socketType(ConnType) {
 		case sockUnix:
 			// use systemd listener by default
-			var listenerFunction = internal.SystemDListener
+			listenerFunction := internal.SystemDListener
 			// switch to manual if pids mismatch
 			if os.Getenv(internal.ListenPID) != strconv.Itoa(os.Getpid()) {
 				listenerFunction = internal.ManualListenerIfNotInUse(ConnURL,
