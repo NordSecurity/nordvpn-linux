@@ -103,7 +103,7 @@ func (View) Docs() error {
 // Clean is used to clean build results.
 func Clean() error {
 	// cleanup regular build folders
-	buildFolders := []string{"./bin", "./dist", "./build"}
+	buildFolders := []string{"./bin", "./dist"}
 	for _, folder := range buildFolders {
 		if internal.FileExists(folder) {
 			fmt.Println("Cleanup build folder:", folder)
@@ -185,7 +185,7 @@ func DownloadOpenvpn() error {
 
 	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
-	return sh.RunWith(env, "ci/openvpn/check_dependencies.sh")
+	return sh.RunWith(env, "build/openvpn/check_dependencies.sh")
 }
 
 // Data for Linux packages
@@ -416,7 +416,7 @@ func (Build) Openvpn(ctx context.Context) error {
 	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 
-	return sh.RunWith(env, "ci/openvpn/build.sh")
+	return sh.RunWith(env, "build/openvpn/build.sh")
 }
 
 // Openvpn binaries for the host architecture
@@ -434,7 +434,7 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"ci/openvpn/build.sh"},
+		[]string{"build/openvpn/build.sh"},
 	)
 }
 
@@ -449,7 +449,7 @@ func (Build) Rust(ctx context.Context) error {
 		"ARCHS_RUST": build.Default.GOARCH,
 		"WORKDIR":    cwd,
 	}
-	return sh.RunWith(env, "ci/build_rust.sh")
+	return sh.RunWith(env, "build/foss/build.sh")
 }
 
 // Builds rust dependencies using Docker builder
@@ -466,7 +466,7 @@ func (Build) RustDocker(ctx context.Context) error {
 		ctx,
 		env,
 		imageRuster,
-		[]string{"ci/build_rust.sh"},
+		[]string{"build/foss/build.sh"},
 	); err != nil {
 		return err
 	}

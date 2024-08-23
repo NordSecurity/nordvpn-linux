@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-source "${WORKDIR}/ci/openvpn/env.sh"
+source "${WORKDIR}/build/openvpn/env.sh"
 
 cores=$(nproc)
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-source "${WORKDIR}/ci/openvpn/env.sh"
+source "${WORKDIR}/build/openvpn/env.sh"
 
 openvpn_tarbal_dir="${WORKDIR}/build/openvpn/tarballs"
 
