@@ -29,7 +29,12 @@ function clone_if_absent() {
 
   if [[ ! -d "${dst_arch_dir}/${repo_name}" ]]; then
     pushd "${dst_arch_dir}"
-    git clone --branch "${version}" "${repo_url}"
+    git clone "${repo_url}"
+
+    pushd "${repo_name}"
+    git checkout "${version}"
+    popd
+
     popd
   fi
 }
@@ -70,6 +75,8 @@ function copy_so_files() {
   done
 }
 
+mkdir -p "${WORKDIR}/build/foss"
+
 # ====================[  Build libtelio from source ]=========================
 clone_if_absent "https://github.com/NordSecurity/libtelio.git" "${LIBTELIO_VERSION}" "${WORKDIR}/build/foss"
 # BYPASS_LLT_SECRETS is needed for libtelio builds
@@ -80,7 +87,8 @@ copy_so_files "${WORKDIR}/build/foss/libtelio" "libtelio.so"
 clone_if_absent "https://github.com/NordSecurity/libdrop.git" "${LIBDROP_VERSION}" "${WORKDIR}/build/foss"
 
 # libdrop does not define configuration for linkers for different architectures
-linkers_config=$(cat <<EOF
+linkers_config=$(
+  cat <<EOF
 [target.x86_64-unknown-linux-gnu]
 linker = "x86_64-linux-gnu-gcc"
 
@@ -98,7 +106,7 @@ linker = "arm-linux-gnueabi-gcc"
 EOF
 )
 mkdir -p "${WORKDIR}/build/foss/libdrop/.cargo"
-echo "${linkers_config}" >> "${WORKDIR}/build/foss/libdrop/.cargo/config"
+echo "${linkers_config}" >"${WORKDIR}/build/foss/libdrop/config.toml"
 
 build_rust "${WORKDIR}/build/foss/libdrop"
 copy_so_files "${WORKDIR}/build/foss/libdrop" "libnorddrop.so"
