@@ -1,8 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-src_dir=$(dirname -- ${BASH_SOURCE[0]})
-source "${src_dir}/env.sh"
+source "${WORKDIR}/ci/openvpn/env.sh"
 
 openvpn_tarbal_dir="${WORKDIR}/build/openvpn/tarballs"
 
@@ -11,7 +10,7 @@ tunnelblick_sha256sum="747aeed732f5303b408006d40736ef2ce276e0d99671b2110bb6b4f2f
 
 tunnelblick_url="https://github.com/Tunnelblick/Tunnelblick/raw/${tunnelblick_version}/third_party/sources"
 
-openssl_ver_tr=$(echo $OPENSSL_VERSION | tr . _)
+openssl_ver_tr=$(echo "$OPENSSL_VERSION" | tr . _)
 
 mkdir -p "${openvpn_tarbal_dir}"
 pushd "${openvpn_tarbal_dir}"
