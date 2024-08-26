@@ -3,7 +3,7 @@ set -euox pipefail
 
 source "${WORKDIR}/ci/env.sh"
 source "${WORKDIR}/ci/archs.sh"
-source "${WORKDIR}/build/openvpn/env.sh"
+source "${WORKDIR}/ci/openvpn/env.sh"
 
 PKG_TO_BUILD=$1
 export PKG_HOMEPAGE="https://nordvpn.com/"

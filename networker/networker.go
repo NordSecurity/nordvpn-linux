@@ -364,7 +364,6 @@ func (netw *Combined) addDefaultRoute() error {
 		Device:  netw.vpnet.Tun().Interface(),
 		TableID: netw.policyRouter.TableID(),
 	})
-
 	if err != nil {
 		return fmt.Errorf("adding the default route: %w", err)
 	}
@@ -785,7 +784,6 @@ func (netw *Combined) stopAllowedIPv6Traffic() error {
 		"vpn_allowlist_dhcp6_in",
 		"vpn_allowlist_dhcp6_out",
 	})
-
 	if err != nil {
 		return err
 	}
@@ -1300,7 +1298,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 			}
 		}
 
-		//TODO (LVPN-4031): detect which peer we are connected (if connected)
+		// TODO (LVPN-4031): detect which peer we are connected (if connected)
 		// to and check if maybe allowLocalAccess permission has changed and
 		// if so, change routing to route to local LAN
 	}

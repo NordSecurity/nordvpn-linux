@@ -204,6 +204,7 @@ func (e *workingExitNode) SetAllowlist(_ config.Allowlist, lan bool) error {
 	e.LanAvailable = lan
 	return nil
 }
+
 func (e *workingExitNode) ResetFirewall(lan bool, killswitch bool) error {
 	e.LanAvailable = lan
 	return nil

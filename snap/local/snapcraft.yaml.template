@@ -158,11 +158,7 @@ parts:
   libraries:
     plugin: dump
     source-type: local
-    source:
-      - on amd64: ./bin/deps/lib/amd64/
-      - on arm64: ./bin/deps/lib/arm64/
-      - on armhf: ./bin/deps/lib/armhf/
-      - on i386: ./bin/deps/lib/i386/
+    source: ./bin/deps/lib/TARGET_ARCH_4APP/
     organize:
       latest/*: usr/lib/
     stage:
