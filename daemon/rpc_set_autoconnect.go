@@ -11,33 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-type serverParameters struct {
-	country string
-	city    string
-	group   config.ServerGroup
-}
-
-func getServerParameters(serverTag string, groupTag string, countries core.Countries) serverParameters {
-	var parameters serverParameters
-
-	parameters.group = groupConvert(groupTag)
-
-	countryIndex, cityIndex := locationByName(serverTag, countries)
-
-	if countryIndex == -1 {
-		return parameters
-	}
-
-	country := countries[countryIndex]
-	parameters.country = country.Name
-	if cityIndex == -1 {
-		return parameters
-	}
-
-	parameters.city = country.Cities[cityIndex].Name
-	return parameters
-}
-
 func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) (*pb.Payload, error) {
 	if !r.ac.IsLoggedIn() {
 		return nil, internal.ErrNotLoggedIn
@@ -74,7 +47,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 	}
 
-	var parameters serverParameters
+	var parameters ServerParameters
 	serverTag := in.GetServerTag()
 	if in.GetAutoConnect() {
 		if serverTag != "" {
@@ -97,7 +70,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			// On the cli side, using the --group flag overrides any other arguments and group name will replace the
 			// server tag. Once this is fixed and this RPC accepts both server tag and a group flag, group flag should
 			// be used as a second argument in this call.s
-			parameters = getServerParameters(serverTag, serverTag, r.dm.GetCountryData().Countries)
+			parameters = GetServerParameters(serverTag, serverTag, r.dm.GetCountryData().Countries)
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
@@ -105,9 +78,9 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			c.AutoConnectData = config.AutoConnectData{
 				ID:                   cfg.AutoConnectData.ID,
 				ServerTag:            serverTag,
-				Country:              parameters.country,
-				City:                 parameters.city,
-				Group:                parameters.group,
+				Country:              parameters.Country,
+				City:                 parameters.City,
+				Group:                parameters.Group,
 				Protocol:             cfg.AutoConnectData.Protocol,
 				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 				Obfuscate:            cfg.AutoConnectData.Obfuscate,

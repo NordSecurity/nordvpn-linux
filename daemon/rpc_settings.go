@@ -29,6 +29,18 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 		subnets = append(subnets, subnet)
 	}
 
+	// Storing autoconnect parameters was introduced later on so they might not be save in a config yet. We need to
+	// perform an update in such cases to maintain compatibility.
+	if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" {
+		// use group tag as a second prameter once it is implemented
+		parameters := GetServerParameters(cfg.AutoConnectData.ServerTag,
+			cfg.AutoConnectData.ServerTag,
+			r.dm.GetCountryData().Countries)
+		cfg.AutoConnectData.Country = parameters.Country
+		cfg.AutoConnectData.City = parameters.City
+		cfg.AutoConnectData.Group = parameters.Group
+	}
+
 	return &pb.SettingsResponse{
 		Type: internal.CodeSuccess,
 		Data: &pb.UserSettings{
