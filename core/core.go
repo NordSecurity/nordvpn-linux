@@ -350,7 +350,7 @@ func (api *DefaultAPI) RecommendedServers(filter ServersFilter, longitude, latit
 	switch filter.Tag.Action { //nolint:exhaustive // libmoose deprecates this
 	case ServerBySpeed:
 		// Set group filter from tag only if group flag is not defined
-		if filter.Group == config.UndefinedGroup {
+		if filter.Group == config.ServerGroup_UNDEFINED {
 			filterQuery = fmt.Sprintf(RecommendedServersGroupsFilter, filter.Tag.ID)
 		}
 	case ServerByCountry:
@@ -362,7 +362,7 @@ func (api *DefaultAPI) RecommendedServers(filter ServersFilter, longitude, latit
 	}
 
 	// When flag is defined append it to filter query
-	if filter.Group != config.UndefinedGroup {
+	if filter.Group != config.ServerGroup_UNDEFINED {
 		filterQuery += fmt.Sprintf(RecommendedServersGroupsFilter, filter.Group)
 	}
 

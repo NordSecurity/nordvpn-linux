@@ -57,9 +57,10 @@ func configToProtobuf(cfg *config.Config) *pb.GlobalSettings {
 			Analytics:  cfg.Analytics.Get(),
 			KillSwitch: cfg.KillSwitch,
 			AutoConnectData: &pb.AutoconnectData{
-				Enabled:       cfg.AutoConnect,
-				ServerTag:     cfg.AutoConnectData.ServerTag,
-				ServerTagType: cfg.AutoConnectData.ServerTagType,
+				Enabled:     cfg.AutoConnect,
+				Country:     cfg.AutoConnectData.Country,
+				City:        cfg.AutoConnectData.City,
+				ServerGroup: cfg.AutoConnectData.Group,
 			},
 			Ipv6:                 cfg.IPv6,
 			Meshnet:              cfg.Mesh,

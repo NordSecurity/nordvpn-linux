@@ -29,37 +29,6 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 		subnets = append(subnets, subnet)
 	}
 
-	// Try to find server tag type if it is unknown to maintain compatibility with older versions of the app that did
-	// not save autoconnect server tag types.
-	if cfg.AutoConnect && cfg.AutoConnectData.ServerTagType == config.ServerTagType_UNKNOWN {
-		if cfg.AutoConnectData.ServerTag != "" {
-			tagType := GetServerTagType(cfg.AutoConnectData.ServerTag, r.dm.countryData.Countries)
-			if tagType == config.ServerTagType_UNKNOWN {
-				log.Println(internal.ErrorPrefix,
-					"failed to determine tag type when loading settings:",
-					cfg.AutoConnectData.ServerTag)
-			} else {
-				// try converting country code to country name to maintain consistency
-				if tagType == config.ServerTagType_COUNTRY {
-					cfg.AutoConnectData.ServerTag = r.dm.CountryCodeToCountryName(cfg.AutoConnectData.ServerTag)
-				}
-				cfg.AutoConnectData.ServerTagType = tagType
-			}
-		} else {
-			cfg.AutoConnectData.ServerTagType = config.ServerTagType_NONE
-		}
-
-		err := r.cm.SaveWith(func(c config.Config) config.Config {
-			c.AutoConnectData.ServerTag = cfg.AutoConnectData.ServerTag
-			c.AutoConnectData.ServerTagType = cfg.AutoConnectData.ServerTagType
-			return c
-		})
-
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to save new tag type:", err)
-		}
-	}
-
 	return &pb.SettingsResponse{
 		Type: internal.CodeSuccess,
 		Data: &pb.UserSettings{
@@ -71,9 +40,10 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 				Analytics:  cfg.Analytics.Get(),
 				KillSwitch: cfg.KillSwitch,
 				AutoConnectData: &pb.AutoconnectData{
-					Enabled:       cfg.AutoConnect,
-					ServerTag:     cfg.AutoConnectData.ServerTag,
-					ServerTagType: cfg.AutoConnectData.ServerTagType,
+					Enabled:     cfg.AutoConnect,
+					Country:     cfg.AutoConnectData.Country,
+					City:        cfg.AutoConnectData.City,
+					ServerGroup: cfg.AutoConnectData.Group,
 				},
 				Ipv6:                 cfg.IPv6,
 				Meshnet:              cfg.Mesh,

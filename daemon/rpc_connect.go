@@ -18,7 +18,7 @@ import (
 
 func isDedicatedIP(server core.Server) bool {
 	index := slices.IndexFunc(server.Groups, func(group core.Group) bool {
-		return group.ID == config.DedicatedIP
+		return group.ID == config.ServerGroup_DEDICATED_IP
 	})
 
 	return index != -1

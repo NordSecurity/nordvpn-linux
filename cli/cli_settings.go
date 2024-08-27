@@ -50,9 +50,9 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Tray))
 	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.Settings.AutoConnectData.Enabled))
 	if settings.Settings.AutoConnectData.Enabled && internal.IsDevEnv(string(c.environment)) {
-		fmt.Printf("Server tag (%d): %s\n",
-			settings.Settings.AutoConnectData.ServerTagType,
-			settings.Settings.AutoConnectData.ServerTag)
+		fmt.Printf("Auto-connect country: %s\n", settings.Settings.AutoConnectData.Country)
+		fmt.Printf("Auto-connect city: %s\n", settings.Settings.AutoConnectData.City)
+		fmt.Printf("Auto-connect group: %s\n", settings.Settings.AutoConnectData.ServerGroup)
 	}
 
 	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Settings.Ipv6))

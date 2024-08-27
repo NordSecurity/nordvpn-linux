@@ -11,6 +11,33 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
+type serverParameters struct {
+	country string
+	city    string
+	group   config.ServerGroup
+}
+
+func getServerParameters(serverTag string, groupTag string, countries core.Countries) serverParameters {
+	var parameters serverParameters
+
+	parameters.group = groupConvert(groupTag)
+
+	countryIndex, cityIndex := locationByName(serverTag, countries)
+
+	if countryIndex == -1 {
+		return parameters
+	}
+
+	country := countries[countryIndex]
+	parameters.country = country.Name
+	if cityIndex == -1 {
+		return parameters
+	}
+
+	parameters.city = country.Cities[cityIndex].Name
+	return parameters
+}
+
 func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) (*pb.Payload, error) {
 	if !r.ac.IsLoggedIn() {
 		return nil, internal.ErrNotLoggedIn
@@ -47,7 +74,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 	}
 
-	serverTagType := config.ServerTagType_UNKNOWN
+	var parameters serverParameters
 	serverTag := in.GetServerTag()
 	if in.GetAutoConnect() {
 		if serverTag != "" {
@@ -67,18 +94,10 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				return nil, err
 			}
 			log.Println(internal.InfoPrefix, "server for autoconnect found", server)
-
-			serverTagType = GetServerTagType(serverTag, r.dm.countryData.Countries)
-			if serverTagType == config.ServerTagType_UNKNOWN {
-				log.Println(internal.ErrorPrefix, "failed to determine server tag type:", serverTag)
-			}
-
-			// If serverTagType is country, the provided server could be either a country name or country code.
-			if serverTagType == config.ServerTagType_COUNTRY {
-				serverTag = server.Country().Name
-			}
-		} else {
-			serverTagType = config.ServerTagType_NONE
+			// On the cli side, using the --group flag overrides any other arguments and group name will replace the
+			// server tag. Once this is fixed and this RPC accepts both server tag and a group flag, group flag should
+			// be used as a second argument in this call.s
+			parameters = getServerParameters(serverTag, serverTag, r.dm.GetCountryData().Countries)
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
@@ -86,7 +105,9 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			c.AutoConnectData = config.AutoConnectData{
 				ID:                   cfg.AutoConnectData.ID,
 				ServerTag:            serverTag,
-				ServerTagType:        serverTagType,
+				Country:              parameters.country,
+				City:                 parameters.city,
+				Group:                parameters.group,
 				Protocol:             cfg.AutoConnectData.Protocol,
 				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 				Obfuscate:            cfg.AutoConnectData.Obfuscate,
