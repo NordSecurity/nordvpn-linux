@@ -338,7 +338,7 @@ func serverTagFromString(
 		return core.ServerTag{Action: core.ServerByUnknown, ID: 0}, nil
 	}
 
-	if group != config.ServerGroup_OBFUSCATED && !isGroupFlagSet {
+	if group != config.ServerGroup_UNDEFINED && !isGroupFlagSet {
 		return core.ServerTag{Action: core.ServerBySpeed, ID: int64(group)}, nil
 	}
 

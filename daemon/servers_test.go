@@ -246,7 +246,7 @@ func TestGroupConvert(t *testing.T) {
 		},
 		{
 			"Asia Pacific",
-			config.ServerGroup_THE_AMERICAS,
+			config.ServerGroup_ASIA_PACIFIC,
 		},
 		{
 			"Africa The Middle East And India",
