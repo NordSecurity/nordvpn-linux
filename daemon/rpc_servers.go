@@ -10,6 +10,7 @@ import (
 )
 
 func techToProto(tech core.ServerTechnology) pb.Technology {
+	//nolint:exhaustive
 	switch tech {
 	case core.OpenVPNUDP:
 		return pb.Technology_OPENVPN_UDP
@@ -21,9 +22,9 @@ func techToProto(tech core.ServerTechnology) pb.Technology {
 		return pb.Technology_OBFUSCATED_OPENVPN_TCP
 	case core.WireguardTech:
 		return pb.Technology_NORDLYNX
+	default:
+		return pb.Technology_UNKNOWN_TECHNLOGY
 	}
-
-	return pb.Technology_UNKNOWN_TECHNLOGY
 }
 
 func groupFilter(groups core.Groups) config.ServerGroup {
