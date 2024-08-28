@@ -7,6 +7,7 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 import "common.proto";
 import "config/technology.proto";
 import "config/protocol.proto";
+import "config/group.proto";
 
 message SettingsRequest {
   int64 uid = 1;
@@ -17,11 +18,18 @@ message SettingsResponse {
   UserSettings data = 2;
 }
 
+message AutoconnectData {
+  bool enabled = 1;
+  string country = 2;
+  string city = 3;
+  config.ServerGroup server_group = 4;
+}
+
 message Settings {
   config.Technology technology = 1;
   bool firewall = 2;
   bool kill_switch = 3;
-  bool auto_connect = 4;
+  AutoconnectData auto_connect_data = 4;
   bool ipv6 = 5;
   bool meshnet = 6;
   bool routing = 7;

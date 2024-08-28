@@ -348,3 +348,16 @@ func (dm *DataManager) Groups(
 	})
 	return result, nil
 }
+
+// CountryCodeToCountryName returns country name for the given country code or an empty string if no match is found.
+func (dm *DataManager) CountryCodeToCountryName(code string) string {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	for _, country := range dm.countryData.Countries {
+		if country.Code == code || country.Name == code {
+			return country.Name
+		}
+	}
+
+	return ""
+}

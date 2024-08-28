@@ -78,7 +78,7 @@ func getServers(
 		return ret, false, err
 	}
 
-	if serverGroup == config.DedicatedIP {
+	if serverGroup == config.ServerGroup_DEDICATED_IP {
 		// DIP servers are taken from the user subscription services
 		return nil, false, ErrDedicatedIPServer
 	}
@@ -158,12 +158,12 @@ func resolveServerGroup(flag, tag string) (config.ServerGroup, error) {
 	tagServerGroup := groupConvert(tag)
 	flagServerGroup := groupConvert(flag)
 
-	if tagServerGroup != config.UndefinedGroup && flagServerGroup != config.UndefinedGroup {
-		return config.UndefinedGroup, internal.ErrDoubleGroup
+	if tagServerGroup != config.ServerGroup_UNDEFINED && flagServerGroup != config.ServerGroup_UNDEFINED {
+		return config.ServerGroup_UNDEFINED, internal.ErrDoubleGroup
 	}
 	if flag != "" {
-		if flagServerGroup == config.UndefinedGroup {
-			return config.UndefinedGroup, internal.ErrGroupDoesNotExist
+		if flagServerGroup == config.ServerGroup_UNDEFINED {
+			return config.ServerGroup_UNDEFINED, internal.ErrGroupDoesNotExist
 		}
 
 		return flagServerGroup, nil
@@ -218,8 +218,8 @@ func getServersRemote(
 		limit = count
 	}
 
-	if group == config.UndefinedGroup && obfuscated {
-		group = config.Obfuscated
+	if group == config.ServerGroup_UNDEFINED && obfuscated {
+		group = config.ServerGroup_OBFUSCATED
 	}
 
 	filter := core.ServersFilter{
@@ -284,6 +284,48 @@ func serverTagToServerBy(serverTag string, srv core.Server) core.ServerBy {
 	return by
 }
 
+// locationByName returns:
+//
+// * index of a country within countries array and -1 if name is an index
+// * index of a country within countries array and index of a city within that country cities array if name is a city
+// * -1 and -1 if name is neither a country nor a city
+func locationByName(name string, countries core.Countries) (int, int) {
+	for countryIndex, country := range countries {
+		countryName := internal.SnakeCase(country.Name)
+		countryCode := internal.SnakeCase(country.Code)
+
+		if strings.EqualFold(name, countryName) || strings.EqualFold(name, countryCode) {
+			return countryIndex, -1
+		}
+		for cityIndex, city := range country.Cities {
+			cityName := internal.SnakeCase(city.Name)
+			if strings.EqualFold(name, cityName) ||
+				strings.EqualFold(name, countryName+" "+cityName) ||
+				strings.EqualFold(name, countryCode+" "+cityName) {
+				return countryIndex, cityIndex
+			}
+		}
+	}
+	return -1, -1
+}
+
+// serverLocationTagFromString returns appropriate tag and true if provided tag string is a country, country code or a
+// city and false if it isn't.
+func serverLocationTagFromString(serverTag string, countries core.Countries) (core.ServerTag, bool) {
+	countryIndex, cityIndex := locationByName(serverTag, countries)
+	if countryIndex == -1 {
+		return core.ServerTag{}, false
+	}
+
+	country := countries[countryIndex]
+	if cityIndex == -1 {
+		return core.ServerTag{Action: core.ServerByCountry, ID: country.ID}, true
+	}
+
+	city := country.Cities[cityIndex]
+	return core.ServerTag{Action: core.ServerByCity, ID: city.ID}, true
+}
+
 func serverTagFromString(
 	countries core.Countries,
 	api core.ServersAPI,
@@ -296,7 +338,7 @@ func serverTagFromString(
 		return core.ServerTag{Action: core.ServerByUnknown, ID: 0}, nil
 	}
 
-	if group != config.UndefinedGroup && !isGroupFlagSet {
+	if group != config.ServerGroup_UNDEFINED && !isGroupFlagSet {
 		return core.ServerTag{Action: core.ServerBySpeed, ID: int64(group)}, nil
 	}
 
@@ -311,22 +353,11 @@ func serverTagFromString(
 			return core.ServerTag{Action: core.ServerByUnknown, ID: 0}, err
 		}
 	}
-	for _, country := range countries {
-		countryName := internal.SnakeCase(country.Name)
-		countryCode := internal.SnakeCase(country.Code)
 
-		if strings.EqualFold(serverTag, countryName) || strings.EqualFold(serverTag, countryCode) {
-			return core.ServerTag{Action: core.ServerByCountry, ID: country.ID}, nil
-		}
-		for _, city := range country.Cities {
-			cityName := internal.SnakeCase(city.Name)
-			if strings.EqualFold(serverTag, cityName) ||
-				strings.EqualFold(serverTag, countryName+" "+cityName) ||
-				strings.EqualFold(serverTag, countryCode+" "+cityName) {
-				return core.ServerTag{Action: core.ServerByCity, ID: city.ID}, nil
-			}
-		}
+	if locationTag, locationFound := serverLocationTagFromString(serverTag, countries); locationFound {
+		return locationTag, nil
 	}
+
 	for _, server := range servers {
 		if strings.EqualFold(serverTag, strings.Split(server.Hostname, ".")[0]) {
 			return core.ServerTag{Action: core.ServerByName, ID: server.ID}, nil
@@ -343,7 +374,7 @@ func groupConvert(group string) config.ServerGroup {
 	if _, ok := config.GroupMap[key]; ok {
 		return config.GroupMap[key]
 	}
-	return config.UndefinedGroup
+	return config.ServerGroup_UNDEFINED
 }
 
 func techToServerTech(tech config.Technology, protocol config.Protocol, obfuscated bool) core.ServerTechnology {
@@ -386,13 +417,13 @@ func canConnect(
 }
 
 func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Predicate {
-	if tag != "" && group != config.UndefinedGroup {
+	if tag != "" && group != config.ServerGroup_UNDEFINED {
 		return func(s core.Server) bool {
 			return slices.ContainsFunc(s.Groups, core.ByGroup(group)) && slices.Contains(s.Keys, tag)
 		}
 	}
 
-	if group != config.UndefinedGroup {
+	if group != config.ServerGroup_UNDEFINED {
 		return func(s core.Server) bool {
 			return slices.ContainsFunc(s.Groups, core.ByGroup(group))
 		}
@@ -407,9 +438,9 @@ func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Pr
 	return func(s core.Server) bool {
 		getGroup := func() config.ServerGroup {
 			if obfuscated {
-				return config.Obfuscated
+				return config.ServerGroup_OBFUSCATED
 			}
-			return config.StandardVPNServers
+			return config.ServerGroup_STANDARD_VPN_SERVERS
 		}
 		return slices.ContainsFunc(s.Groups, core.ByGroup(getGroup()))
 	}
@@ -537,4 +568,31 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 	}
 
 	return server, nil
+}
+
+type ServerParameters struct {
+	Country string
+	City    string
+	Group   config.ServerGroup
+}
+
+func GetServerParameters(serverTag string, groupTag string, countries core.Countries) ServerParameters {
+	var parameters ServerParameters
+
+	parameters.Group = groupConvert(groupTag)
+
+	countryIndex, cityIndex := locationByName(serverTag, countries)
+
+	if countryIndex == -1 {
+		return parameters
+	}
+
+	country := countries[countryIndex]
+	parameters.Country = country.Name
+	if cityIndex == -1 {
+		return parameters
+	}
+
+	parameters.City = country.Cities[cityIndex].Name
+	return parameters
 }

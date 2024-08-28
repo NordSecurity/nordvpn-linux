@@ -21,7 +21,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	if cfg.AutoConnect == in.GetAutoConnect() {
+	if !cfg.AutoConnect && !in.GetAutoConnect() {
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
 		}, nil
@@ -47,13 +47,15 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 	}
 
+	var parameters ServerParameters
+	serverTag := in.GetServerTag()
 	if in.GetAutoConnect() {
-		if in.GetServerTag() != "" {
+		if serverTag != "" {
 			insights := r.dm.GetInsightsData().Insights
 
-			server, _, err := selectServer(r, &insights, cfg, in.GetServerTag(), "")
+			server, _, err := selectServer(r, &insights, cfg, serverTag, "")
 			if err != nil {
-				log.Println(internal.ErrorPrefix, "no server found for autoconnect", in.GetServerTag(), err)
+				log.Println(internal.ErrorPrefix, "no server found for autoconnect", serverTag, err)
 
 				var errorCode *internal.ErrorWithCode
 				if errors.As(err, &errorCode) {
@@ -65,13 +67,20 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				return nil, err
 			}
 			log.Println(internal.InfoPrefix, "server for autoconnect found", server)
+			// On the cli side, using the --group flag overrides any other arguments and group name will replace the
+			// server tag. Once this is fixed and this RPC accepts both server tag and a group flag, group flag should
+			// be used as a second argument in this call.s
+			parameters = GetServerParameters(serverTag, serverTag, r.dm.GetCountryData().Countries)
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
 			c.AutoConnect = in.GetAutoConnect()
 			c.AutoConnectData = config.AutoConnectData{
 				ID:                   cfg.AutoConnectData.ID,
-				ServerTag:            in.GetServerTag(),
+				ServerTag:            serverTag,
+				Country:              parameters.Country,
+				City:                 parameters.City,
+				Group:                parameters.Group,
 				Protocol:             cfg.AutoConnectData.Protocol,
 				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 				Obfuscate:            cfg.AutoConnectData.Obfuscate,
