@@ -31,7 +31,10 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 
 	// Storing autoconnect parameters was introduced later on so they might not be save in a config yet. We need to
 	// perform an update in such cases to maintain compatibility.
-	if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" {
+	autoconnectParamsNotSet := cfg.AutoConnectData.Country == "" &&
+		cfg.AutoConnectData.City == "" &&
+		cfg.AutoConnectData.Group == config.ServerGroup_UNDEFINED
+	if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" && autoconnectParamsNotSet {
 		// use group tag as a second prameter once it is implemented
 		parameters := GetServerParameters(cfg.AutoConnectData.ServerTag,
 			cfg.AutoConnectData.ServerTag,
@@ -39,6 +42,18 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 		cfg.AutoConnectData.Country = parameters.Country
 		cfg.AutoConnectData.City = parameters.City
 		cfg.AutoConnectData.Group = parameters.Group
+
+		err := r.cm.SaveWith(func(c config.Config) config.Config {
+			c.AutoConnectData.Country = cfg.AutoConnectData.Country
+			c.AutoConnectData.City = cfg.AutoConnectData.City
+			c.AutoConnectData.Group = cfg.AutoConnectData.Group
+
+			return c
+		})
+
+		if err != nil {
+			log.Println(internal.WarningPrefix, "failed to set autoconnect parameters during the settings RPC:", err)
+		}
 	}
 
 	return &pb.SettingsResponse{
