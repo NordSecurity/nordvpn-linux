@@ -9,8 +9,10 @@ source "${WORKDIR}"/ci/archs.sh
 # shellcheck disable=SC2153
 if [ "${ENVIRONMENT}" = "dev" ]; then
 	[ "${ARCH}" = "amd64" ] && [ "${RACE_DETECTOR_ENABLED:-""}" == "1" ] && BUILDMODE="-race"
+	TRIMPATH=""
 else
 	BUILDMODE="-buildmode=pie"
+	TRIMPATH="-trimpath"
 fi
 
 ldflags="-X 'main.Version=${VERSION}' \
@@ -88,7 +90,7 @@ for program in ${!names_map[*]}; do # looping over keys
 	# shellcheck disable=SC2086
 	CC="${cross_compiler_map[${ARCH}]}" \
 		go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} ${BUILDMODE:-} -tags "${tags}" \
-		-trimpath -ldflags "-linkmode=external ${ldflags}" \
+		${TRIMPATH:-} -ldflags "-linkmode=external ${ldflags}" \
 		-o "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}"
 	popd
 done
