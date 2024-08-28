@@ -18,17 +18,6 @@ if [ "${ENVIRONMENT}" = "prod" ]; then
     "${STRIP}" "${BASEDIR}"/norduserd
 fi
 
-# translate arch id
-TARGET_ARCH_4SNAP=$([ "${ARCH}" == "aarch64" ] && echo arm64 || echo "${ARCH}")
-
-# prepare snapcraft.yaml
-cp "${WORKDIR}"/snap/local/snapcraft.yaml.template "${WORKDIR}"/snap/snapcraft.yaml
-
-# shellcheck disable=SC1003
-sed -i 's\TARGET_ARCH_4SNAP\'"${TARGET_ARCH_4SNAP}"'\g' "${WORKDIR}"/snap/snapcraft.yaml
-# shellcheck disable=SC1003
-sed -i 's\TARGET_ARCH_4APP\'"${ARCH}"'\g' "${WORKDIR}"/snap/snapcraft.yaml
-
 # build snap package
 snapcraft --destructive-mode
 
