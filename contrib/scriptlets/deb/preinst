@@ -5,7 +5,7 @@ DEFAULT_USER=${SUDO_USER:-"$(logname 2> /dev/null)"}
 if [[ ! "$DEFAULT_USER" || "$DEFAULT_USER" == "root" ]]; then
     DEFAULT_USER=$(id -un -- "1000" 2> /dev/null)
 fi
-ADD_USER_MESSAGE="Adding user $DEFAULT_USER to the group $NORDVPN_GROUP"
+ADD_USER_MESSAGE="Adding user '$DEFAULT_USER' to the group '$NORDVPN_GROUP'"
 
 groupadd --system "$NORDVPN_GROUP" 1>/dev/null 2> /dev/null
 groupCreated=$?
