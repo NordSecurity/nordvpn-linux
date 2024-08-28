@@ -58,6 +58,12 @@ func Test_findPIDOfUID(t *testing.T) {
 			expectedPID: -1,
 		},
 		{
+			name:        "list with empty lines",
+			uidToPID:    []string{"\n1001 35255\n"},
+			uid:         1001,
+			expectedPID: 35255,
+		},
+		{
 			name:        "uid not present",
 			uidToPID:    []string{" 1004 35139", " 1003 35153", " 1002 35144"},
 			uid:         1001,

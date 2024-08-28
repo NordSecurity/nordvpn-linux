@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -49,9 +50,13 @@ func handlePsError(out []byte, err error) error {
 func parseNorduserPIDs(psOutput string) []int {
 	pids := []int{}
 	for _, pidStr := range strings.Split(psOutput, "\n") {
-		pid, err := strconv.Atoi(strings.TrimSpace(pidStr))
+		pidStr = strings.TrimSpace(pidStr)
+		if pidStr == "" {
+			continue
+		}
+		pid, err := strconv.Atoi(pidStr)
 		if err != nil {
-			log.Println("failed to parse pid string: ", err)
+			log.Println(internal.ErrorPrefix, "failed to parse pid string:", pidStr, "; err:", err)
 			continue
 		}
 
@@ -76,15 +81,16 @@ func findPIDOfUID(uids string, desiredUID uint32) int {
 		var pid int
 		var uid int
 		n, err := fmt.Sscanf(uidPid, "%d%d", &uid, &pid)
-		if err != nil {
-			log.Println(internal.ErrorPrefix+" failed to parse uid pid line: ", err)
+		if errors.Is(err, io.EOF) {
 			continue
 		}
-
-		if n != 2 {
-			log.Println(internal.ErrorPrefix+" invalid input line, expected <uid> <pid> format: ", uidPid)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to parse uid pid line:", uidPid, "; err:", err)
+			continue
 		}
-
+		if n != 2 {
+			log.Println(internal.ErrorPrefix, "invalid input line, expected <uid> <pid> format:", uidPid)
+		}
 		if uid == int(desiredUID) {
 			return pid
 		}
