@@ -63,8 +63,8 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 				IsUdp: isUDP,
 				IsTcp: isTCP,
 				PortRange: &pb.PortRange{
-					Start: port,
-					Stop:  0,
+					StartPort: port,
+					EndPort:   0,
 				},
 			},
 		},

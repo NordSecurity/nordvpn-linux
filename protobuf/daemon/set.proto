@@ -99,8 +99,8 @@ message SetTechnologyRequest {
 }
 
 message PortRange {
-  int64 start = 1;
-  int64 stop = 2;
+  int64 start_port = 1;
+  int64 end_port = 2;
 }
 
 message SetAllowlistSubnetRequest {

@@ -84,26 +84,26 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.
 	case *pb.SetAllowlistRequest_SetAllowlistPortsRequest:
 		if request.SetAllowlistPortsRequest.IsUdp {
 			portRange := request.SetAllowlistPortsRequest.GetPortRange()
-			if valid, errorCode := arePortsValid(portRange.Start,
-				portRange.Stop,
+			if valid, errorCode := arePortsValid(portRange.GetStartPort(),
+				portRange.GetEndPort(),
 				allowlist.Ports.UDP,
 				remove); !valid {
 				return config.Allowlist{}, errorCode
 			}
 
-			allowlist.UpdateUDPPorts(getPortsInARange(portRange.GetStart(), portRange.GetStop()), remove)
+			allowlist.UpdateUDPPorts(getPortsInARange(portRange.GetStartPort(), portRange.GetEndPort()), remove)
 		}
 
 		if request.SetAllowlistPortsRequest.IsTcp {
 			portRange := request.SetAllowlistPortsRequest.GetPortRange()
-			if valid, errorCode := arePortsValid(portRange.Start,
-				portRange.Stop,
+			if valid, errorCode := arePortsValid(portRange.GetStartPort(),
+				portRange.GetEndPort(),
 				allowlist.Ports.TCP,
 				remove); !valid {
 				return config.Allowlist{}, errorCode
 			}
 
-			allowlist.UpdateTCPPorts(getPortsInARange(portRange.GetStart(), portRange.GetStop()), remove)
+			allowlist.UpdateTCPPorts(getPortsInARange(portRange.GetStartPort(), portRange.GetEndPort()), remove)
 		}
 	}
 

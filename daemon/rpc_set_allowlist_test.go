@@ -463,8 +463,8 @@ func TestSetAllowlist_Ports(t *testing.T) {
 						IsUdp: test.isUDP,
 						IsTcp: test.isTCP,
 						PortRange: &pb.PortRange{
-							Start: test.portStart,
-							Stop:  test.portStop,
+							StartPort: test.portStart,
+							EndPort:   test.portStop,
 						},
 					},
 				},
@@ -732,8 +732,8 @@ func TestUnsetAllowlist_Ports(t *testing.T) {
 						IsUdp: test.isUDP,
 						IsTcp: test.isTCP,
 						PortRange: &pb.PortRange{
-							Start: test.portStart,
-							Stop:  test.portStop,
+							StartPort: test.portStart,
+							EndPort:   test.portStop,
 						},
 					},
 				},

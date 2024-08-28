@@ -66,8 +66,8 @@ func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 				IsUdp: isUDP,
 				IsTcp: isTCP,
 				PortRange: &pb.PortRange{
-					Start: startPort,
-					Stop:  endPort,
+					StartPort: startPort,
+					EndPort:   endPort,
 				},
 			},
 		},
