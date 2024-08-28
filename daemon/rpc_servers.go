@@ -23,7 +23,7 @@ func techToProto(tech core.ServerTechnology) pb.Technology {
 		return pb.Technology_NORDLYNX
 	}
 
-	return pb.Technology_UNKNWON
+	return pb.Technology_UNKNOWN_TECHNLOGY
 }
 
 func groupFilter(groups core.Groups) config.ServerGroup {
@@ -61,7 +61,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 		technologies := []pb.Technology{}
 		for _, technology := range server.Technologies {
 			protoTech := techToProto(technology.ID)
-			if protoTech == pb.Technology_UNKNWON {
+			if protoTech == pb.Technology_UNKNOWN_TECHNLOGY {
 				continue
 			}
 			technologies = append(technologies, protoTech)

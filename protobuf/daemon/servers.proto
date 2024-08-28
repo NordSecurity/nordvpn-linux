@@ -7,7 +7,7 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 import "config/group.proto";
 
 enum Technology {
-    UNKNWON = 0;
+    UNKNOWN_TECHNLOGY = 0;
     NORDLYNX = 1;
     OPENVPN_TCP = 2;
     OPENVPN_UDP = 3;
