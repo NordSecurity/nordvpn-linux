@@ -16,7 +16,7 @@ enum Technology {
 }
 
 message Server {
-    repeated string ips = 1;
+    int64 id = 1;
     string country_code = 2;
     string city_name = 3;
     string host_name = 4;

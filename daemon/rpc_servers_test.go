@@ -14,20 +14,19 @@ import (
 func TestServers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	server1IP4 := "149.66.140.30"
-	server1IP6 := "6a6b:9636:6e17:55ed:afea:1a89:d1d5:60c"
+	server1ID := 1
 	server1Hostname := "server1"
 	server1Country := "Germany"
 	server1CountryCode := "de"
 	server1City := "Berlin"
 
-	server2IP := "152.114.239.96"
+	server2ID := 2
 	server2Hostname := "server2"
 	server2Country := "France"
 	server2CountryCode := "fr"
 	server2City := "Paris"
 
-	server3IP := "241.246.169.206"
+	server3ID := 3
 	server3Hostname := "server3"
 	server3Country := "Lithuania"
 	server3CountryCode := "lt"
@@ -37,20 +36,7 @@ func TestServers(t *testing.T) {
 		// Server 1
 		// Virtual/P2P/Germany/Berlin/Nordlynx/OpenVPN TCP Obfuscated
 		{
-			IPRecords: []core.ServerIPRecord{
-				{
-					ServerIP: core.ServerIP{
-						IP:      server1IP4,
-						Version: 4,
-					},
-				},
-				{
-					ServerIP: core.ServerIP{
-						IP:      server1IP6,
-						Version: 6,
-					},
-				},
-			},
+			ID:       int64(server1ID),
 			Hostname: server1Hostname,
 			Locations: core.Locations{
 				{
@@ -96,14 +82,7 @@ func TestServers(t *testing.T) {
 		// Server 2
 		// France/Paris/Standard VPN/OpenVPN TCP/OpenVPN UDP
 		{
-			IPRecords: []core.ServerIPRecord{
-				{
-					ServerIP: core.ServerIP{
-						IP:      server2IP,
-						Version: 4,
-					},
-				},
-			},
+			ID:       int64(server2ID),
 			Hostname: server2Hostname,
 			Locations: core.Locations{
 				{
@@ -132,14 +111,7 @@ func TestServers(t *testing.T) {
 		// Server 3
 		// Lithuania/Vilnius/Standard VPN/OpenVPN TCP Obfuscated
 		{
-			IPRecords: []core.ServerIPRecord{
-				{
-					ServerIP: core.ServerIP{
-						IP:      server3IP,
-						Version: 4,
-					},
-				},
-			},
+			ID:       int64(server3ID),
 			Hostname: server3Hostname,
 			Locations: core.Locations{
 				{
@@ -178,7 +150,7 @@ func TestServers(t *testing.T) {
 
 	expectedServers := []*pb.Server{
 		{
-			Ips:         []string{server1IP4, server1IP6},
+			Id:          int64(server1ID),
 			CountryCode: server1CountryCode,
 			CityName:    server1City,
 			HostName:    server1Hostname,
@@ -190,7 +162,7 @@ func TestServers(t *testing.T) {
 			},
 		},
 		{
-			Ips:         []string{server2IP},
+			Id:          int64(server2ID),
 			CountryCode: server2CountryCode,
 			CityName:    server2City,
 			HostName:    server2Hostname,
@@ -202,7 +174,7 @@ func TestServers(t *testing.T) {
 			},
 		},
 		{
-			Ips:         []string{server3IP},
+			Id:          int64(server3ID),
 			CountryCode: server3CountryCode,
 			CityName:    server3City,
 			HostName:    server3Hostname,
@@ -238,7 +210,7 @@ func TestServers(t *testing.T) {
 			r := RPC{dm: &dm}
 
 			resp, err := r.GetServers(context.Background(), &pb.Empty{})
-			assert.Nil(t, err, "Unexpeced error returned by servers RPC.")
+			assert.Nil(t, err, "Unexpected error returned by servers RPC.")
 			assert.Equal(t, test.expectedResponse, resp)
 		})
 	}

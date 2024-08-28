@@ -68,13 +68,8 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 			technologies = append(technologies, protoTech)
 		}
 
-		ips := []string{}
-		for _, ip := range server.IPs() {
-			ips = append(ips, ip.String())
-		}
-
 		s := pb.Server{
-			Ips:          ips,
+			Id:           server.ID,
 			CountryCode:  server.Country().Code,
 			CityName:     server.Country().City.Name,
 			HostName:     server.Hostname,
