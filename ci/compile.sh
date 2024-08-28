@@ -88,7 +88,7 @@ for program in ${!names_map[*]}; do # looping over keys
 	# shellcheck disable=SC2086
 	CC="${cross_compiler_map[${ARCH}]}" \
 		go build ${BUILD_FLAGS:+"${BUILD_FLAGS}"} ${BUILDMODE:-} -tags "${tags}" \
-		-ldflags "-linkmode=external ${ldflags}" \
+		-trimpath -ldflags "-linkmode=external ${ldflags}" \
 		-o "${WORKDIR}/bin/${ARCH}/${names_map[${program}]}"
 	popd
 done
