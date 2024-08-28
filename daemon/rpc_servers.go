@@ -28,8 +28,6 @@ func techToProto(tech core.ServerTechnology) pb.Technology {
 
 func groupFilter(groups core.Groups) config.ServerGroup {
 	filter := []config.ServerGroup{
-		// standard VPN
-		config.ServerGroup_STANDARD_VPN_SERVERS,
 		// P2P(the servers part of this group have from API also standard group which needs to be ignored)
 		config.ServerGroup_P2P,
 		// double VPN
@@ -40,11 +38,15 @@ func groupFilter(groups core.Groups) config.ServerGroup {
 		config.ServerGroup_DEDICATED_IP,
 		// obfuscated openVPN
 		config.ServerGroup_OBFUSCATED,
+		// standard VPN
+		config.ServerGroup_STANDARD_VPN_SERVERS,
 	}
 
-	for _, group := range groups {
-		if slices.Contains(filter, group.ID) {
-			return group.ID
+	for _, filterGroup := range filter {
+		if slices.ContainsFunc(groups, func(g core.Group) bool {
+			return g.ID == filterGroup
+		}) {
+			return filterGroup
 		}
 	}
 
@@ -65,7 +67,13 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 			technologies = append(technologies, protoTech)
 		}
 
+		ips := []string{}
+		for _, ip := range server.IPs() {
+			ips = append(ips, ip.String())
+		}
+
 		s := pb.Server{
+			Ips:          ips,
 			CountryCode:  server.Country().Code,
 			CityName:     server.Country().City.Name,
 			HostName:     server.Hostname,

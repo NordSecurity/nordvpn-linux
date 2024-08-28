@@ -16,12 +16,13 @@ enum Technology {
 }
 
 message Server {
-    string country_code = 1;
-    string city_name = 2;
-    string host_name = 3;
-    bool virtual = 4;
-    config.ServerGroup server_group = 5;
-    repeated Technology technologies = 6;
+    repeated string ips = 1;
+    string country_code = 2;
+    string city_name = 3;
+    string host_name = 4;
+    bool virtual = 5;
+    config.ServerGroup server_group = 6;
+    repeated Technology technologies = 7;
 }
 
 message ServersResponse {
