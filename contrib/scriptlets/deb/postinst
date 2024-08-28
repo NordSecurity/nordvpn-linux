@@ -8,28 +8,25 @@ fi
 DEFAULT_USER_ID=$(id -u ${DEFAULT_USER})
 ENV=$(ps --no-headers -o comm 1)
 NORDVPN_GROUP="nordvpn"
+ADD_USER_MESSAGE="Adding user '$DEFAULT_USER' to the group '$NORDVPN_GROUP'"
+
 installSuccess="NordVPN for Linux successfully installed!"
-userModMessage="To allow other users to use the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
 userAddMessage=', please re-login or execute `su - $USER` in the current shell'
 userShowMessage=""
 if [[ "$DEFAULT_USER" ]]; then
     userShowMessage="$userAddMessage"
 fi
-quickTutorial="To get started${userShowMessage}, type 'nordvpn login' and enter your NordVPN account details. Then type 'nordvpn connect' and you’re all set! $userModMessage If you need help using the app, use the command 'nordvpn --help'."
+quickTutorial="To get started${userShowMessage}, type 'nordvpn login' and enter your NordVPN account details."
+quickTutorialConnect="Then type 'nordvpn connect' and you’re all set!"
+groupMessage="All users belonging to the '$NORDVPN_GROUP' group will be allowed to control the NordVPN application."
+groupAddedMessage="By default the user '$DEFAULT_USER' was added to the '$NORDVPN_GROUP' group during installation."
+userModMessage="To allow other users to control the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
+helpMessage="If you need help using the app, use the command 'nordvpn --help'."
 
-groupadd --system "$NORDVPN_GROUP" 1>/dev/null 2> /dev/null
-installSuccess="NordVPN for Linux successfully installed!"
-userModMessage="To allow other users to use the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
-userAddMessage=', please re-login or execute `su - $USER` in the current shell'
-userShowMessage=""
-if [[ "$DEFAULT_USER" ]]; then
-    usermod -aG "$NORDVPN_GROUP" "$DEFAULT_USER"
-    userShowMessage="$userAddMessage"    
-fi
 mkdir -m 0750 -p "$LOG_DIR"
 chown root:$NORDVPN_GROUP "$LOG_DIR"
-quickTutorial="To get started${userShowMessage}, type 'nordvpn login' and enter your NordVPN account details. Then type 'nordvpn connect' and you’re all set! $userModMessage If you need help using the app, use the command 'nordvpn --help'."
 
+# TODO: Do we need this?
 export XDG_RUNTIME_DIR="/run/user/${DEFAULT_USER_ID}"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
 
@@ -39,7 +36,7 @@ case "$1" in
         mkdir -m 0750 -p "$LOG_DIR"
         chown root:$NORDVPN_GROUP "$LOG_DIR"
 
-        # cleanup files from older version without systemd
+        # Cleanup files from older version without systemd
         if [[ -f "/etc/systemd/system/nordvpnd.service" ]]; then
             rm -f /etc/systemd/system/nordvpnd.service || true
         fi
@@ -73,10 +70,17 @@ case "$1" in
             su -c 'source /usr/share/bash-completion/completions/nordvpn' "${DEFAULT_USER}" &>/dev/null || true
         fi
 
-        # message will be shown only on fresh install (after purge)
+        # Message will be shown only on fresh install (after purge)
         if [[ ! "$2" ]]; then
-            echo "${installSuccess}"
-            echo "${quickTutorial}"
+            echo "$installSuccess"
+            echo "$quickTutorial"
+            echo "$quickTutorialConnect"
+            echo "NOTE: $groupMessage"
+            if [[ "$DEFAULT_USER" ]]; then
+                echo "      $groupAddedMessage"
+            fi
+            echo "      $userModMessage"
+            echo "$helpMessage"
         fi
     ;;
     abort-upgrade|abort-remove|abort-deconfigure)
@@ -88,4 +92,3 @@ case "$1" in
 esac
 
 exit 0
-
