@@ -71,7 +71,7 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 				IsTcp: isTCP,
 				PortRange: &pb.PortRange{
 					StartPort: startPort,
-					EndPort:   startPort,
+					EndPort:   endPort,
 				},
 			},
 		},
