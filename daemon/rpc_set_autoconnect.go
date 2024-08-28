@@ -21,13 +21,13 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	if !cfg.AutoConnect && !in.GetAutoConnect() {
+	if !cfg.AutoConnect && !in.GetEnabled() {
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
 		}, nil
 	}
 
-	if in.GetAutoConnect() {
+	if in.GetEnabled() {
 		switch core.IsServerObfuscated(r.dm.GetServersData().Servers, in.GetServerTag()) {
 		case core.ServerNotObfuscated:
 			if cfg.AutoConnectData.Obfuscate {
@@ -49,7 +49,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 	var parameters ServerParameters
 	serverTag := in.GetServerTag()
-	if in.GetAutoConnect() {
+	if in.GetEnabled() {
 		if serverTag != "" {
 			insights := r.dm.GetInsightsData().Insights
 
@@ -74,7 +74,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
-			c.AutoConnect = in.GetAutoConnect()
+			c.AutoConnect = in.GetEnabled()
 			c.AutoConnectData = config.AutoConnectData{
 				ID:                   cfg.AutoConnectData.ID,
 				ServerTag:            serverTag,
@@ -85,11 +85,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 				Obfuscate:            cfg.AutoConnectData.Obfuscate,
 				DNS:                  cfg.AutoConnectData.DNS,
-				Allowlist: config.NewAllowlist(
-					in.GetAllowlist().GetPorts().GetTcp(),
-					in.GetAllowlist().GetPorts().GetUdp(),
-					in.GetAllowlist().GetSubnets(),
-				),
+				Allowlist:            cfg.AutoConnectData.Allowlist,
 			}
 			return c
 		}); err != nil {
@@ -100,7 +96,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 	} else {
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
-			c.AutoConnect = in.GetAutoConnect()
+			c.AutoConnect = in.GetEnabled()
 			return c
 		}); err != nil {
 			log.Println(internal.ErrorPrefix, err)
@@ -109,7 +105,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			}, nil
 		}
 	}
-	r.events.Settings.Autoconnect.Publish(in.GetAutoConnect())
+	r.events.Settings.Autoconnect.Publish(in.GetEnabled())
 
 	return &pb.Payload{
 		Type: internal.CodeSuccess,

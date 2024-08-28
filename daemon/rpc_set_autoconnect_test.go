@@ -165,7 +165,7 @@ func TestAutoconnect(t *testing.T) {
 		mockEvents := events.Events{Settings: &events.SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
 		dm := DataManager{serversData: ServersData{Servers: serversList()}}
 		r := RPC{cm: mockConfigManager, ac: mockAuthChecker, events: &mockEvents, dm: &dm, serversAPI: &mockServersAPI{}}
-		request := pb.SetAutoconnectRequest{AutoConnect: true}
+		request := pb.SetAutoconnectRequest{Enabled: true}
 
 		request.ServerTag = test.server
 		mockConfigManager.c = test.config
