@@ -15,10 +15,8 @@ enum SetErrorCode {
 }
 
 message SetAutoconnectRequest {
-  string server_tag = 1;
-  bool obfuscate = 3;
-  bool auto_connect = 4;
-  Allowlist allowlist = 5;
+  bool enabled = 1;
+  string server_tag = 2;
 }
 
 message SetGenericRequest {
