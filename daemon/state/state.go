@@ -96,6 +96,16 @@ func (s *StatePublisher) NotifyConfigChanged(e *config.Config) error {
 	return nil
 }
 
+func (s *StatePublisher) NotifyServersListUpdate(any) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Println(internal.DebugPrefix, "notifying about servers list update")
+	s.notify(pb.UpdateEvent_SERVERS_LIST_UPDATE)
+
+	return nil
+}
+
 func (s *StatePublisher) AddSubscriber() (<-chan interface{}, chan<- struct{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
