@@ -3,8 +3,6 @@ set -euxo pipefail
 
 source "${WORKDIR}/ci/env.sh"
 
-cd "${WORKDIR}"
-
 if [ "${ENVIRONMENT}" = "prod" ]; then
     STRIP="$(which eu-strip 2>/dev/null)"
     BASEDIR="bin/${ARCH}"

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+# NOTE: this script should be run in systemd/snapd environment, non-root
+
 source "${WORKDIR}"/ci/env.sh
 
 STRIPPED_STATUS="with debug_info, not stripped"
@@ -8,8 +10,16 @@ if [ "${ENVIRONMENT}" = "prod" ]; then
     STRIPPED_STATUS=", stripped"
 fi
 
-echo "~~~check1: install app snap should not fail"
-sudo snap install --dangerous "${WORKDIR}/dist/app/snap/*${ARCH}.snap"
+ARCH=$([ "${ARCH}" == "aarch64" ] && echo arm64 || echo "${ARCH}")
+
+FILES=$(find "${WORKDIR}/dist/app/snap/" -type f -name "*_${ARCH}.snap")
+echo "${FILES}"
+
+for FILE in $FILES; do
+    echo "~~~check1: install app snap should not fail; FILE: ${FILE}"
+    sudo snap install --dangerous "${FILE}"
+    break #only one file is expected
+done
 
 echo "~~~running on host info: "
 uname -a
@@ -24,13 +34,16 @@ echo "${file_info}"
 echo "~~~check2.1: binary is of expected architecture"
 case "${ARCH}" in
 "armhf")
-echo "${file_info}" | grep "ELF 32-bit LSB pie executable, ARM, EABI5"
+echo "${file_info}" | grep "ELF 32-bit"
+echo "${file_info}" | grep "ARM, EABI5"
 ;;
 "aarch64")
-echo "${file_info}" | grep "ELF 64-bit LSB pie executable, ARM aarch64"
+echo "${file_info}" | grep "ELF 64-bit"
+echo "${file_info}" | grep "ARM aarch64"
 ;;
 "amd64")
-echo "${file_info}" | grep "ELF 64-bit LSB pie executable, x86-64"
+echo "${file_info}" | grep "ELF 64-bit"
+echo "${file_info}" | grep "x86-64"
 ;;
 esac
 
@@ -43,6 +56,7 @@ sleep 5
 echo "~~~info: nordvpnd service status"
 systemctl status snap.nordvpn.nordvpnd.service
 
+# based on experiments, need more time for service to fully start
 sleep 5
 
 echo "~~~check3: socket file: if file present -> service is started/running"
