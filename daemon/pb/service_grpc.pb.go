@@ -62,6 +62,7 @@ type DaemonClient interface {
 	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
 	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_SubscribeToStateChangesClient, error)
+	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
 }
 
 type daemonClient struct {
@@ -524,6 +525,15 @@ func (x *daemonSubscribeToStateChangesClient) Recv() (*AppState, error) {
 	return m, nil
 }
 
+func (c *daemonClient) GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error) {
+	out := new(ServersResponse)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/GetServers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
@@ -568,6 +578,7 @@ type DaemonServer interface {
 	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
 	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
 	SubscribeToStateChanges(*Empty, Daemon_SubscribeToStateChangesServer) error
+	GetServers(context.Context, *Empty) (*ServersResponse, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -694,6 +705,9 @@ func (UnimplementedDaemonServer) SetVirtualLocation(context.Context, *SetGeneric
 }
 func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, Daemon_SubscribeToStateChangesServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToStateChanges not implemented")
+}
+func (UnimplementedDaemonServer) GetServers(context.Context, *Empty) (*ServersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServers not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -1440,6 +1454,24 @@ func (x *daemonSubscribeToStateChangesServer) Send(m *AppState) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Daemon_GetServers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).GetServers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/GetServers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).GetServers(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1590,6 +1622,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetVirtualLocation",
 			Handler:    _Daemon_SetVirtualLocation_Handler,
+		},
+		{
+			MethodName: "GetServers",
+			Handler:    _Daemon_GetServers_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

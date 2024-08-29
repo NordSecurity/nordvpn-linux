@@ -1,6 +1,8 @@
 package core
 
-import "github.com/NordSecurity/nordvpn-linux/core"
+import (
+	"github.com/NordSecurity/nordvpn-linux/core"
+)
 
 type CredentialsAPIMock struct {
 	NotificationCredentialsResponse       core.NotificationCredentialsResponse
