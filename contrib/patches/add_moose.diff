@@ -7,7 +7,7 @@ index 91d48c6..af74160 100644
  )
  
 +replace (
-+	moose/events => ./third-party/moose-events/moosenordvpnappgo
++	moose/events => ./third-party/moose-events/nordvpnapp/moosenordvpnappgo
 +	moose/worker => ./third-party/moose-worker/mooseworkergo
 +)
 +
