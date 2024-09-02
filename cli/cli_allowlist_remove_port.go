@@ -40,15 +40,6 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if port < AllowlistMinPort || port > AllowlistMaxPort {
-		return formatError(fmt.Errorf(
-			AllowlistPortRangeError,
-			port,
-			AllowlistMinPort,
-			AllowlistMaxPort,
-		))
-	}
-
 	isUDP := false
 	isTCP := false
 
@@ -66,39 +57,17 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 		}
 	}
 
-	settings, err := c.getSettings()
-	if err != nil {
-		return formatError(err)
-	}
-	allowlist := settings.Settings.GetAllowlist()
-
-	var (
-		udpIndex int
-		tcpIndex int
-	)
-	if isUDP {
-		udpIndex = slices.Index(allowlist.Ports.Udp, port)
-		if udpIndex >= 0 {
-			allowlist.Ports.Udp = slices.Delete(allowlist.Ports.Udp, udpIndex, udpIndex+1)
-		}
-	}
-	if isTCP {
-		tcpIndex = slices.Index(allowlist.Ports.Tcp, port)
-		if tcpIndex >= 0 {
-			allowlist.Ports.Tcp = slices.Delete(allowlist.Ports.Tcp, tcpIndex, tcpIndex+1)
-		}
-	}
-
-	if isUDP && udpIndex < 0 || isTCP && tcpIndex < 0 {
-		return formatError(fmt.Errorf(
-			AllowlistRemovePortExistsError,
-			port,
-			getProtocolStr(isTCP && tcpIndex < 0, isUDP && udpIndex < 0),
-		))
-	}
-
-	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: allowlist,
+	resp, err := c.client.UnsetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+		Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+			SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+				IsUdp: isUDP,
+				IsTcp: isTCP,
+				PortRange: &pb.PortRange{
+					StartPort: port,
+					EndPort:   0,
+				},
+			},
+		},
 	})
 	if err != nil {
 		return formatError(err)
@@ -115,6 +84,19 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 		))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
+	case internal.CodeAllowlistPortOutOfRange:
+		return formatError(fmt.Errorf(
+			AllowlistPortRangeError,
+			port,
+			internal.AllowlistMinPort,
+			internal.AllowlistMaxPort,
+		))
+	case internal.CodeAllowlistPortNoop:
+		return formatError(fmt.Errorf(
+			AllowlistRemovePortExistsError,
+			port,
+			getProtocolStr(isTCP, isUDP),
+		))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(
 			AllowlistRemovePortSuccess,
