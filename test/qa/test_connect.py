@@ -136,6 +136,9 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated
 # for Nordlynx normally the tunnel is not recreated
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
+    if daemon.is_init_systemd():
+        pytest.skip("LVPN-5733")
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated))
