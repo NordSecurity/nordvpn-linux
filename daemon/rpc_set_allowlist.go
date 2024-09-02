@@ -47,6 +47,14 @@ func arePortsValid(portRangeStart int64, portRangeEnd int64, currentPorts config
 		return false, internal.CodeAllowlistPortOutOfRange
 	}
 
+	if remove {
+		for port := portRangeStart; port <= portRangeEnd; port++ {
+			if _, ok := currentPorts[port]; !ok {
+				return false, internal.CodeAllowlistPortNoop
+			}
+		}
+	}
+
 	if portRangeEnd == 0 {
 		if _, ok := currentPorts[portRangeStart]; ok != remove {
 			return false, internal.CodeAllowlistPortNoop
