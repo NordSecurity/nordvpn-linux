@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,49 +32,47 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	fmt.Printf("Technology: %s\n", settings.Settings.GetTechnology())
-	if settings.Settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Protocol: %s\n", settings.Settings.GetProtocol())
+	fmt.Printf("Technology: %s\n", settings.GetTechnology())
+	if settings.Technology == config.Technology_OPENVPN {
+		fmt.Printf("Protocol: %s\n", settings.GetProtocol())
 	}
-	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetFirewall()))
-	fmt.Printf("Firewall Mark: 0x%x\n", settings.Settings.GetFwmark())
-	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetRouting()))
-	fmt.Printf("Analytics: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetAnalytics()))
-	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetKillSwitch()))
-	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.Settings.ThreatProtectionLite))
-	if settings.Settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.Settings.GetObfuscate()))
+	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.GetFirewall()))
+	fmt.Printf("Firewall Mark: 0x%x\n", settings.GetFwmark())
+	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
+	fmt.Printf("Analytics: %+v\n", nstrings.GetBoolLabel(settings.GetAnalytics()))
+	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
+	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
+	if settings.Technology == config.Technology_OPENVPN {
+		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.GetObfuscate()))
 	}
-	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Notify))
-	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Tray))
-	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.Settings.AutoConnectData.Enabled))
-	if settings.Settings.AutoConnectData.Enabled && internal.IsDevEnv(string(c.environment)) {
-		fmt.Printf("Auto-connect country: %s\n", settings.Settings.AutoConnectData.Country)
-		fmt.Printf("Auto-connect city: %s\n", settings.Settings.AutoConnectData.City)
-		fmt.Printf("Auto-connect group: %s\n", settings.Settings.AutoConnectData.ServerGroup)
+	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.UserSettings.Notify))
+	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSettings.Tray))
+	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.AutoConnectData.Enabled))
+	if settings.AutoConnectData.Enabled && internal.IsDevEnv(string(c.environment)) {
+		fmt.Printf("Auto-connect country: %s\n", settings.AutoConnectData.Country)
+		fmt.Printf("Auto-connect city: %s\n", settings.AutoConnectData.City)
+		fmt.Printf("Auto-connect group: %s\n", settings.AutoConnectData.ServerGroup)
 	}
 
-	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Settings.Ipv6))
-	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Settings.Meshnet))
-	if len(settings.Settings.Dns) == 0 {
+	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Ipv6))
+	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))
+	if len(settings.Dns) == 0 {
 		fmt.Printf("DNS: %+v\n", nstrings.GetBoolLabel(false))
 	} else {
-		fmt.Printf("DNS: %+v\n", strings.Join(settings.Settings.Dns, ", "))
+		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
 	}
-	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.Settings.LanDiscovery))
-	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.Settings.VirtualLocation))
-	if settings.Settings.Technology == config.Technology_NORDLYNX {
-		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.Settings.PostquantumVpn))
+	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
+	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.VirtualLocation))
+	if settings.Technology == config.Technology_NORDLYNX {
+		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.PostquantumVpn))
 	}
 
-	displayAllowlist(settings.Settings.Allowlist)
+	displayAllowlist(settings.Allowlist)
 	return nil
 }
 
-func (c *cmd) getSettings() (*pb.UserSettings, error) {
-	resp, err := c.client.Settings(context.Background(), &pb.SettingsRequest{
-		Uid: int64(os.Getuid()),
-	})
+func (c *cmd) getSettings() (*pb.Settings, error) {
+	resp, err := c.client.Settings(context.Background(), &pb.Empty{})
 	if err != nil {
 		return nil, err
 	}

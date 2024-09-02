@@ -119,11 +119,11 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 }
 
 func (c *cmd) AllowlistRemovePortsAutoComplete(ctx *cli.Context) {
-	settings, err := c.client.Settings(context.Background(), &pb.SettingsRequest{})
+	settings, err := c.client.Settings(context.Background(), &pb.Empty{})
 	if err != nil {
 		return
 	}
-	allowlist := settings.GetData().Settings.GetAllowlist()
+	allowlist := settings.GetData().GetAllowlist()
 
 	switch ctx.NArg() {
 	case 0:

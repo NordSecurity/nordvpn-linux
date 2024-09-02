@@ -56,7 +56,7 @@ type DaemonClient interface {
 	SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
 	UnsetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
 	UnsetAllAllowlist(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
-	Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error)
+	Settings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsResponse, error)
 	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
@@ -451,7 +451,7 @@ func (c *daemonClient) UnsetAllAllowlist(ctx context.Context, in *Empty, opts ..
 	return out, nil
 }
 
-func (c *daemonClient) Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error) {
+func (c *daemonClient) Settings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsResponse, error) {
 	out := new(SettingsResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Settings", in, out, opts...)
 	if err != nil {
@@ -602,7 +602,7 @@ type DaemonServer interface {
 	SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
 	UnsetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
 	UnsetAllAllowlist(context.Context, *Empty) (*Payload, error)
-	Settings(context.Context, *SettingsRequest) (*SettingsResponse, error)
+	Settings(context.Context, *Empty) (*SettingsResponse, error)
 	SettingsProtocols(context.Context, *Empty) (*Payload, error)
 	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
 	Status(context.Context, *Empty) (*StatusResponse, error)
@@ -721,7 +721,7 @@ func (UnimplementedDaemonServer) UnsetAllowlist(context.Context, *SetAllowlistRe
 func (UnimplementedDaemonServer) UnsetAllAllowlist(context.Context, *Empty) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsetAllAllowlist not implemented")
 }
-func (UnimplementedDaemonServer) Settings(context.Context, *SettingsRequest) (*SettingsResponse, error) {
+func (UnimplementedDaemonServer) Settings(context.Context, *Empty) (*SettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Settings not implemented")
 }
 func (UnimplementedDaemonServer) SettingsProtocols(context.Context, *Empty) (*Payload, error) {
@@ -1386,7 +1386,7 @@ func _Daemon_UnsetAllAllowlist_Handler(srv interface{}, ctx context.Context, dec
 }
 
 func _Daemon_Settings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SettingsRequest)
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1398,7 +1398,7 @@ func _Daemon_Settings_Handler(srv interface{}, ctx context.Context, dec func(int
 		FullMethod: "/pb.Daemon/Settings",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Settings(ctx, req.(*SettingsRequest))
+		return srv.(DaemonServer).Settings(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

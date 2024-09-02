@@ -58,7 +58,7 @@ service Daemon {
   rpc SetAllowlist(SetAllowlistRequest) returns (Payload);
   rpc UnsetAllowlist(SetAllowlistRequest) returns (Payload);
   rpc UnsetAllAllowlist(Empty) returns (Payload);
-  rpc Settings(SettingsRequest) returns (SettingsResponse);
+  rpc Settings(Empty) returns (SettingsResponse);
   rpc SettingsProtocols(Empty) returns (Payload);
   rpc SettingsTechnologies(Empty) returns (Payload);
   rpc Status(Empty) returns (StatusResponse);

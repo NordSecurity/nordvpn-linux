@@ -29,7 +29,7 @@ func (c *cmd) SetKillSwitch(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
-	allowlist := settings.Settings.GetAllowlist()
+	allowlist := settings.GetAllowlist()
 
 	resp, err := c.client.SetKillSwitch(context.Background(), &pb.SetKillSwitchRequest{
 		KillSwitch: flag,

@@ -8,7 +8,6 @@ import (
 	"log"
 	"net"
 	"net/netip"
-	"os"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -161,13 +160,11 @@ func Startup(storagePath string,
 		eventManager.SetStorage(storage.NewLibdrop(fileshareImplementation))
 	}
 
-	settings, err := daemonClient.Settings(context.Background(), &daemonpb.SettingsRequest{
-		Uid: int64(os.Getuid()),
-	})
+	settings, err := daemonClient.Settings(context.Background(), &daemonpb.Empty{})
 	if err != nil {
 		return FileshareHandle{}, fmt.Errorf("failed to retrieve daemon setting: %w", err)
 	}
-	if settings != nil && settings.Data.UserSpecificSettings.Notify {
+	if settings != nil && settings.Data.UserSettings.Notify {
 		err = eventManager.EnableNotifications(fileshareImplementation)
 		if err != nil {
 			return FileshareHandle{}, fmt.Errorf("failed to enable notifications: %w", err)

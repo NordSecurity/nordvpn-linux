@@ -9,13 +9,9 @@ import "config/technology.proto";
 import "config/protocol.proto";
 import "config/group.proto";
 
-message SettingsRequest {
-  int64 uid = 1;
-}
-
 message SettingsResponse {
   int64 type = 1;
-  UserSettings data = 2;
+  Settings data = 2;
 }
 
 message AutoconnectData {
@@ -43,20 +39,11 @@ message Settings {
   bool obfuscate = 15;
   bool virtualLocation = 16;
   bool postquantum_vpn = 17;
+  UserSpecificSettings user_settings = 18;
 }
 
 message UserSpecificSettings {
   int64 uid = 1;
   bool notify = 2;
   bool tray = 3;
-}
-
-message UserSettings {
-  Settings settings = 1;
-  UserSpecificSettings user_specific_settings = 2;
-}
-
-message GlobalSettings {
-  Settings settings = 1;
-  repeated UserSpecificSettings user_specific_settings = 2;
 }

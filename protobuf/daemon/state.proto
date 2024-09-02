@@ -6,6 +6,10 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 import "settings.proto";
 
+enum AppStateError {
+    FAILED_TO_GET_UID = 0;
+}
+
 enum ConnectionState {
     DISCONNECTED = 0;
     CONNECTING = 1;
@@ -37,9 +41,10 @@ message LoginEvent {
 
 message AppState {
     oneof state {
-        ConnectionStatus connection_status = 1;
-        LoginEvent login_event = 2;
-        GlobalSettings settings_change = 3;
-        UpdateEvent update_event = 4;
+        AppStateError error = 1;
+        ConnectionStatus connection_status = 2;
+        LoginEvent login_event = 3;
+        Settings settings_change = 4;
+        UpdateEvent update_event = 5;
     }
 }

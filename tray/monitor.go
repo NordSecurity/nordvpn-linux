@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -102,9 +101,7 @@ func (ti *Instance) updateSettings() bool {
 	const errorRetrievingSettingsLog = "Error retrieving settings:"
 	changed := false
 
-	resp, err := ti.client.Settings(context.Background(), &pb.SettingsRequest{
-		Uid: int64(os.Getuid()),
-	})
+	resp, err := ti.client.Settings(context.Background(), &pb.Empty{})
 	var settings *pb.UserSpecificSettings
 
 	if err != nil {
@@ -114,7 +111,7 @@ func (ti *Instance) updateSettings() bool {
 		case internal.CodeConfigError:
 			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, client.ConfigMessage)
 		case internal.CodeSuccess:
-			settings = resp.Data.UserSpecificSettings
+			settings = resp.Data.UserSettings
 		default:
 			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, internal.ErrUnhandled)
 		}
