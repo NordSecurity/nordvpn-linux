@@ -208,7 +208,7 @@ func testNewDataManager() *DataManager {
 		TestdataPath+TestServersFile,
 		TestdataPath+TestCountryFile,
 		TestdataPath+TestVersionFile,
-		&events.DataUpdateEvents{},
+		events.NewDataUpdateEvents(),
 	)
 }
 
