@@ -21,6 +21,7 @@ quickTutorialConnect="Then type 'nordvpn connect' and you’re all set!"
 groupMessage="All users belonging to the '$NORDVPN_GROUP' group will be allowed to control the NordVPN application."
 groupAddedMessage="By default the user '$DEFAULT_USER' was added to the '$NORDVPN_GROUP' group during installation."
 userModMessage="To allow other users to control the application run 'usermod -aG $NORDVPN_GROUP otheruser'."
+userDelMessage="To limit access exclusively to the root user, remove all users from the '$NORDVPN_GROUP' group."
 helpMessage="If you need help using the app, use the command 'nordvpn --help'."
 
 mkdir -m 0750 -p "$LOG_DIR"
@@ -80,6 +81,7 @@ case "$1" in
                 echo "      $groupAddedMessage"
             fi
             echo "      $userModMessage"
+            echo "      $userDelMessage"
             echo "$helpMessage"
         fi
     ;;
