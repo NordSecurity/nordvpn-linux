@@ -123,5 +123,6 @@ func (c *cmd) oauth2(ctx *cli.Context) error {
 	}
 
 	color.Green(LoginSuccess, ctx.App.Name)
+	color.Yellow("\nNOTE: %s", MsgNordVPNGroup)
 	return nil
 }
