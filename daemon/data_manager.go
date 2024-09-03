@@ -126,8 +126,8 @@ func (dm *DataManager) GetServersData() ServersData {
 }
 
 func (dm *DataManager) SetServersData(updatedAt time.Time, servers core.Servers, hash string) (err error) {
-	// The assumption here is that event publisher is thread safe/locked. We can publish the update vent only after
-	// unlocking the main mutex, otherwise event manager reading the anything from DataManager when handling
+	// The assumption here is that event publisher is thread safe/locked. We can publish the update event only after
+	// unlocking the main mutex, otherwise event manager reading anything from DataManager when handling
 	// the event would result in a deadlock.
 	defer func() {
 		if err == nil {
