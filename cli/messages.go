@@ -16,6 +16,8 @@ We couldn’t process your payment. Please try again.`
 	LogoutUsageText       = "Logs you out"
 	PersistTokenUsageText = "Keep your current access token valid after logging out."
 
+	MsgNordVPNGroup = "By default, all users who are members of the 'nordvpn' group have permission to control the NordVPN application.\nTo limit access exclusively to the root user, remove all users from the 'nordvpn' group."
+
 	RateNoArgsMessage    = "Type [1–5] to rate your previous connection (1 – poor, 5 – great): "
 	RateNoConnectionMade = "It seems you haven’t connected to VPN yet. Please rate your experience after your first session."
 	RateAlreadyRated     = "You have already provided a rating for your active/previous connection."
