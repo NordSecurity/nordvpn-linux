@@ -24,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 )
@@ -105,7 +106,7 @@ func TestStartAutoConnect(t *testing.T) {
 				testNewRepoAPI(),
 				&mockAuthenticationAPI{},
 				"1.0.0",
-				&workingFirewall{},
+				&testfirewall.FirewallMock{},
 				daemonevents.NewEventsEmpty(),
 				func(config.Technology) (vpn.VPN, error) {
 					return &mock.WorkingVPN{}, nil
@@ -270,7 +271,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				testNewRepoAPI(),
 				&mockAuthenticationAPI{},
 				"1.0.0",
-				&workingFirewall{},
+				&testfirewall.FirewallMock{},
 				daemonevents.NewEventsEmpty(),
 				func(config.Technology) (vpn.VPN, error) {
 					return &mock.WorkingVPN{}, nil

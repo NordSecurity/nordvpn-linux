@@ -286,6 +286,7 @@ func main() {
 		}
 	}
 	daemonEvents.Subscribe(analytics)
+	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
 
 	if fsystem.NewInstallation {

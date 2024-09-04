@@ -652,25 +652,6 @@ func TestTechToServerTech(t *testing.T) {
 	}
 }
 
-func TestGetSystemInfo(t *testing.T) {
-	category.Set(t, category.Integration)
-	str := getSystemInfo("0.0.0")
-	assert.Contains(t, str, "App Version:")
-	assert.Contains(t, str, "OS Info:")
-	assert.Contains(t, str, "System Info:")
-}
-
-func TestGetNetworkInfo(t *testing.T) {
-	category.Set(t, category.Route, category.Firewall)
-	str := getNetworkInfo()
-	assert.Contains(t, str, "Routes for ipv4")
-	assert.Contains(t, str, "Routes for ipv6")
-	assert.Contains(t, str, "IP rules for ipv4")
-	assert.Contains(t, str, "IP rules for ipv6")
-	assert.Contains(t, str, "IP tables for ipv4")
-	assert.Contains(t, str, "IP tables for ipv6")
-}
-
 func TestPickServer(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {

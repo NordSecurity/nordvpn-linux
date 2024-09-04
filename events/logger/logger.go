@@ -7,6 +7,10 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/netip"
+	"os"
+	"os/exec"
+	"regexp"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -76,6 +80,20 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 	return nil
 }
 
+func (s Subscriber) NotifyConnect(data events.DataConnect) error {
+	eventName := "POST_CONNECT"
+	switch data.EventStatus {
+	case events.StatusSuccess:
+		log.Println(internal.InfoPrefix, "connected to", data.TargetServerName)
+	case events.StatusFailure:
+		log.Println(internal.ErrorPrefix, "failed to connect to", data.TargetServerDomain)
+	case events.StatusAttempt:
+		eventName = "PRE_CONNECT"
+	}
+	log.Printf("%s %s system info:\n%s\n%s\n", internal.InfoPrefix, eventName, getSystemInfo(), getNetworkInfo())
+	return nil
+}
+
 func dataRequestAPIToString(
 	data events.DataRequestAPI,
 	reqBody []byte,
@@ -123,4 +141,90 @@ func processHeaders(hide bool, headers http.Header) http.Header {
 		}
 	}
 	return headers
+}
+
+func getSystemInfo() string {
+	builder := strings.Builder{}
+	out, err := os.ReadFile("/etc/os-release")
+	if err == nil {
+		builder.WriteString("OS Info:\n" + string(out) + "\n")
+	}
+	out, err = exec.Command("uname", "-a").CombinedOutput()
+	if err == nil {
+		builder.WriteString("System Info:" + string(out) + "\n")
+	}
+	return builder.String()
+}
+
+// maskIPRouteOutput changes any non-local ip address in the output to ***
+func maskIPRouteOutput(output string) string {
+	expIPv4 := regexp.MustCompile(`\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}`)
+	expIPv6 := regexp.MustCompile(`(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}` +
+		`|([0-9a-fA-F]{1,4}:){1,7}:` +
+		`|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}` +
+		`|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}` +
+		`|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}` +
+		`|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}` +
+		`|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}` +
+		`|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})` +
+		`|:((:[0-9a-fA-F]{1,4}){1,7}|:)` +
+		`|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}` +
+		`|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])` +
+		`|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))`)
+
+	ips := expIPv4.FindAllString(output, -1)
+	ips = append(ips, expIPv6.FindAllString(output, -1)...)
+	for _, ip := range ips {
+		parsed, err := netip.ParseAddr(ip)
+		if err != nil {
+			log.Println(internal.WarningPrefix,
+				"Failed to parse ip address %s for masking: %v", ip, err)
+			continue
+		}
+
+		if !parsed.IsLinkLocalMulticast() && !parsed.IsLinkLocalUnicast() && !parsed.IsLoopback() && !parsed.IsPrivate() {
+			output = strings.Replace(output, ip, "***", -1)
+		}
+	}
+
+	return output
+}
+
+func getNetworkInfo() string {
+	builder := strings.Builder{}
+	for _, arg := range []string{"4", "6"} {
+		// #nosec G204 -- arg values are known before even running the program
+		out, err := exec.Command("ip", "-"+arg, "route", "show", "table", "all").CombinedOutput()
+		if err != nil {
+			continue
+		}
+		maskedOutput := maskIPRouteOutput(string(out))
+		builder.WriteString("Routes for ipv" + arg + ":\n")
+		builder.WriteString(maskedOutput)
+
+		// #nosec G204 -- arg values are known before even running the program
+		out, err = exec.Command("ip", "-"+arg, "rule").CombinedOutput()
+		if err != nil {
+			continue
+		}
+		builder.WriteString("IP rules for ipv" + arg + ":\n" + string(out) + "\n")
+	}
+
+	for _, iptableVersion := range internal.GetSupportedIPTables() {
+		tableRules := ""
+		for _, table := range []string{"filter", "nat", "mangle", "raw", "security"} {
+			// #nosec G204 -- input is properly sanitized
+			out, err := exec.Command(iptableVersion, "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
+			if err == nil {
+				tableRules += table + ":\n" + string(out) + "\n"
+			}
+		}
+		version := "4"
+		if iptableVersion == "ip6tables" {
+			version = "6"
+		}
+		builder.WriteString("IP tables for ipv" + version + ":\n" + tableRules)
+	}
+
+	return builder.String()
 }
