@@ -2,8 +2,10 @@ package daemon
 
 import (
 	"context"
+	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // Status of daemon and connection
@@ -37,6 +39,11 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		status.State = "Connecting"
 	}
 
+	connectionParameters, err := r.ConnectionParameters.GetConnectionParameters()
+	if err != nil {
+		log.Println(internal.WarningPrefix, "failed to read connection parameters:", err)
+	}
+
 	return &pb.StatusResponse{
 		State:           string(status.State),
 		Technology:      status.Technology,
@@ -50,5 +57,11 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Upload:          status.Upload,
 		Uptime:          uptime,
 		VirtualLocation: status.VirtualLocation,
+		Parameters: &pb.ConnectionParameters{
+			Source:  connectionParameters.ConnectionSource,
+			Country: connectionParameters.Parameters.Country,
+			City:    connectionParameters.Parameters.City,
+			Group:   connectionParameters.Parameters.Group,
+		},
 	}, nil
 }

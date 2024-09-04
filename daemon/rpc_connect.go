@@ -207,6 +207,9 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 					log.Printf("POST_CONNECT system info:\n%s\n", r.networkInfoFunc())
 				}()
 			}
+
+			parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
+			r.ConnectionParameters.SetConnectionParameters(pb.ConnectionSource_MANUAL, parameters)
 			return nil
 		case internal.CodeFailure:
 			log.Println(internal.ErrorPrefix, ev.Message)
