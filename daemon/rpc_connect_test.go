@@ -21,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
@@ -42,57 +43,6 @@ func (mockAuthenticationAPI) Login() (string, error) {
 }
 
 func (mockAuthenticationAPI) Token(string) (*core.LoginResponse, error) {
-	return nil, nil
-}
-
-type validCredentialsAPI struct {
-	renewToken string
-}
-
-func (validCredentialsAPI) NotificationCredentials(token, appUserID string) (core.NotificationCredentialsResponse, error) {
-	return core.NotificationCredentialsResponse{}, nil
-}
-
-func (v validCredentialsAPI) NotificationCredentialsRevoke(token, appUserID string, purgeSession bool) (core.NotificationCredentialsRevokeResponse, error) {
-	return core.NotificationCredentialsRevokeResponse{}, nil
-}
-
-func (validCredentialsAPI) ServiceCredentials(string) (*core.CredentialsResponse, error) {
-	return &core.CredentialsResponse{
-		NordlynxPrivateKey: "nordpriv",
-		Username:           "elite",
-		Password:           "hacker",
-	}, nil
-}
-
-func (v validCredentialsAPI) TokenRenew(renewToken string) (*core.TokenRenewResponse, error) {
-	return &core.TokenRenewResponse{
-		RenewToken: v.renewToken,
-	}, nil
-}
-
-func (validCredentialsAPI) DeleteToken(token string) error {
-	return nil
-}
-
-func (validCredentialsAPI) TrustedPassToken(token string) (*core.TrustedPassTokenResponse, error) {
-	return nil, nil
-}
-
-func (validCredentialsAPI) MultifactorAuthStatus(token string) (*core.MultifactorAuthStatusResponse, error) {
-	return nil, nil
-}
-
-func (validCredentialsAPI) Services(string) (core.ServicesResponse, error) {
-	return core.ServicesResponse{
-		{
-			ExpiresAt: "2029-12-27 00:00:00",
-			Service:   core.Service{ID: 1},
-		},
-	}, nil
-}
-
-func (validCredentialsAPI) CurrentUser(string) (*core.CurrentUserResponse, error) {
 	return nil, nil
 }
 
@@ -352,7 +302,7 @@ func TestRpcConnect(t *testing.T) {
 					dm,
 					api,
 					serversAPI,
-					&validCredentialsAPI{},
+					&testcore.CredentialsAPIMock{},
 					testNewCDNAPI(),
 					testNewRepoAPI(),
 					&mockAuthenticationAPI{},
@@ -414,7 +364,7 @@ func TestRpcReconnect(t *testing.T) {
 		dm,
 		api,
 		&mockServersAPI{},
-		&validCredentialsAPI{},
+		&testcore.CredentialsAPIMock{},
 		testNewCDNAPI(),
 		testNewRepoAPI(),
 		&mockAuthenticationAPI{},

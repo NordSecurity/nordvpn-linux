@@ -45,3 +45,7 @@ func (*CredentialsAPIMock) DeleteToken(string) error {
 func (*CredentialsAPIMock) TrustedPassToken(string) (*core.TrustedPassTokenResponse, error) {
 	return nil, nil
 }
+
+func (*CredentialsAPIMock) Logout(string) error {
+	return nil
+}

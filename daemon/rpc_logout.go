@@ -62,7 +62,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 			log.Println(internal.WarningPrefix, "error revoking NC token")
 		}
 
-		if err := r.api.DeleteToken(tokenData.Token); err != nil {
+		if err := r.credentialsAPI.DeleteToken(tokenData.Token); err != nil {
 			log.Println(internal.ErrorPrefix, "deleting token: ", err)
 			switch {
 			// This means that token is invalid anyway
@@ -79,7 +79,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 			}
 		}
 
-		if err := r.api.Logout(tokenData.Token); err != nil {
+		if err := r.credentialsAPI.Logout(tokenData.Token); err != nil {
 			log.Println(internal.ErrorPrefix, "logging out: ", err)
 			switch {
 			// This means that token is invalid anyway
