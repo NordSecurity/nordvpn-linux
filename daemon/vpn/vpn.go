@@ -44,4 +44,5 @@ type ServerData struct {
 	Obfuscated        bool
 	OpenVPNVersion    string
 	VirtualLocation   bool
+	PostQuantum       bool
 }

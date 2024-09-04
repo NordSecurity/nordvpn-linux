@@ -64,6 +64,9 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.Settings.LanDiscovery))
 	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.Settings.VirtualLocation))
+	if settings.Settings.Technology == config.Technology_NORDLYNX {
+		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.Settings.PostquantumVpn))
+	}
 
 	displayAllowlist(settings.Settings.Allowlist)
 	return nil

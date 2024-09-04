@@ -59,6 +59,8 @@ const (
 	CodeAllowlistSubnetNoop            int64 = 3045
 	CodeAllowlistPortOutOfRange        int64 = 3046
 	CodeAllowlistPortNoop              int64 = 3047
+	CodePqAndMeshnetSimultaneously     int64 = 3048
+	CodePqWithoutNordlynx              int64 = 3049
 )
 
 type ErrorWithCode struct {

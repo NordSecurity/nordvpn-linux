@@ -67,4 +67,5 @@ service Daemon {
   rpc SetVirtualLocation(SetGenericRequest) returns (Payload);
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
   rpc GetServers(Empty) returns (ServersResponse);
+  rpc SetPostQuantum(SetGenericRequest) returns (Payload);
 }
