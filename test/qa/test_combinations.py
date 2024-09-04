@@ -8,7 +8,7 @@ from lib import (
     logging,
     login,
 )
-from test_connect import disconnect_base_test
+from test_connect import disconnect_base_test, get_alias
 from test_connect6 import connect_base_test
 
 
@@ -70,7 +70,7 @@ def test_status_change_technology_and_protocol(
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    sh.nordvpn.connect()
+    sh.nordvpn(get_alias())
     assert source_tech.upper() in sh.nordvpn.status()
 
     if source_tech == "openvpn":
@@ -100,11 +100,11 @@ def test_status_change_technology_and_protocol_reconnect(
         target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
-    sh.nordvpn.connect()
+    sh.nordvpn(get_alias())
     disconnect_base_test()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-    sh.nordvpn.connect()
+    sh.nordvpn(get_alias())
 
     assert target_tech.upper() in sh.nordvpn.status()
 
