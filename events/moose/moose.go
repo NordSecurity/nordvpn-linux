@@ -247,7 +247,31 @@ func (s *Subscriber) NotifyIpv6(data bool) error {
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesIpv6EnabledValue(data))
 }
 
-func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { return nil }
+func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error {
+	var eventTrigger moose.NordvpnappEventTrigger
+	switch data.EventTrigger {
+	case events.TriggerApp:
+		eventTrigger = moose.NordvpnappEventTriggerApp
+	case events.TriggerUser:
+		eventTrigger = moose.NordvpnappEventTriggerUser
+	default:
+		eventTrigger = moose.NordvpnappEventTriggerApp
+	}
+
+	var eventStatus moose.NordvpnappEventStatus
+	switch data.EventStatus {
+	case events.StatusAttempt:
+		eventStatus = moose.NordvpnappEventStatusAttempt
+	case events.StatusSuccess:
+		eventStatus = moose.NordvpnappEventStatusSuccess
+	case events.StatusFailure:
+		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
+	default:
+		eventStatus = moose.NordvpnappEventStatusAttempt
+	}
+
+	return s.response(moose.NordvpnappSendServiceQualityAuthorizationLogin(int32(data.DurationMs), eventTrigger, eventStatus, moose.NordvpnappOptBoolNone))
+}
 
 func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 	var eventTrigger moose.NordvpnappEventTrigger
