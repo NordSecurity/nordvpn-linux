@@ -18,6 +18,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
+	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
@@ -368,6 +369,7 @@ func TestRpcConnect(t *testing.T) {
 					&testnorduser.MockNorduserCombinedService{},
 					&RegistryMock{},
 					nil,
+					sharedctx.New(),
 				)
 				server := &mockRPCServer{}
 				err := rpc.Connect(&pb.ConnectRequest{ServerGroup: test.serverGroup, ServerTag: test.serverTag}, server)
@@ -429,6 +431,7 @@ func TestRpcReconnect(t *testing.T) {
 		&testnorduser.MockNorduserCombinedService{},
 		&RegistryMock{},
 		nil,
+		sharedctx.New(),
 	)
 	err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
 	assert.NoError(t, err)

@@ -21,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
+	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 
 	"github.com/go-co-op/gocron/v2"
 )
@@ -55,6 +56,7 @@ type RPC struct {
 	systemShutdown       atomic.Bool
 	statePublisher       *state.StatePublisher
 	ConnectionParameters ParametersStorage
+	connectContext       *sharedctx.Context
 	pb.UnimplementedDaemonServer
 }
 
@@ -82,6 +84,7 @@ func NewRPC(
 	norduser service.Service,
 	meshRegistry mesh.Registry,
 	statePublisher *state.StatePublisher,
+	connectContext *sharedctx.Context,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
@@ -108,5 +111,6 @@ func NewRPC(
 		norduser:         norduser,
 		meshRegistry:     meshRegistry,
 		statePublisher:   statePublisher,
+		connectContext:   connectContext,
 	}
 }

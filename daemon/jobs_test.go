@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/networker"
+	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
@@ -120,6 +122,7 @@ func TestStartAutoConnect(t *testing.T) {
 				&testnorduser.MockNorduserCombinedService{},
 				&RegistryMock{},
 				nil,
+				sharedctx.New(),
 			)
 
 			err := rpc.StartAutoConnect(mockTimeout)
@@ -160,6 +163,7 @@ type meshNetworker struct {
 }
 
 func (meshNetworker) Start(
+	context.Context,
 	vpn.Credentials,
 	vpn.ServerData,
 	config.Allowlist,
@@ -285,6 +289,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&testnorduser.MockNorduserCombinedService{},
 				&RegistryMock{},
 				nil,
+				sharedctx.New(),
 			)
 
 			meshService := meshnet.NewServer(
@@ -299,6 +304,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				nil,
 				&daemonevents.Events{},
 				&testnorduser.MockNorduserClient{},
+				sharedctx.New(),
 			)
 
 			err := rpc.StartAutoMeshnet(meshService, mockTimeout)

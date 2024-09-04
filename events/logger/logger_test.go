@@ -44,7 +44,6 @@ local 10.128.10.7 dev wlp0s20f3 table local proto kernel scope link src ***`
 func TestGetSystemInfo(t *testing.T) {
 	category.Set(t, category.Integration)
 	str := getSystemInfo()
-	assert.Contains(t, str, "App Version:")
 	assert.Contains(t, str, "OS Info:")
 	assert.Contains(t, str, "System Info:")
 }

@@ -282,6 +282,8 @@ enum ConnectErrorCode {
 	ALREADY_CONNECTED = 1;
 	CONNECT_FAILED = 2;
 	PEER_NO_IP = 3;
+	ALREADY_CONNECTING = 4;
+	CANCELED = 5;
 }
 
 message ConnectResponse {

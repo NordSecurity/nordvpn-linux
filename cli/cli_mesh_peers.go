@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
 
+	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
@@ -546,30 +549,60 @@ func (c *cmd) MeshPeerRemove(ctx *cli.Context) error {
 // MeshPeerConnect retrieves the peer form the service and sends a
 // connect request to the meshnet service
 func (c *cmd) MeshPeerConnect(ctx *cli.Context) error {
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+	defer close(sigCh)
+
+	type warnErr struct {
+		err       error
+		isWarning bool
+	}
+
+	errCh := make(chan warnErr, 1)
+	defer close(errCh)
 	peer, err := c.retrievePeerFromArgs(ctx)
 	if err != nil {
 		return formatError(err)
 	}
-	// Send a removal request to the service
-	removeResp, err := c.meshClient.Connect(context.Background(), &pb.UpdatePeerRequest{
-		Identifier: peer.Identifier,
-	})
-	if err != nil {
-		return formatError(err)
-	}
+
 	peerName := peer.Nickname
 	if peerName == "" {
 		peerName = peer.Hostname
 	}
-	if err := connectResponseToError(
-		removeResp,
-		peerName,
-	); err != nil {
-		return formatError(err)
-	}
 
-	color.Green(MsgMeshnetPeerConnectSuccess, peerName)
-	return nil
+	go func() {
+		// Send a removal request to the service
+		removeResp, err := c.meshClient.Connect(context.Background(), &pb.UpdatePeerRequest{
+			Identifier: peer.Identifier,
+		})
+		if err != nil {
+			errCh <- warnErr{err: err, isWarning: false}
+			return
+		}
+		err, isWarning := connectResponseToError(
+			removeResp,
+			peerName,
+		)
+		errCh <- warnErr{err: err, isWarning: isWarning}
+	}()
+
+	for {
+		select {
+		case <-sigCh:
+			c.client.ConnectCancel(context.Background(), &daemonpb.Empty{})
+		case wErr := <-errCh:
+			err = wErr.err
+			if err != nil {
+				if wErr.isWarning {
+					color.Yellow(err.Error())
+					return nil
+				}
+				return formatError(err)
+			}
+			color.Green(MsgMeshnetPeerConnectSuccess, peerName)
+			return nil
+		}
+	}
 }
 
 func (c *cmd) MeshPeerSetNickname(ctx *cli.Context) error {
@@ -1104,34 +1137,35 @@ func removePeerResponseToError(
 	}
 }
 
-// connectResponseToError determines whether the connect response is an
-// returns a human readable form of it. Otherwise, returns nil
+// connectResponseToError determines whether the connect response is an returns a human readable
+// form of it. Otherwise, returns nil.
+// It also returns whether the returned error is a warning or not
 func connectResponseToError(
 	resp *pb.ConnectResponse,
 	identifier string,
-) error {
+) (error, bool) {
 	if resp == nil {
-		return errors.New(AccountInternalError)
+		return errors.New(AccountInternalError), false
 	}
 	switch resp := resp.Response.(type) {
 	case *pb.ConnectResponse_Empty:
-		return nil
+		return nil, false
 	case *pb.ConnectResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
+		return serviceErrorCodeToError(resp.ServiceErrorCode), false
 	case *pb.ConnectResponse_UpdatePeerErrorCode:
 		return updatePeerErrorCodeToError(
 			resp.UpdatePeerErrorCode,
 			identifier,
-		)
+		), false
 	case *pb.ConnectResponse_ConnectErrorCode:
 		return connectErrorCodeToError(
 			resp.ConnectErrorCode,
 			identifier,
 		)
 	case *pb.ConnectResponse_MeshnetErrorCode:
-		return meshnetErrorToError(resp.MeshnetErrorCode)
+		return meshnetErrorToError(resp.MeshnetErrorCode), false
 	default:
-		return errors.New(AccountInternalError)
+		return errors.New(AccountInternalError), false
 	}
 }
 
@@ -1315,29 +1349,33 @@ func disableAutomaticFileshareFileshareErrorCodeToError(
 	}
 }
 
-// connectErrorCodeToError converts allow incoming traffic
-// error code to a human readable error
+// connectErrorCodeToError converts allow incoming traffic error code to a human readable error.
+// It also returns a boolean representing whether the returned error is a warning or not.
 func connectErrorCodeToError(
 	code pb.ConnectErrorCode,
 	identifier string,
-) error {
+) (error, bool) {
 	switch code {
 	case pb.ConnectErrorCode_ALREADY_CONNECTED:
 		return fmt.Errorf(
 			MsgMeshnetPeerAlreadyConnected,
-		)
+		), false
 	case pb.ConnectErrorCode_PEER_DOES_NOT_ALLOW_ROUTING:
 		return fmt.Errorf(
 			MsgMeshnetPeerDoesNotAllowRouting,
 			identifier,
-		)
+		), false
 	case pb.ConnectErrorCode_CONNECT_FAILED, pb.ConnectErrorCode_PEER_NO_IP:
 		return fmt.Errorf(
 			MsgMeshnetPeerConnectFailed,
 			identifier,
-		)
+		), false
+	case pb.ConnectErrorCode_ALREADY_CONNECTING:
+		return fmt.Errorf(MsgMeshnetPeerAlreadyConnecting), true
+	case pb.ConnectErrorCode_CANCELED:
+		return fmt.Errorf(MsgMeshnetPeerConnectCancel, identifier), true
 	default:
-		return errors.New(AccountInternalError)
+		return errors.New(AccountInternalError), false
 	}
 }
 

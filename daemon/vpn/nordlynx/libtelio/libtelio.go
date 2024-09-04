@@ -7,7 +7,6 @@ package libtelio
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -221,6 +220,7 @@ func logLevelToPrefix(level teliogo.TelioLogLevel) string {
 // exists and this function should re-use that and just initiate the
 // connection
 func (l *Libtelio) Start(
+	ctx context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 ) (err error) {
@@ -234,7 +234,7 @@ func (l *Libtelio) Start(
 	}
 
 	l.currentServer = serverData
-	if err = l.connect(serverData.IP, serverData.NordLynxPublicKey, serverData.PostQuantum); err != nil {
+	if err = l.connect(ctx, serverData.IP, serverData.NordLynxPublicKey, serverData.PostQuantum); err != nil {
 		return err
 	}
 
@@ -245,8 +245,12 @@ func (l *Libtelio) Start(
 }
 
 // connect to the VPN server
-func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string, postQuantum bool) error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (l *Libtelio) connect(
+	ctx context.Context,
+	serverIP netip.Addr,
+	serverPublicKey string,
+	postQuantum bool) error {
+	ctx, cancel := context.WithCancel(ctx)
 	l.cancelConnectionMonitor = cancel
 
 	// Start monitoring connection events before connecting to not miss any
@@ -282,15 +286,13 @@ func (l *Libtelio) connect(serverIP netip.Addr, serverPublicKey string, postQuan
 		return fmt.Errorf("libtelio connect: %w", err)
 	}
 
-	// Check if the connection actually happened. Disconnect if
-	// no actual connection was created within the timeout
+	// Check if the connection actually happened. Disconnect if no actual connection was
+	// created within the timeout or until it was canceled.
 	select {
-	case <-isConnectedC: // isConnectedC will be closed once connection is established
-	case <-time.After(time.Second * 30):
-		cancel()
-		// #nosec G104 -- errors.Join would be useful here
+	case <-ctx.Done():
 		l.disconnect()
-		return errors.New("connected to nordlynx server but there is no internet as a result")
+		return ctx.Err()
+	case <-isConnectedC: // isConnectedC will be closed once connection is established
 	}
 
 	l.active = true
@@ -390,7 +392,14 @@ func (l *Libtelio) Enable(ip netip.Addr, privateKey string) (err error) {
 		}
 
 		// Re-connect to the VPN server
-		if err = l.connect(l.currentServer.IP, l.currentServer.NordLynxPublicKey, l.currentServer.PostQuantum); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+		defer cancel()
+		if err = l.connect(
+			ctx,
+			l.currentServer.IP,
+			l.currentServer.NordLynxPublicKey,
+			l.currentServer.PostQuantum,
+		); err != nil {
 			return fmt.Errorf("reconnecting to server: %w", err)
 		}
 	}
@@ -442,7 +451,14 @@ func (l *Libtelio) NetworkChanged() error {
 				return err
 			}
 
-			if err := l.connect(serverIP, serverPublicKey, serverPQ); err != nil {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+			defer cancel()
+			if err := l.connect(
+				ctx,
+				serverIP,
+				serverPublicKey,
+				serverPQ,
+			); err != nil {
 				return err
 			}
 		}

@@ -62,6 +62,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"google.golang.org/grpc"
@@ -431,6 +432,7 @@ func main() {
 		dataUpdateEvents,
 	)
 
+	sharedContext := sharedctx.New()
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
 		authChecker,
@@ -455,6 +457,7 @@ func main() {
 		norduserService,
 		meshAPIex,
 		statePublisher,
+		sharedContext,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
@@ -468,6 +471,7 @@ func main() {
 		meshnetEvents.PeerUpdate,
 		daemonEvents,
 		norduserClient,
+		sharedContext,
 	)
 
 	opts := []grpc.ServerOption{

@@ -1,6 +1,7 @@
 package networker
 
 import (
+	"context"
 	"fmt"
 	"net/netip"
 	"testing"
@@ -71,7 +72,7 @@ func TestRefreshVPN_NotConnected(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	combined := GetTestCombined()
-	err := combined.refreshVPN()
+	err := combined.refreshVPN(context.Background())
 	assert.NoError(t, err)
 
 	assert.False(t, combined.isConnectedToVPN())
@@ -82,8 +83,15 @@ func TestRefreshVPN_MeshnetFailure(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	combined := GetTestCombined()
+	ctx := context.Background()
 	assert.NoError(t, combined.setMesh(mesh.MachineMap{}, netip.IPv4Unspecified(), ""))
-	assert.NoError(t, combined.start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, config.DNS{}))
+	assert.NoError(t, combined.start(
+		ctx,
+		vpn.Credentials{},
+		vpn.ServerData{},
+		config.Allowlist{},
+		config.DNS{},
+	))
 
 	assert.True(t, combined.isConnectedToVPN())
 	assert.True(t, combined.isMeshnetSet)
@@ -91,7 +99,7 @@ func TestRefreshVPN_MeshnetFailure(t *testing.T) {
 	combined.mesh.(*workingMesh).enableErr = fmt.Errorf("test error")
 	combined.mesh.(*workingMesh).networkChangedErr = fmt.Errorf("test error")
 
-	err := combined.refreshVPN()
+	err := combined.refreshVPN(ctx)
 	assert.Error(t, err)
 
 	assert.True(t, combined.isConnectedToVPN())
@@ -102,9 +110,16 @@ func TestRefreshVPN_VPNFailure(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	combined := GetTestCombined()
+	ctx := context.Background()
 	assert.Empty(t, combined.fw.(*workingFirewall).rules)
 	assert.NoError(t, combined.setMesh(mesh.MachineMap{}, netip.IPv4Unspecified(), ""))
-	assert.NoError(t, combined.start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, config.DNS{}))
+	assert.NoError(t, combined.start(
+		ctx,
+		vpn.Credentials{},
+		vpn.ServerData{},
+		config.Allowlist{},
+		config.DNS{},
+	))
 	assert.NotEmpty(t, combined.fw.(*workingFirewall).rules)
 
 	assert.True(t, combined.isConnectedToVPN())
@@ -112,7 +127,7 @@ func TestRefreshVPN_VPNFailure(t *testing.T) {
 
 	combined.vpnet.(*mock.WorkingVPN).StartErr = fmt.Errorf("test error")
 	combined.vpnet.(*mock.WorkingVPN).ErrNetworkChanges = fmt.Errorf("test error")
-	err := combined.refreshVPN()
+	err := combined.refreshVPN(ctx)
 	assert.Error(t, err)
 
 	assert.False(t, combined.isConnectedToVPN())
@@ -149,11 +164,18 @@ func TestNetworkChange(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			combined := GetTestCombined()
+			ctx := context.Background()
 
 			combined.SetVPN(test.vpn)
 			combined.mesh = test.mesh
 
-			assert.NoError(t, combined.start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, config.DNS{"1.1.1.1"}))
+			assert.NoError(t, combined.start(
+				ctx,
+				vpn.Credentials{},
+				vpn.ServerData{},
+				config.Allowlist{},
+				config.DNS{"1.1.1.1"},
+			))
 			assert.True(t, combined.isNetworkSet)
 
 			if test.mesh != nil {
@@ -161,7 +183,7 @@ func TestNetworkChange(t *testing.T) {
 				assert.True(t, combined.isMeshnetSet)
 			}
 
-			assert.NoError(t, combined.refreshVPN())
+			assert.NoError(t, combined.refreshVPN(ctx))
 			assert.Equal(t, 1, test.vpn.ExecutionStats[mock.StatsNetworkChange])
 			assert.Equal(t, 1, test.vpn.ExecutionStats[mock.StatsStart])
 			assert.True(t, combined.isConnectedToVPN())
@@ -176,14 +198,21 @@ func TestNetworkChange(t *testing.T) {
 func TestFallbackCaseForRefreshVPN(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	ctx := context.Background()
 	combined := GetTestCombined()
 	vpnet := combined.vpnet.(*mock.WorkingVPN)
-	assert.NoError(t, combined.start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, config.DNS{"1.1.1.1"}))
+	assert.NoError(t, combined.start(
+		ctx,
+		vpn.Credentials{},
+		vpn.ServerData{},
+		config.Allowlist{},
+		config.DNS{"1.1.1.1"},
+	))
 	assert.Equal(t, 1, vpnet.ExecutionStats[mock.StatsStart])
 
 	vpnet.ErrNetworkChanges = mock.ErrOnPurpose
 
-	assert.NoError(t, combined.refreshVPN())
+	assert.NoError(t, combined.refreshVPN(ctx))
 	assert.Equal(t, 1, vpnet.ExecutionStats[mock.StatsNetworkChange])
 	assert.Equal(t, 2, vpnet.ExecutionStats[mock.StatsStart])
 

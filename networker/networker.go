@@ -4,6 +4,7 @@ Package networker abstracts network configuration from the rest of the system.
 package networker
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -40,7 +41,10 @@ var (
 	ErrMeshPeerIsNotRoutable = errors.New("mesh peer is not routable")
 	// ErrMeshPeerNotFound to report to outside
 	ErrMeshPeerNotFound = errors.New("mesh peer not found")
-	defaultMeshSubnet   = netip.MustParsePrefix("100.64.0.0/10")
+	// ErrNothingToCancel is returned when `Cancel()` is called but there is no in progress
+	// connection to be canceled
+	ErrNothingToCancel = errors.New("nothing to cancel")
+	defaultMeshSubnet  = netip.MustParsePrefix("100.64.0.0/10")
 )
 
 const (
@@ -85,12 +89,15 @@ type ConnectionStatus struct {
 // At the moment interface is designed to support only VPN connections.
 type Networker interface {
 	Start(
+		context.Context,
 		vpn.Credentials,
 		vpn.ServerData,
 		config.Allowlist,
 		config.DNS,
 		bool, // in case mesh peer connect - route to remote peer's LAN or not
 	) error
+	// Cancel is created instead of using context.Context because `Start` is shared between VPN
+	// and meshnet networkers
 	Stop() error      // stop vpn
 	UnSetMesh() error // stop meshnet
 	SetDNS(nameservers []string) error
@@ -208,6 +215,7 @@ func NewCombined(
 
 // Start VPN connection after preparing the network.
 func (netw *Combined) Start(
+	ctx context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 	allowlist config.Allowlist,
@@ -218,9 +226,9 @@ func (netw *Combined) Start(
 	defer netw.mu.Unlock()
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
-		return netw.restart(creds, serverData, nameservers)
+		return netw.restart(ctx, creds, serverData, nameservers)
 	}
-	return netw.start(creds, serverData, allowlist, nameservers)
+	return netw.start(ctx, creds, serverData, allowlist, nameservers)
 }
 
 // failureRecover what's possible if vpn start fails
@@ -254,6 +262,7 @@ func failureRecover(netw *Combined) {
 }
 
 func (netw *Combined) start(
+	ctx context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 	allowlist config.Allowlist,
@@ -277,7 +286,7 @@ func (netw *Combined) start(
 	if serverData.IP == (netip.Addr{}) {
 		serverData = netw.lastServer
 	}
-	if err = netw.vpnet.Start(creds, serverData); err != nil {
+	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
 			log.Println(internal.DeferPrefix, err)
 		}
@@ -386,6 +395,7 @@ func (netw *Combined) configureFirewall(allowlist config.Allowlist) error {
 }
 
 func (netw *Combined) restart(
+	ctx context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 	nameservers config.DNS,
@@ -417,7 +427,7 @@ func (netw *Combined) restart(
 	if serverData.IP == (netip.Addr{}) {
 		serverData = netw.lastServer
 	}
-	if err = netw.vpnet.Start(creds, serverData); err != nil {
+	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
 			log.Println(internal.DeferPrefix, err)
 		}

@@ -76,6 +76,7 @@ type MeshnetClient interface {
 	// DisableAutomaticFileshare from peer
 	DisableAutomaticFileshare(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*DisableAutomaticFileshareResponse, error)
 	Connect(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*ConnectResponse, error)
+	ConnectCancel(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*ConnectResponse, error)
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer
 	NotifyNewTransfer(ctx context.Context, in *NewTransferNotification, opts ...grpc.CallOption) (*NotifyNewTransferResponse, error)
@@ -307,6 +308,15 @@ func (c *meshnetClient) Connect(ctx context.Context, in *UpdatePeerRequest, opts
 	return out, nil
 }
 
+func (c *meshnetClient) ConnectCancel(ctx context.Context, in *UpdatePeerRequest, opts ...grpc.CallOption) (*ConnectResponse, error) {
+	out := new(ConnectResponse)
+	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/ConnectCancel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *meshnetClient) NotifyNewTransfer(ctx context.Context, in *NewTransferNotification, opts ...grpc.CallOption) (*NotifyNewTransferResponse, error) {
 	out := new(NotifyNewTransferResponse)
 	err := c.cc.Invoke(ctx, "/meshpb.Meshnet/NotifyNewTransfer", in, out, opts...)
@@ -383,6 +393,7 @@ type MeshnetServer interface {
 	// DisableAutomaticFileshare from peer
 	DisableAutomaticFileshare(context.Context, *UpdatePeerRequest) (*DisableAutomaticFileshareResponse, error)
 	Connect(context.Context, *UpdatePeerRequest) (*ConnectResponse, error)
+	ConnectCancel(context.Context, *UpdatePeerRequest) (*ConnectResponse, error)
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer
 	NotifyNewTransfer(context.Context, *NewTransferNotification) (*NotifyNewTransferResponse, error)
@@ -466,6 +477,9 @@ func (UnimplementedMeshnetServer) DisableAutomaticFileshare(context.Context, *Up
 }
 func (UnimplementedMeshnetServer) Connect(context.Context, *UpdatePeerRequest) (*ConnectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Connect not implemented")
+}
+func (UnimplementedMeshnetServer) ConnectCancel(context.Context, *UpdatePeerRequest) (*ConnectResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConnectCancel not implemented")
 }
 func (UnimplementedMeshnetServer) NotifyNewTransfer(context.Context, *NewTransferNotification) (*NotifyNewTransferResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NotifyNewTransfer not implemented")
@@ -918,6 +932,24 @@ func _Meshnet_Connect_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Meshnet_ConnectCancel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePeerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MeshnetServer).ConnectCancel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/meshpb.Meshnet/ConnectCancel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MeshnetServer).ConnectCancel(ctx, req.(*UpdatePeerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Meshnet_NotifyNewTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NewTransferNotification)
 	if err := dec(in); err != nil {
@@ -1056,6 +1088,10 @@ var Meshnet_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Connect",
 			Handler:    _Meshnet_Connect_Handler,
+		},
+		{
+			MethodName: "ConnectCancel",
+			Handler:    _Meshnet_ConnectCancel_Handler,
 		},
 		{
 			MethodName: "NotifyNewTransfer",

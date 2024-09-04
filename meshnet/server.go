@@ -25,6 +25,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
+	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 )
 
 var (
@@ -52,6 +53,7 @@ type Server struct {
 	lastConnectedPeer string
 	norduser          service.NorduserFileshareClient
 	scheduler         gocron.Scheduler
+	connectContext    *sharedctx.Context
 	pb.UnimplementedMeshnetServer
 }
 
@@ -68,6 +70,7 @@ func NewServer(
 	subjectPeerUpdate events.Publisher[[]string],
 	deemonEvents *daemonevents.Events,
 	norduser service.NorduserFileshareClient,
+	connectContext *sharedctx.Context,
 ) *Server {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &Server{
@@ -83,6 +86,7 @@ func NewServer(
 		daemonEvents:      deemonEvents,
 		norduser:          norduser,
 		scheduler:         scheduler,
+		connectContext:    connectContext,
 	}
 }
 
@@ -2854,15 +2858,34 @@ func (s *Server) NotifyNewTransfer(
 
 // Connect to peer as if it was a VPN server.
 func (s *Server) Connect(
-	ctx context.Context,
+	_ context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.ConnectResponse, error) {
+	var (
+		resp *pb.ConnectResponse
+	)
+	if !s.connectContext.TryExecuteWith(func(ctx context.Context) {
+		resp = s.connect(ctx, req)
+	}) {
+		return &pb.ConnectResponse{
+			Response: &pb.ConnectResponse_ConnectErrorCode{
+				ConnectErrorCode: pb.ConnectErrorCode_ALREADY_CONNECTING,
+			},
+		}, nil
+	}
+	return resp, nil
+}
+
+func (s *Server) connect(
+	ctx context.Context,
+	req *pb.UpdatePeerRequest,
+) *pb.ConnectResponse {
 	if !s.ac.IsLoggedIn() {
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
 			},
-		}, nil
+		}
 	}
 
 	if !s.mc.IsRegistrationInfoCorrect() {
@@ -2870,7 +2893,7 @@ func (s *Server) Connect(
 			Response: &pb.ConnectResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
-		}, nil
+		}
 	}
 
 	var cfg config.Config
@@ -2880,7 +2903,7 @@ func (s *Server) Connect(
 			Response: &pb.ConnectResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
 			},
-		}, nil
+		}
 	}
 
 	if !cfg.Mesh {
@@ -2888,7 +2911,7 @@ func (s *Server) Connect(
 			Response: &pb.ConnectResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
 			},
-		}, nil
+		}
 	}
 
 	if cfg.Technology != config.Technology_NORDLYNX {
@@ -2896,7 +2919,7 @@ func (s *Server) Connect(
 			Response: &pb.ConnectResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_TECH_FAILURE,
 			},
-		}, nil
+		}
 	}
 
 	// Measure the time it takes to obtain tokens as the connection attempt event duration
@@ -2916,13 +2939,13 @@ func (s *Server) Connect(
 					Response: &pb.ConnectResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
 					},
-				}, nil
+				}
 			}
 			return &pb.ConnectResponse{
 				Response: &pb.ConnectResponse_ServiceErrorCode{
 					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
 				},
-			}, nil
+			}
 		}
 		s.pub.Publish(fmt.Errorf("listing peers (@Connect): %w", err))
 
@@ -2933,14 +2956,14 @@ func (s *Server) Connect(
 				Response: &pb.ConnectResponse_MeshnetErrorCode{
 					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
 				},
-			}, nil
+			}
 		}
 
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
 			},
-		}, nil
+		}
 	}
 
 	index := slices.IndexFunc(resp, func(p mesh.MachinePeer) bool {
@@ -2951,7 +2974,7 @@ func (s *Server) Connect(
 			Response: &pb.ConnectResponse_UpdatePeerErrorCode{
 				UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
 			},
-		}, nil
+		}
 	}
 
 	peer := resp[index]
@@ -2960,7 +2983,7 @@ func (s *Server) Connect(
 			Response: &pb.ConnectResponse_ConnectErrorCode{
 				ConnectErrorCode: pb.ConnectErrorCode_PEER_DOES_NOT_ALLOW_ROUTING,
 			},
-		}, nil
+		}
 	}
 
 	// offline peers do not have assigned ip address
@@ -2969,7 +2992,7 @@ func (s *Server) Connect(
 			Response: &pb.ConnectResponse_ConnectErrorCode{
 				ConnectErrorCode: pb.ConnectErrorCode_PEER_NO_IP,
 			},
-		}, nil
+		}
 	}
 
 	var nameservers []string
@@ -2990,6 +3013,7 @@ func (s *Server) Connect(
 	connectingStartTime = time.Now()
 
 	if err := s.netw.Start(
+		ctx,
 		vpn.Credentials{
 			NordLynxPrivateKey: cfg.MeshPrivateKey,
 		},
@@ -3008,19 +3032,26 @@ func (s *Server) Connect(
 		event.EventStatus = events.StatusFailure
 		event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 		s.daemonEvents.Service.Connect.Publish(event)
-		if strings.Contains(err.Error(), "already started") {
+		switch {
+		case strings.Contains(err.Error(), "already started"):
 			return &pb.ConnectResponse{
 				Response: &pb.ConnectResponse_ConnectErrorCode{
 					ConnectErrorCode: pb.ConnectErrorCode_ALREADY_CONNECTED,
 				},
-			}, nil
+			}
+		case errors.Is(err, context.Canceled):
+			return &pb.ConnectResponse{
+				Response: &pb.ConnectResponse_ConnectErrorCode{
+					ConnectErrorCode: pb.ConnectErrorCode_CANCELED,
+				},
+			}
 		}
 		s.pub.Publish(fmt.Errorf("starting networker: %w", err))
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_ConnectErrorCode{
 				ConnectErrorCode: pb.ConnectErrorCode_CONNECT_FAILED,
 			},
-		}, nil
+		}
 	}
 	s.lastConnectedPeer = peer.Hostname
 	// Send the connection success event
@@ -3030,7 +3061,7 @@ func (s *Server) Connect(
 
 	return &pb.ConnectResponse{
 		Response: &pb.ConnectResponse_Empty{},
-	}, nil
+	}
 }
 
 // GetPrivateKey returns self private key

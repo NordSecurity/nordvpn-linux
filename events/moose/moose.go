@@ -411,6 +411,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
 	case events.StatusFailure:
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
+	case events.StatusCanceled:
+		eventStatus = moose.NordvpnappEventStatusFailureDueToUserInterrupt
 	default:
 		eventStatus = moose.NordvpnappEventStatusAttempt
 	}

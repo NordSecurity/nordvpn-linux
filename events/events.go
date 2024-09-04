@@ -44,6 +44,7 @@ const (
 	StatusAttempt TypeEventStatus = iota
 	StatusSuccess
 	StatusFailure
+	StatusCanceled
 )
 
 type TypeEventTrigger int

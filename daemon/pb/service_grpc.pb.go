@@ -26,6 +26,7 @@ type DaemonClient interface {
 	TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error)
 	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (Daemon_ConnectClient, error)
+	ConnectCancel(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_DisconnectClient, error)
 	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
@@ -133,6 +134,15 @@ func (x *daemonConnectClient) Recv() (*Payload, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *daemonClient) ConnectCancel(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/ConnectCancel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *daemonClient) Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
@@ -572,6 +582,7 @@ type DaemonServer interface {
 	TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error)
 	Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error)
 	Connect(*ConnectRequest, Daemon_ConnectServer) error
+	ConnectCancel(context.Context, *Empty) (*Payload, error)
 	Countries(context.Context, *Empty) (*ServerGroupsList, error)
 	Disconnect(*Empty, Daemon_DisconnectServer) error
 	Groups(context.Context, *Empty) (*ServerGroupsList, error)
@@ -630,6 +641,9 @@ func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*Serve
 }
 func (UnimplementedDaemonServer) Connect(*ConnectRequest, Daemon_ConnectServer) error {
 	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
+}
+func (UnimplementedDaemonServer) ConnectCancel(context.Context, *Empty) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConnectCancel not implemented")
 }
 func (UnimplementedDaemonServer) Countries(context.Context, *Empty) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Countries not implemented")
@@ -837,6 +851,24 @@ type daemonConnectServer struct {
 
 func (x *daemonConnectServer) Send(m *Payload) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _Daemon_ConnectCancel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).ConnectCancel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/ConnectCancel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).ConnectCancel(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Daemon_Countries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1586,6 +1618,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Cities",
 			Handler:    _Daemon_Cities_Handler,
+		},
+		{
+			MethodName: "ConnectCancel",
+			Handler:    _Daemon_ConnectCancel_Handler,
 		},
 		{
 			MethodName: "Countries",

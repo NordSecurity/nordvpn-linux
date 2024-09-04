@@ -1,6 +1,7 @@
 package networker
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -87,7 +88,7 @@ func (netw *Combined) fixForLinuxMint20() error {
 // 1. try to let each VPN implementation to handle, if the system interfaces didn't change
 // 2. fully re-creates the VPN tunnel but keeps the firewall rules
 // Thread unsafe.
-func (netw *Combined) refreshVPN() (err error) {
+func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	isVPNStarted := netw.isVpnSet
 	isMeshStarted := netw.isMeshnetSet
 
@@ -163,6 +164,7 @@ func (netw *Combined) refreshVPN() (err error) {
 
 	if isVPNStarted {
 		if vpnErr = netw.start(
+			ctx,
 			netw.lastCreds,
 			netw.lastServer,
 			netw.allowlist,

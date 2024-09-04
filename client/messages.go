@@ -13,9 +13,13 @@ const (
 	ConnectTimeoutError    = "It's not you, it's us. We're having trouble reaching our servers. If the issue persists, please contact our customer support."
 	ConnectCantConnect     = "The VPN connection has failed. Please check your internet connection and try connecting to the VPN again. If the issue persists, contact our customer support."
 	ConnectConnected       = "You are already connected to NordVPN."
-	RelogRequest           = "For security purposes, please log in again."
-	MsgTryAgain            = "We're having trouble reaching our servers. Please try again later. If the issue persists, please contact our customer support."
-	UFWDisabledMessage     = "The active UFW firewall on your system prevents us from setting up our firewall properly. We have disabled UFW for the duration of your VPN connection and enabled our firewall to ensure your online security. Your custom UFW rules are imported to our firewall ruleset."
+	// TODO: copy review
+	ConnectConnecting = "Connecting to NordVPN is already in progress."
+	// TODO: copy review
+	ConnectCanceled    = "Connection to %s (%s)%s canceled."
+	RelogRequest       = "For security purposes, please log in again."
+	MsgTryAgain        = "We're having trouble reaching our servers. Please try again later. If the issue persists, please contact our customer support."
+	UFWDisabledMessage = "The active UFW firewall on your system prevents us from setting up our firewall properly. We have disabled UFW for the duration of your VPN connection and enabled our firewall to ensure your online security. Your custom UFW rules are imported to our firewall ruleset."
 
 	SubscriptionURL                 = "https://my.nordaccount.com/plans/?product_group=nordvpn&login_target=nordvpn&utm_source=linux&utm_medium=app&utm_campaign=desktop-app&redirect_uri=nordvpn://claim-online-purchase"
 	SubscriptionURLLogin            = "https://my.nordaccount.com/plans/?product_group=nordvpn&login_target=nordvpn&utm_source=linux&utm_medium=app&utm_campaign=desktop-app&trusted_pass_token=%s&owner_id=%s&redirect_uri=nordvpn://claim-online-purchase"

@@ -67,6 +67,7 @@ service Meshnet {
 	// DisableAutomaticFileshare from peer
 	rpc DisableAutomaticFileshare(UpdatePeerRequest) returns (DisableAutomaticFileshareResponse);
 	rpc Connect(UpdatePeerRequest) returns (ConnectResponse);
+	rpc ConnectCancel(UpdatePeerRequest) returns (ConnectResponse);
 	// NotifyNewTransfer notifies meshnet service about a newly created transaction so it can
 	// notify a corresponding meshnet peer
 	rpc NotifyNewTransfer(NewTransferNotification) returns (NotifyNewTransferResponse);

@@ -19,6 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
+	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
@@ -72,6 +73,7 @@ type workingNetworker struct {
 }
 
 func (workingNetworker) Start(
+	context.Context,
 	vpn.Credentials,
 	vpn.ServerData,
 	config.Allowlist,
@@ -197,6 +199,7 @@ func newMockedServer(
 		&subs.Subject[[]string]{},
 		&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 		testnorduser.NewMockNorduserClient(nil),
+		sharedctx.New(),
 	)
 
 	if isMeshOn {
@@ -261,6 +264,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 				testnorduser.NewMockNorduserClient(test.startFileshareError),
+				sharedctx.New(),
 			)
 			assert.NotEqual(t, nil, mserver)
 			assert.Equal(t, test.cm, mserver.cm)
@@ -339,6 +343,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 				testnorduser.NewMockNorduserClient(test.startFileshareError),
+				sharedctx.New(),
 			)
 			assert.NotEqual(t, nil, mserver)
 			assert.Equal(t, test.cm, mserver.cm)
@@ -397,6 +402,7 @@ func TestServer_Invite(t *testing.T) {
 				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}},
 					Service: &daemonevents.ServiceEvents{UiItemsClick: &daemonevents.MockPublisherSubscriber[events.UiItemsAction]{}}},
 				testnorduser.NewMockNorduserClient(nil),
+				sharedctx.New(),
 			)
 			server.EnableMeshnet(context.Background(), &pb.Empty{})
 			resp, err := server.Invite(context.Background(), &pb.InviteRequest{})
@@ -425,6 +431,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 		&subs.Subject[[]string]{},
 		&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 		testnorduser.NewMockNorduserClient(nil),
+		sharedctx.New(),
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
 	resp, err := server.AcceptInvite(context.Background(), &pb.InviteRequest{
@@ -453,6 +460,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 		&subs.Subject[[]string]{},
 		&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 		testnorduser.NewMockNorduserClient(nil),
+		sharedctx.New(),
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
 
@@ -554,6 +562,7 @@ func TestServer_Connect(t *testing.T) {
 			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}},
 				Service: &daemonevents.ServiceEvents{Connect: &daemonevents.MockPublisherSubscriber[events.DataConnect]{}}},
 			testnorduser.NewMockNorduserClient(nil),
+			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server
@@ -687,6 +696,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 			testnorduser.NewMockNorduserClient(nil),
+			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -810,6 +820,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 			testnorduser.NewMockNorduserClient(nil),
+			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -915,6 +926,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 			testnorduser.NewMockNorduserClient(nil),
+			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -1020,6 +1032,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 			&subs.Subject[[]string]{},
 			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 			testnorduser.NewMockNorduserClient(nil),
+			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -1629,6 +1642,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 				testnorduser.NewMockNorduserClient(nil),
+				sharedctx.New(),
 			)
 
 			if test.isMeshOn {
@@ -1940,6 +1954,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				&subs.Subject[[]string]{},
 				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
 				testnorduser.NewMockNorduserClient(nil),
+				sharedctx.New(),
 			)
 
 			if test.isMeshOn {

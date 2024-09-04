@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"errors"
 	"log"
 	"slices"
@@ -25,6 +26,29 @@ func isDedicatedIP(server core.Server) bool {
 
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
+	var err error
+	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
+	// stopped on `ctx.Done()` only if it happens while `netw.Start()` is being executed.
+	// Otherwise:
+	//   * if context is done before `netw.Start()` is called, it will wait until
+	//     `netw.Start()` is called and exit immediately with an error from the `ctx`.
+	//   * if context is done after `netw.Start()` is done, it will ignore the event and resume
+	//     whole `r.connect` until it exits.
+	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
+	// and have context bypassed to them.
+	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
+		err = r.connect(ctx, in, srv)
+	}) {
+		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
+	}
+	return err
+}
+
+func (r *RPC) connect(
+	ctx context.Context,
+	in *pb.ConnectRequest,
+	srv pb.Daemon_ConnectServer,
+) (retErr error) {
 	if !r.ac.IsLoggedIn() {
 		return internal.ErrNotLoggedIn
 	}
@@ -166,10 +190,10 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return internal.ErrUnhandled
 	}
 
 	err = r.netw.Start(
+		ctx,
 		creds,
 		serverData,
 		allowlist,
@@ -181,16 +205,21 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	)
 
 	if err != nil {
-		event.EventStatus = events.StatusFailure
 		event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 		event.Error = err
+		event.EventStatus = events.StatusFailure
+		t := internal.CodeFailure
+		if errors.Is(err, context.Canceled) {
+			t = internal.CodeDisconnected
+			event.EventStatus = events.StatusCanceled
+			event.Error = nil
+		}
 		r.events.Service.Connect.Publish(event)
 		if err := srv.Send(&pb.Payload{
-			Type: internal.CodeFailure,
+			Type: t,
 			Data: data,
 		}); err != nil {
 			log.Println(internal.ErrorPrefix, err)
-			return internal.ErrUnhandled
 		}
 		return nil
 	}
@@ -209,7 +238,6 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return internal.ErrUnhandled
 	}
 
 	return nil

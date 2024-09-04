@@ -84,9 +84,11 @@ func (s Subscriber) NotifyConnect(data events.DataConnect) error {
 	eventName := "POST_CONNECT"
 	switch data.EventStatus {
 	case events.StatusSuccess:
-		log.Println(internal.InfoPrefix, "connected to", data.TargetServerName)
+		log.Println(internal.InfoPrefix, "connected to", data.TargetServerDomain)
 	case events.StatusFailure:
-		log.Println(internal.ErrorPrefix, "failed to connect to", data.TargetServerDomain)
+		log.Println(internal.ErrorPrefix, "failed to connect to", data.TargetServerDomain, ":", data.Error)
+	case events.StatusCanceled:
+		log.Println(internal.InfoPrefix, "connection to", data.TargetServerDomain, "was cancelled")
 	case events.StatusAttempt:
 		eventName = "PRE_CONNECT"
 	}

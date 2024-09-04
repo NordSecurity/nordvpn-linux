@@ -1,6 +1,7 @@
 package networker
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/netip"
@@ -367,6 +368,7 @@ func TestCombined_Start(t *testing.T) {
 				false,
 			)
 			err := netw.Start(
+				context.Background(),
 				vpn.Credentials{},
 				vpn.ServerData{},
 				config.NewAllowlist(nil, nil, nil),
@@ -1480,6 +1482,7 @@ func TestCombined_Reconnect(t *testing.T) {
 			))
 			// connect to exit node
 			_ = netw.Start(
+				context.Background(),
 				vpn.Credentials{},
 				vpn.ServerData{},
 				config.NewAllowlist(nil, nil, nil),
@@ -1970,7 +1973,14 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 		false,
 	)
 
-	err := netw.start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, config.DNS{"1.1.1.1"})
+	ctx := context.Background()
+	err := netw.start(
+		ctx,
+		vpn.Credentials{},
+		vpn.ServerData{},
+		config.Allowlist{},
+		config.DNS{"1.1.1.1"},
+	)
 	assert.NoError(t, err)
 	assert.Equal(t, "1.1.1.1", dns.setDNS[0])
 
@@ -1978,7 +1988,7 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "2.2.2.2", dns.setDNS[0])
 
-	err = netw.refreshVPN()
+	err = netw.refreshVPN(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, "2.2.2.2", dns.setDNS[0])
 }
@@ -2000,8 +2010,17 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			lanAvailable: false,
 		},
 		{
-			name:         "VPN enabled",
-			actions:      func(c *Combined) { _ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true) },
+			name: "VPN enabled",
+			actions: func(c *Combined) {
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
+			},
 			lanAvailable: false,
 		},
 		{
@@ -2027,7 +2046,14 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then lan discovery",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
 				c.SetLanDiscovery(true)
 			},
 			lanAvailable: true,
@@ -2036,7 +2062,14 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			name: "lan discovery then vpn",
 			actions: func(c *Combined) {
 				c.SetLanDiscovery(true)
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
 			},
 			lanAvailable: true,
 		},
@@ -2053,7 +2086,14 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			name: "lan discovery then vpn then lan discovery off",
 			actions: func(c *Combined) {
 				c.SetLanDiscovery(true)
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
 				c.SetLanDiscovery(false)
 			},
 			lanAvailable: false,
@@ -2061,7 +2101,14 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then killswitch",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 			},
 			lanAvailable: false,
@@ -2069,7 +2116,14 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then killswitch then lan discovery",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
 			},
@@ -2078,7 +2132,14 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then killswitch then lan discovery then killswitch off",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
 				_ = c.UnsetKillSwitch()
@@ -2088,7 +2149,14 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then killswitch then lan discovery then killswitch off then lan discovery off",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
 				_ = c.UnsetKillSwitch()
@@ -2099,7 +2167,14 @@ func TestExitNodeLanAvailability(t *testing.T) {
 		{
 			name: "vpn then killswitch then lan discovery then killswitch off then lan discovery off then vpn off",
 			actions: func(c *Combined) {
-				_ = c.Start(vpn.Credentials{}, vpn.ServerData{}, config.Allowlist{}, nil, true)
+				_ = c.Start(
+					context.Background(),
+					vpn.Credentials{},
+					vpn.ServerData{},
+					config.Allowlist{},
+					nil,
+					true,
+				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
 				_ = c.UnsetKillSwitch()
