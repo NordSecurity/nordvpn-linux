@@ -25,7 +25,8 @@ def teardown_function(function):  # noqa: ARG001
 
 
 def connect_base_test(connection_settings, group=(), name="", hostname=""):
-    output = sh.nordvpn.connect(group, _tty_out=False)
+    connect_alias = random.choice(["c", "connect"])
+    output = sh.nordvpn(connect_alias, group, _tty_out=False)
     print(output)
 
     assert lib.is_connect_successful(output, name, hostname)
@@ -57,7 +58,8 @@ def test_connect_to_server_absent(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect("moon")
+        connect_alias = random.choice(["c", "connect"])
+        sh.nordvpn(connect_alias, "moon")
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
@@ -175,7 +177,8 @@ def test_connect_network_gone(tech, proto, obfuscated):
     default_gateway = network.stop()
     with lib.Defer(lambda: network.start(default_gateway)):
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.connect()
+            connect_alias = random.choice(["c", "connect"])
+            sh.nordvpn(connect_alias)
         print(ex.value)
 
 
@@ -224,7 +227,8 @@ def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect("--group", group, group)
+        connect_alias = random.choice(["c", "connect"])
+        sh.nordvpn(connect_alias, "--group", group, group)
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
@@ -239,7 +243,8 @@ def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect("--group", group, group)
+        connect_alias = random.choice(["c", "connect"])
+        sh.nordvpn(connect_alias, "--group", group, group)
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
@@ -254,7 +259,8 @@ def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect("--group", group, group)
+        connect_alias = random.choice(["c", "connect"])
+        sh.nordvpn(connect_alias, "--group", group, group)
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
@@ -269,7 +275,8 @@ def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
     disconnect_base_test()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect("--group", group, group)
+        connect_alias = random.choice(["c", "connect"])
+        sh.nordvpn(connect_alias, "--group", group, group)
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
@@ -280,7 +287,8 @@ def test_connect_to_group_invalid(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect("--group", "nonexistent_group")
+        connect_alias = random.choice(["c", "connect"])
+        sh.nordvpn(connect_alias, "--group", "nonexistent_group")
 
     print(ex.value)
     assert lib.is_connect_unsuccessful(ex)
@@ -324,7 +332,8 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
 
     for group in unavailable_groups:
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.connect(group)
+            connect_alias = random.choice(["c", "connect"])
+            sh.nordvpn(connect_alias, group)
 
         print(ex.value)
         assert lib.is_connect_unsuccessful(ex)
@@ -344,7 +353,8 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
         name = server_info.hostname.split(".")[0]
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.connect(name)
+            connect_alias = random.choice(["c", "connect"])
+            sh.nordvpn(connect_alias, name)
 
         print(ex.value)
         assert lib.is_connect_unsuccessful(ex)
@@ -358,7 +368,8 @@ def test_status_connected(tech, proto, obfuscated):
     assert "Disconnected" in sh.nordvpn.status()
 
     server_info = server.get_hostname_by(technology=tech, protocol=proto, obfuscated=obfuscated)
-    sh.nordvpn.connect(server_info.hostname.split(".")[0])
+    connect_alias = random.choice(["c", "connect"])
+    sh.nordvpn(connect_alias, server_info.hostname.split(".")[0])
 
     connect_time = time.monotonic()
 
