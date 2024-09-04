@@ -52,10 +52,21 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 }
 
 // loginCommon common login
-func (r *RPC) loginCommon(customCB customCallbackType) (*pb.LoginResponse, error) {
+func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginResponse, retErr error) {
 	if r.ac.IsLoggedIn() {
 		return nil, internal.ErrAlreadyLoggedIn
 	}
+
+	loginStartTime := time.Now()
+	r.events.User.Login.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: events.StatusAttempt})
+
+	defer func() {
+		eventStatus := events.StatusSuccess
+		if retErr != nil || payload != nil && payload.Type != internal.CodeSuccess {
+			eventStatus = events.StatusFailure
+		}
+		r.events.User.Login.Publish(events.DataAuthorization{DurationMs: max(int(time.Since(loginStartTime).Milliseconds()), 1), EventTrigger: events.TriggerUser, EventStatus: eventStatus})
+	}()
 
 	resp, pbresp, err := customCB()
 	if err != nil || pbresp != nil {
@@ -107,8 +118,6 @@ func (r *RPC) loginCommon(customCB customCallbackType) (*pb.LoginResponse, error
 	}
 
 	go StartNC("[login]", r.ncClient)
-
-	r.events.User.Login.Publish(events.DataAuthorization{})
 	r.publisher.Publish("user logged in")
 
 	return &pb.LoginResponse{
@@ -122,6 +131,8 @@ func (r *RPC) LoginOAuth2(in *pb.Empty, srv pb.Daemon_LoginOAuth2Server) error {
 		return internal.ErrAlreadyLoggedIn
 	}
 
+	r.events.User.Login.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: events.StatusAttempt})
+
 	url, err := r.authentication.Login()
 	if err != nil {
 		return err
@@ -131,10 +142,18 @@ func (r *RPC) LoginOAuth2(in *pb.Empty, srv pb.Daemon_LoginOAuth2Server) error {
 }
 
 // LoginOAuth2Callback is called by the browser via cli during OAuth2 login.
-func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (*pb.Empty, error) {
+func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (payload *pb.Empty, retErr error) {
 	if r.ac.IsLoggedIn() {
 		return &pb.Empty{}, internal.ErrAlreadyLoggedIn
 	}
+
+	defer func() {
+		eventStatus := events.StatusSuccess
+		if retErr != nil {
+			eventStatus = events.StatusFailure
+		}
+		r.events.User.Login.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: eventStatus})
+	}()
 
 	if in.GetData() == "" {
 		r.publisher.Publish(ErrMissingExchangeToken.Error())
@@ -170,7 +189,6 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (*pb.Empty
 	}
 
 	go StartNC("[login callback]", r.ncClient)
-	r.events.User.Login.Publish(events.DataAuthorization{})
 	return &pb.Empty{}, nil
 }
 
