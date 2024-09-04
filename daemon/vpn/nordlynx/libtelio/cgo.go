@@ -2,10 +2,10 @@
 
 package libtelio
 
-// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/foss/amd64/latest -lfoss
-// #cgo 386 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/foss/i386/latest -lfoss
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/foss/armel/latest -lfoss
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/foss/armhf/latest -lfoss
-// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/foss/aarch64/latest -lfoss
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/amd64/latest -ltelio
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/i386/latest -ltelio
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/armel/latest -ltelio
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/armhf/latest -ltelio
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/aarch64/latest -ltelio
 // #cgo LDFLAGS: -ldl -lm
 import "C"
