@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"slices"
 	"time"
@@ -28,10 +27,6 @@ func isDedicatedIP(server core.Server) bool {
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	if !r.ac.IsLoggedIn() {
 		return internal.ErrNotLoggedIn
-	}
-
-	if r.systemInfoFunc != nil && r.networkInfoFunc != nil {
-		log.Printf("PRE_CONNECT system info:\n%s\n%s\n", r.systemInfoFunc(r.version), r.networkInfoFunc())
 	}
 
 	vpnExpired, err := r.ac.IsVPNExpired()
@@ -113,8 +108,6 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	}
 	r.lastServer = *server
 
-	eventCh := make(chan ConnectEvent)
-
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	creds := vpn.Credentials{
 		OpenVPNUsername:    tokenData.OpenVPNUsername,
@@ -165,70 +158,60 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		}
 	}()
 
-	go Connect(
-		eventCh,
-		creds,
-		serverData,
-		allowlist,
-		cfg.AutoConnectData.DNS.Or(
-			r.nameservers.Get(cfg.AutoConnectData.ThreatProtectionLite, server.SupportsIPv6()),
-		),
-		r.netw,
-	)
-
 	virtualServer := ""
 	if server.IsVirtualLocation() {
 		virtualServer = " - Virtual"
 	}
 	data := []string{r.lastServer.Name, r.lastServer.Hostname, virtualServer}
 
-	for ev := range eventCh {
-		switch ev.Code {
-		case internal.CodeConnected:
-			// If server has at least one IPv6 address
-			// regardless if IPv4 or IPv6 is used to connect
-			// to the server - DO NOT DISABLE IPv6.
-			if !server.SupportsIPv6() {
-				if err := r.netw.DenyIPv6(); err != nil {
-					log.Println(internal.ErrorPrefix, "failed to disable ipv6:", err)
-				}
-			}
-			event.EventStatus = events.StatusSuccess
-			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
-			r.events.Service.Connect.Publish(event)
+	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return internal.ErrUnhandled
+	}
 
-			if err := srv.Send(&pb.Payload{Type: ev.Code, Data: data}); err != nil {
-				log.Println(internal.ErrorPrefix, err)
-				return internal.ErrUnhandled
-			}
-			r.publisher.Publish("connected to vpn")
-			if r.systemInfoFunc != nil && r.networkInfoFunc != nil {
-				defer func() {
-					log.Printf("POST_CONNECT system info:\n%s\n", r.networkInfoFunc())
-				}()
-			}
+	err = r.netw.Start(
+		creds,
+		serverData,
+		allowlist,
+		cfg.AutoConnectData.DNS.Or(r.nameservers.Get(
+			cfg.AutoConnectData.ThreatProtectionLite,
+			server.SupportsIPv6(),
+		)),
+		true, // here vpn connect - enable routing to local LAN
+	)
 
-			parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
-			r.ConnectionParameters.SetConnectionParameters(pb.ConnectionSource_MANUAL, parameters)
-			return nil
-		case internal.CodeFailure:
-			log.Println(internal.ErrorPrefix, ev.Message)
-			r.publisher.Publish(fmt.Sprintf("failed to connect to %s", server.Hostname))
-			r.publisher.Publish(ev.Message)
-			event.EventStatus = events.StatusFailure
-			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
-			r.events.Service.Connect.Publish(event)
-		case internal.CodeDisconnected:
-		case internal.CodeVPNNotRunning:
-			// nothing to do here, because already connected to VPN
-			continue
-		default:
-		}
-		if err := srv.Send(&pb.Payload{Type: ev.Code, Data: data}); err != nil {
+	if err != nil {
+		event.EventStatus = events.StatusFailure
+		event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+		event.Error = err
+		r.events.Service.Connect.Publish(event)
+		if err := srv.Send(&pb.Payload{
+			Type: internal.CodeFailure,
+			Data: data,
+		}); err != nil {
 			log.Println(internal.ErrorPrefix, err)
 			return internal.ErrUnhandled
 		}
+		return nil
 	}
+
+	// If server has at least one IPv6 address
+	// regardless if IPv4 or IPv6 is used to connect
+	// to the server - DO NOT DISABLE IPv6.
+	if !server.SupportsIPv6() {
+		if err := r.netw.DenyIPv6(); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to disable ipv6:", err)
+		}
+	}
+	event.EventStatus = events.StatusSuccess
+	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+	r.events.Service.Connect.Publish(event)
+
+	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return internal.ErrUnhandled
+	}
+
 	return nil
 }
 

@@ -20,6 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
@@ -122,6 +123,16 @@ type mockAnalytics struct{}
 func (*mockAnalytics) Enable() error  { return nil }
 func (*mockAnalytics) Disable() error { return nil }
 
+type mockEndpointResolver struct{ ip netip.Addr }
+
+func newEndpointResolverMock(ip netip.Addr) mockEndpointResolver {
+	return mockEndpointResolver{ip: ip}
+}
+
+func (g mockEndpointResolver) Resolve(netip.Addr) ([]netip.Addr, error) {
+	return []netip.Addr{g.ip}, nil
+}
+
 func TestRpcConnect(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -143,7 +154,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{},
 			resp:    internal.CodeConnected,
 		},
@@ -153,7 +164,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.FailingVPN{}, nil
 			},
 			netw:    testnetworker.Failing{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{},
 			resp:    internal.CodeFailure,
 		},
@@ -163,7 +174,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{isVPNExpired: true},
 			resp:    internal.CodeAccountExpired,
 		},
@@ -173,7 +184,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{vpnErr: errors.New("test error")},
 			resp:    internal.CodeTokenRenewError,
 		},
@@ -184,7 +195,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{},
 			resp:    internal.CodeConnected,
 		},
@@ -195,7 +206,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{},
 			resp:    internal.CodeConnected,
 		},
@@ -206,7 +217,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{},
 			resp:    internal.CodeConnected,
 		},
@@ -217,7 +228,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{},
 			resp:    internal.CodeConnected,
 		},
@@ -228,7 +239,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{},
 			resp:    internal.CodeConnected,
 		},
@@ -239,7 +250,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw: &testnetworker.Mock{},
-			fw:   &workingFirewall{},
+			fw:   &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{
 				isDedicatedIPExpired: false,
 				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
@@ -253,7 +264,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw: &testnetworker.Mock{},
-			fw:   &workingFirewall{},
+			fw:   &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{
 				isDedicatedIPExpired: false,
 				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
@@ -267,7 +278,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{isDedicatedIPExpired: true},
 			resp:    internal.CodeDedicatedIPRenewError,
 		},
@@ -278,7 +289,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw:    &testnetworker.Mock{},
-			fw:      &workingFirewall{},
+			fw:      &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{isDedicatedIPExpired: true},
 			resp:    internal.CodeDedicatedIPRenewError,
 		},
@@ -289,7 +300,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw: &testnetworker.Mock{},
-			fw:   &workingFirewall{},
+			fw:   &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{
 				isDedicatedIPExpired: false,
 				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
@@ -303,7 +314,7 @@ func TestRpcConnect(t *testing.T) {
 				return &mock.WorkingVPN{}, nil
 			},
 			netw: &testnetworker.Mock{},
-			fw:   &workingFirewall{},
+			fw:   &testfirewall.FirewallMock{},
 			checker: &workingLoginChecker{
 				isDedicatedIPExpired: false,
 				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: auth.NoServerSelected}},
@@ -406,7 +417,7 @@ func TestRpcReconnect(t *testing.T) {
 		testNewRepoAPI(),
 		&mockAuthenticationAPI{},
 		"1.0.0",
-		&workingFirewall{},
+		&testfirewall.FirewallMock{},
 		daemonevents.NewEventsEmpty(),
 		factory,
 		newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),

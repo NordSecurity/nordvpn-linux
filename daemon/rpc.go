@@ -27,21 +27,19 @@ import (
 
 // RPC is a gRPC server.
 type RPC struct {
-	environment     internal.Environment
-	ac              auth.Checker
-	cm              config.Manager
-	dm              *DataManager
-	api             core.CombinedAPI
-	serversAPI      core.ServersAPI
-	credentialsAPI  core.CredentialsAPI
-	cdn             core.CDN
-	repo            *RepoAPI
-	authentication  core.Authentication
-	lastServer      core.Server
-	version         string
-	systemInfoFunc  func(string) string
-	networkInfoFunc func() string
-	events          *daemonevents.Events
+	environment    internal.Environment
+	ac             auth.Checker
+	cm             config.Manager
+	dm             *DataManager
+	api            core.CombinedAPI
+	serversAPI     core.ServersAPI
+	credentialsAPI core.CredentialsAPI
+	cdn            core.CDN
+	repo           *RepoAPI
+	authentication core.Authentication
+	lastServer     core.Server
+	version        string
+	events         *daemonevents.Events
 	// factory picks which VPN implementation to use
 	factory              FactoryFunc
 	endpointResolver     network.EndpointResolver
@@ -98,8 +96,6 @@ func NewRPC(
 		repo:             repo,
 		authentication:   authentication,
 		version:          version,
-		systemInfoFunc:   getSystemInfo,
-		networkInfoFunc:  getNetworkInfo,
 		factory:          factory,
 		events:           events,
 		endpointResolver: endpointResolver,

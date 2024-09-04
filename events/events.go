@@ -74,6 +74,7 @@ type DataConnect struct {
 	TargetServerPick           string
 	TargetServerPickerResponse string
 	TargetServerName           string
+	Error                      error
 }
 
 type DataDisconnect struct {
