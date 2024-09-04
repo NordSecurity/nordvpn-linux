@@ -30,6 +30,7 @@ func (*dummyAnalytics) NotifyConnect(events.DataConnect) error         { return 
 func (*dummyAnalytics) NotifyDisconnect(events.DataDisconnect) error   { return nil }
 func (*dummyAnalytics) NotifyLogin(events.DataAuthorization) error     { return nil }
 func (*dummyAnalytics) NotifyLogout(events.DataAuthorization) error    { return nil }
+func (*dummyAnalytics) NotifyMFA(bool) error                           { return nil }
 func (*dummyAnalytics) NotifyAccountCheck(core.ServicesResponse) error { return nil }
 func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error   { return nil }
 func (*dummyAnalytics) NotifyUiItemsClick(events.UiItemsAction) error  { return nil }

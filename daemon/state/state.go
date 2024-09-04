@@ -86,6 +86,10 @@ func (s *StatePublisher) NotifyLogout(e events.DataAuthorization) error {
 	return nil
 }
 
+func (s *StatePublisher) NotifyMFA(bool) error {
+	return nil
+}
+
 func (s *StatePublisher) NotifyConfigChanged(e *config.Config) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

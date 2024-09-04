@@ -299,6 +299,10 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 	return s.response(moose.NordvpnappSendServiceQualityAuthorizationLogout(int32(data.DurationMs), eventTrigger, eventStatus, moose.NordvpnappOptBoolNone))
 }
 
+func (s *Subscriber) NotifyMFA(data bool) error {
+	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesMfaEnabledValue(data))
+}
+
 func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 	itemType := moose.NordvpnappUserInterfaceItemTypeButton
 	if data.ItemType == "textbox" {
