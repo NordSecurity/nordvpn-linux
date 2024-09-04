@@ -133,7 +133,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		case internal.CodeDedicatedIPRenewError:
 			ti.notifyServiceExpired(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, cli.NoDedicatedIPMessage)
 		case internal.CodeDisconnected:
-			ti.notify(internal.DisconnectSuccess)
+			ti.notify(fmt.Sprintf(client.ConnectCanceled, internal.StringsToInterfaces(out.Data)...))
 		case internal.CodeTagNonexisting:
 			ti.notify(internal.TagNonexistentErrorMessage)
 		case internal.CodeGroupNonexisting:
@@ -144,6 +144,8 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 			ti.notify(internal.DoubleGroupErrorMessage)
 		case internal.CodeVPNRunning:
 			ti.notify(nordclient.ConnectConnected)
+		case internal.CodeNothingToDo:
+			ti.notify(nordclient.ConnectConnecting)
 		case internal.CodeUFWDisabled:
 			ti.notify(nordclient.UFWDisabledMessage)
 		case internal.CodeConnecting:

@@ -3,6 +3,7 @@ package openvpn
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -73,6 +74,7 @@ func New(fwmark uint32, eventsPublisher *vpn.Events) *OpenVPN {
 
 // Start starts openvpn process
 func (ovpn *OpenVPN) Start(
+	ctx context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 ) error {
@@ -154,6 +156,7 @@ func (ovpn *OpenVPN) Start(
 	}
 
 	err = stage1Handler(
+		ctx,
 		ovpn,
 		mgmtCh,
 		creds.OpenVPNUsername,
@@ -378,17 +381,17 @@ func (ovpn *OpenVPN) publishDisconnected() {
 
 // stage1Handler handles events until first successful connection or timeout
 func stage1Handler(
+	ctx context.Context,
 	ovpn *OpenVPN,
 	eventCh chan gopenvpn.Event,
 	username string,
 	password string,
 ) error {
-	timeout := time.NewTimer(time.Second * 30)
 	for {
 		var e gopenvpn.Event
 		select {
-		case <-timeout.C:
-			return errServerTimeout
+		case <-ctx.Done():
+			return ctx.Err()
 		case e = <-eventCh:
 		}
 

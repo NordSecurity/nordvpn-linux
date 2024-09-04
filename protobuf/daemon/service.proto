@@ -28,6 +28,7 @@ service Daemon {
   rpc TokenInfo(Empty) returns (TokenInfoResponse);
   rpc Cities(CitiesRequest) returns (ServerGroupsList);
   rpc Connect(ConnectRequest) returns (stream Payload);
+  rpc ConnectCancel(Empty) returns (Payload);
   rpc Countries(Empty) returns (ServerGroupsList);
   rpc Disconnect(Empty) returns (stream Payload);
   rpc Groups(Empty) returns (ServerGroupsList);

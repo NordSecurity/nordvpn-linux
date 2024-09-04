@@ -1,6 +1,7 @@
 package meshnet
 
 import (
+	"context"
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -36,6 +37,7 @@ type Networker interface {
 	StatusMap() (map[string]string, error)
 	LastServerName() string
 	Start(
+		context.Context,
 		vpn.Credentials,
 		vpn.ServerData,
 		config.Allowlist,

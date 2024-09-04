@@ -3,6 +3,7 @@ package networker
 // Separate package is used due to circular dependency issues
 
 import (
+	"context"
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -27,6 +28,7 @@ type Mock struct {
 }
 
 func (Mock) Start(
+	context.Context,
 	vpn.Credentials,
 	vpn.ServerData,
 	config.Allowlist,
@@ -103,6 +105,7 @@ func (m *Mock) SetLanDiscovery(enabled bool) {
 type Failing struct{}
 
 func (Failing) Start(
+	context.Context,
 	vpn.Credentials,
 	vpn.ServerData,
 	config.Allowlist,

@@ -2,6 +2,7 @@
 package vpn
 
 import (
+	"context"
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -10,7 +11,7 @@ import (
 
 // VPN defines a set of operations that any type that wants to act as a vpn must implement.
 type VPN interface {
-	Start(Credentials, ServerData) error
+	Start(context.Context, Credentials, ServerData) error
 	Stop() error
 	State() State // required because of OpenVPN
 	IsActive() bool

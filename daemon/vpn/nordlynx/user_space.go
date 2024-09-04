@@ -2,6 +2,7 @@ package nordlynx
 
 import (
 	"bufio"
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -80,6 +81,7 @@ func uapiConfig(
 }
 
 func (u *UserSpace) Start(
+	_ context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 ) error {

@@ -1,6 +1,7 @@
 package nordlynx
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -33,6 +34,7 @@ func NewKernelSpace(fwmark uint32, eventsPublisher *vpn.Events) *KernelSpace {
 }
 
 func (k *KernelSpace) Start(
+	_ context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 ) (err error) {

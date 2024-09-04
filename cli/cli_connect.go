@@ -72,10 +72,12 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 	defer close(ch)
+
+	canceled := false
 	go func(ch chan os.Signal) {
 		for range ch {
-			// #nosec G104 -- LVPN-2090
-			c.client.Disconnect(context.Background(), &pb.Empty{})
+			canceled = true
+			c.client.ConnectCancel(context.Background(), &pb.Empty{})
 		}
 	}(ch)
 
@@ -94,7 +96,10 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			if err == io.EOF {
 				break
 			}
-			return formatError(err)
+			// No race condition here as `canceled` is always set before `cancel()`
+			if !canceled {
+				return formatError(err)
+			}
 		}
 
 		switch out.Type {
@@ -127,7 +132,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeDedicatedIPServiceButNoServers:
 			rpcErr = errors.New(NoPreferredDedicatedIPLocationSelected)
 		case internal.CodeDisconnected:
-			rpcErr = errors.New(internal.DisconnectSuccess)
+			color.Yellow(fmt.Sprintf(client.ConnectCanceled, internal.StringsToInterfaces(out.Data)...))
 		case internal.CodeTagNonexisting:
 			rpcErr = errors.New(internal.TagNonexistentErrorMessage)
 		case internal.CodeGroupNonexisting:
@@ -138,6 +143,8 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
+		case internal.CodeNothingToDo:
+			color.Yellow(client.ConnectConnecting)
 		case internal.CodeUFWDisabled:
 			color.Yellow(client.UFWDisabledMessage)
 		case internal.CodeConnecting:

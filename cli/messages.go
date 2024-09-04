@@ -242,11 +242,15 @@ Learn more:
 	MsgMeshnetPeerAutomaticFileshareDisableSuccess     = "Automatic fileshare for '%s' has been denied."
 	MsgMeshnetPeerAutomaticFileshareDefaultDirNotFound = "We couldn't enable auto-accept because the download directory doesn't exist."
 
-	MsgMeshnetPeerConnectUsage        = "Treats a peer as a VPN server and connects to it if the peer has allowed traffic routing."
-	MsgMeshnetPeerConnectSuccess      = "You are connected to Meshnet exit node '%s'."
+	MsgMeshnetPeerConnectUsage   = "Treats a peer as a VPN server and connects to it if the peer has allowed traffic routing."
+	MsgMeshnetPeerConnectSuccess = "You are connected to Meshnet exit node '%s'."
+	// TODO: copy review
+	MsgMeshnetPeerConnectCancel       = "Connection to Meshnet exit node '%s' canceled."
 	MsgMeshnetPeerDoesNotAllowRouting = "Meshnet peer '%s' does not allow traffic routing."
 	MsgMeshnetPeerAlreadyConnected    = "You are already connected."
-	MsgMeshnetPeerConnectFailed       = "Connect to other mesh peer failed - check if peer '%s' is online."
+	// TODO: copy review
+	MsgMeshnetPeerAlreadyConnecting = "Connection to meshnet peer is already in progress."
+	MsgMeshnetPeerConnectFailed     = "Connect to other mesh peer failed - check if peer '%s' is online."
 
 	MsgMeshnetPeerNicknameUsage           = "Sets/removes a peer device nickname within Meshnet."
 	MsgMeshnetPeerSetNicknameUsage        = "Sets a nickname for the specified peer device."
