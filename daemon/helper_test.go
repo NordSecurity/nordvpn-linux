@@ -15,6 +15,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
@@ -207,6 +208,7 @@ func testNewDataManager() *DataManager {
 		TestdataPath+TestServersFile,
 		TestdataPath+TestCountryFile,
 		TestdataPath+TestVersionFile,
+		events.NewDataUpdateEvents(),
 	)
 }
 

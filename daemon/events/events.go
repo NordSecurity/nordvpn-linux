@@ -255,6 +255,24 @@ func NewConfigEvents() *ConfigEvents {
 	}
 }
 
+type DataUpdatePublisher interface {
+	NotifyServersListUpdate(any) error
+}
+
+type DataUpdateEvents struct {
+	ServersUpdate events.PublishSubcriber[any]
+}
+
+func (d *DataUpdateEvents) Subscribe(to DataUpdatePublisher) {
+	d.ServersUpdate.Subscribe(to.NotifyServersListUpdate)
+}
+
+func NewDataUpdateEvents() *DataUpdateEvents {
+	return &DataUpdateEvents{
+		ServersUpdate: &subs.Subject[any]{},
+	}
+}
+
 type MockPublisherSubscriber[T any] struct {
 	EventPublished bool
 }

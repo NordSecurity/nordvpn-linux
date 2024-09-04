@@ -126,7 +126,12 @@ func statusStream(stateChan <-chan interface{}, stopChan chan<- struct{}, srv pb
 				config := configToProtobuf(e)
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_SettingsChange{SettingsChange: config}}); err != nil {
-					log.Println(internal.ErrorPrefix, "config change to send state update:", err)
+					log.Println(internal.ErrorPrefix, "config change failed to send state update:", err)
+				}
+			case pb.UpdateEvent:
+				if err := srv.Send(
+					&pb.AppState{State: &pb.AppState_UpdateEvent{UpdateEvent: e}}); err != nil {
+					log.Println(internal.ErrorPrefix, "update event failed to send state update:", err)
 				}
 			default:
 			}

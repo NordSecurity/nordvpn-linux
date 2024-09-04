@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/request"
@@ -25,7 +26,7 @@ var Salt = ""
 func main() {
 	dataPath := os.Args[1]
 	cm := config.NewFilesystemConfigManager(config.SettingsDataFilePath, config.InstallFilePath, Salt, config.LinuxMachineIDGetter{}, config.StdFilesystemHandle{}, nil)
-	dm := daemon.NewDataManager(dataPath+InsightsFilename, dataPath+ServersFilename, dataPath+countriesFilename, "")
+	dm := daemon.NewDataManager(dataPath+InsightsFilename, dataPath+ServersFilename, dataPath+countriesFilename, "", events.NewDataUpdateEvents())
 	client := request.NewStdHTTP()
 	validator, err := response.NewNordValidator()
 	if err != nil {

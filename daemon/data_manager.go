@@ -11,6 +11,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -24,20 +25,26 @@ type InsightsDataManager interface {
 }
 
 type DataManager struct {
-	appData      AppData
-	countryData  CountryData
-	insightsData InsightsData
-	serversData  ServersData
-	versionData  VersionData
-	mu           sync.Mutex
+	appData          AppData
+	countryData      CountryData
+	insightsData     InsightsData
+	serversData      ServersData
+	versionData      VersionData
+	dataUpdateEvents *events.DataUpdateEvents
+	mu               sync.Mutex
 }
 
-func NewDataManager(insightsFilePath, serversFilePath, countryFilePath, versionFilePath string) *DataManager {
+func NewDataManager(insightsFilePath,
+	serversFilePath,
+	countryFilePath,
+	versionFilePath string,
+	dataUpdateEvents *events.DataUpdateEvents) *DataManager {
 	return &DataManager{
-		countryData:  CountryData{filePath: countryFilePath},
-		insightsData: InsightsData{filePath: insightsFilePath},
-		serversData:  ServersData{filePath: serversFilePath},
-		versionData:  VersionData{filePath: versionFilePath},
+		countryData:      CountryData{filePath: countryFilePath},
+		insightsData:     InsightsData{filePath: insightsFilePath},
+		serversData:      ServersData{filePath: serversFilePath},
+		versionData:      VersionData{filePath: versionFilePath},
+		dataUpdateEvents: dataUpdateEvents,
 	}
 }
 
@@ -118,7 +125,15 @@ func (dm *DataManager) GetServersData() ServersData {
 	return dm.serversData
 }
 
-func (dm *DataManager) SetServersData(updatedAt time.Time, servers core.Servers, hash string) error {
+func (dm *DataManager) SetServersData(updatedAt time.Time, servers core.Servers, hash string) (err error) {
+	// The assumption here is that event publisher is thread safe/locked. We can publish the update event only after
+	// unlocking the main mutex, otherwise event manager reading anything from DataManager when handling
+	// the event would result in a deadlock.
+	defer func() {
+		if err == nil {
+			dm.dataUpdateEvents.ServersUpdate.Publish(true)
+		}
+	}()
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 	dm.serversData.UpdatedAt = updatedAt

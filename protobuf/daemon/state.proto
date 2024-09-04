@@ -12,6 +12,10 @@ enum ConnectionState {
     CONNECTED = 2;
 }
 
+enum UpdateEvent {
+    SERVERS_LIST_UPDATE = 0;
+}
+
 message ConnectionStatus {
     ConnectionState state = 1;
     string server_ip = 2;
@@ -36,5 +40,6 @@ message AppState {
         ConnectionStatus connection_status = 1;
         LoginEvent login_event = 2;
         GlobalSettings settings_change = 3;
+        UpdateEvent update_event = 4;
     }
 }
