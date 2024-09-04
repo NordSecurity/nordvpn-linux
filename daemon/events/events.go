@@ -38,6 +38,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
+		&subs.Subject[bool]{},
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[bool]{},
@@ -68,9 +69,10 @@ func NewEvents(
 	deviceLocation events.PublishSubcriber[core.Insights],
 	lanDiscovery events.PublishSubcriber[bool],
 	virtualLocation events.PublishSubcriber[bool],
+	postquantumVpn events.PublishSubcriber[bool],
 	login events.PublishSubcriber[events.DataAuthorization],
 	logout events.PublishSubcriber[events.DataAuthorization],
-	postquantumVpn events.PublishSubcriber[bool],
+	mfa events.PublishSubcriber[bool],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -103,6 +105,7 @@ func NewEvents(
 		User: &LoginEvents{
 			Login:  login,
 			Logout: logout,
+			MFA:    mfa,
 		},
 	}
 }
@@ -232,16 +235,19 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 type LoginPublisher interface {
 	NotifyLogin(events.DataAuthorization) error
 	NotifyLogout(events.DataAuthorization) error
+	NotifyMFA(bool) error
 }
 
 type LoginEvents struct {
 	Login  events.PublishSubcriber[events.DataAuthorization]
 	Logout events.PublishSubcriber[events.DataAuthorization]
+	MFA    events.PublishSubcriber[bool]
 }
 
 func (l *LoginEvents) Subscribe(to LoginPublisher) {
 	l.Login.Subscribe(to.NotifyLogin)
 	l.Logout.Subscribe(to.NotifyLogout)
+	l.MFA.Subscribe(to.NotifyMFA)
 }
 
 type ConfigPublisher interface {
