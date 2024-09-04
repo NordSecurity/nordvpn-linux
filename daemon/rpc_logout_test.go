@@ -14,6 +14,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nc"
+	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 )
@@ -34,14 +35,14 @@ func (mockApi) Logout(token string) error      { return nil }
 
 func TestLogout_Token(t *testing.T) {
 	rpc := RPC{
-		ac:        &workingLoginChecker{},
-		cm:        newMockConfigManager(),
-		norduser:  &testnorduser.MockNorduserCombinedService{},
-		netw:      &networker.Mock{},
-		ncClient:  mockNC{},
-		publisher: &subs.Subject[string]{},
-		api:       mockApi{},
-		events:    &daemonevents.Events{User: &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}}},
+		ac:             &workingLoginChecker{},
+		cm:             newMockConfigManager(),
+		norduser:       &testnorduser.MockNorduserCombinedService{},
+		netw:           &networker.Mock{},
+		ncClient:       mockNC{},
+		publisher:      &subs.Subject[string]{},
+		credentialsAPI: &testcore.CredentialsAPIMock{},
+		events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}}},
 	}
 
 	tests := []struct {

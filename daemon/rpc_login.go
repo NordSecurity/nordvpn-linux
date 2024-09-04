@@ -74,7 +74,7 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 		return pbresp, nil
 	}
 
-	credentials, err := r.api.ServiceCredentials(resp.Token)
+	credentials, err := r.credentialsAPI.ServiceCredentials(resp.Token)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "retrieving credentials:", err)
 		if errors.Is(err, core.ErrServerInternal) {
@@ -171,7 +171,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (payload *
 		return &pb.Empty{}, err
 	}
 
-	credentials, err := r.api.ServiceCredentials(resp.Token)
+	credentials, err := r.credentialsAPI.ServiceCredentials(resp.Token)
 	if err != nil {
 		r.publisher.Publish(err.Error())
 		return &pb.Empty{}, err

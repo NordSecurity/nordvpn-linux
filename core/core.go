@@ -32,6 +32,7 @@ type CredentialsAPI interface {
 	DeleteToken(string) error
 	TrustedPassToken(string) (*TrustedPassTokenResponse, error)
 	MultifactorAuthStatus(string) (*MultifactorAuthStatusResponse, error)
+	Logout(token string) error
 }
 
 type InsightsAPI interface {
@@ -46,12 +47,9 @@ type ServersAPI interface {
 }
 
 type CombinedAPI interface {
-	CredentialsAPI
 	InsightsAPI
-	ServersAPI
 	Base() string
 	Plans() (*Plans, error)
-	Logout(token string) error
 	CreateUser(email, password string) (*UserCreateResponse, error)
 }
 

@@ -25,7 +25,7 @@ func (r *RPC) StartJobs(statePublisher *state.StatePublisher) {
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
 	// TODO what if configs file is deleted just before servers job or disk is full?
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(6*time.Hour), gocron.NewTask(JobCountries(r.dm, r.api)), gocron.WithName("job countries")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(6*time.Hour), gocron.NewTask(JobCountries(r.dm, r.serversAPI)), gocron.WithName("job countries")); err != nil {
 		log.Println(internal.WarningPrefix, "job countries schedule error:", err)
 	}
 
@@ -34,12 +34,12 @@ func (r *RPC) StartJobs(statePublisher *state.StatePublisher) {
 		log.Println(internal.WarningPrefix, "job insights schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(1*time.Hour), gocron.NewTask(JobServers(r.dm, r.cm, r.api, true)), gocron.WithName("job servers")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(1*time.Hour), gocron.NewTask(JobServers(r.dm, r.cm, r.serversAPI, true)), gocron.WithName("job servers")); err != nil {
 		log.Println(internal.WarningPrefix, "job servers schedule error:", err)
 	}
 	// TODO if autoconnect runs before servers job, it will return zero servers list
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(15*time.Minute), gocron.NewTask(JobServerCheck(r.dm, r.api, r.netw, r.lastServer)), gocron.WithName("job servers check")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(15*time.Minute), gocron.NewTask(JobServerCheck(r.dm, r.serversAPI, r.netw, r.lastServer)), gocron.WithName("job servers check")); err != nil {
 		log.Println(internal.WarningPrefix, "job servers check schedule error:", err)
 	}
 

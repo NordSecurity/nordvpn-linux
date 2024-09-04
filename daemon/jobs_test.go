@@ -26,6 +26,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
@@ -103,7 +104,7 @@ func TestStartAutoConnect(t *testing.T) {
 				dm,
 				api,
 				test.serversAPI,
-				&validCredentialsAPI{},
+				&testcore.CredentialsAPIMock{},
 				testNewCDNAPI(),
 				testNewRepoAPI(),
 				&mockAuthenticationAPI{},
@@ -270,7 +271,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				testNewDataManager(),
 				api,
 				test.serversAPI,
-				&validCredentialsAPI{},
+				&testcore.CredentialsAPIMock{},
 				testNewCDNAPI(),
 				testNewRepoAPI(),
 				&mockAuthenticationAPI{},
