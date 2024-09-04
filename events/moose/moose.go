@@ -235,7 +235,10 @@ func (s *Subscriber) NotifyVirtualLocation(data bool) error {
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue(data))
 }
 
-func (s *Subscriber) NotifyPostquantumVpn(bool) error { return nil }
+func (s *Subscriber) NotifyPostquantumVpn(data bool) error {
+	//TODO: for now using existing field to track PQ feature. Later to be added/used dedicated field.
+	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyMeta(fmt.Sprintf("%t", data)))
+}
 
 func (s *Subscriber) NotifyIpv6(data bool) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIpv6EnabledValue(data)); err != nil {
