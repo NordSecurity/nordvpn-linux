@@ -35,7 +35,7 @@ type DaemonClient interface {
 	LoginOAuth2Callback(ctx context.Context, in *String, opts ...grpc.CallOption) (*Empty, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Payload, error)
 	Plans(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PlansResponse, error)
-	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -54,6 +54,8 @@ type DaemonClient interface {
 	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error)
 	SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
+	UnsetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
+	UnsetAllAllowlist(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error)
 	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
@@ -62,6 +64,8 @@ type DaemonClient interface {
 	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
 	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (Daemon_SubscribeToStateChangesClient, error)
+	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
+	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 }
 
 type daemonClient struct {
@@ -258,8 +262,8 @@ func (c *daemonClient) Plans(ctx context.Context, in *Empty, opts ...grpc.CallOp
 	return out, nil
 }
 
-func (c *daemonClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	out := new(Payload)
+func (c *daemonClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error) {
+	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -429,6 +433,24 @@ func (c *daemonClient) SetAllowlist(ctx context.Context, in *SetAllowlistRequest
 	return out, nil
 }
 
+func (c *daemonClient) UnsetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/UnsetAllowlist", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) UnsetAllAllowlist(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/UnsetAllAllowlist", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *daemonClient) Settings(ctx context.Context, in *SettingsRequest, opts ...grpc.CallOption) (*SettingsResponse, error) {
 	out := new(SettingsResponse)
 	err := c.cc.Invoke(ctx, "/pb.Daemon/Settings", in, out, opts...)
@@ -524,6 +546,24 @@ func (x *daemonSubscribeToStateChangesClient) Recv() (*AppState, error) {
 	return m, nil
 }
 
+func (c *daemonClient) GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error) {
+	out := new(ServersResponse)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/GetServers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, "/pb.Daemon/SetPostQuantum", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility
@@ -541,7 +581,7 @@ type DaemonServer interface {
 	LoginOAuth2Callback(context.Context, *String) (*Empty, error)
 	Logout(context.Context, *LogoutRequest) (*Payload, error)
 	Plans(context.Context, *Empty) (*PlansResponse, error)
-	Ping(context.Context, *Empty) (*Payload, error)
+	Ping(context.Context, *Empty) (*PingResponse, error)
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
 	Register(context.Context, *RegisterRequest) (*Payload, error)
 	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
@@ -560,6 +600,8 @@ type DaemonServer interface {
 	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
 	SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error)
 	SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
+	UnsetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
+	UnsetAllAllowlist(context.Context, *Empty) (*Payload, error)
 	Settings(context.Context, *SettingsRequest) (*SettingsResponse, error)
 	SettingsProtocols(context.Context, *Empty) (*Payload, error)
 	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
@@ -568,6 +610,8 @@ type DaemonServer interface {
 	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
 	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
 	SubscribeToStateChanges(*Empty, Daemon_SubscribeToStateChangesServer) error
+	GetServers(context.Context, *Empty) (*ServersResponse, error)
+	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -614,7 +658,7 @@ func (UnimplementedDaemonServer) Logout(context.Context, *LogoutRequest) (*Paylo
 func (UnimplementedDaemonServer) Plans(context.Context, *Empty) (*PlansResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Plans not implemented")
 }
-func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*Payload, error) {
+func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedDaemonServer) RateConnection(context.Context, *RateRequest) (*Payload, error) {
@@ -671,6 +715,12 @@ func (UnimplementedDaemonServer) SetLANDiscovery(context.Context, *SetLANDiscove
 func (UnimplementedDaemonServer) SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAllowlist not implemented")
 }
+func (UnimplementedDaemonServer) UnsetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsetAllowlist not implemented")
+}
+func (UnimplementedDaemonServer) UnsetAllAllowlist(context.Context, *Empty) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnsetAllAllowlist not implemented")
+}
 func (UnimplementedDaemonServer) Settings(context.Context, *SettingsRequest) (*SettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Settings not implemented")
 }
@@ -694,6 +744,12 @@ func (UnimplementedDaemonServer) SetVirtualLocation(context.Context, *SetGeneric
 }
 func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, Daemon_SubscribeToStateChangesServer) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToStateChanges not implemented")
+}
+func (UnimplementedDaemonServer) GetServers(context.Context, *Empty) (*ServersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServers not implemented")
+}
+func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetPostQuantum not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 
@@ -1293,6 +1349,42 @@ func _Daemon_SetAllowlist_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_UnsetAllowlist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAllowlistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).UnsetAllowlist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/UnsetAllowlist",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).UnsetAllowlist(ctx, req.(*SetAllowlistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_UnsetAllAllowlist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).UnsetAllAllowlist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/UnsetAllAllowlist",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).UnsetAllAllowlist(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Daemon_Settings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SettingsRequest)
 	if err := dec(in); err != nil {
@@ -1440,6 +1532,42 @@ func (x *daemonSubscribeToStateChangesServer) Send(m *AppState) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Daemon_GetServers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).GetServers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/GetServers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).GetServers(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetPostQuantum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetPostQuantum(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Daemon/SetPostQuantum",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetPostQuantum(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1564,6 +1692,14 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_SetAllowlist_Handler,
 		},
 		{
+			MethodName: "UnsetAllowlist",
+			Handler:    _Daemon_UnsetAllowlist_Handler,
+		},
+		{
+			MethodName: "UnsetAllAllowlist",
+			Handler:    _Daemon_UnsetAllAllowlist_Handler,
+		},
+		{
 			MethodName: "Settings",
 			Handler:    _Daemon_Settings_Handler,
 		},
@@ -1590,6 +1726,14 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetVirtualLocation",
 			Handler:    _Daemon_SetVirtualLocation_Handler,
+		},
+		{
+			MethodName: "GetServers",
+			Handler:    _Daemon_GetServers_Handler,
+		},
+		{
+			MethodName: "SetPostQuantum",
+			Handler:    _Daemon_SetPostQuantum_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

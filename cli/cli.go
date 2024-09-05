@@ -322,6 +322,21 @@ func NewApp(version, environment, hash, salt string,
 				Action:       cmd.SetVirtualLocation,
 				BashComplete: cmd.SetBoolAutocomplete,
 			},
+			{
+				Name:         "post-quantum",
+				Aliases:      []string{"pq"},
+				Usage:        SetPqUsageText,
+				Action:       cmd.SetPostquantumVpn,
+				BashComplete: cmd.SetBoolAutocomplete,
+				ArgsUsage:    MsgSetBoolArgsUsage,
+				Description: fmt.Sprintf(
+					MsgSetBoolDescription,
+					SetPqUsageText,
+					"post-quantum",
+					"post-quantum",
+				),
+				Hidden: cmd.Except(config.Technology_NORDLYNX),
+			},
 		},
 	}
 
@@ -459,12 +474,9 @@ func NewApp(version, environment, hash, salt string,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 		},
 		{
-			Name:  "version",
-			Usage: "Shows the app version",
-			Action: func(c *cli.Context) error {
-				cli.VersionPrinter(c)
-				return nil
-			},
+			Name:               "version",
+			Usage:              "Shows daemon version",
+			Action:             cmd.Version,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 		},
 		{
@@ -1150,6 +1162,8 @@ func meshnetErrorToError(code meshpb.MeshnetErrorCode) error {
 		return errors.New(MsgMeshnetNordlynxMustBeEnabled)
 	case meshpb.MeshnetErrorCode_TUNNEL_CLOSED:
 		return errors.New(DisconnectNotConnected)
+	case meshpb.MeshnetErrorCode_CONFLICT_WITH_PQ:
+		return errors.New(SetPqAndMeshnet)
 	default:
 		return errors.New(AccountInternalError)
 	}

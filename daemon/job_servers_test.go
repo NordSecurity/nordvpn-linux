@@ -26,7 +26,7 @@ func (mockServersAPI) Servers() (core.Servers, http.Header, error) {
 }
 
 func (mockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _ float64) (core.Servers, http.Header, error) {
-	if filter.Group == config.DedicatedIP {
+	if filter.Group == config.ServerGroup_DEDICATED_IP {
 		return nil, nil, fmt.Errorf("API must not be called for Dedicated IP")
 	}
 

@@ -18,7 +18,7 @@ import (
 
 func isDedicatedIP(server core.Server) bool {
 	index := slices.IndexFunc(server.Groups, func(group core.Group) bool {
-		return group.ID == config.DedicatedIP
+		return group.ID == config.ServerGroup_DEDICATED_IP
 	})
 
 	return index != -1
@@ -136,6 +136,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 		Obfuscated:        cfg.AutoConnectData.Obfuscate,
 		OpenVPNVersion:    server.Version(),
 		VirtualLocation:   server.IsVirtualLocation(),
+		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
@@ -206,6 +207,9 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 					log.Printf("POST_CONNECT system info:\n%s\n", r.networkInfoFunc())
 				}()
 			}
+
+			parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
+			r.ConnectionParameters.SetConnectionParameters(pb.ConnectionSource_MANUAL, parameters)
 			return nil
 		case internal.CodeFailure:
 			log.Println(internal.ErrorPrefix, ev.Message)

@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"net"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -29,26 +28,12 @@ func (c *cmd) AllowlistRemoveSubnet(ctx *cli.Context) error {
 		return formatError(argsCountError(ctx))
 	}
 
-	_, subnet, err := net.ParseCIDR(args.First())
-	if err != nil {
-		return formatError(argsParseError(ctx))
-	}
+	subnet := args.First()
 
-	settings, err := c.getSettings()
-	if err != nil {
-		return formatError(err)
-	}
-	allowlist := settings.Settings.GetAllowlist()
-
-	subnetIndex := slices.Index(allowlist.Subnets, subnet.String())
-	if subnetIndex < 0 {
-		return formatError(fmt.Errorf(AllowlistRemoveSubnetExistsError, subnet.String()))
-	}
-
-	allowlist.Subnets = slices.Delete(allowlist.Subnets, subnetIndex, subnetIndex+1)
-
-	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: allowlist,
+	resp, err := c.client.UnsetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+		Request: &pb.SetAllowlistRequest_SetAllowlistSubnetRequest{
+			SetAllowlistSubnetRequest: &pb.SetAllowlistSubnetRequest{Subnet: subnet},
+		},
 	})
 	if err != nil {
 		return formatError(err)
@@ -61,6 +46,10 @@ func (c *cmd) AllowlistRemoveSubnet(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(AllowlistRemoveSubnetExistsError, subnet))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
+	case internal.CodeAllowlistInvalidSubnet:
+		return formatError(argsParseError(ctx))
+	case internal.CodeAllowlistSubnetNoop:
+		return formatError(fmt.Errorf(AllowlistRemoveSubnetExistsError, subnet))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(AllowlistRemoveSubnetSuccess, subnet))
 	}

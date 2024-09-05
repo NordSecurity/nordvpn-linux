@@ -15,6 +15,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
@@ -207,6 +208,7 @@ func testNewDataManager() *DataManager {
 		TestdataPath+TestServersFile,
 		TestdataPath+TestCountryFile,
 		TestdataPath+TestVersionFile,
+		events.NewDataUpdateEvents(),
 	)
 }
 
@@ -263,26 +265,26 @@ func serversList() core.Servers {
 
 	groups := core.Groups{
 		core.Group{
-			ID:    config.P2P,
+			ID:    config.ServerGroup_P2P,
 			Title: "P2P",
 		},
 		core.Group{
-			ID:    config.DoubleVPN,
+			ID:    config.ServerGroup_DoubleVPN,
 			Title: "Double VPN",
 		},
 		core.Group{
-			ID:    config.StandardVPNServers,
+			ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
 			Title: "Standard VPN Servers",
 		},
 	}
 
 	dipGroups := core.Groups{
 		core.Group{
-			ID:    config.DedicatedIP,
+			ID:    config.ServerGroup_DEDICATED_IP,
 			Title: "Dedicated IP",
 		},
 		core.Group{
-			ID:    config.StandardVPNServers,
+			ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
 			Title: "Standard VPN Servers",
 		},
 	}

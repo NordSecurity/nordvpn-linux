@@ -37,6 +37,7 @@ func (*dummyAnalytics) NotifyHeartBeat(int) error                      { return 
 func (*dummyAnalytics) NotifyDeviceLocation(core.Insights) error       { return nil }
 func (*dummyAnalytics) NotifyLANDiscovery(bool) error                  { return nil }
 func (*dummyAnalytics) NotifyVirtualLocation(bool) error               { return nil }
+func (*dummyAnalytics) NotifyPostquantumVpn(bool) error                { return nil }
 
 func newAnalytics(eventsDbPath string, fs *config.FilesystemConfigManager,
 	version, env, id string) *dummyAnalytics {

@@ -55,14 +55,18 @@ type Config struct {
 }
 
 type AutoConnectData struct {
-	ID        int64    `json:"id,omitempty"`
-	ServerTag string   `json:"server_tag,omitempty"`
+	ID        int64  `json:"id,omitempty"`
+	ServerTag string `json:"server_tag,omitempty"`
+	Country   string
+	City      string
+	Group     ServerGroup
 	Protocol  Protocol `json:"protocol,omitempty"`
 	// TODO: rename json key when v4 comes out.
 	ThreatProtectionLite bool      `json:"cybersec,omitempty"`
 	Obfuscate            bool      `json:"obfuscate,omitempty"`
 	DNS                  DNS       `json:"dns,omitempty"`
 	Allowlist            Allowlist `json:"whitelist,omitempty"`
+	PostquantumVpn       bool      `json:"postquantum_vpn"`
 }
 
 type DNS []string

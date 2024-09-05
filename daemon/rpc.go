@@ -43,19 +43,20 @@ type RPC struct {
 	networkInfoFunc func() string
 	events          *daemonevents.Events
 	// factory picks which VPN implementation to use
-	factory          FactoryFunc
-	endpointResolver network.EndpointResolver
-	endpoint         network.Endpoint
-	scheduler        gocron.Scheduler
-	netw             networker.Networker
-	publisher        events.Publisher[string]
-	nameservers      dns.Getter
-	ncClient         nc.NotificationClient
-	analytics        events.Analytics
-	norduser         service.Service
-	meshRegistry     mesh.Registry
-	systemShutdown   atomic.Bool
-	statePublisher   *state.StatePublisher
+	factory              FactoryFunc
+	endpointResolver     network.EndpointResolver
+	endpoint             network.Endpoint
+	scheduler            gocron.Scheduler
+	netw                 networker.Networker
+	publisher            events.Publisher[string]
+	nameservers          dns.Getter
+	ncClient             nc.NotificationClient
+	analytics            events.Analytics
+	norduser             service.Service
+	meshRegistry         mesh.Registry
+	systemShutdown       atomic.Bool
+	statePublisher       *state.StatePublisher
+	ConnectionParameters ParametersStorage
 	pb.UnimplementedDaemonServer
 }
 

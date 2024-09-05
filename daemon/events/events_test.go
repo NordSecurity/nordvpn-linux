@@ -53,6 +53,7 @@ func (mockDaemonSubscriber) NotifyLANDiscovery(bool) error                  { re
 func (mockDaemonSubscriber) NotifyVirtualLocation(bool) error               { return nil }
 func (mockDaemonSubscriber) NotifyLogin(events.DataAuthorization) error     { return nil }
 func (mockDaemonSubscriber) NotifyLogout(events.DataAuthorization) error    { return nil }
+func (mockDaemonSubscriber) NotifyPostquantumVpn(bool) error                { return nil }
 
 // isValid returns true if given val is not nil. In case val is struct,
 // it checks if any of exported fields are not nil

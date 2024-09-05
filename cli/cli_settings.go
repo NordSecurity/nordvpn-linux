@@ -48,7 +48,13 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Notify))
 	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSpecificSettings.Tray))
-	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.Settings.AutoConnect))
+	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.Settings.AutoConnectData.Enabled))
+	if settings.Settings.AutoConnectData.Enabled && internal.IsDevEnv(string(c.environment)) {
+		fmt.Printf("Auto-connect country: %s\n", settings.Settings.AutoConnectData.Country)
+		fmt.Printf("Auto-connect city: %s\n", settings.Settings.AutoConnectData.City)
+		fmt.Printf("Auto-connect group: %s\n", settings.Settings.AutoConnectData.ServerGroup)
+	}
+
 	fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Settings.Ipv6))
 	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Settings.Meshnet))
 	if len(settings.Settings.Dns) == 0 {
@@ -58,6 +64,9 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.Settings.LanDiscovery))
 	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.Settings.VirtualLocation))
+	if settings.Settings.Technology == config.Technology_NORDLYNX {
+		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.Settings.PostquantumVpn))
+	}
 
 	displayAllowlist(settings.Settings.Allowlist)
 	return nil

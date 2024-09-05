@@ -15,9 +15,7 @@ import (
 const AllowlistRemoveAllUsageText = "Removes all ports and subnets from the allowlist"
 
 func (c *cmd) AllowlistRemoveAll(ctx *cli.Context) error {
-	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: &pb.Allowlist{},
-	})
+	resp, err := c.client.UnsetAllAllowlist(context.Background(), &pb.Empty{})
 	if err != nil {
 		return formatError(err)
 	}

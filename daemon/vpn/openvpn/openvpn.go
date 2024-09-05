@@ -541,6 +541,8 @@ func newManagementClient(eventCh chan<- gopenvpn.Event) (chan *gopenvpn.MgmtClie
 		return nil, nil, err
 	}
 
+	internal.UpdateFilePermissions(openvpnManagementSocket, internal.PermUserRWX)
+
 	var clientCh = make(chan *gopenvpn.MgmtClient)
 	var errorCh = make(chan error)
 	go func() {

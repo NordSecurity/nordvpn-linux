@@ -40,6 +40,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[events.DataAuthorization]{},
+		&subs.Subject[bool]{},
 	)
 }
 
@@ -69,6 +70,7 @@ func NewEvents(
 	virtualLocation events.PublishSubcriber[bool],
 	login events.PublishSubcriber[events.DataAuthorization],
 	logout events.PublishSubcriber[events.DataAuthorization],
+	postquantumVpn events.PublishSubcriber[bool],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -88,6 +90,7 @@ func NewEvents(
 			Defaults:             defaults,
 			LANDiscovery:         lanDiscovery,
 			VirtualLocation:      virtualLocation,
+			PostquantumVPN:       postquantumVpn,
 		},
 		Service: &ServiceEvents{
 			Connect:        connect,
@@ -133,6 +136,7 @@ type SettingsPublisher interface {
 	NotifyDefaults(any) error
 	NotifyLANDiscovery(bool) error
 	NotifyVirtualLocation(bool) error
+	NotifyPostquantumVpn(bool) error
 }
 
 type SettingsEvents struct {
@@ -152,6 +156,7 @@ type SettingsEvents struct {
 	Defaults             events.PublishSubcriber[any]
 	LANDiscovery         events.PublishSubcriber[bool]
 	VirtualLocation      events.PublishSubcriber[bool]
+	PostquantumVPN       events.PublishSubcriber[bool]
 }
 
 func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
@@ -171,6 +176,7 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Defaults.Subscribe(to.NotifyDefaults)
 	s.LANDiscovery.Subscribe(to.NotifyLANDiscovery)
 	s.VirtualLocation.Subscribe(to.NotifyVirtualLocation)
+	s.PostquantumVPN.Subscribe(to.NotifyPostquantumVpn)
 }
 
 type ServicePublisher interface {
@@ -220,6 +226,7 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Notify.Publish(!(cfg.UsersData.NotifyOff != nil && len(cfg.UsersData.NotifyOff) > 0))
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.VirtualLocation.Publish(cfg.VirtualLocation.Get())
+	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)
 }
 
 type LoginPublisher interface {
@@ -252,6 +259,24 @@ func (c *ConfigEvents) Subscribe(to ConfigPublisher) {
 func NewConfigEvents() *ConfigEvents {
 	return &ConfigEvents{
 		Config: &subs.Subject[*config.Config]{},
+	}
+}
+
+type DataUpdatePublisher interface {
+	NotifyServersListUpdate(any) error
+}
+
+type DataUpdateEvents struct {
+	ServersUpdate events.PublishSubcriber[any]
+}
+
+func (d *DataUpdateEvents) Subscribe(to DataUpdatePublisher) {
+	d.ServersUpdate.Subscribe(to.NotifyServersListUpdate)
+}
+
+func NewDataUpdateEvents() *DataUpdateEvents {
+	return &DataUpdateEvents{
+		ServersUpdate: &subs.Subject[any]{},
 	}
 }
 

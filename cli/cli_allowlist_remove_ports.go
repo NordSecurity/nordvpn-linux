@@ -48,21 +48,6 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	if startPort > endPort {
-		return formatError(argsParseError(ctx))
-	}
-
-	if startPort < AllowlistMinPort || startPort > AllowlistMaxPort ||
-		endPort < AllowlistMinPort || endPort > AllowlistMaxPort {
-		return formatError(fmt.Errorf(
-			AllowlistPortsRangeError,
-			startPort,
-			endPort,
-			AllowlistMinPort,
-			AllowlistMaxPort,
-		))
-	}
-
 	isUDP := false
 	isTCP := false
 	if args.Len() == 2 {
@@ -79,51 +64,17 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 		}
 	}
 
-	settings, err := c.getSettings()
-	if err != nil {
-		return formatError(err)
-	}
-
-	allowlist := settings.Settings.GetAllowlist()
-	slices.Sort(allowlist.Ports.Tcp)
-	slices.Sort(allowlist.Ports.Udp)
-
-	var (
-		startUDPIndex int
-		endUDPIndex   int
-		startTCPIndex int
-		endTCPIndex   int
-	)
-	if isUDP {
-		startUDPIndex = slices.Index(allowlist.Ports.Udp, startPort)
-		endUDPIndex = slices.Index(allowlist.Ports.Udp, endPort)
-	}
-	if isTCP {
-		startTCPIndex = slices.Index(allowlist.Ports.Tcp, startPort)
-		endTCPIndex = slices.Index(allowlist.Ports.Tcp, endPort)
-	}
-
-	udpNotFound := (startUDPIndex < 0 || endUDPIndex < 0)
-	tcpNotFound := (startTCPIndex < 0 || endTCPIndex < 0)
-
-	if isUDP && udpNotFound || isTCP && tcpNotFound {
-		return formatError(fmt.Errorf(
-			AllowlistRemovePortsExistsError,
-			startPort,
-			endPort,
-			getProtocolStr(isTCP && tcpNotFound, isUDP && udpNotFound),
-		))
-	}
-
-	if isUDP && startUDPIndex >= 0 {
-		allowlist.Ports.Udp = slices.Delete(allowlist.Ports.Udp, startUDPIndex, endUDPIndex+1)
-	}
-	if isTCP && startTCPIndex >= 0 {
-		allowlist.Ports.Tcp = slices.Delete(allowlist.Ports.Tcp, startTCPIndex, endTCPIndex+1)
-	}
-
-	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
-		Allowlist: allowlist,
+	resp, err := c.client.UnsetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+		Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+			SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+				IsUdp: isUDP,
+				IsTcp: isTCP,
+				PortRange: &pb.PortRange{
+					StartPort: startPort,
+					EndPort:   endPort,
+				},
+			},
+		},
 	})
 	if err != nil {
 		return formatError(err)
@@ -141,6 +92,21 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 		))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
+	case internal.CodeAllowlistPortOutOfRange:
+		return formatError(fmt.Errorf(
+			AllowlistPortsRangeError,
+			startPort,
+			endPort,
+			internal.AllowlistMinPort,
+			internal.AllowlistMaxPort,
+		))
+	case internal.CodeAllowlistPortNoop:
+		return formatError(fmt.Errorf(
+			AllowlistRemovePortsExistsError,
+			startPort,
+			endPort,
+			getProtocolStr(isTCP, isUDP),
+		))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(
 			AllowlistRemovePortsSuccess,

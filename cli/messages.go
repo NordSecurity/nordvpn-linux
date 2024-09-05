@@ -16,6 +16,8 @@ We couldn’t process your payment. Please try again.`
 	LogoutUsageText       = "Logs you out"
 	PersistTokenUsageText = "Keep your current access token valid after logging out."
 
+	MsgNordVPNGroup = "By default, all users who are members of the 'nordvpn' group have permission to control the NordVPN application.\nTo limit access exclusively to the root user, remove all users from the 'nordvpn' group."
+
 	RateNoArgsMessage    = "Type [1–5] to rate your previous connection (1 – poor, 5 – great): "
 	RateNoConnectionMade = "It seems you haven’t connected to VPN yet. Please rate your experience after your first session."
 	RateAlreadyRated     = "You have already provided a rating for your active/previous connection."
@@ -64,6 +66,7 @@ Example: nordvpn set %s on`
 	SetProtocolAlreadySet  = "Protocol is already set to %s"
 
 	SetTechnologyDepsError = "Missing %s kernel module or configuration utility."
+	SetTechnologyDisablePQ = "The post-quantum VPN is only available with %s technology. Disable post-quantum before switching."
 
 	SetDNSDisableThreatProtectionLite = "Disabling Threat Protection Lite."
 	SetDNSInvalidAddress              = "The provided IP address is invalid."
@@ -356,4 +359,8 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFooterVirtualLocationNote     = "* Virtual location servers"
 
 	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
+
+	SetPqUnavailable = "The post-quantum VPN is unavailable with OpenVPN. Switch to NordLynx to enable post-quantum VPN capabilities."
+	SetPqAndMeshnet  = "The post-quantum VPN and Meshnet cannot operate simultaneously. Please disable one feature to enable the other."
+	SetPqUsageText   = "Enables or disables post-quantum VPN. When enabled, your VPN connection uses new post-quantum cryptography, resistant to quantum computer attacks. Not compatible with Meshnet."
 )

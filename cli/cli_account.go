@@ -79,7 +79,7 @@ func (c *cmd) Account(ctx *cli.Context) error {
 		mfa = "unknown"
 	}
 
-	fmt.Println("MultifactorAuthentication:", mfa)
+	fmt.Println("Multi-factor Authentication (MFA):", mfa)
 
 	return nil
 }

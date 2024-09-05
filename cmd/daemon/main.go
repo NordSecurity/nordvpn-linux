@@ -420,11 +420,14 @@ func main() {
 		meshnetEvents.PeerUpdate,
 		nc.NewCredsFetcher(defaultAPI, fsystem))
 
+	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
+	dataUpdateEvents.Subscribe(statePublisher)
 	dm := daemon.NewDataManager(
 		daemon.InsightsFilePath,
 		daemon.ServersDataFilePath,
 		daemon.CountryDataFilePath,
 		daemon.VersionFilePath,
+		dataUpdateEvents,
 	)
 
 	rpc := daemon.NewRPC(

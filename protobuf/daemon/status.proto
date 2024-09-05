@@ -6,6 +6,20 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 import "config/protocol.proto";
 import "config/technology.proto";
+import "config/group.proto";
+
+enum ConnectionSource {
+  UNKNOWN_SOURCE = 0;
+  MANUAL = 1;
+  AUTO = 2;
+}
+
+message ConnectionParameters {
+  ConnectionSource source = 1;
+  string country = 2;
+  string city = 3;
+  config.ServerGroup group = 4;
+}
 
 message StatusResponse {
   string state = 1;
@@ -20,4 +34,5 @@ message StatusResponse {
   int64 uptime = 10;
   string name = 11;
   bool virtualLocation = 12;
+  ConnectionParameters parameters = 13;
 }

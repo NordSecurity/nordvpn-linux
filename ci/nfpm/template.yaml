@@ -128,6 +128,7 @@ overrides:
   deb:
     # Deb specific scripts.
     scripts:
+      preinstall: ${WORKDIR}/contrib/scriptlets/deb/preinst
       postinstall: ${WORKDIR}/contrib/scriptlets/deb/postinst
       preremove: ${WORKDIR}/contrib/scriptlets/deb/prerm
       postremove: ${WORKDIR}/contrib/scriptlets/deb/postrm

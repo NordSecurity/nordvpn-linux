@@ -21,5 +21,6 @@ sudo snap connect nordvpn:network-control
 sudo snap connect nordvpn:network-observe
 sudo snap connect nordvpn:firewall-control
 sudo snap connect nordvpn:system-observe
+sudo snap connect nordvpn:login-session-observe
 
 echo "~~~INSTALL Snap DONE."

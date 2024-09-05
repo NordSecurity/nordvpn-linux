@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+import "config/group.proto";
+
+enum Technology {
+    UNKNOWN_TECHNLOGY = 0;
+    NORDLYNX = 1;
+    OPENVPN_TCP = 2;
+    OPENVPN_UDP = 3;
+    OBFUSCATED_OPENVPN_TCP = 4;
+    OBFUSCATED_OPENVPN_UDP = 5;
+}
+
+message Server {
+    int64 id = 1;
+    string country_code = 2;
+    string city_name = 3;
+    string host_name = 4;
+    bool virtual = 5;
+    config.ServerGroup server_group = 6;
+    repeated Technology technologies = 7;
+}
+
+message ServersResponse {
+    repeated Server servers = 1;
+}

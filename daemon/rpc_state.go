@@ -50,6 +50,19 @@ func configToProtobuf(cfg *config.Config) *pb.GlobalSettings {
 
 	settings := pb.GlobalSettings{
 		Settings: &pb.Settings{
+			Technology: cfg.Technology,
+			Firewall:   cfg.Firewall,
+			Fwmark:     cfg.FirewallMark,
+			Routing:    cfg.Routing.Get(),
+			Analytics:  cfg.Analytics.Get(),
+			KillSwitch: cfg.KillSwitch,
+			AutoConnectData: &pb.AutoconnectData{
+				Enabled:     cfg.AutoConnect,
+				Country:     cfg.AutoConnectData.Country,
+				City:        cfg.AutoConnectData.City,
+				ServerGroup: cfg.AutoConnectData.Group,
+			},
+			Ipv6:                 cfg.IPv6,
 			Meshnet:              cfg.Mesh,
 			Dns:                  cfg.AutoConnectData.DNS,
 			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
@@ -113,7 +126,12 @@ func statusStream(stateChan <-chan interface{}, stopChan chan<- struct{}, srv pb
 				config := configToProtobuf(e)
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_SettingsChange{SettingsChange: config}}); err != nil {
-					log.Println(internal.ErrorPrefix, "config change to send state update:", err)
+					log.Println(internal.ErrorPrefix, "config change failed to send state update:", err)
+				}
+			case pb.UpdateEvent:
+				if err := srv.Send(
+					&pb.AppState{State: &pb.AppState_UpdateEvent{UpdateEvent: e}}); err != nil {
+					log.Println(internal.ErrorPrefix, "update event failed to send state update:", err)
 				}
 			default:
 			}

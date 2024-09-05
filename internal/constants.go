@@ -88,6 +88,10 @@ const (
 	// MFAEnabledStatusName is a string value used to denote enabled multifactor authentication in a response to the
 	// /v1/users/oauth/mfa/status by the core API
 	MFAEnabledStatusName = "enabled"
+	// AllowlistMinPort defines min port which can be allowlisted
+	AllowlistMinPort = 1
+	// AllowlistMaxPort defines max port which can be allowlisted
+	AllowlistMaxPort = 65535
 )
 
 var (

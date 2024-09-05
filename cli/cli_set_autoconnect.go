@@ -62,16 +62,9 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		}
 	}
 
-	settings, err := c.getSettings()
-	if err != nil {
-		return formatError(err)
-	}
-	allowlist := settings.Settings.GetAllowlist()
-
 	resp, err := c.client.SetAutoConnect(context.Background(), &pb.SetAutoconnectRequest{
-		ServerTag:   serverTag,
-		AutoConnect: flag,
-		Allowlist:   allowlist,
+		Enabled:   flag,
+		ServerTag: serverTag,
 	})
 	if err != nil {
 		return formatError(err)

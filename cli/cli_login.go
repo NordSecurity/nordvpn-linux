@@ -96,6 +96,7 @@ func LoginRespHandler(ctx *cli.Context, resp *pb.LoginResponse) error {
 		return formatError(errors.New(client.TokenInvalid))
 	case internal.CodeSuccess:
 		color.Green(LoginSuccess, ctx.App.Name)
+		color.Yellow("\nNOTE: %s", MsgNordVPNGroup)
 	}
 	return nil
 }
@@ -123,5 +124,6 @@ func (c *cmd) oauth2(ctx *cli.Context) error {
 	}
 
 	color.Green(LoginSuccess, ctx.App.Name)
+	color.Yellow("\nNOTE: %s", MsgNordVPNGroup)
 	return nil
 }

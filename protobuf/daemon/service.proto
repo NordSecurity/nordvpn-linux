@@ -11,6 +11,7 @@ import "connect.proto";
 import "login.proto";
 import "logout.proto";
 import "login_with_token.proto";
+import "ping.proto";
 import "plans.proto";
 import "rate.proto";
 import "register.proto";
@@ -20,6 +21,7 @@ import "status.proto";
 import "token.proto";
 import "purchase.proto";
 import "state.proto";
+import "servers.proto";
 
 service Daemon {
   rpc AccountInfo(Empty) returns (AccountResponse);
@@ -35,7 +37,7 @@ service Daemon {
   rpc LoginOAuth2Callback(String) returns (Empty);
   rpc Logout(LogoutRequest) returns (Payload);
   rpc Plans(Empty) returns (PlansResponse);
-  rpc Ping(Empty) returns (Payload);
+  rpc Ping(Empty) returns (PingResponse);
   rpc RateConnection(RateRequest) returns (Payload);
   rpc Register(RegisterRequest) returns (Payload);
   rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
@@ -54,6 +56,8 @@ service Daemon {
   rpc SetTechnology(SetTechnologyRequest) returns (Payload);
   rpc SetLANDiscovery(SetLANDiscoveryRequest) returns (SetLANDiscoveryResponse);
   rpc SetAllowlist(SetAllowlistRequest) returns (Payload);
+  rpc UnsetAllowlist(SetAllowlistRequest) returns (Payload);
+  rpc UnsetAllAllowlist(Empty) returns (Payload);
   rpc Settings(SettingsRequest) returns (SettingsResponse);
   rpc SettingsProtocols(Empty) returns (Payload);
   rpc SettingsTechnologies(Empty) returns (Payload);
@@ -62,4 +66,6 @@ service Daemon {
   rpc ClaimOnlinePurchase(Empty) returns(ClaimOnlinePurchaseResponse);
   rpc SetVirtualLocation(SetGenericRequest) returns (Payload);
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
+  rpc GetServers(Empty) returns (ServersResponse);
+  rpc SetPostQuantum(SetGenericRequest) returns (Payload);
 }
