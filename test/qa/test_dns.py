@@ -29,9 +29,8 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
-@pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_tpl_on_off_connected(tpl_alias, tech, proto, obfuscated):
+def test_set_tpl_on_off_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     # Make sure, that DNS is unset before we connect to VPN server
@@ -40,12 +39,14 @@ def test_set_tpl_on_off_connected(tpl_alias, tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
+        tpl_alias = dns.get_tpl_alias()
         assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_alias, "on")
 
         assert settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_TPL)
 
+        tpl_alias = dns.get_tpl_alias()
         assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_alias, "off")
 
         assert not settings.is_tpl_enabled()
@@ -56,11 +57,11 @@ def test_set_tpl_on_off_connected(tpl_alias, tech, proto, obfuscated):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_tpl_on_and_connect(tpl_alias, tech, proto, obfuscated):
+def test_set_tpl_on_and_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
+    tpl_alias = dns.get_tpl_alias()
     assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_alias, "on")
 
     assert settings.is_tpl_enabled()
@@ -75,11 +76,11 @@ def test_set_tpl_on_and_connect(tpl_alias, tech, proto, obfuscated):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("tpl_alias", dns.TPL_ALIAS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_set_tpl_off_and_connect(tpl_alias, tech, proto, obfuscated):
+def test_set_tpl_off_and_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
+    tpl_alias = dns.get_tpl_alias()
     sh.nordvpn.set(tpl_alias, "on")
 
     assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_alias, "off")
@@ -103,7 +104,8 @@ def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver)
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    sh.nordvpn.set.tpl("on")
+    tpl_alias = dns.get_tpl_alias()
+    sh.nordvpn.set(tpl_alias, "on")
     assert settings.is_tpl_enabled()
 
     output = sh.nordvpn.set.dns(nameserver)
@@ -123,7 +125,8 @@ def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
-        sh.nordvpn.set.tpl("on")
+        tpl_alias = dns.get_tpl_alias()
+        sh.nordvpn.set(tpl_alias, "on")
         assert settings.is_tpl_enabled()
 
         output = sh.nordvpn.set.dns(nameserver)

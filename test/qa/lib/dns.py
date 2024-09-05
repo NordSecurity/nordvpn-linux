@@ -1,3 +1,5 @@
+import random
+
 import dns.resolver
 import sh
 
@@ -76,3 +78,13 @@ def get_dns_servers():
                     servers.append(item)
         return servers
     return dns.resolver.Resolver().nameservers
+
+
+def get_tpl_alias() -> str:
+    """
+    This function randomly picks an alias from the predefined list 'TPL_ALIAS' and returns it.
+
+    Returns:
+        str: A randomly selected alias from TPL_ALIAS.
+    """
+    return random.choice(TPL_ALIAS)
