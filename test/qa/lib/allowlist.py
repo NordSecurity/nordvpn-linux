@@ -1,3 +1,5 @@
+import random
+
 import sh
 
 from . import Port, Protocol, daemon
@@ -16,7 +18,22 @@ MSG_ALLOWLIST_PORT_RANGE_ADD_SUCCESS = "Ports %s (%s) are allowlisted successful
 MSG_ALLOWLIST_PORT_RANGE_REMOVE_SUCCESS = "Ports %s (%s) are removed from the allowlist successfully."
 MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR = "Ports %s (%s) are not allowlisted."
 
-def add_ports_to_allowlist(ports_list: list[Port], allowlist_alias="allowlist"):
+ALLOWLIST_ALIAS = [
+    "whitelist",
+    "allowlist"
+]
+
+def get_alias() -> str:
+    """
+    This function randomly picks an alias from the predefined list 'ALLOWLIST_ALIAS' and returns it.
+
+    Returns:
+        str: A randomly selected alias from ALLOWLIST_ALIAS.
+    """
+    return random.choice(ALLOWLIST_ALIAS)
+
+
+def add_ports_to_allowlist(ports_list: list[Port]):
     for port in ports_list:
         if ":" in port.value:
             # Port range
@@ -37,7 +54,7 @@ def add_ports_to_allowlist(ports_list: list[Port], allowlist_alias="allowlist"):
             port_value = port.value
             expected_message = MSG_ALLOWLIST_PORT_ADD_SUCCESS % (port_value, port.protocol)
 
-        cmd_message = sh.nordvpn(allowlist_alias, "add", cmd)
+        cmd_message = sh.nordvpn(get_alias(), "add", cmd)
         print(cmd_message)
 
         assert sh.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 1, \
@@ -47,7 +64,7 @@ def add_ports_to_allowlist(ports_list: list[Port], allowlist_alias="allowlist"):
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
 
 
-def remove_ports_from_allowlist(ports_list: list[Port], allowlist_alias="allowlist"):
+def remove_ports_from_allowlist(ports_list: list[Port]):
     for port in ports_list:
         if ":" in port.value:
             # Port range
@@ -68,7 +85,7 @@ def remove_ports_from_allowlist(ports_list: list[Port], allowlist_alias="allowli
             port_value = port.value
             expected_message = MSG_ALLOWLIST_PORT_REMOVE_SUCCESS % (port_value, port.protocol)
 
-        cmd_message = sh.nordvpn(allowlist_alias, "remove", cmd)
+        cmd_message = sh.nordvpn(get_alias(), "remove", cmd)
         print(cmd_message)
 
         assert sh.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 0, \
@@ -78,9 +95,9 @@ def remove_ports_from_allowlist(ports_list: list[Port], allowlist_alias="allowli
             f"Wrong allowlist message.\nExpected: {expected_message}\nGot: {cmd_message}"
 
 
-def add_subnet_to_allowlist(subnet_list: list[str], allowlist_alias="allowlist"):
+def add_subnet_to_allowlist(subnet_list: list[str]):
     for subnet in subnet_list:
-        cmd_message = sh.nordvpn(allowlist_alias, "add", "subnet", subnet)
+        cmd_message = sh.nordvpn(get_alias(), "add", "subnet", subnet)
         expected_message = MSG_ALLOWLIST_SUBNET_ADD_SUCCESS % subnet
 
         assert expected_message in cmd_message, \
@@ -98,9 +115,9 @@ def add_subnet_to_allowlist(subnet_list: list[str], allowlist_alias="allowlist")
             assert subnet in iprules, f"Subnet {subnet} not found in `ip rule show`"
 
 
-def remove_subnet_from_allowlist(subnet_list: list[str], allowlist_alias="allowlist"):
+def remove_subnet_from_allowlist(subnet_list: list[str]):
     for subnet in subnet_list:
-        cmd_message = sh.nordvpn(allowlist_alias, "remove", "subnet", subnet)
+        cmd_message = sh.nordvpn(get_alias(), "remove", "subnet", subnet)
         expected_message = MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS % subnet
 
         assert expected_message in cmd_message, \

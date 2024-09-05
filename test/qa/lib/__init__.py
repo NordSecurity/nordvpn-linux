@@ -154,12 +154,6 @@ PORTS_RANGE = [
     Port("3000:3100", Protocol.ALL),
 ]
 
-# Used for test parametrization, when the same test has to be run with different allowlist alias.
-ALLOWLIST_ALIAS = [
-    "whitelist",
-    "allowlist"
-]
-
 # Used for integration test coverage
 os.environ["GOCOVERDIR"] = os.environ["WORKDIR"] + "/" + os.environ["COVERDIR"]
 
