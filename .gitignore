@@ -7,7 +7,16 @@
 contrib/manual/*.[0-9]
 *.txt
 
-build
+# Rust
+build/*/target/
+
+# Openvpn
+build/openvpn/*
+build/foss/libtelio/
+build/foss/libdrop/
+!build/openvpn/build.sh
+!build/openvpn/check_dependencies.sh
+!build/openvpn/env.sh
 
 # Linux packages
 *.deb

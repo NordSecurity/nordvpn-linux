@@ -12,8 +12,7 @@ while read -r line || [[ -n "$line" ]]; do
     echo "key = ${key}"
     # only export the variable if it is not already set
     if [[ -z "${!key:-}" ]]; then
-      # shellcheck disable=SC2163
-      export "${line}"
+      export "${line?}"
     fi
   fi
 done <"${WORKDIR}/lib-versions.env"
