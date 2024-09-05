@@ -35,6 +35,20 @@ const (
 	covDir        = "covdatafiles"
 )
 
+// Aliases shorthands for daily commands
+var Aliases = map[string]interface{}{
+	"bb":  Build.Binaries,
+	"bbd": Build.BinariesDocker,
+	"bd":  Build.Deb,
+	"bdd": Build.DebDocker,
+	"br":  Build.Rpm,
+	"brd": Build.RpmDocker,
+	"bs":  Build.Snap,
+	"bsd": Build.SnapDocker,
+	"ib":  Install.Binaries,
+	"tg":  Test.Go,
+}
+
 // Build is used for native builds.
 type Build mg.Namespace
 

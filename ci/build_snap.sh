@@ -15,6 +15,9 @@ BASEDIR="bin/${ARCH}"
 # shellcheck disable=SC2153
 "${STRIP}" "${BASEDIR}"/norduserd
 
+# shellcheck disable=SC2153
+"${STRIP}" "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
+
 # build snap package
 snapcraft --destructive-mode
 
