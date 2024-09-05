@@ -133,6 +133,9 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set.notify("on")
     sh.nordvpn.set("virtual-location", "off")
 
+    if tech == "nordlynx":
+        sh.nordvpn.set.pq("on")
+
     assert not settings.is_firewall_enabled()
     assert not settings.is_routing_enabled()
     assert not settings.is_dns_disabled()
@@ -140,6 +143,9 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     assert settings.is_ipv6_enabled()
     assert settings.is_notify_enabled()
     assert not settings.is_virtual_location_enabled()
+
+    if tech == "nordlynx":
+        assert not settings.is_post_quantum_disabled()
 
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
@@ -165,6 +171,9 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     sh.nordvpn.set.ipv6("on")
     sh.nordvpn.set("virtual-location", "off")
 
+    if tech == "nordlynx":
+        sh.nordvpn.set.pq("on")
+
     assert not settings.is_firewall_enabled()
     assert not settings.is_routing_enabled()
     assert settings.is_autoconnect_enabled()
@@ -172,6 +181,9 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     assert not settings.is_dns_disabled()
     assert settings.is_ipv6_enabled()
     assert not settings.is_virtual_location_enabled()
+
+    if tech == "nordlynx":
+        assert not settings.is_post_quantum_disabled()
 
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
@@ -195,6 +207,9 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set("lan-discovery", "on")
     sh.nordvpn.set("virtual-location", "off")
 
+    if tech == "nordlynx":
+        sh.nordvpn.set.pq("on")
+
     sh.nordvpn.connect()
     assert "Status: Connected" in sh.nordvpn.status()
 
@@ -203,6 +218,9 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     assert not settings.are_analytics_enabled()
     assert settings.is_lan_discovery_enabled()
     assert not settings.is_virtual_location_enabled()
+
+    if tech == "nordlynx":
+        assert not settings.is_post_quantum_disabled()
 
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
@@ -300,3 +318,45 @@ def test_set_virtual_location_on_off_repeated():
 
     sh.nordvpn.set("virtual-location", "off")
     assert "Virtual location is already set to 'disabled'." in sh.nordvpn.set("virtual-location", "off")
+
+
+def test_set_post_quantum_on_off():
+
+    pq_alias = settings.get_pq_alias()
+
+    assert "Post-quantum VPN is set to 'enabled' successfully." in sh.nordvpn.set(pq_alias, "on")
+    assert not settings.is_post_quantum_disabled()
+
+    assert "Post-quantum VPN is set to 'disabled' successfully." in sh.nordvpn.set(pq_alias, "off")
+    assert settings.is_post_quantum_disabled()
+
+
+def test_set_post_quantum_off_on_repeated():
+
+    pq_alias = settings.get_pq_alias()
+
+    assert "Post-quantum VPN is already set to 'disabled'." in sh.nordvpn.set(pq_alias, "off")
+
+    sh.nordvpn.set(pq_alias, "on")
+    assert "Post-quantum VPN is already set to 'enabled'." in sh.nordvpn.set(pq_alias, "on")
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
+def test_set_post_quantum_on_open_vpn(tech, proto, obfuscated):
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.set(settings.get_pq_alias(), "on")
+
+    assert "The post-quantum VPN is not compatible with OpenVPN. Switch to NordLynx to use post-quantum VPN capabilities." in str(ex.value)
+
+
+def test_set_technology_openvpn_post_quantum_enabled():
+
+    sh.nordvpn.set(settings.get_pq_alias(), "on")
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.set.technology("OPENVPN")
+
+    assert "This setting is not compatible with the post-quantum VPN. To use OpenVPN, disable the post-quantum VPN first." in str(ex.value)

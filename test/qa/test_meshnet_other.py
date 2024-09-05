@@ -99,3 +99,25 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
     assert "Settings were successfully restored to defaults." in sh.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
+
+
+# This doesn't directly test meshnet, but it uses it
+def test_set_post_quantum_on_meshnet_enabled():
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.set(settings.get_pq_alias(), "on")
+
+    assert "The post-quantum VPN and Meshnet can't run at the same time. Please disable one feature to use the other." in str(ex.value)
+
+
+# This doesn't directly test meshnet, but it uses it
+def test_set_meshnet_on_post_quantum_enabled():
+
+    sh.nordvpn.set.meshnet("off")
+
+    sh.nordvpn.set(settings.get_pq_alias(), "on")
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.set.meshnet("on")
+
+    assert "The post-quantum VPN and Meshnet can't run at the same time. Please disable one feature to use the other." in str(ex.value)

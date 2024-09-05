@@ -430,3 +430,17 @@ def test_connect_to_virtual_server(tech, proto, obfuscated):
 
     connect_base_test((tech, proto, obfuscated), country)
     disconnect_base_test()
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
+def test_connect_to_post_quantum_server(tech, proto, obfuscated):
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    sh.nordvpn.set.pq("on")
+
+    connect_base_test((tech, proto, obfuscated))
+
+    assert "preshared key" in sh.sudo.wg.show()
+
+    disconnect_base_test()
