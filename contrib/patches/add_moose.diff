@@ -1,9 +1,9 @@
 diff --git a/go.mod b/go.mod
-index 91d48c6..af74160 100644
+index c99a298..f2ccb65 100644
 --- a/go.mod
 +++ b/go.mod
 @@ -12,6 +12,11 @@ require (
- 	github.com/NordSecurity/libtelio-go/v5 v5.0.0-rc4
+ 	github.com/NordSecurity/libtelio-go/v5 v5.0.0
  )
  
 +replace (
