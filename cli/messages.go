@@ -66,7 +66,6 @@ Example: nordvpn set %s on`
 	SetProtocolAlreadySet  = "Protocol is already set to %s"
 
 	SetTechnologyDepsError = "Missing %s kernel module or configuration utility."
-	SetTechnologyDisablePQ = "The post-quantum VPN is only available with %s technology. Disable post-quantum before switching."
 
 	SetDNSDisableThreatProtectionLite = "Disabling Threat Protection Lite."
 	SetDNSInvalidAddress              = "The provided IP address is invalid."
@@ -360,7 +359,8 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
 
-	SetPqUnavailable = "The post-quantum VPN is unavailable with OpenVPN. Switch to NordLynx to enable post-quantum VPN capabilities."
-	SetPqAndMeshnet  = "The post-quantum VPN and Meshnet cannot operate simultaneously. Please disable one feature to enable the other."
-	SetPqUsageText   = "Enables or disables post-quantum VPN. When enabled, your VPN connection uses new post-quantum cryptography, resistant to quantum computer attacks. Not compatible with Meshnet."
+	SetPqUnavailable       = "The post-quantum VPN is not compatible with OpenVPN. Switch to NordLynx to use post-quantum VPN capabilities."
+	SetTechnologyDisablePQ = "This setting is not compatible with the post-quantum VPN. To use OpenVPN, disable the post-quantum VPN first."
+	SetPqAndMeshnet        = "The post-quantum VPN and Meshnet can't run at the same time. Please disable one feature to use the other."
+	SetPqUsageText         = "Enables or disables post-quantum VPN. When enabled, your connection uses cutting-edge cryptography designed to resist quantum computer attacks. Not compatible with Meshnet."
 )

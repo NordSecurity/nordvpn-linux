@@ -5,10 +5,8 @@ set -euxo pipefail
 
 source "${WORKDIR}"/ci/env.sh
 
-STRIPPED_STATUS="with debug_info, not stripped"
-if [ "${ENVIRONMENT}" = "prod" ]; then
-    STRIPPED_STATUS=", stripped"
-fi
+# snap contains binaries which are always stripped, same as deb/rpm
+STRIPPED_STATUS=", stripped"
 
 ARCH=$([ "${ARCH}" == "aarch64" ] && echo arm64 || echo "${ARCH}")
 
