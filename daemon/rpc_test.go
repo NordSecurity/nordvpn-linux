@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -16,8 +17,16 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
+	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -39,7 +48,6 @@ const (
 	TestVersionRpm          = "testrpmparse"
 	TestUserCreateJSON      = "usercreate.json"
 	TestUserCredentialsJSON = "usercredentials.json"
-	TestBadUserCreateJSON   = "badusercreate.json"
 	TestPlansJSON           = "plans.json"
 )
 
@@ -55,6 +63,44 @@ type Handler struct {
 
 var privateKey *rsa.PrivateKey
 var publicKey ssh.PublicKey
+
+func testRPC() *RPC {
+	api := core.NewDefaultAPI(
+		"1.0.0",
+		"",
+		http.DefaultClient,
+		response.NoopValidator{},
+	)
+	dm := testNewDataManager()
+	dm.SetServersData(time.Now(), serversList(), "")
+	return NewRPC(
+		internal.Development,
+		&workingLoginChecker{},
+		newMockConfigManager(),
+		dm,
+		api,
+		&mockServersAPI{},
+		&testcore.CredentialsAPIMock{},
+		testNewCDNAPI(),
+		testNewRepoAPI(),
+		&mockAuthenticationAPI{},
+		"1.0.0",
+		daemonevents.NewEventsEmpty(),
+		func(config.Technology) (vpn.VPN, error) {
+			return &mock.WorkingVPN{}, nil
+		},
+		newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
+		&testnetworker.Mock{},
+		&subs.Subject[string]{},
+		&mock.DNSGetter{Names: []string{"1.1.1.1"}},
+		nil,
+		&mockAnalytics{},
+		&testnorduser.MockNorduserCombinedService{},
+		&RegistryMock{},
+		nil,
+		sharedctx.New(),
+	)
+}
 
 func TestMain(m *testing.M) {
 	// make local servers for functions relying on API
