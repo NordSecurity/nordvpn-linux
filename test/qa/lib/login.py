@@ -41,5 +41,4 @@ def login_as(username, ssh_client: ssh.Ssh = None):
 
     if ssh_client is not None:
         return ssh_client.exec_command(f"nordvpn login --token {token}")
-    else:
-        return sh.nordvpn.login("--token", token)
+    return sh.nordvpn.login("--token", token)

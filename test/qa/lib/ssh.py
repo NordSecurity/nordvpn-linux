@@ -61,7 +61,7 @@ class Ssh:
             self.ssh_class_instance: Ssh = ssh_class_instance
 
         def _is_internet_reachable(self, retry=5) -> bool:
-            """ returns True when remote host is reachable by it's public IP. """
+            """Returns True when remote host is reachable by it's public IP."""
             i = 0
             while i < retry:
                 try:
@@ -72,7 +72,7 @@ class Ssh:
             return False
 
         def _is_dns_not_resolvable(self, retry=5) -> bool:
-            """ returns True when domain resolution is not working. """
+            """Returns True when domain resolution is not working."""
             for _ in range(retry):
                 try:
                     with pytest.raises(RuntimeError) as ex:
@@ -86,7 +86,7 @@ class Ssh:
             return False
 
         def is_not_available(self, retry=5) -> bool:
-            """ returns True when network access is not available. """
+            """Returns True when network access is not available."""
             return not self._is_internet_reachable(retry) and self._is_dns_not_resolvable(retry)
 
         def ping(self, target: str, retry=5) -> bool:
@@ -115,7 +115,7 @@ class Ssh:
         def __init__(self, ssh_class_instance):
             self.ssh_class_instance = ssh_class_instance
 
-        def set_permissions(self, peer: str, routing: bool = None, local: bool = None, incoming: bool = None, fileshare: bool = None):
+        def set_permissions(self, peer: str, routing: bool | None = None, local: bool | None = None, incoming: bool | None = None, fileshare: bool | None = None):
             def bool_to_permission(permission: bool) -> str:
                 if permission:
                     return "allow"

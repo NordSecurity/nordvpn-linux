@@ -229,7 +229,7 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     assert network.is_available()
 
     assert daemon.is_killswitch_on()
-    
+
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
     else:

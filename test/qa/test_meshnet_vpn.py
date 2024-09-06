@@ -175,7 +175,7 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     assert settings.is_meshnet_enabled()
     assert settings.is_tpl_enabled()
     assert settings.is_ipv6_enabled()
-    
+
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
     else:

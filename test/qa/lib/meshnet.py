@@ -7,7 +7,7 @@ from enum import Enum
 
 import sh
 
-from . import daemon, info, logging, login, meshnet, ssh
+from . import daemon, info, logging, login, ssh
 
 PEER_USERNAME = login.get_credentials("qa-peer").email
 
@@ -58,11 +58,11 @@ class TestUtils:
         login.login_as("qa-peer", ssh_client)
         sh.nordvpn.set.meshnet.on()
         ssh_client.exec_command("nordvpn set mesh on")
-        meshnet.remove_all_peers()
-        meshnet.remove_all_peers_in_peer(ssh_client)
-        meshnet.revoke_all_invites()
-        meshnet.revoke_all_invites_in_peer(ssh_client)
-        meshnet.add_peer(ssh_client)
+        remove_all_peers()
+        remove_all_peers_in_peer(ssh_client)
+        revoke_all_invites()
+        revoke_all_invites_in_peer(ssh_client)
+        add_peer(ssh_client)
 
 
     @staticmethod
@@ -98,16 +98,16 @@ class Peer:
             public_key: str,
             os: str,
             distribution: str,
-            status: str = None,
-            allow_incoming_traffic: bool = None,
-            allow_routing: bool = None,
-            allow_lan_access: bool = None,
-            allow_sending_files: bool = None,
-            allows_incoming_traffic: bool = None,
-            allows_routing: bool = None,
-            allows_lan_access: bool = None,
-            allows_sending_files: bool = None,
-            accept_fileshare_automatically: bool = None
+            status: str | None = None,
+            allow_incoming_traffic: bool | None = None,
+            allow_routing: bool | None = None,
+            allow_lan_access: bool | None = None,
+            allow_sending_files: bool | None = None,
+            allows_incoming_traffic: bool | None = None,
+            allows_routing: bool | None = None,
+            allows_lan_access: bool | None = None,
+            allows_sending_files: bool | None = None,
+            accept_fileshare_automatically: bool | None = None
             ):
         self.hostname = hostname
         self.nickname = nickname
@@ -209,7 +209,7 @@ class Peer:
         return output
 
     def name(self) -> str:
-        ''' Returns nickname if not empty and hostname otherwise. '''
+        """Returns nickname if not empty and hostname otherwise."""
         if not self.nickname:
             return self.nickname
 
@@ -260,25 +260,25 @@ class PeerList:
 
 
 
-    def parse_peer_list(self, filter_list: str = None) -> list[str]:
-        """ Builds expected Meshnet peer list string according to passed list of filters. """
+    def parse_peer_list(self, filter_list: str | None = None) -> list[str]:
+        """Builds expected Meshnet peer list string according to passed list of filters."""
 
         show_internal = True
         show_external = True
 
         if filter_list is not None:
-            for filter in filter_list:
-                if filter == "external":
+            for flt in filter_list:
+                if flt == "external":
                     show_external = True
                     show_internal = False
                     self.clear_internal_peer_list()
 
-                if filter == "internal":
+                if flt == "internal":
                     show_internal = True
                     show_external = False
                     self.clear_external_peer_list()
 
-                if filter == "offline":
+                if flt == "offline":
                     self.clear_internal_peer_list()
                     self.clear_external_peer_list()
 
@@ -308,15 +308,14 @@ class PeerList:
 
     @classmethod
     def from_str(cls, output: str):
-        """ Converts output/meshnet peer list string to PeerList object. """
+        """Converts output/meshnet peer list string to PeerList object."""
 
         def remove_text_before_and_keyword(input_string, keyword):
             index = input_string.find(keyword)
 
             if index != -1:
                 return input_string[index + len(keyword):]
-            else:
-                return input_string
+            return input_string
 
         peer_list = get_clean_peer_list(output)
         peer_list_object = cls()
@@ -533,8 +532,7 @@ def validate_input_chain(peer_ip: str, routing: bool, local: bool, incoming: boo
             rules = rules.replace(fileshare_rule, "")
         if peer_ip not in rules:
             return True, ""
-        else:
-            return False, f"Rules for peer({peer_ip}) found in the INCOMING chain but peer does not have the incoming permissions\nrules:\n{rules}"
+        return False, f"Rules for peer({peer_ip}) found in the INCOMING chain but peer does not have the incoming permissions\nrules:\n{rules}"
 
     incoming_rule_idx = rules.find(incoming_rule)
 
@@ -572,7 +570,7 @@ def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: b
         # If any peer has routing or local permission, lan block rules should be added, otherwise no rules should be added.
         if (routing or local) and lan_drop_rule_index == -1:
             return False, f"LAN drop rule not added for subnet {lan}\nrules:\n{rules}"
-        elif (not routing) and (not lan) and lan_drop_rule_index != -1:
+        if (not routing) and (not lan) and lan_drop_rule_index != -1:
             return False, f"LAN drop rule added for subnet {lan}\nrules:\n{rules}"
 
         if routing:
@@ -602,12 +600,12 @@ def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: b
 
 
 def set_permission(peer: str, permission: bool, permission_state: bool):
-    """ Tries to set permission to specified state. Ignores any error messages. """
+    """Tries to set permission to specified state. Ignores any error messages."""
     with contextlib.suppress(sh.ErrorReturnCode_1):
         sh.nordvpn.mesh.peer(permission, permission_state, peer)
 
 
-def set_permissions(peer: str, routing: bool = None, local: bool = None, incoming: bool = None, fileshare: bool = None):
+def set_permissions(peer: str, routing: bool | None = None, local: bool | None = None, incoming: bool | None = None, fileshare: bool | None = None):
     def bool_to_permission(permission: bool) -> str:
         if permission:
             return "allow"
@@ -663,5 +661,5 @@ def is_connect_successful(output:str, peer_hostname: str):
     return (MSG_ROUTING_SUCCESS % peer_hostname) in output
 
 def get_lines_with_keywords(lines: list[str], keywords: list[str]) -> list:
-    """ returns list with elements, that contain specified `keywords`. """
+    """Returns list with elements, that contain specified `keywords`."""
     return [line.strip() for line in lines if all(keyword in line for keyword in keywords)]

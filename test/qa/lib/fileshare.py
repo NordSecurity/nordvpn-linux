@@ -2,7 +2,7 @@ import os
 import re
 import tempfile
 from collections import namedtuple
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import sh
 
@@ -16,7 +16,7 @@ CANCEL_SUCCESS_SENDER_SIDE_MSG = "File transfer canceled"
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames")
 
 
-def create_directory(file_count: int, name_suffix: str = "", parent_dir: str = None) -> Directory:
+def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None) -> Directory:
     # for snap testing make directories to be created from current path e.g. dir="./"
     dir_path = tempfile.mkdtemp(dir=parent_dir)
     paths = []
@@ -50,7 +50,7 @@ def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
     return command
 
 
-def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> Optional[str]:
+def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> str | None:
     """Return last id of the last received or sent transfer."""
     if ssh_client is None:
         transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
@@ -66,7 +66,7 @@ def get_last_transfer(outgoing: bool = True, ssh_client: ssh.Ssh = None) -> Opti
     return re.findall("([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})", transfers)[-1]
 
 
-def get_transfer(transfer_id: str, ssh_client: ssh.Ssh = None) -> Optional[str]:
+def get_transfer(transfer_id: str, ssh_client: ssh.Ssh = None) -> str | None:
     if ssh_client is None:
         transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     else:
@@ -80,14 +80,14 @@ def get_transfer(transfer_id: str, ssh_client: ssh.Ssh = None) -> Optional[str]:
     return transfer_entry[0]
 
 
-def find_transfer_by_id(transfer_list: str, idd: str) -> Optional[str]:
+def find_transfer_by_id(transfer_list: str, idd: str) -> str | None:
     for transfer_entry in transfer_list.strip("\n").split("\n"):
         if idd in transfer_entry:
             return transfer_entry
     return None
 
 
-def find_file_in_transfer(file_id: str, transfer_lines: list[str]) -> Optional[str]:
+def find_file_in_transfer(file_id: str, transfer_lines: list[str]) -> str | None:
     for file_entry in transfer_lines:
         if file_id in file_entry:
             return file_entry

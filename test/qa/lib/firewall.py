@@ -161,8 +161,7 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
 
     if current_subnet_rules_input_chain:
         return sort_list_by_other_list(result, current_subnet_rules_input_chain)
-    else:
-        return result
+    return result
 
 
 def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
@@ -183,8 +182,7 @@ def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
 
     if len(current_subnet_rules_forward_chain) > len(result):
         return sort_list_by_other_list(result, current_subnet_rules_forward_chain)
-    else:
-        return result
+    return result
 
 
 def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
@@ -212,8 +210,7 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
 
     if len(current_subnet_rules_input_chain) > len(result):
         return sort_list_by_other_list(result, current_subnet_rules_input_chain)
-    else:
-        return result
+    return result
 
 
 def __rules_allowlist_port_chain_input(interface: str, ports_udp: list[Port], ports_tcp: list[Port]):
@@ -315,7 +312,7 @@ def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], 
 
 
 # TODO: Add missing IPv6 rules (icmp6 & dhcp6)
-def _get_firewall_rules(ports: list[Port] = None, subnets: list[str] = None) -> list[str]:
+def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | None = None) -> list[str]:
     # Default route interface
     interface = sh.ip.route.show("default").split(None)[4]
 
@@ -343,7 +340,7 @@ def _get_firewall_rules(ports: list[Port] = None, subnets: list[str] = None) -> 
     return []
 
 
-def is_active(ports: list[Port] = None, subnets: list[str] = None) -> bool:
+def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None) -> bool:
     """Returns True when all expected rules are found in iptables, in matching order."""
     print(sh.ip.route())
 
