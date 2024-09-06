@@ -15,12 +15,14 @@ select = [
     "SIM",
     # isort
     "I",
+    # Builtins shadowing
+    "A",
+    # Return issues
+    "RET",
     # Unused function argument
     "ARG001",
     # Wrong type
     "PT006",
-    # Missing explicit return at the end of function able to return non-None value
-    "RET503",
     # Exception must not use an f-string literal, assign to variable first
     "EM102",
     # Do not catch blind exception
@@ -33,6 +35,8 @@ select = [
     "RUF005",
     # Use elif instead of else then if, to reduce indentation
     "PLR5501",
+    # Line with empty comment
+    "PLR2044",
     # Loop variable overwritten by assignment target
     "PLW2901",
     # Implicitly concatenated string literals over multiple lines
@@ -41,8 +45,8 @@ select = [
     "N806",
     # Variable in global scope should not be mixedCase
     "N816",
-    # Trailing whitespace
-    "W291",
+    # Whitespaces issues
+    "W29",
     # One-line docstring should fit on one line
     "D200",
     # 1 blank line required between summary line and description
@@ -51,18 +55,30 @@ select = [
     "D208",
     # Multi-line docstring closing quotes should be on a separate line
     "D209",
+    # No whitespaces allowed surrounding docstring text
+    "D210",
     # Multi-line docstring summary should start at the second line
     "D213",
+    # Use triple double quotes
+    "D300",
     # First line should end with a period
     "D400",
     # First word of the first line should be capitalized
     "D403",
+    # Missing dashed underline after section
+    "D407",
     # Use specific rule codes when using noqa
     "PGH004",
+    # Module imports itself
+    "PLW0406",
     # Invalid TODO capitalization: ToDo should be TODO
     "TD006",
+    # Possible hardcoded password assigned
+    "S105",
     # Probable use of requests call without timeout
     "S113",
+    # PEP 484 prohibits implicit `Optional`
+    "RUF013",
     # Apply all rules
     # "ALL"
 ]
@@ -74,13 +90,61 @@ ignore = [
     "SIM108",
     # Use a single `with` statement with multiple contexts instead of nested `with` statements
     "SIM117",
-    # Rules to be selected in future
-    "UP007", "UP035", "RUF013", "D401", "PTH",
-    # Rules to be selected in future, but currently broken
-    "RET505",
+    # Unnecessary assignment to variable before `return` statement
+    "RET504",
+    # First line of docstring should be in imperative mood
+    "D401",
     # Rules ignored from ALL
-    "ANN001", "ANN101", "ANN201", "ANN202", "ANN204", "T201", "D100", "D101", "D102", "D103", "D104", "D105", "D107",
-    "D202", "D212", "COM812", "S101", "TD002", "TD003", "FIX002", "FBT001", "FBT002", "FBT003", "RUF001", "RUF010",
-    "Q000", "PLR0913", "PLR0915", "PLR0911", "PLR2004", "PT012", "PT017", "PT018", "PYI024", "C901", "TRY300",
-    "PERF203", "PERF401", "S60", "S108", "S311", "ISC003", "ERA001"
+    "ANN001",
+    "ANN101",
+    "ANN201",
+    "ANN202",
+    "ANN204",
+    "ANN205",
+    "ANN206",
+    "C901",
+    "COM812",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D106",
+    "D107",
+    "D202",
+    "D212",
+    "D413",
+    "D417",
+    "EM101",
+    "ERA001",
+    "FBT001",
+    "FBT002",
+    "FBT003",
+    "FIX002",
+    "ISC003",
+    "PTH",
+    "PERF203",
+    "PERF401",
+    "PLR0911",
+    "PLR0913",
+    "PLR0915",
+    "PLR2004",
+    "PT012",
+    "PT017",
+    "PT018",
+    "PYI024",
+    "Q000",
+    "RUF001",
+    "RUF010",
+    "S101",
+    "S108",
+    "S311",
+    "S60",
+    "T201",
+    "TD002",
+    "TD003",
+    "TRY002",
+    "TRY003",
+    "TRY300",
 ]
