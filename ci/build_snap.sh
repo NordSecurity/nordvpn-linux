@@ -3,31 +3,20 @@ set -euxo pipefail
 
 source "${WORKDIR}/ci/env.sh"
 
-cd "${WORKDIR}"
+# snap package will have stripped binaries - same as deb/rpm
+STRIP="$(which eu-strip 2>/dev/null)"
+BASEDIR="bin/${ARCH}"
+# shellcheck disable=SC2153
+"${STRIP}" "${BASEDIR}"/nordvpnd
+# shellcheck disable=SC2153
+"${STRIP}" "${BASEDIR}"/nordvpn
+# shellcheck disable=SC2153
+"${STRIP}" "${BASEDIR}"/nordfileshare
+# shellcheck disable=SC2153
+"${STRIP}" "${BASEDIR}"/norduserd
 
-if [ "${ENVIRONMENT}" = "prod" ]; then
-    STRIP="$(which eu-strip 2>/dev/null)"
-    BASEDIR="bin/${ARCH}"
-    # shellcheck disable=SC2153
-    "${STRIP}" "${BASEDIR}"/nordvpnd
-    # shellcheck disable=SC2153
-    "${STRIP}" "${BASEDIR}"/nordvpn
-    # shellcheck disable=SC2153
-    "${STRIP}" "${BASEDIR}"/nordfileshare
-    # shellcheck disable=SC2153
-    "${STRIP}" "${BASEDIR}"/norduserd
-fi
-
-# translate arch id
-TARGET_ARCH_4SNAP=$([ "${ARCH}" == "aarch64" ] && echo arm64 || echo "${ARCH}")
-
-# prepare snapcraft.yaml
-cp "${WORKDIR}"/snap/local/snapcraft.yaml.template "${WORKDIR}"/snap/snapcraft.yaml
-
-# shellcheck disable=SC1003
-sed -i 's\TARGET_ARCH_4SNAP\'"${TARGET_ARCH_4SNAP}"'\g' "${WORKDIR}"/snap/snapcraft.yaml
-# shellcheck disable=SC1003
-sed -i 's\TARGET_ARCH_4APP\'"${ARCH}"'\g' "${WORKDIR}"/snap/snapcraft.yaml
+# shellcheck disable=SC2153
+"${STRIP}" "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
 
 # build snap package
 snapcraft --destructive-mode
