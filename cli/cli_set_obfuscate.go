@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -59,7 +58,7 @@ func (c *cmd) SetObfuscate(ctx *cli.Context) error {
 }
 
 func (c *cmd) BeforeSetObfuscate(ctx *cli.Context) error {
-	resp, err := c.client.Settings(context.Background(), &pb.SettingsRequest{Uid: int64(os.Getuid())})
+	resp, err := c.client.Settings(context.Background(), &pb.Empty{})
 	if err != nil {
 		return formatError(err)
 	}
@@ -73,7 +72,7 @@ func (c *cmd) BeforeSetObfuscate(ctx *cli.Context) error {
 		return internal.ErrUnhandled
 	}
 
-	if resp.Data.Settings.Technology != config.Technology_OPENVPN {
+	if resp.Data.Technology != config.Technology_OPENVPN {
 		return formatError(errors.New(SetObfuscateUnavailable))
 	}
 	return nil

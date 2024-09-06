@@ -7,9 +7,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"google.golang.org/grpc/peer"
 )
 
-func configToProtobuf(cfg *config.Config) *pb.GlobalSettings {
+func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 	ports := pb.Ports{}
 	for port := range cfg.AutoConnectData.Allowlist.Ports.TCP {
 		ports.Tcp = append(ports.Tcp, port)
@@ -23,59 +24,39 @@ func configToProtobuf(cfg *config.Config) *pb.GlobalSettings {
 		subnets = append(subnets, subnet)
 	}
 
-	userSet := make(map[int64]*pb.UserSpecificSettings)
-	for uid, notifyOff := range cfg.UsersData.NotifyOff {
-		userSet[uid] = &pb.UserSpecificSettings{
+	notifyOff := cfg.UsersData.NotifyOff[uid]
+	trayOff := cfg.UsersData.TrayOff[uid]
+
+	settings := pb.Settings{
+		Technology: cfg.Technology,
+		Firewall:   cfg.Firewall,
+		Fwmark:     cfg.FirewallMark,
+		Routing:    cfg.Routing.Get(),
+		Analytics:  cfg.Analytics.Get(),
+		KillSwitch: cfg.KillSwitch,
+		AutoConnectData: &pb.AutoconnectData{
+			Enabled:     cfg.AutoConnect,
+			Country:     cfg.AutoConnectData.Country,
+			City:        cfg.AutoConnectData.City,
+			ServerGroup: cfg.AutoConnectData.Group,
+		},
+		Ipv6:                 cfg.IPv6,
+		Meshnet:              cfg.Mesh,
+		Dns:                  cfg.AutoConnectData.DNS,
+		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+		Protocol:             cfg.AutoConnectData.Protocol,
+		LanDiscovery:         cfg.LanDiscovery,
+		Allowlist: &pb.Allowlist{
+			Ports:   &ports,
+			Subnets: subnets,
+		},
+		Obfuscate:       cfg.AutoConnectData.Obfuscate,
+		VirtualLocation: cfg.VirtualLocation.Get(),
+		UserSettings: &pb.UserSpecificSettings{
 			Uid:    uid,
 			Notify: !notifyOff,
-		}
-	}
-
-	for uid, trayOff := range cfg.UsersData.NotifyOff {
-		if userSettings, ok := userSet[uid]; ok {
-			userSettings.Tray = !trayOff
-			userSet[uid] = userSettings
-		} else {
-			userSet[uid] = &pb.UserSpecificSettings{
-				Uid:  uid,
-				Tray: !trayOff,
-			}
-		}
-	}
-
-	usersSettings := []*pb.UserSpecificSettings{}
-	for _, userSettings := range userSet {
-		usersSettings = append(usersSettings, userSettings)
-	}
-
-	settings := pb.GlobalSettings{
-		Settings: &pb.Settings{
-			Technology: cfg.Technology,
-			Firewall:   cfg.Firewall,
-			Fwmark:     cfg.FirewallMark,
-			Routing:    cfg.Routing.Get(),
-			Analytics:  cfg.Analytics.Get(),
-			KillSwitch: cfg.KillSwitch,
-			AutoConnectData: &pb.AutoconnectData{
-				Enabled:     cfg.AutoConnect,
-				Country:     cfg.AutoConnectData.Country,
-				City:        cfg.AutoConnectData.City,
-				ServerGroup: cfg.AutoConnectData.Group,
-			},
-			Ipv6:                 cfg.IPv6,
-			Meshnet:              cfg.Mesh,
-			Dns:                  cfg.AutoConnectData.DNS,
-			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-			Protocol:             cfg.AutoConnectData.Protocol,
-			LanDiscovery:         cfg.LanDiscovery,
-			Allowlist: &pb.Allowlist{
-				Ports:   &ports,
-				Subnets: subnets,
-			},
-			Obfuscate:       cfg.AutoConnectData.Obfuscate,
-			VirtualLocation: cfg.VirtualLocation.Get(),
+			Tray:   !trayOff,
 		},
-		UserSpecificSettings: usersSettings,
 	}
 
 	return &settings
@@ -83,7 +64,10 @@ func configToProtobuf(cfg *config.Config) *pb.GlobalSettings {
 
 // statusStream starts streaming status events received by stateChan to the subscriber. When the stream is stopped(i.e
 // when subscribers stops listening), stopChan will be closed.
-func statusStream(stateChan <-chan interface{}, stopChan chan<- struct{}, srv pb.Daemon_SubscribeToStateChangesServer) {
+func statusStream(stateChan <-chan interface{},
+	stopChan chan<- struct{},
+	uid int64,
+	srv pb.Daemon_SubscribeToStateChangesServer) {
 	for {
 		select {
 		case <-srv.Context().Done():
@@ -123,7 +107,7 @@ func statusStream(stateChan <-chan interface{}, stopChan chan<- struct{}, srv pb
 					log.Println(internal.ErrorPrefix, "login event failed to send state update:", err)
 				}
 			case *config.Config:
-				config := configToProtobuf(e)
+				config := configToProtobuf(e, uid)
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_SettingsChange{SettingsChange: config}}); err != nil {
 					log.Println(internal.ErrorPrefix, "config change failed to send state update:", err)
@@ -142,8 +126,22 @@ func statusStream(stateChan <-chan interface{}, stopChan chan<- struct{}, srv pb
 func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStateChangesServer) error {
 	log.Println(internal.InfoPrefix, "Received new subscription request")
 
+	peer, ok := peer.FromContext(srv.Context())
+	var uid int64
+	if ok {
+		cred, ok := peer.AuthInfo.(internal.UcredAuth)
+		if !ok {
+			return srv.Send(&pb.AppState{
+				State: &pb.AppState_Error{
+					Error: pb.AppStateError_FAILED_TO_GET_UID,
+				},
+			})
+		}
+		uid = int64(cred.Uid)
+	}
+
 	stateChan, stopChan := r.statePublisher.AddSubscriber()
-	statusStream(stateChan, stopChan, srv)
+	statusStream(stateChan, stopChan, uid, srv)
 
 	return nil
 }

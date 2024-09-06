@@ -108,11 +108,11 @@ func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 }
 
 func (c *cmd) AllowlistRemovePortAutoComplete(ctx *cli.Context) {
-	settings, err := c.client.Settings(context.Background(), &pb.SettingsRequest{})
+	settings, err := c.client.Settings(context.Background(), &pb.Empty{})
 	if err != nil {
 		return
 	}
-	allowlist := settings.GetData().Settings.GetAllowlist()
+	allowlist := settings.GetData().GetAllowlist()
 	switch ctx.NArg() {
 	case 0:
 		// create config after auth

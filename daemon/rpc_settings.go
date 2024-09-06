@@ -7,10 +7,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"google.golang.org/grpc/peer"
 )
 
 // Settings returns system daemon settings
-func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.SettingsResponse, error) {
+func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
@@ -56,40 +57,50 @@ func (r *RPC) Settings(ctx context.Context, in *pb.SettingsRequest) (*pb.Setting
 		}
 	}
 
+	peer, ok := peer.FromContext(ctx)
+	var uid int64
+	if ok {
+		cred, ok := peer.AuthInfo.(internal.UcredAuth)
+		if !ok {
+			return &pb.SettingsResponse{
+				Type: internal.CodeFailure,
+			}, nil
+		}
+		uid = int64(cred.Uid)
+	}
+
 	return &pb.SettingsResponse{
 		Type: internal.CodeSuccess,
-		Data: &pb.UserSettings{
-			Settings: &pb.Settings{
-				Technology: cfg.Technology,
-				Firewall:   cfg.Firewall,
-				Fwmark:     cfg.FirewallMark,
-				Routing:    cfg.Routing.Get(),
-				Analytics:  cfg.Analytics.Get(),
-				KillSwitch: cfg.KillSwitch,
-				AutoConnectData: &pb.AutoconnectData{
-					Enabled:     cfg.AutoConnect,
-					Country:     cfg.AutoConnectData.Country,
-					City:        cfg.AutoConnectData.City,
-					ServerGroup: cfg.AutoConnectData.Group,
-				},
-				Ipv6:                 cfg.IPv6,
-				Meshnet:              cfg.Mesh,
-				Dns:                  cfg.AutoConnectData.DNS,
-				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-				Protocol:             cfg.AutoConnectData.Protocol,
-				LanDiscovery:         cfg.LanDiscovery,
-				Allowlist: &pb.Allowlist{
-					Ports:   &ports,
-					Subnets: subnets,
-				},
-				Obfuscate:       cfg.AutoConnectData.Obfuscate,
-				VirtualLocation: cfg.VirtualLocation.Get(),
-				PostquantumVpn:  cfg.AutoConnectData.PostquantumVpn,
+		Data: &pb.Settings{
+			Technology: cfg.Technology,
+			Firewall:   cfg.Firewall,
+			Fwmark:     cfg.FirewallMark,
+			Routing:    cfg.Routing.Get(),
+			Analytics:  cfg.Analytics.Get(),
+			KillSwitch: cfg.KillSwitch,
+			AutoConnectData: &pb.AutoconnectData{
+				Enabled:     cfg.AutoConnect,
+				Country:     cfg.AutoConnectData.Country,
+				City:        cfg.AutoConnectData.City,
+				ServerGroup: cfg.AutoConnectData.Group,
 			},
-			UserSpecificSettings: &pb.UserSpecificSettings{
-				Uid:    in.GetUid(),
-				Notify: !cfg.UsersData.NotifyOff[in.GetUid()],
-				Tray:   !cfg.UsersData.TrayOff[in.GetUid()],
+			Ipv6:                 cfg.IPv6,
+			Meshnet:              cfg.Mesh,
+			Dns:                  cfg.AutoConnectData.DNS,
+			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+			Protocol:             cfg.AutoConnectData.Protocol,
+			LanDiscovery:         cfg.LanDiscovery,
+			Allowlist: &pb.Allowlist{
+				Ports:   &ports,
+				Subnets: subnets,
+			},
+			Obfuscate:       cfg.AutoConnectData.Obfuscate,
+			PostquantumVpn:  cfg.AutoConnectData.PostquantumVpn,
+			VirtualLocation: cfg.VirtualLocation.Get(),
+			UserSettings: &pb.UserSpecificSettings{
+				Uid:    uid,
+				Notify: !cfg.UsersData.NotifyOff[uid],
+				Tray:   !cfg.UsersData.TrayOff[uid],
 			},
 		},
 	}, nil

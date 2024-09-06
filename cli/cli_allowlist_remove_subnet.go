@@ -57,11 +57,11 @@ func (c *cmd) AllowlistRemoveSubnet(ctx *cli.Context) error {
 }
 
 func (c *cmd) AllowlistRemoveSubnetAutoComplete(ctx *cli.Context) {
-	settings, err := c.client.Settings(context.Background(), &pb.SettingsRequest{})
+	settings, err := c.client.Settings(context.Background(), &pb.Empty{})
 	if err != nil {
 		return
 	}
-	allowlist := settings.GetData().Settings.GetAllowlist()
+	allowlist := settings.GetData().GetAllowlist()
 	for _, subnet := range allowlist.Subnets {
 		if !slices.Contains(ctx.Args().Slice(), subnet) {
 			fmt.Println(subnet)
