@@ -445,7 +445,6 @@ func main() {
 		repoAPI,
 		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
 		Version,
-		fw,
 		daemonEvents,
 		vpnFactory,
 		&endpointResolver,

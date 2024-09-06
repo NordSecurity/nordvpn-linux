@@ -12,7 +12,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -72,7 +71,6 @@ func NewRPC(
 	repo *RepoAPI,
 	authentication core.Authentication,
 	version string,
-	fw firewall.Service,
 	events *daemonevents.Events,
 	factory FactoryFunc,
 	endpointResolver network.EndpointResolver,

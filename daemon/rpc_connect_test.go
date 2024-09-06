@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"errors"
-	"net/http"
 	"net/netip"
 	"testing"
 	"time"
@@ -10,21 +9,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/networker"
-	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
-	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
-	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -89,55 +79,49 @@ func TestRpcConnect(t *testing.T) {
 
 	defer testsCleanup()
 	tests := []struct {
-		name          string
-		serverGroup   string
-		serverTag     string
-		factory       FactoryFunc
-		netw          networker.Networker
-		fw            firewall.Service
-		checker       auth.Checker
-		resp          int64
-		expectedError error
+		name        string
+		serverGroup string
+		serverTag   string
+		factory     FactoryFunc
+		resp        int64
+		setup       func(*RPC)
 	}{
 		{
 			name: "Quick connect works",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{},
-			resp:    internal.CodeConnected,
+			resp: internal.CodeConnected,
 		},
 		{
 			name: "Fail for broken Networker and VPN",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.FailingVPN{}, nil
 			},
-			netw:    testnetworker.Failing{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{},
-			resp:    internal.CodeFailure,
+			setup: func(rpc *RPC) {
+				rpc.netw = testnetworker.Failing{}
+			},
+			resp: internal.CodeFailure,
 		},
 		{
-			name: "fFail when VPN subscription is expired",
+			name: "Fail when VPN subscription is expired",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{isVPNExpired: true},
-			resp:    internal.CodeAccountExpired,
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{isVPNExpired: true}
+			},
+			resp: internal.CodeAccountExpired,
 		},
 		{
 			name: "Fail when VPN subscription API calls fails",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{vpnErr: errors.New("test error")},
-			resp:    internal.CodeTokenRenewError,
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{vpnErr: errors.New("test error")}
+			},
+			resp: internal.CodeTokenRenewError,
 		},
 		{
 			name:      "Connects using country name",
@@ -145,10 +129,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{},
-			resp:    internal.CodeConnected,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Connects using country name + city name",
@@ -156,10 +137,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{},
-			resp:    internal.CodeConnected,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Connects for city name",
@@ -167,10 +145,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{},
-			resp:    internal.CodeConnected,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Connects using country code + city name",
@@ -178,10 +153,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{},
-			resp:    internal.CodeConnected,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Connects using country code",
@@ -189,10 +161,7 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{},
-			resp:    internal.CodeConnected,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:        "Dedicated IP group connect works",
@@ -200,11 +169,13 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw: &testnetworker.Mock{},
-			fw:   &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{
-				isDedicatedIPExpired: false,
-				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{
+					isDedicatedIPExpired: false,
+					dedicatedIPService: []auth.DedicatedIPService{
+						{ExpiresAt: "", ServerID: 7},
+					},
+				}
 			},
 			resp: internal.CodeConnected,
 		},
@@ -214,11 +185,13 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw: &testnetworker.Mock{},
-			fw:   &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{
-				isDedicatedIPExpired: false,
-				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{
+					isDedicatedIPExpired: false,
+					dedicatedIPService: []auth.DedicatedIPService{
+						{ExpiresAt: "", ServerID: 7},
+					},
+				}
 			},
 			resp: internal.CodeConnected,
 		},
@@ -228,10 +201,10 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{isDedicatedIPExpired: true},
-			resp:    internal.CodeDedicatedIPRenewError,
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{isDedicatedIPExpired: true}
+			},
+			resp: internal.CodeDedicatedIPRenewError,
 		},
 		{
 			name:      "fails for Dedicated IP when API fails",
@@ -239,10 +212,11 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw:    &testnetworker.Mock{},
-			fw:      &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{isDedicatedIPExpired: true},
-			resp:    internal.CodeDedicatedIPRenewError,
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{
+					dedicatedIPErr: errors.New("error"),
+				}
+			},
 		},
 		{
 			name:      "fails when server not into Dedicated IP servers list",
@@ -250,11 +224,14 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw: &testnetworker.Mock{},
-			fw:   &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{
-				isDedicatedIPExpired: false,
-				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: 7}},
+
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{
+					isDedicatedIPExpired: false,
+					dedicatedIPService: []auth.DedicatedIPService{
+						{ExpiresAt: "", ServerID: 7},
+					},
+				}
 			},
 			resp: internal.CodeDedicatedIPNoServer,
 		},
@@ -264,67 +241,42 @@ func TestRpcConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			netw: &testnetworker.Mock{},
-			fw:   &testfirewall.FirewallMock{},
-			checker: &workingLoginChecker{
-				isDedicatedIPExpired: false,
-				dedicatedIPService:   []auth.DedicatedIPService{{ExpiresAt: "", ServerID: auth.NoServerSelected}},
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{
+					isDedicatedIPExpired: false,
+					dedicatedIPService: []auth.DedicatedIPService{
+						{ExpiresAt: "", ServerID: auth.NoServerSelected},
+					},
+				}
 			},
 			resp: internal.CodeDedicatedIPServiceButNoServers,
 		},
 	}
 
 	for _, test := range tests {
-		// run each test using working API for servers list and using local cached servers list
+		// run each test using working API for servers list and using local cached servers
+		// list
 		servers := map[string]core.ServersAPI{
 			"Remote": mockServersAPI{},
 			"Local":  mockFailingServersAPI{},
 		}
 		for key, serversAPI := range servers {
 			t.Run(test.name+" "+key, func(t *testing.T) {
-				cm := newMockConfigManager()
-				tokenData := cm.c.TokensData[cm.c.AutoConnectData.ID]
-				tokenData.TokenExpiry = time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat)
-				tokenData.ServiceExpiry = time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat)
-				cm.c.TokensData[cm.c.AutoConnectData.ID] = tokenData
-				dm := testNewDataManager()
-				dm.SetServersData(time.Now(), serversList(), "")
-				api := core.NewDefaultAPI(
-					"",
-					"",
-					http.DefaultClient,
-					response.NoopValidator{},
-				)
-				rpc := NewRPC(
-					internal.Development,
-					test.checker,
-					cm,
-					dm,
-					api,
-					serversAPI,
-					&testcore.CredentialsAPIMock{},
-					testNewCDNAPI(),
-					testNewRepoAPI(),
-					&mockAuthenticationAPI{},
-					"1.0.0",
-					test.fw,
-					daemonevents.NewEventsEmpty(),
-					test.factory,
-					newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
-					test.netw,
-					&subs.Subject[string]{},
-					&mock.DNSGetter{Names: []string{"1.1.1.1"}},
-					nil,
-					&mockAnalytics{},
-					&testnorduser.MockNorduserCombinedService{},
-					&RegistryMock{},
-					nil,
-					sharedctx.New(),
-				)
+				rpc := testRPC()
+				rpc.serversAPI = serversAPI
+				if test.setup != nil {
+					test.setup(rpc)
+				}
 				server := &mockRPCServer{}
-				err := rpc.Connect(&pb.ConnectRequest{ServerGroup: test.serverGroup, ServerTag: test.serverTag}, server)
-				assert.Equal(t, test.expectedError, err)
-				if err == nil {
+				err := rpc.Connect(&pb.ConnectRequest{
+					ServerGroup: test.serverGroup,
+					ServerTag:   test.serverTag,
+				}, server)
+				if test.resp == internal.CodeConnected {
+					assert.NoError(t, err)
+				} else if test.resp == 0 {
+					assert.ErrorIs(t, internal.ErrUnhandled, err)
+				} else {
 					assert.Equal(t, test.resp, server.msg.Type)
 				}
 			})
@@ -335,54 +287,13 @@ func TestRpcConnect(t *testing.T) {
 func TestRpcReconnect(t *testing.T) {
 	category.Set(t, category.Route)
 
-	var fail bool
-	factory := func(config.Technology) (vpn.VPN, error) {
-		if fail {
-			fail = false
-			return &mock.FailingVPN{}, nil
-		}
-		fail = true
-		return &mock.WorkingVPN{}, nil
-	}
-
 	cm := newMockConfigManager()
 	tokenData := cm.c.TokensData[cm.c.AutoConnectData.ID]
 	tokenData.TokenExpiry = time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat)
 	tokenData.ServiceExpiry = time.Now().Add(time.Hour * 1).Format(internal.ServerDateFormat)
 	cm.c.TokensData[cm.c.AutoConnectData.ID] = tokenData
-	dm := testNewDataManager()
-	api := core.NewDefaultAPI(
-		"",
-		"",
-		http.DefaultClient,
-		response.NoopValidator{},
-	)
-	rpc := NewRPC(
-		internal.Development,
-		&workingLoginChecker{},
-		cm,
-		dm,
-		api,
-		&mockServersAPI{},
-		&testcore.CredentialsAPIMock{},
-		testNewCDNAPI(),
-		testNewRepoAPI(),
-		&mockAuthenticationAPI{},
-		"1.0.0",
-		&testfirewall.FirewallMock{},
-		daemonevents.NewEventsEmpty(),
-		factory,
-		newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
-		&testnetworker.Mock{},
-		&subs.Subject[string]{},
-		&mock.DNSGetter{Names: []string{"1.1.1.1"}},
-		nil,
-		&mockAnalytics{},
-		&testnorduser.MockNorduserCombinedService{},
-		&RegistryMock{},
-		nil,
-		sharedctx.New(),
-	)
+
+	rpc := testRPC()
 	err := rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
 	assert.NoError(t, err)
 
