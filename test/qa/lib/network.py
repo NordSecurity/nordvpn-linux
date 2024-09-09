@@ -61,7 +61,7 @@ def _capture_packets(connection_settings: (str, str, str)) -> int:
 
 
 def capture_traffic(connection_settings) -> int:
-    """ Returns count of captured packets. """
+    """Returns count of captured packets."""
 
     # We try to capture packets using other thread
     t_connect = PacketCaptureThread(connection_settings)
@@ -114,7 +114,7 @@ def _is_dns_resolvable(retry=5) -> bool:
 
 
 def _is_dns_not_resolvable(retry: int = 5) -> bool:
-    """ returns True when domain resolution is not working. """
+    """Returns True when domain resolution is not working."""
     i = 0
     while i < retry:
         try:
@@ -130,7 +130,7 @@ def _is_dns_not_resolvable(retry: int = 5) -> bool:
 
 
 def is_not_available(retry=5) -> bool:
-    """ returns True when network access is not available. """
+    """Returns True when network access is not available."""
 
     if daemon.is_init_systemd():
         sh.sudo("resolvectl", "flush-caches")

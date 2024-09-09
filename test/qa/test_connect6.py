@@ -35,7 +35,8 @@ def connect_base_test(group: str = (), name: str = "", hostname: str = "", ipv6 
     """
     Connects to a NordVPN server and performs a series of checks to ensure the connection is successful.
 
-    Parameters:
+    Parameters
+    ----------
     group (str): The specific server name or group name to connect to. Default is an empty string.
     name (str): Used to verify the connection message. Default is an empty string.
     hostname (str): Used to verify the connection message. Default is an empty string.

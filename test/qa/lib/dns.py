@@ -75,5 +75,4 @@ def get_dns_servers():
                 for item in line.strip().split(":")[1].strip().split(" "):
                     servers.append(item)
         return servers
-    else:
-        return dns.resolver.Resolver().nameservers
+    return dns.resolver.Resolver().nameservers

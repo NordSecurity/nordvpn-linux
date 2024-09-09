@@ -62,7 +62,6 @@ def test_set_dns_connected(tech, proto, obfuscated):
     # TODO: LVPN-1349
     sh.nordvpn.connect()
     sh.nordvpn.disconnect()
-    #
 
     lib.set_ipv6("on")
 

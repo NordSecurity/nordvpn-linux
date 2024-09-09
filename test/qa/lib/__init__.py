@@ -1,8 +1,8 @@
 import os
 import re
 import time
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Union
 
 import sh
 
@@ -166,7 +166,7 @@ os.environ["GOCOVERDIR"] = os.environ["WORKDIR"] + "/" + os.environ["COVERDIR"]
 
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.
 class ErrorDefer:
-    def __init__(self, command: Union[sh.Command, Callable]):
+    def __init__(self, command: sh.Command | Callable):
         self.command = command
 
     def __enter__(self):
@@ -179,7 +179,7 @@ class ErrorDefer:
 
 # Implements context manager a.k.a. with block and executes command on exit.
 class Defer:
-    def __init__(self, command: Union[sh.Command, Callable]):
+    def __init__(self, command: sh.Command | Callable):
         self.command = command
 
     def __enter__(self):
@@ -290,8 +290,7 @@ def is_connect_successful(output: str, name: str = "", hostname: str = ""):
             "Connecting to" in output
             and "You are connected to" in output
         )
-    else:
-            return (
+    return (
         f"Connecting to {name} ({hostname})" in output
         and f"You are connected to {name} ({hostname})" in output
         )

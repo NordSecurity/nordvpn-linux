@@ -22,7 +22,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
-def base_test_peer_list(filter_list: list[str] = None) -> None:
+def base_test_peer_list(filter_list: list[str] | None = None) -> None:
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     remote_hostname = peer_list.get_external_peer().hostname
@@ -82,7 +82,7 @@ def test_meshnet_peer_list_peer_connected():
         remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
 
         peer_lists = [local_peer_list, remote_peer_list]
-        return ("Status: connected" in list for list in peer_lists)
+        return ("Status: connected" in lst for lst in peer_lists)
 
     # There is a delay between when peer comes online and when it affect its status when listing peers.
     for result in poll(is_peer_connected):

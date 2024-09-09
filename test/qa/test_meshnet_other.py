@@ -47,7 +47,7 @@ def test_allowlist_incoming_connection():
 # This doesn't directly test meshnet, but it uses it
 def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    
+
     sh.nordvpn.set.fwmark("0xe2f2")
     sh.nordvpn.set.killswitch("on")
     sh.nordvpn.set.tpl("on")
@@ -88,7 +88,7 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
     assert settings.is_lan_discovery_enabled()
     assert not settings.are_analytics_enabled()
     assert settings.is_tpl_enabled()
-    
+
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
     else:

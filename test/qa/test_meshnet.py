@@ -145,7 +145,7 @@ def test_account_switch():
 
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_on_when_logged_out(meshnet_allias):
-    
+
     sh.nordvpn.logout("--persist-token")
     assert not settings.is_meshnet_enabled()
 
@@ -158,7 +158,7 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
 @pytest.mark.skip(reason="LVPN-4590")
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_when_logged_out(meshnet_allias):
-    
+
     sh.nordvpn.logout("--persist-token")
     assert not settings.is_meshnet_enabled()
 
@@ -229,8 +229,8 @@ def test_permission_messages_error(permission, permission_state, expected_messag
 
 
 def test_derp_server_selection_logic():
-    def has_duplicates(list):
-        return len(list) != len(set(list))
+    def has_duplicates(lst):
+        return len(lst) != len(set(lst))
 
     ssh_client.exec_command("sudo iptables -I OUTPUT 1 -p tcp -m tcp --sport 8765 -j DROP")
     ssh_client.exec_command("sudo iptables -I OUTPUT 1 -p tcp -m tcp --dport 8765 -j DROP")
@@ -266,11 +266,11 @@ def test_derp_server_selection_logic():
 @pytest.mark.skip("LVPN-3428, need a discussion here")
 def test_direct_connection_rtt_and_loss():
     def get_loss(ping_output: str) -> float:
-        """ pass `ping_output`, and get loss returned. """
+        """Pass `ping_output`, and get loss returned."""
         return float(ping_output.split("\n")[-3].split(", ")[2].split("%")[0])
 
     def get_average_rtt(ping_output: str) -> float:
-        """ pass `ping_output`, and get average rtt returned. """
+        """Pass `ping_output`, and get average rtt returned."""
         return float(ping_output.split("\n")[-2].split("/")[4])
 
     def base_test(log: str, peer_hostname: str):

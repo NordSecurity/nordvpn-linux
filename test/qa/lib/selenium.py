@@ -22,7 +22,7 @@ SNAP_FF_TMP_DIR_PATH = os.path.expanduser("~") + "/ff_tmp"
 NA_USERNAME_PAGE_TEXTBOX_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/div/span/input'
 NA_USERNAME_PAGE_BUTTON_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/button'
 
-NA_PASSWORD_PAGE_TEXTBOX_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/div[3]/span/input'
+NA_PASSWORD_PAGE_TEXTBOX_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/div[3]/span/input'  # noqa: S105
 NA_PASSWORD_PAGE_BUTTON_XPATH = NA_USERNAME_PAGE_BUTTON_XPATH
 
 NA_CONTINUE_PAGE_LINK_BUTTON = '/html/body/div/div/div[1]/main/div/a'
@@ -32,7 +32,7 @@ LOGIN_FLAG = ["", "--nordaccount"]
 
 
 class SeleniumBrowser:
-    def __init__(self, preferences:list=None):
+    def __init__(self, preferences:list | None=None):
         self.options = webdriver.FirefoxOptions()
         self.options.binary_location = str(sh.which("firefox"))
         self.options.add_argument('--headless')
@@ -53,7 +53,7 @@ class SeleniumBrowser:
         return self.browser
 
     def browser_kill(self) -> None:
-        """ Quits browser, and deletes temporary folder created for Firefox. """
+        """Quits browser, and deletes temporary folder created for Firefox."""
         self.browser.quit()
 
         # Cleanup, if we were working with Firefox from snap
@@ -61,7 +61,7 @@ class SeleniumBrowser:
             os.environ.pop(ENV_FF_TMP)
             os.removedirs(SNAP_FF_TMP_DIR_PATH)
 
-    def browser_element_interact(self, xpath: str, write:str=None, return_attribute:str=None) -> None | str:
+    def browser_element_interact(self, xpath: str, write:str | None=None, return_attribute:str | None=None) -> None | str:
         """
         Clicks element on website, specified by `xpath`.
 
@@ -81,5 +81,4 @@ class SeleniumBrowser:
 
         if return_attribute is not None:
             return website_element.get_attribute(return_attribute)
-        else:
-            return None
+        return None

@@ -164,9 +164,7 @@ def test_accept(accept_directories):
             if file_entry_columns[0].startswith(directory) and ("downloaded" in file_entry or "uploaded" in file_entry):
                 return True
 
-        if "canceled" in file_entry:
-            return True
-        return False
+        return "canceled" in file_entry
 
     def check_files_status_receiver():
         tsfr = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
@@ -621,23 +619,21 @@ def format_memory_usage(rss):
 
     if rss >= GB:
         return f'{round(rss / GB, 2)}gb'
-    elif rss >= MB:
+    if rss >= MB:
         return f'{round(rss / MB, 2)}mb'
-    elif rss >= KB:
+    if rss >= KB:
         return f'{round(rss / KB, 2)}kb'
-    else:
-        return f'{round(rss, 2)}b'
+    return f'{round(rss, 2)}b'
 
 
 def format_time(nanoseconds):
     if nanoseconds < 1000:
         return f'{int(nanoseconds)}ns'
-    elif nanoseconds < 1000000:
+    if nanoseconds < 1000000:
         return f'{int(nanoseconds / 1000)}μs'
-    elif nanoseconds < 1000000000:
+    if nanoseconds < 1000000000:
         return f'{int(nanoseconds / 1000000)}ms'
-    else:
-        return f'{int(nanoseconds / 1000000000)}s'
+    return f'{int(nanoseconds / 1000000000)}s'
 
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
