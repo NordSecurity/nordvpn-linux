@@ -30,7 +30,6 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 			Type: internal.CodeConfigError,
 		}, nil
 	}
-	r.netw.SetVPN(v)
 
 	payload := &pb.Payload{}
 	// payload.Type gets overridden in case of failure
@@ -64,6 +63,9 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 			Type: internal.CodeConfigError,
 		}, nil
 	}
+
+	// change vpn only when all above checks succeed
+	r.netw.SetVPN(v)
 
 	r.events.Settings.Technology.Publish(in.GetTechnology())
 
