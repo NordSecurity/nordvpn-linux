@@ -171,10 +171,10 @@ parts:
     plugin: dump
     source-type: local
     source:
-      - on amd64: ./bin/deps/lib/amd64/
-      - on arm64: ./bin/deps/lib/arm64/
-      - on armhf: ./bin/deps/lib/armhf/
       - on i386: ./bin/deps/lib/i386/
+      - on amd64: ./bin/deps/lib/amd64/
+      - on armhf: ./bin/deps/lib/armhf/
+      - on arm64: ./bin/deps/lib/aarch64/
     organize:
       latest/*: usr/lib/
     stage:
