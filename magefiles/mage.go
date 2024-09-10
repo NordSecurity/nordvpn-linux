@@ -414,7 +414,7 @@ func (Build) BinariesDocker(ctx context.Context) error {
 	return buildBinariesDocker(ctx, "")
 }
 
-// Openvpn binaries for the host architecture
+// Builds Openvpn binaries for the host architecture
 func (Build) Openvpn(ctx context.Context) error {
 	mg.Deps(DownloadOpenvpn)
 
