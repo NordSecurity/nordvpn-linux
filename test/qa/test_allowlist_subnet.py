@@ -38,17 +38,16 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.mark.parametrize("allowlist_alias", lib.ALLOWLIST_ALIAS)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disconnected(allowlist_alias, tech, proto, obfuscated, subnet):
+def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disconnected(tech, proto, obfuscated, subnet):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    allowlist.add_subnet_to_allowlist([subnet], allowlist_alias)
+    allowlist.add_subnet_to_allowlist([subnet])
     assert not firewall.is_active(None, [subnet])
     output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    allowlist.remove_subnet_from_allowlist([subnet], allowlist_alias)
+    allowlist.remove_subnet_from_allowlist([subnet])
     assert not firewall.is_active(None, [subnet])
     output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
@@ -105,7 +104,7 @@ def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
     allowlist.add_subnet_to_allowlist([subnet])
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(lib.ALLOWLIST_ALIAS[1], "add", "subnet", subnet)
+        sh.nordvpn(allowlist.get_alias(), "add", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
     assert expected_message in str(ex)
@@ -123,7 +122,7 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
     allowlist.add_subnet_to_allowlist([subnet])
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(lib.ALLOWLIST_ALIAS[1], "add", "subnet", subnet)
+        sh.nordvpn(allowlist.get_alias(), "add", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
     assert expected_message in str(ex)
@@ -175,7 +174,7 @@ def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscate
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(lib.ALLOWLIST_ALIAS[1], "remove", "subnet", subnet)
+        sh.nordvpn(allowlist.get_alias(), "remove", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_REMOVE_ERROR % subnet
     assert expected_message in str(ex)
@@ -189,7 +188,7 @@ def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, obfuscated, 
     sh.nordvpn.connect()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(lib.ALLOWLIST_ALIAS[1], "remove", "subnet", subnet)
+        sh.nordvpn(allowlist.get_alias(), "remove", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_REMOVE_ERROR % subnet
     assert expected_message in str(ex)
