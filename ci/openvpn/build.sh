@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-src_dir=$(dirname -- ${BASH_SOURCE[0]})
-source "${src_dir}/env.sh"
+source "${WORKDIR}/ci/openvpn/env.sh"
 
 cores=$(nproc)
 
@@ -80,7 +79,6 @@ pushd "${current_dir}"
   case "${ARCH}" in
     "i386")
       target="i686-linux-gnu"
-      prefix="$target-"
       openssl_cflags+=" -m32"
       openssl_ldflags+=" -m32"
       lzo_cflags+=" -m32"
@@ -90,38 +88,34 @@ pushd "${current_dir}"
     ;;
     "amd64")
       target="x86_64-linux-gnu"
-      prefix="$target-"
     ;;
     "armel")
       target="arm-linux-gnueabi"
-      prefix="$target-"
     ;;
     "armhf")
       target="arm-linux-gnueabihf"
-      prefix="$target-"
     ;;
     "aarch64")
       target="aarch64-linux-gnu"
-      prefix="$target-"
     ;;
   esac
 
   pushd "${sources}/openssl-${OPENSSL_VERSION}"
     configure_openssl "${compiler}"
-    make -j$cores CFLAGS+="$openssl_cflags" LDFLAGS+="$openssl_ldflags" > /dev/null
-    make install -j$cores CFLAGS+="$openssl_cflags" LDFLAGS+="$openssl_ldflags" > /dev/null
+    make -j"$cores" CFLAGS+="$openssl_cflags" LDFLAGS+="$openssl_ldflags" > /dev/null
+    make install -j"$cores" CFLAGS+="$openssl_cflags" LDFLAGS+="$openssl_ldflags" > /dev/null
   popd
 
   pushd "${sources}/lzo-${LZO_VERSION}"
     configure_lzo "${compiler}" "${target}" "${lzo_cflags}" "${lzo_ldflags}"
-    make -j$cores > /dev/null
-    make install -j$cores > /dev/null
+    make -j"$cores" > /dev/null
+    make install -j"$cores" > /dev/null
   popd
 
   pushd "${sources}/openvpn-${OPENVPN_VERSION}"
     configure_openvpn "${compiler}" "${target}" "${openvpn_cflags}" "${openvpn_ldflags}"
-    make -j$cores > /dev/null
-    make install -j$cores /dev/null
+    make -j"$cores" > /dev/null
+    make install -j"$cores" /dev/null
   popd
 popd
 

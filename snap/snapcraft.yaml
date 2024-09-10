@@ -167,6 +167,19 @@ parts:
     stage:
       - usr/lib/nordvpn/openvpn
 
+  libraries:
+    plugin: dump
+    source-type: local
+    source:
+      - on i386: ./bin/deps/lib/i386/
+      - on amd64: ./bin/deps/lib/amd64/
+      - on armhf: ./bin/deps/lib/armhf/
+      - on arm64: ./bin/deps/lib/aarch64/
+    organize:
+      latest/*: usr/lib/
+    stage:
+      - usr/lib/
+
   autocomplete:
     plugin: dump
     source-type: local

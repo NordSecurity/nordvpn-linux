@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
-
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -26,7 +25,7 @@ const (
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.2.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.2.0"
+	imageRuster            = registryPrefix + "ruster:1.3.0"
 
 	dockerWorkDir  = "/opt"
 	devPackageType = "source"
@@ -94,7 +93,7 @@ func installHookIfNordsec() error {
 	}
 
 	if !strings.Contains(string(output), "llt-secrets") {
-		return fmt.Errorf("Secret provider was not configured.")
+		return fmt.Errorf("secret provider was not configured")
 	}
 
 	if _, err := exec.Command("git", "secrets", "--install", "--force").CombinedOutput(); err != nil {
@@ -118,11 +117,11 @@ func (View) Docs() error {
 // Clean is used to clean build results.
 func Clean() error {
 	// cleanup regular build folders
-	buildFolders := []string{"./bin", "./dist", "./build/foss/target"}
+	buildFolders := []string{"./bin", "./dist", "./build"}
 	for _, folder := range buildFolders {
 		if internal.FileExists(folder) {
 			fmt.Println("Cleanup build folder:", folder)
-			if err := sh.Run("rm", "-r", folder); err != nil {
+			if err := sh.Run("rm", "-rf", folder); err != nil {
 				return err
 			}
 		}
@@ -158,6 +157,7 @@ func Clean() error {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -168,14 +168,21 @@ func Download() error {
 		return err
 	}
 
+	versions, err := getVersions()
+	if err != nil {
+		return err
+	}
+
+	environment := mergeMaps(env, versions)
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	env["ARCH"] = build.Default.GOARCH
-	env["WORKDIR"] = cwd
-	return sh.RunWith(env, "ci/check_dependencies.sh")
+	environment["ARCH"] = build.Default.GOARCH
+	environment["WORKDIR"] = cwd
+	return sh.RunWith(environment, "ci/check_dependencies.sh")
 }
 
 // Download OpenVPN external dependencies
@@ -192,7 +199,7 @@ func DownloadOpenvpn() error {
 
 	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
-	return sh.RunWith(env, "build/openvpn/check_dependencies.sh")
+	return sh.RunWith(env, "ci/openvpn/check_dependencies.sh")
 }
 
 // Data for Linux packages
@@ -225,6 +232,18 @@ func (Build) Notices() error {
 }
 
 func buildPackage(packageType string, buildFlags string) error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+	env["ARCH"] = build.Default.GOARCH
+	env["GOPATH"] = build.Default.GOPATH
+	env["LD_LIBRARY_PATH"] = fmt.Sprintf("./bin/deps/lib/%s/latest", build.Default.GOARCH)
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
 	mg.Deps(Build.Data)
 	mg.Deps(mg.F(buildBinaries, buildFlags))
 	mg.Deps(Build.Notices)
@@ -234,16 +253,6 @@ func buildPackage(packageType string, buildFlags string) error {
 		mg.Deps(Build.Openvpn)
 	}
 
-	env, err := getEnv()
-	if err != nil {
-		return err
-	}
-	env["ARCH"] = build.Default.GOARCH
-	env["GOPATH"] = build.Default.GOPATH
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
 	env["WORKDIR"] = cwd
 	if packageType == "snap" {
 		return sh.RunWith(env, "ci/build_snap.sh")
@@ -328,8 +337,6 @@ func buildBinaries(buildFlags string) error {
 		return err
 	}
 
-	mg.Deps(Download)
-
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -340,7 +347,9 @@ func buildBinaries(buildFlags string) error {
 		return err
 	}
 
-	if !strings.Contains(env["FEATURES"], "internal") {
+	if strings.Contains(env["FEATURES"], "internal") {
+		mg.Deps(Download)
+	} else {
 		mg.Deps(Build.Rust)
 	}
 
@@ -369,13 +378,14 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		return err
 	}
 
-	mg.Deps(Download)
 	env, err := getEnv()
 	if err != nil {
 		return err
 	}
 
-	if !strings.Contains(env["FEATURES"], "internal") {
+	if strings.Contains(env["FEATURES"], "internal") {
+		mg.Deps(Download)
+	} else {
 		mg.Deps(Build.RustDocker)
 	}
 
@@ -404,7 +414,7 @@ func (Build) BinariesDocker(ctx context.Context) error {
 	return buildBinariesDocker(ctx, "")
 }
 
-// Openvpn binaries for the host architecture
+// Builds Openvpn binaries for the host architecture
 func (Build) Openvpn(ctx context.Context) error {
 	mg.Deps(DownloadOpenvpn)
 
@@ -420,7 +430,7 @@ func (Build) Openvpn(ctx context.Context) error {
 	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 
-	return sh.RunWith(env, "build/openvpn/build.sh")
+	return sh.RunWith(env, "ci/openvpn/build.sh")
 }
 
 // Openvpn binaries for the host architecture
@@ -438,7 +448,7 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"build/openvpn/build.sh"},
+		[]string{"ci/openvpn/build.sh"},
 	)
 }
 
@@ -449,10 +459,11 @@ func (Build) Rust(ctx context.Context) error {
 		return err
 	}
 	env := map[string]string{
-		"ARCHS":   build.Default.GOARCH,
-		"WORKDIR": cwd,
+		// build only for host architecture by default
+		"ARCHS_RUST": build.Default.GOARCH,
+		"WORKDIR":    cwd,
 	}
-	return sh.RunWith(env, "build/foss/build.sh")
+	return sh.RunWith(env, "ci/build_rust.sh")
 }
 
 // Builds rust dependencies using Docker builder
@@ -462,13 +473,14 @@ func (Build) RustDocker(ctx context.Context) error {
 		return err
 	}
 
-	env["ARCHS"] = build.Default.GOARCH
+	// build only for host architecture by default
+	env["ARCHS_RUST"] = build.Default.GOARCH
 	env["WORKDIR"] = dockerWorkDir
 	if err := RunDocker(
 		ctx,
 		env,
 		imageRuster,
-		[]string{"build/foss/build.sh"},
+		[]string{"ci/build_rust.sh"},
 	); err != nil {
 		return err
 	}
@@ -507,6 +519,7 @@ func (Test) Go() error {
 		return err
 	}
 	env["WORKDIR"] = cwd
+	env["ARCH"] = build.Default.GOARCH
 
 	return sh.RunWithV(env, "ci/test.sh")
 }
