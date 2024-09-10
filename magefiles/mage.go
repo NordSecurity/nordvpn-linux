@@ -405,7 +405,7 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"ci/compile.sh", "docker"},
+		[]string{"ci/compile.sh"},
 	)
 }
 
