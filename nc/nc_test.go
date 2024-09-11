@@ -3,6 +3,8 @@ package nc
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/url"
 	"testing"
 	"time"
 
@@ -63,6 +65,90 @@ func connectionStateToString(t *testing.T, state connectionState) string {
 	}
 
 	return "unknown"
+}
+
+type builder struct{}
+
+var initiated = false
+
+func (builder) Build(opts *mqtt.ClientOptions) mqtt.Client {
+	opts = opts.SetCustomOpenConnectionFn(func(*url.URL, mqtt.ClientOptions) (net.Conn, error) {
+		client, server := net.Pipe()
+		go func() {
+			if !initiated {
+				// Connect
+				b := make([]byte, 64)
+				server.Read(b)
+				(&mqttp.ConnackPacket{FixedHeader: mqttp.FixedHeader{MessageType: mqttp.Connack}, ReturnCode: 0}).Write(server)
+
+				// Subscribe
+				server.Read(b)
+				fmt.Println("SUBSCRIBE MSG:", string(b), b)
+				(&mqttp.SubackPacket{FixedHeader: mqttp.FixedHeader{MessageType: mqttp.Suback}, MessageID: 1}).Write(server)
+				mqttp.NewControlPacket(mqttp.Suback).Write(server)
+
+				b = make([]byte, 1024)
+				server.Read(b)
+				return
+			}
+
+			// Connect
+			b := make([]byte, 1024)
+			server.Read(b)
+			(&mqttp.ConnackPacket{FixedHeader: mqttp.FixedHeader{MessageType: mqttp.Connack}, ReturnCode: 0}).Write(server)
+
+			// Subscribe
+			server.Read(b)
+			(&mqttp.SubackPacket{FixedHeader: mqttp.FixedHeader{MessageType: mqttp.Suback}, MessageID: 1, ReturnCodes: []byte{0x05}}).Write(server)
+			mqttp.NewControlPacket(mqttp.Suback).Write(server)
+
+			initiated = true
+			b = make([]byte, 1024)
+			server.Read(b)
+			return
+		}()
+		return client, nil
+	})
+	opts.SetKeepAlive(time.Second * 2)
+	opts.SetPingTimeout(time.Second)
+	return mqtt.NewClient(opts)
+}
+
+type logger struct{}
+
+func (logger) Println(a ...any) {
+	fmt.Println(a...)
+}
+func (logger) Printf(format string, a ...any) {
+	fmt.Printf(format, a...)
+}
+
+func TestNcClientManagementLoop(t *testing.T) {
+	category.Set(t, category.Unit)
+	// mqtt.DEBUG = logger{}
+	c := Client{}
+
+	cfgManager := cfgmock.NewMockConfigManager()
+	cfg := config.Config{}
+	cfg.TokensData = map[int64]config.TokenData{}
+	cfgManager.Cfg = &cfg
+
+	credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{
+		NotificationCredentialsError: nil,
+	}, cfgManager)
+
+	c.clientBuilder = builder{}
+	c.credsFetcher = credsFetcher
+	c.subjectInfo = &subs.Subject[string]{}
+	c.subjectErr = &subs.Subject[error]{}
+	c.subjectPeerUpdate = &subs.Subject[[]string]{}
+
+	for i := 0; i < 4; i++ {
+		err := c.Start()
+		assert.NoError(t, err)
+		c.Stop()
+	}
+	time.Sleep(time.Second * 20)
 }
 
 func TestStartStopNotificationClient(t *testing.T) {

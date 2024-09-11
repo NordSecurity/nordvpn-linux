@@ -50,6 +50,7 @@ func (cf *CredentialsGetter) GetCredentialsFromConfig() (config.NCData, error) {
 
 // GetCredentials fetches credentials from core API and saves them in local config
 func (cf *CredentialsGetter) GetCredentialsFromAPI() (config.NCData, error) {
+	fmt.Println("Fetching from API")
 	var cfg config.Config
 	if err := cf.cm.Load(&cfg); err != nil {
 		return config.NCData{}, fmt.Errorf("reading cfg: %w", err)

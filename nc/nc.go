@@ -407,7 +407,6 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 
 	go func() {
 		client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, ctx)
-
 		for {
 			select {
 			case <-ctx.Done():

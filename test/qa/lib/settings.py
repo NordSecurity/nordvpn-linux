@@ -1,3 +1,5 @@
+import random
+
 import sh
 
 
@@ -19,6 +21,22 @@ class Settings:
     def get(self, key: str) -> str:
         key = key.lower()
         return self.settings.get(key, "")
+
+
+# Used for test parametrization, when the same test has to be run with different Post-quantum VPN alias.
+PQ_ALIAS = [
+    "post-quantum",
+    "pq"
+]
+
+def get_pq_alias() -> str:
+    """
+    This function randomly picks an alias from the predefined list 'PQ_ALIAS' and returns it.
+
+    Returns:
+        str: A randomly selected alias from PQ_ALIAS.
+    """
+    return random.choice(PQ_ALIAS)
 
 
 def get_server_ip() -> str:
@@ -101,6 +119,11 @@ def is_virtual_location_enabled():
     return Settings().get("Virtual Location") == "enabled"
 
 
+def is_post_quantum_disabled():
+    """Returns True, if Post-quantum VPN is disabled in application settings."""
+    return Settings().get("Post-quantum VPN") == "disabled"
+
+
 def app_has_defaults_settings():
     """Returns True, if application settings match the default settings."""
     settings = sh.nordvpn.settings()
@@ -119,5 +142,7 @@ def app_has_defaults_settings():
         "Meshnet: disabled" in settings and
         "DNS: disabled" in settings and
         "LAN Discovery: disabled" in settings and
-        "Virtual Location: enabled" in settings
+        "Virtual Location: enabled" in settings and
+        "Post-quantum VPN: disabled" in settings
+
     )

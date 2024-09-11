@@ -126,9 +126,6 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 	}
 
 	resp.Body = io.NopCloser(bytes.NewBuffer(body))
-	if err := api.validator.Validate(resp.StatusCode, resp.Header, body); err != nil {
-		return nil, fmt.Errorf("validating headers: %w", err)
-	}
 
 	err = ExtractError(resp)
 	if err != nil {

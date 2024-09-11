@@ -6,6 +6,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -160,7 +161,9 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	// We are renewing token if it is expired because we need to make some API calls later
+	log.Println("RENEW STARTED", data.TokenExpiry)
 	if r.expChecker.isExpired(data.TokenExpiry) {
+		log.Println("EXPIRED")
 		if err := r.renewLoginToken(&data); err != nil {
 			if errors.Is(err, core.ErrUnauthorized) ||
 				errors.Is(err, core.ErrNotFound) ||
@@ -190,6 +193,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 		if err := r.cm.SaveWith(saveLoginToken(uid, data)); err != nil {
 			return err
 		}
+		log.Println(":)")
 	}
 
 	// TrustedPass was introduced later on, so it's possible that valid data is not stored even though renew token
@@ -220,6 +224,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 		}
 	}
 
+	log.Println("RENEW DONE")
 	return nil
 }
 

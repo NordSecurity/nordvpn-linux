@@ -2,6 +2,7 @@ package nc
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -11,6 +12,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestBlet(t *testing.T) {
+	category.Set(t, category.Unit)
+	ch := make(chan struct{})
+	defer func() {
+		fmt.Println("ALIOOO", <-ch)
+	}()
+}
 
 // GetCredentials fetches credentials from core API and saves them in local config
 func TestGetCredentialsFromAPIUserIDUpdated(t *testing.T) {

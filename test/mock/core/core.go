@@ -1,6 +1,9 @@
 package core
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
@@ -11,6 +14,9 @@ type CredentialsAPIMock struct {
 }
 
 func (c *CredentialsAPIMock) NotificationCredentials(token, appUserID string) (core.NotificationCredentialsResponse, error) {
+	fmt.Println("Getting notification credentials...")
+	time.Sleep(time.Second * 5)
+	fmt.Println("Got notification credentials...")
 	return c.NotificationCredentialsResponse, c.NotificationCredentialsError
 }
 
