@@ -7,8 +7,9 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 import "config/group.proto";
 
 enum ServersError {
-    GET_CONFIG_ERROR = 0;
-    FILTER_SERVERS_ERROR = 1;
+    NO_ERROR = 0;
+    GET_CONFIG_ERROR = 1;
+    FILTER_SERVERS_ERROR = 2;
 }
 
 enum Technology {

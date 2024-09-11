@@ -84,15 +84,15 @@ func TestServers(t *testing.T) {
 
 	server4ID := 4
 	server4Hostname := "server4"
-	server4Country := "Lithuania"
-	server4CountryCode := "lt"
-	server4City := "Vilnius"
+	server4Country := "Poland"
+	server4CountryCode := "pl"
+	server4City := "Warsaw"
 
 	server5ID := 5
 	server5Hostname := "server4"
-	server5Country := "Lithuania"
-	server5CountryCode := "lt"
-	server5City := "Vilnius"
+	server5Country := "Iceland"
+	server5CountryCode := "is"
+	server5City := "Reykjavik"
 
 	servers := core.Servers{
 		getServer(server1ID,
