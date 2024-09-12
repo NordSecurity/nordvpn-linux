@@ -161,14 +161,13 @@ func New(prod bool, eventPath string, fwmark uint32,
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get telio config:", err)
 
-		defaultTelioConfig := teliogo.GetDefaultFeatureConfig()
-		defaultTelioConfig.Lana = &teliogo.FeatureLana{
-			Prod:      prod,
-			EventPath: eventPath,
-		}
-		defaultTelioConfig.Nurse = &teliogo.FeatureNurse{
-			HeartbeatInterval: defaultHeartbeatInterval,
-		}
+		defaultTelioConfig := teliogo.NewFeaturesDefaultsBuilder().
+			EnableDirect().
+			EnableLana(eventPath, prod).
+			EnableNurse().
+			Build()
+
+		defaultTelioConfig.Nurse.HeartbeatInterval = defaultHeartbeatInterval
 
 		features = &defaultTelioConfig
 	}
