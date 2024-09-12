@@ -6,6 +6,12 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 import "config/group.proto";
 
+enum ServersError {
+    NO_ERROR = 0;
+    GET_CONFIG_ERROR = 1;
+    FILTER_SERVERS_ERROR = 2;
+}
+
 enum Technology {
     UNKNOWN_TECHNLOGY = 0;
     NORDLYNX = 1;
@@ -25,6 +31,13 @@ message Server {
     repeated Technology technologies = 7;
 }
 
-message ServersResponse {
+message Servers {
     repeated Server servers = 1;
+}
+
+message ServersResponse {
+    oneof response {
+        Servers servers = 1;
+        ServersError error = 2;
+    }
 }

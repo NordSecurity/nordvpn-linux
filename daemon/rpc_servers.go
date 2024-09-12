@@ -2,11 +2,13 @@ package daemon
 
 import (
 	"context"
+	"log"
 	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 func techToProto(tech core.ServerTechnology) pb.Technology {
@@ -55,10 +57,34 @@ func groupFilter(groups core.Groups) config.ServerGroup {
 }
 
 func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse, error) {
+	var cfg config.Config
+	err := r.cm.Load(&cfg)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "loading config:", err)
+		return &pb.ServersResponse{Response: &pb.ServersResponse_Error{
+			Error: pb.ServersError_GET_CONFIG_ERROR,
+		}}, nil
+	}
+
 	internalServers := r.dm.GetServersData().Servers
+	internalServers, err = filterServers(internalServers,
+		cfg.Technology,
+		cfg.AutoConnectData.Protocol,
+		"",
+		config.ServerGroup_UNDEFINED,
+		cfg.AutoConnectData.Obfuscate)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "filtering servers", err)
+		return &pb.ServersResponse{Response: &pb.ServersResponse_Error{
+			Error: pb.ServersError_FILTER_SERVERS_ERROR,
+		}}, nil
+	}
 
 	servers := []*pb.Server{}
 	for _, server := range internalServers {
+		if !cfg.VirtualLocation.Get() && server.IsVirtualLocation() {
+			continue
+		}
 		technologies := []pb.Technology{}
 		for _, technology := range server.Technologies {
 			protoTech := techToProto(technology.ID)
@@ -81,5 +107,9 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 		servers = append(servers, &s)
 	}
 
-	return &pb.ServersResponse{Servers: servers}, nil
+	return &pb.ServersResponse{Response: &pb.ServersResponse_Servers{
+		Servers: &pb.Servers{
+			Servers: servers,
+		},
+	}}, nil
 }
