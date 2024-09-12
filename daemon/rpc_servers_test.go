@@ -13,6 +13,42 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func addToServersMap(serversMap []*pb.ServerCountry,
+	countryCode string,
+	city string,
+	server *pb.Server) []*pb.ServerCountry {
+	for _, serverCountry := range serversMap {
+		if serverCountry.CountryCode == countryCode {
+			for _, serverCity := range serverCountry.Cities {
+				if serverCity.CityName == city {
+					serverCity.Servers = append(serverCity.Servers, server)
+					return serversMap
+				}
+			}
+
+			serverCity := pb.ServerCity{
+				CityName: city,
+				Servers:  []*pb.Server{server},
+			}
+			serverCountry.Cities = append(serverCountry.Cities, &serverCity)
+			return serversMap
+		}
+	}
+
+	serverCity := pb.ServerCity{
+		CityName: city,
+		Servers:  []*pb.Server{server},
+	}
+
+	serverCountry := pb.ServerCountry{
+		CountryCode: countryCode,
+		Cities:      []*pb.ServerCity{&serverCity},
+	}
+
+	serversMap = append(serversMap, &serverCountry)
+	return serversMap
+}
+
 func getServer(id int,
 	name string,
 	country string,
@@ -236,14 +272,31 @@ func TestServers(t *testing.T) {
 			}),
 	}
 
-	// server id 3 converted to pb representation
+	expectedServer1 := pb.Server{
+		Id:          int64(server1ID),
+		HostName:    server1Hostname,
+		Virtual:     true,
+		ServerGroup: []config.ServerGroup{config.ServerGroup_P2P, config.ServerGroup_STANDARD_VPN_SERVERS},
+		Technologies: []pb.Technology{
+			pb.Technology_NORDLYNX,
+			pb.Technology_OPENVPN_TCP,
+		},
+	}
+	expectedServer2 := pb.Server{
+		Id:          int64(server2ID),
+		HostName:    server2Hostname,
+		Virtual:     false,
+		ServerGroup: []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS},
+		Technologies: []pb.Technology{
+			pb.Technology_OPENVPN_TCP,
+			pb.Technology_OPENVPN_UDP,
+		},
+	}
 	expectedServer3 := pb.Server{
 		Id:          int64(server3ID),
-		CountryCode: server3CountryCode,
-		CityName:    server3City,
 		HostName:    server3Hostname,
 		Virtual:     false,
-		ServerGroup: config.ServerGroup_OBFUSCATED,
+		ServerGroup: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OBFUSCATED_OPENVPN_TCP,
 			pb.Technology_OPENVPN_TCP,
@@ -251,69 +304,65 @@ func TestServers(t *testing.T) {
 		},
 	}
 
-	expectedServersOpenVPNTCP := []*pb.Server{
-		{
-			Id:          int64(server1ID),
-			CountryCode: server1CountryCode,
-			CityName:    server1City,
-			HostName:    server1Hostname,
-			Virtual:     true,
-			ServerGroup: config.ServerGroup_P2P,
-			Technologies: []pb.Technology{
-				pb.Technology_NORDLYNX,
-				pb.Technology_OPENVPN_TCP,
-			},
-		},
-		{
-			Id:          int64(server2ID),
-			CountryCode: server2CountryCode,
-			CityName:    server2City,
-			HostName:    server2Hostname,
-			Virtual:     false,
-			ServerGroup: config.ServerGroup_STANDARD_VPN_SERVERS,
-			Technologies: []pb.Technology{
-				pb.Technology_OPENVPN_TCP,
-				pb.Technology_OPENVPN_UDP,
-			},
-		},
-		&expectedServer3,
-	}
+	expectedServersOpenVPNTCP := []*pb.ServerCountry{}
+	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "de", "Berlin", &expectedServer1)
+	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "fr", "Paris", &expectedServer2)
+	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "lt", "Vilnius", &expectedServer3)
 
-	expectedServersOpenVPNUDPObfuscated := []*pb.Server{
-		{
-			Id:          int64(server4ID),
-			CountryCode: server4CountryCode,
-			CityName:    server4City,
-			HostName:    server4Hostname,
-			Virtual:     true,
-			ServerGroup: config.ServerGroup_OBFUSCATED,
-			Technologies: []pb.Technology{
-				pb.Technology_OBFUSCATED_OPENVPN_UDP,
-				pb.Technology_OBFUSCATED_OPENVPN_TCP,
-				pb.Technology_OPENVPN_UDP,
-				pb.Technology_OPENVPN_TCP,
-				pb.Technology_NORDLYNX,
-			},
+	expectedServer4 := pb.Server{
+		Id:          int64(server4ID),
+		HostName:    server4Hostname,
+		Virtual:     true,
+		ServerGroup: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+		Technologies: []pb.Technology{
+			pb.Technology_OBFUSCATED_OPENVPN_UDP,
+			pb.Technology_OBFUSCATED_OPENVPN_TCP,
+			pb.Technology_OPENVPN_UDP,
+			pb.Technology_OPENVPN_TCP,
+			pb.Technology_NORDLYNX,
 		},
-		{
-			Id:          int64(server5ID),
-			CountryCode: server5CountryCode,
-			CityName:    server5City,
-			HostName:    server5Hostname,
-			Virtual:     false,
-			ServerGroup: config.ServerGroup_OBFUSCATED,
-			Technologies: []pb.Technology{
-				pb.Technology_OBFUSCATED_OPENVPN_UDP,
-				pb.Technology_OBFUSCATED_OPENVPN_TCP,
-				pb.Technology_OPENVPN_UDP,
-				pb.Technology_OPENVPN_TCP,
-			},
+	}
+	expectedServer5 := pb.Server{
+		Id:          int64(server5ID),
+		HostName:    server5Hostname,
+		Virtual:     false,
+		ServerGroup: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+		Technologies: []pb.Technology{
+			pb.Technology_OBFUSCATED_OPENVPN_UDP,
+			pb.Technology_OBFUSCATED_OPENVPN_TCP,
+			pb.Technology_OPENVPN_UDP,
+			pb.Technology_OPENVPN_TCP,
 		},
 	}
 
-	expectedServersWireguardNonVirtual := []*pb.Server{
-		&expectedServer3,
-	}
+	expectedServersOpenVPNUDPObfuscated := []*pb.ServerCountry{}
+	expectedServersOpenVPNUDPObfuscated = addToServersMap(
+		expectedServersOpenVPNUDPObfuscated,
+		"pl",
+		"Warsaw",
+		&expectedServer4)
+	expectedServersOpenVPNUDPObfuscated = addToServersMap(
+		expectedServersOpenVPNUDPObfuscated,
+		"is",
+		"Reykjavik",
+		&expectedServer5)
+
+	expectedServersWireguardNonVirtual := []*pb.ServerCountry{}
+	expectedServersWireguardNonVirtual = addToServersMap(
+		expectedServersWireguardNonVirtual,
+		"lt",
+		"Vilnius",
+		&pb.Server{
+			Id:          int64(server3ID),
+			HostName:    server3Hostname,
+			Virtual:     false,
+			ServerGroup: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+			Technologies: []pb.Technology{
+				pb.Technology_OBFUSCATED_OPENVPN_TCP,
+				pb.Technology_OPENVPN_TCP,
+				pb.Technology_NORDLYNX,
+			},
+		})
 
 	tests := []struct {
 		name             string
@@ -334,7 +383,9 @@ func TestServers(t *testing.T) {
 			technology:   config.Technology_OPENVPN,
 			protocol:     config.Protocol_TCP,
 			expectedResponse: &pb.ServersResponse{
-				Response: &pb.ServersResponse_Servers{Servers: &pb.Servers{Servers: expectedServersOpenVPNTCP}},
+				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
+					ServersByCountry: expectedServersOpenVPNTCP,
+				}},
 			},
 		},
 		{
@@ -345,8 +396,9 @@ func TestServers(t *testing.T) {
 			technology:   config.Technology_OPENVPN,
 			protocol:     config.Protocol_UDP,
 			expectedResponse: &pb.ServersResponse{
-				Response: &pb.ServersResponse_Servers{
-					Servers: &pb.Servers{Servers: expectedServersOpenVPNUDPObfuscated}},
+				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
+					ServersByCountry: expectedServersOpenVPNUDPObfuscated,
+				}},
 			},
 		},
 		{
@@ -356,8 +408,9 @@ func TestServers(t *testing.T) {
 			allowVirtual: false,
 			technology:   config.Technology_NORDLYNX,
 			expectedResponse: &pb.ServersResponse{
-				Response: &pb.ServersResponse_Servers{
-					Servers: &pb.Servers{Servers: expectedServersWireguardNonVirtual}},
+				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
+					ServersByCountry: expectedServersWireguardNonVirtual,
+				}},
 			},
 		},
 		{
