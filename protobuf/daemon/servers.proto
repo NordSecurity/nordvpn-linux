@@ -25,7 +25,7 @@ message Server {
     int64 id = 1;
     string host_name = 4;
     bool virtual = 5;
-    repeated config.ServerGroup server_group = 6;
+    repeated config.ServerGroup server_groups = 6;
     repeated Technology technologies = 7;
 }
 

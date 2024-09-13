@@ -61,7 +61,6 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 
 	sMap := make(serversMap)
 
-	numberOfServers := 0
 	for _, server := range internalServers {
 		if !allowVirtual && server.IsVirtualLocation() {
 			continue
@@ -71,7 +70,7 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 			Id:           server.ID,
 			HostName:     server.Hostname,
 			Virtual:      server.IsVirtualLocation(),
-			ServerGroup:  groupFilter(server.Groups),
+			ServerGroups: groupFilter(server.Groups),
 			Technologies: technologiesToProtobuf(server.Technologies),
 		}
 
@@ -87,7 +86,6 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 		}
 
 		sMap[countryCode][cityName] = append(sMap[countryCode][cityName], &s)
-		numberOfServers++
 	}
 
 	countries := []*pb.ServerCountry{}

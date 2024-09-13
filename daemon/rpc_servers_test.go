@@ -273,30 +273,30 @@ func TestServers(t *testing.T) {
 	}
 
 	expectedServer1 := pb.Server{
-		Id:          int64(server1ID),
-		HostName:    server1Hostname,
-		Virtual:     true,
-		ServerGroup: []config.ServerGroup{config.ServerGroup_P2P, config.ServerGroup_STANDARD_VPN_SERVERS},
+		Id:           int64(server1ID),
+		HostName:     server1Hostname,
+		Virtual:      true,
+		ServerGroups: []config.ServerGroup{config.ServerGroup_P2P, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_NORDLYNX,
 			pb.Technology_OPENVPN_TCP,
 		},
 	}
 	expectedServer2 := pb.Server{
-		Id:          int64(server2ID),
-		HostName:    server2Hostname,
-		Virtual:     false,
-		ServerGroup: []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS},
+		Id:           int64(server2ID),
+		HostName:     server2Hostname,
+		Virtual:      false,
+		ServerGroups: []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OPENVPN_TCP,
 			pb.Technology_OPENVPN_UDP,
 		},
 	}
 	expectedServer3 := pb.Server{
-		Id:          int64(server3ID),
-		HostName:    server3Hostname,
-		Virtual:     false,
-		ServerGroup: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+		Id:           int64(server3ID),
+		HostName:     server3Hostname,
+		Virtual:      false,
+		ServerGroups: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OBFUSCATED_OPENVPN_TCP,
 			pb.Technology_OPENVPN_TCP,
@@ -310,10 +310,10 @@ func TestServers(t *testing.T) {
 	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "lt", "Vilnius", &expectedServer3)
 
 	expectedServer4 := pb.Server{
-		Id:          int64(server4ID),
-		HostName:    server4Hostname,
-		Virtual:     true,
-		ServerGroup: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+		Id:           int64(server4ID),
+		HostName:     server4Hostname,
+		Virtual:      true,
+		ServerGroups: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OBFUSCATED_OPENVPN_UDP,
 			pb.Technology_OBFUSCATED_OPENVPN_TCP,
@@ -323,10 +323,10 @@ func TestServers(t *testing.T) {
 		},
 	}
 	expectedServer5 := pb.Server{
-		Id:          int64(server5ID),
-		HostName:    server5Hostname,
-		Virtual:     false,
-		ServerGroup: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+		Id:           int64(server5ID),
+		HostName:     server5Hostname,
+		Virtual:      false,
+		ServerGroups: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OBFUSCATED_OPENVPN_UDP,
 			pb.Technology_OBFUSCATED_OPENVPN_TCP,
@@ -353,10 +353,10 @@ func TestServers(t *testing.T) {
 		"lt",
 		"Vilnius",
 		&pb.Server{
-			Id:          int64(server3ID),
-			HostName:    server3Hostname,
-			Virtual:     false,
-			ServerGroup: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+			Id:           int64(server3ID),
+			HostName:     server3Hostname,
+			Virtual:      false,
+			ServerGroups: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
 			Technologies: []pb.Technology{
 				pb.Technology_OBFUSCATED_OPENVPN_TCP,
 				pb.Technology_OPENVPN_TCP,
