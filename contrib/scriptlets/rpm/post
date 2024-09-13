@@ -24,7 +24,10 @@ userModMessage="To allow other users to control the application run 'usermod -aG
 userDelMessage="To limit access exclusively to the root user, remove all users from the '$NORDVPN_GROUP' group."
 helpMessage="If you need help using the app, use the command 'nordvpn --help'."
 
-ldconfig # update shared library cache
+# update configuration and shared library cache for linker to find .so files
+echo "/usr/lib/nordvpn" > /etc/ld.so.conf.d/nordvpn.conf
+ldconfig
+
 groupadd --system "$NORDVPN_GROUP" 1>/dev/null 2> /dev/null
 groupCreated=$?
 
