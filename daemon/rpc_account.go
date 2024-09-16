@@ -91,18 +91,14 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		}
 	}
 
-	mfaStatus := pb.TriState_DISABLED
-	mfaEnabled, err := r.ac.IsMFAEnabled()
+	// get user's current mfa status
+	accountInfo.MfaStatus = pb.TriState_DISABLED
+	mfaStatus, err := r.checkMfaStatus()
 	if err != nil {
-		mfaStatus = pb.TriState_UNKNOWN
-		log.Println(internal.ErrorPrefix, "getting MFA status:", err)
-	} else {
-		r.events.User.MFA.Publish(mfaEnabled)
-		if mfaEnabled {
-			mfaStatus = pb.TriState_ENABLED
-		}
+		accountInfo.MfaStatus = pb.TriState_UNKNOWN
+	} else if mfaStatus {
+		accountInfo.MfaStatus = pb.TriState_ENABLED
 	}
-	accountInfo.MfaStatus = mfaStatus
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
@@ -140,4 +136,16 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 	)
 
 	return accountInfo, nil
+}
+
+// checkMfaStatus check what is current value of user's mfa setting
+func (r *RPC) checkMfaStatus() (bool, error) {
+	mfaEnabled, err := r.ac.IsMFAEnabled()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "getting MFA status:", err)
+		return false, err
+	} else {
+		r.events.User.MFA.Publish(mfaEnabled)
+	}
+	return mfaEnabled, nil
 }

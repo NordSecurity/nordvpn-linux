@@ -53,6 +53,9 @@ func (r *RPC) connect(
 		return internal.ErrNotLoggedIn
 	}
 
+	// get user's current mfa status (here user is logged-in)
+	r.checkMfaStatus()
+
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)

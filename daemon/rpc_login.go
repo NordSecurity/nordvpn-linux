@@ -31,6 +31,7 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 			Type: internal.CodeTokenInvalid,
 		}, nil
 	}
+
 	// login common with custom logic
 	return r.loginCommon(func() (*core.LoginResponse, *pb.LoginResponse, error) {
 		if in.GetToken() != "" {
@@ -117,6 +118,9 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 		}, nil
 	}
 
+	// get user's current mfa status (should be invoked after config with creds is saved)
+	r.checkMfaStatus()
+
 	go StartNC("[login]", r.ncClient)
 	r.publisher.Publish("user logged in")
 
@@ -187,6 +191,9 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (payload *
 	}); err != nil {
 		return &pb.Empty{}, err
 	}
+
+	// get user's current mfa status (should be invoked after config with creds is saved)
+	r.checkMfaStatus()
 
 	go StartNC("[login callback]", r.ncClient)
 	return &pb.Empty{}, nil
