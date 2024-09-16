@@ -21,6 +21,8 @@ case "$1" in
         rm -rf /usr/share/doc/nordvpn
         rm -rf /var/{lib,log}/nordvpn
         rm -rf /run/nordvpn
+        rm -rf /etc/ld.so.conf.d/nordvpn.conf
+        ldconfig
     ;;
     disappear|upgrade|failed-upgrade|abort-install|abort-upgrade)
     ;;

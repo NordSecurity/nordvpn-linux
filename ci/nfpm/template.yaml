@@ -124,7 +124,7 @@ contents:
       mode: 0744
 
   - src: ${WORKDIR}/bin/deps/lib/${ARCH}/latest
-    dst: /usr/lib/
+    dst: /usr/lib/${NAME}
     type: tree
     file_info:
       mode: 0644
