@@ -109,6 +109,28 @@ func (s *Subscriber) mooseInit() error {
 		return fmt.Errorf("initializing event domain: %w", err)
 	}
 
+	timeBetweenEvents, _ := time.ParseDuration("100ms")
+	timeBetweenBatchesOfEvents, _ := time.ParseDuration("1s")
+	if internal.IsProdEnv(s.Environment) {
+		timeBetweenEvents, _ = time.ParseDuration("2s")
+		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
+	}
+	sendEvents := true
+	var batchSize uint32 = 20
+	compressRequest := true
+
+	if err := s.response(uint32(worker.Start(
+		s.EventsDbPath,
+		s.currentDomain,
+		uint64(timeBetweenEvents.Milliseconds()),
+		uint64(timeBetweenBatchesOfEvents.Milliseconds()),
+		sendEvents,
+		batchSize,
+		compressRequest,
+	))); err != nil {
+		return fmt.Errorf("starting worker: %w", err)
+	}
+
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
 		internal.IsProdEnv(s.Environment),
@@ -133,27 +155,6 @@ func (s *Subscriber) mooseInit() error {
 		return fmt.Errorf("setting application version: %w", err)
 	}
 
-	timeBetweenEvents, _ := time.ParseDuration("100ms")
-	timeBetweenBatchesOfEvents, _ := time.ParseDuration("1s")
-	if internal.IsProdEnv(s.Environment) {
-		timeBetweenEvents, _ = time.ParseDuration("2s")
-		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
-	}
-	sendEvents := true
-	var batchSize uint32 = 20
-	compressRequest := true
-
-	if err := s.response(uint32(worker.Start(
-		s.EventsDbPath,
-		s.currentDomain,
-		uint64(timeBetweenEvents.Milliseconds()),
-		uint64(timeBetweenBatchesOfEvents.Milliseconds()),
-		sendEvents,
-		batchSize,
-		compressRequest,
-	))); err != nil {
-		return fmt.Errorf("starting worker: %w", err)
-	}
 	if err := s.response(moose.NordvpnappSetContextDeviceTimeZone(internal.Timezone())); err != nil {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
@@ -236,7 +237,7 @@ func (s *Subscriber) NotifyVirtualLocation(data bool) error {
 }
 
 func (s *Subscriber) NotifyPostquantumVpn(data bool) error {
-	//TODO: for now using existing field to track PQ feature. Later to be added/used dedicated field.
+	// TODO: for now using existing field to track PQ feature. Later to be added/used dedicated field.
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyMeta(fmt.Sprintf("%t", data)))
 }
 
