@@ -10,6 +10,8 @@ RUN dpkg --add-architecture i386 && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \
         pkg-config \
+        dpkg-dev \
+        libcap-ng-dev \
         make \
         gcc \
         gcc-arm-linux-gnueabi \

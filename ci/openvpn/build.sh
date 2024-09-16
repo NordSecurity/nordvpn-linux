@@ -56,7 +56,7 @@ configure_openvpn() {
     LZO_CFLAGS="-I${current_dir}/lzo/include" \
     LIBS="-L${current_dir}/openssl/lib -L${current_dir}/lzo/lib -lssl -lcrypto -llzo2" \
     --prefix="${current_dir}/openvpn" --host="${target}" \
-    --enable-static=yes --enable-iproute2 --disable-shared --disable-debug --disable-plugins
+    --enable-static=yes --enable-iproute2 --disable-lz4 --disable-shared --disable-debug --disable-plugins
 }
 
 declare -A cross_compiler_map=(
