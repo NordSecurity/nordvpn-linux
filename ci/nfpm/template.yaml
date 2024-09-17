@@ -127,7 +127,7 @@ contents:
     dst: /usr/lib/${NAME}
     type: tree
     file_info:
-      mode: 0644
+      mode: 0755
 
 # All fields above marked as `overridable` can be overridden for a given package format in this section.
 overrides:
