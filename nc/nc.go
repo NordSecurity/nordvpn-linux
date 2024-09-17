@@ -130,7 +130,7 @@ type Client struct {
 	startMu          sync.Mutex
 	started          bool
 	cancelConnecting context.CancelFunc // Used to stop connecting attempts if we are already stopping
-	statusChan       <-chan interface{}
+	statusChan       <-chan any
 }
 
 // NewClient is a constructor for a NC client
@@ -385,7 +385,7 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message) {
 // ncClientManagementLoop starts a background goroutine that handles events related to the notification client and
 // attempts reconnection in case of disconnection. It returns a status channel that will be closed once the control
 // loop stops its operations.
-func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan interface{}, error) {
+func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error) {
 	managementChan := make(chan interface{})
 
 	log.Println(logPrefix, "starting management loop")
@@ -407,7 +407,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan interface{}
 		client = c.clientBuilder.Build(opts)
 	}
 
-	statusChan := make(chan interface{})
+	statusChan := make(chan any)
 	go func() {
 		client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, ctx)
 
