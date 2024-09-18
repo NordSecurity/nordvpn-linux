@@ -3,6 +3,8 @@ package daemon
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -46,6 +48,33 @@ func addToServersMap(serversMap []*pb.ServerCountry,
 	}
 
 	serversMap = append(serversMap, &serverCountry)
+	return serversMap
+}
+
+func sortServersMap(serversMap []*pb.ServerCountry) []*pb.ServerCountry {
+	slices.SortFunc(serversMap, func(a *pb.ServerCountry, b *pb.ServerCountry) int {
+		return strings.Compare(a.CountryCode, b.CountryCode)
+	})
+
+	for _, serversCountry := range serversMap {
+		slices.SortFunc(serversCountry.Cities, func(a *pb.ServerCity, b *pb.ServerCity) int {
+			return strings.Compare(a.CityName, b.CityName)
+		})
+		for _, serversCity := range serversCountry.Cities {
+			slices.SortFunc(serversCity.Servers, func(a *pb.Server, b *pb.Server) int {
+				if a.Id < b.Id {
+					return -1
+				}
+
+				if a.Id > b.Id {
+					return 1
+				}
+
+				return 0
+			})
+		}
+	}
+
 	return serversMap
 }
 
@@ -448,7 +477,16 @@ func TestServers(t *testing.T) {
 
 			resp, err := r.GetServers(context.Background(), &pb.Empty{})
 			assert.Nil(t, err, "Unexpected error returned by servers RPC.")
-			assert.Equal(t, test.expectedResponse, resp)
+			assert.IsType(t, test.expectedResponse, resp)
+
+			if test.configErr != nil || test.serversErr != nil {
+				assert.Equal(t, test.expectedResponse, resp)
+				return
+			}
+
+			sorterdExpectedServers := sortServersMap(test.expectedResponse.GetServers().GetServersByCountry())
+			sortedActuall := sortServersMap(resp.GetServers().GetServersByCountry())
+			assert.Equal(t, sorterdExpectedServers, sortedActuall)
 		})
 	}
 }
