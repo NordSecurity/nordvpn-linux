@@ -130,6 +130,7 @@ type Client struct {
 	startMu          sync.Mutex
 	started          bool
 	cancelConnecting context.CancelFunc // Used to stop connecting attempts if we are already stopping
+	statusChan       <-chan any
 }
 
 // NewClient is a constructor for a NC client
@@ -382,8 +383,9 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message) {
 }
 
 // ncClientManagementLoop starts a background goroutine that handles events related to the notification client and
-// attempts reconnection in case of disconnection.
-func (c *Client) ncClientManagementLoop(ctx context.Context) error {
+// attempts reconnection in case of disconnection. It returns a status channel that will be closed once the control
+// loop stops its operations.
+func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error) {
 	managementChan := make(chan interface{})
 
 	log.Println(logPrefix, "starting management loop")
@@ -398,13 +400,14 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 			// of connection loop, because we might not have internet connection at this point
 			credentialsInvalidated = true
 		} else if err != nil {
-			return fmt.Errorf("fetching credentials: %w", err)
+			return nil, fmt.Errorf("fetching credentials: %w", err)
 		}
 	} else {
 		opts := c.createClientOptions(credentials, managementChan, ctx)
 		client = c.clientBuilder.Build(opts)
 	}
 
+	statusChan := make(chan any)
 	go func() {
 		client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, ctx)
 
@@ -418,6 +421,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 					client = nil
 				}
 				log.Println(logPrefix, "stopped management loop")
+				close(statusChan)
 				return
 			case event := <-managementChan:
 				switch ev := event.(type) {
@@ -432,7 +436,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) error {
 		}
 	}()
 
-	return nil
+	return statusChan, nil
 }
 
 // Start initiates the connection with the NC server and subscribes to mandatory topics
@@ -450,11 +454,13 @@ func (c *Client) Start() error {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	c.cancelConnecting = cancelFunc
 
-	if err := c.ncClientManagementLoop(ctx); err != nil {
+	statusChan, err := c.ncClientManagementLoop(ctx)
+	if err != nil {
 		return fmt.Errorf("starting NC management loop: %w", err)
 	}
 
 	c.started = true
+	c.statusChan = statusChan
 
 	return nil
 }
@@ -469,8 +475,11 @@ func (c *Client) Stop() error {
 		return nil
 	}
 
-	log.Println(logPrefix, "stop")
+	log.Println(logPrefix, "stoping NC management loop")
 	c.cancelConnecting()
+	<-c.statusChan
+	c.statusChan = nil
+	log.Println(logPrefix, "stopped NC management loop")
 	c.started = false
 
 	return nil
