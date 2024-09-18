@@ -23,21 +23,29 @@ enum Technology {
 
 message Server {
     int64 id = 1;
-    string country_code = 2;
-    string city_name = 3;
     string host_name = 4;
     bool virtual = 5;
-    config.ServerGroup server_group = 6;
+    repeated config.ServerGroup server_groups = 6;
     repeated Technology technologies = 7;
 }
 
-message Servers {
-    repeated Server servers = 1;
+message ServerCity {
+    string city_name = 1;
+    repeated Server servers = 2;
+}
+
+message ServerCountry {
+    string country_code = 1;
+    repeated ServerCity cities = 2;
+}
+
+message ServersMap {
+    repeated ServerCountry servers_by_country = 1;
 }
 
 message ServersResponse {
     oneof response {
-        Servers servers = 1;
+        ServersMap servers = 1;
         ServersError error = 2;
     }
 }
