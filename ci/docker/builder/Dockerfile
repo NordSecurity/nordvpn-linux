@@ -11,7 +11,6 @@ RUN dpkg --add-architecture i386 && \
     DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \
         pkg-config \
         dpkg-dev \
-        libcap-ng-dev \
         make \
         gcc \
         gcc-arm-linux-gnueabi \
@@ -22,6 +21,18 @@ RUN dpkg --add-architecture i386 && \
         libxml2-dev:i386 \
         libxml2-dev:arm64 \
         libxml2-dev:armhf \
+        libcap-ng-dev \
+        libcap-ng0:i386 \
+        libcap-ng0:arm64 \
+        libcap-ng0:armhf \
+        libnl-genl-3-200 \
+        libnl-genl-3-dev \
+        libnl-genl-3-200:i386 \
+        libnl-genl-3-dev:i386 \
+        libnl-genl-3-200:arm64 \
+        libnl-genl-3-dev:arm64 \
+        libnl-genl-3-200:armhf \
+        libnl-genl-3-dev:armhf \
         # libxml2-dev:armel \
         # Install libc6-dev-armel-cross instead of libxml2-dev:armel to provide libc6-dev for armel
         libc6-dev-armel-cross \
