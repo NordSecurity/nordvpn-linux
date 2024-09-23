@@ -557,6 +557,11 @@ func NewApp(version, environment, hash, salt string,
 			Action: cmd.User,
 			Hidden: true,
 		},
+		{
+			Name:   "status-events",
+			Action: cmd.StatusEvents,
+			Hidden: true,
+		},
 	}
 
 	app.Commands = append(app.Commands, meshnetCommand(cmd))

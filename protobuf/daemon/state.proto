@@ -28,6 +28,7 @@ message ConnectionStatus {
     string server_hostname = 5;
     string server_name = 6;
     bool is_mesh_peer = 7;
+    bool by_user = 8;
 }
 
 enum LoginEventType {

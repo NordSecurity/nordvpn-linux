@@ -89,6 +89,7 @@ func statusStream(stateChan <-chan interface{},
 					ServerName:     e.TargetServerName,
 					ServerHostname: e.TargetServerDomain,
 					IsMeshPeer:     e.IsMeshnetPeer,
+					ByUser:         true,
 				}
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{ConnectionStatus: &status}}); err != nil {
@@ -97,7 +98,9 @@ func statusStream(stateChan <-chan interface{},
 			case events.DataDisconnect:
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{
-						ConnectionStatus: &pb.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED}}}); err != nil {
+						ConnectionStatus: &pb.ConnectionStatus{
+							State:  pb.ConnectionState_DISCONNECTED,
+							ByUser: e.ByUser}}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn disabled failed to send state update:", err)
 				}
 			case pb.LoginEventType:
