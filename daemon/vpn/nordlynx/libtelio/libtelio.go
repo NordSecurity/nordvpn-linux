@@ -682,8 +682,8 @@ func publishConnectEvent(publisher *vpn.Events, connectType events.TypeEventStat
 	})
 }
 
-func publishDisconnectedEvent(publisher *vpn.Events) {
-	publisher.Disconnected.Publish(events.DataDisconnect{})
+func publishDisconnectedEvent(publisher *vpn.Events, byUser bool) {
+	publisher.Disconnected.Publish(events.DataDisconnect{ByUser: byUser})
 }
 
 // monitorConnection awaits for incoming state changes from the states chan and publishes appropriate events. Upon
@@ -733,13 +733,13 @@ func monitorConnection(
 			case teliogo.NodeStateDisconnected:
 				if currentNotifyState != disconnected {
 					currentNotifyState = disconnected
-					publishDisconnectedEvent(eventsPublisher)
+					publishDisconnectedEvent(eventsPublisher, false)
 				}
 			}
 		case <-ctx.Done():
 			if currentNotifyState != disconnected {
 				currentNotifyState = disconnected
-				publishDisconnectedEvent(eventsPublisher)
+				publishDisconnectedEvent(eventsPublisher, true)
 			}
 			return
 		}

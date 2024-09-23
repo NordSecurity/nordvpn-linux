@@ -85,6 +85,7 @@ type DataDisconnect struct {
 	Technology            config.Technology
 	TargetServerSelection string
 	ThreatProtectionLite  bool
+	ByUser                bool
 }
 
 type DataAuthorization struct {

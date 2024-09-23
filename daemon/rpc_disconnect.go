@@ -1,9 +1,11 @@
 package daemon
 
 import (
+	"errors"
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -11,6 +13,9 @@ import (
 
 func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 	if !r.netw.IsVPNActive() {
+		if err := r.netw.UnsetFirewall(); err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
+			log.Println(internal.WarningPrefix, "failed to force unset firewall on disconnect:", err)
+		}
 		return srv.Send(&pb.Payload{
 			Type: internal.CodeVPNNotRunning,
 		})
