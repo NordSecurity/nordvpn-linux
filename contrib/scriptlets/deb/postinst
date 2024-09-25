@@ -26,17 +26,12 @@ helpMessage="If you need help using the app, use the command 'nordvpn --help'."
 
 # update configuration and shared library cache for linker to find .so files
 echo "/usr/lib/nordvpn" > /etc/ld.so.conf.d/nordvpn.conf
-
-SUDO=$(which sudo 2>/dev/null)
-if [[ -x ${SUDO} ]]; then
-  echo "Refreshing linker cache with sudo"
-  # NOTE: sudo is required here even though the script is run with EUID 0
-  ${SUDO} ldconfig
-else
-  echo "Refreshing linker cache - no sudo"
-  ldconfig
-fi
-
+# NOTE: We found some really strange behavior with `ldconfig` cache refresh here.
+# On .deb systems, using just `ldconfig` causes the nordvpnd daemon to fail on
+# the first start with error that .so are missing. On restart, it's working again.
+# Adding ANY flag to `ldconfig` (even the one we added on our own which does
+# literally nothing) fixes the issue.
+ldconfig -v > /dev/null 2>&1
 
 mkdir -m 0750 -p "$LOG_DIR"
 chown root:$NORDVPN_GROUP "$LOG_DIR"
