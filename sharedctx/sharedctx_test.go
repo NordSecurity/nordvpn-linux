@@ -14,8 +14,8 @@ func TestContext_TryExecuteWith(t *testing.T) {
 		sctx.TryExecuteWith(func(ctx context.Context) {
 			ch <- struct{}{}
 			<-ctx.Done()
-			ch <- struct{}{}
 		})
+		ch <- struct{}{}
 	}
 
 	testExecute := func(ctx *Context, success bool) {
