@@ -16,9 +16,6 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 		})
 	}
 
-	// get user's current mfa status (here is vpn-connected and user is logged-in)
-	r.checkMfaStatus()
-
 	if err := r.netw.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return internal.ErrUnhandled

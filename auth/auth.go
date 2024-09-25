@@ -11,6 +11,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -65,12 +66,20 @@ type RenewingChecker struct {
 	cm         config.Manager
 	creds      core.CredentialsAPI
 	expChecker expirationChecker
+	mfaPub     events.Publisher[bool]
 	mu         sync.Mutex
 }
 
 // NewRenewingChecker is a default constructor for RenewingChecker.
-func NewRenewingChecker(cm config.Manager, creds core.CredentialsAPI) *RenewingChecker {
-	return &RenewingChecker{cm: cm, creds: creds, expChecker: systemTimeExpirationChecker{}}
+func NewRenewingChecker(cm config.Manager,
+	creds core.CredentialsAPI,
+	mfaPub events.Publisher[bool],
+) *RenewingChecker {
+	return &RenewingChecker{cm: cm,
+		creds:      creds,
+		expChecker: systemTimeExpirationChecker{},
+		mfaPub:     mfaPub,
+	}
 }
 
 // IsLoggedIn reports user login status.
@@ -95,10 +104,17 @@ func (r *RenewingChecker) IsLoggedIn() bool {
 	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0 && isLoggedIn
 }
 
+// IsMFAEnabled checks if user account has MFA turned on.
+//
+// Thread safe.
 func (r *RenewingChecker) IsMFAEnabled() (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	return r.isMFAEnabled()
+}
+
+func (r *RenewingChecker) isMFAEnabled() (bool, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		return false, fmt.Errorf("loading config: %w", err)
@@ -110,6 +126,9 @@ func (r *RenewingChecker) IsMFAEnabled() (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("querying MFA status: %w", err)
 	}
+
+	// inform subscribers
+	r.mfaPub.Publish(resp.Status == internal.MFAEnabledStatusName)
 
 	return resp.Status == internal.MFAEnabledStatusName, nil
 }
