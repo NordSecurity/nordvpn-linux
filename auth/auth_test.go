@@ -93,6 +93,10 @@ func (m mockExpirationChecker) isExpired(expiryTime string) bool {
 	return false
 }
 
+type mockBoolPublisher struct{}
+
+func (mockBoolPublisher) Publish(bool) {}
+
 func TestIsVPNExpired(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -142,7 +146,7 @@ func TestIsVPNExpired(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api)
+			rc := NewRenewingChecker(test.cm, test.api, mockBoolPublisher{})
 			expired, err := rc.IsVPNExpired()
 			if test.isError {
 				assert.ErrorIs(t, err, testErr)

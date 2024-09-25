@@ -142,10 +142,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 func (r *RPC) checkMfaStatus() (bool, error) {
 	mfaEnabled, err := r.ac.IsMFAEnabled()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting MFA status:", err)
 		return false, err
-	} else {
-		r.events.User.MFA.Publish(mfaEnabled)
 	}
 	return mfaEnabled, nil
 }
