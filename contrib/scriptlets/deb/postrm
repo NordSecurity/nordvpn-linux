@@ -22,7 +22,16 @@ case "$1" in
         rm -rf /var/{lib,log}/nordvpn
         rm -rf /run/nordvpn
         rm -rf /etc/ld.so.conf.d/nordvpn.conf
-        ldconfig
+
+        SUDO=$(which sudo 2>/dev/null)
+        if [[ -x ${SUDO} ]]; then
+          echo "Refreshing linker cache with sudo"
+          # NOTE: sudo is required here even though the script is run with EUID 0
+          ${SUDO} ldconfig
+        else
+          echo "Refreshing linker cache - no sudo"
+          ldconfig
+        fi
     ;;
     disappear|upgrade|failed-upgrade|abort-install|abort-upgrade)
     ;;

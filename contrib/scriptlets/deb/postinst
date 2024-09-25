@@ -26,7 +26,17 @@ helpMessage="If you need help using the app, use the command 'nordvpn --help'."
 
 # update configuration and shared library cache for linker to find .so files
 echo "/usr/lib/nordvpn" > /etc/ld.so.conf.d/nordvpn.conf
-ldconfig
+
+SUDO=$(which sudo 2>/dev/null)
+if [[ -x ${SUDO} ]]; then
+  echo "Refreshing linker cache with sudo"
+  # NOTE: sudo is required here even though the script is run with EUID 0
+  ${SUDO} ldconfig
+else
+  echo "Refreshing linker cache - no sudo"
+  ldconfig
+fi
+
 
 mkdir -m 0750 -p "$LOG_DIR"
 chown root:$NORDVPN_GROUP "$LOG_DIR"
