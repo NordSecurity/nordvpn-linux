@@ -67,6 +67,7 @@ type RenewingChecker struct {
 	creds      core.CredentialsAPI
 	expChecker expirationChecker
 	mfaPub     events.Publisher[bool]
+	errPub     events.Publisher[error]
 	mu         sync.Mutex
 }
 
@@ -74,11 +75,13 @@ type RenewingChecker struct {
 func NewRenewingChecker(cm config.Manager,
 	creds core.CredentialsAPI,
 	mfaPub events.Publisher[bool],
+	errPub events.Publisher[error],
 ) *RenewingChecker {
 	return &RenewingChecker{cm: cm,
 		creds:      creds,
 		expChecker: systemTimeExpirationChecker{},
 		mfaPub:     mfaPub,
+		errPub:     errPub,
 	}
 }
 
@@ -117,14 +120,18 @@ func (r *RenewingChecker) IsMFAEnabled() (bool, error) {
 func (r *RenewingChecker) isMFAEnabled() (bool, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		return false, fmt.Errorf("loading config: %w", err)
+		extraErr := fmt.Errorf("checking MFA status, loading config: %w", err)
+		r.errPub.Publish(extraErr)
+		return false, extraErr
 	}
 
 	data := cfg.TokensData[cfg.AutoConnectData.ID]
 
 	resp, err := r.creds.MultifactorAuthStatus(data.Token)
 	if err != nil {
-		return false, fmt.Errorf("querying MFA status: %w", err)
+		extraErr := fmt.Errorf("querying MFA status: %w", err)
+		r.errPub.Publish(extraErr)
+		return false, extraErr
 	}
 
 	// inform subscribers
