@@ -93,7 +93,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 
 	// get user's current mfa status
 	accountInfo.MfaStatus = pb.TriState_DISABLED
-	mfaStatus, err := r.checkMfaStatus()
+	mfaStatus, err := r.ac.IsMFAEnabled()
 	if err != nil {
 		accountInfo.MfaStatus = pb.TriState_UNKNOWN
 	} else if mfaStatus {
@@ -136,13 +136,4 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 	)
 
 	return accountInfo, nil
-}
-
-// checkMfaStatus check what is current value of user's mfa setting
-func (r *RPC) checkMfaStatus() (bool, error) {
-	mfaEnabled, err := r.ac.IsMFAEnabled()
-	if err != nil {
-		return false, err
-	}
-	return mfaEnabled, nil
 }
