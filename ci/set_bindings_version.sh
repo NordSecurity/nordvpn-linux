@@ -32,4 +32,4 @@ if [[ -n "${tag_version}" ]]; then
   full_package_path=$repo_path/$major_version@$tag_version
 fi
 
-go get $full_package_path
+go get "$full_package_path"
