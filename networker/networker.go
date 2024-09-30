@@ -118,6 +118,7 @@ type Networker interface {
 	SetVPN(vpn.VPN)
 	LastServerName() string
 	SetLanDiscovery(bool)
+	UnsetFirewall() error
 }
 
 // Combined configures networking for VPN connections.
@@ -1072,6 +1073,16 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 	}
 
 	netw.isNetworkSet = true
+	return nil
+}
+
+func (netw *Combined) UnsetFirewall() error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+
+	if !netw.isKillSwitchSet {
+		return netw.unsetNetwork()
+	}
 	return nil
 }
 

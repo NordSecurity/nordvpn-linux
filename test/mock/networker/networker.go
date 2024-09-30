@@ -102,6 +102,8 @@ func (m *Mock) SetLanDiscovery(enabled bool) {
 	m.LanDiscovery = enabled
 }
 
+func (*Mock) UnsetFirewall() error { return nil }
+
 type Failing struct{}
 
 func (Failing) Start(
@@ -144,3 +146,4 @@ func (Failing) SetVPN(vpn.VPN)                                      {}
 func (Failing) LastServerName() string                              { return "" }
 func (Failing) SetLanDiscoveryAndResetMesh(bool, mesh.MachinePeers) {}
 func (Failing) SetLanDiscovery(bool)                                {}
+func (Failing) UnsetFirewall() error                                { return mock.ErrOnPurpose }

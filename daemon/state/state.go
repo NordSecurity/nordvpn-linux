@@ -60,7 +60,7 @@ func (s *StatePublisher) NotifyDisconnect(e events.DataDisconnect) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.DebugPrefix, "notifying about disconnect event")
+	log.Printf(internal.DebugPrefix+" notifying about disconnect event: %+v", e)
 	s.notify(e)
 
 	return nil

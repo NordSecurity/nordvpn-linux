@@ -188,7 +188,7 @@ func (ovpn *OpenVPN) Start(
 // Stop stops openvpn process
 func (ovpn *OpenVPN) Stop() error {
 	ovpn.Lock()
-	ovpn.publishDisconnected()
+	ovpn.publishDisconnected(true)
 	if ovpn.active {
 		ovpn.Unlock()
 		return ovpn.stop()
@@ -331,7 +331,7 @@ func (ovpn *OpenVPN) setState(arg string) {
 		// ignore ExitingState, as we do not want to notify about intermediate stages for disconnection
 	case vpn.ExitedState:
 		if ovpn.publishedState != vpn.ExitedState {
-			ovpn.publishDisconnected()
+			ovpn.publishDisconnected(false)
 			ovpn.publishedState = vpn.ExitedState
 		}
 	default:
@@ -375,8 +375,8 @@ func (ovpn *OpenVPN) publishConnected() {
 }
 
 // publishDisconnected publishes Connecting event using current stored server data. Thread unsafe.
-func (ovpn *OpenVPN) publishDisconnected() {
-	ovpn.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
+func (ovpn *OpenVPN) publishDisconnected(byUser bool) {
+	ovpn.eventsPublisher.Disconnected.Publish(events.DataDisconnect{ByUser: byUser})
 }
 
 // stage1Handler handles events until first successful connection or timeout
