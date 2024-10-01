@@ -22,7 +22,13 @@ case "$1" in
         rm -rf /var/{lib,log}/nordvpn
         rm -rf /run/nordvpn
         rm -rf /etc/ld.so.conf.d/nordvpn.conf
-        ldconfig
+
+        # NOTE: We found some really strange behavior with `ldconfig` cache refresh here.
+        # On .deb systems, using just `ldconfig` causes the nordvpnd daemon to fail on
+        # the first start with error that .so are missing. On restart, it's working again.
+        # Adding ANY flag to `ldconfig` (even the one we added on our own which does
+        # literally nothing) fixes the issue.
+        ldconfig -v > /dev/null 2>&1
     ;;
     disappear|upgrade|failed-upgrade|abort-install|abort-upgrade)
     ;;

@@ -118,8 +118,9 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 		}, nil
 	}
 
-	// get user's current mfa status (should be invoked after config with creds is saved)
-	r.checkMfaStatus()
+	// get user's current mfa status (should be invoked after config with creds are saved)
+	// (errors are checked and logged inside this fn, if any)
+	r.ac.IsMFAEnabled()
 
 	go StartNC("[login]", r.ncClient)
 	r.publisher.Publish("user logged in")
@@ -192,8 +193,9 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (payload *
 		return &pb.Empty{}, err
 	}
 
-	// get user's current mfa status (should be invoked after config with creds is saved)
-	r.checkMfaStatus()
+	// get user's current mfa status (should be invoked after config with creds are saved)
+	// (errors are checked and logged inside this fn, if any)
+	r.ac.IsMFAEnabled()
 
 	go StartNC("[login callback]", r.ncClient)
 	return &pb.Empty{}, nil
