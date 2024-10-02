@@ -18,7 +18,7 @@ import (
 
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
-	imageBuilder           = registryPrefix + "builder:1.3.1"
+	imageBuilder           = registryPrefix + "builder:1.3.2"
 	imagePackager          = registryPrefix + "packager:1.3.0"
 	imageSnapPackager      = registryPrefix + "snaper:0.0.4"
 	imageProtobufGenerator = registryPrefix + "generator:1.3.0"
