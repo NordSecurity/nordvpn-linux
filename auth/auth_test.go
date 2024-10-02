@@ -8,6 +8,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -68,12 +70,17 @@ func (cm *authConfigManager) SaveWith(config.SaveFunc) error {
 
 type authAPI struct {
 	core.CredentialsAPI
-	resp core.ServicesResponse
-	err  error
+	resp    core.ServicesResponse
+	mfaResp core.MultifactorAuthStatusResponse
+	err     error
 }
 
 func (api *authAPI) Services(string) (core.ServicesResponse, error) {
 	return api.resp, api.err
+}
+
+func (api *authAPI) MultifactorAuthStatus(string) (*core.MultifactorAuthStatusResponse, error) {
+	return &api.mfaResp, api.err
 }
 
 type mockExpirationChecker struct {
@@ -91,6 +98,91 @@ func (m mockExpirationChecker) isExpired(expiryTime string) bool {
 		return true
 	}
 	return false
+}
+
+type mockBoolPublisher struct {
+	enabled bool
+}
+
+func (p *mockBoolPublisher) Publish(b bool) {
+	p.enabled = b
+}
+
+type mockErrPublisher struct {
+	err error
+}
+
+func (p *mockErrPublisher) Publish(e error) {
+	p.err = e
+}
+
+func TestIsMFAEnabled(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	configError := errors.New("config error")
+	apiError := errors.New("api error")
+	tests := []struct {
+		name      string
+		cm        config.Manager
+		api       core.CredentialsAPI
+		mfaPub    events.Publisher[bool]
+		errPub    events.Publisher[error]
+		isEnabled bool
+		err       error
+	}{
+		{
+			name:      "mfa enabled",
+			cm:        &authConfigManager{},
+			api:       &authAPI{mfaResp: core.MultifactorAuthStatusResponse{Status: internal.MFAEnabledStatusName}},
+			mfaPub:    &mockBoolPublisher{},
+			errPub:    &mockErrPublisher{},
+			isEnabled: true,
+			err:       nil,
+		},
+		{
+			name:      "mfa disabled",
+			cm:        &authConfigManager{},
+			api:       &authAPI{mfaResp: core.MultifactorAuthStatusResponse{Status: "not enabled"}},
+			mfaPub:    &mockBoolPublisher{},
+			errPub:    &mockErrPublisher{},
+			isEnabled: false,
+			err:       nil,
+		},
+		{
+			name:      "config load fails",
+			cm:        &authConfigManager{loadErr: configError},
+			api:       &authAPI{mfaResp: core.MultifactorAuthStatusResponse{Status: "not enabled"}},
+			mfaPub:    &mockBoolPublisher{},
+			errPub:    &mockErrPublisher{},
+			isEnabled: false,
+			err:       configError,
+		},
+		{
+			name:      "api call fails",
+			cm:        &authConfigManager{},
+			api:       &authAPI{mfaResp: core.MultifactorAuthStatusResponse{Status: "not enabled"}, err: apiError},
+			mfaPub:    &mockBoolPublisher{},
+			errPub:    &mockErrPublisher{},
+			isEnabled: false,
+			err:       apiError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.errPub)
+			enabled, err := rc.isMFAEnabled()
+			assert.Equal(t, test.isEnabled, enabled)
+
+			bp, _ := test.mfaPub.(*mockBoolPublisher)
+			assert.Equal(t, test.isEnabled, bp.enabled)
+
+			assert.True(t, (test.err != nil && errors.Is(err, test.err)) || (test.err == nil && err == nil))
+
+			ep, _ := test.errPub.(*mockErrPublisher)
+			assert.True(t, (test.err != nil && errors.Is(err, test.err)) || (test.err == nil && ep.err == nil))
+		})
+	}
 }
 
 func TestIsVPNExpired(t *testing.T) {
@@ -142,7 +234,7 @@ func TestIsVPNExpired(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api)
+			rc := NewRenewingChecker(test.cm, test.api, &mockBoolPublisher{}, &mockErrPublisher{})
 			expired, err := rc.IsVPNExpired()
 			if test.isError {
 				assert.ErrorIs(t, err, testErr)
