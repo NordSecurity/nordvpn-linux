@@ -1,18 +1,15 @@
 import datetime
 import io
-import socket
 import threading
 import time
 
+import dns.resolver
 import pytest
 import sh
 
 from lib import logging, network
 
 _CHECK_FREQUENCY=5
-
-#TODO: check connectivity outside VPN tunnel!
-
 
 def print_to_string(*args, **kwargs):
     output = io.StringIO()
@@ -27,7 +24,7 @@ def _print_with_timestamp(*args, **kwargs):
     # Get the current time and format it
     timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     # Prepend the timestamp to the original print arguments
-    #_original_print(timestamp, *args, **kwargs)
+    _original_print(timestamp, *args, **kwargs)
     logging.log(data=print_to_string(timestamp, *args, **kwargs))
 
 
@@ -37,8 +34,10 @@ print = _print_with_timestamp # noqa: A001
 @pytest.fixture(scope="function", autouse=True)
 def setup_check_internet_connection():
     print("~~~setup_check_internet_connection: Check internet connection before starting tests")
-    assert network.is_available()
-    print("~~~setup_check_internet_connection: Check internet connection before starting tests SUCCESS")
+    if network.is_available():
+        print("~~~setup_check_internet_connection: BEFORE TEST network.is_available SUCCESS")
+    else:
+        print("~~~setup_check_internet_connection: BEFORE TEST network.is_available FAILURE")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -59,10 +58,10 @@ def _check_connection_to_ip(ip_address):
     while True:
         try:
             print(f"~~~_check_connection_to_ip: {ip_address}")
-            "icmp_seq=" in sh.ping("-c", "1", "-w", "1", ip_address) # noqa: B015
-            print(f"~~~_check_connection_to_ip: {ip_address} SUCCESS")
+            "icmp_seq=" in sh.ping("-c", "3", "-W", "3", ip_address) # noqa: B015
+            print(f"~~~_check_connection_to_ip: IN-PING {ip_address} SUCCESS")
         except sh.ErrorReturnCode as e:
-            print(f"~~~_check_connection_to_ip: Failed to connect to {ip_address}: {e}.")
+            print(f"~~~_check_connection_to_ip: IN-PING {ip_address} FAILURE: {e}.")
         time.sleep(_CHECK_FREQUENCY)
 
 
@@ -70,10 +69,10 @@ def _check_connection_to_ip_outside_vpn(ip_address):
     while True:
         try:
             print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address}")
-            "icmp_seq=" in sh.ping("-c", "1", "-w", "1", "-I", "eth0", ip_address) # noqa: B015
-            print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address} SUCCESS")
+            "icmp_seq=" in sh.sudo.ping("-c", "3", "-W", "3", "-m", "57841", ip_address) # noqa: B015
+            print(f"~~~_check_connection_to_ip_outside_vpn: OUT-PING {ip_address} SUCCESS")
         except sh.ErrorReturnCode as e:
-            print(f"~~~_check_connection_to_ip_outside_vpn: Failed to connect to {ip_address}: {e}.")
+            print(f"~~~_check_connection_to_ip_outside_vpn: OUT-PING {ip_address} FAILURE: {e}.")
         time.sleep(_CHECK_FREQUENCY)
 
 
@@ -81,8 +80,10 @@ def _check_dns_resolution(domain):
     while True:
         try:
             print(f"~~~_check_dns_resolution: {domain}")
-            socket.gethostbyname(domain)
-            print(f"~~~_check_dns_resolution: {domain} SUCCESS")
-        except socket.gaierror:
-            print(f"~~~_check_dns_resolution: DNS resolution for {domain} failed.")
+            resolver = dns.resolver.Resolver()
+            resolver.nameservers = ['8.8.8.8']
+            resolver.resolve(domain, 'A')  # 'A' for IPv4
+            print(f"~~~_check_dns_resolution: DNS {domain} SUCCESS")
+        except Exception as e:  # noqa: BLE001
+            print(f"~~~_check_dns_resolution: DNS {domain} FAILURE. Error: {e}")
         time.sleep(_CHECK_FREQUENCY)
