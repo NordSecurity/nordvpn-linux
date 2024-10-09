@@ -12,6 +12,8 @@ type Service interface {
 	Enable() error
 	// Disable firewall
 	Disable() error
+	// Flushes firewall
+	Flush() error
 }
 
 // Agent carries out required firewall changes.
@@ -22,4 +24,6 @@ type Agent interface {
 	Add(Rule) error
 	// Delete a firewall rule
 	Delete(Rule) error
+	// Flush removes all nordvpn rules
+	Flush() error
 }

@@ -122,6 +122,7 @@ func (f *workingFirewall) Delete(rules []string) error {
 func (workingFirewall) Enable() error   { return nil }
 func (workingFirewall) Disable() error  { return nil }
 func (workingFirewall) IsEnabled() bool { return true }
+func (workingFirewall) Flush() error    { return nil }
 
 type workingAllowlistRouting struct{}
 
@@ -136,6 +137,7 @@ func (failingFirewall) Delete([]string) error     { return mock.ErrOnPurpose }
 func (failingFirewall) Enable() error             { return mock.ErrOnPurpose }
 func (failingFirewall) Disable() error            { return mock.ErrOnPurpose }
 func (failingFirewall) IsEnabled() bool           { return false }
+func (failingFirewall) Flush() error              { return mock.ErrOnPurpose }
 
 type meshnetterFirewall struct{}
 
@@ -155,6 +157,7 @@ func (meshnetterFirewall) Delete([]string) error { return nil }
 func (meshnetterFirewall) Enable() error         { return nil }
 func (meshnetterFirewall) Disable() error        { return nil }
 func (meshnetterFirewall) IsEnabled() bool       { return true }
+func (meshnetterFirewall) Flush() error          { return nil }
 
 func workingDeviceList() ([]net.Interface, error) {
 	return []net.Interface{mock.En0Interface}, nil

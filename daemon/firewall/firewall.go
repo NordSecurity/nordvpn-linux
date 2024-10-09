@@ -125,6 +125,13 @@ func (fw *Firewall) Disable() error {
 	return fw.swap(fw.working, fw.current)
 }
 
+func (fw *Firewall) Flush() error {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+
+	return fw.current.Flush()
+}
+
 func (fw *Firewall) swap(current Agent, next Agent) error {
 	for _, rule := range fw.rules.rules {
 		if err := current.Delete(rule); err != nil {
