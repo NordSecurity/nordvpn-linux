@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -35,13 +33,4 @@ func extractZone(input []byte) string {
 		}
 	}
 	return ""
-}
-
-// Obfuscate given string
-func Obfuscate(text string) string {
-	// removing excess symbols which might interfere with hashing
-	text = strings.TrimSpace(text)
-
-	sum := sha256.Sum256([]byte(text))
-	return fmt.Sprintf("%x", sum[:7])
 }
