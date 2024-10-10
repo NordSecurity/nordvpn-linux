@@ -21,6 +21,8 @@ TSHARK_FILTER_TCP = "(tcp port 443) and (ip dst %s)"
 TSHARK_FILTER_UDP_OBFUSCATED = "udp and (port not 1194) and (ip dst %s)"
 TSHARK_FILTER_TCP_OBFUSCATED = "tcp and (port not 443) and (ip dst %s)"
 
+FWMARK = 57841
+
 class PacketCaptureThread(Thread):
     def __init__(self, connection_settings):
         Thread.__init__(self)
@@ -86,6 +88,18 @@ def _is_internet_reachable(retry=5) -> bool:
     return False
 
 
+def _is_internet_reachable_outside_vpn(retry=5) -> bool:
+    """Returns True when remote host is reachable by its public IP outside VPN tunnel."""
+    i = 0
+    while i < retry:
+        try:
+            return "icmp_seq=" in sh.sudo.ping("-c", "1", "-m", f"{FWMARK}", "-w", "1", "1.1.1.1")
+        except sh.ErrorReturnCode:
+            time.sleep(1)
+            i += 1
+    return False
+
+
 def _is_ipv6_internet_reachable(retry=5) -> bool:
     i = 0
     last = Exception("_is_ipv6_internet_reachable", "error")
@@ -107,6 +121,20 @@ def _is_dns_resolvable(retry=5) -> bool:
         try:
             # @TODO gitlab docker runner has public ipv6, but no connectivity. remove -4 once fixed
             return "icmp_seq=" in sh.ping("-4", "-c", "1", "-w", "1", "nordvpn.com")
+        except sh.ErrorReturnCode:
+            time.sleep(1)
+            i += 1
+    return False
+
+
+def _is_dns_resolvable_outside_vpn(retry: int = 5) -> bool:
+    """Returns True when domain resolution outside vpn is not working."""
+    i = 0
+    while i < retry:
+        try:
+            # @TODO gitlab docker runner has public ipv6, but no connectivity. remove -4 once fixed
+            # @TODO need dns query to go arround vpn tunnel, here with regular ping it does not
+            return "icmp_seq=" in sh.ping("-4", "-c", "1", "-m", f"{FWMARK}", "-w", "1", "nordvpn.com")
         except sh.ErrorReturnCode:
             time.sleep(1)
             i += 1
@@ -142,7 +170,9 @@ def is_not_available(retry=5) -> bool:
 
 def is_available(retry=5) -> bool:
     """Returns True when network access is available or throws AssertionError otherwise."""
+    assert _is_internet_reachable_outside_vpn(retry)
     assert _is_internet_reachable(retry)
+    assert _is_dns_resolvable_outside_vpn(retry)
     assert _is_dns_resolvable(retry)
     return True
 
