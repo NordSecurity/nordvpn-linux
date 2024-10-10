@@ -150,6 +150,9 @@ func (*meshNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
 func (*meshNetworker) LastServerName() string { return "" }
+func (*meshNetworker) GetConnectionParameters() (vpn.ServerData, bool) {
+	return vpn.ServerData{}, false
+}
 
 func TestStartAutoMeshnet(t *testing.T) {
 	category.Set(t, category.Unit)

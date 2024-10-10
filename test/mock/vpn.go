@@ -49,6 +49,9 @@ func (w *WorkingVPN) NetworkChanged() error {
 
 	return w.ErrNetworkChanges
 }
+func (w *WorkingVPN) GetConnectionParameters() (vpn.ServerData, bool) {
+	return vpn.ServerData{}, false
+}
 
 type WorkingInactiveVPN struct{}
 
@@ -60,6 +63,9 @@ func (WorkingInactiveVPN) State() vpn.State      { return vpn.ConnectedState }
 func (WorkingInactiveVPN) IsActive() bool        { return false }
 func (WorkingInactiveVPN) Tun() tunnel.T         { return WorkingT{} }
 func (WorkingInactiveVPN) NetworkChanged() error { return nil }
+func (WorkingInactiveVPN) GetConnectionParameters() (vpn.ServerData, bool) {
+	return vpn.ServerData{}, false
+}
 
 // FailingVPN stub of a github.com/NordSecurity/nordvpn-linux/daemon/vpn.VPN interface.
 type FailingVPN struct{}
@@ -72,6 +78,9 @@ func (FailingVPN) State() vpn.State      { return vpn.ExitedState }
 func (FailingVPN) IsActive() bool        { return false }
 func (FailingVPN) Tun() tunnel.T         { return WorkingT{} }
 func (FailingVPN) NetworkChanged() error { return ErrOnPurpose }
+func (FailingVPN) GetConnectionParameters() (vpn.ServerData, bool) {
+	return vpn.ServerData{}, false
+}
 
 // ActiveVPN stub of a github.com/NordSecurity/nordvpn-linux/daemon/vpn.VPN interface.
 type ActiveVPN struct{}
@@ -84,6 +93,9 @@ func (ActiveVPN) State() vpn.State      { return vpn.ExitedState }
 func (ActiveVPN) IsActive() bool        { return true }
 func (ActiveVPN) Tun() tunnel.T         { return WorkingT{} }
 func (ActiveVPN) NetworkChanged() error { return nil }
+func (ActiveVPN) GetConnectionParameters() (vpn.ServerData, bool) {
+	return vpn.ServerData{}, false
+}
 
 type MeshnetAndVPN struct {
 	WorkingVPN
