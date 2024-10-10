@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"golang.org/x/crypto/ssh"
 )
 
 // GenerateValidHeaders generates HTTP Response headers that will be accepted in client side
@@ -35,19 +33,6 @@ func CreateSignature(privateKey *rsa.PrivateKey, data string) (string, error) {
 	hashed := sha256.Sum256([]byte(data))
 	signature, err := privateKey.Sign(rand.Reader, hashed[:], signerOpts{})
 	return base64.StdEncoding.EncodeToString(signature), err
-}
-
-// PKVault is a mock implementation of PKVault
-type PKVault struct {
-	PublicKey ssh.PublicKey
-}
-
-// Get returns loaded public key
-func (v PKVault) Get(id string) (ssh.PublicKey, error) {
-	if id == "test-key" {
-		return v.PublicKey, nil
-	}
-	return nil, fmt.Errorf("test error")
 }
 
 func getSHA256Hash(data []byte) []byte {

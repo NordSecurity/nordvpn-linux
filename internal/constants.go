@@ -166,15 +166,6 @@ func GetNorduserSocketFork(uid int) string {
 	return fmt.Sprintf("/tmp/%d-%s.sock", uid, Norduserd)
 }
 
-// GetFilesharedPid to save fileshare daemon pid
-func GetFilesharedPid(uid int) string {
-	_, err := os.Stat(fmt.Sprintf("/run/user/%d", uid))
-	if uid == 0 || os.IsNotExist(err) {
-		return fmt.Sprintf("/run/%s/%s.pid", Fileshare, Fileshare)
-	}
-	return fmt.Sprintf("/run/user/%d/%s/%s.pid", uid, Fileshare, Fileshare)
-}
-
 func getHomeDirPath(homeDirectory string) (string, error) {
 	snapUserDataDir := os.Getenv("SNAP_USER_COMMON")
 	if snapUserDataDir != "" {
