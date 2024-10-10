@@ -41,6 +41,9 @@ func JobRefreshMeshnet(s *Server) func() error {
 func JobMonitorFileshareProcess(s *Server) func() error {
 	oldState := false
 	return func() error {
+		if !s.isMeshOn() {
+			return nil
+		}
 		newState := internal.IsProcessRunning(internal.FileshareBinaryPath)
 		if newState == oldState {
 			// only state change triggers the modifications
