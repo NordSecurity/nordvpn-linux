@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-source "${WORKDIR}/lib-versions.env"
+source "${WORKDIR}/ci/export_lib_versions.sh"
 
 declare -A targets=(
   [amd64]=x86_64-unknown-linux-gnu

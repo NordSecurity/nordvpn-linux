@@ -83,6 +83,9 @@ if [[ $tags == *"moose"* ]]; then
 	trap revert_moose_patch EXIT
 fi
 
+source "${WORKDIR}"/ci/set_bindings_version.sh libtelio
+source "${WORKDIR}"/ci/set_bindings_version.sh libdrop
+
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
 	# BUILDMODE can be no value and `go` does not like empty parameter ''
