@@ -7,7 +7,7 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 import "common.proto";
 
 message DedidcatedIPService {
-  int64 server_id = 1;
+  repeated int64 server_ids = 1;
   string dedicated_ip_expires_at = 2;
 }
 
