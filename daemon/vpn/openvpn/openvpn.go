@@ -268,6 +268,12 @@ func (ovpn *OpenVPN) State() vpn.State {
 	return ovpn.state
 }
 
+func (ovpn *OpenVPN) GetConnectionParameters() (vpn.ServerData, bool) {
+	ovpn.Lock()
+	defer ovpn.Unlock()
+	return ovpn.serverData, ovpn.active
+}
+
 func (ovpn *OpenVPN) startOpenVPN() error {
 	stdout, err := ovpn.process.StdoutPipe()
 	if err != nil {

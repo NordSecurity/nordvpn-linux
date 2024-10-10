@@ -17,6 +17,9 @@ type VPN interface {
 	IsActive() bool
 	Tun() tunnel.T // required because of OpenVPN
 	NetworkChanged() error
+	// GetConnectionParameters returns ServerData of current connection and true if connection is established, or empty
+	// ServerData and false if it isn't.
+	GetConnectionParameters() (ServerData, bool)
 }
 
 // Credentials define a possible set of credentials required to

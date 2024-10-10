@@ -634,6 +634,13 @@ func (l *Libtelio) Public(private string) string {
 	return teliogo.GeneratePublicKey(private)
 }
 
+func (l *Libtelio) GetConnectionParameters() (vpn.ServerData, bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	return l.currentServer, l.active
+}
+
 // isConnected function designed to be called before performing an action which trigger events.
 // libtelio is sending back events via callback, to properly catch event from libtelio, event
 // is being received in goroutine, but this goroutine has to be 100% started before invoking

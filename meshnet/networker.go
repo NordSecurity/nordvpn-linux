@@ -45,6 +45,7 @@ type Networker interface {
 		bool, // enableLocalTraffic
 	) error
 	Stop() error
+	GetConnectionParameters() (vpn.ServerData, bool)
 }
 
 // UniqueAddress a member of mesh network.

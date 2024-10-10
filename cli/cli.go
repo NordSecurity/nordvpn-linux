@@ -1164,6 +1164,8 @@ func meshnetErrorToError(code meshpb.MeshnetErrorCode) error {
 		return errors.New(DisconnectNotConnected)
 	case meshpb.MeshnetErrorCode_CONFLICT_WITH_PQ:
 		return errors.New(SetPqAndMeshnet)
+	case meshpb.MeshnetErrorCode_CONFLICT_WITH_PQ_SERVER:
+		return errors.New(SetPqAndMeshnetServer)
 	default:
 		return errors.New(AccountInternalError)
 	}

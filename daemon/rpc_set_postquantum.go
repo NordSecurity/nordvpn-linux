@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"log"
+	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -41,5 +42,6 @@ func (r *RPC) SetPostQuantum(ctx context.Context, in *pb.SetGenericRequest) (*pb
 
 	return &pb.Payload{
 		Type: internal.CodeSuccess,
+		Data: []string{strconv.FormatBool(r.netw.IsVPNActive())},
 	}, nil
 }

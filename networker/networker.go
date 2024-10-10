@@ -1751,3 +1751,10 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 			err)
 	}
 }
+
+func (netw *Combined) GetConnectionParameters() (vpn.ServerData, bool) {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+
+	return netw.vpnet.GetConnectionParameters()
+}
