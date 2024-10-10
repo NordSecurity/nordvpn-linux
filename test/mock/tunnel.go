@@ -18,15 +18,3 @@ func (WorkingT) IPs() []netip.Addr {
 func (WorkingT) TransferRates() (tunnel.Statistics, error) {
 	return tunnel.Statistics{Tx: 1337, Rx: 1337}, nil
 }
-
-// WorkingIPv6T stub of a github.com/NordSecurity/nordvpn-linux/tunnel.T interface.
-type WorkingIPv6T struct{}
-
-func (WorkingIPv6T) Interface() net.Interface { return En0Interface }
-func (WorkingIPv6T) IPs() []netip.Addr {
-	return []netip.Addr{netip.MustParseAddr("fde0:9c97:ec39:4691:6323:2d46:3321:9688")}
-}
-
-func (WorkingIPv6T) TransferRates() (tunnel.Statistics, error) {
-	return tunnel.Statistics{Tx: 1337, Rx: 1337}, nil
-}
