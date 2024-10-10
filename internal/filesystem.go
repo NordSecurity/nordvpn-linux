@@ -264,21 +264,6 @@ func FileCreate(path string, permissions os.FileMode) (*os.File, error) {
 	return file, nil
 }
 
-// FileCreateForUser but leave closing to the caller.
-func FileCreateForUser(path string, permissions os.FileMode, uid int, gid int) (*os.File, error) {
-	file, err := FileCreate(path, permissions)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := file.Chown(uid, gid); err != nil {
-		// #nosec G104 -- no writes were made
-		file.Close()
-		return nil, err
-	}
-	return file, nil
-}
-
 // FileRead reads all file
 func FileRead(file string) ([]byte, error) {
 	// #nosec G304 -- no input comes from the user
@@ -435,66 +420,6 @@ func MachineID() uuid.UUID {
 		return id
 	}
 	return uuid.NewSHA1(machineUUID, []byte(hostname))
-}
-
-// SystemUsers returns all non-root user names
-func SystemUsers() ([]string, error) {
-	// get list of 'human' users on the host system
-	out, err := exec.Command("sh", "-c", "awk -F$':' 'BEGIN { ORS=\" \" }; { if ($3 >= 1000 && $3 < 2000) print $1; }' /etc/passwd").CombinedOutput()
-	if err != nil {
-		return nil, err
-	}
-	return strings.Split(strings.Trim(string(out), " \n"), " "), nil
-}
-
-// SystemUsersIDs returns all non-root user ids
-func SystemUsersIDs() ([]int64, error) {
-	users, err := SystemUsers()
-	if err != nil {
-		return nil, err
-	}
-	var ids []int64
-	for _, u := range users {
-		// #nosec G204 -- input is properly sanitized
-		out, err := exec.Command(
-			"awk",
-			"-v", fmt.Sprintf("val=%s", u),
-			"-F", ":",
-			"$1==val{print $3}",
-			"/etc/passwd",
-		).CombinedOutput()
-		if err != nil {
-			continue
-		}
-		id, err := strconv.ParseInt(strings.Trim(string(out), "\n"), 10, 64)
-		if err != nil {
-			continue
-		}
-		ids = append(ids, id)
-	}
-	return ids, nil
-}
-
-// DBUSSessionBusAddress finds user dbus session bus address
-func DBUSSessionBusAddress(id int64) (string, error) {
-	// #nosec G204 -- input is properly sanitized
-	out, err := exec.Command("ps", "-u", fmt.Sprintf("%d", id), "-o", "pid=").CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("listing processes for uid: %w", err)
-	}
-	for _, number := range strings.Split(strings.Trim(string(out), "\n"), "\n") {
-		pid, err := strconv.ParseInt(strings.Trim(strings.Trim(number, "\n"), " "), 10, 64)
-		if err != nil {
-			continue
-		}
-		out, _ := os.ReadFile(fmt.Sprintf("/proc/%d/environ", pid))
-		for _, env := range strings.Split(string(out), "\000") {
-			if strings.Contains(env, "DBUS_SESSION_BUS_ADDRESS") {
-				return env, nil
-			}
-		}
-	}
-	return "", nil
 }
 
 type NetLink struct {
