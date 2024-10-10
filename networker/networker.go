@@ -1080,10 +1080,7 @@ func (netw *Combined) UnsetFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	if !netw.isKillSwitchSet {
-		return netw.unsetNetwork()
-	}
-	return nil
+	return netw.fw.Flush()
 }
 
 func (netw *Combined) unsetNetwork() error {

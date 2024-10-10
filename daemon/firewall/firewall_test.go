@@ -42,6 +42,11 @@ func (m *mockAgent) Delete(rule Rule) error {
 	return nil
 }
 
+func (m *mockAgent) Flush() error {
+	m.deleted++
+	return nil
+}
+
 func (f *failingAgent) Add(rule Rule) error {
 	f.added++
 	return fmt.Errorf("adding")
@@ -50,6 +55,10 @@ func (f *failingAgent) Add(rule Rule) error {
 func (f *failingAgent) Delete(rule Rule) error {
 	f.deleted++
 	return fmt.Errorf("deleting")
+}
+
+func (m *failingAgent) Flush() error {
+	return nil
 }
 
 func TestFirewallAdd(t *testing.T) {

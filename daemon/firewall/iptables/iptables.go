@@ -118,6 +118,38 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 	return nil
 }
 
+func generateFlushRules(rules string) []string {
+	flushRules := []string{}
+	for _, rule := range strings.Split(rules, "\n") {
+		if strings.Contains(rule, "nordvpn") {
+			newRule := strings.Replace(rule, "-A", "-D", 1)
+			flushRules = append(flushRules, newRule)
+		}
+	}
+
+	return flushRules
+}
+
+func (ipt *IPTables) Flush() error {
+	for _, iptableVersion := range ipt.supportedIPTables {
+		out, err := exec.Command(iptableVersion, "-S").CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("listing rules: %w", err)
+		}
+
+		rules := string(out)
+		for _, rule := range generateFlushRules(rules) {
+			err := exec.Command(iptableVersion, strings.Split(rule, " ")...).Run()
+			if err != nil {
+				return fmt.Errorf("deleting %s rule: %w", rule, err)
+
+			}
+		}
+	}
+
+	return nil
+}
+
 // FilterSupportedIPTables filter supported versions based on what exists in the system
 func FilterSupportedIPTables(supportedIPTables []string) []string {
 	var supported []string
