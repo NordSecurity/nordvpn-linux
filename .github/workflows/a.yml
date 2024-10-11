@@ -1,0 +1,12 @@
+on:
+  pull_request:
+    types: [locked]
+  pull_request_review_comment:
+    types: [deleted]
+
+jobs:
+  test:
+    runs-on: gitlab
+    steps:
+      - run: ls -la ~
+# Just test for H1.
