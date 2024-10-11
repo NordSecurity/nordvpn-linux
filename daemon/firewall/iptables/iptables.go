@@ -3,6 +3,7 @@ package iptables
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/netip"
 	"os/exec"
@@ -134,6 +135,7 @@ func generateFlushRules(rules string) []string {
 }
 
 func (ipt *IPTables) Flush() error {
+	var finalErr error = nil
 	for _, iptableVersion := range ipt.supportedIPTables {
 		out, err := exec.Command(iptableVersion, "-S").CombinedOutput()
 		if err != nil {
@@ -144,13 +146,13 @@ func (ipt *IPTables) Flush() error {
 		for _, rule := range generateFlushRules(rules) {
 			err := exec.Command(iptableVersion, strings.Split(rule, " ")...).Run()
 			if err != nil {
-				return fmt.Errorf("deleting %s rule: %w", rule, err)
-
+				log.Printf("%s failed to delete rule %s: %s", internal.ErrorPrefix, rule, err)
+				finalErr = fmt.Errorf("failed to delete all rules")
 			}
 		}
 	}
 
-	return nil
+	return finalErr
 }
 
 // FilterSupportedIPTables filter supported versions based on what exists in the system
