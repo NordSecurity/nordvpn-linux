@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/netip"
 	"os/exec"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -15,8 +16,9 @@ import (
 )
 
 const (
-	ipv4Table = "iptables"
-	ipv6Table = "ip6tables"
+	ipv4Table      = "iptables"
+	ipv6Table      = "ip6tables"
+	defaultComment = "nordvpn"
 )
 
 const (
@@ -119,9 +121,10 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 }
 
 func generateFlushRules(rules string) []string {
+	re := regexp.MustCompile(fmt.Sprintf(`--comment\s+%s(?:\s|$)`, regexp.QuoteMeta(defaultComment)))
 	flushRules := []string{}
 	for _, rule := range strings.Split(rules, "\n") {
-		if strings.Contains(rule, "nordvpn") {
+		if re.MatchString(rule) {
 			newRule := strings.Replace(rule, "-A", "-D", 1)
 			flushRules = append(flushRules, newRule)
 		}
@@ -427,7 +430,7 @@ func generateIPTablesRule(
 	jump := " -j "
 
 	if comment == "" {
-		comment = "nordvpn"
+		comment = defaultComment
 	}
 
 	var acceptComment string
