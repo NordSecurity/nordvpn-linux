@@ -1883,6 +1883,7 @@ func TestCombined_Refresh(t *testing.T) {
 		Direction:      firewall.Inbound,
 		RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
 		Allow:          false,
+		Comment:        "nordvpn-meshnet",
 	}
 
 	assert.Equal(t, expectedDefaultMeshBlockFwRule, fw.rules[defaultMeshBlockRuleName],
@@ -1900,7 +1901,8 @@ func TestCombined_Refresh(t *testing.T) {
 				firewall.Established,
 			},
 		},
-		Allow: true,
+		Allow:   true,
+		Comment: "nordvpn-meshnet",
 	}
 
 	assert.Equal(t, expectedDefaultMeshAllowEstablishedFwRule, fw.rules["default-mesh-allow-established"],
@@ -1913,6 +1915,7 @@ func TestCombined_Refresh(t *testing.T) {
 		Direction:      firewall.Inbound,
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(machineAddress, machineAddress.BitLen())},
 		Allow:          true,
+		Comment:        "nordvpn-meshnet",
 	}
 
 	assert.Equal(t, expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName],
@@ -1925,6 +1928,7 @@ func TestCombined_Refresh(t *testing.T) {
 		Direction:      firewall.Inbound,
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
 		Allow:          true,
+		Comment:        "nordvpn-meshnet",
 	}
 
 	assert.Equal(t, expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
@@ -1941,6 +1945,7 @@ func TestCombined_Refresh(t *testing.T) {
 		PortsDirection: firewall.Destination,
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
 		Allow:          true,
+		Comment:        "nordvpn-meshnet",
 	}
 
 	assert.Equal(t, expectedAllowFilesharePeer1Rule, fw.rules[peer1FwAllowFileshareRuleName],
@@ -2282,7 +2287,8 @@ func TestResetRouting(t *testing.T) {
 					RemoteNetworks: []netip.Prefix{
 						netip.PrefixFrom(peer1Address, peer1Address.BitLen()),
 					},
-					Allow: true,
+					Allow:   true,
+					Comment: "nordvpn-meshnet",
 				},
 				{
 					Name:      peer1PublicKey + blockLanRule + peer1Address.String(),
@@ -2296,7 +2302,8 @@ func TestResetRouting(t *testing.T) {
 					RemoteNetworks: []netip.Prefix{
 						netip.PrefixFrom(peer1Address, peer1Address.BitLen()),
 					},
-					Allow: false,
+					Allow:   false,
+					Comment: "nordvpn-meshnet",
 				},
 			},
 		},
@@ -2310,7 +2317,8 @@ func TestResetRouting(t *testing.T) {
 					RemoteNetworks: []netip.Prefix{
 						netip.PrefixFrom(peer2Address, peer2Address.BitLen()),
 					},
-					Allow: true,
+					Allow:   true,
+					Comment: "nordvpn-meshnet",
 				},
 				{
 					Name:      peer2PublicKey + blockLanRule + peer2Address.String(),
@@ -2324,7 +2332,8 @@ func TestResetRouting(t *testing.T) {
 					RemoteNetworks: []netip.Prefix{
 						netip.PrefixFrom(peer2Address, peer2Address.BitLen()),
 					},
-					Allow: false,
+					Allow:   false,
+					Comment: "nordvpn-meshnet",
 				},
 			},
 		},
@@ -2338,7 +2347,8 @@ func TestResetRouting(t *testing.T) {
 					RemoteNetworks: []netip.Prefix{
 						netip.PrefixFrom(peer3Address, peer3Address.BitLen()),
 					},
-					Allow: true,
+					Allow:   true,
+					Comment: "nordvpn-meshnet",
 				},
 				{
 					Name:      peer3PublicKey + blockLanRule + peer3Address.String(),
@@ -2352,7 +2362,8 @@ func TestResetRouting(t *testing.T) {
 					RemoteNetworks: []netip.Prefix{
 						netip.PrefixFrom(peer3Address, peer3Address.BitLen()),
 					},
-					Allow: false,
+					Allow:   false,
+					Comment: "nordvpn-meshnet",
 				},
 			},
 		},
@@ -2371,7 +2382,8 @@ func TestResetRouting(t *testing.T) {
 					RemoteNetworks: []netip.Prefix{
 						netip.PrefixFrom(peer5Address, peer5Address.BitLen()),
 					},
-					Allow: true,
+					Allow:   true,
+					Comment: "nordvpn-meshnet",
 				},
 			},
 		},
