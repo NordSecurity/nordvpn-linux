@@ -263,7 +263,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		},
 	}
 
-	dipService2ExpDate := "2050-08-22 00:00:00"
+	dipService2ExpDate := "2050-01-25 00:00:00"
 	var dipService2ServerID int64 = 222222
 	dipService2 := core.ServiceData{
 		ExpiresAt: dipService2ExpDate,
@@ -277,7 +277,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		},
 	}
 
-	dipService3ExpDate := "2050-08-22 00:00:00"
+	dipService3ExpDate := "2043-05-10 00:00:00"
 	dipService3 := core.ServiceData{
 		ExpiresAt: dipService3ExpDate,
 		Service: core.Service{
