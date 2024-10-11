@@ -25,19 +25,19 @@ type Firewall struct {
 
 // NewFirewall produces an instance of Firewall.
 func NewFirewall(noop, working Agent, publisher events.Publisher[string], enabled bool) *Firewall {
-	var current Agent
+	// var current Agent
 
-	if enabled {
-		current = working
-	} else {
-		current = noop
-	}
+	// if enabled {
+	// 	current = working
+	// } else {
+	// current = noop
+	// }
 
 	return &Firewall{
 		working:   working,
 		noop:      noop,
 		enabled:   enabled,
-		current:   current,
+		current:   noop,
 		publisher: publisher,
 	}
 }
