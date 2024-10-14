@@ -110,10 +110,18 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
+	if cfg.Mesh {
+		return &pb.MeshnetResponse{
+			Response: &pb.MeshnetResponse_MeshnetError{
+				MeshnetError: pb.MeshnetErrorCode_ALREADY_ENABLED,
+			},
+		}, nil
+	}
+
 	if cfg.AutoConnectData.PostquantumVpn {
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_MeshnetError{
-				MeshnetError: pb.MeshnetErrorCode_CONFLICT_WITH_PQ_SERVER,
+				MeshnetError: pb.MeshnetErrorCode_CONFLICT_WITH_PQ,
 			},
 		}, nil
 	}
@@ -122,7 +130,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		if serverData.PostQuantum {
 			return &pb.MeshnetResponse{
 				Response: &pb.MeshnetResponse_MeshnetError{
-					MeshnetError: pb.MeshnetErrorCode_CONFLICT_WITH_PQ,
+					MeshnetError: pb.MeshnetErrorCode_CONFLICT_WITH_PQ_SERVER,
 				},
 			}, nil
 		}
@@ -133,14 +141,6 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_MeshnetError{
 				MeshnetError: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
-	if cfg.Mesh {
-		return &pb.MeshnetResponse{
-			Response: &pb.MeshnetResponse_MeshnetError{
-				MeshnetError: pb.MeshnetErrorCode_ALREADY_ENABLED,
 			},
 		}, nil
 	}
