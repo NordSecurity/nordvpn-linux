@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/netip"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/slices"
 
@@ -142,11 +144,72 @@ type CurrentUserResponse struct {
 	Email    string `json:"email"`
 }
 
+type Order struct {
+	ID       int    `json:"id,omitempty"`
+	RemoteID int    `json:"remote_id,omitempty"`
+	Status   string `json:"status,omitempty"`
+	Plans    Plans  `json:"plans,omitempty"`
+}
+
+type PaymentResponse struct {
+	Payment Payment `json:"payment,omitempty"`
+}
+
+type Payment struct {
+	CreatedAt    time.Time    `json:"created_at,omitempty"`
+	Subscription Subscription `json:"subscription,omitempty"`
+	Status       string       `json:"status,omitempty"`
+	Payer        Payer        `json:"payer,omitempty"`
+	Amount       float32      `json:"amount,omitempty"`
+	Currency     string       `json:"currency,omitempty"`
+	Provider     string       `json:"provider,omitempty"`
+}
+
+func (p *Payment) UnmarshalJSON(data []byte) error {
+	type Alias Payment
+	aux := &struct {
+		CreatedAt string `json:"created_at"`
+		Amount    string `json:"amount"`
+		*Alias
+	}{
+		Alias: (*Alias)(p),
+	}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	t, err := time.Parse(internal.ServerDateFormat, aux.CreatedAt)
+	if err != nil {
+		return fmt.Errorf("parsing created_at: %w", err)
+	}
+
+	amount, err := strconv.ParseFloat(aux.Amount, 32)
+	if err != nil {
+		return fmt.Errorf("parsing amount: %w", err)
+	}
+
+	p.CreatedAt = t
+	p.Amount = float32(amount)
+	return nil
+}
+
+type Subscription struct {
+	MerchantID        int32  `json:"merchant_id,omitempty"`
+	FrequencyInterval int32  `json:"frequency_interval,omitempty"`
+	FrequencyUnit     string `json:"frequency_unit,omitempty"`
+	Status            string `json:"status,omitempty"`
+}
+
+type Payer struct {
+	OrderID int `json:"order_id,omitempty"`
+}
+
 type TokenRenewResponse struct {
 	Token      string `json:"token"`
 	RenewToken string `json:"renew_token"`
 	ExpiresAt  string `json:"expires_at"`
 }
+
+type Plans []Plan
 
 type TrustedPassTokenResponse struct {
 	OwnerID string `json:"owner_id"`
@@ -157,10 +220,8 @@ type MultifactorAuthStatusResponse struct {
 	Status string `json:"status"`
 }
 
-type Plans []Plan
-
 type Plan struct {
-	ID         int64  `json:"id"`
+	ID         int32  `json:"id"`
 	Identifier string `json:"identifier"`
 	Type       string `json:"type"`
 	Title      string `json:"title"`
