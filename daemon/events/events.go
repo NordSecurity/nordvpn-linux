@@ -32,7 +32,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[any]{},
 		&subs.Subject[events.DataConnect]{},
 		&subs.Subject[events.DataDisconnect]{},
-		&subs.Subject[core.ServicesResponse]{},
+		&subs.Subject[any]{},
 		&subs.Subject[events.UiItemsAction]{},
 		&subs.Subject[int]{},
 		&subs.Subject[core.Insights]{},
@@ -63,7 +63,7 @@ func NewEvents(
 	defaults events.PublishSubcriber[any],
 	connect events.PublishSubcriber[events.DataConnect],
 	disconnect events.PublishSubcriber[events.DataDisconnect],
-	accountCheck events.PublishSubcriber[core.ServicesResponse],
+	accountCheck events.PublishSubcriber[any],
 	uiItemsClick events.PublishSubcriber[events.UiItemsAction],
 	heartBeat events.PublishSubcriber[int],
 	deviceLocation events.PublishSubcriber[core.Insights],
@@ -185,7 +185,7 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 type ServicePublisher interface {
 	NotifyConnect(events.DataConnect) error
 	NotifyDisconnect(events.DataDisconnect) error
-	NotifyAccountCheck(core.ServicesResponse) error
+	NotifyAccountCheck(any) error
 	NotifyUiItemsClick(events.UiItemsAction) error
 	NotifyHeartBeat(int) error
 	NotifyDeviceLocation(core.Insights) error
@@ -194,7 +194,7 @@ type ServicePublisher interface {
 type ServiceEvents struct {
 	Connect        events.PublishSubcriber[events.DataConnect]
 	Disconnect     events.PublishSubcriber[events.DataDisconnect]
-	AccountCheck   events.PublishSubcriber[core.ServicesResponse]
+	AccountCheck   events.PublishSubcriber[any]
 	UiItemsClick   events.PublishSubcriber[events.UiItemsAction]
 	HeartBeat      events.PublishSubcriber[int]
 	DeviceLocation events.PublishSubcriber[core.Insights]

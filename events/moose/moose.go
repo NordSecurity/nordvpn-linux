@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"os/exec"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -54,6 +55,7 @@ type Subscriber struct {
 	Domain                  string
 	Subdomain               string
 	DeviceID                string
+	SubscriptionAPI         core.SubscriptionAPI
 	currentDomain           string
 	connectionStartTime     time.Time
 	connectionToMeshnetPeer bool
@@ -205,13 +207,17 @@ func (s *Subscriber) NotifyKillswitch(data bool) error {
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesKillSwitchEnabledValue(data))
 }
 
-func (s *Subscriber) NotifyAccountCheck(core.ServicesResponse) error { return nil }
+func (s *Subscriber) NotifyAccountCheck(any) error {
+	return s.fetchSubscriptions()
+}
 
 func (s *Subscriber) NotifyAutoconnect(data bool) error {
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesAutoConnectEnabledValue(data))
 }
 
-func (s *Subscriber) NotifyDefaults(any) error { return nil }
+func (s *Subscriber) NotifyDefaults(any) error {
+	return s.clearSubscriptions()
+}
 
 func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta(fmt.Sprintf(`{"count":%d}`, len(data.Ips)))); err != nil {
@@ -271,7 +277,18 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error {
 		eventStatus = moose.NordvpnappEventStatusAttempt
 	}
 
-	return s.response(moose.NordvpnappSendServiceQualityAuthorizationLogin(int32(data.DurationMs), eventTrigger, eventStatus, moose.NordvpnappOptBoolNone))
+	if err := s.response(moose.NordvpnappSendServiceQualityAuthorizationLogin(
+		int32(data.DurationMs),
+		eventTrigger,
+		eventStatus,
+		moose.NordvpnappOptBoolNone,
+	)); err != nil {
+		return err
+	}
+	if data.EventStatus == events.StatusSuccess {
+		return s.fetchSubscriptions()
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
@@ -297,7 +314,19 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 		eventStatus = moose.NordvpnappEventStatusAttempt
 	}
 
-	return s.response(moose.NordvpnappSendServiceQualityAuthorizationLogout(int32(data.DurationMs), eventTrigger, eventStatus, moose.NordvpnappOptBoolNone))
+	if err := s.response(moose.NordvpnappSendServiceQualityAuthorizationLogout(
+		int32(data.DurationMs),
+		eventTrigger,
+		eventStatus,
+		moose.NordvpnappOptBoolNone,
+	)); err != nil {
+		return err
+	}
+
+	if data.EventStatus == events.StatusSuccess {
+		return s.clearSubscriptions()
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyMFA(data bool) error {
@@ -656,6 +685,222 @@ func (s *Subscriber) sendEvent(contentType, userAgent, requestBody string) int {
 		return errCodeResponseStatus
 	}
 	return errCodeEventSendSuccess
+}
+
+func (s *Subscriber) fetchSubscriptions() error {
+	if !s.enabled {
+		return nil
+	}
+	var cfg config.Config
+	if err := s.Config.Load(&cfg); err != nil {
+		return fmt.Errorf("loading config: %w", err)
+	}
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+
+	payments, err := s.SubscriptionAPI.Payments(token)
+	if err != nil {
+		return fmt.Errorf("fetching payments: %w", err)
+	}
+
+	orders, err := s.SubscriptionAPI.Orders(token)
+	if err != nil {
+		return fmt.Errorf("fetching orders: %w", err)
+	}
+
+	payment, ok := findPayment(payments)
+	if !ok {
+		return fmt.Errorf("no valid payments found for the user")
+	}
+
+	var orderErr error
+	order, ok := findOrder(payment, orders)
+	if !ok {
+		orderErr = fmt.Errorf("no valid order was found for the payment")
+	}
+
+	if err := s.setSubscriptions(
+		payment,
+		order,
+		countFunc(payments, isPaymentValid, 2),
+	); err != nil {
+		errors.Join(orderErr, fmt.Errorf("setting subscriptions: %w", err))
+	}
+
+	return orderErr
+}
+
+func findPayment(payments []core.PaymentResponse) (core.Payment, bool) {
+	// Sort by CreatedAt descending
+	slices.SortFunc(payments, func(a core.PaymentResponse, b core.PaymentResponse) int {
+		return -a.Payment.CreatedAt.Compare(b.Payment.CreatedAt)
+	})
+
+	// Find first element matching criteria
+	index := slices.IndexFunc(payments, isPaymentValid)
+	if index < 0 {
+		return core.Payment{}, false
+	}
+
+	return payments[index].Payment, true
+}
+
+func findOrder(p core.Payment, orders []core.Order) (core.Order, bool) {
+	// Find order matching the payment
+	if p.Subscription.MerchantID != 25 && p.Subscription.MerchantID != 3 {
+		return core.Order{}, false
+	}
+	index := slices.IndexFunc(orders, func(o core.Order) bool {
+		var cmpID int
+		switch p.Subscription.MerchantID {
+		case 3:
+			cmpID = o.ID
+		case 25:
+			cmpID = o.RemoteID
+		}
+		return p.Payer.OrderID == cmpID
+	})
+	if index < 0 {
+		return core.Order{}, false
+	}
+
+	return orders[index], true
+}
+
+func isPaymentValid(pr core.PaymentResponse) bool {
+	p := pr.Payment
+	return p.Status == "done" ||
+		p.Status == "error" ||
+		p.Status == "chargeback" ||
+		p.Status == "refunded" ||
+		p.Status == "partially_refunded" ||
+		p.Status == "trial"
+}
+
+// countFunc returns a number of elements in slice matching criteria
+func countFunc[S ~[]E, E any](s S, f func(E) bool, stopAt int) int {
+	count := 0
+	for _, e := range s {
+		if f(e) {
+			count++
+		}
+		if stopAt >= 0 && count >= stopAt {
+			return count
+		}
+	}
+	return count
+}
+
+func (s *Subscriber) setSubscriptions(
+	payment core.Payment,
+	order core.Order,
+	validPaymentsCount int,
+) error {
+	var plan core.Plan
+	if len(order.Plans) > 0 {
+		plan = order.Plans[0]
+	}
+	for _, fn := range []func() uint32{
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateActivationDate(payment.CreatedAt.Format(time.DateOnly))
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateFrequencyInterval(payment.Subscription.FrequencyInterval)
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateFrequencyUnit(payment.Subscription.FrequencyUnit)
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateIsActive(order.Status == "active")
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateIsNewCustomer(validPaymentsCount == 1)
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateMerchantId(payment.Subscription.MerchantID)
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentAmount(payment.Amount)
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentCurrency(payment.Currency)
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentProvider(payment.Provider)
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentStatus(payment.Status)
+		},
+		func() uint32 {
+			if plan.ID != 0 {
+				return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePlanId(plan.ID)
+			}
+			return 0
+		},
+		func() uint32 {
+			if plan.Type != "" {
+				return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePlanType(plan.Type)
+			}
+			return 0
+		},
+		func() uint32 {
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateSubscriptionStatus(payment.Subscription.Status)
+		},
+	} {
+		if err := s.response(fn()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Subscriber) clearSubscriptions() error {
+	for _, fn := range []func() uint32{
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateActivationDate()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateFrequencyInterval()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateFrequencyUnit()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateIsActive()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateIsNewCustomer()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateMerchantId()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStatePaymentAmount()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStatePaymentCurrency()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStatePaymentProvider()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStatePaymentStatus()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStatePlanId()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStatePlanType()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateSubscriptionStatus()
+		},
+	} {
+		if err := s.response(fn()); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *Subscriber) updateEventDomain() error {

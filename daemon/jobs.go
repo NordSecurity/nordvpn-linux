@@ -54,6 +54,11 @@ func (r *RPC) StartJobs(statePublisher *state.StatePublisher) {
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour), gocron.NewTask(JobHeartBeat(1*24*60 /*minutes*/, r.events)), gocron.WithName("job heart beat")); err != nil {
 		log.Println(internal.WarningPrefix, "job heart beat schedule error:", err)
 	}
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(7*24*time.Hour), gocron.NewTask(func() {
+		r.events.Service.AccountCheck.Publish(nil)
+	})); err != nil {
+		log.Println(internal.WarningPrefix, "job account check schedule error:", err)
+	}
 
 	r.scheduler.Start()
 	for _, job := range r.scheduler.Jobs() {

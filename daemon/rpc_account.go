@@ -131,9 +131,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		accountInfo.Username = currentUser.Username
 	}
 
-	r.events.Service.AccountCheck.Publish(
-		core.ServicesResponse{},
-	)
+	r.events.Service.AccountCheck.Publish(struct{}{})
 
 	return accountInfo, nil
 }
