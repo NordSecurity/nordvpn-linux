@@ -53,6 +53,14 @@ type CombinedAPI interface {
 	CreateUser(email, password string) (*UserCreateResponse, error)
 }
 
+// SubscriptionAPI is responsible for fetching the subscription data of the user
+type SubscriptionAPI interface {
+	// Orders returns a list of orders done by the user
+	Orders(token string) ([]Order, error)
+	// Payments returns a list of payments done by the user
+	Payments(token string) ([]PaymentResponse, error)
+}
+
 type DefaultAPI struct {
 	agent     string
 	baseURL   string
@@ -530,4 +538,28 @@ func (api *DefaultAPI) Logout(token string) error {
 	defer resp.Body.Close()
 
 	return nil
+}
+
+func (api *DefaultAPI) Orders(token string) ([]Order, error) {
+	return getData[[]Order](api, token, urlOrders)
+}
+
+func (api *DefaultAPI) Payments(token string) ([]PaymentResponse, error) {
+	return getData[[]PaymentResponse](api, token, urlPayments)
+}
+
+// getData calls a HTTP get request for the endpoints requiring authentication and returns the
+// requested data.
+func getData[T any](api *DefaultAPI, token string, url string) (T, error) {
+	var data T
+	resp, err := api.request(url, http.MethodGet, nil, token)
+	if err != nil {
+		return data, fmt.Errorf("executing HTTP GET request: %w", err)
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return data, fmt.Errorf("decoding data from JSON: %w", err)
+	}
+
+	return data, nil
 }
