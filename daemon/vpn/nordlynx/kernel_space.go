@@ -22,6 +22,7 @@ type KernelSpace struct {
 	fwmark          uint32
 	tun             *tunnel.Tunnel
 	eventsPublisher *vpn.Events
+	serverData      vpn.ServerData
 	sync.Mutex
 }
 
@@ -67,6 +68,8 @@ func (k *KernelSpace) Start(
 		serverData.NordLynxPublicKey,
 		serverData.IP,
 	)
+
+	k.serverData = serverData
 
 	//check if wireguard is not up already
 	if _, err := exec.Command("ip", "link", "show", "dev", InterfaceName).Output(); err == nil {
@@ -155,6 +158,12 @@ func (k *KernelSpace) State() vpn.State {
 	k.Lock()
 	defer k.Unlock()
 	return k.state
+}
+
+func (k *KernelSpace) GetConnectionParameters() (vpn.ServerData, bool) {
+	k.Lock()
+	defer k.Unlock()
+	return k.serverData, k.active
 }
 
 // stop is used on errors

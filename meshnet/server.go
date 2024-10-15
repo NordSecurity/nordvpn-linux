@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -135,7 +136,19 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
+	if serverData, ok := s.netw.GetConnectionParameters(); ok {
+		if serverData.PostQuantum {
+			return &pb.MeshnetResponse{
+				Response: &pb.MeshnetResponse_MeshnetError{
+					MeshnetError: pb.MeshnetErrorCode_CONFLICT_WITH_PQ_SERVER,
+				},
+			}, nil
+		}
+	}
+
+	log.Println("DEBUG: get token data")
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+	log.Println("DEBUG: is MeshDevice nil: ", cfg.MeshDevice == nil)
 	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {

@@ -123,6 +123,9 @@ func (*workingNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
 func (*workingNetworker) LastServerName() string { return "" }
+func (*workingNetworker) GetConnectionParameters() (vpn.ServerData, bool) {
+	return vpn.ServerData{}, false
+}
 
 type invitationsAPI struct{}
 
