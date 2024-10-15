@@ -66,7 +66,11 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 		if retErr != nil || payload != nil && payload.Type != internal.CodeSuccess {
 			eventStatus = events.StatusFailure
 		}
-		r.events.User.Login.Publish(events.DataAuthorization{DurationMs: max(int(time.Since(loginStartTime).Milliseconds()), 1), EventTrigger: events.TriggerUser, EventStatus: eventStatus})
+		r.events.User.Login.Publish(events.DataAuthorization{
+			DurationMs:   max(int(time.Since(loginStartTime).Milliseconds()), 1),
+			EventTrigger: events.TriggerUser,
+			EventStatus:  eventStatus,
+		})
 	}()
 
 	resp, pbresp, err := customCB()

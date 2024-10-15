@@ -12,6 +12,8 @@ excluded_packages=$excluded_packages"\|events\/moose"
 excluded_packages=$excluded_packages"\|pb\|magefiles"
 excluded_categories="root,link,firewall,route,file,integration"
 
+tags="internal"
+
 # In case 'full' was specified, do not exclude anything and run
 # everything
 if [ "${1:-""}" = "full" ]; then
@@ -24,6 +26,7 @@ if [ "${1:-""}" = "full" ]; then
 
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="root,link"
+	tags="internal,moose"
 fi
 
 # Execute tests in all the packages except the excluded ones
@@ -37,7 +40,7 @@ mkdir -p "${WORKDIR}"/coverage/unit
 export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/amd64/latest"
 
 # shellcheck disable=SC2046
-go test -tags internal -v -race $(go list -buildvcs=false ./... | grep -v "${excluded_packages}") \
+go test -tags "$tags" -v -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}") \
 	-coverprofile "${WORKDIR}"/coverage.txt \
 	-exclude "${excluded_categories}" \
 	-args -test.gocoverdir="${WORKDIR}/coverage/unit"
@@ -50,5 +53,5 @@ go tool cover -func="${WORKDIR}"/coverage.txt
 
 if [ "${1:-""}" = "full" ]; then
 	# "gocover-cobertura" is used for test coverage visualization in the diff view.
-	gocover-cobertura < "$WORKDIR"/coverage.txt > coverage.xml
+	GOFLAGS=-tags="${tags}" gocover-cobertura < "$WORKDIR"/coverage.txt > coverage.xml
 fi

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events/moose"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -15,7 +16,10 @@ var (
 	EventsSubdomain = ""
 )
 
-func newAnalytics(eventsDbPath string, fs *config.FilesystemConfigManager,
+func newAnalytics(
+	eventsDbPath string,
+	fs *config.FilesystemConfigManager,
+	subAPI core.SubscriptionAPI,
 	ver, env, id string) *moose.Subscriber {
 	_ = os.Setenv("MOOSE_LOG_FILE", "Stdout")
 	logLevel := "error"
@@ -24,12 +28,13 @@ func newAnalytics(eventsDbPath string, fs *config.FilesystemConfigManager,
 	}
 	_ = os.Setenv("MOOSE_LOG", logLevel)
 	return &moose.Subscriber{
-		EventsDbPath: eventsDbPath,
-		Config:       fs,
-		Version:      ver,
-		Environment:  env,
-		Domain:       EventsDomain,
-		Subdomain:    EventsSubdomain,
-		DeviceID:     id,
+		EventsDbPath:    eventsDbPath,
+		Config:          fs,
+		Version:         ver,
+		Environment:     env,
+		Domain:          EventsDomain,
+		Subdomain:       EventsSubdomain,
+		DeviceID:        id,
+		SubscriptionAPI: subAPI,
 	}
 }

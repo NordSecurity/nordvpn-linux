@@ -44,6 +44,12 @@ const (
 	// ServicesURL defines url to check user's current/expired services
 	ServicesURL = UsersURL + "/services"
 
+	// urlOrders defines URL to list user's orders
+	urlOrders = UsersURL + "/orders"
+
+	// urlOrders defines URL to list user's payments
+	urlPayments = UsersURL + "/payments"
+
 	// CredentialsURL defines url to generate openvpn credentials
 	CredentialsURL = ServicesURL + "/credentials"
 

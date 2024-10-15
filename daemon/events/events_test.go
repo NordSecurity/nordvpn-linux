@@ -29,32 +29,32 @@ func TestDaemonSubjectsSubscribe(t *testing.T) {
 
 type mockDaemonSubscriber struct{}
 
-func (mockDaemonSubscriber) NotifyKillswitch(bool) error                    { return nil }
-func (mockDaemonSubscriber) NotifyAutoconnect(bool) error                   { return nil }
-func (mockDaemonSubscriber) NotifyDNS(events.DataDNS) error                 { return nil }
-func (mockDaemonSubscriber) NotifyThreatProtectionLite(bool) error          { return nil }
-func (mockDaemonSubscriber) NotifyProtocol(config.Protocol) error           { return nil }
-func (mockDaemonSubscriber) NotifyAllowlist(events.DataAllowlist) error     { return nil }
-func (mockDaemonSubscriber) NotifyTechnology(config.Technology) error       { return nil }
-func (mockDaemonSubscriber) NotifyConnect(events.DataConnect) error         { return nil }
-func (mockDaemonSubscriber) NotifyDisconnect(events.DataDisconnect) error   { return nil }
-func (mockDaemonSubscriber) NotifyAccountCheck(core.ServicesResponse) error { return nil }
-func (mockDaemonSubscriber) NotifyObfuscate(bool) error                     { return nil }
-func (mockDaemonSubscriber) NotifyNotify(bool) error                        { return nil }
-func (mockDaemonSubscriber) NotifyFirewall(bool) error                      { return nil }
-func (mockDaemonSubscriber) NotifyRouting(bool) error                       { return nil }
-func (mockDaemonSubscriber) NotifyIpv6(bool) error                          { return nil }
-func (mockDaemonSubscriber) NotifyDefaults(any) error                       { return nil }
-func (mockDaemonSubscriber) NotifyMeshnet(bool) error                       { return nil }
-func (mockDaemonSubscriber) NotifyUiItemsClick(events.UiItemsAction) error  { return nil }
-func (mockDaemonSubscriber) NotifyHeartBeat(int) error                      { return nil }
-func (mockDaemonSubscriber) NotifyDeviceLocation(core.Insights) error       { return nil }
-func (mockDaemonSubscriber) NotifyLANDiscovery(bool) error                  { return nil }
-func (mockDaemonSubscriber) NotifyVirtualLocation(bool) error               { return nil }
-func (mockDaemonSubscriber) NotifyPostquantumVpn(bool) error                { return nil }
-func (mockDaemonSubscriber) NotifyLogin(events.DataAuthorization) error     { return nil }
-func (mockDaemonSubscriber) NotifyLogout(events.DataAuthorization) error    { return nil }
-func (mockDaemonSubscriber) NotifyMFA(bool) error                           { return nil }
+func (mockDaemonSubscriber) NotifyKillswitch(bool) error                   { return nil }
+func (mockDaemonSubscriber) NotifyAutoconnect(bool) error                  { return nil }
+func (mockDaemonSubscriber) NotifyDNS(events.DataDNS) error                { return nil }
+func (mockDaemonSubscriber) NotifyThreatProtectionLite(bool) error         { return nil }
+func (mockDaemonSubscriber) NotifyProtocol(config.Protocol) error          { return nil }
+func (mockDaemonSubscriber) NotifyAllowlist(events.DataAllowlist) error    { return nil }
+func (mockDaemonSubscriber) NotifyTechnology(config.Technology) error      { return nil }
+func (mockDaemonSubscriber) NotifyConnect(events.DataConnect) error        { return nil }
+func (mockDaemonSubscriber) NotifyDisconnect(events.DataDisconnect) error  { return nil }
+func (mockDaemonSubscriber) NotifyAccountCheck(any) error                  { return nil }
+func (mockDaemonSubscriber) NotifyObfuscate(bool) error                    { return nil }
+func (mockDaemonSubscriber) NotifyNotify(bool) error                       { return nil }
+func (mockDaemonSubscriber) NotifyFirewall(bool) error                     { return nil }
+func (mockDaemonSubscriber) NotifyRouting(bool) error                      { return nil }
+func (mockDaemonSubscriber) NotifyIpv6(bool) error                         { return nil }
+func (mockDaemonSubscriber) NotifyDefaults(any) error                      { return nil }
+func (mockDaemonSubscriber) NotifyMeshnet(bool) error                      { return nil }
+func (mockDaemonSubscriber) NotifyUiItemsClick(events.UiItemsAction) error { return nil }
+func (mockDaemonSubscriber) NotifyHeartBeat(int) error                     { return nil }
+func (mockDaemonSubscriber) NotifyDeviceLocation(core.Insights) error      { return nil }
+func (mockDaemonSubscriber) NotifyLANDiscovery(bool) error                 { return nil }
+func (mockDaemonSubscriber) NotifyVirtualLocation(bool) error              { return nil }
+func (mockDaemonSubscriber) NotifyPostquantumVpn(bool) error               { return nil }
+func (mockDaemonSubscriber) NotifyLogin(events.DataAuthorization) error    { return nil }
+func (mockDaemonSubscriber) NotifyLogout(events.DataAuthorization) error   { return nil }
+func (mockDaemonSubscriber) NotifyMFA(bool) error                          { return nil }
 
 // isValid returns true if given val is not nil. In case val is struct,
 // it checks if any of exported fields are not nil
