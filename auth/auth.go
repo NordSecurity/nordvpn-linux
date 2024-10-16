@@ -18,7 +18,7 @@ import (
 type DedicatedIPService struct {
 	ExpiresAt string
 	// ServerID will be set to NoServerSelected if server was not selected by the user
-	ServerID int64
+	ServerIDs []int64
 }
 
 // Checker provides information about current authentication.
@@ -37,7 +37,6 @@ type Checker interface {
 const (
 	VPNServiceID         = 1
 	DedicatedIPServiceID = 11
-	NoServerSelected     = -1
 )
 
 type expirationChecker interface {
@@ -172,12 +171,12 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	dipServices := []DedicatedIPService{}
 	for _, service := range services {
 		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
-			var serverID int64 = NoServerSelected
-			if len(service.Details.Servers) != 0 {
-				serverID = service.Details.Servers[0].ID
+			serverIDs := []int64{}
+			for _, server := range service.Details.Servers {
+				serverIDs = append(serverIDs, server.ID)
 			}
 			dipServices = append(dipServices,
-				DedicatedIPService{ExpiresAt: service.ExpiresAt, ServerID: serverID})
+				DedicatedIPService{ExpiresAt: service.ExpiresAt, ServerIDs: serverIDs})
 		}
 	}
 

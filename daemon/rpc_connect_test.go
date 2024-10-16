@@ -173,7 +173,7 @@ func TestRpcConnect(t *testing.T) {
 				rpc.ac = &workingLoginChecker{
 					isDedicatedIPExpired: false,
 					dedicatedIPService: []auth.DedicatedIPService{
-						{ExpiresAt: "", ServerID: 7},
+						{ExpiresAt: "", ServerIDs: []int64{7}},
 					},
 				}
 			},
@@ -189,7 +189,23 @@ func TestRpcConnect(t *testing.T) {
 				rpc.ac = &workingLoginChecker{
 					isDedicatedIPExpired: false,
 					dedicatedIPService: []auth.DedicatedIPService{
-						{ExpiresAt: "", ServerID: 7},
+						{ExpiresAt: "", ServerIDs: []int64{7}},
+					},
+				}
+			},
+			resp: internal.CodeConnected,
+		},
+		{
+			name:      "Dedicated IP with server name multiple servers in service works",
+			serverTag: "lt7",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			setup: func(rpc *RPC) {
+				rpc.ac = &workingLoginChecker{
+					isDedicatedIPExpired: false,
+					dedicatedIPService: []auth.DedicatedIPService{
+						{ExpiresAt: "", ServerIDs: []int64{7, 8}},
 					},
 				}
 			},
@@ -229,7 +245,7 @@ func TestRpcConnect(t *testing.T) {
 				rpc.ac = &workingLoginChecker{
 					isDedicatedIPExpired: false,
 					dedicatedIPService: []auth.DedicatedIPService{
-						{ExpiresAt: "", ServerID: 7},
+						{ExpiresAt: "", ServerIDs: []int64{7}},
 					},
 				}
 			},
@@ -245,7 +261,7 @@ func TestRpcConnect(t *testing.T) {
 				rpc.ac = &workingLoginChecker{
 					isDedicatedIPExpired: false,
 					dedicatedIPService: []auth.DedicatedIPService{
-						{ExpiresAt: "", ServerID: auth.NoServerSelected},
+						{ExpiresAt: "", ServerIDs: []int64{}},
 					},
 				}
 			},

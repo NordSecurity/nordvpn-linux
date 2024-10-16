@@ -449,7 +449,7 @@ func selectFilter(tag string, group config.ServerGroup, obfuscated bool) core.Pr
 // isAnyDIPServersAvailable returns true if dedicated IP server is selected for any of the provided services
 func isAnyDIPServersAvailable(dedicatedIPServices []auth.DedicatedIPService) bool {
 	index := slices.IndexFunc(dedicatedIPServices, func(dipService auth.DedicatedIPService) bool {
-		return dipService.ServerID != auth.NoServerSelected
+		return len(dipService.ServerIDs) > 0
 	})
 
 	return index != -1
@@ -516,7 +516,8 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		}
 
 		index := slices.IndexFunc(dedicatedIPServices, func(s auth.DedicatedIPService) bool {
-			return s.ServerID == server.ID
+			index := slices.Index(s.ServerIDs, server.ID)
+			return index != -1
 		})
 		if index == -1 {
 			log.Println(internal.ErrorPrefix, "server is not in the DIP servers list")
@@ -561,7 +562,8 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 	}
 
 	service := dedicatedIPServices[rand.Intn(len(dedicatedIPServices))]
-	server, err := getServerByID(servers, service.ServerID)
+	serverID := service.ServerIDs[rand.Intn(len(service.ServerIDs))]
+	server, err := getServerByID(servers, serverID)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "DIP server not found:", err)
 		return nil, internal.ErrServerIsUnavailable

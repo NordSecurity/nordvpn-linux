@@ -250,7 +250,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	dipService1ExpDate := "2050-06-04 00:00:00"
-	var dipSercice1ServerID int64 = 11111
+	var dipService1ServerID int64 = 11111
 	dipService1 := core.ServiceData{
 		ExpiresAt: dipService1ExpDate,
 		Service: core.Service{
@@ -258,13 +258,13 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		},
 		Details: core.ServiceDetails{
 			Servers: []core.ServiceServer{
-				{ID: dipSercice1ServerID},
+				{ID: dipService1ServerID},
 			},
 		},
 	}
 
-	dipService2ExpDate := "2050-08-22 00:00:00"
-	var dipSercice2ServerID int64 = 11111
+	dipService2ExpDate := "2050-01-25 00:00:00"
+	var dipService2ServerID int64 = 222222
 	dipService2 := core.ServiceData{
 		ExpiresAt: dipService2ExpDate,
 		Service: core.Service{
@@ -272,7 +272,21 @@ func TestGetDedicatedIPServices(t *testing.T) {
 		},
 		Details: core.ServiceDetails{
 			Servers: []core.ServiceServer{
-				{ID: dipSercice2ServerID},
+				{ID: dipService2ServerID},
+			},
+		},
+	}
+
+	dipService3ExpDate := "2043-05-10 00:00:00"
+	dipService3 := core.ServiceData{
+		ExpiresAt: dipService3ExpDate,
+		Service: core.Service{
+			ID: DedicatedIPServiceID,
+		},
+		Details: core.ServiceDetails{
+			Servers: []core.ServiceServer{
+				{ID: dipService1ServerID},
+				{ID: dipService2ServerID},
 			},
 		},
 	}
@@ -328,7 +342,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				dipService1,
 			},
 			expectedDIPSerivces: []DedicatedIPService{
-				{ExpiresAt: dipService1ExpDate, ServerID: dipSercice1ServerID},
+				{ExpiresAt: dipService1ExpDate, ServerIDs: []int64{dipService1ServerID}},
 			},
 		},
 		{
@@ -338,8 +352,17 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				dipService2,
 			},
 			expectedDIPSerivces: []DedicatedIPService{
-				{ExpiresAt: dipService1ExpDate, ServerID: dipSercice1ServerID},
-				{ExpiresAt: dipService2ExpDate, ServerID: dipSercice2ServerID},
+				{ExpiresAt: dipService1ExpDate, ServerIDs: []int64{dipService1ServerID}},
+				{ExpiresAt: dipService2ExpDate, ServerIDs: []int64{dipService2ServerID}},
+			},
+		},
+		{
+			name: "multiple dip servers in single service",
+			servicesResponse: []core.ServiceData{
+				dipService3,
+			},
+			expectedDIPSerivces: []DedicatedIPService{
+				{ExpiresAt: dipService3ExpDate, ServerIDs: []int64{dipService1ServerID, dipService2ServerID}},
 			},
 		},
 		{
@@ -356,7 +379,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				dipService1,
 			},
 			expectedDIPSerivces: []DedicatedIPService{
-				{ExpiresAt: dipService1ExpDate, ServerID: dipSercice1ServerID},
+				{ExpiresAt: dipService1ExpDate, ServerIDs: []int64{dipService1ServerID}},
 			},
 		},
 		{
@@ -368,7 +391,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				dipService1,
 			},
 			expectedDIPSerivces: []DedicatedIPService{
-				{ExpiresAt: dipService1ExpDate, ServerID: dipSercice1ServerID},
+				{ExpiresAt: dipService1ExpDate, ServerIDs: []int64{dipService1ServerID}},
 			},
 		},
 		{
@@ -396,7 +419,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				dipServiceNoServer,
 			},
 			expectedDIPSerivces: []DedicatedIPService{
-				{ExpiresAt: dipServiceNoServerExpirationDate, ServerID: NoServerSelected},
+				{ExpiresAt: dipServiceNoServerExpirationDate, ServerIDs: []int64{}},
 			},
 		},
 	}

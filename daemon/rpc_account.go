@@ -44,7 +44,7 @@ func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.Dedidcat
 	dipServicesProtobuf := []*pb.DedidcatedIPService{}
 	for _, dipService := range dipServices {
 		dipServicesProtobuf = append(dipServicesProtobuf, &pb.DedidcatedIPService{
-			ServerId:             dipService.ServerID,
+			ServerIds:            dipService.ServerIDs,
 			DedicatedIpExpiresAt: dipService.ExpiresAt,
 		})
 	}
