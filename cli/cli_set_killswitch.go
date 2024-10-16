@@ -25,15 +25,8 @@ func (c *cmd) SetKillSwitch(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	settings, err := c.getSettings()
-	if err != nil {
-		return formatError(err)
-	}
-	allowlist := settings.GetAllowlist()
-
 	resp, err := c.client.SetKillSwitch(context.Background(), &pb.SetKillSwitchRequest{
 		KillSwitch: flag,
-		Allowlist:  allowlist,
 	})
 	if err != nil {
 		return formatError(err)
