@@ -913,7 +913,7 @@ def test_clear():
 def test_fileshare_process_monitoring():
     # port is open when fileshare is running
     rules = os.popen("sudo iptables -S").read()
-    assert "49111 -m comment --comment nordvpn -j ACCEPT" in rules
+    assert "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
 
     sh.pkill("-SIGKILL", "nordfileshare")
     # at the time of writing, the monitoring job is executed periodically every 5 seconds,
@@ -922,11 +922,11 @@ def test_fileshare_process_monitoring():
 
     # port is not allowed when fileshare is down
     rules = os.popen("sudo iptables -S").read()
-    assert "49111 -m comment --comment nordvpn -j ACCEPT" not in rules
+    assert "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" not in rules
 
     os.popen("/usr/lib/nordvpn/nordfileshare &")
     time.sleep(10)
 
     # port is allowed again when fileshare process is up
     rules = os.popen("sudo iptables -S").read()
-    assert "49111 -m comment --comment nordvpn -j ACCEPT" in rules
+    assert "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
