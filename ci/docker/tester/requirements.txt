@@ -3,6 +3,7 @@ black==24.3.0
 certifi>=2024.6.2
 chardet==4.0.0
 click==8.0.3
+confluent-kafka==2.3.0
 idna==3.7
 iniconfig==1.1.1
 isort==5.9.3
