@@ -95,7 +95,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 		}
 	}
 
-	if r.ncClient.Revoke(internal.IsDevEnv(string(r.environment))) {
+	if !r.ncClient.Revoke(internal.IsDevEnv(string(r.environment))) {
 		log.Println(internal.WarningPrefix, "error revoking NC token")
 	}
 
