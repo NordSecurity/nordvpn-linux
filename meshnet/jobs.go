@@ -39,32 +39,25 @@ func JobRefreshMeshnet(s *Server) func() error {
 }
 
 func JobMonitorFileshareProcess(s *Server) func() error {
-	oldState := false
 	return func() error {
 		if !s.isMeshOn() {
 			return nil
 		}
-		newState := internal.IsProcessRunning(internal.FileshareBinaryPath)
-		if newState == oldState {
-			// only state change triggers the modifications
-			return nil
-		}
-
-		log.Println(internal.InfoPrefix, "fileshare change to running", newState)
 		peers, err := s.listPeers()
 		if err != nil {
 			return err
 		}
 
-		isFileshareUp := newState
-		for _, peer := range peers {
-			if !isFileshareUp {
+		isFileshareUp := internal.IsProcessRunning(internal.FileshareBinaryPath)
+		if !isFileshareUp {
+			for _, peer := range peers {
 				s.netw.BlockFileshare(UniqueAddress{UID: peer.PublicKey, Address: peer.Address})
-			} else {
+			}
+		} else {
+			for _, peer := range peers {
 				s.netw.AllowFileshare(UniqueAddress{UID: peer.PublicKey, Address: peer.Address})
 			}
 		}
-		oldState = newState
 
 		return nil
 	}
