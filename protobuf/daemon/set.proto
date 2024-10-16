@@ -64,7 +64,6 @@ message SetDNSResponse {
 
 message SetKillSwitchRequest {
   bool kill_switch = 2;
-  Allowlist allowlist = 3;
 }
 
 message SetNotifyRequest {
