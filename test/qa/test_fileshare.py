@@ -778,9 +778,11 @@ def test_accept_destination_directory_not_a_directory():
 
 def test_autoaccept():
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+
     peer_name = peer_list.get_internal_peer().ip
-    subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name], check=False)
-    # subprocess.run(["nordvpn", "mesh", "peer", "auto-accept", "enable", peer_name])
+    peer_hostname = peer_list.get_internal_peer().hostname
+    msg = sh.nordvpn.mesh.peer("auto-accept", "enable", peer_name)
+    assert meshnet.MSG_PEER_AUTOACCEPT_ALLOW_SUCCESS % peer_hostname in msg
 
     time.sleep(10)
 
