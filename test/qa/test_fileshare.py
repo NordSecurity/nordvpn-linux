@@ -639,7 +639,7 @@ def format_time(nanoseconds):
 
 @pytest.mark.parametrize("background", [True, False])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
-def test_permissions_send_forbidden(peer_name, background):
+def test_permissions_send(peer_name, background):
     tester_data = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device()
     tester_address = tester_data.get_peer_name(peer_name)
 
