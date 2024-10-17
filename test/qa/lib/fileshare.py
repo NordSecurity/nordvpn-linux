@@ -4,6 +4,7 @@ import tempfile
 from collections import namedtuple
 from collections.abc import Callable
 
+import pytest
 import sh
 
 from . import logging, ssh
@@ -13,6 +14,8 @@ SEND_CANCELED_BY_PEER_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z0-9]{4}-)
 SEND_CANCELED_BY_OTHER_PROCESS_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})\] canceled by other process'
 CANCEL_SUCCESS_SENDER_SIDE_MSG = "File transfer canceled"
 TRANSFER_ID_REGEX = r"[a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}"
+INTERACTIVE_TRANSFER_PROGRESS_ONGOING_PATTERN = r"File transfer \[[0-9a-fA-F\-]{36}\] progress \[(\d{1,3})%\]"
+INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN = r"File transfer \[[0-9a-fA-F\-]{36}\] completed."
 
 MSG_HISTORY_CLEARED = "File transfer history cleared."
 MSG_CANCEL_TRANSFER = "File transfer canceled."
@@ -157,3 +160,41 @@ def get_not_finished_transfers(ssh_client: ssh.Ssh = None) -> list[str]:
         return []
 
     return transfer_ids
+
+
+def validate_transfer_progress(transfer_log: str):
+    """
+    Checks if transfer progress in the log is consistently increasing.
+
+    Extracts transfer progress lines from the log, ensures they share the same
+    transfer ID, and verifies that the progress percentage increases without decreasing.
+
+    Args:
+        transfer_log (str): The log containing transfer progress details.
+    Returns:
+        bool: True if progress is increasing, False if not.
+    Raises:
+        AssertionError: If message about completed transfer is missing
+        AssertionError: If transfer ID is inconsistent.
+    """
+    assert len(re.findall(INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, transfer_log)) == 1
+    filtered_lines = [line for line in transfer_log.split("\r") if re.search(INTERACTIVE_TRANSFER_PROGRESS_ONGOING_PATTERN, line)]
+    transfer_id = re.findall(TRANSFER_ID_REGEX, filtered_lines[0])[0]
+
+    previous_progress = -1
+    increasing = True
+
+    for line in filtered_lines:
+        assert transfer_id in line
+
+        if len(re.findall(r"\[(\d{1,3})%\]", line)) == 1:
+            precentage = int(re.findall(r"\[(\d{1,3})%\]", line)[0])
+        else:
+            pytest.fail("Precentage was not found during the validation of interactive transfer progress.")
+
+        if precentage < previous_progress:
+            increasing = False
+            break
+        previous_progress = precentage
+
+    return increasing
