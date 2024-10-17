@@ -659,6 +659,10 @@ def test_permissions_send_forbidden(peer_name):
     tester_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().get_peer_name(peer_name)
 
     ssh_client.exec_command(f"nordvpn mesh peer fileshare deny {tester_address}")
+    qa_peer_permission = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_internal_peer().allow_sending_files
+    tester_permission = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
+    assert tester_permission is not True
+    assert qa_peer_permission is not True
 
     directory = fileshare.create_directory(1)
     filename = directory.paths[0]
