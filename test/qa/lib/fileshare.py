@@ -1,8 +1,11 @@
 import os
 import re
 import tempfile
+import time
 from collections import namedtuple
 from collections.abc import Callable
+from enum import Enum
+from threading import Thread
 
 import pytest
 import sh
@@ -224,4 +227,73 @@ def validate_transfer_progress(transfer_log: str):
             break
         previous_progress = precentage
 
+    return increasing
+
+
+class TransferState(Enum):
+    DOWNLOADING = "downloading"
+    UPLOADING = "uploading"
+
+    def __str__(self):
+        return self.value
+
+class TransferProgressValidationThread(Thread):
+    def __init__(self, transfer_id: str, expected_state: str, ssh_client: ssh.Ssh = None):
+        Thread.__init__(self)
+        self.transfer_progress_valid: bool = False
+
+        self.transfer_id: str = transfer_id
+        self.ssh_client: ssh.Ssh = ssh_client
+        self.expected_state: str = expected_state
+
+    def run(self):
+        self.transfer_progress_valid = validate_transfer_progress_bg(self.transfer_id, self.ssh_client, self.expected_state)
+
+def validate_transfer_progress_bg(transfer_id: str, ssh_client: ssh.Ssh, expected_state: str) -> bool:
+    """
+    Checks if transfer progress in the `nordvpn fileshare list` is consistently increasing.
+
+    Extracts transfer progress from `nordvpn fileshare list`, and
+    verifies that the progress percentage increases without decreasing.
+
+    Args:
+        transfer_id (str): The transfer whose progress we want to track.
+    Returns:
+        bool: True if progress is increasing, False if not.
+    """
+    progress_log: list[int] = []
+    previous_progress = -1
+    increasing = True
+
+    retry = 0
+
+    while True:
+        if ssh_client:
+            transfers = ssh_client.exec_command("nordvpn fileshare list")
+        else:
+            transfers = sh.nordvpn.fileshare.list(_tty_out=False)
+
+        transfer = find_transfer_by_id(transfers, transfer_id)
+
+        if "completed" in transfer:
+            break  # Exit the loop when the transfer is completed
+
+        # Extract the percentage progress using regex
+        matches = re.findall(f"{expected_state}" + r"\s+(\d{1,3})%", transfer)
+
+        if len(matches) == 1:
+            percentage = int(matches[0])
+            progress_log.append(percentage)
+
+            if percentage < previous_progress and previous_progress != -1:
+                print(f"Progress log: {str(progress_log)}")
+                increasing = False
+                break  # Exit if the progress is decreasing
+
+            previous_progress = percentage
+        elif retry == 3:
+            pytest.fail(f"Precentage was not found during the validation of interactive transfer progress:\n{transfer}")
+        else:
+            retry += 1
+            time.sleep(1)
     return increasing
