@@ -3,6 +3,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -34,7 +36,7 @@ func (*dummyAnalytics) NotifyMFA(bool) error                          { return n
 func (*dummyAnalytics) NotifyAccountCheck(any) error                  { return nil }
 func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error  { return nil }
 func (*dummyAnalytics) NotifyUiItemsClick(events.UiItemsAction) error { return nil }
-func (*dummyAnalytics) NotifyHeartBeat(int) error                     { return nil }
+func (*dummyAnalytics) NotifyHeartBeat(time.Duration) error           { return nil }
 func (*dummyAnalytics) NotifyDeviceLocation(core.Insights) error      { return nil }
 func (*dummyAnalytics) NotifyLANDiscovery(bool) error                 { return nil }
 func (*dummyAnalytics) NotifyVirtualLocation(bool) error              { return nil }

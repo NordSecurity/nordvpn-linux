@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"time"
 
 	"golang.org/x/net/netutil"
 
@@ -149,6 +150,7 @@ func main() {
 	debugSubject := &subs.Subject[string]{}
 	infoSubject := &subs.Subject[string]{}
 	errSubject := &subs.Subject[error]{}
+	heartBeatSubject := &subs.Subject[time.Duration]{}
 	httpCallsSubject := &subs.Subject[events.DataRequestAPI]{}
 
 	loggerSubscriber := logger.Subscriber{}
@@ -289,6 +291,10 @@ func main() {
 	daemonEvents.Subscribe(analytics)
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
+
+	// Subscribing after initial settings publishing ensures that heartbeat is not sent with
+	// the first `NotifyMeshnet` call but will be sent on the first heartbeat job.
+	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 
 	if fsystem.NewInstallation {
 		daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "first_open", ItemType: "button", ItemValue: "first_open", FormReference: "daemon"})
@@ -556,7 +562,7 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}()
-	rpc.StartJobs(statePublisher)
+	rpc.StartJobs(statePublisher, heartBeatSubject)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {
