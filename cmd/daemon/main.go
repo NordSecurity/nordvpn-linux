@@ -280,7 +280,7 @@ func main() {
 	// obfuscated machineID
 	deviceID := fmt.Sprintf("%x", sha256.Sum256([]byte(cfg.MachineID.String()+Salt)))
 
-	analytics := newAnalytics(eventsDbPath, fsystem, Version, Environment, deviceID)
+	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, Version, Environment, deviceID)
 	if cfg.Analytics.Get() {
 		if err := analytics.Enable(); err != nil {
 			log.Println(internal.WarningPrefix, err)

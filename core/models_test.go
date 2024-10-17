@@ -3,8 +3,11 @@ package core
 import (
 	"encoding/json"
 	"net/netip"
+	"reflect"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -723,4 +726,48 @@ func TestLocationsCountry(t *testing.T) {
 		assert.NoError(t, err)
 		assert.EqualValues(t, first, country)
 	})
+}
+
+func TestPayment_UnmarshalJSON(t *testing.T) {
+	category.Set(t, category.Unit)
+	for _, tt := range []struct {
+		name    string
+		json    string
+		payment Payment
+		errType error
+	}{
+		{
+			name: "valid payment",
+			json: `{"created_at": "2001-01-01 00:00:00", "amount": "1.23", "status": "done"}`,
+			payment: Payment{
+				CreatedAt: time.Date(2001, time.January, 1, 0, 0, 0, 0, time.UTC),
+				Amount:    1.23,
+				Status:    "done",
+			},
+		},
+		{
+			name:    "invalid JSON",
+			errType: &json.SyntaxError{},
+		},
+		{
+			name:    "invalid created_at",
+			errType: &time.ParseError{},
+			json:    `{"created_at": "2001-01-01"}`,
+		},
+		{
+			name:    "invalid amount",
+			errType: strconv.ErrSyntax,
+			json:    `{"created_at": "2001-01-01 00:00:00", "amount": "1.2.3"}`,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var p Payment
+			err := p.UnmarshalJSON([]byte(tt.json))
+			if tt.errType != nil {
+				target := reflect.New(reflect.TypeOf(tt.errType)).Interface()
+				assert.ErrorAs(t, err, target)
+			}
+			assert.Equal(t, tt.payment, p)
+		})
+	}
 }
