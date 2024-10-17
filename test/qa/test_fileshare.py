@@ -783,6 +783,7 @@ def test_autoaccept():
     peer_hostname = peer_list.get_internal_peer().hostname
     msg = sh.nordvpn.mesh.peer("auto-accept", "enable", peer_name)
     assert meshnet.MSG_PEER_AUTOACCEPT_ALLOW_SUCCESS % peer_hostname in msg
+    assert meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().accept_fileshare_automatically is True
 
     time.sleep(10)
 
