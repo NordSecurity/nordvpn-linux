@@ -191,9 +191,10 @@ def test_accept(accept_directories):
     assert sender_files_status_ok is True, f"invalid file status on sender side, transfer {transfer}, files {accept_directories} should be uploaded"
 
 
+@pytest.mark.parametrize("path_flag", [True, False])
 @pytest.mark.parametrize("background", [True, False])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
-def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
+def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName, path_flag: bool):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     wdir = fileshare.create_directory(1)
@@ -228,12 +229,16 @@ def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
     assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id)
 
-    ssh_client.exec_command(f"nordvpn fileshare accept --path /tmp {peer_transfer_id}")
+    if path_flag:
+        peer_filepath = "/tmp/"
+        ssh_client.exec_command(f"nordvpn fileshare accept --path {peer_filepath} {peer_transfer_id}")
+    else:
+        peer_filepath = "~/Downloads/"
+        ssh_client.exec_command(f"nordvpn fileshare accept {peer_transfer_id}")
 
     time.sleep(1)
 
-    peer_filepath = f"/tmp/{wdir.filenames[0]}"
-    output = ssh_client.exec_command(f"cat {peer_filepath}")
+    output = ssh_client.exec_command(f"cat {peer_filepath}/{wdir.filenames[0]}")
     assert message in output
 
     assert command_handle.is_alive() is False
