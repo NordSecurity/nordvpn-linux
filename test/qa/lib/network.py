@@ -134,7 +134,7 @@ def _is_dns_resolvable_outside_vpn(retry: int = 5) -> bool:
         try:
             # @TODO gitlab docker runner has public ipv6, but no connectivity. remove -4 once fixed
             # @TODO need dns query to go arround vpn tunnel, here with regular ping it does not
-            return "icmp_seq=" in sh.ping("-4", "-c", "1", "-m", f"{FWMARK}", "-w", "1", "nordvpn.com")
+            return "icmp_seq=" in sh.sudo.ping("-4", "-c", "1", "-m", f"{FWMARK}", "-w", "1", "nordvpn.com")
         except sh.ErrorReturnCode:
             time.sleep(1)
             i += 1
