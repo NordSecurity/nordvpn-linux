@@ -191,7 +191,7 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 		log.Println(internal.InfoPrefix, "User has logged out")
 	}
 
-	grpcServer.GracefulStop()
+	grpcServer.Stop()
 	fileshareManagementChan <- norduser.Shutdown
 	// shutdownChan will be closed once the shutdown operation is finished
 	<-fileshareShutdownChan
