@@ -382,6 +382,7 @@ def test_fileshare_graceful_cancel():
     time.sleep(2)
 
     sh.kill("-s", "2", command_handle.pid)
+    assert fileshare.MSG_CANCEL_TRANSFER in command_handle.stdout.decode()
 
     time.sleep(2)
 
