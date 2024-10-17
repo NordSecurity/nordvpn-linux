@@ -327,19 +327,22 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     time.sleep(1)
 
     local_transfer_id = fileshare.get_last_transfer()
-    peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+
+    for peer_transfer_id, _ in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=10):
+        if peer_transfer_id is not None:
+            break
+
+    assert peer_transfer_id is not None, "transfer was not received by peer"
 
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, wdir.transfer_paths, lambda file_entry: "request sent" in file_entry)
 
-    ssh_client.exec_command(
-        f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wdir.transfer_paths[0]} {wdir.transfer_paths[2]}"
-    )
+    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wdir.transfer_paths[2]}")
 
     time.sleep(1)
 
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
-    assert "uploaded" in fileshare.find_file_in_transfer(wdir.transfer_paths[0], transfer.split("\n"))
+    assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[0], transfer.split("\n"))
     assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[1], transfer.split("\n"))
     assert "uploaded" in fileshare.find_file_in_transfer(wdir.transfer_paths[2], transfer.split("\n"))
     assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[3], transfer.split("\n"))
@@ -348,7 +351,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
 
     transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
-    assert "downloaded" in fileshare.find_file_in_transfer(wdir.transfer_paths[0], transfer.split("\n"))
+    assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[0], transfer.split("\n"))
     assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[1], transfer.split("\n"))
     assert "downloaded" in fileshare.find_file_in_transfer(wdir.transfer_paths[2], transfer.split("\n"))
     assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[3], transfer.split("\n"))
