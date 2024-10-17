@@ -675,7 +675,7 @@ def test_permissions_send_forbidden(peer_name):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.fileshare.send("--background", peer_address, filename).stdout.decode("utf-8")
+        sh.nordvpn.fileshare.send(peer_address, filename).stdout.decode("utf-8")
 
     assert "This peer does not allow file transfers from you." in str(ex.value)
 
