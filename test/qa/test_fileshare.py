@@ -656,9 +656,13 @@ def test_permissions_send_allowed(peer_name):
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_send_forbidden(peer_name):
-    tester_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().get_peer_name(peer_name)
+    tester_data = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device()
+    tester_address = tester_data.get_peer_name(peer_name)
 
-    ssh_client.exec_command(f"nordvpn mesh peer fileshare deny {tester_address}")
+    fileshare_denied_message = ssh_client.exec_command(f"nordvpn mesh peer fileshare deny {tester_address}")
+    tester_hostname = tester_data.get_peer_name(meshnet.PeerName.Hostname)
+    assert meshnet.MSG_PEER_FILESHARE_DENY_SUCCESS % tester_hostname in fileshare_denied_message
+
     qapeer_permission = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_internal_peer().allow_sending_files
     tester_permission = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
     assert tester_permission is not True
