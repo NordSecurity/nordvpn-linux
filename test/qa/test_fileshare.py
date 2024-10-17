@@ -201,9 +201,6 @@ def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, 
     wdir = fileshare.create_directory(1, file_size="128M")
 
     filepath = wdir.paths[0]
-    message = "testing fileshare"
-    with open(filepath, "w", encoding="utf-8") as file:
-        file.write(message)
 
     if background_send:
         command_handle = sh.nordvpn.fileshare.send("--background", peer_address, filepath)
@@ -232,15 +229,21 @@ def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, 
 
     if path_flag:
         peer_filepath = "/tmp/"
-        ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} --path {peer_filepath} {peer_transfer_id}")
+        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} --path {peer_filepath} {peer_transfer_id}")
     else:
         peer_filepath = "~/Downloads/"
-        ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} {peer_transfer_id}")
+        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} {peer_transfer_id}")
 
     time.sleep(1)
 
-    output = ssh_client.exec_command(f"cat {peer_filepath}/{wdir.filenames[0]}")
-    assert message in output
+    if not background_send:
+        assert fileshare.validate_transfer_progress(command_handle.stdout.decode())
+
+    if not background_accept:
+        assert fileshare.validate_transfer_progress(t_progress_interactive)
+
+    ssh_client.exec_command(f"ls {peer_filepath}/{wdir.filenames[0]}") # this will fail, if file is not found
+    ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/{wdir.filenames[0]}")
 
     assert command_handle.is_alive() is False
     assert command_handle.exit_code == 0
@@ -249,12 +252,6 @@ def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, 
     assert "downloaded" in transfer
 
     assert "uploaded" in sh.nordvpn.fileshare.list(local_transfer_id)
-
-    transfers = ssh_client.exec_command("nordvpn fileshare list")
-    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
-
-    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
-    assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id)
 
 
 @pytest.mark.parametrize("background", [True, False])
@@ -280,7 +277,13 @@ def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.
     time.sleep(1)
 
     local_transfer_id = fileshare.get_last_transfer()
-    peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+
+    for last_peer_transfer_id, _ in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=10):
+        if last_peer_transfer_id is not None:
+            peer_transfer_id = last_peer_transfer_id
+            break
+
+    assert peer_transfer_id is not None, "transfer was not received by peer"
 
     transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
     assert "request sent" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id)
@@ -293,7 +296,7 @@ def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, files_in_transfer, lambda file_entry: "request sent" in file_entry)
 
-    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id}")
+    t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id}")
 
     time.sleep(1)
 
@@ -302,6 +305,11 @@ def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.
 
     transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
     assert fileshare.for_all_files_in_transfer(transfer, files_in_transfer, lambda file_entry: "downloaded" in file_entry)
+
+    if not background:
+        assert fileshare.validate_transfer_progress(command_handle.stdout.decode())
+
+    assert fileshare.validate_transfer_progress(t_progress_interactive)
 
     assert command_handle.is_alive() is False
     assert command_handle.exit_code == 0
@@ -323,7 +331,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
         output = sh.nordvpn.fileshare.send("--background", peer_address, wdir.dir_path).stdout.decode("utf-8")
         assert len(re.findall(r'File transfer ?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}) has started in the background.', output)) > 0
     else:
-        fileshare.start_transfer(peer_address, wdir.dir_path)
+        command_handle = fileshare.start_transfer(peer_address, wdir.dir_path)
 
     time.sleep(1)
 
@@ -338,7 +346,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, wdir.transfer_paths, lambda file_entry: "request sent" in file_entry)
 
-    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wdir.transfer_paths[2]}")
+    t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wdir.transfer_paths[2]}")
 
     time.sleep(1)
 
@@ -362,6 +370,13 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
 
     ssh_client.exec_command(f"ls {workdir}/{wdir.transfer_paths[2]}")
     ssh_client.exec_command(f"sudo rm -rf {workdir}/{os.path.basename(wdir.dir_path)}")
+
+    if not background:
+        assert fileshare.validate_transfer_progress(command_handle.stdout.decode())
+        assert command_handle.is_alive() is False
+        assert command_handle.exit_code == 0
+
+    assert fileshare.validate_transfer_progress(t_progress_interactive)
 
 
 def test_fileshare_graceful_cancel():
