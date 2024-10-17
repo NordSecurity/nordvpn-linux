@@ -584,7 +584,7 @@ func main() {
 	// Graceful stop
 
 	internal.WaitSignal()
-	s.GracefulStop()
+	s.Stop()
 	norduserService.StopAll()
 
 	if err := notificationClient.Stop(); err != nil {
