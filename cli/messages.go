@@ -366,6 +366,6 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	SetPqUnavailable       = "The post-quantum VPN is not compatible with OpenVPN. Switch to NordLynx to use post-quantum VPN capabilities."
 	SetTechnologyDisablePQ = "This setting is not compatible with the post-quantum VPN. To use OpenVPN, disable the post-quantum VPN first."
 	SetPqAndMeshnet        = "The post-quantum VPN and Meshnet can't run at the same time. Please disable one feature to use the other."
-	SetPqAndMeshnetServer  = "Meshnet is not supported while connected to post-quantum server, disconnect from the server and try again."
-	SetPqUsageText         = "Enables or disables post-quantum VPN. When enabled, your connection uses cutting-edge cryptography designed to resist quantum computer attacks. Not compatible with Meshnet."
+	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum servers. Reconnect to the VPN to fully disable post-quantum protection and try again."
+	SetPqUsageText         = "Enables or disables the post-quantum VPN. When enabled, your connection uses cutting-edge cryptography designed to resist quantum computer attacks.\nNote: The feature is not compatible with a dedicated IP, Meshnet, and OpenVPN."
 )
