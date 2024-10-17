@@ -222,6 +222,12 @@ def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName):
 
     assert peer_transfer_id is not None, "transfer was not received by peer"
 
+    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    assert "request sent" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id)
+
+    transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
+    assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id)
+
     ssh_client.exec_command(f"nordvpn fileshare accept --path /tmp {peer_transfer_id}")
 
     time.sleep(1)
@@ -268,6 +274,12 @@ def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.
 
     local_transfer_id = fileshare.get_last_transfer()
     peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+
+    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    assert "request sent" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id)
+
+    transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
+    assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id)
 
     files_in_transfer = dir1.transfer_paths + dir2.transfer_paths + dir3.filenames
 
@@ -345,6 +357,16 @@ def test_fileshare_graceful_cancel():
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
     command_handle = fileshare.start_transfer(peer_address, *wdir.paths)
 
+    for transfer_id, _ in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=10):
+        if transfer_id is not None:
+            break
+
+    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    assert "request sent" in fileshare.find_transfer_by_id(transfers_local, transfer_id)
+
+    transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
+    assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, transfer_id)
+
     time.sleep(2)
 
     sh.kill("-s", "2", command_handle.pid)
@@ -395,6 +417,12 @@ def test_fileshare_cancel_transfer(background: bool, single_file: bool, sender_c
 
     local_transfer_id = fileshare.get_last_transfer()
     peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+
+    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    assert "request sent" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id)
+
+    transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
+    assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id)
 
     if sender_cancels:
         output = sh.nordvpn.fileshare.cancel(local_transfer_id)
