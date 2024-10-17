@@ -346,8 +346,8 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 	))
 }
 
-func (s *Subscriber) NotifyHeartBeat(timePeriodMinutes int) error {
-	return s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(timePeriodMinutes)))
+func (s *Subscriber) NotifyHeartBeat(period time.Duration) error {
+	return s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes())))
 }
 
 func (s *Subscriber) NotifyDeviceLocation(insights core.Insights) error {
@@ -369,7 +369,11 @@ func (s *Subscriber) NotifyDeviceLocation(insights core.Insights) error {
 func (s *Subscriber) NotifyNotify(bool) error { return nil }
 
 func (s *Subscriber) NotifyMeshnet(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesMeshnetEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesMeshnetEnabledValue(data)); err != nil {
+		return err
+	}
+	// 0 duration indicates that this is not a periodic heart beat
+	return s.NotifyHeartBeat(time.Duration(0))
 }
 
 func (s *Subscriber) NotifyObfuscate(data bool) error {
@@ -499,7 +503,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		default:
 			rule = moose.NordvpnappServerSelectionRuleRecommended
 		}
-		return s.response(moose.NordvpnappSendServiceQualityServersConnect(
+		if err := s.response(moose.NordvpnappSendServiceQualityServersConnect(
 			int32(data.DurationMs),
 			eventStatus,
 			moose.NordvpnappEventTriggerUser,
@@ -518,7 +522,13 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			int32(-1),
 			"",
 			int32(-1),
-		))
+		)); err != nil {
+			return err
+		}
+		if data.EventStatus == events.StatusSuccess {
+			return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(true))
+		}
+		return nil
 	}
 }
 
@@ -539,13 +549,15 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	}
 
 	if s.connectionToMeshnetPeer {
-		return s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
+		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
 			int32(-1),
 			eventStatus,
 			moose.NordvpnappEventTriggerUser,
 			connectionTime, // seconds
 			int32(-1),
-		))
+		)); err != nil {
+			return err
+		}
 	} else {
 		var technology moose.NordvpnappVpnConnectionTechnology
 		switch data.Technology {
@@ -591,7 +603,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			threatProtection = moose.NordvpnappOptBoolFalse
 		}
 
-		return s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
+		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
 			int32(-1),
 			eventStatus,
 			moose.NordvpnappEventTriggerUser,
@@ -610,8 +622,11 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			connectionTime, // seconds
 			"",
 			int32(-1),
-		))
+		)); err != nil {
+			return err
+		}
 	}
+	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(false))
 }
 
 func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {

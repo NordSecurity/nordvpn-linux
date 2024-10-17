@@ -21,7 +21,14 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func (r *RPC) StartJobs(statePublisher *state.StatePublisher) {
+const (
+	heartBeatPeriod = time.Hour * 24
+)
+
+func (r *RPC) StartJobs(
+	statePublisher *state.StatePublisher,
+	heartBeatPublisher events.Publisher[time.Duration],
+) {
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
 	// TODO what if configs file is deleted just before servers job or disk is full?
@@ -51,7 +58,7 @@ func (r *RPC) StartJobs(statePublisher *state.StatePublisher) {
 		log.Println(internal.WarningPrefix, "job version schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour), gocron.NewTask(JobHeartBeat(1*24*60 /*minutes*/, r.events)), gocron.WithName("job heart beat")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(heartBeatPeriod), gocron.NewTask(JobHeartBeat(heartBeatPublisher, heartBeatPeriod), gocron.WithName("job heart beat"))); err != nil {
 		log.Println(internal.WarningPrefix, "job heart beat schedule error:", err)
 	}
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(7*24*time.Hour), gocron.NewTask(func() {

@@ -1,15 +1,17 @@
 package daemon
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
 // JobHeartBeat sends heart beats.
 func JobHeartBeat(
-	timePeriod int,
-	events *events.Events,
+	publisher events.Publisher[time.Duration],
+	period time.Duration,
 ) func() {
 	return func() {
-		events.Service.HeartBeat.Publish(timePeriod)
+		publisher.Publish(period)
 	}
 }
