@@ -35,4 +35,5 @@ message StatusResponse {
   string name = 11;
   bool virtualLocation = 12;
   ConnectionParameters parameters = 13;
+  bool postQuantum = 14;
 }
