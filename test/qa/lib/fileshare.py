@@ -20,7 +20,7 @@ MSG_CANCEL_TRANSFER = "File transfer canceled."
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames")
 
 
-def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None) -> Directory:
+def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: str = "1K") -> Directory:
     # for snap testing make directories to be created from current path e.g. dir="./"
     dir_path = tempfile.mkdtemp(dir=parent_dir)
     paths = []
@@ -34,7 +34,13 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
         # in transfer, files are displayed with leading directory only, i.e /tmp/dir/file becomes dir/file
         transfer_paths.append(path.removeprefix("/tmp/"))
         filenames.append(filename)
-        os.mknod(f"{dir_path}/{filename}")
+
+        disallowed_filesize = ["G", "T", "P", "E", "Z", "Y"]
+        for size in disallowed_filesize:
+            if size in file_size:
+                raise ValueError("Specified file size is too big. Specify either (K)ilobytes or (M)egabytes")
+
+        sh.fallocate("-l", file_size, f"{dir_path}/{filename}")
 
     return Directory(dir_path, paths, transfer_paths, filenames)
 

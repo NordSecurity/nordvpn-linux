@@ -198,7 +198,7 @@ def test_accept(accept_directories):
 def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, path_flag: str, background_accept: str):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
-    wdir = fileshare.create_directory(1)
+    wdir = fileshare.create_directory(1, file_size="128M")
 
     filepath = wdir.paths[0]
     message = "testing fileshare"
@@ -262,9 +262,10 @@ def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, 
 def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.PeerName):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
-    dir1 = fileshare.create_directory(5, "1")
-    dir2 = fileshare.create_directory(5, "2")
-    dir3 = fileshare.create_directory(2, "3")
+    file_size = "11M"
+    dir1 = fileshare.create_directory(5, "1", file_size=file_size)
+    dir2 = fileshare.create_directory(5, "2", file_size=file_size)
+    dir3 = fileshare.create_directory(2, "3", file_size=file_size)
 
     # transfer dir1 and dir2 as directories and individual files from dir3, i.e /<dir1> /<dir2> /<dir3>/<file1> /<dir3>/<file2>
     files_to_transfer = [dir1.dir_path, dir2.dir_path, *dir3.paths]
@@ -316,7 +317,7 @@ def test_fileshare_transfer_multiple_files(background: bool, peer_name: meshnet.
 def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
-    wdir = fileshare.create_directory(4)
+    wdir = fileshare.create_directory(4, file_size="32M")
 
     if background:
         output = sh.nordvpn.fileshare.send("--background", peer_address, wdir.dir_path).stdout.decode("utf-8")
