@@ -907,12 +907,24 @@ def test_clear():
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None
     assert fileshare.find_transfer_by_id(transfers, local_transfer_id1) is None
+    assert len(transfers.split("\n")) == 6
+
+    lines_incoming = sh.nordvpn.fileshare.list("--incoming", _tty_out=False).split("\n")
+    assert len(lines_incoming) == 3, str(lines_incoming)
+    lines_outgoing = sh.nordvpn.fileshare.list("--outgoing", _tty_out=False).split("\n")
+    assert len(lines_outgoing) == 3, str(lines_outgoing)
 
     ssh_client.exec_command("nordvpn fileshare clear all")
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert fileshare.find_transfer_by_id(transfers, peer_transfer_id0) is None
     assert fileshare.find_transfer_by_id(transfers, peer_transfer_id1) is None
+    assert len(transfers.split("\n")) == 6
+
+    lines_incoming = ssh_client.exec_command("nordvpn fileshare list --incoming").split("\n")
+    assert len(lines_incoming) == 3, str(lines_incoming)
+    lines_outgoing = ssh_client.exec_command("nordvpn fileshare list --outgoing").split("\n")
+    assert len(lines_outgoing) == 3, str(lines_outgoing)
 
 
 def test_fileshare_process_monitoring():
