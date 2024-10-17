@@ -43,3 +43,8 @@ func (mf *FirewallMock) Enable() error {
 func (mf *FirewallMock) Disable() error {
 	return nil
 }
+
+// Flush firewall
+func (mf *FirewallMock) Flush() error {
+	return nil
+}

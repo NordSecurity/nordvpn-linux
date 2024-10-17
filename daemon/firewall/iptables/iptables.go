@@ -3,9 +3,11 @@ package iptables
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/netip"
 	"os/exec"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -15,8 +17,9 @@ import (
 )
 
 const (
-	ipv4Table = "iptables"
-	ipv6Table = "ip6tables"
+	ipv4Table      = "iptables"
+	ipv6Table      = "ip6tables"
+	defaultComment = "nordvpn"
 )
 
 const (
@@ -116,6 +119,40 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 		}
 	}
 	return nil
+}
+
+func generateFlushRules(rules string) []string {
+	re := regexp.MustCompile(fmt.Sprintf(`--comment\s+%s(?:\s|$)`, regexp.QuoteMeta(defaultComment)))
+	flushRules := []string{}
+	for _, rule := range strings.Split(rules, "\n") {
+		if re.MatchString(rule) {
+			newRule := strings.Replace(rule, "-A", "-D", 1)
+			flushRules = append(flushRules, newRule)
+		}
+	}
+
+	return flushRules
+}
+
+func (ipt *IPTables) Flush() error {
+	var finalErr error = nil
+	for _, iptableVersion := range ipt.supportedIPTables {
+		out, err := exec.Command(iptableVersion, "-S").CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("listing rules: %w", err)
+		}
+
+		rules := string(out)
+		for _, rule := range generateFlushRules(rules) {
+			err := exec.Command(iptableVersion, strings.Split(rule, " ")...).Run()
+			if err != nil {
+				log.Printf("%s failed to delete rule %s: %s", internal.ErrorPrefix, rule, err)
+				finalErr = fmt.Errorf("failed to delete all rules")
+			}
+		}
+	}
+
+	return finalErr
 }
 
 // FilterSupportedIPTables filter supported versions based on what exists in the system
@@ -395,7 +432,7 @@ func generateIPTablesRule(
 	jump := " -j "
 
 	if comment == "" {
-		comment = "nordvpn"
+		comment = defaultComment
 	}
 
 	var acceptComment string

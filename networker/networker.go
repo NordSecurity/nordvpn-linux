@@ -53,7 +53,8 @@ const (
 	allowIncomingRule = "-allow-rule-"
 	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
 	// for blocking incoming connections into local networks
-	blockLanRule = "-block-lan-rule-"
+	blockLanRule               = "-block-lan-rule-"
+	meshnetFirewallRuleComment = "nordvpn-meshnet"
 )
 
 // ConnectionStatus of a currently active connection
@@ -1080,10 +1081,10 @@ func (netw *Combined) UnsetFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	if !netw.isKillSwitchSet {
-		return netw.unsetNetwork()
+	if netw.isKillSwitchSet {
+		return nil
 	}
-	return nil
+	return netw.fw.Flush()
 }
 
 func (netw *Combined) unsetNetwork() error {
@@ -1459,7 +1460,8 @@ func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAll
 		RemoteNetworks: []netip.Prefix{
 			netip.PrefixFrom(address, address.BitLen()),
 		},
-		Allow: true,
+		Allow:   true,
+		Comment: meshnetFirewallRuleComment,
 	}
 	rules = append(rules, rule)
 
@@ -1483,7 +1485,8 @@ func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAll
 			RemoteNetworks: []netip.Prefix{
 				netip.PrefixFrom(address, address.BitLen()),
 			},
-			Allow: false,
+			Allow:   false,
+			Comment: meshnetFirewallRuleComment,
 		}
 
 		rules = append(rules, rule)
@@ -1515,7 +1518,8 @@ func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error
 		RemoteNetworks: []netip.Prefix{
 			netip.PrefixFrom(address, address.BitLen()),
 		},
-		Allow: true,
+		Allow:   true,
+		Comment: meshnetFirewallRuleComment,
 	}}
 
 	ruleIndex := slices.Index(netw.rules, ruleName)
@@ -1695,6 +1699,7 @@ func (netw *Combined) defaultMeshBlock(ip netip.Addr) error {
 			Direction:      firewall.Inbound,
 			RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
 			Allow:          false,
+			Comment:        meshnetFirewallRuleComment,
 		},
 		// Allow inbound traffic for the existing connections
 		// E. g. this device is making some calls to another
@@ -1711,7 +1716,8 @@ func (netw *Combined) defaultMeshBlock(ip netip.Addr) error {
 					firewall.Established,
 				},
 			},
-			Allow: true,
+			Allow:   true,
+			Comment: meshnetFirewallRuleComment,
 		},
 	}); err != nil {
 		return err
