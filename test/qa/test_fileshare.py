@@ -852,7 +852,7 @@ def test_clear():
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[0]}")
-    time.sleep(1)
+    time.sleep(3)
     local_transfer_id0 = fileshare.get_last_transfer()
     peer_transfer_id0 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
     ssh_client.exec_command(f"nordvpn fileshare accept  --path {workdir} {peer_transfer_id0}")
@@ -867,7 +867,7 @@ def test_clear():
     time.sleep(3)
 
     sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[1]}")
-    time.sleep(1)
+    time.sleep(3)
     local_transfer_id1 = fileshare.get_last_transfer()
     peer_transfer_id1 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
     ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id1}")
