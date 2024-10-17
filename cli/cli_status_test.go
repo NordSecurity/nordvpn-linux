@@ -39,6 +39,7 @@ Country: Lithuania
 City: Vilnius
 Current technology: NORDLYNX
 Current protocol: UDP
+Post-quantum VPN: disabled
 Transfer: 69 B received, 69 B sent
 Uptime: 13 seconds
 `,
