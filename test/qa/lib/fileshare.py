@@ -14,6 +14,8 @@ SEND_CANCELED_BY_OTHER_PROCESS_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z
 CANCEL_SUCCESS_SENDER_SIDE_MSG = "File transfer canceled"
 TRANSFER_ID_REGEX = r"[a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}"
 
+MSG_HISTORY_CLEARED = "File transfer history cleared."
+
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames")
 
 
@@ -154,3 +156,23 @@ def get_not_finished_transfers(ssh_client: ssh.Ssh = None) -> list[str]:
         return []
 
     return transfer_ids
+
+
+def clear_history(time_period: str, ssh_client: ssh.Ssh = None):
+    """
+    Clears the fileshare history for a specified time period, either locally or via SSH.
+
+    Args:
+        time_period (str): The time period for which to clear the fileshare history.
+        ssh_client (ssh.Ssh, optional): SSH client for executing the command on a remote server.
+                                        If None, executes locally.
+
+    Raises:
+        AssertionError: If the history clearing message is not found.
+    """
+    if ssh_client is None:
+        msg = sh.nordvpn.fileshare.clear(time_period)
+    else:
+        msg = ssh_client.exec_command(f"nordvpn fileshare clear {time_period}")
+
+    assert MSG_HISTORY_CLEARED in msg
