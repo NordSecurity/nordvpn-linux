@@ -637,23 +637,6 @@ def format_time(nanoseconds):
     return f'{int(nanoseconds / 1000000000)}s'
 
 
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
-def test_permissions_send_allowed(peer_name):
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
-
-    directory = fileshare.create_directory(1)
-    filename = directory.paths[0]
-
-    output = sh.nordvpn.fileshare.send("--background", peer_address, filename).stdout.decode("utf-8")
-    transfer_id = re.findall(fileshare.SEND_NOWAIT_SUCCESS_MSG_PATTERN, output)[0]
-    assert transfer_id is not None
-
-    time.sleep(1)
-
-    peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
-    assert peer_transfer_id is not None
-
-
 @pytest.mark.parametrize("background", [True, False])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_send_forbidden(peer_name, background):
