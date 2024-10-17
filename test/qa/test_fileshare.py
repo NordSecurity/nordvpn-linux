@@ -832,7 +832,8 @@ def test_autoaccept():
     filename = "autoaccepted"
     peer_file_path = f"/home/qapeer/{filename}"
     ssh_client.exec_command(f"echo > {peer_file_path}")
-    ssh_client.exec_command(f"nordvpn fileshare send --background {host_address} {peer_file_path}")
+    send_message = ssh_client.exec_command(f"nordvpn fileshare send --background {host_address} {peer_file_path}")
+    transfer_id = re.findall(f"{fileshare.TRANSFER_ID_REGEX}", send_message)[0]
 
     def check_if_file_received():
         last_transfer_id = fileshare.get_last_transfer(outgoing=False)
@@ -848,6 +849,12 @@ def test_autoaccept():
 
     assert file_received
     assert os.path.isfile(f"{default_download_directory}/{filename}")
+
+    transfers = ssh_client.exec_command("nordvpn fileshare list")
+    assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id)
+
+    transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id)
 
 
 def test_peers_autocomplete():
