@@ -687,6 +687,10 @@ def test_permissions_send_forbidden(peer_name):
     assert tester_permission is True
     assert qapeer_permission is True
 
+    fileshare.start_transfer(peer_address, filename)
+    transfer_id = fileshare.get_last_transfer()
+    sh.nordvpn.fileshare.cancel(transfer_id)
+
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_meshnet_receive_forbidden(peer_name):
