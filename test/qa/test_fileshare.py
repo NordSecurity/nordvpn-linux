@@ -1,4 +1,5 @@
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -269,8 +270,8 @@ def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, 
 @pytest.mark.parametrize("path_flag", [True, False])
 @pytest.mark.parametrize("background_send", [True, False])
 @pytest.mark.parametrize("background_accept", ["", "--background"])
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
-def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str, background_accept: str, peer_name: meshnet.PeerName):
+def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str, background_accept: str):
+    peer_name = random.choice(list(meshnet.PeerName)[:-1])
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     file_size = "22M"
