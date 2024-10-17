@@ -359,6 +359,9 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
 
+    ssh_client.exec_command(f"ls {workdir}/{wdir.transfer_paths[2]}")
+    ssh_client.exec_command(f"sudo rm -rf {workdir}/{os.path.basename(wdir.dir_path)}")
+
 
 def test_fileshare_graceful_cancel():
     wdir = fileshare.create_directory(1)
