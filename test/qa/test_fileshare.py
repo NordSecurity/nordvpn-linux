@@ -663,7 +663,6 @@ def test_permissions_send_forbidden(peer_name):
     tester_hostname = tester_data.get_peer_name(meshnet.PeerName.Hostname)
     assert meshnet.MSG_PEER_FILESHARE_DENY_SUCCESS % tester_hostname in fileshare_denied_message
 
-    ssh_client.exec_command(f"nordvpn mesh peer fileshare deny {tester_address}")
     qa_peer_permission = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_internal_peer().allow_sending_files
     tester_permission = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
     assert tester_permission is not True
@@ -680,7 +679,8 @@ def test_permissions_send_forbidden(peer_name):
     assert "This peer does not allow file transfers from you." in str(ex.value)
 
     # Revert to the state before test
-    ssh_client.exec_command(f"nordvpn mesh peer fileshare allow {tester_address}")
+    fileshare_allowed_message = ssh_client.exec_command(f"nordvpn mesh peer fileshare allow {tester_address}")
+    assert meshnet.MSG_PEER_FILESHARE_ALLOW_SUCCESS % tester_hostname in fileshare_allowed_message
 
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
