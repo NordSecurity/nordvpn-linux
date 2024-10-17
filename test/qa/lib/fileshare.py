@@ -37,6 +37,19 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
 
 
 def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
+    """
+    Initiates a file transfer to a specified peer.
+
+    Args:
+        peer_address (str): The address of the peer to send files to.
+        *filepaths (str): One or more file paths to be transferred.
+
+    Returns:
+        sh.RunningCommand: The running command object, which allows interaction with the ongoing process.
+
+    Further code execution is blocked, until this function finds "Waiting for the peer to accept your transfer..."
+    string, indicating, that the transfer process has started and is waiting for peer confirmation.
+    """
     command = sh.nordvpn.fileshare.send(peer_address, filepaths, _iter=True, _out_bufsize=0)
     buffer = ""
 
