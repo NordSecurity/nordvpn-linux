@@ -885,7 +885,8 @@ def test_clear():
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id0)
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
 
-    sh.nordvpn.fileshare.clear(int(time.time() - transfer_time0))
+    msg = sh.nordvpn.fileshare.clear(int(time.time() - transfer_time0))
+    assert fileshare.MSG_HISTORY_CLEARED in msg
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None
@@ -895,14 +896,16 @@ def test_clear():
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id0)
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
 
-    ssh_client.exec_command(f"nordvpn fileshare clear {int(time.time() - transfer_time0)} seconds")
+    msg = ssh_client.exec_command(f"nordvpn fileshare clear {int(time.time() - transfer_time0)} seconds")
+    assert fileshare.MSG_HISTORY_CLEARED in msg
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert fileshare.find_transfer_by_id(transfers, peer_transfer_id0) is None
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
 
     time.sleep(3)
-    sh.nordvpn.fileshare.clear(1)
+    msg = sh.nordvpn.fileshare.clear(1)
+    assert fileshare.MSG_HISTORY_CLEARED in msg
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None
@@ -914,7 +917,8 @@ def test_clear():
     lines_outgoing = sh.nordvpn.fileshare.list("--outgoing", _tty_out=False).split("\n")
     assert len(lines_outgoing) == 3, str(lines_outgoing)
 
-    ssh_client.exec_command("nordvpn fileshare clear all")
+    msg = ssh_client.exec_command("nordvpn fileshare clear all")
+    assert fileshare.MSG_HISTORY_CLEARED in msg
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert fileshare.find_transfer_by_id(transfers, peer_transfer_id0) is None

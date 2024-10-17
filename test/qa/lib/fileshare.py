@@ -14,6 +14,8 @@ SEND_CANCELED_BY_OTHER_PROCESS_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z
 CANCEL_SUCCESS_SENDER_SIDE_MSG = "File transfer canceled"
 TRANSFER_ID_REGEX = r"[a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}"
 
+MSG_HISTORY_CLEARED = "File transfer history cleared."
+
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames")
 
 
