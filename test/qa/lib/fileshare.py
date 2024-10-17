@@ -27,6 +27,23 @@ Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames")
 
 
 def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: str = "1K") -> Directory:
+    """
+    Creates a temporary directory and populates it with a specified number of files.
+
+    Args:
+        file_count (int): The number of files to create in the directory.
+        name_suffix (str, optional): A suffix to append to the filenames. Defaults to an empty string.
+        parent_dir (str | None, optional): The parent directory where the temporary directory will be created.
+                                           If None, the system default temporary directory is used. Defaults to None.
+        file_size (str, optional): The size of each file to be created, specified using typical file size notation
+                                   (e.g., "1K", "128M"). Defaults to "1K".
+    Returns:
+        Directory: A Directory object containing:
+            - dir_path: Path to the created directory.
+            - paths: Full paths to the created files.
+            - transfer_paths: File paths with leading directories removed.
+            - filenames: Names of the created files.
+    """
     # for snap testing make directories to be created from current path e.g. dir="./"
     dir_path = tempfile.mkdtemp(dir=parent_dir)
     paths = []
@@ -58,7 +75,6 @@ def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
     Args:
         peer_address (str): The address of the peer to send files to.
         *filepaths (str): One or more file paths to be transferred.
-
     Returns:
         sh.RunningCommand: The running command object, which allows interaction with the ongoing process.
 
