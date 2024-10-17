@@ -26,13 +26,7 @@ func (r *RPC) SetKillSwitch(ctx context.Context, in *pb.SetKillSwitchRequest) (*
 	}
 
 	if in.KillSwitch {
-		allowlist := config.NewAllowlist(
-			in.GetAllowlist().GetPorts().GetUdp(),
-			in.GetAllowlist().GetPorts().GetTcp(),
-			in.GetAllowlist().GetSubnets(),
-		)
-
-		if err := r.netw.SetKillSwitch(allowlist); err != nil {
+		if err := r.netw.SetKillSwitch(cfg.AutoConnectData.Allowlist); err != nil {
 			log.Println(internal.ErrorPrefix, "enabling killswitch:", err)
 			return &pb.Payload{
 				Type: internal.CodeKillSwitchError,
