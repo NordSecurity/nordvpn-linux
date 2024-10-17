@@ -192,9 +192,10 @@ def test_accept(accept_directories):
 
 
 @pytest.mark.parametrize("path_flag", [True, False])
-@pytest.mark.parametrize("background", [True, False])
+@pytest.mark.parametrize("background_send", [True, False])
+@pytest.mark.parametrize("background_accept", ["", "--background"])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
-def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName, path_flag: bool):
+def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, path_flag: str, background_accept: str):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     wdir = fileshare.create_directory(1)
@@ -204,7 +205,7 @@ def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName, path_
     with open(filepath, "w", encoding="utf-8") as file:
         file.write(message)
 
-    if background:
+    if background_send:
         command_handle = sh.nordvpn.fileshare.send("--background", peer_address, filepath)
         output = command_handle.stdout.decode("utf-8")
         assert len(re.findall(fileshare.SEND_NOWAIT_SUCCESS_MSG_PATTERN, output)) > 0
@@ -231,10 +232,10 @@ def test_fileshare_transfer(background: bool, peer_name: meshnet.PeerName, path_
 
     if path_flag:
         peer_filepath = "/tmp/"
-        ssh_client.exec_command(f"nordvpn fileshare accept --path {peer_filepath} {peer_transfer_id}")
+        ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} --path {peer_filepath} {peer_transfer_id}")
     else:
         peer_filepath = "~/Downloads/"
-        ssh_client.exec_command(f"nordvpn fileshare accept {peer_transfer_id}")
+        ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} {peer_transfer_id}")
 
     time.sleep(1)
 
