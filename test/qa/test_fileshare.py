@@ -273,13 +273,26 @@ def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, 
 def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str, background_accept: str, peer_name: meshnet.PeerName):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
-    file_size = "11M"
-    dir1 = fileshare.create_directory(5, "1", file_size=file_size)
-    dir2 = fileshare.create_directory(5, "2", file_size=file_size)
+    file_size = "22M"
+    dir1 = fileshare.create_directory(0, "1")
+    dir2 = fileshare.create_directory(2, "2", dir1.dir_path)
     dir3 = fileshare.create_directory(2, "3", file_size=file_size)
+    dir4 = fileshare.create_directory(2, "4" ,file_size=file_size)
 
-    # transfer dir1 and dir2 as directories and individual files from dir3, i.e /<dir1> /<dir2> /<dir3>/<file1> /<dir3>/<file2>
-    files_to_transfer = [dir1.dir_path, dir2.dir_path, *dir3.paths]
+    # .
+    # ├── dir1 - send this
+    # │   └── dir2
+    # │       └── file_1
+    # │       └── file_2
+    # │── dir3 - send this
+    # │    └── file_1
+    # │    └── file_2
+    # │── dir4
+    # │    └── file_1 - send this
+    # │    └── file_2 - send this
+
+    # transfer dir4 as individual files, i.e /<dir4>/<file1> /<dir4>/<file2>
+    files_to_transfer = [dir1.dir_path, dir3.dir_path, *dir4.paths]
 
     if background_send:
         command_handle = sh.nordvpn.fileshare.send("--background", peer_address, *files_to_transfer)
@@ -317,6 +330,15 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
         peer_filepath = "~/Downloads/"
         t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} {peer_transfer_id}")
 
+    for transfers_done in poll(
+        lambda: (
+            "completed" in fileshare.get_transfer(local_transfer_id) and
+            "completed" in fileshare.get_transfer(local_transfer_id, ssh_client)
+        )
+    ):
+        if transfers_done:
+            break
+
     time.sleep(1)
 
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
@@ -330,6 +352,17 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
 
     if not background_accept:
         assert fileshare.validate_transfer_progress(t_progress_interactive)
+
+    ssh_client.exec_command(f"ls {peer_filepath}/{dir2.transfer_paths[0]}")
+    ssh_client.exec_command(f"ls {peer_filepath}/{dir2.transfer_paths[1]}")
+    ssh_client.exec_command(f"ls {peer_filepath}/{dir3.transfer_paths[0]}")
+    ssh_client.exec_command(f"ls {peer_filepath}/{dir3.transfer_paths[1]}")
+    ssh_client.exec_command(f"ls {peer_filepath}/{dir4.filenames[0]}")
+    ssh_client.exec_command(f"ls {peer_filepath}/{dir4.filenames[0]}")
+
+    files_to_rm = [os.path.basename(dir2.dir_path), os.path.basename(dir3.dir_path), dir4.filenames[0], dir4.filenames[1]]
+    for file in files_to_rm:
+        ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/{file}")
 
     assert command_handle.is_alive() is False
     assert command_handle.exit_code == 0
