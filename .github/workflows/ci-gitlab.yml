@@ -10,19 +10,13 @@ on:
 permissions: {}
 jobs:
   trigger-gitlab-pipeline:
-    runs-on: [self-hosted, gitlab]
-    if: |
-      github.event_name == 'push' ||
-      (
-        github.event_name == 'pull_request_target' &&
-        github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name &&
-        github.event.label.name == 'gitlab'
-      )
-    steps:
-      - uses: NordSecurity/trigger-gitlab-pipeline@v2.0.0
-        with:
-          ci-api-v4-url: ${{ secrets.CI_API_V4_URL }}
-          project-id: ${{ secrets.PROJECT_ID }}
-          access-token: ${{ secrets.ACCESS_TOKEN }}
-          triggered-ref: ${{ secrets.TRIGGERED_REF }}
-          trigger-token: ${{ secrets.TRIGGER_TOKEN }}
+    uses: NordSecurity/trigger-gitlab-pipeline/.github/workflows/trigger-gitlab-pipeline.yml@LLT-5701_implement_reusable_workflow_to_enable_workflow_pinning_on_non_ephemeral_runners # TODO specify git hash once it gets merged
+    secrets:
+      ci-api-v4-url: ${{ secrets.CI_API_V4_URL }}
+      access-token: ${{ secrets.GITLAB_API_TOKEN }}
+      trigger-token: ${{ secrets.TOKEN }}
+      project-id: ${{ secrets.PROJECT_ID }}
+    with:
+      schedule: ${{ github.event_name == 'schedule' }}
+      cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
+      triggered-ref: v2.4.9 # REMEMBER to also update in .gitlab-ci.yml
