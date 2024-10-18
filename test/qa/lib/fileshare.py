@@ -157,8 +157,8 @@ def get_new_incoming_transfer(ssh_client: ssh.Ssh = None):
     transfer_status = get_transfer(local_transfer_id, ssh_client)
     if transfer_status is None:
         return None, f"could not read transfer {local_transfer_id} status on receiver side after it has been initiated by the sender"
-    if "completed" in transfer_status:
-        return None, f"no new transfers found on receiver side after transfer has been initiated by the sender, last transfer is {local_transfer_id} but its status is completed"
+    if "completed" in transfer_status or "canceled" in transfer_status:
+        return None, f"no new transfers found on receiver side after transfer has been initiated by the sender, last transfer is {local_transfer_id} but its status is {transfer_status}"
     return local_transfer_id, ""
 
 
