@@ -32,7 +32,7 @@ func (f *FileshareHandle) GetShutdownChan() <-chan struct{} {
 func (f *FileshareHandle) Shutdown() {
 	f.eventManager.CancelLiveTransfers()
 
-	f.grpcServer.GracefulStop()
+	f.grpcServer.Stop()
 
 	if err := f.fileshareImplementation.Disable(); err != nil {
 		log.Println(internal.ErrorPrefix, "disabling fileshare:", err)
