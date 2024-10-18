@@ -149,7 +149,7 @@ def for_all_files_in_transfer(transfer: str, files: list[str], predicate: Callab
 
 
 def get_new_incoming_transfer(ssh_client: ssh.Ssh = None):
-    """Returns last incoming transfer that has not completed."""
+    """Returns last incoming transfer that is not finished."""
     local_transfer_id = get_last_transfer(outgoing=False, ssh_client=ssh_client)
     if local_transfer_id is None:
         return None, "there are no started transfers"
