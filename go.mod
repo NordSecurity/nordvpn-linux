@@ -8,7 +8,7 @@ toolchain go1.22.2
 // NOTE: If you are chaning the binding versions here, keep in mind that you
 // may also need to update versions in `./lib-versions.env` file.
 require (
-	github.com/NordSecurity/libdrop-go/v7 v7.0.0-rc1
+	github.com/NordSecurity/libdrop-go/v8 v8.0.0-20241017064027-670787595588
 	github.com/NordSecurity/libtelio-go/v5 v5.0.0
 )
 
