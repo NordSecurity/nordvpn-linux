@@ -10,19 +10,12 @@ on:
 permissions: {}
 jobs:
   trigger-gitlab-pipeline:
-    runs-on: [self-hosted, gitlab]
-    if: |
-      github.event_name == 'push' ||
-      (
-        github.event_name == 'pull_request_target' &&
-        github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name &&
-        github.event.label.name == 'gitlab'
-      )
-    steps:
-      - uses: NordSecurity/trigger-gitlab-pipeline@v2.0.0
-        with:
-          ci-api-v4-url: ${{ secrets.CI_API_V4_URL }}
-          project-id: ${{ secrets.PROJECT_ID }}
-          access-token: ${{ secrets.ACCESS_TOKEN }}
-          triggered-ref: ${{ secrets.TRIGGERED_REF }}
-          trigger-token: ${{ secrets.TRIGGER_TOKEN }}
+    uses: NordSecurity/trigger-gitlab-pipeline/.github/workflows/trigger-gitlab-pipeline.yml@272b0b859016b5c0ff2c3b7d70799270b0a047fb
+    secrets:
+      ci-api-v4-url: ${{ secrets.CI_API_V4_URL }}
+      access-token: ${{ secrets.ACCESS_TOKEN }}
+      trigger-token: ${{ secrets.TRIGGER_TOKEN }}
+      project-id: ${{ secrets.PROJECT_ID }}
+    with:
+      cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
+      triggered-ref: main
