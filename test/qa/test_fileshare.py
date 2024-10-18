@@ -1,3 +1,4 @@
+import contextlib
 import os
 import random
 import re
@@ -1078,3 +1079,54 @@ def test_fileshare_process_monitoring():
     # port is allowed again when fileshare process is up
     rules = os.popen("sudo iptables -S").read()
     assert "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
+
+
+@pytest.mark.parametrize("background_send", [True, False])
+@pytest.mark.parametrize("background_accept", [True, False])
+def test_all_permissions_denied_send_file(background_send: bool, background_accept: bool):
+    local_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    local_address = local_peer_list.get_this_device().hostname
+
+    permissions = ["incoming", "routing", "local"]
+
+    for permission in permissions:
+        with contextlib.suppress(RuntimeError):
+            ssh_client.exec_command(f"nordvpn mesh peer {permission} deny {local_address}")
+
+    wdir = fileshare.create_directory(1)
+    peer_address = local_peer_list.get_internal_peer().hostname
+
+    if background_send:
+        sh.nordvpn.fileshare.send("--background", peer_address, wdir.paths[0])
+    else:
+        fileshare.start_transfer(peer_address, wdir.paths[0])
+
+    remote_transfer_id = None
+    error_message = None
+    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client)):  # noqa: B007
+        if remote_transfer_id is not None:
+            break
+
+    assert remote_transfer_id is not None, error_message
+
+    if background_accept:
+        ssh_client.exec_command(f"nordvpn fileshare accept --background {remote_transfer_id}")
+    else:
+        ssh_client.exec_command(f"nordvpn fileshare accept {remote_transfer_id}")
+
+    for transfers_done in poll(
+        lambda: (
+            "completed" in fileshare.get_transfer(remote_transfer_id) and
+            "completed" in fileshare.get_transfer(remote_transfer_id, ssh_client)
+        )
+    ):
+        if transfers_done:
+            break
+
+    peer_filepath = "~/Downloads/"
+    ssh_client.exec_command(f"ls {peer_filepath}/{wdir.filenames[0]}")
+    ssh_client.exec_command(f"rm -rf {peer_filepath}/{wdir.filenames[0]}")
+
+    for permission in permissions:
+        with contextlib.suppress(RuntimeError):
+            ssh_client.exec_command(f"nordvpn mesh peer {permission} allow {local_address}")
