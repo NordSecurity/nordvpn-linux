@@ -991,8 +991,12 @@ def test_clear():
     sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[0]}")
     time.sleep(1)
     local_transfer_id0 = fileshare.get_last_transfer()
-    peer_transfer_id0 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
-    ssh_client.exec_command(f"nordvpn fileshare accept  --path {workdir} {peer_transfer_id0}")
+
+    for peer_transfer_id0 in poll(lambda: fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)):
+        if peer_transfer_id0:
+            break
+
+    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id0}")
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id0)
