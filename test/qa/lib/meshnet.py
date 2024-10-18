@@ -372,6 +372,7 @@ MSG_PEER_FILESHARE_DENY_SUCCESS = "Fileshare for '%s' has been denied."
 MSG_PEER_FILESHARE_DENY_ERROR = "Fileshare for '%s' is already denied."
 
 MSG_PEER_AUTOACCEPT_ALLOW_SUCCESS = "Automatic fileshare for '%s' has been allowed."
+MSG_PEER_AUTOACCEPT_DENY_SUCCESS = "Automatic fileshare for '%s' has been denied."
 
 PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET = [
     ("routing", "allow", MSG_PEER_ROUTING_ALLOW_SUCCESS),
