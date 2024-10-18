@@ -542,7 +542,7 @@ def test_fileshare_cancel_transfer(background: bool, single_file: bool, sender_c
         assert "canceled" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
 
         transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
-        assert "canceled" in fileshare.find_transfer_by_id(transfers, local_transfer_id)
+        assert "canceled by peer" in fileshare.find_transfer_by_id(transfers, local_transfer_id)
 
 
 @pytest.mark.parametrize("sender_cancels", [True, False])
