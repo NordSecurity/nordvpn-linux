@@ -44,6 +44,11 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		log.Println(internal.WarningPrefix, "failed to read connection parameters:", err)
 	}
 
+	postQuantum := false
+	if connectionParameters, ok := r.netw.GetConnectionParameters(); ok {
+		postQuantum = connectionParameters.PostQuantum
+	}
+
 	return &pb.StatusResponse{
 		State:           string(status.State),
 		Technology:      status.Technology,
@@ -63,5 +68,6 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 			City:    connectionParameters.Parameters.City,
 			Group:   connectionParameters.Parameters.Group,
 		},
+		PostQuantum: postQuantum,
 	}, nil
 }

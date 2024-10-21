@@ -120,6 +120,7 @@ type Networker interface {
 	LastServerName() string
 	SetLanDiscovery(bool)
 	UnsetFirewall() error
+	GetConnectionParameters() (vpn.ServerData, bool)
 }
 
 // Combined configures networking for VPN connections.

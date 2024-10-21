@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -146,9 +145,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}
 	}
 
-	log.Println("DEBUG: get token data")
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	log.Println("DEBUG: is MeshDevice nil: ", cfg.MeshDevice == nil)
 	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
