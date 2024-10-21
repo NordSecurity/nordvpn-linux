@@ -239,14 +239,14 @@ func (f *Fileshare) start(
 	isProd bool,
 	storagePath string,
 ) error {
-	var autoretryIntervalMs uint32 = 5000
+	var autoRetryIntervalMs uint32 = 5000
 	config := norddrop.Config{
 		DirDepthLimit:       fileshare.DirDepthLimit,
 		TransferFileLimit:   fileshare.TransferFileLimit,
 		MooseEventPath:      eventsDbPath,
 		MooseProd:           isProd,
 		StoragePath:         storagePath,
-		AutoRetryIntervalMs: &autoretryIntervalMs,
+		AutoRetryIntervalMs: &autoRetryIntervalMs,
 	}
 
 	return f.norddrop.Start(listenAddr.String(), config)
