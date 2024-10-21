@@ -259,21 +259,6 @@ func (em *EventManager) handleFileDownloadedEvent(event EventKindFileDownloaded)
 			fileStatusInNotification,
 		)
 	}
-
-	em.finalizeFinishedTransfer(transfer)
-}
-
-func (em *EventManager) finalizeFinishedTransfer(transfer *LiveTransfer) {
-	// Libdrop will not clean up the transfer after transferring all of the files, so we have to
-	// finalize it manually - after all of the files have finished downloading/uploading or are
-	// failed/rejected.
-	// This will generate a [norddrop.EventKindTransferFinalized] event, which is processed in
-	// [EventManager.handleTransferFinalizedEvent] and will trigger the finalization of transfer.
-	if isLiveTransferFinished(transfer) && transfer.Direction == pb.Direction_INCOMING {
-		if err := em.fileshare.Finalize(transfer.ID); err != nil {
-			log.Printf(internal.WarningPrefix+" failed to finalize transfer %s: %s\n", transfer.ID, err)
-		}
-	}
 }
 
 func (em *EventManager) handleFileUploadedEvent(event EventKindFileUploaded) {
@@ -299,8 +284,6 @@ func (em *EventManager) handleFileUploadedEvent(event EventKindFileUploaded) {
 			fileStatusInNotification,
 		)
 	}
-
-	em.finalizeFinishedTransfer(transfer)
 }
 
 func (em *EventManager) handleFileFailedEvent(event EventKindFileFailed) {
@@ -327,8 +310,6 @@ func (em *EventManager) handleFileFailedEvent(event EventKindFileFailed) {
 			fileStatusInNotification,
 		)
 	}
-
-	em.finalizeFinishedTransfer(transfer)
 }
 
 func (em *EventManager) handleFileRejectedEvent(event EventKindFileRejected) {
@@ -355,17 +336,9 @@ func (em *EventManager) handleFileRejectedEvent(event EventKindFileRejected) {
 			fileStatusInNotification,
 		)
 	}
-
-	em.finalizeFinishedTransfer(transfer)
 }
 
 func (em *EventManager) handleTransferFailedEvent(event EventKindTransferFailed) {
-	transfer, err := em.getLiveTransfer(event.TransferId)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
-		return
-	}
-	em.finalizeTransfer(transfer, pb.Status(event.Status.Status))
 }
 
 func (em *EventManager) handleTransferFinalizedEvent(event EventKindTransferFinalized) {

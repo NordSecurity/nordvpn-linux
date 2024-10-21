@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	norddrop "github.com/NordSecurity/libdrop-go/v7"
+	norddrop "github.com/NordSecurity/libdrop-go/v8"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -230,7 +230,6 @@ func (f *Fileshare) Enable(listenAddr netip.Addr) (err error) {
 		}
 		return fmt.Errorf("starting drop: %w", err)
 	}
-
 	return nil
 }
 
@@ -240,12 +239,14 @@ func (f *Fileshare) start(
 	isProd bool,
 	storagePath string,
 ) error {
+	var autoRetryIntervalMs uint32 = 5000
 	config := norddrop.Config{
-		DirDepthLimit:     fileshare.DirDepthLimit,
-		TransferFileLimit: fileshare.TransferFileLimit,
-		MooseEventPath:    eventsDbPath,
-		MooseProd:         isProd,
-		StoragePath:       storagePath,
+		DirDepthLimit:       fileshare.DirDepthLimit,
+		TransferFileLimit:   fileshare.TransferFileLimit,
+		MooseEventPath:      eventsDbPath,
+		MooseProd:           isProd,
+		StoragePath:         storagePath,
+		AutoRetryIntervalMs: &autoRetryIntervalMs,
 	}
 
 	return f.norddrop.Start(listenAddr.String(), config)
@@ -343,13 +344,7 @@ func (f *Fileshare) Load() (map[string]*pb.Transfer, error) {
 func (f *Fileshare) PurgeTransfersUntil(until time.Time) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
-	// TODO: In the calculation below: `until.Unix() * 100` it should be
-	// multiplied by 1000 to get number of milliseconds. The issue is that there
-	// is a bug on the libdrop side here: https://github.com/NordSecurity/libdrop/blob/v7.0.0/norddrop/src/uni.rs#L100
-	// It converts milliseconds to seconds by dividing by 100 instead of 1000
-	// resulting in incorrect dates in the year ~2515 and purging of all transfers.
-	// This will be fixed with migration to v8.0.0 of libdrop.
-	return f.norddrop.PurgeTransfersUntil(until.Unix() * 100)
+	return f.norddrop.PurgeTransfersUntil(until.Unix() * 1000)
 }
 
 func norddropTransferToPBTransfer(ti norddrop.TransferInfo) *pb.Transfer {
