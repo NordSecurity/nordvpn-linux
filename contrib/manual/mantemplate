@@ -282,6 +282,65 @@ $ \fBnordvpn set dns 1.1.1.1 1.0.0.1\fR
 .fi
 .RE
 
+.SH "POST-QUANTUM VPN SUPPORT"
+NordVPN now supports post-quantum cryptography, offering enhanced protection designed to resist attacks from quantum computers. Follow the instructions below to enable and configure this feature.
+
+.SS "Enabling Post-Quantum Support"
+To enable or disable the Post-Quantum VPN feature, run the following commands:
+.P
+.RS 4
+.nf
+$ \fBnordvpn set pq on/off\fR
+.fi
+.RE
+.P
+or
+.P
+.RS 4
+.nf
+$ \fBnordvpn set post-quantum on/off\fR
+.fi
+.RE
+.P
+When enabled, your VPN connection uses state-of-the-art cryptography to secure your data against quantum computing threats.
+.nf
+\fBNote:\fR Post-Quantum VPN is not compatible with the following features:
+.fi
+.
+.IP \[bu] 2
+\fBOpenVPN Technology:\fR You must switch to NordLynx to use post-quantum encryption.
+.IP \[bu] 2
+\fBMeshnet:\fR Post-Quantum VPN cannot run simultaneously with Meshnet.
+
+.SS "Compatibility Warnings"
+
+.IP \[bu] 2
+Switching to Post-Quantum while using OpenVPN:
+.RS
+If OpenVPN is active and you try to enable post-quantum encryption, you will see the following message:
+.RE
+.RS 4
+.B The post-quantum VPN is not compatible with OpenVPN. Switch to NordLynx to use post-quantum VPN capabilities.
+.RE
+
+.IP \[bu] 2
+Switching to OpenVPN while Post-Quantum is enabled:
+.RS
+Attempting to switch to OpenVPN while post-quantum encryption is enabled is not allowed. You must first disable post-quantum encryption. If you try to switch protocols, the following message will appear:
+.RE
+.RS 4
+.B This setting is not compatible with the post-quantum VPN. To use OpenVPN, disable the post-quantum VPN first.
+.RE
+
+.IP \[bu] 2
+Post-Quantum and Meshnet conflict:
+.RS
+Similarly, Meshnet cannot be used simultaneously with post-quantum encryption. You need to disable one of the features before using the other. If both are enabled, the following message will appear:
+.RE
+.RS 4
+.B The post-quantum VPN and Meshnet can't run at the same time. Please disable one feature to use the other.
+.RE
+
 .SH "MESHNET"
 .P
 NordVPN's Meshnet is a type of virtual network that allows multiple devices to connect and communicate with one another directly, even when they are located in different parts of the world. Meshnet makes it possible for people to access resources and services on each other's devices securely and privately. It eliminates the need for firewall configurations and overcomes CGNAT limitations, assigning each device a unique Meshnet IP.
