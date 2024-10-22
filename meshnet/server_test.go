@@ -175,6 +175,7 @@ func (acceptInvitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error
 func newMockedServer(
 	t *testing.T,
 	listErr error,
+	loadConfigErr error,
 	saveConfigErr error,
 	configureErr error,
 	isMeshOn bool,
@@ -188,7 +189,6 @@ func newMockedServer(
 	registryApi.ConfigureErr = configureErr
 
 	configManager := &mock.ConfigManager{}
-	configManager.SaveErr = saveConfigErr
 
 	server := NewServer(
 		meshRenewChecker{},
@@ -208,6 +208,9 @@ func newMockedServer(
 	if isMeshOn {
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 	}
+
+	configManager.SaveErr = saveConfigErr
+	configManager.LoadErr = loadConfigErr
 
 	return server
 }
@@ -1114,6 +1117,7 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 		peerUuid         string
 		listErr          error
 		configureErr     error
+		loadConfigErr    error
 		saveConfigErr    error
 		isMeshOn         bool
 		expectedResponse *pb.EnableAutomaticFileshareResponse
@@ -1178,6 +1182,18 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 			},
 		},
 		{
+			name:          "failed to load config",
+			peerUuid:      peerValidUuid,
+			listErr:       core.ErrUnauthorized,
+			loadConfigErr: fmt.Errorf("generic error"),
+			isMeshOn:      true,
+			expectedResponse: &pb.EnableAutomaticFileshareResponse{
+				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+				},
+			},
+		},
+		{
 			name:          "failed to save config",
 			peerUuid:      peerValidUuid,
 			listErr:       core.ErrUnauthorized,
@@ -1206,6 +1222,7 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			server := newMockedServer(t,
 				test.listErr,
+				test.loadConfigErr,
 				test.saveConfigErr,
 				test.configureErr,
 				test.isMeshOn,
@@ -1239,6 +1256,7 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 		peerUuid         string
 		isMeshOn         bool
 		listErr          error
+		loadConfigErr    error
 		saveConfigErr    error
 		configureErr     error
 		expectedResponse *pb.DisableAutomaticFileshareResponse
@@ -1303,6 +1321,18 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 			},
 		},
 		{
+			name:          "failed to load config",
+			peerUuid:      peerValidUuid,
+			listErr:       core.ErrUnauthorized,
+			loadConfigErr: fmt.Errorf("generic error"),
+			isMeshOn:      true,
+			expectedResponse: &pb.DisableAutomaticFileshareResponse{
+				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
+					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+				},
+			},
+		},
+		{
 			name:          "failed to save config",
 			peerUuid:      peerAleradyDisabledUuid,
 			listErr:       core.ErrUnauthorized,
@@ -1331,6 +1361,7 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			server := newMockedServer(t,
 				test.listErr,
+				test.loadConfigErr,
 				test.saveConfigErr,
 				test.configureErr,
 				test.isMeshOn,
