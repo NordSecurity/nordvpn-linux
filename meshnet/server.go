@@ -265,7 +265,7 @@ func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.IsEnabledResponse, e
 	return &pb.IsEnabledResponse{
 		Response: &pb.IsEnabledResponse_Status{
 			Status: &pb.EnabledStatus{
-				Value: s.mc.IsRegistrationInfoCorrect() && cfg.Mesh,
+				Value: cfg.Mesh && s.mc.IsRegistrationInfoCorrect(),
 				Uid:   cfg.Meshnet.EnabledByUID,
 			},
 		},
@@ -470,14 +470,6 @@ func (s *Server) Invite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.InviteResponse{
-			Response: &pb.InviteResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
@@ -492,6 +484,14 @@ func (s *Server) Invite(
 		return &pb.InviteResponse{
 			Response: &pb.InviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.InviteResponse{
+			Response: &pb.InviteResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -583,14 +583,6 @@ func (s *Server) AcceptInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.RespondToInviteResponse{
-			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
@@ -605,6 +597,14 @@ func (s *Server) AcceptInvite(
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.RespondToInviteResponse{
+			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -708,14 +708,6 @@ func (s *Server) DenyInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.RespondToInviteResponse{
-			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
@@ -730,6 +722,14 @@ func (s *Server) DenyInvite(
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.RespondToInviteResponse{
+			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -799,14 +799,6 @@ func (s *Server) RevokeInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.RespondToInviteResponse{
-			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
@@ -821,6 +813,14 @@ func (s *Server) RevokeInvite(
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.RespondToInviteResponse{
+			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -887,14 +887,6 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.GetInvitesResponse{
-			Response: &pb.GetInvitesResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
@@ -909,6 +901,14 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 		return &pb.GetInvitesResponse{
 			Response: &pb.GetInvitesResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.GetInvitesResponse{
+			Response: &pb.GetInvitesResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -1632,20 +1632,28 @@ func (s *Server) AllowIncoming(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.AllowIncomingResponse{
-			Response: &pb.AllowIncomingResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.AllowIncomingResponse{
 			Response: &pb.AllowIncomingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.AllowIncomingResponse{
+			Response: &pb.AllowIncomingResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.AllowIncomingResponse{
+			Response: &pb.AllowIncomingResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -1748,20 +1756,28 @@ func (s *Server) DenyIncoming(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.DenyIncomingResponse{
-			Response: &pb.DenyIncomingResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.DenyIncomingResponse{
 			Response: &pb.DenyIncomingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.DenyIncomingResponse{
+			Response: &pb.DenyIncomingResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.DenyIncomingResponse{
+			Response: &pb.DenyIncomingResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -1857,20 +1873,20 @@ func (s *Server) AllowRouting(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.AllowRoutingResponse{
-			Response: &pb.AllowRoutingResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.AllowRoutingResponse{
 			Response: &pb.AllowRoutingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.AllowRoutingResponse{
+			Response: &pb.AllowRoutingResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
 			},
 		}, nil
 	}
@@ -1973,20 +1989,28 @@ func (s *Server) DenyRouting(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.DenyRoutingResponse{
-			Response: &pb.DenyRoutingResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.DenyRoutingResponse{
 			Response: &pb.DenyRoutingResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.DenyRoutingResponse{
+			Response: &pb.DenyRoutingResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.DenyRoutingResponse{
+			Response: &pb.DenyRoutingResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -2089,20 +2113,28 @@ func (s *Server) AllowLocalNetwork(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.AllowLocalNetworkResponse{
-			Response: &pb.AllowLocalNetworkResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.AllowLocalNetworkResponse{
 			Response: &pb.AllowLocalNetworkResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.AllowLocalNetworkResponse{
+			Response: &pb.AllowLocalNetworkResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.AllowLocalNetworkResponse{
+			Response: &pb.AllowLocalNetworkResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -2205,20 +2237,28 @@ func (s *Server) DenyLocalNetwork(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.DenyLocalNetworkResponse{
-			Response: &pb.DenyLocalNetworkResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.DenyLocalNetworkResponse{
 			Response: &pb.DenyLocalNetworkResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.DenyLocalNetworkResponse{
+			Response: &pb.DenyLocalNetworkResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.DenyLocalNetworkResponse{
+			Response: &pb.DenyLocalNetworkResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -2321,20 +2361,28 @@ func (s *Server) AllowFileshare(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.AllowFileshareResponse{
-			Response: &pb.AllowFileshareResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.AllowFileshareResponse{
 			Response: &pb.AllowFileshareResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.AllowFileshareResponse{
+			Response: &pb.AllowFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.AllowFileshareResponse{
+			Response: &pb.AllowFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -2441,20 +2489,28 @@ func (s *Server) DenyFileshare(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.DenyFileshareResponse{
-			Response: &pb.DenyFileshareResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.DenyFileshareResponse{
 			Response: &pb.DenyFileshareResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.DenyFileshareResponse{
+			Response: &pb.DenyFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.DenyFileshareResponse{
+			Response: &pb.DenyFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -2561,20 +2617,28 @@ func (s *Server) EnableAutomaticFileshare(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.EnableAutomaticFileshareResponse{
-			Response: &pb.EnableAutomaticFileshareResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.EnableAutomaticFileshareResponse{
 			Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.EnableAutomaticFileshareResponse{
+			Response: &pb.EnableAutomaticFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -2670,20 +2734,28 @@ func (s *Server) DisableAutomaticFileshare(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.DisableAutomaticFileshareResponse{
-			Response: &pb.DisableAutomaticFileshareResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.DisableAutomaticFileshareResponse{
 			Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.DisableAutomaticFileshareResponse{
+			Response: &pb.DisableAutomaticFileshareResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -2779,20 +2851,28 @@ func (s *Server) NotifyNewTransfer(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.NotifyNewTransferResponse{
-			Response: &pb.NotifyNewTransferResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}, nil
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
 		return &pb.NotifyNewTransferResponse{
 			Response: &pb.NotifyNewTransferResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+			},
+		}, nil
+	}
+
+	if !cfg.Mesh {
+		return &pb.NotifyNewTransferResponse{
+			Response: &pb.NotifyNewTransferResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.NotifyNewTransferResponse{
+			Response: &pb.NotifyNewTransferResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}, nil
 	}
@@ -2898,14 +2978,6 @@ func (s *Server) connect(
 		}
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
-		return &pb.ConnectResponse{
-			Response: &pb.ConnectResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
-			},
-		}
-	}
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		s.pub.Publish(err)
@@ -2920,6 +2992,14 @@ func (s *Server) connect(
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}
+	}
+
+	if !s.mc.IsRegistrationInfoCorrect() {
+		return &pb.ConnectResponse{
+			Response: &pb.ConnectResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
 			},
 		}
 	}

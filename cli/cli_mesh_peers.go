@@ -899,6 +899,8 @@ func allowIncomingResponseToError(
 			resp.AllowIncomingErrorCode,
 			identifier,
 		)
+	case *pb.AllowIncomingResponse_MeshnetErrorCode:
+		return meshnetErrorToError(resp.MeshnetErrorCode)
 	default:
 		return errors.New(AccountInternalError)
 	}
@@ -929,6 +931,8 @@ func denyIncomingResponseToError(
 			resp.DenyIncomingErrorCode,
 			identifier,
 		)
+	case *pb.DenyIncomingResponse_MeshnetErrorCode:
+		return meshnetErrorToError(resp.MeshnetErrorCode)
 	default:
 		return errors.New(AccountInternalError)
 	}
