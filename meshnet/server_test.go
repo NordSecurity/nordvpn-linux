@@ -188,7 +188,7 @@ func newMockedServer(
 	registryApi.ListErr = listErr
 	registryApi.ConfigureErr = configureErr
 
-	configManager := &mock.ConfigManager{}
+	configManager := mock.NewMockConfigManager()
 
 	server := NewServer(
 		meshRenewChecker{},
@@ -236,7 +236,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			inv:                 invitationsAPI{},
 			rc:                  registrationChecker{},
 			reg:                 &mock.RegistryMock{},
-			cm:                  &mock.ConfigManager{},
+			cm:                  mock.NewMockConfigManager(),
 			dns:                 &mock.DNSGetter{},
 			startFileshareError: nil,
 			success:             true,
@@ -248,7 +248,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			inv:                 invitationsAPI{},
 			rc:                  registrationChecker{},
 			reg:                 &mock.RegistryMock{},
-			cm:                  &mock.ConfigManager{},
+			cm:                  mock.NewMockConfigManager(),
 			dns:                 &mock.DNSGetter{},
 			startFileshareError: fmt.Errorf("failed to disable fileshare"),
 			success:             true, // Fileshare shouldn't impact meshnet enabling
@@ -397,7 +397,7 @@ func TestServer_Invite(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			server := NewServer(
 				meshRenewChecker{},
-				&mock.ConfigManager{},
+				mock.NewMockConfigManager(),
 				registrationChecker{},
 				test.inv,
 				&workingNetworker{},
@@ -427,7 +427,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 
 	server := NewServer(
 		meshRenewChecker{},
-		&mock.ConfigManager{},
+		mock.NewMockConfigManager(),
 		registrationChecker{},
 		acceptInvitationsAPI{},
 		&workingNetworker{},
@@ -456,7 +456,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 
 	server := NewServer(
 		meshRenewChecker{},
-		&mock.ConfigManager{},
+		mock.NewMockConfigManager(),
 		registrationChecker{},
 		acceptInvitationsAPI{},
 		&workingNetworker{},
@@ -534,8 +534,8 @@ func TestServer_Connect(t *testing.T) {
 
 	getServer := func() *Server {
 		registryApi := mock.RegistryMock{}
-		configManager := &mock.ConfigManager{}
-		configManager.Cfg = &config.Config{Technology: config.Technology_NORDLYNX}
+		configManager := mock.NewMockConfigManager()
+		configManager.Cfg = &config.Config{Technology: config.Technology_NORDLYNX, MeshDevice: &mesh.Machine{}}
 
 		registryApi.Peers = []mesh.MachinePeer{
 			{
@@ -692,7 +692,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 
 		server := NewServer(
 			meshRenewChecker{},
-			&mock.ConfigManager{},
+			mock.NewMockConfigManager(),
 			registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
@@ -816,7 +816,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 
 		server := NewServer(
 			meshRenewChecker{},
-			&mock.ConfigManager{},
+			mock.NewMockConfigManager(),
 			registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
@@ -922,7 +922,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 
 		server := NewServer(
 			meshRenewChecker{},
-			&mock.ConfigManager{},
+			mock.NewMockConfigManager(),
 			registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
@@ -1028,7 +1028,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 
 		server := NewServer(
 			meshRenewChecker{},
-			&mock.ConfigManager{},
+			mock.NewMockConfigManager(),
 			registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
@@ -1655,7 +1655,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			registryApi.ListErr = test.listErr
 			registryApi.ConfigureErr = test.configureErr
 
-			configManager := &mock.ConfigManager{}
+			configManager := mock.NewMockConfigManager()
 			configManager.SaveErr = test.saveConfigErr
 			configManager.LoadErr = test.loadConfigErr
 
@@ -2019,5 +2019,61 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				assert.True(t, registryApi.CurrentMachine.SupportsRouting)
 			}
 		})
+	}
+}
+
+func TestServer_listPeers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name          string
+		machine       *mesh.Machine
+		loadConfigErr error
+		listErr       error
+		shouldBeErr   bool
+	}{
+		{
+			name:        "success",
+			machine:     &mesh.Machine{},
+			shouldBeErr: false,
+		},
+		{
+			name:        "meshnet is not configured",
+			machine:     nil,
+			shouldBeErr: true,
+		},
+		{
+			name:          "load config error",
+			machine:       &mesh.Machine{},
+			loadConfigErr: fmt.Errorf("failed to load config"),
+			shouldBeErr:   true,
+		},
+		{
+			name:        "list error",
+			machine:     &mesh.Machine{},
+			listErr:     fmt.Errorf("failed to load config"),
+			shouldBeErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		configManager := mock.NewMockConfigManager()
+		configManager.LoadErr = test.loadConfigErr
+		configManager.Cfg.MeshDevice = test.machine
+
+		registryApi := mock.RegistryMock{}
+		registryApi.ListErr = test.listErr
+
+		s := Server{
+			cm:  configManager,
+			reg: &registryApi,
+		}
+
+		_, err := s.listPeers()
+		if test.shouldBeErr {
+			assert.NotNil(t, err)
+		} else {
+			assert.Nil(t, err)
+		}
 	}
 }
