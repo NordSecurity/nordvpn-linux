@@ -60,6 +60,7 @@ type Subscriber struct {
 	connectionStartTime     time.Time
 	connectionToMeshnetPeer bool
 	enabled                 bool
+	initialHeartbeatSent    bool
 	mux                     sync.RWMutex
 }
 
@@ -347,7 +348,15 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 }
 
 func (s *Subscriber) NotifyHeartBeat(period time.Duration) error {
-	return s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes())))
+	if err := s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()))); err != nil {
+		return err
+	}
+	if !s.initialHeartbeatSent {
+		s.mux.Lock()
+		defer s.mux.Unlock()
+		s.initialHeartbeatSent = true
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyDeviceLocation(insights core.Insights) error {
@@ -372,8 +381,11 @@ func (s *Subscriber) NotifyMeshnet(data bool) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesMeshnetEnabledValue(data)); err != nil {
 		return err
 	}
-	// 0 duration indicates that this is not a periodic heart beat
-	return s.NotifyHeartBeat(time.Duration(0))
+	if s.initialHeartbeatSent {
+		// 0 duration indicates that this is not a periodic heart beat
+		return s.NotifyHeartBeat(time.Duration(0))
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyObfuscate(data bool) error {
