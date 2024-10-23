@@ -288,13 +288,10 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}
+	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	daemonEvents.Subscribe(analytics)
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
-
-	// Subscribing after initial settings publishing ensures that heartbeat is not sent with
-	// the first `NotifyMeshnet` call but will be sent on the first heartbeat job.
-	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 
 	if fsystem.NewInstallation {
 		daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "first_open", ItemType: "button", ItemValue: "first_open", FormReference: "daemon"})
