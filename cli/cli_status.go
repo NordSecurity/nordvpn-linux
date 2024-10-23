@@ -63,7 +63,6 @@ func Status(resp *pb.StatusResponse) string {
 		pqLabel := "Disabled"
 		if resp.PostQuantum {
 			pqLabel = "Enabled"
-
 		}
 		b.WriteString(
 			fmt.Sprintf("Post-quantum VPN: %s\n", pqLabel),
