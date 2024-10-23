@@ -57,6 +57,10 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
+	if !r.ncClient.Revoke(internal.IsDevEnv(string(r.environment))) {
+		log.Println(internal.WarningPrefix, "error revoking NC token")
+	}
+
 	if !in.GetPersistToken() {
 		if err := r.credentialsAPI.DeleteToken(tokenData.Token); err != nil {
 			log.Println(internal.ErrorPrefix, "deleting token: ", err)
@@ -93,10 +97,6 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 				}, nil
 			}
 		}
-	}
-
-	if !r.ncClient.Revoke(internal.IsDevEnv(string(r.environment))) {
-		log.Println(internal.WarningPrefix, "error revoking NC token")
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
