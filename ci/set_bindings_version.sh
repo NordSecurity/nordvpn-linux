@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-function get_current_version {
-  partial_module_path=$1
-  # 
-  full_module_path=$(go list -m all | grep $partial_module_path)
-}
-
 declare -A LIB_NAME_TO_PACKAGE=(
     [libtelio]=github.com/NordSecurity/libtelio-go
     [libdrop]=github.com/NordSecurity/libdrop-go

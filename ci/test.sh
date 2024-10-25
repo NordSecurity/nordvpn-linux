@@ -18,11 +18,7 @@ tags="internal"
 # everything
 if [ "${1:-""}" = "full" ]; then
 	# Apply moose patch in case compiling with moose
-	git apply "${WORKDIR}"/contrib/patches/add_moose.diff
-	function revert_moose_patch {
-		git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff
-	}
-	trap revert_moose_patch EXIT
+	source "${WORKDIR}"/ci/add_moose.sh
 
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="root,link"
