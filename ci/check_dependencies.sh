@@ -43,6 +43,7 @@ function fetch_gitlab_artifact() {
   curl \
     --retry 3 \
     --retry-delay 2 \
+    --fail \
     --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" \
     -o "${out_file}" \
     -L "${artifact_url}"
