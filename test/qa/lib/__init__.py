@@ -6,6 +6,8 @@ from enum import Enum
 
 import sh
 
+FILE_HASH_UTILITY = "sha256sum"
+
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.

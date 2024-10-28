@@ -9,7 +9,7 @@ from threading import Thread
 import pytest
 import sh
 
-from . import logging, ssh
+from . import FILE_HASH_UTILITY, logging, ssh
 
 SEND_NOWAIT_SUCCESS_MSG_PATTERN = r'File transfer ?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}) has started in the background.'
 SEND_CANCELED_BY_PEER_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})\] canceled by peer'
@@ -22,7 +22,7 @@ INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN = r"File transfer \[[0-9a-fA-F\-
 MSG_HISTORY_CLEARED = "File transfer history cleared."
 MSG_CANCEL_TRANSFER = "File transfer canceled."
 
-Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames")
+Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
 
 def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: str = "1K") -> Directory:
@@ -48,6 +48,9 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
     paths = []
     transfer_paths = []
     filenames = []
+    filehashes = []
+
+    hash_util = sh.Command(FILE_HASH_UTILITY)
 
     for file_number in range(file_count):
         filename = f"file_{file_number}{name_suffix}"
@@ -64,7 +67,10 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
 
         sh.fallocate("-l", file_size, f"{dir_path}/{filename}")
 
-    return Directory(dir_path, paths, transfer_paths, filenames)
+        hash_output = hash_util(path).strip().split()[0]  # Only take the hash part of the output
+        filehashes.append(hash_output)
+
+    return Directory(dir_path, paths, transfer_paths, filenames, filehashes)
 
 
 def start_transfer(peer_address: str, *filepaths: str) -> sh.RunningCommand:
