@@ -95,7 +95,7 @@ func (n *DbusNotifier) Close() error {
 func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, error) {
 	dbusConn, err := dbus.SessionBusPrivate()
 	defer func() {
-		if err != nil {
+		if err != nil && dbusConn != nil {
 			if err := dbusConn.Close(); err != nil {
 				log.Println("failed to close dbus connection: ", err)
 			}
@@ -103,15 +103,15 @@ func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, e
 	}()
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating D-Bus con: %w", err)
 	}
 
 	if err = dbusConn.Auth(nil); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("authenticating to D-Bus: %w", err)
 	}
 
 	if err = dbusConn.Hello(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("sending D-Bus hello: %w", err)
 	}
 
 	onAction := func(action *notify.ActionInvokedSignal) {
@@ -135,7 +135,7 @@ func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, e
 		}),
 	)
 	defer func() {
-		if err != nil {
+		if err != nil && notifier != nil {
 			if err := notifier.Close(); err != nil {
 				log.Println("failed to close notifier: ", err)
 			}
@@ -143,7 +143,7 @@ func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, e
 	}()
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating new notifier: %w", err)
 	}
 
 	return &DbusNotifier{notifier: notifier}, nil
