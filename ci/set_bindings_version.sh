@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-# source "${WORKDIR}/ci/export_lib_versions.sh"
-
 declare -A LIB_NAME_TO_PACKAGE=(
     [libtelio]=github.com/NordSecurity/libtelio-go
     [libdrop]=github.com/NordSecurity/libdrop-go

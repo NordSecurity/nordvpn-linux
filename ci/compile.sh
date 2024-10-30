@@ -59,6 +59,9 @@ export CGO_LDFLAGS="${CGO_LDFLAGS:-""} -Wl,-z,relro,-z,now"
 # In order to enable additional features, provide `FEATURES` environment variable
 tags="${FEATURES:-"telio drop"}"
 
+source "${WORKDIR}"/ci/set_bindings_version.sh libtelio
+source "${WORKDIR}"/ci/set_bindings_version.sh libdrop
+
 if [[ $tags == *"moose"* ]]; then
 	# Set correct events domain in case compiling with moose
 	if [[ "${ENVIRONMENT}" == "prod" ]]; then
@@ -71,20 +74,8 @@ if [[ $tags == *"moose"* ]]; then
 		-X 'main.EventsDomain=${events_domain:-""}' \
 		-X 'main.EventsSubdomain=${EVENTS_SUBDOMAIN:-""}'"
 
-	# Apply moose patch in case compiling with moose
-	git apply "${WORKDIR}"/contrib/patches/add_moose.diff || \
-		# If applying fails try reverting and applying again
-		(git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff && \
-		git apply "${WORKDIR}"/contrib/patches/add_moose.diff)
-	function revert_moose_patch {
-		cd "${WORKDIR}"
-		git apply -R "${WORKDIR}"/contrib/patches/add_moose.diff
-	}
-	trap revert_moose_patch EXIT
+	source "${WORKDIR}"/ci/add_moose.sh
 fi
-
-source "${WORKDIR}"/ci/set_bindings_version.sh libtelio
-source "${WORKDIR}"/ci/set_bindings_version.sh libdrop
 
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
