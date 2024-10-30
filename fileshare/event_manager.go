@@ -65,8 +65,9 @@ func NewEventManager(
 	osInfo OsInfo,
 	filesystem Filesystem,
 	defaultDownloadDir string,
+	ch <-chan Event,
 ) *EventManager {
-	return &EventManager{
+	em := &EventManager{
 		isProd:                isProd,
 		liveTransfers:         map[string]*LiveTransfer{},
 		transferSubscriptions: map[string]chan TransferProgressInfo{},
@@ -75,6 +76,16 @@ func NewEventManager(
 		filesystem:            filesystem,
 		defaultDownloadDir:    defaultDownloadDir,
 	}
+	go func() {
+		for {
+			event := <-ch
+			em.mutex.Lock()
+			em.OnEvent(event)
+			em.mutex.Unlock()
+		}
+	}()
+
+	return em
 }
 
 // SetFileshare must be called before using event manager.
@@ -128,9 +139,6 @@ func (em *EventManager) DisableNotifications() error {
 
 // OnEvent processes events and handles live transfer state.
 func (em *EventManager) OnEvent(event Event) {
-	em.mutex.Lock()
-	defer em.mutex.Unlock()
-
 	if !em.isProd {
 		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", EventToString(event))
 	}
