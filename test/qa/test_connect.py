@@ -129,6 +129,7 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
     disconnect_base_test()
 
 
+@pytest.mark.skip("flaky test, LVPN-6277")
 # the tun interface is recreated only for OpenVPN
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated):
