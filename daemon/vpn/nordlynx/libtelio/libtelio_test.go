@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/netip"
 	"sync"
 	"testing"
 	"time"
 
 	teliogo "github.com/NordSecurity/libtelio-go/v5"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -27,6 +29,25 @@ const (
 	proxyingPersistentKeepaliveSeconds = uint32(25)
 	stunPersistentKeepaliveSeconds     = uint32(25)
 )
+
+type mockLib struct{}
+
+func (mockLib) ConnectToExitNode(teliogo.PublicKey, *[]teliogo.IpNet, *teliogo.SocketAddr) error {
+	return nil
+}
+func (mockLib) ConnectToExitNodePostquantum(
+	*string, teliogo.PublicKey, *[]teliogo.IpNet, teliogo.SocketAddr) error {
+	return nil
+}
+func (mockLib) DisconnectFromExitNodes() error                                       { return nil }
+func (mockLib) SetMeshnetOff() error                                                 { return nil }
+func (mockLib) NotifyNetworkChange(string) error                                     { return nil }
+func (mockLib) SetMeshnet(teliogo.Config) error                                      { return nil }
+func (mockLib) GetStatusMap() []teliogo.TelioNode                                    { return nil }
+func (mockLib) StartNamed(teliogo.SecretKey, teliogo.TelioAdapterType, string) error { return nil }
+func (mockLib) Stop() error                                                          { return nil }
+func (mockLib) SetFwmark(uint32) error                                               { return nil }
+func (mockLib) SetSecretKey(teliogo.SecretKey) error                                 { return nil }
 
 func TestIsConnected(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -69,7 +90,7 @@ func TestIsConnected(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ch := make(chan state)
+			ch := make(chan state, 1)
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
@@ -346,4 +367,126 @@ func Test_maskPublicKey(t *testing.T) {
 	err = json.Compact(buf, []byte(expectedMaskedEventText))
 	assert.NoError(t, err)
 	assert.Equal(t, buf.String(), maskedEventText)
+}
+
+type subscriber struct {
+	mu      sync.RWMutex
+	counter int
+}
+
+func (s *subscriber) NotifyConnect(events.DataConnect) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.counter++
+	return nil
+}
+func (s *subscriber) NotifyDisconnect(events.DataDisconnect) error {
+	return s.NotifyConnect(events.DataConnect{})
+}
+
+func (s *subscriber) Counter() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.counter
+}
+
+func TestLibtelio_connect(t *testing.T) {
+	category.Set(t, category.Unit)
+	for _, tt := range []struct {
+		name   string
+		err    error
+		active bool
+		events int
+		body   func(context.CancelFunc, chan<- state, *sync.WaitGroup)
+	}{
+		{
+			name:   "ctx done before connection established",
+			err:    context.Canceled,
+			active: false,
+			events: 0,
+			body: func(cf context.CancelFunc, _ chan<- state, _ *sync.WaitGroup) {
+				cf()
+			},
+		},
+		{
+			name:   "successful connection",
+			err:    nil,
+			active: true,
+			events: 1,
+			body: func(cf context.CancelFunc, events chan<- state, _ *sync.WaitGroup) {
+				events <- state{
+					State:  teliogo.NodeStateConnected,
+					IsExit: true,
+				}
+			},
+		},
+		{
+			name:   "ctx done after connection established has no impact",
+			err:    nil,
+			active: true,
+			events: 4,
+			body: func(cf context.CancelFunc, events chan<- state, wg *sync.WaitGroup) {
+				events <- state{
+					State:  teliogo.NodeStateConnected,
+					IsExit: true,
+				}
+				// make sure context is canceled after function exited
+				wg.Wait()
+				cf()
+
+				// Check that events are still received
+				events <- state{
+					State:  teliogo.NodeStateDisconnected,
+					IsExit: true,
+				}
+				events <- state{
+					State:  teliogo.NodeStateConnected,
+					IsExit: true,
+				}
+				events <- state{
+					State:  teliogo.NodeStateDisconnected,
+					IsExit: true,
+				}
+			},
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			events := make(chan state, 1)
+			pub := vpn.NewInternalVPNEvents()
+			sub := &subscriber{}
+			pub.Subscribe(sub)
+			// Create instance
+			libtelio := &Libtelio{
+				lib:             mockLib{},
+				events:          events,
+				state:           vpn.ExitedState,
+				fwmark:          123,
+				eventsPublisher: pub,
+			}
+
+			// connect ctx
+			ctx, cancel := context.WithCancel(context.Background())
+			startWg := sync.WaitGroup{}
+			endWg := sync.WaitGroup{}
+			startWg.Add(1)
+			endWg.Add(1)
+			var err error
+			go func() {
+				startWg.Done()
+				err = libtelio.connect(ctx, netip.Addr{}, "", false)
+				endWg.Done()
+			}()
+
+			// Wait until goroutine starts
+			startWg.Wait()
+
+			tt.body(cancel, events, &endWg)
+
+			// Wait until goroutine stops
+			endWg.Wait()
+			assert.ErrorIs(t, tt.err, err)
+			assert.Equal(t, tt.active, libtelio.active)
+			assert.Equal(t, tt.events, sub.Counter())
+		})
+	}
 }
