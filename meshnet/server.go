@@ -3203,6 +3203,10 @@ func (s *Server) listPeers() (mesh.MachinePeers, error) {
 		return nil, fmt.Errorf("reading configuration when listing peers: %w", err)
 	}
 
+	if cfg.MeshDevice == nil {
+		return nil, fmt.Errorf("meshnet is not configured")
+	}
+
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {

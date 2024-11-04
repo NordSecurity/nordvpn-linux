@@ -39,9 +39,7 @@ func (m *ConfigManager) Load(c *config.Config) error {
 	if m.Cfg == nil {
 		m.Cfg = &config.Config{}
 	}
-	if m.Cfg.MeshDevice == nil {
-		m.Cfg.MeshDevice = &mesh.Machine{}
-	}
+
 	*c = *m.Cfg
 	return nil
 }
