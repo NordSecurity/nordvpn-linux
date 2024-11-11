@@ -208,7 +208,7 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     # │       └── file
 
     wdir = fileshare.create_directory(0)
-    wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path, file_size="128M")
+    wfolder = fileshare.create_directory(2, "tmp", parent_dir=wdir.dir_path, file_size="128M")
 
     if filesystem_entity == fileshare.FileSystemEntity.FILE:
         filepath = wfolder.paths[0]
@@ -274,7 +274,6 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
         assert fileshare.validate_transfer_progress(t_progress_interactive)
 
     assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder], ssh_client)
-    ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/{wdir.filenames[0]}")
 
     assert command_handle.is_alive() is False
     assert command_handle.exit_code == 0
@@ -283,6 +282,8 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     assert "downloaded" in transfer
 
     assert "uploaded" in sh.nordvpn.fileshare.list(local_transfer_id)
+    shutil.rmtree(wdir.dir_path)
+    ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/*tmp*")
 
 
 @pytest.mark.parametrize("path_flag", [True, False])

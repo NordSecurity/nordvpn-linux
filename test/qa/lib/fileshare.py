@@ -53,7 +53,7 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
     hash_util = sh.Command(FILE_HASH_UTILITY)
 
     for file_number in range(file_count):
-        filename = f"file_{file_number}{name_suffix}"
+        filename = f"file_tmp_{file_number}{name_suffix}"
         path = f"{dir_path}/{filename}"
         paths.append(path)
         # in transfer, files are displayed with leading directory only, i.e /tmp/dir/file becomes dir/file
