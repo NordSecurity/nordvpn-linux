@@ -453,8 +453,15 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
 
     assert peer_transfer_id is not None, "transfer was not received by peer"
 
+    transfer_paths = \
+        wfolder_1.filenames + \
+        wfolder_2.transfer_paths + \
+        wfolder_3.transfer_paths + \
+        wfolder_4.transfer_paths + \
+        wfolder_5.transfer_paths
+
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
-    assert fileshare.for_all_files_in_transfer(transfer, wdir.transfer_paths, lambda file_entry: "request sent" in file_entry)
+    assert fileshare.for_all_files_in_transfer(transfer, transfer_paths, lambda file_entry: "request sent" in file_entry)
 
     t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wdir.transfer_paths[2]}")
 
