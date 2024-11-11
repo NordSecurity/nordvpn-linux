@@ -207,8 +207,6 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     # │       ├── file
     # │       └── file
 
-    wdir = fileshare.create_directory(1, file_size="128M")
-
     wdir = fileshare.create_directory(0)
     wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path, file_size="128M")
 
@@ -275,7 +273,7 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     if not background_accept:
         assert fileshare.validate_transfer_progress(t_progress_interactive)
 
-    assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wdir], ssh_client)
+    assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder], ssh_client)
     ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/{wdir.filenames[0]}")
 
     assert command_handle.is_alive() is False
