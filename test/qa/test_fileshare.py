@@ -417,6 +417,18 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     # │       └── file
     # │       └── file
 
+    file_size = "128M"
+
+    wfolder_1 = fileshare.create_directory(2, "1", file_size=file_size)
+    wfolder_2 = fileshare.create_directory(2, "2", file_size=file_size)
+    wfolder_3 = fileshare.create_directory(2, "3")
+
+    wdir_1 = fileshare.create_directory(0)
+    wfolder_4 = fileshare.create_directory(2, "4", wdir_1.dir_path)
+
+    wdir_2 = fileshare.create_directory(0)
+    wfolder_5 = fileshare.create_directory(2, "5", wdir_2.dir_path)
+
     if background:
         output = sh.nordvpn.fileshare.send("--background", peer_address, wdir.dir_path).stdout.decode("utf-8")
         assert len(re.findall(r'File transfer ?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}) has started in the background.', output)) > 0
