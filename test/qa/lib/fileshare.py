@@ -346,3 +346,18 @@ def files_from_transfer_exist_in_filesystem(transfer_id: str, dir_list: list[Dir
                 return False
 
     return True
+
+
+class FileSystemEntity(Enum):
+    """
+    Used to define transfer type.
+
+    Enumeration for representing types of file system entities.
+    """
+    FILE = "file"
+    FOLDER_WITH_FILES = "folder"
+    DIRECTORY_WITH_FOLDERS = "directory"
+    FILES = "files"
+
+    def __str__(self):
+        return self.value

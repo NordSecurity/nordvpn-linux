@@ -197,17 +197,36 @@ def test_accept(accept_directories):
 @pytest.mark.parametrize("background_send", [True, False])
 @pytest.mark.parametrize("background_accept", ["", "--background"])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
-def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, path_flag: str, background_accept: str):
+@pytest.mark.parametrize("filesystem_entity", list(fileshare.FileSystemEntity))
+def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, background_send: bool, peer_name: meshnet.PeerName, path_flag: str, background_accept: str):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
+
+    # .
+    # ├── wdir
+    # │   └── wfolder
+    # │       ├── file
+    # │       └── file
 
     wdir = fileshare.create_directory(1, file_size="128M")
 
-    filepath = wdir.paths[0]
+    wdir = fileshare.create_directory(0)
+    wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path, file_size="128M")
+
+    if filesystem_entity == fileshare.FileSystemEntity.FILE:
+        filepath = wfolder.paths[0]
+    elif filesystem_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
+        filepath = wfolder.dir_path
+    elif filesystem_entity == fileshare.FileSystemEntity.DIRECTORY_WITH_FOLDERS:
+        filepath = wdir.dir_path
+    elif filesystem_entity == fileshare.FileSystemEntity.FILES:
+        filepath = wfolder.paths
 
     if background_send:
         command_handle = sh.nordvpn.fileshare.send("--background", peer_address, filepath)
         output = command_handle.stdout.decode("utf-8")
         assert len(re.findall(fileshare.SEND_NOWAIT_SUCCESS_MSG_PATTERN, output)) > 0
+    elif filesystem_entity == fileshare.FileSystemEntity.FILES:
+        command_handle = fileshare.start_transfer(peer_address, *filepath)
     else:
         command_handle = fileshare.start_transfer(peer_address, filepath)
 
