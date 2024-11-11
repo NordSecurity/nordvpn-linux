@@ -278,8 +278,11 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     assert command_handle.is_alive() is False
     assert command_handle.exit_code == 0
 
-    transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
-    assert "downloaded" in transfer
+    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    assert "completed" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id)
+
+    transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
+    assert "completed" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id)
 
     assert "uploaded" in sh.nordvpn.fileshare.list(local_transfer_id)
     shutil.rmtree(wdir.dir_path)
