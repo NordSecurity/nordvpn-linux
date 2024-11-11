@@ -196,9 +196,9 @@ def test_accept(accept_directories):
 @pytest.mark.parametrize("path_flag", [True, False])
 @pytest.mark.parametrize("background_send", [True, False])
 @pytest.mark.parametrize("background_accept", ["", "--background"])
-@pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 @pytest.mark.parametrize("filesystem_entity", list(fileshare.FileSystemEntity))
-def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, background_send: bool, peer_name: meshnet.PeerName, path_flag: str, background_accept: str):
+def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, background_send: bool, path_flag: str, background_accept: str):
+    peer_name = random.choice(list(meshnet.PeerName)[:-1])
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     # .
