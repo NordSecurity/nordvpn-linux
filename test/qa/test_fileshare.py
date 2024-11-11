@@ -256,8 +256,7 @@ def test_fileshare_transfer(background_send: bool, peer_name: meshnet.PeerName, 
     if not background_accept:
         assert fileshare.validate_transfer_progress(t_progress_interactive)
 
-    # the following will fail, if file is not found or if hash mismatches
-    assert wdir.filehashes[0] in ssh_client.io.get_file_hash(f"{peer_filepath}/{wdir.filenames[0]}")
+    assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wdir], ssh_client)
     ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/{wdir.filenames[0]}")
 
     assert command_handle.is_alive() is False
@@ -356,12 +355,7 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
     if not background_accept:
         assert fileshare.validate_transfer_progress(t_progress_interactive)
 
-    assert dir2.filehashes[0] in ssh_client.io.get_file_hash(f"{peer_filepath}/{dir2.transfer_paths[0]}")
-    assert dir2.filehashes[1] in ssh_client.io.get_file_hash(f"{peer_filepath}/{dir2.transfer_paths[1]}")
-    assert dir3.filehashes[0] in ssh_client.io.get_file_hash(f"{peer_filepath}/{dir3.transfer_paths[0]}")
-    assert dir3.filehashes[1] in ssh_client.io.get_file_hash(f"{peer_filepath}/{dir3.transfer_paths[1]}")
-    assert dir4.filehashes[0] in ssh_client.io.get_file_hash(f"{peer_filepath}/{dir4.filenames[0]}")
-    assert dir4.filehashes[1] in ssh_client.io.get_file_hash(f"{peer_filepath}/{dir4.filenames[1]}")
+    assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [dir2, dir3, dir4], ssh_client)
 
     files_to_rm = [os.path.basename(dir2.dir_path), os.path.basename(dir3.dir_path), dir4.filenames[0], dir4.filenames[1]]
     for file in files_to_rm:
@@ -424,7 +418,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
 
-    assert wdir.filehashes[2] in ssh_client.io.get_file_hash(f"{workdir}/{wdir.transfer_paths[2]}")
+    assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wdir], ssh_client)
     ssh_client.exec_command(f"sudo rm -rf {workdir}/{os.path.basename(wdir.dir_path)}")
 
     if not background:
@@ -1137,7 +1131,7 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
             break
 
     peer_filepath = "~/Downloads/"
-    assert wdir.filehashes[0] in ssh_client.io.get_file_hash(f"{peer_filepath}/{wdir.filenames[0]}")
+    assert fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client)
     ssh_client.exec_command(f"rm -rf {peer_filepath}/{wdir.filenames[0]}")
 
     for permission in permissions:

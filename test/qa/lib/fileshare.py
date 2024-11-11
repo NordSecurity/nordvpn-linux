@@ -318,3 +318,31 @@ def validate_transfer_progress_bg(transfer_id: str, ssh_client: ssh.Ssh, expecte
             retry += 1
             time.sleep(1)
     return increasing
+
+
+def files_from_transfer_exist_in_filesystem(transfer_id: str, dir_list: list[Directory],  ssh_client: ssh.Ssh = None) -> bool:
+    """
+    Verifies if all files from a specific NordVPN transfer are present in filesystem, and if same actual files were received, by checking hash.
+
+    Args:
+        transfer_id (str): The ID of the NordVPN file transfer to check.
+        dir_list (list[Directory]): A list of Directory objects, each containing file hashes to check against.
+        ssh_client (ssh.Ssh, optional): An SSH client used to interact with the remote system.
+                                        If None, assumes local file access is not needed.
+
+    Returns:
+        bool: True if all files in the transfer are found in `dir_list` based on their hashes; False otherwise.
+    """
+    if ssh_client is not None:
+        transfers = ssh_client.exec_command("nordvpn fileshare list")
+        download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
+
+        files_in_transfer = [line.split()[0] for line in ssh_client.exec_command(f"nordvpn fileshare list {transfer_id}").split("\n") if "downloaded" in line]
+        for file in files_in_transfer:
+            try:
+                file_hash = ssh_client.io.get_file_hash(f"{download_location}/{file}")
+                assert any(file_hash in directory.filehashes for directory in dir_list)
+            except RuntimeError:
+                return False
+
+    return True
