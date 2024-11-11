@@ -393,7 +393,8 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
 
 
 @pytest.mark.parametrize("background", [True, False])
-def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
+@pytest.mark.parametrize("accept_entity", list(fileshare.FileSystemEntity)[:-1])
+def test_fileshare_transfer_multiple_files_selective_accept(background: bool, accept_entity: fileshare.FileSystemEntity):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
     wdir = fileshare.create_directory(4, file_size="32M")
@@ -424,7 +425,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     wfolder_3 = fileshare.create_directory(2, "3")
 
     wdir_1 = fileshare.create_directory(0)
-    wfolder_4 = fileshare.create_directory(2, "4", wdir_1.dir_path)
+    wfolder_4 = fileshare.create_directory(2, "4", wdir_1.dir_path, file_size)
 
     wdir_2 = fileshare.create_directory(0)
     wfolder_5 = fileshare.create_directory(2, "5", wdir_2.dir_path)
@@ -453,7 +454,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
 
     assert peer_transfer_id is not None, "transfer was not received by peer"
 
-    transfer_paths = \
+    transfer_paths: list = \
         wfolder_1.filenames + \
         wfolder_2.transfer_paths + \
         wfolder_3.transfer_paths + \
@@ -463,7 +464,40 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, transfer_paths, lambda file_entry: "request sent" in file_entry)
 
-    t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wdir.transfer_paths[2]}")
+    if accept_entity == fileshare.FileSystemEntity.FILE:
+        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wfolder_1.filenames[1]}")
+
+        transfer_paths.remove(wfolder_1.filenames[1])
+        canceled_transfer_paths = transfer_paths
+
+        transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        assert fileshare.for_all_files_in_transfer(transfer, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer, [wfolder_1.filenames[1]], lambda file_entry: "uploaded" in file_entry)
+
+        assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder_1], ssh_client)
+    elif accept_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
+        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {os.path.basename(wfolder_2.dir_path)}")
+
+        [transfer_paths.remove(path) for path in wfolder_2.transfer_paths]
+        canceled_transfer_paths = transfer_paths
+
+        transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        assert fileshare.for_all_files_in_transfer(transfer, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer, wfolder_2.transfer_paths, lambda file_entry: "uploaded" in file_entry)
+
+        assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder_2], ssh_client)
+    else:
+        # Directory
+        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {os.path.basename(wdir_1.dir_path)}")
+
+        [transfer_paths.remove(path) for path in wfolder_4.transfer_paths]
+        canceled_transfer_paths = transfer_paths
+
+        transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        assert fileshare.for_all_files_in_transfer(transfer, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer, wfolder_4.transfer_paths, lambda file_entry: "uploaded" in file_entry)
+
+        assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder_4], ssh_client)
 
     time.sleep(1)
 
@@ -485,7 +519,6 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool):
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
 
-    assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wdir], ssh_client)
     ssh_client.exec_command(f"sudo rm -rf {workdir}/{os.path.basename(wdir.dir_path)}")
 
     if not background:
