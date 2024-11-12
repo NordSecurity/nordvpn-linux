@@ -1047,10 +1047,11 @@ def test_autoaccept():
 
     host_address = peer_list.get_this_device().ip
 
-    filename = "autoaccepted"
-    peer_file_path = f"/home/qapeer/{filename}"
-    ssh_client.exec_command(f"echo > {peer_file_path}")
-    send_message = ssh_client.exec_command(f"nordvpn fileshare send --background {host_address} {peer_file_path}")
+    wdir = ssh_client.io.create_directory(1)
+    file_path = wdir.paths[0]
+    filename = wdir.filenames[0]
+
+    send_message = ssh_client.exec_command(f"nordvpn fileshare send --background {host_address} {file_path}")
     transfer_id = re.findall(f"{fileshare.TRANSFER_ID_REGEX}", send_message)[0]
 
     def check_if_file_received():
