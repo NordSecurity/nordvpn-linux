@@ -344,7 +344,18 @@ def files_from_transfer_exist_in_filesystem(transfer_id: str, dir_list: list[Dir
                 assert any(file_hash in directory.filehashes for directory in dir_list)
             except RuntimeError:
                 return False
+    else:
+        transfers = sh.nordvpn.fileshare.list(_tty_out=False)
+        download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
 
+        files_in_transfer = [line.split()[0] for line in sh.nordvpn.fileshare.list(transfer_id, tty_out=False).split("\n") if "downloaded" in line]
+        for file in files_in_transfer:
+            try:
+                hash_util = sh.Command(FILE_HASH_UTILITY)
+                file_hash = hash_util(f"{download_location}/{file}").strip().split()[0]
+                assert any(file_hash in directory.filehashes for directory in dir_list)
+            except RuntimeError:
+                return False
     return True
 
 
