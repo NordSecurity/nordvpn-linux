@@ -1093,6 +1093,10 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
     assert meshnet.MSG_PEER_AUTOACCEPT_DENY_SUCCESS % peer_hostname in msg
     assert meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().accept_fileshare_automatically is False
 
+    shutil.rmtree('/home/qa/Downloads')
+    os.system(f"sudo mkdir -p -m 0777 {default_download_directory}")
+    ssh_client.exec_command(f"rm -rf {wdir.dir_path}")
+
 
 def test_peers_autocomplete():
     peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
