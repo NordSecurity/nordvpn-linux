@@ -652,6 +652,10 @@ def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, send
         transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
         assert "canceled by peer" in fileshare.find_transfer_by_id(transfers, local_transfer_id)
 
+    if transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
+        shutil.rmtree(wfolder.dir_path)
+    shutil.rmtree(wdir.dir_path)
+
 
 @pytest.mark.parametrize("sender_cancels", [True, False])
 def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
