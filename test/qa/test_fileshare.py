@@ -1045,8 +1045,6 @@ def test_autoaccept():
     assert meshnet.MSG_PEER_AUTOACCEPT_ALLOW_SUCCESS % peer_hostname in msg
     assert meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().accept_fileshare_automatically is True
 
-    time.sleep(10)
-
     host_address = peer_list.get_this_device().ip
 
     filename = "autoaccepted"
