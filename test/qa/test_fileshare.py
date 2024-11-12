@@ -592,6 +592,10 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "canceled" in fileshare.find_transfer_by_id(transfers, local_transfer_id)
 
+    if transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
+        shutil.rmtree(wfolder.dir_path)
+    shutil.rmtree(wdir.dir_path)
+
 
 @pytest.mark.parametrize("background", [False, True])
 @pytest.mark.parametrize("sender_cancels", [False, True])
