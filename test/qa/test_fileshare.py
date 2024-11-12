@@ -1036,7 +1036,8 @@ def test_accept_destination_directory_not_a_directory():
     sh.nordvpn.fileshare.cancel(local_transfer_id)
 
 
-def test_autoaccept():
+@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity))
+def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
 
     peer_name = peer_list.get_internal_peer().ip
@@ -1047,27 +1048,40 @@ def test_autoaccept():
 
     host_address = peer_list.get_this_device().ip
 
-    wdir = ssh_client.io.create_directory(1)
-    file_path = wdir.paths[0]
-    filename = wdir.filenames[0]
+    wdir = ssh_client.io.create_directory(0)
+    wfolder = ssh_client.io.create_directory(2, parent_dir=wdir.dir_path)
 
-    send_message = ssh_client.exec_command(f"nordvpn fileshare send --background {host_address} {file_path}")
+    if transfer_entity == fileshare.FileSystemEntity.FILE:
+        path = wfolder.paths[0]
+        expected_files = [wfolder.filenames[0]]
+    elif transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
+        wfolder = ssh_client.io.create_directory(2)
+        path = wfolder.dir_path
+        expected_files = wfolder.transfer_paths
+    elif transfer_entity == fileshare.FileSystemEntity.DIRECTORY_WITH_FOLDERS:
+        path = wdir.dir_path
+        expected_files = wfolder.transfer_paths
+    else: # fileshare.FileSystemEntity.FILES
+        path = " ".join(wfolder.paths)
+        expected_files = wfolder.filenames
+
+    send_message = ssh_client.exec_command(f"nordvpn fileshare send --background {host_address} {path}")
+
     transfer_id = re.findall(f"{fileshare.TRANSFER_ID_REGEX}", send_message)[0]
 
-    def check_if_file_received():
-        last_transfer_id = fileshare.get_last_transfer(outgoing=False)
-        transfer = sh.nordvpn.fileshare.list(last_transfer_id).stdout.decode("utf-8")
-        transfer_lines = transfer.split("\n")
-        file_entry = fileshare.find_file_in_transfer(filename, transfer_lines)
-        return file_entry is not None and "downloaded" in file_entry
-
-    file_received = None
-    for file_received in poll(check_if_file_received, attempts=10):
-        if file_received is True:
+    for peer_got_transfer in poll(lambda: (transfer_id in sh.nordvpn.fileshare.list())):
+        if peer_got_transfer:
             break
 
-    assert file_received
-    assert os.path.isfile(f"{default_download_directory}/{filename}")
+    assert peer_got_transfer, "transfer was not received by peer"
+
+    transfer = sh.nordvpn.fileshare.list(transfer_id)
+    assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "downloaded" in file_entry)
+
+    transfer = ssh_client.exec_command(f"nordvpn fileshare list {transfer_id}")
+    assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "uploaded" in file_entry)
+
+    #assert os.path.isfile(f"{default_download_directory}/{filename}")
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id)
