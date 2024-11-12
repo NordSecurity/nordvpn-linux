@@ -574,23 +574,33 @@ def test_fileshare_graceful_cancel():
     assert "canceled" in fileshare.find_transfer_by_id(transfers, local_transfer_id)
 
 
-@pytest.mark.parametrize("background", [True, False])
-@pytest.mark.parametrize("single_file", [True, False])
-@pytest.mark.parametrize("sender_cancels", [True, False])
-def test_fileshare_cancel_transfer(background: bool, single_file: bool, sender_cancels: bool):
+@pytest.mark.parametrize("background", [False, True])
+@pytest.mark.parametrize("sender_cancels", [False, True])
+@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity))
+def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, sender_cancels: bool):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
-    if single_file:
-        d = fileshare.create_directory(1)
-        path = d.paths[0]
-        expected_files = [d.filenames[0]]
-    else:
-        d = fileshare.create_directory(5)
-        path = d.dir_path
-        expected_files = d.transfer_paths
+    wdir = fileshare.create_directory(0)
+    wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path)
+
+    if transfer_entity == fileshare.FileSystemEntity.FILE:
+        path = wfolder.paths[0]
+        expected_files = [wfolder.filenames[0]]
+    elif transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
+        wfolder = fileshare.create_directory(2)
+        path = wfolder.dir_path
+        expected_files = wfolder.transfer_paths
+    elif transfer_entity == fileshare.FileSystemEntity.DIRECTORY_WITH_FOLDERS:
+        path = wdir.dir_path
+        expected_files = wfolder.transfer_paths
+    else: # fileshare.FileSystemEntity.FILES
+        path = wfolder.paths
+        expected_files = wfolder.filenames
 
     if background:
         command_handle = sh.nordvpn.fileshare.send("--background", peer_address, path)
+    elif not background and transfer_entity == fileshare.FileSystemEntity.FILES:
+        command_handle = fileshare.start_transfer(peer_address, *path)
     else:
         command_handle = fileshare.start_transfer(peer_address, path)
 
@@ -611,7 +621,7 @@ def test_fileshare_cancel_transfer(background: bool, single_file: bool, sender_c
         if not background:
             output = command_handle.stdout.decode("utf-8")
             assert len(re.findall(fileshare.SEND_CANCELED_BY_OTHER_PROCESS_PATTERN, output)) > 0
-    else:  # receiver cancels
+    else: # receiver cancels
         output = ssh_client.exec_command(f"nordvpn fileshare cancel {peer_transfer_id}")
         assert fileshare.CANCEL_SUCCESS_SENDER_SIDE_MSG in output
         if not background:
