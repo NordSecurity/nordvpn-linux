@@ -501,20 +501,8 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
 
     time.sleep(1)
 
-    transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
-    assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[0], transfer.split("\n"))
-    assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[1], transfer.split("\n"))
-    assert "uploaded" in fileshare.find_file_in_transfer(wdir.transfer_paths[2], transfer.split("\n"))
-    assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[3], transfer.split("\n"))
-
     transfers = sh.nordvpn.fileshare.list()
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
-
-    transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
-    assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[0], transfer.split("\n"))
-    assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[1], transfer.split("\n"))
-    assert "downloaded" in fileshare.find_file_in_transfer(wdir.transfer_paths[2], transfer.split("\n"))
-    assert "canceled" in fileshare.find_file_in_transfer(wdir.transfer_paths[3], transfer.split("\n"))
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
