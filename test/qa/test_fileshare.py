@@ -462,19 +462,21 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
     transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
     assert fileshare.for_all_files_in_transfer(transfer, transfer_paths, lambda file_entry: "request sent" in file_entry)
 
+    peer_filepath = "/tmp/"
     if accept_entity == fileshare.FileSystemEntity.FILE:
-        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {wfolder_1.filenames[1]}")
+        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {peer_filepath} {peer_transfer_id} {wfolder_1.filenames[1]}")
 
         transfer_paths.remove(wfolder_1.filenames[1])
         canceled_transfer_paths = transfer_paths
 
         transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+
         assert fileshare.for_all_files_in_transfer(transfer, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
         assert fileshare.for_all_files_in_transfer(transfer, [wfolder_1.filenames[1]], lambda file_entry: "uploaded" in file_entry)
 
         assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder_1], ssh_client)
     elif accept_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
-        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {os.path.basename(wfolder_2.dir_path)}")
+        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {peer_filepath} {peer_transfer_id} {os.path.basename(wfolder_2.dir_path)}")
 
         [transfer_paths.remove(path) for path in wfolder_2.transfer_paths]
         canceled_transfer_paths = transfer_paths
@@ -486,7 +488,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder_2], ssh_client)
     else:
         # Directory
-        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id} {os.path.basename(wdir_1.dir_path)}")
+        t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept --path {peer_filepath} {peer_transfer_id} {os.path.basename(wdir_1.dir_path)}")
 
         [transfer_paths.remove(path) for path in wfolder_4.transfer_paths]
         canceled_transfer_paths = transfer_paths
@@ -511,6 +513,11 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         assert command_handle.exit_code == 0
 
     assert fileshare.validate_transfer_progress(t_progress_interactive)
+
+    for entity in [wfolder_1, wfolder_2, wfolder_3, wdir_1, wdir_2]:
+        shutil.rmtree(entity.dir_path)
+
+    ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/*tmp*")
 
 
 def test_fileshare_graceful_cancel():
