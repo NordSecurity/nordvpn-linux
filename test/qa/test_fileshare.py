@@ -469,10 +469,13 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         transfer_paths.remove(wfolder_1.filenames[1])
         canceled_transfer_paths = transfer_paths
 
-        transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        transfer_local = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        assert fileshare.for_all_files_in_transfer(transfer_local, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer_local, [wfolder_1.filenames[1]], lambda file_entry: "uploaded" in file_entry)
 
-        assert fileshare.for_all_files_in_transfer(transfer, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
-        assert fileshare.for_all_files_in_transfer(transfer, [wfolder_1.filenames[1]], lambda file_entry: "uploaded" in file_entry)
+        transfer_remote = ssh_client.exec_command(f"nordvpn fileshare list {local_transfer_id}")
+        assert fileshare.for_all_files_in_transfer(transfer_remote, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer_remote, [wfolder_1.filenames[1]], lambda file_entry: "downloaded" in file_entry)
 
         assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder_1], ssh_client)
     elif accept_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
@@ -481,9 +484,13 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         [transfer_paths.remove(path) for path in wfolder_2.transfer_paths]
         canceled_transfer_paths = transfer_paths
 
-        transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
-        assert fileshare.for_all_files_in_transfer(transfer, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
-        assert fileshare.for_all_files_in_transfer(transfer, wfolder_2.transfer_paths, lambda file_entry: "uploaded" in file_entry)
+        transfer_local = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        assert fileshare.for_all_files_in_transfer(transfer_local, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer_local, wfolder_2.transfer_paths, lambda file_entry: "uploaded" in file_entry)
+
+        transfer_remote = ssh_client.exec_command(f"nordvpn fileshare list {local_transfer_id}")
+        assert fileshare.for_all_files_in_transfer(transfer_remote, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer_remote, wfolder_2.transfer_paths, lambda file_entry: "downloaded" in file_entry)
 
         assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder_2], ssh_client)
     else:
@@ -493,9 +500,13 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
         [transfer_paths.remove(path) for path in wfolder_4.transfer_paths]
         canceled_transfer_paths = transfer_paths
 
-        transfer = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
-        assert fileshare.for_all_files_in_transfer(transfer, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
-        assert fileshare.for_all_files_in_transfer(transfer, wfolder_4.transfer_paths, lambda file_entry: "uploaded" in file_entry)
+        transfer_local = sh.nordvpn.fileshare.list(local_transfer_id).stdout.decode("utf-8")
+        assert fileshare.for_all_files_in_transfer(transfer_local, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer_local, wfolder_4.transfer_paths, lambda file_entry: "uploaded" in file_entry)
+
+        transfer_remote = ssh_client.exec_command(f"nordvpn fileshare list {local_transfer_id}")
+        assert fileshare.for_all_files_in_transfer(transfer_remote, canceled_transfer_paths, lambda file_entry: "canceled" in file_entry)
+        assert fileshare.for_all_files_in_transfer(transfer_remote, wfolder_4.transfer_paths, lambda file_entry: "downloaded" in file_entry)
 
         assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder_4], ssh_client)
 
