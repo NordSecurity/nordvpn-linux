@@ -1081,7 +1081,7 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
     transfer = ssh_client.exec_command(f"nordvpn fileshare list {transfer_id}")
     assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "uploaded" in file_entry)
 
-    #assert os.path.isfile(f"{default_download_directory}/{filename}")
+    assert fileshare.files_from_transfer_exist_in_filesystem(transfer_id, [wfolder])
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id)
