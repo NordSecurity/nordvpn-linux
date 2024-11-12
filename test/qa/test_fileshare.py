@@ -397,8 +397,6 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
 def test_fileshare_transfer_multiple_files_selective_accept(background: bool, accept_entity: fileshare.FileSystemEntity):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
-    wdir = fileshare.create_directory(4, file_size="32M")
-
     # .
     # ├── wfolder_1
     # │   ├── file
@@ -506,8 +504,6 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id)
-
-    ssh_client.exec_command(f"sudo rm -rf {workdir}/{os.path.basename(wdir.dir_path)}")
 
     if not background:
         assert fileshare.validate_transfer_progress(command_handle.stdout.decode())
