@@ -68,6 +68,10 @@ if [[ -n ${LATTE:-} ]]; then
     fi
 fi
 
+#TODO: test, then cleanup
+pip install pyinotify pyroute2
+sudo rm -rf "${WORKDIR}/dist/logs/*"
+
 python3 -m pytest -v --timeout 180 -x -rsx --timeout-method=signal -o log_cli=true "${args[@]}"
 
 if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then

@@ -5,9 +5,9 @@ import threading
 import time
 
 import dns.resolver
-import pyinotify
 import pytest
 import sh
+from pyroute2 import IPRoute
 
 from lib import logging, network
 
@@ -49,8 +49,14 @@ def setup_check_internet_connection(request):
     # we want to capture network traffic during test, outside vpn tunnel and inside tunnel;
     # we can use tshark to capture on multiple interfaces - only need to know what is
     # the tun interface name: nordlynx or nordtun? just capture on `any` interface...
+    # but network traffic captured with `any` does not preserve interface info and later
+    # when analyzing captured data is not possible to filter by interface :-/
+    # also, start capturing for non-existing yet interface - not possible;
+    # solution: start netlink event monitor and handle RTM_NEWLINK event.
+    #TODO: cleanup this code after test and proof
 
     # start capture thread
+    threading.Thread(target=monitor_with_netlink, args=(test_name,), daemon=True).start()
     threading.Thread(target=_capture_packets, args=(test_name,), daemon=True).start()
     yield # execute test
 
@@ -74,36 +80,35 @@ def time_str():
 
 
 def _capture_packets(test_name):
-    path = f"{os.environ['WORKDIR']}/dist/logs/{test_name}-{time_str()}"
+    path = f"{os.environ['WORKDIR']}/dist/logs/{test_name}-eth0-{time_str()}"
     # capture traffic on all interfaces and save to file
     sh.dumpcap("-i", "any", "-w", f"{path}.pcap")
+    #_capture_packets_on_interface(test_name, "eth0")
 
 
-def _capture_packets_interface(test_name, interface):
-    path = f"{os.environ['WORKDIR']}/dist/logs/{test_name}-{interface}-{time_str()}"
-    # capture traffic on all interfaces and save to file
-    sh.dumpcap("-i", "any", "-w", f"{path}.pcap")
-
-
-def monitor_network_interfaces(test_name):
-    wm = pyinotify.WatchManager()
-    notifier = pyinotify.Notifier(wm, NetworkInterfaceHandler(test_name))
-    wm.add_watch('/sys/class/net/', pyinotify.IN_CREATE)
-    print("Monitoring for new network interfaces...")
-    notifier.loop()
-
-
-class NetworkInterfaceHandler(pyinotify.ProcessEvent):
-    def __init__(self, test_name):
-        self.test_name = test_name  # Instance variable
-
-    def process_IN_CREATE(self, event):
-        interface = event.name
-        print(f"New network interface detected: {interface}")
-        _capture_packets_interface(self.test_name, interface)
+def _capture_packets_on_interface(test_name, interface):
+    path = f"{os.environ['WORKDIR']}/dist/logs/{test_name}-{interface}-{time_str()}.pcap"
+    print(f"~~~_capture_packets_on_interface to file: {path}")
+    # capture traffic on given interface and save to file
+    #sh.sudo.touch(path)
+    sh.dumpcap("-i", interface, "-w", path)
 
 
 
+def monitor_with_netlink(test_name):
+    ip = IPRoute()
+    ip.bind()
+
+    print("~~~Monitoring network events...")
+    for msg in ip.get():
+        print(f"~~~~~~received msg: {msg}")
+        if msg['event'] == 'RTM_NEWLINK':
+            interface = msg['attrs'][0][1]
+            print(f"~~~~~~~~~New interface detected: {interface}")
+            threading.Thread(target=_capture_packets_on_interface, args=(test_name,interface,), daemon=True).start()
+            #_capture_packets_on_interface(test_name, interface)
+
+    print("~~~Exit monitoring")
 
 
 
