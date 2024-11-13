@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 
 import psutil
@@ -591,6 +592,88 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "canceled" in fileshare.find_transfer_by_id(transfers, local_transfer_id)
+
+    if transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
+        shutil.rmtree(wfolder.dir_path)
+    shutil.rmtree(wdir.dir_path)
+
+
+@pytest.mark.parametrize("sender_cancels", [False])
+@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity))
+def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transfer_entity: fileshare.FileSystemEntity):
+    file_size = "128M"
+    wdir = fileshare.create_directory(0)
+    wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path, file_size=file_size)
+
+    if transfer_entity == fileshare.FileSystemEntity.FILE:
+        path = wfolder.paths[0]
+        expected_files = [wfolder.filenames[0]]
+    elif transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
+        wfolder = fileshare.create_directory(2, file_size=file_size)
+        path = wfolder.dir_path
+        expected_files = wfolder.transfer_paths
+    elif transfer_entity == fileshare.FileSystemEntity.DIRECTORY_WITH_FOLDERS:
+        path = wdir.dir_path
+        expected_files = wfolder.transfer_paths
+    else: # fileshare.FileSystemEntity.FILES
+        path = wfolder.paths
+        expected_files = wfolder.filenames
+
+    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
+
+    if transfer_entity == fileshare.FileSystemEntity.FILES:
+        command_handle = fileshare.start_transfer(peer_address, *path)
+    else:
+        command_handle = fileshare.start_transfer(peer_address, path)
+
+    for transfer_id, _ in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=10):
+        if transfer_id is not None:
+            break
+
+    transfers_local = sh.nordvpn.fileshare.list(_tty_out=False)
+    assert "request sent" in fileshare.find_transfer_by_id(transfers_local, transfer_id)
+
+    transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
+    assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, transfer_id)
+
+    transfer_accept_thread = threading.Thread(target=lambda: ssh_client.exec_command(f"nordvpn fileshare accept {transfer_id}"))
+    transfer_accept_thread.start()
+
+    for transfer_in_progress in poll(lambda: "downloading" in fileshare.get_transfer(transfer_id, ssh_client)):
+        if transfer_in_progress is not None:
+            break
+
+    assert transfer_in_progress, "transfer is either not started or already completed: " + str(fileshare.get_transfer(transfer_id, ssh_client))
+
+    if sender_cancels:
+        sh.kill("-s", "2", command_handle.pid)
+        assert fileshare.MSG_CANCEL_TRANSFER in command_handle.stdout.decode()
+    else:
+        fileshare_pid = ssh_client.exec_command("pgrep -f 'nordvpn fileshare accept'")
+        ssh_client.exec_command(f"kill -s 2 {fileshare_pid}")
+
+    transfer_accept_thread.join()
+
+    local_transfer_id = fileshare.get_last_transfer()
+    peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+
+    transfer = sh.nordvpn.fileshare.list(local_transfer_id)
+    assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "canceled" in file_entry)
+
+    transfer = ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}")
+    assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "canceled" in file_entry)
+
+    assert command_handle.is_alive() is False
+    assert command_handle.exit_code == 0
+
+    transfers_local = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
+    if sender_cancels:
+        assert "canceled" in fileshare.find_transfer_by_id(transfers_local, local_transfer_id)
+        assert "canceled by peer" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id)
+    else:
+        assert "canceled by peer" in fileshare.find_transfer_by_id(transfers_local, peer_transfer_id)
+        assert "canceled" in fileshare.find_transfer_by_id(transfers_remote, local_transfer_id)
 
     if transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
         shutil.rmtree(wfolder.dir_path)
