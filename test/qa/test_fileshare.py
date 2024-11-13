@@ -598,10 +598,10 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
     shutil.rmtree(wdir.dir_path)
 
 
-@pytest.mark.parametrize("sender_cancels", [False])
+@pytest.mark.parametrize("sender_cancels", [False, True])
 @pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity))
 def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transfer_entity: fileshare.FileSystemEntity):
-    file_size = "128M"
+    file_size = "256M"
     wdir = fileshare.create_directory(0)
     wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path, file_size=file_size)
 
@@ -636,7 +636,17 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
     assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, transfer_id)
 
-    transfer_accept_thread = threading.Thread(target=lambda: ssh_client.exec_command(f"nordvpn fileshare accept {transfer_id}"))
+    class PeerTransferAcceptThread(threading.Thread):
+        def __init__(self, transfer_id: str):
+            threading.Thread.__init__(self)
+            self.message: str = ""
+
+            self.transfer_id: str = transfer_id
+
+        def run(self):
+            self.message = ssh_client.exec_command(f"nordvpn fileshare accept {self.transfer_id}")
+
+    transfer_accept_thread = PeerTransferAcceptThread(transfer_id)
     transfer_accept_thread.start()
 
     for transfer_in_progress in poll(lambda: "downloading" in fileshare.get_transfer(transfer_id, ssh_client)):
@@ -647,12 +657,17 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
 
     if sender_cancels:
         sh.kill("-s", "2", command_handle.pid)
+
+        transfer_accept_thread.join()
+
         assert fileshare.MSG_CANCEL_TRANSFER in command_handle.stdout.decode()
     else:
         fileshare_pid = ssh_client.exec_command("pgrep -f 'nordvpn fileshare accept'")
         ssh_client.exec_command(f"kill -s 2 {fileshare_pid}")
 
-    transfer_accept_thread.join()
+        transfer_accept_thread.join()
+
+        assert fileshare.MSG_CANCEL_TRANSFER in transfer_accept_thread.message
 
     local_transfer_id = fileshare.get_last_transfer()
     peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
