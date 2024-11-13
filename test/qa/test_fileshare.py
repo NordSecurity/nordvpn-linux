@@ -270,9 +270,11 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
 
     if not background_send:
         assert fileshare.validate_transfer_progress(command_handle.stdout.decode())
+        assert len(re.findall(fileshare.INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, command_handle.stdout.decode())) == 1
 
     if not background_accept:
         assert fileshare.validate_transfer_progress(t_progress_interactive)
+        assert len(re.findall(fileshare.INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, t_progress_interactive)) == 1
 
     assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder], ssh_client)
 
@@ -373,9 +375,11 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
 
     if not background_send:
         assert fileshare.validate_transfer_progress(command_handle.stdout.decode())
+        assert len(re.findall(fileshare.INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, command_handle.stdout.decode())) == 1
 
     if not background_accept:
         assert fileshare.validate_transfer_progress(t_progress_interactive)
+        assert len(re.findall(fileshare.INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, t_progress_interactive)) == 1
 
     assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [dir2, dir3, dir4], ssh_client)
 
@@ -521,10 +525,12 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
 
     if not background:
         assert fileshare.validate_transfer_progress(command_handle.stdout.decode())
+        assert len(re.findall(fileshare.INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, command_handle.stdout.decode())) == 1
         assert command_handle.is_alive() is False
         assert command_handle.exit_code == 0
 
     assert fileshare.validate_transfer_progress(t_progress_interactive)
+    assert len(re.findall(fileshare.INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, t_progress_interactive)) == 1
 
     for entity in [wfolder_1, wfolder_2, wfolder_3, wdir_1, wdir_2]:
         shutil.rmtree(entity.dir_path)

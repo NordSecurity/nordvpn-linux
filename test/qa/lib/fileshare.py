@@ -224,10 +224,8 @@ def validate_transfer_progress(transfer_log: str):
     Returns:
         bool: True if progress is increasing, False if not.
     Raises:
-        AssertionError: If message about completed transfer is missing
         AssertionError: If transfer ID is inconsistent.
     """
-    assert len(re.findall(INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, transfer_log)) == 1
     filtered_lines = [line for line in transfer_log.split("\r") if re.search(INTERACTIVE_TRANSFER_PROGRESS_ONGOING_PATTERN, line)]
     transfer_id = re.search(TRANSFER_ID_REGEX, filtered_lines[0])
 
