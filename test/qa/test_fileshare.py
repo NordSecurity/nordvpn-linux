@@ -192,10 +192,10 @@ def test_accept(accept_directories):
     assert sender_files_status_ok is True, f"invalid file status on sender side, transfer {transfer}, files {accept_directories} should be uploaded"
 
 
-@pytest.mark.parametrize("path_flag", [True, False])
-@pytest.mark.parametrize("background_send", [True, False])
-@pytest.mark.parametrize("background_accept", ["", "--background"])
-@pytest.mark.parametrize("filesystem_entity", list(fileshare.FileSystemEntity))
+@pytest.mark.parametrize("path_flag", [True, False], ids=["accept_custom_path", "accept_downloads"])
+@pytest.mark.parametrize("background_accept", ["", "--background"], ids=["accept_int", "accept_bg"])
+@pytest.mark.parametrize("background_send", [True, False], ids=["send_bg", "send_int"])
+@pytest.mark.parametrize("filesystem_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
 def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, background_send: bool, path_flag: str, background_accept: str):
     peer_name = random.choice(list(meshnet.PeerName)[:-1])
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
@@ -290,9 +290,9 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/*tmp*")
 
 
-@pytest.mark.parametrize("path_flag", [True, False])
-@pytest.mark.parametrize("background_send", [True, False])
-@pytest.mark.parametrize("background_accept", ["", "--background"])
+@pytest.mark.parametrize("path_flag", [True, False], ids=["accept_custom_path", "accept_downloads"])
+@pytest.mark.parametrize("background_accept", ["", "--background"], ids=["accept_int", "accept_bg"])
+@pytest.mark.parametrize("background_send", [True, False], ids=["send_bg", "send_int"])
 def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str, background_accept: str):
     peer_name = random.choice(list(meshnet.PeerName)[:-1])
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
@@ -395,8 +395,8 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
     assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id)
 
 
-@pytest.mark.parametrize("background", [True, False])
-@pytest.mark.parametrize("accept_entity", list(fileshare.FileSystemEntity)[:-1])
+@pytest.mark.parametrize("accept_entity", list(fileshare.FileSystemEntity)[:-1], ids = [f"accept_{entity.value}" for entity in list(fileshare.FileSystemEntity)[:-1]])
+@pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 def test_fileshare_transfer_multiple_files_selective_accept(background: bool, accept_entity: fileshare.FileSystemEntity):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
@@ -536,7 +536,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
     ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/*tmp*")
 
 
-@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity))
+@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
 def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
     wdir = fileshare.create_directory(0)
     wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path)
@@ -602,8 +602,8 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
     shutil.rmtree(wdir.dir_path)
 
 
-@pytest.mark.parametrize("sender_cancels", [False, True])
-@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity))
+@pytest.mark.parametrize("sender_cancels", [False, True], ids=["receiver_cancels", "sender_cancels"])
+@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
 def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transfer_entity: fileshare.FileSystemEntity):
     file_size = "256M"
     wdir = fileshare.create_directory(0)
@@ -701,9 +701,9 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
     shutil.rmtree(wdir.dir_path)
 
 
-@pytest.mark.parametrize("background", [False, True])
-@pytest.mark.parametrize("sender_cancels", [False, True])
-@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity))
+@pytest.mark.parametrize("background", [False, True], ids=["send_int", "send_bg"])
+@pytest.mark.parametrize("sender_cancels", [False, True], ids=["receiver_cancels", "sender_cancels"])
+@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
 def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, sender_cancels: bool):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
@@ -784,7 +784,7 @@ def test_fileshare_cancel_transfer(background: bool, transfer_entity: bool, send
     shutil.rmtree(wdir.dir_path)
 
 
-@pytest.mark.parametrize("sender_cancels", [True, False])
+@pytest.mark.parametrize("sender_cancels", [True, False], ids=["sender_cancels", "receiver_cancels"])
 def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
@@ -809,12 +809,12 @@ def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
             ssh_client.exec_command(f"nordvpn fileshare cancel {peer_transfer_id}")
 
 
-@pytest.mark.parametrize("background", [True, False])
-@pytest.mark.parametrize("multiple_directories", [True, False])
+@pytest.mark.parametrize("multiple_directories", [True, False], ids=["single_dir", "multi_dir"])
+@pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 def test_fileshare_file_limit_exceeded(background: bool, multiple_directories: bool):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
 
-    if multiple_directories:
+    if not multiple_directories:
         wdir = fileshare.create_directory(1001)
         dirs = [wdir.dir_path]
     else:
@@ -832,7 +832,7 @@ def test_fileshare_file_limit_exceeded(background: bool, multiple_directories: b
     assert "Number of files in a transfer cannot exceed 1000. Try archiving the directory." in str(ex.value)
 
 
-@pytest.mark.parametrize("background", [True, False])
+@pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 def test_fileshare_file_directory_depth_exceeded(background: bool):
     src_path = tempfile.mkdtemp()
 
@@ -995,7 +995,7 @@ def format_time(nanoseconds):
     return f'{int(nanoseconds / 1000000000)}s'
 
 
-@pytest.mark.parametrize("background", [True, False])
+@pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_send(peer_name, background):
     tester_data = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device()
@@ -1140,7 +1140,7 @@ def test_accept_destination_directory_not_a_directory():
     sh.nordvpn.fileshare.cancel(local_transfer_id)
 
 
-@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity))
+@pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
 def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
 
@@ -1351,8 +1351,8 @@ def test_fileshare_process_monitoring():
     assert "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
 
 
-@pytest.mark.parametrize("background_send", [True, False])
-@pytest.mark.parametrize("background_accept", [True, False])
+@pytest.mark.parametrize("background_accept", [True, False], ids=["accept_bg", "accept_int"])
+@pytest.mark.parametrize("background_send", [True, False], ids=["send_bg", "send_int"])
 def test_all_permissions_denied_send_file(background_send: bool, background_accept: bool):
     local_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     local_address = local_peer_list.get_this_device().hostname
