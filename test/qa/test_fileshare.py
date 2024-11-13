@@ -667,6 +667,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
         transfer_accept_thread.join()
 
         assert fileshare.MSG_CANCEL_TRANSFER in command_handle.stdout.decode()
+        assert fileshare.validate_transfer_progress(command_handle.stdout.decode())
     else:
         fileshare_pid = ssh_client.exec_command("pgrep -f 'nordvpn fileshare accept'")
         ssh_client.exec_command(f"kill -s 2 {fileshare_pid}")
@@ -674,6 +675,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
         transfer_accept_thread.join()
 
         assert fileshare.MSG_CANCEL_TRANSFER in transfer_accept_thread.message
+        assert fileshare.validate_transfer_progress(transfer_accept_thread.message)
 
     local_transfer_id = fileshare.get_last_transfer()
     peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
