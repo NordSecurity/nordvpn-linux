@@ -1217,8 +1217,11 @@ def test_transfers_autocomplete():
     wdir = fileshare.create_directory(2)
     fileshare.start_transfer(peer_address, *wdir.paths)
 
-    time.sleep(1)
-    peer_transfer_id = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
+    for peer_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client)):  # noqa: B007
+        if peer_transfer_id is not None:
+            break
+
+    assert peer_transfer_id is not None, error_message
 
     print(ssh_client.exec_command(f"nordvpn fileshare list {peer_transfer_id}"))
 
