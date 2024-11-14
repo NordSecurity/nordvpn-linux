@@ -12,7 +12,6 @@ import psutil
 import pytest
 import sh
 
-import lib
 from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
