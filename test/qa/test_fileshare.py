@@ -381,9 +381,10 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
 
     assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [dir2, dir3, dir4], ssh_client)
 
-    files_to_rm = [os.path.basename(dir2.dir_path), os.path.basename(dir3.dir_path), dir4.filenames[0], dir4.filenames[1]]
-    for file in files_to_rm:
-        ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/{file}")
+    for entity in [dir1, dir3, dir4]:
+        shutil.rmtree(entity.dir_path)
+
+    ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/*tmp*")
 
     assert command_handle.is_alive() is False
     assert command_handle.exit_code == 0
@@ -808,6 +809,7 @@ def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
             assert "This file is not in progress." in ex
             ssh_client.exec_command(f"nordvpn fileshare cancel {peer_transfer_id}")
 
+    shutil.rmtree(wdir.dir_path)
 
 @pytest.mark.parametrize("multiple_directories", [True, False], ids=["single_dir", "multi_dir"])
 @pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
@@ -831,6 +833,8 @@ def test_fileshare_file_limit_exceeded(background: bool, multiple_directories: b
 
     assert "Number of files in a transfer cannot exceed 1000. Try archiving the directory." in str(ex.value)
 
+    for directory_path in dirs:
+        shutil.rmtree(directory_path)
 
 @pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 def test_fileshare_file_directory_depth_exceeded(background: bool):
@@ -850,6 +854,7 @@ def test_fileshare_file_directory_depth_exceeded(background: bool):
 
     assert "File depth cannot exceed 5 directories. Try archiving the directory." in str(ex.value)
 
+    shutil.rmtree(src_path)
 
 def test_transfers_persistence():
     peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
@@ -1036,6 +1041,8 @@ def test_permissions_send(peer_name, background):
     transfer_id = fileshare.get_last_transfer()
     sh.nordvpn.fileshare.cancel(transfer_id)
 
+    shutil.rmtree(directory.dir_path)
+
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_meshnet_receive_forbidden(peer_name):
@@ -1054,6 +1061,8 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     with pytest.raises(RuntimeError) as ex:
         ssh_client.exec_command(f"nordvpn fileshare send --background {tester_address} {file_name}")
         assert "peer does not allow file transfers" in ex
+
+    ssh_client.exec_command(f"rm -rf {file_name}")
 
     actual_transfer_list = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     actual_transfer_list = actual_transfer_list[actual_transfer_list.index("Incoming"):].strip()
@@ -1138,6 +1147,8 @@ def test_accept_destination_directory_not_a_directory():
         assert f"Download directory {path} is a symlink. You can provide provide an alternative via --path" in ex
 
     sh.nordvpn.fileshare.cancel(local_transfer_id)
+
+    sh.rm(path)
 
 
 @pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
@@ -1249,6 +1260,11 @@ def test_transfers_autocomplete():
     assert peer_transfer_id not in output
     output = ssh_client.exec_command("nordvpn fileshare list --generate-bash-completion")
     assert peer_transfer_id in output
+
+    shutil.rmtree(wdir.dir_path)
+
+    for file in wdir.filenames:
+        ssh_client.exec_command(f"rm -rf /tmp/{file}")
 
 
 def test_clear():
@@ -1400,3 +1416,5 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
     for permission in permissions:
         with contextlib.suppress(RuntimeError):
             ssh_client.exec_command(f"nordvpn mesh peer {permission} allow {local_address}")
+
+    shutil.rmtree(wdir.dir_path)
