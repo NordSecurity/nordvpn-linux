@@ -4,8 +4,6 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-import "config/protocol.proto";
-
 message CountriesResponse {
   repeated Country countries = 1;
 }

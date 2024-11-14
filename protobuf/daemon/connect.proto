@@ -4,9 +4,6 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-import "common.proto";
-import "config/protocol.proto";
-
 message ConnectRequest {
   string server_tag = 1;
   string server_group = 11;
