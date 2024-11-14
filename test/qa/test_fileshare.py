@@ -28,7 +28,6 @@ def setup_module(module):  # noqa: ARG001
     os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
     daemon.start()
     login.login_as("default")
-    lib.set_technology_and_protocol("nordlynx", "", "")
 
     # temporary hack for autoaccept tests, we create a default download directory
     # will be remove once default download directory setting is implemented
