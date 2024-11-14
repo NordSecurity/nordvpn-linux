@@ -21,9 +21,9 @@ const (
 	imageBuilder           = registryPrefix + "builder:1.3.2"
 	imagePackager          = registryPrefix + "packager:1.3.0"
 	imageSnapPackager      = registryPrefix + "snaper:0.0.4"
-	imageProtobufGenerator = registryPrefix + "generator:1.3.1"
+	imageProtobufGenerator = registryPrefix + "generator:1.4.0"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
-	imageTester            = registryPrefix + "tester:1.2.0"
+	imageTester            = registryPrefix + "tester:1.3.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
 	imageRuster            = registryPrefix + "ruster:1.3.0"
 
@@ -573,7 +573,7 @@ func (Test) Hardening(ctx context.Context) error {
 
 // Run QA tests (arguments: {testGroup} {testPattern})
 func (Test) QA(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
+	mg.Deps(mg.F(buildPackage, "deb", "-cover"))
 	return qa(ctx, testGroup, testPattern)
 }
 

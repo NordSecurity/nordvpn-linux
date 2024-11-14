@@ -37,3 +37,19 @@ protoc --go_grpc_opt=module=github.com/NordSecurity/nordvpn-linux --go_grpc_out=
 protoc --go_grpc_opt=module=github.com/NordSecurity/nordvpn-linux --go_grpc_out=. protobuf/meshnet/service.proto -I protobuf/meshnet
 protoc --go_grpc_opt=module=github.com/NordSecurity/nordvpn-linux --go_grpc_out=. protobuf/fileshare/service.proto -I protobuf/fileshare
 protoc --go_grpc_opt=module=github.com/NordSecurity/nordvpn-linux --go_grpc_out=. protobuf/norduser/service.proto -I protobuf/norduser
+
+outDir="${PWD}"/test/qa/lib/protobuf/daemon
+mkdir -p "${outDir}"
+touch "${outDir}"/__init__.py
+
+python3 -m grpc_tools.protoc \
+	--proto_path="${PWD}"/protobuf/daemon \
+	--python_out="${outDir}" \
+	--pyi_out="${outDir}" \
+	"${PWD}"/protobuf/daemon/*.proto \
+	"${PWD}"/protobuf/daemon/config/*.proto
+
+python3 -m grpc_tools.protoc \
+	--proto_path="${PWD}"/protobuf/daemon \
+	--grpc_python_out="${outDir}" \
+	"${PWD}"/protobuf/daemon/service.proto
