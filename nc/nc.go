@@ -289,6 +289,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 		}
 		client, connectionState = c.tryConnect(client, logFunc, connectionState, managementChan, ctx)
 		if connectionState == connectedSuccessfully {
+			log.Println(logPrefix, "connected successfully")
 			break
 		}
 
@@ -303,12 +304,14 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 		}
 	}
 
+	log.Println(logPrefix, "subscribe to subjects")
 	token := client.SubscribeMultiple(subscriptions, nil)
 	if token.WaitTimeout(timeout) && token.Error() != nil {
 		c.subjectErr.Publish(
 			fmt.Errorf(logPrefix+" subscribing to %v topics: %s", unsubscriptions, token.Error()),
 		)
 	}
+	log.Println(logPrefix, "subscribed to subjects")
 
 	log.Println(logPrefix, "Connected")
 
