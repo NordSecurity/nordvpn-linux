@@ -14,7 +14,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os/exec"
 	"slices"
@@ -28,22 +27,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	moose "moose/events"
 	worker "moose/worker"
-)
-
-const (
-	workerVersion                = "8.2.0"
-	eventEncoding                = "application/json"
-	eventEndpoint                = "/app-events"
-	errCodeEventSendSuccess      = 0
-	errCodeEventSendDisabled     = 1
-	errCodeRequestCreationFailed = 2
-	errCodeRequestDoFailed       = 3
-	errCodeResponseStatus        = 4
 )
 
 // Subscriber listen events, send to moose engine
@@ -72,7 +59,7 @@ func (s *Subscriber) Enable() error {
 		return nil
 	}
 	s.enabled = true
-	return s.mooseInit()
+	return s.response(moose.MooseNordvpnappSetOptIn(true))
 }
 
 // Disable moose analytics engine
@@ -83,10 +70,7 @@ func (s *Subscriber) Disable() error {
 		return nil
 	}
 	s.enabled = false
-	if err := s.response(uint32(worker.Stop())); err != nil {
-		return err
-	}
-	return s.response(moose.MooseNordvpnappDeinit())
+	return s.response(moose.MooseNordvpnappSetOptIn(false))
 }
 
 func (s *Subscriber) isEnabled() bool {
@@ -95,8 +79,11 @@ func (s *Subscriber) isEnabled() bool {
 	return s.enabled
 }
 
-// mooseInit initializes moose libs
-func (s *Subscriber) mooseInit() error {
+// Init initializes moose libs. It has to be done before usage regardless of the enabled state.
+// Disabled case should be handled by `set_opt_out` value.
+func (s *Subscriber) Init() error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	var cfg config.Config
 	if err := s.Config.Load(&cfg); err != nil {
 		return err
@@ -134,11 +121,13 @@ func (s *Subscriber) mooseInit() error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
+	s.enabled = cfg.Analytics.Get()
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
 		internal.IsProdEnv(s.Environment),
 		s,
 		s,
+		s.enabled,
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
@@ -244,8 +233,7 @@ func (s *Subscriber) NotifyVirtualLocation(data bool) error {
 }
 
 func (s *Subscriber) NotifyPostquantumVpn(data bool) error {
-	// TODO: for now using existing field to track PQ feature. Later to be added/used dedicated field.
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyMeta(fmt.Sprintf("%t", data)))
+	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesPostQuantumEnabledValue(data))
 }
 
 func (s *Subscriber) NotifyIpv6(data bool) error {
@@ -283,6 +271,8 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error {
 		eventTrigger,
 		eventStatus,
 		moose.NordvpnappOptBoolNone,
+		-1,
+		nil,
 	)); err != nil {
 		return err
 	}
@@ -320,6 +310,8 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 		eventTrigger,
 		eventStatus,
 		moose.NordvpnappOptBoolNone,
+		-1,
+		nil,
 	)); err != nil {
 		return err
 	}
@@ -344,11 +336,12 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 		itemType,
 		data.ItemValue,
 		data.FormReference,
+		nil,
 	))
 }
 
 func (s *Subscriber) NotifyHeartBeat(period time.Duration) error {
-	if err := s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()))); err != nil {
+	if err := s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()), nil)); err != nil {
 		return err
 	}
 	if !s.initialHeartbeatSent {
@@ -468,8 +461,9 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			int32(data.DurationMs),
 			eventStatus,
 			moose.NordvpnappEventTriggerUser,
-			int32(-1),
-			int32(-1),
+			-1,
+			-1,
+			nil,
 		))
 	} else {
 		var threatProtection moose.NordvpnappOptBool
@@ -530,10 +524,12 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			data.TargetServerCity,
 			protocol,
 			technology,
+			moose.NordvpnappServerTypeNone,
 			threatProtection,
-			int32(-1),
+			-1,
 			"",
-			int32(-1),
+			-1,
+			nil,
 		)); err != nil {
 			return err
 		}
@@ -562,11 +558,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 
 	if s.connectionToMeshnetPeer {
 		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
-			int32(-1),
+			-1,
 			eventStatus,
 			moose.NordvpnappEventTriggerUser,
 			connectionTime, // seconds
-			int32(-1),
+			-1,
+			nil,
 		)); err != nil {
 			return err
 		}
@@ -616,7 +613,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		}
 
 		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
-			int32(-1),
+			-1,
 			eventStatus,
 			moose.NordvpnappEventTriggerUser,
 			moose.NordvpnappVpnConnectionTriggerNone, // pass proper trigger
@@ -630,10 +627,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			"",
 			protocol,
 			technology,
+			moose.NordvpnappServerTypeNone,
 			threatProtection,
 			connectionTime, // seconds
 			"",
-			int32(-1),
+			-1,
+			nil,
 		)); err != nil {
 			return err
 		}
@@ -674,44 +673,8 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		"",
 		"",
 		"",
+		nil,
 	))
-}
-
-// sendEvent is used as a https://go.dev/ref/spec#Method_values in order be able
-// to handle changing domains without involving channels.
-//
-// called by moose worker for each event
-func (s *Subscriber) sendEvent(contentType, userAgent, requestBody string) int {
-	if !s.isEnabled() {
-		return errCodeEventSendDisabled
-	}
-	s.mux.Lock()
-	domain := s.currentDomain
-	s.mux.Unlock()
-	req, err := request.NewRequest(
-		http.MethodPost,
-		userAgent,
-		domain,
-		eventEndpoint,
-		contentType,
-		fmt.Sprintf("%d", len(requestBody)),
-		eventEncoding,
-		strings.NewReader(requestBody),
-	)
-	if err != nil {
-		return errCodeRequestCreationFailed
-	}
-
-	// Moose team requested specific timeout value
-	client := request.NewStdHTTP(func(c *http.Client) { c.Timeout = time.Second * 30 })
-	resp, err := client.Do(req)
-	if err != nil {
-		return errCodeRequestDoFailed
-	}
-	if resp.StatusCode >= 400 {
-		return errCodeResponseStatus
-	}
-	return errCodeEventSendSuccess
 }
 
 func (s *Subscriber) fetchSubscriptions() error {
@@ -935,7 +898,10 @@ func (s *Subscriber) updateEventDomain() error {
 	if err != nil {
 		return err
 	}
-	domainUrl.Host = s.Subdomain + "." + domainUrl.Host
+	// TODO: Remove subdomain handling logic as it brings no value after domain rotation removal
+	if s.Subdomain != "" {
+		domainUrl.Host = s.Subdomain + "." + domainUrl.Host
+	}
 	s.currentDomain = domainUrl.String()
 	return nil
 }

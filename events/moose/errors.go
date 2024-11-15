@@ -12,36 +12,28 @@ import (
 	moose "moose/events"
 )
 
-func (s *Subscriber) PostInit(errCode uint32) *moose.ListenerError {
-	switch errCode {
-	case 13:
-		log.Println(internal.WarningPrefix, "moose: init internal error")
-	case 12:
-		log.Println(internal.WarningPrefix, "moose: version mismatch")
-	case 11:
-		log.Println(internal.WarningPrefix, "moose: input error")
-	case 3:
-		log.Println(internal.WarningPrefix, "moose: already initialized")
-	case 0:
-		log.Println(internal.WarningPrefix, "moose: init was successful")
+func (s *Subscriber) PostInit(initResult moose.InitResult, errCode int32, errMsg string) *moose.ListenerError {
+	switch initResult {
+	case moose.InitResultOkEmptyContext,
+		moose.InitResultOkExistingContext,
+		moose.InitResultOkAlreadyStarted:
+		log.Println(internal.InfoPrefix, "MOOSE: Initialization OK:", initResult)
 	default:
-		log.Println(internal.WarningPrefix, "moose: unexpected init error:", errCode)
+		log.Printf("%s MOOSE: Initialization error: %d: %d: %s\n",
+			internal.ErrorPrefix,
+			initResult,
+			errCode,
+			errMsg,
+		)
 	}
-
 	return nil
 }
 
-func (s *Subscriber) OnError(level uint32, code uint32, message string) *moose.ListenerError {
-	var prefix string
-	switch level {
-	case 2:
-		prefix = internal.ErrorPrefix
-	case 1:
-		prefix = internal.WarningPrefix
+func (s *Subscriber) OnError(err moose.TrackerError, level uint32, code int32, msg string) *moose.ListenerError {
+	if internal.IsProdEnv(s.Environment) && level < 2 {
+		return nil
 	}
-
-	log.Println(prefix, message, code)
-
+	log.Printf("%s MOOSE: %d: %d: %s", internal.ErrorPrefix, err, code, msg)
 	return nil
 }
 

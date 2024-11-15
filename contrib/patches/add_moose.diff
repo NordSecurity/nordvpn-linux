@@ -7,8 +7,8 @@ index 129d05f..369a0f8 100644
  )
  
 +replace (
-+	moose/events => ./third-party/moose-events/nordvpnapp/moosenordvpnappgo
-+	moose/worker => ./third-party/moose-worker/mooseworkergo
++	moose/events => ./third-party/moose-events/moosenordvpnappgo/v14
++	moose/worker => ./third-party/moose-worker/mooseworkergo/v14
 +)
 +
  require (
