@@ -1,3 +1,4 @@
+import ctypes
 import datetime
 import io
 import os
@@ -30,6 +31,24 @@ def _print_with_timestamp(*args, **kwargs):
     logging.log(data=print_to_string(timestamp, *args, **kwargs))
 
 
+def stop_thread(thread):
+    if not thread.is_alive():
+        #print("Thread is not alive; nothing to stop.")
+        return
+    tid = thread.ident
+    res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+        ctypes.c_long(tid),
+        ctypes.py_object(SystemExit)  # Raise SystemExit in the thread
+    )
+    if res == 0:
+        #raise ValueError("Invalid thread ID")
+        return
+
+    if res > 1:
+        ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
+        #raise SystemError("PyThreadState_SetAsyncExc failed")
+
+
 # Replace the built-in print with our custom version
 print = _print_with_timestamp # noqa: A001
 
@@ -56,9 +75,14 @@ def setup_check_internet_connection(request):
     #TODO: cleanup this code after test and proof
 
     # start capture thread
-    threading.Thread(target=monitor_with_netlink, args=(test_name,), daemon=True).start()
-    threading.Thread(target=_capture_packets, args=(test_name,), daemon=True).start()
+    th1 = threading.Thread(target=monitor_with_netlink, args=(test_name,), daemon=True)
+    th1.start()
+    th2 = threading.Thread(target=_capture_packets, args=(test_name,), daemon=True)
+    th2.start()
     yield # execute test
+    time.sleep(2)
+    stop_thread(th2)
+    stop_thread(th1)
 
 
 # @pytest.fixture(scope="session", autouse=True)
