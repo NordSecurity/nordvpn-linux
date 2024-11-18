@@ -1,8 +1,6 @@
 module github.com/NordSecurity/nordvpn-linux
 
-go 1.21.1
-
-toolchain go1.22.2
+go 1.22.2
 
 // Bindings
 // NOTE: If you are chaning the binding versions here, keep in mind that you
@@ -106,4 +104,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	gotest.tools/v3 v3.4.0
 )
