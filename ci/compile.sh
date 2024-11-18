@@ -74,7 +74,12 @@ if [[ $tags == *"moose"* ]]; then
 		-X 'main.EventsDomain=${events_domain:-""}' \
 		-X 'main.EventsSubdomain=${EVENTS_SUBDOMAIN:-""}'"
 
-	source "${WORKDIR}"/ci/add_moose.sh
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v14
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v14
+fi
+
+if [[ $tags == *"quench"* ]]; then
+	source "${WORKDIR}"/ci/add_private_bindings.sh quench ./third-party/quench
 fi
 
 for program in ${!names_map[*]}; do # looping over keys

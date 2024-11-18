@@ -23,6 +23,10 @@ libmoose_worker_artifact_url="${LIBMOOSE_WORKER_ARTIFACTS_URL}/${LIBMOOSE_WORKER
 libmoose_worker_zipfile="${temp_dir}/libmoose-worker-${LIBMOOSE_WORKER_VERSION}.zip"
 libmoose_worker_dst="${temp_dir}/libmoose-worker-${LIBMOOSE_WORKER_VERSION}"
 
+libquench_artifact_url="${LIBQUENCH_ARTIFACTS_URL}/${LIBQUENCH_VERSION}/linux.zip"
+libquench_zipfile="${temp_dir}/libquench-${LIBQUENCH_VERSION}.zip"
+libquench_dst="${temp_dir}/libquench-${LIBQUENCH_VERSION}"
+
 lib_versions_file="${WORKDIR}/lib-versions.env"
 checkout_completed_flag_file="${lib_root}/checkout-completed-flag"
 
@@ -109,6 +113,7 @@ fetch_gitlab_artifact "${libdrop_artifact_url}" "${libdrop_zipfile}"
 if [[ "${FEATURES:-""}" == *internal* ]]; then
   fetch_gitlab_artifact "${libmoose_nordvpnapp_artifact_url}" "${libmoose_nordvpnapp_zipfile}"
   fetch_gitlab_artifact "${libmoose_worker_artifact_url}" "${libmoose_worker_zipfile}"
+  fetch_gitlab_artifact "${libquench_artifact_url}" "${libquench_zipfile}"
 fi
 
 # ====================[  Unzip files ]=========================
@@ -119,6 +124,7 @@ unzip -o "${libdrop_zipfile}" -d "${temp_dir}" && mv "${temp_dir}/libdrop" "${li
 if [[ "${FEATURES:-""}" == *internal* ]]; then
   unzip -o "${libmoose_nordvpnapp_zipfile}" -d "${temp_dir}" && mv "${temp_dir}/out" "${libmoose_nordvpnapp_dst}"
   unzip -o "${libmoose_worker_zipfile}" -d "${temp_dir}" && mv "${temp_dir}/out" "${libmoose_worker_dst}"
+  unzip -o "${libquench_zipfile}" -d "${temp_dir}" && mv "${temp_dir}/dist" "${libquench_dst}"
 fi
 
 # ====================[  Copy to bin/deps/libs ]=========================
@@ -140,6 +146,9 @@ if [[ "${FEATURES:-""}" == *internal* ]]; then
 
   # moose worker
   copy_to_libs "${libmoose_worker_dst}/worker/bin/worker/linux" "libmooseworker.so"
+
+  # libquench
+  copy_to_libs "${libquench_dst}/linux/release" "libquench.so"
 fi
 
 # remove leftovers
