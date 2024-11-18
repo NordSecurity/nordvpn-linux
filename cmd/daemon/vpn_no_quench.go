@@ -4,6 +4,6 @@ package main
 
 import "github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 
-func getQuenchVPN() vpn.VPN {
+func getQuenchVPN(fwmark uint32) vpn.VPN {
 	return nil
 }

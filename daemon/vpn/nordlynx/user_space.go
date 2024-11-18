@@ -128,7 +128,7 @@ func (u *UserSpace) Start(
 
 	u.conn = conn
 
-	tun := tunnel.New(*iface, interfaceIps)
+	tun := tunnel.New(*iface, interfaceIps, nil)
 	u.tun = tun
 	if err := tun.AddAddrs(); err != nil {
 		if err := u.stop(); err != nil {
