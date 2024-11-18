@@ -8,6 +8,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -170,7 +172,7 @@ func TestIsMFAEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.errPub)
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.errPub, daemonevents.NewAccountUpdateEvents())
 			enabled, err := rc.isMFAEnabled()
 			assert.Equal(t, test.isEnabled, enabled)
 
@@ -190,11 +192,14 @@ func TestIsVPNExpired(t *testing.T) {
 
 	testErr := errors.New("test error")
 	tests := []struct {
-		name      string
-		cm        config.Manager
-		api       core.CredentialsAPI
-		isExpired bool
-		isError   bool
+		name          string
+		cm            config.Manager
+		api           core.CredentialsAPI
+		accPub        *daemonevents.MockPublisherSubscriber[*pb.AccountModification]
+		isExpired     bool
+		subRefreshed  bool
+		newExpiryDate string
+		isError       bool
 	}{
 		{
 			name: "no updates needed",
@@ -202,45 +207,66 @@ func TestIsVPNExpired(t *testing.T) {
 			api:  &authAPI{},
 		},
 		{
-			name: "update successful",
-			cm:   &authConfigManager{serviceExpiry: "1990-01-01 09:18:53"},
-			api:  &authAPI{resp: []core.ServiceData{{Service: core.Service{ID: 1}, ExpiresAt: "2990-01-01 09:18:53"}}},
+			name:          "update successful",
+			cm:            &authConfigManager{serviceExpiry: "1990-01-01 09:18:53"},
+			api:           &authAPI{resp: []core.ServiceData{{Service: core.Service{ID: 1}, ExpiresAt: "2990-01-01 09:18:53"}}},
+			subRefreshed:  true,
+			newExpiryDate: "2990-01-01 09:18:53",
+			accPub:        &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{},
 		},
 		{
-			name:      "expired",
-			cm:        &authConfigManager{serviceExpiry: "1990-01-01 09:18:53"},
-			api:       &authAPI{resp: []core.ServiceData{{Service: core.Service{ID: 1}, ExpiresAt: "1990-01-01 09:18:53"}}},
-			isExpired: true,
+			name:          "expired",
+			cm:            &authConfigManager{serviceExpiry: "1990-01-01 09:18:53"},
+			api:           &authAPI{resp: []core.ServiceData{{Service: core.Service{ID: 1}, ExpiresAt: "1990-01-01 09:18:53"}}},
+			accPub:        &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{},
+			subRefreshed:  true,
+			newExpiryDate: "1990-01-01 09:18:53",
+			isExpired:     true,
 		},
 		{
 			name:    "config load error",
 			cm:      &authConfigManager{loadErr: testErr},
 			api:     &authAPI{},
+			accPub:  &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{},
 			isError: true,
 		},
 		{
 			name:    "config save error",
 			cm:      &authConfigManager{saveErr: testErr},
 			api:     &authAPI{},
+			accPub:  &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{},
 			isError: true,
 		},
 		{
 			name:    "api error",
 			cm:      &authConfigManager{serviceExpiry: "1990-01-01 09:18:53"},
 			api:     &authAPI{err: testErr},
+			accPub:  &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{},
 			isError: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, &mockBoolPublisher{}, &mockErrPublisher{})
+			rc := NewRenewingChecker(
+				test.cm,
+				test.api,
+				&mockBoolPublisher{},
+				&mockErrPublisher{},
+				&daemonevents.AccountUpdateEvents{SubscriptionUpdate: test.accPub},
+			)
 			expired, err := rc.IsVPNExpired()
 			if test.isError {
 				assert.ErrorIs(t, err, testErr)
+				assert.False(t, test.accPub.EventPublished)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, test.isExpired, expired)
+				if test.subRefreshed {
+					assert.Equal(t, test.accPub.EventPublished, test.subRefreshed)
+					assert.NotNil(t, test.accPub.Event)
+					assert.Equal(t, *test.accPub.Event.ExpiresAt, test.newExpiryDate)
+				}
 			}
 		})
 	}

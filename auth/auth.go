@@ -6,8 +6,6 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"log"
-	"os"
 	"sync"
 	"time"
 

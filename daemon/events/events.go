@@ -311,9 +311,11 @@ func NewAccountUpdateEvents() *AccountUpdateEvents {
 
 type MockPublisherSubscriber[T any] struct {
 	EventPublished bool
+	Event          T
 }
 
 func (mp *MockPublisherSubscriber[T]) Publish(message T) {
 	mp.EventPublished = true
+	mp.Event = message
 }
 func (*MockPublisherSubscriber[T]) Subscribe(handler events.Handler[T]) {}
