@@ -160,11 +160,18 @@ func TestStartStopNotificationClient(t *testing.T) {
 			&subs.Subject[[]string]{},
 			credsFetcher)
 
+		mgmtChan := make(chan interface{})
+		go func() {
+			for {
+				<-mgmtChan
+			}
+		}()
+
 		t.Run(test.name, func(t *testing.T) {
 			_, newConnectionState := notificationClient.tryConnect(&mockMqttClient,
 				nil,
 				test.initialState,
-				make(chan<- interface{}),
+				mgmtChan,
 				context.Background())
 
 			assert.Equal(t,

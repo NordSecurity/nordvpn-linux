@@ -3,12 +3,15 @@ package nc
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
+
+const credentialsValidityPeriod = 24 * time.Hour
 
 type CredentialsGetter struct {
 	api core.CredentialsAPI
@@ -23,10 +26,11 @@ func NewCredsFetcher(api core.CredentialsAPI, cm config.Manager) CredentialsGett
 }
 
 func areNCCredentialsValid(ncData config.NCData) bool {
-	return !ncData.IsUserIDEmpty() ||
-		ncData.Endpoint != "" ||
-		ncData.Username != "" ||
-		ncData.Password != ""
+	return !ncData.IsUserIDEmpty() &&
+		ncData.Endpoint != "" &&
+		ncData.Username != "" &&
+		ncData.Password != "" &&
+		!ncData.ExpirationDate.IsZero()
 }
 
 var ErrInvalidCredentials = fmt.Errorf("stored credentials are not valid")
@@ -80,6 +84,7 @@ func (cf *CredentialsGetter) GetCredentialsFromAPI() (config.NCData, error) {
 	ncData.Endpoint = resp.Endpoint
 	ncData.Username = resp.Username
 	ncData.Password = resp.Password
+	ncData.ExpirationDate = time.Now().Add(credentialsValidityPeriod)
 
 	return ncData, cf.cm.SaveWith(func(c config.Config) config.Config {
 		user := c.TokensData[userID]
