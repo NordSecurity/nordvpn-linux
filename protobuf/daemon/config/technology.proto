@@ -8,4 +8,5 @@ enum Technology {
   UNKNOWN_TECHNOLOGY = 0;
   OPENVPN = 1;
   NORDLYNX = 2;
+  QUENCH = 3;
 }

@@ -41,6 +41,8 @@ func (c *cmd) SetTechnology(ctx *cli.Context) error {
 		tech = config.Technology_OPENVPN
 	case config.Technology_NORDLYNX.String():
 		tech = config.Technology_NORDLYNX
+	case config.Technology_QUENCH.String():
+		tech = config.Technology_QUENCH
 	default:
 		return formatError(argsParseError(ctx))
 	}
