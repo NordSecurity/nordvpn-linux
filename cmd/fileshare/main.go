@@ -12,6 +12,7 @@ import (
 	"net/netip"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -45,6 +46,15 @@ func openLogFile(path string) (*os.File, error) {
 }
 
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("panic:", r)
+			if internal.IsDevEnv(Environment) {
+				log.Println(string(debug.Stack()))
+			}
+			panic(r)
+		}
+	}()
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		os.Exit(int(childprocess.CodeFailedToEnable))
@@ -54,6 +64,7 @@ func main() {
 	if err == nil {
 		if logFile, err := openLogFile(filepath.Join(cacheDirPath, internal.FileshareLogFileName)); err == nil {
 			log.SetOutput(logFile)
+			logSetup(logFile)
 			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
 		}
 	}
