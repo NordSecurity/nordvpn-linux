@@ -4,6 +4,6 @@ package main
 
 import "github.com/NordSecurity/nordvpn-linux/daemon/vpn/quench"
 
-func getQuenchVPN() *quench.Quench {
-	return quench.New()
+func getQuenchVPN(fwmark uint32) *quench.Quench {
+	return quench.New(fwmark)
 }
