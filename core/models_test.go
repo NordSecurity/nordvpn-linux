@@ -177,6 +177,24 @@ const inputTest = `{
         "server_id": 956504,
         "status": "online"
       }
+    },
+	{
+      "id": 51,
+      "name": "NordWhisper",
+      "identifier": "quench",
+      "created_at": "2024-12-1 15:08:23",
+      "updated_at": "2024-12-1 15:08:23",
+      "metadata": [
+        {
+          "name": "port",
+          "value": "12345"
+        }
+      ],
+      "pivot": {
+        "technology_id": 51,
+        "server_id": 956504,
+        "status": "online"
+      }
     }
   ],
   "groups": [
@@ -768,6 +786,125 @@ func TestPayment_UnmarshalJSON(t *testing.T) {
 				assert.ErrorAs(t, err, target)
 			}
 			assert.Equal(t, tt.payment, p)
+		})
+	}
+}
+
+func TestNordWhisperPort_UnmarshalJSON(t *testing.T) {
+	const serverJson = `{
+	"id": 956504,
+	"created_at": "2020-02-26 13:19:09",
+	"updated_at": "2020-06-12 09:56:27",
+	"name": "Latvia #40",
+	"station": "185.176.222.52",
+	"hostname": "lv40.nordvpn.com",
+	"load": 10,
+	"status": "online",
+	"locations": [
+	],
+	"services": [
+	],
+	"groups": [
+	],
+	"specifications": [
+	],
+	"ips": [
+	],`
+
+	quenchTechJson := `"technologies": [
+		{
+		"id": 51,
+		"name": "NordWhisper",
+		"identifier": "quench",
+		"created_at": "2024-12-1 15:08:23",
+		"updated_at": "2024-12-1 15:08:23",
+		"metadata": [
+			{
+			"name": "port",
+			"value": "12345"
+			}
+		],
+		"pivot": {
+			"technology_id": 51,
+			"server_id": 956504,
+			"status": "online"
+		}
+		}
+	]}`
+
+	quenchTechNoPortJson := `"technologies": [
+		{
+		"id": 51,
+		"name": "NordWhisper",
+		"identifier": "quench",
+		"created_at": "2024-12-1 15:08:23",
+		"updated_at": "2024-12-1 15:08:23",
+		"metadata": [
+		],
+		"pivot": {
+			"technology_id": 51,
+			"server_id": 956504,
+			"status": "online"
+		}
+		}
+	]}`
+
+	quenchInvalidPortJson := `"technologies": [
+		{
+		"id": 51,
+		"name": "NordWhisper",
+		"identifier": "quench",
+		"created_at": "2024-12-1 15:08:23",
+		"updated_at": "2024-12-1 15:08:23",
+		"metadata": [
+			{
+			"name": "port",
+			"value": "abcd"
+			}
+		],
+		"pivot": {
+			"technology_id": 51,
+			"server_id": 956504,
+			"status": "online"
+		}
+		}
+	]}`
+
+	noQuenchJson := `"technologies": []}`
+
+	tests := []struct {
+		name         string
+		quenchJson   string
+		expectedPort int64
+	}{
+		{
+			name:         "success",
+			quenchJson:   quenchTechJson,
+			expectedPort: 12345,
+		},
+		{
+			name:         "quench tech no port json",
+			quenchJson:   quenchTechNoPortJson,
+			expectedPort: 0,
+		},
+		{
+			name:         "invalid port",
+			quenchJson:   quenchInvalidPortJson,
+			expectedPort: 0,
+		},
+		{
+			name:         "no quench technology",
+			quenchJson:   noQuenchJson,
+			expectedPort: 0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var server Server
+			err := server.UnmarshalJSON([]byte(serverJson + test.quenchJson))
+			assert.Nil(t, err, "Unexpected error when deserializing server json.")
+			assert.Equal(t, test.expectedPort, server.QuenchPort)
 		})
 	}
 }

@@ -154,6 +154,7 @@ func (r *RPC) connect(
 		OpenVPNVersion:    server.Version(),
 		VirtualLocation:   server.IsVirtualLocation(),
 		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
+		QuenchPort:        server.QuenchPort,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
