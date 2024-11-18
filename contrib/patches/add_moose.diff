@@ -1,23 +1,22 @@
 diff --git a/go.mod b/go.mod
-index 129d05f..369a0f8 100644
+index e1e88ce..9b6608d 100644
 --- a/go.mod
 +++ b/go.mod
-@@ -12,6 +12,11 @@ require (
- 	github.com/NordSecurity/libtelio-go/v5 v5.0.0
- )
+@@ -4,12 +4,19 @@ go 1.21.1
+ 
+ toolchain go1.22.2
  
 +replace (
-+	moose/events => ./third-party/moose-events/nordvpnapp/moosenordvpnappgo
-+	moose/worker => ./third-party/moose-worker/mooseworkergo
++	moose/events => ./third-party/moose-events/moosenordvpnappgo/v14
++	moose/worker => ./third-party/moose-worker/mooseworkergo/v14
 +)
 +
+ // Bindings
+ // NOTE: If you are chaning the binding versions here, keep in mind that you
+ // may also need to update versions in `./lib-versions.env` file.
  require (
- 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
- 	github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d
-@@ -50,6 +55,8 @@ require (
- 	google.golang.org/grpc v1.64.1
- 	google.golang.org/protobuf v1.34.2
- 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+ 	github.com/NordSecurity/libdrop-go/v8 v8.0.0-20241017064027-670787595588
+ 	github.com/NordSecurity/libtelio-go/v5 v5.0.3
 +	moose/events v0.0.0
 +	moose/worker v0.0.0
  )
