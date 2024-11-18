@@ -6,11 +6,15 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -62,12 +66,13 @@ func (systemTimeExpirationChecker) isExpired(expiryTime string) bool {
 
 // RenewingChecker does both authentication checks and renewals in case of expiration.
 type RenewingChecker struct {
-	cm         config.Manager
-	creds      core.CredentialsAPI
-	expChecker expirationChecker
-	mfaPub     events.Publisher[bool]
-	errPub     events.Publisher[error]
-	mu         sync.Mutex
+	cm                  config.Manager
+	creds               core.CredentialsAPI
+	expChecker          expirationChecker
+	mfaPub              events.Publisher[bool]
+	errPub              events.Publisher[error]
+	mu                  sync.Mutex
+	accountUpdateEvents *daemonevents.AccountUpdateEvents
 }
 
 // NewRenewingChecker is a default constructor for RenewingChecker.
@@ -75,12 +80,15 @@ func NewRenewingChecker(cm config.Manager,
 	creds core.CredentialsAPI,
 	mfaPub events.Publisher[bool],
 	errPub events.Publisher[error],
+	accountUpdateEvents *daemonevents.AccountUpdateEvents,
 ) *RenewingChecker {
-	return &RenewingChecker{cm: cm,
-		creds:      creds,
-		expChecker: systemTimeExpirationChecker{},
-		mfaPub:     mfaPub,
-		errPub:     errPub,
+	return &RenewingChecker{
+		cm:                  cm,
+		creds:               creds,
+		expChecker:          systemTimeExpirationChecker{},
+		mfaPub:              mfaPub,
+		errPub:              errPub,
+		accountUpdateEvents: accountUpdateEvents,
 	}
 }
 
@@ -312,6 +320,9 @@ func (r *RenewingChecker) fetchSaveServices(userId int64, data *config.TokenData
 	if err := r.cm.SaveWith(saveVpnExpirationDate(userId, *data)); err != nil {
 		return fmt.Errorf("saving config: %w", err)
 	}
+	r.accountUpdateEvents.SubscriptionUpdate.Publish(&pb.AccountModification{
+		ExpiresAt: &data.ServiceExpiry,
+	})
 
 	return nil
 }

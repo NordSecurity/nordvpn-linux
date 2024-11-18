@@ -67,7 +67,8 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 func statusStream(stateChan <-chan interface{},
 	stopChan chan<- struct{},
 	uid int64,
-	srv pb.Daemon_SubscribeToStateChangesServer) {
+	srv pb.Daemon_SubscribeToStateChangesServer,
+) {
 	for {
 		select {
 		case <-srv.Context().Done():
@@ -100,13 +101,16 @@ func statusStream(stateChan <-chan interface{},
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{
 						ConnectionStatus: &pb.ConnectionStatus{
 							State:  pb.ConnectionState_DISCONNECTED,
-							ByUser: e.ByUser}}}); err != nil {
+							ByUser: e.ByUser,
+						},
+					}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn disabled failed to send state update:", err)
 				}
 			case pb.LoginEventType:
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_LoginEvent{
-						LoginEvent: &pb.LoginEvent{Type: e}}}); err != nil {
+						LoginEvent: &pb.LoginEvent{Type: e},
+					}}); err != nil {
 					log.Println(internal.ErrorPrefix, "login event failed to send state update:", err)
 				}
 			case *config.Config:
@@ -119,6 +123,11 @@ func statusStream(stateChan <-chan interface{},
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_UpdateEvent{UpdateEvent: e}}); err != nil {
 					log.Println(internal.ErrorPrefix, "update event failed to send state update:", err)
+				}
+			case *pb.AccountModification:
+				if err := srv.Send(
+					&pb.AppState{State: &pb.AppState_AccountModification{AccountModification: e}}); err != nil {
+					log.Println(internal.ErrorPrefix, "account updated failed to send state update:", err)
 				}
 			default:
 			}

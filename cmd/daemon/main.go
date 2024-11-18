@@ -411,7 +411,15 @@ func main() {
 	)
 	meshnetEvents.SelfRemoved.Subscribe(meshUnsetter.NotifyDisabled)
 
-	authChecker := auth.NewRenewingChecker(fsystem, defaultAPI, daemonEvents.User.MFA, errSubject)
+	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
+	accountUpdateEvents.Subscribe(statePublisher)
+	authChecker := auth.NewRenewingChecker(
+		fsystem,
+		defaultAPI,
+		daemonEvents.User.MFA,
+		errSubject,
+		accountUpdateEvents,
+	)
 	endpointResolver := network.NewDefaultResolverChain(fw)
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},

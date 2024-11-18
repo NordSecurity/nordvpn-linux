@@ -10,16 +10,6 @@ enum AppStateError {
     FAILED_TO_GET_UID = 0;
 }
 
-enum ConnectionState {
-    DISCONNECTED = 0;
-    CONNECTING = 1;
-    CONNECTED = 2;
-}
-
-enum UpdateEvent {
-    SERVERS_LIST_UPDATE = 0;
-}
-
 message ConnectionStatus {
     ConnectionState state = 1;
     string server_ip = 2;
@@ -31,13 +21,27 @@ message ConnectionStatus {
     bool by_user = 8;
 }
 
+enum ConnectionState {
+    DISCONNECTED = 0;
+    CONNECTING = 1;
+    CONNECTED = 2;
+}
+
+message LoginEvent {
+    LoginEventType type = 1;
+}
+
 enum LoginEventType {
     LOGIN = 0;
     LOGOUT = 1;
 }
 
-message LoginEvent {
-    LoginEventType type = 1;
+enum UpdateEvent {
+    SERVERS_LIST_UPDATE = 0;
+}
+
+message AccountModification {
+  optional string expires_at = 1;
 }
 
 message AppState {
@@ -47,5 +51,7 @@ message AppState {
         LoginEvent login_event = 3;
         Settings settings_change = 4;
         UpdateEvent update_event = 5;
+        AccountModification account_modification = 6;
     }
 }
+
