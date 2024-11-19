@@ -17,6 +17,7 @@ class Ssh:
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         self.daemon = self.Daemon(self)
+        self.io = self.IO(self)
         self.meshnet = self.Meshnet(self)
         self.network = self.Network(self)
 
@@ -55,6 +56,13 @@ class Ssh:
                 return False
             else:
                 return True
+
+    class IO:
+        def __init__(self, ssh_class_instance):
+            self.ssh_class_instance: Ssh = ssh_class_instance
+
+        def get_file_hash(self, file_path: str) -> str:
+            return self.ssh_class_instance.exec_command(f"{lib.FILE_HASH_UTILITY} {file_path}").split()[0]
 
     class Network:
         def __init__(self, ssh_class_instance):
