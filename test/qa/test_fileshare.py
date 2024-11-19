@@ -660,6 +660,8 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
 
     assert transfer_in_progress, "transfer is either not started or already completed: " + str(fileshare.get_transfer(transfer_id, ssh_client))
 
+    time.sleep(1) # avoid "downloading 0%"
+
     if sender_cancels:
         sh.kill("-s", "2", command_handle.pid)
 
