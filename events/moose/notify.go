@@ -21,6 +21,7 @@ type notifyRequest func(
 	limits string,
 	offset string,
 	responseSummary string,
+	debugJson *string,
 ) uint32
 
 func noSuchEndpoint(
@@ -36,6 +37,7 @@ func noSuchEndpoint(
 	limits string,
 	offset string,
 	responseSummary string,
+	debugJson *string,
 ) uint32 {
 	return 0
 }
