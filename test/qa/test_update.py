@@ -5,7 +5,7 @@ import shutil
 import sh
 
 import lib
-from lib import daemon, login, meshnet, network, ssh
+from lib import daemon, fileshare, login, meshnet, network, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -80,3 +80,9 @@ def test_meshnet_available_after_update():
 def test_fileshare_available_after_update():
     fileshare_help_page = sh.nordvpn.fileshare("--help", _tty_out=False)
     assert "Learn more: https://meshnet.nordvpn.com/features/sharing-files-in-meshnet" in fileshare_help_page
+
+    wdir = fileshare.create_directory(5)
+
+    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
+
+    fileshare.start_transfer(peer_hostname, wdir.dir_path)
