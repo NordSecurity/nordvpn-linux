@@ -4,7 +4,8 @@ import shutil
 
 import sh
 
-from lib import daemon, login, meshnet, ssh
+import lib
+from lib import daemon, login, meshnet, network, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -65,3 +66,12 @@ def test_meshnet_available_after_update():
 
     local_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().hostname
     ssh_client.exec_command(f"nordvpn mesh peer routing allow {local_hostname}")
+
+    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
+    output = sh.nordvpn.mesh.peer.connect(peer_hostname)
+    assert meshnet.is_connect_successful(output, peer_hostname)
+
+    assert network.is_available()
+
+    output = sh.nordvpn.disconnect()
+    assert lib.is_disconnect_successful(output)
