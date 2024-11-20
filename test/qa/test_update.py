@@ -1,7 +1,15 @@
+import time
+
 import sh
+
+from lib import daemon
 
 
 def setup_module(module):  # noqa: ARG001
     sh.sudo.apt.purge("-y", "nordvpn")
 
     sh.sh(_in=sh.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
+
+    daemon.start()
+    while not daemon.is_running():
+        time.sleep(1)
