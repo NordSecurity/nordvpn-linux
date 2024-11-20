@@ -62,3 +62,6 @@ def teardown_function(function):  # noqa: ARG001
 def test_meshnet_available_after_update():
     meshnet_help_page = sh.nordvpn.meshnet("--help", _tty_out=False)
     assert "Learn more: https://meshnet.nordvpn.com/" in meshnet_help_page
+
+    local_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().hostname
+    ssh_client.exec_command(f"nordvpn mesh peer routing allow {local_hostname}")
