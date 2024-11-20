@@ -13,6 +13,9 @@ from test_connect import connect_base_test, disconnect_base_test
 class TestData:
     INVOLVES_MESHNET = None
 
+class ProductionApplicationData:
+    APP_VERSION = None
+
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 def setup_module(module):  # noqa: ARG001
@@ -28,6 +31,7 @@ def setup_function(function):  # noqa: ARG001
     sh.sudo.apt.purge("-y", "nordvpn")
 
     sh.sh(_in=sh.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
+    ProductionApplicationData.APP_VERSION = sh.nordvpn("-v").split()[2]
 
     daemon.start()
 
