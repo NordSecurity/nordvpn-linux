@@ -5,7 +5,7 @@ import shutil
 import sh
 
 import lib
-from lib import daemon, fileshare, login, meshnet, network, ssh
+from lib import daemon, fileshare, login, meshnet, network, poll, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -86,3 +86,11 @@ def test_fileshare_available_after_update():
     peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
 
     fileshare.start_transfer(peer_hostname, wdir.dir_path)
+
+    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client)):  # noqa: B007
+        if remote_transfer_id is not None:
+            break
+
+    assert remote_transfer_id is not None, error_message
+
+    ssh_client.exec_command(f"nordvpn fileshare accept {remote_transfer_id}")
