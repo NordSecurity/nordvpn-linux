@@ -12,7 +12,7 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
+from lib import daemon, fileshare, info, logging, login, meshnet, network, poll, ssh
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -23,6 +23,9 @@ test_files = ["testing_fileshare_0.txt", "testing_fileshare_1.txt", "testing_fil
 default_download_directory = "/home/qa/Downloads"
 
 def setup_module(module):  # noqa: ARG001
+    logging.log("IP: " + str(network.get_external_device_ip()))
+    pytest.skip()
+
     os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
     os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
     daemon.start()

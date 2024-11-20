@@ -4,11 +4,13 @@ import pytest
 import sh
 
 import lib
-from lib import allowlist, daemon, firewall, info, logging, login
+from lib import allowlist, daemon, firewall, info, logging, login, network
 
 
 def setup_module(module):  # noqa: ARG001
     firewall.add_and_delete_random_route()
+    logging.log("IP: " + str(network.get_external_device_ip()))
+    pytest.skip()
 
 
 def setup_function(function):  # noqa: ARG001

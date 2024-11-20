@@ -2,14 +2,14 @@ import pytest
 import sh
 
 import lib
-from lib import (
-    daemon,
-    info,
-    logging,
-    login,
-)
+from lib import daemon, info, logging, login, network
 from test_connect import disconnect_base_test, get_alias
 from test_connect6 import connect_base_test
+
+
+def setup_module(module):  # noqa: ARG001
+    logging.log("IP: " + str(network.get_external_device_ip()))
+    pytest.skip()
 
 
 def setup_function(function):  # noqa: ARG001

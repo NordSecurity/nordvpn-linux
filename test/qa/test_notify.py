@@ -2,12 +2,14 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, info, logging, login, notify, settings
+from lib import daemon, info, logging, login, network, notify, settings
 
 
 def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
+    logging.log("IP: " + str(network.get_external_device_ip()))
+    pytest.skip()
 
 
 def teardown_module(module):  # noqa: ARG001

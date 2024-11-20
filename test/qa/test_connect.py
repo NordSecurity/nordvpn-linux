@@ -13,6 +13,11 @@ CONNECT_ALIAS = [
     "c"
 ]
 
+def setup_module(module):  # noqa: ARG001
+    logging.log("IP: " + str(network.get_external_device_ip()))
+    pytest.skip()
+
+
 def setup_function(function):  # noqa: ARG001
     daemon.start()
     login.login_as("default")

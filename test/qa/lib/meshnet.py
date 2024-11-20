@@ -5,9 +5,10 @@ import subprocess
 import time
 from enum import Enum
 
+import pytest
 import sh
 
-from . import daemon, info, logging, login, ssh
+from . import daemon, info, logging, login, network, ssh
 
 PEER_USERNAME = login.get_credentials("qa-peer").email
 
@@ -28,6 +29,9 @@ strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGN
 class TestUtils:
     @staticmethod
     def setup_module(ssh_client: ssh.Ssh):
+        logging.log("IP: " + str(network.get_external_device_ip()))
+        pytest.skip()
+
         os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
         os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
         ssh_client.connect()

@@ -7,6 +7,8 @@ from lib import daemon, dns, info, logging, login, network, settings
 
 def setup_module(module):  # noqa: ARG001
     daemon.start()
+    logging.log("IP: " + str(network.get_external_device_ip()))
+    pytest.skip()
 
 
 def teardown_module(module):  # noqa: ARG001

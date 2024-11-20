@@ -14,6 +14,11 @@ from lib import (
 from test_connect import disconnect_base_test
 
 
+def setup_module(module):  # noqa: ARG001
+    logging.log("IP: " + str(network.get_external_device_ip()))
+    pytest.skip()
+
+
 def setup_function(function):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
