@@ -57,3 +57,8 @@ def teardown_function(function):  # noqa: ARG001
 
     daemon.stop_peer(ssh_client)
     daemon.uninstall_peer(ssh_client)
+
+
+def test_meshnet_available_after_update():
+    meshnet_help_page = sh.nordvpn.meshnet("--help", _tty_out=False)
+    assert "Learn more: https://meshnet.nordvpn.com/" in meshnet_help_page
