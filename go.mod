@@ -9,7 +9,7 @@ toolchain go1.22.2
 // may also need to update versions in `./lib-versions.env` file.
 require (
 	github.com/NordSecurity/libdrop-go/v8 v8.0.0-20241017064027-670787595588
-	github.com/NordSecurity/libtelio-go/v5 v5.0.0
+	github.com/NordSecurity/libtelio-go/v5 v5.0.3
 )
 
 require (
@@ -50,6 +50,7 @@ require (
 	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
+	gotest.tools/v3 v3.4.0
 )
 
 require (
@@ -105,5 +106,4 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240701130421-f6361c86f094 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gotest.tools/v3 v3.4.0 // indirect
 )

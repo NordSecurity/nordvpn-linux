@@ -3,6 +3,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -27,7 +28,7 @@ func newAnalytics(
 		logLevel = "debug"
 	}
 	_ = os.Setenv("MOOSE_LOG", logLevel)
-	return &moose.Subscriber{
+	sub := &moose.Subscriber{
 		EventsDbPath:    eventsDbPath,
 		Config:          fs,
 		Version:         ver,
@@ -37,4 +38,8 @@ func newAnalytics(
 		DeviceID:        id,
 		SubscriptionAPI: subAPI,
 	}
+	if err := sub.Init(); err != nil {
+		log.Println(internal.ErrorPrefix, "MOOSE: Initialization error:", err)
+	}
+	return sub
 }
