@@ -2,10 +2,12 @@ import glob
 import os
 import shutil
 
+import pytest
 import sh
 
 import lib
 from lib import daemon, fileshare, login, meshnet, network, poll, ssh
+from test_connect import connect_base_test, disconnect_base_test
 
 
 class TestData:
@@ -98,3 +100,11 @@ def test_fileshare_available_after_update():
     ssh_client.exec_command(f"nordvpn fileshare accept {remote_transfer_id}")
 
     fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client)
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_quick_connect_after_update(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    connect_base_test((tech, proto, obfuscated))
+    disconnect_base_test()
