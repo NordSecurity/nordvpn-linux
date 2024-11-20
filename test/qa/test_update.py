@@ -75,3 +75,8 @@ def test_meshnet_available_after_update():
 
     output = sh.nordvpn.disconnect()
     assert lib.is_disconnect_successful(output)
+
+
+def test_fileshare_available_after_update():
+    fileshare_help_page = sh.nordvpn.fileshare("--help", _tty_out=False)
+    assert "Learn more: https://meshnet.nordvpn.com/features/sharing-files-in-meshnet" in fileshare_help_page
