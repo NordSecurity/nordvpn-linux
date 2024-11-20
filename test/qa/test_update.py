@@ -115,3 +115,8 @@ def test_quick_connect_after_update(tech, proto, obfuscated):
 
     connect_base_test((tech, proto, obfuscated))
     disconnect_base_test()
+
+
+def test_changelog_after_update():
+    if ProductionApplicationData.APP_VERSION in sh.nordvpn("-v"):
+        pytest.skip("Changelog not implemented yet.")
