@@ -120,3 +120,10 @@ def test_quick_connect_after_update(tech, proto, obfuscated):
 def test_changelog_after_update():
     if ProductionApplicationData.APP_VERSION in sh.nordvpn("-v"):
         pytest.skip("Changelog not implemented yet.")
+
+    changelog_path = "/usr/share/doc/nordvpn/changelog.Debian.gz"
+    changelog = sh.dpkg_parsechangelog("-l", changelog_path)
+
+    nordvpn_version = str(sh.nordvpn("-v").split()[2])
+    assert nordvpn_version in changelog
+    assert "*" in changelog
