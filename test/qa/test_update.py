@@ -7,8 +7,11 @@ import sh
 import lib
 from lib import daemon, fileshare, login, meshnet, network, poll, ssh
 
-ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
+class TestData:
+    INVOLVES_MESHNET = None
+
+ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 def setup_module(module):  # noqa: ARG001
     os.system("sudo mkdir -p -m 0777 /home/qa/Downloads")
@@ -18,12 +21,12 @@ def setup_module(module):  # noqa: ARG001
 
 
 def setup_function(function):  # noqa: ARG001
+    TestData.INVOLVES_MESHNET = any(keyword in os.environ["PYTEST_CURRENT_TEST"] for keyword in ["meshnet", "fileshare"])
+
     sh.sudo.apt.purge("-y", "nordvpn")
 
     sh.sh(_in=sh.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
 
-    os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
-    os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
     daemon.start()
 
     login.login_as("default")
@@ -32,32 +35,31 @@ def setup_function(function):  # noqa: ARG001
     deb_path = glob.glob(f'{project_root}/dist/app/deb/*amd64.deb')[0]
     sh.sudo.apt.install(deb_path, "-y")
 
-    sh.nordvpn.set.notify.off()
-    assert "Meshnet is set to 'enabled' successfully." in sh.nordvpn.set.meshnet.on()
+    if TestData.INVOLVES_MESHNET:
+        sh.nordvpn.set.notify.off()
+        assert "Meshnet is set to 'enabled' successfully." in sh.nordvpn.set.meshnet.on()
 
-    meshnet.remove_all_peers()
+        meshnet.remove_all_peers()
 
-    daemon.install_peer(ssh_client)
-    daemon.start_peer(ssh_client)
-    login.login_as("default", ssh_client)
-    ssh_client.exec_command("nordvpn set notify off")
-    ssh_client.exec_command("nordvpn set mesh on")
+        daemon.install_peer(ssh_client)
+        daemon.start_peer(ssh_client)
+        login.login_as("default", ssh_client)
+        ssh_client.exec_command("nordvpn set notify off")
+        ssh_client.exec_command("nordvpn set mesh on")
 
-    sh.nordvpn.mesh.peer.list()
-    ssh_client.exec_command("nordvpn mesh peer list")
+        sh.nordvpn.mesh.peer.list()
+        ssh_client.exec_command("nordvpn mesh peer list")
 
 
 def teardown_function(function):  # noqa: ARG001
-    ssh_client.exec_command("rm -rf /root/Downloads/*")
+    if TestData.INVOLVES_MESHNET:
+        ssh_client.exec_command("rm -rf /root/Downloads/*")
 
-    shutil.rmtree("/home/qa/.config/nordvpn")
-    shutil.rmtree("/home/qa/.cache/nordvpn")
+        sh.nordvpn.set.mesh.off()
+        ssh_client.exec_command("nordvpn set mesh off")
 
-    sh.nordvpn.set.mesh.off()
-    ssh_client.exec_command("nordvpn set mesh off")
-
-    daemon.stop_peer(ssh_client)
-    daemon.uninstall_peer(ssh_client)
+        daemon.stop_peer(ssh_client)
+        daemon.uninstall_peer(ssh_client)
 
 
 def test_meshnet_available_after_update():
