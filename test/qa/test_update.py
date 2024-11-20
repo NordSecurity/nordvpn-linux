@@ -2,7 +2,7 @@ import time
 
 import sh
 
-from lib import daemon
+from lib import daemon, login
 
 
 def setup_module(module):  # noqa: ARG001
@@ -13,3 +13,5 @@ def setup_module(module):  # noqa: ARG001
     daemon.start()
     while not daemon.is_running():
         time.sleep(1)
+
+    login.login_as("default")
