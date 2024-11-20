@@ -19,9 +19,12 @@ const (
 	SetTechnologyUsageText     = "Sets the technology"
 	SetTechnologyArgsUsageText = `<technology>`
 	SetTechnologyDescription   = `Use this command to set the technology.
-Supported values for <technology>: OPENVPN or NORDLYNX.
+Supported values for <technology>: %s.
 
 Example: 'nordvpn set technology OPENVPN'`
+
+	SupportedValuesNoQuench = "OPENVPN or NORDLYNX"
+	SupportedValuesQuench   = "OPENVPN, NORDLYNX or QUENCH"
 )
 
 func (c *cmd) SetTechnology(ctx *cli.Context) error {
@@ -69,6 +72,8 @@ func (c *cmd) SetTechnology(ctx *cli.Context) error {
 		// must be right before CodeSuccess
 		color.Yellow(SetAutoConnectForceOff)
 		fallthrough
+	case internal.CodeFeatureHidden:
+		return formatError(argsParseError(ctx))
 	case internal.CodeSuccess:
 		flag, _ := strconv.ParseBool(resp.Data[0])
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Technology", strings.Join(resp.Data[1:], " ")))
