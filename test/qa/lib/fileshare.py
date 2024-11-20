@@ -53,7 +53,7 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
     hash_util = sh.Command(FILE_HASH_UTILITY)
 
     for file_number in range(file_count):
-        filename = f"file_{file_number}{name_suffix}"
+        filename = f"file_tmp_{file_number}{name_suffix}"
         path = f"{dir_path}/{filename}"
         paths.append(path)
         # in transfer, files are displayed with leading directory only, i.e /tmp/dir/file becomes dir/file
@@ -224,10 +224,8 @@ def validate_transfer_progress(transfer_log: str):
     Returns:
         bool: True if progress is increasing, False if not.
     Raises:
-        AssertionError: If message about completed transfer is missing
         AssertionError: If transfer ID is inconsistent.
     """
-    assert len(re.findall(INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, transfer_log)) == 1
     filtered_lines = [line for line in transfer_log.split("\r") if re.search(INTERACTIVE_TRANSFER_PROGRESS_ONGOING_PATTERN, line)]
     transfer_id = re.search(TRANSFER_ID_REGEX, filtered_lines[0])
 
@@ -344,5 +342,31 @@ def files_from_transfer_exist_in_filesystem(transfer_id: str, dir_list: list[Dir
                 assert any(file_hash in directory.filehashes for directory in dir_list)
             except RuntimeError:
                 return False
+    else:
+        transfers = sh.nordvpn.fileshare.list(_tty_out=False)
+        download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
 
+        files_in_transfer = [line.split()[0] for line in sh.nordvpn.fileshare.list(transfer_id, tty_out=False).split("\n") if "downloaded" in line]
+        for file in files_in_transfer:
+            try:
+                hash_util = sh.Command(FILE_HASH_UTILITY)
+                file_hash = hash_util(f"{download_location}/{file}").strip().split()[0]
+                assert any(file_hash in directory.filehashes for directory in dir_list)
+            except RuntimeError:
+                return False
     return True
+
+
+class FileSystemEntity(Enum):
+    """
+    Used to define transfer type.
+
+    Enumeration for representing types of file system entities.
+    """
+    FILE = "file"
+    FOLDER_WITH_FILES = "folder"
+    DIRECTORY_WITH_FOLDERS = "directory"
+    FILES = "files"
+
+    def __str__(self):
+        return self.value
