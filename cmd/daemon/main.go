@@ -49,6 +49,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	grpcmiddleware "github.com/NordSecurity/nordvpn-linux/grpc_middleware"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -145,6 +146,22 @@ func main() {
 		}
 	}
 
+	rcConfig := getRemoteConfigGetter(fsystem)
+	quenchEnabled, err := rcConfig.GetQuenchEnabled(Version)
+	if err != nil {
+		log.Println("failed to determine if quench is enabled:", err)
+	}
+
+	// fallback to Nordlynx if quench was enabled in previous installation and is disabled now
+	if (!features.QuenchEnabled || !quenchEnabled) && cfg.Technology == config.Technology_QUENCH {
+		err := fsystem.SaveWith(func(c config.Config) config.Config {
+			c.Technology = config.Technology_NORDLYNX
+			return c
+		})
+
+		log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
+	}
+
 	// Events
 
 	daemonEvents := daemonevents.NewEventsEmpty()
@@ -192,7 +209,6 @@ func main() {
 
 	// API
 	var validator response.Validator
-	var err error
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
 		validator = response.NoopValidator{}
 	} else {
@@ -296,7 +312,7 @@ func main() {
 		daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "first_open", ItemType: "button", ItemValue: "first_open", FormReference: "daemon"})
 	}
 
-	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem)
+	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
 	internalVpnEvents := vpn.NewInternalVPNEvents()
 
@@ -468,6 +484,7 @@ func main() {
 		meshAPIex,
 		statePublisher,
 		sharedContext,
+		rcConfig,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,

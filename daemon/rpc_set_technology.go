@@ -7,10 +7,36 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*pb.Payload, error) {
+	if in.Technology == config.Technology_QUENCH {
+		if !features.QuenchEnabled {
+			log.Println(internal.DebugPrefix,
+				"user requested a quench technology but the feature is hidden based on compile flag.")
+			return &pb.Payload{
+				Type: internal.CodeFeatureHidden,
+			}, nil
+		}
+		quenchEnabled, err := r.remoteConfigGetter.GetQuenchEnabled(r.version)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to determine if quench is enabled by remote config:", err)
+			return &pb.Payload{
+				Type: internal.CodeFeatureHidden,
+			}, nil
+		}
+
+		if !quenchEnabled {
+			log.Println(internal.ErrorPrefix,
+				"user rquested a quench technology but the feature is hidden based on remote config flag")
+			return &pb.Payload{
+				Type: internal.CodeFeatureHidden,
+			}, nil
+		}
+	}
+
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
