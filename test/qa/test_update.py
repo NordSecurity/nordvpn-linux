@@ -32,7 +32,7 @@ def setup_function(function):  # noqa: ARG001
     sh.sudo.apt.install(deb_path, "-y")
 
     sh.nordvpn.set.notify.off()
-    sh.nordvpn.set.meshnet.on()
+    assert "Meshnet is set to 'enabled' successfully." in sh.nordvpn.set.meshnet.on()
 
     meshnet.remove_all_peers()
 
