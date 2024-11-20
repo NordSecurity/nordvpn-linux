@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 )
 
@@ -15,6 +16,6 @@ func (noopConfigGetter) GetConfig(string) (string, error) {
 	return "", fmt.Errorf("config is not available")
 }
 
-func vpnLibConfigGetterImplementation(_ config.Manager) vpn.LibConfigGetter {
+func vpnLibConfigGetterImplementation(_ config.Manager, _ remote.RemoteConfigGetter) vpn.LibConfigGetter {
 	return noopConfigGetter{}
 }

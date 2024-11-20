@@ -23,7 +23,7 @@ if [ "${1:-""}" = "full" ]; then
 
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="root,link"
-	tags="internal,moose"
+	tags="internal,quench,moose"
 fi
 
 # Execute tests in all the packages except the excluded ones

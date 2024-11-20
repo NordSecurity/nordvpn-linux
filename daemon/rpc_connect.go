@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
@@ -44,6 +45,34 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	return err
 }
 
+// quenchConfigFallback checks if technology is configured to quench and falls back to NordLynx if quench was disabled
+// in compile time or in remote config. It returns a new config with desired technology set.
+func (r *RPC) quenchConfigFallback(cfg config.Config) config.Config {
+	if cfg.Technology != config.Technology_QUENCH {
+		return cfg
+	}
+
+	quenchEnabled, err := r.remoteConfigGetter.GetQuenchEnabled(r.version)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to retrieve remote config for quench:", err)
+	}
+
+	if features.QuenchEnabled && (quenchEnabled && err == nil) {
+		return cfg
+	}
+
+	log.Println(internal.DebugPrefix,
+		"user had configured Quench technolgy, but it was disabled, falling back to NordLynx")
+
+	cfg.Technology = config.Technology_QUENCH
+	r.cm.SaveWith(func(c config.Config) config.Config {
+		c.Technology = config.Technology_QUENCH
+		return c
+	})
+
+	return cfg
+}
+
 func (r *RPC) connect(
 	ctx context.Context,
 	in *pb.ConnectRequest,
@@ -65,6 +94,7 @@ func (r *RPC) connect(
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
+	cfg = r.quenchConfigFallback(cfg)
 
 	insights := r.dm.GetInsightsData().Insights
 

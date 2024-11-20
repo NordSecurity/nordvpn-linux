@@ -8,6 +8,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
@@ -56,6 +57,7 @@ type RPC struct {
 	statePublisher       *state.StatePublisher
 	ConnectionParameters ParametersStorage
 	connectContext       *sharedctx.Context
+	remoteConfigGetter   remote.RemoteConfigGetter
 	pb.UnimplementedDaemonServer
 }
 
@@ -83,32 +85,34 @@ func NewRPC(
 	meshRegistry mesh.Registry,
 	statePublisher *state.StatePublisher,
 	connectContext *sharedctx.Context,
+	remoteConfigGetter remote.RemoteConfigGetter,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
-		environment:      environment,
-		ac:               ac,
-		cm:               cm,
-		dm:               dm,
-		api:              api,
-		serversAPI:       serversAPI,
-		credentialsAPI:   credentialsAPI,
-		cdn:              cdn,
-		repo:             repo,
-		authentication:   authentication,
-		version:          version,
-		factory:          factory,
-		events:           events,
-		endpointResolver: endpointResolver,
-		scheduler:        scheduler,
-		netw:             netw,
-		publisher:        publisher,
-		nameservers:      nameservers,
-		ncClient:         ncClient,
-		analytics:        analytics,
-		norduser:         norduser,
-		meshRegistry:     meshRegistry,
-		statePublisher:   statePublisher,
-		connectContext:   connectContext,
+		environment:        environment,
+		ac:                 ac,
+		cm:                 cm,
+		dm:                 dm,
+		api:                api,
+		serversAPI:         serversAPI,
+		credentialsAPI:     credentialsAPI,
+		cdn:                cdn,
+		repo:               repo,
+		authentication:     authentication,
+		version:            version,
+		factory:            factory,
+		events:             events,
+		endpointResolver:   endpointResolver,
+		scheduler:          scheduler,
+		netw:               netw,
+		publisher:          publisher,
+		nameservers:        nameservers,
+		ncClient:           ncClient,
+		analytics:          analytics,
+		norduser:           norduser,
+		meshRegistry:       meshRegistry,
+		statePublisher:     statePublisher,
+		connectContext:     connectContext,
+		remoteConfigGetter: remoteConfigGetter,
 	}
 }

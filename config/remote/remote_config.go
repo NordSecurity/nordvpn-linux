@@ -15,11 +15,12 @@ const (
 	// and digits, underscores) app will try to find field corresponding to
 	// app's version, but if exact match is not found then first older version
 	// is chosen, if that one is also not available, then use local defaults.
-	RcTelioConfigFieldPrefix = "telio_config_"
+	RcTelioConfigFieldPrefix  = "telio_config_"
+	RcQuenchConfigFieldPrefix = "quench_enabled_"
 )
 
 // RemoteConfigGetter get values from remote config
 type RemoteConfigGetter interface {
-	GetValue(key string) (string, error)
 	GetTelioConfig(version string) (string, error)
+	GetQuenchEnabled(version string) (bool, error)
 }
