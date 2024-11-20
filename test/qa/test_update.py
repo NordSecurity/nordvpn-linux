@@ -1,5 +1,6 @@
 import glob
 import os
+import shutil
 
 import sh
 
@@ -9,6 +10,13 @@ ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 
 def setup_module(module):  # noqa: ARG001
+    os.system("sudo mkdir -p -m 0777 /home/qa/Downloads")
+
+    ssh_client.connect()
+    ssh_client.exec_command("mkdir -p /root/Downloads")
+
+
+def setup_function(function):  # noqa: ARG001
     sh.sudo.apt.purge("-y", "nordvpn")
 
     sh.sh(_in=sh.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
@@ -16,8 +24,6 @@ def setup_module(module):  # noqa: ARG001
     os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
     os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
     daemon.start()
-
-    os.system("sudo mkdir -p -m 0777 /home/qa/Downloads")
 
     login.login_as("default")
 
@@ -30,8 +36,6 @@ def setup_module(module):  # noqa: ARG001
 
     meshnet.remove_all_peers()
 
-    ssh_client.connect()
-    ssh_client.exec_command("mkdir -p /root/Downloads")
     daemon.install_peer(ssh_client)
     daemon.start_peer(ssh_client)
     login.login_as("default", ssh_client)
@@ -40,3 +44,16 @@ def setup_module(module):  # noqa: ARG001
 
     sh.nordvpn.mesh.peer.list()
     ssh_client.exec_command("nordvpn mesh peer list")
+
+
+def teardown_function(function):  # noqa: ARG001
+    ssh_client.exec_command("rm -rf /root/Downloads/*")
+
+    shutil.rmtree("/home/qa/.config/nordvpn")
+    shutil.rmtree("/home/qa/.cache/nordvpn")
+
+    sh.nordvpn.set.mesh.off()
+    ssh_client.exec_command("nordvpn set mesh off")
+
+    daemon.stop_peer(ssh_client)
+    daemon.uninstall_peer(ssh_client)
