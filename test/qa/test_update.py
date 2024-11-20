@@ -94,3 +94,5 @@ def test_fileshare_available_after_update():
     assert remote_transfer_id is not None, error_message
 
     ssh_client.exec_command(f"nordvpn fileshare accept {remote_transfer_id}")
+
+    fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client)
