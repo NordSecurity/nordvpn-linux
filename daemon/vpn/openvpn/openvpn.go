@@ -127,6 +127,8 @@ func (ovpn *OpenVPN) Start(
 		"--mark", strconv.Itoa(int(ovpn.fwmark)),
 		"--dev-type", interfaceType,
 		"--dev", InterfaceName,
+		// DCO cannot be used because currently servers are pushing `comp-lzo no`
+		"--disable-dco",
 	)
 	err = startOpenVPN(process)
 
