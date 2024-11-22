@@ -56,13 +56,11 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
 
 
     # for snap testing make directories to be created from current path e.g. dir="./"
-    dir_path = tempfile.mkdtemp(dir=parent_dir)
+    dir_path = exec_command(f"mktemp -d {f'{parent_dir}/tmp.XXXXXX' if parent_dir else ''}").split()[0]
     paths = []
     transfer_paths = []
     filenames = []
     filehashes = []
-
-    hash_util = sh.Command(FILE_HASH_UTILITY)
 
     for file_number in range(file_count):
         filename = f"file_tmp_{file_number}{name_suffix}"
@@ -77,9 +75,9 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
             if size in file_size:
                 raise ValueError("Specified file size is too big. Specify either (K)ilobytes or (M)egabytes")
 
-        sh.fallocate("-l", file_size, f"{dir_path}/{filename}")
+        exec_command(f"fallocate -l {file_size} {dir_path}/{filename}")
 
-        hash_output = hash_util(path).strip().split()[0]  # Only take the hash part of the output
+        hash_output = exec_command(f"{FILE_HASH_UTILITY} {path}").strip().split()[0]  # Only take the hash part of the output
         filehashes.append(hash_output)
 
     return Directory(dir_path, paths, transfer_paths, filenames, filehashes)
