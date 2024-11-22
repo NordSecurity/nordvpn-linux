@@ -1,5 +1,4 @@
 import re
-import tempfile
 import time
 from collections import namedtuple
 from collections.abc import Callable
