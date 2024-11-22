@@ -25,7 +25,7 @@ MSG_CANCEL_TRANSFER = "File transfer canceled."
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
 
-def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: str = "1K") -> Directory:
+def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: str = "1K", ssh_client: ssh.Ssh = None) -> Directory:
     """
     Creates a temporary directory and populates it with a specified number of files.
 
@@ -43,6 +43,18 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
             - transfer_paths: File paths with leading directories removed.
             - filenames: Names of the created files.
     """
+
+    def exec_command(command: str):
+        """
+        Executes a command locally, if `ssh_client` parameter is provided to `create_directory`.
+
+        Otherwise, `command` is executed on a remote SSH client.
+        """
+        if ssh_client is None:
+            return sh.Command(command.split()[0])(*command.split()[1:])
+        return ssh_client.exec_command(command)
+
+
     # for snap testing make directories to be created from current path e.g. dir="./"
     dir_path = tempfile.mkdtemp(dir=parent_dir)
     paths = []
