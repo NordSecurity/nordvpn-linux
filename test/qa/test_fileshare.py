@@ -1165,14 +1165,14 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
 
     host_address = peer_list.get_this_device().ip
 
-    wdir = ssh_client.io.create_directory(0)
-    wfolder = ssh_client.io.create_directory(2, parent_dir=wdir.dir_path)
+    wdir = fileshare.create_directory(0, ssh_client=ssh_client)
+    wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path, ssh_client=ssh_client)
 
     if transfer_entity == fileshare.FileSystemEntity.FILE:
         path = wfolder.paths[0]
         expected_files = [wfolder.filenames[0]]
     elif transfer_entity == fileshare.FileSystemEntity.FOLDER_WITH_FILES:
-        wfolder = ssh_client.io.create_directory(2)
+        wfolder = fileshare.create_directory(2, ssh_client=ssh_client)
         path = wfolder.dir_path
         expected_files = wfolder.transfer_paths
     elif transfer_entity == fileshare.FileSystemEntity.DIRECTORY_WITH_FOLDERS:
