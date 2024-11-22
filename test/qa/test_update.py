@@ -37,9 +37,11 @@ def setup_function(function):  # noqa: ARG001
 
     login.login_as("default")
 
+    daemon.stop() # TODO: LVPN-6403
     project_root = os.environ["WORKDIR"]
     deb_path = glob.glob(f'{project_root}/dist/app/deb/*amd64.deb')[0]
     sh.sudo.apt.install(deb_path, "-y")
+    daemon.start() # TODO: LVPN-6403
 
     if TestData.INVOLVES_MESHNET:
         sh.nordvpn.set.notify.off()
@@ -66,6 +68,7 @@ def teardown_function(function):  # noqa: ARG001
 
         daemon.stop_peer(ssh_client)
         daemon.uninstall_peer(ssh_client)
+    daemon.stop() # TODO: LVPN-6403
 
 
 def test_meshnet_available_after_update():
