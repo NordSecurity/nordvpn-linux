@@ -15,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/google/uuid"
 )
 
 type DedicatedIPService struct {
@@ -192,6 +193,13 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	// We are renewing token if it is expired because we need to make some API calls later
 	if r.expChecker.isExpired(data.TokenExpiry) {
+		if data.IdempotencyKey == nil {
+			key := uuid.New()
+			data.IdempotencyKey = &key
+			if err := r.cm.SaveWith(saveIdempotencyKey(uid, data)); err != nil {
+				return fmt.Errorf("saving idempotency key: %w", err)
+			}
+		}
 		if err := r.renewLoginToken(&data); err != nil {
 			if errors.Is(err, core.ErrUnauthorized) ||
 				errors.Is(err, core.ErrNotFound) ||
@@ -255,7 +263,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 }
 
 func (r *RenewingChecker) renewLoginToken(data *config.TokenData) error {
-	resp, err := r.creds.TokenRenew(data.RenewToken)
+	resp, err := r.creds.TokenRenew(data.RenewToken, *data.IdempotencyKey)
 	if err != nil {
 		return err
 	}
@@ -263,6 +271,7 @@ func (r *RenewingChecker) renewLoginToken(data *config.TokenData) error {
 	data.Token = resp.Token
 	data.RenewToken = resp.RenewToken
 	data.TokenExpiry = resp.ExpiresAt
+	data.IdempotencyKey = nil
 	return nil
 }
 
@@ -378,6 +387,16 @@ func saveVpnServerCredentials(userID int64, data config.TokenData) config.SaveFu
 		user.NordLynxPrivateKey = data.NordLynxPrivateKey
 		user.OpenVPNUsername = data.OpenVPNUsername
 		user.OpenVPNPassword = data.OpenVPNPassword
+		return c
+	}
+}
+
+func saveIdempotencyKey(userID int64, data config.TokenData) config.SaveFunc {
+	return func(c config.Config) config.Config {
+		user := c.TokensData[userID]
+		defer func() { c.TokensData[userID] = user }()
+
+		user.IdempotencyKey = data.IdempotencyKey
 		return c
 	}
 }
