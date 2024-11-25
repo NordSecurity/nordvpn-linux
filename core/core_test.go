@@ -10,6 +10,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -127,7 +128,7 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 				http.DefaultClient,
 				response.NoopValidator{},
 			)
-			_, err := api.TokenRenew("refresh me")
+			_, err := api.TokenRenew("refresh me", uuid.New())
 			assert.True(t, errors.Is(err, test.err))
 		})
 	}
