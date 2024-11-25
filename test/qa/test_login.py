@@ -48,7 +48,7 @@ def test_repeated_login():
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             login.login_as("default")
 
-        assert "You are already logged in." in str(ex.value)
+        assert "You are already logged in." in str(ex.value) 
 
 
 @pytest.mark.skip(reason="can't get login token for expired account")
@@ -56,7 +56,7 @@ def test_expired_account_connect():
     lib.set_technology_and_protocol("openvpn", "udp", "off")
 
     output = login.login_as("expired")
-    print(output)
+    print(output) 
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.connect()
