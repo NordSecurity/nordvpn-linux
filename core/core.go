@@ -15,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/google/uuid"
 )
 
 const (
@@ -26,7 +27,7 @@ type CredentialsAPI interface {
 	NotificationCredentials(token, appUserID string) (NotificationCredentialsResponse, error)
 	NotificationCredentialsRevoke(token, appUserID string, purgeSession bool) (NotificationCredentialsRevokeResponse, error)
 	ServiceCredentials(string) (*CredentialsResponse, error)
-	TokenRenew(string) (*TokenRenewResponse, error)
+	TokenRenew(token string, idempotencyKey uuid.UUID) (*TokenRenewResponse, error)
 	Services(string) (ServicesResponse, error)
 	CurrentUser(string) (*CurrentUserResponse, error)
 	DeleteToken(string) error
@@ -279,7 +280,7 @@ func (api *DefaultAPI) MultifactorAuthStatus(token string) (*MultifactorAuthStat
 }
 
 // TokenRenew queries the renew token and returns new token data
-func (api *DefaultAPI) TokenRenew(token string) (*TokenRenewResponse, error) {
+func (api *DefaultAPI) TokenRenew(token string, idempotencyKey uuid.UUID) (*TokenRenewResponse, error) {
 	if token == "" {
 		return nil, ErrBadRequest
 	}
@@ -296,6 +297,7 @@ func (api *DefaultAPI) TokenRenew(token string) (*TokenRenewResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("Idempotency-Key", idempotencyKey.String())
 
 	resp, err := api.do(req)
 	if err != nil {

@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/google/uuid"
 )
 
 type CredentialsAPIMock struct {
@@ -22,7 +23,7 @@ func (*CredentialsAPIMock) ServiceCredentials(string) (*core.CredentialsResponse
 	return nil, nil
 }
 
-func (*CredentialsAPIMock) TokenRenew(string) (*core.TokenRenewResponse, error) {
+func (*CredentialsAPIMock) TokenRenew(token string, idempotencyKey uuid.UUID) (*core.TokenRenewResponse, error) {
 	return nil, nil
 }
 
