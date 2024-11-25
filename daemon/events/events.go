@@ -3,6 +3,7 @@ package events
 import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 )
@@ -222,11 +223,13 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Ipv6.Publish(cfg.IPv6)
 	s.Technology.Publish(cfg.Technology)
 	s.Obfuscate.Publish(cfg.AutoConnectData.Obfuscate)
-	s.Notify.Publish(!(cfg.UsersData.NotifyOff != nil && len(cfg.UsersData.NotifyOff) > 0))
+	s.Notify.Publish(cfg.UsersData.NotifyOff == nil || len(cfg.UsersData.NotifyOff) <= 0)
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.VirtualLocation.Publish(cfg.VirtualLocation.Get())
 	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)
 }
+
+// Login/logout changes
 
 type LoginPublisher interface {
 	NotifyLogin(events.DataAuthorization) error
@@ -246,6 +249,8 @@ func (l *LoginEvents) Subscribe(to LoginPublisher) {
 	l.MFA.Subscribe(to.NotifyMFA)
 }
 
+// Config changes
+
 type ConfigPublisher interface {
 	NotifyConfigChanged(cfg *config.Config) error
 }
@@ -263,6 +268,8 @@ func NewConfigEvents() *ConfigEvents {
 		Config: &subs.Subject[*config.Config]{},
 	}
 }
+
+// Data changes
 
 type DataUpdatePublisher interface {
 	NotifyServersListUpdate(any) error
@@ -282,11 +289,33 @@ func NewDataUpdateEvents() *DataUpdateEvents {
 	}
 }
 
+// Account changes
+
+type AccountUpdatePublisher interface {
+	NotifySubscriptionChanged(*pb.AccountModification) error
+}
+
+type AccountUpdateEvents struct {
+	SubscriptionUpdate events.PublishSubcriber[*pb.AccountModification]
+}
+
+func (d *AccountUpdateEvents) Subscribe(to AccountUpdatePublisher) {
+	d.SubscriptionUpdate.Subscribe(to.NotifySubscriptionChanged)
+}
+
+func NewAccountUpdateEvents() *AccountUpdateEvents {
+	return &AccountUpdateEvents{
+		SubscriptionUpdate: &subs.Subject[*pb.AccountModification]{},
+	}
+}
+
 type MockPublisherSubscriber[T any] struct {
 	EventPublished bool
+	Event          T
 }
 
 func (mp *MockPublisherSubscriber[T]) Publish(message T) {
 	mp.EventPublished = true
+	mp.Event = message
 }
 func (*MockPublisherSubscriber[T]) Subscribe(handler events.Handler[T]) {}

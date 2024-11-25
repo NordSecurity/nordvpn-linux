@@ -1,8 +1,10 @@
 package state
 
 import (
+	"context"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -10,12 +12,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
+const notifyTimeout = 100 * time.Millisecond
+
 type subscriber struct {
-	stateChan chan<- interface{}
+	stateChan chan<- any
 	stopChan  <-chan struct{}
 }
 
-func newSubscriber(stateChan chan<- interface{}, stopChan <-chan struct{}) subscriber {
+func newSubscriber(stateChan chan<- any, stopChan <-chan struct{}) subscriber {
 	return subscriber{
 		stateChan: stateChan,
 		stopChan:  stopChan,
@@ -23,24 +27,27 @@ func newSubscriber(stateChan chan<- interface{}, stopChan <-chan struct{}) subsc
 }
 
 type StatePublisher struct {
-	mu          sync.Mutex
 	subscribers []subscriber
+	mu          sync.Mutex
 }
 
 func NewState() *StatePublisher {
 	return &StatePublisher{}
 }
 
-func (s *StatePublisher) notify(e interface{}) {
+func (s *StatePublisher) notify(e any) {
 	newSubs := []subscriber{}
 	for _, sub := range s.subscribers {
+		timeout, cancel := context.WithTimeout(context.Background(), notifyTimeout)
+		defer cancel()
 		select {
 		case <-sub.stopChan:
 			close(sub.stateChan)
 		case sub.stateChan <- e:
 			newSubs = append(newSubs, sub)
-		default:
+		case <-timeout.Done():
 			newSubs = append(newSubs, sub)
+			log.Println(internal.WarningPrefix, "could not notify state subscriber, event dropped")
 		}
 	}
 	s.subscribers = newSubs
@@ -110,6 +117,16 @@ func (s *StatePublisher) NotifyServersListUpdate(any) error {
 	return nil
 }
 
+func (s *StatePublisher) NotifySubscriptionChanged(e *pb.AccountModification) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Println(internal.DebugPrefix, "notifying about subscription update")
+	s.notify(e)
+
+	return nil
+}
+
 func (s *StatePublisher) AddSubscriber() (<-chan interface{}, chan<- struct{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -124,7 +141,7 @@ func (s *StatePublisher) AddSubscriber() (<-chan interface{}, chan<- struct{}) {
 		}
 	}
 
-	stateChan := make(chan interface{})
+	stateChan := make(chan any)
 	stopChan := make(chan struct{})
 
 	newSubs = append(newSubs, newSubscriber(stateChan, stopChan))
