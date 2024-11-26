@@ -148,7 +148,7 @@ overrides:
       - libxml2
       - libidn2
       - zlib
-      - libnl3
+      - (libnl3 or libnl3-200)
     # RPM specific scripts.
     scripts:
       postinstall: ${WORKDIR}/contrib/scriptlets/rpm/post
