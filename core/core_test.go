@@ -110,11 +110,27 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 func TestDefaultAPI_TokenRenew(t *testing.T) {
 	category.Set(t, category.Integration)
 
+	idempotencyKey := uuid.New()
 	tests := []testCase{
 		testNewCase(t, http.StatusCreated, TokenRenewURL, "core_token_renew", nil),
 		testNewCase(t, http.StatusBadRequest, TokenRenewURL, "core_token_renew", ErrBadRequest),
 		testNewCase(t, http.StatusNotFound, TokenRenewURL, "core_token_renew", ErrNotFound),
 		testNewCase(t, http.StatusInternalServerError, TokenRenewURL, "", ErrServerInternal),
+
+		{
+			name: "Idempotent request",
+			handler: func(rw http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, idempotencyKey.String(), r.Header.Get("Idempotency-Key"))
+				data, err := os.ReadFile(fmt.Sprintf("testdata/%s_%d.json", "core_token_renew", http.StatusCreated))
+				if err != nil {
+					rw.WriteHeader(http.StatusCreated)
+					return
+				}
+				rw.WriteHeader(301)
+				rw.Write(data)
+			},
+			err: nil,
+		},
 	}
 
 	for _, test := range tests {
@@ -128,7 +144,7 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 				http.DefaultClient,
 				response.NoopValidator{},
 			)
-			_, err := api.TokenRenew("refresh me", uuid.New())
+			_, err := api.TokenRenew("refresh me", idempotencyKey)
 			assert.True(t, errors.Is(err, test.err))
 		})
 	}
