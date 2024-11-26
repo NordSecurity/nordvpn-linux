@@ -271,7 +271,6 @@ func (r *RenewingChecker) renewLoginToken(data *config.TokenData) error {
 	data.Token = resp.Token
 	data.RenewToken = resp.RenewToken
 	data.TokenExpiry = resp.ExpiresAt
-	data.IdempotencyKey = nil
 	return nil
 }
 
