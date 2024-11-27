@@ -9,6 +9,7 @@ import lib
 from lib import daemon, fileshare, login, meshnet, network, poll, ssh
 from test_connect import connect_base_test, disconnect_base_test
 
+PROJECT_ROOT = os.environ['WORKDIR']
 
 class TestData:
     INVOLVES_MESHNET = None
@@ -38,8 +39,7 @@ def setup_function(function):  # noqa: ARG001
     login.login_as("default")
 
     daemon.stop() # TODO: LVPN-6403
-    project_root = os.environ["WORKDIR"]
-    deb_path = glob.glob(f'{project_root}/dist/app/deb/*amd64.deb')[0]
+    deb_path = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/*amd64.deb')[0]
     sh.sudo.apt.install(deb_path, "-y")
     daemon.start() # TODO: LVPN-6403
 
@@ -68,7 +68,7 @@ def teardown_function(function):  # noqa: ARG001
 
         daemon.stop_peer(ssh_client)
 
-        dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
+        dest_logs_path = f"{PROJECT_ROOT}/dist/logs"
         ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
         shutil.copy("/home/qa/.cache/nordvpn/norduserd.log", dest_logs_path)
         shutil.copy("/home/qa/.cache/nordvpn/nordfileshare.log", dest_logs_path)
