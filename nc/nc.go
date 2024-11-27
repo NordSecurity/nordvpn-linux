@@ -428,7 +428,10 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 		connectedChan := make(chan mqtt.Client)
 		connect := func(client mqtt.Client, credentialsInvalidated bool, connectionContext context.Context) {
 			client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, connectionContext)
-			connectedChan <- client
+			select {
+			case connectedChan <- client:
+			case <-connectionContext.Done():
+			}
 		}
 
 		opts := c.createClientOptions(credentials, managementChan, connectionContext)
