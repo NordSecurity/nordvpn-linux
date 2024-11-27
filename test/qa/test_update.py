@@ -67,6 +67,12 @@ def teardown_function(function):  # noqa: ARG001
         ssh_client.exec_command("nordvpn set mesh off")
 
         daemon.stop_peer(ssh_client)
+
+        dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
+        ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
+        shutil.copy("/home/qa/.cache/nordvpn/norduserd.log", dest_logs_path)
+        shutil.copy("/home/qa/.cache/nordvpn/nordfileshare.log", dest_logs_path)
+
         daemon.uninstall_peer(ssh_client)
     daemon.stop() # TODO: LVPN-6403
 
