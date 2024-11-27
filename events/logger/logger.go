@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -118,11 +119,16 @@ func dataRequestAPIToString(
 		b.WriteString(fmt.Sprintf("Error: %s\n", data.Error))
 	}
 	if data.Response != nil {
+		tmpBody := "(binary data)"
+		// do not print binary data
+		if !slices.Contains(data.Response.Header.Values("Content-Type"), "application/octet-stream") {
+			tmpBody = string(respBody)
+		}
 		b.WriteString(fmt.Sprintf("Response: %s %d - %s %s\n",
 			data.Response.Proto,
 			data.Response.StatusCode,
 			data.Response.Header,
-			string(respBody),
+			tmpBody,
 		))
 	}
 
