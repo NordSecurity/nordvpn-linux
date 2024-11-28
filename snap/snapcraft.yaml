@@ -121,6 +121,7 @@ parts:
       - libxml2
       - e2fsprogs
       - dbus-x11
+      - libnl-genl-3-200
     organize:
       nordvpn: bin/nordvpn
       nordvpnd: bin/nordvpnd

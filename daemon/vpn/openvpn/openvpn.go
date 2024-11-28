@@ -44,7 +44,7 @@ var (
 )
 
 type OpenVPN struct {
-	process  *exec.Cmd
+	stopCh   chan error
 	manager  *gopenvpn.MgmtClient
 	state    vpn.State
 	substate vpn.Substate
@@ -56,11 +56,11 @@ type OpenVPN struct {
 	fwmark          uint32
 	eventsPublisher *vpn.Events
 	serverData      vpn.ServerData
-	// sync.Mutex is used all over the place due to how OpenVPN
+	// sync.RWMutex is used all over the place due to how OpenVPN
 	// is managed over the management interface.
 	// Simple Lock(); defer Unlock() results in deadlocks, since
 	// substates updates get stuck waiting for Mutex.
-	sync.Mutex
+	sync.RWMutex
 }
 
 func New(fwmark uint32, eventsPublisher *vpn.Events) *OpenVPN {
@@ -113,7 +113,7 @@ func (ovpn *OpenVPN) Start(
 
 	ovpn.active = true
 	// #nosec G204 -- input is properly sanitized
-	ovpn.process = exec.Command(
+	process := exec.Command(
 		openVPNExec,
 		"--config", openVPNConfigFileName, // path to openVpnConfig to be used
 		"--management-client",
@@ -127,10 +127,18 @@ func (ovpn *OpenVPN) Start(
 		"--mark", strconv.Itoa(int(ovpn.fwmark)),
 		"--dev-type", interfaceType,
 		"--dev", InterfaceName,
+		// DCO cannot be used because currently servers are pushing `comp-lzo no`
+		"--disable-dco",
 	)
+	err = startOpenVPN(process)
+
+	ovpn.stopCh = make(chan error, 1)
+	go func() {
+		ovpn.stopCh <- process.Wait()
+	}()
+
 	ovpn.Unlock()
 
-	err = ovpn.startOpenVPN()
 	if err != nil {
 		// #nosec G104 -- errors.Join would be useful here
 		ovpn.stop()
@@ -143,6 +151,12 @@ func (ovpn *OpenVPN) Start(
 		ovpn.manager = client
 		ovpn.Unlock()
 	case err := <-mErrCh:
+		return err
+	case err := <-ovpn.stopCh:
+		ovpn.Lock()
+		close(ovpn.stopCh)
+		ovpn.stopCh = nil
+		ovpn.Unlock()
 		return err
 	case <-time.After(3 * time.Second):
 		return errors.New("management timeout")
@@ -199,6 +213,8 @@ func (ovpn *OpenVPN) Stop() error {
 
 // stop actually stops openvpn process
 func (ovpn *OpenVPN) stop() error {
+	ovpn.Lock()
+	defer ovpn.Unlock()
 	if ovpn.manager != nil {
 		if pid, _ := ovpn.manager.Pid(); pid != 0 {
 			err := ovpn.manager.SendSignal("SIGINT")
@@ -208,20 +224,23 @@ func (ovpn *OpenVPN) stop() error {
 		}
 	}
 
-	if ovpn.process.Process != nil {
-		if err := ovpn.process.Wait(); err != nil {
+	if ovpn.stopCh != nil {
+		if err := <-ovpn.stopCh; err != nil {
 			// Don't return here as this could've failed due to non zero return code.
 			// This would result in broken ovpn state
 			log.Println(internal.ErrorPrefix, "Error on waiting for OpenVPN to stop:", err)
 		}
 
+		close(ovpn.stopCh)
+		ovpn.stopCh = nil
+	}
+
+	if ovpn.manager != nil {
 		if err := ovpn.manager.Close(); err != nil {
 			return err
 		}
 	}
 
-	ovpn.Lock()
-	defer ovpn.Unlock()
 	ovpn.manager = nil
 	ovpn.tun = nil
 	ovpn.active = false
@@ -272,38 +291,6 @@ func (ovpn *OpenVPN) GetConnectionParameters() (vpn.ServerData, bool) {
 	ovpn.Lock()
 	defer ovpn.Unlock()
 	return ovpn.serverData, ovpn.active
-}
-
-func (ovpn *OpenVPN) startOpenVPN() error {
-	stdout, err := ovpn.process.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	stderr, err := ovpn.process.StderrPipe()
-	if err != nil {
-		return err
-	}
-
-	stdoutCh := make(chan struct{})
-	stderrCh := make(chan struct{})
-	go vpnMonitor(stdout, "INFO", stdoutCh)
-	go vpnMonitor(stderr, "ERROR", stderrCh)
-
-	err = ovpn.process.Start()
-	if err != nil {
-		return err
-	}
-
-	select {
-	case <-stdoutCh:
-		close(stdoutCh)
-		return nil
-	case <-stderrCh:
-		close(stderrCh)
-		return nil
-	default:
-		return nil
-	}
 }
 
 func (ovpn *OpenVPN) setTun(tun tunnel.Tunnel) {
@@ -383,6 +370,38 @@ func (ovpn *OpenVPN) publishConnected() {
 // publishDisconnected publishes Connecting event using current stored server data. Thread unsafe.
 func (ovpn *OpenVPN) publishDisconnected(byUser bool) {
 	ovpn.eventsPublisher.Disconnected.Publish(events.DataDisconnect{ByUser: byUser})
+}
+
+func startOpenVPN(process *exec.Cmd) error {
+	stdout, err := process.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, err := process.StderrPipe()
+	if err != nil {
+		return err
+	}
+
+	stdoutCh := make(chan struct{})
+	stderrCh := make(chan struct{})
+	go vpnMonitor(stdout, "INFO", stdoutCh)
+	go vpnMonitor(stderr, "ERROR", stderrCh)
+
+	err = process.Start()
+	if err != nil {
+		return err
+	}
+
+	select {
+	case <-stdoutCh:
+		close(stdoutCh)
+		return nil
+	case <-stderrCh:
+		close(stderrCh)
+		return nil
+	default:
+		return nil
+	}
 }
 
 // stage1Handler handles events until first successful connection or timeout
