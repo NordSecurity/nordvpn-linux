@@ -23,6 +23,9 @@ libmoose_worker_artifact_url="${LIBMOOSE_WORKER_ARTIFACTS_URL}/${LIBMOOSE_WORKER
 libmoose_worker_zipfile="${temp_dir}/libmoose-worker-${LIBMOOSE_WORKER_VERSION}.zip"
 libmoose_worker_dst="${temp_dir}/libmoose-worker-${LIBMOOSE_WORKER_VERSION}"
 
+lib_versions_file="${WORKDIR}/lib-versions.env"
+checkout_completed_flag_file="${lib_root}/checkout-completed-flag"
+
 mkdir -p "${temp_dir}"
 
 function fetch_gitlab_artifact() {
@@ -85,9 +88,17 @@ function copy_to_libs() {
 }
 
 # Artifacts zips are pretty big. Skip downloading if it was already done.
-if [[ -e "${lib_root}/checkout-completed-flag" ]]; then
-  echo "Dependencies already downloaded. Skipping download step."
-  exit 0
+# UNLESS the versions of the libs checked out recently do not match the
+# versions present in `lib-versions.env`
+if [[ -e "${checkout_completed_flag_file}" ]]; then
+  if cmp -s "${checkout_completed_flag_file}" "${lib_versions_file}"; then
+    echo "Dependencies already downloaded. Skipping download step."
+    exit 0
+  else
+    echo "You have library dependencies downloaded, but the versions do not match with lib-versions.env file."
+    echo "Run \`mage clean\` first to get rid of old dependencies and rerun the build to fetch correct versions."
+    exit 1
+  fi
 fi
 
 # ====================[  Download artifacts ]=========================
@@ -134,4 +145,4 @@ fi
 # remove leftovers
 rm -rf "${temp_dir}"
 
-touch "${lib_root}/checkout-completed-flag"
+cp "${lib_versions_file}" "${checkout_completed_flag_file}"
