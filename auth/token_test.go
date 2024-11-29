@@ -164,7 +164,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 			assert.Equal(t, lastToken, cm.c.TokensData[0].Token)
 		}
 
-		// make a proper request once again, and expect the saved token data to be udated
+		// make a proper request once again, and expect the saved token data to be updated
 		{
 			rt.resp = &core.TokenRenewResponse{
 				Token:      uuid.New().String(),
