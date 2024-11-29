@@ -126,7 +126,7 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 					rw.WriteHeader(http.StatusCreated)
 					return
 				}
-				rw.WriteHeader(301)
+				rw.WriteHeader(http.StatusCreated)
 				rw.Write(data)
 			},
 			err: nil,
