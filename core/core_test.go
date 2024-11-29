@@ -123,7 +123,7 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 				assert.Equal(t, idempotencyKey.String(), r.Header.Get("Idempotency-Key"))
 				data, err := os.ReadFile(fmt.Sprintf("testdata/%s_%d.json", "core_token_renew", http.StatusCreated))
 				if err != nil {
-					rw.WriteHeader(http.StatusCreated)
+					rw.WriteHeader(http.StatusInternalServerError)
 					return
 				}
 				rw.WriteHeader(http.StatusCreated)
