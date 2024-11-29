@@ -150,6 +150,7 @@ overrides:
       - libidn2
       - zlib
       - (libnl3 or libnl3-200)
+      - glibc >= 2.29
     # RPM specific scripts.
     scripts:
       postinstall: ${WORKDIR}/contrib/scriptlets/rpm/post
