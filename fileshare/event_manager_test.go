@@ -217,7 +217,8 @@ func (m *mockStorage) PurgeTransfersUntil(until time.Time) error {
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "", make(chan Event))
+
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
 
@@ -259,7 +260,7 @@ func TestGetTransfers(t *testing.T) {
 func TestGetTransfers_Fail(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "", make(chan Event))
 	eventManager.SetStorage(&mockStorage{err: errors.New("storage failure")})
 	_, err := eventManager.GetTransfers()
 	assert.ErrorContains(t, err, "storage failure")
@@ -268,7 +269,7 @@ func TestGetTransfers_Fail(t *testing.T) {
 func TestTransferProgress(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "", make(chan Event))
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
@@ -502,7 +503,7 @@ func TestAcceptTransfer(t *testing.T) {
 			&mockMeshClient{},
 			&mockSystemEnvironment.mockEventManagerOsInfo,
 			&mockSystemEnvironment.mockEventManagerFilesystem,
-			"")
+			"", make(chan Event))
 		storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 		eventManager.SetStorage(storage)
 		storage.transfers[transferID] = &pb.Transfer{
@@ -534,7 +535,7 @@ func TestAcceptTransfer_Outgoing(t *testing.T) {
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
-		"")
+		"", make(chan Event))
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
 	transferID := exampleUUID
@@ -557,7 +558,7 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
-		"")
+		"", make(chan Event))
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
 	transferID := exampleUUID
@@ -588,7 +589,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
-			"")
+			"", make(chan Event))
 		eventManager.notificationManager = &notificationManager
 		eventManager.SetFileshare(&mockEventManagerFileshare{})
 		storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
@@ -724,7 +725,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
-		"")
+		"", make(chan Event))
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
@@ -779,7 +780,7 @@ func TestTransferRequestNotification(t *testing.T) {
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
-		"")
+		"", make(chan Event))
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -890,7 +891,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 			&mockMeshClient{},
 			&osInfo,
 			&filesystem,
-			"")
+			"", make(chan Event))
 		storage := &mockStorage{}
 		eventManager.SetStorage(storage)
 		storage.transfers = map[string]*pb.Transfer{
@@ -1054,7 +1055,7 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
-		mockOsEnvironment.destinationDirectory)
+		mockOsEnvironment.destinationDirectory, make(chan Event))
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetStorage(&mockStorage{})
 
@@ -1119,7 +1120,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
-			"")
+			"", make(chan Event))
 		eventManager.notificationManager = &notificationManager
 		eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -1238,7 +1239,7 @@ func TestAutoaccept(t *testing.T) {
 		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
-		mockOsEnvironment.destinationDirectory)
+		mockOsEnvironment.destinationDirectory, make(chan Event))
 	eventManager.notificationManager = &notificationManager
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
