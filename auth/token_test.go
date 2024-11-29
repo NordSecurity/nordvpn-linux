@@ -19,12 +19,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockRt struct {
+type mockRoundTripper struct {
 	resp                   *core.TokenRenewResponse
 	expectedIdempotencyKey uuid.UUID
 }
 
-func (rt *mockRt) RoundTrip(req *http.Request) (*http.Response, error) {
+func (rt *mockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.URL.Path != "/v1/users/tokens/renew" {
 		panic(fmt.Errorf("requested on an unexpected path: `%s`", req.URL.Path))
 	}
@@ -99,7 +99,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 
 	category.Set(t, category.Unit)
 
-	rt := mockRt{
+	rt := mockRoundTripper{
 		expectedIdempotencyKey: idempotencyKey,
 	}
 	client := request.NewStdHTTP()
