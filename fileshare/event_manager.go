@@ -77,8 +77,7 @@ func NewEventManager(
 		defaultDownloadDir:    defaultDownloadDir,
 	}
 	go func() {
-		for {
-			event := <-ch
+		for event := range ch {
 			em.mutex.Lock()
 			em.OnEvent(event)
 			em.mutex.Unlock()
