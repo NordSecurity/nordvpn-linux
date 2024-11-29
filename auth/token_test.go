@@ -129,21 +129,20 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		expChecker: systemTimeExpirationChecker{},
 	}
 
-	{
-		// replace the current expired token with a new one from server, normal behavior
-		{
-			rt.resp = &core.TokenRenewResponse{
-				Token:      uuid.New().String(),
-				RenewToken: "renew-token",
-				ExpiresAt:  validDate.String(),
-			}
-			isLoggedIn := rc.IsLoggedIn()
-			assert.True(t, isLoggedIn)
-			assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token)
+	t.Run("valid token renewal request", func(t *testing.T) {
+		rt.resp = &core.TokenRenewResponse{
+			Token:      uuid.New().String(),
+			RenewToken: "renew-token",
+			ExpiresAt:  validDate.String(),
 		}
+		isLoggedIn := rc.IsLoggedIn()
+		assert.True(t, isLoggedIn, "user should be logged in")
+		assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token, "token should be updated in the configuration")
+	})
 
+	t.Run("token renewal attempt with expected failure on a HTTP level", func(t *testing.T) {
 		// replace the token in the config with one that is expired.
-		// the next IsLoggedIn() request should attempt a token renewal
+		// so the next IsLoggedIn() request should attempt a token renewal
 		cm.c.TokensData[0] = config.TokenData{
 			Token:              rt.resp.Token,
 			RenewToken:         rt.resp.RenewToken,
@@ -156,24 +155,21 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 
 		// next request is a failure from our custom roundtripper,
 		// make sure that the token in the configuration itself has not been changed, thus the client didn't log out
-		{
-			lastToken := strings.Clone(cm.c.TokensData[0].Token)
-			rt.resp = nil
-			isLoggedIn := rc.IsLoggedIn()
-			assert.True(t, isLoggedIn)
-			assert.Equal(t, lastToken, cm.c.TokensData[0].Token)
-		}
+		lastToken := strings.Clone(cm.c.TokensData[0].Token)
+		rt.resp = nil // setting the resp to nil means that the request will fail
+		isLoggedIn := rc.IsLoggedIn()
+		assert.True(t, isLoggedIn, "user should be logged in, even after a failed request")
+		assert.Equal(t, lastToken, cm.c.TokensData[0].Token, "token should not be updated in the configuration after a failed request")
+	})
 
-		// make a proper request once again, and expect the saved token data to be updated
-		{
-			rt.resp = &core.TokenRenewResponse{
-				Token:      uuid.New().String(),
-				RenewToken: "renew-token",
-				ExpiresAt:  validDate.String(),
-			}
-			isLoggedIn := rc.IsLoggedIn()
-			assert.True(t, isLoggedIn)
-			assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token)
+	t.Run("valid token renewal request after a failure", func(t *testing.T) {
+		rt.resp = &core.TokenRenewResponse{
+			Token:      uuid.New().String(),
+			RenewToken: "renew-token",
+			ExpiresAt:  validDate.String(),
 		}
-	}
+		isLoggedIn := rc.IsLoggedIn()
+		assert.True(t, isLoggedIn, "user should be logged in")
+		assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token, "token should be updated in the configuration")
+	})
 }
