@@ -7,9 +7,15 @@ import dns.resolver
 import pytest
 import sh
 
+import sys
+import os
+
 from lib import logging, network
 
 _CHECK_FREQUENCY=5
+
+sys.path.append(os.path.abspath(os.path.join(
+    os.path.dirname(__file__), 'lib/protobuf/daemon')))
 
 def print_to_string(*args, **kwargs):
     output = io.StringIO()

@@ -32,6 +32,20 @@ const (
 	defaultHeartbeatInterval = 60 * 60
 )
 
+type lib interface {
+	ConnectToExitNode(publicKey teliogo.PublicKey, allowedIps *[]teliogo.IpNet, endpoint *teliogo.SocketAddr) error
+	ConnectToExitNodePostquantum(identifier *string, publicKey teliogo.PublicKey, allowedIps *[]teliogo.IpNet, endpoint teliogo.SocketAddr) error
+	DisconnectFromExitNodes() error
+	SetMeshnetOff() error
+	NotifyNetworkChange(networkInfo string) error
+	SetMeshnet(cfg teliogo.Config) error
+	GetStatusMap() []teliogo.TelioNode
+	StartNamed(secretKey teliogo.SecretKey, adapter teliogo.TelioAdapterType, name string) error
+	Stop() error
+	SetFwmark(fwmark uint32) error
+	SetSecretKey(secretKey teliogo.SecretKey) error
+}
+
 type state struct {
 	Nickname  string
 	State     teliogo.NodeState
@@ -106,7 +120,7 @@ func eventCallback(states chan<- state) eventCb {
 // 8. VPN disconnected, calling Disable - tunnel must be destroyed
 type Libtelio struct {
 	state                   vpn.State
-	lib                     *teliogo.Telio
+	lib                     lib
 	events                  <-chan state
 	cancelConnectionMonitor func()
 	active                  bool
@@ -245,11 +259,11 @@ func (l *Libtelio) Start(
 
 // connect to the VPN server
 func (l *Libtelio) connect(
-	ctx context.Context,
+	connectCtx context.Context,
 	serverIP netip.Addr,
 	serverPublicKey string,
 	postQuantum bool) error {
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	l.cancelConnectionMonitor = cancel
 
 	// Start monitoring connection events before connecting to not miss any
@@ -288,6 +302,9 @@ func (l *Libtelio) connect(
 	// Check if the connection actually happened. Disconnect if no actual connection was
 	// created within the timeout or until it was canceled.
 	select {
+	case <-connectCtx.Done():
+		l.disconnect()
+		return ctx.Err()
 	case <-ctx.Done():
 		l.disconnect()
 		return ctx.Err()

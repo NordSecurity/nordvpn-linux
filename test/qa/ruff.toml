@@ -83,8 +83,7 @@ select = [
     # "ALL"
 ]
 
-ignore = [
-    # Line too long
+ignore = [ # Line too long
     "E501",
     # Use ternary operator instead of if-else-block
     "SIM108",
@@ -122,6 +121,7 @@ ignore = [
     "FBT002",
     "FBT003",
     "FIX002",
+    "I001",
     "ISC003",
     "PTH",
     "PERF203",
@@ -148,3 +148,5 @@ ignore = [
     "TRY003",
     "TRY300",
 ]
+
+exclude = ["test/qa/lib/protobuf/**"]
