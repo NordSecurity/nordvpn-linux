@@ -8,8 +8,8 @@ FROM ubuntu:20.04
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
 # Based on: https://github.com/docker-library/golang/blob/master/1.22/bookworm/Dockerfile
-ENV GOLANG_VERSION 1.22.5
-ENV GOLANG_SHA256 904b924d435eaea086515bc63235b192ea441bd8c9b198c507e85009e6e4c7f0
+ENV GOLANG_VERSION 1.23.3
+ENV GOLANG_SHA256 a0afb9744c00648bafb1b90b4aba5bdb86f424f02f9275399ce0c20b93a2c3a8
 
 RUN apt-get update && \
     apt-get -y --no-install-recommends upgrade && \
