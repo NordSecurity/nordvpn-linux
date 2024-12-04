@@ -22,7 +22,7 @@ import state_pb2 as state__pb2
 import status_pb2 as status__pb2
 import token_pb2 as token__pb2
 
-GRPC_GENERATED_VERSION = '1.67.1'
+GRPC_GENERATED_VERSION = '1.68.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
