@@ -131,7 +131,7 @@ func main() {
 		config.SettingsDataFilePath,
 		config.InstallFilePath,
 		Salt,
-		config.LinuxMachineIDGetter{},
+		config.NewMachineID(os.ReadFile, os.Hostname),
 		config.StdFilesystemHandle{},
 		configEvents.Config,
 	)
@@ -278,6 +278,10 @@ func main() {
 			log.Println(err)
 		}
 	}
+
+	log.Println("read")
+	f := config.NewMachineID(internal.FileRead, os.Hostname)
+	log.Println("read", f.GetMachineID().String())
 
 	// obfuscated machineID
 	deviceID := fmt.Sprintf("%x", sha256.Sum256([]byte(cfg.MachineID.String()+Salt)))
