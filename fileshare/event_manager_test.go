@@ -217,7 +217,7 @@ func (m *mockStorage) PurgeTransfersUntil(until time.Time) error {
 func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "", make(chan Event))
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
@@ -260,7 +260,7 @@ func TestGetTransfers(t *testing.T) {
 func TestGetTransfers_Fail(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "", make(chan Event))
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.SetStorage(&mockStorage{err: errors.New("storage failure")})
 	_, err := eventManager.GetTransfers()
 	assert.ErrorContains(t, err, "storage failure")
@@ -269,7 +269,7 @@ func TestGetTransfers_Fail(t *testing.T) {
 func TestTransferProgress(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "", make(chan Event))
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
@@ -315,7 +315,7 @@ func TestTransferProgress(t *testing.T) {
 		},
 	}
 
-	eventManager.OnEvent(
+	eventManager.SyncEvent(
 		Event{
 			Kind: EventKindRequestQueued{
 				Peer:       peer,
@@ -343,16 +343,13 @@ func TestTransferProgress(t *testing.T) {
 
 	progCh := eventManager.Subscribe(transferID)
 
-	eventManager.OnEvent(
+	eventManager.SyncEvent(
 		Event{
 			Kind: EventKindFileStarted{
 				TransferId: transferID,
 				FileId:     file1ID,
 			},
 		},
-	)
-
-	eventManager.OnEvent(
 		Event{
 			Kind: EventKindFileStarted{
 				TransferId:  transferID,
@@ -364,7 +361,7 @@ func TestTransferProgress(t *testing.T) {
 
 	transferredBytes := file1sz
 	go func() {
-		eventManager.OnEvent(
+		eventManager.SyncEvent(
 			Event{
 				Kind: EventKindFileProgress{
 					TransferId:  transferID,
@@ -383,25 +380,19 @@ func TestTransferProgress(t *testing.T) {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
 	go func() {
-		eventManager.OnEvent(
+		eventManager.SyncEvent(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file1ID,
 				},
 			},
-		)
-
-		eventManager.OnEvent(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file2ID,
 				},
 			},
-		)
-
-		eventManager.OnEvent(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
@@ -413,7 +404,7 @@ func TestTransferProgress(t *testing.T) {
 		// Final transfer state is determined from storage
 		storage.transfers[transferID].Status = pb.Status_SUCCESS
 
-		eventManager.OnEvent(
+		eventManager.SyncEvent(
 			Event{
 				Timestamp: 0,
 				Kind: EventKindTransferFinalized{
@@ -503,7 +494,7 @@ func TestAcceptTransfer(t *testing.T) {
 			&mockMeshClient{},
 			&mockSystemEnvironment.mockEventManagerOsInfo,
 			&mockSystemEnvironment.mockEventManagerFilesystem,
-			"", make(chan Event))
+			"")
 		storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 		eventManager.SetStorage(storage)
 		storage.transfers[transferID] = &pb.Transfer{
@@ -535,7 +526,7 @@ func TestAcceptTransfer_Outgoing(t *testing.T) {
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
-		"", make(chan Event))
+		"")
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
 	transferID := exampleUUID
@@ -558,7 +549,7 @@ func TestAcceptTransfer_AlreadyAccepted(t *testing.T) {
 		&mockMeshClient{},
 		&mockSystemEnvironment.mockEventManagerOsInfo,
 		&mockSystemEnvironment.mockEventManagerFilesystem,
-		"", make(chan Event))
+		"")
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
 	transferID := exampleUUID
@@ -589,7 +580,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
-			"", make(chan Event))
+			"")
 		eventManager.notificationManager = &notificationManager
 		eventManager.SetFileshare(&mockEventManagerFileshare{})
 		storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
@@ -685,7 +676,9 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		eventManager, notifier := initializeEventManager(test.direction)
 
 		t.Run(test.name, func(t *testing.T) {
-			eventManager.OnEvent(test.event)
+			eventManager.SyncEvent(
+				test.event,
+			)
 
 			assert.Equal(t, 1, len(notifier.notifications),
 				"TransferFinished event was received, but EventManager did not send any notifications.")
@@ -725,7 +718,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
-		"", make(chan Event))
+		"")
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
@@ -741,7 +734,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		Direction:        pb.Direction_INCOMING,
 	}
 
-	eventManager.OnEvent(Event{
+	eventManager.SyncEvent(Event{
 		Kind: EventKindFileDownloaded{
 			TransferId: transferID,
 			FileId:     fileID,
@@ -780,7 +773,7 @@ func TestTransferRequestNotification(t *testing.T) {
 		&mockMeshClient{},
 		&mockEventManagerOsInfo{},
 		&mockEventManagerFilesystem{},
-		"", make(chan Event))
+		"")
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -807,7 +800,7 @@ func TestTransferRequestNotification(t *testing.T) {
 		},
 	}
 
-	eventManager.OnEvent(event)
+	eventManager.SyncEvent(event)
 
 	assert.Equal(t, 1, len(notifier.notifications),
 		"Transfer request notification was not sent after transfer request event was received.")
@@ -891,7 +884,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 			&mockMeshClient{},
 			&osInfo,
 			&filesystem,
-			"", make(chan Event))
+			"")
 		storage := &mockStorage{}
 		eventManager.SetStorage(storage)
 		storage.transfers = map[string]*pb.Transfer{
@@ -1055,7 +1048,7 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
-		mockOsEnvironment.destinationDirectory, make(chan Event))
+		mockOsEnvironment.destinationDirectory)
 	eventManager.notificationManager = &notificationManager
 	eventManager.SetStorage(&mockStorage{})
 
@@ -1120,7 +1113,7 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 			&mockMeshClient{},
 			&mockEventManagerOsInfo{},
 			&mockEventManagerFilesystem{},
-			"", make(chan Event))
+			"")
 		eventManager.notificationManager = &notificationManager
 		eventManager.SetFileshare(&mockEventManagerFileshare{})
 
@@ -1239,7 +1232,7 @@ func TestAutoaccept(t *testing.T) {
 		&mockMeshClient{},
 		&mockOsEnvironment.mockEventManagerOsInfo,
 		&mockOsEnvironment.mockEventManagerFilesystem,
-		mockOsEnvironment.destinationDirectory, make(chan Event))
+		mockOsEnvironment.destinationDirectory)
 	eventManager.notificationManager = &notificationManager
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
@@ -1341,7 +1334,7 @@ func TestAutoaccept(t *testing.T) {
 
 			eventManager.fileshare = &mockFileshare
 			eventManager.defaultDownloadDir = test.defaultDownloadDirectory
-			eventManager.OnEvent(event)
+			eventManager.SyncEvent(event)
 
 			if test.acceptedTransferID != "" {
 				assert.NotEmpty(t, mockFileshare.acceptedTransferIDS,

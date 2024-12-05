@@ -56,6 +56,10 @@ type EventManager struct {
 	filesystem            Filesystem
 	notificationManager   *NotificationManager
 	defaultDownloadDir    string
+
+	syncEvents  chan []Event
+	syncCh      chan struct{}
+	asyncEvents chan []Event
 }
 
 // NewEventManager loads transfer state from storage, or creates empty state if loading fails.
@@ -65,7 +69,6 @@ func NewEventManager(
 	osInfo OsInfo,
 	filesystem Filesystem,
 	defaultDownloadDir string,
-	ch <-chan Event,
 ) *EventManager {
 	em := &EventManager{
 		isProd:                isProd,
@@ -75,16 +78,50 @@ func NewEventManager(
 		osInfo:                osInfo,
 		filesystem:            filesystem,
 		defaultDownloadDir:    defaultDownloadDir,
+		syncEvents:            make(chan []Event),
+		syncCh:                make(chan struct{}),
+		asyncEvents:           make(chan []Event, 32),
 	}
-	go func() {
-		for event := range ch {
-			em.mutex.Lock()
-			em.OnEvent(event)
-			em.mutex.Unlock()
-		}
-	}()
+	go em.process()
 
 	return em
+}
+
+func (em *EventManager) process() {
+	fn := func(ev []Event) {
+		em.mutex.Lock()
+		for _, e := range ev {
+			em.handleEvent(e)
+		}
+		em.mutex.Unlock()
+	}
+
+	for {
+		select {
+		case e, ok := <-em.asyncEvents:
+			if !ok {
+				log.Println(internal.WarningPrefix + " asyncEvents channel closed")
+				return
+			}
+			fn(e)
+		case e, ok := <-em.syncEvents:
+			if !ok {
+				log.Println(internal.WarningPrefix + " syncEvents channel closed")
+				return
+			}
+			fn(e)
+			em.syncCh <- struct{}{}
+		}
+	}
+}
+
+func (em *EventManager) AsyncEvent(event ...Event) {
+	em.asyncEvents <- event
+}
+
+func (em *EventManager) SyncEvent(event ...Event) {
+	em.syncEvents <- event
+	<-em.syncCh
 }
 
 // SetFileshare must be called before using event manager.
@@ -137,7 +174,7 @@ func (em *EventManager) DisableNotifications() error {
 }
 
 // OnEvent processes events and handles live transfer state.
-func (em *EventManager) OnEvent(event Event) {
+func (em *EventManager) handleEvent(event Event) {
 	if !em.isProd {
 		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", EventToString(event))
 	}
@@ -227,8 +264,13 @@ func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 		return
 	}
 
+	fmt.Printf("total transferred b4: %d\n", transfer.TotalTransferred)
 	transfer.TotalTransferred += event.Transferred - file.Transferred // add only delta
 	file.Transferred = event.Transferred
+	fmt.Printf("event.Transferred: %d\n", event.Transferred)
+	fmt.Printf("file.Transferred: %d\n", file.Transferred)
+	fmt.Printf("transfer.TotalTransferred: %d\n", transfer.TotalTransferred)
+	fmt.Printf("\n\n\n")
 
 	if progressCh, ok := em.transferSubscriptions[transfer.ID]; ok {
 		var progressPercent uint32

@@ -73,13 +73,11 @@ func (dl defaultLogger) Level() norddrop.LogLevel {
 
 type libdropEventCallback struct {
 	eventCallback fileshare.EventCallback
-	ch            chan<- fileshare.Event
 }
 
 func (lec libdropEventCallback) OnEvent(nev norddrop.Event) {
 	ev := libdropEventToInternalEvent(nev)
-	lec.ch <- ev
-	// lec.eventCallback.OnEvent(ev)
+	lec.eventCallback.AsyncEvent(ev)
 }
 
 func libdropEventToInternalEvent(nev norddrop.Event) fileshare.Event {
@@ -193,7 +191,6 @@ func New(
 	pubkeyFunc func(string) []byte,
 	privKey string,
 	storagePath string,
-	ch chan<- fileshare.Event,
 ) (*Fileshare, error) {
 	keyStore := defaultKeyStore{
 		pubkeyFunc: pubkeyFunc,
@@ -206,7 +203,7 @@ func New(
 
 	logger := defaultLogger{logLevel}
 
-	eventCallback := libdropEventCallback{eventCb, ch}
+	eventCallback := libdropEventCallback{eventCb}
 	norddrop, err := norddrop.NewNordDrop(eventCallback, keyStore, logger)
 	if err != nil {
 		return nil, fmt.Errorf("creating norddrop instance: %w", err)
