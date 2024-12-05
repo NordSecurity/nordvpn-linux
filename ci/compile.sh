@@ -79,7 +79,7 @@ if [[ $tags == *"moose"* ]]; then
 fi
 
 if [[ $tags == *"quench"* ]]; then
-	source "${WORKDIR}"/ci/add_private_bindings.sh quench ./third-party/libquench-go/v2
+	source "${WORKDIR}"/ci/add_private_bindings.sh quench ./third-party/libquench-go
 fi
 
 for program in ${!names_map[*]}; do # looping over keys
