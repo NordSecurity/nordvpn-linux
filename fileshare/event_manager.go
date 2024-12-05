@@ -264,13 +264,8 @@ func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 		return
 	}
 
-	fmt.Printf("total transferred b4: %d\n", transfer.TotalTransferred)
 	transfer.TotalTransferred += event.Transferred - file.Transferred // add only delta
 	file.Transferred = event.Transferred
-	fmt.Printf("event.Transferred: %d\n", event.Transferred)
-	fmt.Printf("file.Transferred: %d\n", file.Transferred)
-	fmt.Printf("transfer.TotalTransferred: %d\n", transfer.TotalTransferred)
-	fmt.Printf("\n\n\n")
 
 	if progressCh, ok := em.transferSubscriptions[transfer.ID]; ok {
 		var progressPercent uint32
