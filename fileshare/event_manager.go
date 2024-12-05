@@ -58,7 +58,7 @@ type EventManager struct {
 	defaultDownloadDir    string
 
 	syncEvents  chan []Event
-	syncCh      chan struct{}
+	syncDoneCh  chan struct{}
 	asyncEvents chan []Event
 }
 
@@ -79,8 +79,8 @@ func NewEventManager(
 		filesystem:            filesystem,
 		defaultDownloadDir:    defaultDownloadDir,
 		syncEvents:            make(chan []Event),
-		syncCh:                make(chan struct{}),
-		asyncEvents:           make(chan []Event, 32),
+		syncDoneCh:            make(chan struct{}),
+		asyncEvents:           make(chan []Event, 2048),
 	}
 	go em.process()
 
@@ -110,7 +110,7 @@ func (em *EventManager) process() {
 				return
 			}
 			fn(e)
-			em.syncCh <- struct{}{}
+			em.syncDoneCh <- struct{}{}
 		}
 	}
 }
@@ -121,7 +121,7 @@ func (em *EventManager) AsyncEvent(event ...Event) {
 
 func (em *EventManager) SyncEvent(event ...Event) {
 	em.syncEvents <- event
-	<-em.syncCh
+	<-em.syncDoneCh
 }
 
 // SetFileshare must be called before using event manager.
@@ -250,6 +250,29 @@ func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceive
 	}
 }
 
+func (em *EventManager) withProgressCh(transferID string, fn func(ch chan TransferProgressInfo)) {
+	if ch, ok := em.transferSubscriptions[transferID]; ok {
+		fn(ch)
+	}
+}
+
+func (em *EventManager) reportProgress(transferID string, status pb.Status, transferred uint32) {
+	em.withProgressCh(transferID, func(ch chan TransferProgressInfo) {
+		progress := TransferProgressInfo{
+			TransferID:  transferID,
+			Transferred: transferred,
+			Status:      status,
+		}
+		select {
+		case ch <- progress:
+		default:
+			log.Println(internal.WarningPrefix, " progress channel is full. removing oldest item and sending")
+			<-ch
+			ch <- progress
+		}
+	})
+}
+
 func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
@@ -267,17 +290,11 @@ func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 	transfer.TotalTransferred += event.Transferred - file.Transferred // add only delta
 	file.Transferred = event.Transferred
 
-	if progressCh, ok := em.transferSubscriptions[transfer.ID]; ok {
-		var progressPercent uint32
-		if transfer.TotalSize > 0 { // transfer progress percentage should be reported to subscriber
-			progressPercent = uint32(float64(transfer.TotalTransferred) / float64(transfer.TotalSize) * 100)
-		}
-		progressCh <- TransferProgressInfo{
-			TransferID:  event.TransferId,
-			Transferred: progressPercent,
-			Status:      pb.Status_ONGOING,
-		}
+	var progressPercent uint32
+	if transfer.TotalSize > 0 { // transfer progress percentage should be reported to subscriber
+		progressPercent = uint32(float64(transfer.TotalTransferred) / float64(transfer.TotalSize) * 100)
 	}
+	em.reportProgress(transfer.ID, pb.Status_ONGOING, progressPercent)
 }
 
 func (em *EventManager) handleFileDownloadedEvent(event EventKindFileDownloaded) {
@@ -411,16 +428,13 @@ func (em *EventManager) handleTransferFinalizedEvent(event EventKindTransferFina
 }
 
 func (em *EventManager) finalizeTransfer(transfer *LiveTransfer, status pb.Status) {
-	if progressCh, ok := em.transferSubscriptions[transfer.ID]; ok {
-		progressCh <- TransferProgressInfo{
-			TransferID: transfer.ID,
-			Status:     status,
-		}
+	em.reportProgress(transfer.ID, status, 0)
+	em.withProgressCh(transfer.ID, func(ch chan TransferProgressInfo) {
 		// unsubscribe finished transfer
-		close(progressCh)
-		delete(em.transferSubscriptions, transfer.ID)
-	}
+		close(ch)
+	})
 
+	delete(em.transferSubscriptions, transfer.ID)
 	delete(em.liveTransfers, transfer.ID)
 }
 

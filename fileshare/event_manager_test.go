@@ -1359,11 +1359,13 @@ func TestAutoaccept(t *testing.T) {
 }
 
 func TestAsyncEvents(t *testing.T) {
-	const numEvents uint64 = 64
+	const numEvents uint64 = 1024
+	const chunkSize uint64 = 8
+	const chunkCount uint64 = numEvents / chunkSize
 
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager := NewEventManager(true, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
 	eventManager.SetFileshare(&mockEventManagerFileshare{})
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
@@ -1424,18 +1426,43 @@ func TestAsyncEvents(t *testing.T) {
 			},
 		)
 	}
-	eventManager.AsyncEvent(events...)
 
-	progCh := eventManager.Subscribe(transferID)
-	lastProgress := uint32(0)
-	for i := uint64(0); i < numEvents; i++ {
-		prog := <-progCh
-		if prog.Transferred < lastProgress {
-			t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)
+	chunks := make([][]Event, chunkCount)
+	for i := uint64(0); i < chunkCount; i++ {
+		chunks[i] = make([]Event, chunkSize)
+		for j := uint64(0); j < chunkSize; j++ {
+			chunks[i][j] = events[(i*chunkSize)+j]
 		}
-		lastProgress = prog.Transferred
 	}
-	if len(progCh) != 0 {
-		t.Fatalf("progCh was not drained, len(progCh) = %d", len(progCh))
-	}
+
+	t.Run("AsyncEvent() should not block with progCh buffer = 32 and 1024 events ", func(t *testing.T) {
+		progCh := make(chan TransferProgressInfo, 32)
+		eventManager.transferSubscriptions[transferID] = progCh
+
+		for _, chunk := range chunks {
+			eventManager.AsyncEvent(chunk...)
+		}
+	})
+
+	t.Run("AsyncEvent() events should be in order & all received", func(t *testing.T) {
+		progCh := make(chan TransferProgressInfo, numEvents*2) // enough buffer space
+		eventManager.transferSubscriptions[transferID] = progCh
+
+		for _, chunk := range chunks {
+			eventManager.AsyncEvent(chunk...)
+		}
+		lastProgress := uint32(0)
+		for i := uint64(0); i < numEvents-2; i++ {
+			prog := <-progCh
+			if prog.Transferred < lastProgress {
+				t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)
+			}
+			lastProgress = prog.Transferred
+		}
+
+		if len(progCh) != 0 {
+			t.Fatalf("progCh was not drained, len(progCh) = %d", len(progCh))
+		}
+	})
+
 }
