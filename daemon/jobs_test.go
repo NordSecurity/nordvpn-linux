@@ -36,6 +36,7 @@ func (failingLoginChecker) IsMFAEnabled() (bool, error) { return false, nil }
 func (failingLoginChecker) IsVPNExpired() (bool, error) {
 	return true, errors.New("IsVPNExpired error")
 }
+
 func (failingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
@@ -154,6 +155,15 @@ func (*meshNetworker) GetConnectionParameters() (vpn.ServerData, bool) {
 	return vpn.ServerData{}, false
 }
 
+type handlerDummy struct{}
+
+func (handlerDummy) OnProcessStarted(meshnet.ProcEvent) {}
+func (handlerDummy) OnProcessStopped(meshnet.ProcEvent) {}
+
+func monitorSetupDummy() (meshnet.MonitorChannels, error) {
+	return meshnet.MonitorChannels{}, nil
+}
+
 func TestStartAutoMeshnet(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -215,6 +225,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				nil,
 				&daemonevents.Events{},
 				&testnorduser.MockNorduserClient{},
+				meshnet.NewProcMonitor(handlerDummy{}, monitorSetupDummy),
 				sharedctx.New(),
 			)
 

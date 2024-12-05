@@ -39,21 +39,23 @@ var (
 // Server is an implementation of pb.MeshnetServer. It represents the
 // part of meshnet in a daemon side
 type Server struct {
-	ac                auth.Checker
-	cm                config.Manager
-	mc                Checker
-	invitationAPI     mesh.Inviter
-	netw              Networker
-	reg               mesh.Registry
-	nameservers       dns.Getter
-	pub               events.Publisher[error]
-	subjectPeerUpdate events.Publisher[[]string]
-	daemonEvents      *daemonevents.Events
-	lastPeers         string
-	lastConnectedPeer string
-	norduser          service.NorduserFileshareClient
-	scheduler         gocron.Scheduler
-	connectContext    *sharedctx.Context
+	ac                   auth.Checker
+	cm                   config.Manager
+	mc                   Checker
+	invitationAPI        mesh.Inviter
+	netw                 Networker
+	reg                  mesh.Registry
+	nameservers          dns.Getter
+	pub                  events.Publisher[error]
+	subjectPeerUpdate    events.Publisher[[]string]
+	daemonEvents         *daemonevents.Events
+	lastPeers            string
+	lastConnectedPeer    string
+	norduser             service.NorduserFileshareClient
+	scheduler            gocron.Scheduler
+	fileshareProcMonitor NetlinkProcessMonitor
+	monitorStopper       *MonitorStopper
+	connectContext       *sharedctx.Context
 	pb.UnimplementedMeshnetServer
 }
 
@@ -70,23 +72,25 @@ func NewServer(
 	subjectPeerUpdate events.Publisher[[]string],
 	deemonEvents *daemonevents.Events,
 	norduser service.NorduserFileshareClient,
+	fileshareProcMonitor NetlinkProcessMonitor,
 	connectContext *sharedctx.Context,
 ) *Server {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &Server{
-		ac:                ac,
-		cm:                cm,
-		mc:                mc,
-		invitationAPI:     invitationAPI,
-		netw:              netw,
-		reg:               reg,
-		nameservers:       nameservers,
-		pub:               pub,
-		subjectPeerUpdate: subjectPeerUpdate,
-		daemonEvents:      deemonEvents,
-		norduser:          norduser,
-		scheduler:         scheduler,
-		connectContext:    connectContext,
+		ac:                   ac,
+		cm:                   cm,
+		mc:                   mc,
+		invitationAPI:        invitationAPI,
+		netw:                 netw,
+		reg:                  reg,
+		nameservers:          nameservers,
+		pub:                  pub,
+		subjectPeerUpdate:    subjectPeerUpdate,
+		daemonEvents:         deemonEvents,
+		norduser:             norduser,
+		scheduler:            scheduler,
+		fileshareProcMonitor: fileshareProcMonitor,
+		connectContext:       connectContext,
 	}
 }
 
@@ -222,6 +226,17 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 			},
 		}, nil
 	}
+
+	stopper, err := s.fileshareProcMonitor.Start()
+	if err != nil {
+		s.pub.Publish(err)
+		return &pb.MeshnetResponse{
+			Response: &pb.MeshnetResponse_ServiceError{
+				ServiceError: pb.ServiceErrorCode_MONITOR_FAILURE,
+			},
+		}, nil
+	}
+	s.monitorStopper = &stopper
 
 	s.daemonEvents.Settings.Meshnet.Publish(true)
 
@@ -371,6 +386,10 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 				ServiceError: pb.ServiceErrorCode_CONFIG_FAILURE,
 			},
 		}, nil
+	}
+
+	if s.monitorStopper != nil {
+		s.monitorStopper.Stop()
 	}
 	s.daemonEvents.Settings.Meshnet.Publish(false)
 
@@ -2951,9 +2970,7 @@ func (s *Server) Connect(
 	_ context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.ConnectResponse, error) {
-	var (
-		resp *pb.ConnectResponse
-	)
+	var resp *pb.ConnectResponse
 	if !s.connectContext.TryExecuteWith(func(ctx context.Context) {
 		resp = s.connect(ctx, req)
 	}) {
