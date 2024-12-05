@@ -1357,3 +1357,85 @@ func TestAutoaccept(t *testing.T) {
 		})
 	}
 }
+
+func TestAsyncEvents(t *testing.T) {
+	const numEvents uint64 = 64
+
+	category.Set(t, category.Unit)
+
+	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+	eventManager.SetFileshare(&mockEventManagerFileshare{})
+	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+	eventManager.SetStorage(storage)
+
+	transferID := exampleUUID
+	peer := "12.12.12.12"
+	path := tmpDir
+	file := "testfile"
+	fileID := "testfileid"
+	var fileSize uint64 = numEvents * 100
+
+	storage.transfers[transferID] = &pb.Transfer{
+		Id:        transferID,
+		Peer:      peer,
+		Path:      path,
+		Status:    pb.Status_REQUESTED,
+		TotalSize: fileSize,
+		Files: []*pb.File{
+			{
+				Id:     fileID,
+				Path:   file,
+				Size:   fileSize,
+				Status: pb.Status_REQUESTED,
+			},
+		},
+	}
+
+	events := []Event{
+		{
+			Kind: EventKindRequestQueued{
+				Peer:       peer,
+				TransferId: transferID,
+				Files: []QueuedFile{
+					{
+						Id:   fileID,
+						Path: file,
+						Size: fileSize,
+					},
+				},
+			},
+		},
+		{
+			Kind: EventKindFileStarted{
+				TransferId: transferID,
+				FileId:     fileID,
+			},
+		},
+	}
+
+	for i := uint64(0); i < numEvents; i++ {
+		events = append(events,
+			Event{
+				Kind: EventKindFileProgress{
+					TransferId:  transferID,
+					FileId:      fileID,
+					Transferred: (fileSize / numEvents) * (i + 1),
+				},
+			},
+		)
+	}
+	eventManager.AsyncEvent(events...)
+
+	progCh := eventManager.Subscribe(transferID)
+	lastProgress := uint32(0)
+	for i := uint64(0); i < numEvents; i++ {
+		prog := <-progCh
+		if prog.Transferred < lastProgress {
+			t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)
+		}
+		lastProgress = prog.Transferred
+	}
+	if len(progCh) != 0 {
+		t.Fatalf("progCh was not drained, len(progCh) = %d", len(progCh))
+	}
+}
