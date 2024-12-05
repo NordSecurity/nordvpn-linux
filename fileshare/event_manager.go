@@ -645,7 +645,7 @@ func (em *EventManager) Subscribe(id string) <-chan TransferProgressInfo {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
-	em.transferSubscriptions[id] = make(chan TransferProgressInfo)
+	em.transferSubscriptions[id] = make(chan TransferProgressInfo, 32) // use buffered channels, because we don't want to block the event processing
 
 	return em.transferSubscriptions[id]
 }
