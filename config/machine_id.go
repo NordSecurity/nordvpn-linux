@@ -46,19 +46,7 @@ func (getter MachineID) GetMachineID() uuid.UUID {
 
 	// Fallback to manually generating a UUID
 	log.Println(internal.ErrorPrefix, "failed to generate random UUID", err)
-	var fallbackUUID uuid.UUID
-	_, err = rand.Read(fallbackUUID[:])
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "rand failed, retry to generate uuid", err)
-		return uuid.New()
-	}
-
-	// Set version (4) and variant bits according to RFC 4122
-	fallbackUUID[6] = (fallbackUUID[6] & 0x0F) | 0x40 // Version 4
-	fallbackUUID[8] = (fallbackUUID[8] & 0x3F) | 0x80 // Variant (10xx)
-
-	// ensure that the random generate UUID is correct
-	return uuid.MustParse(fallbackUUID.String())
+	return getter.fallbackGenerateUUID()
 }
 
 func (getter MachineID) generateID() (uuid.UUID, error) {
@@ -133,6 +121,24 @@ func (getter MachineID) readMotherboardSerialNumber() ([]byte, error) {
 
 func (getter MachineID) readProductUUID() ([]byte, error) {
 	return getter.fileReader("/sys/class/dmi/id/product_uuid")
+}
+
+// fallback to generate a UUID using random data, when uuid.New fails
+func (getter MachineID) fallbackGenerateUUID() uuid.UUID {
+	var id uuid.UUID
+	// randomize the content
+	_, err := rand.Read(id[:])
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "rand failed, retry to generate uuid", err)
+		return uuid.New()
+	}
+
+	// Set version (4) and variant bits according to RFC 4122
+	id[6] = (id[6] & 0x0F) | 0x40 // Version 4
+	id[8] = (id[8] & 0x3F) | 0x80 // Variant (10xx)
+
+	// ensure that the random generate UUID is correct
+	return uuid.MustParse(id.String())
 }
 
 func getValueForKey(fileContent string, key string, delim string) (string, error) {

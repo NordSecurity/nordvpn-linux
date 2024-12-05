@@ -122,13 +122,14 @@ func TestGenerateMachineID(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			generator := NewMachineID(func(fileName string) ([]byte, error) {
-				val, ok := test.filesContent[fileName]
-				if !ok {
-					return nil, fmt.Errorf("cannot open file")
-				}
-				return []byte(val), nil
-			},
+			generator := NewMachineID(
+				func(fileName string) ([]byte, error) {
+					val, ok := test.filesContent[fileName]
+					if !ok {
+						return nil, fmt.Errorf("cannot open file")
+					}
+					return []byte(val), nil
+				},
 				func() (name string, err error) {
 					if test.hostName == "" {
 						return "", fmt.Errorf("failed to get hostname")
@@ -156,4 +157,13 @@ func TestGenerateMachineID(t *testing.T) {
 			assert.Equal(t, machineUUID, id)
 		})
 	}
+}
+
+func TestFallbackGenerateUUID(t *testing.T) {
+	generator := MachineID{}
+
+	// check that a UUID is returned and that is is not all 0s
+	id, err := uuid.Parse(generator.fallbackGenerateUUID().String())
+	assert.Nil(t, err)
+	assert.NotEqual(t, id, uuid.UUID{})
 }
