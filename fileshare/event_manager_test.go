@@ -1359,39 +1359,19 @@ func TestAutoaccept(t *testing.T) {
 }
 
 func TestAsyncEvents(t *testing.T) {
-	const numEvents uint64 = 1024
-	const chunkSize uint64 = 8
-	const chunkCount uint64 = numEvents / chunkSize
-
 	category.Set(t, category.Unit)
 
-	eventManager := NewEventManager(true, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
-	eventManager.SetFileshare(&mockEventManagerFileshare{})
-	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
-	eventManager.SetStorage(storage)
-
-	transferID := exampleUUID
-	peer := "12.12.12.12"
-	path := tmpDir
-	file := "testfile"
-	fileID := "testfileid"
-	var fileSize uint64 = numEvents * 100
-
-	storage.transfers[transferID] = &pb.Transfer{
-		Id:        transferID,
-		Peer:      peer,
-		Path:      path,
-		Status:    pb.Status_REQUESTED,
-		TotalSize: fileSize,
-		Files: []*pb.File{
-			{
-				Id:     fileID,
-				Path:   file,
-				Size:   fileSize,
-				Status: pb.Status_REQUESTED,
-			},
-		},
-	}
+	const (
+		numEvents  uint64 = 1024
+		chunkSize  uint64 = 8
+		chunkCount uint64 = numEvents / chunkSize
+		transferID string = exampleUUID
+		peer              = "12.12.12.12"
+		path              = tmpDir
+		file              = "testfile"
+		fileID            = "testfileid"
+		fileSize          = numEvents * 100
+	)
 
 	events := []Event{
 		{
@@ -1435,34 +1415,89 @@ func TestAsyncEvents(t *testing.T) {
 		}
 	}
 
-	t.Run("AsyncEvent() should not block with progCh buffer = 32 and 1024 events ", func(t *testing.T) {
-		progCh := make(chan TransferProgressInfo, 32)
-		eventManager.transferSubscriptions[transferID] = progCh
+	tests := []struct {
+		name       string
+		progChSize int
+		fn         func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo)
+	}{
+		{
+			name:       "AsyncEvent() should not block with progCh buffer = 1 and 1024 events",
+			progChSize: 32,
+			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
+				for _, chunk := range chunks {
+					em.AsyncEvent(chunk...)
+				}
+			},
+		},
+		{
+			name:       "AsyncEvent() events should be in order & all received",
+			progChSize: int(numEvents * 2),
+			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
+				for _, chunk := range chunks {
+					em.AsyncEvent(chunk...)
+				}
+				lastProgress := uint32(0)
+				for i := uint64(0); i < numEvents-2; i++ {
+					prog := <-progCh
+					if prog.Transferred < lastProgress {
+						t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)
+					}
+					lastProgress = prog.Transferred
+				}
 
-		for _, chunk := range chunks {
-			eventManager.AsyncEvent(chunk...)
-		}
-	})
+				if len(progCh) != 0 {
+					t.Fatalf("progCh was not drained, len(progCh) = %d", len(progCh))
+				}
+			},
+		},
+		{
+			name:       "SyncEvent() events should block",
+			progChSize: 32,
+			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
+				done := make(chan struct{})
+				go func() {
+					for _, chunk := range chunks {
+						em.SyncEvent(chunk...)
+					}
+					<-done
+				}()
 
-	t.Run("AsyncEvent() events should be in order & all received", func(t *testing.T) {
-		progCh := make(chan TransferProgressInfo, numEvents*2) // enough buffer space
-		eventManager.transferSubscriptions[transferID] = progCh
+				timeout := time.After(time.Millisecond * 100)
+				select {
+				case <-done:
+					t.Fatalf("SyncEvent() should block, but it didn't")
+				case <-timeout:
+				}
+			},
+		},
+	}
 
-		for _, chunk := range chunks {
-			eventManager.AsyncEvent(chunk...)
-		}
-		lastProgress := uint32(0)
-		for i := uint64(0); i < numEvents-2; i++ {
-			prog := <-progCh
-			if prog.Transferred < lastProgress {
-				t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			em := NewEventManager(true, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+			em.SetFileshare(&mockEventManagerFileshare{})
+			storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+			em.SetStorage(storage)
+
+			storage.transfers[transferID] = &pb.Transfer{
+				Id:        transferID,
+				Peer:      peer,
+				Path:      path,
+				Status:    pb.Status_REQUESTED,
+				TotalSize: fileSize,
+				Files: []*pb.File{
+					{
+						Id:     fileID,
+						Path:   file,
+						Size:   fileSize,
+						Status: pb.Status_REQUESTED,
+					},
+				},
 			}
-			lastProgress = prog.Transferred
-		}
 
-		if len(progCh) != 0 {
-			t.Fatalf("progCh was not drained, len(progCh) = %d", len(progCh))
-		}
-	})
-
+			progCh := make(chan TransferProgressInfo, test.progChSize)
+			em.transferSubscriptions[transferID] = progCh
+			test.fn(t, em, progCh)
+		})
+	}
 }
