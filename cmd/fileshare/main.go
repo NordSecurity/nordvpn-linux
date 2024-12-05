@@ -146,14 +146,12 @@ func main() {
 		defaultDownloadDirectory = ""
 	}
 
-	ch := make(chan fileshare.Event, 100)
 	eventManager := fileshare.NewEventManager(
 		internal.IsProdEnv(Environment),
 		meshClient,
 		fileshare.StdOsInfo{},
 		fileshare.NewStdFilesystem("/"),
 		defaultDownloadDirectory,
-		ch,
 	)
 
 	privKeyResponse, err := meshClient.GetPrivateKey(context.Background(), &meshpb.Empty{})
@@ -188,7 +186,6 @@ func main() {
 		fileshare.NewPubkeyProvider(meshClient).PubkeyFunc,
 		string(meshPrivKey),
 		storagePath,
-		ch,
 	)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "can't create fileshare implementation:", err)
