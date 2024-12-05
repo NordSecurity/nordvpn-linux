@@ -23,6 +23,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
+	"github.com/vishvananda/netlink"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -44,6 +45,7 @@ type meshRenewChecker struct {
 func (m meshRenewChecker) IsLoggedIn() bool {
 	return !m.IsNotLoggedIn
 }
+
 func (m meshRenewChecker) IsMFAEnabled() (bool, error) {
 	return false, nil
 }
@@ -92,6 +94,10 @@ func (n *workingNetworker) AllowFileshare(address UniqueAddress) error {
 	return nil
 }
 
+func (n *workingNetworker) PermitFileshare() error {
+	return nil
+}
+
 func (n *workingNetworker) AllowIncoming(address UniqueAddress, lanAllowed bool) error {
 	n.allowedIncoming = append(n.allowedIncoming, allowedIncoming{
 		address:    address,
@@ -108,6 +114,10 @@ func (n *workingNetworker) BlockIncoming(address UniqueAddress) error {
 
 func (n *workingNetworker) BlockFileshare(address UniqueAddress) error {
 	n.blockedFileshare = append(n.blockedFileshare, address)
+	return nil
+}
+
+func (n *workingNetworker) ForbidFileshare() error {
 	return nil
 }
 
@@ -172,6 +182,22 @@ func (acceptInvitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error
 	}, nil
 }
 
+type eventHandlerStub struct{}
+
+func (eventHandlerStub) OnProcessStarted(ProcEvent) {
+}
+
+func (eventHandlerStub) OnProcessStopped(ProcEvent) {
+}
+
+func monitorSetupStub() (MonitorChannels, error) {
+	return MonitorChannels{
+		EventCh: make(chan netlink.ProcEvent),
+		DoneCh:  make(chan struct{}),
+		ErrCh:   make(chan error),
+	}, nil
+}
+
 func newMockedServer(
 	t *testing.T,
 	listErr error,
@@ -209,6 +235,7 @@ func newMockedServer(
 			},
 		},
 		testnorduser.NewMockNorduserClient(nil),
+		NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 		sharedctx.New(),
 	)
 
@@ -284,6 +311,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 					},
 				},
 				testnorduser.NewMockNorduserClient(test.startFileshareError),
+				NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 				sharedctx.New(),
 			)
 			assert.NotEqual(t, nil, mserver)
@@ -370,6 +398,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 					},
 				},
 				testnorduser.NewMockNorduserClient(test.startFileshareError),
+				NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 				sharedctx.New(),
 			)
 			assert.NotEqual(t, nil, mserver)
@@ -438,6 +467,7 @@ func TestServer_Invite(t *testing.T) {
 					},
 				},
 				testnorduser.NewMockNorduserClient(nil),
+				NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 				sharedctx.New(),
 			)
 			server.EnableMeshnet(context.Background(), &pb.Empty{})
@@ -474,6 +504,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 			},
 		},
 		testnorduser.NewMockNorduserClient(nil),
+		NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 		sharedctx.New(),
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
@@ -510,6 +541,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 			},
 		},
 		testnorduser.NewMockNorduserClient(nil),
+		NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 		sharedctx.New(),
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
@@ -619,6 +651,7 @@ func TestServer_Connect(t *testing.T) {
 				},
 			},
 			testnorduser.NewMockNorduserClient(nil),
+			NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
@@ -760,6 +793,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 				},
 			},
 			testnorduser.NewMockNorduserClient(nil),
+			NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
@@ -891,6 +925,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 				},
 			},
 			testnorduser.NewMockNorduserClient(nil),
+			NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
@@ -1004,6 +1039,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 				},
 			},
 			testnorduser.NewMockNorduserClient(nil),
+			NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
@@ -1118,6 +1154,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 				},
 			},
 			testnorduser.NewMockNorduserClient(nil),
+			NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 			sharedctx.New(),
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
@@ -1763,6 +1800,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 					},
 				},
 				testnorduser.NewMockNorduserClient(nil),
+				NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 				sharedctx.New(),
 			)
 
@@ -2082,6 +2120,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 					},
 				},
 				testnorduser.NewMockNorduserClient(nil),
+				NewProcMonitor(eventHandlerStub{}, monitorSetupStub),
 				sharedctx.New(),
 			)
 
@@ -2113,61 +2152,5 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				assert.True(t, registryApi.CurrentMachine.SupportsRouting)
 			}
 		})
-	}
-}
-
-func TestServer_listPeers(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name          string
-		machine       *mesh.Machine
-		loadConfigErr error
-		listErr       error
-		shouldBeErr   bool
-	}{
-		{
-			name:        "success",
-			machine:     &mesh.Machine{},
-			shouldBeErr: false,
-		},
-		{
-			name:        "meshnet is not configured",
-			machine:     nil,
-			shouldBeErr: true,
-		},
-		{
-			name:          "load config error",
-			machine:       &mesh.Machine{},
-			loadConfigErr: fmt.Errorf("failed to load config"),
-			shouldBeErr:   true,
-		},
-		{
-			name:        "list error",
-			machine:     &mesh.Machine{},
-			listErr:     fmt.Errorf("failed to load config"),
-			shouldBeErr: true,
-		},
-	}
-
-	for _, test := range tests {
-		configManager := mock.NewMockConfigManager()
-		configManager.LoadErr = test.loadConfigErr
-		configManager.Cfg.MeshDevice = test.machine
-
-		registryApi := mock.RegistryMock{}
-		registryApi.ListErr = test.listErr
-
-		s := Server{
-			cm:  configManager,
-			reg: &registryApi,
-		}
-
-		_, err := s.listPeers()
-		if test.shouldBeErr {
-			assert.NotNil(t, err)
-		} else {
-			assert.Nil(t, err)
-		}
 	}
 }

@@ -131,7 +131,7 @@ func ruleAppliesForRoute(rule netlink.Rule, route netlink.Route, ifgroup uint32)
 		routeDstPrefixLen, _ = route.Dst.Mask.Size()
 	}
 	// Cannot make any assumptions about fwmarks as route has no information about them
-	return rule.Invert != (rule.Mark < 0 &&
+	return rule.Invert != (rule.Mark == 0 &&
 		rule.Table == route.Table &&
 		isSubnet(rule.Src, route.Dst) &&
 		(rule.SuppressPrefixlen < 0 || rule.SuppressPrefixlen < routeDstPrefixLen) &&

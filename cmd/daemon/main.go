@@ -65,6 +65,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/vishvananda/netlink"
 
 	"google.golang.org/grpc"
 )
@@ -129,7 +130,7 @@ func main() {
 
 	// Config
 	configEvents := daemonevents.NewConfigEvents()
-	fsystem := config.NewFilesystemConfigManager(
+	cfgMgr := config.NewFilesystemConfigManager(
 		config.SettingsDataFilePath,
 		config.InstallFilePath,
 		Salt,
@@ -138,9 +139,9 @@ func main() {
 		configEvents.Config,
 	)
 	var cfg config.Config
-	if err := fsystem.Load(&cfg); err != nil {
+	if err := cfgMgr.Load(&cfg); err != nil {
 		log.Println(err)
-		if err := fsystem.Reset(); err != nil {
+		if err := cfgMgr.Reset(); err != nil {
 			log.Fatalln(err)
 		}
 	}
@@ -236,7 +237,7 @@ func main() {
 		httpClientWithRotator,
 		validator,
 	)
-	meshAPIex := registry.NewRegistry(
+	meshRegistry := registry.NewRegistry(
 		defaultAPI,
 		meshnetEvents.SelfRemoved,
 	)
@@ -286,17 +287,17 @@ func main() {
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
 
-	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, Version, Environment, deviceID)
+	analytics := newAnalytics(eventsDbPath, cfgMgr, defaultAPI, Version, Environment, deviceID)
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	daemonEvents.Subscribe(analytics)
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
 
-	if fsystem.NewInstallation {
+	if cfgMgr.NewInstallation {
 		daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "first_open", ItemType: "button", ItemValue: "first_open", FormReference: "daemon"})
 	}
 
-	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem)
+	vpnLibConfigGetter := vpnLibConfigGetterImplementation(cfgMgr)
 
 	internalVpnEvents := vpn.NewInternalVPNEvents()
 
@@ -398,17 +399,17 @@ func main() {
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
 	meshnetChecker := meshnet.NewRegisteringChecker(
-		fsystem,
+		cfgMgr,
 		keygen,
-		meshAPIex,
+		meshRegistry,
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
-		meshAPIex, meshnetChecker, fsystem, netw,
+		meshRegistry, meshnetChecker, cfgMgr, netw,
 	).NotifyPeerUpdate)
 
 	meshUnsetter := meshunsetter.NewMeshnet(
-		fsystem,
+		cfgMgr,
 		netw,
 		errSubject,
 		norduserClient,
@@ -418,7 +419,7 @@ func main() {
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
 	authChecker := auth.NewRenewingChecker(
-		fsystem,
+		cfgMgr,
 		defaultAPI,
 		daemonEvents.User.MFA,
 		daemonEvents.User.Logout,
@@ -431,7 +432,7 @@ func main() {
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
-		nc.NewCredsFetcher(defaultAPI, fsystem))
+		nc.NewCredsFetcher(defaultAPI, cfgMgr))
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
 	dataUpdateEvents.Subscribe(statePublisher)
@@ -447,7 +448,7 @@ func main() {
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
 		authChecker,
-		fsystem,
+		cfgMgr,
 		dm,
 		defaultAPI,
 		defaultAPI,
@@ -465,22 +466,30 @@ func main() {
 		notificationClient,
 		analytics,
 		norduserService,
-		meshAPIex,
+		meshRegistry,
 		statePublisher,
 		sharedContext,
 	)
+
+	filesharePortController := meshnet.NewPortAccessController(cfgMgr, netw, meshRegistry)
+	fileshareProcMonitor := meshnet.NewProcMonitor(
+		&filesharePortController,
+		netlinkMonitorSetupFn,
+	)
+
 	meshService := meshnet.NewServer(
 		authChecker,
-		fsystem,
+		cfgMgr,
 		meshnetChecker,
 		defaultAPI,
 		netw,
-		meshAPIex,
+		meshRegistry,
 		threatProtectionLiteServers,
 		errSubject,
 		meshnetEvents.PeerUpdate,
 		daemonEvents,
 		norduserClient,
+		fileshareProcMonitor,
 		sharedContext,
 	)
 
@@ -578,11 +587,11 @@ func main() {
 		go rpc.StartAutoConnect(network.ExponentialBackoff)
 	}
 
-	monitor, err := netstate.NewNetlinkMonitor([]string{openvpn.InterfaceName, nordlynx.InterfaceName})
+	netMonitor, err := netstate.NewNetlinkMonitor([]string{openvpn.InterfaceName, nordlynx.InterfaceName})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	monitor.Start(netw)
+	netMonitor.Start(netw)
 
 	if authChecker.IsLoggedIn() {
 		go daemon.StartNC("[startup]", notificationClient)
@@ -610,4 +619,18 @@ func main() {
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
+}
+
+func netlinkMonitorSetupFn() (meshnet.MonitorChannels, error) {
+	eventCh := make(chan netlink.ProcEvent, 128)
+	doneCh := make(chan struct{})
+	errCh := make(chan error)
+	if err := netlink.ProcEventMonitor(eventCh, doneCh, errCh); err != nil {
+		return meshnet.MonitorChannels{}, err
+	}
+	return meshnet.MonitorChannels{
+		EventCh: eventCh,
+		DoneCh:  doneCh,
+		ErrCh:   errCh,
+	}, nil
 }

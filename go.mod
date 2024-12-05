@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.2
 
 // Bindings
-// NOTE: If you are chaning the binding versions here, keep in mind that you
+// NOTE: If you are changing the binding versions here, keep in mind that you
 // may also need to update versions in `./lib-versions.env` file.
 require (
 	github.com/NordSecurity/libdrop-go/v8 v8.0.0-20241017064027-670787595588
@@ -36,7 +36,7 @@ require (
 	github.com/quic-go/quic-go v0.48.2
 	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.25.0
-	github.com/vishvananda/netlink v1.1.0
+	github.com/vishvananda/netlink v1.3.0
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/mod v0.17.0
@@ -89,7 +89,7 @@ require (
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/vishvananda/netns v0.0.0-20211101163701-50045581ed74 // indirect
+	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0 // indirect

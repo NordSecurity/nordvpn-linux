@@ -469,7 +469,7 @@ func fwmarkRule(prioID int, fwmark uint32, tableID int, ipv6 bool) *netlink.Rule
 	rule := netlink.NewRule()
 	rule.Priority = prioID
 	rule.Invert = true
-	rule.Mark = int(fwmark)
+	rule.Mark = fwmark
 	rule.Table = tableID
 	rule.Family = toNetlinkFamily(ipv6)
 	return rule
