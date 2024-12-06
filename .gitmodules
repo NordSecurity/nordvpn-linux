@@ -4,3 +4,6 @@
 [submodule "third-party/moose-worker"]
 	path = third-party/moose-worker
 	url = ../../../../moose/moose-events.git
+[submodule "third-party/libquench-go"]
+	path = third-party/libquench-go
+	url = ../../libquench-go
