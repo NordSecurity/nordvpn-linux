@@ -435,6 +435,8 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 		technology = moose.NordvpnappVpnConnectionTechnologyNordlynx
 	case config.Technology_OPENVPN:
 		technology = moose.NordvpnappVpnConnectionTechnologyOpenvpn
+	case config.Technology_QUENCH:
+		technology = moose.NordvpnappVpnConnectionTechnologyNordwhisper
 	case config.Technology_UNKNOWN_TECHNOLOGY:
 		return errors.New("unknown technology")
 	default:
@@ -486,6 +488,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			protocol = moose.NordvpnappVpnConnectionProtocolTcp
 		case config.Protocol_UDP:
 			protocol = moose.NordvpnappVpnConnectionProtocolUdp
+		case config.Protocol_Webtunnel:
+			protocol = moose.NordvpnappVpnConnectionProtocolWebtunnel
 		case config.Protocol_UNKNOWN_PROTOCOL:
 			protocol = moose.NordvpnappVpnConnectionProtocolNone
 		default:
@@ -498,6 +502,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			technology = moose.NordvpnappVpnConnectionTechnologyOpenvpn
 		case config.Technology_NORDLYNX:
 			technology = moose.NordvpnappVpnConnectionTechnologyNordlynx
+		case config.Technology_QUENCH:
+			technology = moose.NordvpnappVpnConnectionTechnologyNordwhisper
 		case config.Technology_UNKNOWN_TECHNOLOGY:
 			technology = moose.NordvpnappVpnConnectionTechnologyNone
 		default:
@@ -581,6 +587,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			technology = moose.NordvpnappVpnConnectionTechnologyOpenvpn
 		case config.Technology_NORDLYNX:
 			technology = moose.NordvpnappVpnConnectionTechnologyNordlynx
+		case config.Technology_QUENCH:
+			technology = moose.NordvpnappVpnConnectionTechnologyNordwhisper
 		case config.Technology_UNKNOWN_TECHNOLOGY:
 			technology = moose.NordvpnappVpnConnectionTechnologyNone
 		default:
@@ -593,6 +601,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			protocol = moose.NordvpnappVpnConnectionProtocolTcp
 		case config.Protocol_UDP:
 			protocol = moose.NordvpnappVpnConnectionProtocolUdp
+		case config.Protocol_Webtunnel:
+			protocol = moose.NordvpnappVpnConnectionProtocolWebtunnel
 		case config.Protocol_UNKNOWN_PROTOCOL:
 			protocol = moose.NordvpnappVpnConnectionProtocolNone
 		default:
