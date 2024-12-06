@@ -94,6 +94,7 @@ apps:
       - firewall-control
       - sys-dbus
       - system-observe
+      - hardware-observe
 parts:
   nordvpn:
     plugin: nil
