@@ -13,6 +13,7 @@ import logout_pb2 as logout__pb2
 import ping_pb2 as ping__pb2
 import plans_pb2 as plans__pb2
 import purchase_pb2 as purchase__pb2
+import quench_hidden_pb2 as quench__hidden__pb2
 import rate_pb2 as rate__pb2
 import register_pb2 as register__pb2
 import servers_pb2 as servers__pb2
@@ -275,6 +276,11 @@ class DaemonStub(object):
                 '/pb.Daemon/SetPostQuantum',
                 request_serializer=set__pb2.SetGenericRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.IsQuenchEnabled = channel.unary_unary(
+                '/pb.Daemon/IsQuenchEnabled',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=quench__hidden__pb2.QuenchEnabled.FromString,
                 _registered_method=True)
 
 
@@ -551,6 +557,12 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def IsQuenchEnabled(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DaemonServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -778,6 +790,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.SetPostQuantum,
                     request_deserializer=set__pb2.SetGenericRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'IsQuenchEnabled': grpc.unary_unary_rpc_method_handler(
+                    servicer.IsQuenchEnabled,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=quench__hidden__pb2.QuenchEnabled.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1995,6 +2012,33 @@ class Daemon(object):
             '/pb.Daemon/SetPostQuantum',
             set__pb2.SetGenericRequest.SerializeToString,
             common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def IsQuenchEnabled(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/IsQuenchEnabled',
+            common__pb2.Empty.SerializeToString,
+            quench__hidden__pb2.QuenchEnabled.FromString,
             options,
             channel_credentials,
             insecure,

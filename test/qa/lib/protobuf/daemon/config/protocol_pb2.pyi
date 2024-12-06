@@ -9,6 +9,8 @@ class Protocol(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     UNKNOWN_PROTOCOL: _ClassVar[Protocol]
     UDP: _ClassVar[Protocol]
     TCP: _ClassVar[Protocol]
+    Webtunnel: _ClassVar[Protocol]
 UNKNOWN_PROTOCOL: Protocol
 UDP: Protocol
 TCP: Protocol
+Webtunnel: Protocol

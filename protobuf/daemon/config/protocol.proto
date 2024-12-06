@@ -8,4 +8,5 @@ enum Protocol {
   UNKNOWN_PROTOCOL = 0;
   UDP = 1;
   TCP = 2;
+  Webtunnel = 3;
 }
