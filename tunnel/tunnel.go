@@ -93,12 +93,16 @@ func Find(ipAddrs ...netip.Addr) (Tunnel, error) {
 
 func (t *Tunnel) cmdAddrs(cmd string) error {
 	for _, ip := range t.ips {
+		mask := 10 // unify with other platforms
+		if ip.BitLen() > 32 {
+			mask = ip.BitLen() // ipv6
+		}
 		// #nosec G204 -- input is properly sanitized
 		cmd := exec.Command(
 			"ip",
 			"address",
 			cmd,
-			fmt.Sprintf("%s/%d", ip.String(), ip.BitLen()),
+			fmt.Sprintf("%s/%d", ip.String(), mask),
 			"dev",
 			t.iface.Name,
 		)
