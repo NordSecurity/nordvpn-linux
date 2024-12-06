@@ -62,6 +62,8 @@ tags="${FEATURES:-"telio drop"}"
 source "${WORKDIR}"/ci/set_bindings_version.sh libtelio
 source "${WORKDIR}"/ci/set_bindings_version.sh libdrop
 
+private_bindings_rollback=""
+trap -- '${WORKDIR}/ci/remove_private_bindings.sh moose/events; ${WORKDIR}/ci/remove_private_bindings.sh moose/worker; ${WORKDIR}/ci/remove_private_bindings.sh quench' EXIT
 if [[ $tags == *"moose"* ]]; then
 	# Set correct events domain in case compiling with moose
 	if [[ "${ENVIRONMENT}" == "prod" ]]; then
@@ -79,7 +81,9 @@ if [[ $tags == *"moose"* ]]; then
 fi
 
 if [[ $tags == *"quench"* ]]; then
-	source "${WORKDIR}"/ci/add_private_bindings.sh quench ./third-party/libquench-go
+	private_bindings_rollback="${private_bindings_rollback} ${WORKDIR}/ci/remove_private_bindings.sh quench"
+	# trap -- "$private_bindings_rollback" EXIT
+	# source "${WORKDIR}"/ci/add_private_bindings.sh quench ./third-party/libquench-go
 fi
 
 for program in ${!names_map[*]}; do # looping over keys
