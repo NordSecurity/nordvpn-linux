@@ -284,7 +284,8 @@ func main() {
 	machineID := machineIdGenerator.GetMachineID()
 
 	// obfuscated machineID and add the mask to identify how the ID was generated
-	deviceID := fmt.Sprintf("%x_%x", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
+	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
+	log.Println("read", deviceID)
 
 	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, Version, Environment, deviceID)
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
