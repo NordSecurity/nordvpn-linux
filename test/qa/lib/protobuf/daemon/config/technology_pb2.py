@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17\x63onfig/technology.proto\x12\x06\x63onfig*?\n\nTechnology\x12\x16\n\x12UNKNOWN_TECHNOLOGY\x10\x00\x12\x0b\n\x07OPENVPN\x10\x01\x12\x0c\n\x08NORDLYNX\x10\x02\x42.Z,github.com/NordSecurity/nordvpn-linux/configb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17\x63onfig/technology.proto\x12\x06\x63onfig*K\n\nTechnology\x12\x16\n\x12UNKNOWN_TECHNOLOGY\x10\x00\x12\x0b\n\x07OPENVPN\x10\x01\x12\x0c\n\x08NORDLYNX\x10\x02\x12\n\n\x06QUENCH\x10\x03\x42.Z,github.com/NordSecurity/nordvpn-linux/configb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,5 +33,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z,github.com/NordSecurity/nordvpn-linux/config'
   _globals['_TECHNOLOGY']._serialized_start=35
-  _globals['_TECHNOLOGY']._serialized_end=98
+  _globals['_TECHNOLOGY']._serialized_end=110
 # @@protoc_insertion_point(module_scope)
