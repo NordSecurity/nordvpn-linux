@@ -3,7 +3,14 @@ set -euxo pipefail
 
 # NOTE: this script should be run in systemd/snapd environment, non-root
 
+source "${WORKDIR}/ci/snap_functions.sh"
+
 source "${WORKDIR}"/ci/env.sh
+
+# to get over: snap "snapd" has "auto-refresh" change in progress
+echo "~~~set snap refresh on hold - for snapd"
+sudo snap refresh --hold='720h' snapd
+
 
 # snap contains binaries which are always stripped, same as deb/rpm
 STRIPPED_STATUS=", stripped"
@@ -18,6 +25,10 @@ for FILE in $FILES; do
     sudo snap install --dangerous "${FILE}"
     break #only one file is expected
 done
+
+echo "~~~set snap refresh on hold - for nordvpn"
+sudo snap refresh --hold='720h' nordvpn
+
 
 echo "~~~running on host info: "
 uname -a
@@ -48,26 +59,36 @@ esac
 echo "~~~check2.2: binary is stripped/not stripped"
 echo "${file_info}" | grep "${STRIPPED_STATUS}"
 
-# give some time for service to start
-sleep 5
-
-echo "~~~info: nordvpnd service status"
-systemctl status snap.nordvpn.nordvpnd.service
-
-# based on experiments, need more time for service to fully start
-sleep 5
-
-echo "~~~check3: socket file: if file present -> service is started/running"
-ls -la /var/snap/nordvpn/common/run/nordvpn/nordvpnd.sock
-
 echo "~~~fix permissions"
 sudo groupadd nordvpn
 sudo usermod -aG nordvpn "${USER}"
-sudo snap connect nordvpn:network-control
-sudo snap connect nordvpn:network-observe
-sudo snap connect nordvpn:firewall-control
-sudo snap connect nordvpn:login-session-observe
-sudo snap connect nordvpn:system-observe
+
+echo "~~~connect snap interfaces"
+snap_connect_interfaces
+
+echo "~~~restart snap nordvpn service"
+sudo snap stop nordvpn
+sudo snap start nordvpn
+
+sleep 5
+
+
+SERVICE_UNIT=snap.nordvpn.nordvpnd.service
+
+if systemctl is-failed --quiet "${SERVICE_UNIT}"; then
+    echo "~~~snap logs nordvpn"
+    sudo snap logs -n=100 nordvpn
+
+    echo "~~~journalctl ${SERVICE_UNIT}"
+    sudo journalctl -n 100 -u "${SERVICE_UNIT}"
+fi
+
+echo "~~~info: nordvpnd service status"
+
+systemctl status "${SERVICE_UNIT}"
+
+echo "~~~check3: socket file: if file present -> service is started/running"
+ls -la /var/snap/nordvpn/common/run/nordvpn/nordvpnd.sock
 
 echo "~~~check4: minimal test"
 nordvpn version

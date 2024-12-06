@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+source "${WORKDIR}/ci/snap_functions.sh"
+
 # if host does not have ip6table modules loaded, we must loaded it the docker
 if [[ ! $(sudo ip6tables -S) ]]; then
     if [[ ! $(command -v modprobe) ]]; then
@@ -17,10 +19,6 @@ find "${WORKDIR}"/ -type f -name "*amd64.snap" \
 	-exec sudo snap install --dangerous "{}" +
 
 echo "~~~GRANT permissions - connect snap interfaces"
-sudo snap connect nordvpn:network-control
-sudo snap connect nordvpn:network-observe
-sudo snap connect nordvpn:firewall-control
-sudo snap connect nordvpn:system-observe
-sudo snap connect nordvpn:login-session-observe
+snap_connect_interfaces
 
 echo "~~~INSTALL Snap DONE."
