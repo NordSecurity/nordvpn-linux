@@ -125,13 +125,15 @@ func main() {
 	log.SetOutput(os.Stdout)
 	log.Println(internal.InfoPrefix, "Daemon has started")
 
+	machineIdGenerator := config.NewMachineID(os.ReadFile, os.Hostname)
+
 	// Config
 	configEvents := daemonevents.NewConfigEvents()
 	fsystem := config.NewFilesystemConfigManager(
 		config.SettingsDataFilePath,
 		config.InstallFilePath,
 		Salt,
-		config.NewMachineID(os.ReadFile, os.Hostname),
+		machineIdGenerator,
 		config.StdFilesystemHandle{},
 		configEvents.Config,
 	)
@@ -279,12 +281,10 @@ func main() {
 		}
 	}
 
-	log.Println("read")
-	f := config.NewMachineID(internal.FileRead, os.Hostname)
-	log.Println("read", f.GetMachineID().String())
+	machineID := machineIdGenerator.GetMachineID()
 
-	// obfuscated machineID
-	deviceID := fmt.Sprintf("%x", sha256.Sum256([]byte(cfg.MachineID.String()+Salt)))
+	// obfuscated machineID and add the mask to identify how the ID was generated
+	deviceID := fmt.Sprintf("%x_%x", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
 
 	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, Version, Environment, deviceID)
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)

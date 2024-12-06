@@ -36,30 +36,6 @@ func TestManualListener(t *testing.T) {
 	listener.Close()
 }
 
-func TestMachineID(t *testing.T) {
-	category.Set(t, category.Integration)
-
-	id := MachineID()
-
-	hostname, err := os.Hostname()
-	assert.NoError(t, err)
-
-	// Test if MachineID is empty
-	assert.NotEmpty(t, id.String())
-
-	// Test if MachineID UUID contains hostname string
-	assert.False(t, strings.Contains(id.String(), hostname))
-
-	// Test if MachineID UUID contains hostname bytes
-	byteStringSice := []byte(hostname)
-	for index, hexVal := range byteStringSice {
-		if !strings.Contains(id.String(), fmt.Sprintf("%x", int(hexVal))) {
-			break
-		}
-		assert.NotEqual(t, index, len(byteStringSice)-1, "Machine ID contains hostname bytes")
-	}
-}
-
 func TestEnsureDir(t *testing.T) {
 	category.Set(t, category.Integration)
 

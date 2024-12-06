@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -12,11 +13,11 @@ import (
 func TestGenerateMachineID(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	const hostName = "host"
+	const hostname = "host"
 
 	tests := []struct {
 		name         string
-		hostName     string
+		hostname     string
 		filesContent map[string]string
 		expectedId   func() uuid.UUID
 		expectsError bool
@@ -29,39 +30,39 @@ func TestGenerateMachineID(t *testing.T) {
 		{
 			name:         "Fails for empty files",
 			expectedId:   func() uuid.UUID { return uuid.UUID{} },
-			hostName:     "host",
+			hostname:     "host",
 			expectsError: true,
 		},
 		{
 			name:     "Successful for hostname + /etc/machine-id",
-			hostName: hostName,
+			hostname: hostname,
 			filesContent: map[string]string{
 				"/etc/machine-id": uuid.NameSpaceDNS.String(),
 			},
 			expectedId: func() uuid.UUID {
-				return uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostName))
+				return uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostname))
 			},
 			expectsError: false,
 		},
 		{
 			name:     "Successful for hostname + /var/lib/dbus/machine-id",
-			hostName: hostName,
+			hostname: hostname,
 			filesContent: map[string]string{
 				"/var/lib/dbus/machine-id": uuid.NameSpaceDNS.String(),
 			},
 			expectedId: func() uuid.UUID {
-				return uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostName))
+				return uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostname))
 			},
 			expectsError: false,
 		},
 		{
 			name:     "Successful for hostname + /sys/class/dmi/id/product_uuid",
-			hostName: hostName,
+			hostname: hostname,
 			filesContent: map[string]string{
 				"/sys/class/dmi/id/product_uuid": uuid.NameSpaceDNS.String(),
 			},
 			expectedId: func() uuid.UUID {
-				id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostName))
+				id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostname))
 				id = uuid.NewSHA1(id, []byte(uuid.NameSpaceDNS.String()))
 				return id
 			},
@@ -69,13 +70,13 @@ func TestGenerateMachineID(t *testing.T) {
 		},
 		{
 			name:     "Successful for hostname + /etc/machine-id + /proc/cpuinfo",
-			hostName: hostName,
+			hostname: hostname,
 			filesContent: map[string]string{
 				"/etc/machine-id": uuid.NameSpaceDNS.String(),
 				"/proc/cpuinfo":   "Serial: cpuinfo",
 			},
 			expectedId: func() uuid.UUID {
-				id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostName))
+				id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostname))
 				id = uuid.NewSHA1(id, []byte("cpuinfo"))
 				return id
 			},
@@ -83,13 +84,13 @@ func TestGenerateMachineID(t *testing.T) {
 		},
 		{
 			name:     "Successful for hostname + /etc/machine-id + /sys/class/dmi/id/board_serial",
-			hostName: hostName,
+			hostname: hostname,
 			filesContent: map[string]string{
 				"/etc/machine-id":                uuid.NameSpaceDNS.String(),
 				"/sys/class/dmi/id/board_serial": "board_serial",
 			},
 			expectedId: func() uuid.UUID {
-				id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostName))
+				id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostname))
 				id = uuid.NewSHA1(id, []byte("board_serial"))
 				return id
 			},
@@ -97,7 +98,7 @@ func TestGenerateMachineID(t *testing.T) {
 		},
 		{
 			name:     "Add files are present",
-			hostName: hostName,
+			hostname: hostname,
 			filesContent: map[string]string{
 				"/etc/machine-id":                uuid.NameSpaceDNS.String(),
 				"/var/lib/dbus/machine-id":       uuid.NameSpaceDNS.String(),
@@ -106,7 +107,7 @@ func TestGenerateMachineID(t *testing.T) {
 				"/proc/cpuinfo":                  "Serial: cpuinfo",
 			},
 			expectedId: func() uuid.UUID {
-				id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostName))
+				id := uuid.NewSHA1(uuid.NameSpaceDNS, []byte(hostname))
 				// CPU ID
 				id = uuid.NewSHA1(id, []byte("cpuinfo"))
 				// device product number, /sys/class/dmi/id/product_uuid
@@ -131,18 +132,30 @@ func TestGenerateMachineID(t *testing.T) {
 					return []byte(val), nil
 				},
 				func() (name string, err error) {
-					if test.hostName == "" {
+					if test.hostname == "" {
 						return "", fmt.Errorf("failed to get hostname")
 					}
-					return test.hostName, nil
+					return test.hostname, nil
 				},
 			)
 
 			// test internal device generator which uses the hardware info
-			deviceId, err := generator.generateID()
+			id, err := generator.generateID()
 
 			assert.Equal(t, test.expectsError, err != nil)
-			assert.Equal(t, test.expectedId(), deviceId)
+			assert.Equal(t, test.expectedId(), id)
+
+			// Test if MachineID UUID contains hostname string
+			assert.False(t, strings.Contains(id.String(), hostname))
+
+			// Test if MachineID UUID contains hostname bytes
+			byteStringSice := []byte(hostname)
+			for index, hexVal := range byteStringSice {
+				if !strings.Contains(id.String(), fmt.Sprintf("%x", int(hexVal))) {
+					break
+				}
+				assert.NotEqual(t, index, len(byteStringSice)-1, "Machine ID contains hostname bytes")
+			}
 
 			// generate second time to be sure the same result is obtained
 			secondId, err := generator.generateID()
@@ -152,9 +165,9 @@ func TestGenerateMachineID(t *testing.T) {
 			// check that the public function always returns UUID,
 			// even if the application is not able to get system & hardware information
 			machineUUID := generator.GetMachineID()
-			id, err := uuid.Parse(machineUUID.String())
+			parsedUUID, err := uuid.Parse(machineUUID.String())
 			assert.Nil(t, err)
-			assert.Equal(t, machineUUID, id)
+			assert.Equal(t, machineUUID, parsedUUID)
 		})
 	}
 }
