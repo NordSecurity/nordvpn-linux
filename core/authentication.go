@@ -75,7 +75,7 @@ func (o *OAuth2) Login() (string, error) {
 		return "", err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, ReaderLimit))
 	if err != nil {
 		return "", err
 	}
@@ -123,7 +123,7 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, ReaderLimit))
 	if err != nil {
 		return nil, err
 	}

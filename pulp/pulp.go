@@ -12,6 +12,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
 const (
@@ -85,7 +87,7 @@ func Login(
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, core.ReaderLimit))
 	if err != nil {
 		return nil, fmt.Errorf("read: %w", err)
 	}
