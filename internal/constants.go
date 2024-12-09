@@ -67,6 +67,9 @@ const (
 	// ServerDateFormat defines api date format
 	ServerDateFormat = "2006-01-02 15:04:05"
 
+	// Date format to include only the year and the month
+	YearMonthDateFormat = "2006-01"
+
 	// Fileshared defines filesharing process name
 	Fileshare = "nordfileshare"
 
