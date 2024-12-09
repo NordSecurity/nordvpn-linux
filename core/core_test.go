@@ -1,8 +1,10 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -223,4 +225,32 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 			assert.True(t, errors.Is(err, test.err))
 		})
 	}
+}
+
+func TestMaxBytes(t *testing.T) {
+
+	randomBytes := func(size int64) []byte {
+		data := make([]byte, size+1)
+		for i := int64(0); i < size; i++ {
+			data[size] = byte(rand.Intn(255))
+		}
+		return data
+	}
+
+	t.Run("too big input", func(t *testing.T) {
+		input := randomBytes(maxBytesLimit + 1024)
+		rc := bytes.NewReader(input)
+		_, err := MaxBytesReadAll(rc)
+
+		assert.Error(t, err)
+	})
+
+	t.Run("input with okay size", func(t *testing.T) {
+		input := randomBytes(maxBytesLimit - 1024)
+		rc := bytes.NewReader(input)
+		output, err := MaxBytesReadAll(rc)
+
+		assert.Nil(t, err)
+		assert.Equal(t, input, output)
+	})
 }
