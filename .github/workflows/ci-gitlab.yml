@@ -17,5 +17,5 @@ jobs:
       trigger-token: ${{ secrets.TRIGGER_TOKEN }}
       project-id: ${{ secrets.PROJECT_ID }}
     with:
-      cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
-      triggered-ref: main
+      cancel-outdated-pipelines: ${{ github.ref_name != 'use-tester-image-1.3.2' }}
+      triggered-ref: use-tester-image-1.3.2
