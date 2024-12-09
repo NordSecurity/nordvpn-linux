@@ -21,6 +21,8 @@ import (
 const (
 	// linuxPlatformID defines the linux platform ID on the Notification Centre
 	linuxPlatformID = 500
+
+	ReaderLimit int64 = 1024 * 1024 * 10 // 10MB
 )
 
 type CredentialsAPI interface {
@@ -127,7 +129,7 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 	defer resp.Body.Close()
 
 	var body []byte
-	body, err = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(io.LimitReader(resp.Body, ReaderLimit))
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +478,7 @@ func (api *DefaultAPI) NotificationCredentials(token, appUserID string) (Notific
 		return NotificationCredentialsResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
 	defer rawResp.Body.Close()
-	out, err := io.ReadAll(rawResp.Body)
+	out, err := io.ReadAll(io.LimitReader(rawResp.Body, ReaderLimit))
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("reading HTTP response body: %w", err)
 	}
@@ -520,7 +522,7 @@ func (api *DefaultAPI) NotificationCredentialsRevoke(token, appUserID string, pu
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
 	defer rawResp.Body.Close()
-	out, err := io.ReadAll(rawResp.Body)
+	out, err := io.ReadAll(io.LimitReader(rawResp.Body, ReaderLimit))
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("reading HTTP response body: %w", err)
 	}
