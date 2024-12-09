@@ -63,18 +63,19 @@ def start_system_monitoring():
 def _check_connection_to_ip(ip_address):
     while True:
         try:
-            print(f"~~~_check_connection_to_ip: {ip_address}")
             "icmp_seq=" in sh.ping("-c", "3", "-W", "3", ip_address) # noqa: B015
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} SUCCESS")
         except sh.ErrorReturnCode as e:
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} FAILURE: {e}.")
+            logging.log("_check_connection_to_ip: Default route:",
+                        str(os.popen("sudo ip route get 1.1.1.1").read()),
+                        "iptables stats",str(os.popen("sudo iptables -L -v -n").read()))
         time.sleep(_CHECK_FREQUENCY)
 
 
 def _check_connection_to_ip_outside_vpn(ip_address):
     while True:
         try:
-            print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address}")
             "icmp_seq=" in sh.sudo.ping("-c", "3", "-W", "3", "-m", "57841", ip_address) # noqa: B015
             print(f"~~~_check_connection_to_ip_outside_vpn: OUT-PING {ip_address} SUCCESS")
         except sh.ErrorReturnCode as e:
@@ -85,7 +86,6 @@ def _check_connection_to_ip_outside_vpn(ip_address):
 def _check_dns_resolution(domain):
     while True:
         try:
-            print(f"~~~_check_dns_resolution: {domain}")
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ['8.8.8.8']
             resolver.resolve(domain, 'A')  # 'A' for IPv4

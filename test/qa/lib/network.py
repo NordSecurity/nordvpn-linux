@@ -123,7 +123,7 @@ def _is_dns_resolvable(retry=5) -> bool:
     while i < retry:
         try:
             resolver = dns.resolver.Resolver()
-            resolver.resolve(domain, 'A')  # 'A' for IPv4
+            resolver.resolve(domain, 'A', lifetime=5)  # 'A' for IPv4
             return True
         except Exception as e:  # noqa: BLE001
             print(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
