@@ -57,7 +57,7 @@ func (api *RepoAPI) DebianFileList() ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, core.ReaderLimit))
+	body, err := core.MaxBytesReadAll(resp.Body)
 	if err != nil {
 		//log.Printf("DebianFileList failed to read fileinfo data. Error: %v.\n", err)
 		return nil, err
@@ -88,7 +88,7 @@ func (api *RepoAPI) RpmFileList() ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, core.ReaderLimit))
+	body, err := core.MaxBytesReadAll(resp.Body)
 	if err != nil {
 		//log.Printf("RpmFileList failed to read repomd data. Error: %v.\n", err)
 		return nil, err
@@ -104,7 +104,7 @@ func (api *RepoAPI) RpmFileList() ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err = io.ReadAll(io.LimitReader(resp.Body, core.ReaderLimit))
+	body, err = core.MaxBytesReadAll(resp.Body)
 	if err != nil {
 		//log.Printf("RpmFileList failed to read fileinfo. Error: %v.\n", err)
 		return nil, err
