@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -87,7 +86,7 @@ func Login(
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(io.LimitReader(resp.Body, core.ReaderLimit))
+	data, err := core.MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read: %w", err)
 	}
@@ -209,7 +208,7 @@ func versions(
 		return nil, fmt.Errorf("post: %w", err)
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, core.ReaderLimit))
+	body, err := core.MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read: %w", err)
 	}
