@@ -759,7 +759,6 @@ func findOrder(p core.Payment, orders []core.Order) (core.Order, bool) {
 func isPaymentValid(pr core.PaymentResponse) bool {
 	p := pr.Payment
 	return p.Status == "done" ||
-		p.Status == "error" ||
 		p.Status == "chargeback" ||
 		p.Status == "refunded" ||
 		p.Status == "partially_refunded" ||
@@ -791,7 +790,7 @@ func (s *Subscriber) setSubscriptions(
 	}
 	for _, fn := range []func() uint32{
 		func() uint32 {
-			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateActivationDate(payment.CreatedAt.Format(time.DateOnly))
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateActivationDate(payment.CreatedAt.Format(internal.YearMonthDateFormat))
 		},
 		func() uint32 {
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateFrequencyInterval(payment.Subscription.FrequencyInterval)
