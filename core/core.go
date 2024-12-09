@@ -126,7 +126,7 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 	defer resp.Body.Close()
 
 	var body []byte
-	body, err = io.ReadAll(resp.Body)
+	body, err = MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -474,7 +474,7 @@ func (api *DefaultAPI) NotificationCredentials(token, appUserID string) (Notific
 		return NotificationCredentialsResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
 	defer rawResp.Body.Close()
-	out, err := io.ReadAll(rawResp.Body)
+	out, err := MaxBytesReadAll(rawResp.Body)
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("reading HTTP response body: %w", err)
 	}
@@ -518,7 +518,7 @@ func (api *DefaultAPI) NotificationCredentialsRevoke(token, appUserID string, pu
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
 	defer rawResp.Body.Close()
-	out, err := io.ReadAll(rawResp.Body)
+	out, err := MaxBytesReadAll(rawResp.Body)
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("reading HTTP response body: %w", err)
 	}
@@ -562,4 +562,32 @@ func getData[T any](api *DefaultAPI, token string, url string) (T, error) {
 	}
 
 	return data, nil
+}
+
+const maxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
+
+// re-implementation of io.ReadAll with max limit
+func MaxBytesReadAll(r io.Reader) ([]byte, error) {
+	b := make([]byte, 0, 512)
+	for {
+		// ---
+		// my modification
+		if int64(len(b)) > maxBytesLimit {
+			return b, fmt.Errorf("input exceeded the max limit")
+		}
+		// ---
+		n, err := r.Read(b[len(b):cap(b)])
+		b = b[:len(b)+n]
+		if err != nil {
+			if err == io.EOF {
+				err = nil
+			}
+			return b, err
+		}
+
+		if len(b) == cap(b) {
+			// Add more capacity (let append pick how much).
+			b = append(b, 0)[:len(b)]
+		}
+	}
 }

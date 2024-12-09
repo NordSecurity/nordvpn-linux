@@ -77,7 +77,7 @@ func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
 				reader = resp.Body
 			}
 		}
-		body, err = io.ReadAll(reader)
+		body, err = MaxBytesReadAll(reader)
 		if err != nil {
 			return nil, err
 		}
