@@ -14,6 +14,24 @@ import sh
 
 from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
 
+# Later move this to another place
+# Helper class to run sh commands with _tty_out=false
+class ShWithoutTTY:
+    def __init__(self, base=None, level=None):
+        self.base = base or sh
+        self.level = level
+
+    def __getattr__(self, name):
+        # Create a new wrapper for the next level
+        return ShWithoutTTY(base=getattr(self.base, name), level=name)
+
+    def __call__(self, *args, **kwargs):
+        # When the command is finally called, add _tty_out=False
+        kwargs["_tty_out"] = False
+        return self.base(*args, **kwargs)
+
+sh = ShWithoutTTY()
+
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 # for snap testing, make this path from current folder e.g. ./tmp/testfiles
