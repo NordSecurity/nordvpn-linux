@@ -209,7 +209,7 @@ func versions(
 		return nil, fmt.Errorf("post: %w", err)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, core.ReaderLimit))
 	if err != nil {
 		return nil, fmt.Errorf("read: %w", err)
 	}
