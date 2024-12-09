@@ -4,7 +4,6 @@ import time
 from collections import namedtuple
 
 import paramiko
-import pytest
 
 import lib
 
