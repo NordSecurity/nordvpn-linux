@@ -367,7 +367,11 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
 def is_empty() -> bool:
     """Returns True when firewall does not have DROP rules."""
     # under snap, also on host, ignore docker rules
-    return "DROP" not in os.popen("sudo iptables -S | grep -v DOCKER").read()
+    rules = os.popen("sudo iptables -S | grep -v DOCKER").read()
+    if "DROP" in rules:
+        logging.log("DROP in {rules}")
+        return False
+    return True
 
 
 def _get_iptables_rules() -> list[str]:

@@ -29,6 +29,10 @@ def collect():
             str(nameserver_info),
             "Processes:",
             str(processes),
+            "Default route:",
+            str(os.popen("sudo ip route get 1.1.1.1").read()),
+            "iptables stats",
+            str(os.popen("sudo iptables -L -v -n").read()),
             "-------------------end of system-information--------------------",
         ]
     )

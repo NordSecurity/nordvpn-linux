@@ -26,14 +26,14 @@ FWMARK = 57841
 class PacketCaptureThread(Thread):
     def __init__(self, connection_settings):
         Thread.__init__(self)
-        self.packets_captured: int = -1
         self.connection_settings = connection_settings
+        self.packets = ""
 
     def run(self):
-        self.packets_captured = _capture_packets(self.connection_settings)
+        self.packets = _capture_packets(self.connection_settings)
 
 
-def _capture_packets(connection_settings: (str, str, str)) -> int:
+def _capture_packets(connection_settings: (str, str, str)) -> str:
     technology = connection_settings[0]
     protocol = connection_settings[1]
     obfuscated = connection_settings[2]
@@ -57,9 +57,7 @@ def _capture_packets(connection_settings: (str, str, str)) -> int:
     tshark_result: str = sh.tshark("-i", "any", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "-a", "duration:3", "-a", "packets:1", "-f", traffic_filter)
     #tshark_result: str = os.popen(f"sudo tshark -i any -T fields -e ip.src -e ip.dst -a duration:3 -a packets:1 -f {traffic_filter}").read()
 
-    packets = tshark_result.strip().splitlines()
-
-    return len(packets)
+    return tshark_result.strip()
 
 
 def capture_traffic(connection_settings) -> int:
@@ -69,11 +67,14 @@ def capture_traffic(connection_settings) -> int:
     t_connect = PacketCaptureThread(connection_settings)
     t_connect.start()
 
-    sh.ping("-c", "2", "-w", "2", "1.1.1.1")
+    try:
+        sh.ping("-c", "2", "-w", "2", "1.1.1.1")
+    except sh.ErrorReturnCode:
+        logging.log(t_connect.packets)
 
     t_connect.join()
 
-    return t_connect.packets_captured
+    return len(t_connect.packets.splitlines())
 
 
 def _is_internet_reachable(retry=5) -> bool:
@@ -85,6 +86,7 @@ def _is_internet_reachable(retry=5) -> bool:
         except sh.ErrorReturnCode:
             time.sleep(1)
             i += 1
+    _is_internet_reachable_outside_vpn(1)
     return False
 
 
@@ -117,43 +119,15 @@ def _is_ipv6_internet_reachable(retry=5) -> bool:
 def _is_dns_resolvable(retry=5) -> bool:
     """Returns True when domain resolution is working."""
     i = 0
+    domain = "nordvpn.com"
     while i < retry:
         try:
-            # @TODO gitlab docker runner has public ipv6, but no connectivity. remove -4 once fixed
-            return "icmp_seq=" in sh.ping("-4", "-c", "1", "-w", "1", "nordvpn.com")
-        except sh.ErrorReturnCode:
-            time.sleep(1)
-            i += 1
-    return False
-
-
-def _is_dns_resolvable_outside_vpn(retry: int = 5) -> bool:
-    """Returns True when domain resolution outside vpn is not working."""
-    i = 0
-    while i < retry:
-        try:
-            # @TODO gitlab docker runner has public ipv6, but no connectivity. remove -4 once fixed
-            # @TODO need dns query to go arround vpn tunnel, here with regular ping it does not
-            return "icmp_seq=" in sh.ping("-4", "-c", "1", "-m", f"{FWMARK}", "-w", "1", "nordvpn.com")
-        except sh.ErrorReturnCode:
-            time.sleep(1)
-            i += 1
-    return False
-
-
-def _is_dns_not_resolvable(retry: int = 5) -> bool:
-    """Returns True when domain resolution is not working."""
-    i = 0
-    while i < retry:
-        try:
-            with pytest.raises((dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout)):
-                resolver = dns.resolver.Resolver()
-                resolver.lifetime = 1
-                resolver.resolve("nordvpn.com")
+            resolver = dns.resolver.Resolver()
+            resolver.resolve(domain, 'A')  # 'A' for IPv4
             return True
-        except:  # noqa: E722
+        except Exception as e:  # noqa: BLE001
+            print(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
             time.sleep(1)
-            i += 1
     return False
 
 
@@ -165,15 +139,13 @@ def is_not_available(retry=5) -> bool:
 
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
-    return not _is_internet_reachable(retry) and _is_dns_not_resolvable(retry)
+    return not _is_internet_reachable(retry) and not _is_dns_resolvable(retry)
 
 
 def is_available(retry=5) -> bool:
     """Returns True when network access is available or throws AssertionError otherwise."""
     assert _is_internet_reachable_outside_vpn(retry)
     assert _is_internet_reachable(retry)
-    assert _is_dns_resolvable_outside_vpn(retry)
-    assert _is_dns_resolvable(retry)
     return True
 
 

@@ -126,23 +126,9 @@ class Ssh:
                     i += 1
             return False
 
-        def _is_dns_not_resolvable(self, retry=5) -> bool:
-            """Returns True when domain resolution is not working."""
-            for _ in range(retry):
-                try:
-                    with pytest.raises(RuntimeError) as ex:
-                        self.ssh_class_instance.exec_command("ping -c 1 -w 1 nordvpn.com")
-
-                    return "Network is unreachable" in str(ex) or \
-                        "Name or service not known" in str(ex) or \
-                        "Temporary failure in name resolution" in str(ex)
-                except RuntimeError as ex:
-                    time.sleep(1)
-            return False
-
         def is_not_available(self, retry=5) -> bool:
             """Returns True when network access is not available."""
-            return not self._is_internet_reachable(retry) and self._is_dns_not_resolvable(retry)
+            return not self._is_internet_reachable(retry) and not self._is_dns_resolvable(retry)
 
         def ping(self, target: str, retry=5) -> bool:
             i = 0
