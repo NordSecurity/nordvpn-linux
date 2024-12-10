@@ -574,7 +574,7 @@ const maxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
 func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 	limitedReader := &io.LimitedReader{
 		R: r,
-		N: maxBytesLimit,
+		N: maxBytesLimit + 1, // + 1 because we allow for values which are equal to the limit
 	}
 	data, err := io.ReadAll(limitedReader)
 	if err != nil {
