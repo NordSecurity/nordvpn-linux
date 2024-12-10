@@ -16,98 +16,13 @@ import (
 
 var ErrIncorrectCmdlineContent = errors.New("invalid content of cmdline file of /proc")
 
-// FilesharePortAccessController blocks or allows fileshare port when
-// fileshare process stopped or was restarted accordingly.
-type FilesharePortAccessController struct {
-	cm           config.Manager
-	netw         Networker
-	reg          mesh.Registry
-	filesharePID PID
+type procUtil interface {
+	isFileshareProcess(PID) bool
 }
 
-func NewPortAccessController(cm config.Manager, netw Networker, reg mesh.Registry) FilesharePortAccessController {
-	return FilesharePortAccessController{
-		cm:           cm,
-		netw:         netw,
-		reg:          reg,
-		filesharePID: 0,
-	}
-}
+type defaultProcUtil struct{}
 
-func (eh *FilesharePortAccessController) OnProcessStarted(ev ProcEvent) {
-	if eh.filesharePID != 0 {
-		// fileshare already started and we noted the PID, no need to
-		// process next events anymore until the PID gets reset in [EventHandler.OnProcessStopped]
-		return
-	}
-	if !isFileshareProcess(ev.PID) {
-		return
-	}
-	eh.filesharePID = ev.PID
-	go eh.allowFileshare()
-}
-
-func (eh *FilesharePortAccessController) allowFileshare() error {
-	log.Println(internal.InfoPrefix, "allowing fileshare port")
-	peers, err := eh.listPeers()
-	if err != nil {
-		return err
-	}
-
-	for _, peer := range peers {
-		peerUniqAddr := UniqueAddress{UID: peer.PublicKey, Address: peer.Address}
-		if err := eh.netw.AllowFileshare(peerUniqAddr); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (eh *FilesharePortAccessController) listPeers() (mesh.MachinePeers, error) {
-	var cfg config.Config
-	if err := eh.cm.Load(&cfg); err != nil {
-		return nil, fmt.Errorf("reading configuration when listing peers: %w", err)
-	}
-
-	if cfg.MeshDevice == nil {
-		return nil, fmt.Errorf("meshnet is not configured")
-	}
-
-	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	peers, err := eh.reg.List(token, cfg.MeshDevice.ID)
-	if err != nil {
-		return nil, fmt.Errorf("listing peers: %w", err)
-	}
-	return peers, nil
-}
-
-func (eh *FilesharePortAccessController) OnProcessStopped(ev ProcEvent) {
-	if eh.filesharePID != ev.PID {
-		return
-	}
-	eh.filesharePID = 0
-	go eh.blockFileshare()
-}
-
-func (eh *FilesharePortAccessController) blockFileshare() error {
-	log.Println(internal.InfoPrefix, "blocking fileshare port")
-	peers, err := eh.listPeers()
-	if err != nil {
-		return err
-	}
-
-	for _, peer := range peers {
-		peerUniqAddr := UniqueAddress{UID: peer.PublicKey, Address: peer.Address}
-		if err := eh.netw.BlockFileshare(peerUniqAddr); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func isFileshareProcess(pid PID) bool {
+func (defaultProcUtil) isFileshareProcess(pid PID) bool {
 	// ignore older processes, fileshare is always
 	// younger than the daemon so it has higher PID
 	if pid < PID(os.Getpid()) {
@@ -136,4 +51,97 @@ func readProcPath(pid PID) (string, error) {
 		return "", ErrIncorrectCmdlineContent
 	}
 	return args[0], nil
+}
+
+// FilesharePortAccessController blocks or allows fileshare port when
+// fileshare process stopped or was restarted accordingly.
+type FilesharePortAccessController struct {
+	cm           config.Manager
+	netw         Networker
+	reg          mesh.Registry
+	filesharePID PID
+	pu           procUtil
+}
+
+func NewPortAccessController(cm config.Manager, netw Networker, reg mesh.Registry) FilesharePortAccessController {
+	return FilesharePortAccessController{
+		cm:           cm,
+		netw:         netw,
+		reg:          reg,
+		filesharePID: 0,
+		pu:           defaultProcUtil{},
+	}
+}
+
+func (eventHandler *FilesharePortAccessController) OnProcessStarted(ev ProcEvent) {
+	if eventHandler.filesharePID != 0 {
+		// fileshare already started and we noted the PID, no need to
+		// process next events anymore until the PID gets reset in [EventHandler.OnProcessStopped]
+		return
+	}
+	if !eventHandler.pu.isFileshareProcess(ev.PID) {
+		return
+	}
+	eventHandler.filesharePID = ev.PID
+	go eventHandler.allowFileshare()
+}
+
+func (eventHandler *FilesharePortAccessController) allowFileshare() error {
+	log.Println(internal.InfoPrefix, "allowing fileshare port")
+	peers, err := eventHandler.listPeers()
+	if err != nil {
+		return err
+	}
+
+	for _, peer := range peers {
+		peerUniqAddr := UniqueAddress{UID: peer.PublicKey, Address: peer.Address}
+		if err := eventHandler.netw.AllowFileshare(peerUniqAddr); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (eventHandler *FilesharePortAccessController) listPeers() (mesh.MachinePeers, error) {
+	var cfg config.Config
+	if err := eventHandler.cm.Load(&cfg); err != nil {
+		return nil, fmt.Errorf("reading configuration when listing peers: %w", err)
+	}
+
+	if cfg.MeshDevice == nil {
+		return nil, fmt.Errorf("meshnet is not configured")
+	}
+
+	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+	peers, err := eventHandler.reg.List(token, cfg.MeshDevice.ID)
+	if err != nil {
+		return nil, fmt.Errorf("listing peers: %w", err)
+	}
+	return peers, nil
+}
+
+func (eventHandler *FilesharePortAccessController) OnProcessStopped(ev ProcEvent) {
+	if eventHandler.filesharePID != ev.PID {
+		return
+	}
+	eventHandler.filesharePID = 0
+	go eventHandler.blockFileshare()
+}
+
+func (eventHandler *FilesharePortAccessController) blockFileshare() error {
+	log.Println(internal.InfoPrefix, "blocking fileshare port")
+	peers, err := eventHandler.listPeers()
+	if err != nil {
+		return err
+	}
+
+	for _, peer := range peers {
+		peerUniqAddr := UniqueAddress{UID: peer.PublicKey, Address: peer.Address}
+		if err := eventHandler.netw.BlockFileshare(peerUniqAddr); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
