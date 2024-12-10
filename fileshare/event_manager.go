@@ -173,7 +173,6 @@ func (em *EventManager) DisableNotifications() error {
 	return nil
 }
 
-// OnEvent processes events and handles live transfer state.
 func (em *EventManager) handleEvent(event Event) {
 	if !em.isProd {
 		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", EventToString(event))
