@@ -100,13 +100,13 @@ func (em *EventManager) process() {
 		select {
 		case e, ok := <-em.asyncEvents:
 			if !ok {
-				log.Println(internal.WarningPrefix + " asyncEvents channel closed")
+				log.Println(internal.WarningPrefix, "asyncEvents channel closed")
 				return
 			}
 			fn(e)
 		case e, ok := <-em.syncEvents:
 			if !ok {
-				log.Println(internal.WarningPrefix + " syncEvents channel closed")
+				log.Println(internal.WarningPrefix, "syncEvents channel closed")
 				return
 			}
 			fn(e)
