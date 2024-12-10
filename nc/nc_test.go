@@ -3,6 +3,7 @@ package nc
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 
@@ -21,8 +22,9 @@ import (
 type mockMqttClient struct {
 	mqtt.Client
 	// connecting indicates if client is in connecting or disconnecting state
-	connecting   bool
-	connectToken mockMqttToken
+	connecting     bool
+	connectToken   mockMqttToken
+	subscribeToken mockMqttToken
 }
 
 func (m *mockMqttClient) Connect() mqtt.Token {
@@ -35,6 +37,10 @@ func (m *mockMqttClient) Unsubscribe(topics ...string) mqtt.Token {
 }
 
 func (m *mockMqttClient) Disconnect(uint) { m.connecting = false }
+
+func (m *mockMqttClient) SubscribeMultiple(filters map[string]byte, callback mqtt.MessageHandler) mqtt.Token {
+	return &m.subscribeToken
+}
 
 type mockMqttToken struct {
 	mqtt.Token
@@ -139,6 +145,13 @@ func TestStartStopNotificationClient(t *testing.T) {
 		},
 	}
 
+	mgmtChan := make(chan interface{})
+	go func() {
+		for {
+			<-mgmtChan
+		}
+	}()
+
 	for _, test := range tests {
 		connectionToken := mockMqttToken{
 			timesOut: test.connectionTimeout,
@@ -160,13 +173,6 @@ func TestStartStopNotificationClient(t *testing.T) {
 			&subs.Subject[[]string]{},
 			credsFetcher)
 
-		mgmtChan := make(chan interface{})
-		go func() {
-			for {
-				<-mgmtChan
-			}
-		}()
-
 		t.Run(test.name, func(t *testing.T) {
 			_, newConnectionState := notificationClient.tryConnect(&mockMqttClient,
 				nil,
@@ -184,4 +190,64 @@ func TestStartStopNotificationClient(t *testing.T) {
 				"MQTT client left in invalid state after calling tryConnect.")
 		})
 	}
+}
+
+func TestNCManagementLoop(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	goroutinesInitial := runtime.NumGoroutine()
+
+	cfg := config.Config{}
+	cfg.TokensData = make(map[int64]config.TokenData)
+	cfgManager := cfgmock.NewMockConfigManager()
+	cfgManager.Cfg = &cfg
+
+	connectionToken := mockMqttToken{
+		timesOut: false,
+		err:      nil,
+	}
+	subscribeToken := mockMqttToken{
+		timesOut: false,
+		err:      nil,
+	}
+	mockMqttClient := mockMqttClient{
+		connectToken:   connectionToken,
+		subscribeToken: subscribeToken,
+	}
+	clientBuilderMock := ncmock.MockClientBuilder{
+		Client: &mockMqttClient,
+	}
+
+	credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{
+		NotificationCredentialsError: nil,
+	}, cfgManager)
+	notificationClient := NewClient(&clientBuilderMock,
+		&subs.Subject[string]{},
+		&subs.Subject[error]{},
+		&subs.Subject[[]string]{},
+		credsFetcher)
+	notificationClient.Start()
+	time.Sleep(1 * time.Second)
+
+	goroutinesOnStartup := runtime.NumGoroutine()
+	assert.True(t, goroutinesOnStartup == goroutinesInitial+1 || goroutinesOnStartup == goroutinesInitial+2,
+		`On startup, 
+		there should be at most two goroutines running(management loop goroutine and connection goroutine)`)
+
+	// give management loop time to start up properly
+	time.Sleep(1 * time.Second)
+	clientBuilderMock.ConnectionLostHandler(clientBuilderMock.Client, mqttp.ErrorRefusedNotAuthorised)
+	goroutinesAfterLoosingAuth := runtime.NumGoroutine()
+	assert.True(t, goroutinesAfterLoosingAuth == goroutinesInitial+1 || goroutinesAfterLoosingAuth == goroutinesInitial+2,
+		`After loosing authorization, 
+		there should be at most two goroutines running(management loop goroutine and connection goroutine`)
+
+	time.Sleep(1 * time.Second)
+	normalOperationGoroutines := runtime.NumGoroutine()
+	assert.Equal(t, normalOperationGoroutines, goroutinesInitial+1,
+		"In normal operation, there should be only a single goroutine.")
+
+	notificationClient.Stop()
+	shutdownGoroutines := runtime.NumGoroutine()
+	assert.Equal(t, goroutinesInitial, shutdownGoroutines, "goroutines remaining after nc management loop was stopped.")
 }
