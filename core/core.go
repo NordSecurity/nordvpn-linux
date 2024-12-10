@@ -579,7 +579,7 @@ func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 		return nil, err
 	}
 	if limitedReader.N == 0 {
-		return nil, fmt.Errorf("input exceeded the max limit")
+		return nil, fmt.Errorf("input exceeded the max limit of %d bytes", maxBytesLimit)
 	}
 
 	return data, nil
