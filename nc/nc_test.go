@@ -236,7 +236,7 @@ func TestNCManagementLoop(t *testing.T) {
 
 	// give management loop time to start up properly
 	time.Sleep(1 * time.Second)
-	clientBuilderMock.ConnectionLostHandler(clientBuilderMock.Client, mqttp.ErrorRefusedNotAuthorised)
+	clientBuilderMock.CallConnectionLost(mqttp.ErrorRefusedNotAuthorised)
 	goroutinesAfterLoosingAuth := runtime.NumGoroutine()
 	assert.True(t, goroutinesAfterLoosingAuth == goroutinesInitial+1 || goroutinesAfterLoosingAuth == goroutinesInitial+2,
 		`After loosing authorization, 
