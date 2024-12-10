@@ -54,7 +54,7 @@ type Server struct {
 	norduser             service.NorduserFileshareClient
 	scheduler            gocron.Scheduler
 	fileshareProcMonitor NetlinkProcessMonitor
-	monitorStopper       *MonitorStopper
+	cancelMonitor        context.CancelFunc
 	connectContext       *sharedctx.Context
 	pb.UnimplementedMeshnetServer
 }
@@ -227,7 +227,8 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
-	stopper, err := s.fileshareProcMonitor.Start()
+	monitorCtx, cancelMonitor := context.WithCancel(context.Background())
+	err = s.fileshareProcMonitor.Start(monitorCtx)
 	if err != nil {
 		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
@@ -236,7 +237,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 			},
 		}, nil
 	}
-	s.monitorStopper = &stopper
+	s.cancelMonitor = cancelMonitor
 
 	s.daemonEvents.Settings.Meshnet.Publish(true)
 
@@ -388,8 +389,8 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		}, nil
 	}
 
-	if s.monitorStopper != nil {
-		s.monitorStopper.Stop()
+	if s.cancelMonitor != nil {
+		s.cancelMonitor()
 	}
 	s.daemonEvents.Settings.Meshnet.Publish(false)
 

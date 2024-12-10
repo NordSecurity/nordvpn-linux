@@ -16,21 +16,21 @@ func TestEventHandler_OnProcessStarted(t *testing.T) {
 		savedPID  PID
 		finalPID  PID
 		procEvent ProcEvent
-		pu        procUtil
+		pc        processChecker
 	}{
 		{
 			name:      "PID is set if process is fileshare",
 			savedPID:  PID(0),
 			procEvent: ProcEvent{1337},
 			finalPID:  PID(1337),
-			pu:        procUtilStub{isFileshare: true},
+			pc:        procCheckerStub{isFileshare: true},
 		},
 		{
 			name:      "PID is not updated if process is NOT fileshare",
 			savedPID:  PID(0),
 			procEvent: ProcEvent{1337},
 			finalPID:  PID(0),
-			pu:        procUtilStub{isFileshare: false},
+			pc:        procCheckerStub{isFileshare: false},
 		},
 		{
 			name:     "no processing when PID is already set",
@@ -42,10 +42,10 @@ func TestEventHandler_OnProcessStarted(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			pac := FilesharePortAccessController{
-				filesharePID: tt.savedPID,
-				pu:           tt.pu,
-				cm:           mock.NewMockConfigManager(),
-				reg:          &mock.RegistryMock{},
+				filesharePID:   tt.savedPID,
+				processChecker: tt.pc,
+				cm:             mock.NewMockConfigManager(),
+				reg:            &mock.RegistryMock{},
 			}
 			assert.Equal(t, tt.savedPID, pac.filesharePID)
 
@@ -66,7 +66,7 @@ func TestEventHandler_OnProcessStopped(t *testing.T) {
 		procEvent ProcEvent
 	}{
 		{
-			name:      "PID is NOT zeroed when event PID does not match with the saved one",
+			name:      "PID is NOT zeroed when event's PID does not match with the saved one",
 			savedPID:  PID(1337),
 			procEvent: ProcEvent{666},
 			finalPID:  PID(1337),
@@ -83,10 +83,10 @@ func TestEventHandler_OnProcessStopped(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			notImportant := false
 			pac := FilesharePortAccessController{
-				filesharePID: tt.savedPID,
-				pu:           procUtilStub{isFileshare: notImportant},
-				cm:           mock.NewMockConfigManager(),
-				reg:          &mock.RegistryMock{},
+				filesharePID:   tt.savedPID,
+				processChecker: procCheckerStub{isFileshare: notImportant},
+				cm:             mock.NewMockConfigManager(),
+				reg:            &mock.RegistryMock{},
 			}
 			assert.Equal(t, tt.savedPID, pac.filesharePID)
 
@@ -97,10 +97,10 @@ func TestEventHandler_OnProcessStopped(t *testing.T) {
 	}
 }
 
-type procUtilStub struct {
+type procCheckerStub struct {
 	isFileshare bool
 }
 
-func (pu procUtilStub) isFileshareProcess(PID) bool {
+func (pu procCheckerStub) isFileshareProcess(PID) bool {
 	return pu.isFileshare
 }

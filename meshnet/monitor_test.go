@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/exp/rand"
+	"golang.org/x/net/context"
 )
 
 func TestNetlinkProcessMonitor_Start(t *testing.T) {
@@ -34,7 +35,8 @@ func TestNetlinkProcessMonitor_Start(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			monitor := NewProcMonitor(eventHandlerDummy{}, tt.setupFn)
-			_, err := monitor.Start()
+			ctx, _ := context.WithCancel(context.Background())
+			err := monitor.Start(ctx)
 
 			assert.Equal(t, err != nil, tt.isError)
 		})
@@ -102,7 +104,8 @@ func TestNetlinkProcessMonitor_EventHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			channels, setupFn := openChannelsMonitorSetup()
 			monitor := NewProcMonitor(tt.eh, setupFn)
-			monitor.Start()
+			ctx, _ := context.WithCancel(context.Background())
+			monitor.Start(ctx)
 			assert.Zero(t, tt.eh.onStartedCallCount)
 			assert.Zero(t, len(tt.eh.startedCalledSignal))
 
@@ -124,7 +127,7 @@ func TestNetlinkProcessMonitor_EventHandler(t *testing.T) {
 	}
 }
 
-func TestMonitorStopper_Stop(t *testing.T) {
+func TestMonitorCancellation(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
@@ -143,12 +146,13 @@ func TestMonitorStopper_Stop(t *testing.T) {
 			channels, setupFn := openChannelsMonitorSetup()
 			spy := newEventHandlerSpy()
 			monitor := NewProcMonitor(spy, setupFn)
-			stopper, _ := monitor.Start()
+			ctx, cancel := context.WithCancel(context.Background())
+			monitor.Start(ctx)
 			// event handler is running
 			channels.EventCh <- mkEvent(netlink.PROC_EVENT_EXEC, 1337)
 			<-spy.startedCalledSignal
 
-			stopper.Stop()
+			cancel()
 
 			select {
 			case <-channels.DoneCh:
@@ -157,8 +161,8 @@ func TestMonitorStopper_Stop(t *testing.T) {
 				t.Fatal("monitor stopper failed to stop the monitor")
 			}
 
-			// calling [MonitorStopper.Stop] multiple times has no effect
-			stopper.Stop()
+			// calling cancel multiple times has no effect
+			cancel()
 		})
 	}
 }

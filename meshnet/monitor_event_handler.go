@@ -16,60 +16,23 @@ import (
 
 var ErrIncorrectCmdlineContent = errors.New("invalid content of cmdline file of /proc")
 
-type procUtil interface {
-	isFileshareProcess(PID) bool
-}
-
-type defaultProcUtil struct{}
-
-func (defaultProcUtil) isFileshareProcess(pid PID) bool {
-	// ignore older processes, fileshare is always
-	// younger than the daemon so it has higher PID
-	if pid < PID(os.Getpid()) {
-		return false
-	}
-
-	procPath, err := readProcPath(pid)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to read process path from /proc", err)
-		return false
-	}
-
-	return procPath == internal.FileshareBinaryPath
-}
-
-func readProcPath(pid PID) (string, error) {
-	pidStr := strconv.FormatUint(uint64(pid), 10)
-	cmdlinePath := filepath.Join("/proc", pidStr, "cmdline")
-
-	cmdline, err := os.ReadFile(cmdlinePath)
-	if err != nil {
-		return "", err
-	}
-	args := strings.Split(string(cmdline), "\x00")
-	if len(args) == 0 {
-		return "", ErrIncorrectCmdlineContent
-	}
-	return args[0], nil
-}
-
 // FilesharePortAccessController blocks or allows fileshare port when
 // fileshare process stopped or was restarted accordingly.
 type FilesharePortAccessController struct {
-	cm           config.Manager
-	netw         Networker
-	reg          mesh.Registry
-	filesharePID PID
-	pu           procUtil
+	cm             config.Manager
+	netw           Networker
+	reg            mesh.Registry
+	filesharePID   PID
+	processChecker processChecker
 }
 
 func NewPortAccessController(cm config.Manager, netw Networker, reg mesh.Registry) FilesharePortAccessController {
 	return FilesharePortAccessController{
-		cm:           cm,
-		netw:         netw,
-		reg:          reg,
-		filesharePID: 0,
-		pu:           defaultProcUtil{},
+		cm:             cm,
+		netw:           netw,
+		reg:            reg,
+		filesharePID:   0,
+		processChecker: defaultProcChecker{},
 	}
 }
 
@@ -79,7 +42,7 @@ func (eventHandler *FilesharePortAccessController) OnProcessStarted(ev ProcEvent
 		// process next events anymore until the PID gets reset in [EventHandler.OnProcessStopped]
 		return
 	}
-	if !eventHandler.pu.isFileshareProcess(ev.PID) {
+	if !eventHandler.processChecker.isFileshareProcess(ev.PID) {
 		return
 	}
 	eventHandler.filesharePID = ev.PID
@@ -144,4 +107,45 @@ func (eventHandler *FilesharePortAccessController) blockFileshare() error {
 	}
 
 	return nil
+}
+
+// processChecker allows checking if process with specified [PID]
+// is a fileshare process.
+type processChecker interface {
+	isFileshareProcess(PID) bool
+}
+
+// defaultProcChecker allows checking if process specified by [PID]
+// is a fileshare process by reading its path via `/proc/<pid>/cmdline`.
+type defaultProcChecker struct{}
+
+func (defaultProcChecker) isFileshareProcess(pid PID) bool {
+	// ignore older processes, fileshare is always
+	// younger than the daemon so it has higher PID
+	if pid < PID(os.Getpid()) {
+		return false
+	}
+
+	procPath, err := readProcPath(pid)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to read process path from /proc", err)
+		return false
+	}
+
+	return procPath == internal.FileshareBinaryPath
+}
+
+func readProcPath(pid PID) (string, error) {
+	pidStr := strconv.FormatUint(uint64(pid), 10)
+	cmdlinePath := filepath.Join("/proc", pidStr, "cmdline")
+
+	cmdline, err := os.ReadFile(cmdlinePath)
+	if err != nil {
+		return "", err
+	}
+	args := strings.Split(string(cmdline), "\x00")
+	if len(args) == 0 {
+		return "", ErrIncorrectCmdlineContent
+	}
+	return args[0], nil
 }
