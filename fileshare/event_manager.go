@@ -115,6 +115,10 @@ func (em *EventManager) process() {
 	}
 }
 
+// sends an event to the event manager
+// the event manager will process it asynchronously and return immediately
+//
+// unless the asyncEvents channel is full, in which case it will block until there is space
 func (em *EventManager) AsyncEvent(event ...Event) {
 	select {
 	case em.asyncEvents <- event:
@@ -124,6 +128,8 @@ func (em *EventManager) AsyncEvent(event ...Event) {
 	}
 }
 
+// sends an event to the event manager
+// the event manager will process is synchronously and return after the event is fully processed
 func (em *EventManager) SyncEvent(event ...Event) {
 	em.syncEvents <- event
 	<-em.syncDoneCh
