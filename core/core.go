@@ -570,26 +570,17 @@ const maxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
 
 // re-implementation of io.ReadAll with max limit
 func MaxBytesReadAll(r io.Reader) ([]byte, error) {
-	b := make([]byte, 0, 512)
-	for {
-		// ---
-		// my modification
-		if int64(len(b)) > maxBytesLimit {
-			return b, fmt.Errorf("input exceeded the max limit")
-		}
-		// ---
-		n, err := r.Read(b[len(b):cap(b)])
-		b = b[:len(b)+n]
-		if err != nil {
-			if err == io.EOF {
-				err = nil
-			}
-			return b, err
-		}
-
-		if len(b) == cap(b) {
-			// Add more capacity (let append pick how much).
-			b = append(b, 0)[:len(b)]
-		}
+	limitedReader := &io.LimitedReader{
+		R: r,
+		N: maxBytesLimit,
 	}
+	data, err := io.ReadAll(limitedReader)
+	if err != nil {
+		return nil, err
+	}
+	if limitedReader.N == 0 {
+		return nil, fmt.Errorf("input exceeded the max limit")
+	}
+
+	return data, nil
 }
