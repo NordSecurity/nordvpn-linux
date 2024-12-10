@@ -238,6 +238,8 @@ func (c *Client) tryConnect(
 			return client, needsAuthorization
 		}
 
+		// send new creation date to the management loop
+		managementChan <- credentials.ExpirationDate
 		opts := c.createClientOptions(credentials, managementChan, ctx)
 		client = c.clientBuilder.Build(opts)
 		connectionState = connecting
@@ -392,46 +394,100 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 
 	var client mqtt.Client
 
+	connectionContext, cancelConnectionFunc := context.WithCancel(ctx)
+
 	credentialsInvalidated := false
 	credentials, err := c.credsFetcher.GetCredentialsFromConfig()
+	credsExpirationChan := time.After(time.Until(credentials.ExpirationDate))
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
 			// Client will be initialized when connecting if credentials are invalidated. We want to do this as a part
 			// of connection loop, because we might not have internet connection at this point
 			credentialsInvalidated = true
-		} else if err != nil {
+			credsExpirationChan = nil
+		} else {
+			cancelConnectionFunc()
 			return nil, fmt.Errorf("fetching credentials: %w", err)
 		}
-	} else {
-		opts := c.createClientOptions(credentials, managementChan, ctx)
-		client = c.clientBuilder.Build(opts)
 	}
 
 	statusChan := make(chan any)
 	go func() {
-		client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, ctx)
+		defer func() {
+			log.Println(logPrefix, "stopping management loop")
+			cancelConnectionFunc()
+			if client != nil {
+				client.Unsubscribe(unsubscriptions...)
+				client.Disconnect(0)
+				client = nil
+			}
+			log.Println(logPrefix, "stopped management loop")
+			close(statusChan)
+		}()
+
+		connectedChan := make(chan mqtt.Client)
+		connect := func(client mqtt.Client, credentialsInvalidated bool, connectionContext context.Context) {
+			client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, connectionContext)
+			select {
+			case connectedChan <- client:
+			case <-connectionContext.Done():
+			}
+		}
+
+		opts := c.createClientOptions(credentials, managementChan, connectionContext)
+		client = c.clientBuilder.Build(opts)
+		go connect(client, credentialsInvalidated, connectionContext)
+
+		log.Println(logPrefix, "starting initial connection loop")
+	CONNECTION_LOOP:
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case client = <-connectedChan:
+				break CONNECTION_LOOP
+			case event := <-managementChan:
+				if newCredentialsExpirationDate, ok := event.(time.Time); ok {
+					log.Println(logPrefix, "new token expiration time:", newCredentialsExpirationDate)
+					credsExpirationChan = time.After(time.Until(newCredentialsExpirationDate))
+				}
+			case <-credsExpirationChan:
+				log.Println(logPrefix, "token expired in the initial connection loop")
+				credsExpirationChan = nil
+				cancelConnectionFunc()
+				client.Disconnect(0)
+				c.credsFetcher.RevokeCredentials(false)
+				connectionContext, cancelConnectionFunc = context.WithCancel(ctx)
+				go connect(client, true, connectionContext)
+			}
+		}
+		log.Println(logPrefix, "initial connection established")
 
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println(logPrefix, "stopping management loop")
-				if client != nil {
-					client.Unsubscribe(unsubscriptions...)
-					client.Disconnect(0)
-					client = nil
-				}
-				log.Println(logPrefix, "stopped management loop")
-				close(statusChan)
 				return
+			case client = <-connectedChan:
 			case event := <-managementChan:
 				switch ev := event.(type) {
 				case authLost:
-					client = c.connectWithBackoff(client, true, managementChan, ctx)
+					go connect(client, true, connectionContext)
 				case connectionLost:
-					client = c.connectWithBackoff(client, false, managementChan, ctx)
+					go connect(client, false, connectionContext)
 				case mqttMessage:
 					c.handleMessage(client, ev.message)
+				case time.Time:
+					log.Println(logPrefix, "new token expiration time:", ev)
+					credsExpirationChan = time.After(time.Until(ev))
 				}
+			case <-credsExpirationChan:
+				log.Println(logPrefix, "token expired in the management connection loop")
+				credsExpirationChan = nil
+				cancelConnectionFunc()
+				client.Disconnect(0)
+				c.credsFetcher.RevokeCredentials(false)
+				connectionContext, cancelConnectionFunc = context.WithCancel(ctx)
+				go connect(client, true, connectionContext)
 			}
 		}
 	}()
