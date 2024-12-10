@@ -116,7 +116,12 @@ func (em *EventManager) process() {
 }
 
 func (em *EventManager) AsyncEvent(event ...Event) {
-	em.asyncEvents <- event
+	select {
+	case em.asyncEvents <- event:
+	default:
+		log.Println(internal.WarningPrefix, " async events channel is full. AsyncEvent() will block until there is space")
+		em.asyncEvents <- event
+	}
 }
 
 func (em *EventManager) SyncEvent(event ...Event) {
