@@ -80,7 +80,7 @@ func NewEventManager(
 		defaultDownloadDir:    defaultDownloadDir,
 		syncEvents:            make(chan []Event),
 		syncDoneCh:            make(chan struct{}),
-		asyncEvents:           make(chan []Event, 2048),
+		asyncEvents:           make(chan []Event, 32),
 	}
 	go em.process()
 
