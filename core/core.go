@@ -568,7 +568,9 @@ func getData[T any](api *DefaultAPI, token string, url string) (T, error) {
 
 const maxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
 
-// re-implementation of io.ReadAll with max limit
+// MaxBytesReadAll is a wrapper around io.ReadAll that limits the number of bytes read from the reader.
+//
+// If the reader exceeds the maxBytesLimit, the function returns an error.
 func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 	limitedReader := &io.LimitedReader{
 		R: r,
