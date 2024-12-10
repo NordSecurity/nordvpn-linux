@@ -256,5 +256,4 @@ func TestMaxBytes(t *testing.T) {
 	t.Run("input with exact limit size", func(t *testing.T) {
 		test(t, maxBytesLimit, nil)
 	})
-
 }
