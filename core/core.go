@@ -568,6 +568,14 @@ func getData[T any](api *DefaultAPI, token string, url string) (T, error) {
 
 const maxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
 
+type ErrMaxBytesLimit struct {
+	Limit int64
+}
+
+func (err *ErrMaxBytesLimit) Error() string {
+	return fmt.Sprintf("input exceeded the max limit of %d bytes", err.Limit)
+}
+
 // MaxBytesReadAll is a wrapper around io.ReadAll that limits the number of bytes read from the reader.
 //
 // If the reader exceeds the maxBytesLimit, the function returns an error.
