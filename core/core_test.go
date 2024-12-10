@@ -228,38 +228,33 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 }
 
 func TestMaxBytes(t *testing.T) {
-	randomBytes := func(size int64) []byte {
-		data := make([]byte, size)
-		for i := range data {
-			data[i] = byte(rand.Intn(255))
+	test := func(t *testing.T, size int64, expectedErr error) {
+		input := make([]byte, size)
+		for i := range input {
+			input[i] = byte(rand.Intn(255))
 		}
-		return data
+		rc := bytes.NewReader(input)
+
+		bytes, err := MaxBytesReadAll(rc)
+
+		if err == nil {
+			assert.Nil(t, err)
+			assert.Equal(t, input, bytes)
+		} else {
+			assert.EqualError(t, err, expectedErr.Error())
+		}
 	}
 
 	t.Run("too big input", func(t *testing.T) {
-		input := randomBytes(maxBytesLimit + 1)
-		rc := bytes.NewReader(input)
-		_, err := MaxBytesReadAll(rc)
-
-		assert.Error(t, err)
+		test(t, maxBytesLimit+1, &ErrMaxBytesLimit{Limit: maxBytesLimit})
 	})
 
 	t.Run("input with size within limits", func(t *testing.T) {
-		input := randomBytes(maxBytesLimit - 1)
-		rc := bytes.NewReader(input)
-		output, err := MaxBytesReadAll(rc)
-
-		assert.Nil(t, err)
-		assert.Equal(t, input, output)
+		test(t, maxBytesLimit-1, nil)
 	})
 
 	t.Run("input with exact limit size", func(t *testing.T) {
-		input := randomBytes(maxBytesLimit)
-		rc := bytes.NewReader(input)
-		output, err := MaxBytesReadAll(rc)
-
-		assert.Nil(t, err)
-		assert.Equal(t, input, output, "input and output should be equal")
+		test(t, maxBytesLimit, nil)
 	})
 
 }
