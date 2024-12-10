@@ -1,8 +1,8 @@
 package meshnet
 
 import (
+	"context"
 	"log"
-	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/vishvananda/netlink"
@@ -16,7 +16,7 @@ type (
 type MonitorChannels struct {
 	EventCh chan netlink.ProcEvent
 	DoneCh  chan struct{}
-	ErrCh   chan error
+	ErrCh   <-chan error
 }
 
 type ProcEvent struct {
@@ -47,19 +47,18 @@ func NewProcMonitor(handler EventHandler, setup SetupFn) NetlinkProcessMonitor {
 //
 // It recreates the source of the events by calling [SetupFn]
 // every time [NetlinkProcessMonitor.Start] is called.
-func (pm *NetlinkProcessMonitor) Start() (MonitorStopper, error) {
+func (pm *NetlinkProcessMonitor) Start(ctx context.Context) error {
 	channels, err := pm.setup()
 	if err != nil {
-		return MonitorStopper{}, err
+		return err
 	}
 
-	stopCh := make(chan struct{})
 	go func() {
 		for {
 			select {
 			case ev := <-channels.EventCh:
 				pm.handleProcessEvent(&ev)
-			case <-stopCh:
+			case <-ctx.Done():
 				channels.DoneCh <- struct{}{}
 				return
 			case err := <-channels.ErrCh:
@@ -68,10 +67,7 @@ func (pm *NetlinkProcessMonitor) Start() (MonitorStopper, error) {
 		}
 	}()
 
-	return MonitorStopper{
-		stopFn: func() { stopCh <- struct{}{} },
-		once:   sync.Once{},
-	}, nil
+	return nil
 }
 
 func (pm *NetlinkProcessMonitor) handleProcessEvent(ev *netlink.ProcEvent) {
@@ -84,16 +80,4 @@ func (pm *NetlinkProcessMonitor) handleProcessEvent(ev *netlink.ProcEvent) {
 		event := ProcEvent{PID: PID(ev.Msg.Pid())}
 		pm.handler.OnProcessStopped(event)
 	}
-}
-
-// MonitorStopper allows stopping the process monitoring via [MonitorStopper.Stop] method.
-type MonitorStopper struct {
-	stopFn func()
-	once   sync.Once
-}
-
-// Stop stops process monitoring, can be called multiple times, but subsequent calls
-// have no effect.
-func (ms *MonitorStopper) Stop() {
-	ms.once.Do(ms.stopFn)
 }
