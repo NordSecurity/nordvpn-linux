@@ -228,7 +228,6 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 }
 
 func TestMaxBytes(t *testing.T) {
-
 	randomBytes := func(size int64) []byte {
 		data := make([]byte, size+1)
 		for i := int64(0); i < size; i++ {
