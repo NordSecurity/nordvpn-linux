@@ -588,7 +588,7 @@ func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if limitedReader.N == 0 {
+	if limitedReader.N <= 0 {
 		return nil, &ErrMaxBytesLimit{Limit: maxBytesLimit}
 	}
 
