@@ -49,6 +49,7 @@ depends:
   - libidn2-0
   - zlib1g
   - libnl-genl-3-200
+  - libc6 (>= 2.29)
 
 # Basic file that applies to all packagers
 contents:
@@ -149,6 +150,7 @@ overrides:
       - libidn2
       - zlib
       - (libnl3 or libnl3-200)
+      - glibc >= 2.29
     # RPM specific scripts.
     scripts:
       postinstall: ${WORKDIR}/contrib/scriptlets/rpm/post
