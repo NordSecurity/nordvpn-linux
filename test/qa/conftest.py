@@ -67,9 +67,10 @@ def _check_connection_to_ip(ip_address):
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} SUCCESS")
         except sh.ErrorReturnCode as e:
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} FAILURE: {e}.")
-            logging.log("_check_connection_to_ip: Default route:",
+            data = "\n".join("_check_connection_to_ip: Default route:",
                         str(os.popen("sudo ip route get 1.1.1.1").read()),
                         "iptables stats",str(os.popen("sudo iptables -L -v -n").read()))
+            logging.log(data=data)
         time.sleep(_CHECK_FREQUENCY)
 
 

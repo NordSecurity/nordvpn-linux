@@ -7,6 +7,7 @@ import sh
 
 import lib
 from lib import daemon, info, logging, login, network, server
+import contextlib
 
 CONNECT_ALIAS = [
     "connect",
@@ -17,6 +18,8 @@ def setup_function(function):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
     logging.log()
+    with contextlib.suppress(Exception):
+        sh.nordvpn.set.firewall("off")
 
 
 def teardown_function(function):  # noqa: ARG001
