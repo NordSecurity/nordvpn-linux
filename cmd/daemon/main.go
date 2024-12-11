@@ -417,6 +417,7 @@ func main() {
 		fsystem,
 		defaultAPI,
 		daemonEvents.User.MFA,
+		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
 	)

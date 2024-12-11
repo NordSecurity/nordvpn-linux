@@ -475,7 +475,7 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		log.Println(internal.ErrorPrefix, "picking servers:", err)
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
-			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout)); err != nil {
 				return nil, false, err
 			}
 			return nil, false, internal.ErrNotLoggedIn

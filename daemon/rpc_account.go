@@ -116,7 +116,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 		log.Println(internal.ErrorPrefix, "retrieving user:", err)
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
-			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout)); err != nil {
 				return &pb.AccountResponse{
 					Type: internal.CodeConfigError,
 				}, nil
