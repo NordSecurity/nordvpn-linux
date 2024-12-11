@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"golang.org/x/sys/unix"
 )
 
@@ -391,35 +390,6 @@ func FileSha256(filepath string) (sum []byte, err error) {
 func IsCommandAvailable(command string) bool {
 	_, err := exec.LookPath(command)
 	return err == nil
-}
-
-// MachineID return unique machine identification id
-func MachineID() uuid.UUID {
-	// systemd machine id
-	out, _ := exec.Command("sh", "-c", "cat /etc/machine-id").Output()
-	id := strings.Trim(string(out), "\n")
-	if id == "" {
-		// failsafe, this is generated without systemd
-		out, _ = exec.Command("sh", "-c", "cat /var/lib/dbus/machine-id").Output()
-		id = strings.Trim(string(out), "\n")
-	}
-	if id == "" {
-		// this might fail because it requires sudo
-		out, _ = exec.Command("sh", "-c", "cat /sys/class/dmi/id/product_uuid").Output()
-		id = strings.Trim(string(out), "\n")
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return uuid.New()
-	}
-
-	machineUUID, err := uuid.Parse(id)
-	if err != nil {
-		id, _ := uuid.NewRandom()
-		return id
-	}
-	return uuid.NewSHA1(machineUUID, []byte(hostname))
 }
 
 type NetLink struct {

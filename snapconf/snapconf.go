@@ -39,6 +39,7 @@ const (
 	InterfaceHome                Interface = "home"
 	InterfaceLoginSessionObserve Interface = "login-session-observe"
 	InterfaceSystemObserve       Interface = "system-observe"
+	InterfaceHardwareObserve     Interface = "hardware-observe"
 )
 
 // IsUnderSnap defines whether the current process is executed under snapd
@@ -59,8 +60,11 @@ type ConnChecker struct {
 
 // NewSnapChecker snap permission checker with specific setup
 func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
+	// currently the order is important for machine ID generation:
+	// At the moment InterfaceHardwareObserve needs to be first because snap restarts the daemon only for some of the interfaces.
 	return NewConnChecker(
 		[]Interface{
+			InterfaceHardwareObserve,
 			InterfaceNetwork,
 			InterfaceNetworkBind,
 			InterfaceNetworkControl,
@@ -71,6 +75,7 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceSystemObserve,
 		},
 		[]Interface{
+			InterfaceHardwareObserve,
 			InterfaceNetwork,
 			InterfaceNetworkBind,
 			InterfaceNetworkControl,

@@ -12,8 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -62,17 +60,6 @@ func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileM
 		return err
 	}
 	return os.WriteFile(location, data, mode)
-}
-
-type MachineIDGetter interface {
-	GetMachineID() uuid.UUID
-}
-
-type LinuxMachineIDGetter struct {
-}
-
-func (LinuxMachineIDGetter) GetMachineID() uuid.UUID {
-	return internal.MachineID()
 }
 
 type ConfigPublisher interface {
