@@ -69,6 +69,7 @@ type RenewingChecker struct {
 	creds               core.CredentialsAPI
 	expChecker          expirationChecker
 	mfaPub              events.Publisher[bool]
+	logoutPub           events.Publisher[events.DataAuthorization]
 	errPub              events.Publisher[error]
 	mu                  sync.Mutex
 	accountUpdateEvents *daemonevents.AccountUpdateEvents
@@ -78,6 +79,7 @@ type RenewingChecker struct {
 func NewRenewingChecker(cm config.Manager,
 	creds core.CredentialsAPI,
 	mfaPub events.Publisher[bool],
+	logoutPub events.Publisher[events.DataAuthorization],
 	errPub events.Publisher[error],
 	accountUpdateEvents *daemonevents.AccountUpdateEvents,
 ) *RenewingChecker {
@@ -86,6 +88,7 @@ func NewRenewingChecker(cm config.Manager,
 		creds:               creds,
 		expChecker:          systemTimeExpirationChecker{},
 		mfaPub:              mfaPub,
+		logoutPub:           logoutPub,
 		errPub:              errPub,
 		accountUpdateEvents: accountUpdateEvents,
 	}
@@ -204,7 +207,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 			if errors.Is(err, core.ErrUnauthorized) ||
 				errors.Is(err, core.ErrNotFound) ||
 				errors.Is(err, core.ErrBadRequest) {
-				return r.cm.SaveWith(Logout(uid))
+				return r.cm.SaveWith(Logout(uid, r.logoutPub))
 			}
 			return nil
 		}
@@ -213,7 +216,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 			if errors.Is(err, core.ErrUnauthorized) ||
 				errors.Is(err, core.ErrNotFound) ||
 				errors.Is(err, core.ErrBadRequest) {
-				return r.cm.SaveWith(Logout(uid))
+				return r.cm.SaveWith(Logout(uid, r.logoutPub))
 			}
 			return nil
 		}
@@ -222,7 +225,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 				if errors.Is(err, core.ErrUnauthorized) ||
 					errors.Is(err, core.ErrNotFound) ||
 					errors.Is(err, core.ErrBadRequest) {
-					return r.cm.SaveWith(Logout(uid))
+					return r.cm.SaveWith(Logout(uid, r.logoutPub))
 				}
 			}
 		}
@@ -240,7 +243,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 			if errors.Is(err, core.ErrUnauthorized) ||
 				errors.Is(err, core.ErrNotFound) ||
 				errors.Is(err, core.ErrBadRequest) {
-				return r.cm.SaveWith(Logout(uid))
+				return r.cm.SaveWith(Logout(uid, r.logoutPub))
 			}
 		}
 
@@ -401,8 +404,13 @@ func saveIdempotencyKey(userID int64, data config.TokenData) config.SaveFunc {
 }
 
 // Logout the user.
-func Logout(user int64) config.SaveFunc {
+func Logout(user int64, logoutPub events.Publisher[events.DataAuthorization]) config.SaveFunc {
 	return func(c config.Config) config.Config {
+		if logoutPub != nil {
+			// register stats instant logout with status success
+			logoutPub.Publish(events.DataAuthorization{
+				DurationMs: 0, EventTrigger: events.TriggerApp, EventStatus: events.StatusSuccess})
+		}
 		delete(c.TokensData, user)
 		return c
 	}

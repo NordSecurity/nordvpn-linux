@@ -149,7 +149,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.MeshnetResponse{
 					Response: &pb.MeshnetResponse_ServiceError{
@@ -303,7 +303,7 @@ func (s *Server) StartMeshnet() error {
 	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				return err
 			}
 		}
@@ -419,7 +419,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.MeshnetResponse{
 					Response: &pb.MeshnetResponse_ServiceError{
@@ -544,7 +544,7 @@ func (s *Server) Invite(
 			}, nil
 		}
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.InviteResponse{
 					Response: &pb.InviteResponse_ServiceErrorCode{
@@ -613,7 +613,7 @@ func (s *Server) AcceptInvite(
 	received, err := s.invitationAPI.Received(tokenData.Token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.RespondToInviteResponse{
 					Response: &pb.RespondToInviteResponse_ServiceErrorCode{
@@ -738,7 +738,7 @@ func (s *Server) DenyInvite(
 	received, err := s.invitationAPI.Received(tokenData.Token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.RespondToInviteResponse{
 					Response: &pb.RespondToInviteResponse_ServiceErrorCode{
@@ -829,7 +829,7 @@ func (s *Server) RevokeInvite(
 	sent, err := s.invitationAPI.Sent(tokenData.Token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.RespondToInviteResponse{
 					Response: &pb.RespondToInviteResponse_ServiceErrorCode{
@@ -917,7 +917,7 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 	resp, err := s.invitationAPI.Received(tokenData.Token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.GetInvitesResponse{
 					Response: &pb.GetInvitesResponse_ServiceErrorCode{
@@ -1013,7 +1013,7 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 		resp, err := s.reg.Local(token)
 		if err != nil {
 			if errors.Is(err, core.ErrUnauthorized) {
-				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 					s.pub.Publish(err)
 					return &pb.GetPeersResponse{
 						Response: &pb.GetPeersResponse_ServiceErrorCode{
@@ -1054,7 +1054,7 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 		resp, err := s.reg.List(token, cfg.MeshDevice.ID)
 		if err != nil {
 			if errors.Is(err, core.ErrUnauthorized) {
-				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 					s.pub.Publish(err)
 					return &pb.GetPeersResponse{
 						Response: &pb.GetPeersResponse_ServiceErrorCode{
@@ -1146,7 +1146,7 @@ func (s *Server) RemovePeer(
 		resp, err := s.reg.Local(token)
 		if err != nil {
 			if errors.Is(err, core.ErrUnauthorized) {
-				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+				if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 					s.pub.Publish(err)
 					return &pb.RemovePeerResponse{
 						Response: &pb.RemovePeerResponse_ServiceErrorCode{
@@ -1218,7 +1218,7 @@ func (s *Server) RemovePeer(
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.RemovePeerResponse{
 					Response: &pb.RemovePeerResponse_ServiceErrorCode{
@@ -1334,7 +1334,7 @@ func (s *Server) ChangePeerNickname(
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.ChangeNicknameResponse{
 					Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
@@ -1553,7 +1553,7 @@ func (s *Server) ChangeMachineNickname(
 
 		if errors.Is(err, core.ErrUnauthorized) {
 			// TODO: check what happens with cfg.Mesh
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.ChangeNicknameResponse{
 					Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
@@ -1662,7 +1662,7 @@ func (s *Server) AllowIncoming(
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.AllowIncomingResponse{
 					Response: &pb.AllowIncomingResponse_ServiceErrorCode{
@@ -1786,7 +1786,7 @@ func (s *Server) DenyIncoming(
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.DenyIncomingResponse{
 					Response: &pb.DenyIncomingResponse_ServiceErrorCode{
@@ -1895,7 +1895,7 @@ func (s *Server) AllowRouting(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.AllowRoutingResponse{
 					Response: &pb.AllowRoutingResponse_ServiceErrorCode{
@@ -2019,7 +2019,7 @@ func (s *Server) DenyRouting(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.DenyRoutingResponse{
 					Response: &pb.DenyRoutingResponse_ServiceErrorCode{
@@ -2143,7 +2143,7 @@ func (s *Server) AllowLocalNetwork(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.AllowLocalNetworkResponse{
 					Response: &pb.AllowLocalNetworkResponse_ServiceErrorCode{
@@ -2267,7 +2267,7 @@ func (s *Server) DenyLocalNetwork(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.DenyLocalNetworkResponse{
 					Response: &pb.DenyLocalNetworkResponse_ServiceErrorCode{
@@ -2391,7 +2391,7 @@ func (s *Server) AllowFileshare(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.AllowFileshareResponse{
 					Response: &pb.AllowFileshareResponse_ServiceErrorCode{
@@ -2519,7 +2519,7 @@ func (s *Server) DenyFileshare(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.DenyFileshareResponse{
 					Response: &pb.DenyFileshareResponse_ServiceErrorCode{
@@ -2647,7 +2647,7 @@ func (s *Server) EnableAutomaticFileshare(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.EnableAutomaticFileshareResponse{
 					Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
@@ -2764,7 +2764,7 @@ func (s *Server) DisableAutomaticFileshare(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.DisableAutomaticFileshareResponse{
 					Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
@@ -2881,7 +2881,7 @@ func (s *Server) NotifyNewTransfer(
 	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				s.pub.Publish(err)
 				return &pb.NotifyNewTransferResponse{
 					Response: &pb.NotifyNewTransferResponse_ServiceErrorCode{
@@ -3024,7 +3024,7 @@ func (s *Server) connect(
 	resp, err := s.reg.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
-			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID)); err != nil {
+			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
 				return &pb.ConnectResponse{
 					Response: &pb.ConnectResponse_ServiceErrorCode{
 						ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,

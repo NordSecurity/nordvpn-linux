@@ -110,6 +110,12 @@ func (p *mockBoolPublisher) Publish(b bool) {
 	p.enabled = b
 }
 
+type mockAuthPublisher struct {
+}
+
+func (p *mockAuthPublisher) Publish(events.DataAuthorization) {
+}
+
 type mockErrPublisher struct {
 	err error
 }
@@ -128,6 +134,7 @@ func TestIsMFAEnabled(t *testing.T) {
 		cm        config.Manager
 		api       core.CredentialsAPI
 		mfaPub    events.Publisher[bool]
+		loutPub   events.Publisher[events.DataAuthorization]
 		errPub    events.Publisher[error]
 		isEnabled bool
 		err       error
@@ -137,6 +144,7 @@ func TestIsMFAEnabled(t *testing.T) {
 			cm:        &authConfigManager{},
 			api:       &authAPI{mfaResp: core.MultifactorAuthStatusResponse{Status: internal.MFAEnabledStatusName}},
 			mfaPub:    &mockBoolPublisher{},
+			loutPub:   &mockAuthPublisher{},
 			errPub:    &mockErrPublisher{},
 			isEnabled: true,
 			err:       nil,
@@ -146,6 +154,7 @@ func TestIsMFAEnabled(t *testing.T) {
 			cm:        &authConfigManager{},
 			api:       &authAPI{mfaResp: core.MultifactorAuthStatusResponse{Status: "not enabled"}},
 			mfaPub:    &mockBoolPublisher{},
+			loutPub:   &mockAuthPublisher{},
 			errPub:    &mockErrPublisher{},
 			isEnabled: false,
 			err:       nil,
@@ -155,6 +164,7 @@ func TestIsMFAEnabled(t *testing.T) {
 			cm:        &authConfigManager{loadErr: configError},
 			api:       &authAPI{mfaResp: core.MultifactorAuthStatusResponse{Status: "not enabled"}},
 			mfaPub:    &mockBoolPublisher{},
+			loutPub:   &mockAuthPublisher{},
 			errPub:    &mockErrPublisher{},
 			isEnabled: false,
 			err:       configError,
@@ -164,6 +174,7 @@ func TestIsMFAEnabled(t *testing.T) {
 			cm:        &authConfigManager{},
 			api:       &authAPI{mfaResp: core.MultifactorAuthStatusResponse{Status: "not enabled"}, err: apiError},
 			mfaPub:    &mockBoolPublisher{},
+			loutPub:   &mockAuthPublisher{},
 			errPub:    &mockErrPublisher{},
 			isEnabled: false,
 			err:       apiError,
@@ -172,7 +183,7 @@ func TestIsMFAEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.errPub, daemonevents.NewAccountUpdateEvents())
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents())
 			enabled, err := rc.isMFAEnabled()
 			assert.Equal(t, test.isEnabled, enabled)
 
@@ -252,6 +263,7 @@ func TestIsVPNExpired(t *testing.T) {
 				test.cm,
 				test.api,
 				&mockBoolPublisher{},
+				&mockAuthPublisher{},
 				&mockErrPublisher{},
 				&daemonevents.AccountUpdateEvents{SubscriptionUpdate: test.accPub},
 			)
