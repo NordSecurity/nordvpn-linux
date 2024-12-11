@@ -304,7 +304,7 @@ func (l *Libtelio) connect(
 	select {
 	case <-connectCtx.Done():
 		l.disconnect()
-		return ctx.Err()
+		return connectCtx.Err()
 	case <-ctx.Done():
 		l.disconnect()
 		return ctx.Err()
