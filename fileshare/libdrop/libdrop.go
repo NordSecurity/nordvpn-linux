@@ -75,9 +75,9 @@ type libdropEventCallback struct {
 	eventCallback fileshare.EventCallback
 }
 
-func (nec libdropEventCallback) OnEvent(nev norddrop.Event) {
+func (lec libdropEventCallback) OnEvent(nev norddrop.Event) {
 	ev := libdropEventToInternalEvent(nev)
-	nec.eventCallback.OnEvent(ev)
+	lec.eventCallback.AsyncEvent(ev)
 }
 
 func libdropEventToInternalEvent(nev norddrop.Event) fileshare.Event {

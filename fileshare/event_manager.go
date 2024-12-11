@@ -56,6 +56,10 @@ type EventManager struct {
 	filesystem            Filesystem
 	notificationManager   *NotificationManager
 	defaultDownloadDir    string
+
+	syncEvents  chan []Event
+	syncDoneCh  chan struct{}
+	asyncEvents chan []Event
 }
 
 // NewEventManager loads transfer state from storage, or creates empty state if loading fails.
@@ -66,7 +70,7 @@ func NewEventManager(
 	filesystem Filesystem,
 	defaultDownloadDir string,
 ) *EventManager {
-	return &EventManager{
+	em := &EventManager{
 		isProd:                isProd,
 		liveTransfers:         map[string]*LiveTransfer{},
 		transferSubscriptions: map[string]chan TransferProgressInfo{},
@@ -74,7 +78,60 @@ func NewEventManager(
 		osInfo:                osInfo,
 		filesystem:            filesystem,
 		defaultDownloadDir:    defaultDownloadDir,
+		syncEvents:            make(chan []Event),
+		syncDoneCh:            make(chan struct{}),
+		asyncEvents:           make(chan []Event, 32),
 	}
+	go em.process()
+
+	return em
+}
+
+func (em *EventManager) process() {
+	fn := func(ev []Event) {
+		em.mutex.Lock()
+		for _, e := range ev {
+			em.handleEvent(e)
+		}
+		em.mutex.Unlock()
+	}
+
+	for {
+		select {
+		case e, ok := <-em.asyncEvents:
+			if !ok {
+				log.Println(internal.WarningPrefix, "asyncEvents channel closed")
+				return
+			}
+			fn(e)
+		case e, ok := <-em.syncEvents:
+			if !ok {
+				log.Println(internal.WarningPrefix, "syncEvents channel closed")
+				return
+			}
+			fn(e)
+			em.syncDoneCh <- struct{}{}
+		}
+	}
+}
+
+// AsyncEvent sends an event to the event manager in an asynchronous manner
+//
+// This function should return immediately,
+// unless the asyncEvents channel is full, in which case it will block until there is space
+func (em *EventManager) AsyncEvent(event ...Event) {
+	select {
+	case em.asyncEvents <- event:
+	default:
+		log.Println(internal.WarningPrefix, " async events channel is full. AsyncEvent() will block until there is space")
+		em.asyncEvents <- event
+	}
+}
+
+// SyncEvent sends an event to the event manager in a synchronous manner, and waits for the event to be fully processed
+func (em *EventManager) SyncEvent(event ...Event) {
+	em.syncEvents <- event
+	<-em.syncDoneCh
 }
 
 // SetFileshare must be called before using event manager.
@@ -126,11 +183,7 @@ func (em *EventManager) DisableNotifications() error {
 	return nil
 }
 
-// OnEvent processes events and handles live transfer state.
-func (em *EventManager) OnEvent(event Event) {
-	em.mutex.Lock()
-	defer em.mutex.Unlock()
-
+func (em *EventManager) handleEvent(event Event) {
 	if !em.isProd {
 		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", EventToString(event))
 	}
@@ -206,6 +259,29 @@ func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceive
 	}
 }
 
+func (em *EventManager) withProgressCh(transferID string, fn func(ch chan TransferProgressInfo)) {
+	if ch, ok := em.transferSubscriptions[transferID]; ok {
+		fn(ch)
+	}
+}
+
+func (em *EventManager) reportProgress(transferID string, status pb.Status, transferred uint32) {
+	em.withProgressCh(transferID, func(ch chan TransferProgressInfo) {
+		progress := TransferProgressInfo{
+			TransferID:  transferID,
+			Transferred: transferred,
+			Status:      status,
+		}
+		select {
+		case ch <- progress:
+		default:
+			log.Println(internal.WarningPrefix, " progress channel is full. removing oldest item and sending")
+			<-ch
+			ch <- progress
+		}
+	})
+}
+
 func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
@@ -223,17 +299,11 @@ func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 	transfer.TotalTransferred += event.Transferred - file.Transferred // add only delta
 	file.Transferred = event.Transferred
 
-	if progressCh, ok := em.transferSubscriptions[transfer.ID]; ok {
-		var progressPercent uint32
-		if transfer.TotalSize > 0 { // transfer progress percentage should be reported to subscriber
-			progressPercent = uint32(float64(transfer.TotalTransferred) / float64(transfer.TotalSize) * 100)
-		}
-		progressCh <- TransferProgressInfo{
-			TransferID:  event.TransferId,
-			Transferred: progressPercent,
-			Status:      pb.Status_ONGOING,
-		}
+	var progressPercent uint32
+	if transfer.TotalSize > 0 { // transfer progress percentage should be reported to subscriber
+		progressPercent = uint32(float64(transfer.TotalTransferred) / float64(transfer.TotalSize) * 100)
 	}
+	em.reportProgress(transfer.ID, pb.Status_ONGOING, progressPercent)
 }
 
 func (em *EventManager) handleFileDownloadedEvent(event EventKindFileDownloaded) {
@@ -367,16 +437,13 @@ func (em *EventManager) handleTransferFinalizedEvent(event EventKindTransferFina
 }
 
 func (em *EventManager) finalizeTransfer(transfer *LiveTransfer, status pb.Status) {
-	if progressCh, ok := em.transferSubscriptions[transfer.ID]; ok {
-		progressCh <- TransferProgressInfo{
-			TransferID: transfer.ID,
-			Status:     status,
-		}
+	em.reportProgress(transfer.ID, status, 0)
+	em.withProgressCh(transfer.ID, func(ch chan TransferProgressInfo) {
 		// unsubscribe finished transfer
-		close(progressCh)
-		delete(em.transferSubscriptions, transfer.ID)
-	}
+		close(ch)
+	})
 
+	delete(em.transferSubscriptions, transfer.ID)
 	delete(em.liveTransfers, transfer.ID)
 }
 
@@ -601,7 +668,7 @@ func (em *EventManager) Subscribe(id string) <-chan TransferProgressInfo {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
 
-	em.transferSubscriptions[id] = make(chan TransferProgressInfo)
+	em.transferSubscriptions[id] = make(chan TransferProgressInfo, 32) // use buffered channels, because we don't want to block the event processing
 
 	return em.transferSubscriptions[id]
 }

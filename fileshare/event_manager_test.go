@@ -218,6 +218,7 @@ func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
 
@@ -314,7 +315,7 @@ func TestTransferProgress(t *testing.T) {
 		},
 	}
 
-	eventManager.OnEvent(
+	eventManager.SyncEvent(
 		Event{
 			Kind: EventKindRequestQueued{
 				Peer:       peer,
@@ -342,16 +343,13 @@ func TestTransferProgress(t *testing.T) {
 
 	progCh := eventManager.Subscribe(transferID)
 
-	eventManager.OnEvent(
+	eventManager.SyncEvent(
 		Event{
 			Kind: EventKindFileStarted{
 				TransferId: transferID,
 				FileId:     file1ID,
 			},
 		},
-	)
-
-	eventManager.OnEvent(
 		Event{
 			Kind: EventKindFileStarted{
 				TransferId:  transferID,
@@ -363,7 +361,7 @@ func TestTransferProgress(t *testing.T) {
 
 	transferredBytes := file1sz
 	go func() {
-		eventManager.OnEvent(
+		eventManager.SyncEvent(
 			Event{
 				Kind: EventKindFileProgress{
 					TransferId:  transferID,
@@ -382,25 +380,19 @@ func TestTransferProgress(t *testing.T) {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
 	go func() {
-		eventManager.OnEvent(
+		eventManager.SyncEvent(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file1ID,
 				},
 			},
-		)
-
-		eventManager.OnEvent(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file2ID,
 				},
 			},
-		)
-
-		eventManager.OnEvent(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
@@ -412,7 +404,7 @@ func TestTransferProgress(t *testing.T) {
 		// Final transfer state is determined from storage
 		storage.transfers[transferID].Status = pb.Status_SUCCESS
 
-		eventManager.OnEvent(
+		eventManager.SyncEvent(
 			Event{
 				Timestamp: 0,
 				Kind: EventKindTransferFinalized{
@@ -684,7 +676,9 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		eventManager, notifier := initializeEventManager(test.direction)
 
 		t.Run(test.name, func(t *testing.T) {
-			eventManager.OnEvent(test.event)
+			eventManager.SyncEvent(
+				test.event,
+			)
 
 			assert.Equal(t, 1, len(notifier.notifications),
 				"TransferFinished event was received, but EventManager did not send any notifications.")
@@ -740,7 +734,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		Direction:        pb.Direction_INCOMING,
 	}
 
-	eventManager.OnEvent(Event{
+	eventManager.SyncEvent(Event{
 		Kind: EventKindFileDownloaded{
 			TransferId: transferID,
 			FileId:     fileID,
@@ -806,7 +800,7 @@ func TestTransferRequestNotification(t *testing.T) {
 		},
 	}
 
-	eventManager.OnEvent(event)
+	eventManager.SyncEvent(event)
 
 	assert.Equal(t, 1, len(notifier.notifications),
 		"Transfer request notification was not sent after transfer request event was received.")
@@ -1340,7 +1334,7 @@ func TestAutoaccept(t *testing.T) {
 
 			eventManager.fileshare = &mockFileshare
 			eventManager.defaultDownloadDir = test.defaultDownloadDirectory
-			eventManager.OnEvent(event)
+			eventManager.SyncEvent(event)
 
 			if test.acceptedTransferID != "" {
 				assert.NotEmpty(t, mockFileshare.acceptedTransferIDS,
@@ -1360,6 +1354,150 @@ func TestAutoaccept(t *testing.T) {
 
 			assert.Empty(t, notification.actions,
 				"Unexpected actions found in autoaccepted transfer notification")
+		})
+	}
+}
+
+func TestAsyncEvents(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	const (
+		numEvents  uint64 = 1024
+		chunkSize  uint64 = 8
+		chunkCount uint64 = numEvents / chunkSize
+		transferID string = exampleUUID
+		peer              = "12.12.12.12"
+		path              = tmpDir
+		file              = "testfile"
+		fileID            = "testfileid"
+		fileSize          = numEvents * 100
+	)
+
+	events := []Event{
+		{
+			Kind: EventKindRequestQueued{
+				Peer:       peer,
+				TransferId: transferID,
+				Files: []QueuedFile{
+					{
+						Id:   fileID,
+						Path: file,
+						Size: fileSize,
+					},
+				},
+			},
+		},
+		{
+			Kind: EventKindFileStarted{
+				TransferId: transferID,
+				FileId:     fileID,
+			},
+		},
+	}
+
+	for i := uint64(0); i < numEvents; i++ {
+		events = append(events,
+			Event{
+				Kind: EventKindFileProgress{
+					TransferId:  transferID,
+					FileId:      fileID,
+					Transferred: (fileSize / numEvents) * (i + 1),
+				},
+			},
+		)
+	}
+
+	chunks := make([][]Event, chunkCount)
+	for i := uint64(0); i < chunkCount; i++ {
+		chunks[i] = make([]Event, chunkSize)
+		for j := uint64(0); j < chunkSize; j++ {
+			chunks[i][j] = events[(i*chunkSize)+j]
+		}
+	}
+
+	tests := []struct {
+		name       string
+		progChSize int
+		fn         func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo)
+	}{
+		{
+			name:       "AsyncEvent() should not block with progCh buffer = 1 and 1024 events",
+			progChSize: 32,
+			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
+				for _, chunk := range chunks {
+					em.AsyncEvent(chunk...)
+				}
+			},
+		},
+		{
+			name:       "AsyncEvent() events should be in order & all received",
+			progChSize: int(numEvents * 2),
+			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
+				for _, chunk := range chunks {
+					em.AsyncEvent(chunk...)
+				}
+				lastProgress := uint32(0)
+				for i := uint64(0); i < numEvents-2; i++ {
+					prog := <-progCh
+					if prog.Transferred < lastProgress {
+						t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)
+					}
+					lastProgress = prog.Transferred
+				}
+
+				if len(progCh) != 0 {
+					t.Fatalf("progCh was not drained, len(progCh) = %d", len(progCh))
+				}
+			},
+		},
+		{
+			name:       "SyncEvent() events should block",
+			progChSize: 32,
+			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
+				done := make(chan struct{})
+				go func() {
+					for _, chunk := range chunks {
+						em.SyncEvent(chunk...)
+					}
+					<-done
+				}()
+
+				timeout := time.After(time.Millisecond * 100)
+				select {
+				case <-done:
+					t.Fatalf("SyncEvent() should block, but it didn't")
+				case <-timeout:
+				}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			em := NewEventManager(true, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+			em.SetFileshare(&mockEventManagerFileshare{})
+			storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+			em.SetStorage(storage)
+
+			storage.transfers[transferID] = &pb.Transfer{
+				Id:        transferID,
+				Peer:      peer,
+				Path:      path,
+				Status:    pb.Status_REQUESTED,
+				TotalSize: fileSize,
+				Files: []*pb.File{
+					{
+						Id:     fileID,
+						Path:   file,
+						Size:   fileSize,
+						Status: pb.Status_REQUESTED,
+					},
+				},
+			}
+
+			progCh := make(chan TransferProgressInfo, test.progChSize)
+			em.transferSubscriptions[transferID] = progCh
+			test.fn(t, em, progCh)
 		})
 	}
 }
