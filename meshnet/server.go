@@ -239,11 +239,6 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
-	// time.AfterFunc(20*time.Second, func() {
-	// 	log.Println(internal.DebugPrefix, "-------     panic now!")
-	// 	panic("intentional panic")
-	// })
-
 	s.daemonEvents.Settings.Meshnet.Publish(true)
 
 	// We want to enable filesharing only after setting config to avoid race condition

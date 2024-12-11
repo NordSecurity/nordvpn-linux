@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,7 +9,6 @@ import (
 	"strings"
 	"syscall"
 	"testing"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
@@ -394,44 +392,3 @@ func TestOpenLogFile(t *testing.T) {
 		})
 	}
 }
-
-type MockDirEntry struct {
-	name string
-}
-
-func (m *MockDirEntry) Name() string {
-	return m.name
-}
-
-func (m *MockDirEntry) IsDir() bool {
-	return true
-}
-
-func (m *MockDirEntry) Type() fs.FileMode {
-	return os.ModeSymlink
-}
-
-func (m *MockDirEntry) Info() (fs.FileInfo, error) {
-	return &MockFileInfo{
-		name:    m.name,
-		size:    1024,
-		mode:    os.FileMode(0644),
-		modTime: time.Now(),
-		sys:     &syscall.Stat_t{},
-	}, nil
-}
-
-type MockFileInfo struct {
-	modTime time.Time
-	sys     any
-	name    string
-	size    int64
-	mode    fs.FileMode
-}
-
-func (m *MockFileInfo) Name() string       { return m.name }
-func (m *MockFileInfo) Size() int64        { return m.size }
-func (m *MockFileInfo) Mode() fs.FileMode  { return m.mode }
-func (m *MockFileInfo) ModTime() time.Time { return m.modTime }
-func (m *MockFileInfo) IsDir() bool        { return m.mode.IsDir() }
-func (m *MockFileInfo) Sys() any           { return m.sys }

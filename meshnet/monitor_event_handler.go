@@ -4,10 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -24,17 +20,30 @@ type FilesharePortAccessController struct {
 	netw           Networker
 	reg            mesh.Registry
 	filesharePID   PID
-	processChecker processChecker
+	processChecker ProcessChecker
 	mu             sync.Mutex
 }
 
-func NewPortAccessController(cm config.Manager, netw Networker, reg mesh.Registry) FilesharePortAccessController {
+func NewPortAccessController(
+	cm config.Manager,
+	netw Networker,
+	reg mesh.Registry,
+	pc ProcessChecker,
+) FilesharePortAccessController {
+	filesharePID := PID(0)
+	// NOTE:if the fileshare is already running, set the initial PID.
+	// This can happen only when the daemon was restarted, but nordfileshare
+	// process was not - for example there was a panic in daemon.
+	PID := pc.GiveProcessPID(internal.FileshareBinaryPath)
+	if PID != nil {
+		filesharePID = *PID
+	}
 	return FilesharePortAccessController{
 		cm:             cm,
 		netw:           netw,
 		reg:            reg,
-		filesharePID:   0,
-		processChecker: defaultProcChecker{},
+		filesharePID:   filesharePID,
+		processChecker: pc,
 	}
 }
 
@@ -44,9 +53,21 @@ func (eventHandler *FilesharePortAccessController) OnProcessStarted(ev ProcEvent
 		// process next events anymore until the PID gets reset in [EventHandler.OnProcessStopped]
 		return
 	}
-	if !eventHandler.processChecker.isFileshareProcess(ev.PID) {
+
+	// NOTE: at this point, we can ignore older processes. It's because
+	// we checked above that the [eventHandler.filesharePID] is not set
+	// which means that nordfileshare process was not running at the time
+	// of creation of [FilesharePortAccessController] - constructor checks
+	// if nordfilshare is already running - so we know that nordfileshare
+	// PID will be higher than the daemon PID.
+	if ev.PID < eventHandler.processChecker.CurrentPID() {
 		return
 	}
+
+	if !eventHandler.processChecker.IsFileshareProcess(ev.PID) {
+		return
+	}
+
 	log.Println(internal.InfoPrefix, "updating fileshare process pid to:", ev.PID)
 	eventHandler.filesharePID = ev.PID
 	go eventHandler.allowFileshare()
@@ -121,43 +142,9 @@ func (eventHandler *FilesharePortAccessController) blockFileshare() error {
 	return nil
 }
 
-// processChecker allows checking if process with specified [PID]
-// is a fileshare process.
-type processChecker interface {
-	isFileshareProcess(PID) bool
-}
-
-// defaultProcChecker allows checking if process specified by [PID]
-// is a fileshare process by reading its path via `/proc/<pid>/cmdline`.
-type defaultProcChecker struct{}
-
-func (defaultProcChecker) isFileshareProcess(pid PID) bool {
-	// ignore older processes, fileshare is always
-	// younger than the daemon so it has higher PID
-	if pid < PID(os.Getpid()) {
-		return false
-	}
-
-	procPath, err := readProcPath(pid)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to read process path from /proc", err)
-		return false
-	}
-
-	return procPath == internal.FileshareBinaryPath
-}
-
-func readProcPath(pid PID) (string, error) {
-	pidStr := strconv.FormatUint(uint64(pid), 10)
-	cmdlinePath := filepath.Join("/proc", pidStr, "cmdline")
-
-	cmdline, err := os.ReadFile(cmdlinePath)
-	if err != nil {
-		return "", err
-	}
-	args := strings.Split(string(cmdline), "\x00")
-	if len(args) == 0 {
-		return "", ErrIncorrectCmdlineContent
-	}
-	return args[0], nil
+// ProcessChecker represents process-related utilities
+type ProcessChecker interface {
+	IsFileshareProcess(PID) bool
+	GiveProcessPID(string) *PID
+	CurrentPID() PID
 }

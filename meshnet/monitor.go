@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	PID     uint32
+	PID     uint64
 	SetupFn func() (MonitorChannels, error)
 )
 

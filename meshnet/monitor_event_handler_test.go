@@ -16,14 +16,21 @@ func TestEventHandler_OnProcessStarted(t *testing.T) {
 		savedPID  PID
 		finalPID  PID
 		procEvent ProcEvent
-		pc        processChecker
+		pc        ProcessChecker
 	}{
 		{
 			name:      "PID is set if process is fileshare",
 			savedPID:  PID(0),
 			procEvent: ProcEvent{1337},
 			finalPID:  PID(1337),
-			pc:        procCheckerStub{isFileshare: true},
+			pc:        procCheckerStub{isFileshare: true, currentPID: 1336}, // currentPID lower than the PID from event
+		},
+		{
+			name:      "PID is not updated if the event's PID is older than current process PID",
+			savedPID:  PID(0),
+			procEvent: ProcEvent{1337},
+			finalPID:  PID(0),
+			pc:        procCheckerStub{isFileshare: true, currentPID: 1338}, // currentPID higher than the PID from event
 		},
 		{
 			name:      "PID is not updated if process is NOT fileshare",
@@ -99,8 +106,17 @@ func TestEventHandler_OnProcessStopped(t *testing.T) {
 
 type procCheckerStub struct {
 	isFileshare bool
+	currentPID  PID
 }
 
-func (pu procCheckerStub) isFileshareProcess(PID) bool {
-	return pu.isFileshare
+func (pc procCheckerStub) IsFileshareProcess(PID) bool {
+	return pc.isFileshare
+}
+
+func (pu procCheckerStub) GiveProcessPID(string) *PID {
+	return nil
+}
+
+func (pc procCheckerStub) CurrentPID() PID {
+	return pc.currentPID
 }
