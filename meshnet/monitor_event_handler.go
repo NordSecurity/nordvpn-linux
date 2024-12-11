@@ -47,6 +47,7 @@ func (eventHandler *FilesharePortAccessController) OnProcessStarted(ev ProcEvent
 	if !eventHandler.processChecker.isFileshareProcess(ev.PID) {
 		return
 	}
+	log.Println(internal.InfoPrefix, "updating fileshare process pid to:", ev.PID)
 	eventHandler.filesharePID = ev.PID
 	go eventHandler.allowFileshare()
 }
@@ -94,6 +95,7 @@ func (eventHandler *FilesharePortAccessController) OnProcessStopped(ev ProcEvent
 	if eventHandler.filesharePID != ev.PID {
 		return
 	}
+	log.Println(internal.InfoPrefix, "resetting fileshare pid")
 	eventHandler.filesharePID = 0
 	go eventHandler.blockFileshare()
 }

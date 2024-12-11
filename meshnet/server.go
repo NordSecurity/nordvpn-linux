@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
@@ -56,6 +57,7 @@ type Server struct {
 	fileshareProcMonitor NetlinkProcessMonitor
 	cancelMonitor        context.CancelFunc
 	connectContext       *sharedctx.Context
+	mu                   sync.Mutex
 	pb.UnimplementedMeshnetServer
 }
 
@@ -175,6 +177,16 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
+	err = s.startFileshareMonitor()
+	if err != nil {
+		s.pub.Publish(err)
+		return &pb.MeshnetResponse{
+			Response: &pb.MeshnetResponse_ServiceError{
+				ServiceError: pb.ServiceErrorCode_MONITOR_FAILURE,
+			},
+		}, nil
+	}
+
 	if err = s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
@@ -227,17 +239,10 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
-	monitorCtx, cancelMonitor := context.WithCancel(context.Background())
-	err = s.fileshareProcMonitor.Start(monitorCtx)
-	if err != nil {
-		s.pub.Publish(err)
-		return &pb.MeshnetResponse{
-			Response: &pb.MeshnetResponse_ServiceError{
-				ServiceError: pb.ServiceErrorCode_MONITOR_FAILURE,
-			},
-		}, nil
-	}
-	s.cancelMonitor = cancelMonitor
+	// time.AfterFunc(20*time.Second, func() {
+	// 	log.Println(internal.DebugPrefix, "-------     panic now!")
+	// 	panic("intentional panic")
+	// })
 
 	s.daemonEvents.Settings.Meshnet.Publish(true)
 
@@ -256,6 +261,23 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	return &pb.MeshnetResponse{
 		Response: &pb.MeshnetResponse_Empty{},
 	}, nil
+}
+
+func (s *Server) startFileshareMonitor() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// cancel old monitor if there is any
+	if s.cancelMonitor != nil {
+		s.cancelMonitor()
+	}
+	// start a new one
+	monitorCtx, cancelMonitor := context.WithCancel(context.Background())
+	err := s.fileshareProcMonitor.Start(monitorCtx)
+	if err != nil {
+		return err
+	}
+	s.cancelMonitor = cancelMonitor
+	return nil
 }
 
 // IsEnabled checks if meshnet is enabled
@@ -289,10 +311,11 @@ func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.IsEnabledResponse, e
 }
 
 var (
-	ErrNotLoggedIn         = fmt.Errorf("not logged in")
-	ErrConfigLoad          = fmt.Errorf("problem loading config")
-	ErrMeshnetNotEnabled   = fmt.Errorf("meshnet not enabled")
-	ErrDeviceNotRegistered = fmt.Errorf("not registered")
+	ErrNotLoggedIn          = fmt.Errorf("not logged in")
+	ErrConfigLoad           = fmt.Errorf("problem loading config")
+	ErrMeshnetNotEnabled    = fmt.Errorf("meshnet not enabled")
+	ErrDeviceNotRegistered  = fmt.Errorf("not registered")
+	ErrMonitorFailedToStart = fmt.Errorf("fileshare monitor failed to start")
 )
 
 func (s *Server) StartMeshnet() error {
@@ -324,6 +347,11 @@ func (s *Server) StartMeshnet() error {
 			}
 		}
 		return fmt.Errorf("retrieving meshnet map: %w", err)
+	}
+
+	if err := s.startFileshareMonitor(); err != nil {
+		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
+		return ErrMonitorFailedToStart
 	}
 
 	if err := s.netw.SetMesh(
@@ -389,14 +417,20 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		}, nil
 	}
 
-	if s.cancelMonitor != nil {
-		s.cancelMonitor()
-	}
+	s.stopFileshareMonitor()
 	s.daemonEvents.Settings.Meshnet.Publish(false)
 
 	return &pb.MeshnetResponse{
 		Response: &pb.MeshnetResponse_Empty{},
 	}, nil
+}
+
+func (s *Server) stopFileshareMonitor() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.cancelMonitor != nil {
+		s.cancelMonitor()
+	}
 }
 
 // RefreshMeshnet updates peer configuration.
