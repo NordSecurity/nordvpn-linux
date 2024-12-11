@@ -200,7 +200,14 @@ func newMockedServer(
 		&mock.DNSGetter{},
 		&subs.Subject[error]{},
 		&subs.Subject[[]string]{},
-		&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+		&daemonevents.Events{
+			Settings: &daemonevents.SettingsEvents{
+				Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+			},
+			User: &daemonevents.LoginEvents{
+				Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+			},
+		},
 		testnorduser.NewMockNorduserClient(nil),
 		sharedctx.New(),
 	)
@@ -268,7 +275,14 @@ func TestServer_EnableMeshnet(t *testing.T) {
 				test.dns,
 				&subs.Subject[error]{},
 				&subs.Subject[[]string]{},
-				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+				&daemonevents.Events{
+					Settings: &daemonevents.SettingsEvents{
+						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+					},
+					User: &daemonevents.LoginEvents{
+						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+					},
+				},
 				testnorduser.NewMockNorduserClient(test.startFileshareError),
 				sharedctx.New(),
 			)
@@ -347,7 +361,14 @@ func TestServer_DisableMeshnet(t *testing.T) {
 				test.dns,
 				&subs.Subject[error]{},
 				&subs.Subject[[]string]{},
-				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+				&daemonevents.Events{
+					Settings: &daemonevents.SettingsEvents{
+						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+					},
+					User: &daemonevents.LoginEvents{
+						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+					},
+				},
 				testnorduser.NewMockNorduserClient(test.startFileshareError),
 				sharedctx.New(),
 			)
@@ -405,8 +426,17 @@ func TestServer_Invite(t *testing.T) {
 				&mock.DNSGetter{},
 				&subs.Subject[error]{},
 				&subs.Subject[[]string]{},
-				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}},
-					Service: &daemonevents.ServiceEvents{UiItemsClick: &daemonevents.MockPublisherSubscriber[events.UiItemsAction]{}}},
+				&daemonevents.Events{
+					Settings: &daemonevents.SettingsEvents{
+						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+					},
+					Service: &daemonevents.ServiceEvents{
+						UiItemsClick: &daemonevents.MockPublisherSubscriber[events.UiItemsAction]{},
+					},
+					User: &daemonevents.LoginEvents{
+						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+					},
+				},
 				testnorduser.NewMockNorduserClient(nil),
 				sharedctx.New(),
 			)
@@ -435,7 +465,14 @@ func TestServer_AcceptInvite(t *testing.T) {
 		&mock.DNSGetter{},
 		&subs.Subject[error]{},
 		&subs.Subject[[]string]{},
-		&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+		&daemonevents.Events{
+			Settings: &daemonevents.SettingsEvents{
+				Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+			},
+			User: &daemonevents.LoginEvents{
+				Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+			},
+		},
 		testnorduser.NewMockNorduserClient(nil),
 		sharedctx.New(),
 	)
@@ -464,7 +501,14 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 		&mock.DNSGetter{},
 		&subs.Subject[error]{},
 		&subs.Subject[[]string]{},
-		&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+		&daemonevents.Events{
+			Settings: &daemonevents.SettingsEvents{
+				Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+			},
+			User: &daemonevents.LoginEvents{
+				Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+			},
+		},
 		testnorduser.NewMockNorduserClient(nil),
 		sharedctx.New(),
 	)
@@ -565,8 +609,15 @@ func TestServer_Connect(t *testing.T) {
 			&mock.DNSGetter{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
-			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}},
-				Service: &daemonevents.ServiceEvents{Connect: &daemonevents.MockPublisherSubscriber[events.DataConnect]{}}},
+			&daemonevents.Events{
+				Settings: &daemonevents.SettingsEvents{
+					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+				},
+				Service: &daemonevents.ServiceEvents{Connect: &daemonevents.MockPublisherSubscriber[events.DataConnect]{}},
+				User: &daemonevents.LoginEvents{
+					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+				},
+			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
 		)
@@ -700,7 +751,14 @@ func TestServer_AcceptIncoming(t *testing.T) {
 			&mock.DNSGetter{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
-			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+			&daemonevents.Events{
+				Settings: &daemonevents.SettingsEvents{
+					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+				},
+				User: &daemonevents.LoginEvents{
+					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+				},
+			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
 		)
@@ -824,7 +882,14 @@ func TestServer_DenyIncoming(t *testing.T) {
 			&mock.DNSGetter{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
-			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+			&daemonevents.Events{
+				Settings: &daemonevents.SettingsEvents{
+					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+				},
+				User: &daemonevents.LoginEvents{
+					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+				},
+			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
 		)
@@ -930,7 +995,14 @@ func TestServer_AllowFileshare(t *testing.T) {
 			&mock.DNSGetter{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
-			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+			&daemonevents.Events{
+				Settings: &daemonevents.SettingsEvents{
+					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+				},
+				User: &daemonevents.LoginEvents{
+					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+				},
+			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
 		)
@@ -1036,7 +1108,15 @@ func TestServer_DenyFileshare(t *testing.T) {
 			&mock.DNSGetter{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
-			&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+			&daemonevents.Events{
+				Settings: &daemonevents.SettingsEvents{
+					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+				},
+				Service: &daemonevents.ServiceEvents{Connect: &daemonevents.MockPublisherSubscriber[events.DataConnect]{}},
+				User: &daemonevents.LoginEvents{
+					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+				},
+			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
 		)
@@ -1674,7 +1754,14 @@ func TestServer_Peer_Nickname(t *testing.T) {
 				&mock.DNSGetter{RegisteredDomains: test.reservedDNSNames},
 				&subs.Subject[error]{},
 				&subs.Subject[[]string]{},
-				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+				&daemonevents.Events{
+					Settings: &daemonevents.SettingsEvents{
+						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+					},
+					User: &daemonevents.LoginEvents{
+						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+					},
+				},
 				testnorduser.NewMockNorduserClient(nil),
 				sharedctx.New(),
 			)
@@ -1986,7 +2073,14 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				&mock.DNSGetter{RegisteredDomains: test.reservedDNSNames},
 				&subs.Subject[error]{},
 				&subs.Subject[[]string]{},
-				&daemonevents.Events{Settings: &daemonevents.SettingsEvents{Meshnet: &daemonevents.MockPublisherSubscriber[bool]{}}},
+				&daemonevents.Events{
+					Settings: &daemonevents.SettingsEvents{
+						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
+					},
+					User: &daemonevents.LoginEvents{
+						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
+					},
+				},
 				testnorduser.NewMockNorduserClient(nil),
 				sharedctx.New(),
 			)
