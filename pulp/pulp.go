@@ -8,10 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
 const (
@@ -85,7 +86,7 @@ func Login(
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := core.MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read: %w", err)
 	}
@@ -207,7 +208,7 @@ func versions(
 		return nil, fmt.Errorf("post: %w", err)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := core.MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read: %w", err)
 	}

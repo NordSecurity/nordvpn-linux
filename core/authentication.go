@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -75,7 +74,7 @@ func (o *OAuth2) Login() (string, error) {
 		return "", err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -123,7 +122,7 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
