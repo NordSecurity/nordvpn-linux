@@ -228,32 +228,30 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 }
 
 func TestMaxBytes(t *testing.T) {
-	test := func(t *testing.T, size int64, expectedErr error) {
-		input := make([]byte, size)
-		for i := range input {
-			input[i] = byte(rand.Intn(255))
-		}
-		rc := bytes.NewReader(input)
-
-		bytes, err := MaxBytesReadAll(rc)
-
-		if err == nil {
-			assert.Nil(t, err)
-			assert.Equal(t, input, bytes)
-		} else {
-			assert.EqualError(t, err, expectedErr.Error())
-		}
+	tests := map[string]struct {
+		size        int64
+		expectedErr error
+	}{
+		"too big input":               {size: maxBytesLimit + 1, expectedErr: &ErrMaxBytesLimit{Limit: maxBytesLimit}},
+		"input size within limits":    {size: maxBytesLimit - 1, expectedErr: nil},
+		"input size exact limit size": {size: maxBytesLimit, expectedErr: nil},
 	}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			input := make([]byte, test.size)
+			for i := range input {
+				input[i] = byte(rand.Intn(255))
+			}
+			rc := bytes.NewReader(input)
 
-	t.Run("too big input", func(t *testing.T) {
-		test(t, maxBytesLimit+1, &ErrMaxBytesLimit{Limit: maxBytesLimit})
-	})
+			bytes, err := MaxBytesReadAll(rc)
 
-	t.Run("input with size within limits", func(t *testing.T) {
-		test(t, maxBytesLimit-1, nil)
-	})
-
-	t.Run("input with exact limit size", func(t *testing.T) {
-		test(t, maxBytesLimit, nil)
-	})
+			if err == nil {
+				assert.Nil(t, err)
+				assert.Equal(t, input, bytes)
+			} else {
+				assert.EqualError(t, err, test.expectedErr.Error())
+			}
+		})
+	}
 }
