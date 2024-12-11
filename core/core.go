@@ -588,6 +588,11 @@ func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	// check whether the io.ReadAll() stopped because of EOF coming from io.Reader or because of the limit
+	//
+	// two cases can happen here:
+	// limit reached       - limitedReader.N <= 0
+	// io.Reader is empty  - limitedReader.N > 0
 	if limitedReader.N <= 0 {
 		return nil, &ErrMaxBytesLimit{Limit: maxBytesLimit}
 	}
