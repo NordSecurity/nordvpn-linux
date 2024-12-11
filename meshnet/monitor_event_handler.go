@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -24,6 +25,7 @@ type FilesharePortAccessController struct {
 	reg            mesh.Registry
 	filesharePID   PID
 	processChecker processChecker
+	mu             sync.Mutex
 }
 
 func NewPortAccessController(cm config.Manager, netw Networker, reg mesh.Registry) FilesharePortAccessController {
@@ -51,6 +53,10 @@ func (eventHandler *FilesharePortAccessController) OnProcessStarted(ev ProcEvent
 
 func (eventHandler *FilesharePortAccessController) allowFileshare() error {
 	log.Println(internal.InfoPrefix, "allowing fileshare port")
+
+	eventHandler.mu.Lock()
+	defer eventHandler.mu.Unlock()
+
 	peers, err := eventHandler.listPeers()
 	if err != nil {
 		return err
@@ -94,6 +100,10 @@ func (eventHandler *FilesharePortAccessController) OnProcessStopped(ev ProcEvent
 
 func (eventHandler *FilesharePortAccessController) blockFileshare() error {
 	log.Println(internal.InfoPrefix, "blocking fileshare port")
+
+	eventHandler.mu.Lock()
+	defer eventHandler.mu.Unlock()
+
 	peers, err := eventHandler.listPeers()
 	if err != nil {
 		return err
