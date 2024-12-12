@@ -5,11 +5,14 @@ import sh
 
 import lib
 from lib import daemon, info, logging, login, network, server
+import contextlib
 
 
 def setup_module(module):  # noqa: ARG001
     daemon.start()
     login.login_as("default")
+    with contextlib.suppress(Exception):
+        sh.nordvpn.set.firewall("off")
 
 
 def teardown_module(module):  # noqa: ARG001
