@@ -7,6 +7,7 @@ import sh
 
 import lib
 from lib import daemon, info, logging, login, network, server
+import os
 
 CONNECT_ALIAS = [
     "connect",
@@ -24,8 +25,9 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
     kernel_logs = sh.sudo.dmesg()
+    project_root = os.environ["WORKDIR"]
     # Write the logs to the output file
-    with open("/opt/dist/logs/dmesg.log", "w") as file:
+    with open(f"{project_root}/dist/logs/dmesg.log", "w") as file:
         file.write("dmesg logs")
         file.write(str(kernel_logs))
 
