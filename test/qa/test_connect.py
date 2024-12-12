@@ -23,6 +23,12 @@ def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
+    kernel_logs = sh.sudo.dmesg()
+    # Write the logs to the output file
+    with open("/opt/dist/logs/dmesg.log", "w") as file:
+        file.write("dmesg logs")
+        file.write(str(kernel_logs))
+
     sh.nordvpn.logout("--persist-token")
     sh.nordvpn.set.defaults()
     daemon.stop()

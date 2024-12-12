@@ -106,6 +106,16 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 			continue
 		}
 		for _, ipTableRule := range ipTablesRules {
+			if !rule.Allow {
+				prefix := fmt.Sprintf("-j LOG --log-prefix \"LOG-pre-%s\" --log-level 4", rule.Name)
+				log.Println(internal.DebugPrefix, "[iptables-debug], add rule: ", prefix)
+				logRule := strings.Replace(ipTableRule, "-j DROP", prefix, -1)
+				args := fmt.Sprintf("%s %s -w"+internal.SecondsToWaitForIptablesLock, flag, logRule)
+				out, err := exec.Command(iptableVersion, strings.Split(args, " ")...).CombinedOutput()
+				if err != nil {
+					log.Printf(internal.ErrorPrefix+" [iptables-debug]"+" failed to add rule: %ss: %s", err, string(out))
+				}
+			}
 			// -w does not accept arguments on older iptables versions
 			args := fmt.Sprintf("%s %s -w "+internal.SecondsToWaitForIptablesLock, flag, ipTableRule)
 			// #nosec G204 -- input is properly sanitized
@@ -115,6 +125,17 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 					return nil
 				}
 				return fmt.Errorf("%s %s rule '%s': %w: %s", errStr, iptableVersion, ipTableRule, err, string(out))
+			}
+
+			if !rule.Allow {
+				prefix := fmt.Sprintf("-j LOG --log-prefix \"LOG-post-%s\" --log-level 4", rule.Name)
+				log.Println(internal.DebugPrefix, "[iptables-debug], add rule: ", prefix)
+				logRule := strings.Replace(ipTableRule, "-j DROP", prefix, -1)
+				args := fmt.Sprintf("%s %s -w"+internal.SecondsToWaitForIptablesLock, flag, logRule)
+				out, err := exec.Command(iptableVersion, strings.Split(args, " ")...).CombinedOutput()
+				if err != nil {
+					log.Printf(internal.ErrorPrefix+"[iptables-debug]"+" failed to add rule: %s: %s", err, string(out))
+				}
 			}
 		}
 	}
