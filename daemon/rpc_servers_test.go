@@ -212,10 +212,6 @@ func TestServers(t *testing.T) {
 			false,
 			core.Groups{
 				{
-					ID:    config.ServerGroup_OBFUSCATED,
-					Title: "Standard VPN",
-				},
-				{
 					ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
 					Title: "Standard VPN",
 				},
@@ -231,7 +227,6 @@ func TestServers(t *testing.T) {
 			[]core.ServerTechnology{
 				core.L2TP,
 				core.HTTPProxy,
-				core.OpenVPNTCPObfuscated,
 				core.OpenVPNTCP,
 				core.WireguardTech,
 			}),
@@ -325,9 +320,8 @@ func TestServers(t *testing.T) {
 		Id:           int64(server3ID),
 		HostName:     server3Hostname,
 		Virtual:      false,
-		ServerGroups: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+		ServerGroups: []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
-			pb.Technology_OBFUSCATED_OPENVPN_TCP,
 			pb.Technology_OPENVPN_TCP,
 			pb.Technology_NORDLYNX,
 		},
@@ -385,9 +379,8 @@ func TestServers(t *testing.T) {
 			Id:           int64(server3ID),
 			HostName:     server3Hostname,
 			Virtual:      false,
-			ServerGroups: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
+			ServerGroups: []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS},
 			Technologies: []pb.Technology{
-				pb.Technology_OBFUSCATED_OPENVPN_TCP,
 				pb.Technology_OPENVPN_TCP,
 				pb.Technology_NORDLYNX,
 			},

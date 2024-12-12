@@ -349,7 +349,7 @@ func IsConnectableVia(tech ServerTechnology) Predicate {
 // IsObfuscated returns a filter for keeping only obfuscated servers.
 func IsObfuscated() Predicate {
 	return func(s Server) bool {
-		return IsConnectableVia(OpenVPNUDPObfuscated)(s) &&
+		return IsConnectableVia(OpenVPNUDPObfuscated)(s) ||
 			IsConnectableVia(OpenVPNTCPObfuscated)(s)
 	}
 }
