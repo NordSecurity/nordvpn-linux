@@ -157,11 +157,11 @@ def test_route_to_peer_status_valid():
 
     connect_time = time.monotonic()
 
-    time.sleep(15)
+    time.sleep(5)
     sh.ping("-c", "1", "-w", "1", "103.86.96.100")
 
-    status_time = time.monotonic()
     status_output = sh.nordvpn.status().lstrip("\r -")
+    status_time = time.monotonic()
 
     # Split the data into lines, filter out lines that don't contain ':',
     # split each line into key-value pairs, strip whitespace, and convert keys to lowercase
