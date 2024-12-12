@@ -62,7 +62,7 @@ func (r *RPC) quenchConfigFallback(cfg config.Config) config.Config {
 	}
 
 	log.Println(internal.DebugPrefix,
-		"user had configured Quench technolgy, but it was disabled, falling back to NordLynx")
+		"user had configured Quench technology, but it was disabled, falling back to NordLynx")
 
 	cfg.Technology = config.Technology_QUENCH
 	r.cm.SaveWith(func(c config.Config) config.Config {
