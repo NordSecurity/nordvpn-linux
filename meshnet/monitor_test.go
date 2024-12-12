@@ -35,11 +35,101 @@ func TestNetlinkProcessMonitor_Start(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			monitor := NewProcMonitor(eventHandlerDummy{}, tt.setupFn)
-			ctx, _ := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
 			err := monitor.Start(ctx)
 
 			assert.Equal(t, err != nil, tt.isError)
 		})
+	}
+}
+
+func TestNetlinkProcessMonitor_Start_AllowedOnlyOncePerRunningMonitor(t *testing.T) {
+	category.Set(t, category.Unit)
+	channels, setup := openChannelsMonitorSetup()
+	monitor := NewProcMonitor(eventHandlerDummy{}, setup)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// starting first time - fine
+	err := monitor.Start(ctx)
+	assert.Nil(t, err)
+
+	// not allowed until monitor is running
+	err = monitor.Start(ctx)
+	assert.NotNil(t, err)
+
+	cancel()
+
+	select {
+	case <-channels.DoneCh:
+		// cancellation done
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for monitor to acknowledge cancellation")
+	}
+
+	// allowed again after cancellation
+	err = monitor.Start(ctx)
+	assert.Nil(t, err)
+}
+
+func TestNetlinkProcessMonitor_Start_RevertsOnSetupFailure(t *testing.T) {
+	category.Set(t, category.Unit)
+	monitor := NewProcMonitor(eventHandlerDummy{}, failingSetup)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	err := monitor.Start(ctx)
+
+	assert.NotNil(t, err)
+}
+
+func TestNetlinkProcessMonitor_Start_RevertsOnImmediateCancel(t *testing.T) {
+	category.Set(t, category.Unit)
+	monitor := NewProcMonitor(eventHandlerDummy{}, workingSetup)
+	ctx, cancel := context.WithCancel(context.Background())
+	err := monitor.Start(ctx)
+	assert.Nil(t, err)
+
+	// immediately cancel
+	cancel()
+
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+
+	timeout := time.NewTimer(1 * time.Second)
+	defer timeout.Stop()
+
+	// busy wait for max of `timeout` to check that `isRunning` was reverted
+CheckLoop:
+	for {
+		select {
+		case <-ticker.C:
+			if !monitor.isRunning.Load() {
+				break CheckLoop // exit outer loop, not select statement
+			}
+		case <-timeout.C:
+			t.Fatal("isRunning did not revert to false after context cancellation")
+		}
+	}
+}
+
+func TestNetlinkProcessMonitor_StartStop(t *testing.T) {
+	category.Set(t, category.Unit)
+	channels, setupFn := openChannelsMonitorSetup()
+	monitor := NewProcMonitor(eventHandlerDummy{}, setupFn)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	err := monitor.Start(ctx)
+	assert.Nil(t, err)
+	assert.True(t, monitor.isRunning.Load())
+
+	cancel()
+
+	select {
+	case <-channels.DoneCh:
+		assert.False(t, monitor.isRunning.Load())
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for monitor to stop")
 	}
 }
 
@@ -206,7 +296,7 @@ func failingSetup() (MonitorChannels, error) {
 func workingSetup() (MonitorChannels, error) {
 	return MonitorChannels{
 		EventCh: make(chan netlink.ProcEvent),
-		DoneCh:  make(chan struct{}),
+		DoneCh:  make(chan struct{}, 1),
 		ErrCh:   make(chan error),
 	}, nil
 }

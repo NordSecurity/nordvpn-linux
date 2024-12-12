@@ -2,7 +2,10 @@ package meshnet
 
 import (
 	"context"
+	"errors"
 	"log"
+	"sync"
+	"sync/atomic"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/vishvananda/netlink"
@@ -32,8 +35,9 @@ type EventHandler interface {
 // NetlinkProcessMonitor monitors EXEC and EXIT events of processes and calls
 // [EventHandler.OnProcessStarted] and [EventHandler.OnProcessStopped] accordingly.
 type NetlinkProcessMonitor struct {
-	handler EventHandler
-	setup   SetupFn
+	handler   EventHandler
+	setup     SetupFn
+	isRunning atomic.Bool
 }
 
 func NewProcMonitor(handler EventHandler, setup SetupFn) NetlinkProcessMonitor {
@@ -48,17 +52,46 @@ func NewProcMonitor(handler EventHandler, setup SetupFn) NetlinkProcessMonitor {
 // It recreates the source of the events by calling [SetupFn]
 // every time [NetlinkProcessMonitor.Start] is called.
 func (pm *NetlinkProcessMonitor) Start(ctx context.Context) error {
+	if !pm.isRunning.CompareAndSwap(false, true) {
+		return errors.New("monitoring already started for this instance")
+	}
+
+	var monitoringStarted sync.WaitGroup
+	monitoringStarted.Add(1)
+	err := pm.start(ctx, &monitoringStarted)
+	if err != nil {
+		pm.isRunning.CompareAndSwap(true, false)
+		return err
+	}
+	monitoringStarted.Wait()
+	return nil
+}
+
+func (pm *NetlinkProcessMonitor) start(ctx context.Context, monitoringStarted *sync.WaitGroup) error {
 	channels, err := pm.setup()
 	if err != nil {
 		return err
 	}
 
 	go func() {
+		monitoringStarted.Done()
+		// check if the work was cancelled before the loop even started
+		// and mark the monitor as not running
+		select {
+		case <-ctx.Done():
+			pm.isRunning.CompareAndSwap(true, false)
+			channels.DoneCh <- struct{}{}
+			return
+		default:
+			// continue to main loop
+		}
+
 		for {
 			select {
 			case ev := <-channels.EventCh:
 				pm.handleProcessEvent(&ev)
 			case <-ctx.Done():
+				pm.isRunning.CompareAndSwap(true, false)
 				channels.DoneCh <- struct{}{}
 				return
 			case err := <-channels.ErrCh:
