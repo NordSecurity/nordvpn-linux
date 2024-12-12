@@ -54,7 +54,7 @@ type Server struct {
 	lastConnectedPeer    string
 	norduser             service.NorduserFileshareClient
 	scheduler            gocron.Scheduler
-	fileshareProcMonitor NetlinkProcessMonitor
+	fileshareProcMonitor *NetlinkProcessMonitor
 	cancelMonitor        context.CancelFunc
 	connectContext       *sharedctx.Context
 	mu                   sync.Mutex
@@ -74,7 +74,7 @@ func NewServer(
 	subjectPeerUpdate events.Publisher[[]string],
 	deemonEvents *daemonevents.Events,
 	norduser service.NorduserFileshareClient,
-	fileshareProcMonitor NetlinkProcessMonitor,
+	fileshareProcMonitor *NetlinkProcessMonitor,
 	connectContext *sharedctx.Context,
 ) *Server {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
@@ -269,6 +269,7 @@ func (s *Server) startFileshareMonitor() error {
 	monitorCtx, cancelMonitor := context.WithCancel(context.Background())
 	err := s.fileshareProcMonitor.Start(monitorCtx)
 	if err != nil {
+		cancelMonitor()
 		return err
 	}
 	s.cancelMonitor = cancelMonitor

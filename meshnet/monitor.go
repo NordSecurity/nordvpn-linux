@@ -40,8 +40,8 @@ type NetlinkProcessMonitor struct {
 	isRunning atomic.Bool
 }
 
-func NewProcMonitor(handler EventHandler, setup SetupFn) NetlinkProcessMonitor {
-	return NetlinkProcessMonitor{
+func NewProcMonitor(handler EventHandler, setup SetupFn) *NetlinkProcessMonitor {
+	return &NetlinkProcessMonitor{
 		handler: handler,
 		setup:   setup,
 	}
