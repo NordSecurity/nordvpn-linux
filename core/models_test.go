@@ -378,7 +378,7 @@ func TestIsObfuscated(t *testing.T) {
 					},
 				},
 			},
-			expected: false,
+			expected: true,
 		},
 		{
 			name: "not obfuscated online technology with online server",
