@@ -25,7 +25,7 @@ func newAnalytics(
 	_ = os.Setenv("MOOSE_LOG_FILE", "Stdout")
 	logLevel := "error"
 	if !internal.IsProdEnv(env) {
-		logLevel = "debug"
+		logLevel = "error"
 	}
 	_ = os.Setenv("MOOSE_LOG", logLevel)
 	sub := &moose.Subscriber{

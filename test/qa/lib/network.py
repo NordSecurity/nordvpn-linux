@@ -208,10 +208,11 @@ def stop() -> str:
 
     if daemon.is_init_systemd():
         sh.sudo.nmcli.networking.off()
+        print("using nmcli")
     else:
         sh.sudo.ip.link.set.dev.eth0.down()
 
-    logging.log("stopping network")
+    logging.log("stopping network {default_gateway}")
     assert is_not_available()
     logging.log(info.collect())
     return default_gateway
