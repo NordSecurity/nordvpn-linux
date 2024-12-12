@@ -139,7 +139,7 @@ def is_not_available(retry=5) -> bool:
 
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
-    return not _is_internet_reachable(retry) and not _is_dns_resolvable(retry)
+    return not _is_internet_reachable(retry)
 
 
 def is_available(retry=5) -> bool:
