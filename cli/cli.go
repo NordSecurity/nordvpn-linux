@@ -969,7 +969,8 @@ type LoaderInterceptor struct {
 }
 
 func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string, req interface{}, reply interface{}, cc *grpc.ClientConn,
-	invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	invoker grpc.UnaryInvoker, opts ...grpc.CallOption,
+) error {
 	if i.enabled {
 		loader := NewLoader()
 		loader.Start()
@@ -981,7 +982,8 @@ func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string,
 }
 
 func (i *LoaderInterceptor) StreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string,
-	streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	streamer grpc.Streamer, opts ...grpc.CallOption,
+) (grpc.ClientStream, error) {
 	stream, err := streamer(ctx, desc, cc, method, opts...)
 	return loaderStream{ClientStream: stream, loaderEnabled: i.enabled}, err
 }
@@ -1137,6 +1139,8 @@ func serviceErrorCodeToError(code meshpb.ServiceErrorCode) error {
 	switch code {
 	case meshpb.ServiceErrorCode_NOT_LOGGED_IN:
 		return internal.ErrNotLoggedIn
+	case meshpb.ServiceErrorCode_MONITOR_FAILURE:
+		return internal.ErrMonitorFailed
 	case meshpb.ServiceErrorCode_API_FAILURE, meshpb.ServiceErrorCode_CONFIG_FAILURE:
 		fallthrough
 	default:
