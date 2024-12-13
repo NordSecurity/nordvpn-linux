@@ -163,7 +163,7 @@ func routeCmp(a netlink.Route, b netlink.Route) int {
 // isSubnet returns true if network contains whole range of subnet. Otherwise, returns false.
 func isSubnet(network, subnet *net.IPNet) bool {
 	// nil is treated as an IP with 0 prefix
-	if network == nil {
+	if network == nil || network.IP.Equal(net.IPv4zero) || network.IP.Equal(net.IPv6zero) {
 		return true
 	}
 	if subnet == nil {
