@@ -9,8 +9,7 @@ import (
 )
 
 type EventCallback interface {
-	AsyncEvent(event ...Event)
-	SyncEvent(event ...Event)
+	Event(event ...Event)
 }
 
 type Event struct {

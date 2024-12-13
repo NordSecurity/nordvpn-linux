@@ -57,9 +57,7 @@ type EventManager struct {
 	notificationManager   *NotificationManager
 	defaultDownloadDir    string
 
-	syncEvents  chan []Event
-	syncDoneCh  chan struct{}
-	asyncEvents chan []Event
+	events chan []Event
 }
 
 // NewEventManager loads transfer state from storage, or creates empty state if loading fails.
@@ -78,9 +76,7 @@ func NewEventManager(
 		osInfo:                osInfo,
 		filesystem:            filesystem,
 		defaultDownloadDir:    defaultDownloadDir,
-		syncEvents:            make(chan []Event),
-		syncDoneCh:            make(chan struct{}),
-		asyncEvents:           make(chan []Event, 32),
+		events:                make(chan []Event, 32),
 	}
 	go em.process()
 
@@ -90,48 +86,33 @@ func NewEventManager(
 func (em *EventManager) process() {
 	fn := func(ev []Event) {
 		em.mutex.Lock()
+		defer em.mutex.Unlock()
 		for _, e := range ev {
 			em.handleEvent(e)
 		}
-		em.mutex.Unlock()
 	}
 
 	for {
-		select {
-		case e, ok := <-em.asyncEvents:
-			if !ok {
-				log.Println(internal.WarningPrefix, "asyncEvents channel closed")
-				return
-			}
-			fn(e)
-		case e, ok := <-em.syncEvents:
-			if !ok {
-				log.Println(internal.WarningPrefix, "syncEvents channel closed")
-				return
-			}
-			fn(e)
-			em.syncDoneCh <- struct{}{}
+		events, ok := <-em.events
+		if !ok {
+			log.Println(internal.WarningPrefix, "events channel closed")
+			return
 		}
+		fn(events)
 	}
 }
 
-// AsyncEvent sends an event to the event manager in an asynchronous manner
+// Event sends an event to the event manager in an asynchronous manner
 //
 // This function should return immediately,
-// unless the asyncEvents channel is full, in which case it will block until there is space
-func (em *EventManager) AsyncEvent(event ...Event) {
+// unless the Events channel is full, in which case it will block until there is space
+func (em *EventManager) Event(event ...Event) {
 	select {
-	case em.asyncEvents <- event:
+	case em.events <- event:
 	default:
-		log.Println(internal.WarningPrefix, " async events channel is full. AsyncEvent() will block until there is space")
-		em.asyncEvents <- event
+		log.Println(internal.WarningPrefix, " async events channel is full. Event() will block until there is space")
+		em.events <- event
 	}
-}
-
-// SyncEvent sends an event to the event manager in a synchronous manner, and waits for the event to be fully processed
-func (em *EventManager) SyncEvent(event ...Event) {
-	em.syncEvents <- event
-	<-em.syncDoneCh
 }
 
 // SetFileshare must be called before using event manager.
