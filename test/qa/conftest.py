@@ -50,18 +50,27 @@ def setup_check_internet_connection():
 def start_system_monitoring():
     print("~~~start_system_monitoring: Start system monitoring")
 
-    connection_check_thread = threading.Thread(target=_check_connection_to_ip, args=("1.1.1.1",), daemon=True)
-    connection_out_vpn_check_thread = threading.Thread(target=_check_connection_to_ip_outside_vpn, args=("1.1.1.1",), daemon=True)
-    dns_resolver_thread = threading.Thread(target=_check_dns_resolution, args=("nordvpn.com",), daemon=True)
+    # control running threads execution
+    stop_event = threading.Event()
+
+    connection_check_thread = threading.Thread(target=_check_connection_to_ip, args=("1.1.1.1", stop_event), daemon=True)
+    connection_out_vpn_check_thread = threading.Thread(target=_check_connection_to_ip_outside_vpn, args=("1.1.1.1", stop_event), daemon=True)
+    dns_resolver_thread = threading.Thread(target=_check_dns_resolution, args=("nordvpn.com", stop_event), daemon=True)
     connection_check_thread.start()
     connection_out_vpn_check_thread.start()
     dns_resolver_thread.start()
 
+    # execute tests
     yield
 
+    # stop monitoring after execution
+    stop_event.set()
+    connection_check_thread.join()
+    connection_out_vpn_check_thread.join()
+    dns_resolver_thread.join()
 
-def _check_connection_to_ip(ip_address):
-    while True:
+def _check_connection_to_ip(ip_address, stop_event):
+    while not stop_event.is_set():
         try:
             "icmp_seq=" in sh.ping("-c", "3", "-W", "3", ip_address) # noqa: B015
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} SUCCESS")
@@ -74,8 +83,8 @@ def _check_connection_to_ip(ip_address):
         time.sleep(_CHECK_FREQUENCY)
 
 
-def _check_connection_to_ip_outside_vpn(ip_address):
-    while True:
+def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
+    while not stop_event.is_set():
         try:
             "icmp_seq=" in sh.sudo.ping("-c", "3", "-W", "3", "-m", "57841", ip_address) # noqa: B015
             print(f"~~~_check_connection_to_ip_outside_vpn: OUT-PING {ip_address} SUCCESS")
@@ -84,8 +93,8 @@ def _check_connection_to_ip_outside_vpn(ip_address):
         time.sleep(_CHECK_FREQUENCY)
 
 
-def _check_dns_resolution(domain):
-    while True:
+def _check_dns_resolution(domain, stop_event):
+    while not stop_event.is_set():
         try:
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ['8.8.8.8']
