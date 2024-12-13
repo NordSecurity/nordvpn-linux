@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/netip"
 
@@ -132,7 +131,7 @@ func (api *DefaultAPI) Register(token string, peer mesh.Machine) (*mesh.Machine,
 	}
 
 	var raw mesh.MachineCreateResponse
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +282,7 @@ func (api *DefaultAPI) Local(token string) (mesh.Machines, error) {
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +317,7 @@ func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, erro
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +371,7 @@ func (api *DefaultAPI) List(token string, self uuid.UUID) (mesh.MachinePeers, er
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -467,7 +466,7 @@ func (api *DefaultAPI) Received(token string, self uuid.UUID) (mesh.Invitations,
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -500,7 +499,7 @@ func (api *DefaultAPI) Sent(token string, self uuid.UUID) (mesh.Invitations, err
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

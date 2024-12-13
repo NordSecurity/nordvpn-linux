@@ -127,7 +127,7 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 	defer resp.Body.Close()
 
 	var body []byte
-	body, err = io.ReadAll(resp.Body)
+	body, err = MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func (api *DefaultAPI) NotificationCredentials(token, appUserID string) (Notific
 		return NotificationCredentialsResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
 	defer rawResp.Body.Close()
-	out, err := io.ReadAll(rawResp.Body)
+	out, err := MaxBytesReadAll(rawResp.Body)
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("reading HTTP response body: %w", err)
 	}
@@ -520,7 +520,7 @@ func (api *DefaultAPI) NotificationCredentialsRevoke(token, appUserID string, pu
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
 	defer rawResp.Body.Close()
-	out, err := io.ReadAll(rawResp.Body)
+	out, err := MaxBytesReadAll(rawResp.Body)
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("reading HTTP response body: %w", err)
 	}
@@ -561,6 +561,40 @@ func getData[T any](api *DefaultAPI, token string, url string) (T, error) {
 	defer resp.Body.Close()
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return data, fmt.Errorf("decoding data from JSON: %w", err)
+	}
+
+	return data, nil
+}
+
+const maxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
+
+type ErrMaxBytesLimit struct {
+	Limit int64
+}
+
+func (err *ErrMaxBytesLimit) Error() string {
+	return fmt.Sprintf("input exceeded the max limit of %d bytes", err.Limit)
+}
+
+// MaxBytesReadAll is a wrapper around io.ReadAll that limits the number of bytes read from the reader.
+//
+// If the reader exceeds the maxBytesLimit, the function returns an error.
+func MaxBytesReadAll(r io.Reader) ([]byte, error) {
+	limitedReader := &io.LimitedReader{
+		R: r,
+		N: maxBytesLimit + 1, // + 1 because we allow for values which are equal to the limit
+	}
+	data, err := io.ReadAll(limitedReader)
+	if err != nil {
+		return nil, err
+	}
+	// check whether the io.ReadAll() stopped because of EOF coming from io.Reader or because of the limit
+	//
+	// two cases can happen here:
+	// limit reached       - limitedReader.N <= 0
+	// io.Reader is empty  - limitedReader.N > 0
+	if limitedReader.N <= 0 {
+		return nil, &ErrMaxBytesLimit{Limit: maxBytesLimit}
 	}
 
 	return data, nil
