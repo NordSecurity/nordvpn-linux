@@ -433,10 +433,12 @@ func TestTransferProgress(t *testing.T) {
 	assert.Equal(t, pb.Status_SUCCESS, progressEvent.Status)
 
 	waitGroup.Wait()
+	eventManager.mutex.Lock() // required so that go test -race doesn't fail, normally it's not needed
 	_, ok := eventManager.transferSubscriptions[transferID]
 	assert.False(t, ok) // expect subscriber to be removed
 	_, ok = eventManager.liveTransfers[transferID]
 	assert.False(t, ok) // expect transfer not to be tracked anymore
+	eventManager.mutex.Unlock()
 }
 
 func TestAcceptTransfer(t *testing.T) {
