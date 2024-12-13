@@ -68,7 +68,6 @@ func (mn *mockNotifier) SendNotification(summary string, body string, actions []
 		default:
 			<-mn.updateCh
 			mn.updateCh <- struct{}{}
-
 		}
 	}
 	return notificationID, nil
@@ -433,7 +432,7 @@ func TestTransferProgress(t *testing.T) {
 	assert.Equal(t, pb.Status_SUCCESS, progressEvent.Status)
 
 	waitGroup.Wait()
-	eventManager.mutex.Lock() // required so that go test -race doesn't fail, normally it's not needed
+	eventManager.mutex.Lock() // required so that go test -race doesn't fail, normal functions used in production use mutex anyways
 	_, ok := eventManager.transferSubscriptions[transferID]
 	assert.False(t, ok) // expect subscriber to be removed
 	_, ok = eventManager.liveTransfers[transferID]
