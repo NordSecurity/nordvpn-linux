@@ -80,7 +80,7 @@ func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 	}
 }
 
-func createH3Transport() *http3.RoundTripper {
+func createH3Transport() *http3.Transport {
 	pool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatal(err)
@@ -89,8 +89,8 @@ func createH3Transport() *http3.RoundTripper {
 	// as of quic-go 0.40.1, GSO handling causes race conditions
 	_ = os.Setenv("QUIC_GO_DISABLE_GSO", "1")
 	// #nosec G402 -- minimum tls version is controlled by the standard library
-	return &http3.RoundTripper{
-		QuicConfig: &quic.Config{
+	return &http3.Transport{
+		QUICConfig: &quic.Config{
 			MaxIdleTimeout: request.TransportTimeout,
 		},
 		TLSClientConfig: &tls.Config{
