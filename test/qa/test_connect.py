@@ -9,10 +9,17 @@ import lib
 from lib import daemon, info, logging, login, network, server
 import os
 
+import shutil
+import subprocess
+
 CONNECT_ALIAS = [
     "connect",
     "c"
 ]
+
+def setup_module():
+    subprocess.call(['sudo','/etc/init.d/ulogd2','start'])
+    time.sleep(5)
 
 def setup_function(function):  # noqa: ARG001
     daemon.start()
@@ -24,12 +31,10 @@ def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
-    kernel_logs = sh.sudo.dmesg()
     project_root = os.environ["WORKDIR"]
-    # Write the logs to the output file
-    with open(f"{project_root}/dist/logs/dmesg.log", "w") as file:
-        file.write("dmesg logs")
-        file.write(str(kernel_logs))
+
+    # shutil.copy("/var/log/syslogemu.log", f"{project_root}/dist/logs")
+    subprocess.call(['sudo','cp', "/var/log/ulog/syslogemu.log", f"{project_root}/dist/logs"])
 
     sh.nordvpn.logout("--persist-token")
     sh.nordvpn.set.defaults()
