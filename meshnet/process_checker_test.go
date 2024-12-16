@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// XXX: Update tests (including name)
 func TestGiveProcessPID(t *testing.T) {
 	category.Set(t, category.Unit)
 

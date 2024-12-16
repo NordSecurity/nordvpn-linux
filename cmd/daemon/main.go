@@ -472,13 +472,11 @@ func main() {
 	)
 
 	filesharePortController := meshnet.NewPortAccessController(
-		cfgMgr,
 		netw,
-		meshRegistry,
 		meshnet.NewProcessChecker(),
 	)
 	fileshareProcMonitor := meshnet.NewProcMonitor(
-		&filesharePortController,
+		filesharePortController,
 		netlinkMonitorSetupFn,
 	)
 

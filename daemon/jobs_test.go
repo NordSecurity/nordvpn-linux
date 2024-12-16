@@ -129,6 +129,10 @@ func (n *meshNetworker) AllowFileshare(address meshnet.UniqueAddress) error {
 	return nil
 }
 
+func (n *meshNetworker) PermitFileshare() error {
+	return nil
+}
+
 func (n *meshNetworker) AllowIncoming(address meshnet.UniqueAddress, lanAllowed bool) error {
 	n.allowedIncoming = append(n.allowedIncoming, address)
 	return nil
@@ -141,6 +145,10 @@ func (n *meshNetworker) BlockIncoming(address meshnet.UniqueAddress) error {
 
 func (n *meshNetworker) BlockFileshare(address meshnet.UniqueAddress) error {
 	n.blockedFileshare = append(n.blockedFileshare, address)
+	return nil
+}
+
+func (n *meshNetworker) ForbidFileshare() error {
 	return nil
 }
 

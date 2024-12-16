@@ -1872,7 +1872,16 @@ func TestCombined_Refresh(t *testing.T) {
 	for _, rule := range fw.rules {
 		ruleNames = append(ruleNames, rule.Name)
 	}
-	assert.Equal(t, 6, len(fw.rules), "%d firewall rules were configured, expected 5, rules content: \n%s",
+	// fileshare not permitted, so its rules are not added
+	assert.Equal(t, 5, len(fw.rules), "%d firewall rules were configured, expected 5, rules content: \n%s",
+		len(fw.rules),
+		strings.Join(ruleNames, "\n"))
+
+	netw.isFilesharePermitted = true
+	netw.Refresh(machineMap)
+
+	// fileshare permitted now, so it's rules are added
+	assert.Equal(t, 6, len(fw.rules), "%d firewall rules were configured, expected 6, rules content: \n%s",
 		len(fw.rules),
 		strings.Join(ruleNames, "\n"))
 
@@ -2425,4 +2434,24 @@ func TestResetRouting(t *testing.T) {
 			assert.Equal(t, peers, exitNode.peers)
 		})
 	}
+}
+
+func TestCombined_PermitFileshare_SetsIsFileshareAllowedToTrue(t *testing.T) {
+	category.Set(t, category.Unit)
+	netw := GetTestCombined()
+	assert.False(t, netw.isFilesharePermitted)
+
+	netw.PermitFileshare()
+
+	assert.True(t, netw.isFilesharePermitted)
+}
+
+func TestCombined_ForbidFileshare_SetIsFileshareAllowedToFalse(t *testing.T) {
+	category.Set(t, category.Unit)
+	netw := GetTestCombined()
+	netw.isFilesharePermitted = true
+
+	netw.ForbidFileshare()
+
+	assert.False(t, netw.isFilesharePermitted)
 }
