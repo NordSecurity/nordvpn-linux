@@ -1115,7 +1115,6 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 		notifier := mockNotifier{
 			notifications: []mockNotification{},
 			nextID:        pendingTransferNotificationID,
-			// updateCh:      make(chan struct{}),
 		}
 
 		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
