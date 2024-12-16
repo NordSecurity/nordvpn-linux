@@ -369,7 +369,7 @@ def is_empty() -> bool:
     # under snap, also on host, ignore docker rules
     rules = os.popen("sudo iptables -S | grep -v DOCKER").read()
     if "DROP" in rules:
-        logging.log("DROP in {rules}")
+        logging.log(f"DROP in {rules}")
         return False
     return True
 

@@ -47,15 +47,14 @@ def connect_base_test(connection_settings, group=(), name="", hostname=""):
 
     assert lib.is_connect_successful(output, name, hostname)
 
-    packets_captured = network.capture_traffic(connection_settings)
+    packets_captured = network.capture_traffic(connection_settings).splitlines()
 
     assert network.is_connected()
-    assert packets_captured > 0
+    assert len(packets_captured) > 0
 
 
 def disconnect_base_test():
     output = sh.nordvpn.disconnect()
-    print(output)
     assert lib.is_disconnect_successful(output)
     assert network.is_disconnected()
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()

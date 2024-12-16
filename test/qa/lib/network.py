@@ -24,57 +24,62 @@ TSHARK_FILTER_TCP_OBFUSCATED = "tcp and (port not 443) and (ip dst %s)"
 FWMARK = 57841
 
 class PacketCaptureThread(Thread):
-    def __init__(self, connection_settings):
+    def __init__(self, connection_settings, duration: int):
         Thread.__init__(self)
         self.connection_settings = connection_settings
         self.packets = ""
+        self.duration=duration
 
     def run(self):
-        self.packets = _capture_packets(self.connection_settings)
+        self.packets = self._capture_packets()
 
 
-def _capture_packets(connection_settings: (str, str, str)) -> str:
-    technology = connection_settings[0]
-    protocol = connection_settings[1]
-    obfuscated = connection_settings[2]
+    def _capture_packets(self) -> str:
+        technology = self.connection_settings[0]
+        protocol = self.connection_settings[1]
+        obfuscated = self.connection_settings[2]
 
-    # Collect information needed for tshark filter
-    server_ip = settings.get_server_ip()
+        # Collect information needed for tshark filter
+        server_ip = settings.get_server_ip()
 
-    # Choose traffic filter according to information collected above
-    if technology == "nordlynx" and protocol == "" and obfuscated == "":
-        traffic_filter = TSHARK_FILTER_NORDLYNX % server_ip
-    elif technology == "openvpn" and protocol == "udp" and obfuscated == "off":
-        traffic_filter = TSHARK_FILTER_UDP % server_ip
-    elif technology == "openvpn" and protocol == "tcp" and obfuscated == "off":
-        traffic_filter = TSHARK_FILTER_TCP % server_ip
-    elif technology == "openvpn" and protocol == "udp" and obfuscated == "on":
-        traffic_filter = TSHARK_FILTER_UDP_OBFUSCATED % server_ip
-    elif technology == "openvpn" and protocol == "tcp" and obfuscated == "on":
-        traffic_filter = TSHARK_FILTER_TCP_OBFUSCATED % server_ip
+        # Choose traffic filter according to information collected above
+        if technology == "nordlynx" and protocol == "" and obfuscated == "":
+            traffic_filter = TSHARK_FILTER_NORDLYNX % server_ip
+        elif technology == "openvpn" and protocol == "udp" and obfuscated == "off":
+            traffic_filter = TSHARK_FILTER_UDP % server_ip
+        elif technology == "openvpn" and protocol == "tcp" and obfuscated == "off":
+            traffic_filter = TSHARK_FILTER_TCP % server_ip
+        elif technology == "openvpn" and protocol == "udp" and obfuscated == "on":
+            traffic_filter = TSHARK_FILTER_UDP_OBFUSCATED % server_ip
+        elif technology == "openvpn" and protocol == "tcp" and obfuscated == "on":
+            traffic_filter = TSHARK_FILTER_TCP_OBFUSCATED % server_ip
 
-    # If enough packets are captured, do not wait the duration time, exit early, show compact output
-    tshark_result: str = sh.tshark("-i", "any", "-T", "fields", "-e", "ip.src", "-e", "ip.dst", "-a", "duration:3", "-a", "packets:1", "-f", traffic_filter)
-    #tshark_result: str = os.popen(f"sudo tshark -i any -T fields -e ip.src -e ip.dst -a duration:3 -a packets:1 -f {traffic_filter}").read()
+        command = ["-i", "any", "-a", f"duration:{self.duration}"]
+        if technology != "" :
+            command += "-f", traffic_filter
 
-    return tshark_result.strip()
+        # If enough packets are captured, do not wait the duration time, exit early, show compact output
+        tshark_result: str = sh.tshark(command)
+        #tshark_result: str = os.popen(f"sudo tshark -i any -T fields -e ip.src -e ip.dst -a duration:3 -a packets:1 -f {traffic_filter}").read()
+
+        return tshark_result.strip()
 
 
-def capture_traffic(connection_settings) -> int:
+def capture_traffic(connection_settings, duration: int=3) -> str:
     """Returns count of captured packets."""
 
     # We try to capture packets using other thread
-    t_connect = PacketCaptureThread(connection_settings)
+    t_connect = PacketCaptureThread(connection_settings, duration)
     t_connect.start()
 
     try:
-        sh.ping("-c", "2", "-w", "2", "1.1.1.1")
+        sh.ping("-c", "10", "-w", "1", "1.1.1.1")
     except sh.ErrorReturnCode:
         logging.log(t_connect.packets)
 
     t_connect.join()
 
-    return len(t_connect.packets.splitlines())
+    return t_connect.packets
 
 
 def _is_internet_reachable(retry=5) -> bool:
@@ -86,7 +91,7 @@ def _is_internet_reachable(retry=5) -> bool:
         except sh.ErrorReturnCode:
             time.sleep(1)
             i += 1
-    _is_internet_reachable_outside_vpn(1)
+    logging.log(capture_traffic(("", "", ""), duration=10))
     return False
 
 
