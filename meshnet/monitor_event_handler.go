@@ -3,7 +3,6 @@ package meshnet
 import (
 	"errors"
 	"log"
-	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -16,7 +15,6 @@ type FilesharePortAccessController struct {
 	netw           FileshareNetworker
 	filesharePID   PID
 	processChecker ProcessChecker
-	mu             sync.Mutex
 }
 
 func NewPortAccessController(netw FileshareNetworker, pc ProcessChecker) *FilesharePortAccessController {
