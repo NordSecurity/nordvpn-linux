@@ -110,7 +110,7 @@ func (em *EventManager) Event(event ...Event) {
 	select {
 	case em.events <- event:
 	default:
-		log.Println(internal.WarningPrefix, " async events channel is full. Event() will block until there is space")
+		log.Println(internal.WarningPrefix, "async events channel is full. Event() will block until there is space")
 		em.events <- event
 	}
 }
