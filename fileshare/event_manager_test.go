@@ -45,14 +45,8 @@ type mockNotifier struct {
 }
 
 func (mn *mockNotifier) Wait() {
-	timeout := make(chan bool, 1)
-	go func() {
-		time.Sleep(1 * time.Second)
-		timeout <- true
-	}()
-
 	select {
-	case <-timeout:
+	case <-time.After(1 * time.Second):
 	case <-mn.updateCh:
 	}
 }
