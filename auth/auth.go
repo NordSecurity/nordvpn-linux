@@ -409,7 +409,7 @@ func Logout(user int64, logoutPub events.Publisher[events.DataAuthorization]) co
 		if logoutPub != nil {
 			// register stats instant logout with status success
 			logoutPub.Publish(events.DataAuthorization{
-				DurationMs: 0, EventTrigger: events.TriggerApp, EventStatus: events.StatusSuccess})
+				DurationMs: -1, EventTrigger: events.TriggerApp, EventStatus: events.StatusSuccess})
 		}
 		delete(c.TokensData, user)
 		return c
