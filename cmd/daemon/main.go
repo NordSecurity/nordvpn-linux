@@ -49,7 +49,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/features"
 	grpcmiddleware "github.com/NordSecurity/nordvpn-linux/grpc_middleware"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -153,13 +152,14 @@ func main() {
 	}
 
 	// fallback to Nordlynx if quench was enabled in previous installation and is disabled now
-	if (!features.QuenchEnabled || !quenchEnabled) && cfg.Technology == config.Technology_QUENCH {
+	if (QuenchEnabled || !quenchEnabled) && cfg.Technology == config.Technology_QUENCH {
 		err := fsystem.SaveWith(func(c config.Config) config.Config {
 			c.Technology = config.Technology_NORDLYNX
 			return c
 		})
-
-		log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
+		}
 	}
 
 	// Events

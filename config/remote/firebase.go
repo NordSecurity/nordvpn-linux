@@ -124,7 +124,7 @@ func (rc *RConfig) fetchAndSaveRemoteConfig() (remoteConfig []byte, err error) {
 	return remoteConfigValue, nil
 }
 
-// GetValue provides value of requested key from remote config
+// getValue provides value of requested key from remote config
 func (rc *RConfig) getValue(cfgKey string) (string, error) {
 	err := rc.fetchRemoteConfigIfTime()
 	if err != nil {
@@ -162,6 +162,7 @@ func stringToSemVersion(stringVersion, prefix string) (*semver.Version, error) {
 	return semver.NewVersion(stringVersion)
 }
 
+// GetQuenchEnabled returns the quench configuration flag from remote config
 func (rc *RConfig) GetQuenchEnabled(stringVersion string) (bool, error) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
