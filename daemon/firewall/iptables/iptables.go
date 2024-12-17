@@ -107,7 +107,7 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 		}
 		for _, ipTableRule := range ipTablesRules {
 			if !rule.Allow {
-				prefix := fmt.Sprintf("-j ULOG --nflog-prefix \"LOG-pre-%s\"", rule.Name)
+				prefix := fmt.Sprintf("-j NFLOG --nflog-prefix \"LOG-pre-%s\"", rule.Name)
 				log.Println(internal.DebugPrefix, "[iptables-debug], add rule: ", prefix)
 				logRule := strings.Replace(ipTableRule, "-j DROP", prefix, -1)
 				args := fmt.Sprintf("%s %s -w"+internal.SecondsToWaitForIptablesLock, flag, logRule)
