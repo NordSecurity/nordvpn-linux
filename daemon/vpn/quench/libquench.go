@@ -137,7 +137,7 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 	}
 
 	ip := netip.MustParsePrefix(quenchInterfaceAddr)
-	tun := tunnel.New(*iface, []netip.Addr{}, []netip.Prefix{ip})
+	tun := tunnel.New(*iface, []netip.Addr{}, ip)
 
 	if err := tun.AddAddrs(); err != nil {
 		return fmt.Errorf("setting up vinc: %w", err)

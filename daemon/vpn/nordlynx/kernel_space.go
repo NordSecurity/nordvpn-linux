@@ -95,7 +95,7 @@ func (k *KernelSpace) Start(
 		interfaceIps = append(interfaceIps, ipv6)
 	}
 
-	tun := tunnel.New(*iface, interfaceIps, nil)
+	tun := tunnel.New(*iface, interfaceIps, netip.Prefix{})
 	k.tun = tun
 	if err := pushConfig(tun.Interface(), conf); err != nil {
 		if err := k.stop(); err != nil {

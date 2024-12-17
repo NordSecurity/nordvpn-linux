@@ -33,13 +33,13 @@ type Tunnel struct {
 	// might be a good idea to change this to a pointer now
 	// so that we could see changes to the interface at real time
 	// but this would need testing first to check if it actually works
-	iface    net.Interface
-	ips      []netip.Addr
-	prefixes []netip.Prefix
+	iface  net.Interface
+	ips    []netip.Addr
+	prefix netip.Prefix
 }
 
-func New(iface net.Interface, ips []netip.Addr, prefixes []netip.Prefix) *Tunnel {
-	return &Tunnel{iface: iface, ips: ips, prefixes: prefixes}
+func New(iface net.Interface, ips []netip.Addr, prefix netip.Prefix) *Tunnel {
+	return &Tunnel{iface: iface, ips: ips, prefix: prefix}
 }
 
 // Interface returns the underlying network interface.
@@ -106,22 +106,19 @@ func addDelAddr(cmd string, ifaceName string, addr string) ([]byte, error) {
 }
 
 func (t *Tunnel) cmdAddrs(cmd string) error {
-	for _, ip := range t.ips {
-		mask := 10 // unify with other platforms
-		if ip.BitLen() > 32 {
-			mask = ip.BitLen() // ipv6
+	if len(t.ips) > 0 {
+		for _, ip := range t.ips {
+			mask := 10 // unify with other platforms
+			if ip.BitLen() > 32 {
+				mask = ip.BitLen() // ipv6
+			}
+			out, err := addDelAddr(cmd, t.iface.Name, fmt.Sprintf("%s/%d", ip.String(), mask))
+			if err != nil {
+				return fmt.Errorf("%s IP address to interface: %s : %w", cmd, string(out), err)
+			}
 		}
-		out, err := addDelAddr(cmd, t.iface.Name, fmt.Sprintf("%s/%d", ip.String(), mask))
-		if err != nil {
-			return fmt.Errorf("%s IP address to interface: %s : %w", cmd, string(out), err)
-		}
-	}
-
-	for _, prefix := range t.prefixes {
-		out, err := addDelAddr(cmd, t.iface.Name, prefix.String())
-		if err != nil {
-			return fmt.Errorf("%s IP address to interface: %s : %w", cmd, string(out), err)
-		}
+	} else {
+		addDelAddr(cmd, t.iface.Name, t.prefix.String())
 	}
 	return nil
 }
