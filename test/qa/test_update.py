@@ -55,8 +55,7 @@ def setup_function(function):  # noqa: ARG001
         ssh_client.exec_command("nordvpn set notify off")
         ssh_client.exec_command("nordvpn set mesh on")
 
-        sh.nordvpn.mesh.peer.list()
-        ssh_client.exec_command("nordvpn mesh peer list")
+        meshnet.are_peers_connected(ssh_client)
 
 
 def teardown_function(function):  # noqa: ARG001
