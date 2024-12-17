@@ -1433,13 +1433,13 @@ func TestEventsFlow(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		progChSize int
-		fn         func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo)
+		name                string
+		progressChannelSize int
+		fn                  func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo)
 	}{
 		{
-			name:       "Event() should not block with progCh buffer = 1 and 1024 events",
-			progChSize: 32,
+			name:                "Event() should not block with progCh buffer = 1 and 1024 events",
+			progressChannelSize: 32,
 			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
 				for _, chunk := range chunks {
 					em.Event(chunk...)
@@ -1447,8 +1447,8 @@ func TestEventsFlow(t *testing.T) {
 			},
 		},
 		{
-			name:       "Event() events should be in order & all received",
-			progChSize: int(numEvents * 2),
+			name:                "Event() events should be in order & all received",
+			progressChannelSize: int(numEvents * 2),
 			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
 				for _, chunk := range chunks {
 					em.Event(chunk...)
@@ -1492,7 +1492,7 @@ func TestEventsFlow(t *testing.T) {
 				},
 			}
 
-			progCh := make(chan TransferProgressInfo, test.progChSize)
+			progCh := make(chan TransferProgressInfo, test.progressChannelSize)
 			em.transferSubscriptions[transferID] = progCh
 			test.fn(t, em, progCh)
 		})
