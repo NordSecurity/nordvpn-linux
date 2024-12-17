@@ -379,8 +379,8 @@ def test_status_connected(tech, proto, obfuscated):
     time.sleep(15)
     sh.ping("-c", "1", "-w", "1", "1.1.1.1")
 
-    status_time = time.monotonic()
     status_info = daemon.get_status_data()
+    status_time = time.monotonic()
 
     print("status_info: " + str(status_info))
     print("actual_status: " + str(sh.nordvpn.status()))

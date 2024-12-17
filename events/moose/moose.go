@@ -100,7 +100,7 @@ func (s *Subscriber) Init() error {
 	}
 
 	timeBetweenEvents, _ := time.ParseDuration("100ms")
-	timeBetweenBatchesOfEvents, _ := time.ParseDuration("1s")
+	timeBetweenBatchesOfEvents, _ := time.ParseDuration("1h")
 	if internal.IsProdEnv(s.Environment) {
 		timeBetweenEvents, _ = time.ParseDuration("2s")
 		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
