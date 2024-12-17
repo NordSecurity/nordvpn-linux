@@ -40,16 +40,6 @@ func (eventHandler *FilesharePortAccessController) OnProcessStarted(ev ProcEvent
 		return
 	}
 
-	// NOTE: at this point, we can ignore older processes. It's because
-	// we checked above that the [eventHandler.filesharePID] is not set
-	// which means that nordfileshare process was not running at the time
-	// of creation of [FilesharePortAccessController] - constructor checks
-	// if nordfilshare is already running - so we know that nordfileshare
-	// PID will be higher than the daemon PID.
-	if ev.PID < eventHandler.processChecker.CurrentPID() {
-		return
-	}
-
 	if !eventHandler.processChecker.IsFileshareProcess(ev.PID) {
 		return
 	}
@@ -63,9 +53,11 @@ func (eventHandler *FilesharePortAccessController) OnProcessStopped(ev ProcEvent
 	if eventHandler.filesharePID == 0 {
 		return
 	}
+
 	if eventHandler.filesharePID != ev.PID {
 		return
 	}
+
 	log.Println(internal.InfoPrefix, "resetting fileshare pid")
 	eventHandler.filesharePID = 0
 	go eventHandler.netw.ForbidFileshare()

@@ -625,7 +625,9 @@ func main() {
 }
 
 func netlinkMonitorSetupFn() (meshnet.MonitorChannels, error) {
-	eventCh := make(chan netlink.ProcEvent, 128)
+	// NOTE: It receives events from the kernel, needs to be big enough
+	// and also user-space processing needs to be fast enough.
+	eventCh := make(chan netlink.ProcEvent, 256)
 	doneCh := make(chan struct{})
 	errCh := make(chan error)
 	if err := netlink.ProcEventMonitor(eventCh, doneCh, errCh); err != nil {

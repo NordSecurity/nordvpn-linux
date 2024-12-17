@@ -27,13 +27,6 @@ func TestOnProcessStarted_ManagesPID(t *testing.T) {
 			pc:        procCheckerStub{isFileshare: true, daemonPID: 1336}, // currentPID lower than the PID from event
 		},
 		{
-			name:      "PID is not updated if the event's PID is older than current process PID",
-			savedPID:  PID(0),
-			procEvent: ProcEvent{1337},
-			finalPID:  PID(0),
-			pc:        procCheckerStub{isFileshare: true, daemonPID: 1338}, // currentPID higher than the PID from event
-		},
-		{
 			name:      "PID is not updated if process is NOT fileshare",
 			savedPID:  PID(0),
 			procEvent: ProcEvent{1337},
@@ -94,12 +87,6 @@ func TestOnProcessStarted_DoesNotPermitFileshare(t *testing.T) {
 		procEvent ProcEvent
 		pc        ProcessChecker
 	}{
-		{
-			name:      "when the event's PID is older than current process PID",
-			savedPID:  PID(0),
-			procEvent: ProcEvent{1337},
-			pc:        procCheckerStub{isFileshare: true, daemonPID: 1338}, // daemon PID higher than the PID from event
-		},
 		{
 			name:     "when process is NOT fileshare",
 			savedPID: PID(0),
