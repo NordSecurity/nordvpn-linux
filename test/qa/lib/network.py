@@ -4,7 +4,6 @@ from itertools import cycle
 from threading import Thread
 
 import dns.resolver
-import pytest
 import requests
 import sh
 
