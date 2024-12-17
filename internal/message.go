@@ -30,4 +30,8 @@ const (
 
 	// Error message when the server is a virtual location, but user has virtual-location off
 	SpecifiedServerIsVirtualLocation = "Please enable virtual location access to connect to this server."
+
+	// MonitorFailed is an error message for error returned when
+	// nordfileshare process monitor fails to start during enabling meshnet
+	MonitorFailed = "We encountered an issue activating Meshnet because one of our safety feature did not initialize correctly."
 )
