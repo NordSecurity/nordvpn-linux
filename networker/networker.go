@@ -1662,7 +1662,7 @@ func (netw *Combined) removeRule(ruleName string) error {
 func (netw *Combined) ForbidFileshare() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	netw.isFilesharePermitted = false
+	defer func() { netw.isFilesharePermitted = false }()
 	return netw.blockFileshareAll()
 }
 
