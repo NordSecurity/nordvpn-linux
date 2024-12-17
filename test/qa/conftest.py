@@ -117,12 +117,11 @@ def _check_dns_resolution(domain, stop_event):
 def _capture_traffic(stop_event):
     print("start _capture_traffic")
     # use circular log files, keep only 2 latest each 10MB size
-    command = ["tshark", "-a", "filesize:1048576", "-b", "files:2", "-i", "any", "-w", os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap"]
+    command = ["tshark", "-a", "filesize:10240", "-b", "files:2", "-i", "any", "-w", os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap"]
     print("Starting tshark...")
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     stop_event.wait()
     print("Stopping tshark with Ctrl+C...")
     process.send_signal(signal.SIGINT)
     print(f"tshark out {process.stdout.read().strip()} - {process.stderr.read().strip()}")
-    print(sh.ls("/opt/dist/logs"))
     time.sleep(1)

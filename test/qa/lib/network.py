@@ -6,6 +6,7 @@ from threading import Thread
 import dns.resolver
 import requests
 import sh
+import urllib
 
 from . import daemon, firewall, info, logging, settings
 
@@ -72,8 +73,10 @@ def capture_traffic(connection_settings, duration: int=3) -> str:
     t_connect.start()
 
     try:
-        sh.ping("-c", "10", "-w", "1", "1.1.1.1")
-    except sh.ErrorReturnCode:
+        # generate some traffic
+        urllib.request.urlopen('https://1.1.1.1', timeout=2)
+        urllib.request.urlopen('https://nordvpn.com', timeout=2)
+    except Exception: # noqa: BLE001
         logging.log(t_connect.packets)
 
     t_connect.join()
