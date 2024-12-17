@@ -55,18 +55,19 @@ func (r *RPC) quenchConfigFallback(cfg config.Config) config.Config {
 	quenchEnabled, err := r.remoteConfigGetter.GetQuenchEnabled(r.version)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to retrieve remote config for quench:", err)
+		return cfg
 	}
 
-	if features.QuenchEnabled && (quenchEnabled && err == nil) {
+	if features.QuenchEnabled && quenchEnabled {
 		return cfg
 	}
 
 	log.Println(internal.DebugPrefix,
 		"user had configured Quench technology, but it was disabled, falling back to NordLynx")
 
-	cfg.Technology = config.Technology_QUENCH
+	cfg.Technology = config.Technology_NORDLYNX
 	r.cm.SaveWith(func(c config.Config) config.Config {
-		c.Technology = config.Technology_QUENCH
+		c.Technology = config.Technology_NORDLYNX
 		return c
 	})
 

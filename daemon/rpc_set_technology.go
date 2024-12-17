@@ -30,7 +30,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 
 		if !quenchEnabled {
 			log.Println(internal.ErrorPrefix,
-				"user rquested a quench technology but the feature is hidden based on remote config flag")
+				"user requested a quench technology but the feature is hidden based on remote config flag")
 			return &pb.Payload{
 				Type: internal.CodeFeatureHidden,
 			}, nil

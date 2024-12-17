@@ -23,7 +23,7 @@ func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
 	return func(tech config.Technology) (vpn.VPN, error) {
 		switch tech {
 		case config.Technology_NORDLYNX:
-			return nordlynxVPN, nil
+			return nordlynxVPN, err
 		case config.Technology_OPENVPN:
 			return openvpn.New(fwmark, eventsPublisher), nil
 		case config.Technology_QUENCH:
