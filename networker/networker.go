@@ -1636,6 +1636,10 @@ func (netw *Combined) BlockFileshare(uniqueAddress meshnet.UniqueAddress) error 
 }
 
 func (netw *Combined) blockFileshare(publicKey string, address netip.Addr) error {
+	if !netw.isFilesharePermitted {
+		log.Println(internal.WarningPrefix, "fileshare is already forbidden")
+		return nil
+	}
 	ruleName := publicKey + "-allow-fileshare-rule-" + address.String()
 	return netw.removeRule(ruleName)
 }
