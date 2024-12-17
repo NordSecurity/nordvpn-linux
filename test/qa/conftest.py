@@ -79,14 +79,14 @@ def _check_connection_to_ip(ip_address, stop_event):
     print("start _check_connection_to_ip")
     while not stop_event.is_set():
         try:
-            socket.create_connection((ip_address, 443), timeout=1)
+            network.is_internet_reachable(ip_address=ip_address, retry=1)
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} SUCCESS")
         except Exception as e: # noqa: BLE001
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} FAILURE: {e}.")
             data = "\n".join(["_check_connection_to_ip: Default route:",
                         str(os.popen("sudo ip route get 1.1.1.1").read()),
                         "iptables stats",str(os.popen("sudo iptables -L -v -n").read())])
-            print(data=data)
+            print(data)
         stop_event.wait(_CHECK_FREQUENCY)
 
 
@@ -117,7 +117,7 @@ def _check_dns_resolution(domain, stop_event):
 def _capture_traffic(stop_event):
     print("start _capture_traffic")
     # use circular log files, keep only 2 latest each 10MB size
-    command = ["tshark", "-a", "filesize:1048576", "-b", "files:2", "-i", "any", "-w", "/opt/dist/logs/tshark_capture.pcap"]
+    command = ["tshark", "-a", "filesize:1048576", "-b", "files:2", "-i", "any", "-w", os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap"]
     print("Starting tshark...")
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     stop_event.wait()

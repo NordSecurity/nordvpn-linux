@@ -81,16 +81,17 @@ def capture_traffic(connection_settings, duration: int=3) -> str:
     return t_connect.packets
 
 
-def _is_internet_reachable(retry=5) -> bool:
+def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
     """Returns True when remote host is reachable by its public IP."""
     i = 0
     while i < retry:
         try:
-            return "icmp_seq=" in sh.ping("-c", "1", "-w", "1", "1.1.1.1")
-        except sh.ErrorReturnCode:
+            sock = socket.create_connection((ip_address, port), timeout=1)
+            sock.close()
+            return True
+        except Exception: # noqa: BLE001
             time.sleep(1)
             i += 1
-    logging.log(capture_traffic(("", "", ""), duration=10))
     return False
 
 
@@ -143,13 +144,13 @@ def is_not_available(retry=5) -> bool:
 
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
-    return not _is_internet_reachable(retry)
+    return not is_internet_reachable(retry=retry)
 
 
 def is_available(retry=5) -> bool:
     """Returns True when network access is available or throws AssertionError otherwise."""
     assert _is_internet_reachable_outside_vpn(retry)
-    assert _is_internet_reachable(retry)
+    assert is_internet_reachable(retry=retry)
     return True
 
 
