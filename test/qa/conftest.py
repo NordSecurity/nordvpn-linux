@@ -1,5 +1,8 @@
 import datetime
 import io
+import subprocess
+import signal
+import socket
 import threading
 import time
 
@@ -53,47 +56,53 @@ def start_system_monitoring():
     # control running threads execution
     stop_event = threading.Event()
 
-    connection_check_thread = threading.Thread(target=_check_connection_to_ip, args=("1.1.1.1", stop_event), daemon=True)
-    connection_out_vpn_check_thread = threading.Thread(target=_check_connection_to_ip_outside_vpn, args=("1.1.1.1", stop_event), daemon=True)
-    dns_resolver_thread = threading.Thread(target=_check_dns_resolution, args=("nordvpn.com", stop_event), daemon=True)
-    connection_check_thread.start()
-    connection_out_vpn_check_thread.start()
-    dns_resolver_thread.start()
+    threads = []
+
+    threads.append(threading.Thread(target=_check_connection_to_ip, args=["1.1.1.1", stop_event], daemon=True))
+    threads.append(threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True))
+    threads.append(threading.Thread(target=_check_dns_resolution, args=["nordvpn.com", stop_event], daemon=True))
+    threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
+    print(threads)
+
+    for thread in threads:
+        thread.start()
 
     # execute tests
     yield
 
     # stop monitoring after execution
     stop_event.set()
-    connection_check_thread.join()
-    connection_out_vpn_check_thread.join()
-    dns_resolver_thread.join()
+    for thread in threads:
+        thread.join()
 
 def _check_connection_to_ip(ip_address, stop_event):
+    print("start _check_connection_to_ip")
     while not stop_event.is_set():
         try:
-            "icmp_seq=" in sh.ping("-c", "3", "-W", "3", ip_address) # noqa: B015
+            socket.create_connection((ip_address, 443), timeout=1)
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} SUCCESS")
-        except sh.ErrorReturnCode as e:
+        except Exception as e: # noqa: BLE001
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} FAILURE: {e}.")
             data = "\n".join(["_check_connection_to_ip: Default route:",
                         str(os.popen("sudo ip route get 1.1.1.1").read()),
                         "iptables stats",str(os.popen("sudo iptables -L -v -n").read())])
-            logging.log(data=data)
-        time.sleep(_CHECK_FREQUENCY)
+            print(data=data)
+        stop_event.wait(_CHECK_FREQUENCY)
 
 
 def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
+    print("start _check_connection_to_ip_outside_vpn")
     while not stop_event.is_set():
         try:
             "icmp_seq=" in sh.sudo.ping("-c", "3", "-W", "3", "-m", "57841", ip_address) # noqa: B015
             print(f"~~~_check_connection_to_ip_outside_vpn: OUT-PING {ip_address} SUCCESS")
-        except sh.ErrorReturnCode as e:
+        except Exception as e: # noqa: BLE001
             print(f"~~~_check_connection_to_ip_outside_vpn: OUT-PING {ip_address} FAILURE: {e}.")
-        time.sleep(_CHECK_FREQUENCY)
+        stop_event.wait(_CHECK_FREQUENCY)
 
 
 def _check_dns_resolution(domain, stop_event):
+    print("start _check_dns_resolution")
     while not stop_event.is_set():
         try:
             resolver = dns.resolver.Resolver()
@@ -102,4 +111,18 @@ def _check_dns_resolution(domain, stop_event):
             print(f"~~~_check_dns_resolution: DNS {domain} SUCCESS")
         except Exception as e:  # noqa: BLE001
             print(f"~~~_check_dns_resolution: DNS {domain} FAILURE. Error: {e}")
-        time.sleep(_CHECK_FREQUENCY)
+        stop_event.wait(_CHECK_FREQUENCY)
+
+
+def _capture_traffic(stop_event):
+    print("start _capture_traffic")
+    # use circular log files, keep only 2 latest each 10MB size
+    command = ["tshark", "-a", "filesize:1048576", "-b", "files:2", "-i", "any", "-w", "/opt/dist/logs/tshark_capture.pcap"]
+    print("Starting tshark...")
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stop_event.wait()
+    print("Stopping tshark with Ctrl+C...")
+    process.send_signal(signal.SIGINT)
+    print(f"tshark out {process.stdout.read().strip()} - {process.stderr.read().strip()}")
+    print(sh.ls("/opt/dist/logs"))
+    time.sleep(1)
