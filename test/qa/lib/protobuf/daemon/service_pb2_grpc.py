@@ -11,10 +11,8 @@ import login_pb2 as login__pb2
 import login_with_token_pb2 as login__with__token__pb2
 import logout_pb2 as logout__pb2
 import ping_pb2 as ping__pb2
-import plans_pb2 as plans__pb2
 import purchase_pb2 as purchase__pb2
 import rate_pb2 as rate__pb2
-import register_pb2 as register__pb2
 import servers_pb2 as servers__pb2
 import set_pb2 as set__pb2
 import settings_pb2 as settings__pb2
@@ -103,23 +101,18 @@ class DaemonStub(object):
                 _registered_method=True)
         self.LoginOAuth2 = channel.unary_stream(
                 '/pb.Daemon/LoginOAuth2',
-                request_serializer=common__pb2.Empty.SerializeToString,
+                request_serializer=login__pb2.LoginOAuth2Request.SerializeToString,
                 response_deserializer=login__pb2.String.FromString,
                 _registered_method=True)
         self.LoginOAuth2Callback = channel.unary_unary(
                 '/pb.Daemon/LoginOAuth2Callback',
-                request_serializer=login__pb2.String.SerializeToString,
+                request_serializer=login__pb2.LoginOAuth2CallbackRequest.SerializeToString,
                 response_deserializer=common__pb2.Empty.FromString,
                 _registered_method=True)
         self.Logout = channel.unary_unary(
                 '/pb.Daemon/Logout',
                 request_serializer=logout__pb2.LogoutRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
-        self.Plans = channel.unary_unary(
-                '/pb.Daemon/Plans',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=plans__pb2.PlansResponse.FromString,
                 _registered_method=True)
         self.Ping = channel.unary_unary(
                 '/pb.Daemon/Ping',
@@ -129,11 +122,6 @@ class DaemonStub(object):
         self.RateConnection = channel.unary_unary(
                 '/pb.Daemon/RateConnection',
                 request_serializer=rate__pb2.RateRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
-        self.Register = channel.unary_unary(
-                '/pb.Daemon/Register',
-                request_serializer=register__pb2.RegisterRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetAutoConnect = channel.unary_unary(
@@ -359,12 +347,6 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Plans(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def Ping(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -372,12 +354,6 @@ class DaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def RateConnection(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def Register(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -606,23 +582,18 @@ def add_DaemonServicer_to_server(servicer, server):
             ),
             'LoginOAuth2': grpc.unary_stream_rpc_method_handler(
                     servicer.LoginOAuth2,
-                    request_deserializer=common__pb2.Empty.FromString,
+                    request_deserializer=login__pb2.LoginOAuth2Request.FromString,
                     response_serializer=login__pb2.String.SerializeToString,
             ),
             'LoginOAuth2Callback': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginOAuth2Callback,
-                    request_deserializer=login__pb2.String.FromString,
+                    request_deserializer=login__pb2.LoginOAuth2CallbackRequest.FromString,
                     response_serializer=common__pb2.Empty.SerializeToString,
             ),
             'Logout': grpc.unary_unary_rpc_method_handler(
                     servicer.Logout,
                     request_deserializer=logout__pb2.LogoutRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'Plans': grpc.unary_unary_rpc_method_handler(
-                    servicer.Plans,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=plans__pb2.PlansResponse.SerializeToString,
             ),
             'Ping': grpc.unary_unary_rpc_method_handler(
                     servicer.Ping,
@@ -632,11 +603,6 @@ def add_DaemonServicer_to_server(servicer, server):
             'RateConnection': grpc.unary_unary_rpc_method_handler(
                     servicer.RateConnection,
                     request_deserializer=rate__pb2.RateRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'Register': grpc.unary_unary_rpc_method_handler(
-                    servicer.Register,
-                    request_deserializer=register__pb2.RegisterRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'SetAutoConnect': grpc.unary_unary_rpc_method_handler(
@@ -1075,7 +1041,7 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/LoginOAuth2',
-            common__pb2.Empty.SerializeToString,
+            login__pb2.LoginOAuth2Request.SerializeToString,
             login__pb2.String.FromString,
             options,
             channel_credentials,
@@ -1102,7 +1068,7 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/LoginOAuth2Callback',
-            login__pb2.String.SerializeToString,
+            login__pb2.LoginOAuth2CallbackRequest.SerializeToString,
             common__pb2.Empty.FromString,
             options,
             channel_credentials,
@@ -1131,33 +1097,6 @@ class Daemon(object):
             '/pb.Daemon/Logout',
             logout__pb2.LogoutRequest.SerializeToString,
             common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Plans(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/Plans',
-            common__pb2.Empty.SerializeToString,
-            plans__pb2.PlansResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1211,33 +1150,6 @@ class Daemon(object):
             target,
             '/pb.Daemon/RateConnection',
             rate__pb2.RateRequest.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Register(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/Register',
-            register__pb2.RegisterRequest.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,
