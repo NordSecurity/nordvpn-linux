@@ -32,10 +32,8 @@ const (
 	Daemon_LoginOAuth2_FullMethodName             = "/pb.Daemon/LoginOAuth2"
 	Daemon_LoginOAuth2Callback_FullMethodName     = "/pb.Daemon/LoginOAuth2Callback"
 	Daemon_Logout_FullMethodName                  = "/pb.Daemon/Logout"
-	Daemon_Plans_FullMethodName                   = "/pb.Daemon/Plans"
 	Daemon_Ping_FullMethodName                    = "/pb.Daemon/Ping"
 	Daemon_RateConnection_FullMethodName          = "/pb.Daemon/RateConnection"
-	Daemon_Register_FullMethodName                = "/pb.Daemon/Register"
 	Daemon_SetAutoConnect_FullMethodName          = "/pb.Daemon/SetAutoConnect"
 	Daemon_SetThreatProtectionLite_FullMethodName = "/pb.Daemon/SetThreatProtectionLite"
 	Daemon_SetDefaults_FullMethodName             = "/pb.Daemon/SetDefaults"
@@ -80,13 +78,11 @@ type DaemonClient interface {
 	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	LoginOAuth2(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[String], error)
-	LoginOAuth2Callback(ctx context.Context, in *String, opts ...grpc.CallOption) (*Empty, error)
+	LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (grpc.ServerStreamingClient[String], error)
+	LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*Empty, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Payload, error)
-	Plans(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PlansResponse, error)
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
-	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error)
 	SetDefaults(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
@@ -243,13 +239,13 @@ func (c *daemonClient) LoginWithToken(ctx context.Context, in *LoginWithTokenReq
 	return out, nil
 }
 
-func (c *daemonClient) LoginOAuth2(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[String], error) {
+func (c *daemonClient) LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (grpc.ServerStreamingClient[String], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[2], Daemon_LoginOAuth2_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[Empty, String]{ClientStream: stream}
+	x := &grpc.GenericClientStream[LoginOAuth2Request, String]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -262,7 +258,7 @@ func (c *daemonClient) LoginOAuth2(ctx context.Context, in *Empty, opts ...grpc.
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_LoginOAuth2Client = grpc.ServerStreamingClient[String]
 
-func (c *daemonClient) LoginOAuth2Callback(ctx context.Context, in *String, opts ...grpc.CallOption) (*Empty, error) {
+func (c *daemonClient) LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, Daemon_LoginOAuth2Callback_FullMethodName, in, out, cOpts...)
@@ -276,16 +272,6 @@ func (c *daemonClient) Logout(ctx context.Context, in *LogoutRequest, opts ...gr
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, Daemon_Logout_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) Plans(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PlansResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PlansResponse)
-	err := c.cc.Invoke(ctx, Daemon_Plans_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -306,16 +292,6 @@ func (c *daemonClient) RateConnection(ctx context.Context, in *RateRequest, opts
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, Daemon_RateConnection_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_Register_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -625,13 +601,11 @@ type DaemonServer interface {
 	Groups(context.Context, *Empty) (*ServerGroupsList, error)
 	IsLoggedIn(context.Context, *Empty) (*Bool, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
-	LoginOAuth2(*Empty, grpc.ServerStreamingServer[String]) error
-	LoginOAuth2Callback(context.Context, *String) (*Empty, error)
+	LoginOAuth2(*LoginOAuth2Request, grpc.ServerStreamingServer[String]) error
+	LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*Empty, error)
 	Logout(context.Context, *LogoutRequest) (*Payload, error)
-	Plans(context.Context, *Empty) (*PlansResponse, error)
 	Ping(context.Context, *Empty) (*PingResponse, error)
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
-	Register(context.Context, *RegisterRequest) (*Payload, error)
 	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
 	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error)
 	SetDefaults(context.Context, *Empty) (*Payload, error)
@@ -700,26 +674,20 @@ func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*Bool, err
 func (UnimplementedDaemonServer) LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginWithToken not implemented")
 }
-func (UnimplementedDaemonServer) LoginOAuth2(*Empty, grpc.ServerStreamingServer[String]) error {
+func (UnimplementedDaemonServer) LoginOAuth2(*LoginOAuth2Request, grpc.ServerStreamingServer[String]) error {
 	return status.Errorf(codes.Unimplemented, "method LoginOAuth2 not implemented")
 }
-func (UnimplementedDaemonServer) LoginOAuth2Callback(context.Context, *String) (*Empty, error) {
+func (UnimplementedDaemonServer) LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginOAuth2Callback not implemented")
 }
 func (UnimplementedDaemonServer) Logout(context.Context, *LogoutRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
-}
-func (UnimplementedDaemonServer) Plans(context.Context, *Empty) (*PlansResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Plans not implemented")
 }
 func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedDaemonServer) RateConnection(context.Context, *RateRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RateConnection not implemented")
-}
-func (UnimplementedDaemonServer) Register(context.Context, *RegisterRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
 func (UnimplementedDaemonServer) SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAutoConnect not implemented")
@@ -993,18 +961,18 @@ func _Daemon_LoginWithToken_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _Daemon_LoginOAuth2_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Empty)
+	m := new(LoginOAuth2Request)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(DaemonServer).LoginOAuth2(m, &grpc.GenericServerStream[Empty, String]{ServerStream: stream})
+	return srv.(DaemonServer).LoginOAuth2(m, &grpc.GenericServerStream[LoginOAuth2Request, String]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_LoginOAuth2Server = grpc.ServerStreamingServer[String]
 
 func _Daemon_LoginOAuth2Callback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(String)
+	in := new(LoginOAuth2CallbackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1016,7 +984,7 @@ func _Daemon_LoginOAuth2Callback_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: Daemon_LoginOAuth2Callback_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).LoginOAuth2Callback(ctx, req.(*String))
+		return srv.(DaemonServer).LoginOAuth2Callback(ctx, req.(*LoginOAuth2CallbackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1035,24 +1003,6 @@ func _Daemon_Logout_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).Logout(ctx, req.(*LogoutRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_Plans_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).Plans(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_Plans_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Plans(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1089,24 +1039,6 @@ func _Daemon_RateConnection_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).RateConnection(ctx, req.(*RateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).Register(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_Register_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Register(ctx, req.(*RegisterRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1656,20 +1588,12 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_Logout_Handler,
 		},
 		{
-			MethodName: "Plans",
-			Handler:    _Daemon_Plans_Handler,
-		},
-		{
 			MethodName: "Ping",
 			Handler:    _Daemon_Ping_Handler,
 		},
 		{
 			MethodName: "RateConnection",
 			Handler:    _Daemon_RateConnection_Handler,
-		},
-		{
-			MethodName: "Register",
-			Handler:    _Daemon_Register_Handler,
 		},
 		{
 			MethodName: "SetAutoConnect",

@@ -13,7 +13,7 @@ import (
 
 // Authentication is responsible for verifying user's identity.
 type Authentication interface {
-	Login() (string, error)
+	Login(bool) (string, error)
 	Token(string) (*LoginResponse, error)
 }
 
@@ -36,7 +36,7 @@ func NewOAuth2(client *http.Client, baseURL string) *OAuth2 {
 	}
 }
 
-func (o *OAuth2) Login() (string, error) {
+func (o *OAuth2) Login(regularLogin bool) (string, error) {
 	o.Lock()
 	defer o.Unlock()
 
@@ -52,7 +52,11 @@ func (o *OAuth2) Login() (string, error) {
 
 	query := url.Values{}
 	query.Add("challenge", o.challenge)
-	query.Add("preferred_flow", "login")
+	if regularLogin {
+		query.Add("preferred_flow", "login")
+	} else {
+		query.Add("preferred_flow", "registration")
+	}
 	query.Add("redirect_flow", "default")
 	path.RawQuery = query.Encode()
 	log.Println("oauth2 login url", path.String())

@@ -30,7 +30,7 @@ func (c *cmd) Login(ctx *cli.Context) error {
 	}
 
 	if ctx.IsSet(flagLoginCallback) {
-		return c.oauth2(ctx)
+		return c.oauth2(ctx, true)
 	}
 
 	if ctx.IsSet(flagToken) {
@@ -44,7 +44,9 @@ func (c *cmd) Login(ctx *cli.Context) error {
 
 	cl, err := c.client.LoginOAuth2(
 		context.Background(),
-		&pb.Empty{},
+		&pb.LoginOAuth2Request{
+			Type: pb.LoginType_LoginType_LOGIN,
+		},
 	)
 	if err != nil {
 		return formatError(err)
@@ -102,7 +104,7 @@ func LoginRespHandler(ctx *cli.Context, resp *pb.LoginResponse) error {
 }
 
 // oauth2 is called by the browser during login via OAuth2.
-func (c *cmd) oauth2(ctx *cli.Context) error {
+func (c *cmd) oauth2(ctx *cli.Context, regularLogin bool) error {
 	if ctx.NArg() != 1 {
 		return formatError(errors.New("expected a url"))
 	}
@@ -116,8 +118,14 @@ func (c *cmd) oauth2(ctx *cli.Context) error {
 		return formatError(errors.New("expected a url with nordvpn scheme"))
 	}
 
-	_, err = c.client.LoginOAuth2Callback(context.Background(), &pb.String{
-		Data: url.Query().Get("exchange_token"),
+	loginType := pb.LoginType_LoginType_LOGIN
+	if !regularLogin {
+		loginType = pb.LoginType_LoginType_SIGNUP
+	}
+
+	_, err = c.client.LoginOAuth2Callback(context.Background(), &pb.LoginOAuth2CallbackRequest{
+		Token: url.Query().Get("exchange_token"),
+		Type:  loginType,
 	})
 	if err != nil {
 		return formatError(err)
