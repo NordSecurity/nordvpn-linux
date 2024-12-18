@@ -44,6 +44,7 @@ type meshRenewChecker struct {
 func (m meshRenewChecker) IsLoggedIn() bool {
 	return !m.IsNotLoggedIn
 }
+
 func (m meshRenewChecker) IsMFAEnabled() (bool, error) {
 	return false, nil
 }
@@ -92,6 +93,10 @@ func (n *workingNetworker) AllowFileshare(address UniqueAddress) error {
 	return nil
 }
 
+func (n *workingNetworker) PermitFileshare() error {
+	return nil
+}
+
 func (n *workingNetworker) AllowIncoming(address UniqueAddress, lanAllowed bool) error {
 	n.allowedIncoming = append(n.allowedIncoming, allowedIncoming{
 		address:    address,
@@ -108,6 +113,10 @@ func (n *workingNetworker) BlockIncoming(address UniqueAddress) error {
 
 func (n *workingNetworker) BlockFileshare(address UniqueAddress) error {
 	n.blockedFileshare = append(n.blockedFileshare, address)
+	return nil
+}
+
+func (n *workingNetworker) ForbidFileshare() error {
 	return nil
 }
 
