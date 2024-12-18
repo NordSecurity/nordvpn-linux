@@ -1353,9 +1353,9 @@ def test_fileshare_process_monitoring():
     assert "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
 
     sh.pkill("-SIGKILL", "nordfileshare")
-    # at the time of writing, the monitoring job is executed periodically every 5 seconds,
-    # wait for 10 to be sure the job executed
-    time.sleep(10)
+    # at the time of writing, the monitoring job is executed periodically every 500 milliseconds,
+    # wait for 1 second to be sure the job executed
+    time.sleep(1)
 
     # port is not allowed when fileshare is down
     rules = os.popen("sudo iptables -S").read()
