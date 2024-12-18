@@ -65,7 +65,7 @@ class PacketCaptureThread(Thread):
         return tshark_result.strip()
 
 
-def capture_traffic(connection_settings, duration: int=3) -> str:
+def capture_traffic(connection_settings, duration: int=5) -> str:
     """Returns count of captured packets."""
 
     # We try to capture packets using other thread
@@ -74,9 +74,11 @@ def capture_traffic(connection_settings, duration: int=3) -> str:
 
     try:
         # generate some traffic
-        urllib.request.urlopen('https://1.1.1.1', timeout=2)
-        urllib.request.urlopen('https://nordvpn.com', timeout=2)
-    except Exception: # noqa: BLE001
+        req = urllib.request.Request("https://1.1.1.1", method="HEAD")
+        response = urllib.request.urlopen(req, timeout=1)
+        print(f"capture_traffic HTTP Status: {response.status}")
+    except Exception as e: # noqa: BLE001
+        logging.log(f"capture_traffic exception: {e}")
         logging.log(t_connect.packets)
 
     t_connect.join()

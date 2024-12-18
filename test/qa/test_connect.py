@@ -43,10 +43,10 @@ def connect_base_test(connection_settings, group=(), name="", hostname=""):
     print(output)
 
     assert lib.is_connect_successful(output, name, hostname)
-
-    packets_captured = network.capture_traffic(connection_settings).splitlines()
-
     assert network.is_connected()
+
+    print(connection_settings)
+    packets_captured = network.capture_traffic(connection_settings).splitlines()
     assert len(packets_captured) > 0
 
 
