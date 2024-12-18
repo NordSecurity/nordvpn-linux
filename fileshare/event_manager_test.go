@@ -1412,7 +1412,12 @@ func TestEventsFlow(t *testing.T) {
 		},
 	}
 
-	for i := uint64(0); i < numEvents; i++ {
+	// subtract by the existing RequestQueued and FileStarted events
+	// to make sure we have the correct number of events
+	// otherwise it's not chunked properly, as the size is not disivable by chunkSize(1026 % 8 = 2)
+	numProgressEvents := numEvents - uint64(len(events))
+
+	for i := uint64(0); i < numProgressEvents; i++ {
 		events = append(events,
 			Event{
 				Kind: EventKindFileProgress{
@@ -1454,7 +1459,7 @@ func TestEventsFlow(t *testing.T) {
 					em.Event(chunk...)
 				}
 				lastProgress := uint32(0)
-				for i := uint64(0); i < numEvents-2; i++ {
+				for i := uint64(0); i < numProgressEvents; i++ {
 					prog := <-progCh
 					if prog.Transferred < lastProgress {
 						t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)
