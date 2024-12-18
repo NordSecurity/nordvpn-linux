@@ -1414,7 +1414,7 @@ func TestEventsFlow(t *testing.T) {
 
 	// subtract by the existing RequestQueued and FileStarted events
 	// to make sure we have the correct number of events
-	// otherwise it's not chunked properly, as the size is not disivable by chunkSize(1026 % 8 = 2)
+	// otherwise it's not chunked properly, as the size is not divisable by chunkSize(1026 % 8 = 2)
 	numProgressEvents := numEvents - uint64(len(events))
 
 	for i := uint64(0); i < numProgressEvents; i++ {
