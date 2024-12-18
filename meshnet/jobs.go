@@ -15,7 +15,7 @@ func (s *Server) StartJobs() {
 	}
 
 	if _, err := s.scheduler.NewJob(
-		gocron.DurationJob(500*time.Millisecond),
+		gocron.DurationJob(1*time.Second),
 		gocron.NewTask(JobMonitorFileshareProcess(s)),
 		gocron.WithName("job monitor fileshare process")); err != nil {
 		log.Println(internal.WarningPrefix, "job monitor fileshare process schedule error:", err)
