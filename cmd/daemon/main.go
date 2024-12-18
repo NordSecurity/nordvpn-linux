@@ -49,7 +49,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/features"
 	grpcmiddleware "github.com/NordSecurity/nordvpn-linux/grpc_middleware"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -147,21 +146,6 @@ func main() {
 	}
 
 	rcConfig := getRemoteConfigGetter(fsystem)
-	nordWhisperEnabled, err := rcConfig.GetNordWhisperEnabled(Version)
-	if err != nil {
-		log.Println("failed to determine if NordWhisper is enabled:", err)
-	}
-
-	// fallback to Nordlynx if NordWhisper was enabled in previous installation and is disabled now
-	if (features.NordWhisperEnabled || !nordWhisperEnabled) && cfg.Technology == config.Technology_NORDWHISPER {
-		err := fsystem.SaveWith(func(c config.Config) config.Config {
-			c.Technology = config.Technology_NORDLYNX
-			return c
-		})
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
-		}
-	}
 
 	// Events
 
@@ -209,6 +193,7 @@ func main() {
 	)
 
 	// API
+	var err error
 	var validator response.Validator
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
 		validator = response.NoopValidator{}
@@ -323,7 +308,13 @@ func main() {
 
 	vpn, err := vpnFactory(cfg.Technology)
 	if err != nil {
-		log.Fatalln(err)
+		// if NordWhiser was disabled we'll fall back automatically to NordLynx if autoconnect is enabled or tell user
+		// to switch to a different tech
+		if !errors.Is(err, ErrNordWhisperDisabled) {
+			log.Fatalln(err)
+		} else {
+			log.Println(internal.ErrorPrefix, "failed to build NordWhisper VPN, it was disabled during compilation")
+		}
 	}
 
 	devices, err := device.ListPhysical()

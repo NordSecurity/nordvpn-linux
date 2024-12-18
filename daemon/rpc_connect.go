@@ -95,6 +95,23 @@ func (r *RPC) connect(
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
+
+	if cfg.Technology == config.Technology_NORDWHISPER {
+		if !features.NordWhisperEnabled {
+			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+		}
+
+		nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to retrieve remote config for NordWhisper:", err)
+			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+		}
+
+		if !nordWhisperEnabled {
+			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+		}
+	}
+
 	cfg = r.nordWhisperConfigFallback(cfg)
 
 	insights := r.dm.GetInsightsData().Insights
