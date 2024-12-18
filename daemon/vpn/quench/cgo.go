@@ -1,3 +1,5 @@
+//go:build quench
+
 package quench
 
 // #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/amd64/latest -lquench

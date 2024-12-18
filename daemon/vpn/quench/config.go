@@ -1,3 +1,5 @@
+//go:build quench
+
 package quench
 
 type Spec struct {
