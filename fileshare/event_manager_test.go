@@ -1429,6 +1429,10 @@ func TestEventsFlow(t *testing.T) {
 		)
 	}
 
+	if uint64(len(events))%chunkSize != 0 {
+		panic("events size is not divisible by chunkSize")
+	}
+
 	chunks := make([][]Event, chunkCount)
 	for i := uint64(0); i < chunkCount; i++ {
 		chunks[i] = make([]Event, chunkSize)
