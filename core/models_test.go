@@ -872,37 +872,107 @@ func TestNordWhisperPort_UnmarshalJSON(t *testing.T) {
 
 	noQuenchJson := `"technologies": []}`
 
+	multipleTechnologies := `"technologies": [
+		{
+		"id": 51,
+		"name": "NordWhisper",
+		"identifier": "quench",
+		"created_at": "2024-12-1 15:08:23",
+		"updated_at": "2024-12-1 15:08:23",
+		"metadata": [
+			{
+			"name": "port",
+			"value": "12345"
+			}
+		],
+		"pivot": {
+			"technology_id": 51,
+			"server_id": 956504,
+			"status": "online"
+		}
+		},
+		{
+		"id": 3,
+		"name": "OpenVPN UDP",
+		"identifier": "openvpn_udp",
+		"created_at": "2017-05-04 08:03:24",
+		"updated_at": "2017-05-09 19:27:37",
+		"metadata": [
+			{
+			"name": "ports",
+			"value": [1111, 2222, 3333]
+			}
+		],
+		"pivot": {
+			"technology_id": 3,
+			"server_id": 956504,
+			"status": "online"
+		}
+		},
+		{
+		"id": 5,
+		"name": "OpenVPN TCP",
+		"identifier": "openvpn_tcp",
+		"created_at": "2017-05-09 19:28:14",
+		"updated_at": "2017-05-09 19:28:14",
+		"metadata": [],
+		"pivot": {
+			"technology_id": 5,
+			"server_id": 956504,
+			"status": "online"
+		}
+		},
+		{
+		"id": 9,
+		"name": "HTTP Proxy",
+		"identifier": "proxy",
+		"created_at": "2017-05-09 19:29:09",
+		"updated_at": "2017-06-13 14:25:29",
+		"metadata": [],
+		"pivot": {
+			"technology_id": 9,
+			"server_id": 956504,
+			"status": "maintenance"
+		}
+		}
+	]}`
+
 	tests := []struct {
-		name         string
-		quenchJson   string
-		expectedPort int64
+		name           string
+		technologyJson string
+		expectedPort   int64
 	}{
 		{
-			name:         "success",
-			quenchJson:   quenchTechJson,
-			expectedPort: 12345,
+			name:           "success",
+			technologyJson: quenchTechJson,
+			expectedPort:   12345,
 		},
 		{
-			name:         "quench tech no port json",
-			quenchJson:   quenchTechNoPortJson,
-			expectedPort: 0,
+			name:           "quench tech no port json",
+			technologyJson: quenchTechNoPortJson,
+			expectedPort:   0,
 		},
 		{
-			name:         "invalid port",
-			quenchJson:   quenchInvalidPortJson,
-			expectedPort: 0,
+			name:           "invalid port",
+			technologyJson: quenchInvalidPortJson,
+			expectedPort:   0,
 		},
 		{
-			name:         "no quench technology",
-			quenchJson:   noQuenchJson,
-			expectedPort: 0,
+			name:           "no quench technology",
+			technologyJson: noQuenchJson,
+			expectedPort:   0,
+		},
+		{
+			name:           "multiple technologies",
+			technologyJson: multipleTechnologies,
+			expectedPort:   12345,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var server Server
-			err := server.UnmarshalJSON([]byte(serverJson + test.quenchJson))
+			err := server.UnmarshalJSON([]byte(serverJson + test.technologyJson))
 			assert.Nil(t, err, "Unexpected error when deserializing server json.")
 			assert.Equal(t, test.expectedPort, server.NordWhisperPort)
 		})
