@@ -380,9 +380,9 @@ def bind_port():
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
         sock.bind(('0.0.0.0', 49111))
         sock.listen(1)
-        print(f"Successfully bound to fileshare port")
+        print("Successfully bound to fileshare port")
         return sock
-    except socket.error as e:
+    except OSError as e:
         print(f"Failed to bind to fileshare port: {e}")
         return None
 
