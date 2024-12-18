@@ -1872,7 +1872,19 @@ func TestCombined_Refresh(t *testing.T) {
 	for _, rule := range fw.rules {
 		ruleNames = append(ruleNames, rule.Name)
 	}
-	assert.Equal(t, 6, len(fw.rules), "%d firewall rules were configured, expected 5, rules content: \n%s",
+
+	// fileshare is forbidden here, so no new fileshare rules were added
+	assert.Equal(t, 5, len(fw.rules), "%d firewall rules were configured, expected 5, rules content: \n%s",
+		len(fw.rules),
+		strings.Join(ruleNames, "\n"))
+
+	// permit fileshare
+	netw.isFilesharePermitted = true
+
+	netw.Refresh(machineMap)
+
+	// now after refresh, fileshare rules are also added
+	assert.Equal(t, 6, len(fw.rules), "%d firewall rules were configured, expected 6, rules content: \n%s",
 		len(fw.rules),
 		strings.Join(ruleNames, "\n"))
 
