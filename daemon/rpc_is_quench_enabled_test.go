@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsQuenchEnabled(t *testing.T) {
+func TestIsNordWhisperEnabled(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	remoteConfigGetter := mock.NewRemoteConfigMock()
@@ -20,22 +20,22 @@ func TestIsQuenchEnabled(t *testing.T) {
 	}
 
 	tests := []struct {
-		name             string
-		quenchEnabledErr error
+		name                  string
+		nordWhisperEnabledErr error
 	}{
 		{
-			name: "quench disabled",
+			name: "NordWhisper disabled",
 		},
 		{
-			name:             "failed to get quench status",
-			quenchEnabledErr: fmt.Errorf("failed to get quench status"),
+			name:                  "failed to get NordWhisper status",
+			nordWhisperEnabledErr: fmt.Errorf("failed to get NordWhisper status"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			resp, err := r.IsQuenchEnabled(context.Background(), &pb.Empty{})
-			assert.Nil(t, err, "Unexpected error returned by IsQuenchEnabled rpc.")
+			resp, err := r.IsNordWhisperEnabled(context.Background(), &pb.Empty{})
+			assert.Nil(t, err, "Unexpected error returned by IsNordWhisperEnabled rpc.")
 			assert.Equal(t, resp.Enabled, false, "Unexpected response type received.")
 		})
 	}

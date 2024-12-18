@@ -119,10 +119,10 @@ func NewApp(version, environment, hash, salt string,
 	cli.HelpFlag.(*cli.BoolFlag).Usage = "Show help"
 	cli.VersionFlag.(*cli.BoolFlag).Usage = "Print the version"
 
-	setTechnologyDescription := fmt.Sprintf(SetTechnologyDescription, SupportedValuesQuench)
-	quenchEnabled, err := cmd.client.IsQuenchEnabled(context.Background(), &pb.Empty{})
-	if err != nil || !quenchEnabled.Enabled {
-		setTechnologyDescription = fmt.Sprintf(SetTechnologyDescription, SupportedValuesNoQuench)
+	setTechnologyDescription := fmt.Sprintf(SetTechnologyDescription, SupportedValuesWithNordWhisper)
+	nordWhisperEnabled, err := cmd.client.IsNordWhisperEnabled(context.Background(), &pb.Empty{})
+	if err != nil || !nordWhisperEnabled.Enabled {
+		setTechnologyDescription = fmt.Sprintf(SetTechnologyDescription, SupportedValuesWithoutNordWhisper)
 	}
 
 	setCommand := cli.Command{

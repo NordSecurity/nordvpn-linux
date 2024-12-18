@@ -4,6 +4,6 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-message QuenchEnabled {
+message NordWhisperEnabled {
   bool enabled = 1;
 }

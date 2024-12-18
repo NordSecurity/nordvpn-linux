@@ -162,12 +162,12 @@ func stringToSemVersion(stringVersion, prefix string) (*semver.Version, error) {
 	return semver.NewVersion(stringVersion)
 }
 
-// GetQuenchEnabled returns the quench configuration flag from remote config
-func (rc *RConfig) GetQuenchEnabled(stringVersion string) (bool, error) {
+// GetNordWhisperEnabled returns the NordWhisper configuration flag from remote config
+func (rc *RConfig) GetNordWhisperEnabled(stringVersion string) (bool, error) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 
-	enabledStr, err := rc.getRemoteConfigByVersion(RcQuenchConfigFieldPrefix, stringVersion)
+	enabledStr, err := rc.getRemoteConfigByVersion(RcNordWhisperConfigFieldPrefix, stringVersion)
 	if err != nil {
 		return false, fmt.Errorf("fetching the telio config: %w", err)
 	}

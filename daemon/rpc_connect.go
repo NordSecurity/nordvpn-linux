@@ -45,25 +45,25 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	return err
 }
 
-// quenchConfigFallback checks if technology is configured to quench and falls back to NordLynx if quench was disabled
-// in compile time or in remote config. It returns a new config with desired technology set.
-func (r *RPC) quenchConfigFallback(cfg config.Config) config.Config {
-	if cfg.Technology != config.Technology_QUENCH {
+// nordWhisperConfigFallback checks if technology is configured to NordWhisper and falls back to NordLynx if NordWhisper
+// was disabled in compile time or in remote config. It returns a new config with desired technology set.
+func (r *RPC) nordWhisperConfigFallback(cfg config.Config) config.Config {
+	if cfg.Technology != config.Technology_NORDWHISPER {
 		return cfg
 	}
 
-	quenchEnabled, err := r.remoteConfigGetter.GetQuenchEnabled(r.version)
+	nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to retrieve remote config for quench:", err)
+		log.Println(internal.ErrorPrefix, "failed to retrieve remote config for NordWhisper:", err)
 		return cfg
 	}
 
-	if features.QuenchEnabled && quenchEnabled {
+	if features.NordWhisperEnabled && nordWhisperEnabled {
 		return cfg
 	}
 
 	log.Println(internal.DebugPrefix,
-		"user had configured Quench technology, but it was disabled, falling back to NordLynx")
+		"user had configured NordWhisper technology, but it was disabled, falling back to NordLynx")
 
 	cfg.Technology = config.Technology_NORDLYNX
 	r.cm.SaveWith(func(c config.Config) config.Config {
@@ -95,7 +95,7 @@ func (r *RPC) connect(
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
-	cfg = r.quenchConfigFallback(cfg)
+	cfg = r.nordWhisperConfigFallback(cfg)
 
 	insights := r.dm.GetInsightsData().Insights
 
@@ -185,7 +185,7 @@ func (r *RPC) connect(
 		OpenVPNVersion:    server.Version(),
 		VirtualLocation:   server.IsVirtualLocation(),
 		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
-		QuenchPort:        server.QuenchPort,
+		NordWhisperPort:   server.NordWhisperPort,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist

@@ -8,8 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 )
 
-const QuenchEnabled = false
-
-func getQuenchVPN(fwmark uint32) (vpn.VPN, error) {
-	return nil, fmt.Errorf("quench is not enabled")
+func getNordWhisperVPN(fwmark uint32) (vpn.VPN, error) {
+	return nil, fmt.Errorf("NordWhisper is not enabled")
 }

@@ -62,7 +62,7 @@ const (
 	Daemon_SubscribeToStateChanges_FullMethodName = "/pb.Daemon/SubscribeToStateChanges"
 	Daemon_GetServers_FullMethodName              = "/pb.Daemon/GetServers"
 	Daemon_SetPostQuantum_FullMethodName          = "/pb.Daemon/SetPostQuantum"
-	Daemon_IsQuenchEnabled_FullMethodName         = "/pb.Daemon/IsQuenchEnabled"
+	Daemon_IsNordWhisperEnabled_FullMethodName    = "/pb.Daemon/IsNordWhisperEnabled"
 )
 
 // DaemonClient is the client API for Daemon service.
@@ -112,7 +112,7 @@ type DaemonClient interface {
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
 	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
 	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
-	IsQuenchEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*QuenchEnabled, error)
+	IsNordWhisperEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*NordWhisperEnabled, error)
 }
 
 type daemonClient struct {
@@ -589,10 +589,10 @@ func (c *daemonClient) SetPostQuantum(ctx context.Context, in *SetGenericRequest
 	return out, nil
 }
 
-func (c *daemonClient) IsQuenchEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*QuenchEnabled, error) {
+func (c *daemonClient) IsNordWhisperEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*NordWhisperEnabled, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(QuenchEnabled)
-	err := c.cc.Invoke(ctx, Daemon_IsQuenchEnabled_FullMethodName, in, out, cOpts...)
+	out := new(NordWhisperEnabled)
+	err := c.cc.Invoke(ctx, Daemon_IsNordWhisperEnabled_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -646,7 +646,7 @@ type DaemonServer interface {
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
 	GetServers(context.Context, *Empty) (*ServersResponse, error)
 	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
-	IsQuenchEnabled(context.Context, *Empty) (*QuenchEnabled, error)
+	IsNordWhisperEnabled(context.Context, *Empty) (*NordWhisperEnabled, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -786,8 +786,8 @@ func (UnimplementedDaemonServer) GetServers(context.Context, *Empty) (*ServersRe
 func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPostQuantum not implemented")
 }
-func (UnimplementedDaemonServer) IsQuenchEnabled(context.Context, *Empty) (*QuenchEnabled, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IsQuenchEnabled not implemented")
+func (UnimplementedDaemonServer) IsNordWhisperEnabled(context.Context, *Empty) (*NordWhisperEnabled, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsNordWhisperEnabled not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 func (UnimplementedDaemonServer) testEmbeddedByValue()                {}
@@ -1556,20 +1556,20 @@ func _Daemon_SetPostQuantum_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_IsQuenchEnabled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Daemon_IsNordWhisperEnabled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).IsQuenchEnabled(ctx, in)
+		return srv.(DaemonServer).IsNordWhisperEnabled(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_IsQuenchEnabled_FullMethodName,
+		FullMethod: Daemon_IsNordWhisperEnabled_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).IsQuenchEnabled(ctx, req.(*Empty))
+		return srv.(DaemonServer).IsNordWhisperEnabled(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1738,8 +1738,8 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_SetPostQuantum_Handler,
 		},
 		{
-			MethodName: "IsQuenchEnabled",
-			Handler:    _Daemon_IsQuenchEnabled_Handler,
+			MethodName: "IsNordWhisperEnabled",
+			Handler:    _Daemon_IsNordWhisperEnabled_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

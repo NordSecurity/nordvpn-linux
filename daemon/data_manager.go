@@ -224,7 +224,7 @@ func toServerTechnology(
 		case config.Protocol_UNKNOWN_PROTOCOL:
 			return 0, errors.New("invalid protocol")
 		}
-	case config.Technology_QUENCH:
+	case config.Technology_NORDWHISPER:
 		serverTechnology = core.NordWhisperTech
 	case config.Technology_UNKNOWN_TECHNOLOGY:
 		return 0, errors.New("invalid technology")

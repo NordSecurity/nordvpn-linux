@@ -147,7 +147,7 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 		return fmt.Errorf("adding ip address to vnic: %w", err)
 	}
 
-	addr := fmt.Sprintf("wt://%s:%d/", server.IP, server.QuenchPort)
+	addr := fmt.Sprintf("wt://%s:%d/", server.IP, server.NordWhisperPort)
 
 	config := Config{
 		Protocol: Protocol{

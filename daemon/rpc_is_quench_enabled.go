@@ -9,15 +9,16 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-func (r *RPC) IsQuenchEnabled(ctx context.Context, in *pb.Empty) (*pb.QuenchEnabled, error) {
-	if !features.QuenchEnabled {
-		return &pb.QuenchEnabled{Enabled: false}, nil
+func (r *RPC) IsNordWhisperEnabled(ctx context.Context, in *pb.Empty) (*pb.NordWhisperEnabled, error) {
+	if !features.NordWhisperEnabled {
+		return &pb.NordWhisperEnabled{Enabled: false}, nil
 	}
-	quenchEnabled, err := r.remoteConfigGetter.GetQuenchEnabled(r.version)
+	nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to determine if quench is enabled based on firebase config:", err)
-		return &pb.QuenchEnabled{Enabled: false}, nil
+		log.Println(internal.ErrorPrefix,
+			"failed to determine if NordWhisper is enabled based on firebase config:", err)
+		return &pb.NordWhisperEnabled{Enabled: false}, nil
 	}
 
-	return &pb.QuenchEnabled{Enabled: quenchEnabled}, nil
+	return &pb.NordWhisperEnabled{Enabled: nordWhisperEnabled}, nil
 }
