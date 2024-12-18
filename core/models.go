@@ -276,7 +276,7 @@ type Server struct {
 	Penalty           float64          `json:"penalty"`
 	PartialPenalty    float64          `json:"partial_penalty"`
 	NordLynxPublicKey string           `json:"-"`
-	QuenchPort        int64            `json:"-"`
+	NordWhisperPort   int64            `json:"-"`
 	Keys              []string         `json:"-"`
 	IPRecords         []ServerIPRecord `json:"ips"`
 }
@@ -372,7 +372,7 @@ func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Pr
 				return IsConnectableVia(OpenVPNTCP)(s) ||
 					IsConnectableVia(OpenVPNTCPObfuscated)(s)
 			}
-		case config.Technology_QUENCH:
+		case config.Technology_NORDWHISPER:
 			return IsConnectableVia(NordWhisperTech)(s)
 		case config.Technology_UNKNOWN_TECHNOLOGY:
 			break
@@ -480,10 +480,10 @@ func (s *Server) UnmarshalJSON(b []byte) error {
 					trimmed := strings.TrimSpace(value)
 					port, err := strconv.ParseInt(trimmed, 10, 64)
 					if err != nil {
-						log.Println("failed to parse quench server port:", err)
+						log.Println("failed to parse NordWhisper server port:", err)
 						continue
 					}
-					hack.QuenchPort = port
+					hack.NordWhisperPort = port
 					break
 				}
 			}

@@ -904,7 +904,7 @@ func TestNordWhisperPort_UnmarshalJSON(t *testing.T) {
 			var server Server
 			err := server.UnmarshalJSON([]byte(serverJson + test.quenchJson))
 			assert.Nil(t, err, "Unexpected error when deserializing server json.")
-			assert.Equal(t, test.expectedPort, server.QuenchPort)
+			assert.Equal(t, test.expectedPort, server.NordWhisperPort)
 		})
 	}
 }

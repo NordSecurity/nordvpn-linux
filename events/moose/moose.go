@@ -428,7 +428,7 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 		technology = moose.NordvpnappVpnConnectionTechnologyNordlynx
 	case config.Technology_OPENVPN:
 		technology = moose.NordvpnappVpnConnectionTechnologyOpenvpn
-	case config.Technology_QUENCH:
+	case config.Technology_NORDWHISPER:
 		technology = moose.NordvpnappVpnConnectionTechnologyNordwhisper
 	case config.Technology_UNKNOWN_TECHNOLOGY:
 		return errors.New("unknown technology")
@@ -495,7 +495,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			technology = moose.NordvpnappVpnConnectionTechnologyOpenvpn
 		case config.Technology_NORDLYNX:
 			technology = moose.NordvpnappVpnConnectionTechnologyNordlynx
-		case config.Technology_QUENCH:
+		case config.Technology_NORDWHISPER:
 			technology = moose.NordvpnappVpnConnectionTechnologyNordwhisper
 		case config.Technology_UNKNOWN_TECHNOLOGY:
 			technology = moose.NordvpnappVpnConnectionTechnologyNone
@@ -580,7 +580,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			technology = moose.NordvpnappVpnConnectionTechnologyOpenvpn
 		case config.Technology_NORDLYNX:
 			technology = moose.NordvpnappVpnConnectionTechnologyNordlynx
-		case config.Technology_QUENCH:
+		case config.Technology_NORDWHISPER:
 			technology = moose.NordvpnappVpnConnectionTechnologyNordwhisper
 		case config.Technology_UNKNOWN_TECHNOLOGY:
 			technology = moose.NordvpnappVpnConnectionTechnologyNone

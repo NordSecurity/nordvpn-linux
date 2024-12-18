@@ -23,8 +23,10 @@ Supported values for <technology>: %s.
 
 Example: 'nordvpn set technology OPENVPN'`
 
-	SupportedValuesNoQuench = "OPENVPN or NORDLYNX"
-	SupportedValuesQuench   = "OPENVPN, NORDLYNX or QUENCH"
+	// Used when NordWhisper technology is disabled
+	SupportedValuesWithoutNordWhisper = "OPENVPN or NORDLYNX"
+	// Used when NordWhisper technology is enabled
+	SupportedValuesWithNordWhisper = "OPENVPN, NORDLYNX or NORDWHISPER"
 )
 
 func (c *cmd) SetTechnology(ctx *cli.Context) error {
@@ -44,8 +46,8 @@ func (c *cmd) SetTechnology(ctx *cli.Context) error {
 		tech = config.Technology_OPENVPN
 	case config.Technology_NORDLYNX.String():
 		tech = config.Technology_NORDLYNX
-	case config.Technology_QUENCH.String():
-		tech = config.Technology_QUENCH
+	case config.Technology_NORDWHISPER.String():
+		tech = config.Technology_NORDWHISPER
 	default:
 		return formatError(argsParseError(ctx))
 	}

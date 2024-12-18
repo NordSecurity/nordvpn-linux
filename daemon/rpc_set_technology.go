@@ -12,25 +12,25 @@ import (
 )
 
 func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*pb.Payload, error) {
-	if in.Technology == config.Technology_QUENCH {
-		if !features.QuenchEnabled {
+	if in.Technology == config.Technology_NORDWHISPER {
+		if !features.NordWhisperEnabled {
 			log.Println(internal.DebugPrefix,
-				"user requested a quench technology but the feature is hidden based on compile flag.")
+				"user requested a NordWhisper technology but the feature is hidden based on compile flag.")
 			return &pb.Payload{
 				Type: internal.CodeFeatureHidden,
 			}, nil
 		}
-		quenchEnabled, err := r.remoteConfigGetter.GetQuenchEnabled(r.version)
+		nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to determine if quench is enabled by remote config:", err)
+			log.Println(internal.ErrorPrefix, "failed to determine if NordWhisper is enabled by remote config:", err)
 			return &pb.Payload{
 				Type: internal.CodeFeatureHidden,
 			}, nil
 		}
 
-		if !quenchEnabled {
+		if !nordWhisperEnabled {
 			log.Println(internal.ErrorPrefix,
-				"user requested a quench technology but the feature is hidden based on remote config flag")
+				"user requested a NordWhisper technology but the feature is hidden based on remote config flag")
 			return &pb.Payload{
 				Type: internal.CodeFeatureHidden,
 			}, nil
@@ -70,7 +70,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	if in.GetTechnology() == config.Technology_NORDLYNX {
 		protocol = config.Protocol_UDP
 		obfuscate = false
-	} else if in.GetTechnology() == config.Technology_QUENCH {
+	} else if in.GetTechnology() == config.Technology_NORDWHISPER {
 		protocol = config.Protocol_Webtunnel
 		obfuscate = false
 	}

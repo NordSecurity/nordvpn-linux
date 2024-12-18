@@ -398,7 +398,7 @@ func techToServerTech(tech config.Technology, protocol config.Protocol, obfuscat
 		case config.Protocol_UNKNOWN_PROTOCOL:
 			break
 		}
-	case config.Technology_QUENCH:
+	case config.Technology_NORDWHISPER:
 		return core.NordWhisperTech
 	case config.Technology_UNKNOWN_TECHNOLOGY:
 		break

@@ -26,8 +26,8 @@ func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
 			return nordlynxVPN, err
 		case config.Technology_OPENVPN:
 			return openvpn.New(fwmark, eventsPublisher), nil
-		case config.Technology_QUENCH:
-			return getQuenchVPN(fwmark)
+		case config.Technology_NORDWHISPER:
+			return getNordWhisperVPN(fwmark)
 		case config.Technology_UNKNOWN_TECHNOLOGY:
 			fallthrough
 		default:

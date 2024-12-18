@@ -147,13 +147,13 @@ func main() {
 	}
 
 	rcConfig := getRemoteConfigGetter(fsystem)
-	quenchEnabled, err := rcConfig.GetQuenchEnabled(Version)
+	nordWhisperEnabled, err := rcConfig.GetNordWhisperEnabled(Version)
 	if err != nil {
-		log.Println("failed to determine if quench is enabled:", err)
+		log.Println("failed to determine if NordWhisper is enabled:", err)
 	}
 
-	// fallback to Nordlynx if quench was enabled in previous installation and is disabled now
-	if (features.QuenchEnabled || !quenchEnabled) && cfg.Technology == config.Technology_QUENCH {
+	// fallback to Nordlynx if NordWhisper was enabled in previous installation and is disabled now
+	if (features.NordWhisperEnabled || !nordWhisperEnabled) && cfg.Technology == config.Technology_NORDWHISPER {
 		err := fsystem.SaveWith(func(c config.Config) config.Config {
 			c.Technology = config.Technology_NORDLYNX
 			return c

@@ -1,8 +1,8 @@
 package mock
 
 type RemoteConfigMock struct {
-	QuenchEnabled bool
-	GetQuenchErr  error
+	NordWhisperEnabled bool
+	GetNordWhisperErr  error
 }
 
 func NewRemoteConfigMock() *RemoteConfigMock {
@@ -13,6 +13,6 @@ func (r *RemoteConfigMock) GetTelioConfig(version string) (string, error) {
 	return "", nil
 }
 
-func (r *RemoteConfigMock) GetQuenchEnabled(version string) (bool, error) {
-	return r.QuenchEnabled, r.GetQuenchErr
+func (r *RemoteConfigMock) GetNordWhisperEnabled(version string) (bool, error) {
+	return r.NordWhisperEnabled, r.GetNordWhisperErr
 }

@@ -2,4 +2,4 @@
 
 package features
 
-const QuenchEnabled = false
+const NordWhisperEnabled = false

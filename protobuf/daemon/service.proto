@@ -22,7 +22,7 @@ import "token.proto";
 import "purchase.proto";
 import "state.proto";
 import "servers.proto";
-import "quench_hidden.proto";
+import "nordwhisper_hidden.proto";
 
 service Daemon {
   rpc AccountInfo(Empty) returns (AccountResponse);
@@ -70,5 +70,5 @@ service Daemon {
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
   rpc GetServers(Empty) returns (ServersResponse);
   rpc SetPostQuantum(SetGenericRequest) returns (Payload);
-  rpc IsQuenchEnabled(Empty) returns (QuenchEnabled);
+  rpc IsNordWhisperEnabled(Empty) returns (NordWhisperEnabled);
 }

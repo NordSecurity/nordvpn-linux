@@ -16,7 +16,7 @@ func (r RemoteConfigGetterStub) GetTelioConfig(version string) (string, error) {
 	return "", fmt.Errorf("firebase config was not compiled into the app")
 }
 
-func (r RemoteConfigGetterStub) GetQuenchEnabled(version string) (bool, error) {
+func (r RemoteConfigGetterStub) GetNordWhisperEnabled(version string) (bool, error) {
 	return false, nil
 }
 
