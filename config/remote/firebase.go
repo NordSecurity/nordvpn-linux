@@ -72,19 +72,19 @@ func (rc *RConfig) fetchRemoteConfigIfTime() error {
 	remoteConfig := []byte(cfg.RemoteConfig)
 
 	// don't fetch the remote config too often even if there is nothing cached
-	if time.Now().After(cfg.RCLastUpdate.Add(rc.updatePeriod)) {
-		if fetchedConfig, err := rc.fetchAndSaveRemoteConfig(); err != nil {
-			// if there no is cached config return error
-			// otherwise use the cached data
-			if len(remoteConfig) == 0 {
-				return err
-			} else {
-				log.Println(internal.ErrorPrefix, "use cached config because fetch failed:", err)
-			}
+	// if time.Now().After(cfg.RCLastUpdate.Add(rc.updatePeriod)) {
+	if fetchedConfig, err := rc.fetchAndSaveRemoteConfig(); err != nil {
+		// if there no is cached config return error
+		// otherwise use the cached data
+		if len(remoteConfig) == 0 {
+			return err
 		} else {
-			remoteConfig = fetchedConfig
+			log.Println(internal.ErrorPrefix, "use cached config because fetch failed:", err)
 		}
+	} else {
+		remoteConfig = fetchedConfig
 	}
+	// }
 
 	if err := json.Unmarshal(remoteConfig, rc.config); err != nil {
 		return fmt.Errorf("parsing remote config from JSON: %w", err)
@@ -171,6 +171,8 @@ func (rc *RConfig) GetNordWhisperEnabled(stringVersion string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("fetching the telio config: %w", err)
 	}
+
+	log.Println("DEBUG: ", enabledStr)
 
 	enabled, err := strconv.ParseBool(enabledStr)
 	if err != nil {
