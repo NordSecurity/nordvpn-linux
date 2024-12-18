@@ -8,6 +8,8 @@ from threading import Thread
 
 import pytest
 import sh
+import socket
+import os
 
 from . import FILE_HASH_UTILITY, logging, ssh
 
@@ -370,3 +372,21 @@ class FileSystemEntity(Enum):
 
     def __str__(self):
         return self.value
+
+
+def bind_port():
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+        sock.bind(('0.0.0.0', 49111))
+        sock.listen(1)
+        print(f"Successfully bound to fileshare port")
+        return sock
+    except socket.error as e:
+        print(f"Failed to bind to fileshare port: {e}")
+        return None
+
+
+def port_is_allowed() -> bool:
+    rules = os.popen("sudo iptables -S").read()
+    return "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
