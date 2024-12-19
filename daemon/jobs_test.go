@@ -36,6 +36,7 @@ func (failingLoginChecker) IsMFAEnabled() (bool, error) { return false, nil }
 func (failingLoginChecker) IsVPNExpired() (bool, error) {
 	return true, errors.New("IsVPNExpired error")
 }
+
 func (failingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
@@ -128,6 +129,10 @@ func (n *meshNetworker) AllowFileshare(address meshnet.UniqueAddress) error {
 	return nil
 }
 
+func (n *meshNetworker) PermitFileshare() error {
+	return nil
+}
+
 func (n *meshNetworker) AllowIncoming(address meshnet.UniqueAddress, lanAllowed bool) error {
 	n.allowedIncoming = append(n.allowedIncoming, address)
 	return nil
@@ -135,6 +140,10 @@ func (n *meshNetworker) AllowIncoming(address meshnet.UniqueAddress, lanAllowed 
 
 func (n *meshNetworker) BlockIncoming(address meshnet.UniqueAddress) error {
 	n.blockedIncoming = append(n.blockedIncoming, address)
+	return nil
+}
+
+func (n *meshNetworker) ForbidFileshare() error {
 	return nil
 }
 
