@@ -39,15 +39,23 @@ func JobRefreshMeshnet(s *Server) func() error {
 }
 
 func JobMonitorFileshareProcess(s *Server) func() error {
+	isFileshareAllowed := false
 	return func() error {
 		if !s.isMeshOn() {
+			if isFileshareAllowed {
+				if err := s.netw.ForbidFileshare(); err == nil {
+					isFileshareAllowed = false
+				}
+			}
 			return nil
 		}
 
 		if internal.IsProcessRunning(internal.FileshareBinaryPath) {
 			s.netw.PermitFileshare()
+			isFileshareAllowed = true
 		} else {
 			s.netw.ForbidFileshare()
+			isFileshareAllowed = false
 		}
 
 		return nil
