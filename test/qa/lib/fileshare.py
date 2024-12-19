@@ -374,7 +374,7 @@ class FileSystemEntity(Enum):
         return self.value
 
 
-def bind_port():
+def bind_port() -> socket.socket | None:
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
@@ -388,5 +388,37 @@ def bind_port():
 
 
 def port_is_allowed() -> bool:
+    for _ in range(3):
+        if is_port_allowed():
+            return True
+        time.sleep(1)
+    return False
+
+
+def is_port_allowed() -> bool:
     rules = os.popen("sudo iptables -S").read()
     return "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
+
+
+def port_is_blocked() -> bool:
+    for _ in range(3):
+        if not is_port_allowed():
+            return True
+        time.sleep(1)
+    return False
+
+
+def ensure_mesh_is_on() -> None:
+    try:
+        sh.nordvpn.set.meshnet.on()
+    except sh.ErrorReturnCode_1 as e:
+        if "Meshnet is already enabled." not in str(e):
+            raise e
+
+
+def restart_mesh() -> None:
+    sh.nordvpn.set.meshnet.off()
+    time.sleep(2)
+    sh.nordvpn.set.meshnet.on()
+    time.sleep(5)
+

@@ -1348,50 +1348,54 @@ def test_clear():
 
 
 def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_changes():
-    # port is open when fileshare is running
-    assert fileshare.port_is_allowed()
+    try:
+        # port is open when fileshare is running
+        assert fileshare.port_is_allowed()
 
-    sh.pkill("-SIGKILL", "nordfileshare")
-    # at the time of writing, the monitoring job is executed periodically every second,
-    # wait for 2 seconds to be sure the job executed
-    time.sleep(2)
+        sh.pkill("-SIGKILL", "nordfileshare")
+        # at the time of writing, the monitoring job is executed periodically every second,
+        # wait for 2 seconds to be sure the job executed
+        time.sleep(2)
 
-    # port is not allowed when fileshare is down
-    assert not fileshare.port_is_allowed()
+        # port is not allowed when fileshare is down
+        assert fileshare.port_is_blocked()
 
-    os.popen("/usr/lib/nordvpn/nordfileshare &")
-    time.sleep(2)
-    # port is allowed again when fileshare process is up
-    assert fileshare.port_is_allowed()
+        # restart meshet to get fileshare back up
+        fileshare.restart_mesh()
+
+        # port is allowed again when fileshare process is up
+        assert fileshare.port_is_allowed()
+    finally: # meshnet should be on for most of the tests in this module
+        fileshare.ensure_mesh_is_on()
 
 
 def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_taken_before():
-    # stop meshnet to bind to 49111 first
-    sh.nordvpn.set.meshnet.off()
+    try:
+        # stop meshnet to bind to 49111 first
+        sh.nordvpn.set.meshnet.off()
+        assert fileshare.port_is_blocked()
 
-    # no meshnet - no port
-    assert not fileshare.port_is_allowed()
+        # bind to port before fileshare process starts
+        sock = fileshare.bind_port()
+        assert sock is not None
 
-    # bind to port before fileshare process starts
-    sock = fileshare.bind_port()
-    assert sock is not None
+        # start meshnet
+        sh.nordvpn.set.meshnet.on() # now fileshare tries to start but fails because the port is taken
+        time.sleep(2)
 
-    # start meshnet
-    sh.nordvpn.set.meshnet.on() # now fileshare tries to start but fails because the port is taken
-    time.sleep(2)
+        # port should not be allowed (fileshare is down)
+        assert fileshare.port_is_blocked()
 
-    # port should not be allowed (fileshare is down)
-    assert not fileshare.port_is_allowed()
+        # free the port
+        sock.close()
 
-    # free the port
-    sock.close()
+        # restart meshnet, now fileshare can start properly
+        fileshare.restart_mesh()
 
-    # now fileshare can start properly
-    os.popen("/usr/lib/nordvpn/nordfileshare &")
-    time.sleep(2)
-
-    # port is allowed again when fileshare process is up
-    assert fileshare.port_is_allowed()
+        # fileshare is up so port is allowed
+        assert fileshare.port_is_allowed()
+    finally: # meshnet should be on for most of the tests in this module
+        fileshare.ensure_mesh_is_on()
 
 
 @pytest.mark.parametrize("background_accept", [True, False], ids=["accept_bg", "accept_int"])
