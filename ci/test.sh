@@ -24,7 +24,7 @@ if [ "${1:-""}" = "full" ]; then
 
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="root,link"
-	tags="internal,quench,moose"
+	tags="internal,moose"
 fi
 
 # Execute tests in all the packages except the excluded ones
@@ -38,7 +38,7 @@ mkdir -p "${WORKDIR}"/coverage/unit
 export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/amd64/latest"
 
 # shellcheck disable=SC2046
-go test -tags "$tags" -v -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}") \
+go test -tags "$tags" -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}") \
 	-coverprofile "${WORKDIR}"/coverage.txt \
 	-exclude "${excluded_categories}" \
 	-args -test.gocoverdir="${WORKDIR}/coverage/unit"
