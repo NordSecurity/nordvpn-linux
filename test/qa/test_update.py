@@ -6,7 +6,7 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, fileshare, login, meshnet, network, poll, ssh
+from lib import daemon, fileshare, login, meshnet, network, poll, ssh, firewall, logging
 from test_connect import connect_base_test, disconnect_base_test
 
 PROJECT_ROOT = os.environ['WORKDIR']
@@ -27,6 +27,7 @@ def setup_module(module):  # noqa: ARG001
 
 
 def setup_function(function):  # noqa: ARG001
+    firewall.is_empty()
     TestData.INVOLVES_MESHNET = any(keyword in os.environ["PYTEST_CURRENT_TEST"] for keyword in ["meshnet", "fileshare"])
 
     sh.sudo.apt.purge("-y", "nordvpn")
@@ -44,6 +45,7 @@ def setup_function(function):  # noqa: ARG001
     daemon.start() # TODO: LVPN-6403
 
     if TestData.INVOLVES_MESHNET:
+        logging.log("meshnet test setup")
         sh.nordvpn.set.notify.off()
         assert "Meshnet is set to 'enabled' successfully." in sh.nordvpn.set.meshnet.on()
 
@@ -61,6 +63,7 @@ def setup_function(function):  # noqa: ARG001
 
 def teardown_function(function):  # noqa: ARG001
     if TestData.INVOLVES_MESHNET:
+        logging.log("meshnet test cleanup")
         ssh_client.exec_command("rm -rf /root/Downloads/*")
 
         sh.nordvpn.set.mesh.off()
@@ -75,6 +78,7 @@ def teardown_function(function):  # noqa: ARG001
 
         daemon.uninstall_peer(ssh_client)
     daemon.stop() # TODO: LVPN-6403
+    assert firewall.is_empty()
 
 
 def test_meshnet_available_after_update():

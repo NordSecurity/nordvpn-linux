@@ -1,5 +1,8 @@
 import datetime
 import io
+import subprocess
+import signal
+import socket
 import threading
 import time
 
@@ -50,46 +53,75 @@ def setup_check_internet_connection():
 def start_system_monitoring():
     print("~~~start_system_monitoring: Start system monitoring")
 
-    connection_check_thread = threading.Thread(target=_check_connection_to_ip, args=("1.1.1.1",), daemon=True)
-    connection_out_vpn_check_thread = threading.Thread(target=_check_connection_to_ip_outside_vpn, args=("1.1.1.1",), daemon=True)
-    dns_resolver_thread = threading.Thread(target=_check_dns_resolution, args=("nordvpn.com",), daemon=True)
-    connection_check_thread.start()
-    connection_out_vpn_check_thread.start()
-    dns_resolver_thread.start()
+    # control running threads execution
+    stop_event = threading.Event()
 
+    threads = []
+
+    threads.append(threading.Thread(target=_check_connection_to_ip, args=["1.1.1.1", stop_event], daemon=True))
+    threads.append(threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True))
+    threads.append(threading.Thread(target=_check_dns_resolution, args=["nordvpn.com", stop_event], daemon=True))
+    threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
+    print(threads)
+
+    for thread in threads:
+        thread.start()
+
+    # execute tests
     yield
 
+    # stop monitoring after execution
+    stop_event.set()
+    for thread in threads:
+        thread.join()
 
-def _check_connection_to_ip(ip_address):
-    while True:
+def _check_connection_to_ip(ip_address, stop_event):
+    print("start _check_connection_to_ip")
+    while not stop_event.is_set():
         try:
-            print(f"~~~_check_connection_to_ip: {ip_address}")
-            "icmp_seq=" in sh.ping("-c", "3", "-W", "3", ip_address) # noqa: B015
+            network.is_internet_reachable(ip_address=ip_address, retry=1)
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} SUCCESS")
-        except sh.ErrorReturnCode as e:
+        except Exception as e: # noqa: BLE001
             print(f"~~~_check_connection_to_ip: IN-PING {ip_address} FAILURE: {e}.")
-        time.sleep(_CHECK_FREQUENCY)
+            data = "\n".join(["_check_connection_to_ip: Default route:",
+                        str(os.popen("sudo ip route get 1.1.1.1").read()),
+                        "iptables stats",str(os.popen("sudo iptables -L -v -n").read())])
+            print(data)
+        stop_event.wait(_CHECK_FREQUENCY)
 
 
-def _check_connection_to_ip_outside_vpn(ip_address):
-    while True:
+def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
+    print("start _check_connection_to_ip_outside_vpn")
+    while not stop_event.is_set():
         try:
-            print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address}")
             "icmp_seq=" in sh.sudo.ping("-c", "3", "-W", "3", "-m", "57841", ip_address) # noqa: B015
             print(f"~~~_check_connection_to_ip_outside_vpn: OUT-PING {ip_address} SUCCESS")
-        except sh.ErrorReturnCode as e:
+        except Exception as e: # noqa: BLE001
             print(f"~~~_check_connection_to_ip_outside_vpn: OUT-PING {ip_address} FAILURE: {e}.")
-        time.sleep(_CHECK_FREQUENCY)
+        stop_event.wait(_CHECK_FREQUENCY)
 
 
-def _check_dns_resolution(domain):
-    while True:
+def _check_dns_resolution(domain, stop_event):
+    print("start _check_dns_resolution")
+    while not stop_event.is_set():
         try:
-            print(f"~~~_check_dns_resolution: {domain}")
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ['8.8.8.8']
             resolver.resolve(domain, 'A')  # 'A' for IPv4
             print(f"~~~_check_dns_resolution: DNS {domain} SUCCESS")
         except Exception as e:  # noqa: BLE001
             print(f"~~~_check_dns_resolution: DNS {domain} FAILURE. Error: {e}")
-        time.sleep(_CHECK_FREQUENCY)
+        stop_event.wait(_CHECK_FREQUENCY)
+
+
+def _capture_traffic(stop_event):
+    print("start _capture_traffic")
+    # use circular log files, keep only 2 latest each 10MB size
+    command = ["tshark", "-a", "filesize:10240", "-b", "files:2", "-i", "any", "-w", os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap"]
+    print("Starting tshark...")
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stop_event.wait()
+    print("Stopping tshark with Ctrl+C...")
+    process.send_signal(signal.SIGINT)
+    print(f"tshark out {process.stdout.read().strip()} - {process.stderr.read().strip()}")
+    time.sleep(1)
