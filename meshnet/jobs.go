@@ -42,38 +42,55 @@ func JobMonitorFileshareProcess(s *Server) func() error {
 	job := monitorFileshareProcessJob{
 		isFileshareAllowed: false,
 		meshChecker:        s,
-		networker:          s.netw,
+		rulesController:    s.netw,
+		processChecker:     defaultProcessChecker{},
 	}
 	return job.run
-}
-
-type monitorFileshareProcessJob struct {
-	isFileshareAllowed bool
-	meshChecker        meshChecker
-	networker          Networker
-}
-
-type meshChecker interface {
-	isMeshOn() bool
 }
 
 func (j *monitorFileshareProcessJob) run() error {
 	if !j.meshChecker.isMeshOn() {
 		if j.isFileshareAllowed {
-			if err := j.networker.ForbidFileshare(); err == nil {
+			if err := j.rulesController.ForbidFileshare(); err == nil {
 				j.isFileshareAllowed = false
 			}
 		}
 		return nil
 	}
 
-	if internal.IsProcessRunning(internal.FileshareBinaryPath) {
-		j.networker.PermitFileshare()
+	if j.processChecker.isFileshareRunning() {
+		j.rulesController.PermitFileshare()
 		j.isFileshareAllowed = true
 	} else {
-		j.networker.ForbidFileshare()
+		j.rulesController.ForbidFileshare()
 		j.isFileshareAllowed = false
 	}
 
 	return nil
+}
+
+type defaultProcessChecker struct{}
+
+func (defaultProcessChecker) isFileshareRunning() bool {
+	return internal.IsProcessRunning(internal.FileshareBinaryPath)
+}
+
+type monitorFileshareProcessJob struct {
+	isFileshareAllowed bool
+	meshChecker        meshChecker
+	rulesController    rulesController
+	processChecker     processChecker
+}
+
+type meshChecker interface {
+	isMeshOn() bool
+}
+
+type rulesController interface {
+	ForbidFileshare() error
+	PermitFileshare() error
+}
+
+type processChecker interface {
+	isFileshareRunning() bool
 }
