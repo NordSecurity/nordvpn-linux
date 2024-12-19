@@ -236,6 +236,7 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 		if cfg.Technology == config.Technology_NORDWHISPER && !r.isNordWhisperEnabled() {
 			err := r.cm.SaveWith(func(c config.Config) config.Config {
 				c.Technology = config.Technology_NORDLYNX
+				c.AutoConnectData.Protocol = config.Protocol_UDP
 				return c
 			})
 			if err != nil {

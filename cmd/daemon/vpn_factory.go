@@ -23,7 +23,7 @@ func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
 		log.Println(internal.ErrorPrefix, "getting NordLynx vpn:", nordLynxErr)
 	}
 
-	nordWhisperVPN, nordWhisperErr := getNordWhisperVPN(fwmark)
+	nordWhisperVPN, nordWhisperErr := getNordWhisperVPN(fwmark, envIsDev)
 	if nordWhisperErr != nil {
 		log.Println(internal.ErrorPrefix, "getting NordWhisper vpn:", nordWhisperErr)
 	}

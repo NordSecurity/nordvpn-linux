@@ -46,6 +46,8 @@ func (o *Observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
+	close(o.eventsChan)
+
 	eventsChan := make(chan vpn.State)
 	o.eventsChan = eventsChan
 	o.eventsSubscribtionContext = ctx
@@ -83,7 +85,7 @@ func (o *Observer) Connected() {
 
 	o.notifyConnectionStateChange(vpn.ConnectedState)
 
-	log.Println(internal.DebugPrefix, "connected")
+	log.Println(internal.DebugPrefix, quenchPrefix, "connected")
 }
 
 func (o *Observer) Disconnected(reason quenchBindigns.DisconnectReason) {
@@ -107,9 +109,13 @@ type Quench struct {
 	tun      *tunnel.Tunnel
 }
 
-func New(fwmark uint32) *Quench {
+func New(fwmark uint32, envIsDev bool) *Quench {
+	logLevel := quenchBindigns.LogLevelInfo
+	if envIsDev {
+		logLevel = quenchBindigns.LogLevelDebug
+	}
 	logger := Logger{}
-	quenchBindigns.SetLogCallback(quenchBindigns.LogLevelDebug, &logger)
+	quenchBindigns.SetLogCallback(logLevel, &logger)
 
 	return &Quench{
 		fwmark:   fwmark,
@@ -195,6 +201,9 @@ CONNECTION_LOOP:
 			q.state = ev
 
 			if ev == vpn.ExitedState {
+				q.vnic = nil
+				q.tun = nil
+				q.server = vpn.ServerData{}
 				return fmt.Errorf("connection failed")
 			}
 
@@ -255,7 +264,11 @@ func (q *Quench) IsActive() bool {
 func (q *Quench) Tun() tunnel.T {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	return q.tun
+
+	if q.tun != nil {
+		return q.tun
+	}
+	return nil
 }
 
 func (q *Quench) NetworkChanged() error {
