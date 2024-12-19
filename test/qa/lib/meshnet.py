@@ -5,6 +5,7 @@ import subprocess
 import time
 from enum import Enum
 
+import pytest
 import sh
 
 from . import daemon, info, logging, login, ssh
@@ -666,3 +667,29 @@ def is_connect_successful(output:str, peer_hostname: str):
 def get_lines_with_keywords(lines: list[str], keywords: list[str]) -> list:
     """Returns list with elements, that contain specified `keywords`."""
     return [line.strip() for line in lines if all(keyword in line for keyword in keywords)]
+
+def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 3) -> None:
+    """
+    Verifies if local and remote NordVPN mesh peers see each other as connected in peer list.
+
+    Args:
+        ssh_client (ssh.Ssh): SSH client to execute commands on the remote system.
+
+    Raises:
+        pytest.fail: If peers are not connected after `retry` attempts.
+    """
+
+    for refresh_count in range(retry):
+        local_peer_list = sh.nordvpn.mesh.peer.list(_tty_out=False)
+        remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
+
+        if "Status: connected" in local_peer_list and \
+            "Status: connected" in remote_peer_list:
+            logging.log(f"peer list refresh count: {refresh_count}")
+            return
+
+        time.sleep(2)
+
+    logging.log(f"=== local_peer_list ===\n{local_peer_list}\n")
+    logging.log(f"=== remote_peer_list ===\n{remote_peer_list}\n")
+    pytest.fail("Peers do not see each other as connected.")

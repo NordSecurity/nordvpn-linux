@@ -55,8 +55,7 @@ def setup_function(function):  # noqa: ARG001
         ssh_client.exec_command("nordvpn set notify off")
         ssh_client.exec_command("nordvpn set mesh on")
 
-        sh.nordvpn.mesh.peer.list()
-        ssh_client.exec_command("nordvpn mesh peer list")
+        meshnet.are_peers_connected(ssh_client)
 
 
 def teardown_function(function):  # noqa: ARG001
@@ -81,17 +80,21 @@ def test_meshnet_available_after_update():
     meshnet_help_page = sh.nordvpn.meshnet("--help", _tty_out=False)
     assert "Learn more: https://meshnet.nordvpn.com/" in meshnet_help_page
 
-    local_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().hostname
+    parsed_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+
+    local_hostname = parsed_peer_list.get_this_device().hostname
     ssh_client.exec_command(f"nordvpn mesh peer routing allow {local_hostname}")
 
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().hostname
+    peer_hostname = parsed_peer_list.get_internal_peer().hostname
     output = sh.nordvpn.mesh.peer.connect(peer_hostname)
     assert meshnet.is_connect_successful(output, peer_hostname)
-
+    assert daemon.is_connected()
     assert network.is_available()
 
     output = sh.nordvpn.disconnect()
     assert lib.is_disconnect_successful(output)
+    assert not daemon.is_connected()
+    assert network.is_available()
 
 
 def test_fileshare_available_after_update():
