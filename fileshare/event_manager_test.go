@@ -41,12 +41,29 @@ type mockNotification struct {
 type mockNotifier struct {
 	notifications []mockNotification
 	nextID        uint32
+	updateCh      chan struct{}
+}
+
+func (mn *mockNotifier) Wait() {
+	select {
+	case <-time.After(1 * time.Second):
+	case <-mn.updateCh:
+	}
 }
 
 func (mn *mockNotifier) SendNotification(summary string, body string, actions []Action) (uint32, error) {
 	notificationID := mn.nextID
 	mn.notifications = append(mn.notifications, mockNotification{id: notificationID, summary: summary, body: body, actions: actions})
 	mn.nextID++
+
+	if mn.updateCh != nil {
+		select {
+		case mn.updateCh <- struct{}{}:
+		default:
+			<-mn.updateCh
+			mn.updateCh <- struct{}{}
+		}
+	}
 	return notificationID, nil
 }
 
@@ -218,6 +235,7 @@ func TestGetTransfers(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	eventManager := NewEventManager(false, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+
 	storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
 	eventManager.SetStorage(storage)
 
@@ -314,27 +332,15 @@ func TestTransferProgress(t *testing.T) {
 		},
 	}
 
-	eventManager.OnEvent(
+	eventManager.Event(
 		Event{
 			Kind: EventKindRequestQueued{
 				Peer:       peer,
 				TransferId: transferID,
 				Files: []QueuedFile{
-					{
-						Id:   file1ID,
-						Path: file1,
-						Size: file1sz,
-					},
-					{
-						Id:   file2ID,
-						Path: file2,
-						Size: file2sz,
-					},
-					{
-						Id:   file3ID,
-						Path: file3,
-						Size: file3sz,
-					},
+					{Id: file1ID, Path: file1, Size: file1sz},
+					{Id: file2ID, Path: file2, Size: file2sz},
+					{Id: file3ID, Path: file3, Size: file3sz},
 				},
 			},
 		},
@@ -342,16 +348,13 @@ func TestTransferProgress(t *testing.T) {
 
 	progCh := eventManager.Subscribe(transferID)
 
-	eventManager.OnEvent(
+	eventManager.Event(
 		Event{
 			Kind: EventKindFileStarted{
 				TransferId: transferID,
 				FileId:     file1ID,
 			},
 		},
-	)
-
-	eventManager.OnEvent(
 		Event{
 			Kind: EventKindFileStarted{
 				TransferId:  transferID,
@@ -363,7 +366,7 @@ func TestTransferProgress(t *testing.T) {
 
 	transferredBytes := file1sz
 	go func() {
-		eventManager.OnEvent(
+		eventManager.Event(
 			Event{
 				Kind: EventKindFileProgress{
 					TransferId:  transferID,
@@ -382,25 +385,19 @@ func TestTransferProgress(t *testing.T) {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(1)
 	go func() {
-		eventManager.OnEvent(
+		eventManager.Event(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file1ID,
 				},
 			},
-		)
-
-		eventManager.OnEvent(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
 					FileId:     file2ID,
 				},
 			},
-		)
-
-		eventManager.OnEvent(
 			Event{
 				Kind: EventKindFileDownloaded{
 					TransferId: transferID,
@@ -412,7 +409,7 @@ func TestTransferProgress(t *testing.T) {
 		// Final transfer state is determined from storage
 		storage.transfers[transferID].Status = pb.Status_SUCCESS
 
-		eventManager.OnEvent(
+		eventManager.Event(
 			Event{
 				Timestamp: 0,
 				Kind: EventKindTransferFinalized{
@@ -429,10 +426,12 @@ func TestTransferProgress(t *testing.T) {
 	assert.Equal(t, pb.Status_SUCCESS, progressEvent.Status)
 
 	waitGroup.Wait()
+	eventManager.mutex.Lock() // required so that go test -race doesn't fail, normal functions used in production use mutex anyways
 	_, ok := eventManager.transferSubscriptions[transferID]
 	assert.False(t, ok) // expect subscriber to be removed
 	_, ok = eventManager.liveTransfers[transferID]
 	assert.False(t, ok) // expect transfer not to be tracked anymore
+	eventManager.mutex.Unlock()
 }
 
 func TestAcceptTransfer(t *testing.T) {
@@ -580,6 +579,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		notifier := mockNotifier{
 			notifications: []mockNotification{},
 			nextID:        0,
+			updateCh:      make(chan struct{}, 1),
 		}
 		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
 		notificationManager.notifier = &notifier
@@ -684,7 +684,10 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		eventManager, notifier := initializeEventManager(test.direction)
 
 		t.Run(test.name, func(t *testing.T) {
-			eventManager.OnEvent(test.event)
+			eventManager.Event(
+				test.event,
+			)
+			notifier.Wait()
 
 			assert.Equal(t, 1, len(notifier.notifications),
 				"TransferFinished event was received, but EventManager did not send any notifications.")
@@ -709,6 +712,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
 		nextID:        0,
+		updateCh:      make(chan struct{}, 1),
 	}
 
 	openedFiles := []string{}
@@ -740,7 +744,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		Direction:        pb.Direction_INCOMING,
 	}
 
-	eventManager.OnEvent(Event{
+	eventManager.Event(Event{
 		Kind: EventKindFileDownloaded{
 			TransferId: transferID,
 			FileId:     fileID,
@@ -748,6 +752,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 		},
 	})
 
+	notifier.Wait()
 	notification := notifier.notifications[0]
 
 	notificationManager.OpenFile(notification.id)
@@ -764,6 +769,7 @@ func TestTransferRequestNotification(t *testing.T) {
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
 		nextID:        0,
+		updateCh:      make(chan struct{}, 1),
 	}
 
 	openedFiles := []string{}
@@ -806,7 +812,8 @@ func TestTransferRequestNotification(t *testing.T) {
 		},
 	}
 
-	eventManager.OnEvent(event)
+	eventManager.Event(event)
+	notifier.Wait()
 
 	assert.Equal(t, 1, len(notifier.notifications),
 		"Transfer request notification was not sent after transfer request event was received.")
@@ -874,6 +881,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		notifier := mockNotifier{
 			notifications: []mockNotification{},
 			nextID:        pendingTransferNotificationID,
+			updateCh:      make(chan struct{}, 1),
 		}
 
 		osInfo := mockEventManagerOsInfo{
@@ -1045,6 +1053,7 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
 		nextID:        transferNotificationID,
+		updateCh:      make(chan struct{}, 1),
 	}
 
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
@@ -1229,6 +1238,7 @@ func TestAutoaccept(t *testing.T) {
 	notifier := mockNotifier{
 		notifications: []mockNotification{},
 		nextID:        0,
+		updateCh:      make(chan struct{}, 1),
 	}
 
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
@@ -1340,7 +1350,8 @@ func TestAutoaccept(t *testing.T) {
 
 			eventManager.fileshare = &mockFileshare
 			eventManager.defaultDownloadDir = test.defaultDownloadDirectory
-			eventManager.OnEvent(event)
+			eventManager.Event(event)
+			notifier.Wait()
 
 			if test.acceptedTransferID != "" {
 				assert.NotEmpty(t, mockFileshare.acceptedTransferIDS,
@@ -1360,6 +1371,139 @@ func TestAutoaccept(t *testing.T) {
 
 			assert.Empty(t, notification.actions,
 				"Unexpected actions found in autoaccepted transfer notification")
+		})
+	}
+}
+
+func TestEventsFlow(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	const (
+		numEvents  uint64 = 1024
+		chunkSize  uint64 = 8
+		chunkCount uint64 = numEvents / chunkSize
+		transferID string = exampleUUID
+		peer              = "12.12.12.12"
+		path              = tmpDir
+		file              = "testfile"
+		fileID            = "testfileid"
+		fileSize          = numEvents * 100
+	)
+
+	events := []Event{
+		{
+			Kind: EventKindRequestQueued{
+				Peer:       peer,
+				TransferId: transferID,
+				Files: []QueuedFile{
+					{
+						Id:   fileID,
+						Path: file,
+						Size: fileSize,
+					},
+				},
+			},
+		},
+		{
+			Kind: EventKindFileStarted{
+				TransferId: transferID,
+				FileId:     fileID,
+			},
+		},
+	}
+
+	// subtract by the existing RequestQueued and FileStarted events
+	// to make sure we have the correct number of events
+	// otherwise it's not chunked properly, as the size is not divisable by chunkSize(1026 % 8 = 2)
+	numProgressEvents := numEvents - uint64(len(events))
+
+	for i := uint64(0); i < numProgressEvents; i++ {
+		events = append(events,
+			Event{
+				Kind: EventKindFileProgress{
+					TransferId:  transferID,
+					FileId:      fileID,
+					Transferred: (fileSize / numEvents) * (i + 1),
+				},
+			},
+		)
+	}
+
+	if uint64(len(events))%chunkSize != 0 {
+		panic("events size is not divisible by chunkSize")
+	}
+
+	chunks := make([][]Event, chunkCount)
+	for i := uint64(0); i < chunkCount; i++ {
+		chunks[i] = make([]Event, chunkSize)
+		for j := uint64(0); j < chunkSize; j++ {
+			chunks[i][j] = events[(i*chunkSize)+j]
+		}
+	}
+
+	tests := []struct {
+		name                string
+		progressChannelSize int
+		fn                  func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo)
+	}{
+		{
+			name:                "Event() should not block with progCh buffer = 1 and 1024 events",
+			progressChannelSize: 32,
+			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
+				for _, chunk := range chunks {
+					em.Event(chunk...)
+				}
+			},
+		},
+		{
+			name:                "Event() events should be in order & all received",
+			progressChannelSize: int(numEvents * 2),
+			fn: func(t *testing.T, em *EventManager, progCh chan TransferProgressInfo) {
+				for _, chunk := range chunks {
+					em.Event(chunk...)
+				}
+				lastProgress := uint32(0)
+				for i := uint64(0); i < numProgressEvents; i++ {
+					prog := <-progCh
+					if prog.Transferred < lastProgress {
+						t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)
+					}
+					lastProgress = prog.Transferred
+				}
+
+				if len(progCh) != 0 {
+					t.Fatalf("progCh was not drained, len(progCh) = %d", len(progCh))
+				}
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			em := NewEventManager(true, &mockMeshClient{}, &mockEventManagerOsInfo{}, &mockEventManagerFilesystem{}, "")
+			em.SetFileshare(&mockEventManagerFileshare{})
+			storage := &mockStorage{transfers: map[string]*pb.Transfer{}}
+			em.SetStorage(storage)
+
+			storage.transfers[transferID] = &pb.Transfer{
+				Id:        transferID,
+				Peer:      peer,
+				Path:      path,
+				Status:    pb.Status_REQUESTED,
+				TotalSize: fileSize,
+				Files: []*pb.File{
+					{
+						Id:     fileID,
+						Path:   file,
+						Size:   fileSize,
+						Status: pb.Status_REQUESTED,
+					},
+				},
+			}
+
+			progCh := make(chan TransferProgressInfo, test.progressChannelSize)
+			em.transferSubscriptions[transferID] = progCh
+			test.fn(t, em, progCh)
 		})
 	}
 }
