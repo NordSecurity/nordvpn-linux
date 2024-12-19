@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
@@ -64,6 +65,22 @@ func (r *RPC) connect(
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
+	}
+
+	if cfg.Technology == config.Technology_NORDWHISPER {
+		if !features.NordWhisperEnabled {
+			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+		}
+
+		nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to retrieve remote config for NordWhisper:", err)
+			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+		}
+
+		if !nordWhisperEnabled {
+			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+		}
 	}
 
 	insights := r.dm.GetInsightsData().Insights
@@ -154,6 +171,7 @@ func (r *RPC) connect(
 		OpenVPNVersion:    server.Version(),
 		VirtualLocation:   server.IsVirtualLocation(),
 		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
+		NordWhisperPort:   server.NordWhisperPort,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist

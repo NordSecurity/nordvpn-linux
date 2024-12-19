@@ -141,6 +141,8 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.ServerUnavailableErrorMessage)
 		case internal.CodeDoubleGroupError:
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
+		case internal.CodeTechnologyDisabled:
+			rpcErr = errors.New(TechnologyDisabledMessage)
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:

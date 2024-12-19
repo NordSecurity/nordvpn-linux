@@ -3,35 +3,24 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net/netip"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	cesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
-	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
-func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
-	cfg vpn.LibConfigGetter, appVersion string, eventsPublisher *vpn.Events,
-) daemon.FactoryFunc {
-	return func(tech config.Technology) (vpn.VPN, error) {
-		switch tech {
-		case config.Technology_NORDLYNX:
-			return nordlynx.NewKernelSpace(fwmark, eventsPublisher), nil
-		case config.Technology_OPENVPN:
-			return openvpn.New(fwmark, eventsPublisher), nil
-		case config.Technology_UNKNOWN_TECHNOLOGY:
-			fallthrough
-		default:
-			return nil, errors.New("no such technology")
-		}
-	}
+func getNordlynxVPN(envIsDev bool,
+	eventsDbPath string,
+	fwmark uint32,
+	cfg vpn.LibConfigGetter,
+	appVersion string,
+	eventsPublisher *vpn.Events) (*nordlynx.KernelSpace, error) {
+	return nordlynx.NewKernelSpace(fwmark, eventsPublisher), nil
 }
 
 // noopMesh is a noop implementation of meshnet. It is used when telio

@@ -592,7 +592,7 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
 		return fmt.Errorf("retrieving the interface: %w", err)
 	}
 
-	tun := tunnel.New(*iface, []netip.Addr{ip})
+	tun := tunnel.New(*iface, []netip.Addr{ip}, netip.Prefix{})
 
 	err = tun.AddAddrs()
 	if err != nil {
@@ -628,7 +628,7 @@ func (l *Libtelio) updateTunnel(privateKey string, ip netip.Addr) error {
 	if err := l.tun.DelAddrs(); err != nil {
 		return fmt.Errorf("deleting interface addrs: %w", err)
 	}
-	tun := tunnel.New(l.tun.Interface(), []netip.Addr{ip})
+	tun := tunnel.New(l.tun.Interface(), []netip.Addr{ip}, netip.Prefix{})
 	if err := tun.AddAddrs(); err != nil {
 		return fmt.Errorf("adding interface addrs: %w", err)
 	}

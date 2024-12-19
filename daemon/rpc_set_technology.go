@@ -7,10 +7,36 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*pb.Payload, error) {
+	if in.Technology == config.Technology_NORDWHISPER {
+		if !features.NordWhisperEnabled {
+			log.Println(internal.DebugPrefix,
+				"user requested a NordWhisper technology but the feature is hidden based on compile flag.")
+			return &pb.Payload{
+				Type: internal.CodeFeatureHidden,
+			}, nil
+		}
+		nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to determine if NordWhisper is enabled by remote config:", err)
+			return &pb.Payload{
+				Type: internal.CodeFeatureHidden,
+			}, nil
+		}
+
+		if !nordWhisperEnabled {
+			log.Println(internal.ErrorPrefix,
+				"user requested a NordWhisper technology but the feature is hidden based on remote config flag")
+			return &pb.Payload{
+				Type: internal.CodeFeatureHidden,
+			}, nil
+		}
+	}
+
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
@@ -43,6 +69,9 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	obfuscate := cfg.AutoConnectData.Obfuscate
 	if in.GetTechnology() == config.Technology_NORDLYNX {
 		protocol = config.Protocol_UDP
+		obfuscate = false
+	} else if in.GetTechnology() == config.Technology_NORDWHISPER {
+		protocol = config.Protocol_Webtunnel
 		obfuscate = false
 	}
 
