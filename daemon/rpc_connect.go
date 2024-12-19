@@ -45,35 +45,6 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	return err
 }
 
-// nordWhisperConfigFallback checks if technology is configured to NordWhisper and falls back to NordLynx if NordWhisper
-// was disabled in compile time or in remote config. It returns a new config with desired technology set.
-func (r *RPC) nordWhisperConfigFallback(cfg config.Config) config.Config {
-	if cfg.Technology != config.Technology_NORDWHISPER {
-		return cfg
-	}
-
-	nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to retrieve remote config for NordWhisper:", err)
-		return cfg
-	}
-
-	if features.NordWhisperEnabled && nordWhisperEnabled {
-		return cfg
-	}
-
-	log.Println(internal.DebugPrefix,
-		"user had configured NordWhisper technology, but it was disabled, falling back to NordLynx")
-
-	cfg.Technology = config.Technology_NORDLYNX
-	r.cm.SaveWith(func(c config.Config) config.Config {
-		c.Technology = config.Technology_NORDLYNX
-		return c
-	})
-
-	return cfg
-}
-
 func (r *RPC) connect(
 	ctx context.Context,
 	in *pb.ConnectRequest,
@@ -111,8 +82,6 @@ func (r *RPC) connect(
 			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
 		}
 	}
-
-	cfg = r.nordWhisperConfigFallback(cfg)
 
 	insights := r.dm.GetInsightsData().Insights
 
