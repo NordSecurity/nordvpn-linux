@@ -20,7 +20,7 @@ import "token.proto";
 import "purchase.proto";
 import "state.proto";
 import "servers.proto";
-import "nordwhisper_hidden.proto";
+import "nordwhisper_enabled.proto";
 
 service Daemon {
   rpc AccountInfo(Empty) returns (AccountResponse);

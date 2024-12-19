@@ -10,7 +10,7 @@ import connect_pb2 as connect__pb2
 import login_pb2 as login__pb2
 import login_with_token_pb2 as login__with__token__pb2
 import logout_pb2 as logout__pb2
-import nordwhisper_hidden_pb2 as nordwhisper__hidden__pb2
+import nordwhisper_enabled_pb2 as nordwhisper__enabled__pb2
 import ping_pb2 as ping__pb2
 import purchase_pb2 as purchase__pb2
 import rate_pb2 as rate__pb2
@@ -268,7 +268,7 @@ class DaemonStub(object):
         self.IsNordWhisperEnabled = channel.unary_unary(
                 '/pb.Daemon/IsNordWhisperEnabled',
                 request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=nordwhisper__hidden__pb2.NordWhisperEnabled.FromString,
+                response_deserializer=nordwhisper__enabled__pb2.NordWhisperEnabled.FromString,
                 _registered_method=True)
 
 
@@ -760,7 +760,7 @@ def add_DaemonServicer_to_server(servicer, server):
             'IsNordWhisperEnabled': grpc.unary_unary_rpc_method_handler(
                     servicer.IsNordWhisperEnabled,
                     request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=nordwhisper__hidden__pb2.NordWhisperEnabled.SerializeToString,
+                    response_serializer=nordwhisper__enabled__pb2.NordWhisperEnabled.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1950,7 +1950,7 @@ class Daemon(object):
             target,
             '/pb.Daemon/IsNordWhisperEnabled',
             common__pb2.Empty.SerializeToString,
-            nordwhisper__hidden__pb2.NordWhisperEnabled.FromString,
+            nordwhisper__enabled__pb2.NordWhisperEnabled.FromString,
             options,
             channel_credentials,
             insecure,
