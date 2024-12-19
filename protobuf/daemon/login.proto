@@ -4,6 +4,21 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
+enum LoginType {
+  LoginType_UNKNOWN = 0;
+  LoginType_LOGIN = 1;
+  LoginType_SIGNUP = 2;
+}
+
+message LoginOAuth2Request {
+  LoginType type = 1;
+}
+
+message LoginOAuth2CallbackRequest {
+  string token = 1;
+  LoginType type = 2;
+}
+
 message LoginResponse {
   int64 type = 1;
   string url = 5;

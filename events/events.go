@@ -54,6 +54,13 @@ const (
 	TriggerUser
 )
 
+type TypeLoginType int
+
+const (
+	LoginLogin  TypeLoginType = iota // regular login
+	LoginSignUp                      // login after signup
+)
+
 type DataConnect struct {
 	IsMeshnetPeer              bool
 	APIHostname                string
@@ -92,6 +99,7 @@ type DataAuthorization struct {
 	DurationMs   int
 	EventTrigger TypeEventTrigger
 	EventStatus  TypeEventStatus
+	EventType    TypeLoginType
 }
 
 type DataRequestAPI struct {
