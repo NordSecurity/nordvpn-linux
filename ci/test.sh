@@ -19,7 +19,7 @@ tags="internal"
 # everything
 if [ "${1:-""}" = "full" ]; then
 	# Apply moose patch in case compiling with moose
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v14
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v15
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v14
 
 	excluded_packages="thisshouldneverexist"
