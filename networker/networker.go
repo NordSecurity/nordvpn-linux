@@ -47,6 +47,16 @@ var (
 	defaultMeshSubnet  = netip.MustParsePrefix("100.64.0.0/10")
 )
 
+// ErrNoSuchRule is returned when networker tried to remove
+// a rule, but such rule does not exist
+type ErrNoSuchRule struct {
+	ruleName string
+}
+
+func (e ErrNoSuchRule) Error() string {
+	return fmt.Sprintf("allow rule does not exist for %s", e.ruleName)
+}
+
 const (
 	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
 	// for allowing the incomig connections
@@ -1651,7 +1661,7 @@ func (netw *Combined) removeRule(ruleName string) error {
 	ruleIndex := slices.Index(netw.rules, ruleName)
 
 	if ruleIndex == -1 {
-		return fmt.Errorf("allow rule does not exist for %s", ruleName)
+		return ErrNoSuchRule{ruleName}
 	}
 
 	if err := netw.fw.Delete([]string{ruleName}); err != nil {
@@ -1668,15 +1678,26 @@ func (netw *Combined) ForbidFileshare() error {
 	if !netw.isFilesharePermitted {
 		return nil
 	}
-	defer func() { netw.isFilesharePermitted = false }()
-	return netw.blockFileshareAll()
+
+	err := netw.blockFileshareAll()
+	// NOTE: Mark fileshare as forbidden only when there was no error here, so it
+	// can be tried again.
+	if err == nil {
+		netw.isFilesharePermitted = false
+	}
+
+	return err
 }
 
 func (netw *Combined) blockFileshareAll() error {
 	var allErrors []error
 	for _, peer := range netw.cfg.Peers {
 		err := netw.blockFileshare(peer.PublicKey, peer.Address)
-		allErrors = append(allErrors, err)
+		// NOTE: It's fine to have the rule already removed which returns [ErrNoSuchRule].
+		// It's not fine to have any other errors, so keep those.
+		if !errors.Is(err, ErrNoSuchRule{}) {
+			allErrors = append(allErrors, err)
+		}
 	}
 	return errors.Join(allErrors...)
 }
