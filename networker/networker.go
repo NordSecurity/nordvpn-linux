@@ -545,8 +545,11 @@ func (netw *Combined) ConnectionStatus() (ConnectionStatus, error) {
 	}
 
 	tech := config.Technology_OPENVPN
+	tunnelName := netw.vpnet.Tun().Interface().Name
 	if netw.vpnet.Tun().Interface().Name == "nordlynx" {
 		tech = config.Technology_NORDLYNX
+	} else if tunnelName == internal.NordWhisperInterfaceName {
+		tech = config.Technology_NORDWHISPER
 	}
 
 	var uptime *time.Duration

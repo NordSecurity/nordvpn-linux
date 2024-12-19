@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	vnicName            = "qtun"
 	quenchPrefix        = "[quench]"
 	quenchInterfaceAddr = "10.3.0.2/16"
 )
@@ -114,7 +113,7 @@ func New(fwmark uint32) *Quench {
 
 	return &Quench{
 		fwmark:   fwmark,
-		vnicName: vnicName,
+		vnicName: internal.NordWhisperInterfaceName,
 		observer: NewObserver(),
 		logger:   &logger,
 		state:    vpn.ExitedState,
