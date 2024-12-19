@@ -88,12 +88,12 @@ def test_meshnet_available_after_update():
     peer_hostname = parsed_peer_list.get_internal_peer().hostname
     output = sh.nordvpn.mesh.peer.connect(peer_hostname)
     assert meshnet.is_connect_successful(output, peer_hostname)
-
+    assert daemon.is_connected()
     assert network.is_available()
 
     output = sh.nordvpn.disconnect()
     assert lib.is_disconnect_successful(output)
-
+    assert not daemon.is_connected()
     assert network.is_available()
 
 
