@@ -6,19 +6,18 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/features"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-func (r *RPC) IsNordWhisperEnabled(ctx context.Context, in *pb.Empty) (*pb.NordWhisperEnabled, error) {
-	if !features.NordWhisperEnabled {
-		return &pb.NordWhisperEnabled{Enabled: false}, nil
-	}
+func (r *RPC) isNordWhisperEnabled() bool {
 	nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
 	if err != nil {
-		log.Println(internal.ErrorPrefix,
-			"failed to determine if NordWhisper is enabled based on firebase config:", err)
-		return &pb.NordWhisperEnabled{Enabled: false}, nil
+		log.Println("failed to determine if NordWhisper is enabled:", err)
+		return false
 	}
 
-	return &pb.NordWhisperEnabled{Enabled: nordWhisperEnabled}, nil
+	return features.NordWhisperEnabled && nordWhisperEnabled
+}
+
+func (r *RPC) IsNordWhisperEnabled(ctx context.Context, in *pb.Empty) (*pb.NordWhisperEnabled, error) {
+	return &pb.NordWhisperEnabled{Enabled: r.isNordWhisperEnabled()}, nil
 }

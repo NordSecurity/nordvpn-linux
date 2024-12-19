@@ -15,7 +15,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 
@@ -234,21 +233,13 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 			return err
 		}
 
-		if cfg.Technology == config.Technology_NORDWHISPER {
-			nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
+		if cfg.Technology == config.Technology_NORDWHISPER && !r.isNordWhisperEnabled() {
+			err := r.cm.SaveWith(func(c config.Config) config.Config {
+				c.Technology = config.Technology_NORDLYNX
+				return c
+			})
 			if err != nil {
-				log.Println("failed to determine if NordWhisper is enabled:", err)
-			}
-
-			// fallback to Nordlynx if NordWhisper was enabled in previous installation and is disabled now
-			if features.NordWhisperEnabled || !nordWhisperEnabled {
-				err := r.cm.SaveWith(func(c config.Config) config.Config {
-					c.Technology = config.Technology_NORDLYNX
-					return c
-				})
-				if err != nil {
-					log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
-				}
+				log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
 			}
 		}
 
