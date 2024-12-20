@@ -82,7 +82,7 @@ func (o *Observer) Connecting() {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	// Log only when state has changet to ConnectingState from some other state. This will prevent log flood when
+	// Log only when state has changed to ConnectingState from some other state. This will prevent log flood when
 	// libquench attempts to reconnect multiple times in no-net scenario.
 	if o.currentState != vpn.ConnectingState {
 		log.Println(internal.DebugPrefix, quenchPrefix, "connecting to quench server")
@@ -240,7 +240,7 @@ func (q *Quench) Stop() error {
 
 	if q.vnic != nil {
 		if err := q.vnic.Disconnect(); err != nil {
-			return fmt.Errorf("disconnectiong from a quench server: %w", err)
+			return fmt.Errorf("disconnecting from a quench server: %w", err)
 		}
 
 		for {

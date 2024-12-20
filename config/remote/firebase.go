@@ -169,7 +169,7 @@ func (rc *RConfig) GetNordWhisperEnabled(stringVersion string) (bool, error) {
 
 	enabledStr, err := rc.getRemoteConfigByVersion(RcNordWhisperConfigFieldPrefix, stringVersion)
 	if err != nil {
-		return false, fmt.Errorf("fetching the telio config: %w", err)
+		return false, fmt.Errorf("fetching the NordWhisper config: %w", err)
 	}
 
 	enabled, err := strconv.ParseBool(enabledStr)
