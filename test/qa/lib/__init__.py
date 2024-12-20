@@ -333,3 +333,18 @@ def get_virtual_countries() -> list[str]:
         countries.append(country)
 
     return countries
+
+
+class CommandExecutor:
+    def __init__(self, ssh_client = None):
+        self.ssh_client = ssh_client
+
+    def __call__(self, command: str = "-1"):
+        """
+        Executes `command` locally, if `ssh_client` parameter was not provided to constructor.
+
+        Otherwise, `command` is executed on a remote SSH client.
+        """
+        if self.ssh_client is None:
+            return sh.Command(command.split()[0])(*command.split()[1:], tty_out=False)
+        return self.ssh_client.exec_command(command)
