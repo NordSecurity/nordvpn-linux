@@ -20,7 +20,6 @@ class Ssh:
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
         self.daemon = self.Daemon(self)
-        self.io = self.IO(self)
         self.meshnet = self.Meshnet(self)
         self.network = self.Network(self)
 
@@ -59,57 +58,6 @@ class Ssh:
                 return False
             else:
                 return True
-
-    class IO:
-        def __init__(self, ssh_class_instance):
-            self.ssh_class_instance: Ssh = ssh_class_instance
-
-        def get_file_hash(self, file_path: str) -> str:
-            return self.ssh_class_instance.exec_command(f"{lib.FILE_HASH_UTILITY} {file_path}").split()[0]
-
-        def create_directory(self, file_count: int, name_suffix: str = "", parent_dir: str = "", file_size: str = "1K") -> Directory:
-            """
-            Creates a temporary directory on remote peer and populates it with a specified number of files.
-
-            Args:
-                file_count (int): The number of files to create in the directory.
-                name_suffix (str, optional): A suffix to append to the filenames. Defaults to an empty string.
-                parent_dir (str | None, optional): The parent directory where the temporary directory will be created.
-                                                If None, the system default temporary directory is used. Defaults to None.
-                file_size (str, optional): The size of each file to be created, specified using typical file size notation
-                                        (e.g., "1K", "128M"). Defaults to "1K".
-            Returns:
-                Directory: A Directory object containing:
-                    - dir_path: Path to the created directory.
-                    - paths: Full paths to the created files.
-                    - transfer_paths: File paths with leading directories removed.
-                    - filenames: Names of the created files.
-            """
-            dir_path = self.ssh_class_instance.exec_command(f"mktemp -d {f'{parent_dir}/tmp.XXXXXX' if parent_dir else ''}").split()[0]
-            paths = []
-            transfer_paths = []
-            filenames = []
-            filehashes = []
-
-            for file_number in range(file_count):
-                filename = f"file_{file_number}{name_suffix}"
-                path = f"{dir_path}/{filename}"
-                paths.append(path)
-                # in transfer, files are displayed with leading directory only, i.e /tmp/dir/file becomes dir/file
-                transfer_paths.append(path.removeprefix("/tmp/"))
-                filenames.append(filename)
-
-                disallowed_filesize = ["G", "T", "P", "E", "Z", "Y"]
-                for size in disallowed_filesize:
-                    if size in file_size:
-                        raise ValueError("Specified file size is too big. Specify either (K)ilobytes or (M)egabytes")
-
-                self.ssh_class_instance.exec_command(f"fallocate -l {file_size} {dir_path}/{filename}")
-
-                hash_output = self.ssh_class_instance.exec_command(f"sha256sum {path}").strip().split()[0]  # Only take the hash part of the output
-                filehashes.append(hash_output)
-
-            return Directory(dir_path, paths, transfer_paths, filenames, filehashes)
 
     class Network:
         def __init__(self, ssh_class_instance):
