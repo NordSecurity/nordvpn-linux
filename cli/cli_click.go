@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -54,8 +55,9 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 			return formatError(err)
 		}
 
-		if url.Scheme == "nordvpn" {
-			if url.Host == "claim-online-purchase" {
+		if strings.ToLower(url.Scheme) == "nordvpn" {
+			switch strings.ToLower(url.Host) {
+			case "claim-online-purchase":
 				resp, err := c.client.ClaimOnlinePurchase(context.Background(), &pb.Empty{})
 				if err != nil {
 					return formatError(err)
@@ -67,17 +69,26 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 
 				color.Green(ClaimOnlinePurchaseSuccess)
 				return nil
-			}
 
-			// if arg is given
-			// run the same as: login --callback %arg
-			if err := c.oauth2(ctx); err != nil {
-				return formatError(err)
+			case "login":
+				// login can be regular, or after new account setup & vpn service purchase (signup)
+				regularLogin := true
+				if strings.ToLower(url.Query().Get("action")) == "signup" {
+					regularLogin = false
+				}
+
+				// if arg is given
+				// run the same as: login --callback %arg
+				if err := c.oauth2(ctx, regularLogin); err != nil {
+					return formatError(err)
+				}
+				return nil
 			}
 		}
-	} else {
-		cli.ShowAppHelp(ctx)
 	}
+
+	// for all unhandled cases
+	cli.ShowAppHelp(ctx)
 
 	return nil
 }

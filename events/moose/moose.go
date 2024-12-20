@@ -266,7 +266,13 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error {
 		eventStatus = moose.NordvpnappEventStatusAttempt
 	}
 
-	if err := s.response(moose.NordvpnappSendServiceQualityAuthorizationLogin(
+	// regular login, or login after signup
+	mooseFn := moose.NordvpnappSendServiceQualityAuthorizationLogin
+	if data.EventType == events.LoginSignUp {
+		mooseFn = moose.NordvpnappSendServiceQualityAuthorizationRegister
+	}
+
+	if err := s.response(mooseFn(
 		int32(data.DurationMs),
 		eventTrigger,
 		eventStatus,
@@ -276,6 +282,7 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error {
 	)); err != nil {
 		return err
 	}
+
 	if data.EventStatus == events.StatusSuccess {
 		return s.fetchSubscriptions()
 	}

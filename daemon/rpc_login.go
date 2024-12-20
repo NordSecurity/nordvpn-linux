@@ -24,6 +24,8 @@ type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
 
 var isTokenValid = regexp.MustCompile(`^[a-f0-9]*$`).MatchString
 
+var lastLoginAttemptTime time.Time
+
 // Login the user with given token
 func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error) {
 	if !isTokenValid(in.GetToken()) {
@@ -59,7 +61,12 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 	}
 
 	loginStartTime := time.Now()
-	r.events.User.Login.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: events.StatusAttempt})
+	r.events.User.Login.Publish(events.DataAuthorization{
+		DurationMs:   -1,
+		EventTrigger: events.TriggerUser,
+		EventStatus:  events.StatusAttempt,
+		EventType:    events.LoginLogin,
+	})
 
 	defer func() {
 		eventStatus := events.StatusSuccess
@@ -70,6 +77,7 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 			DurationMs:   max(int(time.Since(loginStartTime).Milliseconds()), 1),
 			EventTrigger: events.TriggerUser,
 			EventStatus:  eventStatus,
+			EventType:    events.LoginLogin,
 		})
 	}()
 
@@ -135,14 +143,26 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 }
 
 // LoginOAuth2 is called when logging in with OAuth2.
-func (r *RPC) LoginOAuth2(in *pb.Empty, srv pb.Daemon_LoginOAuth2Server) error {
+func (r *RPC) LoginOAuth2(in *pb.LoginOAuth2Request, srv pb.Daemon_LoginOAuth2Server) error {
 	if r.ac.IsLoggedIn() {
 		return internal.ErrAlreadyLoggedIn
 	}
 
-	r.events.User.Login.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: events.StatusAttempt})
+	lastLoginAttemptTime = time.Now()
 
-	url, err := r.authentication.Login()
+	eventType := events.LoginLogin
+	if in.GetType() == pb.LoginType_LoginType_SIGNUP {
+		eventType = events.LoginSignUp
+	}
+
+	r.events.User.Login.Publish(events.DataAuthorization{
+		DurationMs:   -1,
+		EventTrigger: events.TriggerUser,
+		EventStatus:  events.StatusAttempt,
+		EventType:    eventType,
+	})
+
+	url, err := r.authentication.Login(in.GetType() == pb.LoginType_LoginType_LOGIN)
 	if err != nil {
 		return err
 	}
@@ -151,9 +171,14 @@ func (r *RPC) LoginOAuth2(in *pb.Empty, srv pb.Daemon_LoginOAuth2Server) error {
 }
 
 // LoginOAuth2Callback is called by the browser via cli during OAuth2 login.
-func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (payload *pb.Empty, retErr error) {
+func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2CallbackRequest) (payload *pb.Empty, retErr error) {
 	if r.ac.IsLoggedIn() {
 		return &pb.Empty{}, internal.ErrAlreadyLoggedIn
+	}
+
+	loginType := events.LoginLogin
+	if in.GetType() == pb.LoginType_LoginType_SIGNUP {
+		loginType = events.LoginSignUp
 	}
 
 	defer func() {
@@ -161,15 +186,21 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.String) (payload *
 		if retErr != nil {
 			eventStatus = events.StatusFailure
 		}
-		r.events.User.Login.Publish(events.DataAuthorization{DurationMs: -1, EventTrigger: events.TriggerUser, EventStatus: eventStatus})
+		r.events.User.Login.Publish(events.DataAuthorization{
+			DurationMs:   max(int(time.Since(lastLoginAttemptTime).Milliseconds()), 1),
+			EventTrigger: events.TriggerUser,
+			EventStatus:  eventStatus,
+			EventType:    loginType,
+		})
+		lastLoginAttemptTime = time.Time{}
 	}()
 
-	if in.GetData() == "" {
+	if in.GetToken() == "" {
 		r.publisher.Publish(ErrMissingExchangeToken.Error())
 		return &pb.Empty{}, ErrMissingExchangeToken
 	}
 
-	resp, err := r.authentication.Token(in.GetData())
+	resp, err := r.authentication.Token(in.GetToken())
 	if err != nil {
 		r.publisher.Publish(err.Error())
 		return &pb.Empty{}, err
