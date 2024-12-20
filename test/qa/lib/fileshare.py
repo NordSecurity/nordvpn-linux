@@ -375,16 +375,18 @@ class FileSystemEntity(Enum):
 
 
 def bind_port() -> socket.socket | None:
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
-        sock.bind(('0.0.0.0', 49111))
-        sock.listen(1)
-        print("Successfully bound to fileshare port")
-        return sock
-    except OSError as e:
-        print(f"Failed to bind to fileshare port: {e}")
-        return None
+    for _ in range(3):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+            sock.bind(('0.0.0.0', 49111))
+            sock.listen(1)
+            logging.log("successfully bound to fileshare port")
+            return sock
+        except OSError as e:
+            logging.log(f"failed to bind to fileshare port: {e}")
+        time.sleep(1)
+    return None
 
 
 def port_is_allowed() -> bool:
