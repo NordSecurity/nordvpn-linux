@@ -6,9 +6,9 @@ COPY requirements.txt /tmp/requirements.txt
 
 # Install Debian packages
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \
+    DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install vim linux-modules-6.8.0-49-generic \
         # linux app
-        apt-utils curl git iputils-ping sudo kmod systemd \
+        apt-utils curl git iputils-ping sudo kmod systemd ulogd2 \
         # preinstall deps required by nordvpn
         libxml2 iproute2 iptables \
         # install wireguard tools for tests
@@ -22,6 +22,8 @@ RUN apt-get update && \
     # cleanup
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+RUN modprobe nfnetlink_log
 
 # Install Python packages for tests
 RUN python3 -m pip install --no-cache-dir -r /tmp/requirements.txt && rm -rf /tmp/*
