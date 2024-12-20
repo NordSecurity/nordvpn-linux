@@ -16,7 +16,7 @@ const (
 	// app's version, but if exact match is not found then first older version
 	// is chosen, if that one is also not available, then use local defaults.
 	RcTelioConfigFieldPrefix       = "telio_config_"
-	RcNordWhisperConfigFieldPrefix = "quench_enabled_"
+	RcNordWhisperConfigFieldPrefix = "nordWhisper_enabled_"
 )
 
 // RemoteConfigGetter get values from remote config

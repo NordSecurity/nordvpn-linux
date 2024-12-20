@@ -13,8 +13,7 @@ func getNordWhisperVPN(fwmark uint32, _ bool) (vpn.VPN, error) {
 	return noopNordWhisper{}, ErrNordWhisperDisabled
 }
 
-// noopMesh is a noop implementation of meshnet. It is used when telio
-// is not available and should be used only for development purposes
+// noopNordWhisper is a noop implementation of NordWhisper used in build where NordWhisper is not enabled
 type noopNordWhisper struct{}
 
 func (noopNordWhisper) Start(context.Context, vpn.Credentials, vpn.ServerData) error { return nil }
