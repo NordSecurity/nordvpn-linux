@@ -58,7 +58,9 @@ func (o *Observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	close(o.eventsChan)
+	if o.eventsChan != nil {
+		close(o.eventsChan)
+	}
 
 	eventsChan := make(chan vpn.State)
 	o.eventsChan = eventsChan
