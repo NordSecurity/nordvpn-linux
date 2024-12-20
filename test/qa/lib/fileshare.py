@@ -1,3 +1,4 @@
+import random
 import re
 import time
 from collections import namedtuple
@@ -21,10 +22,12 @@ INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN = r"File transfer \[[0-9a-fA-F\-
 MSG_HISTORY_CLEARED = "File transfer history cleared."
 MSG_CANCEL_TRANSFER = "File transfer canceled."
 
+DEFAULT_FILE_SIZE = 1
+
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
 
-def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: str = "1K", ssh_client: ssh.Ssh = None) -> Directory:
+def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: int = DEFAULT_FILE_SIZE, ssh_client: ssh.Ssh = None) -> Directory:
     """
     Creates a temporary directory and populates it with a specified number of files.
 
@@ -33,8 +36,7 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
         name_suffix (str, optional): A suffix to append to the filenames. Defaults to an empty string.
         parent_dir (str | None, optional): The parent directory where the temporary directory will be created.
                                            If None, the system default temporary directory is used. Defaults to None.
-        file_size (str, optional): The size of each file to be created, specified using typical file size notation
-                                   (e.g., "1K", "128M"). Defaults to "1K".
+        file_size (int, optional): The size of each file to be created, in megabytes. Defaults to `1`.
     Returns:
         Directory: A Directory object containing:
             - dir_path: Path to the created directory.
@@ -60,12 +62,11 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
         transfer_paths.append(path.removeprefix("/tmp/"))
         filenames.append(filename)
 
-        disallowed_filesize = ["G", "T", "P", "E", "Z", "Y"]
-        for size in disallowed_filesize:
-            if size in file_size:
-                raise ValueError("Specified file size is too big. Specify either (K)ilobytes or (M)egabytes")
+        # same size files generated with fallocate are not unique, so adding random factor
+        file_size_kb: int = (file_size * 1024) + random.randint(1, 128) + random.randint(1, 384)
+        file_siz_str: str = f"{file_size_kb}K"
 
-        exec_command(f"fallocate -l {file_size} {dir_path}/{filename}")
+        exec_command(f"fallocate -l {file_siz_str} {dir_path}/{filename}")
 
         hash_output = exec_command(f"{FILE_HASH_UTILITY} {path}").strip().split()[0]  # Only take the hash part of the output
         filehashes.append(hash_output)
