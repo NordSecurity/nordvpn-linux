@@ -26,7 +26,19 @@ const (
 type Logger struct{}
 
 func (l *Logger) Log(logLevel quenchBindigns.LogLevel, message string) {
-	log.Println(internal.DebugPrefix, quenchPrefix, message)
+	logPrefix := ""
+	//nolint:exhaustive // We do not use prefixes for other log levels
+	switch logLevel {
+	case quenchBindigns.LogLevelInfo:
+		logPrefix = internal.InfoPrefix
+	case quenchBindigns.LogLevelDebug:
+		logPrefix = internal.DebugPrefix
+	case quenchBindigns.LogLevelError:
+		logPrefix = internal.ErrorPrefix
+	default:
+		logPrefix = internal.DebugPrefix
+	}
+	log.Println(logPrefix, quenchPrefix, message)
 }
 
 type Observer struct {
