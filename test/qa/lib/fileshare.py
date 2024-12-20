@@ -331,29 +331,18 @@ def files_from_transfer_exist_in_filesystem(transfer_id: str, dir_list: list[Dir
     Returns:
         bool: True if all files in the transfer are found in `dir_list` based on their hashes; False otherwise.
     """
-    if ssh_client is not None:
-        transfers = ssh_client.exec_command("nordvpn fileshare list")
-        download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
+    exec_command = CommandExecutor(ssh_client)
 
-        files_in_transfer = [line.split()[0] for line in ssh_client.exec_command(f"nordvpn fileshare list {transfer_id}").split("\n") if "downloaded" in line]
-        for file in files_in_transfer:
-            try:
-                file_hash = ssh_client.io.get_file_hash(f"{download_location}/{file}")
-                assert any(file_hash in directory.filehashes for directory in dir_list)
-            except RuntimeError:
-                return False
-    else:
-        transfers = sh.nordvpn.fileshare.list(_tty_out=False)
-        download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
+    transfers = exec_command("nordvpn fileshare list")
+    download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
 
-        files_in_transfer = [line.split()[0] for line in sh.nordvpn.fileshare.list(transfer_id, tty_out=False).split("\n") if "downloaded" in line]
-        for file in files_in_transfer:
-            try:
-                hash_util = sh.Command(FILE_HASH_UTILITY)
-                file_hash = hash_util(f"{download_location}/{file}").strip().split()[0]
-                assert any(file_hash in directory.filehashes for directory in dir_list)
-            except RuntimeError:
-                return False
+    files_in_transfer = [line.split()[0] for line in exec_command(f"nordvpn fileshare list {transfer_id}").split("\n") if "downloaded" in line]
+    for file in files_in_transfer:
+        try:
+            file_hash = exec_command(f"{FILE_HASH_UTILITY} {download_location}/{file}").split()[0]
+            assert any(file_hash in directory.filehashes for directory in dir_list)
+        except:  # noqa: E722
+            return False
     return True
 
 
