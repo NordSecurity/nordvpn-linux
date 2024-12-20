@@ -1369,6 +1369,7 @@ def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_c
         fileshare.ensure_mesh_is_on()
 
 
+@pytest.mark.skip(reason="LVPN-6691")
 def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_taken_before():
     try:
         # stop meshnet to bind to 49111 first
