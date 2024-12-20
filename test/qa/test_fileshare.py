@@ -1373,6 +1373,7 @@ def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_take
     try:
         # stop meshnet to bind to 49111 first
         sh.nordvpn.set.meshnet.off()
+        time.sleep(2)
         assert fileshare.port_is_blocked()
 
         # bind to port before fileshare process starts
