@@ -22,6 +22,7 @@ import "token.proto";
 import "purchase.proto";
 import "state.proto";
 import "servers.proto";
+import "nordwhisper_enabled.proto";
 
 service Daemon {
   rpc AccountInfo(Empty) returns (AccountResponse);
@@ -69,4 +70,5 @@ service Daemon {
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
   rpc GetServers(Empty) returns (ServersResponse);
   rpc SetPostQuantum(SetGenericRequest) returns (Payload);
+  rpc IsNordWhisperEnabled(Empty) returns (NordWhisperEnabled);
 }

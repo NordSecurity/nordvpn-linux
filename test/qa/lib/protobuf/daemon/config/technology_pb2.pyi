@@ -9,6 +9,8 @@ class Technology(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     UNKNOWN_TECHNOLOGY: _ClassVar[Technology]
     OPENVPN: _ClassVar[Technology]
     NORDLYNX: _ClassVar[Technology]
+    NORDWHISPER: _ClassVar[Technology]
 UNKNOWN_TECHNOLOGY: Technology
 OPENVPN: Technology
 NORDLYNX: Technology
+NORDWHISPER: Technology

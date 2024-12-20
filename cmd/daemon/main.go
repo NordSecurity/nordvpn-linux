@@ -145,6 +145,8 @@ func main() {
 		}
 	}
 
+	rcConfig := getRemoteConfigGetter(fsystem)
+
 	// Events
 
 	daemonEvents := daemonevents.NewEventsEmpty()
@@ -191,8 +193,8 @@ func main() {
 	)
 
 	// API
-	var validator response.Validator
 	var err error
+	var validator response.Validator
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
 		validator = response.NoopValidator{}
 	} else {
@@ -296,7 +298,7 @@ func main() {
 		daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "first_open", ItemType: "button", ItemValue: "first_open", FormReference: "daemon"})
 	}
 
-	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem)
+	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
 	internalVpnEvents := vpn.NewInternalVPNEvents()
 
@@ -306,7 +308,13 @@ func main() {
 
 	vpn, err := vpnFactory(cfg.Technology)
 	if err != nil {
-		log.Fatalln(err)
+		// if NordWhiser was disabled we'll fall back automatically to NordLynx if autoconnect is enabled or tell user
+		// to switch to a different tech
+		if !errors.Is(err, ErrNordWhisperDisabled) {
+			log.Fatalln(err)
+		} else {
+			log.Println(internal.ErrorPrefix, "failed to build NordWhisper VPN, it was disabled during compilation")
+		}
 	}
 
 	devices, err := device.ListPhysical()
@@ -468,6 +476,7 @@ func main() {
 		meshAPIex,
 		statePublisher,
 		sharedContext,
+		rcConfig,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,

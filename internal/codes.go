@@ -61,6 +61,8 @@ const (
 	CodeAllowlistPortNoop              int64 = 3047
 	CodePqAndMeshnetSimultaneously     int64 = 3048
 	CodePqWithoutNordlynx              int64 = 3049
+	CodeFeatureHidden                  int64 = 3050
+	CodeTechnologyDisabled             int64 = 3051
 )
 
 type ErrorWithCode struct {

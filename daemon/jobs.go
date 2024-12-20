@@ -233,6 +233,17 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 			return err
 		}
 
+		if cfg.Technology == config.Technology_NORDWHISPER && !r.isNordWhisperEnabled() {
+			err := r.cm.SaveWith(func(c config.Config) config.Config {
+				c.Technology = config.Technology_NORDLYNX
+				c.AutoConnectData.Protocol = config.Protocol_UDP
+				return c
+			})
+			if err != nil {
+				log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
+			}
+		}
+
 		server := autoconnectServer{}
 		err = r.Connect(&pb.ConnectRequest{ServerTag: cfg.AutoConnectData.ServerTag}, &server)
 		if connectErrorCheck(err) && server.err == nil {

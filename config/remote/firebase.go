@@ -8,7 +8,9 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -44,6 +46,7 @@ type ServiceAccount struct {
 }
 
 type RConfig struct {
+	mu            sync.Mutex
 	updatePeriod  time.Duration
 	config        *firebaseremoteconfig.RemoteConfig
 	remoteService RemoteConfigService
@@ -121,8 +124,8 @@ func (rc *RConfig) fetchAndSaveRemoteConfig() (remoteConfig []byte, err error) {
 	return remoteConfigValue, nil
 }
 
-// GetValue provides value of requested key from remote config
-func (rc *RConfig) GetValue(cfgKey string) (string, error) {
+// getValue provides value of requested key from remote config
+func (rc *RConfig) getValue(cfgKey string) (string, error) {
 	err := rc.fetchRemoteConfigIfTime()
 	if err != nil {
 		log.Println(internal.WarningPrefix, "using cached config:", err)
@@ -159,9 +162,38 @@ func stringToSemVersion(stringVersion, prefix string) (*semver.Version, error) {
 	return semver.NewVersion(stringVersion)
 }
 
+// GetNordWhisperEnabled returns the NordWhisper configuration flag from remote config
+func (rc *RConfig) GetNordWhisperEnabled(stringVersion string) (bool, error) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	enabledStr, err := rc.getRemoteConfigByVersion(RcNordWhisperConfigFieldPrefix, stringVersion)
+	if err != nil {
+		return false, fmt.Errorf("fetching the NordWhisper config: %w", err)
+	}
+
+	enabled, err := strconv.ParseBool(enabledStr)
+	if err != nil {
+		return false, fmt.Errorf("parsing firebase parameter: %w", err)
+	}
+
+	return enabled, nil
+}
+
 // GetTelioConfig try to find remote config field for app version
 // and load json block from that field
 func (rc *RConfig) GetTelioConfig(stringVersion string) (string, error) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	cfg, err := rc.getRemoteConfigByVersion(RcTelioConfigFieldPrefix, stringVersion)
+	if err != nil {
+		return "", fmt.Errorf("fetching the telio config: %w", err)
+	}
+	return cfg, nil
+}
+
+func (rc *RConfig) getRemoteConfigByVersion(prefix string, stringVersion string) (string, error) {
 	if err := rc.fetchRemoteConfigIfTime(); err != nil {
 		if len(rc.config.Parameters) == 0 {
 			return "", err
@@ -177,8 +209,8 @@ func (rc *RConfig) GetTelioConfig(stringVersion string) (string, error) {
 	// build descending ordered version list
 	orderedFields := []*fieldVersion{}
 	for key := range rc.config.Parameters {
-		if strings.HasPrefix(key, RcTelioConfigFieldPrefix) {
-			ver, err := stringToSemVersion(key, RcTelioConfigFieldPrefix)
+		if strings.HasPrefix(key, prefix) {
+			ver, err := stringToSemVersion(key, prefix)
 			if err != nil {
 				log.Println(err)
 				continue
@@ -194,7 +226,7 @@ func (rc *RConfig) GetTelioConfig(stringVersion string) (string, error) {
 	}
 	log.Println("remote config version field:", versionField)
 
-	jsonString, err := rc.GetValue(versionField)
+	jsonString, err := rc.getValue(versionField)
 	if err != nil {
 		return "", err
 	}

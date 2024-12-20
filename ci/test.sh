@@ -10,6 +10,7 @@ excluded_packages="moose\|cmd\/daemon\|telio\|daemon\/vpn\/openvpn"
 excluded_packages=$excluded_packages"\|meshnet\/mesh\/nordlynx\|fileshare\/drop"
 excluded_packages=$excluded_packages"\|events\/moose"
 excluded_packages=$excluded_packages"\|pb\|magefiles"
+excluded_packages=$excluded_packages"\|daemon\/vpn\/quench"
 excluded_categories="root,link,firewall,route,file,integration"
 
 tags="internal"
@@ -18,7 +19,7 @@ tags="internal"
 # everything
 if [ "${1:-""}" = "full" ]; then
 	# Apply moose patch in case compiling with moose
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v14
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v15
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v14
 
 	excluded_packages="thisshouldneverexist"
@@ -37,7 +38,7 @@ mkdir -p "${WORKDIR}"/coverage/unit
 export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/amd64/latest"
 
 # shellcheck disable=SC2046
-go test -tags "$tags" -v -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}") \
+go test -tags "$tags" -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}") \
 	-coverprofile "${WORKDIR}"/coverage.txt \
 	-exclude "${excluded_categories}" \
 	-args -test.gocoverdir="${WORKDIR}/coverage/unit"
