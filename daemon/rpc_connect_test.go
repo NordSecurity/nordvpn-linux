@@ -28,7 +28,7 @@ func (m *mockRPCServer) Send(p *pb.Payload) error { m.msg = p; return nil }
 
 type mockAuthenticationAPI struct{}
 
-func (mockAuthenticationAPI) Login() (string, error) {
+func (mockAuthenticationAPI) Login(bool) (string, error) {
 	return "", nil
 }
 

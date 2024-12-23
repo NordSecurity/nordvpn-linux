@@ -28,7 +28,9 @@ func (ti *Instance) login() {
 
 	cl, err := ti.client.LoginOAuth2(
 		context.Background(),
-		&pb.Empty{},
+		&pb.LoginOAuth2Request{
+			Type: pb.LoginType_LoginType_LOGIN,
+		},
 	)
 	if err != nil {
 		ti.notify("Login error: %s", err)
