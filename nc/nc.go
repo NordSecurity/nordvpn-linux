@@ -239,7 +239,11 @@ func (c *Client) tryConnect(
 		}
 
 		// send new creation date to the management loop
-		managementChan <- credentials.ExpirationDate
+		select {
+		case managementChan <- credentials.ExpirationDate:
+		case <-ctx.Done():
+		}
+
 		opts := c.createClientOptions(credentials, managementChan, ctx)
 		client = c.clientBuilder.Build(opts)
 		connectionState = connecting
