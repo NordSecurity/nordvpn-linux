@@ -167,6 +167,8 @@ func getConfigIdentifier(protocol config.Protocol, obfuscated bool) (openvpnID, 
 			return techXORTCP, nil
 		}
 		return techTCP, nil
+	case config.Protocol_Webtunnel:
+		fallthrough
 	case config.Protocol_UNKNOWN_PROTOCOL:
 		fallthrough
 	default:
@@ -190,6 +192,8 @@ func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protoc
 			args = addOrReplaceArgument(args, "proto udp6", "proto udp6$")
 		case config.Protocol_TCP:
 			args = addOrReplaceArgument(args, "proto tcp6", "proto tcp6$")
+		case config.Protocol_Webtunnel:
+			fallthrough
 		case config.Protocol_UNKNOWN_PROTOCOL:
 			fallthrough
 		default:

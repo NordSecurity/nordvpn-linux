@@ -99,6 +99,7 @@ func testRPC() *RPC {
 		&RegistryMock{},
 		nil,
 		sharedctx.New(),
+		mock.NewRemoteConfigMock(),
 	)
 }
 

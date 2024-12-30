@@ -38,7 +38,7 @@ func TestRemoteConfig_GetValue(t *testing.T) {
 	category.Set(t, category.File)
 	initConfig()
 	rc := NewRConfig(time.Duration(0), &remoteServiceMock{}, getConfigManager())
-	welcomeMessage, err := rc.GetValue("welcome_message")
+	welcomeMessage, err := rc.getValue("welcome_message")
 	assert.NoError(t, err)
 	assert.Equal(t, "hola", welcomeMessage)
 }
@@ -48,10 +48,10 @@ func TestRemoteConfig_Caching(t *testing.T) {
 	initConfig()
 	rsm := remoteServiceMock{}
 	rc := NewRConfig(time.Hour*24, &rsm, getConfigManager())
-	_, err := rc.GetValue("welcome_message")
+	_, err := rc.getValue("welcome_message")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rsm.fetchCount)
-	welcomeMessage, err := rc.GetValue("welcome_message")
+	welcomeMessage, err := rc.getValue("welcome_message")
 	assert.NoError(t, err)
 	assert.Equal(t, "hola", welcomeMessage)
 	assert.Equal(t, 1, rsm.fetchCount)
@@ -62,10 +62,10 @@ func TestRemoteConfig_NoCaching(t *testing.T) {
 	initConfig()
 	rsm := remoteServiceMock{}
 	rc := NewRConfig(0, &rsm, getConfigManager())
-	_, err := rc.GetValue("welcome_message")
+	_, err := rc.getValue("welcome_message")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rsm.fetchCount)
-	welcomeMessage, err := rc.GetValue("welcome_message")
+	welcomeMessage, err := rc.getValue("welcome_message")
 	assert.NoError(t, err)
 	assert.Equal(t, "hola", welcomeMessage)
 	assert.Equal(t, 2, rsm.fetchCount)
@@ -361,7 +361,7 @@ func TestRemoteConfig_GetCachedData(t *testing.T) {
 			cm.Cfg.RCLastUpdate = time.Now()
 			cm.Cfg.RemoteConfig = test.cachedValue
 
-			value, err := rc.GetValue("welcome_message")
+			value, err := rc.getValue("welcome_message")
 
 			assert.Equal(t, test.expectedValue, value)
 			if test.expectedValue == "" {

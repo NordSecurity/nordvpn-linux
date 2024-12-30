@@ -393,9 +393,13 @@ func techToServerTech(tech config.Technology, protocol config.Protocol, obfuscat
 				return core.OpenVPNUDPObfuscated
 			}
 			return core.OpenVPNUDP
+		case config.Protocol_Webtunnel:
+			break
 		case config.Protocol_UNKNOWN_PROTOCOL:
 			break
 		}
+	case config.Technology_NORDWHISPER:
+		return core.NordWhisperTech
 	case config.Technology_UNKNOWN_TECHNOLOGY:
 		break
 	}

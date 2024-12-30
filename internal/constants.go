@@ -95,6 +95,8 @@ const (
 	AllowlistMinPort = 1
 	// AllowlistMaxPort defines max port which can be allowlisted
 	AllowlistMaxPort = 65535
+
+	NordWhisperInterfaceName = "qtun"
 )
 
 var (

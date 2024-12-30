@@ -9,7 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio"
 )
 
-func vpnLibConfigGetterImplementation(cm config.Manager) vpn.LibConfigGetter {
-	rcConfig := remote.NewRConfig(remote.UpdatePeriod, remote.NewFirebaseService(FirebaseToken), cm)
+func vpnLibConfigGetterImplementation(cm config.Manager, rcConfig remote.RemoteConfigGetter) vpn.LibConfigGetter {
 	return libtelio.NewTelioConfig(rcConfig)
 }

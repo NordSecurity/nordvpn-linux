@@ -219,9 +219,13 @@ func toServerTechnology(
 			} else {
 				serverTechnology = core.OpenVPNUDP
 			}
+		case config.Protocol_Webtunnel:
+			return 0, errors.New("webtunnel protocol is not compatible with opevpn")
 		case config.Protocol_UNKNOWN_PROTOCOL:
 			return 0, errors.New("invalid protocol")
 		}
+	case config.Technology_NORDWHISPER:
+		serverTechnology = core.NordWhisperTech
 	case config.Technology_UNKNOWN_TECHNOLOGY:
 		return 0, errors.New("invalid technology")
 	}

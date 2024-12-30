@@ -119,6 +119,12 @@ func NewApp(version, environment, hash, salt string,
 	cli.HelpFlag.(*cli.BoolFlag).Usage = "Show help"
 	cli.VersionFlag.(*cli.BoolFlag).Usage = "Print the version"
 
+	setTechnologyDescription := fmt.Sprintf(SetTechnologyDescription, SupportedValuesWithNordWhisper)
+	nordWhisperEnabled, err := cmd.client.IsNordWhisperEnabled(context.Background(), &pb.Empty{})
+	if err != nil || !nordWhisperEnabled.Enabled {
+		setTechnologyDescription = fmt.Sprintf(SetTechnologyDescription, SupportedValuesWithoutNordWhisper)
+	}
+
 	setCommand := cli.Command{
 		Name:    "set",
 		Aliases: []string{"s"},
@@ -285,7 +291,7 @@ func NewApp(version, environment, hash, salt string,
 				Action:       cmd.SetTechnology,
 				BashComplete: cmd.SetTechnologyAutoComplete,
 				ArgsUsage:    SetTechnologyArgsUsageText,
-				Description:  SetTechnologyDescription,
+				Description:  setTechnologyDescription,
 			},
 			{
 				Name:         "meshnet",

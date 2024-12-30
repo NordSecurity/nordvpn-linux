@@ -40,6 +40,8 @@ const (
 	OpenVPNTCPObfuscated ServerTechnology = 17
 	// WireguardTech represents wireguard technology
 	WireguardTech ServerTechnology = 35
+	// NordWhisperTech represents NordWhisper technology
+	NordWhisperTech ServerTechnology = 51
 )
 
 type ServerBy int
@@ -274,6 +276,7 @@ type Server struct {
 	Penalty           float64          `json:"penalty"`
 	PartialPenalty    float64          `json:"partial_penalty"`
 	NordLynxPublicKey string           `json:"-"`
+	NordWhisperPort   int64            `json:"-"`
 	Keys              []string         `json:"-"`
 	IPRecords         []ServerIPRecord `json:"ips"`
 }
@@ -369,6 +372,8 @@ func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Pr
 				return IsConnectableVia(OpenVPNTCP)(s) ||
 					IsConnectableVia(OpenVPNTCPObfuscated)(s)
 			}
+		case config.Technology_NORDWHISPER:
+			return IsConnectableVia(NordWhisperTech)(s)
 		case config.Technology_UNKNOWN_TECHNOLOGY:
 			break
 		}
@@ -470,6 +475,17 @@ func (s *Server) UnmarshalJSON(b []byte) error {
 					hack.NordLynxPublicKey = trimmed
 				}
 				break
+			} else if meta.Name == "port" {
+				if tech.ID == NordWhisperTech {
+					trimmed := strings.TrimSpace(value)
+					port, err := strconv.ParseInt(trimmed, 10, 64)
+					if err != nil {
+						log.Println("failed to parse NordWhisper server port:", err)
+						continue
+					}
+					hack.NordWhisperPort = port
+					break
+				}
 			}
 		}
 		// gob ignores nil fields
