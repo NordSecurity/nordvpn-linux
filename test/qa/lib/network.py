@@ -90,6 +90,8 @@ def capture_traffic(connection_settings) -> int:
 
 @measure_time
 def _check_connectivity(host, port=80, timeout=5) -> bool:
+    resolver = dns.resolver.get_default_resolver()
+    print("~~~CURRENT DNS: ", resolver.nameservers)
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
