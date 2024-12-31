@@ -62,6 +62,17 @@ def _capture_packets(connection_settings: (str, str, str)) -> int:
     return len(packets)
 
 
+def measure_time(func):
+    """A decorator that measures the execution time of a function and prints it."""
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()  # more precise for short durations
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"~~~Function {func.__name__} took {end - start:.6f} seconds to complete.")
+        return result
+    return wrapper
+
+
 def capture_traffic(connection_settings) -> int:
     """Returns count of captured packets."""
 
@@ -69,14 +80,16 @@ def capture_traffic(connection_settings) -> int:
     t_connect = PacketCaptureThread(connection_settings)
     t_connect.start()
 
-    sh.ping("-c", "2", "-w", "2", "1.1.1.1")
+    #sh.ping("-c", "2", "-w", "2", "1.1.1.1")
+    _check_connectivity("1.1.1.1", 53)
 
     t_connect.join()
 
     return t_connect.packets_captured
 
 
-def _check_connectivity(host, port=80, timeout=2) -> bool:
+@measure_time
+def _check_connectivity(host, port=80, timeout=5) -> bool:
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(timeout)
@@ -87,6 +100,7 @@ def _check_connectivity(host, port=80, timeout=2) -> bool:
         sock.close()
 
     return False
+
 
 def _is_internet_reachable(retry=5) -> bool:
     """Returns True when remote host is reachable by its public IP."""
