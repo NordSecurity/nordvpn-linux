@@ -217,7 +217,7 @@ func TestConnectionCancellation(t *testing.T) {
 			connectionErr: mqttp.ErrorRefusedNotAuthorised,
 		},
 		{
-			name:                "fetch credentails failure",
+			name:                "fetch credentials failure",
 			fetchCredentialsErr: fmt.Errorf("failed to fetch credentials"),
 		},
 		{
