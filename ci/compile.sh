@@ -82,6 +82,7 @@ fi
 
 if [[ $tags == *"quench"* ]]; then
 	private_bindings_rollback="${private_bindings_rollback} ${WORKDIR}/ci/remove_private_bindings.sh quench"
+	source "${WORKDIR}"/ci/add_private_bindings.sh quench ./third-party/libquench-go
 fi
 
 for program in ${!names_map[*]}; do # looping over keys
