@@ -47,6 +47,16 @@ var (
 	defaultMeshSubnet  = netip.MustParsePrefix("100.64.0.0/10")
 )
 
+// ErrNoSuchRule is returned when networker tried to remove
+// a rule, but such rule does not exist
+type ErrNoSuchRule struct {
+	ruleName string
+}
+
+func (e ErrNoSuchRule) Error() string {
+	return fmt.Sprintf("allow rule does not exist for %s", e.ruleName)
+}
+
 const (
 	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
 	// for allowing the incomig connections
@@ -168,7 +178,8 @@ type Combined struct {
 	enableLocalTraffic bool
 	// list with the existing OS interfaces when VPN was connected.
 	// This is used at network changes to know when a new interface was inserted
-	interfaces mapset.Set[string]
+	interfaces           mapset.Set[string]
+	isFilesharePermitted bool
 }
 
 // NewCombined returns a ready made version of
@@ -1512,6 +1523,11 @@ func (netw *Combined) AllowFileshare(uniqueAddress meshnet.UniqueAddress) error 
 }
 
 func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error {
+	if !netw.isFilesharePermitted {
+		log.Println(internal.WarningPrefix, "fileshare is not permitted, can't add allow rules")
+		return nil
+	}
+
 	ruleName := publicKey + "-allow-fileshare-rule-" + address.String()
 	rules := []firewall.Rule{{
 		Name:           ruleName,
@@ -1538,6 +1554,27 @@ func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error
 
 	netw.rules = append(netw.rules, ruleName)
 	return nil
+}
+
+func (netw *Combined) PermitFileshare() error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+	if netw.isFilesharePermitted {
+		return nil
+	}
+	netw.isFilesharePermitted = true
+	return netw.allowFileshareAll()
+}
+
+func (netw *Combined) allowFileshareAll() error {
+	var allErrors []error
+	for _, peer := range netw.cfg.Peers {
+		if peer.DoIAllowFileshare {
+			err := netw.allowFileshare(peer.PublicKey, peer.Address)
+			allErrors = append(allErrors, err)
+		}
+	}
+	return errors.Join(allErrors...)
 }
 
 func (netw *Combined) undenyDNS() error {
@@ -1611,7 +1648,15 @@ func (netw *Combined) blockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 func (netw *Combined) BlockFileshare(uniqueAddress meshnet.UniqueAddress) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	ruleName := uniqueAddress.UID + "-allow-fileshare-rule-" + uniqueAddress.Address.String()
+	return netw.blockFileshare(uniqueAddress.UID, uniqueAddress.Address)
+}
+
+func (netw *Combined) blockFileshare(publicKey string, address netip.Addr) error {
+	if !netw.isFilesharePermitted {
+		log.Println(internal.WarningPrefix, "fileshare is already forbidden")
+		return nil
+	}
+	ruleName := publicKey + "-allow-fileshare-rule-" + address.String()
 	return netw.removeRule(ruleName)
 }
 
@@ -1619,7 +1664,7 @@ func (netw *Combined) removeRule(ruleName string) error {
 	ruleIndex := slices.Index(netw.rules, ruleName)
 
 	if ruleIndex == -1 {
-		return fmt.Errorf("allow rule does not exist for %s", ruleName)
+		return ErrNoSuchRule{ruleName}
 	}
 
 	if err := netw.fw.Delete([]string{ruleName}); err != nil {
@@ -1628,6 +1673,36 @@ func (netw *Combined) removeRule(ruleName string) error {
 	netw.rules = slices.Delete(netw.rules, ruleIndex, ruleIndex+1)
 
 	return nil
+}
+
+func (netw *Combined) ForbidFileshare() error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+	if !netw.isFilesharePermitted {
+		return nil
+	}
+
+	err := netw.blockFileshareAll()
+	// NOTE: Mark fileshare as forbidden only when there was no error here, so it
+	// can be tried again.
+	if err == nil {
+		netw.isFilesharePermitted = false
+	}
+
+	return err
+}
+
+func (netw *Combined) blockFileshareAll() error {
+	var allErrors []error
+	for _, peer := range netw.cfg.Peers {
+		err := netw.blockFileshare(peer.PublicKey, peer.Address)
+		// NOTE: It's fine to have the rule already removed which returns [ErrNoSuchRule].
+		// It's not fine to have any other errors, so keep those.
+		if !errors.Is(err, ErrNoSuchRule{}) {
+			allErrors = append(allErrors, err)
+		}
+	}
+	return errors.Join(allErrors...)
 }
 
 func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {

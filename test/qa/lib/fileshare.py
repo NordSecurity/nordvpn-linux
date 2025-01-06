@@ -8,6 +8,8 @@ from threading import Thread
 
 import pytest
 import sh
+import socket
+import os
 
 from . import FILE_HASH_UTILITY, logging, ssh
 
@@ -370,3 +372,55 @@ class FileSystemEntity(Enum):
 
     def __str__(self):
         return self.value
+
+
+def bind_port() -> socket.socket | None:
+    for _ in range(3):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 0)
+            sock.bind(('0.0.0.0', 49111))
+            sock.listen(1)
+            logging.log("successfully bound to fileshare port")
+            return sock
+        except OSError as e:
+            logging.log(f"failed to bind to fileshare port: {e}")
+        time.sleep(1)
+    return None
+
+
+def port_is_allowed() -> bool:
+    for _ in range(3):
+        if is_port_allowed():
+            return True
+        time.sleep(1)
+    return False
+
+
+def is_port_allowed() -> bool:
+    rules = os.popen("sudo iptables -S").read()
+    return "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
+
+
+def port_is_blocked() -> bool:
+    for _ in range(3):
+        if not is_port_allowed():
+            return True
+        time.sleep(1)
+    return False
+
+
+def ensure_mesh_is_on() -> None:
+    try:
+        sh.nordvpn.set.meshnet.on()
+    except sh.ErrorReturnCode_1 as e:
+        if "Meshnet is already enabled." not in str(e):
+            raise e
+
+
+def restart_mesh() -> None:
+    sh.nordvpn.set.meshnet.off()
+    time.sleep(2)
+    sh.nordvpn.set.meshnet.on()
+    time.sleep(5)
+
