@@ -23,6 +23,7 @@ MSG_HISTORY_CLEARED = "File transfer history cleared."
 MSG_CANCEL_TRANSFER = "File transfer canceled."
 
 DEFAULT_FILE_SIZE = 1
+MAX_FILE_SIZE = 1024
 
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
@@ -36,7 +37,7 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
         name_suffix (str, optional): A suffix to append to the filenames. Defaults to an empty string.
         parent_dir (str | None, optional): The parent directory where the temporary directory will be created.
                                            If None, the system default temporary directory is used. Defaults to None.
-        file_size (int, optional): The size of each file to be created, in megabytes. Defaults to `1`.
+        file_size (int, optional): The size of each file to be created, in megabytes. Default: `1` MB; Maximum: `1024` MB.
     Returns:
         Directory: A Directory object containing:
             - dir_path: Path to the created directory.
@@ -44,6 +45,10 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
             - transfer_paths: File paths with leading directories removed.
             - filenames: Names of the created files.
     """
+
+    if file_size > MAX_FILE_SIZE:
+        ex = f"Maximum allowed file size is {MAX_FILE_SIZE} MB"
+        raise ValueError(ex)
 
     exec_command = CommandExecutor(ssh_client)
 
