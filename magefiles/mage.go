@@ -18,14 +18,14 @@ import (
 
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
-	imageBuilder           = registryPrefix + "builder:1.3.3"
+	imageBuilder           = registryPrefix + "builder:1.3.4"
 	imagePackager          = registryPrefix + "packager:1.3.1"
 	imageSnapPackager      = registryPrefix + "snaper:0.0.4"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.1"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.3.2"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.3.0"
+	imageRuster            = registryPrefix + "ruster:1.3.1"
 
 	dockerWorkDir  = "/opt"
 	devPackageType = "source"

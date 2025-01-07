@@ -33,6 +33,7 @@ RUN dpkg --add-architecture i386 && \
         libnl-genl-3-dev:arm64 \
         libnl-genl-3-200:armhf \
         libnl-genl-3-dev:armhf \
+        libsqlite3-dev \
         # libxml2-dev:armel \
         # Install libc6-dev-armel-cross instead of libxml2-dev:armel to provide libc6-dev for armel
         libc6-dev-armel-cross \
