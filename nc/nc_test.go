@@ -204,6 +204,7 @@ func TestConnectionCancellation(t *testing.T) {
 		connectionErr       error
 		fetchCredentialsErr error
 		tokenTimeout        time.Duration // how long client will wait for connection to be established
+		delayBeforeCancel   time.Duration
 	}{
 		{
 			name: "connection success",
@@ -223,6 +224,10 @@ func TestConnectionCancellation(t *testing.T) {
 		{
 			name:         "cancel while waiting for connection",
 			tokenTimeout: 10 * time.Second,
+		},
+		{
+			name:              "delay before cancel",
+			delayBeforeCancel: 10 * time.Millisecond,
 		},
 	}
 
@@ -248,7 +253,7 @@ func TestConnectionCancellation(t *testing.T) {
 			subjectErr:        &subs.Subject[error]{},
 			subjectPeerUpdate: &subs.Subject[[]string]{},
 			credsFetcher:      credsFetcher,
-			timeFunc:          func(i int) time.Duration { return test.tokenTimeout },
+			retryDelayFunc:    func(i int) time.Duration { return test.tokenTimeout },
 		}
 
 		t.Run(test.name, func(t *testing.T) {
@@ -259,6 +264,7 @@ func TestConnectionCancellation(t *testing.T) {
 				connectedChan <- true
 			}()
 
+			time.Sleep(test.delayBeforeCancel)
 			cancelFunc()
 
 			select {

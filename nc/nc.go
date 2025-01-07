@@ -116,7 +116,7 @@ func (MqttClientBuilder) Build(opts *mqtt.ClientOptions) mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
-type TimeFunc func(int) time.Duration
+type CalculateRetryDelayForAttempt func(attempt int) time.Duration
 
 // Client is a client for Notification center
 type Client struct {
@@ -128,7 +128,7 @@ type Client struct {
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
-	timeFunc          TimeFunc
+	retryDelayFunc    CalculateRetryDelayForAttempt
 
 	startMu          sync.Mutex
 	started          bool
@@ -150,7 +150,7 @@ func NewClient(
 		subjectErr:        subjectErr,
 		subjectPeerUpdate: subjectPeerUpdate,
 		credsFetcher:      credsFetcher,
-		timeFunc:          network.ExponentialBackoff,
+		retryDelayFunc:    network.ExponentialBackoff,
 	}
 }
 
@@ -246,6 +246,7 @@ func (c *Client) tryConnect(
 		select {
 		case managementChan <- credentials.ExpirationDate:
 		case <-ctx.Done():
+			return client, connectionState
 		}
 
 		opts := c.createClientOptions(credentials, managementChan, ctx)
@@ -309,7 +310,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 				client.Disconnect(0)
 			}
 			return client
-		case <-time.After(c.timeFunc(tries)):
+		case <-time.After(c.retryDelayFunc(tries)):
 		}
 	}
 
