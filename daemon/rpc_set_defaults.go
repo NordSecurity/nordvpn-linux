@@ -31,7 +31,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error
 	}
 
 	if internal.IsDevEnv(string(r.environment)) {
-		if !r.ncClient.Revoke(true) {
+		if !r.ncClient.Revoke() {
 			log.Println(internal.WarningPrefix, "error revoking token")
 		}
 	}

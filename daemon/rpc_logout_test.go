@@ -23,8 +23,8 @@ type mockNC struct {
 	nc.NotificationClient
 }
 
-func (mockNC) Stop() error      { return nil }
-func (mockNC) Revoke(bool) bool { return true }
+func (mockNC) Stop() error  { return nil }
+func (mockNC) Revoke() bool { return true }
 
 type mockApi struct {
 	core.CombinedAPI
