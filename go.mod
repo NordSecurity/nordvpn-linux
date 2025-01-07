@@ -108,5 +108,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	moose/events v0.0.0
 )
-
-replace moose/events => ./third-party/moose-events/moosenordvpnappgo/v14
