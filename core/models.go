@@ -554,6 +554,7 @@ type Pivot struct {
 }
 
 type Insights struct {
+	IP          *string `json:"ip"`
 	City        string  `json:"city"`
 	Country     string  `json:"country"`
 	Isp         string  `json:"isp"`
