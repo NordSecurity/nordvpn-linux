@@ -10,4 +10,4 @@ if [ -z "$bindings_name" ]; then
 fi
 
 go mod edit -droprequire="$bindings_name" || { echo "failed to drop require for $bindings_name"; exit 1; }
-go mod edit -dropreplace="$bindings_name" || { echo "failde to drop replace for $bindings_name"; exit 1; }
+go mod edit -dropreplace="$bindings_name" || { echo "failed to drop replace for $bindings_name"; exit 1; }
