@@ -49,11 +49,19 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		postQuantum = connectionParameters.PostQuantum
 	}
 
+	insights := r.dm.GetInsightsData()
+	var ip string
+	if insights.Insights.IP != nil {
+		ip = *insights.Insights.IP
+	} else {
+		ip = status.IP.String()
+	}
+
 	return &pb.StatusResponse{
 		State:           string(status.State),
 		Technology:      status.Technology,
 		Protocol:        status.Protocol,
-		Ip:              status.IP.String(),
+		Ip:              ip,
 		Hostname:        status.Hostname,
 		Name:            status.Name,
 		Country:         status.Country,
