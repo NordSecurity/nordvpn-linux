@@ -10,7 +10,8 @@ func TechNameToUpperCamelCase(tech Technology) string {
 	case Technology_NORDWHISPER:
 		return "NordWhisper"
 	case Technology_UNKNOWN_TECHNOLOGY:
+		fallthrough
+	default:
 		return ""
 	}
-	return ""
 }
