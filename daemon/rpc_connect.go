@@ -244,17 +244,6 @@ func (r *RPC) connect(
 		return nil
 	}
 
-	// update the insights with new data from the API
-	// it's needed so that `rpc_status.go` returns an updated IP address
-	newInsights, err := r.api.Insights()
-	if err != nil || newInsights == nil {
-		log.Println(internal.ErrorPrefix, err)
-	} else {
-		if err := r.dm.SetInsightsData(*newInsights); err != nil {
-			log.Println(internal.ErrorPrefix, err)
-		}
-	}
-
 	// If server has at least one IPv6 address
 	// regardless if IPv4 or IPv6 is used to connect
 	// to the server - DO NOT DISABLE IPv6.

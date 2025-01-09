@@ -75,6 +75,42 @@ func (r *RPC) StartJobs(
 		}
 	}
 
+	actualIP := JobActualIP(r.dm, r.api)
+
+	go func() {
+		call := func(ctx context.Context, isConnected bool) {
+			err := actualIP(ctx, isConnected)
+			if err != nil {
+				log.Println(internal.ErrorPrefix, "actual ip job error")
+			}
+		}
+
+		stateChan, _ := statePublisher.AddSubscriber()
+		var cancel context.CancelFunc
+
+		for ev := range stateChan {
+			if cancel != nil {
+				cancel()
+			}
+
+			var ctx context.Context
+			ctx, cancel = context.WithCancel(context.Background())
+
+			switch ev.(type) {
+			case events.DataConnect:
+				time.Sleep(time.Second * 5)
+				go call(ctx, true)
+			case events.DataDisconnect:
+				go call(ctx, false)
+			}
+		}
+
+		// Ensure the context is canceled when the loop exits
+		if cancel != nil {
+			cancel()
+		}
+	}()
+
 	go func() {
 		stateChan, _ := statePublisher.AddSubscriber()
 		for ev := range stateChan {
