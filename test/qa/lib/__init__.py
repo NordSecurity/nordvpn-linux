@@ -333,3 +333,12 @@ def get_virtual_countries() -> list[str]:
         countries.append(country)
 
     return countries
+
+def technology_to_upper_camel_case(tech: str) -> str:
+    match tech.upper():
+        case "NORDLYNX":
+            return "NordLynx"
+        case "OPENVPN":
+            return "OpenVPN"
+        case "NORDWHISPER":
+            return "NordWhisper"

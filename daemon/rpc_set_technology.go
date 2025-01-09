@@ -45,7 +45,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	if cfg.Technology == in.GetTechnology() {
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
-			Data: []string{in.GetTechnology().String()},
+			Data: []string{config.TechNameToUpperCamelCase(in.GetTechnology())},
 		}, nil
 	}
 
@@ -78,6 +78,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	if in.GetTechnology() != config.Technology_NORDLYNX && cfg.AutoConnectData.PostquantumVpn {
 		return &pb.Payload{
 			Type: internal.CodePqWithoutNordlynx,
+			Data: []string{config.TechNameToUpperCamelCase(in.GetTechnology())},
 		}, nil
 	}
 
@@ -98,6 +99,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 
 	r.events.Settings.Technology.Publish(in.GetTechnology())
 
-	payload.Data = []string{strconv.FormatBool(r.netw.IsVPNActive()), in.GetTechnology().String()}
+	payload.Data = []string{strconv.FormatBool(r.netw.IsVPNActive()),
+		config.TechNameToUpperCamelCase(in.GetTechnology())}
 	return payload, nil
 }
