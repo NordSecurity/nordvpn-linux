@@ -100,7 +100,7 @@ func (r *RPC) StartJobs(
 			case events.DataConnect:
 				go call(ctx, true)
 			case events.DataDisconnect:
-				go call(ctx, false)
+				call(ctx, false) // should finish immediately, that's why it's not a separate goroutine
 			}
 		}
 
