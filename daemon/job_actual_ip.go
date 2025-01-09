@@ -18,7 +18,7 @@ func insightsUntilSuccess(ctx context.Context, api core.InsightsAPI) (core.Insig
 			return core.Insights{}, ctx.Err()
 		default:
 			insights, err := api.Insights()
-			if err == nil || insights != nil {
+			if err == nil && insights != nil {
 				return *insights, nil
 			} else {
 				log.Println(internal.ErrorPrefix, err)
