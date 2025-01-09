@@ -67,7 +67,7 @@ func (c *cmd) SetTechnology(ctx *cli.Context) error {
 	case internal.CodeDependencyError:
 		return formatError(fmt.Errorf(SetTechnologyDepsError, internal.StringsToInterfaces(resp.Data)...))
 	case internal.CodePqWithoutNordlynx:
-		return formatError(fmt.Errorf(SetTechnologyDisablePQ))
+		return formatError(fmt.Errorf(SetTechnologyDisablePQ, resp.Data[0]))
 	case internal.CodeNothingToDo:
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Technology", strings.Join(resp.Data, " ")))
 	case internal.CodeSuccessWithoutAC:

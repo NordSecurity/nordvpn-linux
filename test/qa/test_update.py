@@ -121,7 +121,8 @@ def test_fileshare_available_after_update():
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_quick_connect_after_update(tech, proto, obfuscated):
     if tech == "openvpn" and proto == "udp" and obfuscated == "on":
-        assert f"Technology is set to '{tech.upper()}' successfully." in sh.nordvpn.set.technology(tech)
+        tech_name = lib.technology_to_upper_camel_case(tech)
+        assert f"Technology is set to '{tech_name}' successfully." in sh.nordvpn.set.technology(tech)
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
