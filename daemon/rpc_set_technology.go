@@ -78,7 +78,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	if in.GetTechnology() != config.Technology_NORDLYNX && cfg.AutoConnectData.PostquantumVpn {
 		return &pb.Payload{
 			Type: internal.CodePqWithoutNordlynx,
-			Data: []string{config.TechNameToUpperCamelCase(cfg.Technology)},
+			Data: []string{config.TechNameToUpperCamelCase(in.GetTechnology())},
 		}, nil
 	}
 
