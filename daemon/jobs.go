@@ -98,7 +98,6 @@ func (r *RPC) StartJobs(
 
 			switch ev.(type) {
 			case events.DataConnect:
-				time.Sleep(time.Second * 5)
 				go call(ctx, true)
 			case events.DataDisconnect:
 				go call(ctx, false)
