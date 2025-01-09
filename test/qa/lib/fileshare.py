@@ -1,5 +1,5 @@
+import random
 import re
-import tempfile
 import time
 from collections import namedtuple
 from collections.abc import Callable
@@ -9,7 +9,7 @@ from threading import Thread
 import pytest
 import sh
 
-from . import FILE_HASH_UTILITY, logging, ssh
+from . import FILE_HASH_UTILITY, CommandExecutor, logging, ssh
 
 SEND_NOWAIT_SUCCESS_MSG_PATTERN = r'File transfer ?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}) has started in the background.'
 SEND_CANCELED_BY_PEER_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})\] canceled by peer'
@@ -22,10 +22,13 @@ INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN = r"File transfer \[[0-9a-fA-F\-
 MSG_HISTORY_CLEARED = "File transfer history cleared."
 MSG_CANCEL_TRANSFER = "File transfer canceled."
 
+DEFAULT_FILE_SIZE = 1
+MAX_FILE_SIZE = 1024
+
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
 
-def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: str = "1K") -> Directory:
+def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: int = DEFAULT_FILE_SIZE, ssh_client: ssh.Ssh = None) -> Directory:
     """
     Creates a temporary directory and populates it with a specified number of files.
 
@@ -34,8 +37,7 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
         name_suffix (str, optional): A suffix to append to the filenames. Defaults to an empty string.
         parent_dir (str | None, optional): The parent directory where the temporary directory will be created.
                                            If None, the system default temporary directory is used. Defaults to None.
-        file_size (str, optional): The size of each file to be created, specified using typical file size notation
-                                   (e.g., "1K", "128M"). Defaults to "1K".
+        file_size (int, optional): The size of each file to be created, in megabytes. Default: `1` MB; Maximum: `1024` MB.
     Returns:
         Directory: A Directory object containing:
             - dir_path: Path to the created directory.
@@ -43,14 +45,19 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
             - transfer_paths: File paths with leading directories removed.
             - filenames: Names of the created files.
     """
+
+    if file_size > MAX_FILE_SIZE:
+        ex = f"Maximum allowed file size is {MAX_FILE_SIZE} MB"
+        raise ValueError(ex)
+
+    exec_command = CommandExecutor(ssh_client)
+
     # for snap testing make directories to be created from current path e.g. dir="./"
-    dir_path = tempfile.mkdtemp(dir=parent_dir)
+    dir_path = exec_command(f"mktemp -d {f'{parent_dir}/tmp.XXXXXX' if parent_dir else ''}").split()[0]
     paths = []
     transfer_paths = []
     filenames = []
     filehashes = []
-
-    hash_util = sh.Command(FILE_HASH_UTILITY)
 
     for file_number in range(file_count):
         filename = f"file_tmp_{file_number}{name_suffix}"
@@ -60,14 +67,13 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
         transfer_paths.append(path.removeprefix("/tmp/"))
         filenames.append(filename)
 
-        disallowed_filesize = ["G", "T", "P", "E", "Z", "Y"]
-        for size in disallowed_filesize:
-            if size in file_size:
-                raise ValueError("Specified file size is too big. Specify either (K)ilobytes or (M)egabytes")
+        # same size files generated with fallocate are not unique, so adding random factor
+        file_size_kb: int = (file_size * 1024) + random.randint(1, 128) + random.randint(1, 384)
+        file_siz_str: str = f"{file_size_kb}K"
 
-        sh.fallocate("-l", file_size, f"{dir_path}/{filename}")
+        exec_command(f"fallocate -l {file_siz_str} {dir_path}/{filename}")
 
-        hash_output = hash_util(path).strip().split()[0]  # Only take the hash part of the output
+        hash_output = exec_command(f"{FILE_HASH_UTILITY} {path}").strip().split()[0]  # Only take the hash part of the output
         filehashes.append(hash_output)
 
     return Directory(dir_path, paths, transfer_paths, filenames, filehashes)
@@ -331,29 +337,18 @@ def files_from_transfer_exist_in_filesystem(transfer_id: str, dir_list: list[Dir
     Returns:
         bool: True if all files in the transfer are found in `dir_list` based on their hashes; False otherwise.
     """
-    if ssh_client is not None:
-        transfers = ssh_client.exec_command("nordvpn fileshare list")
-        download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
+    exec_command = CommandExecutor(ssh_client)
 
-        files_in_transfer = [line.split()[0] for line in ssh_client.exec_command(f"nordvpn fileshare list {transfer_id}").split("\n") if "downloaded" in line]
-        for file in files_in_transfer:
-            try:
-                file_hash = ssh_client.io.get_file_hash(f"{download_location}/{file}")
-                assert any(file_hash in directory.filehashes for directory in dir_list)
-            except RuntimeError:
-                return False
-    else:
-        transfers = sh.nordvpn.fileshare.list(_tty_out=False)
-        download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
+    transfers = exec_command("nordvpn fileshare list")
+    download_location = find_transfer_by_id(transfers, transfer_id).split()[-1]
 
-        files_in_transfer = [line.split()[0] for line in sh.nordvpn.fileshare.list(transfer_id, tty_out=False).split("\n") if "downloaded" in line]
-        for file in files_in_transfer:
-            try:
-                hash_util = sh.Command(FILE_HASH_UTILITY)
-                file_hash = hash_util(f"{download_location}/{file}").strip().split()[0]
-                assert any(file_hash in directory.filehashes for directory in dir_list)
-            except RuntimeError:
-                return False
+    files_in_transfer = [line.split()[0] for line in exec_command(f"nordvpn fileshare list {transfer_id}").split("\n") if "downloaded" in line]
+    for file in files_in_transfer:
+        try:
+            file_hash = exec_command(f"{FILE_HASH_UTILITY} {download_location}/{file}").split()[0]
+            assert any(file_hash in directory.filehashes for directory in dir_list)
+        except:  # noqa: E722
+            return False
     return True
 
 
