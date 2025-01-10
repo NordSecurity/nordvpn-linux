@@ -62,6 +62,7 @@ tags="${FEATURES:-"telio drop"}"
 source "${WORKDIR}"/ci/set_bindings_version.sh libtelio
 source "${WORKDIR}"/ci/set_bindings_version.sh libdrop
 
+trap -- '${WORKDIR}/ci/remove_private_bindings.sh moose/events; ${WORKDIR}/ci/remove_private_bindings.sh moose/worker; ${WORKDIR}/ci/remove_private_bindings.sh quench' EXIT
 if [[ $tags == *"moose"* ]]; then
 	# Set correct events domain in case compiling with moose
 	if [[ "${ENVIRONMENT}" == "prod" ]]; then
