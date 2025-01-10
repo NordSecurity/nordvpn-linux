@@ -73,6 +73,8 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 	} else if in.GetTechnology() == config.Technology_NORDWHISPER {
 		protocol = config.Protocol_Webtunnel
 		obfuscate = false
+	} else if in.GetTechnology() == config.Technology_OPENVPN {
+		protocol = config.Protocol_UDP
 	}
 
 	if in.GetTechnology() != config.Technology_NORDLYNX && cfg.AutoConnectData.PostquantumVpn {
