@@ -89,9 +89,10 @@ func (r *RPC) StartJobs(
 		var cancel context.CancelFunc
 
 		for ev := range stateChan {
-			switch ev.(type) {
-			case events.DataConnect:
-			case events.DataDisconnect:
+			_, isConnect := ev.(events.DataConnect)
+			_, isDisconnect := ev.(events.DataDisconnect)
+
+			if isConnect || isDisconnect {
 				if cancel != nil {
 					cancel()
 				}
@@ -99,7 +100,7 @@ func (r *RPC) StartJobs(
 				var ctx context.Context
 				ctx, cancel = context.WithCancel(context.Background())
 
-				if _, ok := ev.(events.DataConnect); ok {
+				if isConnect {
 					go call(ctx, true)
 				} else {
 					call(ctx, false) // should finish immediately, that's why it's not a separate goroutine
