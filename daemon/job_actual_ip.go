@@ -39,7 +39,6 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI) (netip.Ad
 			return netip.Addr{}, ctx.Err() // Exit if context is canceled during sleep
 		}
 	}
-
 }
 
 func JobActualIP(dm *DataManager, api core.InsightsAPI) func(context.Context, bool) error {
