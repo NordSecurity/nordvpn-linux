@@ -12,7 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	netwoekermock "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -74,7 +74,7 @@ func TestSetTechnology_NordWhisper(t *testing.T) {
 				},
 			}
 
-			networker := netwoekermock.Mock{}
+			networker := networker.Mock{}
 
 			r := RPC{
 				remoteConfigGetter: remoteConfigGetter,
