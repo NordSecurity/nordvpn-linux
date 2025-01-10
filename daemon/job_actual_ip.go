@@ -11,28 +11,32 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
 
-func insightsUntilSuccess(ctx context.Context, api core.InsightsAPI) (core.Insights, error) {
+func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI) (netip.Addr, error) {
 	for i := 0; ; i++ {
+		if ctx.Err() != nil {
+			return netip.Addr{}, ctx.Err()
+		}
+
+		insights, err := api.Insights()
+		if err == nil && insights != nil {
+			ip, err := netip.ParseAddr(insights.IP)
+			if err != nil {
+				return netip.Addr{}, err
+			}
+
+			return ip, nil
+		} else {
+			log.Println(internal.ErrorPrefix, err)
+		}
+
+		backoff := network.ExponentialBackoff(i)
+
+		// Wait before retrying
 		select {
+		case <-time.After(backoff):
+			// Continue to the next retry
 		case <-ctx.Done():
-			return core.Insights{}, ctx.Err()
-		default:
-			insights, err := api.Insights()
-			if err == nil && insights != nil {
-				return *insights, nil
-			} else {
-				log.Println(internal.ErrorPrefix, err)
-			}
-
-			backoff := network.ExponentialBackoff(i)
-
-			// Wait before retrying
-			select {
-			case <-time.After(backoff):
-				// Continue to the next retry
-			case <-ctx.Done():
-				return core.Insights{}, ctx.Err() // Exit if context is canceled during sleep
-			}
+			return netip.Addr{}, ctx.Err() // Exit if context is canceled during sleep
 		}
 	}
 
@@ -49,12 +53,7 @@ func JobActualIP(dm *DataManager, api core.InsightsAPI) func(context.Context, bo
 			return nil
 		}
 
-		insights, err := insightsUntilSuccess(ctx, api)
-		if err != nil {
-			return err
-		}
-
-		insightsIP, err := netip.ParseAddr(insights.IP)
+		insightsIP, err := insightsIPUntilSuccess(ctx, api)
 		if err != nil {
 			return err
 		}
