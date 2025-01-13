@@ -11,7 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
 
-func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI) (netip.Addr, error) {
+func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff func(int) time.Duration) (netip.Addr, error) {
 	for i := 0; ; i++ {
 		if ctx.Err() != nil {
 			return netip.Addr{}, ctx.Err()
@@ -29,11 +29,9 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI) (netip.Ad
 			log.Println(internal.ErrorPrefix, err)
 		}
 
-		backoff := network.ExponentialBackoff(i)
-
 		// Wait before retrying
 		select {
-		case <-time.After(backoff):
+		case <-time.After(backoff(i)):
 			// Continue to the next retry
 		case <-ctx.Done():
 			return netip.Addr{}, ctx.Err() // Exit if context is canceled during sleep
@@ -52,7 +50,7 @@ func JobActualIP(dm *DataManager, api core.InsightsAPI) func(context.Context, bo
 			return nil
 		}
 
-		insightsIP, err := insightsIPUntilSuccess(ctx, api)
+		insightsIP, err := insightsIPUntilSuccess(ctx, api, network.ExponentialBackoff)
 		if err != nil {
 			return err
 		}
