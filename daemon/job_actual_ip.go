@@ -17,7 +17,7 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI) (netip.Ad
 			return netip.Addr{}, ctx.Err()
 		}
 
-		insights, err := api.Insights()
+		insights, err := api.InsightsViaTunnel()
 		if err == nil && insights != nil {
 			ip, err := netip.ParseAddr(insights.IP)
 			if err != nil {
