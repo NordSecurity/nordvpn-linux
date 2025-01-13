@@ -234,6 +234,8 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 		}
 
 		if cfg.Technology == config.Technology_NORDWHISPER && !r.isNordWhisperEnabled() {
+			log.Println(internal.DebugPrefix,
+				"technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
 			err := r.cm.SaveWith(func(c config.Config) config.Config {
 				c.Technology = config.Technology_NORDLYNX
 				c.AutoConnectData.Protocol = config.Protocol_UDP
@@ -242,6 +244,13 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
 			}
+
+			v, err := r.factory(config.Technology_NORDLYNX)
+			if err != nil {
+				log.Println(internal.ErrorPrefix, "failed to build VPN instance:", err)
+			}
+
+			r.netw.SetVPN(v)
 		}
 
 		server := autoconnectServer{}
