@@ -144,7 +144,6 @@ func (api *DefaultAPI) doWithClient(req *http.Request, client *http.Client) (*ht
 	}
 
 	return resp, nil
-
 }
 
 // do request regardless of the authentication.
