@@ -248,9 +248,9 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 			v, err := r.factory(config.Technology_NORDLYNX)
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "failed to build VPN instance:", err)
+			} else {
+				r.netw.SetVPN(v)
 			}
-
-			r.netw.SetVPN(v)
 		}
 
 		server := autoconnectServer{}
