@@ -38,6 +38,7 @@ type CredentialsAPI interface {
 
 type InsightsAPI interface {
 	Insights() (*Insights, error)
+	InsightsViaTunnel() (*Insights, error)
 }
 
 type ServersAPI interface {
@@ -418,14 +419,13 @@ func (api *DefaultAPI) Server(id int64) (*Server, error) {
 	return &ret[0], nil
 }
 
-// Insights returns insights about user
-func (api *DefaultAPI) Insights() (*Insights, error) {
+func (api *DefaultAPI) insights(client *http.Client) (*Insights, error) {
 	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, InsightsURL, "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -436,6 +436,19 @@ func (api *DefaultAPI) Insights() (*Insights, error) {
 		return nil, err
 	}
 	return &ret, nil
+}
+
+// Insights returns insights about user
+func (api *DefaultAPI) Insights() (*Insights, error) {
+	return api.insights(api.client)
+}
+
+// InsightsViaTunnel returns insights about user, but the request is made through a tunnel
+// the method is not using the default client, but creates a new one
+// the request might not neccesary go through a tunnel, if there's no tunnel open
+func (api *DefaultAPI) InsightsViaTunnel() (*Insights, error) {
+	client := request.NewStdHTTP()
+	return api.insights(client)
 }
 
 type NotificationCredentialsRequest struct {

@@ -19,6 +19,10 @@ func (workingInsightsAPI) Insights() (*core.Insights, error) {
 	}, nil
 }
 
+func (a workingInsightsAPI) InsightsViaTunnel() (*core.Insights, error) {
+	return a.Insights()
+}
+
 type workingInsightsDataManager struct {
 	data InsightsData
 }
