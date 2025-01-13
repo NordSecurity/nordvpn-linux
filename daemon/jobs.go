@@ -220,18 +220,18 @@ func connectErrorCheck(err error) bool {
 func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 	log.Println(internal.DebugPrefix,
 		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
-	err := r.cm.SaveWith(func(c config.Config) config.Config {
+	v, err := r.factory(targetTechnology)
+	if err != nil {
+		return fmt.Errorf("failed to build VPN instance: %s", err)
+	}
+
+	err = r.cm.SaveWith(func(c config.Config) config.Config {
 		c.Technology = targetTechnology
 		c.AutoConnectData.Protocol = config.Protocol_UDP
 		return c
 	})
 	if err != nil {
 		return fmt.Errorf("failed to fallback to Nordlynx tech: %s", err)
-	}
-
-	v, err := r.factory(targetTechnology)
-	if err != nil {
-		return fmt.Errorf("failed to build VPN instance: %s", err)
 	}
 
 	r.netw.SetVPN(v)
