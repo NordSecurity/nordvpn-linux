@@ -81,7 +81,7 @@ func (r *RPC) StartJobs(
 		call := func(ctx context.Context, isConnected bool) {
 			err := actualIP(ctx, isConnected)
 			if err != nil {
-				log.Println(internal.ErrorPrefix, "actual ip job error")
+				log.Println(internal.ErrorPrefix, "actual ip job error: ", err)
 			}
 		}
 
