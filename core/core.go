@@ -445,7 +445,7 @@ func (api *DefaultAPI) Insights() (*Insights, error) {
 
 // InsightsViaTunnel returns insights about user, but the request is made through a tunnel
 // the method is not using the default client, but creates a new one
-// the request might not neccesary go through a tunnel, if there's no tunnel open
+// the request might not necessary go through a tunnel, if there's no tunnel open
 func (api *DefaultAPI) InsightsViaTunnel() (*Insights, error) {
 	client := request.NewStdHTTP()
 	return api.insights(client)
