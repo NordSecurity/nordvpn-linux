@@ -13,6 +13,59 @@ import os
 
 from . import FILE_HASH_UTILITY, CommandExecutor, logging, ssh
 
+class FileSize:
+    """
+    A class to represent and convert file sizes between kilobytes (KB) and megabytes (MB).
+
+    Attributes:
+        size (int): The size of the file in KB. Default is 1 KB.
+    """
+
+    def __init__(self, size: int = 1):
+        self.size = size
+
+    @classmethod
+    def from_kb(cls, size: int):
+        """
+        Create an instance with the file size in kilobytes (KB).
+
+        Args:
+            size (int): The size of the file in KB.
+        Returns:
+            FileSize: An instance of the FileSize class.
+        """
+        return cls(size)
+
+    @classmethod
+    def from_mb(cls, size: int):
+        """
+        Create an instance with the file size in megabytes (MB).
+
+        Args:
+            size (int): The size of the file in MB.
+        Returns:
+            FileSize: An instance of the FileSize class.
+        """
+        return cls(size * 1024)
+
+    def to_kb(self) -> int:
+        """
+        Get the file size in kilobytes (KB).
+
+        Returns:
+            int: The file size in KB.
+        """
+        return self.size
+
+    def to_mb(self) -> float:
+        """
+        Get the file size in megabytes (MB).
+
+        Returns:
+            float: The file size in MB.
+        """
+        return self.size / 1024
+
 SEND_NOWAIT_SUCCESS_MSG_PATTERN = r'File transfer ?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12}) has started in the background.'
 SEND_CANCELED_BY_PEER_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})\] canceled by peer'
 SEND_CANCELED_BY_OTHER_PROCESS_PATTERN = r'File transfer \[?([a-z0-9]{8}-(?:[a-z0-9]{4}-){3}[a-z0-9]{12})\] canceled by other process'
