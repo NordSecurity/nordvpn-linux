@@ -13,29 +13,39 @@ import (
 )
 
 func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff func(int) time.Duration) (netip.Addr, error) {
+	type Result struct {
+		netip.Addr
+		error
+	}
+	result := make(chan Result)
 	for i := 0; ; i++ {
-		if ctx.Err() != nil {
-			return netip.Addr{}, ctx.Err()
-		}
-
-		insights, err := api.InsightsViaTunnel()
-		if err == nil && insights != nil {
-			ip, err := netip.ParseAddr(insights.IP)
-			if err == nil {
-				return ip, nil
-			} else {
-				log.Println(internal.ErrorPrefix, fmt.Sprintf("failed to parse IP address(%s)", insights.IP), err)
+		// this goroutine is used so that this function is immediately stopped once the context is cancelled
+		go func() {
+			if ctx.Err() != nil {
+				result <- Result{netip.Addr{}, ctx.Err()}
+				return
 			}
-		} else {
-			log.Println(internal.ErrorPrefix, "failed to get insights", err)
-		}
 
-		// Wait before retrying
+			insights, err := api.InsightsViaTunnel()
+			if err == nil && insights != nil {
+				ip, err := netip.ParseAddr(insights.IP)
+				if err == nil {
+					result <- Result{ip, nil}
+				} else {
+					log.Println(internal.ErrorPrefix, fmt.Sprintf("failed to parse IP address(%s)", insights.IP), err)
+				}
+			} else {
+				log.Println(internal.ErrorPrefix, "failed to get insights", err)
+			}
+			// Wait before retrying
+			time.Sleep(backoff(i))
+		}()
+
 		select {
-		case <-time.After(backoff(i)):
-			// Continue to the next retry
+		case r := <-result:
+			return r.Addr, r.error
 		case <-ctx.Done():
-			return netip.Addr{}, ctx.Err() // Exit if context is canceled during sleep
+			return netip.Addr{}, ctx.Err()
 		}
 	}
 }
