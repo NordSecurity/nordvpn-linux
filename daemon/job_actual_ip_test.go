@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"errors"
+	"net/netip"
 	"testing"
 	"time"
 
@@ -78,15 +79,16 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 			ctxTimeout: time.Second,
 			insightsAPI: func() insightFunc {
 				return func() (*core.Insights, error) {
-					return &core.Insights{IP: "invalid-ip"}, nil
+					return &core.Insights{IP: netip.Addr{}.String()}, nil
 				}
 			},
-			expectedIP:  "invalid IP",
-			expectedErr: "ParseAddr(\"invalid-ip\"): unable to parse IP",
+			expectedIP: "invalid IP",
+			// deadline exceeded and not invalid ip error, because when an invalid ip error occurs, it should retry until the context is cancelled
+			expectedErr: context.DeadlineExceeded.Error(),
 		},
 		{
 			name:       "Successful IP retrieval on third attempt",
-			ctxTimeout: 2 * time.Second,
+			ctxTimeout: time.Second,
 			insightsAPI: func() insightFunc {
 				callCount := 0
 				return func() (*core.Insights, error) {
@@ -118,10 +120,12 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 				return time.Millisecond * 10
 			})
 
-			if tt.expectedErr != "" {
+			if tt.expectedErr == "" {
+				assert.NoError(t, err)
+			} else {
 				assert.ErrorContains(t, err, tt.expectedErr)
 			}
-			assert.Equal(t, ip.String(), tt.expectedIP)
+			assert.Equal(t, tt.expectedIP, ip.String())
 		})
 	}
 }

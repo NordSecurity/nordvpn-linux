@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/netip"
 	"time"
@@ -12,6 +11,22 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
 
+// tryInsightsIP is an attempt to get insights IP
+// the IP it returns is always valid
+func tryInsightsIP(api core.InsightsAPI) (netip.Addr, error) {
+	insights, err := api.InsightsViaTunnel()
+	if err == nil && insights != nil {
+		ip, err := netip.ParseAddr(insights.IP)
+		if err == nil {
+			return ip, nil
+		} else {
+			return netip.Addr{}, err
+		}
+	} else {
+		return netip.Addr{}, err
+	}
+}
+
 func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff func(int) time.Duration) (netip.Addr, error) {
 	type Result struct {
 		netip.Addr
@@ -19,31 +34,30 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff f
 	}
 	result := make(chan Result)
 	for i := 0; ; i++ {
+		if ctx.Err() != nil {
+			return netip.Addr{}, ctx.Err()
+		}
+
 		// this goroutine is used so that this function is immediately stopped once the context is cancelled
 		go func() {
-			if ctx.Err() != nil {
-				result <- Result{netip.Addr{}, ctx.Err()}
-				return
-			}
-
-			insights, err := api.InsightsViaTunnel()
-			if err == nil && insights != nil {
-				ip, err := netip.ParseAddr(insights.IP)
-				if err == nil {
-					result <- Result{ip, nil}
-				} else {
-					log.Println(internal.ErrorPrefix, fmt.Sprintf("failed to parse IP address(%s)", insights.IP), err)
-				}
-			} else {
-				log.Println(internal.ErrorPrefix, "failed to get insights", err)
-			}
-			// Wait before retrying
-			time.Sleep(backoff(i))
+			ip, err := tryInsightsIP(api)
+			result <- Result{ip, err}
 		}()
 
 		select {
 		case r := <-result:
-			return r.Addr, r.error
+			if r.error == nil {
+				return r.Addr, nil
+			} else {
+				log.Println(internal.ErrorPrefix, "insights ip attempt failed: ", r.error)
+			}
+		case <-ctx.Done():
+			return netip.Addr{}, ctx.Err()
+		}
+
+		select {
+		case <-time.After(backoff(i)): // wait before retrying
+		// PS: there's no fallthrough
 		case <-ctx.Done():
 			return netip.Addr{}, ctx.Err()
 		}
