@@ -219,7 +219,8 @@ func connectErrorCheck(err error) bool {
 
 func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 	log.Println(internal.DebugPrefix,
-		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
+		" technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
+		targetTechnology.String())
 	v, err := r.factory(targetTechnology)
 	if err != nil {
 		return fmt.Errorf("failed to build VPN instance: %s", err)
@@ -231,7 +232,7 @@ func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 		return c
 	})
 	if err != nil {
-		return fmt.Errorf("failed to fallback to Nordlynx tech: %s", err)
+		return fmt.Errorf("failed to fallback to %s tech: %s", targetTechnology.String(), err)
 	}
 
 	r.netw.SetVPN(v)
