@@ -1,6 +1,10 @@
 #!/bin/sh
-echo "==============================                       calling the hook"
-echo "==============================                       calling the hook" >/tmp/calllog
-if [ "$(cat ${SNAP_COMMON}/connections/hardware-observe 2>/dev/null)" -ne "1" ]; then
+
+INTERFACE_NAME="hardware-observe"
+
+if snapctl is-connected ${INTERFACE_NAME}; then
+  echo "The ${INTERFACE_NAME} interface is connected. Restarting the Snap container..."
   snapctl restart nordvpn.nordvpnd
+else
+  echo "The ${INTERFACE_NAME} interface is not connected."
 fi

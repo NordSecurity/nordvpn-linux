@@ -1,4 +1,10 @@
 #!/bin/sh
-if [ "$(cat ${SNAP_COMMON}/connections/network-control 2> /dev/null)" -ne "1" ]; then
-	snapctl restart nordvpn.nordvpnd
+
+INTERFACE_NAME="network-control"
+
+if snapctl is-connected ${INTERFACE_NAME}; then
+  echo "The ${INTERFACE_NAME} interface is connected. Restarting the Snap container..."
+  snapctl restart nordvpn.nordvpnd
+else
+  echo "The ${INTERFACE_NAME} interface is not connected."
 fi
