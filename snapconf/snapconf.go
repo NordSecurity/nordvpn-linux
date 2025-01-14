@@ -30,6 +30,9 @@ const (
 // https://snapcraft.io/docs/supported-interfaces
 type Interface string
 
+// NOTE: Some of the interfaces require restart of the service. This is achieved
+// by using snap hooks see snap/hooks directory.
+// For more information see the docs: https://snapcraft.io/docs/interface-hooks.
 const (
 	InterfaceNetwork             Interface = "network"
 	InterfaceNetworkBind         Interface = "network-bind"
@@ -60,8 +63,6 @@ type ConnChecker struct {
 
 // NewSnapChecker snap permission checker with specific setup
 func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
-	// currently the order is important for machine ID generation:
-	// At the moment InterfaceHardwareObserve needs to be first because snap restarts the daemon only for some of the interfaces.
 	return NewConnChecker(
 		[]Interface{
 			InterfaceHardwareObserve,
