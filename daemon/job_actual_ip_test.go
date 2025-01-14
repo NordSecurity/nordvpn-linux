@@ -8,6 +8,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // func TestJobActualIP(t *testing.T) {
@@ -34,7 +36,7 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 		ctxTimeout  time.Duration
 		insightsAPI func() func() (*core.Insights, error)
 		expectedIP  string
-		expectedErr error
+		expectedErr string
 	}{
 		{
 			name:       "Successful IP retrieval",
@@ -45,18 +47,19 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 				}
 			},
 			expectedIP:  "192.168.1.1",
-			expectedErr: nil,
+			expectedErr: "",
 		},
 		{
 			name:       "API returns error",
-			ctxTimeout: time.Second,
+			ctxTimeout: time.Millisecond * 100,
 			insightsAPI: func() insightFunc {
 				return func() (*core.Insights, error) {
 					return nil, errors.New("API error")
 				}
 			},
-			expectedIP:  "",
-			expectedErr: context.DeadlineExceeded,
+			expectedIP: "invalid IP",
+			// deadline exceeded and not API error, because when an API errors occurs, it should retry until the context is cancelled
+			expectedErr: context.DeadlineExceeded.Error(),
 		},
 		{
 			name:       "Context canceled",
@@ -67,8 +70,8 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 					return &core.Insights{IP: "192.168.1.1"}, nil
 				}
 			},
-			expectedIP:  "",
-			expectedErr: context.DeadlineExceeded,
+			expectedIP:  "invalid IP",
+			expectedErr: context.DeadlineExceeded.Error(),
 		},
 		{
 			name:       "Invalid IP format",
@@ -78,8 +81,8 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 					return &core.Insights{IP: "invalid-ip"}, nil
 				}
 			},
-			expectedIP:  "",
-			expectedErr: errors.New("invalid IP format"),
+			expectedIP:  "invalid IP",
+			expectedErr: "ParseAddr(\"invalid-ip\"): unable to parse IP",
 		},
 		{
 			name:       "Successful IP retrieval on third attempt",
@@ -97,7 +100,7 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 				}
 			},
 			expectedIP:  "192.168.1.10",
-			expectedErr: nil,
+			expectedErr: "",
 		},
 	}
 
@@ -115,13 +118,10 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 				return time.Millisecond * 10
 			})
 
-			if (err != nil) != (tt.expectedErr != nil) {
-				t.Fatalf("unexpected error: got %v, want %v", err, tt.expectedErr)
+			if tt.expectedErr != "" {
+				assert.ErrorContains(t, err, tt.expectedErr)
 			}
-
-			if err == nil && ip.String() != tt.expectedIP {
-				t.Errorf("unexpected IP: got %v, want %v", ip, tt.expectedIP)
-			}
+			assert.Equal(t, ip.String(), tt.expectedIP)
 		})
 	}
 }
@@ -176,17 +176,13 @@ func TestJobActualIP(t *testing.T) {
 			job := JobActualIP(dm, api)
 			err := job(ctx, tt.isConnected)
 
-			if !errors.Is(err, tt.expectedErr) {
-				t.Fatalf("unexpected error: got %v, want %v", err, tt.expectedErr)
-			}
+			assert.ErrorIs(t, err, tt.expectedErr)
 
 			dm.mu.Lock()
 			actualIP := dm.actualIP
 			dm.mu.Unlock()
 
-			if actualIP.String() != tt.expectedIP {
-				t.Errorf("unexpected IP: got %v, want %v", actualIP, tt.expectedIP)
-			}
+			assert.Equal(t, actualIP.String(), tt.expectedIP)
 		})
 	}
 }
