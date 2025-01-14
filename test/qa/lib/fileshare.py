@@ -77,13 +77,13 @@ INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN = r"File transfer \[[0-9a-fA-F\-
 MSG_HISTORY_CLEARED = "File transfer history cleared."
 MSG_CANCEL_TRANSFER = "File transfer canceled."
 
-DEFAULT_FILE_SIZE = 1
-MAX_FILE_SIZE = 1024
+DEFAULT_FILE_SIZE: FileSize = FileSize().from_kb(1)
+MAX_FILE_SIZE: FileSize = FileSize().from_mb(1024)
 
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
 
-def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: int = DEFAULT_FILE_SIZE, ssh_client: ssh.Ssh = None) -> Directory:
+def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | None = None, file_size: FileSize = DEFAULT_FILE_SIZE, ssh_client: ssh.Ssh = None) -> Directory:
     """
     Creates a temporary directory and populates it with a specified number of files.
 
@@ -100,9 +100,8 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
             - transfer_paths: File paths with leading directories removed.
             - filenames: Names of the created files.
     """
-
-    if file_size > MAX_FILE_SIZE:
-        ex = f"Maximum allowed file size is {MAX_FILE_SIZE} MB"
+    if file_size.to_kb() > MAX_FILE_SIZE.to_kb():
+        ex = f"Maximum allowed file size is {MAX_FILE_SIZE.to_mb()} MB"
         raise ValueError(ex)
 
     exec_command = CommandExecutor(ssh_client)
@@ -123,7 +122,7 @@ def create_directory(file_count: int, name_suffix: str = "", parent_dir: str | N
         filenames.append(filename)
 
         # same size files generated with fallocate are not unique, so adding random factor
-        file_size_kb: int = (file_size * 1024) + random.randint(1, 128) + random.randint(1, 384)
+        file_size_kb: int = file_size.to_kb() + random.randint(1, 128) + random.randint(1, 384)
         file_siz_str: str = f"{file_size_kb}K"
 
         exec_command(f"fallocate -l {file_siz_str} {dir_path}/{filename}")
