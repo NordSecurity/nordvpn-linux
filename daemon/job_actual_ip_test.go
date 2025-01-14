@@ -176,7 +176,7 @@ func TestJobActualIP(t *testing.T) {
 			job := JobActualIP(dm, api)
 			err := job(ctx, tt.isConnected)
 
-			if (err != nil) != (tt.expectedErr != nil) {
+			if !errors.Is(err, tt.expectedErr) {
 				t.Fatalf("unexpected error: got %v, want %v", err, tt.expectedErr)
 			}
 
