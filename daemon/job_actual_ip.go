@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/netip"
 	"time"
@@ -20,13 +21,13 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff f
 		insights, err := api.InsightsViaTunnel()
 		if err == nil && insights != nil {
 			ip, err := netip.ParseAddr(insights.IP)
-			if err != nil {
-				return netip.Addr{}, err
+			if err == nil {
+				return ip, nil
+			} else {
+				log.Println(internal.ErrorPrefix, fmt.Sprintf("failed to parse IP address(%s)", insights.IP), err)
 			}
-
-			return ip, nil
 		} else {
-			log.Println(internal.ErrorPrefix, err)
+			log.Println(internal.ErrorPrefix, "failed to get insights", err)
 		}
 
 		// Wait before retrying
