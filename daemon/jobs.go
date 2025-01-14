@@ -219,7 +219,7 @@ func connectErrorCheck(err error) bool {
 
 func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 	log.Println(internal.DebugPrefix,
-		" technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
+		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
 		targetTechnology.String())
 	v, err := r.factory(targetTechnology)
 	if err != nil {
