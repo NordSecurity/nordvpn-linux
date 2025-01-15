@@ -75,47 +75,7 @@ func (r *RPC) StartJobs(
 		}
 	}
 
-	actualIP := JobActualIP(r.dm, r.api)
-
-	go func() {
-		call := func(ctx context.Context, isConnected bool) {
-			err := actualIP(ctx, isConnected)
-			if err != nil {
-				if err == context.Canceled {
-					return
-				}
-				log.Println(internal.ErrorPrefix, "actual ip job error: ", err)
-			}
-		}
-
-		stateChan, _ := statePublisher.AddSubscriber()
-		var cancel context.CancelFunc
-
-		for ev := range stateChan {
-			_, isConnect := ev.(events.DataConnect)
-			_, isDisconnect := ev.(events.DataDisconnect)
-
-			if isConnect || isDisconnect {
-				if cancel != nil {
-					cancel()
-				}
-
-				var ctx context.Context
-				ctx, cancel = context.WithCancel(context.Background())
-
-				if isConnect {
-					go call(ctx, true)
-				} else {
-					call(ctx, false) // should finish immediately, that's why it's not a separate goroutine
-				}
-			}
-		}
-
-		// Ensure the context is canceled when the loop exits
-		if cancel != nil {
-			cancel()
-		}
-	}()
+	go JobActualIP(statePublisher, r.dm, r.api)
 
 	go func() {
 		stateChan, _ := statePublisher.AddSubscriber()

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
@@ -64,25 +66,65 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff f
 	}
 }
 
-func JobActualIP(dm *DataManager, api core.InsightsAPI) func(context.Context, bool) error {
-	return func(ctx context.Context, isConnected bool) error {
-		var newIP netip.Addr
-		defer func() {
-			dm.SetActualIP(newIP)
-		}()
+func updateActualIP(dm *DataManager, api core.InsightsAPI, ctx context.Context, isConnected bool) error {
+	var newIP netip.Addr
+	defer func() {
+		dm.SetActualIP(newIP)
+	}()
 
-		if !isConnected {
-			return nil
-		}
-
-		insightsIP, err := insightsIPUntilSuccess(ctx, api, network.ExponentialBackoff)
-		if err != nil {
-			return err
-		}
-		if insightsIP.IsValid() {
-			newIP = insightsIP
-		}
-
+	if !isConnected {
 		return nil
+	}
+
+	insightsIP, err := insightsIPUntilSuccess(ctx, api, network.ExponentialBackoff)
+	if err != nil {
+		return err
+	}
+	if insightsIP.IsValid() {
+		newIP = insightsIP
+	}
+
+	return nil
+}
+
+// JobActualIP is a long-running job that will update the actual IP address indefinitely
+// it reacts to state updates from the statePublisher
+func JobActualIP(statePublisher *state.StatePublisher, dm *DataManager, api core.InsightsAPI) {
+	call := func(ctx context.Context, isConnected bool) {
+		err := updateActualIP(dm, api, ctx, isConnected)
+		if err != nil {
+			if err == context.Canceled {
+				return
+			}
+			log.Println(internal.ErrorPrefix, "actual ip job error: ", err)
+		}
+	}
+
+	stateChan, _ := statePublisher.AddSubscriber()
+	var cancel context.CancelFunc
+
+	for ev := range stateChan {
+		_, isConnect := ev.(events.DataConnect)
+		_, isDisconnect := ev.(events.DataDisconnect)
+
+		if isConnect || isDisconnect {
+			if cancel != nil {
+				cancel()
+			}
+
+			var ctx context.Context
+			ctx, cancel = context.WithCancel(context.Background())
+
+			if isConnect {
+				go call(ctx, true)
+			} else {
+				call(ctx, false) // should finish immediately, that's why it's not a separate goroutine
+			}
+		}
+	}
+
+	// Ensure the context is canceled when the loop exits
+	if cancel != nil {
+		cancel()
 	}
 }

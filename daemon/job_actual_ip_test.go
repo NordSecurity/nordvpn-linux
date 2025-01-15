@@ -13,10 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// func TestJobActualIP(t *testing.T) {
-
-// }
-
 type mockInsights struct {
 	insightsFunc insightFunc
 }
@@ -130,7 +126,7 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 	}
 }
 
-func TestJobActualIP(t *testing.T) {
+func TestUpdateActualIP(t *testing.T) {
 	tests := []struct {
 		name        string
 		isConnected bool
@@ -177,8 +173,7 @@ func TestJobActualIP(t *testing.T) {
 				insightsFunc: tt.insightsAPI,
 			}
 
-			job := JobActualIP(dm, api)
-			err := job(ctx, tt.isConnected)
+			err := updateActualIP(dm, api, ctx, tt.isConnected)
 
 			assert.ErrorIs(t, err, tt.expectedErr)
 
