@@ -99,7 +99,7 @@ func main() {
 		log.Println(internal.WarningPrefix, "failed to remove old socket file:", err)
 	}
 
-	listener, err := internal.ManualListener(internal.FileshareSocket, internal.PermUserRWGroupRWOthersRW)()
+	listener, err := internal.ManualListener(internal.FileshareSocket, internal.PermUserRWX)()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to open unix socket:", err)
 		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
