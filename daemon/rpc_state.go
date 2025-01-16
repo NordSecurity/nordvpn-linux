@@ -91,6 +91,7 @@ func statusStream(stateChan <-chan interface{},
 					ServerHostname: e.TargetServerDomain,
 					IsMeshPeer:     e.IsMeshnetPeer,
 					ByUser:         true,
+					IsVirtual:      e.IsVirtual,
 				}
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{ConnectionStatus: &status}}); err != nil {
