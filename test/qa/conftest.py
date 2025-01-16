@@ -75,9 +75,9 @@ def _check_connection_to_ip(ip_address, stop_event):
     print("Start _check_connection_to_ip")
     while not stop_event.is_set():
         try:
-            "icmp_seq=" in sh.ping("-c", "3", "-W", "3", ip_address) # noqa: B015
+            network.is_internet_reachable(ip_address=ip_address, retry=1)
         except Exception as e: # noqa: BLE001
-            print(f"_check_connection_to_ip: IN-PING {ip_address} FAILURE: {e}.")
+            print(f"_check_connection_to_ip: FAILURE for {ip_address}: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
 
 
@@ -85,7 +85,7 @@ def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
     print("Start _check_connection_to_ip_outside_vpn")
     while not stop_event.is_set():
         try:
-            "icmp_seq=" in sh.sudo.ping("-c", "3", "-W", "3", "-m", "57841", ip_address) # noqa: B015
+            network.is_internet_reachable_outside_vpn(ip_address=ip_address, retry=1)
         except Exception as e: # noqa: BLE001
             print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address} FAILURE: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
