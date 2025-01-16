@@ -7,7 +7,6 @@ import time
 
 import dns.resolver
 import pytest
-import sh
 
 import sys
 import os
