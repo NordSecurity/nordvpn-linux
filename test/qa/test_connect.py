@@ -387,7 +387,9 @@ def test_status_connected(tech, proto, obfuscated):
     assert server_info.hostname in status_info["hostname"]
     assert server_info.name in status_info["server"]
 
-    assert socket.gethostbyname(server_info.hostname) in status_info["ip"]
+    external_ip = network.get_external_device_ip()
+
+    assert external_ip in status_info["ip"]
 
     assert server_info.country in status_info["country"]
     assert server_info.city in status_info["city"]
