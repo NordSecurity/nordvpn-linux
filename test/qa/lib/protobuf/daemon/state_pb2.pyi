@@ -25,6 +25,7 @@ class LoginEventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 class UpdateEvent(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     SERVERS_LIST_UPDATE: _ClassVar[UpdateEvent]
+    ACTUAL_IP_UPDATE: _ClassVar[UpdateEvent]
 FAILED_TO_GET_UID: AppStateError
 DISCONNECTED: ConnectionState
 CONNECTING: ConnectionState
@@ -32,6 +33,7 @@ CONNECTED: ConnectionState
 LOGIN: LoginEventType
 LOGOUT: LoginEventType
 SERVERS_LIST_UPDATE: UpdateEvent
+ACTUAL_IP_UPDATE: UpdateEvent
 
 class ConnectionStatus(_message.Message):
     __slots__ = ("state", "server_ip", "server_country", "server_city", "server_hostname", "server_name", "is_mesh_peer", "by_user", "is_virtual_location", "parameters")

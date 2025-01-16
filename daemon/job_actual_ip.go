@@ -92,7 +92,12 @@ func updateActualIP(dm *DataManager, api core.InsightsAPI, ctx context.Context, 
 func JobActualIP(statePublisher *state.StatePublisher, dm *DataManager, api core.InsightsAPI) {
 	call := func(ctx context.Context, isConnected bool) {
 		err := updateActualIP(dm, api, ctx, isConnected)
-		if err != nil {
+		if err == nil {
+			err := statePublisher.NotifyActualIPUpdate()
+			if err != nil {
+				log.Println(internal.ErrorPrefix, "notify about actual ip update failed: ", err)
+			}
+		} else {
 			if err == context.Canceled {
 				return
 			}
