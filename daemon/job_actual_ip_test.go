@@ -8,7 +8,10 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/daemon/events"
+	daemonEvents "github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
+	"github.com/NordSecurity/nordvpn-linux/events"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -60,7 +63,7 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 		},
 		{
 			name:       "Context canceled",
-			ctxTimeout: 0,
+			ctxTimeout: time.Millisecond,
 			insightsAPI: func() insightFunc {
 				return func() (*core.Insights, error) {
 					time.Sleep(10 * time.Millisecond)
@@ -168,7 +171,7 @@ func TestUpdateActualIP(t *testing.T) {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 
-			dm := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
+			dm := NewDataManager("", "", "", "", daemonEvents.NewDataUpdateEvents())
 			api := &mockInsights{
 				insightsFunc: tt.insightsAPI,
 			}
@@ -184,4 +187,39 @@ func TestUpdateActualIP(t *testing.T) {
 			assert.Equal(t, actualIP.String(), tt.expectedIP)
 		})
 	}
+}
+
+func receiveWithTimeout(t *testing.T, ch <-chan interface{}) interface{} {
+	const TIMEOUT time.Duration = time.Second * 5
+	select {
+	case msg := <-ch:
+		return msg
+	case <-time.After(TIMEOUT):
+		t.Fatal("no message received")
+	}
+	return nil
+}
+
+func TestJobUpdateActualIP(t *testing.T) {
+	address := netip.AddrFrom4([4]byte{192, 168, 1, 2})
+	rpc := testRPC()
+	rpc.statePublisher = state.NewState()
+	stateChan, _ := rpc.statePublisher.AddSubscriber()
+	api := &mockInsights{
+		insightsFunc: func() (*core.Insights, error) {
+			return &core.Insights{IP: address.String()}, nil
+		},
+	}
+	go JobActualIP(rpc.statePublisher, rpc.dm, api)
+	time.Sleep(time.Millisecond * 100)
+	assert.Equal(t, netip.Addr{}, rpc.dm.GetActualIP())
+	eventConnect := events.DataConnect{}
+	go func() {
+		err := rpc.statePublisher.NotifyConnect(eventConnect)
+		assert.NoError(t, err)
+	}()
+
+	assert.Equal(t, eventConnect, receiveWithTimeout(t, stateChan))
+	assert.Equal(t, pb.UpdateEvent_ACTUAL_IP_UPDATE, receiveWithTimeout(t, stateChan))
+	assert.Equal(t, address, rpc.dm.GetActualIP())
 }
