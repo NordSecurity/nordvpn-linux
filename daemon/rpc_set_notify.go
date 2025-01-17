@@ -10,6 +10,19 @@ import (
 )
 
 func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Payload, error) {
+	isInNordVPNGroup, err := internal.IsInAllowedGroup(uint32(in.Uid))
+	if err != nil {
+		return &pb.Payload{
+			Type: internal.CodeInternalError,
+		}, nil
+	}
+
+	if !isInNordVPNGroup {
+		return &pb.Payload{
+			Type: internal.CodeNotInNordVPNGroup,
+		}, nil
+	}
+
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
