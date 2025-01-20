@@ -76,3 +76,24 @@ def collect_state_changes(stop_at: int, tracked_states: Sequence[str], timeout: 
                 if len(result) >= stop_at:
                     break
         return result
+
+
+def test_is_virtual_is_true_for_virtual_location():
+    check_is_virtual_in_response("Algiers", True)
+
+
+def check_is_virtual_in_response(loc: str, expected_is_virtual: bool):
+    expected_states = [state_pb2.ConnectionState.CONNECTED]
+
+    result = []
+    thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
+        len(expected_states), ['connection_status'])))
+    thread.start()
+    sh.nordvpn.connect(loc)
+    sh.nordvpn.disconnect()
+    thread.join()
+    assert result.pop().connection_status.is_virtual == expected_is_virtual
+
+
+def test_is_virtual_is_false_for_non_virtual_location():
+    check_is_virtual_in_response("Poland", False)
