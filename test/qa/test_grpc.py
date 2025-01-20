@@ -3,7 +3,7 @@ import sh
 import grpc
 from collections.abc import Sequence
 from lib import daemon, info, logging, login
-from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2)
+from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
 
 NORDVPND_SOCKET = 'unix:///run/nordvpn/nordvpnd.sock'
 
@@ -97,3 +97,16 @@ def check_is_virtual_in_response(loc: str, expected_is_virtual: bool):
 
 def test_is_virtual_is_false_for_non_virtual_location():
     check_is_virtual_in_response("Poland", False)
+
+
+def test_manual_connection_source_is_present_in_response():
+    expected_states = [state_pb2.ConnectionState.CONNECTED]
+
+    result = []
+    thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
+        len(expected_states), ['connection_status'])))
+    thread.start()
+    sh.nordvpn.connect()
+    sh.nordvpn.disconnect()
+    thread.join()
+    assert result.pop().connection_status.parameters.source == status_pb2.ConnectionSource.MANUAL
