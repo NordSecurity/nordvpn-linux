@@ -103,7 +103,7 @@ type AcknowledgementPayload struct {
 type NotificationClient interface {
 	Start() error
 	Stop() error
-	Revoke(bool) bool
+	Revoke() bool
 }
 
 type ClientBuilder interface {
@@ -542,7 +542,7 @@ func (c *Client) Stop() error {
 }
 
 // Revoke revokes the NC communication token
-func (c *Client) Revoke(purgeSession bool) bool {
+func (c *Client) Revoke() bool {
 	c.startMu.Lock()
 	defer c.startMu.Unlock()
 
@@ -551,8 +551,7 @@ func (c *Client) Revoke(purgeSession bool) bool {
 		return false
 	}
 
-	log.Println(logPrefix, "revoking token, purgeSession:", purgeSession)
-	ok, err := c.credsFetcher.RevokeCredentials(purgeSession)
+	ok, err := c.credsFetcher.RevokeCredentials(true)
 	if ok {
 		log.Println(logPrefix, "token revoked successfully")
 		return true
