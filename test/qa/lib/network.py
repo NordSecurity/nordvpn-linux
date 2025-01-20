@@ -112,8 +112,10 @@ def is_internet_reachable_outside_vpn(ip_address="1.1.1.1", retry=5) -> bool:
     while i < retry:
         try:
             # ping can remain since it is executed with FWMARK
-            return "icmp_seq=" in sh.sudo.ping("-c", "1", "-m", f"{FWMARK}", "-w", "1", ip_address)
-        except sh.ErrorReturnCode:
+            response = sh.sudo.ping("-c", "1", "-m", f"{FWMARK}", "-w", "1", ip_address)
+            return "icmp_seq=" in response
+        except sh.ErrorReturnCode as ex:
+            print(f"is_internet_reachable_outside_vpn - failed {ex}: {response}")
             time.sleep(1)
             i += 1
     return False
