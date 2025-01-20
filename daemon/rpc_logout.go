@@ -103,6 +103,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 		delete(c.TokensData, c.AutoConnectData.ID)
 		c.AutoConnectData.ID = 0
 		c.Mesh = false
+		c.MeshPrivateKey = ""
 		return c
 	}); err != nil {
 		return nil, err

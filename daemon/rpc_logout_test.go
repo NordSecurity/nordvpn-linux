@@ -34,9 +34,11 @@ func (mockApi) DeleteToken(token string) error { return nil }
 func (mockApi) Logout(token string) error      { return nil }
 
 func TestLogout_Token(t *testing.T) {
+	cfgManagerMock := newMockConfigManager()
+
 	rpc := RPC{
 		ac:             &workingLoginChecker{},
-		cm:             newMockConfigManager(),
+		cm:             cfgManagerMock,
 		norduser:       &testnorduser.MockNorduserCombinedService{},
 		netw:           &networker.Mock{},
 		ncClient:       mockNC{},
@@ -84,12 +86,14 @@ func TestLogout_Token(t *testing.T) {
 				}
 				tokenData.Token = "1234"
 				c.TokensData[c.AutoConnectData.ID] = tokenData
+				c.MeshPrivateKey = "key"
 				return c
 			})
 			assert.NoError(t, err)
 			resp, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: test.persistToken})
 			assert.NoError(t, err)
 			assert.Equal(t, test.result, resp.Type)
+			assert.Equal(t, "", cfgManagerMock.c.MeshPrivateKey, "Mesh private key not removed after logout.")
 		})
 	}
 }
