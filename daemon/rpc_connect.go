@@ -183,6 +183,14 @@ func (r *RPC) connect(
 	event.TargetServerIP = subnet.Addr().String()
 	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 
+	r.ConnectionParameters.SetConnectionParameters(
+		pb.ConnectionSource_MANUAL,
+		ServerParameters{
+			Country: cfg.AutoConnectData.Country,
+			City:    cfg.AutoConnectData.City,
+			Group:   cfg.AutoConnectData.Group,
+		})
+
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)
 
@@ -221,7 +229,6 @@ func (r *RPC) connect(
 		)),
 		true, // here vpn connect - enable routing to local LAN
 	)
-
 	if err != nil {
 		event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 		event.Error = err
