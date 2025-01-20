@@ -7,3 +7,6 @@
 [submodule "third-party/libquench-go"]
 	url = ../../libquench-go.git
 	path = third-party/libquench-go
+[submodule "third-party/libvinis-go"]
+	path = third-party/libvinis-go
+	url = ../../libvinis-go.git
