@@ -40,7 +40,7 @@ print = _print_with_timestamp # noqa: A001
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_check_internet_connection():
-    if not network.is_available():
+    if not network.is_internet_reachable(retry=1) or not network.is_internet_reachable_outside_vpn(retry=1):
         print("setup_check_internet_connection: no internet available before running the tests")
 
 
