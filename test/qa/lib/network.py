@@ -98,7 +98,7 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
     i = 0
     while i < retry:
         try:
-            if _check_connectivity(ip_address, port):
+            if _check_connectivity(host=ip_address, port=port):
                 return True
         except sh.ErrorReturnCode:
             time.sleep(1)
