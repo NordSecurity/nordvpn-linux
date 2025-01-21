@@ -73,7 +73,7 @@ def capture_traffic(connection_settings, duration: int=5) -> str:
 
     try:
         # generate some traffic
-        generate_traffic()
+        generate_traffic(repeat=5)
     except Exception as e: # noqa: BLE001
         logging.log(f"capture_traffic exception: {e}")
         logging.log(t_connect.packets)
@@ -83,7 +83,7 @@ def capture_traffic(connection_settings, duration: int=5) -> str:
     return t_connect.packets
 
 
-def is_internet_reachable(ip_address="1.1.1.1", port=80, retry=5) -> bool:
+def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
     """Returns True when remote host is reachable by its public IP."""
     i = 0
     while i < retry:
@@ -254,13 +254,13 @@ def get_external_device_ip() -> str:
     return requests.get(API_EXTERNAL_IP, timeout=5).json().get("ip")
 
 
-def generate_traffic(address = "https://1.1.1.1", timeout=1, repeat=1):
+def generate_traffic(address = "https://nordvpn.com", timeout=1, repeat=1):
     for _ in range(0, max(repeat, 1)):
         try:
             req = urllib.request.Request(address, method="HEAD")
             urllib.request.urlopen(req, timeout=timeout)
         except Exception as e:  # noqa: BLE001
-            print(f"generate_traffic: FAILURE: {e}")
+            print(f"generate_traffic FAIL: {e}")
             time.sleep(0.5)
 
 
