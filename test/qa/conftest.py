@@ -111,5 +111,10 @@ def _capture_traffic(stop_event):
     stop_event.wait()
     print("Stopping tshark with Ctrl+C")
     process.send_signal(signal.SIGINT)
+    try:
+        process.wait(timeout=2)
+    except Exception as e:  # noqa: BLE001
+        print(f"failed to stop tshark. Error: {e}")
+        process.kill()
     print(f"tshark out {process.stdout.read().strip()} - {process.stderr.read().strip()}")
     time.sleep(1)
