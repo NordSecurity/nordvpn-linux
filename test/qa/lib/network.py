@@ -83,24 +83,16 @@ def capture_traffic(connection_settings, duration: int=5) -> str:
     return t_connect.packets
 
 
-def _check_connectivity(host, port=80, timeout=2) -> bool:
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
-        result = sock.connect_ex((host, port))
-        return result == 0
-    finally:
-        sock.close()
-
-
-def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
+def is_internet_reachable(ip_address="1.1.1.1", port=80, retry=5) -> bool:
     """Returns True when remote host is reachable by its public IP."""
     i = 0
     while i < retry:
         try:
-            if _check_connectivity(host=ip_address, port=port):
-                return True
-        except sh.ErrorReturnCode:
+            sock = socket.create_connection((ip_address, port), timeout=2)
+            sock.close()
+            return True
+        except Exception as e: # noqa: BLE001
+            print(f"is_internet_reachable failed {ip_address}: {e}")
             time.sleep(1)
             i += 1
     return False
@@ -143,11 +135,13 @@ def _is_dns_resolvable(domain = "nordvpn.com", retry=5) -> bool:
     while i < retry:
         try:
             resolver = dns.resolver.Resolver()
+            resolver.nameservers = ["103.86.96.100"] # specify server so it will not get the result from the docker host
             resolver.resolve(domain, 'A', lifetime=5)
             return True
         except Exception as e:  # noqa: BLE001
             print(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
             time.sleep(1)
+            i += 1
     return False
 
 
@@ -159,7 +153,7 @@ def is_not_available(retry=5) -> bool:
 
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
-    return not is_internet_reachable(retry=retry) and not _is_dns_resolvable(retry=retry)
+    return not is_internet_reachable(retry=retry, ip_address="8.8.8.8") and not _is_dns_resolvable(retry=retry)
 
 
 def is_available(retry=5) -> bool:
@@ -262,5 +256,11 @@ def get_external_device_ip() -> str:
 
 def generate_traffic(address = "https://1.1.1.1", timeout=1, repeat=1):
     for _ in range(0, max(repeat, 1)):
-        req = urllib.request.Request(address, method="HEAD")
-        urllib.request.urlopen(req, timeout=timeout)
+        try:
+            req = urllib.request.Request(address, method="HEAD")
+            urllib.request.urlopen(req, timeout=timeout)
+        except Exception as e:  # noqa: BLE001
+            print(f"generate_traffic: FAILURE: {e}")
+            time.sleep(0.5)
+
+
