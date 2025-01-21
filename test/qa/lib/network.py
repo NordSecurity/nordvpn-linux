@@ -106,7 +106,7 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
     return False
 
 
-def is_internet_reachable_outside_vpn(ip_address="1.0.0.1", retry=5) -> bool:
+def is_internet_reachable_outside_vpn(retry=5, ip_address="1.0.0.1") -> bool:
     """Returns True when remote host is reachable by its public IP outside VPN tunnel."""
     i = 0
     response = ""
@@ -164,9 +164,9 @@ def is_not_available(retry=5) -> bool:
 
 def is_available(retry=5) -> bool:
     """Returns True when network access is available or throws AssertionError otherwise."""
-    assert is_internet_reachable_outside_vpn(retry)
+    assert is_internet_reachable_outside_vpn(retry=retry)
     assert is_internet_reachable(retry=retry)
-    assert _is_dns_resolvable(retry)
+    assert _is_dns_resolvable(retry=retry)
     return True
 
 
