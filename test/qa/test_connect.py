@@ -377,7 +377,7 @@ def test_status_connected(tech, proto, obfuscated):
 
     connect_time = time.monotonic()
 
-    network.generate_traffic(repeat=5)
+    network.generate_traffic(retry=5)
 
     status_info = daemon.get_status_data()
     status_time = time.monotonic()
