@@ -109,13 +109,15 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
 def is_internet_reachable_outside_vpn(ip_address="1.1.1.1", retry=5) -> bool:
     """Returns True when remote host is reachable by its public IP outside VPN tunnel."""
     i = 0
+    response = ""
     while i < retry:
         try:
             # ping can remain since it is executed with FWMARK
+            response = ""
             response = sh.sudo.ping("-c", "1", "-m", f"{FWMARK}", "-w", "1", ip_address)
             return "icmp_seq=" in response
         except sh.ErrorReturnCode as ex:
-            print(f"is_internet_reachable_outside_vpn - failed {ex}: {response}")
+            print(f"is_internet_reachable_outside_vpn({i}) - failed {ex}: {response}")
             time.sleep(1)
             i += 1
     return False
