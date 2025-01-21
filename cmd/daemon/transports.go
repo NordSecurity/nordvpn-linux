@@ -141,10 +141,11 @@ func createTimedOutTransport(
 	if containsH1 {
 		h1ReTransport := request.NewHTTPReTransport(createH1Transport(resolver, fwmark))
 		connectSubject.Subscribe(h1ReTransport.NotifyConnect)
-		h1Transport = request.NewPublishingRoundTripper(
-			h1ReTransport,
-			httpCallsSubject,
-		)
+		h1Transport = getPinningTransport(
+			request.NewPublishingRoundTripper(
+				h1ReTransport,
+				httpCallsSubject,
+			))
 		if !containsH3 {
 			return h1Transport
 		}
@@ -158,10 +159,11 @@ func createTimedOutTransport(
 		}
 		h3ReTransport := request.NewQuicTransport(createH3Transport)
 		connectSubject.Subscribe(h3ReTransport.NotifyConnect)
-		h3Transport = request.NewPublishingRoundTripper(
-			h3ReTransport,
-			httpCallsSubject,
-		)
+		h3Transport = getPinningTransport(
+			request.NewPublishingRoundTripper(
+				h3ReTransport,
+				httpCallsSubject,
+			))
 		if !containsH1 {
 			return h3Transport
 		}

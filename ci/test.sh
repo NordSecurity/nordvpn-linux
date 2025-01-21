@@ -10,7 +10,7 @@ excluded_packages="moose\|cmd\/daemon\|telio\|daemon\/vpn\/openvpn"
 excluded_packages=$excluded_packages"\|meshnet\/mesh\/nordlynx\|fileshare\/drop"
 excluded_packages=$excluded_packages"\|events\/moose"
 excluded_packages=$excluded_packages"\|pb\|magefiles"
-excluded_packages=$excluded_packages"\|daemon\/vpn\/quench"
+excluded_packages=$excluded_packages"\|daemon\/vpn\/quench\/vinis"
 excluded_categories="root,link,firewall,route,file,integration"
 
 tags="internal"

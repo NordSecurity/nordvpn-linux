@@ -83,6 +83,10 @@ if [[ $tags == *"quench"* ]]; then
 	source "${WORKDIR}"/ci/add_private_bindings.sh quench ./third-party/libquench-go
 fi
 
+if [[ $tags == *"vinis"* ]]; then
+	source "${WORKDIR}"/ci/add_private_bindings.sh vinis ./third-party/libvinis-go
+fi
+
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
 	# BUILDMODE can be no value and `go` does not like empty parameter ''
