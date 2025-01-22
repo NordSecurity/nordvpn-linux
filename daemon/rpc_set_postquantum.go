@@ -25,7 +25,8 @@ func (r *RPC) SetPostQuantum(ctx context.Context, in *pb.SetGenericRequest) (*pb
 	}
 
 	if cfg.Technology != config.Technology_NORDLYNX {
-		return &pb.Payload{Type: internal.CodePqWithoutNordlynx}, nil
+		return &pb.Payload{Type: internal.CodePqWithoutNordlynx,
+			Data: []string{config.TechNameToUpperCamelCase(cfg.Technology)}}, nil
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {

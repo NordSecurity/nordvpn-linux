@@ -59,8 +59,19 @@ func TestSetPostquantumVpn(t *testing.T) {
 		Type: internal.CodePqAndMeshnetSimultaneously,
 	}
 
-	conflictTechPayload := pb.Payload{
+	conflictUnknownTechPayload := pb.Payload{
 		Type: internal.CodePqWithoutNordlynx,
+		Data: []string{""},
+	}
+
+	conflictOpenVPNTechPayload := pb.Payload{
+		Type: internal.CodePqWithoutNordlynx,
+		Data: []string{"OpenVPN"},
+	}
+
+	conflictNordWhisperPayload := pb.Payload{
+		Type: internal.CodePqWithoutNordlynx,
+		Data: []string{"NordWhisper"},
 	}
 
 	tests := []struct {
@@ -78,7 +89,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			meshnet:        false,
 			vpnActive:      false,
 			tech:           config.Technology_UNKNOWN_TECHNOLOGY,
-			payload:        &conflictTechPayload,
+			payload:        &conflictUnknownTechPayload,
 			eventPublished: false,
 		},
 		{
@@ -96,7 +107,7 @@ func TestSetPostquantumVpn(t *testing.T) {
 			meshnet:        false,
 			vpnActive:      false,
 			tech:           config.Technology_UNKNOWN_TECHNOLOGY,
-			payload:        &conflictTechPayload,
+			payload:        &conflictUnknownTechPayload,
 			eventPublished: false,
 		},
 		{
@@ -124,6 +135,24 @@ func TestSetPostquantumVpn(t *testing.T) {
 			tech:           config.Technology_NORDLYNX,
 			payload:        &successWithVPNPayload,
 			eventPublished: true,
+		},
+		{
+			testName:       "pq on mesh is off tech openvpn",
+			pq:             true,
+			meshnet:        false,
+			vpnActive:      false,
+			tech:           config.Technology_OPENVPN,
+			payload:        &conflictOpenVPNTechPayload,
+			eventPublished: false,
+		},
+		{
+			testName:       "pq on mesh is off tech nordwhisper",
+			pq:             true,
+			meshnet:        false,
+			vpnActive:      false,
+			tech:           config.Technology_NORDWHISPER,
+			payload:        &conflictNordWhisperPayload,
+			eventPublished: false,
 		},
 	}
 

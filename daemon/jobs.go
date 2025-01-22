@@ -217,6 +217,28 @@ func connectErrorCheck(err error) bool {
 	return err == nil
 }
 
+func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
+	log.Println(internal.DebugPrefix,
+		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
+		targetTechnology.String())
+	v, err := r.factory(targetTechnology)
+	if err != nil {
+		return fmt.Errorf("failed to build VPN instance: %s", err)
+	}
+
+	err = r.cm.SaveWith(func(c config.Config) config.Config {
+		c.Technology = targetTechnology
+		c.AutoConnectData.Protocol = config.Protocol_UDP
+		return c
+	})
+	if err != nil {
+		return fmt.Errorf("failed to fallback to %s tech: %s", targetTechnology.String(), err)
+	}
+
+	r.netw.SetVPN(v)
+	return nil
+}
+
 // StartAutoConnect connect to VPN server if autoconnect is enabled
 func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 	tries := 1
@@ -234,13 +256,13 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 		}
 
 		if cfg.Technology == config.Technology_NORDWHISPER && !r.isNordWhisperEnabled() {
-			err := r.cm.SaveWith(func(c config.Config) config.Config {
-				c.Technology = config.Technology_NORDLYNX
-				c.AutoConnectData.Protocol = config.Protocol_UDP
-				return c
-			})
-			if err != nil {
-				log.Println(internal.ErrorPrefix, "failed to fallback to Nordlynx tech:", err)
+			log.Println(internal.DebugPrefix,
+				"technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
+			if err := r.fallbackTechnology(config.Technology_NORDLYNX); err != nil {
+				log.Println(internal.ErrorPrefix, "failed to fall back to NordLynx technology, will try OpenVPN")
+				if err := r.fallbackTechnology(config.Technology_OPENVPN); err != nil {
+					return fmt.Errorf("falling back to OpenVPN technology: %s", err)
+				}
 			}
 		}
 
