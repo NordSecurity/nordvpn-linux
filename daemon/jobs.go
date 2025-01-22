@@ -75,8 +75,6 @@ func (r *RPC) StartJobs(
 		}
 	}
 
-	go JobActualIP(statePublisher, r.dm, r.api)
-
 	go func() {
 		stateChan, _ := statePublisher.AddSubscriber()
 		for ev := range stateChan {

@@ -576,6 +576,8 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}()
+
+	go daemon.ProcessActualIPs(statePublisher, dm, defaultAPI)
 	rpc.StartJobs(statePublisher, heartBeatSubject)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
