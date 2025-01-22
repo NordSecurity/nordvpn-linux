@@ -52,7 +52,7 @@ class PacketCaptureThread(Thread):
             command += self._add_filters()
 
         tshark_result: str = sh.tshark(command)
-        print(tshark_result)
+        print(f"captured traffic: {tshark_result}")
 
         return tshark_result.strip()
 
@@ -248,4 +248,4 @@ def get_external_device_ip() -> str:
 
 
 def generate_traffic(retry=1):
-    _is_dns_resolvable(domain="nordvpn.com", retry=retry)
+    _is_dns_resolvable(domain="test1.com", retry=retry)

@@ -47,6 +47,7 @@ def connect_base_test(connection_settings, group=(), name="", hostname=""):
 
     print(connection_settings)
     packets_captured = network.capture_traffic(connection_settings).splitlines()
+    assert packets_captured != ""
     assert len(packets_captured) > 0
 
 
