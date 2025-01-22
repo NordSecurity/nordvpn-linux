@@ -73,7 +73,7 @@ def capture_traffic(connection_settings, duration: int=5) -> str:
 
     try:
         # generate some traffic
-        generate_traffic(repeat=5)
+        generate_traffic(retry=5)
     except Exception as e: # noqa: BLE001
         logging.log(f"capture_traffic exception: {e}")
         logging.log(t_connect.packets)
@@ -254,13 +254,5 @@ def get_external_device_ip() -> str:
     return requests.get(API_EXTERNAL_IP, timeout=5).json().get("ip")
 
 
-def generate_traffic(address = "https://nordvpn.com", timeout=1, repeat=1):
-    for _ in range(0, max(repeat, 1)):
-        try:
-            req = urllib.request.Request(address, method="HEAD")
-            urllib.request.urlopen(req, timeout=timeout)
-        except Exception as e:  # noqa: BLE001
-            print(f"generate_traffic FAIL: {e}")
-            time.sleep(0.5)
-
-
+def generate_traffic(retry=1):
+    _is_dns_resolvable(domain="nordvpn.com", retry=retry)
