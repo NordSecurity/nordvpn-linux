@@ -6,7 +6,6 @@ from threading import Thread
 import dns.resolver
 import requests
 import sh
-import urllib
 
 from . import daemon, firewall, info, logging, settings
 
