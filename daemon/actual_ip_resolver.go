@@ -43,7 +43,9 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff f
 		// this goroutine is used so that this function is immediately stopped once the context is cancelled
 		go func() {
 			ip, err := tryInsightsIP(api)
-			result <- Result{ip, err}
+			if ctx.Err() == nil {
+				result <- Result{ip, err}
+			}
 		}()
 
 		select {
