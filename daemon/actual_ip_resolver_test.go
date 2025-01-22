@@ -200,7 +200,7 @@ func receiveWithTimeout(t *testing.T, ch <-chan interface{}) interface{} {
 	return nil
 }
 
-func TestProcessActualIPs(t *testing.T) {
+func TestActualIPResolver(t *testing.T) {
 	address := netip.AddrFrom4([4]byte{192, 168, 1, 2})
 	rpc := testRPC()
 	rpc.statePublisher = state.NewState()
@@ -210,7 +210,7 @@ func TestProcessActualIPs(t *testing.T) {
 			return &core.Insights{IP: address.String()}, nil
 		},
 	}
-	go ProcessActualIPs(rpc.statePublisher, rpc.dm, api)
+	go ActualIPResolver(rpc.statePublisher, rpc.dm, api)
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, netip.Addr{}, rpc.dm.GetActualIP())
 	eventConnect := events.DataConnect{}

@@ -87,9 +87,9 @@ func updateActualIP(dm *DataManager, api core.InsightsAPI, ctx context.Context, 
 	return nil
 }
 
-// ProcessActualIPs is a long-running function that will update the actual IP address indefinitely
+// ActualIPResolver is a long-running function that will update the actual IP address indefinitely
 // it reacts to state updates from the statePublisher
-func ProcessActualIPs(statePublisher *state.StatePublisher, dm *DataManager, api core.InsightsAPI) {
+func ActualIPResolver(statePublisher *state.StatePublisher, dm *DataManager, api core.InsightsAPI) {
 	call := func(ctx context.Context, isConnected bool) {
 		err := updateActualIP(dm, api, ctx, isConnected)
 		if err == nil {
