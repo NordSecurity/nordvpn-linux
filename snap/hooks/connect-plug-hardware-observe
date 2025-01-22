@@ -1,6 +1,6 @@
 #!/bin/sh
 
-INTERFACE_NAME="network-control"
+INTERFACE_NAME="hardware-observe"
 
 if snapctl is-connected ${INTERFACE_NAME}; then
   echo "The ${INTERFACE_NAME} interface is connected. Restarting the Snap container..."

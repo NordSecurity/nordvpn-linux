@@ -23,7 +23,7 @@ func (r *RPC) SetProtocol(ctx context.Context, in *pb.SetProtocolRequest) (*pb.S
 		}, nil
 	}
 
-	if cfg.Technology == config.Technology_NORDLYNX {
+	if cfg.Technology != config.Technology_OPENVPN {
 		return &pb.SetProtocolResponse{
 			Response: &pb.SetProtocolResponse_SetProtocolStatus{
 				SetProtocolStatus: pb.SetProtocolStatus_INVALID_TECHNOLOGY,

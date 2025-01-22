@@ -15,7 +15,7 @@ func (s *Server) StartJobs() {
 	}
 
 	if _, err := s.scheduler.NewJob(
-		gocron.DurationJob(5*time.Second),
+		gocron.DurationJob(1*time.Second),
 		gocron.NewTask(JobMonitorFileshareProcess(s)),
 		gocron.WithName("job monitor fileshare process")); err != nil {
 		log.Println(internal.WarningPrefix, "job monitor fileshare process schedule error:", err)
@@ -39,33 +39,58 @@ func JobRefreshMeshnet(s *Server) func() error {
 }
 
 func JobMonitorFileshareProcess(s *Server) func() error {
-	oldState := false
-	return func() error {
-		if !s.isMeshOn() {
-			return nil
-		}
-		newState := internal.IsProcessRunning(internal.FileshareBinaryPath)
-		if newState == oldState {
-			// only state change triggers the modifications
-			return nil
-		}
+	job := monitorFileshareProcessJob{
+		isFileshareAllowed: false,
+		meshChecker:        s,
+		rulesController:    s.netw,
+		processChecker:     defaultProcessChecker{},
+	}
+	return job.run
+}
 
-		log.Println(internal.InfoPrefix, "fileshare change to running", newState)
-		peers, err := s.listPeers()
-		if err != nil {
-			return err
-		}
-
-		isFileshareUp := newState
-		for _, peer := range peers {
-			if !isFileshareUp {
-				s.netw.BlockFileshare(UniqueAddress{UID: peer.PublicKey, Address: peer.Address})
-			} else {
-				s.netw.AllowFileshare(UniqueAddress{UID: peer.PublicKey, Address: peer.Address})
+func (j *monitorFileshareProcessJob) run() error {
+	if !j.meshChecker.isMeshOn() {
+		if j.isFileshareAllowed {
+			if err := j.rulesController.ForbidFileshare(); err == nil {
+				j.isFileshareAllowed = false
 			}
 		}
-		oldState = newState
-
 		return nil
 	}
+
+	if j.processChecker.isFileshareRunning() {
+		j.rulesController.PermitFileshare()
+		j.isFileshareAllowed = true
+	} else {
+		j.rulesController.ForbidFileshare()
+		j.isFileshareAllowed = false
+	}
+
+	return nil
+}
+
+type defaultProcessChecker struct{}
+
+func (defaultProcessChecker) isFileshareRunning() bool {
+	return internal.IsProcessRunning(internal.FileshareBinaryPath)
+}
+
+type monitorFileshareProcessJob struct {
+	isFileshareAllowed bool
+	meshChecker        meshChecker
+	rulesController    rulesController
+	processChecker     processChecker
+}
+
+type meshChecker interface {
+	isMeshOn() bool
+}
+
+type rulesController interface {
+	ForbidFileshare() error
+	PermitFileshare() error
+}
+
+type processChecker interface {
+	isFileshareRunning() bool
 }

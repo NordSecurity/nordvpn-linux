@@ -22,6 +22,7 @@ func TestIsPaymentValid(t *testing.T) {
 		{name: "empty payment", valid: false},
 		{name: "invalid status", valid: false, payment: core.Payment{Status: "invalid"}},
 		{name: "done status", valid: true, payment: core.Payment{Status: "done"}},
+		{name: "error status", valid: false, payment: core.Payment{Status: "error"}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(

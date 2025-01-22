@@ -97,7 +97,8 @@ def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
     if tech == "nordlynx":
         sh.nordvpn.set.technology("OPENVPN")
 
-    assert f"Technology is set to '{tech.upper()}' successfully." in sh.nordvpn.set.technology(tech)
+    tech_name =  lib.technology_to_upper_camel_case(tech)
+    assert f"Technology is set to '{tech_name}' successfully." in sh.nordvpn.set.technology(tech)
     assert tech.upper() in sh.nordvpn.settings()
 
 

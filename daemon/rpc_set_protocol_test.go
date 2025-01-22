@@ -129,9 +129,20 @@ func TestSetProtocol_Error(t *testing.T) {
 			},
 		},
 		{
-			name:              "set protocol invalid technology",
+			name:              "set protocol invalid technology NordLynx",
 			currentTechnology: config.Technology_NORDLYNX,
 			currentProtocol:   config.Protocol_UDP,
+			desiredProtocol:   config.Protocol_TCP,
+			expectedResponse: &pb.SetProtocolResponse{
+				Response: &pb.SetProtocolResponse_SetProtocolStatus{
+					SetProtocolStatus: pb.SetProtocolStatus_INVALID_TECHNOLOGY,
+				},
+			},
+		},
+		{
+			name:              "set protocol invalid technology NordWhisper",
+			currentTechnology: config.Technology_NORDWHISPER,
+			currentProtocol:   config.Protocol_Webtunnel,
 			desiredProtocol:   config.Protocol_TCP,
 			expectedResponse: &pb.SetProtocolResponse{
 				Response: &pb.SetProtocolResponse_SetProtocolStatus{
