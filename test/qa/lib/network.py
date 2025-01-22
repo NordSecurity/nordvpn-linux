@@ -50,9 +50,9 @@ class PacketCaptureThread(Thread):
         command = ["-i", "any", "-a", f"duration:{self.duration}"]
         if technology != "" :
             command += self._add_filters()
-
+        logging.log(f"start capturing {command}")
         tshark_result: str = sh.tshark(command)
-        print(f"captured traffic: {tshark_result}")
+        logging.log(f"captured traffic: {tshark_result}")
 
         return tshark_result.strip()
 
