@@ -14,49 +14,42 @@ _blackholes = []
 
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
-TSHARK_FILTER_NORDLYNX = "(udp port 51820) and (ip dst %s)"
-TSHARK_FILTER_UDP = "(udp port 1194) and (ip dst %s)"
-TSHARK_FILTER_TCP = "(tcp port 443) and (ip dst %s)"
-TSHARK_FILTER_UDP_OBFUSCATED = "udp and (port not 1194) and (ip dst %s)"
-TSHARK_FILTER_TCP_OBFUSCATED = "tcp and (port not 443) and (ip dst %s)"
-
 FWMARK = 57841
 
 class PacketCaptureThread(Thread):
     def __init__(self, connection_settings, duration: int):
         Thread.__init__(self)
-        self.packets_captured: int = -1
         self.connection_settings = connection_settings
         self.packets = ""
         self.duration=duration
 
     def run(self):
-        self.packets_captured = self._capture_packets()
+        self.packets = self._capture_packets()
 
-
-    def _capture_packets(self) -> str:
+    def _add_filters(self) -> list[str]:
         technology = self.connection_settings[0]
         protocol = self.connection_settings[1]
         obfuscated = self.connection_settings[2]
-
-        # Collect information needed for tshark filter
         server_ip = settings.get_server_ip()
 
-        # Choose traffic filter according to information collected above
-        if technology == "nordlynx" and protocol == "" and obfuscated == "":
-            traffic_filter = TSHARK_FILTER_NORDLYNX % server_ip
-        elif technology == "openvpn" and protocol == "udp" and obfuscated == "off":
-            traffic_filter = TSHARK_FILTER_UDP % server_ip
-        elif technology == "openvpn" and protocol == "tcp" and obfuscated == "off":
-            traffic_filter = TSHARK_FILTER_TCP % server_ip
-        elif technology == "openvpn" and protocol == "udp" and obfuscated == "on":
-            traffic_filter = TSHARK_FILTER_UDP_OBFUSCATED % server_ip
-        elif technology == "openvpn" and protocol == "tcp" and obfuscated == "on":
-            traffic_filter = TSHARK_FILTER_TCP_OBFUSCATED % server_ip
+        if technology == "nordlynx":
+            return ["-f", f"(udp port 51820) and (host {server_ip})", "-Y", "wg"]
+
+        if technology == "openvpn":
+            if obfuscated == "off":
+                return ["-f", f"{protocol} and (host {server_ip})", "-Y", "openvpn"]
+            if obfuscated =="on":
+                return ["-f", f"{protocol} and (host {server_ip})", "-Y", "not openvpn"]
+
+        print("_add_filters: no filters were added")
+        return []
+
+    def _capture_packets(self) -> str:
+        technology = self.connection_settings[0]
 
         command = ["-i", "any", "-a", f"duration:{self.duration}"]
         if technology != "" :
-            command += "-f", traffic_filter
+            command += self._add_filters()
 
         tshark_result: str = sh.tshark(command)
 
