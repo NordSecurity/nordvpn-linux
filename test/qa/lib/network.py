@@ -52,6 +52,7 @@ class PacketCaptureThread(Thread):
             command += self._add_filters()
 
         tshark_result: str = sh.tshark(command)
+        print(tshark_result)
 
         return tshark_result.strip()
 
