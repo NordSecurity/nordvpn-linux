@@ -16,7 +16,9 @@ RUN apt-get update && \
         # install python for tests
         python3 python3-pip \
         # install tshark  \
-        tshark && \
+        tshark \
+        # changelog parsing
+        dpkg-dev && \
     # make sure, that Docker does not hang during installation, when we get TUI screen
     yes yes | DEBIAN_FRONTEND=teletype dpkg-reconfigure wireshark-common && \
     # cleanup

@@ -334,6 +334,22 @@ def get_virtual_countries() -> list[str]:
 
     return countries
 
+class CommandExecutor:
+    def __init__(self, ssh_client = None):
+        self.ssh_client = ssh_client
+    def __call__(self, command: str):
+        """
+        Executes `command` locally, if `ssh_client` parameter was not provided to constructor.
+
+        Otherwise, `command` is executed on a remote SSH client.
+        """
+        if not isinstance(command, str):
+            msg = f"Expected a string, got {type(command).__name__}"
+            raise TypeError(msg)
+        if self.ssh_client is None:
+            return sh.Command(command.split()[0])(*command.split()[1:], tty_out=False)
+        return self.ssh_client.exec_command(command)
+
 def technology_to_upper_camel_case(tech: str) -> str:
     match tech.upper():
         case "NORDLYNX":
