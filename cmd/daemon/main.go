@@ -577,7 +577,7 @@ func main() {
 		}
 	}()
 
-	go daemon.ProcessActualIPs(statePublisher, dm, defaultAPI)
+	go daemon.ActualIPResolver(statePublisher, dm, defaultAPI)
 	rpc.StartJobs(statePublisher, heartBeatSubject)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
