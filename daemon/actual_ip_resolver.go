@@ -71,6 +71,9 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff f
 func updateActualIP(statePublisher *state.StatePublisher, dm *DataManager, api core.InsightsAPI, ctx context.Context, isConnected bool) {
 	var newIP netip.Addr
 	defer func() {
+		if ctx.Err() != nil {
+			return
+		}
 		dm.SetActualIP(newIP)
 		err := statePublisher.NotifyActualIPUpdate()
 		if err != nil {
