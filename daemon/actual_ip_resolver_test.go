@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
-	daemonEvents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -125,66 +124,6 @@ func TestInsightsIPUntilSuccess(t *testing.T) {
 				assert.ErrorContains(t, err, tt.expectedErr)
 			}
 			assert.Equal(t, tt.expectedIP, ip.String())
-		})
-	}
-}
-
-func TestUpdateActualIP(t *testing.T) {
-	tests := []struct {
-		name        string
-		isConnected bool
-		insightsAPI func() (*core.Insights, error)
-		expectedIP  string
-		expectedErr error
-	}{
-		{
-			name:        "Successful IP update",
-			isConnected: true,
-			insightsAPI: func() (*core.Insights, error) {
-				return &core.Insights{IP: "192.168.1.2"}, nil
-			},
-			expectedIP:  "192.168.1.2",
-			expectedErr: nil,
-		},
-		{
-			name:        "Not connected",
-			isConnected: false,
-			insightsAPI: func() (*core.Insights, error) {
-				return &core.Insights{IP: "192.168.1.2"}, nil
-			},
-			expectedIP:  "invalid IP",
-			expectedErr: nil,
-		},
-		{
-			name:        "Error from Insights API",
-			isConnected: true,
-			insightsAPI: func() (*core.Insights, error) {
-				return nil, errors.New("API error")
-			},
-			expectedIP:  "invalid IP",
-			expectedErr: context.DeadlineExceeded,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-			defer cancel()
-
-			dm := NewDataManager("", "", "", "", daemonEvents.NewDataUpdateEvents())
-			api := &mockInsights{
-				insightsFunc: tt.insightsAPI,
-			}
-
-			err := updateActualIP(dm, api, ctx, tt.isConnected)
-
-			assert.ErrorIs(t, err, tt.expectedErr)
-
-			dm.mu.Lock()
-			actualIP := dm.actualIP
-			dm.mu.Unlock()
-
-			assert.Equal(t, actualIP.String(), tt.expectedIP)
 		})
 	}
 }

@@ -68,45 +68,36 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff f
 	}
 }
 
-func updateActualIP(dm *DataManager, api core.InsightsAPI, ctx context.Context, isConnected bool) error {
+func updateActualIP(statePublisher *state.StatePublisher, dm *DataManager, api core.InsightsAPI, ctx context.Context, isConnected bool) {
 	var newIP netip.Addr
 	defer func() {
 		dm.SetActualIP(newIP)
+		err := statePublisher.NotifyActualIPUpdate()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "notify about actual ip update failed: ", err)
+		}
 	}()
 
 	if !isConnected {
-		return nil
+		return
 	}
 
 	insightsIP, err := insightsIPUntilSuccess(ctx, api, network.ExponentialBackoff)
 	if err != nil {
-		return err
+		if err == context.Canceled {
+			return
+		}
+		log.Println(internal.ErrorPrefix, "actual ip job error: ", err)
+		return
 	}
 	if insightsIP.IsValid() {
 		newIP = insightsIP
 	}
-
-	return nil
 }
 
 // ActualIPResolver is a long-running function that will update the actual IP address indefinitely
 // it reacts to state updates from the statePublisher
 func ActualIPResolver(statePublisher *state.StatePublisher, dm *DataManager, api core.InsightsAPI) {
-	call := func(ctx context.Context, isConnected bool) {
-		err := updateActualIP(dm, api, ctx, isConnected)
-		if err == nil {
-			err := statePublisher.NotifyActualIPUpdate()
-			if err != nil {
-				log.Println(internal.ErrorPrefix, "notify about actual ip update failed: ", err)
-			}
-		} else {
-			if err == context.Canceled {
-				return
-			}
-			log.Println(internal.ErrorPrefix, "actual ip job error: ", err)
-		}
-	}
-
 	stateChan, _ := statePublisher.AddSubscriber()
 	var cancel context.CancelFunc
 
@@ -123,9 +114,9 @@ func ActualIPResolver(statePublisher *state.StatePublisher, dm *DataManager, api
 			ctx, cancel = context.WithCancel(context.Background())
 
 			if isConnect {
-				go call(ctx, true)
+				go updateActualIP(statePublisher, dm, api, ctx, true)
 			} else {
-				call(ctx, false) // should finish immediately, that's why it's not a separate goroutine
+				updateActualIP(statePublisher, dm, api, ctx, false) // should finish immediately, that's why it's not a separate goroutine
 			}
 		}
 	}
