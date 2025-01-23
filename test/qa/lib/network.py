@@ -52,6 +52,7 @@ class PacketCaptureThread(Thread):
             command += self._add_filters()
         logging.log(f"start capturing {command}")
         tshark_result: str = sh.tshark(command)
+        # in some cases there will be no output from tshark. This might be a python or tshark problem
         logging.log(f"captured traffic: {tshark_result}")
 
         return tshark_result.strip()
@@ -247,8 +248,6 @@ def get_external_device_ip() -> str:
     return requests.get(API_EXTERNAL_IP, timeout=5).json().get("ip")
 
 
-counter = 1
 def generate_traffic(retry=1):
-    global counter
-    _is_dns_resolvable(domain=f"test-{counter}.com", retry=retry)
-    counter += 1
+    # use an invalid server name to be sure that there will be DNS requests and that the result will not be from OS cache
+    _is_dns_resolvable(domain="invalid-server-name.com", retry=retry)

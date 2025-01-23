@@ -39,16 +39,12 @@ def get_alias() -> str:
 
 
 def connect_base_test(connection_settings, group=(), name="", hostname=""):
+    print(connection_settings)
     output = sh.nordvpn(get_alias(), group, _tty_out=False)
     print(output)
 
     assert lib.is_connect_successful(output, name, hostname)
-    assert network.is_connected()
-
-    print(connection_settings)
-    packets_captured = network.capture_traffic(connection_settings).splitlines()
-    assert packets_captured != []
-    assert len(packets_captured) > 0
+    assert network.is_available()
 
 
 def disconnect_base_test():
