@@ -247,5 +247,8 @@ def get_external_device_ip() -> str:
     return requests.get(API_EXTERNAL_IP, timeout=5).json().get("ip")
 
 
+counter = 1
 def generate_traffic(retry=1):
-    _is_dns_resolvable(domain="test1.com", retry=retry)
+    global counter
+    _is_dns_resolvable(domain=f"test-{counter}.com", retry=retry)
+    counter += 1
