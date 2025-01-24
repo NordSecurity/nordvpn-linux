@@ -34,7 +34,7 @@ func insightsIPUntilSuccess(ctx context.Context, api core.InsightsAPI, backoff f
 		netip.Addr
 		error
 	}
-	result := make(chan Result)
+	result := make(chan Result, 1)
 	for i := 0; ; i++ {
 		if ctx.Err() != nil {
 			return netip.Addr{}, ctx.Err()
