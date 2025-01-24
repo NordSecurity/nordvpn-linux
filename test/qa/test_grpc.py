@@ -78,11 +78,11 @@ def collect_state_changes(stop_at: int, tracked_states: Sequence[str], timeout: 
         return result
 
 
-def test_is_virtual_is_true_for_virtual_location():
-    check_is_virtual_in_response("Algiers", True)
+def test_is_virtual_location_is_true_for_virtual_location():
+    check_is_virtual_location_in_response("Algiers", True)
 
 
-def check_is_virtual_in_response(loc: str, expected_is_virtual: bool):
+def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
     expected_states = [state_pb2.ConnectionState.CONNECTED]
 
     result = []
@@ -92,11 +92,11 @@ def check_is_virtual_in_response(loc: str, expected_is_virtual: bool):
     sh.nordvpn.connect(loc)
     sh.nordvpn.disconnect()
     thread.join()
-    assert result.pop().connection_status.is_virtual == expected_is_virtual
+    assert result.pop().connection_status.is_virtual_location == expected_is_virtual
 
 
 def test_is_virtual_is_false_for_non_virtual_location():
-    check_is_virtual_in_response("Poland", False)
+    check_is_virtual_location_in_response("Poland", False)
 
 
 def test_manual_connection_source_is_present_in_response():

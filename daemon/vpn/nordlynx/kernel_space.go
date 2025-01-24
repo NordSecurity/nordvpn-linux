@@ -50,7 +50,7 @@ func (k *KernelSpace) Start(
 		TargetServerIP:      serverData.IP.String(),
 		TargetServerCountry: serverData.Country,
 		TargetServerCity:    serverData.City,
-		IsVirtual:           serverData.VirtualLocation,
+		IsVirtualLocation:   serverData.VirtualLocation,
 	}
 
 	k.eventsPublisher.Connected.Publish(event)

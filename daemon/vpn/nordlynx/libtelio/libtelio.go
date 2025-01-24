@@ -704,7 +704,7 @@ func publishConnectEvent(publisher *vpn.Events, connectType events.TypeEventStat
 		TargetServerDomain:  server.Hostname,
 		TargetServerName:    name,
 		IsMeshnetPeer:       !state.IsVPN,
-		IsVirtual:           server.VirtualLocation,
+		IsVirtualLocation:   server.VirtualLocation,
 	})
 }
 

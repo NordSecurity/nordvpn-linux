@@ -364,7 +364,7 @@ func (ovpn *OpenVPN) publishConnected() {
 		TargetServerIP:      ovpn.serverData.IP.String(),
 		TargetServerCountry: ovpn.serverData.Country,
 		TargetServerCity:    ovpn.serverData.City,
-		IsVirtual:           ovpn.serverData.VirtualLocation,
+		IsVirtualLocation:   ovpn.serverData.VirtualLocation,
 	})
 }
 
