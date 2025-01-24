@@ -17,13 +17,13 @@ import (
 // the IP it returns is always valid
 func tryInsightsIP(api core.InsightsAPI) (netip.Addr, error) {
 	insights, err := api.InsightsViaTunnel()
-	if err == nil && insights != nil {
-		ip, err := netip.ParseAddr(insights.IP)
-		if err == nil {
-			return ip, nil
-		} else {
-			return netip.Addr{}, err
-		}
+	if err != nil || insights == nil {
+		return netip.Addr{}, err
+	}
+
+	ip, err := netip.ParseAddr(insights.IP)
+	if err == nil {
+		return ip, nil
 	} else {
 		return netip.Addr{}, err
 	}
