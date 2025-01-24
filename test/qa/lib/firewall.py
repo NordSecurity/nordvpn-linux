@@ -156,9 +156,8 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
     fw_lines = os.popen("sudo iptables -S").read()
 
     for line in fw_lines.splitlines():
-        if "INPUT" in line and "-s" in line:
+        if all(x in line for x in ["INPUT", "-s", "nordvpn"]):
             current_subnet_rules_input_chain.append(line)
-
     if current_subnet_rules_input_chain:
         return sort_list_by_other_list(result, current_subnet_rules_input_chain)
     return result
@@ -403,8 +402,12 @@ def sort_list_by_other_list(to_sort: list[str], sort_by: list[str]) -> list[str]
     # Create a dictionary to store the order of rules in `sort_by`
     order_dict = {rule: index for index, rule in enumerate(sort_by)}
 
-    # Sort `to_sort` based on the order in `sort_by`
-    return sorted(to_sort, key=lambda rule: order_dict[rule])
+    try:
+        # Sort `to_sort` based on the order in `sort_by`
+        return sorted(to_sort, key=lambda rule: order_dict[rule])
+    except Exception as e: # noqa: BLE001
+        logging.log(data=f"sort_list_by_other_list{e}: {to_sort}\n{sort_by}")
+        raise
 
 
 def add_and_delete_random_route():
