@@ -1,4 +1,5 @@
 import settings_pb2 as _settings_pb2
+import status_pb2 as _status_pb2
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -33,7 +34,7 @@ LOGOUT: LoginEventType
 SERVERS_LIST_UPDATE: UpdateEvent
 
 class ConnectionStatus(_message.Message):
-    __slots__ = ("state", "server_ip", "server_country", "server_city", "server_hostname", "server_name", "is_mesh_peer", "by_user")
+    __slots__ = ("state", "server_ip", "server_country", "server_city", "server_hostname", "server_name", "is_mesh_peer", "by_user", "is_virtual_location", "parameters")
     STATE_FIELD_NUMBER: _ClassVar[int]
     SERVER_IP_FIELD_NUMBER: _ClassVar[int]
     SERVER_COUNTRY_FIELD_NUMBER: _ClassVar[int]
@@ -42,6 +43,8 @@ class ConnectionStatus(_message.Message):
     SERVER_NAME_FIELD_NUMBER: _ClassVar[int]
     IS_MESH_PEER_FIELD_NUMBER: _ClassVar[int]
     BY_USER_FIELD_NUMBER: _ClassVar[int]
+    IS_VIRTUAL_LOCATION_FIELD_NUMBER: _ClassVar[int]
+    PARAMETERS_FIELD_NUMBER: _ClassVar[int]
     state: ConnectionState
     server_ip: str
     server_country: str
@@ -50,7 +53,9 @@ class ConnectionStatus(_message.Message):
     server_name: str
     is_mesh_peer: bool
     by_user: bool
-    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., server_ip: _Optional[str] = ..., server_country: _Optional[str] = ..., server_city: _Optional[str] = ..., server_hostname: _Optional[str] = ..., server_name: _Optional[str] = ..., is_mesh_peer: bool = ..., by_user: bool = ...) -> None: ...
+    is_virtual_location: bool
+    parameters: _status_pb2.ConnectionParameters
+    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., server_ip: _Optional[str] = ..., server_country: _Optional[str] = ..., server_city: _Optional[str] = ..., server_hostname: _Optional[str] = ..., server_name: _Optional[str] = ..., is_mesh_peer: bool = ..., by_user: bool = ..., is_virtual_location: bool = ..., parameters: _Optional[_Union[_status_pb2.ConnectionParameters, _Mapping]] = ...) -> None: ...
 
 class LoginEvent(_message.Message):
     __slots__ = ("type",)

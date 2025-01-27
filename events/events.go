@@ -83,6 +83,7 @@ type DataConnect struct {
 	TargetServerPickerResponse string
 	TargetServerName           string
 	Error                      error
+	IsVirtualLocation          bool
 }
 
 type DataDisconnect struct {

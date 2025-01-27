@@ -364,6 +364,7 @@ func (ovpn *OpenVPN) publishConnected() {
 		TargetServerIP:      ovpn.serverData.IP.String(),
 		TargetServerCountry: ovpn.serverData.Country,
 		TargetServerCity:    ovpn.serverData.City,
+		IsVirtualLocation:   ovpn.serverData.VirtualLocation,
 	})
 }
 
@@ -571,8 +572,8 @@ func newManagementClient(eventCh chan<- gopenvpn.Event) (chan *gopenvpn.MgmtClie
 
 	internal.UpdateFilePermissions(openvpnManagementSocket, internal.PermUserRWX)
 
-	var clientCh = make(chan *gopenvpn.MgmtClient)
-	var errorCh = make(chan error)
+	clientCh := make(chan *gopenvpn.MgmtClient)
+	errorCh := make(chan error)
 	go func() {
 		conn, err := listener.Accept()
 		if err != nil {

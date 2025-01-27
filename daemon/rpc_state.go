@@ -68,6 +68,7 @@ func statusStream(stateChan <-chan interface{},
 	stopChan chan<- struct{},
 	uid int64,
 	srv pb.Daemon_SubscribeToStateChangesServer,
+	paramsStorage *ParametersStorage,
 ) {
 	for {
 		select {
@@ -82,16 +83,25 @@ func statusStream(stateChan <-chan interface{},
 					state = pb.ConnectionState_CONNECTED
 				}
 
+				connectionParameters := paramsStorage.parameters
 				status := pb.ConnectionStatus{
-					State:          state,
-					ServerIp:       e.TargetServerIP,
-					ServerCountry:  e.TargetServerCountry,
-					ServerCity:     e.TargetServerCity,
-					ServerName:     e.TargetServerName,
-					ServerHostname: e.TargetServerDomain,
-					IsMeshPeer:     e.IsMeshnetPeer,
-					ByUser:         true,
+					State:             state,
+					ServerIp:          e.TargetServerIP,
+					ServerCountry:     e.TargetServerCountry,
+					ServerCity:        e.TargetServerCity,
+					ServerName:        e.TargetServerName,
+					ServerHostname:    e.TargetServerDomain,
+					IsMeshPeer:        e.IsMeshnetPeer,
+					ByUser:            true,
+					IsVirtualLocation: e.IsVirtualLocation,
+					Parameters: &pb.ConnectionParameters{
+						Source:  connectionParameters.ConnectionSource,
+						Country: connectionParameters.Parameters.Country,
+						City:    connectionParameters.Parameters.City,
+						Group:   connectionParameters.Parameters.Group,
+					},
 				}
+
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{ConnectionStatus: &status}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn enabled failed to send state update:", err)
@@ -153,7 +163,7 @@ func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStat
 	}
 
 	stateChan, stopChan := r.statePublisher.AddSubscriber()
-	statusStream(stateChan, stopChan, uid, srv)
+	statusStream(stateChan, stopChan, uid, srv, &r.ConnectionParameters)
 
 	return nil
 }
