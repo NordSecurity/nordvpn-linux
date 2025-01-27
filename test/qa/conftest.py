@@ -7,7 +7,6 @@ import time
 
 import dns.resolver
 import pytest
-import sh
 
 import sys
 import os
@@ -41,7 +40,7 @@ print = _print_with_timestamp # noqa: A001
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_check_internet_connection():
-    if not network.is_available():
+    if not network.is_internet_reachable(retry=1) or not network.is_internet_reachable_outside_vpn(retry=1):
         print("setup_check_internet_connection: no internet available before running the tests")
 
 
@@ -75,9 +74,9 @@ def _check_connection_to_ip(ip_address, stop_event):
     print("Start _check_connection_to_ip")
     while not stop_event.is_set():
         try:
-            "icmp_seq=" in sh.ping("-c", "3", "-W", "3", ip_address) # noqa: B015
+            network.is_internet_reachable(ip_address=ip_address, retry=1)
         except Exception as e: # noqa: BLE001
-            print(f"_check_connection_to_ip: IN-PING {ip_address} FAILURE: {e}.")
+            print(f"_check_connection_to_ip: FAILURE for {ip_address}: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
 
 
@@ -85,7 +84,7 @@ def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
     print("Start _check_connection_to_ip_outside_vpn")
     while not stop_event.is_set():
         try:
-            "icmp_seq=" in sh.sudo.ping("-c", "3", "-W", "3", "-m", "57841", ip_address) # noqa: B015
+            network.is_internet_reachable_outside_vpn(ip_address=ip_address, retry=1)
         except Exception as e: # noqa: BLE001
             print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address} FAILURE: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
@@ -112,5 +111,10 @@ def _capture_traffic(stop_event):
     stop_event.wait()
     print("Stopping tshark with Ctrl+C")
     process.send_signal(signal.SIGINT)
-    print(f"tshark out {process.stdout.read().strip()} - {process.stderr.read().strip()}")
+    try:
+        process.wait(timeout=2)
+    except Exception as e:  # noqa: BLE001
+        print(f"failed to stop tshark. Error: {e}")
+        process.kill()
+    print(f"tshark out {process.stdout.read().strip()[-10:]} - {process.stderr.read().strip()[-10:]}")
     time.sleep(1)

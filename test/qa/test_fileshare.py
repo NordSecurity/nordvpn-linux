@@ -101,10 +101,10 @@ def teardown_function(function):  # noqa: ARG001
                           ["outer", "nested/inner"],
                           ["nested/inner"]])
 def test_accept(accept_directories):
-    address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
+    output = sh.nordvpn.mesh.peer.list(_tty_out=False)
+    address = meshnet.PeerList.from_str(output).get_this_device().ip
 
     # Check peer list on both ends
-    output = f'{sh.nordvpn.mesh.peer.list(_tty_out=False)}'
     logging.log(data="------------------11----------------------------------")
     logging.log(data=output)
     logging.log(data="------------------------------------------------------")
