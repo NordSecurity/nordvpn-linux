@@ -152,7 +152,9 @@ func TestActualIPResolver(t *testing.T) {
 	go ActualIPResolver(rpc.statePublisher, rpc.dm, api)
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, netip.Addr{}, rpc.dm.GetActualIP())
-	eventConnect := events.DataConnect{}
+	eventConnect := events.DataConnect{
+		EventStatus: events.StatusSuccess,
+	}
 	go func() {
 		err := rpc.statePublisher.NotifyConnect(eventConnect)
 		assert.NoError(t, err)
