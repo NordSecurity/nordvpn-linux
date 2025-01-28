@@ -105,7 +105,7 @@ func ActualIPResolver(statePublisher *state.StatePublisher, dm *DataManager, api
 	var cancel context.CancelFunc
 
 	for ev := range stateChan {
-		_, isConnect := ev.(events.DataConnect)
+		connectEvent, isConnect := ev.(events.DataConnect)
 		_, isDisconnect := ev.(events.DataDisconnect)
 
 		if isConnect || isDisconnect {
@@ -116,10 +116,12 @@ func ActualIPResolver(statePublisher *state.StatePublisher, dm *DataManager, api
 			var ctx context.Context
 			ctx, cancel = context.WithCancel(context.Background())
 
-			if isConnect {
+			if isConnect && connectEvent.EventStatus == events.StatusSuccess {
 				go updateActualIP(statePublisher, dm, api, ctx, true)
-			} else {
+			} else if isDisconnect {
 				updateActualIP(statePublisher, dm, api, ctx, false) // should finish immediately, that's why it's not a separate goroutine
+			} else {
+				continue
 			}
 		}
 	}
