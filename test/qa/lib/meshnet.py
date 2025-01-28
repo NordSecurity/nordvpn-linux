@@ -617,16 +617,20 @@ def set_permissions(peer: str, routing: bool | None = None, local: bool | None =
 
     # ignore any failures that might occur when permissions are already configured to the desired value
     if routing is not None:
-        sh.nordvpn.mesh.peer.routing(bool_to_permission(routing), peer, _ok_code=(0, 1))
+        result = sh.nordvpn.mesh.peer.routing(bool_to_permission(routing), peer, _ok_code=(0, 1))
+        logging.log(f"DEBUG: set routing to {routing} for {peer} output: {result}, return code: {result.exit_code}")
 
     if local is not None:
         sh.nordvpn.mesh.peer.local(bool_to_permission(local), peer, _ok_code=(0, 1))
+        logging.log(f"DEBUG: set local to {local} for {peer} output: {result}, return code: {result.exit_code}")
 
     if incoming is not None:
         sh.nordvpn.mesh.peer.incoming(bool_to_permission(incoming), peer, _ok_code=(0, 1))
+        logging.log(f"DEBUG: set incoming to {incoming} for {peer} output: {result}, return code: {result.exit_code}")
 
     if fileshare is not None:
         sh.nordvpn.mesh.peer.fileshare(bool_to_permission(fileshare), peer, _ok_code=(0, 1))
+        logging.log(f"DEBUG: set fileshare to {fileshare} for {peer} output: {result}, return code: {result.exit_code}")
 
 
 def get_clean_peer_list(peer_list: str):

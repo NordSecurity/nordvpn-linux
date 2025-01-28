@@ -4,7 +4,8 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, meshnet, network, settings, ssh
+from lib import daemon, meshnet, network, settings, ssh, logging
+
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -28,7 +29,11 @@ def teardown_function(function):  # noqa: ARG001
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
-    peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
+    logging.log(f"DEBUG: lan_discovery: {lan_discovery}, local: {local}")
+    peer_list = sh.nordvpn.mesh.peer.list()
+    logging.log(peer_list)
+    logging.log(peer_list.exit_code)
+    peer_ip = meshnet.PeerList.from_str(peer_list).get_external_peer().ip
     meshnet.set_permissions(peer_ip, True, local, True, True)
 
     lan_discovery_value = "on" if lan_discovery else "off"

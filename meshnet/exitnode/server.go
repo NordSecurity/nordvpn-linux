@@ -3,11 +3,13 @@ package exitnode
 
 import (
 	"fmt"
+	"log"
 	"net/netip"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 )
 
@@ -85,8 +87,10 @@ func (en *Server) ResetPeers(peers mesh.MachinePeers, lanAvailable bool, killswi
 }
 
 func (en *Server) resetPeers(lanAvailable bool, killswitch bool) error {
+	log.Println(internal.DebugPrefix, "resetPeeers: lan-available:", lanAvailable)
 	trafficPeers := make([]TrafficPeer, 0, len(en.peers))
 	for _, peer := range en.peers {
+		log.Println(internal.DebugPrefix, "resetPeeers: peer:", peer.Nickname, "/", peer.Hostname, "local:", peer.DoIAllowLocalNetwork)
 		if peer.Address.IsValid() {
 			trafficPeers = append(trafficPeers, TrafficPeer{
 				netip.PrefixFrom(peer.Address, peer.Address.BitLen()),
