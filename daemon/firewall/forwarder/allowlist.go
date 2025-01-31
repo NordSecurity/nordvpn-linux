@@ -1,4 +1,4 @@
-package exitnode
+package forwarder
 
 import (
 	"fmt"

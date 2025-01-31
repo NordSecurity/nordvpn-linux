@@ -28,6 +28,7 @@ import (
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
@@ -54,7 +55,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
-	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/registry"
 	"github.com/NordSecurity/nordvpn-linux/nc"
@@ -378,12 +378,12 @@ func main() {
 		dnsHostSetter,
 		vpnRouter,
 		meshRouter,
-		exitnode.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
+		forwarder.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
 			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
 			return exec.Command(command, arg...).CombinedOutput()
 		}, cfg.AutoConnectData.Allowlist,
 			kernel.NewSysctlSetter(
-				exitnode.Ipv4fwdKernelParamName,
+				forwarder.Ipv4fwdKernelParamName,
 				1,
 				0,
 			)),
