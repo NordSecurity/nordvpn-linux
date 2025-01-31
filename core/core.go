@@ -38,6 +38,7 @@ type CredentialsAPI interface {
 
 type InsightsAPI interface {
 	Insights() (*Insights, error)
+	InsightsViaTunnel() (*Insights, error)
 }
 
 type ServersAPI interface {
@@ -99,9 +100,9 @@ func (api *DefaultAPI) request(path, method string, data []byte, token string) (
 	return api.do(req)
 }
 
-// do request regardless of the authentication.
-func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
-	resp, err := api.client.Do(req)
+// doWithClient makes a request with the provided client.
+func (api *DefaultAPI) doWithClient(req *http.Request, client *http.Client) (*http.Response, error) {
+	resp, err := client.Do(req)
 
 	// Transport of the request is already up to date
 
@@ -143,6 +144,11 @@ func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+// do request regardless of the authentication.
+func (api *DefaultAPI) do(req *http.Request) (*http.Response, error) {
+	return api.doWithClient(req, api.client)
 }
 
 func (api *DefaultAPI) Plans() (*Plans, error) {
@@ -418,14 +424,13 @@ func (api *DefaultAPI) Server(id int64) (*Server, error) {
 	return &ret[0], nil
 }
 
-// Insights returns insights about user
-func (api *DefaultAPI) Insights() (*Insights, error) {
+func (api *DefaultAPI) insightsWithClient(client *http.Client) (*Insights, error) {
 	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, InsightsURL, "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doWithClient(req, client)
 	if err != nil {
 		return nil, err
 	}
@@ -436,6 +441,19 @@ func (api *DefaultAPI) Insights() (*Insights, error) {
 		return nil, err
 	}
 	return &ret, nil
+}
+
+// Insights returns insights about user
+func (api *DefaultAPI) Insights() (*Insights, error) {
+	return api.insightsWithClient(api.client)
+}
+
+// InsightsViaTunnel returns insights about user, but the request is made through a tunnel
+// the method is not using the default client, but creates a new one
+// the request might not necessary go through a tunnel, if there's no tunnel open
+func (api *DefaultAPI) InsightsViaTunnel() (*Insights, error) {
+	client := request.NewStdHTTP()
+	return api.insightsWithClient(client)
 }
 
 type NotificationCredentialsRequest struct {
