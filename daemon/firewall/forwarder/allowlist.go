@@ -14,7 +14,7 @@ import (
 type operation bool
 
 const (
-	meshAllowlistRuleComment = "nordvpn-exitnode-allowlist"
+	meshAllowlistRuleComment = "nordvpn-exitnode-peer-allowlist"
 )
 
 // Used when adding or removing rules from firewall
@@ -33,9 +33,8 @@ type allowlistManager struct {
 	runCommandFunc runCommandFunc
 }
 
-func newAllowlist(runCommandFunc runCommandFunc, allowlist config.Allowlist) allowlistManager {
+func newAllowlist(runCommandFunc runCommandFunc) allowlistManager {
 	return allowlistManager{
-		allowlist:      allowlist,
 		runCommandFunc: runCommandFunc,
 	}
 }

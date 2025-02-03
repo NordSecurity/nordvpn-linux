@@ -205,7 +205,6 @@ func addAllowlistRules(commandFunc runCommandFunc, interfaceNames []string, allo
 				return fmt.Errorf("allowing local traffic for subnet %s from interface %s: %W",
 					subnet, iface, err)
 			}
-
 		}
 	}
 	return nil

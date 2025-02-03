@@ -381,7 +381,7 @@ func main() {
 		forwarder.NewServer(ifaceNames, func(command string, arg ...string) ([]byte, error) {
 			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
 			return exec.Command(command, arg...).CombinedOutput()
-		}, cfg.AutoConnectData.Allowlist,
+		},
 			kernel.NewSysctlSetter(
 				forwarder.Ipv4fwdKernelParamName,
 				1,

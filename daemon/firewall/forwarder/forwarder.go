@@ -35,12 +35,12 @@ type Forwarder struct {
 }
 
 // NewServer create & initialize new Server
-func NewServer(interfaceNames []string, commandFunc runCommandFunc, allowlist config.Allowlist, sysctlSetter kernel.SysctlSetter) *Forwarder {
+func NewServer(interfaceNames []string, commandFunc runCommandFunc, sysctlSetter kernel.SysctlSetter) *Forwarder {
 	return &Forwarder{
 		interfaceNames:   interfaceNames,
 		runCommandFunc:   commandFunc,
 		sysctlSetter:     sysctlSetter,
-		allowlistManager: newAllowlist(commandFunc, allowlist),
+		allowlistManager: newAllowlist(commandFunc),
 	}
 }
 
@@ -70,16 +70,27 @@ func (en *Forwarder) ResetFirewall(lanAvailable bool,
 	enableAllowlist bool,
 	allowlist config.Allowlist) error {
 	if !en.enabled {
-		return resetAllowlistRules(en.runCommandFunc,
+		if err := en.allowlistManager.disableAllowlist(); err != nil {
+			return fmt.Errorf("disabling peer allowlist: %w", err)
+		}
+		if err := resetAllowlistRules(en.runCommandFunc,
 			en.interfaceNames,
 			killswitch,
 			enableAllowlist,
-			allowlist.GetSubnets())
+			allowlist.GetSubnets()); err != nil {
+			return fmt.Errorf("reseting allowlist rules: %w", err)
+		}
+
+		return nil
 	}
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
-	return en.resetPeers(lanAvailable, killswitch, enableAllowlist, allowlist)
+	if err := en.resetPeers(lanAvailable, killswitch, enableAllowlist, allowlist); err != nil {
+		return fmt.Errorf("reseting peers: %w", err)
+	}
+
+	return nil
 }
 
 // ResetPeers resets forwarding rules to respect settings in the provided peer list.
@@ -119,12 +130,13 @@ func (en *Forwarder) resetPeers(lanAvailable bool, killswitch bool, enableAllowl
 		return err
 	}
 
-	en.allowlistManager.setAllowlist(allowlist)
-
 	// TODO: Peer local access should not depend on host VPN allowlists settings
 	if err := en.allowlistManager.disableAllowlist(); err != nil {
 		return err
 	}
+
+	en.allowlistManager.setAllowlist(allowlist)
+
 	// If exit node doesn't have full access to its own LAN, we need to ensure access to
 	// allowlisted destinations
 	if !lanAvailable {
@@ -163,23 +175,6 @@ func (en *Forwarder) Disable() error {
 	}
 
 	en.enabled = false
-
-	return nil
-}
-
-func (en *Forwarder) SetAllowlist(allowlist config.Allowlist, lanAvailable bool) error {
-	en.mu.Lock()
-	defer en.mu.Unlock()
-
-	if err := en.allowlistManager.disableAllowlist(); err != nil {
-		return err
-	}
-
-	en.allowlistManager.setAllowlist(allowlist)
-
-	if en.enabled && !lanAvailable {
-		return en.allowlistManager.enableAllowlist()
-	}
 
 	return nil
 }
