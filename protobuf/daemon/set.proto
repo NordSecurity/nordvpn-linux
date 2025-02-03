@@ -16,6 +16,7 @@ enum SetErrorCode {
 message SetAutoconnectRequest {
   bool enabled = 1;
   string server_tag = 2;
+  string server_group = 3;
 }
 
 message SetGenericRequest {

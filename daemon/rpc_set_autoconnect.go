@@ -53,7 +53,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		if serverTag != "" {
 			insights := r.dm.GetInsightsData().Insights
 
-			server, _, err := selectServer(r, &insights, cfg, serverTag, "")
+			server, _, err := selectServer(r, &insights, cfg, serverTag, in.GetServerGroup())
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "no server found for autoconnect", serverTag, err)
 
@@ -67,10 +67,18 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				return nil, err
 			}
 			log.Println(internal.InfoPrefix, "server for autoconnect found", server)
-			// On the cli side, using the --group flag overrides any other arguments and group name will replace the
-			// server tag. Once this is fixed and this RPC accepts both server tag and a group flag, group flag should
-			// be used as a second argument in this call.s
-			parameters = GetServerParameters(serverTag, serverTag, r.dm.GetCountryData().Countries)
+			// NOTE: ServerGroup param in the request is a new addition. Initially,
+			// server group was coming from [pb.SetAutoConnectRequest.ServerTag] param.
+			// To maintin backward compatibility, we set it to `serverTag` here and override
+			// if the [pb.SetAutoConnectRequest.ServerGroup] is set. This may not be needed
+			// after adding support for server group in CLI (LVPN-5901).
+			serverGroup := serverTag
+			if in.GetServerGroup() != "" {
+				serverGroup = in.GetServerGroup()
+			}
+			parameters.Group = groupConvert(serverGroup)
+			parameters.Country = server.Country().Name
+			parameters.City = server.Country().City.Name
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
