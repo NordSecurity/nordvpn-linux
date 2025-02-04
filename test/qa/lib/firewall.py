@@ -156,9 +156,8 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
     fw_lines = os.popen("sudo iptables -S").read()
 
     for line in fw_lines.splitlines():
-        if "INPUT" in line and "-s" in line:
+        if all(x in line for x in ["INPUT", "-s", "nordvpn"]):
             current_subnet_rules_input_chain.append(line)
-
     if current_subnet_rules_input_chain:
         return sort_list_by_other_list(result, current_subnet_rules_input_chain)
     return result
@@ -367,7 +366,11 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
 def is_empty() -> bool:
     """Returns True when firewall does not have DROP rules."""
     # under snap, also on host, ignore docker rules
-    return "DROP" not in os.popen("sudo iptables -S | grep -v DOCKER").read()
+    rules = os.popen("sudo iptables -S | grep -v DOCKER").read()
+    result = "DROP" not in rules
+    if not result:
+        logging.log(data=f"firewall.is_empty rules: {rules}")
+    return result
 
 
 def _get_iptables_rules() -> list[str]:
@@ -403,8 +406,12 @@ def sort_list_by_other_list(to_sort: list[str], sort_by: list[str]) -> list[str]
     # Create a dictionary to store the order of rules in `sort_by`
     order_dict = {rule: index for index, rule in enumerate(sort_by)}
 
-    # Sort `to_sort` based on the order in `sort_by`
-    return sorted(to_sort, key=lambda rule: order_dict[rule])
+    try:
+        # Sort `to_sort` based on the order in `sort_by`
+        return sorted(to_sort, key=lambda rule: order_dict[rule])
+    except Exception as e: # noqa: BLE001
+        logging.log(data=f"sort_list_by_other_list{e}: {to_sort}\n{sort_by}")
+        raise
 
 
 def add_and_delete_random_route():

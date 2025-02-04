@@ -55,7 +55,6 @@ func queryAPI(url string, transp http.RoundTripper) error {
 }
 
 func TestTransports(t *testing.T) {
-	t.Skip("LVPN-6886") // skipping for now to unblock the CI
 	category.Set(t, category.Integration)
 
 	tests := []struct {
@@ -82,12 +81,12 @@ func TestTransports(t *testing.T) {
 			transport:   createH3Transport(),
 			expectError: false,
 		},
-		{
-			comment:     "test quic transport large resp",
-			inputURL:    serverListLargeURL,
-			transport:   createH3Transport(),
-			expectError: false,
-		},
+		// { Fix in LVPN-6886
+		// 	comment:     "test quic transport large resp",
+		// 	inputURL:    serverListLargeURL,
+		// 	transport:   createH3Transport(),
+		// 	expectError: false,
+		// },
 		{
 			comment:     "test non quic/H3 url with H1 transport",
 			inputURL:    nonH3serverURL,
@@ -103,13 +102,14 @@ func TestTransports(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		fmt.Println("~~~ RUN TEST:", tt.comment)
-		err := queryAPI(tt.inputURL, tt.transport)
-		if tt.expectError {
-			assert.Error(t, err)
-		} else {
-			assert.NoError(t, err)
-		}
+		t.Run(tt.comment, func(t *testing.T) {
+			err := queryAPI(tt.inputURL, tt.transport)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }
 
