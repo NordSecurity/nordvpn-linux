@@ -963,7 +963,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
+				newWorkingExitNode(),
 				0,
 				false,
 			)
@@ -1020,7 +1020,7 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
+				newWorkingExitNode(),
 				0,
 				false,
 			)
