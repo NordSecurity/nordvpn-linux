@@ -49,11 +49,20 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 	var parameters ServerParameters
 	serverTag := in.GetServerTag()
+	serverGroup := in.GetServerGroup()
 	if in.GetEnabled() {
+		// NOTE: For backward compatibility, if the serverGroup is specified but
+		// server tag is not, then we simulate the previous behavior of not having
+		// serverGroup at all. This may not be needed after adding support for
+		// server group in CLI (LVPN-5901).
+		if serverTag == "" && serverGroup != "" {
+			serverTag = serverGroup
+			serverGroup = ""
+		}
 		if serverTag != "" {
 			insights := r.dm.GetInsightsData().Insights
 
-			server, _, err := selectServer(r, &insights, cfg, serverTag, in.GetServerGroup())
+			server, _, err := selectServer(r, &insights, cfg, serverTag, serverGroup)
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "no server found for autoconnect", serverTag, err)
 
@@ -69,12 +78,11 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			log.Println(internal.InfoPrefix, "server for autoconnect found", server)
 			// NOTE: ServerGroup param in the request is a new addition. Initially,
 			// server group was coming from [pb.SetAutoConnectRequest.ServerTag] param.
-			// To maintin backward compatibility, we set it to `serverTag` here and override
-			// if the [pb.SetAutoConnectRequest.ServerGroup] is set. This may not be needed
+			// To maintin backward compatibility, we set it to `serverTag` here if the
+			// [pb.SetAutoConnectRequest.ServerGroup] is empty. This may not be needed
 			// after adding support for server group in CLI (LVPN-5901).
-			serverGroup := serverTag
-			if in.GetServerGroup() != "" {
-				serverGroup = in.GetServerGroup()
+			if serverGroup == "" {
+				serverGroup = serverTag
 			}
 			parameters.Group = groupConvert(serverGroup)
 			parameters.Country = server.Country().Name
