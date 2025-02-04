@@ -652,7 +652,7 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
+				newWorkingExitNode(),
 				0,
 				false,
 			)
