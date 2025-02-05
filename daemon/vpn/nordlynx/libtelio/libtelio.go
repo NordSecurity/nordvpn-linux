@@ -195,7 +195,7 @@ func New(prod bool, eventPath string, fwmark uint32,
 	}
 
 	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
-	teliogo.SetGlobalLogger(teliogo.TelioLogLevelInfo, loggerCb)
+	teliogo.SetGlobalLogger(teliogo.TelioLogLevelDebug, loggerCb)
 	lib, err := teliogo.NewTelio(*features, eventCallback(events))
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to create telio instance:", err)
