@@ -92,6 +92,17 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	isVPNStarted := netw.isVpnSet
 	isMeshStarted := netw.isMeshnetSet
 
+	if netw.isKillSwitchSet {
+		// reset killswitch to account for new network configuration(new interface)
+		if err := netw.unsetKillSwitch(); err != nil {
+			return fmt.Errorf("unsetting killswitch: %w", err)
+		}
+
+		if err := netw.setKillSwitch(netw.allowlist); err != nil {
+			return fmt.Errorf("setting killswitch: %w", err)
+		}
+	}
+
 	if !isVPNStarted && !isMeshStarted {
 		return nil
 	}

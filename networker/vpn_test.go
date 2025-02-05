@@ -3,12 +3,14 @@ package networker
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/netip"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
@@ -133,6 +135,102 @@ func TestRefreshVPN_VPNFailure(t *testing.T) {
 	assert.False(t, combined.isConnectedToVPN())
 	assert.True(t, combined.isMeshnetSet)
 	assert.NotEmpty(t, combined.fw.(*workingFirewall).rules) // We want to keep rules to avoid leaking
+}
+
+func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// check if nics contains all of the nicNames, return names of all interfaces that were not found
+	containsInterfacesFunc := func(nics []net.Interface, nicNames ...string) []string {
+		missingNICs := []string{}
+		for _, nicName := range nicNames {
+			nicFound := false
+			for _, nic := range nics {
+				if nic.Name == nicName {
+					nicFound = true
+					break
+				}
+			}
+			if !nicFound {
+				missingNICs = append(missingNICs, nicName)
+			}
+		}
+
+		return missingNICs
+	}
+
+	firewall := newWorkingFirewall()
+	combined := NewCombined(
+		&mock.WorkingVPN{},
+		&workingMesh{},
+		workingGateway{},
+		&subs.Subject[string]{},
+		workingRouter{},
+		&workingDNS{},
+		&workingIpv6{},
+		firewall,
+		workingAllowlistRouting{},
+		workingDeviceList,
+		&workingRoutingSetup{},
+		&workingHostSetter{},
+		workingRouter{},
+		workingRouter{},
+		&workingExitNode{},
+		0,
+		false,
+	)
+
+	nic1Name := "nic1"
+	nic2Name := "nic2"
+	combined.devices = func() ([]net.Interface, error) {
+		return []net.Interface{
+			{Name: nic1Name},
+			{Name: nic2Name},
+		}, nil
+	}
+	combined.isKillSwitchSet = true
+
+	ctx := context.Background()
+	err := combined.refreshVPN(ctx)
+	assert.NoError(t, err)
+
+	dropRule := firewall.rules["drop-fw"]
+	missingNICs := containsInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name)
+
+	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
+
+	// new interface added
+	nic3Name := "nic3"
+	combined.devices = func() ([]net.Interface, error) {
+		return []net.Interface{
+			{Name: nic1Name},
+			{Name: nic2Name},
+			{Name: nic3Name},
+		}, nil
+	}
+	err = combined.refreshVPN(ctx)
+	assert.NoError(t, err)
+
+	dropRule = firewall.rules["drop-fw"]
+	missingNICs = containsInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
+
+	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
+
+	// interface removed
+	combined.devices = func() ([]net.Interface, error) {
+		return []net.Interface{
+			{Name: nic1Name},
+			{Name: nic3Name},
+		}, nil
+	}
+	err = combined.refreshVPN(ctx)
+	assert.NoError(t, err)
+
+	dropRule = firewall.rules["drop-fw"]
+	missingNICs = containsInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
+
+	assert.Len(t, missingNICs, 1, "Block rule was not updated properly when interface was removed: %s", missingNICs)
+	assert.Contains(t, missingNICs, nic2Name, "Block rule for NIC 2 was not removed.")
 }
 
 func TestNetworkChange(t *testing.T) {
