@@ -132,7 +132,7 @@ func TestResetPeersExitnode(t *testing.T) {
 		}, "\n",
 	)
 
-	server := NewServer(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
+	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 
 	server.ResetPeers(peers, true, false, false, config.Allowlist{})
 
@@ -179,7 +179,7 @@ func TestResetPeers_LANDiscoveryEnabled(t *testing.T) {
 	peers := getPeers()
 	interfaces := []string{"eth0", "eth1"}
 	commandExecutor := CommandExecutorMock{}
-	server := NewServer(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
+	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 
 	err := server.ResetPeers(peers, true, false, false, config.Allowlist{
 		Subnets: config.Subnets{"192.168.0.1/32": true},
@@ -230,7 +230,7 @@ func TestResetPeers_LANDiscoveryDisabled(t *testing.T) {
 	peers := getPeers()
 	interfaces := []string{"eth0", "eth1"}
 	commandExecutor := CommandExecutorMock{}
-	server := NewServer(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
+	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 
 	err := server.ResetPeers(peers, false, false, false, config.Allowlist{
 		Subnets: config.Subnets{"192.168.0.1/32": true},
@@ -407,7 +407,7 @@ func TestDisable(t *testing.T) {
 
 	interfaces := []string{"eth0", "eth1"}
 
-	server := NewServer(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
+	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 	server.Disable()
 
 	expectedCommands := []string{
@@ -456,7 +456,7 @@ func TestFirewall_AllowlistOrdering(t *testing.T) {
 		}, "\n",
 	)
 
-	server := NewServer(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
+	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 	server.enabled = true
 
 	server.ResetFirewall(true, false, true, config.Allowlist{Subnets: config.Subnets{"1.1.1.1/32": true}})

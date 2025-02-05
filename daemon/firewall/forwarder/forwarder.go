@@ -15,10 +15,14 @@ const (
 	Ipv4fwdKernelParamName = "net.ipv4.ip_forward"
 )
 
-// ForwardChainManager is exit node server side interface
+// ForwardChainManager is responsible for managing rules in the FORWARD chain of iptables
 type ForwardChainManager interface {
 	Enable() error
-	ResetPeers(mesh.MachinePeers, bool, bool, bool, config.Allowlist) error
+	ResetPeers(peers mesh.MachinePeers,
+		lanAvailable bool,
+		killswitch bool,
+		enableAllowlist bool,
+		allowlist config.Allowlist)
 	ResetFirewall(lanAvailable bool, killswitch bool, enableAllowlist bool, allowlist config.Allowlist) error
 	Disable() error
 }
@@ -34,8 +38,8 @@ type Forwarder struct {
 	enabled          bool
 }
 
-// NewServer create & initialize new Server
-func NewServer(interfaceNames []string, commandFunc runCommandFunc, sysctlSetter kernel.SysctlSetter) *Forwarder {
+// NewForwarder create & initialize new Server
+func NewForwarder(interfaceNames []string, commandFunc runCommandFunc, sysctlSetter kernel.SysctlSetter) *Forwarder {
 	return &Forwarder{
 		interfaceNames:   interfaceNames,
 		runCommandFunc:   commandFunc,
