@@ -241,6 +241,10 @@ func (ovpn *OpenVPN) stop() error {
 		}
 	}
 
+	if err := ovpn.tun.UnblockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to unblock ARP for the tunnel interface: %s", err)
+	}
+
 	ovpn.manager = nil
 	ovpn.tun = nil
 	ovpn.active = false
@@ -297,6 +301,9 @@ func (ovpn *OpenVPN) setTun(tun tunnel.Tunnel) {
 	ovpn.Lock()
 	defer ovpn.Unlock()
 	ovpn.tun = &tun
+	if err := tun.BlockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to block ARP for the tunnel interface: %s", err)
+	}
 }
 
 func (ovpn *OpenVPN) Tun() tunnel.T {

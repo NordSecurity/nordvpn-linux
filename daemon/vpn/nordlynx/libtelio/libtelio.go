@@ -605,6 +605,10 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
 		return fmt.Errorf("upping the interface: %w", err)
 	}
 
+	if err := tun.BlockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to block ARP for the tunnel interface:", err)
+	}
+
 	err = nordlynx.SetMTU(tun.Interface())
 	if err != nil {
 		return fmt.Errorf("setting mtu for the interface: %w", err)
@@ -621,11 +625,20 @@ func (l *Libtelio) closeTunnel() error {
 	if err := l.lib.Stop(); err != nil {
 		return fmt.Errorf("stopping libtelio: %w", err)
 	}
+
+	if err := l.tun.UnblockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to unblock ARP for tunnel interface:", err)
+	}
+
 	l.tun = nil
 	return nil
 }
 
 func (l *Libtelio) updateTunnel(privateKey string, ip netip.Addr) error {
+	if err := l.tun.UnblockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to unblock ARP for tunnel interface:", err)
+	}
+
 	if err := l.tun.DelAddrs(); err != nil {
 		return fmt.Errorf("deleting interface addrs: %w", err)
 	}
@@ -636,6 +649,10 @@ func (l *Libtelio) updateTunnel(privateKey string, ip netip.Addr) error {
 
 	if err := l.lib.SetSecretKey(privateKey); err != nil {
 		return fmt.Errorf("setting private key: %w", err)
+	}
+
+	if err := tun.BlockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to block ARP for tunnel interface:", err)
 	}
 
 	l.tun = tun

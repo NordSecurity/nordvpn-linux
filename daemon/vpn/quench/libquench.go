@@ -204,6 +204,10 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 	q.tun = tun
 	q.server = server
 
+	if err := q.tun.BlockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Blocking ARP for tunnel interface:", err)
+	}
+
 	log.Println(internal.DebugPrefix, "waiting for connection")
 CONNECTION_LOOP:
 	for {
@@ -256,6 +260,9 @@ func (q *Quench) Stop() error {
 		q.vnic = nil
 	}
 
+	if err := q.tun.UnblockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Unblocking ARP for tunnel interface:", err)
+	}
 	q.tun = nil
 	q.state = vpn.ExitedState
 
