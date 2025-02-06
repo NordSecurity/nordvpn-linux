@@ -78,15 +78,13 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			log.Println(internal.InfoPrefix, "server for autoconnect found", server)
 			// NOTE: ServerGroup param in the request is a new addition. Initially,
 			// server group was coming from [pb.SetAutoConnectRequest.ServerTag] param.
-			// To maintin backward compatibility, we set it to `serverTag` here if the
+			// To maintain backward compatibility, we set it to `serverTag` here if the
 			// [pb.SetAutoConnectRequest.ServerGroup] is empty. This may not be needed
 			// after adding support for server group in CLI (LVPN-5901).
 			if serverGroup == "" {
 				serverGroup = serverTag
 			}
-			parameters.Group = groupConvert(serverGroup)
-			parameters.Country = server.Country().Name
-			parameters.City = server.Country().City.Name
+			parameters = GetServerParameters(serverTag, serverGroup, r.dm.GetCountryData().Countries)
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
