@@ -229,7 +229,7 @@ func (rc *RConfig) getRemoteConfigByVersion(prefix string, stringVersion string)
 
 	// only log new RC version field when it has changed
 	if newRCFetched {
-		log.Println("remote config version field:", versionField)
+		log.Println(internal.InfoPrefix, "remote config version field:", versionField)
 	}
 
 	jsonString, err := rc.getValue(versionField)
