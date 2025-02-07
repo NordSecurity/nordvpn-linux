@@ -22,7 +22,7 @@ type ForwardChainManager interface {
 		lanAvailable bool,
 		killswitch bool,
 		enableAllowlist bool,
-		allowlist config.Allowlist)
+		allowlist config.Allowlist) error
 	ResetFirewall(lanAvailable bool, killswitch bool, enableAllowlist bool, allowlist config.Allowlist) error
 	Disable() error
 }
