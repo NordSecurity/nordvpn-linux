@@ -194,7 +194,9 @@ func (rc *RConfig) GetTelioConfig(stringVersion string) (string, error) {
 }
 
 func (rc *RConfig) getRemoteConfigByVersion(prefix string, stringVersion string) (string, error) {
+	newRCFetched := false
 	if err := rc.fetchRemoteConfigIfTime(); err != nil {
+		newRCFetched = true
 		if len(rc.config.Parameters) == 0 {
 			return "", err
 		}
@@ -224,7 +226,11 @@ func (rc *RConfig) getRemoteConfigByVersion(prefix string, stringVersion string)
 	if err != nil {
 		return "", err
 	}
-	log.Println("remote config version field:", versionField)
+
+	// only log new RC version field when it has changed
+	if newRCFetched {
+		log.Println("remote config version field:", versionField)
+	}
 
 	jsonString, err := rc.getValue(versionField)
 	if err != nil {
