@@ -141,7 +141,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	// check if nics contains all of the nicNames, return names of all interfaces that were not found
-	containsInterfacesFunc := func(nics []net.Interface, nicNames ...string) []string {
+	findMissingInterfacesFunc := func(nics []net.Interface, nicNames ...string) []string {
 		missingNICs := []string{}
 		for _, nicName := range nicNames {
 			nicFound := false
@@ -195,7 +195,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	assert.NoError(t, err)
 
 	dropRule := firewall.rules["drop-fw"]
-	missingNICs := containsInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name)
+	missingNICs := findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name)
 
 	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
 
@@ -212,7 +212,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	assert.NoError(t, err)
 
 	dropRule = firewall.rules["drop-fw"]
-	missingNICs = containsInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
+	missingNICs = findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
 
 	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
 
@@ -227,7 +227,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	assert.NoError(t, err)
 
 	dropRule = firewall.rules["drop-fw"]
-	missingNICs = containsInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
+	missingNICs = findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
 
 	assert.Len(t, missingNICs, 1, "Block rule was not updated properly when interface was removed: %s", missingNICs)
 	assert.Contains(t, missingNICs, nic2Name, "Block rule for NIC 2 was not removed.")
