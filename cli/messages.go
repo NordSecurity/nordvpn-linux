@@ -123,7 +123,7 @@ Example: nordvpn set %s on`
 	NoPreferredDedicatedIPLocationSelected = "It looks like you haven’t selected the preferred server location for your dedicated IP. Please head over to Nord Account and set up your dedicated IP server."
 	NoSuchCommand                          = "Command '%s' doesn't exist."
 	MsgListIsEmpty                         = "We couldn’t load the list of %s. Please try again later."
-	TechnologyDisabledMessage              = "Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology."
+	TechnologyDisabledMessage              = "Unable to connect with the current technology. Please switch to a different one using the command \"nordvpn set technology.\""
 
 	// Meshnet
 	MsgSetMeshnetUsage       = "Enables or disables Meshnet on this device."
