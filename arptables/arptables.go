@@ -37,7 +37,7 @@ func isRulePresent(commandFunc CommandFunc, targetRule string, chain string) (bo
 		return false, fmt.Errorf("getting current rules: %w", err)
 	}
 
-	for _, rule := range strings.Split(string(currentRules), "\n") {
+	for _, rule := range strings.Split(currentRules, "\n") {
 		if rule == targetRule {
 			return true, nil
 		}
