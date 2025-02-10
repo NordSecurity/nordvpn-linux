@@ -184,19 +184,20 @@ func NewApp(version, environment, hash, salt string,
 				Usage:  SetFirewallMarkUsageText,
 				Action: cmd.SetFirewallMark,
 			},
-			{
-				Name:      "ipv6",
-				Usage:     SetIpv6UsageText,
-				Action:    cmd.SetIpv6,
-				ArgsUsage: MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetIpv6UsageText,
-					"ipv6",
-					"ipv6",
-				),
-				BashComplete: cmd.SetBoolAutocomplete,
-			},
+			// TODO: uncomment once IPv6 support is enabled in the backend
+			// {
+			// 	Name:      "ipv6",
+			// 	Usage:     SetIpv6UsageText,
+			// 	Action:    cmd.SetIpv6,
+			// 	ArgsUsage: MsgSetBoolArgsUsage,
+			// 	Description: fmt.Sprintf(
+			// 		MsgSetBoolDescription,
+			// 		SetIpv6UsageText,
+			// 		"ipv6",
+			// 		"ipv6",
+			// 	),
+			// 	BashComplete: cmd.SetBoolAutocomplete,
+			// },
 			{
 				Name:      "routing",
 				Usage:     SetRoutingUsageText,
