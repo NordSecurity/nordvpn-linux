@@ -600,13 +600,13 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
 		return fmt.Errorf("adding addresses to the interface: %w", err)
 	}
 
+	if err := tun.BlockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to block ARP for the tunnel interface:", err)
+	}
+
 	err = tun.Up()
 	if err != nil {
 		return fmt.Errorf("upping the interface: %w", err)
-	}
-
-	if err := tun.BlockARP(); err != nil {
-		log.Println(internal.ErrorPrefix, "Failed to block ARP for the tunnel interface:", err)
 	}
 
 	err = nordlynx.SetMTU(tun.Interface())
