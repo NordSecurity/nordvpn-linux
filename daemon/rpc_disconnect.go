@@ -29,6 +29,16 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 		log.Println(internal.ErrorPrefix, err)
 	}
 
+	if !cfg.Mesh && cfg.MeshPrivateKey != "" {
+		err := r.cm.SaveWith(func(c config.Config) config.Config {
+			c.MeshPrivateKey = ""
+			return c
+		})
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to clean up mesh private key:", err)
+		}
+	}
+
 	r.events.Service.Disconnect.Publish(events.DataDisconnect{
 		Protocol:             cfg.AutoConnectData.Protocol,
 		EventStatus:          events.StatusSuccess,
