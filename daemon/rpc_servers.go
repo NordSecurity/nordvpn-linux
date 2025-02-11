@@ -121,7 +121,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 			(core.IsObfuscated()(s) == cfg.AutoConnectData.Obfuscate)
 	})
 
-	if err != nil {
+	if len(servers) == 0 {
 		log.Println(internal.ErrorPrefix, "filtering servers", err)
 		return &pb.ServersResponse{Response: &pb.ServersResponse_Error{
 			Error: pb.ServersError_FILTER_SERVERS_ERROR,
