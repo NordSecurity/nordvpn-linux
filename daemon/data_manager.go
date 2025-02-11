@@ -136,9 +136,14 @@ func (dm *DataManager) SetServersData(updatedAt time.Time, servers core.Servers,
 	}()
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
-	dm.serversData.UpdatedAt = updatedAt
-	dm.serversData.Servers = servers
-	dm.serversData.Hash = hash
+	// Replace entire object to prevent race, because only the ServerData object is protected by the lock
+	// Using members outside could case race conditions, if in the same time they are replaced
+	dm.serversData = ServersData{
+		UpdatedAt: updatedAt,
+		Servers:   servers,
+		Hash:      hash,
+		filePath:  dm.serversData.filePath,
+	}
 	return dm.serversData.save()
 }
 
