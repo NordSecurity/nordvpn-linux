@@ -360,8 +360,14 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		s.pub.Publish(fmt.Errorf("unsetting mesh: %w", err))
 	}
 
+	meshPK := cfg.MeshPrivateKey
+	if _, connected := s.netw.GetConnectionParameters(); !connected {
+		meshPK = ""
+	}
+
 	if err := s.cm.SaveWith(func(c config.Config) config.Config {
 		c.Mesh = false
+		c.MeshPrivateKey = meshPK
 		return c
 	}); err != nil {
 		s.pub.Publish(err)
