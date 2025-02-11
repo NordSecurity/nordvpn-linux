@@ -56,6 +56,8 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 
 // loginCommon common login
 func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginResponse, retErr error) {
+	r.meshPrivateKeyController.ClearMeshPrivateKey()
+
 	if r.ac.IsLoggedIn() {
 		return nil, internal.ErrAlreadyLoggedIn
 	}
