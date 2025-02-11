@@ -7,7 +7,7 @@ source "${WORKDIR}/ci/openvpn/env.sh"
 
 PKG_TO_BUILD=$1
 export PKG_HOMEPAGE="https://nordvpn.com/"
-export PKG_DESCRIPTION="The best online VPN service for speed and security\nNordVPN protects your privacy online and\nlets access media content without regional restrictions.\nStrong encryption and no-log policy\nwith 5000+ servers in 60+ countries."
+export PKG_DESCRIPTION="The NordVPN app for Linux protects your internet traffic with top-grade encryption and changes your IP address, so whatever you do online stays private and secure. Connect to over 7,100 high-speed servers covering 118 countries.\n\nYou can secure up to 10 devices with a single account. Enjoy a safer internet experience on all your devices."
 
 # clean build dir
 APP_DIR=${WORKDIR}/dist/app
