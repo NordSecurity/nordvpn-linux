@@ -14,6 +14,7 @@ import (
 	quenchBindigns "quench"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
@@ -46,12 +47,24 @@ type Observer struct {
 	currentState              vpn.State
 	eventsChan                chan<- vpn.State
 	eventsSubscribtionContext context.Context
+
+	eventNotifier *vpn.Events
+	// currentServer is used to build vpn event notification
+	currentServer vpn.ServerData
 }
 
-func NewObserver() *Observer {
+func NewObserver(eventNotifier *vpn.Events) *Observer {
 	return &Observer{
-		eventsChan: nil,
+		eventsChan:    nil,
+		eventNotifier: eventNotifier,
 	}
+}
+
+func (o *Observer) SetServerData(server vpn.ServerData) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	o.currentServer = server
 }
 
 func (o *Observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
@@ -80,6 +93,19 @@ func (o *Observer) notifyConnectionStateChange(state vpn.State) {
 	}
 }
 
+func getConnectEvent(status events.TypeEventStatus, serverData vpn.ServerData) events.DataConnect {
+	return events.DataConnect{
+		EventStatus:           status,
+		IsMeshnetPeer:         false,
+		TargetServerSelection: serverData.IP.String(),
+		TargetServerCountry:   serverData.Country,
+		TargetServerCity:      serverData.City,
+		TargetServerDomain:    serverData.Hostname,
+		TargetServerName:      serverData.Name,
+		IsVirtualLocation:     serverData.VirtualLocation,
+	}
+}
+
 func (o *Observer) Connecting() {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -91,6 +117,7 @@ func (o *Observer) Connecting() {
 	}
 
 	o.notifyConnectionStateChange(vpn.ConnectingState)
+	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusAttempt, o.currentServer))
 }
 
 func (o *Observer) Connected() {
@@ -100,6 +127,7 @@ func (o *Observer) Connected() {
 	o.notifyConnectionStateChange(vpn.ConnectedState)
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "connected")
+	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusSuccess, o.currentServer))
 }
 
 func (o *Observer) Disconnected(reason quenchBindigns.DisconnectReason) {
@@ -109,6 +137,15 @@ func (o *Observer) Disconnected(reason quenchBindigns.DisconnectReason) {
 	o.notifyConnectionStateChange(vpn.ExitedState)
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "disconnected:", reason)
+
+	byUser := false
+	if reason == quenchBindigns.DisconnectReasonDisconnectRequested {
+		byUser = true
+	}
+
+	o.eventNotifier.Disconnected.Publish(events.DataDisconnect{
+		ByUser: byUser,
+	})
 }
 
 type Quench struct {
@@ -123,7 +160,7 @@ type Quench struct {
 	tun      *tunnel.Tunnel
 }
 
-func New(fwmark uint32, envIsDev bool) *Quench {
+func New(fwmark uint32, envIsDev bool, events *vpn.Events) *Quench {
 	logLevel := quenchBindigns.LogLevelInfo
 	if envIsDev {
 		logLevel = quenchBindigns.LogLevelDebug
@@ -134,7 +171,7 @@ func New(fwmark uint32, envIsDev bool) *Quench {
 	return &Quench{
 		fwmark:   fwmark,
 		vnicName: internal.NordWhisperInterfaceName,
-		observer: NewObserver(),
+		observer: NewObserver(events),
 		logger:   &logger,
 		state:    vpn.ExitedState,
 	}
@@ -194,6 +231,8 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 	eventsContext, eventsCancelFunc := context.WithCancel(ctx)
 	eventsChan := q.observer.SubscribeToEvents(eventsContext)
 	defer eventsCancelFunc()
+
+	q.observer.SetServerData(server)
 
 	err = vnic.Connect(string(jsonConfig), &quenchCreds)
 	if err != nil {
