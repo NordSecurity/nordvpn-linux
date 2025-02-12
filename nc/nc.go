@@ -116,6 +116,8 @@ func (MqttClientBuilder) Build(opts *mqtt.ClientOptions) mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
+type CalculateRetryDelayForAttempt func(attempt int) time.Duration
+
 // Client is a client for Notification center
 type Client struct {
 	clientBuilder ClientBuilder
@@ -126,6 +128,7 @@ type Client struct {
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
+	retryDelayFunc    CalculateRetryDelayForAttempt
 
 	startMu          sync.Mutex
 	started          bool
@@ -147,6 +150,7 @@ func NewClient(
 		subjectErr:        subjectErr,
 		subjectPeerUpdate: subjectPeerUpdate,
 		credsFetcher:      credsFetcher,
+		retryDelayFunc:    network.ExponentialBackoff,
 	}
 }
 
@@ -239,7 +243,12 @@ func (c *Client) tryConnect(
 		}
 
 		// send new creation date to the management loop
-		managementChan <- credentials.ExpirationDate
+		select {
+		case managementChan <- credentials.ExpirationDate:
+		case <-ctx.Done():
+			return client, connectionState
+		}
+
 		opts := c.createClientOptions(credentials, managementChan, ctx)
 		client = c.clientBuilder.Build(opts)
 		connectionState = connecting
@@ -301,7 +310,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 				client.Disconnect(0)
 			}
 			return client
-		case <-time.After(network.ExponentialBackoff(tries)):
+		case <-time.After(c.retryDelayFunc(tries)):
 		}
 	}
 
@@ -315,6 +324,18 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 	log.Println(logPrefix, "Connected")
 
 	return client
+}
+
+func (c *Client) connect(client mqtt.Client,
+	credentialsInvalidated bool,
+	connectionContext context.Context,
+	managementChan chan<- interface{},
+	connectedChan chan<- mqtt.Client) {
+	client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, connectionContext)
+	select {
+	case connectedChan <- client:
+	case <-connectionContext.Done():
+	}
 }
 
 func (c *Client) sendDeliveryConfirmation(client mqtt.Client, messageID string) error {
@@ -426,17 +447,9 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 		}()
 
 		connectedChan := make(chan mqtt.Client)
-		connect := func(client mqtt.Client, credentialsInvalidated bool, connectionContext context.Context) {
-			client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, connectionContext)
-			select {
-			case connectedChan <- client:
-			case <-connectionContext.Done():
-			}
-		}
-
 		opts := c.createClientOptions(credentials, managementChan, connectionContext)
 		client = c.clientBuilder.Build(opts)
-		go connect(client, credentialsInvalidated, connectionContext)
+		go c.connect(client, credentialsInvalidated, connectionContext, managementChan, connectedChan)
 
 		log.Println(logPrefix, "starting initial connection loop")
 	CONNECTION_LOOP:
@@ -458,7 +471,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 				client.Disconnect(0)
 				c.credsFetcher.RevokeCredentials(false)
 				connectionContext, cancelConnectionFunc = context.WithCancel(ctx)
-				go connect(client, true, connectionContext)
+				go c.connect(client, true, connectionContext, managementChan, connectedChan)
 			}
 		}
 		log.Println(logPrefix, "initial connection established")
@@ -471,9 +484,9 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 			case event := <-managementChan:
 				switch ev := event.(type) {
 				case authLost:
-					go connect(client, true, connectionContext)
+					go c.connect(client, true, connectionContext, managementChan, connectedChan)
 				case connectionLost:
-					go connect(client, false, connectionContext)
+					go c.connect(client, false, connectionContext, managementChan, connectedChan)
 				case mqttMessage:
 					c.handleMessage(client, ev.message)
 				case time.Time:
@@ -487,7 +500,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 				client.Disconnect(0)
 				c.credsFetcher.RevokeCredentials(false)
 				connectionContext, cancelConnectionFunc = context.WithCancel(ctx)
-				go connect(client, true, connectionContext)
+				go c.connect(client, true, connectionContext, managementChan, connectedChan)
 			}
 		}
 	}()
