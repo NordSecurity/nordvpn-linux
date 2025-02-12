@@ -70,12 +70,12 @@ func (c *cmd) SetTechnology(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(SetTechnologyDisablePQ, resp.Data[0]))
 	case internal.CodeNothingToDo:
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Technology", strings.Join(resp.Data, " ")))
+	case internal.CodeFeatureHidden:
+		return formatError(argsParseError(ctx))
 	case internal.CodeSuccessWithoutAC:
 		// must be right before CodeSuccess
 		color.Yellow(SetAutoConnectForceOff)
 		fallthrough
-	case internal.CodeFeatureHidden:
-		return formatError(argsParseError(ctx))
 	case internal.CodeSuccess:
 		flag, _ := strconv.ParseBool(resp.Data[0])
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Technology", strings.Join(resp.Data[1:], " ")))
