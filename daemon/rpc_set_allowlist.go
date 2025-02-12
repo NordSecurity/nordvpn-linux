@@ -42,7 +42,7 @@ func arePortsValid(portRangeStart int64, portRangeEnd int64, currentPorts config
 	}
 
 	if portRangeEnd != 0 &&
-		((portRangeStart < internal.AllowlistMinPort || portRangeStart > internal.AllowlistMaxPort) ||
+		((portRangeEnd < internal.AllowlistMinPort || portRangeEnd > internal.AllowlistMaxPort) ||
 			portRangeEnd < portRangeStart) {
 		return false, internal.CodeAllowlistPortOutOfRange
 	}
