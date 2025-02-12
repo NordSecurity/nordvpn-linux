@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -28,7 +27,6 @@ func (c *cmd) SetNotify(ctx *cli.Context) error {
 	}
 
 	daemonResp, err := c.client.SetNotify(context.Background(), &pb.SetNotifyRequest{
-		Uid:    int64(os.Getuid()),
 		Notify: flag,
 	})
 	if err != nil {

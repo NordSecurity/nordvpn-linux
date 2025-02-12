@@ -110,12 +110,10 @@ class SetKillSwitchRequest(_message.Message):
     def __init__(self, kill_switch: bool = ...) -> None: ...
 
 class SetNotifyRequest(_message.Message):
-    __slots__ = ("uid", "notify")
-    UID_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("notify",)
     NOTIFY_FIELD_NUMBER: _ClassVar[int]
-    uid: int
     notify: bool
-    def __init__(self, uid: _Optional[int] = ..., notify: bool = ...) -> None: ...
+    def __init__(self, notify: bool = ...) -> None: ...
 
 class SetTrayRequest(_message.Message):
     __slots__ = ("uid", "tray")
