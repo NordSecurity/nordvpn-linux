@@ -364,9 +364,9 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
 
-	SetPqUnavailable       = "The post-quantum VPN is not compatible with %s. Switch to NordLynx to use post-quantum VPN capabilities."
-	SetTechnologyDisablePQ = "This setting is not compatible with the post-quantum VPN. To use %s, disable the post-quantum VPN first."
-	SetPqAndMeshnet        = "The post-quantum VPN and Meshnet can't run at the same time. Please disable one feature to use the other."
-	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum servers. Reconnect to the VPN to fully disable post-quantum protection and try again."
-	SetPqUsageText         = "Enables or disables the post-quantum VPN. When enabled, your connection uses cutting-edge cryptography designed to resist quantum computer attacks.\nNote: The feature is not compatible with a dedicated IP, Meshnet, and OpenVPN."
+	SetPqUnavailable       = "Post-quantum encryption is unavailable with %s. Switch to NordLynx to activate post-quantum protection."
+	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, disable post-quantum encryption first."
+	SetPqAndMeshnet        = "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other."
+	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
+	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN, or obfuscated servers.\nThe feature is not compatible with Meshnet."
 )
