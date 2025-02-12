@@ -42,7 +42,7 @@ func (l *Logger) Log(logLevel quenchBindigns.LogLevel, message string) {
 	log.Println(logPrefix, quenchPrefix, message)
 }
 
-type Observer struct {
+type observer struct {
 	mu                        sync.Mutex
 	currentState              vpn.State
 	eventsChan                chan<- vpn.State
@@ -53,21 +53,21 @@ type Observer struct {
 	currentServer vpn.ServerData
 }
 
-func NewObserver(eventNotifier *vpn.Events) *Observer {
-	return &Observer{
+func newObserver(eventNotifier *vpn.Events) *observer {
+	return &observer{
 		eventsChan:    nil,
 		eventNotifier: eventNotifier,
 	}
 }
 
-func (o *Observer) SetServerData(server vpn.ServerData) {
+func (o *observer) SetServerData(server vpn.ServerData) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
 	o.currentServer = server
 }
 
-func (o *Observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
+func (o *observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -81,7 +81,7 @@ func (o *Observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
 	return eventsChan
 }
 
-func (o *Observer) notifyConnectionStateChange(state vpn.State) {
+func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	o.currentState = state
 	if o.eventsChan != nil {
 		log.Println(internal.DebugPrefix, quenchPrefix, "unsubscribing from quench state changes")
@@ -106,7 +106,7 @@ func getConnectEvent(status events.TypeEventStatus, serverData vpn.ServerData) e
 	}
 }
 
-func (o *Observer) Connecting() {
+func (o *observer) Connecting() {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -120,7 +120,7 @@ func (o *Observer) Connecting() {
 	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusAttempt, o.currentServer))
 }
 
-func (o *Observer) Connected() {
+func (o *observer) Connected() {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -130,7 +130,7 @@ func (o *Observer) Connected() {
 	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusSuccess, o.currentServer))
 }
 
-func (o *Observer) Disconnected(reason quenchBindigns.DisconnectReason) {
+func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -152,7 +152,7 @@ type Quench struct {
 	mu       sync.Mutex
 	fwmark   uint32
 	vnicName string
-	observer *Observer
+	observer *observer
 	logger   *Logger
 	state    vpn.State
 	server   vpn.ServerData
@@ -171,7 +171,7 @@ func New(fwmark uint32, envIsDev bool, events *vpn.Events) *Quench {
 	return &Quench{
 		fwmark:   fwmark,
 		vnicName: internal.NordWhisperInterfaceName,
-		observer: NewObserver(events),
+		observer: newObserver(events),
 		logger:   &logger,
 		state:    vpn.ExitedState,
 	}
