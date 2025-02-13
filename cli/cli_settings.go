@@ -54,8 +54,6 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("Auto-connect group: %s\n", settings.AutoConnectData.ServerGroup)
 	}
 
-	// TODO: uncomment once IPv6 support is enabled in the backend
-	// fmt.Printf("IPv6: %+v\n", nstrings.GetBoolLabel(settings.Ipv6))
 	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))
 	if len(settings.Dns) == 0 {
 		fmt.Printf("DNS: %+v\n", nstrings.GetBoolLabel(false))
