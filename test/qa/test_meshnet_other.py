@@ -5,7 +5,6 @@ import grpc
 import lib
 import sys
 import os
-import time
 from lib import daemon, meshnet, settings, ssh, logging
 
 sys.path.append(os.path.abspath(os.path.join(
