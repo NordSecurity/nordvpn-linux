@@ -145,6 +145,19 @@ func main() {
 		}
 	}
 
+	// TODO: remove this once IPv6 is enabled in the backed
+	// IPv6 command was hidden in release 3.20.1 because support for IPv6 was dropped. We need to unset this setting
+	// if user had it enabled in a previous install.
+	if cfg.IPv6 {
+		cfg.IPv6 = false
+		if err := fsystem.SaveWith(func(c config.Config) config.Config {
+			c.IPv6 = false
+			return c
+		}); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to disable IPv6 on startup")
+		}
+	}
+
 	rcConfig := getRemoteConfigGetter(fsystem)
 
 	// Events
