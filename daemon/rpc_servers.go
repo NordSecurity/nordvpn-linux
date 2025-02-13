@@ -116,15 +116,12 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 		}}, nil
 	}
 
-	internalServers := r.dm.GetServersData().Servers
-	internalServers, err = filterServers(internalServers,
-		cfg.Technology,
-		cfg.AutoConnectData.Protocol,
-		"",
-		config.ServerGroup_UNDEFINED,
-		cfg.AutoConnectData.Obfuscate)
+	servers := internal.Filter(r.dm.GetServersData().Servers, func(s core.Server) bool {
+		return core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(s) &&
+			(core.IsObfuscated()(s) == cfg.AutoConnectData.Obfuscate)
+	})
 
-	if err != nil {
+	if len(servers) == 0 {
 		log.Println(internal.ErrorPrefix, "filtering servers", err)
 		return &pb.ServersResponse{Response: &pb.ServersResponse_Error{
 			Error: pb.ServersError_FILTER_SERVERS_ERROR,
@@ -133,7 +130,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 
 	return &pb.ServersResponse{Response: &pb.ServersResponse_Servers{
 		Servers: &pb.ServersMap{
-			ServersByCountry: serversListToServersMap(internalServers, cfg.VirtualLocation.Get()),
+			ServersByCountry: serversListToServersMap(servers, cfg.VirtualLocation.Get()),
 		},
 	}}, nil
 }

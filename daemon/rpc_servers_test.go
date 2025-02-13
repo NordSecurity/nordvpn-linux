@@ -446,7 +446,7 @@ func TestServers(t *testing.T) {
 		},
 		{
 			name:        "failure because of filter error",
-			serversList: core.Servers{}, // servers will retrun an error because it will fails to find available servers
+			serversList: core.Servers{}, // servers will return an error because it fails to find available servers
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Error{
 					Error: pb.ServersError_FILTER_SERVERS_ERROR,
@@ -465,7 +465,7 @@ func TestServers(t *testing.T) {
 			cfgManager.Cfg.AutoConnectData.Protocol = test.protocol
 
 			dm := DataManager{}
-			dm.serversData.Servers = servers
+			dm.serversData.Servers = test.serversList
 			r := RPC{dm: &dm, cm: cfgManager}
 
 			resp, err := r.GetServers(context.Background(), &pb.Empty{})
