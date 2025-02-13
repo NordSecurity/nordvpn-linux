@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -8,6 +9,20 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
+
+func MeshPrivateKeyCleanup(cfg config.Config, configManager config.Manager) error {
+	if !cfg.Mesh && cfg.MeshPrivateKey != "" {
+		err := configManager.SaveWith(func(c config.Config) config.Config {
+			c.MeshPrivateKey = ""
+			return c
+		})
+		if err != nil {
+			return fmt.Errorf("saving config: %w", err)
+		}
+	}
+
+	return nil
+}
 
 func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 	if !r.netw.IsVPNActive() {
@@ -27,6 +42,10 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
+	}
+
+	if err := MeshPrivateKeyCleanup(cfg, r.cm); err != nil {
+		log.Println(internal.ErrorPrefix, "cleaning up meshnet private key:", err)
 	}
 
 	r.events.Service.Disconnect.Publish(events.DataDisconnect{

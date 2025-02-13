@@ -619,4 +619,10 @@ func main() {
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
+
+	if err := fsystem.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, "loading config at shutdown for mesh private key cleanup: %w", err)
+	} else {
+		daemon.MeshPrivateKeyCleanup(cfg, fsystem)
+	}
 }
