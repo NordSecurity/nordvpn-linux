@@ -111,25 +111,6 @@ const (
 	sockTCP socketType = "tcp"
 )
 
-func meshPrivateKeyCleanup(configManager config.Manager) {
-	var cfg config.Config
-	err := configManager.Load(&cfg)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to load config for shutdown operations:", err)
-		return
-	}
-
-	if !cfg.Mesh && cfg.MeshPrivateKey != "" {
-		err := configManager.SaveWith(func(c config.Config) config.Config {
-			c.MeshPrivateKey = ""
-			return c
-		})
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to clean up mesh private key on shutdown:", err)
-		}
-	}
-}
-
 func main() {
 	// pprof
 	if internal.IsDevEnv(Environment) {
@@ -644,5 +625,9 @@ func main() {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
 
-	meshPrivateKeyCleanup(fsystem)
+	if err := fsystem.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, "loading config at shutdown for mesh private key cleanup: %w", err)
+	} else {
+		daemon.MeshPrivateKeyCleanup(cfg, fsystem)
+	}
 }
