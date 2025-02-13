@@ -52,3 +52,18 @@ python3 -m grpc_tools.protoc \
 	--proto_path="${PWD}"/protobuf/daemon \
 	--grpc_python_out="${outDir}" \
 	"${PWD}"/protobuf/daemon/service.proto
+
+outDir="${PWD}"/test/qa/lib/protobuf/meshnet
+mkdir -p "${outDir}"
+touch "${outDir}"/__init__.py
+
+python3 -m grpc_tools.protoc \
+	--proto_path="${PWD}"/protobuf/meshnet \
+	--python_out="${outDir}" \
+	--pyi_out="${outDir}" \
+	"${PWD}"/protobuf/meshnet/*.proto
+
+python3 -m grpc_tools.protoc \
+	--proto_path="${PWD}"/protobuf/meshnet \
+	--grpc_python_out="${outDir}" \
+	"${PWD}"/protobuf/meshnet/service.proto
