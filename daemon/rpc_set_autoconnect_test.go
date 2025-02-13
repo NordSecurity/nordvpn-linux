@@ -14,8 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type mockAutoconnectAuthChecker struct {
-}
+type mockAutoconnectAuthChecker struct{}
 
 func (mockAutoconnectAuthChecker) IsLoggedIn() bool            { return true }
 func (mockAutoconnectAuthChecker) IsMFAEnabled() (bool, error) { return false, nil }
@@ -178,6 +177,76 @@ func TestAutoconnect(t *testing.T) {
 				assert.Equal(t, test.returnCode, resp.Type)
 			}
 			assert.Equal(t, test.eventPublished, mockPublisherSubscriber.EventPublished)
+		})
+	}
+}
+
+func TestAutoconnect_SavesCorrectServerGroup(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		testName       string
+		serverGroup    string
+		config         config.Config
+		setServerGroup config.ServerGroup
+	}{
+		{
+			testName:       "for standard",
+			serverGroup:    "standard_vpn_servers",
+			setServerGroup: config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
+		{
+			testName:       "for p2p",
+			serverGroup:    "p2p",
+			setServerGroup: config.ServerGroup_P2P,
+		},
+		{
+			testName:       "for obfuscated servers",
+			serverGroup:    "obfuscated_servers",
+			setServerGroup: config.ServerGroup_OBFUSCATED,
+		},
+		{
+			testName:       "for double_vpn",
+			serverGroup:    "double_vpn",
+			setServerGroup: config.ServerGroup_DoubleVPN,
+		},
+		{
+			testName:       "for onion_over_vpn",
+			serverGroup:    "onion_over_vpn",
+			setServerGroup: config.ServerGroup_ONION_OVER_VPN,
+		},
+	}
+
+	for _, test := range tests {
+		mockAuthChecker := mockAutoconnectAuthChecker{}
+		mockConfigManager := newMockConfigManager()
+		mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
+		mockEvents := events.Events{
+			Settings: &events.SettingsEvents{
+				Autoconnect: &mockPublisherSubscriber,
+			},
+		}
+		dm := DataManager{serversData: ServersData{Servers: serversList()}}
+		r := RPC{
+			cm:         mockConfigManager,
+			ac:         mockAuthChecker,
+			events:     &mockEvents,
+			dm:         &dm,
+			serversAPI: &mockServersAPI{},
+		}
+		request := pb.SetAutoconnectRequest{
+			Enabled:     true,
+			ServerTag:   "DE",
+			ServerGroup: test.serverGroup,
+		}
+
+		t.Run(test.testName, func(t *testing.T) {
+			assert.Equal(t, config.ServerGroup_UNDEFINED, mockConfigManager.c.AutoConnectData.Group)
+			resp, err := r.SetAutoConnect(context.Background(), &request)
+
+			assert.Nil(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			assert.Equal(t, test.setServerGroup, mockConfigManager.c.AutoConnectData.Group)
 		})
 	}
 }

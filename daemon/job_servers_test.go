@@ -139,8 +139,7 @@ func (m *mockConfigManager) Reset() error {
 	return nil
 }
 
-type failingConfigManager struct {
-}
+type failingConfigManager struct{}
 
 func (failingConfigManager) SaveWith(f config.SaveFunc) error {
 	return errors.New("failed")

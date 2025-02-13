@@ -49,11 +49,20 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 	var parameters ServerParameters
 	serverTag := in.GetServerTag()
+	serverGroup := in.GetServerGroup()
 	if in.GetEnabled() {
+		// NOTE: For backward compatibility, if the serverGroup is specified but
+		// server tag is not, then we simulate the previous behavior of not having
+		// serverGroup at all. This may not be needed after adding support for
+		// server group in CLI (LVPN-5901).
+		if serverTag == "" && serverGroup != "" {
+			serverTag = serverGroup
+			serverGroup = ""
+		}
 		if serverTag != "" {
 			insights := r.dm.GetInsightsData().Insights
 
-			server, _, err := selectServer(r, &insights, cfg, serverTag, "")
+			server, _, err := selectServer(r, &insights, cfg, serverTag, serverGroup)
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "no server found for autoconnect", serverTag, err)
 
@@ -67,10 +76,15 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				return nil, err
 			}
 			log.Println(internal.InfoPrefix, "server for autoconnect found", server)
-			// On the cli side, using the --group flag overrides any other arguments and group name will replace the
-			// server tag. Once this is fixed and this RPC accepts both server tag and a group flag, group flag should
-			// be used as a second argument in this call.s
-			parameters = GetServerParameters(serverTag, serverTag, r.dm.GetCountryData().Countries)
+			// NOTE: ServerGroup param in the request is a new addition. Initially,
+			// server group was coming from [pb.SetAutoConnectRequest.ServerTag] param.
+			// To maintain backward compatibility, we set it to `serverTag` here if the
+			// [pb.SetAutoConnectRequest.ServerGroup] is empty. This may not be needed
+			// after adding support for server group in CLI (LVPN-5901).
+			if serverGroup == "" {
+				serverGroup = serverTag
+			}
+			parameters = GetServerParameters(serverTag, serverGroup, r.dm.GetCountryData().Countries)
 		}
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {

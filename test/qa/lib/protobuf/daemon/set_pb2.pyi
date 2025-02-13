@@ -52,12 +52,14 @@ DISCOVERY_CONFIGURED: SetLANDiscoveryStatus
 DISCOVERY_CONFIGURED_ALLOWLIST_RESET: SetLANDiscoveryStatus
 
 class SetAutoconnectRequest(_message.Message):
-    __slots__ = ("enabled", "server_tag")
+    __slots__ = ("enabled", "server_tag", "server_group")
     ENABLED_FIELD_NUMBER: _ClassVar[int]
     SERVER_TAG_FIELD_NUMBER: _ClassVar[int]
+    SERVER_GROUP_FIELD_NUMBER: _ClassVar[int]
     enabled: bool
     server_tag: str
-    def __init__(self, enabled: bool = ..., server_tag: _Optional[str] = ...) -> None: ...
+    server_group: str
+    def __init__(self, enabled: bool = ..., server_tag: _Optional[str] = ..., server_group: _Optional[str] = ...) -> None: ...
 
 class SetGenericRequest(_message.Message):
     __slots__ = ("enabled",)
