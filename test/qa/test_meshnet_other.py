@@ -1,8 +1,18 @@
 import pytest
 import sh
+import grpc
 
 import lib
-from lib import daemon, meshnet, settings, ssh
+import sys
+import os
+import time
+from lib import daemon, meshnet, settings, ssh, logging
+
+sys.path.append(os.path.abspath(os.path.join(
+    os.path.dirname(__file__), 'lib/protobuf/meshnet')))
+
+from lib.protobuf.meshnet import (service_pb2_grpc, empty_pb2)
+import lib.protobuf.meshnet
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -121,3 +131,51 @@ def test_set_meshnet_on_post_quantum_enabled():
         sh.nordvpn.set.meshnet("on")
 
     assert "The post-quantum VPN and Meshnet can't run at the same time. Please disable one feature to use the other." in str(ex.value)
+
+def test_mesh_private_key_is_revoked_on_mesh_off():
+    sh.nordvpn.set.meshnet("off")
+
+    with grpc.insecure_channel(lib.NORDVPND_SOCKET) as channel:
+        stub = service_pb2_grpc.MeshnetStub(channel)
+        response = stub.GetPrivateKey(empty_pb2.Empty())
+        assert response.private_key == "", "Meshnet private key should be removed when meshnet is disabled."
+
+def test_mesh_private_key_is_revoked_on_mesh_off_vpn_disconnect():
+    sh.nordvpn.connect()
+    sh.nordvpn.set.meshnet("off")
+
+    with grpc.insecure_channel(lib.NORDVPND_SOCKET) as channel:
+        stub = service_pb2_grpc.MeshnetStub(channel)
+        response = stub.GetPrivateKey(empty_pb2.Empty())
+        assert response.private_key != "", "Meshnet private key should not be removed mid-VPN connection."
+
+        sh.nordvpn.disconnect()
+        response = stub.GetPrivateKey(empty_pb2.Empty())
+        assert response.private_key == "", "Meshnet private key should be removed when meshnet is disabled."
+
+def test_mesh_private_key_is_revoked_on_mesh_off_daemon_shutdown():
+    sh.nordvpn.connect()
+    sh.nordvpn.set.meshnet("off")
+
+    with grpc.insecure_channel(lib.NORDVPND_SOCKET) as channel:
+        stub = service_pb2_grpc.MeshnetStub(channel)
+        response = stub.GetPrivateKey(empty_pb2.Empty())
+        assert response.private_key != "", "Meshnet private key should not be removed mid-VPN connection."
+
+    daemon.restart()
+    def is_meshnet_pk_removed() -> bool:
+        try:
+            with grpc.insecure_channel(lib.NORDVPND_SOCKET) as channel:
+                stub = service_pb2_grpc.MeshnetStub(channel)
+                response = stub.GetPrivateKey(empty_pb2.Empty())
+                return response.private_key == "", "Meshnet private key should be removed when meshnet is disabled."
+        except Exception as e:# noqa: BLE001
+            logging.log(f"attempting to retrieve private key from daemon: {e}")
+            return False
+
+    pk_removed = False
+    for pk_removed in lib.poll(is_meshnet_pk_removed):
+        if pk_removed:
+            break
+    assert pk_removed, "Meshnet private key was not removed after daemon shutdown."
+
