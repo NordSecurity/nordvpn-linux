@@ -66,6 +66,7 @@ def start_system_monitoring():
     yield
 
     # stop monitoring after execution
+    print("Stopping the monitoring")
     stop_event.set()
     for thread in threads:
         thread.join()

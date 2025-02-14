@@ -308,14 +308,3 @@ func NewAccountUpdateEvents() *AccountUpdateEvents {
 		SubscriptionUpdate: &subs.Subject[*pb.AccountModification]{},
 	}
 }
-
-type MockPublisherSubscriber[T any] struct {
-	EventPublished bool
-	Event          T
-}
-
-func (mp *MockPublisherSubscriber[T]) Publish(message T) {
-	mp.EventPublished = true
-	mp.Event = message
-}
-func (*MockPublisherSubscriber[T]) Subscribe(handler events.Handler[T]) {}

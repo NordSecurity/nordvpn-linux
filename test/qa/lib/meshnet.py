@@ -8,7 +8,7 @@ from enum import Enum
 import pytest
 import sh
 
-from . import daemon, info, logging, login, ssh
+from . import daemon, info, logging, login, ssh, poll
 
 PEER_USERNAME = login.get_credentials("qa-peer").email
 
@@ -70,6 +70,12 @@ class TestUtils:
     def teardown_function(ssh_client: ssh.Ssh):
         logging.log(data=info.collect())
         logging.log()
+        try:
+            # fetch after each test the logs for the remote peer
+            dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
+            ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
+        except Exception as e: # noqa: BLE001
+            logging.log(f"teardown_function failed to download logs: {e}")
         ssh_client.exec_command("nordvpn set defaults")
         sh.nordvpn.set.defaults()
         daemon.stop_peer(ssh_client)
@@ -259,7 +265,14 @@ class PeerList:
     def clear_external_peer_list(self):
         self.external_peers = []
 
-
+    def find_peer(self, peer_ip: str) -> Peer:
+        for peer in self.get_all_external_peers():
+            if peer.ip == peer_ip:
+                return peer
+        for peer in self.get_all_internal_peers():
+            if peer.ip == peer_ip:
+                return peer
+        return None
 
     def parse_peer_list(self, filter_list: str | None = None) -> list[str]:
         """Builds expected Meshnet peer list string according to passed list of filters."""
@@ -430,18 +443,33 @@ def add_peer(ssh_client: ssh.Ssh,
 
 def remove_all_peers():
     """Removes all meshnet peers from local device."""
+    sh.nordvpn.mesh.peer.refresh()
     peer_list = PeerList.from_str(sh.nordvpn.mesh.peer.list())
 
     for peer in peer_list.get_all_internal_peers() + peer_list.get_all_external_peers():
-        sh.nordvpn.mesh.peer.remove(peer.hostname)
+        try:
+            sh.nordvpn.mesh.peer.remove(peer.hostname)
+        except Exception as e: # noqa: BLE001
+            # ignore the error. Since meshnet map is cached it is only refreshed on NC events
+            # so it can happen that the peer is not anymore into the list when it needs to be deleted
+            logging.log(f"remove_all_peers {peer.hostname} error: {e}")
+
+    time.sleep(1) # give some time to NC to handle all the changes
 
 
 def remove_all_peers_in_peer(ssh_client: ssh.Ssh):
     """Removes all meshnet peers from peer device."""
+    ssh_client.exec_command("nordvpn mesh peer refresh")
     peer_list = PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list"))
 
     for peer in peer_list.get_all_internal_peers() + peer_list.get_all_external_peers():
-        ssh_client.exec_command(f"nordvpn mesh peer remove {peer.hostname}")
+        try:
+            ssh_client.exec_command(f"nordvpn mesh peer remove {peer.hostname}")
+        except Exception as e: # noqa: BLE001
+            # ignore the error. Since meshnet map is cached it is only refreshed on NC events
+            # so it can happen that the peer is not anymore into the list when it needs to be deleted
+            logging.log(f"remove_all_peers_in_peer {peer.hostname} error: {e}")
+    time.sleep(1) # give some time to NC to handle all the changes
 
 
 def get_sent_invites(output: str) -> list:
@@ -470,6 +498,7 @@ def revoke_all_invites_in_peer(ssh_client: ssh.Ssh):
 
 
 def send_meshnet_invite(email):
+    logging.log("send_meshnet_invite start")
     try:
         command = ["nordvpn", "meshnet", "invite", "send", email]
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -485,7 +514,8 @@ def send_meshnet_invite(email):
             stdout, stderr = process.communicate()
 
         if process.returncode != 0:
-            raise sh.ErrorReturnCode_1(full_cmd="", stdout=b"", stderr=stdout.split('\n')[-2].encode('utf-8'))
+            logging.log(f"send_meshnet_invite {process.returncode} {os.strerror(process.returncode)}: {stdout} | {stderr}")
+            raise sh.ErrorReturnCode_1(full_cmd="", stdout=b"", stderr=stdout.encode('utf-8'))
 
         return stdout.strip().split('\n')[-1]
     except subprocess.CalledProcessError as e:
@@ -693,3 +723,17 @@ def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 3) -> None:
     logging.log(f"=== local_peer_list ===\n{local_peer_list}\n")
     logging.log(f"=== remote_peer_list ===\n{remote_peer_list}\n")
     pytest.fail("Peers do not see each other as connected.")
+
+
+# Wait until a specified peer becomes online
+def waitForPeerToBeOnline(peer_ip: str, ssh_client: ssh.Ssh = None, waitDurationSec: int = 5) -> None:
+    def get_peers_list() -> str :
+        if not ssh_client:
+            return sh.nordvpn.meshnet.peer.list()
+        return ssh_client.exec_command("nordvpn mesh peer list")
+
+    for peers_list_str in poll(get_peers_list, attempts=waitDurationSec, sleep=1):  # noqa: B007
+        peers_list = PeerList.from_str(peers_list_str)
+        found = peers_list.find_peer(peer_ip=peer_ip)
+        if found and found.status == "connected":
+            return

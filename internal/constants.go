@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 const (
@@ -142,6 +143,12 @@ var (
 	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
+
+	// How often will meshnet map be updated from the API
+	MeshnetMapUpdateInterval = 5 * time.Minute
+
+	// The tag assigned to the job to update meshnet map
+	MeshnetMapJobTag = "meshnet-map"
 )
 
 func GetSupportedIPTables() []string {

@@ -187,9 +187,9 @@ func newMockedServer(
 	loadConfigErr error,
 	saveConfigErr error,
 	configureErr error,
-	isMeshOn bool,
+	isMeshnetOn bool,
 	peers []mesh.MachinePeer,
-) *Server {
+) (*Server, *mock.RegistryMock) {
 	t.Helper()
 
 	registryApi := mock.RegistryMock{}
@@ -219,16 +219,17 @@ func newMockedServer(
 		},
 		testnorduser.NewMockNorduserClient(nil),
 		sharedctx.New(),
+		&mock.MockDataManager{},
 	)
 
-	if isMeshOn {
+	if isMeshnetOn {
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 	}
 
 	configManager.SaveErr = saveConfigErr
 	configManager.LoadErr = loadConfigErr
 
-	return server
+	return server, &registryApi
 }
 
 func TestServer_EnableMeshnet(t *testing.T) {
@@ -294,6 +295,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 				},
 				testnorduser.NewMockNorduserClient(test.startFileshareError),
 				sharedctx.New(),
+				&mock.MockDataManager{},
 			)
 			assert.NotEqual(t, nil, mserver)
 			assert.Equal(t, test.cm, mserver.cm)
@@ -380,6 +382,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 				},
 				testnorduser.NewMockNorduserClient(test.startFileshareError),
 				sharedctx.New(),
+				&mock.MockDataManager{},
 			)
 			assert.NotEqual(t, nil, mserver)
 			assert.Equal(t, test.cm, mserver.cm)
@@ -448,6 +451,7 @@ func TestServer_Invite(t *testing.T) {
 				},
 				testnorduser.NewMockNorduserClient(nil),
 				sharedctx.New(),
+				&mock.MockDataManager{},
 			)
 			server.EnableMeshnet(context.Background(), &pb.Empty{})
 			resp, err := server.Invite(context.Background(), &pb.InviteRequest{})
@@ -484,6 +488,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 		},
 		testnorduser.NewMockNorduserClient(nil),
 		sharedctx.New(),
+		&mock.MockDataManager{},
 	)
 	server.EnableMeshnet(context.Background(), &pb.Empty{})
 	resp, err := server.AcceptInvite(context.Background(), &pb.InviteRequest{
@@ -520,9 +525,8 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 		},
 		testnorduser.NewMockNorduserClient(nil),
 		sharedctx.New(),
+		&mock.MockDataManager{},
 	)
-	server.EnableMeshnet(context.Background(), &pb.Empty{})
-
 	localPeerIP := "172.17.0.1"
 	externalPeerIP := "192.17.30.5"
 
@@ -566,16 +570,19 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		registryApi.Peers = test.peers
-
-		resp, _ := server.GetPeers(context.Background(), &pb.Empty{})
-
 		t.Run(test.name, func(t *testing.T) {
+			registryApi.Peers = test.peers
+			server.EnableMeshnet(context.Background(), &pb.Empty{})
+
+			resp, _ := server.GetPeers(context.Background(), &pb.Empty{})
+
 			assert.IsType(t, &pb.GetPeersResponse_Peers{}, resp.Response)
 			assert.Equal(t, 1, len(resp.GetPeers().Local))
 			assert.Equal(t, test.expectedLocalPeerIP, resp.GetPeers().Local[0].GetIp())
 			assert.Equal(t, 1, len(resp.GetPeers().External))
 			assert.Equal(t, test.expectedExternalPeerIP, resp.GetPeers().External[0].GetIp())
+
+			server.DisableMeshnet(context.Background(), &pb.Empty{})
 		})
 	}
 }
@@ -629,6 +636,7 @@ func TestServer_Connect(t *testing.T) {
 			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
+			&mock.MockDataManager{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server
@@ -770,6 +778,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
+			&mock.MockDataManager{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -901,6 +910,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
+			&mock.MockDataManager{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -1014,6 +1024,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
+			&mock.MockDataManager{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -1128,6 +1139,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 			},
 			testnorduser.NewMockNorduserClient(nil),
 			sharedctx.New(),
+			&mock.MockDataManager{},
 		)
 		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
@@ -1309,13 +1321,15 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := newMockedServer(t,
+			server, api := newMockedServer(t,
 				test.listErr,
 				test.loadConfigErr,
 				test.saveConfigErr,
 				test.configureErr,
 				test.isMeshOn,
 				peers)
+
+			api.MapErr = test.listErr
 			resp, err := server.EnableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -1448,13 +1462,16 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := newMockedServer(t,
+			server, api := newMockedServer(t,
 				test.listErr,
 				test.loadConfigErr,
 				test.saveConfigErr,
 				test.configureErr,
 				test.isMeshOn,
-				peers)
+				peers,
+			)
+			api.MapErr = test.listErr
+
 			resp, err := server.DisableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -1773,11 +1790,13 @@ func TestServer_Peer_Nickname(t *testing.T) {
 				},
 				testnorduser.NewMockNorduserClient(nil),
 				sharedctx.New(),
+				&mock.MockDataManager{},
 			)
 
 			if test.isMeshOn {
 				server.EnableMeshnet(context.Background(), &pb.Empty{})
 			}
+			registryApi.MapErr = test.listErr
 
 			checker.registrationErr = test.registrationErr
 
@@ -2092,6 +2111,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				},
 				testnorduser.NewMockNorduserClient(nil),
 				sharedctx.New(),
+				&mock.MockDataManager{},
 			)
 
 			if test.isMeshOn {
@@ -2122,61 +2142,5 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				assert.True(t, registryApi.CurrentMachine.SupportsRouting)
 			}
 		})
-	}
-}
-
-func TestServer_listPeers(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name          string
-		machine       *mesh.Machine
-		loadConfigErr error
-		listErr       error
-		shouldBeErr   bool
-	}{
-		{
-			name:        "success",
-			machine:     &mesh.Machine{},
-			shouldBeErr: false,
-		},
-		{
-			name:        "meshnet is not configured",
-			machine:     nil,
-			shouldBeErr: true,
-		},
-		{
-			name:          "load config error",
-			machine:       &mesh.Machine{},
-			loadConfigErr: fmt.Errorf("failed to load config"),
-			shouldBeErr:   true,
-		},
-		{
-			name:        "list error",
-			machine:     &mesh.Machine{},
-			listErr:     fmt.Errorf("failed to load config"),
-			shouldBeErr: true,
-		},
-	}
-
-	for _, test := range tests {
-		configManager := mock.NewMockConfigManager()
-		configManager.LoadErr = test.loadConfigErr
-		configManager.Cfg.MeshDevice = test.machine
-
-		registryApi := mock.RegistryMock{}
-		registryApi.ListErr = test.listErr
-
-		s := Server{
-			cm:  configManager,
-			reg: &registryApi,
-		}
-
-		_, err := s.listPeers()
-		if test.shouldBeErr {
-			assert.NotNil(t, err)
-		} else {
-			assert.Nil(t, err)
-		}
 	}
 }

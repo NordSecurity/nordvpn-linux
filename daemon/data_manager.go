@@ -11,7 +11,9 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/daemon/models"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -32,19 +34,28 @@ type DataManager struct {
 	versionData      VersionData
 	dataUpdateEvents *events.DataUpdateEvents
 	mu               sync.Mutex
+	meshnetMap       *models.CachedValue[mesh.MachineMap]
 }
 
 func NewDataManager(insightsFilePath,
 	serversFilePath,
 	countryFilePath,
 	versionFilePath string,
-	dataUpdateEvents *events.DataUpdateEvents) *DataManager {
+	dataUpdateEvents *events.DataUpdateEvents,
+) *DataManager {
 	return &DataManager{
 		countryData:      CountryData{filePath: countryFilePath},
 		insightsData:     InsightsData{filePath: insightsFilePath},
 		serversData:      ServersData{filePath: serversFilePath},
 		versionData:      VersionData{filePath: versionFilePath},
 		dataUpdateEvents: dataUpdateEvents,
+		meshnetMap: models.NewCachedValue(
+			mesh.MachineMap{},
+			errors.New("empty"),
+			time.Time{},
+			internal.MeshnetMapUpdateInterval,
+			nil,
+		),
 	}
 }
 
@@ -384,4 +395,16 @@ func (dm *DataManager) CountryCodeToCountryName(code string) string {
 	}
 
 	return ""
+}
+
+func (dm *DataManager) GetMeshnetMap() (mesh.MachineMap, error) {
+	return dm.meshnetMap.Get()
+}
+
+func (dm *DataManager) SetMeshnetMap(peers mesh.MachineMap, err error) {
+	dm.meshnetMap.Set(peers, err)
+}
+
+func (dm *DataManager) ChangeUpdaterFnForMeshnetMap(updaterFn func(*models.CachedValue[mesh.MachineMap])) {
+	dm.meshnetMap.ChangeUpdaterFn(updaterFn)
 }

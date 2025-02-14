@@ -225,6 +225,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 				&daemonevents.Events{},
 				&testnorduser.MockNorduserClient{},
 				sharedctx.New(),
+				&mock.MockDataManager{},
 			)
 
 			err := rpc.StartAutoMeshnet(meshService, mockTimeout)

@@ -48,6 +48,7 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn set mesh on")
 
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    sh.nordvpn.meshnet.peer.refresh()
     peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
     assert meshnet.is_peer_reachable(ssh_client, peer)
 
@@ -1012,10 +1013,11 @@ def test_permissions_send(peer_name, background):
     tester_hostname = tester_data.get_peer_name(meshnet.PeerName.Hostname)
     assert meshnet.MSG_PEER_FILESHARE_DENY_SUCCESS % tester_hostname in fileshare_denied_message
 
+    sh.nordvpn.meshnet.peer.refresh()
     qa_peer_permission = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_internal_peer().allow_sending_files
     tester_permission = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
-    assert tester_permission is not True
-    assert qa_peer_permission is not True
+    assert not tester_permission
+    assert not qa_peer_permission
 
     directory = fileshare.create_directory(1)
     filename = directory.paths[0]
@@ -1034,10 +1036,11 @@ def test_permissions_send(peer_name, background):
     fileshare_allowed_message = ssh_client.exec_command(f"nordvpn mesh peer fileshare allow {tester_address}")
     assert meshnet.MSG_PEER_FILESHARE_ALLOW_SUCCESS % tester_hostname in fileshare_allowed_message
 
+    sh.nordvpn.meshnet.peer.refresh()
     qapeer_permission = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_internal_peer().allow_sending_files
     tester_permission = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().allows_sending_files
-    assert tester_permission is True
-    assert qapeer_permission is True
+    assert tester_permission
+    assert qapeer_permission
 
     fileshare.start_transfer(peer_address, filename)
     transfer_id = fileshare.get_last_transfer()
@@ -1061,6 +1064,7 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     file_name = "/tmp/file_allowed"
     ssh_client.exec_command(f"echo > {file_name}")
     with pytest.raises(RuntimeError) as ex:
+        ssh_client.exec_command("nordvpn meshnet peer refresh")
         ssh_client.exec_command(f"nordvpn fileshare send --background {tester_address} {file_name}")
         assert "peer does not allow file transfers" in ex
 
@@ -1078,6 +1082,8 @@ def test_accept_destination_directory_does_not_exist():
     address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
 
     filename = "file"
+
+    meshnet.waitForPeerToBeOnline(peer_ip=address, ssh_client=ssh_client)
 
     ssh_client.exec_command(f"touch {workdir}/{filename}")
     ssh_client.exec_command(f"nordvpn fileshare send --background {address} {workdir}/{filename}")
@@ -1102,6 +1108,7 @@ def test_accept_destination_directory_symlink():
 
     filename = "file"
 
+    meshnet.waitForPeerToBeOnline(peer_ip=address, ssh_client=ssh_client)
     ssh_client.exec_command(f"touch {workdir}/{filename}")
     ssh_client.exec_command(f"nordvpn fileshare send --background {address} {workdir}/{filename}")
 
@@ -1131,6 +1138,7 @@ def test_accept_destination_directory_not_a_directory():
 
     filename = "file"
 
+    meshnet.waitForPeerToBeOnline(peer_ip=address, ssh_client=ssh_client)
     ssh_client.exec_command(f"touch {workdir}/{filename}")
     ssh_client.exec_command(f"nordvpn fileshare send --background {address} {workdir}/{filename}")
 
@@ -1182,6 +1190,7 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
         path = " ".join(wfolder.paths)
         expected_files = wfolder.filenames
 
+    meshnet.waitForPeerToBeOnline(peer_ip=host_address, ssh_client=ssh_client)
     send_message = ssh_client.exec_command(f"nordvpn fileshare send --background {host_address} {path}")
 
     transfer_id = re.findall(f"{fileshare.TRANSFER_ID_REGEX}", send_message)[0]

@@ -2,9 +2,15 @@ package meshnet
 
 import (
 	"errors"
+	"sync/atomic"
 	"testing"
+	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	internal "github.com/NordSecurity/nordvpn-linux/meshnet/interfaces"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/jobs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +20,7 @@ func TestJobMonitorFileshare(t *testing.T) {
 	tests := []struct {
 		name                        string
 		isFileshareInitiallyAllowed bool
-		meshChecker                 meshChecker
+		meshChecker                 internal.MeshnetChecker
 		processChecker              processChecker
 		wasForbidCalled             bool
 		wasPermitCalled             bool
@@ -91,7 +97,7 @@ type meshCheckerStub struct {
 	isMeshnetOn bool
 }
 
-func (m meshCheckerStub) isMeshOn() bool {
+func (m meshCheckerStub) IsMeshnetOn() bool {
 	return m.isMeshnetOn
 }
 
@@ -123,4 +129,34 @@ type processCheckerStub struct {
 
 func (m processCheckerStub) isFileshareRunning() bool {
 	return m.isFileshareUp
+}
+
+type mockMeshnetFetcher struct {
+	RefreshCalls atomic.Int32
+}
+
+func (r *mockMeshnetFetcher) RefreshMeshnetMap(changePeerIds []string) (mesh.MachineMap, error) {
+	r.RefreshCalls.Add(1)
+	return mesh.MachineMap{}, nil
+}
+
+func TestConfigureMeshnetMapRefresher(t *testing.T) {
+	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
+	scheduler.Start()
+
+	fetcher := &mockMeshnetFetcher{}
+	meshChecker := meshCheckerStub{isMeshnetOn: true}
+
+	assert.NoError(t, jobs.ConfigureMeshnetMapRefresher(false, scheduler, meshChecker, fetcher, time.Millisecond*50), "no error returned when job doesn't exists")
+	time.Sleep(time.Millisecond * 70)
+	assert.Equal(t, fetcher.RefreshCalls.Load(), int32(0), "refresh map was never called")
+
+	assert.NoError(t, jobs.ConfigureMeshnetMapRefresher(true, scheduler, meshChecker, fetcher, time.Millisecond*50))
+	time.Sleep(time.Millisecond * 70)
+	assert.NotEqual(t, fetcher.RefreshCalls.Load(), int32(1), "refresh map was called only once")
+
+	assert.NoError(t, jobs.ConfigureMeshnetMapRefresher(false, scheduler, meshChecker, &mockMeshnetFetcher{}, time.Millisecond*50))
+	fetcher.RefreshCalls.Store(0)
+	time.Sleep(time.Millisecond * 70)
+	assert.Equal(t, fetcher.RefreshCalls.Load(), int32(0), "refresh map was not called after job was stopped")
 }

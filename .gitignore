@@ -30,7 +30,7 @@ __pycache__
 
 .vagrant
 .vscode/*
-!.vscode/settings.json
+.vscode/settings.json
 !.vscode/launch.json
 !.vscode/tasks.json
 contrib/manual/nordvpn.1

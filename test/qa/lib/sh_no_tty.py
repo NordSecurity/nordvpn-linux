@@ -1,0 +1,16 @@
+import sh
+
+# Helper class that uses sh command with tty_out=false
+class ShNoTTY:
+    def __init__(self, base=None, level=None):
+        self.base = base or sh
+        self.level = level
+
+    def __getattr__(self, name):
+        # Create a new wrapper for the next level
+        return ShNoTTY(base=getattr(self.base, name), level=name)
+
+    def __call__(self, *args, **kwargs):
+        # When the command is finally called, add _tty_out=False
+        kwargs["_tty_out"] = False
+        return self.base(*args, **kwargs)

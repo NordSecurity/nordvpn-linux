@@ -6,14 +6,17 @@ import (
 
 	"github.com/go-co-op/gocron/v2"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	interfaces "github.com/NordSecurity/nordvpn-linux/meshnet/interfaces"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/jobs"
 )
 
-func (s *Server) StartJobs() {
-	if _, err := s.scheduler.NewJob(gocron.DurationJob(2*time.Hour), gocron.NewTask(JobRefreshMeshnet(s)), gocron.WithName("job refresh meshnet")); err != nil {
-		log.Println(internal.WarningPrefix, "job refresh meshnet schedule error:", err)
-	}
-
+func (s *Server) StartJobs(
+	meshnetStatusPublisher events.PublishSubcriber[bool],
+	cfg config.Config,
+) {
 	if _, err := s.scheduler.NewJob(
 		gocron.DurationJob(1*time.Second),
 		gocron.NewTask(JobMonitorFileshareProcess(s)),
@@ -28,13 +31,14 @@ func (s *Server) StartJobs() {
 			log.Println(internal.WarningPrefix, job.Name(), "first run error:", err)
 		}
 	}
-}
 
-func JobRefreshMeshnet(s *Server) func() error {
-	return func() error {
-		// ignore what is returned, try to do it here as light as possible
-		_, _ = s.RefreshMeshnet(nil, nil)
-		return nil
+	// monitors the meshnet status and starts/stops the meshnet map refreshing job
+	meshnetStatusPublisher.Subscribe(func(enabled bool) error {
+		return jobs.ConfigureMeshnetMapRefresher(enabled, s.scheduler, s, s, internal.MeshnetMapUpdateInterval)
+	})
+
+	if cfg.Mesh {
+		jobs.ConfigureMeshnetMapRefresher(true, s.scheduler, s, s, internal.MeshnetMapUpdateInterval)
 	}
 }
 
@@ -49,7 +53,7 @@ func JobMonitorFileshareProcess(s *Server) func() error {
 }
 
 func (j *monitorFileshareProcessJob) run() error {
-	if !j.meshChecker.isMeshOn() {
+	if !j.meshChecker.IsMeshnetOn() {
 		if j.isFileshareAllowed {
 			if err := j.rulesController.ForbidFileshare(); err == nil {
 				j.isFileshareAllowed = false
@@ -77,13 +81,9 @@ func (defaultProcessChecker) isFileshareRunning() bool {
 
 type monitorFileshareProcessJob struct {
 	isFileshareAllowed bool
-	meshChecker        meshChecker
+	meshChecker        interfaces.MeshnetChecker
 	rulesController    rulesController
 	processChecker     processChecker
-}
-
-type meshChecker interface {
-	isMeshOn() bool
 }
 
 type rulesController interface {

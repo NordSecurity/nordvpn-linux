@@ -18,6 +18,7 @@ type RegistryMock struct {
 	ListErr      error
 	ConfigureErr error
 	UpdateErr    error
+	MapErr       error
 }
 
 func (*RegistryMock) Register(token string, self mesh.Machine) (*mesh.Machine, error) {
@@ -83,6 +84,9 @@ func (r *RegistryMock) List(token string, self uuid.UUID) (mesh.MachinePeers, er
 }
 
 func (r *RegistryMock) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
+	if r.MapErr != nil {
+		return nil, r.MapErr
+	}
 	return &mesh.MachineMap{Machine: r.CurrentMachine, Peers: r.Peers}, nil
 }
 

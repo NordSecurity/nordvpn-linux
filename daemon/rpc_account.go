@@ -73,7 +73,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 	accountInfo.DedicatedIpStatus = internal.CodeSuccess
 	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated ip services: %w", err)
+		log.Println(internal.ErrorPrefix, "getting dedicated ip services:", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	}
 
