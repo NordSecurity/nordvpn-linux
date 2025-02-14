@@ -657,16 +657,8 @@ func (c *cmd) changeMeshnetPeerNickname(peer *pb.Peer, nickname string) error {
 		return errors.New(AccountInternalError)
 	}
 	switch resp := resp.Response.(type) {
-	case *pb.ChangeNicknameResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-
-	case *pb.ChangeNicknameResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			peer.Hostname,
-		)
-	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
-		return meshnetErrorToError(resp.MeshnetErrorCode)
+	case *pb.ChangeNicknameResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, nickname)
 	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
 		return getChangeNicknameResponseToError(resp.ChangeNicknameErrorCode, nickname)
 	}
@@ -696,12 +688,8 @@ func (c *cmd) MeshSetMachineNickname(ctx *cli.Context) error {
 		return errors.New(AccountInternalError)
 	}
 	switch resp := resp.Response.(type) {
-	case *pb.ChangeNicknameResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.ChangeNicknameResponse_UpdatePeerErrorCode:
-		return errors.New(AccountInternalError)
-	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
-		return meshnetErrorToError(resp.MeshnetErrorCode)
+	case *pb.ChangeNicknameResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, nickname)
 	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
 		return getChangeNicknameResponseToError(resp.ChangeNicknameErrorCode, nickname)
 	}
@@ -723,12 +711,8 @@ func (c *cmd) MeshRemoveMachineNickname(ctx *cli.Context) error {
 		return errors.New(AccountInternalError)
 	}
 	switch resp := resp.Response.(type) {
-	case *pb.ChangeNicknameResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.ChangeNicknameResponse_UpdatePeerErrorCode:
-		return errors.New(AccountInternalError)
-	case *pb.ChangeNicknameResponse_MeshnetErrorCode:
-		return meshnetErrorToError(resp.MeshnetErrorCode)
+	case *pb.ChangeNicknameResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, "")
 	case *pb.ChangeNicknameResponse_ChangeNicknameErrorCode:
 		return getChangeNicknameResponseToError(resp.ChangeNicknameErrorCode, "")
 	}
@@ -827,18 +811,10 @@ func allowRoutingResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.AllowRoutingResponse_Empty:
 		return nil
-	case *pb.AllowRoutingResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.AllowRoutingResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.AllowRoutingResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.AllowRoutingResponse_AllowRoutingErrorCode:
-		return allowRoutingErrorCodeToError(
-			resp.AllowRoutingErrorCode,
-			identifier,
-		)
+		return allowRoutingErrorCodeToError(resp.AllowRoutingErrorCode, identifier)
 	default:
 		return errors.New(AccountInternalError)
 	}
@@ -857,13 +833,8 @@ func denyRoutingResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.DenyRoutingResponse_Empty:
 		return nil
-	case *pb.DenyRoutingResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.DenyRoutingResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.DenyRoutingResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.DenyRoutingResponse_DenyRoutingErrorCode:
 		return denyRoutingErrorCodeToError(
 			resp.DenyRoutingErrorCode,
@@ -887,20 +858,13 @@ func allowIncomingResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.AllowIncomingResponse_Empty:
 		return nil
-	case *pb.AllowIncomingResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.AllowIncomingResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.AllowIncomingResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.AllowIncomingResponse_AllowIncomingErrorCode:
 		return allowIncomingErrorCodeToError(
 			resp.AllowIncomingErrorCode,
 			identifier,
 		)
-	case *pb.AllowIncomingResponse_MeshnetErrorCode:
-		return meshnetErrorToError(resp.MeshnetErrorCode)
 	default:
 		return errors.New(AccountInternalError)
 	}
@@ -919,20 +883,13 @@ func denyIncomingResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.DenyIncomingResponse_Empty:
 		return nil
-	case *pb.DenyIncomingResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.DenyIncomingResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.DenyIncomingResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.DenyIncomingResponse_DenyIncomingErrorCode:
 		return denyIncomingErrorCodeToError(
 			resp.DenyIncomingErrorCode,
 			identifier,
 		)
-	case *pb.DenyIncomingResponse_MeshnetErrorCode:
-		return meshnetErrorToError(resp.MeshnetErrorCode)
 	default:
 		return errors.New(AccountInternalError)
 	}
@@ -951,13 +908,8 @@ func allowLocalNetworkResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.AllowLocalNetworkResponse_Empty:
 		return nil
-	case *pb.AllowLocalNetworkResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.AllowLocalNetworkResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.AllowLocalNetworkResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.AllowLocalNetworkResponse_AllowLocalNetworkErrorCode:
 		return allowLocalNetworkErrorCodeToError(
 			resp.AllowLocalNetworkErrorCode,
@@ -981,13 +933,8 @@ func denyLocalNetworkResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.DenyLocalNetworkResponse_Empty:
 		return nil
-	case *pb.DenyLocalNetworkResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.DenyLocalNetworkResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.DenyLocalNetworkResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.DenyLocalNetworkResponse_DenyLocalNetworkErrorCode:
 		return denyLocalNetworkErrorCodeToError(
 			resp.DenyLocalNetworkErrorCode,
@@ -1010,13 +957,8 @@ func allowFileshareResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.AllowFileshareResponse_Empty:
 		return nil
-	case *pb.AllowFileshareResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.AllowFileshareResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.AllowFileshareResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.AllowFileshareResponse_AllowSendErrorCode:
 		return allowFileshareErrorCodeToError(
 			resp.AllowSendErrorCode,
@@ -1040,13 +982,8 @@ func denyFileshareResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.DenyFileshareResponse_Empty:
 		return nil
-	case *pb.DenyFileshareResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.DenyFileshareResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.DenyFileshareResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.DenyFileshareResponse_DenySendErrorCode:
 		return denyFileshareErrorCodeToError(
 			resp.DenySendErrorCode,
@@ -1069,13 +1006,8 @@ func enableAutomaticFileshareResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.EnableAutomaticFileshareResponse_Empty:
 		return nil
-	case *pb.EnableAutomaticFileshareResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.EnableAutomaticFileshareResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.EnableAutomaticFileshareResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.EnableAutomaticFileshareResponse_EnableAutomaticFileshareErrorCode:
 		return enableAutomaticFileshareFileshareErrorCodeToError(
 			resp.EnableAutomaticFileshareErrorCode,
@@ -1098,13 +1030,8 @@ func disableAutomaticFileshareResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.DisableAutomaticFileshareResponse_Empty:
 		return nil
-	case *pb.DisableAutomaticFileshareResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.DisableAutomaticFileshareResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.DisableAutomaticFileshareResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	case *pb.DisableAutomaticFileshareResponse_DisableAutomaticFileshareErrorCode:
 		return disableAutomaticFileshareFileshareErrorCodeToError(
 			resp.DisableAutomaticFileshareErrorCode,
@@ -1129,13 +1056,8 @@ func removePeerResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.RemovePeerResponse_Empty:
 		return nil
-	case *pb.RemovePeerResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.RemovePeerResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		)
+	case *pb.RemovePeerResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier)
 	default:
 		return errors.New(AccountInternalError)
 	}
@@ -1154,20 +1076,13 @@ func connectResponseToError(
 	switch resp := resp.Response.(type) {
 	case *pb.ConnectResponse_Empty:
 		return nil, false
-	case *pb.ConnectResponse_ServiceErrorCode:
-		return serviceErrorCodeToError(resp.ServiceErrorCode), false
-	case *pb.ConnectResponse_UpdatePeerErrorCode:
-		return updatePeerErrorCodeToError(
-			resp.UpdatePeerErrorCode,
-			identifier,
-		), false
+	case *pb.ConnectResponse_UpdatePeerError:
+		return updatePeerErrorToError(resp.UpdatePeerError, identifier), false
 	case *pb.ConnectResponse_ConnectErrorCode:
 		return connectErrorCodeToError(
 			resp.ConnectErrorCode,
 			identifier,
 		)
-	case *pb.ConnectResponse_MeshnetErrorCode:
-		return meshnetErrorToError(resp.MeshnetErrorCode), false
 	default:
 		return errors.New(AccountInternalError), false
 	}
@@ -1395,10 +1310,8 @@ func getPeersResponseToPeerList(
 	switch resp := resp.Response.(type) {
 	case *pb.GetPeersResponse_Peers:
 		return resp.Peers, nil
-	case *pb.GetPeersResponse_ServiceErrorCode:
-		return nil, serviceErrorCodeToError(resp.ServiceErrorCode)
-	case *pb.GetPeersResponse_MeshnetErrorCode:
-		return nil, meshnetErrorToError(resp.MeshnetErrorCode)
+	case *pb.GetPeersResponse_Error:
+		return nil, generalErrorToError(resp.Error)
 	default:
 		return nil, errors.New(AccountInternalError)
 	}
@@ -1447,5 +1360,25 @@ func getChangeNicknameResponseToError(code pb.ChangeNicknameErrorCode, nickname 
 		return errors.New(MsgMeshnetNicknameAlreadyEmpty)
 	}
 
+	return errors.New(AccountInternalError)
+}
+
+func updatePeerErrorToError(err *pb.UpdatePeerError, identifier string) error {
+	switch resp := err.Error.(type) {
+	case *pb.UpdatePeerError_GeneralError:
+		return generalErrorToError(resp.GeneralError)
+	case *pb.UpdatePeerError_UpdatePeerErrorCode:
+		return updatePeerErrorCodeToError(resp.UpdatePeerErrorCode, identifier)
+	}
+	return errors.New(AccountInternalError)
+}
+
+func generalErrorToError(err *pb.Error) error {
+	switch resp := err.Error.(type) {
+	case *pb.Error_MeshnetErrorCode:
+		return meshnetErrorToError(resp.MeshnetErrorCode)
+	case *pb.Error_ServiceErrorCode:
+		return serviceErrorCodeToError(resp.ServiceErrorCode)
+	}
 	return errors.New(AccountInternalError)
 }

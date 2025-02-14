@@ -49,10 +49,8 @@ func getAllPeers(meshClient meshpb.MeshnetClient) (*meshpb.PeerList, error) {
 	switch resp := resp.Response.(type) {
 	case *meshpb.GetPeersResponse_Peers:
 		return resp.Peers, nil
-	case *meshpb.GetPeersResponse_ServiceErrorCode:
-		return nil, fmt.Errorf("GetPeers failed, service error: %s", meshpb.ServiceErrorCode_name[int32(resp.ServiceErrorCode)])
-	case *meshpb.GetPeersResponse_MeshnetErrorCode:
-		return nil, fmt.Errorf("GetPeers failed, meshnet error: %s", meshpb.ServiceErrorCode_name[int32(resp.MeshnetErrorCode)])
+	case *meshpb.GetPeersResponse_Error:
+		return nil, fmt.Errorf("GetPeers failed, error: %s", resp.Error.String())
 	default:
 		return nil, fmt.Errorf("GetPeers failed, unknown error")
 	}
