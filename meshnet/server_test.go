@@ -2,6 +2,7 @@ package meshnet
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/peer"
 )
 
@@ -184,10 +186,7 @@ func (acceptInvitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error
 func newMockedServer(
 	t *testing.T,
 	listErr error,
-	loadConfigErr error,
-	saveConfigErr error,
 	configureErr error,
-	isMeshOn bool,
 	peers []mesh.MachinePeer,
 ) *Server {
 	t.Helper()
@@ -221,13 +220,7 @@ func newMockedServer(
 		sharedctx.New(),
 	)
 
-	if isMeshOn {
-		server.EnableMeshnet(context.Background(), &pb.Empty{})
-	}
-
-	configManager.SaveErr = saveConfigErr
-	configManager.LoadErr = loadConfigErr
-
+	server.EnableMeshnet(context.Background(), &pb.Empty{})
 	return server
 }
 
@@ -807,8 +800,8 @@ func TestServer_AcceptIncoming(t *testing.T) {
 			name:     "unknown peer",
 			peerUuid: "invalid",
 			expectedResponse: &pb.AllowIncomingResponse{
-				Response: &pb.AllowIncomingResponse_UpdatePeerErrorCode{
-					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				Response: &pb.AllowIncomingResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
 			expectedAllowedIPs: []allowedIncoming{},
@@ -938,8 +931,8 @@ func TestServer_DenyIncoming(t *testing.T) {
 			name:     "unknown peer",
 			peerUuid: "invalid",
 			expectedResponse: &pb.DenyIncomingResponse{
-				Response: &pb.DenyIncomingResponse_UpdatePeerErrorCode{
-					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				Response: &pb.DenyIncomingResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
 			expectedBlockedIPs: []UniqueAddress{},
@@ -1051,8 +1044,8 @@ func TestServer_AllowFileshare(t *testing.T) {
 			name:     "unknown peer",
 			peerUuid: "invalid",
 			expectedResponse: &pb.AllowFileshareResponse{
-				Response: &pb.AllowFileshareResponse_UpdatePeerErrorCode{
-					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				Response: &pb.AllowFileshareResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
 			expectedAllowedIPs: []UniqueAddress{},
@@ -1165,8 +1158,8 @@ func TestServer_DenyFileshare(t *testing.T) {
 			name:     "unknown peer",
 			peerUuid: "invalid",
 			expectedResponse: &pb.DenyFileshareResponse{
-				Response: &pb.DenyFileshareResponse_UpdatePeerErrorCode{
-					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				Response: &pb.DenyFileshareResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
 			expectedAllowedIPs: []UniqueAddress{},
@@ -1189,38 +1182,20 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 	peerValidUuid := exampleUUID3
 	peerAlreadyEnabledUuid := exampleUUID1
 
-	peers := []mesh.MachinePeer{
-		{
-			ID:                uuid.MustParse(peerValidUuid),
-			DoIAllowFileshare: false,
-		},
-		{
-			ID:                uuid.MustParse(peerAlreadyEnabledUuid),
-			DoIAllowFileshare: true,
-			AlwaysAcceptFiles: true,
-		},
-	}
-
 	tests := []struct {
 		name             string
 		peerUuid         string
-		listErr          error
 		configureErr     error
-		loadConfigErr    error
-		saveConfigErr    error
-		isMeshOn         bool
 		expectedResponse *pb.EnableAutomaticFileshareResponse
 	}{
 		{
 			name:             "enable for valid peer",
 			peerUuid:         peerValidUuid,
-			isMeshOn:         true,
 			expectedResponse: &pb.EnableAutomaticFileshareResponse{Response: &pb.EnableAutomaticFileshareResponse_Empty{}},
 		},
 		{
 			name:     "automatic fileshare already enabled",
 			peerUuid: peerAlreadyEnabledUuid,
-			isMeshOn: true,
 			expectedResponse: &pb.EnableAutomaticFileshareResponse{
 				Response: &pb.EnableAutomaticFileshareResponse_EnableAutomaticFileshareErrorCode{
 					EnableAutomaticFileshareErrorCode: pb.EnableAutomaticFileshareErrorCode_AUTOMATIC_FILESHARE_ALREADY_ENABLED,
@@ -1230,67 +1205,9 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 		{
 			name:     "unknown peer",
 			peerUuid: "invalid",
-			isMeshOn: true,
 			expectedResponse: &pb.EnableAutomaticFileshareResponse{
-				Response: &pb.EnableAutomaticFileshareResponse_UpdatePeerErrorCode{
-					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
-				},
-			},
-		},
-		{
-			name:     "not authorized to list peers",
-			peerUuid: peerValidUuid,
-			listErr:  core.ErrUnauthorized,
-			isMeshOn: true,
-			expectedResponse: &pb.EnableAutomaticFileshareResponse{
-				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
-				},
-			},
-		},
-		{
-			name:     "meshnet is not on",
-			peerUuid: peerValidUuid,
-			listErr:  fmt.Errorf("generic error"),
-			isMeshOn: false,
-			expectedResponse: &pb.EnableAutomaticFileshareResponse{
-				Response: &pb.EnableAutomaticFileshareResponse_MeshnetErrorCode{
-					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
-				},
-			},
-		},
-		{
-			name:     "unknown error",
-			peerUuid: peerValidUuid,
-			listErr:  fmt.Errorf("generic error"),
-			isMeshOn: true,
-			expectedResponse: &pb.EnableAutomaticFileshareResponse{
-				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
-				},
-			},
-		},
-		{
-			name:          "failed to load config",
-			peerUuid:      peerValidUuid,
-			listErr:       core.ErrUnauthorized,
-			loadConfigErr: fmt.Errorf("generic error"),
-			isMeshOn:      true,
-			expectedResponse: &pb.EnableAutomaticFileshareResponse{
-				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
-				},
-			},
-		},
-		{
-			name:          "failed to save config",
-			peerUuid:      peerValidUuid,
-			listErr:       core.ErrUnauthorized,
-			saveConfigErr: fmt.Errorf("generic error"),
-			isMeshOn:      true,
-			expectedResponse: &pb.EnableAutomaticFileshareResponse{
-				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+				Response: &pb.EnableAutomaticFileshareResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
 		},
@@ -1298,10 +1215,9 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 			name:         "failed to configure peer",
 			peerUuid:     peerValidUuid,
 			configureErr: fmt.Errorf("generic error"),
-			isMeshOn:     true,
 			expectedResponse: &pb.EnableAutomaticFileshareResponse{
-				Response: &pb.EnableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				Response: &pb.EnableAutomaticFileshareResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
 				},
 			},
 		},
@@ -1309,12 +1225,20 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			peers := []mesh.MachinePeer{
+				{
+					ID:                uuid.MustParse(peerValidUuid),
+					DoIAllowFileshare: false,
+				},
+				{
+					ID:                uuid.MustParse(peerAlreadyEnabledUuid),
+					DoIAllowFileshare: true,
+					AlwaysAcceptFiles: true,
+				},
+			}
 			server := newMockedServer(t,
-				test.listErr,
-				test.loadConfigErr,
-				test.saveConfigErr,
+				nil,
 				test.configureErr,
-				test.isMeshOn,
 				peers)
 			resp, err := server.EnableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
@@ -1328,38 +1252,20 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 	peerValidUuid := exampleUUID3
 	peerAleradyDisabledUuid := exampleUUID1
 
-	peers := []mesh.MachinePeer{
-		{
-			ID:                uuid.MustParse(peerValidUuid),
-			DoIAllowFileshare: false,
-			AlwaysAcceptFiles: true,
-		},
-		{
-			ID:                uuid.MustParse(peerAleradyDisabledUuid),
-			DoIAllowFileshare: true,
-		},
-	}
-
 	tests := []struct {
 		name             string
 		peerUuid         string
-		isMeshOn         bool
-		listErr          error
-		loadConfigErr    error
-		saveConfigErr    error
 		configureErr     error
 		expectedResponse *pb.DisableAutomaticFileshareResponse
 	}{
 		{
 			name:             "enable for valid peer",
 			peerUuid:         peerValidUuid,
-			isMeshOn:         true,
 			expectedResponse: &pb.DisableAutomaticFileshareResponse{Response: &pb.DisableAutomaticFileshareResponse_Empty{}},
 		},
 		{
 			name:     "automatic fileshare already enabled",
 			peerUuid: peerAleradyDisabledUuid,
-			isMeshOn: true,
 			expectedResponse: &pb.DisableAutomaticFileshareResponse{
 				Response: &pb.DisableAutomaticFileshareResponse_DisableAutomaticFileshareErrorCode{
 					DisableAutomaticFileshareErrorCode: pb.DisableAutomaticFileshareErrorCode_AUTOMATIC_FILESHARE_ALREADY_DISABLED,
@@ -1369,67 +1275,9 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 		{
 			name:     "unknown peer",
 			peerUuid: "invalid",
-			isMeshOn: true,
 			expectedResponse: &pb.DisableAutomaticFileshareResponse{
-				Response: &pb.DisableAutomaticFileshareResponse_UpdatePeerErrorCode{
-					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
-				},
-			},
-		},
-		{
-			name:     "not authorized to list peers",
-			peerUuid: peerValidUuid,
-			listErr:  core.ErrUnauthorized,
-			isMeshOn: true,
-			expectedResponse: &pb.DisableAutomaticFileshareResponse{
-				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
-				},
-			},
-		},
-		{
-			name:     "meshnet is not on",
-			peerUuid: peerValidUuid,
-			listErr:  fmt.Errorf("generic error"),
-			isMeshOn: false,
-			expectedResponse: &pb.DisableAutomaticFileshareResponse{
-				Response: &pb.DisableAutomaticFileshareResponse_MeshnetErrorCode{
-					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
-				},
-			},
-		},
-		{
-			name:     "unknown error",
-			peerUuid: peerValidUuid,
-			listErr:  fmt.Errorf("generic error"),
-			isMeshOn: true,
-			expectedResponse: &pb.DisableAutomaticFileshareResponse{
-				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
-				},
-			},
-		},
-		{
-			name:          "failed to load config",
-			peerUuid:      peerValidUuid,
-			listErr:       core.ErrUnauthorized,
-			loadConfigErr: fmt.Errorf("generic error"),
-			isMeshOn:      true,
-			expectedResponse: &pb.DisableAutomaticFileshareResponse{
-				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
-				},
-			},
-		},
-		{
-			name:          "failed to save config",
-			peerUuid:      peerAleradyDisabledUuid,
-			listErr:       core.ErrUnauthorized,
-			saveConfigErr: fmt.Errorf("generic error"),
-			isMeshOn:      true,
-			expectedResponse: &pb.DisableAutomaticFileshareResponse{
-				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+				Response: &pb.DisableAutomaticFileshareResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
 		},
@@ -1437,23 +1285,31 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 			name:         "failed to configure peer",
 			peerUuid:     peerValidUuid,
 			configureErr: fmt.Errorf("generic error"),
-			isMeshOn:     true,
 			expectedResponse: &pb.DisableAutomaticFileshareResponse{
-				Response: &pb.DisableAutomaticFileshareResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				Response: &pb.DisableAutomaticFileshareResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
 				},
 			},
 		},
 	}
 
 	for _, test := range tests {
+		peers := []mesh.MachinePeer{
+			{
+				ID:                uuid.MustParse(peerValidUuid),
+				DoIAllowFileshare: false,
+				AlwaysAcceptFiles: true,
+			},
+			{
+				ID:                uuid.MustParse(peerAleradyDisabledUuid),
+				DoIAllowFileshare: true,
+			},
+		}
+
 		t.Run(test.name, func(t *testing.T) {
 			server := newMockedServer(t,
-				test.listErr,
-				test.loadConfigErr,
-				test.saveConfigErr,
+				nil,
 				test.configureErr,
-				test.isMeshOn,
 				peers)
 			resp, err := server.DisableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
@@ -1476,20 +1332,14 @@ func TestServer_Peer_Nickname(t *testing.T) {
 		peersList        mesh.MachinePeers
 		peerId           string
 		newNickname      string
-		isMeshOn         bool
 		listErr          error
-		saveConfigErr    error
-		loadConfigErr    error
 		configureErr     error
-		isNotLoggedIn    bool
 		expectedErr      error
-		registrationErr  error
 		reservedDNSNames mock.RegisteredDomainsList
 		expectedResponse *pb.ChangeNicknameResponse
 	}{
 		{
-			name:     "set successful using peer ID",
-			isMeshOn: true,
+			name: "set successful using peer ID",
 			peersList: []mesh.MachinePeer{
 				{
 					ID: uuid.MustParse(exampleUUID1),
@@ -1500,8 +1350,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			expectedResponse: changedSuccessfully,
 		},
 		{
-			name:     "set successful case insensitive using nickname",
-			isMeshOn: true,
+			name: "set successful case insensitive using nickname",
 			peersList: []mesh.MachinePeer{
 				{
 					ID:       uuid.MustParse(exampleUUID1),
@@ -1513,8 +1362,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			expectedResponse: changedSuccessfully,
 		},
 		{
-			name:     "reset successful",
-			isMeshOn: true,
+			name: "reset successful",
 			peersList: []mesh.MachinePeer{
 				{
 					ID:       uuid.MustParse(exampleUUID1),
@@ -1525,8 +1373,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			expectedResponse: changedSuccessfully,
 		},
 		{
-			name:     "fails settings the same nickname",
-			isMeshOn: true,
+			name: "fails settings the same nickname",
 			peersList: []mesh.MachinePeer{
 				{
 					ID:       uuid.MustParse(exampleUUID1),
@@ -1542,75 +1389,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			},
 		},
 		{
-			name:     "fails because is not logged in",
-			isMeshOn: true,
-			peersList: []mesh.MachinePeer{
-				{
-					ID: uuid.MustParse(exampleUUID1),
-				},
-			},
-			peerId:        exampleUUID1,
-			newNickname:   peerNickname1,
-			isNotLoggedIn: true,
-			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
-				},
-			},
-		},
-		{
-			name:     "fails to load config",
-			isMeshOn: true,
-			peersList: []mesh.MachinePeer{
-				{
-					ID: uuid.MustParse(exampleUUID1),
-				},
-			},
-			peerId:        exampleUUID1,
-			newNickname:   peerNickname1,
-			loadConfigErr: fmt.Errorf("load failed"),
-			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
-				},
-			},
-		},
-		{
-			name:     "meshnet not running",
-			isMeshOn: false,
-			peersList: []mesh.MachinePeer{
-				{
-					ID: uuid.MustParse(exampleUUID1),
-				},
-			},
-			peerId:      exampleUUID1,
-			newNickname: peerNickname1,
-			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_MeshnetErrorCode{
-					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
-				},
-			},
-		},
-		{
-			name:     "fails at registration info incorrect",
-			isMeshOn: true,
-			peersList: []mesh.MachinePeer{
-				{
-					ID: uuid.MustParse(exampleUUID1),
-				},
-			},
-			peerId:          exampleUUID1,
-			newNickname:     peerNickname1,
-			registrationErr: fmt.Errorf("failed"),
-			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
-				},
-			},
-		},
-		{
-			name:     "peer not found",
-			isMeshOn: true,
+			name: "peer not found",
 			peersList: []mesh.MachinePeer{
 				{
 					ID: uuid.MustParse(exampleUUID1),
@@ -1619,14 +1398,13 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			peerId:      exampleUUID2,
 			newNickname: peerNickname1,
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_UpdatePeerErrorCode{
-					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
 		},
 		{
-			name:     "fails to get peers list",
-			isMeshOn: true,
+			name: "fails to get peers list",
 			peersList: []mesh.MachinePeer{
 				{
 					ID: uuid.MustParse(exampleUUID1),
@@ -1636,14 +1414,13 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			newNickname: peerNickname1,
 			listErr:     fmt.Errorf("error"),
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
 				},
 			},
 		},
 		{
-			name:     "fails to get peers list with ErrUnauthorized",
-			isMeshOn: true,
+			name: "fails to get peers list with ErrUnauthorized",
 			peersList: []mesh.MachinePeer{
 				{
 					ID: uuid.MustParse(exampleUUID1),
@@ -1652,15 +1429,15 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			peerId:      exampleUUID1,
 			newNickname: peerNickname1,
 			listErr:     core.ErrUnauthorized,
+
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_NOT_LOGGED_IN),
 				},
 			},
 		},
 		{
-			name:     "fails to register because of DNS conflict",
-			isMeshOn: true,
+			name: "fails to register because of DNS conflict",
 			peersList: []mesh.MachinePeer{
 				{
 					ID: uuid.MustParse(exampleUUID1),
@@ -1676,8 +1453,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			},
 		},
 		{
-			name:     "successful change nickname for same value but different caps",
-			isMeshOn: true,
+			name: "successful change nickname for same value but different caps",
 			peersList: []mesh.MachinePeer{
 				{
 					ID:       uuid.MustParse(exampleUUID1),
@@ -1691,18 +1467,17 @@ func TestServer_Peer_Nickname(t *testing.T) {
 		},
 		{
 			name:        "machine has no peers",
-			isMeshOn:    true,
 			peerId:      exampleUUID1,
 			newNickname: peerNickname1,
+
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_UpdatePeerErrorCode{
-					UpdatePeerErrorCode: pb.UpdatePeerErrorCode_PEER_NOT_FOUND,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
 		},
 		{
-			name:     "set nickname API fails",
-			isMeshOn: true,
+			name: "set nickname API fails",
 			peersList: []mesh.MachinePeer{
 				{
 					ID: uuid.MustParse(exampleUUID1),
@@ -1712,14 +1487,13 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			newNickname:  peerNickname1,
 			configureErr: fmt.Errorf("error"),
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
 				},
 			},
 		},
 		{
-			name:     "API returns error that nickname contains invalid chars",
-			isMeshOn: true,
+			name: "API returns error that nickname contains invalid chars",
 			peersList: []mesh.MachinePeer{
 				{
 					ID:       uuid.MustParse(exampleUUID1),
@@ -1745,11 +1519,8 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			registryApi.ConfigureErr = test.configureErr
 
 			configManager := mock.NewMockConfigManager()
-			configManager.SaveErr = test.saveConfigErr
-			configManager.LoadErr = test.loadConfigErr
 
 			ac := meshRenewChecker{}
-			ac.IsNotLoggedIn = test.isNotLoggedIn
 
 			checker := registrationChecker{}
 
@@ -1775,11 +1546,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 				sharedctx.New(),
 			)
 
-			if test.isMeshOn {
-				server.EnableMeshnet(context.Background(), &pb.Empty{})
-			}
-
-			checker.registrationErr = test.registrationErr
+			server.EnableMeshnet(context.Background(), &pb.Empty{})
 
 			request := pb.ChangePeerNicknameRequest{
 				Identifier: test.peerId,
@@ -1812,14 +1579,10 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 	tests := []struct {
 		name             string
 		newNickname      string
-		isMeshOn         bool
 		listErr          error
-		saveConfigErr    error
-		loadConfigErr    error
 		configureErr     error
 		isNotLoggedIn    bool
 		expectedErr      error
-		registrationErr  error
 		updateErr        error
 		machine          mesh.Machine
 		reservedDNSNames mock.RegisteredDomainsList
@@ -1827,21 +1590,18 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 	}{
 		{
 			name:             "set nickname successfully",
-			isMeshOn:         true,
 			newNickname:      machineNickname,
 			machine:          mesh.Machine{SupportsRouting: true},
 			expectedResponse: changedSuccessfully,
 		},
 		{
 			name:             "clear nickname",
-			isMeshOn:         true,
 			machine:          mesh.Machine{SupportsRouting: true, Nickname: strings.ToUpper(machineNickname)},
 			expectedResponse: changedSuccessfully,
 		},
 		{
-			name:     "clear nickname, when is already empty",
-			isMeshOn: true,
-			machine:  mesh.Machine{SupportsRouting: true},
+			name:    "clear nickname, when is already empty",
+			machine: mesh.Machine{SupportsRouting: true},
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
 					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_NICKNAME_ALREADY_EMPTY,
@@ -1850,50 +1610,16 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:          "fails because not logged in",
-			isMeshOn:      true,
 			isNotLoggedIn: true,
 			newNickname:   machineNickname,
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
-				},
-			},
-		},
-		{
-			name:          "load config files fails",
-			isMeshOn:      true,
-			newNickname:   machineNickname,
-			loadConfigErr: fmt.Errorf("error"),
-			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
-				},
-			},
-		},
-		{
-			name:        "set nickname successfully",
-			isMeshOn:    false,
-			newNickname: machineNickname,
-			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_MeshnetErrorCode{
-					MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
-				},
-			},
-		},
-		{
-			name:            "meshnet registration is not correct",
-			isMeshOn:        true,
-			newNickname:     machineNickname,
-			registrationErr: fmt.Errorf("error"),
-			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_NOT_LOGGED_IN),
 				},
 			},
 		},
 		{
 			name:        "set same nickname",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true, Nickname: machineNickname},
 			expectedResponse: &pb.ChangeNicknameResponse{
@@ -1904,50 +1630,34 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:             "set same nickname, but different caps",
-			isMeshOn:         true,
 			newNickname:      strings.ToUpper(machineNickname),
 			machine:          mesh.Machine{SupportsRouting: true, Nickname: machineNickname},
 			expectedResponse: changedSuccessfully,
 		},
 		{
 			name:        "update API fails with ErrUnauthorized",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrUnauthorized,
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_NOT_LOGGED_IN),
 				},
 			},
 		},
 		{
 			name:        "update API fails",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   fmt.Errorf("error"),
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
-				},
-			},
-		},
-		{
-			name:          "config save fails",
-			isMeshOn:      true,
-			newNickname:   machineNickname,
-			machine:       mesh.Machine{SupportsRouting: true},
-			saveConfigErr: fmt.Errorf("error"),
-			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_CONFIG_FAILURE,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
 				},
 			},
 		},
 		{
 			name:             "fails to register because of DNS conflict",
-			isMeshOn:         true,
 			newNickname:      "peer1",
 			machine:          mesh.Machine{SupportsRouting: true},
 			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.IPv4bcast}},
@@ -1959,19 +1669,17 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:        "generic API error",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   fmt.Errorf("error"),
 			expectedResponse: &pb.ChangeNicknameResponse{
-				Response: &pb.ChangeNicknameResponse_ServiceErrorCode{
-					ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
+				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
+					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
 				},
 			},
 		},
 		{
 			name:        "API returns error rate limit reach",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrRateLimitReach,
@@ -1983,7 +1691,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:        "API returns error nickname too long",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrNicknameTooLong,
@@ -1995,7 +1702,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:        "API returns error duplicate nickname",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrDuplicateNickname,
@@ -2007,7 +1713,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:        "API returns forbidden word",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrContainsForbiddenWord,
@@ -2019,7 +1724,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:        "API returns invalid suffix or prefix",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrInvalidPrefixOrSuffix,
@@ -2031,7 +1735,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:        "API error double hyphens",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrNicknameWithDoubleHyphens,
@@ -2043,7 +1746,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		},
 		{
 			name:        "API error nickname contains invalid chars",
-			isMeshOn:    true,
 			newNickname: machineNickname,
 			machine:     mesh.Machine{SupportsRouting: true},
 			updateErr:   core.ErrContainsInvalidChars,
@@ -2064,7 +1766,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			registryApi.CurrentMachine = test.machine
 
 			configManager := mock.NewMockConfigManager()
-			configManager.LoadErr = test.loadConfigErr
 			configManager.Cfg.MeshDevice = &test.machine
 
 			ac := meshRenewChecker{}
@@ -2094,28 +1795,20 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 				sharedctx.New(),
 			)
 
-			if test.isMeshOn {
-				server.EnableMeshnet(context.Background(), &pb.Empty{})
-			}
-
-			checker.registrationErr = test.registrationErr
+			server.EnableMeshnet(context.Background(), &pb.Empty{})
 
 			request := pb.ChangeMachineNicknameRequest{
 				Nickname: test.newNickname,
 			}
-
-			configManager.SaveErr = test.saveConfigErr
 
 			resp, err := server.ChangeMachineNickname(context.Background(), &request)
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedResponse, resp)
 
 			if !assert.ObjectsAreEqual(resp, changedSuccessfully) {
-				if test.saveConfigErr == nil {
-					// if the API is able to change the nickname, but save fails => local info and server info are out-of-sync
-					// the out-of-sync state will remain until current machine receives a NC notification or after mesh restart
-					assert.Equal(t, test.machine.Nickname, registryApi.CurrentMachine.Nickname)
-				}
+				// if the API is able to change the nickname, but save fails => local info and server info are out-of-sync
+				// the out-of-sync state will remain until current machine receives a NC notification or after mesh restart
+				assert.Equal(t, test.machine.Nickname, registryApi.CurrentMachine.Nickname)
 			} else {
 				assert.Equal(t, test.newNickname, registryApi.CurrentMachine.Nickname)
 				assert.True(t, configManager.Cfg.MeshDevice.SupportsRouting)
@@ -2125,58 +1818,212 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 	}
 }
 
-func TestServer_listPeers(t *testing.T) {
+func TestServer_fetchCfg(t *testing.T) {
 	category.Set(t, category.Unit)
-
-	tests := []struct {
+	for _, tt := range []struct {
 		name          string
-		machine       *mesh.Machine
-		loadConfigErr error
-		listErr       error
-		shouldBeErr   bool
+		isMeshOff     bool
+		isNotLoggedIn bool
+		cm            config.Manager
+		mc            Checker
+		err           *pb.Error
 	}{
 		{
-			name:        "success",
-			machine:     &mesh.Machine{},
-			shouldBeErr: false,
+			name: "success",
 		},
 		{
-			name:        "meshnet is not configured",
-			machine:     nil,
-			shouldBeErr: true,
+			name:          "not logged in",
+			isNotLoggedIn: true,
+			err:           generalServiceError(pb.ServiceErrorCode_NOT_LOGGED_IN),
 		},
 		{
-			name:          "load config error",
-			machine:       &mesh.Machine{},
-			loadConfigErr: fmt.Errorf("failed to load config"),
-			shouldBeErr:   true,
+			name: "config load failed",
+			cm: func() config.Manager {
+				cm := mock.NewMockConfigManager()
+				cm.LoadErr = errors.New("some err")
+				return cm
+			}(),
+			err: generalServiceError(pb.ServiceErrorCode_CONFIG_FAILURE),
 		},
 		{
-			name:        "list error",
-			machine:     &mesh.Machine{},
-			listErr:     fmt.Errorf("failed to load config"),
-			shouldBeErr: true,
+			name: "meshnet not enabled",
+			cm: func() config.Manager {
+				cm := mock.NewMockConfigManager()
+				cm.Cfg.Mesh = false
+				return cm
+			}(),
+			err: generalMeshError(pb.MeshnetErrorCode_NOT_ENABLED),
+		},
+		{
+			name: "auth checker failed",
+			mc:   registrationChecker{registrationErr: errors.New("some err")},
+			err:  generalMeshError(pb.MeshnetErrorCode_NOT_REGISTERED),
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			s := newMockedServer(t, nil, nil, nil)
+			if tt.mc != nil {
+				s.mc = tt.mc
+			}
+			if tt.cm != nil {
+				s.cm = tt.cm
+			}
+			ac := meshRenewChecker{}
+			ac.IsNotLoggedIn = tt.isNotLoggedIn
+			s.ac = ac
+
+			// Make sure it fetches the same config as cm would
+			var expectedCfg config.Config
+			s.cm.Load(&expectedCfg)
+
+			cfg, err := s.fetchCfg()
+
+			// Ignore meshnet settings as they are likely to be changed by reg checker
+			cfg.Mesh = false
+			cfg.MeshDevice = nil
+			cfg.MeshPrivateKey = ""
+			expectedCfg.Mesh = false
+			expectedCfg.MeshDevice = nil
+			expectedCfg.MeshPrivateKey = ""
+
+			assert.EqualValues(t, tt.err, err)
+			assert.Equal(t, expectedCfg, cfg)
+		})
+	}
+}
+
+func TestServer_fetchPeers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for _, tt := range []struct {
+		name    string
+		err     *pb.Error
+		cm      config.Manager
+		listErr error
+	}{
+		{
+			name: "success",
+		},
+		{
+			name:    "invalid token",
+			listErr: core.ErrUnauthorized,
+			err:     generalServiceError(pb.ServiceErrorCode_NOT_LOGGED_IN),
+		},
+		{
+			name:    "config save error on logout",
+			err:     generalServiceError(pb.ServiceErrorCode_CONFIG_FAILURE),
+			listErr: core.ErrUnauthorized,
+			cm: func() config.Manager {
+				cm := mock.NewMockConfigManager()
+				cm.Cfg.Mesh = true
+				cm.SaveErr = errors.New("some err")
+				return cm
+			}(),
+		},
+		{
+			name:    "self removed",
+			err:     generalMeshError(pb.MeshnetErrorCode_NOT_ENABLED),
+			listErr: core.ErrConflict,
+			cm: func() config.Manager {
+				cm := mock.NewMockConfigManager()
+				cm.Cfg.Mesh = false
+				return cm
+			}(),
+		},
+		{
+			name:    "list failure",
+			err:     generalServiceError(pb.ServiceErrorCode_API_FAILURE),
+			listErr: core.ErrConflict,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			peers := []mesh.MachinePeer{
+				{
+					ID:                uuid.MustParse(exampleUUID1),
+					DoIAllowFileshare: false,
+					AlwaysAcceptFiles: true,
+				},
+				{
+					ID:                uuid.MustParse(exampleUUID1),
+					DoIAllowFileshare: true,
+				},
+			}
+			s := newMockedServer(t, tt.listErr, nil, peers)
+			if tt.cm != nil {
+				s.cm = tt.cm
+			}
+			token, self, peers, err := s.fetchPeers()
+
+			// Make sure it fetches the same config as cm would
+			var cfg config.Config
+			require.NoError(t, s.cm.Load(&cfg))
+			assert.Equal(t, cfg.TokensData[cfg.AutoConnectData.ID].Token, token)
+			assert.EqualValues(t, *cfg.MeshDevice, self)
+			expectedPeers, _ := s.reg.List(token, self.ID)
+			assert.EqualValues(t, expectedPeers, peers)
+			assert.EqualValues(t, tt.err, err)
+		})
+	}
+}
+
+func TestServer_fetchPeer(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	peers := []mesh.MachinePeer{
+		{
+			ID:                uuid.MustParse(exampleUUID1),
+			DoIAllowFileshare: false,
+			AlwaysAcceptFiles: true,
+		},
+		{
+			ID:                uuid.MustParse(exampleUUID2),
+			DoIAllowFileshare: true,
 		},
 	}
 
-	for _, test := range tests {
-		configManager := mock.NewMockConfigManager()
-		configManager.LoadErr = test.loadConfigErr
-		configManager.Cfg.MeshDevice = test.machine
+	for _, tt := range []struct {
+		name     string
+		peerUUID string
+		err      *pb.UpdatePeerError
+		listErr  error
+	}{
+		{
+			name:     "success 1",
+			peerUUID: exampleUUID1,
+		},
+		{
+			name:     "success 2",
+			peerUUID: exampleUUID2,
+		},
+		{
+			name:     "peer not found",
+			peerUUID: exampleUUID3,
+			err:      updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
+		},
+		{
+			name:     "list failure",
+			peerUUID: exampleUUID1,
+			listErr:  core.ErrConflict,
+			err:      updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			s := newMockedServer(t, tt.listErr, nil, peers)
+			token, self, peers, peer, err := s.fetchPeer(tt.peerUUID)
 
-		registryApi := mock.RegistryMock{}
-		registryApi.ListErr = test.listErr
+			// Make sure it fetches the same config as cm would
+			var cfg config.Config
+			require.NoError(t, s.cm.Load(&cfg))
+			assert.Equal(t, cfg.TokensData[cfg.AutoConnectData.ID].Token, token)
+			assert.EqualValues(t, *cfg.MeshDevice, self)
 
-		s := Server{
-			cm:  configManager,
-			reg: &registryApi,
-		}
+			expectedPeers, _ := s.reg.List(token, self.ID)
+			assert.EqualValues(t, expectedPeers, peers)
+			assert.EqualValues(t, tt.err, err)
 
-		_, err := s.listPeers()
-		if test.shouldBeErr {
-			assert.NotNil(t, err)
-		} else {
-			assert.Nil(t, err)
-		}
+			if tt.err == nil {
+				assert.Equal(t, uuid.MustParse(tt.peerUUID), peer.ID)
+			}
+		})
 	}
 }
