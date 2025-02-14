@@ -1,5 +1,5 @@
-// Package exitnode provides meshnet-related firewall management functionality.
-package exitnode
+// Package forwarder manages the FORWARD chain rules(meshnet and allowlist).
+package forwarder
 
 import (
 	"fmt"
@@ -15,17 +15,20 @@ const (
 	Ipv4fwdKernelParamName = "net.ipv4.ip_forward"
 )
 
-// Node is exit node server side interface
-type Node interface {
+// ForwardChainManager is responsible for managing rules in the FORWARD chain of iptables
+type ForwardChainManager interface {
 	Enable() error
-	ResetPeers(mesh.MachinePeers, bool, bool) error
-	ResetFirewall(lanAvailable bool, killswitch bool) error
+	ResetPeers(peers mesh.MachinePeers,
+		lanAvailable bool,
+		killswitch bool,
+		enableAllowlist bool,
+		allowlist config.Allowlist) error
+	ResetFirewall(lanAvailable bool, killswitch bool, enableAllowlist bool, allowlist config.Allowlist) error
 	Disable() error
-	SetAllowlist(config config.Allowlist, lanAvailable bool) error
 }
 
-// Server struct for server side
-type Server struct {
+// Forwarder manages the FORWARD chain in iptables
+type Forwarder struct {
 	mu               sync.Mutex
 	interfaceNames   []string // need to remember on which interface we started
 	runCommandFunc   runCommandFunc
@@ -35,18 +38,18 @@ type Server struct {
 	enabled          bool
 }
 
-// NewServer create & initialize new Server
-func NewServer(interfaceNames []string, commandFunc runCommandFunc, allowlist config.Allowlist, sysctlSetter kernel.SysctlSetter) *Server {
-	return &Server{
+// NewForwarder create & initialize new Server
+func NewForwarder(interfaceNames []string, commandFunc runCommandFunc, sysctlSetter kernel.SysctlSetter) *Forwarder {
+	return &Forwarder{
 		interfaceNames:   interfaceNames,
 		runCommandFunc:   commandFunc,
 		sysctlSetter:     sysctlSetter,
-		allowlistManager: newAllowlist(commandFunc, allowlist),
+		allowlistManager: newAllowlist(commandFunc),
 	}
 }
 
-// Enable backup current state and enable fwd+msq
-func (en *Server) Enable() error {
+// Enable adds meshnet related rules to the FORWARD chain.
+func (en *Forwarder) Enable() error {
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
@@ -64,27 +67,50 @@ func (en *Server) Enable() error {
 	return nil
 }
 
-// ResetFirewall resets peer rules when peers don't change
-func (en *Server) ResetFirewall(lanAvailable bool, killswitch bool) error {
+// ResetFirewall resets forwarding rules using the stored peer list. If meshnet is not enabled, only allowlist related
+// rules will be affected.
+func (en *Forwarder) ResetFirewall(lanAvailable bool,
+	killswitch bool,
+	enableAllowlist bool,
+	allowlist config.Allowlist) error {
 	if !en.enabled {
+		if err := en.allowlistManager.disableAllowlist(); err != nil {
+			return fmt.Errorf("disabling peer allowlist: %w", err)
+		}
+		if err := resetAllowlistRules(en.runCommandFunc,
+			en.interfaceNames,
+			killswitch,
+			enableAllowlist,
+			allowlist.GetSubnets()); err != nil {
+			return fmt.Errorf("reseting allowlist rules: %w", err)
+		}
+
 		return nil
 	}
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
-	return en.resetPeers(lanAvailable, killswitch)
+	if err := en.resetPeers(lanAvailable, killswitch, enableAllowlist, allowlist); err != nil {
+		return fmt.Errorf("reseting peers: %w", err)
+	}
+
+	return nil
 }
 
-// EnablePeer enables masquerading for peer
-func (en *Server) ResetPeers(peers mesh.MachinePeers, lanAvailable bool, killswitch bool) error {
+// ResetPeers resets forwarding rules to respect settings in the provided peer list.
+func (en *Forwarder) ResetPeers(peers mesh.MachinePeers,
+	lanAvailable bool,
+	killswitch bool,
+	enableAllowlist bool,
+	allowlist config.Allowlist) error {
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
 	en.peers = peers
-	return en.resetPeers(lanAvailable, killswitch)
+	return en.resetPeers(lanAvailable, killswitch, enableAllowlist, allowlist)
 }
 
-func (en *Server) resetPeers(lanAvailable bool, killswitch bool) error {
+func (en *Forwarder) resetPeers(lanAvailable bool, killswitch bool, enableAllowlist bool, allowlist config.Allowlist) error {
 	trafficPeers := make([]TrafficPeer, 0, len(en.peers))
 	for _, peer := range en.peers {
 		if peer.Address.IsValid() {
@@ -99,7 +125,12 @@ func (en *Server) resetPeers(lanAvailable bool, killswitch bool) error {
 		}
 	}
 
-	if err := resetPeersTraffic(trafficPeers, en.interfaceNames, en.runCommandFunc, killswitch); err != nil {
+	if err := resetForwardTraffic(trafficPeers,
+		en.interfaceNames,
+		en.runCommandFunc,
+		killswitch,
+		enableAllowlist,
+		allowlist.GetSubnets()); err != nil {
 		return err
 	}
 
@@ -107,6 +138,9 @@ func (en *Server) resetPeers(lanAvailable bool, killswitch bool) error {
 	if err := en.allowlistManager.disableAllowlist(); err != nil {
 		return err
 	}
+
+	en.allowlistManager.setAllowlist(allowlist)
+
 	// If exit node doesn't have full access to its own LAN, we need to ensure access to
 	// allowlisted destinations
 	if !lanAvailable {
@@ -117,8 +151,8 @@ func (en *Server) resetPeers(lanAvailable bool, killswitch bool) error {
 	return nil
 }
 
-// Disable restore current state and disable fwd+msq
-func (en *Server) Disable() error {
+// Disable removes meshnet related rules from the FORWARD and NAT chains.
+func (en *Forwarder) Disable() error {
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
@@ -145,23 +179,6 @@ func (en *Server) Disable() error {
 	}
 
 	en.enabled = false
-
-	return nil
-}
-
-func (en *Server) SetAllowlist(allowlist config.Allowlist, lanAvailable bool) error {
-	en.mu.Lock()
-	defer en.mu.Unlock()
-
-	if err := en.allowlistManager.disableAllowlist(); err != nil {
-		return err
-	}
-
-	en.allowlistManager.setAllowlist(allowlist)
-
-	if en.enabled && !lanAvailable {
-		return en.allowlistManager.enableAllowlist()
-	}
 
 	return nil
 }
