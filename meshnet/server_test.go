@@ -198,6 +198,7 @@ func newMockedServer(
 		acceptInvitationsAPI{},
 		&workingNetworker{},
 		&registryApi,
+		&registryApi,
 		&mock.DNSGetter{},
 		&subs.Subject[error]{},
 		&subs.Subject[[]string]{},
@@ -405,7 +406,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 		registryApi := mock.RegistryMock{}
 		registryApi.Peers = test.peers
 		server := newMockedServer(t, true)
-		server.reg = &registryApi
+		server.ret = &registryApi
 
 		resp, _ := server.GetPeers(context.Background(), &pb.Empty{})
 
@@ -453,6 +454,7 @@ func TestServer_Connect(t *testing.T) {
 		server := newMockedServer(t, true)
 		server.cm = configManager
 		server.reg = &registryApi
+		server.ret = &registryApi
 		return server
 	}
 
@@ -575,6 +577,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 		server := newMockedServer(t, true)
 		server.netw = &networker
 		server.reg = &registryApi
+		server.ret = &registryApi
 		return server, &networker
 	}
 
@@ -686,6 +689,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 		server := newMockedServer(t, true)
 		server.netw = &networker
 		server.reg = &registryApi
+		server.ret = &registryApi
 		return server, &networker
 	}
 
@@ -779,6 +783,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 		server := newMockedServer(t, true)
 		server.netw = &networker
 		server.reg = &registryApi
+		server.ret = &registryApi
 
 		return server, &networker
 	}
@@ -874,6 +879,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 		server := newMockedServer(t, true)
 		server.netw = &networker
 		server.reg = &registryApi
+		server.ret = &registryApi
 
 		return server, &networker
 	}
@@ -993,6 +999,7 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 			reg.Peers = peers
 			server := newMockedServer(t, true)
 			server.reg = reg
+			server.ret = reg
 			resp, err := server.EnableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -1065,6 +1072,7 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 			reg.Peers = peers
 			server := newMockedServer(t, true)
 			server.reg = reg
+			server.ret = reg
 			resp, err := server.DisableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -1273,6 +1281,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 
 			server := newMockedServer(t, true)
 			server.reg = &registryApi
+			server.ret = &registryApi
 			server.nameservers = &mock.DNSGetter{RegisteredDomains: test.reservedDNSNames}
 
 			request := pb.ChangePeerNicknameRequest{
@@ -1501,6 +1510,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			server := newMockedServer(t, true)
 			server.ac = ac
 			server.reg = &registryApi
+			server.ret = &registryApi
 			server.cm = configManager
 			server.nameservers = &mock.DNSGetter{RegisteredDomains: test.reservedDNSNames}
 
@@ -1659,7 +1669,7 @@ func TestServer_fetchPeers(t *testing.T) {
 			reg.ListErr = tt.listErr
 			reg.Peers = peers
 			s := newMockedServer(t, true)
-			s.reg = reg
+			s.ret = reg
 			if tt.cm != nil {
 				s.cm = tt.cm
 			}
@@ -1670,7 +1680,7 @@ func TestServer_fetchPeers(t *testing.T) {
 			require.NoError(t, s.cm.Load(&cfg))
 			assert.Equal(t, cfg.TokensData[cfg.AutoConnectData.ID].Token, token)
 			assert.EqualValues(t, *cfg.MeshDevice, self)
-			expectedPeers, _ := s.reg.List(token, self.ID)
+			expectedPeers, _ := s.ret.List(token, self.ID)
 			assert.EqualValues(t, expectedPeers, peers)
 			assert.EqualValues(t, tt.err, err)
 		})
@@ -1723,7 +1733,7 @@ func TestServer_fetchPeer(t *testing.T) {
 			reg.ListErr = tt.listErr
 			reg.Peers = peers
 			s := newMockedServer(t, true)
-			s.reg = reg
+			s.ret = reg
 			token, self, peers, peer, err := s.fetchPeer(tt.peerUUID)
 
 			// Make sure it fetches the same config as cm would
@@ -1732,7 +1742,7 @@ func TestServer_fetchPeer(t *testing.T) {
 			assert.Equal(t, cfg.TokensData[cfg.AutoConnectData.ID].Token, token)
 			assert.EqualValues(t, *cfg.MeshDevice, self)
 
-			expectedPeers, _ := s.reg.List(token, self.ID)
+			expectedPeers, _ := s.ret.List(token, self.ID)
 			assert.EqualValues(t, expectedPeers, peers)
 			assert.EqualValues(t, tt.err, err)
 
