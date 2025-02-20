@@ -212,13 +212,15 @@ func TestStartAutoMeshnet(t *testing.T) {
 				rpc.serversAPI = test.serversAPI
 			}
 
+			registry := &mock.RegistryMock{}
 			meshService := meshnet.NewServer(
 				rpc.ac,
 				rpc.cm,
 				&meshRenewChecker{},
 				&invitationsAPI{},
 				&meshNetworker{},
-				&mock.RegistryMock{},
+				registry,
+				registry,
 				&mock.DNSGetter{},
 				&subs.Subject[error]{},
 				nil,

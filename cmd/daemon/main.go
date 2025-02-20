@@ -56,7 +56,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
-	"github.com/NordSecurity/nordvpn-linux/meshnet/registry"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/retriever"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
@@ -238,7 +238,7 @@ func main() {
 		httpClientWithRotator,
 		validator,
 	)
-	meshAPIex := registry.NewRegistry(
+	meshRetriever := retriever.NewRetriever(
 		defaultAPI,
 		meshnetEvents.SelfRemoved,
 	)
@@ -408,11 +408,11 @@ func main() {
 	meshnetChecker := meshnet.NewRegisteringChecker(
 		fsystem,
 		keygen,
-		meshAPIex,
+		defaultAPI,
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
-		meshAPIex, meshnetChecker, fsystem, netw,
+		meshRetriever, meshnetChecker, fsystem, netw,
 	).NotifyPeerUpdate)
 
 	meshUnsetter := meshunsetter.NewMeshnet(
@@ -483,7 +483,8 @@ func main() {
 		meshnetChecker,
 		defaultAPI,
 		netw,
-		meshAPIex,
+		defaultAPI,
+		meshRetriever,
 		threatProtectionLiteServers,
 		errSubject,
 		meshnetEvents.PeerUpdate,
