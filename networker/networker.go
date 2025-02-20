@@ -20,13 +20,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
-	"github.com/NordSecurity/nordvpn-linux/meshnet/exitnode"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
 )
@@ -152,7 +152,7 @@ type Combined struct {
 	dnsHostSetter      dns.HostnameSetter
 	router             routes.Service
 	peerRouter         routes.Service
-	exitNode           exitnode.Node
+	exitNode           forwarder.ForwardChainManager
 	isNetworkSet       bool // used during cleanup
 	isKillSwitchSet    bool // used during cleanup
 	isV6TrafficAllowed bool // used during cleanup
@@ -199,7 +199,7 @@ func NewCombined(
 	dnsHostSetter dns.HostnameSetter,
 	router routes.Service,
 	peerRouter routes.Service,
-	exitNode exitnode.Node,
+	exitNode forwarder.ForwardChainManager,
 	fwmark uint32,
 	lanDiscovery bool,
 ) *Combined {
@@ -909,8 +909,7 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 		}
 	}
 
-	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	return netw.exitNode.SetAllowlist(allowlist, lanAvailable)
+	return nil
 }
 
 func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
@@ -950,13 +949,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			Direction:      firewall.TwoWay,
 			Allow:          true,
 		})
-		rules = append(rules, firewall.Rule{
-			Name:           "allowlist_subnets_forward",
-			Interfaces:     ifaces,
-			RemoteNetworks: subnets,
-			Direction:      firewall.Forward,
-			Allow:          true,
-		})
 	}
 
 	for _, pair := range []struct {
@@ -989,6 +981,14 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	}
 	if err := netw.fw.Add(rules); err != nil {
 		return err
+	}
+
+	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
+	if err := netw.exitNode.ResetFirewall(lanAvailable,
+		netw.isKillSwitchSet,
+		netw.isNetworkSet,
+		allowlist); err != nil {
+		return fmt.Errorf("resseting forward firewall: %w", err)
 	}
 
 	// if port 53 is whitelisted - do not add drop-dns rules
@@ -1082,7 +1082,10 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 		return err
 	}
 
-	if err := netw.exitNode.ResetFirewall(netw.lanDiscovery, true); err != nil {
+	if err := netw.exitNode.ResetFirewall(netw.lanDiscovery,
+		true,
+		netw.isNetworkSet,
+		netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after enabling killswitch: ",
 			err)
@@ -1117,7 +1120,7 @@ func (netw *Combined) unsetNetwork() error {
 	}
 
 	// Passing true because LAN is always available when network is unset
-	if err := netw.exitNode.ResetFirewall(true, false); err != nil {
+	if err := netw.exitNode.ResetFirewall(true, false, false, netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after disabling killswitch: ",
 			err)
@@ -1341,7 +1344,11 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	}
 
 	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	err = netw.exitNode.ResetPeers(cfg.Peers, lanAvailable, netw.isKillSwitchSet)
+	err = netw.exitNode.ResetPeers(cfg.Peers,
+		lanAvailable,
+		netw.isKillSwitchSet,
+		netw.isNetworkSet,
+		netw.allowlist)
 	if err != nil {
 		return err
 	}
@@ -1761,7 +1768,11 @@ func (netw *Combined) refreshIncoming(peer mesh.MachinePeer) error {
 
 func (netw *Combined) ResetRouting(peer mesh.MachinePeer, peers mesh.MachinePeers) error {
 	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	if err := netw.exitNode.ResetPeers(peers, lanAvailable, netw.isKillSwitchSet); err != nil {
+	if err := netw.exitNode.ResetPeers(peers,
+		lanAvailable,
+		netw.isKillSwitchSet,
+		netw.isNetworkSet,
+		netw.allowlist); err != nil {
 		return err
 	}
 
@@ -1830,7 +1841,10 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 		}
 	}
 
-	if err := netw.exitNode.ResetFirewall(lanAvailable, netw.isKillSwitchSet); err != nil {
+	if err := netw.exitNode.ResetFirewall(lanAvailable,
+		netw.isKillSwitchSet,
+		netw.isNetworkSet,
+		netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after enabling lan discovery:",
 			err)
