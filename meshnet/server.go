@@ -45,6 +45,7 @@ type Server struct {
 	invitationAPI     mesh.Inviter
 	netw              Networker
 	reg               mesh.Registry
+	ret               mesh.Retriever
 	nameservers       dns.Getter
 	pub               events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
@@ -65,6 +66,7 @@ func NewServer(
 	invitationAPI mesh.Inviter,
 	netw Networker,
 	reg mesh.Registry,
+	ret mesh.Retriever,
 	nameservers dns.Getter,
 	pub events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
@@ -80,6 +82,7 @@ func NewServer(
 		invitationAPI:     invitationAPI,
 		netw:              netw,
 		reg:               reg,
+		ret:               ret,
 		nameservers:       nameservers,
 		pub:               pub,
 		subjectPeerUpdate: subjectPeerUpdate,
@@ -146,7 +149,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
+	resp, err := s.ret.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
@@ -300,7 +303,7 @@ func (s *Server) StartMeshnet() error {
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
+	resp, err := s.ret.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
@@ -416,7 +419,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
+	resp, err := s.ret.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
@@ -671,7 +674,7 @@ func (s *Server) AcceptInvite(
 		}, nil
 	}
 
-	resp, err := s.reg.Map(tokenData.Token, cfg.MeshDevice.ID)
+	resp, err := s.ret.Map(tokenData.Token, cfg.MeshDevice.ID)
 	if err != nil {
 		s.pub.Publish(err)
 		return &pb.RespondToInviteResponse{
@@ -1107,7 +1110,7 @@ func (s *Server) ChangePeerNickname(
 		return s.apiToNicknameError(err), nil
 	}
 
-	mapResp, err := s.reg.Map(token, self.ID)
+	mapResp, err := s.ret.Map(token, self.ID)
 	if err != nil {
 		s.pub.Publish(err)
 		return &pb.ChangeNicknameResponse{
@@ -1233,7 +1236,7 @@ func (s *Server) ChangeMachineNickname(
 		return changeNicknameServiceError(pb.ServiceErrorCode_CONFIG_FAILURE), nil
 	}
 
-	resp, err := s.reg.Map(token, cfg.MeshDevice.ID)
+	resp, err := s.ret.Map(token, cfg.MeshDevice.ID)
 	if err != nil {
 		s.pub.Publish(err)
 		return changeNicknameServiceError(pb.ServiceErrorCode_API_FAILURE), nil
@@ -1304,7 +1307,7 @@ func (s *Server) fetchPeers() (
 	// This should never be nil as it is always executed after registration info check
 	self = *cfg.MeshDevice
 	var err error
-	peers, err = s.reg.List(token, self.ID)
+	peers, err = s.ret.List(token, self.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(
@@ -1862,7 +1865,7 @@ func (s *Server) NotifyNewTransfer(
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	peers, err := s.reg.List(token, cfg.MeshDevice.ID)
+	peers, err := s.ret.List(token, cfg.MeshDevice.ID)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
