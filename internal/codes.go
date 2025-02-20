@@ -63,6 +63,7 @@ const (
 	CodePqWithoutNordlynx              int64 = 3049
 	CodeFeatureHidden                  int64 = 3050
 	CodeTechnologyDisabled             int64 = 3051
+	CodeNotInNordVPNGroup              int64 = 3052
 )
 
 type ErrorWithCode struct {

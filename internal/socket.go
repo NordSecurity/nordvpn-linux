@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os/user"
 	"reflect"
 	"strconv"
 	"strings"
@@ -13,35 +12,6 @@ import (
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/credentials"
 )
-
-var allowedGroups []string = []string{"nordvpn"}
-var ErrNoPermission error = fmt.Errorf("requesting user does not have permissions")
-
-func isInAllowedGroup(ucred *unix.Ucred) (bool, error) {
-	userInfo, err := user.LookupId(fmt.Sprintf("%d", ucred.Uid))
-	if err != nil {
-		return false, fmt.Errorf("authenticate user, lookup user info: %s", err)
-	}
-	// user belongs to the allowed group?
-	groups, err := userInfo.GroupIds()
-	if err != nil {
-		return false, fmt.Errorf("authenticate user, check user groups: %s", err)
-	}
-
-	for _, groupId := range groups {
-		groupInfo, err := user.LookupGroupId(groupId)
-		if err != nil {
-			return false, fmt.Errorf("authenticate user, check user group: %s", err)
-		}
-		for _, allowGroupName := range allowedGroups {
-			if groupInfo.Name == allowGroupName {
-				return true, nil
-			}
-		}
-	}
-
-	return false, nil
-}
 
 // getUnixCreds returns info from unix socket connection about the process on the other end.
 func getUnixCreds(conn net.Conn, authenticator SocketAuthenticator) (*unix.Ucred, error) {
@@ -96,7 +66,7 @@ func (DaemonAuthenticator) Authenticate(ucred *unix.Ucred) error {
 		return nil
 	}
 
-	isGroup, err := isInAllowedGroup(ucred)
+	isGroup, err := IsInAllowedGroup(ucred.Uid)
 	if err != nil {
 		return err
 	}
