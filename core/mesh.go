@@ -262,42 +262,6 @@ func peersResponseToLocalPeers(rawPeers []mesh.MachinePeerResponse) []mesh.Machi
 	return peers
 }
 
-// Local peer list.
-func (api *DefaultAPI) Local(token string) (mesh.Machines, error) {
-	api.mu.Lock()
-	defer api.mu.Unlock()
-
-	resp, err := api.request(
-		urlMeshMachines,
-		http.MethodGet,
-		nil,
-		token,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if err := ExtractError(resp); err != nil {
-		return nil, err
-	}
-
-	body, err := MaxBytesReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var rawPeers []mesh.MachinePeerResponse
-	err = json.Unmarshal(body, &rawPeers)
-	if err != nil {
-		return nil, err
-	}
-
-	peers := peersResponseToLocalPeers(rawPeers)
-
-	return peers, nil
-}
-
 func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
 	api.mu.Lock()
 	defer api.mu.Unlock()

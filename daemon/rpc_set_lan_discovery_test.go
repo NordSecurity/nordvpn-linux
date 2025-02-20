@@ -125,10 +125,9 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 			}}
 
 			rpc := RPC{
-				cm:           configManager,
-				netw:         &networker,
-				events:       &mockEvents,
-				meshRegistry: &RegistryMock{},
+				cm:     configManager,
+				netw:   &networker,
+				events: &mockEvents,
 			}
 			resp, err := rpc.SetLANDiscovery(context.Background(), &pb.SetLANDiscoveryRequest{
 				Enabled: test.enabled,
