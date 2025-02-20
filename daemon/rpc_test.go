@@ -96,7 +96,6 @@ func testRPC() *RPC {
 		nil,
 		&mockAnalytics{},
 		&testnorduser.MockNorduserCombinedService{},
-		&RegistryMock{},
 		nil,
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),

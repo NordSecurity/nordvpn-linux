@@ -20,8 +20,6 @@ type Registry interface {
 	) error
 	// Unregister Peer from the mesh network.
 	Unregister(token string, self uuid.UUID) error
-	// Local peers owned the same user.
-	Local(token string) (Machines, error)
 	// List given peer's neighbours in the mesh network.
 	List(token string, self uuid.UUID) (MachinePeers, error)
 	Map(token string, self uuid.UUID) (*MachineMap, error)

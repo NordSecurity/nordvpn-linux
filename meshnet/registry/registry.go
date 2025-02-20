@@ -53,11 +53,6 @@ func (r *Registry) Unregister(token string, self uuid.UUID) error {
 	return r.inner.Unregister(token, self)
 }
 
-// Local peers owned the same user.
-func (r *Registry) Local(token string) (mesh.Machines, error) {
-	return r.inner.Local(token)
-}
-
 // List given peer's neighbours in the mesh network.
 func (r *Registry) List(token string, self uuid.UUID) (resp mesh.MachinePeers, err error) {
 	anotherMachine := self

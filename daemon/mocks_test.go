@@ -53,7 +53,6 @@ type RegistryMock struct {
 	listErr      error
 	peers        mesh.MachinePeers
 	configureErr error
-	localPeers   mesh.Machines
 }
 
 func (*RegistryMock) Register(token string, self mesh.Machine) (*mesh.Machine, error) {
@@ -68,9 +67,6 @@ func (r *RegistryMock) Configure(string, uuid.UUID, uuid.UUID, mesh.PeerUpdateRe
 }
 
 func (*RegistryMock) Unregister(token string, self uuid.UUID) error { return nil }
-func (r *RegistryMock) Local(token string) (mesh.Machines, error) {
-	return r.localPeers, nil
-}
 
 func (r *RegistryMock) List(token string, self uuid.UUID) (mesh.MachinePeers, error) {
 	if r.listErr != nil {

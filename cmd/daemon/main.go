@@ -473,7 +473,6 @@ func main() {
 		notificationClient,
 		analytics,
 		norduserService,
-		meshAPIex,
 		statePublisher,
 		sharedContext,
 		rcConfig,
