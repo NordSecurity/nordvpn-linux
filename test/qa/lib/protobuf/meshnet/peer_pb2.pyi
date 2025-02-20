@@ -109,14 +109,12 @@ ALREADY_CONNECTING: ConnectErrorCode
 CANCELED: ConnectErrorCode
 
 class GetPeersResponse(_message.Message):
-    __slots__ = ("peers", "service_error_code", "meshnet_error_code")
+    __slots__ = ("peers", "error")
     PEERS_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
     peers: PeerList
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, peers: _Optional[_Union[PeerList, _Mapping]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    error: Error
+    def __init__(self, peers: _Optional[_Union[PeerList, _Mapping]] = ..., error: _Optional[_Union[Error, _Mapping]] = ...) -> None: ...
 
 class PeerList(_message.Message):
     __slots__ = ("self", "local", "external")
@@ -178,17 +176,29 @@ class UpdatePeerRequest(_message.Message):
     identifier: str
     def __init__(self, identifier: _Optional[str] = ...) -> None: ...
 
-class RemovePeerResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "service_error_code", "meshnet_error_code")
-    EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+class Error(_message.Message):
+    __slots__ = ("service_error_code", "meshnet_error_code")
     SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     service_error_code: _service_response_pb2.ServiceErrorCode
     meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    def __init__(self, service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+
+class UpdatePeerError(_message.Message):
+    __slots__ = ("general_error", "update_peer_error_code")
+    GENERAL_ERROR_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    general_error: Error
+    update_peer_error_code: UpdatePeerErrorCode
+    def __init__(self, general_error: _Optional[_Union[Error, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ...) -> None: ...
+
+class RemovePeerResponse(_message.Message):
+    __slots__ = ("empty", "update_peer_error")
+    EMPTY_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
+    empty: _empty_pb2.Empty
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class ChangePeerNicknameRequest(_message.Message):
     __slots__ = ("identifier", "nickname")
@@ -205,172 +215,126 @@ class ChangeMachineNicknameRequest(_message.Message):
     def __init__(self, nickname: _Optional[str] = ...) -> None: ...
 
 class ChangeNicknameResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "service_error_code", "meshnet_error_code", "change_nickname_error_code")
+    __slots__ = ("empty", "change_nickname_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     CHANGE_NICKNAME_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
     change_nickname_error_code: ChangeNicknameErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ..., change_nickname_error_code: _Optional[_Union[ChangeNicknameErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., change_nickname_error_code: _Optional[_Union[ChangeNicknameErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class AllowRoutingResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "allow_routing_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "allow_routing_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     ALLOW_ROUTING_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     allow_routing_error_code: AllowRoutingErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., allow_routing_error_code: _Optional[_Union[AllowRoutingErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., allow_routing_error_code: _Optional[_Union[AllowRoutingErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class DenyRoutingResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "deny_routing_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "deny_routing_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     DENY_ROUTING_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     deny_routing_error_code: DenyRoutingErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., deny_routing_error_code: _Optional[_Union[DenyRoutingErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., deny_routing_error_code: _Optional[_Union[DenyRoutingErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class AllowIncomingResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "allow_incoming_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "allow_incoming_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     ALLOW_INCOMING_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     allow_incoming_error_code: AllowIncomingErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., allow_incoming_error_code: _Optional[_Union[AllowIncomingErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., allow_incoming_error_code: _Optional[_Union[AllowIncomingErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class DenyIncomingResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "deny_incoming_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "deny_incoming_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     DENY_INCOMING_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     deny_incoming_error_code: DenyIncomingErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., deny_incoming_error_code: _Optional[_Union[DenyIncomingErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., deny_incoming_error_code: _Optional[_Union[DenyIncomingErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class AllowLocalNetworkResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "allow_local_network_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "allow_local_network_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     ALLOW_LOCAL_NETWORK_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     allow_local_network_error_code: AllowLocalNetworkErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., allow_local_network_error_code: _Optional[_Union[AllowLocalNetworkErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., allow_local_network_error_code: _Optional[_Union[AllowLocalNetworkErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class DenyLocalNetworkResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "deny_local_network_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "deny_local_network_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     DENY_LOCAL_NETWORK_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     deny_local_network_error_code: DenyLocalNetworkErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., deny_local_network_error_code: _Optional[_Union[DenyLocalNetworkErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., deny_local_network_error_code: _Optional[_Union[DenyLocalNetworkErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class AllowFileshareResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "allow_send_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "allow_send_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     ALLOW_SEND_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     allow_send_error_code: AllowFileshareErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., allow_send_error_code: _Optional[_Union[AllowFileshareErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., allow_send_error_code: _Optional[_Union[AllowFileshareErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class DenyFileshareResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "deny_send_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "deny_send_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     DENY_SEND_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     deny_send_error_code: DenyFileshareErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., deny_send_error_code: _Optional[_Union[DenyFileshareErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., deny_send_error_code: _Optional[_Union[DenyFileshareErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class EnableAutomaticFileshareResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "enable_automatic_fileshare_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "enable_automatic_fileshare_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     ENABLE_AUTOMATIC_FILESHARE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     enable_automatic_fileshare_error_code: EnableAutomaticFileshareErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., enable_automatic_fileshare_error_code: _Optional[_Union[EnableAutomaticFileshareErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., enable_automatic_fileshare_error_code: _Optional[_Union[EnableAutomaticFileshareErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class DisableAutomaticFileshareResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "disable_automatic_fileshare_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "disable_automatic_fileshare_error_code", "update_peer_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     DISABLE_AUTOMATIC_FILESHARE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     disable_automatic_fileshare_error_code: DisableAutomaticFileshareErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., disable_automatic_fileshare_error_code: _Optional[_Union[DisableAutomaticFileshareErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., disable_automatic_fileshare_error_code: _Optional[_Union[DisableAutomaticFileshareErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ...) -> None: ...
 
 class ConnectResponse(_message.Message):
-    __slots__ = ("empty", "update_peer_error_code", "connect_error_code", "service_error_code", "meshnet_error_code")
+    __slots__ = ("empty", "connect_error_code", "update_peer_error", "meshnet_error")
     EMPTY_FIELD_NUMBER: _ClassVar[int]
-    UPDATE_PEER_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
     CONNECT_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SERVICE_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    MESHNET_ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_PEER_ERROR_FIELD_NUMBER: _ClassVar[int]
+    MESHNET_ERROR_FIELD_NUMBER: _ClassVar[int]
     empty: _empty_pb2.Empty
-    update_peer_error_code: UpdatePeerErrorCode
     connect_error_code: ConnectErrorCode
-    service_error_code: _service_response_pb2.ServiceErrorCode
-    meshnet_error_code: _service_response_pb2.MeshnetErrorCode
-    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., update_peer_error_code: _Optional[_Union[UpdatePeerErrorCode, str]] = ..., connect_error_code: _Optional[_Union[ConnectErrorCode, str]] = ..., service_error_code: _Optional[_Union[_service_response_pb2.ServiceErrorCode, str]] = ..., meshnet_error_code: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
+    update_peer_error: UpdatePeerError
+    meshnet_error: _service_response_pb2.MeshnetErrorCode
+    def __init__(self, empty: _Optional[_Union[_empty_pb2.Empty, _Mapping]] = ..., connect_error_code: _Optional[_Union[ConnectErrorCode, str]] = ..., update_peer_error: _Optional[_Union[UpdatePeerError, _Mapping]] = ..., meshnet_error: _Optional[_Union[_service_response_pb2.MeshnetErrorCode, str]] = ...) -> None: ...
 
 class PrivateKeyResponse(_message.Message):
     __slots__ = ("private_key", "service_error_code")

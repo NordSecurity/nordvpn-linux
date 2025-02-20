@@ -30,14 +30,12 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 // Config should be evolved is such a way, that it does not
 // require any use of constructors by the caller.
 type Config struct {
-	Technology   Technology `json:"technology,omitempty"`
-	Firewall     bool       `json:"firewall"` // omitempty breaks this
-	FirewallMark uint32     `json:"fwmark"`
-	Routing      TrueField  `json:"routing"`
-	Analytics    TrueField  `json:"analytics"`
-	Mesh         bool       `json:"mesh"`
-	// MeshPrivateKey is base64 encoded
-	MeshPrivateKey  string              `json:"mesh_private_key"`
+	Technology      Technology          `json:"technology,omitempty"`
+	Firewall        bool                `json:"firewall"` // omitempty breaks this
+	FirewallMark    uint32              `json:"fwmark"`
+	Routing         TrueField           `json:"routing"`
+	Analytics       TrueField           `json:"analytics"`
+	Mesh            bool                `json:"mesh"`
 	MeshDevice      *mesh.Machine       `json:"mesh_device"`
 	KillSwitch      bool                `json:"kill_switch,omitempty"`
 	AutoConnect     bool                `json:"auto_connect,omitempty"`
