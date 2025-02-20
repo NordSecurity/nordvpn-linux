@@ -144,11 +144,8 @@ func (s *Server) getPeers() (map[string]*meshpb.Peer, map[string]*meshpb.Peer, e
 	case *meshpb.GetPeersResponse_Peers:
 		peerPubkeyToPeer, peerNameToPeer := meshnet.MakePeerMaps(resp.Peers)
 		return peerPubkeyToPeer, peerNameToPeer, nil
-	case *meshpb.GetPeersResponse_ServiceErrorCode:
-		log.Printf("GetPeers failed, service error: %s", meshpb.ServiceErrorCode_name[int32(resp.ServiceErrorCode)])
-		return nil, nil, errGetPeersFailed
-	case *meshpb.GetPeersResponse_MeshnetErrorCode:
-		log.Printf("GetPeers failed, meshnet error: %s", meshpb.ServiceErrorCode_name[int32(resp.MeshnetErrorCode)])
+	case *meshpb.GetPeersResponse_Error:
+		log.Printf("GetPeers failed, error: %s", resp.Error.String())
 		return nil, nil, errGetPeersFailed
 	default:
 		log.Printf("GetPeers failed, unknown error")

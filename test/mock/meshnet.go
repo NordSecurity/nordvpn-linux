@@ -39,7 +39,7 @@ func (r *RegistryMock) Configure(token string, id uuid.UUID, peerID uuid.UUID, p
 	}
 
 	if len(r.Peers) != 0 {
-		for _, v := range r.Peers {
+		for i, v := range r.Peers {
 			if v.ID == peerID {
 				v.AlwaysAcceptFiles = peer.AlwaysAcceptFiles
 				v.DoIAllowRouting = peer.DoIAllowRouting
@@ -47,14 +47,12 @@ func (r *RegistryMock) Configure(token string, id uuid.UUID, peerID uuid.UUID, p
 				v.DoIAllowFileshare = peer.DoIAllowFileshare
 				v.DoIAllowInbound = peer.DoIAllowInbound
 				v.Nickname = peer.Nickname
-
-				return nil
+				r.Peers = slices.Replace(r.Peers, i, i+1, v)
 			}
+			return nil
 		}
-
 		return fmt.Errorf("not found")
 	}
-
 	return nil
 }
 
