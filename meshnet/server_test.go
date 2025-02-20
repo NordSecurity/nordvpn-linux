@@ -55,10 +55,23 @@ func (meshRenewChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, err
 
 type registrationChecker struct {
 	registrationErr error
+	meshPrivateKey  string
 }
 
-func (r registrationChecker) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
-func (r registrationChecker) Register() error                 { return r.registrationErr }
+func (r *registrationChecker) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
+func (r *registrationChecker) Register() error {
+	if r.registrationErr != nil {
+		return r.registrationErr
+	}
+
+	r.meshPrivateKey = "key"
+	return nil
+}
+
+func (r *registrationChecker) GetMeshPrivateKey() (string, bool) {
+	return r.meshPrivateKey, r.meshPrivateKey != ""
+}
+func (r *registrationChecker) ClearMeshPrivateKey() {}
 
 type allowedIncoming struct {
 	address    UniqueAddress
@@ -202,7 +215,7 @@ func newMockedServer(
 	server := NewServer(
 		meshRenewChecker{},
 		configManager,
-		registrationChecker{},
+		&registrationChecker{},
 		acceptInvitationsAPI{},
 		&workingNetworker{},
 		&registryApi,
@@ -250,7 +263,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			netw:                &workingNetworker{},
 			ac:                  meshRenewChecker{},
 			inv:                 invitationsAPI{},
-			rc:                  registrationChecker{},
+			rc:                  &registrationChecker{},
 			reg:                 &mock.RegistryMock{},
 			cm:                  mock.NewMockConfigManager(),
 			dns:                 &mock.DNSGetter{},
@@ -262,7 +275,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			netw:                &workingNetworker{},
 			ac:                  meshRenewChecker{},
 			inv:                 invitationsAPI{},
-			rc:                  registrationChecker{},
+			rc:                  &registrationChecker{},
 			reg:                 &mock.RegistryMock{},
 			cm:                  mock.NewMockConfigManager(),
 			dns:                 &mock.DNSGetter{},
@@ -338,7 +351,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			netw:                &workingNetworker{},
 			ac:                  meshRenewChecker{},
 			inv:                 invitationsAPI{},
-			rc:                  registrationChecker{},
+			rc:                  &registrationChecker{},
 			reg:                 &mock.RegistryMock{},
 			cm:                  &mock.ConfigManager{},
 			dns:                 &mock.DNSGetter{},
@@ -349,7 +362,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			netw:                &workingNetworker{},
 			ac:                  meshRenewChecker{},
 			inv:                 invitationsAPI{},
-			rc:                  registrationChecker{},
+			rc:                  &registrationChecker{},
 			reg:                 &mock.RegistryMock{},
 			cm:                  &mock.ConfigManager{},
 			dns:                 &mock.DNSGetter{},
@@ -428,7 +441,7 @@ func TestServer_Invite(t *testing.T) {
 			server := NewServer(
 				meshRenewChecker{},
 				mock.NewMockConfigManager(),
-				registrationChecker{},
+				&registrationChecker{},
 				test.inv,
 				&workingNetworker{},
 				&mock.RegistryMock{},
@@ -467,7 +480,7 @@ func TestServer_AcceptInvite(t *testing.T) {
 	server := NewServer(
 		meshRenewChecker{},
 		mock.NewMockConfigManager(),
-		registrationChecker{},
+		&registrationChecker{},
 		acceptInvitationsAPI{},
 		&workingNetworker{},
 		&mock.RegistryMock{},
@@ -503,7 +516,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 	server := NewServer(
 		meshRenewChecker{},
 		mock.NewMockConfigManager(),
-		registrationChecker{},
+		&registrationChecker{},
 		acceptInvitationsAPI{},
 		&workingNetworker{},
 		&registryApi,
@@ -611,7 +624,7 @@ func TestServer_Connect(t *testing.T) {
 		server := NewServer(
 			meshRenewChecker{},
 			configManager,
-			registrationChecker{},
+			&registrationChecker{},
 			acceptInvitationsAPI{},
 			&workingNetworker{},
 			&registryApi,
@@ -753,7 +766,7 @@ func TestServer_AcceptIncoming(t *testing.T) {
 		server := NewServer(
 			meshRenewChecker{},
 			mock.NewMockConfigManager(),
-			registrationChecker{},
+			&registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
 			&registryApi,
@@ -884,7 +897,7 @@ func TestServer_DenyIncoming(t *testing.T) {
 		server := NewServer(
 			meshRenewChecker{},
 			mock.NewMockConfigManager(),
-			registrationChecker{},
+			&registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
 			&registryApi,
@@ -997,7 +1010,7 @@ func TestServer_AllowFileshare(t *testing.T) {
 		server := NewServer(
 			meshRenewChecker{},
 			mock.NewMockConfigManager(),
-			registrationChecker{},
+			&registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
 			&registryApi,
@@ -1110,7 +1123,7 @@ func TestServer_DenyFileshare(t *testing.T) {
 		server := NewServer(
 			meshRenewChecker{},
 			mock.NewMockConfigManager(),
-			registrationChecker{},
+			&registrationChecker{},
 			acceptInvitationsAPI{},
 			&networker,
 			&registryApi,
