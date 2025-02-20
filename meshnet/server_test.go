@@ -13,7 +13,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -185,17 +184,11 @@ func (acceptInvitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error
 
 func newMockedServer(
 	t *testing.T,
-	listErr error,
-	configureErr error,
-	peers []mesh.MachinePeer,
+	enableMesh bool,
 ) *Server {
 	t.Helper()
 
 	registryApi := mock.RegistryMock{}
-	registryApi.Peers = peers
-	registryApi.ListErr = listErr
-	registryApi.ConfigureErr = configureErr
-
 	configManager := mock.NewMockConfigManager()
 
 	server := NewServer(
@@ -215,12 +208,18 @@ func newMockedServer(
 			User: &daemonevents.LoginEvents{
 				Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
 			},
+			Service: &daemonevents.ServiceEvents{
+				UiItemsClick: &daemonevents.MockPublisherSubscriber[events.UiItemsAction]{},
+				Connect:      &daemonevents.MockPublisherSubscriber[events.DataConnect]{},
+			},
 		},
 		testnorduser.NewMockNorduserClient(nil),
 		sharedctx.New(),
 	)
 
-	server.EnableMeshnet(context.Background(), &pb.Empty{})
+	if enableMesh {
+		server.EnableMeshnet(context.Background(), &pb.Empty{})
+	}
 	return server
 }
 
@@ -228,37 +227,16 @@ func TestServer_EnableMeshnet(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
 		name                string
-		netw                Networker
-		ac                  auth.Checker
-		inv                 mesh.Inviter
-		rc                  Checker
-		reg                 mesh.Registry
-		cm                  config.Manager
-		dns                 dns.Getter
 		startFileshareError error
 		success             bool
 	}{
 		{
 			name:                "everything works",
-			netw:                &workingNetworker{},
-			ac:                  meshRenewChecker{},
-			inv:                 invitationsAPI{},
-			rc:                  registrationChecker{},
-			reg:                 &mock.RegistryMock{},
-			cm:                  mock.NewMockConfigManager(),
-			dns:                 &mock.DNSGetter{},
 			startFileshareError: nil,
 			success:             true,
 		},
 		{
 			name:                "fileshare fails",
-			netw:                &workingNetworker{},
-			ac:                  meshRenewChecker{},
-			inv:                 invitationsAPI{},
-			rc:                  registrationChecker{},
-			reg:                 &mock.RegistryMock{},
-			cm:                  mock.NewMockConfigManager(),
-			dns:                 &mock.DNSGetter{},
 			startFileshareError: fmt.Errorf("failed to disable fileshare"),
 			success:             true, // Fileshare shouldn't impact meshnet enabling
 		},
@@ -267,30 +245,9 @@ func TestServer_EnableMeshnet(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// Check server creation
-			mserver := NewServer(
-				test.ac,
-				test.cm,
-				test.rc,
-				test.inv,
-				test.netw,
-				test.reg,
-				test.dns,
-				&subs.Subject[error]{},
-				&subs.Subject[[]string]{},
-				&daemonevents.Events{
-					Settings: &daemonevents.SettingsEvents{
-						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-					},
-					User: &daemonevents.LoginEvents{
-						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-					},
-				},
-				testnorduser.NewMockNorduserClient(test.startFileshareError),
-				sharedctx.New(),
-			)
+			mserver := newMockedServer(t, false)
+			mserver.norduser = testnorduser.NewMockNorduserClient(test.startFileshareError)
 			assert.NotEqual(t, nil, mserver)
-			assert.Equal(t, test.cm, mserver.cm)
-			assert.Equal(t, test.netw, mserver.netw)
 
 			// Check server configuration
 			var cfg config.Config
@@ -317,35 +274,14 @@ func TestServer_DisableMeshnet(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
 		name                string
-		netw                Networker
-		ac                  auth.Checker
-		inv                 mesh.Inviter
-		rc                  Checker
-		reg                 mesh.Registry
-		cm                  config.Manager
-		dns                 dns.Getter
 		startFileshareError error
 	}{
 		{
 			name:                "everything works",
-			netw:                &workingNetworker{},
-			ac:                  meshRenewChecker{},
-			inv:                 invitationsAPI{},
-			rc:                  registrationChecker{},
-			reg:                 &mock.RegistryMock{},
-			cm:                  &mock.ConfigManager{},
-			dns:                 &mock.DNSGetter{},
 			startFileshareError: nil,
 		},
 		{
 			name:                "fileshare fails",
-			netw:                &workingNetworker{},
-			ac:                  meshRenewChecker{},
-			inv:                 invitationsAPI{},
-			rc:                  registrationChecker{},
-			reg:                 &mock.RegistryMock{},
-			cm:                  &mock.ConfigManager{},
-			dns:                 &mock.DNSGetter{},
 			startFileshareError: fmt.Errorf("failed to start fileshare"),
 		},
 	}
@@ -353,34 +289,10 @@ func TestServer_DisableMeshnet(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// Check server creation
-			mserver := NewServer(
-				test.ac,
-				test.cm,
-				test.rc,
-				test.inv,
-				test.netw,
-				test.reg,
-				test.dns,
-				&subs.Subject[error]{},
-				&subs.Subject[[]string]{},
-				&daemonevents.Events{
-					Settings: &daemonevents.SettingsEvents{
-						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-					},
-					User: &daemonevents.LoginEvents{
-						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-					},
-				},
-				testnorduser.NewMockNorduserClient(test.startFileshareError),
-				sharedctx.New(),
-			)
-			assert.NotEqual(t, nil, mserver)
-			assert.Equal(t, test.cm, mserver.cm)
-			assert.Equal(t, test.netw, mserver.netw)
+			mserver := newMockedServer(t, true)
+			mserver.norduser = testnorduser.NewMockNorduserClient(test.startFileshareError)
 
-			// Set server configuration
-			var cfg config.Config
-			mserver.cm.SaveWith(func(c config.Config) config.Config { c.Mesh = true; return c })
+			assert.NotEqual(t, nil, mserver)
 
 			// Disable Mesh
 			resp, err := mserver.DisableMeshnet(context.Background(), &pb.Empty{})
@@ -389,6 +301,7 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			assert.Equal(t, true, ok)
 
 			// Check new server configuration
+			var cfg config.Config
 			err = mserver.cm.Load(&cfg)
 			assert.NoError(t, err)
 			assert.Equal(t, false, cfg.Mesh)
@@ -418,31 +331,8 @@ func TestServer_Invite(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := NewServer(
-				meshRenewChecker{},
-				mock.NewMockConfigManager(),
-				registrationChecker{},
-				test.inv,
-				&workingNetworker{},
-				&mock.RegistryMock{},
-				&mock.DNSGetter{},
-				&subs.Subject[error]{},
-				&subs.Subject[[]string]{},
-				&daemonevents.Events{
-					Settings: &daemonevents.SettingsEvents{
-						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-					},
-					Service: &daemonevents.ServiceEvents{
-						UiItemsClick: &daemonevents.MockPublisherSubscriber[events.UiItemsAction]{},
-					},
-					User: &daemonevents.LoginEvents{
-						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-					},
-				},
-				testnorduser.NewMockNorduserClient(nil),
-				sharedctx.New(),
-			)
-			server.EnableMeshnet(context.Background(), &pb.Empty{})
+			server := newMockedServer(t, true)
+			server.invitationAPI = test.inv
 			resp, err := server.Invite(context.Background(), &pb.InviteRequest{})
 			assert.NoError(t, err)
 			assert.NotNil(t, resp)
@@ -456,29 +346,7 @@ func TestServer_Invite(t *testing.T) {
 
 func TestServer_AcceptInvite(t *testing.T) {
 	category.Set(t, category.Unit)
-
-	server := NewServer(
-		meshRenewChecker{},
-		mock.NewMockConfigManager(),
-		registrationChecker{},
-		acceptInvitationsAPI{},
-		&workingNetworker{},
-		&mock.RegistryMock{},
-		&mock.DNSGetter{},
-		&subs.Subject[error]{},
-		&subs.Subject[[]string]{},
-		&daemonevents.Events{
-			Settings: &daemonevents.SettingsEvents{
-				Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-			},
-			User: &daemonevents.LoginEvents{
-				Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-			},
-		},
-		testnorduser.NewMockNorduserClient(nil),
-		sharedctx.New(),
-	)
-	server.EnableMeshnet(context.Background(), &pb.Empty{})
+	server := newMockedServer(t, true)
 	resp, err := server.AcceptInvite(context.Background(), &pb.InviteRequest{
 		Email: "inviter@nordvpn.com",
 	})
@@ -491,31 +359,6 @@ func TestServer_AcceptInvite(t *testing.T) {
 }
 
 func TestServer_GetPeersIPHandling(t *testing.T) {
-	registryApi := mock.RegistryMock{}
-
-	server := NewServer(
-		meshRenewChecker{},
-		mock.NewMockConfigManager(),
-		registrationChecker{},
-		acceptInvitationsAPI{},
-		&workingNetworker{},
-		&registryApi,
-		&mock.DNSGetter{},
-		&subs.Subject[error]{},
-		&subs.Subject[[]string]{},
-		&daemonevents.Events{
-			Settings: &daemonevents.SettingsEvents{
-				Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-			},
-			User: &daemonevents.LoginEvents{
-				Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-			},
-		},
-		testnorduser.NewMockNorduserClient(nil),
-		sharedctx.New(),
-	)
-	server.EnableMeshnet(context.Background(), &pb.Empty{})
-
 	localPeerIP := "172.17.0.1"
 	externalPeerIP := "192.17.30.5"
 
@@ -559,7 +402,10 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		registryApi := mock.RegistryMock{}
 		registryApi.Peers = test.peers
+		server := newMockedServer(t, true)
+		server.reg = &registryApi
 
 		resp, _ := server.GetPeers(context.Background(), &pb.Empty{})
 
@@ -581,7 +427,11 @@ func TestServer_Connect(t *testing.T) {
 	getServer := func() *Server {
 		registryApi := mock.RegistryMock{}
 		configManager := mock.NewMockConfigManager()
-		configManager.Cfg = &config.Config{Technology: config.Technology_NORDLYNX, MeshDevice: &mesh.Machine{}}
+		configManager.Cfg = &config.Config{
+			Technology: config.Technology_NORDLYNX,
+			MeshDevice: &mesh.Machine{},
+			Mesh:       true,
+		}
 
 		registryApi.Peers = []mesh.MachinePeer{
 			{
@@ -600,30 +450,9 @@ func TestServer_Connect(t *testing.T) {
 				Address:              netip.MustParseAddr("87.169.173.253"),
 			},
 		}
-
-		server := NewServer(
-			meshRenewChecker{},
-			configManager,
-			registrationChecker{},
-			acceptInvitationsAPI{},
-			&workingNetworker{},
-			&registryApi,
-			&mock.DNSGetter{},
-			&subs.Subject[error]{},
-			&subs.Subject[[]string]{},
-			&daemonevents.Events{
-				Settings: &daemonevents.SettingsEvents{
-					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-				},
-				Service: &daemonevents.ServiceEvents{Connect: &daemonevents.MockPublisherSubscriber[events.DataConnect]{}},
-				User: &daemonevents.LoginEvents{
-					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-				},
-			},
-			testnorduser.NewMockNorduserClient(nil),
-			sharedctx.New(),
-		)
-		server.EnableMeshnet(context.Background(), &pb.Empty{})
+		server := newMockedServer(t, true)
+		server.cm = configManager
+		server.reg = &registryApi
 		return server
 	}
 
@@ -743,28 +572,9 @@ func TestServer_AcceptIncoming(t *testing.T) {
 		networker := workingNetworker{}
 		networker.allowedIncoming = []allowedIncoming{}
 
-		server := NewServer(
-			meshRenewChecker{},
-			mock.NewMockConfigManager(),
-			registrationChecker{},
-			acceptInvitationsAPI{},
-			&networker,
-			&registryApi,
-			&mock.DNSGetter{},
-			&subs.Subject[error]{},
-			&subs.Subject[[]string]{},
-			&daemonevents.Events{
-				Settings: &daemonevents.SettingsEvents{
-					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-				},
-				User: &daemonevents.LoginEvents{
-					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-				},
-			},
-			testnorduser.NewMockNorduserClient(nil),
-			sharedctx.New(),
-		)
-		server.EnableMeshnet(context.Background(), &pb.Empty{})
+		server := newMockedServer(t, true)
+		server.netw = &networker
+		server.reg = &registryApi
 		return server, &networker
 	}
 
@@ -873,29 +683,9 @@ func TestServer_DenyIncoming(t *testing.T) {
 
 		networker := workingNetworker{}
 		networker.blockedIncoming = []UniqueAddress{}
-
-		server := NewServer(
-			meshRenewChecker{},
-			mock.NewMockConfigManager(),
-			registrationChecker{},
-			acceptInvitationsAPI{},
-			&networker,
-			&registryApi,
-			&mock.DNSGetter{},
-			&subs.Subject[error]{},
-			&subs.Subject[[]string]{},
-			&daemonevents.Events{
-				Settings: &daemonevents.SettingsEvents{
-					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-				},
-				User: &daemonevents.LoginEvents{
-					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-				},
-			},
-			testnorduser.NewMockNorduserClient(nil),
-			sharedctx.New(),
-		)
-		server.EnableMeshnet(context.Background(), &pb.Empty{})
+		server := newMockedServer(t, true)
+		server.netw = &networker
+		server.reg = &registryApi
 		return server, &networker
 	}
 
@@ -986,29 +776,10 @@ func TestServer_AllowFileshare(t *testing.T) {
 
 		networker := workingNetworker{}
 		networker.allowedFileshare = []UniqueAddress{}
+		server := newMockedServer(t, true)
+		server.netw = &networker
+		server.reg = &registryApi
 
-		server := NewServer(
-			meshRenewChecker{},
-			mock.NewMockConfigManager(),
-			registrationChecker{},
-			acceptInvitationsAPI{},
-			&networker,
-			&registryApi,
-			&mock.DNSGetter{},
-			&subs.Subject[error]{},
-			&subs.Subject[[]string]{},
-			&daemonevents.Events{
-				Settings: &daemonevents.SettingsEvents{
-					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-				},
-				User: &daemonevents.LoginEvents{
-					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-				},
-			},
-			testnorduser.NewMockNorduserClient(nil),
-			sharedctx.New(),
-		)
-		server.EnableMeshnet(context.Background(), &pb.Empty{})
 		return server, &networker
 	}
 
@@ -1100,29 +871,10 @@ func TestServer_DenyFileshare(t *testing.T) {
 		networker := workingNetworker{}
 		networker.blockedFileshare = []UniqueAddress{}
 
-		server := NewServer(
-			meshRenewChecker{},
-			mock.NewMockConfigManager(),
-			registrationChecker{},
-			acceptInvitationsAPI{},
-			&networker,
-			&registryApi,
-			&mock.DNSGetter{},
-			&subs.Subject[error]{},
-			&subs.Subject[[]string]{},
-			&daemonevents.Events{
-				Settings: &daemonevents.SettingsEvents{
-					Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-				},
-				Service: &daemonevents.ServiceEvents{Connect: &daemonevents.MockPublisherSubscriber[events.DataConnect]{}},
-				User: &daemonevents.LoginEvents{
-					Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-				},
-			},
-			testnorduser.NewMockNorduserClient(nil),
-			sharedctx.New(),
-		)
-		server.EnableMeshnet(context.Background(), &pb.Empty{})
+		server := newMockedServer(t, true)
+		server.netw = &networker
+		server.reg = &registryApi
+
 		return server, &networker
 	}
 
@@ -1236,10 +988,11 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 					AlwaysAcceptFiles: true,
 				},
 			}
-			server := newMockedServer(t,
-				nil,
-				test.configureErr,
-				peers)
+			reg := &mock.RegistryMock{}
+			reg.ConfigureErr = test.configureErr
+			reg.Peers = peers
+			server := newMockedServer(t, true)
+			server.reg = reg
 			resp, err := server.EnableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -1307,10 +1060,11 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 		}
 
 		t.Run(test.name, func(t *testing.T) {
-			server := newMockedServer(t,
-				nil,
-				test.configureErr,
-				peers)
+			reg := &mock.RegistryMock{}
+			reg.ConfigureErr = test.configureErr
+			reg.Peers = peers
+			server := newMockedServer(t, true)
+			server.reg = reg
 			resp, err := server.DisableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -1334,7 +1088,6 @@ func TestServer_Peer_Nickname(t *testing.T) {
 		newNickname      string
 		listErr          error
 		configureErr     error
-		expectedErr      error
 		reservedDNSNames mock.RegisteredDomainsList
 		expectedResponse *pb.ChangeNicknameResponse
 	}{
@@ -1518,35 +1271,9 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			registryApi.ListErr = test.listErr
 			registryApi.ConfigureErr = test.configureErr
 
-			configManager := mock.NewMockConfigManager()
-
-			ac := meshRenewChecker{}
-
-			checker := registrationChecker{}
-
-			server := NewServer(
-				&ac,
-				configManager,
-				&checker,
-				acceptInvitationsAPI{},
-				&workingNetworker{},
-				&registryApi,
-				&mock.DNSGetter{RegisteredDomains: test.reservedDNSNames},
-				&subs.Subject[error]{},
-				&subs.Subject[[]string]{},
-				&daemonevents.Events{
-					Settings: &daemonevents.SettingsEvents{
-						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-					},
-					User: &daemonevents.LoginEvents{
-						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-					},
-				},
-				testnorduser.NewMockNorduserClient(nil),
-				sharedctx.New(),
-			)
-
-			server.EnableMeshnet(context.Background(), &pb.Empty{})
+			server := newMockedServer(t, true)
+			server.reg = &registryApi
+			server.nameservers = &mock.DNSGetter{RegisteredDomains: test.reservedDNSNames}
 
 			request := pb.ChangePeerNicknameRequest{
 				Identifier: test.peerId,
@@ -1582,7 +1309,6 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 		listErr          error
 		configureErr     error
 		isNotLoggedIn    bool
-		expectedErr      error
 		updateErr        error
 		machine          mesh.Machine
 		reservedDNSNames mock.RegisteredDomainsList
@@ -1767,35 +1493,16 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 
 			configManager := mock.NewMockConfigManager()
 			configManager.Cfg.MeshDevice = &test.machine
+			configManager.Cfg.Mesh = true
 
 			ac := meshRenewChecker{}
 			ac.IsNotLoggedIn = test.isNotLoggedIn
 
-			checker := registrationChecker{}
-
-			server := NewServer(
-				&ac,
-				configManager,
-				&checker,
-				acceptInvitationsAPI{},
-				&workingNetworker{},
-				&registryApi,
-				&mock.DNSGetter{RegisteredDomains: test.reservedDNSNames},
-				&subs.Subject[error]{},
-				&subs.Subject[[]string]{},
-				&daemonevents.Events{
-					Settings: &daemonevents.SettingsEvents{
-						Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
-					},
-					User: &daemonevents.LoginEvents{
-						Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{},
-					},
-				},
-				testnorduser.NewMockNorduserClient(nil),
-				sharedctx.New(),
-			)
-
-			server.EnableMeshnet(context.Background(), &pb.Empty{})
+			server := newMockedServer(t, true)
+			server.ac = ac
+			server.reg = &registryApi
+			server.cm = configManager
+			server.nameservers = &mock.DNSGetter{RegisteredDomains: test.reservedDNSNames}
 
 			request := pb.ChangeMachineNicknameRequest{
 				Nickname: test.newNickname,
@@ -1822,7 +1529,6 @@ func TestServer_fetchCfg(t *testing.T) {
 	category.Set(t, category.Unit)
 	for _, tt := range []struct {
 		name          string
-		isMeshOff     bool
 		isNotLoggedIn bool
 		cm            config.Manager
 		mc            Checker
@@ -1861,7 +1567,7 @@ func TestServer_fetchCfg(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newMockedServer(t, nil, nil, nil)
+			s := newMockedServer(t, true)
 			if tt.mc != nil {
 				s.mc = tt.mc
 			}
@@ -1948,7 +1654,12 @@ func TestServer_fetchPeers(t *testing.T) {
 					DoIAllowFileshare: true,
 				},
 			}
-			s := newMockedServer(t, tt.listErr, nil, peers)
+
+			reg := &mock.RegistryMock{}
+			reg.ListErr = tt.listErr
+			reg.Peers = peers
+			s := newMockedServer(t, true)
+			s.reg = reg
 			if tt.cm != nil {
 				s.cm = tt.cm
 			}
@@ -2008,7 +1719,11 @@ func TestServer_fetchPeer(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newMockedServer(t, tt.listErr, nil, peers)
+			reg := &mock.RegistryMock{}
+			reg.ListErr = tt.listErr
+			reg.Peers = peers
+			s := newMockedServer(t, true)
+			s.reg = reg
 			token, self, peers, peer, err := s.fetchPeer(tt.peerUUID)
 
 			// Make sure it fetches the same config as cm would

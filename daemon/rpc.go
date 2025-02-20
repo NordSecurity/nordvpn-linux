@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -52,7 +51,6 @@ type RPC struct {
 	ncClient             nc.NotificationClient
 	analytics            events.Analytics
 	norduser             service.Service
-	meshRegistry         mesh.Registry
 	systemShutdown       atomic.Bool
 	statePublisher       *state.StatePublisher
 	ConnectionParameters ParametersStorage
@@ -82,7 +80,6 @@ func NewRPC(
 	ncClient nc.NotificationClient,
 	analytics events.Analytics,
 	norduser service.Service,
-	meshRegistry mesh.Registry,
 	statePublisher *state.StatePublisher,
 	connectContext *sharedctx.Context,
 	remoteConfigGetter remote.RemoteConfigGetter,
@@ -110,7 +107,6 @@ func NewRPC(
 		ncClient:           ncClient,
 		analytics:          analytics,
 		norduser:           norduser,
-		meshRegistry:       meshRegistry,
 		statePublisher:     statePublisher,
 		connectContext:     connectContext,
 		remoteConfigGetter: remoteConfigGetter,
