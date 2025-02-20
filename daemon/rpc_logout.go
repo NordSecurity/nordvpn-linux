@@ -99,11 +99,12 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 		}
 	}
 
+	r.meshPrivateKeyController.ClearMeshPrivateKey()
+
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		delete(c.TokensData, c.AutoConnectData.ID)
 		c.AutoConnectData.ID = 0
 		c.Mesh = false
-		c.MeshPrivateKey = ""
 		return c
 	}); err != nil {
 		return nil, err

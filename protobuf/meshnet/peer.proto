@@ -283,6 +283,7 @@ message ConnectResponse {
 		Empty empty = 1;
 		ConnectErrorCode connect_error_code = 3;
 		UpdatePeerError update_peer_error = 6;
+		MeshnetErrorCode meshnet_error = 7;
 	}
 }
 

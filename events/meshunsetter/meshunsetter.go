@@ -6,6 +6,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
 )
 
@@ -14,10 +15,11 @@ type MeshUnsetter interface {
 }
 
 type Meshnet struct {
-	man          config.Manager
-	netw         MeshUnsetter
-	errPublisher events.Publisher[error]
-	norduser     service.NorduserFileshareClient
+	man                      config.Manager
+	netw                     MeshUnsetter
+	meshPrivateKeyController meshnet.PrivateKeyController
+	errPublisher             events.Publisher[error]
+	norduser                 service.NorduserFileshareClient
 }
 
 func NewMeshnet(
@@ -25,12 +27,14 @@ func NewMeshnet(
 	netw MeshUnsetter,
 	errPublisher events.Publisher[error],
 	norduser service.NorduserFileshareClient,
+	meshPrivateKeyController meshnet.PrivateKeyController,
 ) *Meshnet {
 	return &Meshnet{
-		man:          man,
-		netw:         netw,
-		errPublisher: errPublisher,
-		norduser:     norduser,
+		man:                      man,
+		netw:                     netw,
+		errPublisher:             errPublisher,
+		norduser:                 norduser,
+		meshPrivateKeyController: meshPrivateKeyController,
 	}
 }
 
@@ -63,10 +67,11 @@ func (m *Meshnet) unsetMesh() error {
 		))
 	}
 
+	m.meshPrivateKeyController.ClearMeshPrivateKey()
+
 	return m.man.SaveWith(func(c config.Config) config.Config {
 		c.Mesh = false
 		c.MeshDevice = nil
-		c.MeshPrivateKey = ""
 		return c
 	})
 }

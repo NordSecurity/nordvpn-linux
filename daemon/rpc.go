@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/networker"
@@ -41,21 +42,22 @@ type RPC struct {
 	version        string
 	events         *daemonevents.Events
 	// factory picks which VPN implementation to use
-	factory              FactoryFunc
-	endpointResolver     network.EndpointResolver
-	endpoint             network.Endpoint
-	scheduler            gocron.Scheduler
-	netw                 networker.Networker
-	publisher            events.Publisher[string]
-	nameservers          dns.Getter
-	ncClient             nc.NotificationClient
-	analytics            events.Analytics
-	norduser             service.Service
-	systemShutdown       atomic.Bool
-	statePublisher       *state.StatePublisher
-	ConnectionParameters ParametersStorage
-	connectContext       *sharedctx.Context
-	remoteConfigGetter   remote.RemoteConfigGetter
+	factory                  FactoryFunc
+	endpointResolver         network.EndpointResolver
+	endpoint                 network.Endpoint
+	scheduler                gocron.Scheduler
+	netw                     networker.Networker
+	publisher                events.Publisher[string]
+	nameservers              dns.Getter
+	ncClient                 nc.NotificationClient
+	analytics                events.Analytics
+	norduser                 service.Service
+	systemShutdown           atomic.Bool
+	statePublisher           *state.StatePublisher
+	ConnectionParameters     ParametersStorage
+	connectContext           *sharedctx.Context
+	remoteConfigGetter       remote.RemoteConfigGetter
+	meshPrivateKeyController meshnet.PrivateKeyController
 	pb.UnimplementedDaemonServer
 }
 
@@ -83,32 +85,34 @@ func NewRPC(
 	statePublisher *state.StatePublisher,
 	connectContext *sharedctx.Context,
 	remoteConfigGetter remote.RemoteConfigGetter,
+	meshPrivateKeyController meshnet.PrivateKeyController,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
-		environment:        environment,
-		ac:                 ac,
-		cm:                 cm,
-		dm:                 dm,
-		api:                api,
-		serversAPI:         serversAPI,
-		credentialsAPI:     credentialsAPI,
-		cdn:                cdn,
-		repo:               repo,
-		authentication:     authentication,
-		version:            version,
-		factory:            factory,
-		events:             events,
-		endpointResolver:   endpointResolver,
-		scheduler:          scheduler,
-		netw:               netw,
-		publisher:          publisher,
-		nameservers:        nameservers,
-		ncClient:           ncClient,
-		analytics:          analytics,
-		norduser:           norduser,
-		statePublisher:     statePublisher,
-		connectContext:     connectContext,
-		remoteConfigGetter: remoteConfigGetter,
+		environment:              environment,
+		ac:                       ac,
+		cm:                       cm,
+		dm:                       dm,
+		api:                      api,
+		serversAPI:               serversAPI,
+		credentialsAPI:           credentialsAPI,
+		cdn:                      cdn,
+		repo:                     repo,
+		authentication:           authentication,
+		version:                  version,
+		factory:                  factory,
+		events:                   events,
+		endpointResolver:         endpointResolver,
+		scheduler:                scheduler,
+		netw:                     netw,
+		publisher:                publisher,
+		nameservers:              nameservers,
+		ncClient:                 ncClient,
+		analytics:                analytics,
+		norduser:                 norduser,
+		statePublisher:           statePublisher,
+		connectContext:           connectContext,
+		remoteConfigGetter:       remoteConfigGetter,
+		meshPrivateKeyController: meshPrivateKeyController,
 	}
 }
