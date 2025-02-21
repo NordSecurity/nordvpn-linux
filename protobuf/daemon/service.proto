@@ -67,4 +67,5 @@ service Daemon {
   rpc GetServers(Empty) returns (ServersResponse);
   rpc SetPostQuantum(SetGenericRequest) returns (Payload);
   rpc IsNordWhisperEnabled(Empty) returns (NordWhisperEnabled);
+  rpc GetDaemonApiVersion(GetDaemonApiVersionRequest) returns (GetDaemonApiVersionResponse);
 }
