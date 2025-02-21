@@ -182,6 +182,10 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
+	// There is a delay in the backend between registering a new key and when that key is recognized, so we need to wait
+	// some time, otherwise connection will fail.
+	time.Sleep(5 * time.Second)
+
 	if err = s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
@@ -325,6 +329,10 @@ func (s *Server) StartMeshnet() error {
 	if !ok {
 		return fmt.Errorf("meshnet private key not found")
 	}
+
+	// There is a delay in the backend between registering a new key and when that key is recognized, so we need to wait
+	// some time, otherwise connection will fail.
+	time.Sleep(5 * time.Second)
 
 	if err := s.netw.SetMesh(
 		*resp,
