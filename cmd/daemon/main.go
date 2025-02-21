@@ -420,6 +420,7 @@ func main() {
 		netw,
 		errSubject,
 		norduserClient,
+		meshnetChecker,
 	)
 	meshnetEvents.SelfRemoved.Subscribe(meshUnsetter.NotifyDisabled)
 
@@ -477,6 +478,7 @@ func main() {
 		statePublisher,
 		sharedContext,
 		rcConfig,
+		meshnetChecker,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
@@ -619,4 +621,6 @@ func main() {
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
+
+	meshnetChecker.ClearMeshPrivateKey()
 }
