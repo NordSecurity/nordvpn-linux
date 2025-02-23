@@ -1734,7 +1734,7 @@ func TestServer_fetchPeer(t *testing.T) {
 			reg.Peers = peers
 			s := newMockedServer(t, true)
 			s.ret = reg
-			token, self, peers, peer, err := s.fetchPeer(tt.peerUUID)
+			token, self, peer, err := s.fetchPeer(tt.peerUUID)
 
 			// Make sure it fetches the same config as cm would
 			var cfg config.Config

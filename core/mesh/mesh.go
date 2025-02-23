@@ -34,10 +34,14 @@ type Registry interface {
 	) error
 }
 
+// CachingRetriever is a Retriever which has to implement some kind of caching, therefore is
+// exposing `forceUpdate` parameter.
+type CachingRetriever interface {
+	Map(token string, self uuid.UUID, forceUpdate bool) (*MachineMap, error)
+}
+
 // Retriever defines a set of operations to retrieve a current state of meshnet of this device.
 type Retriever interface {
-	// List given peer's neighbours in the mesh network.
-	List(token string, self uuid.UUID) (MachinePeers, error)
 	Map(token string, self uuid.UUID) (*MachineMap, error)
 }
 
