@@ -15,7 +15,7 @@ type RegistryMock struct {
 	Peers          mesh.MachinePeers
 	LocalPeers     mesh.Machines
 
-	ListErr      error
+	MapErr       error
 	ConfigureErr error
 	UpdateErr    error
 }
@@ -70,14 +70,10 @@ func (r *RegistryMock) GetPeerWithIdentifier(id string) *mesh.MachinePeer {
 
 func (*RegistryMock) Unregister(token string, self uuid.UUID) error { return nil }
 
-func (r *RegistryMock) List(token string, self uuid.UUID) (mesh.MachinePeers, error) {
-	if r.ListErr != nil {
-		return nil, r.ListErr
+func (r *RegistryMock) Map(token string, self uuid.UUID, _ bool) (*mesh.MachineMap, error) {
+	if r.MapErr != nil {
+		return nil, r.MapErr
 	}
-	return r.Peers, nil
-}
-
-func (r *RegistryMock) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
 	return &mesh.MachineMap{Machine: r.CurrentMachine, Peers: r.Peers}, nil
 }
 
@@ -92,4 +88,13 @@ func (*RegistryMock) NotifyNewTransfer(
 	transferID string,
 ) error {
 	return nil
+}
+
+type CachingMapperMock struct {
+	Value *mesh.MachineMap
+	Error error
+}
+
+func (m *CachingMapperMock) Map(_ string, _ uuid.UUID, _ bool) (*mesh.MachineMap, error) {
+	return m.Value, m.Error
 }
