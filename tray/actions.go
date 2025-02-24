@@ -191,7 +191,6 @@ func (ti *Instance) setNotify(flag bool) bool {
 		flagText = "on"
 	}
 	resp, err := ti.client.SetNotify(context.Background(), &pb.SetNotifyRequest{
-		Uid:    int64(os.Getuid()),
 		Notify: flag,
 	})
 	if err != nil {
