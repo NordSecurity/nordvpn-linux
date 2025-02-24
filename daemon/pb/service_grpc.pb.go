@@ -63,6 +63,7 @@ const (
 	Daemon_GetServers_FullMethodName              = "/pb.Daemon/GetServers"
 	Daemon_SetPostQuantum_FullMethodName          = "/pb.Daemon/SetPostQuantum"
 	Daemon_IsNordWhisperEnabled_FullMethodName    = "/pb.Daemon/IsNordWhisperEnabled"
+	Daemon_GetDaemonApiVersion_FullMethodName     = "/pb.Daemon/GetDaemonApiVersion"
 )
 
 // DaemonClient is the client API for Daemon service.
@@ -113,6 +114,7 @@ type DaemonClient interface {
 	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
 	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	IsNordWhisperEnabled(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*NordWhisperEnabled, error)
+	GetDaemonApiVersion(ctx context.Context, in *GetDaemonApiVersionRequest, opts ...grpc.CallOption) (*GetDaemonApiVersionResponse, error)
 }
 
 type daemonClient struct {
@@ -599,6 +601,16 @@ func (c *daemonClient) IsNordWhisperEnabled(ctx context.Context, in *Empty, opts
 	return out, nil
 }
 
+func (c *daemonClient) GetDaemonApiVersion(ctx context.Context, in *GetDaemonApiVersionRequest, opts ...grpc.CallOption) (*GetDaemonApiVersionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDaemonApiVersionResponse)
+	err := c.cc.Invoke(ctx, Daemon_GetDaemonApiVersion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility.
@@ -647,6 +659,7 @@ type DaemonServer interface {
 	GetServers(context.Context, *Empty) (*ServersResponse, error)
 	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
 	IsNordWhisperEnabled(context.Context, *Empty) (*NordWhisperEnabled, error)
+	GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -788,6 +801,9 @@ func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequ
 }
 func (UnimplementedDaemonServer) IsNordWhisperEnabled(context.Context, *Empty) (*NordWhisperEnabled, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsNordWhisperEnabled not implemented")
+}
+func (UnimplementedDaemonServer) GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetDaemonApiVersion not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 func (UnimplementedDaemonServer) testEmbeddedByValue()                {}
@@ -1574,6 +1590,24 @@ func _Daemon_IsNordWhisperEnabled_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_GetDaemonApiVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDaemonApiVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).GetDaemonApiVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_GetDaemonApiVersion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).GetDaemonApiVersion(ctx, req.(*GetDaemonApiVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1740,6 +1774,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsNordWhisperEnabled",
 			Handler:    _Daemon_IsNordWhisperEnabled_Handler,
+		},
+		{
+			MethodName: "GetDaemonApiVersion",
+			Handler:    _Daemon_GetDaemonApiVersion_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
