@@ -95,14 +95,14 @@ func (o *observer) notifyConnectionStateChange(state vpn.State) {
 
 func getConnectEvent(status events.TypeEventStatus, serverData vpn.ServerData) events.DataConnect {
 	return events.DataConnect{
-		EventStatus:           status,
-		IsMeshnetPeer:         false,
-		TargetServerSelection: serverData.IP.String(),
-		TargetServerCountry:   serverData.Country,
-		TargetServerCity:      serverData.City,
-		TargetServerDomain:    serverData.Hostname,
-		TargetServerName:      serverData.Name,
-		IsVirtualLocation:     serverData.VirtualLocation,
+		EventStatus:         status,
+		IsMeshnetPeer:       false,
+		TargetServerIP:      serverData.IP.String(),
+		TargetServerCountry: serverData.Country,
+		TargetServerCity:    serverData.City,
+		TargetServerDomain:  serverData.Hostname,
+		TargetServerName:    serverData.Name,
+		IsVirtualLocation:   serverData.VirtualLocation,
 	}
 }
 
