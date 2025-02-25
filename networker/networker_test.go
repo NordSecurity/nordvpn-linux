@@ -196,7 +196,11 @@ func (e *workingExitNode) Enable() error {
 	return nil
 }
 
-func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lan bool, killswitch bool) error {
+func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers,
+	lan bool,
+	killswitch bool,
+	enableAllowlist bool,
+	allowlistedSubnets config.Allowlist) error {
 	e.peers = peers
 	e.LanAvailable = lan
 	return nil
@@ -204,12 +208,11 @@ func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers, lan bool, killswit
 
 func (*workingExitNode) DisablePeer(netip.Addr) error { return nil }
 func (*workingExitNode) Disable() error               { return nil }
-func (e *workingExitNode) SetAllowlist(_ config.Allowlist, lan bool) error {
-	e.LanAvailable = lan
-	return nil
-}
 
-func (e *workingExitNode) ResetFirewall(lan bool, killswitch bool) error {
+func (e *workingExitNode) ResetFirewall(lan bool,
+	killswitch bool,
+	enableAllowlist bool,
+	allowlist config.Allowlist) error {
 	e.LanAvailable = lan
 	return nil
 }
@@ -649,7 +652,7 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
+				newWorkingExitNode(),
 				0,
 				false,
 			)
@@ -960,7 +963,7 @@ func TestCombined_SetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
+				newWorkingExitNode(),
 				0,
 				false,
 			)
@@ -1017,7 +1020,7 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
+				newWorkingExitNode(),
 				0,
 				false,
 			)

@@ -1,4 +1,4 @@
-package exitnode
+package forwarder
 
 import (
 	"fmt"
@@ -45,7 +45,13 @@ func TestFiltering(t *testing.T) {
 	ip := netip.MustParsePrefix("100.77.1.1/32")
 
 	interfaceNames := []string{"eth0"}
-	err = resetPeersTraffic([]TrafficPeer{{ip, true, false}}, interfaceNames, commandFunc, false)
+	err = resetForwardTraffic(
+		[]TrafficPeer{{ip, true, false}},
+		interfaceNames,
+		commandFunc,
+		false,
+		false,
+		[]string{})
 	assert.NoError(t, err)
 
 	rc, err = checkFilteringRule(ip.String(), commandFunc)
@@ -198,7 +204,7 @@ func TestResetPeersTraffic(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%+v", test.peers), func(t *testing.T) {
-			err = resetPeersTraffic(test.peers, interfaceNames, commandFunc, false)
+			err = resetForwardTraffic(test.peers, interfaceNames, commandFunc, false, false, []string{})
 			assert.NoError(t, err)
 
 			for i, peer := range test.peers {
