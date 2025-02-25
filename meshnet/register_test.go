@@ -42,7 +42,9 @@ func TestRegister_NotYetRegistered(t *testing.T) {
 	rc := NewRegisteringChecker(cm, &generator{}, &registry{})
 	err := rc.Register()
 	assert.NoError(t, err)
-	assert.Equal(t, privateKey, cm.Cfg.MeshPrivateKey)
+	meshPK, ok := rc.GetMeshPrivateKey()
+	assert.True(t, ok)
+	assert.Equal(t, privateKey, meshPK)
 	assert.Equal(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 	assert.Equal(t, registryIP, cm.Cfg.MeshDevice.Address.String())
 }
@@ -52,7 +54,6 @@ func TestRegister_AlreadyRegistered(t *testing.T) {
 
 	cm := &mock.ConfigManager{
 		Cfg: &config.Config{
-			MeshPrivateKey: "0002",
 			MeshDevice: &mesh.Machine{
 				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				Address: netip.MustParseAddr("0.0.0.2"),
@@ -60,9 +61,13 @@ func TestRegister_AlreadyRegistered(t *testing.T) {
 		},
 	}
 	rc := NewRegisteringChecker(cm, &generator{}, &registry{})
+	rc.meshPrivateKey = "0002"
 	err := rc.Register()
 	assert.NoError(t, err)
-	assert.NotEqual(t, privateKey, cm.Cfg.MeshPrivateKey) // Existing private key should be kept
+
+	meshPK, ok := rc.GetMeshPrivateKey()
+	assert.True(t, ok)
+	assert.Equal(t, privateKey, meshPK) // New private key should be generated
 	assert.Equal(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 	assert.Equal(t, registryIP, cm.Cfg.MeshDevice.Address.String())
 }
@@ -71,14 +76,13 @@ func TestIsRegistered_NotYetRegistered(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name          string
-		cfg           *config.Config
-		newPrivateKey bool
+		name           string
+		cfg            *config.Config
+		meshPrivateKey string
 	}{
 		{
-			name:          "empty config",
-			cfg:           &config.Config{},
-			newPrivateKey: true,
+			name: "empty config",
+			cfg:  &config.Config{},
 		},
 		{
 			name: "no private key",
@@ -87,29 +91,27 @@ func TestIsRegistered_NotYetRegistered(t *testing.T) {
 					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 					Address: netip.MustParseAddr("0.0.0.2"),
 				}},
-			newPrivateKey: true,
 		},
 		{
-			name: "no MeshDevice",
-			cfg: &config.Config{
-				MeshPrivateKey: "0002",
-			},
+			name:           "no MeshDevice",
+			cfg:            &config.Config{},
+			meshPrivateKey: "0002",
 		},
 		{
 			name: "no ID",
 			cfg: &config.Config{
-				MeshPrivateKey: "0002",
 				MeshDevice: &mesh.Machine{
 					Address: netip.MustParseAddr("0.0.0.2"),
 				}},
+			meshPrivateKey: "0002",
 		},
 		{
 			name: "no address",
 			cfg: &config.Config{
-				MeshPrivateKey: "0002",
 				MeshDevice: &mesh.Machine{
 					ID: uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				}},
+			meshPrivateKey: "0002",
 		},
 	}
 
@@ -117,9 +119,13 @@ func TestIsRegistered_NotYetRegistered(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cm := &mock.ConfigManager{Cfg: test.cfg}
 			rc := NewRegisteringChecker(cm, &generator{}, &registry{})
+			rc.meshPrivateKey = test.meshPrivateKey
 			ok := rc.IsRegistrationInfoCorrect()
 			assert.True(t, ok)
-			assert.Equal(t, test.newPrivateKey, privateKey == cm.Cfg.MeshPrivateKey)
+
+			meshPrivateKey, ok := rc.GetMeshPrivateKey()
+			assert.True(t, ok)
+			assert.Equal(t, privateKey, meshPrivateKey)
 			assert.Equal(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 			assert.Equal(t, registryIP, cm.Cfg.MeshDevice.Address.String())
 		})
@@ -131,7 +137,6 @@ func TestIsRegistered_AlreadyRegistered(t *testing.T) {
 
 	cm := &mock.ConfigManager{
 		Cfg: &config.Config{
-			MeshPrivateKey: "0002",
 			MeshDevice: &mesh.Machine{
 				ID:      uuid.MustParse("00000000-0000-0000-0000-000000000002"),
 				Address: netip.MustParseAddr("0.0.0.2"),
@@ -139,10 +144,14 @@ func TestIsRegistered_AlreadyRegistered(t *testing.T) {
 		},
 	}
 	rc := NewRegisteringChecker(cm, &generator{}, &registry{})
+	rc.meshPrivateKey = "0002"
 	ok := rc.IsRegistrationInfoCorrect()
 	assert.True(t, ok)
+
 	// Registration should not be done, values should not change
-	assert.NotEqual(t, privateKey, cm.Cfg.MeshPrivateKey)
+	meshPrivateKey, ok := rc.GetMeshPrivateKey()
+	assert.True(t, ok)
+	assert.NotEqual(t, privateKey, meshPrivateKey)
 	assert.NotEqual(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 	assert.NotEqual(t, registryIP, cm.Cfg.MeshDevice.Address.String())
 }
