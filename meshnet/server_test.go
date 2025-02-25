@@ -61,18 +61,7 @@ type registrationChecker struct {
 func (r registrationChecker) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
 func (r registrationChecker) Register() error                 { return r.registrationErr }
 
-type allowedIncoming struct {
-	address    UniqueAddress
-	lanAllowed bool
-}
-
-type workingNetworker struct {
-	allowedIncoming  []allowedIncoming
-	blockedIncoming  []UniqueAddress
-	allowedFileshare []UniqueAddress
-	blockedFileshare []UniqueAddress
-	resetPeers       []string
-}
+type workingNetworker struct{}
 
 func (workingNetworker) Start(
 	context.Context,
@@ -89,31 +78,7 @@ func (*workingNetworker) Stop() error                                       { re
 func (*workingNetworker) SetMesh(mesh.MachineMap, netip.Addr, string) error { return nil }
 func (*workingNetworker) UnSetMesh() error                                  { return nil }
 
-func (n *workingNetworker) AllowFileshare(address UniqueAddress) error {
-	n.allowedFileshare = append(n.allowedFileshare, address)
-	return nil
-}
-
 func (n *workingNetworker) PermitFileshare() error {
-	return nil
-}
-
-func (n *workingNetworker) AllowIncoming(address UniqueAddress, lanAllowed bool) error {
-	n.allowedIncoming = append(n.allowedIncoming, allowedIncoming{
-		address:    address,
-		lanAllowed: lanAllowed,
-	})
-
-	return nil
-}
-
-func (n *workingNetworker) BlockIncoming(address UniqueAddress) error {
-	n.blockedIncoming = append(n.blockedIncoming, address)
-	return nil
-}
-
-func (n *workingNetworker) BlockFileshare(address UniqueAddress) error {
-	n.blockedFileshare = append(n.blockedFileshare, address)
 	return nil
 }
 
@@ -121,14 +86,7 @@ func (n *workingNetworker) ForbidFileshare() error {
 	return nil
 }
 
-func (n *workingNetworker) ResetRouting(changedPeer mesh.MachinePeer, peer mesh.MachinePeers) error {
-	n.resetPeers = append(n.resetPeers, changedPeer.PublicKey)
-
-	return nil
-}
-
-func (*workingNetworker) BlockRouting(UniqueAddress) error { return nil }
-func (*workingNetworker) Refresh(mesh.MachineMap) error    { return nil }
+func (*workingNetworker) Refresh(mesh.MachineMap) error { return nil }
 func (*workingNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
