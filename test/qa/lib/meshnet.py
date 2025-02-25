@@ -7,6 +7,7 @@ from enum import Enum
 
 import pytest
 import sh
+from lib.shell import sh_no_tty
 
 from . import daemon, info, logging, login, ssh
 
@@ -57,7 +58,7 @@ class TestUtils:
         daemon.start_peer(ssh_client)
         login.login_as("default")
         login.login_as("qa-peer", ssh_client)
-        sh.nordvpn.set.meshnet.on()
+        sh_no_tty.nordvpn.set.meshnet.on()
         ssh_client.exec_command("nordvpn set mesh on")
         remove_all_peers()
         remove_all_peers_in_peer(ssh_client)
@@ -71,10 +72,10 @@ class TestUtils:
         logging.log(data=info.collect())
         logging.log()
         ssh_client.exec_command("nordvpn set defaults")
-        sh.nordvpn.set.defaults()
+        sh_no_tty.nordvpn.set.defaults()
         daemon.stop_peer(ssh_client)
         daemon.stop()
-        sh.sudo.iptables("-F")
+        sh_no_tty.sudo.iptables("-F")
         ssh_client.exec_command("sudo iptables -F")
 
 
@@ -421,19 +422,19 @@ def add_peer(ssh_client: ssh.Ssh,
     peer_allow_local_arg = f"--allow-local-network-access={str(peer_allow_local).lower()}"
     peer_allow_incoming_arg = f"--allow-incoming-traffic={str(peer_allow_incoming).lower()}"
 
-    sh.nordvpn.mesh.inv.send(tester_allow_incoming_arg, tester_allow_local_arg, tester_allow_routing_arg, tester_allow_fileshare_arg, PEER_USERNAME)
+    sh_no_tty.nordvpn.mesh.inv.send(tester_allow_incoming_arg, tester_allow_local_arg, tester_allow_routing_arg, tester_allow_fileshare_arg, PEER_USERNAME)
     local_user = login.get_credentials("default").email
     ssh_client.exec_command(f"yes | nordvpn mesh inv accept {peer_allow_local_arg} {peer_allow_incoming_arg} {peer_allow_routing_arg} {peer_allow_fileshare_arg} {local_user}")
 
-    sh.nordvpn.mesh.peer.refresh()
+    sh_no_tty.nordvpn.mesh.peer.refresh()
 
 
 def remove_all_peers():
     """Removes all meshnet peers from local device."""
-    peer_list = PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    peer_list = PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
 
     for peer in peer_list.get_all_internal_peers() + peer_list.get_all_external_peers():
-        sh.nordvpn.mesh.peer.remove(peer.hostname)
+        sh_no_tty.nordvpn.mesh.peer.remove(peer.hostname)
 
 
 def remove_all_peers_in_peer(ssh_client: ssh.Ssh):
@@ -457,9 +458,9 @@ def get_sent_invites(output: str) -> list:
 
 def revoke_all_invites():
     """Revokes all sent meshnet invites in local device."""
-    output = f"{sh.nordvpn.mesh.inv.list(_tty_out=False)}"  # convert to string, _tty_out false disables colors
+    output = f"{sh_no_tty.nordvpn.mesh.inv.list()}"  # convert to string, _tty_out false disables colors
     for i in get_sent_invites(output):
-        sh.nordvpn.mesh.inv.revoke(i)
+        sh_no_tty.nordvpn.mesh.inv.revoke(i)
 
 
 def revoke_all_invites_in_peer(ssh_client: ssh.Ssh):
@@ -506,7 +507,7 @@ def accept_meshnet_invite(ssh_client: ssh.Ssh,
 
     local_user = login.get_credentials("default").email
     output = ssh_client.exec_command(f"yes | nordvpn mesh inv accept {peer_allow_local_arg} {peer_allow_incoming_arg} {peer_allow_routing_arg} {peer_allow_fileshare_arg} {local_user}")
-    sh.nordvpn.mesh.peer.refresh()
+    sh_no_tty.nordvpn.mesh.peer.refresh()
 
     return output
 
@@ -519,7 +520,7 @@ def deny_meshnet_invite(ssh_client: ssh.Ssh):
     return output
 
 def validate_input_chain(peer_ip: str, routing: bool, local: bool, incoming: bool, fileshare: bool) -> (bool, str):
-    #rules = sh.sudo.iptables("-S", "INPUT")
+    #rules = sh_no_tty.sudo.iptables("-S", "INPUT")
     rules = os.popen("sudo iptables -S INPUT").read()
 
     fileshare_rule = f"-A INPUT -s {peer_ip}/32 -p tcp -m tcp --dport 49111 -m comment --comment nordvpn -j ACCEPT"
@@ -606,7 +607,7 @@ def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: b
 def set_permission(peer: str, permission: bool, permission_state: bool):
     """Tries to set permission to specified state. Ignores any error messages."""
     with contextlib.suppress(sh.ErrorReturnCode_1):
-        sh.nordvpn.mesh.peer(permission, permission_state, peer)
+        sh_no_tty.nordvpn.mesh.peer(permission, permission_state, peer)
 
 
 def set_permissions(peer: str, routing: bool | None = None, local: bool | None = None, incoming: bool | None = None, fileshare: bool | None = None):
@@ -617,16 +618,16 @@ def set_permissions(peer: str, routing: bool | None = None, local: bool | None =
 
     # ignore any failures that might occur when permissions are already configured to the desired value
     if routing is not None:
-        sh.nordvpn.mesh.peer.routing(bool_to_permission(routing), peer, _ok_code=(0, 1))
+        sh_no_tty.nordvpn.mesh.peer.routing(bool_to_permission(routing), peer, _ok_code=(0, 1))
 
     if local is not None:
-        sh.nordvpn.mesh.peer.local(bool_to_permission(local), peer, _ok_code=(0, 1))
+        sh_no_tty.nordvpn.mesh.peer.local(bool_to_permission(local), peer, _ok_code=(0, 1))
 
     if incoming is not None:
-        sh.nordvpn.mesh.peer.incoming(bool_to_permission(incoming), peer, _ok_code=(0, 1))
+        sh_no_tty.nordvpn.mesh.peer.incoming(bool_to_permission(incoming), peer, _ok_code=(0, 1))
 
     if fileshare is not None:
-        sh.nordvpn.mesh.peer.fileshare(bool_to_permission(fileshare), peer, _ok_code=(0, 1))
+        sh_no_tty.nordvpn.mesh.peer.fileshare(bool_to_permission(fileshare), peer, _ok_code=(0, 1))
 
 
 def get_clean_peer_list(peer_list: str):
@@ -656,7 +657,7 @@ def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, peer_name: PeerName = Pee
             print(e.stderr)
             time.sleep(1)
             i += 1
-    print(sh.nordvpn.mesh.peer.list())
+    print(sh_no_tty.nordvpn.mesh.peer.list())
     output = ssh_client.exec_command("nordvpn mesh peer list")
     print(output)
     return False
@@ -680,7 +681,7 @@ def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 3) -> None:
     """
 
     for refresh_count in range(retry):
-        local_peer_list = sh.nordvpn.mesh.peer.list(_tty_out=False)
+        local_peer_list = sh_no_tty.nordvpn.mesh.peer.list()
         remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
 
         if "Status: connected" in local_peer_list and \
