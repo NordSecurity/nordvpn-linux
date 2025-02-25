@@ -6,6 +6,7 @@ import sh
 
 import lib
 from lib import daemon, logging, meshnet, network, ssh
+from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -29,8 +30,8 @@ def teardown_function(function):  # noqa: ARG001
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_killswitch_exitnode(lan_discovery: bool, local: bool):
-    my_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().ip
-    peer_ip = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().ip
+    my_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().ip
+    peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
 
     # Initiate ssh connection via mesh because we are going to lose the main connection
     ssh_client_mesh = ssh.Ssh(peer_ip, "root", "root")
@@ -61,7 +62,7 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_available()
 
     # Connect to exitnode
-    sh.nordvpn.mesh.peer.connect(peer_ip)
+    sh_no_tty.nordvpn.mesh.peer.connect(peer_ip)
     assert daemon.is_connected()
     assert network.is_available()
 
@@ -71,12 +72,12 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_not_available()
 
     # Disconnect from exitnode
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
     assert not daemon.is_connected()
     assert network.is_available()
 
     # Connect to exitnode
-    sh.nordvpn.mesh.peer.connect(peer_ip)
+    sh_no_tty.nordvpn.mesh.peer.connect(peer_ip)
     assert daemon.is_connected()
     assert network.is_not_available()
 
@@ -86,20 +87,20 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_available()
 
     # Disconnect from exitnode
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
     assert not daemon.is_connected()
     assert network.is_available()
 
 
 def test_route_traffic_to_each_other():
-    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
     peer_pubkey = peer_list.get_external_peer().public_key
 
     ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
     ssh_client_mesh.connect()
 
-    output = sh.nordvpn.mesh.peer.connect(peer_pubkey)
+    output = sh_no_tty.nordvpn.mesh.peer.connect(peer_pubkey)
     assert meshnet.is_connect_successful(output, peer_hostname)
 
     local_hostname = peer_list.get_this_device().hostname
@@ -109,13 +110,13 @@ def test_route_traffic_to_each_other():
     assert network.is_not_available()
     assert ssh_client_mesh.network.is_not_available()
 
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
     ssh_client_mesh.exec_command("nordvpn disconnect")
     ssh_client_mesh.disconnect()
 
 
 def test_routing_deny_for_peer_is_peer_no_netting():
-    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
 
     ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
@@ -125,7 +126,7 @@ def test_routing_deny_for_peer_is_peer_no_netting():
     output = ssh_client_mesh.exec_command("nordvpn mesh peer connect " + this_device.ip)
     assert meshnet.is_connect_successful(output, this_device.hostname)
 
-    sh.nordvpn.mesh.peer.routing.deny(peer_hostname)
+    sh_no_tty.nordvpn.mesh.peer.routing.deny(peer_hostname)
 
     assert ssh_client_mesh.network.is_not_available()
 
@@ -137,7 +138,7 @@ def test_route_to_nonexistant_node():
     nonexistant_node_name = "penguins-are-cool.nord"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.mesh.peer.connect(nonexistant_node_name)
+        sh_no_tty.nordvpn.mesh.peer.connect(nonexistant_node_name)
 
     expected_message = meshnet.MSG_PEER_UNKNOWN % nonexistant_node_name
 
@@ -145,14 +146,14 @@ def test_route_to_nonexistant_node():
 
 
 def test_route_to_peer_status_valid():
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
+    peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
     ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
     ssh_client_mesh.connect()
 
     peer_nick = "a-A-a"
-    sh.nordvpn.mesh.peer.nick.set(peer_hostname, peer_nick)
-    output = sh.nordvpn.mesh.peer.connect(peer_nick)
+    sh_no_tty.nordvpn.mesh.peer.nick.set(peer_hostname, peer_nick)
+    output = sh_no_tty.nordvpn.mesh.peer.connect(peer_nick)
     assert meshnet.is_connect_successful(output, peer_nick)
 
     connect_time = time.monotonic()
@@ -160,7 +161,7 @@ def test_route_to_peer_status_valid():
     time.sleep(5)
     sh.ping("-c", "1", "-w", "1", "103.86.96.100")
 
-    status_output = sh.nordvpn.status().lstrip("\r -")
+    status_output = sh_no_tty.nordvpn.status().lstrip("\r -")
     status_time = time.monotonic()
 
     # Split the data into lines, filter out lines that don't contain ':',
@@ -174,7 +175,7 @@ def test_route_to_peer_status_valid():
     }
 
     logging.log("status_info: " + str(status_info))
-    logging.log("status_info: " + str(sh.nordvpn.status()))
+    logging.log("status_info: " + str(sh_no_tty.nordvpn.status()))
 
     assert "Connected" in status_info["status"]
     assert peer_hostname in status_info["hostname"]
@@ -197,20 +198,20 @@ def test_route_to_peer_status_valid():
     else:
         assert time_connected >= time_passed - 1 and time_connected <= time_passed + 1
 
-    sh.nordvpn.disconnect()
+    sh_no_tty.nordvpn.disconnect()
     ssh_client_mesh.disconnect()
 
 
 @pytest.mark.skip(reason="Test suit exits, before test can be completed.")
 def test_route_to_peer_that_is_disconnected():
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().name()
+    peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().name()
 
     ssh_client.exec_command("nordvpn set mesh off")
 
     time.sleep(140)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.mesh.peer.connect(peer_hostname)
+        sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
 
     expected_message = meshnet.MSG_PEER_OFFLINE % peer_hostname
 
@@ -221,9 +222,9 @@ def test_route_to_peer_that_is_disconnected():
 def test_route_traffic_to_peer_wrong_tech(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().name()
+    peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().name()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.mesh.peer.connect(peer_hostname)
+        sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
 
     assert meshnet.MSG_ROUTING_NEED_NORDLYNX in str(ex)
