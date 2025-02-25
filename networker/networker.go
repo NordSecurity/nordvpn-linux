@@ -1465,13 +1465,6 @@ func (netw *Combined) StatusMap() (map[string]string, error) {
 	return netw.mesh.StatusMap()
 }
 
-// AllowIncoming traffic from the uniqueAddress.
-func (netw *Combined) AllowIncoming(uniqueAddress meshnet.UniqueAddress, lanAllowed bool) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	return netw.allowIncoming(uniqueAddress.UID, uniqueAddress.Address, lanAllowed)
-}
-
 func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAllowed bool) error {
 	rules := []firewall.Rule{}
 
@@ -1632,14 +1625,6 @@ func (netw *Combined) denyDNS() error {
 	return nil
 }
 
-// Unblock address.
-func (netw *Combined) BlockIncoming(uniqueAddress meshnet.UniqueAddress) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-
-	return netw.blockIncoming(uniqueAddress)
-}
-
 func (netw *Combined) blockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 	lanRuleName := uniqueAddress.UID + blockLanRule + uniqueAddress.Address.String()
 	if slices.Index(netw.rules, lanRuleName) != -1 {
@@ -1650,12 +1635,6 @@ func (netw *Combined) blockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 
 	ruleName := uniqueAddress.UID + allowIncomingRule + uniqueAddress.Address.String()
 	return netw.removeRule(ruleName)
-}
-
-func (netw *Combined) BlockFileshare(uniqueAddress meshnet.UniqueAddress) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	return netw.blockFileshare(uniqueAddress.UID, uniqueAddress.Address)
 }
 
 func (netw *Combined) blockFileshare(publicKey string, address netip.Addr) error {
