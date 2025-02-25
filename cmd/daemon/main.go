@@ -55,6 +55,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/inviter"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/mapper"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/registry"
@@ -486,7 +487,7 @@ func main() {
 		authChecker,
 		fsystem,
 		meshnetChecker,
-		defaultAPI,
+		inviter.NewNotifyingInviter(defaultAPI, meshnetEvents.PeerUpdate),
 		netw,
 		meshRegistry,
 		meshMapper,
