@@ -8,10 +8,14 @@ import (
 	"github.com/google/uuid"
 )
 
+// CachingMapper is an implementation of mesh.CachingMapper that wraps inner Mapper and caching
+// logic from CachedValue.
 type CachingMapper struct {
 	mmap *CachedValue[retrievalKey, *mesh.MachineMap]
 }
 
+// NewCachingMapper returns a new instance of CachingMapper filled newly created CachedValue and
+// inner.Map function as GetFn for CachedValue.
 func NewCachingMapper(inner mesh.Mapper, cacheTTL time.Duration) *CachingMapper {
 	mapFn := func(key retrievalKey) (*mesh.MachineMap, error) {
 		return inner.Map(key.token, key.id)
@@ -21,6 +25,7 @@ func NewCachingMapper(inner mesh.Mapper, cacheTTL time.Duration) *CachingMapper 
 	}
 }
 
+// Map uses CachedValue.Get function, where GetFn is inner.Map function.
 func (r *CachingMapper) Map(
 	token string,
 	self uuid.UUID,
@@ -29,6 +34,8 @@ func (r *CachingMapper) Map(
 	return r.mmap.Get(retrievalKey{token: token, id: self}, forceUpdate)
 }
 
+// retrievalKey is a structure acting as a key to CachedValue which composes of fields that are
+// arguments to mesh.Mapper.Map function.
 type retrievalKey struct {
 	token string
 	id    uuid.UUID
@@ -44,9 +51,10 @@ type CachedValue[K comparable, V any] struct {
 	mu         sync.Mutex
 }
 
-// GetFn is a function that returns data and error in case it failed
+// GetFn is a function that returns data and error in case it failed.
 type GetFn[K, V any] func(K) (V, error)
 
+// NewCachedValue creates a new instance of CachedValue filled with the given parameters.
 func NewCachedValue[K comparable, V any](
 	validity time.Duration,
 	getFn GetFn[K, V],

@@ -102,12 +102,7 @@ func (invitationsAPI) Accept(string, uuid.UUID, uuid.UUID, bool, bool, bool, boo
 func (invitationsAPI) Revoke(string, uuid.UUID, uuid.UUID) error                         { return nil }
 func (invitationsAPI) Reject(string, uuid.UUID, uuid.UUID) error                         { return nil }
 
-type meshNetworker struct {
-	allowedIncoming  []meshnet.UniqueAddress
-	blockedIncoming  []meshnet.UniqueAddress
-	allowedFileshare []meshnet.UniqueAddress
-	blockedFileshare []meshnet.UniqueAddress
-}
+type meshNetworker struct{}
 
 func (meshNetworker) Start(
 	context.Context,
@@ -124,22 +119,7 @@ func (*meshNetworker) Stop() error                                       { retur
 func (*meshNetworker) SetMesh(mesh.MachineMap, netip.Addr, string) error { return nil }
 func (*meshNetworker) UnSetMesh() error                                  { return nil }
 
-func (n *meshNetworker) AllowFileshare(address meshnet.UniqueAddress) error {
-	n.allowedFileshare = append(n.allowedFileshare, address)
-	return nil
-}
-
 func (n *meshNetworker) PermitFileshare() error {
-	return nil
-}
-
-func (n *meshNetworker) AllowIncoming(address meshnet.UniqueAddress, lanAllowed bool) error {
-	n.allowedIncoming = append(n.allowedIncoming, address)
-	return nil
-}
-
-func (n *meshNetworker) BlockIncoming(address meshnet.UniqueAddress) error {
-	n.blockedIncoming = append(n.blockedIncoming, address)
 	return nil
 }
 
@@ -147,14 +127,7 @@ func (n *meshNetworker) ForbidFileshare() error {
 	return nil
 }
 
-func (n *meshNetworker) BlockFileshare(address meshnet.UniqueAddress) error {
-	n.blockedFileshare = append(n.blockedFileshare, address)
-	return nil
-}
-
-func (*meshNetworker) ResetRouting(mesh.MachinePeer, mesh.MachinePeers) error { return nil }
-func (*meshNetworker) BlockRouting(meshnet.UniqueAddress) error               { return nil }
-func (*meshNetworker) Refresh(mesh.MachineMap) error                          { return nil }
+func (*meshNetworker) Refresh(mesh.MachineMap) error { return nil }
 func (*meshNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }

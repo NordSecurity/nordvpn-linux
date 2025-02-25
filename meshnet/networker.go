@@ -20,24 +20,10 @@ type Networker interface {
 	Refresh(mesh.MachineMap) error // Remove
 	// UnSetMesh unsets the meshnet configuration
 	UnSetMesh() error
-	// AllowIncoming creates an allowing fw rule for the given
-	// address
-	AllowIncoming(address UniqueAddress, lanAllowed bool) error
-	// BlockIncoming creates a blocking fw rule for the given
-	// address
-	BlockIncoming(UniqueAddress) error
-	// AllowFileshare creates a rule enabling fileshare port for the given address
-	AllowFileshare(UniqueAddress) error
 	// PermitFileshare creates a rules enabling fileshare port for all available peers and sets fileshare as permitted
 	PermitFileshare() error
-	// BlockFileshare removes a rule enabling fileshare port for the given address if it exists
-	BlockFileshare(UniqueAddress) error
 	// ForbidFileshare removes a rules enabling fileshare port for all available peers and sets fileshare as forbidden
 	ForbidFileshare() error
-	// ResetRouting is used when there are routing setting changes,
-	// except when routing is denied - then BlockRouting must be used. changedPeer is the peer whose routing settings
-	// changed, peers is the map of all the machine peers(including the changed peer).
-	ResetRouting(changedPeer mesh.MachinePeer, peers mesh.MachinePeers) error
 	StatusMap() (map[string]string, error)
 	LastServerName() string
 	Start(
