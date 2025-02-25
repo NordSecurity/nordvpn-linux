@@ -3,6 +3,7 @@ import sh
 
 import lib
 from lib import daemon, meshnet, settings, ssh
+from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -27,7 +28,7 @@ def teardown_function(function):  # noqa: ARG001
 def test_allowlist_incoming_connection():
     my_ip = ssh_client.exec_command("echo $SSH_CLIENT").split()[0]
 
-    peer_hostname = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_external_peer().hostname
+    peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
     # Initiate ssh connection via mesh because we are going to lose the main connection
     ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
     ssh_client_mesh.connect()
@@ -48,14 +49,14 @@ def test_allowlist_incoming_connection():
 def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    sh.nordvpn.set.fwmark("0xe2f2")
-    sh.nordvpn.set.killswitch("on")
-    sh.nordvpn.set.tpl("on")
-    sh.nordvpn.set.autoconnect("on")
-    sh.nordvpn.set("lan-discovery", "on")
+    sh_no_tty.nordvpn.set.fwmark("0xe2f2")
+    sh_no_tty.nordvpn.set.killswitch("on")
+    sh_no_tty.nordvpn.set.tpl("on")
+    sh_no_tty.nordvpn.set.autoconnect("on")
+    sh_no_tty.nordvpn.set("lan-discovery", "on")
 
     assert settings.is_meshnet_enabled()
-    assert "0xe1f1" not in sh.nordvpn.settings()
+    assert "0xe1f1" not in  sh_no_tty.nordvpn.settings()
     assert daemon.is_killswitch_on()
     assert settings.is_tpl_enabled()
     assert settings.is_autoconnect_enabled()
@@ -66,7 +67,7 @@ def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert "Settings were successfully restored to defaults." in sh.nordvpn.set.defaults()
+    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
 
@@ -76,14 +77,14 @@ def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
 def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    sh.nordvpn.set.fwmark("0xe2f2")
-    sh.nordvpn.set.killswitch("on")
-    sh.nordvpn.set("lan-discovery", "on")
-    sh.nordvpn.set.analytics("off")
-    sh.nordvpn.set.tpl("on")
+    sh_no_tty.nordvpn.set.fwmark("0xe2f2")
+    sh_no_tty.nordvpn.set.killswitch("on")
+    sh_no_tty.nordvpn.set("lan-discovery", "on")
+    sh_no_tty.nordvpn.set.analytics("off")
+    sh_no_tty.nordvpn.set.tpl("on")
 
     assert settings.is_meshnet_enabled()
-    assert "0xe1f1" not in sh.nordvpn.settings()
+    assert "0xe1f1" not in  sh_no_tty.nordvpn.settings()
     assert daemon.is_killswitch_on()
     assert settings.is_lan_discovery_enabled()
     assert not settings.are_analytics_enabled()
@@ -94,9 +95,9 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    sh.nordvpn.logout("--persist-token")
+    sh_no_tty.nordvpn.logout("--persist-token")
 
-    assert "Settings were successfully restored to defaults." in sh.nordvpn.set.defaults()
+    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
 
@@ -105,7 +106,7 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
 def test_set_post_quantum_on_meshnet_enabled():
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set(settings.get_pq_alias(), "on")
+        sh_no_tty.nordvpn.set(settings.get_pq_alias(), "on")
 
     assert "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other." in str(ex.value)
 
@@ -113,11 +114,11 @@ def test_set_post_quantum_on_meshnet_enabled():
 # This doesn't directly test meshnet, but it uses it
 def test_set_meshnet_on_post_quantum_enabled():
 
-    sh.nordvpn.set.meshnet("off")
+    sh_no_tty.nordvpn.set.meshnet("off")
 
-    sh.nordvpn.set(settings.get_pq_alias(), "on")
+    sh_no_tty.nordvpn.set(settings.get_pq_alias(), "on")
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.meshnet("on")
+        sh_no_tty.nordvpn.set.meshnet("on")
 
     assert "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other." in str(ex.value)

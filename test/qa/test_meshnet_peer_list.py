@@ -1,7 +1,7 @@
 import pytest
-import sh
 
 from lib import meshnet, poll, ssh
+from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -23,7 +23,7 @@ def teardown_function(function):  # noqa: ARG001
 
 
 def base_test_peer_list(filter_list: list[str] | None = None) -> None:
-    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     remote_hostname = peer_list.get_external_peer().hostname
 
@@ -37,11 +37,11 @@ def base_test_peer_list(filter_list: list[str] | None = None) -> None:
         meshnet.set_permissions(remote_hostname, routing=routing_allowed, incoming=incoming_traffic_allowed, fileshare=allows_sending_files)
         ssh_client.meshnet.set_permissions(local_hostname, routing=allows_routing, incoming=allows_incoming_traffic, fileshare=allows_sending_files)
 
-    local_peer_list = meshnet.get_clean_peer_list(sh.nordvpn.mesh.peer.list())
+    local_peer_list = meshnet.get_clean_peer_list(sh_no_tty.nordvpn.mesh.peer.list())
     local_formed_list = meshnet.PeerList.from_str(local_peer_list).parse_peer_list(filter_list)
 
     if len(filter_list) != 0:
-        local_peer_list_filtered = meshnet.get_clean_peer_list(str(sh.nordvpn.mesh.peer.list("-f", ",".join(filter_list)))).split("\n")
+        local_peer_list_filtered = meshnet.get_clean_peer_list(str(sh_no_tty.nordvpn.mesh.peer.list("-f", ",".join(filter_list)))).split("\n")
 
         assert local_formed_list == local_peer_list_filtered
     else:
@@ -78,7 +78,7 @@ def test_meshnet_peer_list_permission_filters(allows_incoming_traffic, allows_ro
 
 def test_meshnet_peer_list_peer_connected():
     def is_peer_connected():
-        local_peer_list = sh.nordvpn.mesh.peer.list(_tty_out=False)
+        local_peer_list = sh_no_tty.nordvpn.mesh.peer.list(_tty_out=False)
         remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
 
         peer_lists = [local_peer_list, remote_peer_list]

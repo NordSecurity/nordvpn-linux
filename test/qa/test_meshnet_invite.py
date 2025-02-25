@@ -2,7 +2,7 @@ import pytest
 import sh
 
 from lib import login, meshnet, ssh
-
+from lib.shell import sh_no_tty
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 
@@ -26,7 +26,7 @@ def test_invite_send():
 
     assert "Meshnet invitation to 'test@test.com' was sent." in meshnet.send_meshnet_invite("test@test.com")
 
-    assert "test@test.com" in sh.nordvpn.meshnet.invite.list()
+    assert "test@test.com" in sh_no_tty.nordvpn.meshnet.invite.list()
 
 
 def test_invite_send_repeated():
@@ -75,24 +75,24 @@ def test_invite_revoke():
 
     meshnet.send_meshnet_invite("test@test.com")
 
-    assert "Meshnet invitation to 'test@test.com' was revoked." in sh.nordvpn.meshnet.invite.revoke("test@test.com")
+    assert "Meshnet invitation to 'test@test.com' was revoked." in sh_no_tty.nordvpn.meshnet.invite.revoke("test@test.com")
 
-    assert "test@test.com" not in sh.nordvpn.meshnet.invite.list()
+    assert "test@test.com" not in sh_no_tty.nordvpn.meshnet.invite.list()
 
 
 def test_invite_revoke_repeated():
     meshnet.send_meshnet_invite("test@test.com")
-    sh.nordvpn.meshnet.invite.revoke("test@test.com")
+    sh_no_tty.nordvpn.meshnet.invite.revoke("test@test.com")
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.revoke("test@test.com")
+        sh_no_tty.nordvpn.meshnet.invite.revoke("test@test.com")
 
     assert "No invitation from 'test@test.com' was found." in str(ex.value)
 
 
 def test_invite_revoke_non_existent():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.revoke("test@test.com")
+        sh_no_tty.nordvpn.meshnet.invite.revoke("test@test.com")
 
     assert "No invitation from 'test@test.com' was found." in str(ex.value)
 
@@ -101,14 +101,14 @@ def test_invite_revoke_non_existent_long_email():
     email = "test" * 65 + "@test.com"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.revoke(email)
+        sh_no_tty.nordvpn.meshnet.invite.revoke(email)
 
     assert f"No invitation from '{email}' was found." in str(ex.value)
 
 
 def test_invite_revoke_non_existent_special_character():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.revoke("\u2222@test.com")
+        sh_no_tty.nordvpn.meshnet.invite.revoke("\u2222@test.com")
 
     assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
 
@@ -129,7 +129,7 @@ def test_invite_deny():
 
 def test_invite_deny_non_existent():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.deny("test@test.com")
+        sh_no_tty.nordvpn.meshnet.invite.deny("test@test.com")
 
     assert "No invitation from 'test@test.com' was found." in str(ex.value)
 
@@ -138,14 +138,14 @@ def test_invite_deny_non_existent_long_email():
     email = "test" * 65 + "@test.com"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.deny(email)
+        sh_no_tty.nordvpn.meshnet.invite.deny(email)
 
     assert f"No invitation from '{email}' was found." in str(ex.value)
 
 
 def test_invite_deny_non_existent_special_character():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.deny("\u2222@test.com")
+        sh_no_tty.nordvpn.meshnet.invite.deny("\u2222@test.com")
 
     assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
 
@@ -166,7 +166,7 @@ def test_invite_accept():
 
 def test_invite_accept_non_existent():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.accept("test@test.com")
+        sh_no_tty.nordvpn.meshnet.invite.accept("test@test.com")
 
     assert "No invitation from 'test@test.com' was found." in str(ex.value)
 
@@ -175,13 +175,13 @@ def test_invite_accept_non_existent_long_email():
     email = "test" * 65 + "@test.com"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.accept(email)
+        sh_no_tty.nordvpn.meshnet.invite.accept(email)
 
     assert f"No invitation from '{email}' was found." in str(ex.value)
 
 
 def test_invite_accept_non_existent_special_character():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.meshnet.invite.accept("\u2222@test.com")
+        sh_no_tty.nordvpn.meshnet.invite.accept("\u2222@test.com")
 
     assert "No invitation from '\u2222@test.com' was found." in str(ex.value)
