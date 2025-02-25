@@ -350,7 +350,7 @@ def test_set_post_quantum_on_open_vpn(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
-    assert "The post-quantum VPN is not compatible with OpenVPN. Switch to NordLynx to use post-quantum VPN capabilities." in str(ex.value)
+    assert "Post-quantum encryption is unavailable with OpenVPN. Switch to NordLynx to activate post-quantum protection." in str(ex.value)
 
 
 def test_set_technology_openvpn_post_quantum_enabled():
@@ -360,4 +360,4 @@ def test_set_technology_openvpn_post_quantum_enabled():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.technology("OPENVPN")
 
-    assert "This setting is not compatible with the post-quantum VPN. To use OpenVPN, disable the post-quantum VPN first." in str(ex.value)
+    assert "This setting is not compatible with post-quantum encryption. To use OpenVPN, disable post-quantum encryption first." in str(ex.value)
