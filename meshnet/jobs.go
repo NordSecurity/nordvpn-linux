@@ -10,6 +10,9 @@ import (
 )
 
 func (s *Server) StartJobs() {
+	if _, err := s.scheduler.NewJob(gocron.DurationJob(5*time.Minute), gocron.NewTask(JobRefreshMeshMap(s)), gocron.WithName("job refresh mesh map")); err != nil {
+		log.Println(internal.WarningPrefix, "job refresh meshnet map schedule error:", err)
+	}
 	if _, err := s.scheduler.NewJob(gocron.DurationJob(2*time.Hour), gocron.NewTask(JobRefreshMeshnet(s)), gocron.WithName("job refresh meshnet")); err != nil {
 		log.Println(internal.WarningPrefix, "job refresh meshnet schedule error:", err)
 	}
@@ -27,6 +30,15 @@ func (s *Server) StartJobs() {
 		if err != nil {
 			log.Println(internal.WarningPrefix, job.Name(), "first run error:", err)
 		}
+	}
+}
+
+func JobRefreshMeshMap(s *Server) func() error {
+	return func() error {
+		// Ignore anything as this is just needed to issue a mesh map update if it is old
+		// enough.
+		_, _, _, _ = s.fetchPeers()
+		return nil
 	}
 }
 

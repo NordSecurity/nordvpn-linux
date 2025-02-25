@@ -1458,13 +1458,6 @@ func (netw *Combined) StatusMap() (map[string]string, error) {
 	return netw.mesh.StatusMap()
 }
 
-// AllowIncoming traffic from the uniqueAddress.
-func (netw *Combined) AllowIncoming(uniqueAddress meshnet.UniqueAddress, lanAllowed bool) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	return netw.allowIncoming(uniqueAddress.UID, uniqueAddress.Address, lanAllowed)
-}
-
 func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAllowed bool) error {
 	rules := []firewall.Rule{}
 
@@ -1625,14 +1618,6 @@ func (netw *Combined) denyDNS() error {
 	return nil
 }
 
-// Unblock address.
-func (netw *Combined) BlockIncoming(uniqueAddress meshnet.UniqueAddress) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-
-	return netw.blockIncoming(uniqueAddress)
-}
-
 func (netw *Combined) blockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 	lanRuleName := uniqueAddress.UID + blockLanRule + uniqueAddress.Address.String()
 	if slices.Index(netw.rules, lanRuleName) != -1 {
@@ -1643,12 +1628,6 @@ func (netw *Combined) blockIncoming(uniqueAddress meshnet.UniqueAddress) error {
 
 	ruleName := uniqueAddress.UID + allowIncomingRule + uniqueAddress.Address.String()
 	return netw.removeRule(ruleName)
-}
-
-func (netw *Combined) BlockFileshare(uniqueAddress meshnet.UniqueAddress) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	return netw.blockFileshare(uniqueAddress.UID, uniqueAddress.Address)
 }
 
 func (netw *Combined) blockFileshare(publicKey string, address netip.Addr) error {
@@ -1732,40 +1711,6 @@ func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 		}
 	}
 	return hosts
-}
-
-func (netw *Combined) refreshIncoming(peer mesh.MachinePeer) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-
-	if !peer.DoIAllowInbound {
-		return nil
-	}
-
-	address := meshnet.UniqueAddress{
-		UID: peer.PublicKey, Address: peer.Address,
-	}
-
-	if slices.Index(netw.rules, peer.PublicKey+allowIncomingRule+peer.Address.String()) != -1 {
-		if err := netw.blockIncoming(address); err != nil {
-			return fmt.Errorf("blocking incoming traffic: %w", err)
-		}
-	}
-
-	if err := netw.allowIncoming(address.UID, address.Address, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
-		return fmt.Errorf("allowing incoming traffic: %w", err)
-	}
-
-	return nil
-}
-
-func (netw *Combined) ResetRouting(peer mesh.MachinePeer, peers mesh.MachinePeers) error {
-	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	if err := netw.exitNode.ResetPeers(peers, lanAvailable, netw.isKillSwitchSet); err != nil {
-		return err
-	}
-
-	return netw.refreshIncoming(peer)
 }
 
 func (netw *Combined) defaultMeshBlock(ip netip.Addr) error {

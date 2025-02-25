@@ -61,18 +61,7 @@ type registrationChecker struct {
 func (r registrationChecker) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
 func (r registrationChecker) Register() error                 { return r.registrationErr }
 
-type allowedIncoming struct {
-	address    UniqueAddress
-	lanAllowed bool
-}
-
-type workingNetworker struct {
-	allowedIncoming  []allowedIncoming
-	blockedIncoming  []UniqueAddress
-	allowedFileshare []UniqueAddress
-	blockedFileshare []UniqueAddress
-	resetPeers       []string
-}
+type workingNetworker struct{}
 
 func (workingNetworker) Start(
 	context.Context,
@@ -89,31 +78,7 @@ func (*workingNetworker) Stop() error                                       { re
 func (*workingNetworker) SetMesh(mesh.MachineMap, netip.Addr, string) error { return nil }
 func (*workingNetworker) UnSetMesh() error                                  { return nil }
 
-func (n *workingNetworker) AllowFileshare(address UniqueAddress) error {
-	n.allowedFileshare = append(n.allowedFileshare, address)
-	return nil
-}
-
 func (n *workingNetworker) PermitFileshare() error {
-	return nil
-}
-
-func (n *workingNetworker) AllowIncoming(address UniqueAddress, lanAllowed bool) error {
-	n.allowedIncoming = append(n.allowedIncoming, allowedIncoming{
-		address:    address,
-		lanAllowed: lanAllowed,
-	})
-
-	return nil
-}
-
-func (n *workingNetworker) BlockIncoming(address UniqueAddress) error {
-	n.blockedIncoming = append(n.blockedIncoming, address)
-	return nil
-}
-
-func (n *workingNetworker) BlockFileshare(address UniqueAddress) error {
-	n.blockedFileshare = append(n.blockedFileshare, address)
 	return nil
 }
 
@@ -121,14 +86,7 @@ func (n *workingNetworker) ForbidFileshare() error {
 	return nil
 }
 
-func (n *workingNetworker) ResetRouting(changedPeer mesh.MachinePeer, peer mesh.MachinePeers) error {
-	n.resetPeers = append(n.resetPeers, changedPeer.PublicKey)
-
-	return nil
-}
-
-func (*workingNetworker) BlockRouting(UniqueAddress) error { return nil }
-func (*workingNetworker) Refresh(mesh.MachineMap) error    { return nil }
+func (*workingNetworker) Refresh(mesh.MachineMap) error { return nil }
 func (*workingNetworker) StatusMap() (map[string]string, error) {
 	return map[string]string{}, nil
 }
@@ -190,6 +148,7 @@ func newMockedServer(
 
 	registryApi := mock.RegistryMock{}
 	configManager := mock.NewMockConfigManager()
+	configManager.Cfg.Technology = config.Technology_NORDLYNX
 
 	server := NewServer(
 		meshRenewChecker{},
@@ -198,9 +157,9 @@ func newMockedServer(
 		acceptInvitationsAPI{},
 		&workingNetworker{},
 		&registryApi,
+		&registryApi,
 		&mock.DNSGetter{},
 		&subs.Subject[error]{},
-		&subs.Subject[[]string]{},
 		&daemonevents.Events{
 			Settings: &daemonevents.SettingsEvents{
 				Meshnet: &daemonevents.MockPublisherSubscriber[bool]{},
@@ -405,7 +364,7 @@ func TestServer_GetPeersIPHandling(t *testing.T) {
 		registryApi := mock.RegistryMock{}
 		registryApi.Peers = test.peers
 		server := newMockedServer(t, true)
-		server.reg = &registryApi
+		server.mapper = &registryApi
 
 		resp, _ := server.GetPeers(context.Background(), &pb.Empty{})
 
@@ -423,38 +382,6 @@ func TestServer_Connect(t *testing.T) {
 	peerValidUuid := exampleUUID3
 	peerNoIpUuid := exampleUUID2
 	peerNoRoutingUuid := exampleUUID1
-
-	getServer := func() *Server {
-		registryApi := mock.RegistryMock{}
-		configManager := mock.NewMockConfigManager()
-		configManager.Cfg = &config.Config{
-			Technology: config.Technology_NORDLYNX,
-			MeshDevice: &mesh.Machine{},
-			Mesh:       true,
-		}
-
-		registryApi.Peers = []mesh.MachinePeer{
-			{
-				ID:                   uuid.MustParse(peerValidUuid),
-				DoesPeerAllowRouting: true,
-				Address:              netip.MustParseAddr("220.16.61.136"),
-			},
-			{
-				ID:                   uuid.MustParse(peerNoIpUuid),
-				DoesPeerAllowRouting: true,
-				Address:              netip.Addr{},
-			},
-			{
-				ID:                   uuid.MustParse(peerNoRoutingUuid),
-				DoesPeerAllowRouting: false,
-				Address:              netip.MustParseAddr("87.169.173.253"),
-			},
-		}
-		server := newMockedServer(t, true)
-		server.cm = configManager
-		server.reg = &registryApi
-		return server
-	}
 
 	tests := []struct {
 		name             string
@@ -486,7 +413,26 @@ func TestServer_Connect(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server := getServer()
+			server := newMockedServer(t, true)
+			registryApi := mock.RegistryMock{}
+			registryApi.Peers = []mesh.MachinePeer{
+				{
+					ID:                   uuid.MustParse(peerValidUuid),
+					DoesPeerAllowRouting: true,
+					Address:              netip.MustParseAddr("220.16.61.136"),
+				},
+				{
+					ID:                   uuid.MustParse(peerNoIpUuid),
+					DoesPeerAllowRouting: true,
+					Address:              netip.Addr{},
+				},
+				{
+					ID:                   uuid.MustParse(peerNoRoutingUuid),
+					DoesPeerAllowRouting: false,
+					Address:              netip.MustParseAddr("87.169.173.253"),
+				},
+			}
+			server.mapper = &registryApi
 			resp, err := server.Connect(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -497,104 +443,23 @@ func TestServer_Connect(t *testing.T) {
 
 func TestServer_AcceptIncoming(t *testing.T) {
 	peerValidUuid := exampleUUID3
-	peerNoIpUuid := exampleUUID2
 	peerIncomingAlreadyAllowedUuid := exampleUUID1
-	peerNoRoutingUuid := "8c9f1e11-4b67-4ba4-a2df-4308757f2d59"
-	peerNoLANUuid := "06d3c1ba-997c-4b2c-9d61-0d718becdd89"
-	peerLANAndRoutingUuid := "7505abad-527f-442f-b17a-820451ff8e8a"
 
 	peerValidAddress := netip.MustParseAddr("220.16.61.136")
 	peerIncomingAlreadyAllowedAddress := netip.MustParseAddr("87.169.173.253")
-	peerNoRoutingAddress := netip.MustParseAddr("54.1.218.8")
-	peerNoLANAddress := netip.MustParseAddr("18.203.48.39")
-	peerLANAndRoutingAddress := netip.MustParseAddr("249.205.110.178")
 
 	peerValidPublicKey := examplePublicKey1
 	peerIncomingAlreadyAllowedPublicKey := examplePublicKey2
-	peerNoRoutingPublicKey := "ubQBAfx1VXCI2yXqx5oqmcoc5wpBuRxvXRfXXC8qeR="
-	peerNoLANAddressPublicKey := "OwJTUXZmqOvXtiC8viXIlezSGe5uEZjTkhVWPyNSnA="
-	peerLANAndRoutingPublicKey := "SNoKCfCdi6OKHGI1dRM8QCLwuUMZ5Q2oltlYsLG1kA="
-
-	getServer := func() (*Server, *workingNetworker) {
-		registryApi := mock.RegistryMock{}
-		registryApi.Peers = []mesh.MachinePeer{
-			{
-				ID:              uuid.MustParse(peerValidUuid),
-				DoIAllowInbound: false,
-				Address:         peerValidAddress,
-				PublicKey:       peerValidPublicKey,
-			},
-			{
-				ID:              uuid.MustParse(peerNoIpUuid),
-				DoIAllowInbound: false,
-				Address:         netip.Addr{},
-			},
-			{
-				ID:              uuid.MustParse(peerIncomingAlreadyAllowedUuid),
-				DoIAllowInbound: true,
-				Address:         peerIncomingAlreadyAllowedAddress,
-				PublicKey:       peerIncomingAlreadyAllowedPublicKey,
-			},
-			{
-				ID:                   uuid.MustParse(peerNoRoutingUuid),
-				DoIAllowInbound:      false,
-				DoIAllowLocalNetwork: true,
-				DoIAllowRouting:      false,
-				Address:              peerNoRoutingAddress,
-				PublicKey:            peerNoRoutingPublicKey,
-			},
-			{
-				ID:                   uuid.MustParse(peerNoRoutingUuid),
-				DoIAllowInbound:      false,
-				DoIAllowLocalNetwork: true,
-				DoIAllowRouting:      false,
-				Address:              peerNoRoutingAddress,
-				PublicKey:            peerNoRoutingPublicKey,
-			},
-			{
-				ID:                   uuid.MustParse(peerNoLANUuid),
-				DoIAllowInbound:      false,
-				DoIAllowLocalNetwork: false,
-				DoIAllowRouting:      true,
-				Address:              peerNoLANAddress,
-				PublicKey:            peerNoLANAddressPublicKey,
-			},
-			{
-				ID:                   uuid.MustParse(peerLANAndRoutingUuid),
-				DoIAllowInbound:      false,
-				DoIAllowLocalNetwork: true,
-				DoIAllowRouting:      true,
-				Address:              peerLANAndRoutingAddress,
-				PublicKey:            peerLANAndRoutingPublicKey,
-			},
-		}
-
-		networker := workingNetworker{}
-		networker.allowedIncoming = []allowedIncoming{}
-
-		server := newMockedServer(t, true)
-		server.netw = &networker
-		server.reg = &registryApi
-		return server, &networker
-	}
 
 	tests := []struct {
-		name               string
-		peerUuid           string
-		expectedResponse   *pb.AllowIncomingResponse
-		expectedAllowedIPs []allowedIncoming
+		name             string
+		peerUuid         string
+		expectedResponse *pb.AllowIncomingResponse
 	}{
 		{
-			name:               "allow valid peer",
-			peerUuid:           peerValidUuid,
-			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
-			expectedAllowedIPs: []allowedIncoming{{address: UniqueAddress{UID: peerValidPublicKey, Address: peerValidAddress}, lanAllowed: false}},
-		},
-		{
-			name:               "allow peer with no ip",
-			peerUuid:           peerNoIpUuid,
-			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
-			expectedAllowedIPs: []allowedIncoming{},
+			name:             "allow valid peer",
+			peerUuid:         peerValidUuid,
+			expectedResponse: &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
 		},
 		{
 			name:     "peer traffic routing already allowed",
@@ -604,7 +469,6 @@ func TestServer_AcceptIncoming(t *testing.T) {
 					AllowIncomingErrorCode: pb.AllowIncomingErrorCode_INCOMING_ALREADY_ALLOWED,
 				},
 			},
-			expectedAllowedIPs: []allowedIncoming{},
 		},
 		{
 			name:     "unknown peer",
@@ -614,43 +478,39 @@ func TestServer_AcceptIncoming(t *testing.T) {
 					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
-			expectedAllowedIPs: []allowedIncoming{},
-		},
-		{
-			name:               "allow peer no routing",
-			peerUuid:           peerNoRoutingUuid,
-			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
-			expectedAllowedIPs: []allowedIncoming{{address: UniqueAddress{UID: peerNoRoutingPublicKey, Address: peerNoRoutingAddress}, lanAllowed: false}},
-		},
-		{
-			name:               "allow peer no lan",
-			peerUuid:           peerNoLANUuid,
-			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
-			expectedAllowedIPs: []allowedIncoming{{address: UniqueAddress{UID: peerNoLANAddressPublicKey, Address: peerNoLANAddress}, lanAllowed: false}},
-		},
-		{
-			name:               "allow peer routing and lan",
-			peerUuid:           peerLANAndRoutingUuid,
-			expectedResponse:   &pb.AllowIncomingResponse{Response: &pb.AllowIncomingResponse_Empty{}},
-			expectedAllowedIPs: []allowedIncoming{{address: UniqueAddress{UID: peerLANAndRoutingPublicKey, Address: peerLANAndRoutingAddress}, lanAllowed: true}},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, networker := getServer()
+			server := newMockedServer(t, true)
+			registryApi := mock.RegistryMock{}
+			registryApi.Peers = []mesh.MachinePeer{
+				{
+					ID:              uuid.MustParse(peerValidUuid),
+					DoIAllowInbound: false,
+					Address:         peerValidAddress,
+					PublicKey:       peerValidPublicKey,
+				},
+				{
+					ID:              uuid.MustParse(peerIncomingAlreadyAllowedUuid),
+					DoIAllowInbound: true,
+					Address:         peerIncomingAlreadyAllowedAddress,
+					PublicKey:       peerIncomingAlreadyAllowedPublicKey,
+				},
+			}
+			server.mapper = &registryApi
+
 			resp, err := server.AllowIncoming(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedResponse, resp)
-			assert.Equal(t, test.expectedAllowedIPs, networker.allowedIncoming, "Invalid addresses were allowed.")
 		})
 	}
 }
 
 func TestServer_DenyIncoming(t *testing.T) {
 	peerValidUuid := exampleUUID3
-	peerNoIpUuid := exampleUUID2
 	peerIncomingAlreadyDeniedUuid := exampleUUID1
 
 	peerValidAddress := netip.MustParseAddr("220.16.61.136")
@@ -659,53 +519,15 @@ func TestServer_DenyIncoming(t *testing.T) {
 	peerValidPublicKey := examplePublicKey1
 	peerIncomingAlreadyDeniedPublicKey := examplePublicKey2
 
-	getServer := func() (*Server, *workingNetworker) {
-		registryApi := mock.RegistryMock{}
-		registryApi.Peers = []mesh.MachinePeer{
-			{
-				ID:              uuid.MustParse(peerValidUuid),
-				DoIAllowInbound: true,
-				Address:         peerValidAddress,
-				PublicKey:       peerValidPublicKey,
-			},
-			{
-				ID:              uuid.MustParse(peerNoIpUuid),
-				DoIAllowInbound: true,
-				Address:         netip.Addr{},
-			},
-			{
-				ID:              uuid.MustParse(peerIncomingAlreadyDeniedUuid),
-				DoIAllowInbound: false,
-				Address:         peerIncomingAlreadyDeniedAddress,
-				PublicKey:       peerIncomingAlreadyDeniedPublicKey,
-			},
-		}
-
-		networker := workingNetworker{}
-		networker.blockedIncoming = []UniqueAddress{}
-		server := newMockedServer(t, true)
-		server.netw = &networker
-		server.reg = &registryApi
-		return server, &networker
-	}
-
 	tests := []struct {
-		name               string
-		peerUuid           string
-		expectedResponse   *pb.DenyIncomingResponse
-		expectedBlockedIPs []UniqueAddress
+		name             string
+		peerUuid         string
+		expectedResponse *pb.DenyIncomingResponse
 	}{
 		{
-			name:               "deny valid peer",
-			peerUuid:           peerValidUuid,
-			expectedResponse:   &pb.DenyIncomingResponse{Response: &pb.DenyIncomingResponse_Empty{}},
-			expectedBlockedIPs: []UniqueAddress{{UID: peerValidPublicKey, Address: peerValidAddress}},
-		},
-		{
-			name:               "connect to peer with no ip",
-			peerUuid:           peerNoIpUuid,
-			expectedResponse:   &pb.DenyIncomingResponse{Response: &pb.DenyIncomingResponse_Empty{}},
-			expectedBlockedIPs: []UniqueAddress{},
+			name:             "deny valid peer",
+			peerUuid:         peerValidUuid,
+			expectedResponse: &pb.DenyIncomingResponse{Response: &pb.DenyIncomingResponse_Empty{}},
 		},
 		{
 			name:     "peer traffic routing already denied",
@@ -715,7 +537,6 @@ func TestServer_DenyIncoming(t *testing.T) {
 					DenyIncomingErrorCode: pb.DenyIncomingErrorCode_INCOMING_ALREADY_DENIED,
 				},
 			},
-			expectedBlockedIPs: []UniqueAddress{},
 		},
 		{
 			name:     "unknown peer",
@@ -725,25 +546,38 @@ func TestServer_DenyIncoming(t *testing.T) {
 					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
-			expectedBlockedIPs: []UniqueAddress{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, networker := getServer()
+			server := newMockedServer(t, true)
+			registryApi := mock.RegistryMock{}
+			registryApi.Peers = []mesh.MachinePeer{
+				{
+					ID:              uuid.MustParse(peerValidUuid),
+					DoIAllowInbound: true,
+					Address:         peerValidAddress,
+					PublicKey:       peerValidPublicKey,
+				},
+				{
+					ID:              uuid.MustParse(peerIncomingAlreadyDeniedUuid),
+					DoIAllowInbound: false,
+					Address:         peerIncomingAlreadyDeniedAddress,
+					PublicKey:       peerIncomingAlreadyDeniedPublicKey,
+				},
+			}
+			server.mapper = &registryApi
 			resp, err := server.DenyIncoming(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedResponse, resp)
-			assert.Equal(t, test.expectedBlockedIPs, networker.blockedIncoming)
 		})
 	}
 }
 
 func TestServer_AllowFileshare(t *testing.T) {
 	peerValidUuid := exampleUUID3
-	peerNoIpUuid := exampleUUID2
 	peerIncomingAlreadyDeniedUuid := exampleUUID1
 
 	peerValidAddress := netip.MustParseAddr("220.16.61.136")
@@ -752,54 +586,15 @@ func TestServer_AllowFileshare(t *testing.T) {
 	peerValidPublicKey := examplePublicKey2
 	peerIncomingAlreadyDeniedPublicKey := examplePublicKey1
 
-	getServer := func() (*Server, *workingNetworker) {
-		registryApi := mock.RegistryMock{}
-		registryApi.Peers = []mesh.MachinePeer{
-			{
-				ID:                uuid.MustParse(peerValidUuid),
-				DoIAllowFileshare: false,
-				Address:           peerValidAddress,
-				PublicKey:         peerValidPublicKey,
-			},
-			{
-				ID:                uuid.MustParse(peerNoIpUuid),
-				DoIAllowFileshare: false,
-				Address:           netip.Addr{},
-			},
-			{
-				ID:                uuid.MustParse(peerIncomingAlreadyDeniedUuid),
-				DoIAllowFileshare: true,
-				Address:           peerIncomingAlreadyDeniedAddress,
-				PublicKey:         peerIncomingAlreadyDeniedPublicKey,
-			},
-		}
-
-		networker := workingNetworker{}
-		networker.allowedFileshare = []UniqueAddress{}
-		server := newMockedServer(t, true)
-		server.netw = &networker
-		server.reg = &registryApi
-
-		return server, &networker
-	}
-
 	tests := []struct {
-		name               string
-		peerUuid           string
-		expectedResponse   *pb.AllowFileshareResponse
-		expectedAllowedIPs []UniqueAddress
+		name             string
+		peerUuid         string
+		expectedResponse *pb.AllowFileshareResponse
 	}{
 		{
-			name:               "allow valid peer",
-			peerUuid:           peerValidUuid,
-			expectedResponse:   &pb.AllowFileshareResponse{Response: &pb.AllowFileshareResponse_Empty{}},
-			expectedAllowedIPs: []UniqueAddress{{UID: peerValidPublicKey, Address: peerValidAddress}},
-		},
-		{
-			name:               "allow fileshare to peer with no ip",
-			peerUuid:           peerNoIpUuid,
-			expectedResponse:   &pb.AllowFileshareResponse{Response: &pb.AllowFileshareResponse_Empty{}},
-			expectedAllowedIPs: []UniqueAddress{},
+			name:             "allow valid peer",
+			peerUuid:         peerValidUuid,
+			expectedResponse: &pb.AllowFileshareResponse{Response: &pb.AllowFileshareResponse_Empty{}},
 		},
 		{
 			name:     "fileshare already denied",
@@ -809,7 +604,6 @@ func TestServer_AllowFileshare(t *testing.T) {
 					AllowSendErrorCode: pb.AllowFileshareErrorCode_SEND_ALREADY_ALLOWED,
 				},
 			},
-			expectedAllowedIPs: []UniqueAddress{},
 		},
 		{
 			name:     "unknown peer",
@@ -819,25 +613,38 @@ func TestServer_AllowFileshare(t *testing.T) {
 					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
-			expectedAllowedIPs: []UniqueAddress{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, networker := getServer()
+			server := newMockedServer(t, true)
+			registryApi := mock.RegistryMock{}
+			registryApi.Peers = []mesh.MachinePeer{
+				{
+					ID:                uuid.MustParse(peerValidUuid),
+					DoIAllowFileshare: false,
+					Address:           peerValidAddress,
+					PublicKey:         peerValidPublicKey,
+				},
+				{
+					ID:                uuid.MustParse(peerIncomingAlreadyDeniedUuid),
+					DoIAllowFileshare: true,
+					Address:           peerIncomingAlreadyDeniedAddress,
+					PublicKey:         peerIncomingAlreadyDeniedPublicKey,
+				},
+			}
+			server.mapper = &registryApi
 			resp, err := server.AllowFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedResponse, resp)
-			assert.Equal(t, test.expectedAllowedIPs, networker.allowedFileshare)
 		})
 	}
 }
 
 func TestServer_DenyFileshare(t *testing.T) {
 	peerValidUuid := exampleUUID3
-	peerNoIpUuid := exampleUUID2
 	peerIncomingAlreadyDeniedUuid := exampleUUID1
 
 	peerValidAddress := netip.MustParseAddr("220.16.61.136")
@@ -846,55 +653,15 @@ func TestServer_DenyFileshare(t *testing.T) {
 	peerValidPublicKey := examplePublicKey1
 	peerIncomingAlreadyDeniedPublicKey := examplePublicKey2
 
-	getServer := func() (*Server, *workingNetworker) {
-		registryApi := mock.RegistryMock{}
-		registryApi.Peers = []mesh.MachinePeer{
-			{
-				ID:                uuid.MustParse(peerValidUuid),
-				DoIAllowFileshare: true,
-				Address:           peerValidAddress,
-				PublicKey:         peerValidPublicKey,
-			},
-			{
-				ID:                uuid.MustParse(peerNoIpUuid),
-				DoIAllowFileshare: true,
-				Address:           netip.Addr{},
-			},
-			{
-				ID:                uuid.MustParse(peerIncomingAlreadyDeniedUuid),
-				DoIAllowFileshare: false,
-				Address:           peerIncomingAlreadyDeniedAddress,
-				PublicKey:         peerIncomingAlreadyDeniedPublicKey,
-			},
-		}
-
-		networker := workingNetworker{}
-		networker.blockedFileshare = []UniqueAddress{}
-
-		server := newMockedServer(t, true)
-		server.netw = &networker
-		server.reg = &registryApi
-
-		return server, &networker
-	}
-
 	tests := []struct {
-		name               string
-		peerUuid           string
-		expectedResponse   *pb.DenyFileshareResponse
-		expectedAllowedIPs []UniqueAddress
+		name             string
+		peerUuid         string
+		expectedResponse *pb.DenyFileshareResponse
 	}{
 		{
-			name:               "deny valid peer",
-			peerUuid:           peerValidUuid,
-			expectedResponse:   &pb.DenyFileshareResponse{Response: &pb.DenyFileshareResponse_Empty{}},
-			expectedAllowedIPs: []UniqueAddress{{UID: peerValidPublicKey, Address: peerValidAddress}},
-		},
-		{
-			name:               "allow fileshare to peer with no ip",
-			peerUuid:           peerNoIpUuid,
-			expectedResponse:   &pb.DenyFileshareResponse{Response: &pb.DenyFileshareResponse_Empty{}},
-			expectedAllowedIPs: []UniqueAddress{},
+			name:             "deny valid peer",
+			peerUuid:         peerValidUuid,
+			expectedResponse: &pb.DenyFileshareResponse{Response: &pb.DenyFileshareResponse_Empty{}},
 		},
 		{
 			name:     "fileshare already denied",
@@ -904,7 +671,6 @@ func TestServer_DenyFileshare(t *testing.T) {
 					DenySendErrorCode: pb.DenyFileshareErrorCode_SEND_ALREADY_DENIED,
 				},
 			},
-			expectedAllowedIPs: []UniqueAddress{},
 		},
 		{
 			name:     "unknown peer",
@@ -914,18 +680,33 @@ func TestServer_DenyFileshare(t *testing.T) {
 					UpdatePeerError: updatePeerError(pb.UpdatePeerErrorCode_PEER_NOT_FOUND),
 				},
 			},
-			expectedAllowedIPs: []UniqueAddress{},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, networker := getServer()
+			server := newMockedServer(t, true)
+			registryApi := mock.RegistryMock{}
+			registryApi.Peers = []mesh.MachinePeer{
+				{
+					ID:                uuid.MustParse(peerValidUuid),
+					DoIAllowFileshare: true,
+					Address:           peerValidAddress,
+					PublicKey:         peerValidPublicKey,
+				},
+				{
+					ID:                uuid.MustParse(peerIncomingAlreadyDeniedUuid),
+					DoIAllowFileshare: false,
+					Address:           peerIncomingAlreadyDeniedAddress,
+					PublicKey:         peerIncomingAlreadyDeniedPublicKey,
+				},
+			}
+			server.mapper = &registryApi
+
 			resp, err := server.DenyFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
 			assert.Equal(t, test.expectedResponse, resp)
-			assert.Equal(t, test.expectedAllowedIPs, networker.blockedFileshare)
 		})
 	}
 }
@@ -993,6 +774,7 @@ func TestServer_EnableAutomaticFileshare(t *testing.T) {
 			reg.Peers = peers
 			server := newMockedServer(t, true)
 			server.reg = reg
+			server.mapper = reg
 			resp, err := server.EnableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -1065,6 +847,7 @@ func TestServer_DisableAutomaticFileshare(t *testing.T) {
 			reg.Peers = peers
 			server := newMockedServer(t, true)
 			server.reg = reg
+			server.mapper = reg
 			resp, err := server.DisableAutomaticFileshare(context.Background(), &pb.UpdatePeerRequest{Identifier: test.peerUuid})
 
 			assert.Nil(t, err)
@@ -1086,7 +869,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 		peersList        mesh.MachinePeers
 		peerId           string
 		newNickname      string
-		listErr          error
+		mapErr           error
 		configureErr     error
 		reservedDNSNames mock.RegisteredDomainsList
 		expectedResponse *pb.ChangeNicknameResponse
@@ -1165,7 +948,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			},
 			peerId:      exampleUUID1,
 			newNickname: peerNickname1,
-			listErr:     fmt.Errorf("error"),
+			mapErr:      fmt.Errorf("error"),
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
 					UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
@@ -1181,7 +964,7 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			},
 			peerId:      exampleUUID1,
 			newNickname: peerNickname1,
-			listErr:     core.ErrUnauthorized,
+			mapErr:      core.ErrUnauthorized,
 
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_UpdatePeerError{
@@ -1268,11 +1051,12 @@ func TestServer_Peer_Nickname(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			registryApi := mock.RegistryMock{}
 			registryApi.Peers = test.peersList
-			registryApi.ListErr = test.listErr
+			registryApi.MapErr = test.mapErr
 			registryApi.ConfigureErr = test.configureErr
 
 			server := newMockedServer(t, true)
 			server.reg = &registryApi
+			server.mapper = &registryApi
 			server.nameservers = &mock.DNSGetter{RegisteredDomains: test.reservedDNSNames}
 
 			request := pb.ChangePeerNicknameRequest{
@@ -1306,7 +1090,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 	tests := []struct {
 		name             string
 		newNickname      string
-		listErr          error
+		mapErr           error
 		configureErr     error
 		isNotLoggedIn    bool
 		updateErr        error
@@ -1486,7 +1270,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			registryApi := mock.RegistryMock{}
-			registryApi.ListErr = test.listErr
+			registryApi.MapErr = test.mapErr
 			registryApi.ConfigureErr = test.configureErr
 			registryApi.UpdateErr = test.updateErr
 			registryApi.CurrentMachine = test.machine
@@ -1501,6 +1285,7 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			server := newMockedServer(t, true)
 			server.ac = ac
 			server.reg = &registryApi
+			server.mapper = &registryApi
 			server.cm = configManager
 			server.nameservers = &mock.DNSGetter{RegisteredDomains: test.reservedDNSNames}
 
@@ -1588,9 +1373,11 @@ func TestServer_fetchCfg(t *testing.T) {
 			cfg.Mesh = false
 			cfg.MeshDevice = nil
 			cfg.MeshPrivateKey = ""
+			cfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
 			expectedCfg.Mesh = false
 			expectedCfg.MeshDevice = nil
 			expectedCfg.MeshPrivateKey = ""
+			expectedCfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
 
 			assert.EqualValues(t, tt.err, err)
 			assert.Equal(t, expectedCfg, cfg)
@@ -1602,23 +1389,23 @@ func TestServer_fetchPeers(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	for _, tt := range []struct {
-		name    string
-		err     *pb.Error
-		cm      config.Manager
-		listErr error
+		name   string
+		err    *pb.Error
+		cm     config.Manager
+		mapErr error
 	}{
 		{
 			name: "success",
 		},
 		{
-			name:    "invalid token",
-			listErr: core.ErrUnauthorized,
-			err:     generalServiceError(pb.ServiceErrorCode_NOT_LOGGED_IN),
+			name:   "invalid token",
+			mapErr: core.ErrUnauthorized,
+			err:    generalServiceError(pb.ServiceErrorCode_NOT_LOGGED_IN),
 		},
 		{
-			name:    "config save error on logout",
-			err:     generalServiceError(pb.ServiceErrorCode_CONFIG_FAILURE),
-			listErr: core.ErrUnauthorized,
+			name:   "config save error on logout",
+			err:    generalServiceError(pb.ServiceErrorCode_CONFIG_FAILURE),
+			mapErr: core.ErrUnauthorized,
 			cm: func() config.Manager {
 				cm := mock.NewMockConfigManager()
 				cm.Cfg.Mesh = true
@@ -1627,9 +1414,9 @@ func TestServer_fetchPeers(t *testing.T) {
 			}(),
 		},
 		{
-			name:    "self removed",
-			err:     generalMeshError(pb.MeshnetErrorCode_NOT_ENABLED),
-			listErr: core.ErrConflict,
+			name:   "self removed",
+			err:    generalMeshError(pb.MeshnetErrorCode_NOT_ENABLED),
+			mapErr: core.ErrConflict,
 			cm: func() config.Manager {
 				cm := mock.NewMockConfigManager()
 				cm.Cfg.Mesh = false
@@ -1637,9 +1424,9 @@ func TestServer_fetchPeers(t *testing.T) {
 			}(),
 		},
 		{
-			name:    "list failure",
-			err:     generalServiceError(pb.ServiceErrorCode_API_FAILURE),
-			listErr: core.ErrConflict,
+			name:   "list failure",
+			err:    generalServiceError(pb.ServiceErrorCode_API_FAILURE),
+			mapErr: core.ErrConflict,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1656,10 +1443,10 @@ func TestServer_fetchPeers(t *testing.T) {
 			}
 
 			reg := &mock.RegistryMock{}
-			reg.ListErr = tt.listErr
+			reg.MapErr = tt.mapErr
 			reg.Peers = peers
 			s := newMockedServer(t, true)
-			s.reg = reg
+			s.mapper = reg
 			if tt.cm != nil {
 				s.cm = tt.cm
 			}
@@ -1670,8 +1457,10 @@ func TestServer_fetchPeers(t *testing.T) {
 			require.NoError(t, s.cm.Load(&cfg))
 			assert.Equal(t, cfg.TokensData[cfg.AutoConnectData.ID].Token, token)
 			assert.EqualValues(t, *cfg.MeshDevice, self)
-			expectedPeers, _ := s.reg.List(token, self.ID)
-			assert.EqualValues(t, expectedPeers, peers)
+			if tt.mapErr == nil {
+				mmap, _ := s.mapper.Map(token, self.ID, true)
+				assert.EqualValues(t, mmap.Peers, peers)
+			}
 			assert.EqualValues(t, tt.err, err)
 		})
 	}
@@ -1696,7 +1485,7 @@ func TestServer_fetchPeer(t *testing.T) {
 		name     string
 		peerUUID string
 		err      *pb.UpdatePeerError
-		listErr  error
+		mapErr   error
 	}{
 		{
 			name:     "success 1",
@@ -1714,26 +1503,23 @@ func TestServer_fetchPeer(t *testing.T) {
 		{
 			name:     "list failure",
 			peerUUID: exampleUUID1,
-			listErr:  core.ErrConflict,
+			mapErr:   core.ErrConflict,
 			err:      updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			reg := &mock.RegistryMock{}
-			reg.ListErr = tt.listErr
+			reg.MapErr = tt.mapErr
 			reg.Peers = peers
 			s := newMockedServer(t, true)
-			s.reg = reg
-			token, self, peers, peer, err := s.fetchPeer(tt.peerUUID)
+			s.mapper = reg
+			token, self, peer, err := s.fetchPeer(tt.peerUUID)
 
 			// Make sure it fetches the same config as cm would
 			var cfg config.Config
 			require.NoError(t, s.cm.Load(&cfg))
 			assert.Equal(t, cfg.TokensData[cfg.AutoConnectData.ID].Token, token)
 			assert.EqualValues(t, *cfg.MeshDevice, self)
-
-			expectedPeers, _ := s.reg.List(token, self.ID)
-			assert.EqualValues(t, expectedPeers, peers)
 			assert.EqualValues(t, tt.err, err)
 
 			if tt.err == nil {

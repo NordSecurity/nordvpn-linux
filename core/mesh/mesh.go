@@ -20,9 +20,6 @@ type Registry interface {
 	) error
 	// Unregister Peer from the mesh network.
 	Unregister(token string, self uuid.UUID) error
-	// List given peer's neighbours in the mesh network.
-	List(token string, self uuid.UUID) (MachinePeers, error)
-	Map(token string, self uuid.UUID) (*MachineMap, error)
 	// Unpair invited peer.
 	Unpair(token string, self uuid.UUID, peer uuid.UUID) error
 	// NotifyNewTransfer notifies a device about a new incoming transfer (outgoing from this
@@ -35,6 +32,17 @@ type Registry interface {
 		fileCount int,
 		transferID string,
 	) error
+}
+
+// CachingMapper is a Mapper which has to implement some kind of caching, therefore is exposing a
+// `forceUpdate` parameter.
+type CachingMapper interface {
+	Map(token string, self uuid.UUID, forceUpdate bool) (*MachineMap, error)
+}
+
+// Mapper defines a set of operations to retrieve a current state of meshnet of this device.
+type Mapper interface {
+	Map(token string, self uuid.UUID) (*MachineMap, error)
 }
 
 // Inviter defines a set of operations for managing personal mesh network.
