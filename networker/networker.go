@@ -1133,11 +1133,11 @@ func (netw *Combined) unsetNetwork() error {
 func (netw *Combined) SetKillSwitch(allowlist config.Allowlist) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.setKillSwitch(allowlist)
+	return netw.setKillSwitch(allowlist, false)
 }
 
-func (netw *Combined) setKillSwitch(allowlist config.Allowlist) error {
-	if !netw.isNetworkSet {
+func (netw *Combined) setKillSwitch(allowlist config.Allowlist, force bool) error {
+	if !netw.isNetworkSet || force {
 		if err := netw.setNetwork(allowlist); err != nil {
 			return err
 		}
