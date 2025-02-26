@@ -10,4 +10,3 @@ dnspython==2.6.1
 protobuf==5.28.3
 selenium==4.26.0
 grpcio==1.68.1
-scapy==2.6.0
