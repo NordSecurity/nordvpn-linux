@@ -48,6 +48,7 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn set mesh on")
 
     ssh_client.exec_command("nordvpn mesh peer refresh")
+    sh.nordvpn.mesh.peer.refresh()
     peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
     assert meshnet.is_peer_reachable(ssh_client, peer)
 
@@ -1009,6 +1010,8 @@ def test_permissions_send(peer_name, background):
     tester_address = tester_data.get_peer_name(peer_name)
 
     fileshare_denied_message = ssh_client.exec_command(f"nordvpn mesh peer fileshare deny {tester_address}")
+    sh.nordvpn.mesh.peer.refresh()
+
     tester_hostname = tester_data.get_peer_name(meshnet.PeerName.Hostname)
     assert meshnet.MSG_PEER_FILESHARE_DENY_SUCCESS % tester_hostname in fileshare_denied_message
 
@@ -1032,6 +1035,8 @@ def test_permissions_send(peer_name, background):
 
     # Revert to the state before test
     fileshare_allowed_message = ssh_client.exec_command(f"nordvpn mesh peer fileshare allow {tester_address}")
+    sh.nordvpn.mesh.peer.refresh()
+
     assert meshnet.MSG_PEER_FILESHARE_ALLOW_SUCCESS % tester_hostname in fileshare_allowed_message
 
     qapeer_permission = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_internal_peer().allow_sending_files
@@ -1051,6 +1056,7 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     sh.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+    ssh_client.exec_command("nordvpn mesh peer refresh")
 
     # transfer list should not change if transfer request was properly blocked
     expected_transfer_list = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
@@ -1072,6 +1078,7 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     assert expected_transfer_list == actual_transfer_list
 
     sh.nordvpn.mesh.peer.fileshare.allow(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+    ssh_client.exec_command("nordvpn mesh peer refresh")
 
 
 def test_accept_destination_directory_does_not_exist():

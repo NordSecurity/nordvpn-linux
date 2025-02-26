@@ -45,12 +45,10 @@ type Server struct {
 	invitationAPI     mesh.Inviter
 	netw              Networker
 	reg               mesh.Registry
-	ret               mesh.Retriever
+	mapper            mesh.CachingMapper
 	nameservers       dns.Getter
 	pub               events.Publisher[error]
-	subjectPeerUpdate events.Publisher[[]string]
 	daemonEvents      *daemonevents.Events
-	lastPeers         string
 	lastConnectedPeer string
 	norduser          service.NorduserFileshareClient
 	scheduler         gocron.Scheduler
@@ -66,30 +64,28 @@ func NewServer(
 	invitationAPI mesh.Inviter,
 	netw Networker,
 	reg mesh.Registry,
-	ret mesh.Retriever,
+	mapper mesh.CachingMapper,
 	nameservers dns.Getter,
 	pub events.Publisher[error],
-	subjectPeerUpdate events.Publisher[[]string],
 	deemonEvents *daemonevents.Events,
 	norduser service.NorduserFileshareClient,
 	connectContext *sharedctx.Context,
 ) *Server {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &Server{
-		ac:                ac,
-		cm:                cm,
-		mc:                mc,
-		invitationAPI:     invitationAPI,
-		netw:              netw,
-		reg:               reg,
-		ret:               ret,
-		nameservers:       nameservers,
-		pub:               pub,
-		subjectPeerUpdate: subjectPeerUpdate,
-		daemonEvents:      deemonEvents,
-		norduser:          norduser,
-		scheduler:         scheduler,
-		connectContext:    connectContext,
+		ac:             ac,
+		cm:             cm,
+		mc:             mc,
+		invitationAPI:  invitationAPI,
+		netw:           netw,
+		reg:            reg,
+		mapper:         mapper,
+		nameservers:    nameservers,
+		pub:            pub,
+		daemonEvents:   deemonEvents,
+		norduser:       norduser,
+		scheduler:      scheduler,
+		connectContext: connectContext,
 	}
 }
 
@@ -149,7 +145,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	resp, err := s.ret.Map(token, cfg.MeshDevice.ID)
+	resp, err := s.mapper.Map(token, cfg.MeshDevice.ID, true)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
@@ -303,7 +299,7 @@ func (s *Server) StartMeshnet() error {
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	resp, err := s.ret.Map(token, cfg.MeshDevice.ID)
+	resp, err := s.mapper.Map(token, cfg.MeshDevice.ID, true)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
@@ -419,7 +415,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	resp, err := s.ret.Map(token, cfg.MeshDevice.ID)
+	resp, err := s.mapper.Map(token, cfg.MeshDevice.ID, true)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
@@ -670,25 +666,6 @@ func (s *Server) AcceptInvite(
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
-			},
-		}, nil
-	}
-
-	resp, err := s.ret.Map(tokenData.Token, cfg.MeshDevice.ID)
-	if err != nil {
-		s.pub.Publish(err)
-		return &pb.RespondToInviteResponse{
-			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
-				ServiceErrorCode: pb.ServiceErrorCode_API_FAILURE,
-			},
-		}, nil
-	}
-
-	if err := s.netw.Refresh(*resp); err != nil {
-		s.pub.Publish(err)
-		return &pb.RespondToInviteResponse{
-			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
-				MeshnetErrorCode: pb.MeshnetErrorCode_LIB_FAILURE,
 			},
 		}, nil
 	}
@@ -1011,10 +988,6 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 			resp.External = append(resp.External, protoPeer)
 		}
 	}
-	if s.lastPeers != resp.String() {
-		s.lastPeers = resp.String()
-		s.subjectPeerUpdate.Publish(nil)
-	}
 
 	return &pb.GetPeersResponse{
 		Response: &pb.GetPeersResponse_Peers{
@@ -1027,7 +1000,7 @@ func (s *Server) RemovePeer(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.RemovePeerResponse, error) {
-	token, self, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.RemovePeerResponse{
 			Response: &pb.RemovePeerResponse_UpdatePeerError{
@@ -1064,7 +1037,7 @@ func (s *Server) ChangePeerNickname(
 	ctx context.Context,
 	req *pb.ChangePeerNicknameRequest,
 ) (*pb.ChangeNicknameResponse, error) {
-	token, self, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.ChangeNicknameResponse{
 			Response: &pb.ChangeNicknameResponse_UpdatePeerError{
@@ -1108,26 +1081,6 @@ func (s *Server) ChangePeerNickname(
 	if err := s.reg.Configure(token, self.ID, peer.ID, mesh.NewPeerUpdateRequest(peer)); err != nil {
 		s.pub.Publish(err)
 		return s.apiToNicknameError(err), nil
-	}
-
-	mapResp, err := s.ret.Map(token, self.ID)
-	if err != nil {
-		s.pub.Publish(err)
-		return &pb.ChangeNicknameResponse{
-			Response: &pb.ChangeNicknameResponse_UpdatePeerError{
-				UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_API_FAILURE),
-			},
-		}, nil
-	}
-
-	if err := s.netw.Refresh(*mapResp); err != nil {
-		s.pub.Publish(err)
-
-		return &pb.ChangeNicknameResponse{
-			Response: &pb.ChangeNicknameResponse_UpdatePeerError{
-				UpdatePeerError: updatePeerServiceError(pb.ServiceErrorCode_CONFIG_FAILURE),
-			},
-		}, nil
 	}
 
 	return &pb.ChangeNicknameResponse{
@@ -1236,17 +1189,6 @@ func (s *Server) ChangeMachineNickname(
 		return changeNicknameServiceError(pb.ServiceErrorCode_CONFIG_FAILURE), nil
 	}
 
-	resp, err := s.ret.Map(token, cfg.MeshDevice.ID)
-	if err != nil {
-		s.pub.Publish(err)
-		return changeNicknameServiceError(pb.ServiceErrorCode_API_FAILURE), nil
-	}
-
-	if err := s.netw.Refresh(*resp); err != nil {
-		s.pub.Publish(err)
-		return changeNicknameServiceError(pb.ServiceErrorCode_CONFIG_FAILURE), nil
-	}
-
 	return &pb.ChangeNicknameResponse{
 		Response: &pb.ChangeNicknameResponse_Empty{},
 	}, nil
@@ -1307,7 +1249,8 @@ func (s *Server) fetchPeers() (
 	// This should never be nil as it is always executed after registration info check
 	self = *cfg.MeshDevice
 	var err error
-	peers, err = s.ret.List(token, self.ID)
+	var mmap *mesh.MachineMap
+	mmap, err = s.mapper.Map(token, self.ID, false)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(
@@ -1332,6 +1275,9 @@ func (s *Server) fetchPeers() (
 		grpcErr = generalServiceError(pb.ServiceErrorCode_API_FAILURE)
 		return
 	}
+	if mmap != nil {
+		peers = mmap.Peers
+	}
 	return
 }
 
@@ -1341,11 +1287,11 @@ func (s *Server) fetchPeers() (
 func (s *Server) fetchPeer(identifier string) (
 	token string,
 	self mesh.Machine,
-	peers mesh.MachinePeers,
 	peer mesh.MachinePeer,
 	grpcErr *pb.UpdatePeerError,
 ) {
 	var err *pb.Error
+	var peers mesh.MachinePeers
 	token, self, peers, err = s.fetchPeers()
 	if err != nil {
 		grpcErr = updateGeneralError(err)
@@ -1366,7 +1312,7 @@ func (s *Server) AllowIncoming(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.AllowIncomingResponse, error) {
-	token, self, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.AllowIncomingResponse{
 			Response: &pb.AllowIncomingResponse_UpdatePeerError{
@@ -1393,19 +1339,6 @@ func (s *Server) AllowIncoming(
 		}, nil
 	}
 
-	if peer.Address.IsValid() {
-		if err := s.netw.AllowIncoming(UniqueAddress{
-			UID: peer.PublicKey, Address: peer.Address,
-		}, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
-			s.pub.Publish(err)
-			return &pb.AllowIncomingResponse{
-				Response: &pb.AllowIncomingResponse_UpdatePeerError{
-					UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_LIB_FAILURE),
-				},
-			}, nil
-		}
-	}
-
 	return &pb.AllowIncomingResponse{
 		Response: &pb.AllowIncomingResponse_Empty{},
 	}, nil
@@ -1416,7 +1349,7 @@ func (s *Server) DenyIncoming(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.DenyIncomingResponse, error) {
-	token, self, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.DenyIncomingResponse{
 			Response: &pb.DenyIncomingResponse_UpdatePeerError{
@@ -1442,19 +1375,6 @@ func (s *Server) DenyIncoming(
 		}, nil
 	}
 
-	if peer.Address.IsValid() {
-		if err := s.netw.BlockIncoming(UniqueAddress{
-			UID: peer.PublicKey, Address: peer.Address,
-		}); err != nil {
-			s.pub.Publish(err)
-			return &pb.DenyIncomingResponse{
-				Response: &pb.DenyIncomingResponse_UpdatePeerError{
-					UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_LIB_FAILURE),
-				},
-			}, nil
-		}
-	}
-
 	return &pb.DenyIncomingResponse{
 		Response: &pb.DenyIncomingResponse_Empty{},
 	}, nil
@@ -1465,7 +1385,7 @@ func (s *Server) AllowRouting(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.AllowRoutingResponse, error) {
-	token, self, peers, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.AllowRoutingResponse{
 			Response: &pb.AllowRoutingResponse_UpdatePeerError{
@@ -1493,15 +1413,6 @@ func (s *Server) AllowRouting(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peer, peers); err != nil {
-		s.pub.Publish(err)
-		return &pb.AllowRoutingResponse{
-			Response: &pb.AllowRoutingResponse_UpdatePeerError{
-				UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_LIB_FAILURE),
-			},
-		}, nil
-	}
-
 	return &pb.AllowRoutingResponse{
 		Response: &pb.AllowRoutingResponse_Empty{},
 	}, nil
@@ -1512,7 +1423,7 @@ func (s *Server) DenyRouting(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.DenyRoutingResponse, error) {
-	token, self, peers, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.DenyRoutingResponse{
 			Response: &pb.DenyRoutingResponse_UpdatePeerError{
@@ -1540,15 +1451,6 @@ func (s *Server) DenyRouting(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peer, peers); err != nil {
-		s.pub.Publish(err)
-		return &pb.DenyRoutingResponse{
-			Response: &pb.DenyRoutingResponse_UpdatePeerError{
-				UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_LIB_FAILURE),
-			},
-		}, nil
-	}
-
 	return &pb.DenyRoutingResponse{
 		Response: &pb.DenyRoutingResponse_Empty{},
 	}, nil
@@ -1559,7 +1461,7 @@ func (s *Server) AllowLocalNetwork(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.AllowLocalNetworkResponse, error) {
-	token, self, peers, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.AllowLocalNetworkResponse{
 			Response: &pb.AllowLocalNetworkResponse_UpdatePeerError{
@@ -1587,15 +1489,6 @@ func (s *Server) AllowLocalNetwork(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peer, peers); err != nil {
-		s.pub.Publish(err)
-		return &pb.AllowLocalNetworkResponse{
-			Response: &pb.AllowLocalNetworkResponse_UpdatePeerError{
-				UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_LIB_FAILURE),
-			},
-		}, nil
-	}
-
 	return &pb.AllowLocalNetworkResponse{
 		Response: &pb.AllowLocalNetworkResponse_Empty{},
 	}, nil
@@ -1606,7 +1499,7 @@ func (s *Server) DenyLocalNetwork(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.DenyLocalNetworkResponse, error) {
-	token, self, peers, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.DenyLocalNetworkResponse{
 			Response: &pb.DenyLocalNetworkResponse_UpdatePeerError{
@@ -1634,15 +1527,6 @@ func (s *Server) DenyLocalNetwork(
 		}, nil
 	}
 
-	if err := s.netw.ResetRouting(peer, peers); err != nil {
-		s.pub.Publish(err)
-		return &pb.DenyLocalNetworkResponse{
-			Response: &pb.DenyLocalNetworkResponse_UpdatePeerError{
-				UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_LIB_FAILURE),
-			},
-		}, nil
-	}
-
 	return &pb.DenyLocalNetworkResponse{
 		Response: &pb.DenyLocalNetworkResponse_Empty{},
 	}, nil
@@ -1653,7 +1537,7 @@ func (s *Server) AllowFileshare(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.AllowFileshareResponse, error) {
-	token, self, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.AllowFileshareResponse{
 			Response: &pb.AllowFileshareResponse_UpdatePeerError{
@@ -1685,17 +1569,6 @@ func (s *Server) AllowFileshare(
 		}, nil
 	}
 
-	if peer.Address.IsValid() {
-		if err := s.netw.AllowFileshare(
-			UniqueAddress{UID: peer.PublicKey, Address: peer.Address}); err != nil {
-			return &pb.AllowFileshareResponse{
-				Response: &pb.AllowFileshareResponse_UpdatePeerError{
-					UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_LIB_FAILURE),
-				},
-			}, nil
-		}
-	}
-
 	return &pb.AllowFileshareResponse{
 		Response: &pb.AllowFileshareResponse_Empty{},
 	}, nil
@@ -1706,7 +1579,7 @@ func (s *Server) DenyFileshare(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.DenyFileshareResponse, error) {
-	token, self, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.DenyFileshareResponse{
 			Response: &pb.DenyFileshareResponse_UpdatePeerError{
@@ -1733,17 +1606,6 @@ func (s *Server) DenyFileshare(
 		}, nil
 	}
 
-	if peer.Address.IsValid() {
-		if err := s.netw.BlockFileshare(
-			UniqueAddress{UID: peer.PublicKey, Address: peer.Address}); err != nil {
-			return &pb.DenyFileshareResponse{
-				Response: &pb.DenyFileshareResponse_UpdatePeerError{
-					UpdatePeerError: updatePeerMeshError(pb.MeshnetErrorCode_LIB_FAILURE),
-				},
-			}, nil
-		}
-	}
-
 	return &pb.DenyFileshareResponse{
 		Response: &pb.DenyFileshareResponse_Empty{},
 	}, nil
@@ -1754,7 +1616,7 @@ func (s *Server) EnableAutomaticFileshare(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.EnableAutomaticFileshareResponse, error) {
-	token, self, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.EnableAutomaticFileshareResponse{
 			Response: &pb.EnableAutomaticFileshareResponse_UpdatePeerError{
@@ -1792,7 +1654,7 @@ func (s *Server) DisableAutomaticFileshare(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.DisableAutomaticFileshareResponse, error) {
-	token, self, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	token, self, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.DisableAutomaticFileshareResponse{
 			Response: &pb.DisableAutomaticFileshareResponse_UpdatePeerError{
@@ -1865,7 +1727,7 @@ func (s *Server) NotifyNewTransfer(
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	peers, err := s.ret.List(token, cfg.MeshDevice.ID)
+	mmap, err := s.mapper.Map(token, cfg.MeshDevice.ID, false)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, s.daemonEvents.User.Logout)); err != nil {
@@ -1901,6 +1763,10 @@ func (s *Server) NotifyNewTransfer(
 		}, nil
 	}
 
+	var peers mesh.MachinePeers
+	if mmap != nil {
+		peers = mmap.Peers
+	}
 	index := slices.IndexFunc(peers, func(p mesh.MachinePeer) bool {
 		return p.ID.String() == req.GetIdentifier()
 	})
@@ -1957,8 +1823,7 @@ func (s *Server) connect(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,
 ) *pb.ConnectResponse {
-	//nolint: dogsled // first 3 return values are unused
-	_, _, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
+	_, _, peer, grpcErr := s.fetchPeer(req.GetIdentifier())
 	if grpcErr != nil {
 		return &pb.ConnectResponse{
 			Response: &pb.ConnectResponse_UpdatePeerError{
