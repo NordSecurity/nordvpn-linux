@@ -223,7 +223,6 @@ func TestStartAutoMeshnet(t *testing.T) {
 				registry,
 				&mock.DNSGetter{},
 				&subs.Subject[error]{},
-				nil,
 				&daemonevents.Events{},
 				&testnorduser.MockNorduserClient{},
 				sharedctx.New(),

@@ -12,14 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshn "github.com/NordSecurity/nordvpn-linux/meshnet"
-
-	"github.com/google/uuid"
 )
-
-// Mapper returns meshnet map.
-type Mapper interface {
-	Map(token string, self uuid.UUID) (*mesh.MachineMap, error)
-}
 
 // Refresher updates active meshnet peer list.
 type Refresher interface {
@@ -28,7 +21,7 @@ type Refresher interface {
 
 // Meshnet refreshes peers.
 type Meshnet struct {
-	api     Mapper
+	api     mesh.CachingMapper
 	checker meshn.Checker
 	man     config.Manager
 	netw    Refresher
@@ -36,7 +29,7 @@ type Meshnet struct {
 
 // NewMeshnet is a default constructor for Meshnet.
 func NewMeshnet(
-	api Mapper,
+	api mesh.CachingMapper,
 	checker meshn.Checker,
 	man config.Manager,
 	netw Refresher,
@@ -60,7 +53,7 @@ func (m *Meshnet) NotifyPeerUpdate(peerIds []string) error {
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	resp, err := m.api.Map(token, cfg.MeshDevice.ID)
+	resp, err := m.api.Map(token, cfg.MeshDevice.ID, true)
 	if err != nil {
 		return err
 	}
