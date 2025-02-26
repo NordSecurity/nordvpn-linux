@@ -80,7 +80,7 @@ type DaemonClient interface {
 	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (grpc.ServerStreamingClient[String], error)
+	LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LoginOAuth2Response], error)
 	LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*Empty, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Payload, error)
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
@@ -243,13 +243,13 @@ func (c *daemonClient) LoginWithToken(ctx context.Context, in *LoginWithTokenReq
 	return out, nil
 }
 
-func (c *daemonClient) LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (grpc.ServerStreamingClient[String], error) {
+func (c *daemonClient) LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (grpc.ServerStreamingClient[LoginOAuth2Response], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[2], Daemon_LoginOAuth2_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[LoginOAuth2Request, String]{ClientStream: stream}
+	x := &grpc.GenericClientStream[LoginOAuth2Request, LoginOAuth2Response]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -260,7 +260,7 @@ func (c *daemonClient) LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, 
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Daemon_LoginOAuth2Client = grpc.ServerStreamingClient[String]
+type Daemon_LoginOAuth2Client = grpc.ServerStreamingClient[LoginOAuth2Response]
 
 func (c *daemonClient) LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -625,7 +625,7 @@ type DaemonServer interface {
 	Groups(context.Context, *Empty) (*ServerGroupsList, error)
 	IsLoggedIn(context.Context, *Empty) (*Bool, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
-	LoginOAuth2(*LoginOAuth2Request, grpc.ServerStreamingServer[String]) error
+	LoginOAuth2(*LoginOAuth2Request, grpc.ServerStreamingServer[LoginOAuth2Response]) error
 	LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*Empty, error)
 	Logout(context.Context, *LogoutRequest) (*Payload, error)
 	Ping(context.Context, *Empty) (*PingResponse, error)
@@ -700,7 +700,7 @@ func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*Bool, err
 func (UnimplementedDaemonServer) LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginWithToken not implemented")
 }
-func (UnimplementedDaemonServer) LoginOAuth2(*LoginOAuth2Request, grpc.ServerStreamingServer[String]) error {
+func (UnimplementedDaemonServer) LoginOAuth2(*LoginOAuth2Request, grpc.ServerStreamingServer[LoginOAuth2Response]) error {
 	return status.Errorf(codes.Unimplemented, "method LoginOAuth2 not implemented")
 }
 func (UnimplementedDaemonServer) LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*Empty, error) {
@@ -997,11 +997,11 @@ func _Daemon_LoginOAuth2_Handler(srv interface{}, stream grpc.ServerStream) erro
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(DaemonServer).LoginOAuth2(m, &grpc.GenericServerStream[LoginOAuth2Request, String]{ServerStream: stream})
+	return srv.(DaemonServer).LoginOAuth2(m, &grpc.GenericServerStream[LoginOAuth2Request, LoginOAuth2Response]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Daemon_LoginOAuth2Server = grpc.ServerStreamingServer[String]
+type Daemon_LoginOAuth2Server = grpc.ServerStreamingServer[LoginOAuth2Response]
 
 func _Daemon_LoginOAuth2Callback_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(LoginOAuth2CallbackRequest)

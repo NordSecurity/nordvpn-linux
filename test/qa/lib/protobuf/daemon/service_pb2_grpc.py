@@ -103,7 +103,7 @@ class DaemonStub(object):
         self.LoginOAuth2 = channel.unary_stream(
                 '/pb.Daemon/LoginOAuth2',
                 request_serializer=login__pb2.LoginOAuth2Request.SerializeToString,
-                response_deserializer=login__pb2.String.FromString,
+                response_deserializer=login__pb2.LoginOAuth2Response.FromString,
                 _registered_method=True)
         self.LoginOAuth2Callback = channel.unary_unary(
                 '/pb.Daemon/LoginOAuth2Callback',
@@ -606,7 +606,7 @@ def add_DaemonServicer_to_server(servicer, server):
             'LoginOAuth2': grpc.unary_stream_rpc_method_handler(
                     servicer.LoginOAuth2,
                     request_deserializer=login__pb2.LoginOAuth2Request.FromString,
-                    response_serializer=login__pb2.String.SerializeToString,
+                    response_serializer=login__pb2.LoginOAuth2Response.SerializeToString,
             ),
             'LoginOAuth2Callback': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginOAuth2Callback,
@@ -1075,7 +1075,7 @@ class Daemon(object):
             target,
             '/pb.Daemon/LoginOAuth2',
             login__pb2.LoginOAuth2Request.SerializeToString,
-            login__pb2.String.FromString,
+            login__pb2.LoginOAuth2Response.FromString,
             options,
             channel_credentials,
             insecure,

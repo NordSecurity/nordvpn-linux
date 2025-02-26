@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -166,10 +167,22 @@ func (r *RPC) LoginOAuth2(in *pb.LoginOAuth2Request, srv pb.Daemon_LoginOAuth2Se
 
 	url, err := r.authentication.Login(in.GetType() == pb.LoginType_LoginType_LOGIN)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "network is unreachable") {
+			return srv.Send(&pb.LoginOAuth2Response{
+				Response: &pb.LoginOAuth2Response_Error{
+					Error: pb.LoginOAuth2Error_NO_NET,
+				}})
+		}
+		return srv.Send(&pb.LoginOAuth2Response{
+			Response: &pb.LoginOAuth2Response_Error{
+				Error: pb.LoginOAuth2Error_UNKNOWN_OAUTH2_ERROR,
+			}})
 	}
 
-	return srv.Send(&pb.String{Data: url})
+	return srv.Send(&pb.LoginOAuth2Response{
+		Response: &pb.LoginOAuth2Response_Url{
+			Url: &pb.String{Data: url},
+		}})
 }
 
 // LoginOAuth2Callback is called by the browser via cli during OAuth2 login.
