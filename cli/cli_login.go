@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"errors"
-	"io"
 	"net/url"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
@@ -42,26 +41,32 @@ func (c *cmd) Login(ctx *cli.Context) error {
 		return nil
 	}
 
-	cl, err := c.client.LoginOAuth2(
+	return c.login(pb.LoginType_LoginType_LOGIN)
+}
+
+func (c *cmd) login(requestType pb.LoginType) error {
+	resp, err := c.client.LoginOAuth2(
 		context.Background(),
 		&pb.LoginOAuth2Request{
-			Type: pb.LoginType_LoginType_LOGIN,
+			Type: requestType,
 		},
 	)
 	if err != nil {
 		return formatError(err)
 	}
 
-	for {
-		resp, err := cl.Recv()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return formatError(err)
-		}
-		if url := resp.GetData(); url != "" {
+	switch resp.Status {
+	case pb.LoginOAuth2Status_UNKNOWN_OAUTH2_ERROR:
+		return formatError(internal.ErrUnhandled)
+	case pb.LoginOAuth2Status_NO_NET:
+		return formatError(internal.ErrNoNetWhenLoggingIn)
+	case pb.LoginOAuth2Status_ALREADY_LOGGED_IN:
+		return formatError(internal.ErrAlreadyLoggedIn)
+	case pb.LoginOAuth2Status_SUCCESS:
+		if url := resp.Url; url != "" {
 			color.Green("Continue in the browser: %s", url)
+		} else {
+			return formatError(internal.ErrUnhandled)
 		}
 	}
 
