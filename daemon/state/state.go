@@ -117,6 +117,16 @@ func (s *StatePublisher) NotifyServersListUpdate(any) error {
 	return nil
 }
 
+func (s *StatePublisher) NotifyActualIPUpdate() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Println(internal.DebugPrefix, "notifying actual ip update")
+	s.notify(pb.UpdateEvent_ACTUAL_IP_UPDATE)
+
+	return nil
+}
+
 func (s *StatePublisher) NotifySubscriptionChanged(e *pb.AccountModification) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
