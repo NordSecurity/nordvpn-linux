@@ -27,3 +27,15 @@ message LoginResponse {
 message String {
     string data = 1;
 }
+
+enum LoginOAuth2Error {
+  UNKNOWN_OAUTH2_ERROR = 0;
+  NO_NET = 1;
+}
+
+message LoginOAuth2Response {
+  oneof response {
+    String url = 1;
+    LoginOAuth2Error error = 2;
+  }
+}

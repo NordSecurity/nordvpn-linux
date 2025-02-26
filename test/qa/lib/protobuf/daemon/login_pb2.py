@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0blogin.proto\x12\x02pb\"1\n\x12LoginOAuth2Request\x12\x1b\n\x04type\x18\x01 \x01(\x0e\x32\r.pb.LoginType\"H\n\x1aLoginOAuth2CallbackRequest\x12\r\n\x05token\x18\x01 \x01(\t\x12\x1b\n\x04type\x18\x02 \x01(\x0e\x32\r.pb.LoginType\"*\n\rLoginResponse\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0b\n\x03url\x18\x05 \x01(\t\"\x16\n\x06String\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t*M\n\tLoginType\x12\x15\n\x11LoginType_UNKNOWN\x10\x00\x12\x13\n\x0fLoginType_LOGIN\x10\x01\x12\x14\n\x10LoginType_SIGNUP\x10\x02\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0blogin.proto\x12\x02pb\"1\n\x12LoginOAuth2Request\x12\x1b\n\x04type\x18\x01 \x01(\x0e\x32\r.pb.LoginType\"H\n\x1aLoginOAuth2CallbackRequest\x12\r\n\x05token\x18\x01 \x01(\t\x12\x1b\n\x04type\x18\x02 \x01(\x0e\x32\r.pb.LoginType\"*\n\rLoginResponse\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0b\n\x03url\x18\x05 \x01(\t\"\x16\n\x06String\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"c\n\x13LoginOAuth2Response\x12\x19\n\x03url\x18\x01 \x01(\x0b\x32\n.pb.StringH\x00\x12%\n\x05\x65rror\x18\x02 \x01(\x0e\x32\x14.pb.LoginOAuth2ErrorH\x00\x42\n\n\x08response*M\n\tLoginType\x12\x15\n\x11LoginType_UNKNOWN\x10\x00\x12\x13\n\x0fLoginType_LOGIN\x10\x01\x12\x14\n\x10LoginType_SIGNUP\x10\x02*8\n\x10LoginOAuth2Error\x12\x18\n\x14UNKNOWN_OAUTH2_ERROR\x10\x00\x12\n\n\x06NO_NET\x10\x01\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,8 +32,10 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'login_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
-  _globals['_LOGINTYPE']._serialized_start=212
-  _globals['_LOGINTYPE']._serialized_end=289
+  _globals['_LOGINTYPE']._serialized_start=313
+  _globals['_LOGINTYPE']._serialized_end=390
+  _globals['_LOGINOAUTH2ERROR']._serialized_start=392
+  _globals['_LOGINOAUTH2ERROR']._serialized_end=448
   _globals['_LOGINOAUTH2REQUEST']._serialized_start=19
   _globals['_LOGINOAUTH2REQUEST']._serialized_end=68
   _globals['_LOGINOAUTH2CALLBACKREQUEST']._serialized_start=70
@@ -42,4 +44,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LOGINRESPONSE']._serialized_end=186
   _globals['_STRING']._serialized_start=188
   _globals['_STRING']._serialized_end=210
+  _globals['_LOGINOAUTH2RESPONSE']._serialized_start=212
+  _globals['_LOGINOAUTH2RESPONSE']._serialized_end=311
 # @@protoc_insertion_point(module_scope)
