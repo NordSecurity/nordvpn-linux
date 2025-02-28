@@ -6,11 +6,18 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
+class DaemonApiVersion(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    UNKNOWN_VERSION: _ClassVar[DaemonApiVersion]
+    CURRENT_VERSION: _ClassVar[DaemonApiVersion]
+
 class TriState(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     UNKNOWN: _ClassVar[TriState]
     DISABLED: _ClassVar[TriState]
     ENABLED: _ClassVar[TriState]
+UNKNOWN_VERSION: DaemonApiVersion
+CURRENT_VERSION: DaemonApiVersion
 UNKNOWN: TriState
 DISABLED: TriState
 ENABLED: TriState
