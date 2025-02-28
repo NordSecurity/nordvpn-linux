@@ -8,6 +8,6 @@ import (
 
 func (r *RPC) GetDaemonApiVersion(_ context.Context, _ *pb.GetDaemonApiVersionRequest) (*pb.GetDaemonApiVersionResponse, error) {
 	return &pb.GetDaemonApiVersionResponse{
-		ApiVersion: pb.DaemonApiVersion_CURRENT_VERSION,
+		ApiVersion: DaemonApiVersion,
 	}, nil
 }

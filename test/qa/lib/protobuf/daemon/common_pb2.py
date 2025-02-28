@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63ommon.proto\x12\x02pb\"\x1c\n\x1aGetDaemonApiVersionRequest\"G\n\x1bGetDaemonApiVersionResponse\x12(\n\napiVersion\x18\x01 \x01(\x0e\x32\x14.pb.DaemonApiVersion\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"%\n\x07Payload\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x02 \x03(\t\"6\n\tAllowlist\x12\x18\n\x05ports\x18\x01 \x01(\x0b\x32\t.pb.Ports\x12\x0f\n\x07subnets\x18\x02 \x03(\t\"!\n\x05Ports\x12\x0b\n\x03udp\x18\x01 \x03(\x03\x12\x0b\n\x03tcp\x18\x02 \x03(\x03\"4\n\x0bServerGroup\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0fvirtualLocation\x18\x02 \x01(\x08\"B\n\x10ServerGroupsList\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12 \n\x07servers\x18\x02 \x03(\x0b\x32\x0f.pb.ServerGroup*<\n\x10\x44\x61\x65monApiVersion\x12\x13\n\x0fUNKNOWN_VERSION\x10\x00\x12\x13\n\x0f\x43URRENT_VERSION\x10\x01*2\n\x08TriState\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0c\n\x08\x44ISABLED\x10\x01\x12\x0b\n\x07\x45NABLED\x10\x02\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63ommon.proto\x12\x02pb\"\x1c\n\x1aGetDaemonApiVersionRequest\"1\n\x1bGetDaemonApiVersionResponse\x12\x12\n\napiVersion\x18\x01 \x01(\r\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"%\n\x07Payload\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x02 \x03(\t\"6\n\tAllowlist\x12\x18\n\x05ports\x18\x01 \x01(\x0b\x32\t.pb.Ports\x12\x0f\n\x07subnets\x18\x02 \x03(\t\"!\n\x05Ports\x12\x0b\n\x03udp\x18\x01 \x03(\x03\x12\x0b\n\x03tcp\x18\x02 \x03(\x03\"4\n\x0bServerGroup\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0fvirtualLocation\x18\x02 \x01(\x08\"B\n\x10ServerGroupsList\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12 \n\x07servers\x18\x02 \x03(\x0b\x32\x0f.pb.ServerGroup*2\n\x08TriState\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0c\n\x08\x44ISABLED\x10\x01\x12\x0b\n\x07\x45NABLED\x10\x02\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,26 +32,24 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'common_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
-  _globals['_DAEMONAPIVERSION']._serialized_start=407
-  _globals['_DAEMONAPIVERSION']._serialized_end=467
-  _globals['_TRISTATE']._serialized_start=469
-  _globals['_TRISTATE']._serialized_end=519
+  _globals['_TRISTATE']._serialized_start=385
+  _globals['_TRISTATE']._serialized_end=435
   _globals['_GETDAEMONAPIVERSIONREQUEST']._serialized_start=20
   _globals['_GETDAEMONAPIVERSIONREQUEST']._serialized_end=48
   _globals['_GETDAEMONAPIVERSIONRESPONSE']._serialized_start=50
-  _globals['_GETDAEMONAPIVERSIONRESPONSE']._serialized_end=121
-  _globals['_EMPTY']._serialized_start=123
-  _globals['_EMPTY']._serialized_end=130
-  _globals['_BOOL']._serialized_start=132
-  _globals['_BOOL']._serialized_end=153
-  _globals['_PAYLOAD']._serialized_start=155
-  _globals['_PAYLOAD']._serialized_end=192
-  _globals['_ALLOWLIST']._serialized_start=194
-  _globals['_ALLOWLIST']._serialized_end=248
-  _globals['_PORTS']._serialized_start=250
-  _globals['_PORTS']._serialized_end=283
-  _globals['_SERVERGROUP']._serialized_start=285
-  _globals['_SERVERGROUP']._serialized_end=337
-  _globals['_SERVERGROUPSLIST']._serialized_start=339
-  _globals['_SERVERGROUPSLIST']._serialized_end=405
+  _globals['_GETDAEMONAPIVERSIONRESPONSE']._serialized_end=99
+  _globals['_EMPTY']._serialized_start=101
+  _globals['_EMPTY']._serialized_end=108
+  _globals['_BOOL']._serialized_start=110
+  _globals['_BOOL']._serialized_end=131
+  _globals['_PAYLOAD']._serialized_start=133
+  _globals['_PAYLOAD']._serialized_end=170
+  _globals['_ALLOWLIST']._serialized_start=172
+  _globals['_ALLOWLIST']._serialized_end=226
+  _globals['_PORTS']._serialized_start=228
+  _globals['_PORTS']._serialized_end=261
+  _globals['_SERVERGROUP']._serialized_start=263
+  _globals['_SERVERGROUP']._serialized_end=315
+  _globals['_SERVERGROUPSLIST']._serialized_start=317
+  _globals['_SERVERGROUPSLIST']._serialized_end=383
 # @@protoc_insertion_point(module_scope)

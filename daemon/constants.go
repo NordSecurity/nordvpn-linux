@@ -21,6 +21,9 @@ const (
 
 	// RandomComponentMax defines maximum value of random component
 	RandomComponentMax = 0.001
+
+	// Daemon gRPC API current version
+	DaemonApiVersion uint32 = 1
 )
 
 var (
