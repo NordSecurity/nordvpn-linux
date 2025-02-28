@@ -71,27 +71,23 @@ def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
     my_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().ip
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
 
-    # Initiate ssh connection via mesh because we are going to lose the main connection
-    ssh_client_mesh = ssh.Ssh(peer_ip, "root", "root")
-    ssh_client_mesh.connect()
-
     try:
-        ssh_client_mesh.exec_command(f"nordvpn mesh peer incoming allow {my_ip}")
+        ssh_client.exec_command(f"nordvpn mesh peer incoming allow {my_ip}")
     except RuntimeError as err:
         if "already allowed" not in err.args[0]:
             raise
     try:
-        ssh_client_mesh.exec_command(f"nordvpn mesh peer routing allow {my_ip}")
+        ssh_client.exec_command(f"nordvpn mesh peer routing allow {my_ip}")
     except RuntimeError as err:
         if "already allowed" not in err.args[0]:
             raise
     try:
-        ssh_client_mesh.exec_command(f"nordvpn mesh peer local {'allow' if local else 'deny'} {my_ip}")
+        ssh_client.exec_command(f"nordvpn mesh peer local {'allow' if local else 'deny'} {my_ip}")
     except RuntimeError as err:
         if "already allowed" not in err.args[0]:
             raise
     try:
-        ssh_client_mesh.exec_command(f"nordvpn set lan-discovery {'on' if lan_discovery else 'off'}")
+        ssh_client.exec_command(f"nordvpn set lan-discovery {'on' if lan_discovery else 'off'}")
     except RuntimeError as err:
         if "already set" not in err.args[0]:
             raise
@@ -107,24 +103,24 @@ def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
     peer_external_ip = network.get_external_device_ip()
 
     # Enable killswitch on exitnode
-    ssh_client_mesh.exec_command("nordvpn set killswitch enabled")
+    ssh_client.exec_command("nordvpn set killswitch enabled")
     assert daemon.is_connected()
     assert network.is_not_available()
 
     # Exitnode connects to VPN
-    ssh_client_mesh.exec_command("nordvpn connect")
+    ssh_client.exec_command("nordvpn connect")
     assert daemon.is_connected()
     assert network.is_available()
     peer_vpn_ip = network.get_external_device_ip()
     assert peer_vpn_ip not in [my_ip, my_external_ip, peer_ip, peer_external_ip]
 
     # Exitnode disconnects from VPN
-    ssh_client_mesh.exec_command("nordvpn disconnect")
+    ssh_client.exec_command("nordvpn disconnect")
     assert daemon.is_connected()
     assert network.is_not_available()
 
     # Disable killswitch on exitnode
-    ssh_client_mesh.exec_command("nordvpn set killswitch disabled")
+    ssh_client.exec_command("nordvpn set killswitch disabled")
     assert daemon.is_connected()
     assert network.is_available()
 
@@ -193,10 +189,7 @@ def test_route_to_peer_that_is_connected_to_vpn():
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname
 
-    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
-    ssh_client_mesh.connect()
-
-    ssh_client_mesh.exec_command("nordvpn connect")
+    ssh_client.exec_command("nordvpn connect")
 
     my_ip = network.get_external_device_ip()
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
@@ -204,21 +197,19 @@ def test_route_to_peer_that_is_connected_to_vpn():
     assert my_ip != network.get_external_device_ip()
 
     lib.is_disconnect_successful(sh_no_tty.nordvpn.disconnect())
-    ssh_client_mesh.exec_command("nordvpn disconnect")
+    ssh_client.exec_command("nordvpn disconnect")
 
     time.sleep(1) # Other way around
 
     sh_no_tty.nordvpn.connect()
 
-    peer_ip = ssh_client_mesh.network.get_external_device_ip()
-    output = ssh_client_mesh.exec_command(f"nordvpn mesh peer connect {local_hostname}")
+    peer_ip = ssh_client.network.get_external_device_ip()
+    output = ssh_client.exec_command(f"nordvpn mesh peer connect {local_hostname}")
     assert meshnet.is_connect_successful(output, local_hostname)
-    assert peer_ip != ssh_client_mesh.network.get_external_device_ip()
+    assert peer_ip != ssh_client.network.get_external_device_ip()
 
-    ssh_client_mesh.exec_command("nordvpn disconnect")
+    ssh_client.exec_command("nordvpn disconnect")
     lib.is_disconnect_successful(sh_no_tty.nordvpn.disconnect())
-
-    ssh_client_mesh.disconnect()
 
 
 def test_route_to_peer_that_disconnects_from_vpn():
@@ -226,17 +217,14 @@ def test_route_to_peer_that_disconnects_from_vpn():
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname
 
-    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
-    ssh_client_mesh.connect()
-
-    ssh_client_mesh.exec_command("nordvpn connect")
+    ssh_client.exec_command("nordvpn connect")
 
     my_ip = network.get_external_device_ip()
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
     assert meshnet.is_connect_successful(output, peer_hostname)
     assert my_ip != network.get_external_device_ip()
 
-    ssh_client_mesh.exec_command("nordvpn disconnect")
+    ssh_client.exec_command("nordvpn disconnect")
     assert my_ip == network.get_external_device_ip()
 
     lib.is_disconnect_successful(sh_no_tty.nordvpn.disconnect())
@@ -246,25 +234,21 @@ def test_route_to_peer_that_disconnects_from_vpn():
 
     sh_no_tty.nordvpn.connect()
 
-    peer_ip = ssh_client_mesh.network.get_external_device_ip()
-    output = ssh_client_mesh.exec_command(f"nordvpn mesh peer connect {local_hostname}")
+    peer_ip = ssh_client.network.get_external_device_ip()
+    output = ssh_client.exec_command(f"nordvpn mesh peer connect {local_hostname}")
     assert meshnet.is_connect_successful(output, local_hostname)
-    assert peer_ip != ssh_client_mesh.network.get_external_device_ip()
+    assert peer_ip != ssh_client.network.get_external_device_ip()
 
     sh_no_tty.nordvpn.disconnect()
-    assert peer_ip == ssh_client_mesh.network.get_external_device_ip()
+    assert peer_ip == ssh_client.network.get_external_device_ip()
 
-    lib.is_disconnect_successful(ssh_client_mesh.exec_command("nordvpn disconnect"))
+    lib.is_disconnect_successful(ssh_client.exec_command("nordvpn disconnect"))
 
-    ssh_client_mesh.disconnect()
 
 def test_route_traffic_to_peer_once_again_when_already_routing():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
-    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
-    ssh_client_mesh.connect()
-
-    ssh_client_mesh.exec_command("nordvpn connect")
+    ssh_client.exec_command("nordvpn connect")
 
     my_ip = network.get_external_device_ip()
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
@@ -278,6 +262,6 @@ def test_route_traffic_to_peer_once_again_when_already_routing():
     assert my_ip != network.get_external_device_ip()
 
     sh_no_tty.nordvpn.disconnect()
-    ssh_client_mesh.exec_command("nordvpn disconnect")
+    ssh_client.exec_command("nordvpn disconnect")
 
 

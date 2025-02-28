@@ -77,7 +77,6 @@ def teardown_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn logout --persist-token")
     daemon.stop_peer(ssh_client)
     daemon.uninstall_peer(ssh_client)
-    ssh_client.disconnect()
 
     sh.nordvpn.set.meshnet.off()
     sh.nordvpn.set.notify.on()
