@@ -1,10 +1,12 @@
 package request
 
 import (
+	"log"
 	"net/http"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // HTTPReTransport is std RoundTripper enhanced to reconnect after vpn connect is done
@@ -30,6 +32,8 @@ func (m *HTTPReTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Proto = "HTTP/1.1"
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	log.Println(internal.DebugPrefix, "CALLING CREATEFN")
+	m.inner = m.createFn()
 	return m.inner.RoundTrip(req)
 }
 

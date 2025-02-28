@@ -51,7 +51,7 @@ func (m *QuicTransport) executeRequest(req *http.Request) (*http.Response, error
 	response, err := m.inner.RoundTrip(req)
 
 	// check the errors if inner needs to be recreated
-	recreate := shouldRecreate(err)
+	recreate := true
 
 	// mark that inner needs to be recreated while holding the read lock to be sure shouldRecreate is not replaced before recreation
 	m.shouldRecreate.Store(recreate)

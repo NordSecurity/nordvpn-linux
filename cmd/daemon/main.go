@@ -123,7 +123,7 @@ func main() {
 	// Logging
 
 	log.SetOutput(os.Stdout)
-	log.Println(internal.InfoPrefix, "Daemon has started")
+	log.Println(internal.InfoPrefix, "Daemon has started @@@@@@@@")
 
 	machineIdGenerator := config.NewMachineID(os.ReadFile, os.Hostname)
 

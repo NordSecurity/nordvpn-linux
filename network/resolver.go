@@ -2,12 +2,15 @@ package network
 
 import (
 	"fmt"
+	"log"
 	"net/netip"
 	"sync"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // Resolver is a DNSResolver implementation wrapping each DHCP request with
@@ -42,6 +45,10 @@ func (r *Resolver) ResolveWithNameservers(domain string, nameservers []netip.Add
 	if err != nil {
 		return nil, fmt.Errorf("allowlisting DNS IP addresses %+v: %w", nameservers, err)
 	}
+	log.Println(internal.DebugPrefix, "about to run the sleep func")
+	time.Sleep(time.Second * 10)
+	log.Println(internal.DebugPrefix, "after sleep is done?")
+	// return nil, fmt.Errorf("die die die")
 	defer r.fw.Delete([]string{"allow_dns"}) // ignore error here
 	// get the addresses from DNS
 	var ipAddrs []netip.Addr

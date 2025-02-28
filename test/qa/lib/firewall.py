@@ -3,7 +3,7 @@ import re
 
 import sh
 
-from . import Port, Protocol, daemon, logging
+from . import Port, Protocol, daemon, logging, dns
 
 IP_ROUTE_TABLE = 205
 
@@ -99,10 +99,10 @@ INPUT_LAN_DISCOVERY_RULES = [
 ]
 
 FORWARD_LAN_DISCOVERY_RULES = [
-    "-A FORWARD -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
-    "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
-    "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
-    "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A FORWARD -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
+    "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
+    "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
+    "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
 ]
 
 OUTPUT_LAN_DISCOVERY_RULES = [
@@ -167,7 +167,7 @@ def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
     result = []
 
     for subnet in subnets:
-        result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
+        result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn-allowlist-transient -j ACCEPT", )
 
     result += (f"-A FORWARD -o {interface} -m comment --comment nordvpn -j DROP", )
 
@@ -344,6 +344,8 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
     print(sh.ip.route())
 
     expected_rules = _get_firewall_rules(ports, subnets)
+    expected_rules = list(set(expected_rules))
+    expected_rules.sort()
     print("\nExpected rules:")
     logging.log("\nExpected rules:")
     for rule in expected_rules:
@@ -351,6 +353,7 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
         logging.log(rule)
 
     current_rules = _get_iptables_rules()
+    current_rules.sort()
     print("\nCurrent rules:")
     logging.log("\nCurrent rules:")
     for rule in current_rules:
@@ -359,8 +362,7 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
 
     print()
     print(sh.nordvpn.settings())
-
-    return all(ln in current_rules for ln in expected_rules)
+    return current_rules == expected_rules
 
 
 def is_empty() -> bool:
@@ -377,7 +379,16 @@ def _get_iptables_rules() -> list[str]:
     # TODO: add full ipv6 support, separate task #LVPN-3684
     print("Using iptables")
     fw_lines = os.popen("sudo iptables -S").read()
-    return fw_lines.split('\n')[3:-1]
+    fw_list = fw_lines.split('\n')[3:-1]
+    dns_full = dns.DNS_NORD + dns.DNS_TPL
+    for dns_entry in dns_full:
+        for rule in fw_list:
+            logging.log(f"checking if {dns_entry} is in {rule}")
+            if dns_entry in rule:
+                logging.log(f"FOUND: {dns_entry} is in {rule}")
+                fw_list.remove(rule)
+                logging.log(f"removed rule: {rule}")
+    return fw_list
 
 
 def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
