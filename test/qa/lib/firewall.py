@@ -99,10 +99,10 @@ INPUT_LAN_DISCOVERY_RULES = [
 ]
 
 FORWARD_LAN_DISCOVERY_RULES = [
-    "-A FORWARD -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
-    "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
-    "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
-    "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -j ACCEPT",
+    "-A FORWARD -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
+    "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
+    "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
+    "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
 ]
 
 OUTPUT_LAN_DISCOVERY_RULES = [
@@ -167,7 +167,7 @@ def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
     result = []
 
     for subnet in subnets:
-        result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
+        result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn-allowlist-transient -j ACCEPT", )
 
     result += (f"-A FORWARD -o {interface} -m comment --comment nordvpn -j DROP", )
 
