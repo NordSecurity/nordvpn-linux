@@ -47,20 +47,15 @@ def is_meshnet_pk_removed() -> bool:
 def test_allowlist_incoming_connection():
     my_ip = ssh_client.exec_command("echo $SSH_CLIENT").split()[0]
 
-    peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
-    # Initiate ssh connection via mesh because we are going to lose the main connection
-    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
-    ssh_client_mesh.connect()
-
-    ssh_client_mesh.exec_command("nordvpn set killswitch on")
+    ssh_client.exec_command("nordvpn set killswitch on")
     # We should not have direct connection anymore after connecting to VPN
     with pytest.raises(sh.ErrorReturnCode_1):
         assert "icmp_seq=" not in sh.ping("-c", "1", "qa-peer")
 
-        ssh_client_mesh.exec_command(f"nordvpn allowlist add subnet {my_ip}/32")
+        ssh_client.exec_command(f"nordvpn allowlist add subnet {my_ip}/32")
         # Direct connection should work again after allowlisting
         assert "icmp_seq=" in sh.ping("-c", "1", "qa-peer")
-    ssh_client_mesh.exec_command("nordvpn set killswitch off")
+    ssh_client.exec_command("nordvpn set killswitch off")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
