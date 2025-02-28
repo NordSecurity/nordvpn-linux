@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# This hook enforces the commit message format:
+#   LVPN-<id>: <msg>
+# where <id> is one or more digits and <msg> can be any text.
+
+commit_msg_file="$1"
+commit_msg=$(head -n 1 "${commit_msg_file}")
+
+pattern="^LVPN-[0-9]+: .+"
+
+if ! echo "${commit_msg}" | grep -qE "${pattern}"; then
+  echo "ERROR: Commit message must be in the format 'LVPN-<id>: <msg>'"
+  echo "       where <id> is a number and <msg> is a non-empty message."
+  exit 1
+fi
+
+exit 0
+
