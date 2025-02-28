@@ -257,11 +257,12 @@ func startSnap() {
 		log.Println(internal.ErrorPrefix, "Failed to add autostart:", err)
 	}
 
-	uid, err := strconv.Atoi(usr.Uid)
+	uid64, err := strconv.ParseUint(usr.Uid, 10, 32)
 	if err != nil {
 		log.Printf("%s Invalid unix user id, failed to convert from string: %s", internal.ErrorPrefix, usr.Uid)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
+	uid := uint32(uid64)
 
 	logoutChan := make(chan interface{})
 	go func() {
