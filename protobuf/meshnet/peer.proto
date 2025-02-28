@@ -11,8 +11,7 @@ import "service_response.proto";
 message GetPeersResponse {
 	oneof response {
 		PeerList peers = 1;
-		ServiceErrorCode service_error_code = 2;
-		MeshnetErrorCode meshnet_error_code = 3;
+		Error error = 4;
 	}
 }
 
@@ -57,6 +56,23 @@ message UpdatePeerRequest {
 	string identifier = 1;
 }
 
+
+// Error defines a generic meshnet error that could be returned by most meshnet endpoints
+message Error {
+	oneof error {
+		ServiceErrorCode service_error_code = 1;
+		MeshnetErrorCode meshnet_error_code = 2;
+	}
+}
+
+// UpdatePeerError can be either generic meshnet error or generic peer update error
+message UpdatePeerError {
+	oneof error {
+		Error general_error = 1;
+		UpdatePeerErrorCode update_peer_error_code = 2;
+	}
+}
+
 // UpdatePeerErrorCode defines an error code on updating a peer within
 // the meshnet
 enum UpdatePeerErrorCode {
@@ -67,9 +83,7 @@ enum UpdatePeerErrorCode {
 message RemovePeerResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
-		ServiceErrorCode service_error_code = 3;
-		MeshnetErrorCode meshnet_error_code = 4;
+		UpdatePeerError update_peer_error = 5;
 	}
 }
 
@@ -102,10 +116,8 @@ message ChangeMachineNicknameRequest {
 message ChangeNicknameResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
-		ServiceErrorCode service_error_code = 3;
-		MeshnetErrorCode meshnet_error_code = 4;
 		ChangeNicknameErrorCode change_nickname_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -167,10 +179,8 @@ enum DisableAutomaticFileshareErrorCode {
 message AllowRoutingResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		AllowRoutingErrorCode allow_routing_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -178,10 +188,8 @@ message AllowRoutingResponse {
 message DenyRoutingResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		DenyRoutingErrorCode deny_routing_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -190,10 +198,8 @@ message DenyRoutingResponse {
 message AllowIncomingResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		AllowIncomingErrorCode allow_incoming_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -202,10 +208,8 @@ message AllowIncomingResponse {
 message DenyIncomingResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		DenyIncomingErrorCode deny_incoming_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -214,10 +218,8 @@ message DenyIncomingResponse {
 message AllowLocalNetworkResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		AllowLocalNetworkErrorCode allow_local_network_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -226,10 +228,8 @@ message AllowLocalNetworkResponse {
 message DenyLocalNetworkResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		DenyLocalNetworkErrorCode deny_local_network_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -237,10 +237,8 @@ message DenyLocalNetworkResponse {
 message AllowFileshareResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		AllowFileshareErrorCode allow_send_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -248,10 +246,8 @@ message AllowFileshareResponse {
 message DenyFileshareResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		DenyFileshareErrorCode deny_send_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -259,10 +255,8 @@ message DenyFileshareResponse {
 message EnableAutomaticFileshareResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		EnableAutomaticFileshareErrorCode enable_automatic_fileshare_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -270,10 +264,8 @@ message EnableAutomaticFileshareResponse {
 message DisableAutomaticFileshareResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		DisableAutomaticFileshareErrorCode disable_automatic_fileshare_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
@@ -289,10 +281,8 @@ enum ConnectErrorCode {
 message ConnectResponse {
 	oneof response {
 		Empty empty = 1;
-		UpdatePeerErrorCode update_peer_error_code = 2;
 		ConnectErrorCode connect_error_code = 3;
-		ServiceErrorCode service_error_code = 4;
-		MeshnetErrorCode meshnet_error_code = 5;
+		UpdatePeerError update_peer_error = 6;
 	}
 }
 
