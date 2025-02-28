@@ -32,7 +32,22 @@ class TestUtils:
         os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
         os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
         ssh_client.connect()
+
+        # TODO: cleanup
+        fwmark = "0xe1f1"
+        default_gw = sh.sudo.ip.route().split(" ")[2]
+        sh.sudo.iptables("-t", "mangle", "-A", "PREROUTING", "-p", "tcp", "--dport", "22", "-j", "MARK",
+                    "--set-xmark", fwmark)
+        sh.sudo.iptables("-t", "mangle", "-A", "OUTPUT", "-p", "tcp", "--dport", "22", "-j", "MARK",
+                    "--set-xmark", fwmark)
+        sh.sudo.ip.rule.add.fwmark(fwmark, "table", "200")
+        sh.sudo.ip.route.add.default.via(default_gw, "table", "200")
+
         daemon.install_peer(ssh_client)
+        ssh_client.exec_command(f'sudo iptables -t mangle -A PREROUTING -p tcp --dport 22 -j MARK --set-xmark {fwmark}')
+        ssh_client.exec_command(f'sudo iptables -t mangle -A OUTPUT -p tcp --dport 22 -j MARK --set-xmark {fwmark}')
+        ssh_client.exec_command(f'ip rule add fwmark {fwmark} table 200')
+        ssh_client.exec_command(f'ip route add default via {default_gw} table 200')
 
 
     @staticmethod
