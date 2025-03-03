@@ -27,9 +27,22 @@ import (
 
 const (
 	netCoreRmemMaxKey    = "net.core.rmem_max"
-	netCodeRmemMaxValue  = 2500000
+	netCoreWmemMaxKey    = "net.core.wmem_max"
+	netCoreMemMaxValue   = 7500000
 	envHTTPTransportsKey = "HTTP_TRANSPORTS"
 )
+
+// SetBufferSizeForHTTP3 increase receive buffer size to roughly 7.5 MB, as recommended for quic-go library.
+// see: https://github.com/quic-go/quic-go/wiki/UDP-Receive-Buffer-Size
+func SetBufferSizeForHTTP3() error {
+	if err := kernel.SetParameter(netCoreRmemMaxKey, netCoreMemMaxValue); err != nil {
+		return fmt.Errorf("setting receive buffer: %w", err)
+	}
+	if err := kernel.SetParameter(netCoreWmemMaxKey, netCoreMemMaxValue); err != nil {
+		return fmt.Errorf("setting write buffer: %w", err)
+	}
+	return nil
+}
 
 func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.RoundTripper {
 	return func() http.RoundTripper {
@@ -136,34 +149,29 @@ func createTimedOutTransport(
 	containsH1 := slices.Contains(transportTypes, "http1")
 	containsH3 := slices.Contains(transportTypes, "http3")
 
-	var h1Transport http.RoundTripper
-	var h3Transport http.RoundTripper
+	var h1Transport *request.HTTPReTransport
+	var h3Transport *request.QuicTransport
 	if containsH1 {
-		h1ReTransport := request.NewHTTPReTransport(createH1Transport(resolver, fwmark))
-		connectSubject.Subscribe(h1ReTransport.NotifyConnect)
-		h1Transport = request.NewPublishingRoundTripper(
-			h1ReTransport,
-			httpCallsSubject,
-		)
+		h1Transport = request.NewHTTPReTransport(createH1Transport(resolver, fwmark))
+		connectSubject.Subscribe(h1Transport.NotifyConnect)
 		if !containsH3 {
-			return h1Transport
+			return request.NewPublishingRoundTripper(
+				h1Transport,
+				httpCallsSubject,
+			)
 		}
 	}
 	if containsH3 {
-		// For quic-go need to increase receive buffer size
-		// This command will increase the maximum receive buffer size to roughly 2.5 MB
-		// see: https://github.com/quic-go/quic-go/wiki/UDP-Receive-Buffer-Size
-		if err := kernel.SetParameter(netCoreRmemMaxKey, netCodeRmemMaxValue); err != nil {
-			log.Println(internal.WarningPrefix, err)
+		if err := SetBufferSizeForHTTP3(); err != nil {
+			log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
 		}
-		h3ReTransport := request.NewQuicTransport(createH3Transport)
-		connectSubject.Subscribe(h3ReTransport.NotifyConnect)
-		h3Transport = request.NewPublishingRoundTripper(
-			h3ReTransport,
-			httpCallsSubject,
-		)
+		h3Transport = request.NewQuicTransport(createH3Transport)
+		connectSubject.Subscribe(h3Transport.NotifyConnect)
 		if !containsH1 {
-			return h3Transport
+			return request.NewPublishingRoundTripper(
+				h3Transport,
+				httpCallsSubject,
+			)
 		}
 	}
 	// This should never happen as validation makes sure of that but it is here for nil panics
@@ -173,5 +181,6 @@ func createTimedOutTransport(
 		return nil
 	}
 
-	return request.NewRotatingRoundTripper(h1Transport, h3Transport, time.Hour)
+	rotatingRoundTriper := request.NewRotatingRoundTripper(h1Transport, h3Transport, time.Hour)
+	return request.NewPublishingRoundTripper(rotatingRoundTriper, httpCallsSubject)
 }
