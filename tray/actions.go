@@ -26,7 +26,7 @@ func (ti *Instance) login() {
 		return
 	}
 
-	cl, err := ti.client.LoginOAuth2(
+	loginResp, err := ti.client.LoginOAuth2(
 		context.Background(),
 		&pb.LoginOAuth2Request{
 			Type: pb.LoginType_LoginType_LOGIN,
@@ -37,17 +37,15 @@ func (ti *Instance) login() {
 		return
 	}
 
-	for {
-		resp, err := cl.Recv()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			ti.notify("Login error: %s", err)
-			return
-		}
-
-		if url := resp.GetData(); url != "" {
+	switch loginResp.Status {
+	case pb.LoginOAuth2Status_UNKNOWN_OAUTH2_ERROR:
+		ti.notify("Login error: %s", internal.ErrUnhandled)
+	case pb.LoginOAuth2Status_NO_NET:
+		ti.notify(internal.ErrNoNetWhenLoggingIn.Error())
+	case pb.LoginOAuth2Status_ALREADY_LOGGED_IN:
+		ti.notify("You are already logged in")
+	case pb.LoginOAuth2Status_SUCCESS:
+		if url := loginResp.Ulr; url != "" {
 			// #nosec G204 -- user input is not passed in
 			cmd := exec.Command("xdg-open", url)
 			err = cmd.Run()
@@ -58,6 +56,7 @@ func (ti *Instance) login() {
 			}
 		}
 	}
+
 }
 
 func (ti *Instance) logout(persistToken bool) bool {
