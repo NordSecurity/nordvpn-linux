@@ -3,7 +3,7 @@ import re
 
 import sh
 
-from . import Port, Protocol, daemon, logging
+from . import Port, Protocol, daemon, logging, dns
 
 IP_ROUTE_TABLE = 205
 
@@ -121,14 +121,14 @@ def __rules_connmark_chain_input(interface: str):
         ]
 
 
-def __rules_connmark_chain_forward(interface: str):
+def __rules_block_forwarding(interface: str):
     return \
         [
             f"-A FORWARD -o {interface} -m comment --comment nordvpn -j DROP",
         ]
 
 
-def __rules_connmark_chain_output(interface: str):
+def __rules_block_dns_port():
     return \
         [
             "-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
@@ -138,7 +138,13 @@ def __rules_connmark_chain_output(interface: str):
             "-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
             "-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
             "-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP"
+        ]
+
+
+def __rules_connmark_chain_output(interface: str):
+    return \
+        [
             f"-A OUTPUT -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
             f"-A OUTPUT -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
             f"-A OUTPUT -o {interface} -m comment --comment nordvpn -j DROP"
@@ -151,15 +157,6 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += (f"-A INPUT -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT", )
 
-    current_subnet_rules_input_chain = []
-
-    fw_lines = os.popen("sudo iptables -S").read()
-
-    for line in fw_lines.splitlines():
-        if all(x in line for x in ["INPUT", "-s", "nordvpn"]):
-            current_subnet_rules_input_chain.append(line)
-    if current_subnet_rules_input_chain:
-        return sort_list_by_other_list(result, current_subnet_rules_input_chain)
     return result
 
 
@@ -169,18 +166,6 @@ def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn-allowlist-transient -j ACCEPT", )
 
-    result += (f"-A FORWARD -o {interface} -m comment --comment nordvpn -j DROP", )
-
-    current_subnet_rules_forward_chain = []
-
-    fw_lines = os.popen("sudo iptables -S").read()
-
-    for line in fw_lines.splitlines():
-        if "FORWARD" in line and ("-d" in line or "DROP" in line):
-            current_subnet_rules_forward_chain.append(line)
-
-    if len(current_subnet_rules_forward_chain) > len(result):
-        return sort_list_by_other_list(result, current_subnet_rules_forward_chain)
     return result
 
 
@@ -190,25 +175,6 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += (f"-A OUTPUT -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
 
-    result += ("-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
-    result += ("-A OUTPUT -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
-    result += ("-A OUTPUT -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
-    result += ("-A OUTPUT -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
-    result += ("-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
-    result += ("-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
-    result += ("-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP", )
-    result += ("-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP", )
-
-    current_subnet_rules_input_chain = []
-
-    fw_lines = os.popen("sudo iptables -S").read()
-
-    for line in fw_lines.splitlines():
-        if "OUTPUT" in line and "-d" in line:
-            current_subnet_rules_input_chain.append(line)
-
-    if len(current_subnet_rules_input_chain) > len(result):
-        return sort_list_by_other_list(result, current_subnet_rules_input_chain)
     return result
 
 
@@ -251,7 +217,8 @@ def _get_rules_killswitch_on(interface: str):
 
     result.extend(__rules_connmark_chain_input(interface))
 
-    result.extend(__rules_connmark_chain_forward(interface))
+    result.extend(__rules_block_forwarding(interface))
+    result.extend(__rules_block_dns_port())
 
     result.extend(__rules_connmark_chain_output(interface))
 
@@ -269,6 +236,8 @@ def _get_rules_allowlist_subnet_on(interface: str, subnets: list[str]):
     result.extend(__rules_connmark_chain_input(interface))
 
     result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
+    result.extend(__rules_block_forwarding(interface))
+    result.extend(__rules_block_dns_port())
 
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
     result.extend(__rules_connmark_chain_output(interface))
@@ -286,6 +255,9 @@ def _get_rules_allowlist_port_on(interface: str, ports: list[Port]):
     result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
     result.extend(__rules_connmark_chain_input(interface))
 
+    result.extend(__rules_block_forwarding(interface))
+    result.extend(__rules_block_dns_port())
+
     result.extend(__rules_allowlist_port_chain_output(interface, ports_udp, ports_tcp))
     result.extend(__rules_connmark_chain_output(interface))
 
@@ -302,6 +274,8 @@ def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], 
     result.extend(__rules_connmark_chain_input(interface))
 
     result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
+    result.extend(__rules_block_forwarding(interface))
+    result.extend(__rules_block_dns_port())
 
     result.extend(__rules_allowlist_port_chain_output(interface, ports_udp, ports_tcp))
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
@@ -344,6 +318,7 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
     print(sh.ip.route())
 
     expected_rules = _get_firewall_rules(ports, subnets)
+    expected_rules.sort()
     print("\nExpected rules:")
     logging.log("\nExpected rules:")
     for rule in expected_rules:
@@ -351,6 +326,7 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
         logging.log(rule)
 
     current_rules = _get_iptables_rules()
+    current_rules.sort()
     print("\nCurrent rules:")
     logging.log("\nCurrent rules:")
     for rule in current_rules:
@@ -359,8 +335,7 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
 
     print()
     print(sh.nordvpn.settings())
-
-    return all(ln in current_rules for ln in expected_rules)
+    return current_rules == expected_rules
 
 
 def is_empty() -> bool:
@@ -377,7 +352,9 @@ def _get_iptables_rules() -> list[str]:
     # TODO: add full ipv6 support, separate task #LVPN-3684
     print("Using iptables")
     fw_lines = os.popen("sudo iptables -S").read()
-    return fw_lines.split('\n')[3:-1]
+    fw_list = fw_lines.split('\n')[3:-1]
+    dns_full = dns.DNS_NORD + dns.DNS_TPL
+    return [rule for rule in fw_list if not any(dns in rule for dns in dns_full)]
 
 
 def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
@@ -400,18 +377,6 @@ def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
     ports_tcp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split('(\\d+)', x.value)], reverse=True)
 
     return ports_udp, ports_tcp
-
-
-def sort_list_by_other_list(to_sort: list[str], sort_by: list[str]) -> list[str]:
-    # Create a dictionary to store the order of rules in `sort_by`
-    order_dict = {rule: index for index, rule in enumerate(sort_by)}
-
-    try:
-        # Sort `to_sort` based on the order in `sort_by`
-        return sorted(to_sort, key=lambda rule: order_dict[rule])
-    except Exception as e: # noqa: BLE001
-        logging.log(data=f"sort_list_by_other_list{e}: {to_sort}\n{sort_by}")
-        raise
 
 
 def add_and_delete_random_route():
