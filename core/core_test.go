@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/google/uuid"
 
@@ -232,9 +233,11 @@ func TestMaxBytes(t *testing.T) {
 		size        int64
 		expectedErr error
 	}{
-		"too big input":               {size: maxBytesLimit + 1, expectedErr: &ErrMaxBytesLimit{Limit: maxBytesLimit}},
-		"input size within limits":    {size: maxBytesLimit - 1, expectedErr: nil},
-		"input size exact limit size": {size: maxBytesLimit, expectedErr: nil},
+		"too big input": {
+			size:        internal.MaxBytesLimit + 1,
+			expectedErr: &ErrMaxBytesLimit{Limit: internal.MaxBytesLimit}},
+		"input size within limits":    {size: internal.MaxBytesLimit - 1, expectedErr: nil},
+		"input size exact limit size": {size: internal.MaxBytesLimit, expectedErr: nil},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {

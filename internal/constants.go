@@ -97,6 +97,8 @@ const (
 	AllowlistMaxPort = 65535
 
 	NordWhisperInterfaceName = "qtun"
+
+	MaxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
 )
 
 var (
