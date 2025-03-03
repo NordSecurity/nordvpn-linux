@@ -27,7 +27,8 @@ import (
 
 const (
 	netCoreRmemMaxKey    = "net.core.rmem_max"
-	netCodeRmemMaxValue  = 2500000
+	netCoreWmemMaxKey    = "net.core.wmem_max"
+	netCoreMemMaxValue   = 7500000
 	envHTTPTransportsKey = "HTTP_TRANSPORTS"
 )
 
@@ -139,31 +140,34 @@ func createTimedOutTransport(
 	var h1Transport http.RoundTripper
 	var h3Transport http.RoundTripper
 	if containsH1 {
-		h1ReTransport := request.NewHTTPReTransport(createH1Transport(resolver, fwmark))
-		connectSubject.Subscribe(h1ReTransport.NotifyConnect)
-		h1Transport = request.NewPublishingRoundTripper(
-			h1ReTransport,
-			httpCallsSubject,
-		)
+		transport := request.NewHTTPReTransport(createH1Transport(resolver, fwmark))
+		connectSubject.Subscribe(transport.NotifyConnect)
+		h1Transport = transport
 		if !containsH3 {
-			return h1Transport
+			return request.NewPublishingRoundTripper(
+				h1Transport,
+				httpCallsSubject,
+			)
 		}
 	}
 	if containsH3 {
 		// For quic-go need to increase receive buffer size
 		// This command will increase the maximum receive buffer size to roughly 2.5 MB
 		// see: https://github.com/quic-go/quic-go/wiki/UDP-Receive-Buffer-Size
-		if err := kernel.SetParameter(netCoreRmemMaxKey, netCodeRmemMaxValue); err != nil {
+		if err := kernel.SetParameter(netCoreRmemMaxKey, netCoreMemMaxValue); err != nil {
 			log.Println(internal.WarningPrefix, err)
 		}
-		h3ReTransport := request.NewQuicTransport(createH3Transport)
-		connectSubject.Subscribe(h3ReTransport.NotifyConnect)
-		h3Transport = request.NewPublishingRoundTripper(
-			h3ReTransport,
-			httpCallsSubject,
-		)
+		if err := kernel.SetParameter(netCoreWmemMaxKey, netCoreMemMaxValue); err != nil {
+			log.Println(internal.WarningPrefix, err)
+		}
+		transport := request.NewQuicTransport(createH3Transport)
+		connectSubject.Subscribe(transport.NotifyConnect)
+		h3Transport = transport
 		if !containsH1 {
-			return h3Transport
+			return request.NewPublishingRoundTripper(
+				h3Transport,
+				httpCallsSubject,
+			)
 		}
 	}
 	// This should never happen as validation makes sure of that but it is here for nil panics
@@ -173,5 +177,6 @@ func createTimedOutTransport(
 		return nil
 	}
 
-	return request.NewRotatingRoundTripper(h1Transport, h3Transport, time.Hour)
+	rotatingRoundTriper := request.NewRotatingRoundTripper(h1Transport, h3Transport, time.Hour)
+	return request.NewPublishingRoundTripper(rotatingRoundTriper, httpCallsSubject)
 }

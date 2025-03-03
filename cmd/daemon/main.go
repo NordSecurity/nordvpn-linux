@@ -228,7 +228,10 @@ func main() {
 
 	resolver := network.NewResolver(fw, threatProtectionLiteServers)
 
-	if err := kernel.SetParameter(netCoreRmemMaxKey, netCodeRmemMaxValue); err != nil {
+	if err := kernel.SetParameter(netCoreRmemMaxKey, netCoreMemMaxValue); err != nil {
+		log.Println(internal.WarningPrefix, err)
+	}
+	if err := kernel.SetParameter(netCoreWmemMaxKey, netCoreMemMaxValue); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}
 	httpClientWithRotator := request.NewStdHTTP()
