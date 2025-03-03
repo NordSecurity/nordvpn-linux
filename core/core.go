@@ -14,6 +14,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/google/uuid"
 )
@@ -566,8 +567,6 @@ func getData[T any](api *DefaultAPI, token string, url string) (T, error) {
 	return data, nil
 }
 
-const maxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
-
 type ErrMaxBytesLimit struct {
 	Limit int64
 }
@@ -582,7 +581,7 @@ func (err *ErrMaxBytesLimit) Error() string {
 func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 	limitedReader := &io.LimitedReader{
 		R: r,
-		N: maxBytesLimit + 1, // + 1 because we allow for values which are equal to the limit
+		N: internal.MaxBytesLimit + 1, // + 1 because we allow for values which are equal to the limit
 	}
 	data, err := io.ReadAll(limitedReader)
 	if err != nil {
@@ -594,7 +593,7 @@ func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 	// limit reached       - limitedReader.N <= 0
 	// io.Reader is empty  - limitedReader.N > 0
 	if limitedReader.N <= 0 {
-		return nil, &ErrMaxBytesLimit{Limit: maxBytesLimit}
+		return nil, &ErrMaxBytesLimit{Limit: internal.MaxBytesLimit}
 	}
 
 	return data, nil

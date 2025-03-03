@@ -3,9 +3,12 @@ package request
 import (
 	"bytes"
 	"io"
+	"log"
 	"net/http"
 	"sync/atomic"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 type RotatingRoundTripper struct {
@@ -41,7 +44,8 @@ func (rt *RotatingRoundTripper) roundTripH3(req *http.Request) (*http.Response, 
 	// HTTP/3 responses are streamed, so error can occur while reading the response body. We need to attempt a read here
 	// so all potential errors can be detected and we can rotate to HTTP/1
 	var buf bytes.Buffer
-	_, err = io.Copy(&buf, resp.Body)
+	reader := io.LimitReader(resp.Body, internal.MaxBytesLimit+1)
+	_, err = io.Copy(&buf, reader)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +67,7 @@ func (rt *RotatingRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 		if err == nil {
 			return resp, err
 		}
+		log.Println(internal.ErrorPrefix, "HTTP/3 request failed:", err, "rotating to HTTP/1")
 		rt.isCurrentH3.Store(false)
 	}
 	return rt.roundTripperH1.RoundTrip(req)
