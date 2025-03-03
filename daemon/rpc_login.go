@@ -146,9 +146,11 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 }
 
 // LoginOAuth2 is called when logging in with OAuth2.
-func (r *RPC) LoginOAuth2(in *pb.LoginOAuth2Request, srv pb.Daemon_LoginOAuth2Server) error {
+func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.LoginOAuth2Response, error) {
 	if r.ac.IsLoggedIn() {
-		return internal.ErrAlreadyLoggedIn
+		return &pb.LoginOAuth2Response{
+			Status: pb.LoginOAuth2Status_ALREADY_LOGGED_IN,
+		}, nil
 	}
 
 	lastLoginAttemptTime = time.Now()
@@ -168,21 +170,20 @@ func (r *RPC) LoginOAuth2(in *pb.LoginOAuth2Request, srv pb.Daemon_LoginOAuth2Se
 	url, err := r.authentication.Login(in.GetType() == pb.LoginType_LoginType_LOGIN)
 	if err != nil {
 		if strings.Contains(err.Error(), "network is unreachable") {
-			return srv.Send(&pb.LoginOAuth2Response{
-				Response: &pb.LoginOAuth2Response_Error{
-					Error: pb.LoginOAuth2Error_NO_NET,
-				}})
+			return &pb.LoginOAuth2Response{
+				Status: pb.LoginOAuth2Status_NO_NET}, nil
 		}
-		return srv.Send(&pb.LoginOAuth2Response{
-			Response: &pb.LoginOAuth2Response_Error{
-				Error: pb.LoginOAuth2Error_UNKNOWN_OAUTH2_ERROR,
-			}})
+
+		log.Println(internal.ErrorPrefix, "failed to get login url from backend:", err)
+		return &pb.LoginOAuth2Response{
+			Status: pb.LoginOAuth2Status_UNKNOWN_OAUTH2_ERROR,
+		}, nil
 	}
 
-	return srv.Send(&pb.LoginOAuth2Response{
-		Response: &pb.LoginOAuth2Response_Url{
-			Url: &pb.String{Data: url},
-		}})
+	return &pb.LoginOAuth2Response{
+		Status: pb.LoginOAuth2Status_SUCCESS,
+		Ulr:    url,
+	}, nil
 }
 
 // LoginOAuth2Callback is called by the browser via cli during OAuth2 login.
