@@ -48,9 +48,9 @@ class LoginResponse(_message.Message):
     def __init__(self, type: _Optional[int] = ..., url: _Optional[str] = ...) -> None: ...
 
 class LoginOAuth2Response(_message.Message):
-    __slots__ = ("status", "ulr")
+    __slots__ = ("status", "url")
     STATUS_FIELD_NUMBER: _ClassVar[int]
-    ULR_FIELD_NUMBER: _ClassVar[int]
+    URL_FIELD_NUMBER: _ClassVar[int]
     status: LoginOAuth2Status
-    ulr: str
-    def __init__(self, status: _Optional[_Union[LoginOAuth2Status, str]] = ..., ulr: _Optional[str] = ...) -> None: ...
+    url: str
+    def __init__(self, status: _Optional[_Union[LoginOAuth2Status, str]] = ..., url: _Optional[str] = ...) -> None: ...

@@ -33,5 +33,5 @@ enum LoginOAuth2Status {
 
 message LoginOAuth2Response {
   LoginOAuth2Status status = 1;
-  string ulr = 2;
+  string url = 2;
 }

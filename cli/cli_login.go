@@ -63,7 +63,7 @@ func (c *cmd) login(requestType pb.LoginType) error {
 	case pb.LoginOAuth2Status_ALREADY_LOGGED_IN:
 		return formatError(internal.ErrAlreadyLoggedIn)
 	case pb.LoginOAuth2Status_SUCCESS:
-		if url := resp.Ulr; url != "" {
+		if url := resp.Url; url != "" {
 			color.Green("Continue in the browser: %s", url)
 		} else {
 			return formatError(internal.ErrUnhandled)
