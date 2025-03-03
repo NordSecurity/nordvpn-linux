@@ -182,7 +182,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 
 	return &pb.LoginOAuth2Response{
 		Status: pb.LoginOAuth2Status_SUCCESS,
-		Ulr:    url,
+		Url:    url,
 	}, nil
 }
 

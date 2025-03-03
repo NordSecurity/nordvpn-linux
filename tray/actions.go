@@ -45,7 +45,7 @@ func (ti *Instance) login() {
 	case pb.LoginOAuth2Status_ALREADY_LOGGED_IN:
 		ti.notify("You are already logged in")
 	case pb.LoginOAuth2Status_SUCCESS:
-		if url := loginResp.Ulr; url != "" {
+		if url := loginResp.Url; url != "" {
 			// #nosec G204 -- user input is not passed in
 			cmd := exec.Command("xdg-open", url)
 			err = cmd.Run()
