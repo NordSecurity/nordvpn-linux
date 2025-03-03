@@ -29,8 +29,8 @@ class GetDaemonApiVersionRequest(_message.Message):
 class GetDaemonApiVersionResponse(_message.Message):
     __slots__ = ("apiVersion",)
     APIVERSION_FIELD_NUMBER: _ClassVar[int]
-    apiVersion: DaemonApiVersion
-    def __init__(self, apiVersion: _Optional[_Union[DaemonApiVersion, str]] = ...) -> None: ...
+    apiVersion: int
+    def __init__(self, apiVersion: _Optional[int] = ...) -> None: ...
 
 class Empty(_message.Message):
     __slots__ = ()
