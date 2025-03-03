@@ -49,11 +49,17 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		postQuantum = connectionParameters.PostQuantum
 	}
 
+	var ipString string
+	actualIP := r.dm.GetActualIP()
+	if actualIP.IsValid() {
+		ipString = actualIP.String()
+	}
+
 	return &pb.StatusResponse{
 		State:           string(status.State),
 		Technology:      status.Technology,
 		Protocol:        status.Protocol,
-		Ip:              status.IP.String(),
+		Ip:              ipString,
 		Hostname:        status.Hostname,
 		Name:            status.Name,
 		Country:         status.Country,

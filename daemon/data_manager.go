@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/netip"
 	"sort"
 	"strings"
 	"sync"
@@ -30,6 +31,7 @@ type DataManager struct {
 	insightsData     InsightsData
 	serversData      ServersData
 	versionData      VersionData
+	actualIP         netip.Addr
 	dataUpdateEvents *events.DataUpdateEvents
 	mu               sync.Mutex
 }
@@ -44,6 +46,7 @@ func NewDataManager(insightsFilePath,
 		insightsData:     InsightsData{filePath: insightsFilePath},
 		serversData:      ServersData{filePath: serversFilePath},
 		versionData:      VersionData{filePath: versionFilePath},
+		actualIP:         netip.Addr{},
 		dataUpdateEvents: dataUpdateEvents,
 	}
 }
@@ -199,6 +202,18 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 	if err := dm.versionData.save(); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}
+}
+
+func (dm *DataManager) GetActualIP() netip.Addr {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	return dm.actualIP
+}
+
+func (dm *DataManager) SetActualIP(ip netip.Addr) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	dm.actualIP = ip
 }
 
 func toServerTechnology(
