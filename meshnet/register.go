@@ -23,7 +23,7 @@ type Checker interface {
 	IsRegistrationInfoCorrect() bool
 	// Register the device
 	Register() error
-	// GetMeshPrivateKey returns returns meshnet private key and a boolean value indicating if it has been generated
+	// GetMeshPrivateKey returns meshnet private key and a boolean value indicating if it has been generated
 	GetMeshPrivateKey() (string, bool)
 	PrivateKeyController
 }
@@ -122,6 +122,7 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		SupportsRouting: true,
 	})
 	if err != nil {
+		r.meshPrivateKey = ""
 		return fmt.Errorf("registering new mesh machine: %w", err)
 	}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -173,7 +172,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 
 	meshPK, ok := s.mc.GetMeshPrivateKey()
 	if !ok {
-		log.Println(internal.ErrorPrefix, "Meshnet private key not stored for the enable operation.")
+		s.pub.Publish(fmt.Errorf("meshnet private key not stored for the enable operation"))
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_MeshnetError{
 				MeshnetError: pb.MeshnetErrorCode_NOT_REGISTERED,
