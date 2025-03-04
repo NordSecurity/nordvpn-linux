@@ -169,7 +169,7 @@ def test_mesh_private_key_is_revoked_on_mesh_off_daemon_shutdown():
                 stub = service_pb2_grpc.MeshnetStub(channel)
                 response = stub.GetPrivateKey(empty_pb2.Empty())
                 return response.private_key == "", "Meshnet private key should be removed when meshnet is disabled."
-        except Exception as e:# noqa: BLE001
+        except Exception:# noqa: BLE001
             return False
 
     pk_removed = False
