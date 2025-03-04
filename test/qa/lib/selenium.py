@@ -19,13 +19,13 @@ ENV_FF_TMP = "TMPDIR"
 SNAP_FF_TMP_DIR_PATH = os.path.expanduser("~") + "/ff_tmp"
 
 # XPath used in Selenium tests, to determine locations of elements on NordAccount
-NA_USERNAME_PAGE_TEXTBOX_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/div/span/input'
-NA_USERNAME_PAGE_BUTTON_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/button'
+NA_USERNAME_PAGE_TEXTBOX_XPATH = '//*[@data-testid="identifier-input"]'
+NA_USERNAME_PAGE_BUTTON_XPATH = '//*[@data-testid="identifier-submit"]'
 
-NA_PASSWORD_PAGE_TEXTBOX_XPATH = '/html/body/div/div/div[1]/main/form/fieldset/div[3]/span/input'  # noqa: S105
-NA_PASSWORD_PAGE_BUTTON_XPATH = NA_USERNAME_PAGE_BUTTON_XPATH
+NA_PASSWORD_PAGE_TEXTBOX_XPATH = '//*[@data-testid="signin-password-input"]'  # noqa: S105
+NA_PASSWORD_PAGE_BUTTON_XPATH = '//*[@data-testid="signin-button"]'  # noqa: S105
 
-NA_CONTINUE_PAGE_LINK_BUTTON = '/html/body/div/div/div[1]/main/div/a'
+NA_CONTINUE_PAGE_LINK_BUTTON = '//*[@data-testid="error-page-link"]'
 
 # used with Selenium login tests
 LOGIN_FLAG = ["", "--nordaccount"]
