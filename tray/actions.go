@@ -43,7 +43,7 @@ func (ti *Instance) login() {
 	case pb.LoginOAuth2Status_NO_NET:
 		ti.notify(internal.ErrNoNetWhenLoggingIn.Error())
 	case pb.LoginOAuth2Status_ALREADY_LOGGED_IN:
-		ti.notify("You are already logged in")
+		ti.notify(internal.ErrAlreadyLoggedIn.Error())
 	case pb.LoginOAuth2Status_SUCCESS:
 		if url := loginResp.Url; url != "" {
 			// #nosec G204 -- user input is not passed in
