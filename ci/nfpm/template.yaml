@@ -153,6 +153,7 @@ overrides:
       - glibc >= 2.29
     # RPM specific scripts.
     scripts:
+      preinstall: ${WORKDIR}/contrib/scriptlets/rpm/preinst
       postinstall: ${WORKDIR}/contrib/scriptlets/rpm/post
       preremove: ${WORKDIR}/contrib/scriptlets/rpm/preun
       postremove: ${WORKDIR}/contrib/scriptlets/rpm/postun
