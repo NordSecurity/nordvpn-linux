@@ -32,6 +32,18 @@ const (
 	envHTTPTransportsKey = "HTTP_TRANSPORTS"
 )
 
+// SetBufferSizeForHTTP3 increase receive buffer size to roughly 7.5 MB, as recommended for quic-go library.
+// see: https://github.com/quic-go/quic-go/wiki/UDP-Receive-Buffer-Size
+func SetBufferSizeForHTTP3() error {
+	if err := kernel.SetParameter(netCoreRmemMaxKey, netCoreMemMaxValue); err != nil {
+		return fmt.Errorf("setting receive buffer: %w", err)
+	}
+	if err := kernel.SetParameter(netCoreWmemMaxKey, netCoreMemMaxValue); err != nil {
+		return fmt.Errorf("setting write buffer: %w", err)
+	}
+	return nil
+}
+
 func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.RoundTripper {
 	return func() http.RoundTripper {
 		var operr error
@@ -151,14 +163,8 @@ func createTimedOutTransport(
 		}
 	}
 	if containsH3 {
-		// For quic-go need to increase receive buffer size
-		// This command will increase the maximum receive buffer size to roughly 2.5 MB
-		// see: https://github.com/quic-go/quic-go/wiki/UDP-Receive-Buffer-Size
-		if err := kernel.SetParameter(netCoreRmemMaxKey, netCoreMemMaxValue); err != nil {
-			log.Println(internal.WarningPrefix, err)
-		}
-		if err := kernel.SetParameter(netCoreWmemMaxKey, netCoreMemMaxValue); err != nil {
-			log.Println(internal.WarningPrefix, err)
+		if err := SetBufferSizeForHTTP3(); err != nil {
+			log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
 		}
 		transport := request.NewQuicTransport(createH3Transport)
 		connectSubject.Subscribe(transport.NotifyConnect)
