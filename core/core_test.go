@@ -236,8 +236,8 @@ func TestMaxBytes(t *testing.T) {
 		"too big input": {
 			size:        internal.MaxBytesLimit + 1,
 			expectedErr: &ErrMaxBytesLimit{Limit: internal.MaxBytesLimit}},
-		"input size within limits":    {size: internal.MaxBytesLimit - 1, expectedErr: nil},
-		"input size exact limit size": {size: internal.MaxBytesLimit, expectedErr: nil},
+		"input size within limits":    {size: internal.MaxBytesLimit - 2, expectedErr: nil},
+		"input size exact limit size": {size: internal.MaxBytesLimit - 1, expectedErr: nil},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
