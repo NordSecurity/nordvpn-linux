@@ -169,12 +169,12 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 
 	url, err := r.authentication.Login(in.GetType() == pb.LoginType_LoginType_LOGIN)
 	if err != nil {
-		if strings.Contains(err.Error(), "network is unreachable") {
+		if strings.Contains(err.Error(), "network is unreachable") ||
+			strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers") {
 			return &pb.LoginOAuth2Response{
 				Status: pb.LoginOAuth2Status_NO_NET}, nil
 		}
 
-		log.Println(internal.ErrorPrefix, "failed to get login url from backend:", err)
 		return &pb.LoginOAuth2Response{
 			Status: pb.LoginOAuth2Status_UNKNOWN_OAUTH2_ERROR,
 		}, nil
