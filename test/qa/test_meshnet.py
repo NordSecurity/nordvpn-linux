@@ -101,7 +101,14 @@ def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, filesh
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, routing, local, incoming, fileshare)
 
-    (result, message) = meshnet.validate_input_chain(peer_ip, routing, local, incoming, fileshare)
+    def validate_input() -> (bool, str):
+        return meshnet.validate_input_chain(peer_ip, routing, local, incoming, fileshare)
+
+    result = False
+    message = ""
+    for result, message in lib.poll(validate_input):
+        if result:
+            break
     assert result, message
 
     (result, message) = meshnet.validate_forward_chain(peer_ip, routing, local, incoming, fileshare)
