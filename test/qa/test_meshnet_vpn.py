@@ -65,6 +65,7 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
         assert result, message
 
 
+@pytest.mark.timeout(180, method="thread")
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
