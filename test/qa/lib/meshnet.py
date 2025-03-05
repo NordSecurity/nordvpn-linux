@@ -527,11 +527,11 @@ def validate_input_chain(peer_ip: str, routing: bool, local: bool, incoming: boo
     #rules = sh_no_tty.sudo.iptables("-S", "INPUT")
     rules = os.popen("sudo iptables -S INPUT").read()
 
-    fileshare_rule = f"-A INPUT -s {peer_ip}/32 -p tcp -m tcp --dport 49111 -m comment --comment nordvpn -j ACCEPT"
+    fileshare_rule = f"-A INPUT -s {peer_ip}/32 -p tcp -m tcp --dport 49111 -m comment --comment nordvpn-meshnet -j ACCEPT"
     if (fileshare_rule in rules) != fileshare:
         return False, f"Fileshare permissions configured incorrectly, rule expected: {fileshare_rule}\nrules:{rules}"
 
-    incoming_rule = f"-A INPUT -s {peer_ip}/32 -m comment --comment nordvpn -j ACCEPT"
+    incoming_rule = f"-A INPUT -s {peer_ip}/32 -m comment --comment nordvpn-meshnet -j ACCEPT"
     if (incoming_rule in rules) != incoming:
         return False, f"Incoming permissions configured incorrectly, rule expected: {incoming_rule}\nrules:{rules}"
 
