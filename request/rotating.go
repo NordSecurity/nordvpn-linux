@@ -44,7 +44,7 @@ func (rt *RotatingRoundTripper) roundTripH3(req *http.Request) (*http.Response, 
 	// HTTP/3 responses are streamed, so error can occur while reading the response body. We need to attempt a read here
 	// so all potential errors can be detected and we can rotate to HTTP/1
 	var buf bytes.Buffer
-	reader := io.LimitReader(resp.Body, internal.MaxBytesLimit+1)
+	reader := io.LimitReader(resp.Body, internal.MaxBytesLimit)
 	_, err = io.Copy(&buf, reader)
 	if err != nil {
 		return nil, err

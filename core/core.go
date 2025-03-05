@@ -581,7 +581,7 @@ func (err *ErrMaxBytesLimit) Error() string {
 func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 	limitedReader := &io.LimitedReader{
 		R: r,
-		N: internal.MaxBytesLimit + 1, // + 1 because we allow for values which are equal to the limit
+		N: internal.MaxBytesLimit,
 	}
 	data, err := io.ReadAll(limitedReader)
 	if err != nil {

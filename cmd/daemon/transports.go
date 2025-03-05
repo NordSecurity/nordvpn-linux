@@ -149,12 +149,11 @@ func createTimedOutTransport(
 	containsH1 := slices.Contains(transportTypes, "http1")
 	containsH3 := slices.Contains(transportTypes, "http3")
 
-	var h1Transport http.RoundTripper
-	var h3Transport http.RoundTripper
+	var h1Transport *request.HTTPReTransport
+	var h3Transport *request.QuicTransport
 	if containsH1 {
-		transport := request.NewHTTPReTransport(createH1Transport(resolver, fwmark))
-		connectSubject.Subscribe(transport.NotifyConnect)
-		h1Transport = transport
+		h1Transport = request.NewHTTPReTransport(createH1Transport(resolver, fwmark))
+		connectSubject.Subscribe(h1Transport.NotifyConnect)
 		if !containsH3 {
 			return request.NewPublishingRoundTripper(
 				h1Transport,
@@ -166,9 +165,8 @@ func createTimedOutTransport(
 		if err := SetBufferSizeForHTTP3(); err != nil {
 			log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
 		}
-		transport := request.NewQuicTransport(createH3Transport)
-		connectSubject.Subscribe(transport.NotifyConnect)
-		h3Transport = transport
+		h3Transport = request.NewQuicTransport(createH3Transport)
+		connectSubject.Subscribe(h3Transport.NotifyConnect)
 		if !containsH1 {
 			return request.NewPublishingRoundTripper(
 				h3Transport,

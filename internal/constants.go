@@ -98,7 +98,7 @@ const (
 
 	NordWhisperInterfaceName = "qtun"
 
-	MaxBytesLimit int64 = 1024 * 1024 * 10 // 10MB
+	MaxBytesLimit int64 = 1024*1024*10 + 1 // 10MB + 1 because we allow for values which are equal to the limit
 )
 
 var (
