@@ -109,7 +109,7 @@ func (r *RegisteringChecker) Register() error {
 }
 
 func (r *RegisteringChecker) register(cfg *config.Config) error {
-	r.meshPrivateKey = r.gen.Private()
+	privateKey := r.gen.Private()
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	distroName, err := distro.ReleaseName()
 	if err != nil {
@@ -122,10 +122,10 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		SupportsRouting: true,
 	})
 	if err != nil {
-		r.meshPrivateKey = ""
 		return fmt.Errorf("registering new mesh machine: %w", err)
 	}
 
+	r.meshPrivateKey = privateKey
 	cfg.MeshDevice = peer
 	return nil
 }
