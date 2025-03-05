@@ -112,6 +112,10 @@ func (k *KernelSpace) Start(
 		return err
 	}
 
+	if err := tun.BlockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to block ARP for tunnel interface:", err)
+	}
+
 	if err := tun.Up(); err != nil {
 		if err := k.stop(); err != nil {
 			log.Println(internal.WarningPrefix, err)
@@ -140,6 +144,11 @@ func (k *KernelSpace) Stop() error {
 		k.state = vpn.ExitingState
 		return nil
 	}
+
+	if err := k.tun.UnblockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to unblock ARP for tunnel interface:", err)
+	}
+
 	return k.stop()
 }
 
