@@ -11,25 +11,6 @@ enum AppStateError {
     FAILED_TO_GET_UID = 0;
 }
 
-message ConnectionStatus {
-    ConnectionState state = 1;
-    string server_ip = 2;
-    string server_country = 3;
-    string server_city = 4;
-    string server_hostname = 5;
-    string server_name = 6;
-    bool is_mesh_peer = 7;
-    bool by_user = 8;
-    bool is_virtual_location = 9;
-    ConnectionParameters parameters = 10;
-}
-
-enum ConnectionState {
-    DISCONNECTED = 0;
-    CONNECTING = 1;
-    CONNECTED = 2;
-}
-
 message LoginEvent {
     LoginEventType type = 1;
 }
@@ -50,7 +31,7 @@ message AccountModification {
 message AppState {
     oneof state {
         AppStateError error = 1;
-        ConnectionStatus connection_status = 2;
+        StatusResponse connection_status = 2;
         LoginEvent login_event = 3;
         Settings settings_change = 4;
         UpdateEvent update_event = 5;

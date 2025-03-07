@@ -47,9 +47,9 @@ func (ti *Instance) updateLoginStatus() bool {
 
 	loggedIn := resp.GetValue()
 
-	if !loggedIn && ti.state.loggedIn && ti.state.vpnStatus == ConnectedString {
+	if !loggedIn && ti.state.loggedIn && ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		// reset the VPN info if the user logs out while connected to VPN
-		ti.setVpnStatus("Disconnected", "", "", "", "", false)
+		ti.setVpnStatus(pb.ConnectionState_DISCONNECTED, "", "", "", "", false)
 	}
 
 	ti.state.mu.Lock()
@@ -352,7 +352,7 @@ func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 }
 
 func (ti *Instance) setVpnStatus(
-	vpnStatus string,
+	vpnStatus pb.ConnectionState,
 	vpnName string,
 	vpnHostname string,
 	vpnCity string,
@@ -368,7 +368,7 @@ func (ti *Instance) setVpnStatus(
 	}
 
 	if ti.state.vpnStatus != vpnStatus {
-		if vpnStatus == ConnectedString {
+		if vpnStatus == pb.ConnectionState_CONNECTED {
 			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconConnected)
 			}
