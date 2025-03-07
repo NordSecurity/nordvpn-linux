@@ -22,7 +22,6 @@ const (
 	PollingUpdateInterval     = 5 * time.Second
 	PollingFullUpdateInterval = 60 * time.Second
 	AccountInfoUpdateInterval = 24 * time.Hour
-	ConnectedString           = "Connected"
 )
 
 type Status int
@@ -80,7 +79,7 @@ type trayState struct {
 	trayStatus          Status
 	daemonError         string
 	accountName         string
-	vpnStatus           string
+	vpnStatus           pb.ConnectionState
 	vpnName             string
 	vpnHostname         string
 	vpnCity             string
@@ -133,7 +132,7 @@ func (ti *Instance) Start() {
 		ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-gray")
 	}
 
-	ti.state.vpnStatus = "Disconnected"
+	ti.state.vpnStatus = pb.ConnectionState_DISCONNECTED
 	ti.state.notificationsStatus = Invalid
 	ti.redrawChan = make(chan struct{})
 	ti.initialChan = make(chan struct{})
@@ -155,7 +154,7 @@ func (ti *Instance) OnReady() {
 	systray.SetTooltip("NordVPN")
 
 	ti.state.mu.Lock()
-	if ti.state.vpnStatus == "Disconnected" {
+	if ti.state.vpnStatus == pb.ConnectionState_DISCONNECTED {
 		systray.SetIconName(ti.iconDisconnected)
 	} else {
 		systray.SetIconName(ti.iconConnected)

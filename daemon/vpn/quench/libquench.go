@@ -13,6 +13,7 @@ import (
 
 	quenchBindigns "quench"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -51,12 +52,15 @@ type observer struct {
 	eventNotifier *vpn.Events
 	// currentServer is used to build vpn event notification
 	currentServer vpn.ServerData
+	// nicName is used to retrieve tunnel transfer rates to build vpn event notifications
+	nicName string
 }
 
-func newObserver(eventNotifier *vpn.Events) *observer {
+func newObserver(eventNotifier *vpn.Events, nicName string) *observer {
 	return &observer{
 		eventsChan:    nil,
 		eventNotifier: eventNotifier,
+		nicName:       nicName,
 	}
 }
 
@@ -93,7 +97,12 @@ func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	}
 }
 
-func getConnectEvent(status events.TypeEventStatus, serverData vpn.ServerData) events.DataConnect {
+func getConnectEvent(status events.TypeEventStatus, serverData vpn.ServerData, nicName string) events.DataConnect {
+	transferStates, err := tunnel.GetTransferRates(nicName)
+	if err != nil {
+		fmt.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
+	}
+
 	return events.DataConnect{
 		EventStatus:         status,
 		IsMeshnetPeer:       false,
@@ -103,6 +112,10 @@ func getConnectEvent(status events.TypeEventStatus, serverData vpn.ServerData) e
 		TargetServerDomain:  serverData.Hostname,
 		TargetServerName:    serverData.Name,
 		IsVirtualLocation:   serverData.VirtualLocation,
+		Technology:          config.Technology_NORDWHISPER,
+		Protocol:            config.Protocol_Webtunnel,
+		Upload:              transferStates.Tx,
+		Download:            transferStates.Rx,
 	}
 }
 
@@ -117,7 +130,7 @@ func (o *observer) Connecting() {
 	}
 
 	o.notifyConnectionStateChange(vpn.ConnectingState)
-	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusAttempt, o.currentServer))
+	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusAttempt, o.currentServer, o.nicName))
 }
 
 func (o *observer) Connected() {
@@ -127,7 +140,7 @@ func (o *observer) Connected() {
 	o.notifyConnectionStateChange(vpn.ConnectedState)
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "connected")
-	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusSuccess, o.currentServer))
+	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusSuccess, o.currentServer, o.nicName))
 }
 
 func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
@@ -138,13 +151,22 @@ func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "disconnected:", reason)
 
+	transferStats, err := tunnel.GetTransferRates(o.nicName)
+	if err != nil {
+		fmt.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
+	}
+
 	byUser := false
 	if reason == quenchBindigns.DisconnectReasonDisconnectRequested {
 		byUser = true
 	}
 
 	o.eventNotifier.Disconnected.Publish(events.DataDisconnect{
-		ByUser: byUser,
+		ByUser:     byUser,
+		Technology: config.Technology_NORDWHISPER,
+		Protocol:   config.Protocol_Webtunnel,
+		Upload:     transferStats.Tx,
+		Download:   transferStats.Rx,
 	})
 }
 
@@ -171,7 +193,7 @@ func New(fwmark uint32, envIsDev bool, events *vpn.Events) *Quench {
 	return &Quench{
 		fwmark:   fwmark,
 		vnicName: internal.NordWhisperInterfaceName,
-		observer: newObserver(events),
+		observer: newObserver(events, internal.NordWhisperInterfaceName),
 		logger:   &logger,
 		state:    vpn.ExitedState,
 	}

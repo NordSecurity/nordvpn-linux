@@ -9,6 +9,7 @@ import (
 
 	"github.com/NordSecurity/systray"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 )
@@ -88,10 +89,12 @@ func addDaemonErrorSection(ti *Instance) {
 }
 
 func addVpnSection(ti *Instance) {
-	mStatus := systray.AddMenuItem("VPN "+strings.ToLower(ti.state.vpnStatus), "VPN "+strings.ToLower(ti.state.vpnStatus))
+	mStatus := systray.AddMenuItem(
+		"VPN "+strings.ToLower(ti.state.vpnStatus.String()),
+		"VPN "+strings.ToLower(ti.state.vpnStatus.String()))
 	mStatus.Disable()
 
-	if ti.state.vpnStatus == ConnectedString {
+	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		vpnServerName := ti.state.serverName()
 		if vpnServerName != "" {
 			mHostname := systray.AddMenuItem("Server: "+vpnServerName, "Server: "+vpnServerName)

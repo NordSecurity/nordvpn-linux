@@ -21,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -70,7 +71,7 @@ const (
 // ConnectionStatus of a currently active connection
 type ConnectionStatus struct {
 	// State of the vpn. OpenVPN specific.
-	State vpn.State
+	State pb.ConnectionState
 	// Technology, which may or may not match what's in the config
 	Technology config.Technology
 	// Protocol, which may or may not match what's in the config
@@ -570,7 +571,7 @@ func (netw *Combined) ConnectionStatus() (ConnectionStatus, error) {
 	}
 
 	return ConnectionStatus{
-		State:           vpn.ConnectedState,
+		State:           pb.ConnectionState_CONNECTED,
 		Technology:      tech,
 		Protocol:        netw.lastServer.Protocol,
 		IP:              netw.lastServer.IP,
