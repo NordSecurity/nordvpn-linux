@@ -5,6 +5,7 @@ from collections import namedtuple
 
 import paramiko
 import pytest
+import threading
 
 import lib
 
