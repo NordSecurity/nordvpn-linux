@@ -13,6 +13,8 @@ import os
 
 from lib import logging, network
 
+pytest_plugins = ("lib.pytest_timeouts.pytest_timeouts")
+
 _CHECK_FREQUENCY=5
 
 sys.path.append(os.path.abspath(os.path.join(
