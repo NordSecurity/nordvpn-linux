@@ -19,6 +19,7 @@ import (
 
 	gopenvpn "github.com/NordSecurity/gopenvpn/openvpn"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -347,30 +348,46 @@ func (ovpn *OpenVPN) getSubstate() vpn.Substate {
 	return ovpn.substate
 }
 
-// publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
-func (ovpn *OpenVPN) publishConnecting() {
-	ovpn.eventsPublisher.Connected.Publish(events.DataConnect{
-		EventStatus:         events.StatusAttempt,
+func (ovpn *OpenVPN) getConnectedConnectingEvent(state events.TypeEventStatus) events.DataConnect {
+	stats, err := tunnel.GetTransferRates(InterfaceName)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get transfer rates for the tunnel:", err)
+	}
+	return events.DataConnect{
+		EventStatus:         state,
 		TargetServerIP:      ovpn.serverData.IP.String(),
 		TargetServerCountry: ovpn.serverData.Country,
 		TargetServerCity:    ovpn.serverData.City,
-	})
+		Technology:          config.Technology_OPENVPN,
+		Protocol:            ovpn.serverData.Protocol,
+		Upload:              stats.Tx,
+		Download:            stats.Rx,
+	}
+}
+
+// publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
+func (ovpn *OpenVPN) publishConnecting() {
+	ovpn.eventsPublisher.Connected.Publish(ovpn.getConnectedConnectingEvent(events.StatusAttempt))
 }
 
 // publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
 func (ovpn *OpenVPN) publishConnected() {
-	ovpn.eventsPublisher.Connected.Publish(events.DataConnect{
-		EventStatus:         events.StatusSuccess,
-		TargetServerIP:      ovpn.serverData.IP.String(),
-		TargetServerCountry: ovpn.serverData.Country,
-		TargetServerCity:    ovpn.serverData.City,
-		IsVirtualLocation:   ovpn.serverData.VirtualLocation,
-	})
+	ovpn.eventsPublisher.Connected.Publish(ovpn.getConnectedConnectingEvent(events.StatusSuccess))
 }
 
 // publishDisconnected publishes Connecting event using current stored server data. Thread unsafe.
 func (ovpn *OpenVPN) publishDisconnected(byUser bool) {
-	ovpn.eventsPublisher.Disconnected.Publish(events.DataDisconnect{ByUser: byUser})
+	stats, err := tunnel.GetTransferRates(InterfaceName)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get transfer rates for the tunnel:", err)
+	}
+	ovpn.eventsPublisher.Disconnected.Publish(events.DataDisconnect{
+		ByUser:     byUser,
+		Technology: config.Technology_OPENVPN,
+		Protocol:   ovpn.serverData.Protocol,
+		Upload:     stats.Tx,
+		Download:   stats.Rx,
+	})
 }
 
 func startOpenVPN(process *exec.Cmd) error {

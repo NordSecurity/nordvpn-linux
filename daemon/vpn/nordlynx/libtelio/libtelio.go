@@ -17,6 +17,7 @@ import (
 	"time"
 
 	teliogo "github.com/NordSecurity/libtelio-go/v5"
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -268,7 +269,10 @@ func (l *Libtelio) connect(
 	l.cancelConnectionMonitor = cancel
 
 	// Start monitoring connection events before connecting to not miss any
-	isConnectedC := isConnected(ctx, l.events, connParameters{pubKey: serverPublicKey, server: l.currentServer}, l.eventsPublisher)
+	isConnectedC := isConnected(ctx,
+		l.events,
+		connParameters{pubKey: serverPublicKey, server: l.currentServer},
+		l.eventsPublisher)
 
 	var err error
 	endpoint := net.JoinHostPort(serverIP.String(), "51820")
@@ -691,11 +695,20 @@ type connParameters struct {
 	server vpn.ServerData
 }
 
-func publishConnectEvent(publisher *vpn.Events, connectType events.TypeEventStatus, server vpn.ServerData, state state) {
+func publishConnectEvent(publisher *vpn.Events,
+	connectType events.TypeEventStatus,
+	server vpn.ServerData,
+	state state) {
 	name := server.Name
 	if !state.IsVPN {
 		name = state.Nickname
 	}
+
+	transferStats, err := tunnel.GetTransferRates(nordlynx.InterfaceName)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
+	}
+
 	publisher.Connected.Publish(events.DataConnect{
 		EventStatus:         connectType,
 		TargetServerIP:      server.IP.String(),
@@ -705,11 +718,25 @@ func publishConnectEvent(publisher *vpn.Events, connectType events.TypeEventStat
 		TargetServerName:    name,
 		IsMeshnetPeer:       !state.IsVPN,
 		IsVirtualLocation:   server.VirtualLocation,
+		Technology:          config.Technology_NORDLYNX,
+		Protocol:            config.Protocol_UDP,
+		Upload:              transferStats.Tx,
+		Download:            transferStats.Rx,
 	})
 }
 
 func publishDisconnectedEvent(publisher *vpn.Events, byUser bool) {
-	publisher.Disconnected.Publish(events.DataDisconnect{ByUser: byUser})
+	transferStats, err := tunnel.GetTransferRates(nordlynx.InterfaceName)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
+	}
+
+	publisher.Disconnected.Publish(events.DataDisconnect{
+		ByUser:     byUser,
+		Technology: config.Technology_NORDLYNX,
+		Protocol:   config.Protocol_UDP,
+		Upload:     transferStats.Tx,
+		Download:   transferStats.Rx})
 }
 
 // monitorConnection awaits for incoming state changes from the states chan and publishes appropriate events. Upon

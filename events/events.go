@@ -84,6 +84,8 @@ type DataConnect struct {
 	TargetServerName           string
 	Error                      error
 	IsVirtualLocation          bool
+	Upload                     uint64
+	Download                   uint64
 }
 
 type DataDisconnect struct {
@@ -94,6 +96,8 @@ type DataDisconnect struct {
 	TargetServerSelection string
 	ThreatProtectionLite  bool
 	ByUser                bool
+	Upload                uint64
+	Download              uint64
 }
 
 type DataAuthorization struct {
