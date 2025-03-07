@@ -170,10 +170,24 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
+	meshPK, ok := s.mc.GetMeshPrivateKey()
+	if !ok {
+		s.pub.Publish(fmt.Errorf("meshnet private key not stored for the enable operation"))
+		return &pb.MeshnetResponse{
+			Response: &pb.MeshnetResponse_MeshnetError{
+				MeshnetError: pb.MeshnetErrorCode_NOT_REGISTERED,
+			},
+		}, nil
+	}
+
+	// There is a delay in the backend between registering a new key and when that key is recognized, so we need to wait
+	// some time, otherwise connection will fail.
+	time.Sleep(5 * time.Second)
+
 	if err = s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
-		cfg.MeshPrivateKey,
+		meshPK,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		if errors.Is(err, ErrTunnelClosed) {
@@ -309,10 +323,19 @@ func (s *Server) StartMeshnet() error {
 		return fmt.Errorf("retrieving meshnet map: %w", err)
 	}
 
+	meshnetPK, ok := s.mc.GetMeshPrivateKey()
+	if !ok {
+		return fmt.Errorf("meshnet private key not found")
+	}
+
+	// There is a delay in the backend between registering a new key and when that key is recognized, so we need to wait
+	// some time, otherwise connection will fail.
+	time.Sleep(5 * time.Second)
+
 	if err := s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
-		cfg.MeshPrivateKey,
+		meshnetPK,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		return fmt.Errorf("setting the meshnet up: %w", err)
@@ -358,6 +381,10 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 
 	if err := s.netw.UnSetMesh(); err != nil {
 		s.pub.Publish(fmt.Errorf("unsetting mesh: %w", err))
+	}
+
+	if _, connected := s.netw.GetConnectionParameters(); !connected {
+		s.mc.ClearMeshPrivateKey()
 	}
 
 	if err := s.cm.SaveWith(func(c config.Config) config.Config {
@@ -1891,10 +1918,19 @@ func (s *Server) connect(
 	// Reset the connecting start timer
 	connectingStartTime = time.Now()
 
+	meshnetPK, ok := s.mc.GetMeshPrivateKey()
+	if !ok {
+		return &pb.ConnectResponse{
+			Response: &pb.ConnectResponse_MeshnetError{
+				MeshnetError: pb.MeshnetErrorCode_NOT_REGISTERED,
+			},
+		}
+	}
+
 	if err := s.netw.Start(
 		ctx,
 		vpn.Credentials{
-			NordLynxPrivateKey: cfg.MeshPrivateKey,
+			NordLynxPrivateKey: meshnetPK,
 		},
 		vpn.ServerData{
 			IP:                peer.Address,
@@ -1963,9 +1999,11 @@ func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKey
 		}, nil
 	}
 
+	meshnetPK, _ := s.mc.GetMeshPrivateKey()
+
 	return &pb.PrivateKeyResponse{
 		Response: &pb.PrivateKeyResponse_PrivateKey{
-			PrivateKey: cfg.MeshPrivateKey,
+			PrivateKey: meshnetPK,
 		},
 	}, nil
 }

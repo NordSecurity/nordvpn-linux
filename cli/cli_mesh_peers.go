@@ -1083,6 +1083,8 @@ func connectResponseToError(
 			resp.ConnectErrorCode,
 			identifier,
 		)
+	case *pb.ConnectResponse_MeshnetError:
+		return meshnetErrorToError(resp.MeshnetError), false
 	default:
 		return errors.New(AccountInternalError), false
 	}
