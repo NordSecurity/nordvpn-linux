@@ -117,7 +117,7 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 	}
 	peer, err := r.reg.Register(token, cmesh.Machine{
 		HardwareID:      cfg.MachineID,
-		PublicKey:       r.gen.Public(r.meshPrivateKey),
+		PublicKey:       r.gen.Public(privateKey),
 		OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
 		SupportsRouting: true,
 	})
