@@ -100,10 +100,10 @@ class DaemonStub(object):
                 request_serializer=login__with__token__pb2.LoginWithTokenRequest.SerializeToString,
                 response_deserializer=login__pb2.LoginResponse.FromString,
                 _registered_method=True)
-        self.LoginOAuth2 = channel.unary_stream(
+        self.LoginOAuth2 = channel.unary_unary(
                 '/pb.Daemon/LoginOAuth2',
                 request_serializer=login__pb2.LoginOAuth2Request.SerializeToString,
-                response_deserializer=login__pb2.String.FromString,
+                response_deserializer=login__pb2.LoginOAuth2Response.FromString,
                 _registered_method=True)
         self.LoginOAuth2Callback = channel.unary_unary(
                 '/pb.Daemon/LoginOAuth2Callback',
@@ -603,10 +603,10 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=login__with__token__pb2.LoginWithTokenRequest.FromString,
                     response_serializer=login__pb2.LoginResponse.SerializeToString,
             ),
-            'LoginOAuth2': grpc.unary_stream_rpc_method_handler(
+            'LoginOAuth2': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginOAuth2,
                     request_deserializer=login__pb2.LoginOAuth2Request.FromString,
-                    response_serializer=login__pb2.String.SerializeToString,
+                    response_serializer=login__pb2.LoginOAuth2Response.SerializeToString,
             ),
             'LoginOAuth2Callback': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginOAuth2Callback,
@@ -1070,12 +1070,12 @@ class Daemon(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
+        return grpc.experimental.unary_unary(
             request,
             target,
             '/pb.Daemon/LoginOAuth2',
             login__pb2.LoginOAuth2Request.SerializeToString,
-            login__pb2.String.FromString,
+            login__pb2.LoginOAuth2Response.FromString,
             options,
             channel_credentials,
             insecure,

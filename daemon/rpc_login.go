@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -145,9 +146,11 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 }
 
 // LoginOAuth2 is called when logging in with OAuth2.
-func (r *RPC) LoginOAuth2(in *pb.LoginOAuth2Request, srv pb.Daemon_LoginOAuth2Server) error {
+func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.LoginOAuth2Response, error) {
 	if r.ac.IsLoggedIn() {
-		return internal.ErrAlreadyLoggedIn
+		return &pb.LoginOAuth2Response{
+			Status: pb.LoginOAuth2Status_ALREADY_LOGGED_IN,
+		}, nil
 	}
 
 	lastLoginAttemptTime = time.Now()
@@ -166,10 +169,21 @@ func (r *RPC) LoginOAuth2(in *pb.LoginOAuth2Request, srv pb.Daemon_LoginOAuth2Se
 
 	url, err := r.authentication.Login(in.GetType() == pb.LoginType_LoginType_LOGIN)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "network is unreachable") ||
+			strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers") {
+			return &pb.LoginOAuth2Response{
+				Status: pb.LoginOAuth2Status_NO_NET}, nil
+		}
+
+		return &pb.LoginOAuth2Response{
+			Status: pb.LoginOAuth2Status_UNKNOWN_OAUTH2_ERROR,
+		}, nil
 	}
 
-	return srv.Send(&pb.String{Data: url})
+	return &pb.LoginOAuth2Response{
+		Status: pb.LoginOAuth2Status_SUCCESS,
+		Url:    url,
+	}, nil
 }
 
 // LoginOAuth2Callback is called by the browser via cli during OAuth2 login.
