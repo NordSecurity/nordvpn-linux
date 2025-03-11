@@ -3,23 +3,23 @@
 import grpc
 import warnings
 
-import account_pb2 as account__pb2
-import cities_pb2 as cities__pb2
-import common_pb2 as common__pb2
-import connect_pb2 as connect__pb2
-import login_pb2 as login__pb2
-import login_with_token_pb2 as login__with__token__pb2
-import logout_pb2 as logout__pb2
-import nordwhisper_enabled_pb2 as nordwhisper__enabled__pb2
-import ping_pb2 as ping__pb2
-import purchase_pb2 as purchase__pb2
-import rate_pb2 as rate__pb2
-import servers_pb2 as servers__pb2
-import set_pb2 as set__pb2
-import settings_pb2 as settings__pb2
-import state_pb2 as state__pb2
-import status_pb2 as status__pb2
-import token_pb2 as token__pb2
+from protobuf.daemon import account_pb2 as protobuf_dot_daemon_dot_account__pb2
+from protobuf.daemon import cities_pb2 as protobuf_dot_daemon_dot_cities__pb2
+from protobuf.daemon import common_pb2 as protobuf_dot_daemon_dot_common__pb2
+from protobuf.daemon import connect_pb2 as protobuf_dot_daemon_dot_connect__pb2
+from protobuf.daemon import login_pb2 as protobuf_dot_daemon_dot_login__pb2
+from protobuf.daemon import login_with_token_pb2 as protobuf_dot_daemon_dot_login__with__token__pb2
+from protobuf.daemon import logout_pb2 as protobuf_dot_daemon_dot_logout__pb2
+from protobuf.daemon import nordwhisper_enabled_pb2 as protobuf_dot_daemon_dot_nordwhisper__enabled__pb2
+from protobuf.daemon import ping_pb2 as protobuf_dot_daemon_dot_ping__pb2
+from protobuf.daemon import purchase_pb2 as protobuf_dot_daemon_dot_purchase__pb2
+from protobuf.daemon import rate_pb2 as protobuf_dot_daemon_dot_rate__pb2
+from protobuf.daemon import servers_pb2 as protobuf_dot_daemon_dot_servers__pb2
+from protobuf.daemon import set_pb2 as protobuf_dot_daemon_dot_set__pb2
+from protobuf.daemon import settings_pb2 as protobuf_dot_daemon_dot_settings__pb2
+from protobuf.daemon import state_pb2 as protobuf_dot_daemon_dot_state__pb2
+from protobuf.daemon import status_pb2 as protobuf_dot_daemon_dot_status__pb2
+from protobuf.daemon import token_pb2 as protobuf_dot_daemon_dot_token__pb2
 
 GRPC_GENERATED_VERSION = '1.68.1'
 GRPC_VERSION = grpc.__version__
@@ -34,7 +34,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in service_pb2_grpc.py depends on'
+        + f' but the generated code in protobuf/daemon/service_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -52,228 +52,228 @@ class DaemonStub(object):
         """
         self.AccountInfo = channel.unary_unary(
                 '/pb.Daemon/AccountInfo',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=account__pb2.AccountResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_account__pb2.AccountResponse.FromString,
                 _registered_method=True)
         self.TokenInfo = channel.unary_unary(
                 '/pb.Daemon/TokenInfo',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=token__pb2.TokenInfoResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_token__pb2.TokenInfoResponse.FromString,
                 _registered_method=True)
         self.Cities = channel.unary_unary(
                 '/pb.Daemon/Cities',
-                request_serializer=cities__pb2.CitiesRequest.SerializeToString,
-                response_deserializer=common__pb2.ServerGroupsList.FromString,
+                request_serializer=protobuf_dot_daemon_dot_cities__pb2.CitiesRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.FromString,
                 _registered_method=True)
         self.Connect = channel.unary_stream(
                 '/pb.Daemon/Connect',
-                request_serializer=connect__pb2.ConnectRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_connect__pb2.ConnectRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.ConnectCancel = channel.unary_unary(
                 '/pb.Daemon/ConnectCancel',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.Countries = channel.unary_unary(
                 '/pb.Daemon/Countries',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.ServerGroupsList.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.FromString,
                 _registered_method=True)
         self.Disconnect = channel.unary_stream(
                 '/pb.Daemon/Disconnect',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.Groups = channel.unary_unary(
                 '/pb.Daemon/Groups',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.ServerGroupsList.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.FromString,
                 _registered_method=True)
         self.IsLoggedIn = channel.unary_unary(
                 '/pb.Daemon/IsLoggedIn',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Bool.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Bool.FromString,
                 _registered_method=True)
         self.LoginWithToken = channel.unary_unary(
                 '/pb.Daemon/LoginWithToken',
-                request_serializer=login__with__token__pb2.LoginWithTokenRequest.SerializeToString,
-                response_deserializer=login__pb2.LoginResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_login__with__token__pb2.LoginWithTokenRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_login__pb2.LoginResponse.FromString,
                 _registered_method=True)
         self.LoginOAuth2 = channel.unary_unary(
                 '/pb.Daemon/LoginOAuth2',
-                request_serializer=login__pb2.LoginOAuth2Request.SerializeToString,
-                response_deserializer=login__pb2.LoginOAuth2Response.FromString,
+                request_serializer=protobuf_dot_daemon_dot_login__pb2.LoginOAuth2Request.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_login__pb2.LoginOAuth2Response.FromString,
                 _registered_method=True)
         self.LoginOAuth2Callback = channel.unary_unary(
                 '/pb.Daemon/LoginOAuth2Callback',
-                request_serializer=login__pb2.LoginOAuth2CallbackRequest.SerializeToString,
-                response_deserializer=common__pb2.Empty.FromString,
+                request_serializer=protobuf_dot_daemon_dot_login__pb2.LoginOAuth2CallbackRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
                 _registered_method=True)
         self.Logout = channel.unary_unary(
                 '/pb.Daemon/Logout',
-                request_serializer=logout__pb2.LogoutRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_logout__pb2.LogoutRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.Ping = channel.unary_unary(
                 '/pb.Daemon/Ping',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=ping__pb2.PingResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_ping__pb2.PingResponse.FromString,
                 _registered_method=True)
         self.RateConnection = channel.unary_unary(
                 '/pb.Daemon/RateConnection',
-                request_serializer=rate__pb2.RateRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_rate__pb2.RateRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetAutoConnect = channel.unary_unary(
                 '/pb.Daemon/SetAutoConnect',
-                request_serializer=set__pb2.SetAutoconnectRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetAutoconnectRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetThreatProtectionLite = channel.unary_unary(
                 '/pb.Daemon/SetThreatProtectionLite',
-                request_serializer=set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
-                response_deserializer=set__pb2.SetThreatProtectionLiteResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_set__pb2.SetThreatProtectionLiteResponse.FromString,
                 _registered_method=True)
         self.SetDefaults = channel.unary_unary(
                 '/pb.Daemon/SetDefaults',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetDNS = channel.unary_unary(
                 '/pb.Daemon/SetDNS',
-                request_serializer=set__pb2.SetDNSRequest.SerializeToString,
-                response_deserializer=set__pb2.SetDNSResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetDNSRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_set__pb2.SetDNSResponse.FromString,
                 _registered_method=True)
         self.SetFirewall = channel.unary_unary(
                 '/pb.Daemon/SetFirewall',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetFirewallMark = channel.unary_unary(
                 '/pb.Daemon/SetFirewallMark',
-                request_serializer=set__pb2.SetUint32Request.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetUint32Request.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetRouting = channel.unary_unary(
                 '/pb.Daemon/SetRouting',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetAnalytics = channel.unary_unary(
                 '/pb.Daemon/SetAnalytics',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetKillSwitch = channel.unary_unary(
                 '/pb.Daemon/SetKillSwitch',
-                request_serializer=set__pb2.SetKillSwitchRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetKillSwitchRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetNotify = channel.unary_unary(
                 '/pb.Daemon/SetNotify',
-                request_serializer=set__pb2.SetNotifyRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetNotifyRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetTray = channel.unary_unary(
                 '/pb.Daemon/SetTray',
-                request_serializer=set__pb2.SetTrayRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetTrayRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetObfuscate = channel.unary_unary(
                 '/pb.Daemon/SetObfuscate',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetProtocol = channel.unary_unary(
                 '/pb.Daemon/SetProtocol',
-                request_serializer=set__pb2.SetProtocolRequest.SerializeToString,
-                response_deserializer=set__pb2.SetProtocolResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetProtocolRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_set__pb2.SetProtocolResponse.FromString,
                 _registered_method=True)
         self.SetTechnology = channel.unary_unary(
                 '/pb.Daemon/SetTechnology',
-                request_serializer=set__pb2.SetTechnologyRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetTechnologyRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetLANDiscovery = channel.unary_unary(
                 '/pb.Daemon/SetLANDiscovery',
-                request_serializer=set__pb2.SetLANDiscoveryRequest.SerializeToString,
-                response_deserializer=set__pb2.SetLANDiscoveryResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetLANDiscoveryRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_set__pb2.SetLANDiscoveryResponse.FromString,
                 _registered_method=True)
         self.SetAllowlist = channel.unary_unary(
                 '/pb.Daemon/SetAllowlist',
-                request_serializer=set__pb2.SetAllowlistRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetAllowlistRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.UnsetAllowlist = channel.unary_unary(
                 '/pb.Daemon/UnsetAllowlist',
-                request_serializer=set__pb2.SetAllowlistRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetAllowlistRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.UnsetAllAllowlist = channel.unary_unary(
                 '/pb.Daemon/UnsetAllAllowlist',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.Settings = channel.unary_unary(
                 '/pb.Daemon/Settings',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=settings__pb2.SettingsResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_settings__pb2.SettingsResponse.FromString,
                 _registered_method=True)
         self.SettingsProtocols = channel.unary_unary(
                 '/pb.Daemon/SettingsProtocols',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SettingsTechnologies = channel.unary_unary(
                 '/pb.Daemon/SettingsTechnologies',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.Status = channel.unary_unary(
                 '/pb.Daemon/Status',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=status__pb2.StatusResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_status__pb2.StatusResponse.FromString,
                 _registered_method=True)
         self.SetIpv6 = channel.unary_unary(
                 '/pb.Daemon/SetIpv6',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.ClaimOnlinePurchase = channel.unary_unary(
                 '/pb.Daemon/ClaimOnlinePurchase',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=purchase__pb2.ClaimOnlinePurchaseResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_purchase__pb2.ClaimOnlinePurchaseResponse.FromString,
                 _registered_method=True)
         self.SetVirtualLocation = channel.unary_unary(
                 '/pb.Daemon/SetVirtualLocation',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SubscribeToStateChanges = channel.unary_stream(
                 '/pb.Daemon/SubscribeToStateChanges',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=state__pb2.AppState.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_state__pb2.AppState.FromString,
                 _registered_method=True)
         self.GetServers = channel.unary_unary(
                 '/pb.Daemon/GetServers',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=servers__pb2.ServersResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_servers__pb2.ServersResponse.FromString,
                 _registered_method=True)
         self.SetPostQuantum = channel.unary_unary(
                 '/pb.Daemon/SetPostQuantum',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
+                request_serializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
                 _registered_method=True)
         self.IsNordWhisperEnabled = channel.unary_unary(
                 '/pb.Daemon/IsNordWhisperEnabled',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=nordwhisper__enabled__pb2.NordWhisperEnabled.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_nordwhisper__enabled__pb2.NordWhisperEnabled.FromString,
                 _registered_method=True)
         self.GetDaemonApiVersion = channel.unary_unary(
                 '/pb.Daemon/GetDaemonApiVersion',
-                request_serializer=common__pb2.GetDaemonApiVersionRequest.SerializeToString,
-                response_deserializer=common__pb2.GetDaemonApiVersionResponse.FromString,
+                request_serializer=protobuf_dot_daemon_dot_common__pb2.GetDaemonApiVersionRequest.SerializeToString,
+                response_deserializer=protobuf_dot_daemon_dot_common__pb2.GetDaemonApiVersionResponse.FromString,
                 _registered_method=True)
 
 
@@ -555,228 +555,228 @@ def add_DaemonServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'AccountInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.AccountInfo,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=account__pb2.AccountResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_account__pb2.AccountResponse.SerializeToString,
             ),
             'TokenInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.TokenInfo,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=token__pb2.TokenInfoResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_token__pb2.TokenInfoResponse.SerializeToString,
             ),
             'Cities': grpc.unary_unary_rpc_method_handler(
                     servicer.Cities,
-                    request_deserializer=cities__pb2.CitiesRequest.FromString,
-                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_cities__pb2.CitiesRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.SerializeToString,
             ),
             'Connect': grpc.unary_stream_rpc_method_handler(
                     servicer.Connect,
-                    request_deserializer=connect__pb2.ConnectRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_connect__pb2.ConnectRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'ConnectCancel': grpc.unary_unary_rpc_method_handler(
                     servicer.ConnectCancel,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'Countries': grpc.unary_unary_rpc_method_handler(
                     servicer.Countries,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.SerializeToString,
             ),
             'Disconnect': grpc.unary_stream_rpc_method_handler(
                     servicer.Disconnect,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'Groups': grpc.unary_unary_rpc_method_handler(
                     servicer.Groups,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.SerializeToString,
             ),
             'IsLoggedIn': grpc.unary_unary_rpc_method_handler(
                     servicer.IsLoggedIn,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Bool.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Bool.SerializeToString,
             ),
             'LoginWithToken': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginWithToken,
-                    request_deserializer=login__with__token__pb2.LoginWithTokenRequest.FromString,
-                    response_serializer=login__pb2.LoginResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_login__with__token__pb2.LoginWithTokenRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_login__pb2.LoginResponse.SerializeToString,
             ),
             'LoginOAuth2': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginOAuth2,
-                    request_deserializer=login__pb2.LoginOAuth2Request.FromString,
-                    response_serializer=login__pb2.LoginOAuth2Response.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_login__pb2.LoginOAuth2Request.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_login__pb2.LoginOAuth2Response.SerializeToString,
             ),
             'LoginOAuth2Callback': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginOAuth2Callback,
-                    request_deserializer=login__pb2.LoginOAuth2CallbackRequest.FromString,
-                    response_serializer=common__pb2.Empty.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_login__pb2.LoginOAuth2CallbackRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
             ),
             'Logout': grpc.unary_unary_rpc_method_handler(
                     servicer.Logout,
-                    request_deserializer=logout__pb2.LogoutRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_logout__pb2.LogoutRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'Ping': grpc.unary_unary_rpc_method_handler(
                     servicer.Ping,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=ping__pb2.PingResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_ping__pb2.PingResponse.SerializeToString,
             ),
             'RateConnection': grpc.unary_unary_rpc_method_handler(
                     servicer.RateConnection,
-                    request_deserializer=rate__pb2.RateRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_rate__pb2.RateRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetAutoConnect': grpc.unary_unary_rpc_method_handler(
                     servicer.SetAutoConnect,
-                    request_deserializer=set__pb2.SetAutoconnectRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetAutoconnectRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetThreatProtectionLite': grpc.unary_unary_rpc_method_handler(
                     servicer.SetThreatProtectionLite,
-                    request_deserializer=set__pb2.SetThreatProtectionLiteRequest.FromString,
-                    response_serializer=set__pb2.SetThreatProtectionLiteResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetThreatProtectionLiteRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_set__pb2.SetThreatProtectionLiteResponse.SerializeToString,
             ),
             'SetDefaults': grpc.unary_unary_rpc_method_handler(
                     servicer.SetDefaults,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetDNS': grpc.unary_unary_rpc_method_handler(
                     servicer.SetDNS,
-                    request_deserializer=set__pb2.SetDNSRequest.FromString,
-                    response_serializer=set__pb2.SetDNSResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetDNSRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_set__pb2.SetDNSResponse.SerializeToString,
             ),
             'SetFirewall': grpc.unary_unary_rpc_method_handler(
                     servicer.SetFirewall,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetFirewallMark': grpc.unary_unary_rpc_method_handler(
                     servicer.SetFirewallMark,
-                    request_deserializer=set__pb2.SetUint32Request.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetUint32Request.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetRouting': grpc.unary_unary_rpc_method_handler(
                     servicer.SetRouting,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetAnalytics': grpc.unary_unary_rpc_method_handler(
                     servicer.SetAnalytics,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetKillSwitch': grpc.unary_unary_rpc_method_handler(
                     servicer.SetKillSwitch,
-                    request_deserializer=set__pb2.SetKillSwitchRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetKillSwitchRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetNotify': grpc.unary_unary_rpc_method_handler(
                     servicer.SetNotify,
-                    request_deserializer=set__pb2.SetNotifyRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetNotifyRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetTray': grpc.unary_unary_rpc_method_handler(
                     servicer.SetTray,
-                    request_deserializer=set__pb2.SetTrayRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetTrayRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetObfuscate': grpc.unary_unary_rpc_method_handler(
                     servicer.SetObfuscate,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetProtocol': grpc.unary_unary_rpc_method_handler(
                     servicer.SetProtocol,
-                    request_deserializer=set__pb2.SetProtocolRequest.FromString,
-                    response_serializer=set__pb2.SetProtocolResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetProtocolRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_set__pb2.SetProtocolResponse.SerializeToString,
             ),
             'SetTechnology': grpc.unary_unary_rpc_method_handler(
                     servicer.SetTechnology,
-                    request_deserializer=set__pb2.SetTechnologyRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetTechnologyRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SetLANDiscovery': grpc.unary_unary_rpc_method_handler(
                     servicer.SetLANDiscovery,
-                    request_deserializer=set__pb2.SetLANDiscoveryRequest.FromString,
-                    response_serializer=set__pb2.SetLANDiscoveryResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetLANDiscoveryRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_set__pb2.SetLANDiscoveryResponse.SerializeToString,
             ),
             'SetAllowlist': grpc.unary_unary_rpc_method_handler(
                     servicer.SetAllowlist,
-                    request_deserializer=set__pb2.SetAllowlistRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetAllowlistRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'UnsetAllowlist': grpc.unary_unary_rpc_method_handler(
                     servicer.UnsetAllowlist,
-                    request_deserializer=set__pb2.SetAllowlistRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetAllowlistRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'UnsetAllAllowlist': grpc.unary_unary_rpc_method_handler(
                     servicer.UnsetAllAllowlist,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'Settings': grpc.unary_unary_rpc_method_handler(
                     servicer.Settings,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=settings__pb2.SettingsResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_settings__pb2.SettingsResponse.SerializeToString,
             ),
             'SettingsProtocols': grpc.unary_unary_rpc_method_handler(
                     servicer.SettingsProtocols,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SettingsTechnologies': grpc.unary_unary_rpc_method_handler(
                     servicer.SettingsTechnologies,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'Status': grpc.unary_unary_rpc_method_handler(
                     servicer.Status,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=status__pb2.StatusResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_status__pb2.StatusResponse.SerializeToString,
             ),
             'SetIpv6': grpc.unary_unary_rpc_method_handler(
                     servicer.SetIpv6,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'ClaimOnlinePurchase': grpc.unary_unary_rpc_method_handler(
                     servicer.ClaimOnlinePurchase,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=purchase__pb2.ClaimOnlinePurchaseResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_purchase__pb2.ClaimOnlinePurchaseResponse.SerializeToString,
             ),
             'SetVirtualLocation': grpc.unary_unary_rpc_method_handler(
                     servicer.SetVirtualLocation,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'SubscribeToStateChanges': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeToStateChanges,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=state__pb2.AppState.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_state__pb2.AppState.SerializeToString,
             ),
             'GetServers': grpc.unary_unary_rpc_method_handler(
                     servicer.GetServers,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=servers__pb2.ServersResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_servers__pb2.ServersResponse.SerializeToString,
             ),
             'SetPostQuantum': grpc.unary_unary_rpc_method_handler(
                     servicer.SetPostQuantum,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.Payload.SerializeToString,
             ),
             'IsNordWhisperEnabled': grpc.unary_unary_rpc_method_handler(
                     servicer.IsNordWhisperEnabled,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=nordwhisper__enabled__pb2.NordWhisperEnabled.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_nordwhisper__enabled__pb2.NordWhisperEnabled.SerializeToString,
             ),
             'GetDaemonApiVersion': grpc.unary_unary_rpc_method_handler(
                     servicer.GetDaemonApiVersion,
-                    request_deserializer=common__pb2.GetDaemonApiVersionRequest.FromString,
-                    response_serializer=common__pb2.GetDaemonApiVersionResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_daemon_dot_common__pb2.GetDaemonApiVersionRequest.FromString,
+                    response_serializer=protobuf_dot_daemon_dot_common__pb2.GetDaemonApiVersionResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -804,8 +804,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/AccountInfo',
-            common__pb2.Empty.SerializeToString,
-            account__pb2.AccountResponse.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_account__pb2.AccountResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -831,8 +831,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/TokenInfo',
-            common__pb2.Empty.SerializeToString,
-            token__pb2.TokenInfoResponse.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_token__pb2.TokenInfoResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -858,8 +858,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Cities',
-            cities__pb2.CitiesRequest.SerializeToString,
-            common__pb2.ServerGroupsList.FromString,
+            protobuf_dot_daemon_dot_cities__pb2.CitiesRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.FromString,
             options,
             channel_credentials,
             insecure,
@@ -885,8 +885,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Connect',
-            connect__pb2.ConnectRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_connect__pb2.ConnectRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -912,8 +912,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/ConnectCancel',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -939,8 +939,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Countries',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.ServerGroupsList.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.FromString,
             options,
             channel_credentials,
             insecure,
@@ -966,8 +966,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Disconnect',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -993,8 +993,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Groups',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.ServerGroupsList.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.ServerGroupsList.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1020,8 +1020,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/IsLoggedIn',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Bool.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Bool.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1047,8 +1047,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/LoginWithToken',
-            login__with__token__pb2.LoginWithTokenRequest.SerializeToString,
-            login__pb2.LoginResponse.FromString,
+            protobuf_dot_daemon_dot_login__with__token__pb2.LoginWithTokenRequest.SerializeToString,
+            protobuf_dot_daemon_dot_login__pb2.LoginResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1074,8 +1074,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/LoginOAuth2',
-            login__pb2.LoginOAuth2Request.SerializeToString,
-            login__pb2.LoginOAuth2Response.FromString,
+            protobuf_dot_daemon_dot_login__pb2.LoginOAuth2Request.SerializeToString,
+            protobuf_dot_daemon_dot_login__pb2.LoginOAuth2Response.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1101,8 +1101,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/LoginOAuth2Callback',
-            login__pb2.LoginOAuth2CallbackRequest.SerializeToString,
-            common__pb2.Empty.FromString,
+            protobuf_dot_daemon_dot_login__pb2.LoginOAuth2CallbackRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1128,8 +1128,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Logout',
-            logout__pb2.LogoutRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_logout__pb2.LogoutRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1155,8 +1155,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Ping',
-            common__pb2.Empty.SerializeToString,
-            ping__pb2.PingResponse.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_ping__pb2.PingResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1182,8 +1182,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/RateConnection',
-            rate__pb2.RateRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_rate__pb2.RateRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1209,8 +1209,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetAutoConnect',
-            set__pb2.SetAutoconnectRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetAutoconnectRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1236,8 +1236,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetThreatProtectionLite',
-            set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
-            set__pb2.SetThreatProtectionLiteResponse.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
+            protobuf_dot_daemon_dot_set__pb2.SetThreatProtectionLiteResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1263,8 +1263,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetDefaults',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1290,8 +1290,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetDNS',
-            set__pb2.SetDNSRequest.SerializeToString,
-            set__pb2.SetDNSResponse.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetDNSRequest.SerializeToString,
+            protobuf_dot_daemon_dot_set__pb2.SetDNSResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1317,8 +1317,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetFirewall',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1344,8 +1344,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetFirewallMark',
-            set__pb2.SetUint32Request.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetUint32Request.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1371,8 +1371,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetRouting',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1398,8 +1398,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetAnalytics',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1425,8 +1425,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetKillSwitch',
-            set__pb2.SetKillSwitchRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetKillSwitchRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1452,8 +1452,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetNotify',
-            set__pb2.SetNotifyRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetNotifyRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1479,8 +1479,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetTray',
-            set__pb2.SetTrayRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetTrayRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1506,8 +1506,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetObfuscate',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1533,8 +1533,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetProtocol',
-            set__pb2.SetProtocolRequest.SerializeToString,
-            set__pb2.SetProtocolResponse.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetProtocolRequest.SerializeToString,
+            protobuf_dot_daemon_dot_set__pb2.SetProtocolResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1560,8 +1560,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetTechnology',
-            set__pb2.SetTechnologyRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetTechnologyRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1587,8 +1587,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetLANDiscovery',
-            set__pb2.SetLANDiscoveryRequest.SerializeToString,
-            set__pb2.SetLANDiscoveryResponse.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetLANDiscoveryRequest.SerializeToString,
+            protobuf_dot_daemon_dot_set__pb2.SetLANDiscoveryResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1614,8 +1614,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetAllowlist',
-            set__pb2.SetAllowlistRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetAllowlistRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1641,8 +1641,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/UnsetAllowlist',
-            set__pb2.SetAllowlistRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetAllowlistRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1668,8 +1668,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/UnsetAllAllowlist',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1695,8 +1695,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Settings',
-            common__pb2.Empty.SerializeToString,
-            settings__pb2.SettingsResponse.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_settings__pb2.SettingsResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1722,8 +1722,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SettingsProtocols',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1749,8 +1749,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SettingsTechnologies',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1776,8 +1776,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/Status',
-            common__pb2.Empty.SerializeToString,
-            status__pb2.StatusResponse.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_status__pb2.StatusResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1803,8 +1803,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetIpv6',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1830,8 +1830,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/ClaimOnlinePurchase',
-            common__pb2.Empty.SerializeToString,
-            purchase__pb2.ClaimOnlinePurchaseResponse.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_purchase__pb2.ClaimOnlinePurchaseResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1857,8 +1857,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetVirtualLocation',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1884,8 +1884,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SubscribeToStateChanges',
-            common__pb2.Empty.SerializeToString,
-            state__pb2.AppState.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_state__pb2.AppState.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1911,8 +1911,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/GetServers',
-            common__pb2.Empty.SerializeToString,
-            servers__pb2.ServersResponse.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_servers__pb2.ServersResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1938,8 +1938,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetPostQuantum',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
+            protobuf_dot_daemon_dot_set__pb2.SetGenericRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1965,8 +1965,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/IsNordWhisperEnabled',
-            common__pb2.Empty.SerializeToString,
-            nordwhisper__enabled__pb2.NordWhisperEnabled.FromString,
+            protobuf_dot_daemon_dot_common__pb2.Empty.SerializeToString,
+            protobuf_dot_daemon_dot_nordwhisper__enabled__pb2.NordWhisperEnabled.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1992,8 +1992,8 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/GetDaemonApiVersion',
-            common__pb2.GetDaemonApiVersionRequest.SerializeToString,
-            common__pb2.GetDaemonApiVersionResponse.FromString,
+            protobuf_dot_daemon_dot_common__pb2.GetDaemonApiVersionRequest.SerializeToString,
+            protobuf_dot_daemon_dot_common__pb2.GetDaemonApiVersionResponse.FromString,
             options,
             channel_credentials,
             insecure,

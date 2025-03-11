@@ -1,4 +1,4 @@
-from config import group_pb2 as _group_pb2
+from protobuf.daemon.config import group_pb2 as _group_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor

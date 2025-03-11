@@ -4,23 +4,23 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-import "account.proto";
-import "cities.proto";
-import "common.proto";
-import "connect.proto";
-import "login.proto";
-import "logout.proto";
-import "login_with_token.proto";
-import "ping.proto";
-import "rate.proto";
-import "set.proto";
-import "settings.proto";
-import "status.proto";
-import "token.proto";
-import "purchase.proto";
-import "state.proto";
-import "servers.proto";
-import "nordwhisper_enabled.proto";
+import "protobuf/daemon/account.proto";
+import "protobuf/daemon/cities.proto";
+import "protobuf/daemon/common.proto";
+import "protobuf/daemon/connect.proto";
+import "protobuf/daemon/login.proto";
+import "protobuf/daemon/logout.proto";
+import "protobuf/daemon/login_with_token.proto";
+import "protobuf/daemon/ping.proto";
+import "protobuf/daemon/rate.proto";
+import "protobuf/daemon/set.proto";
+import "protobuf/daemon/settings.proto";
+import "protobuf/daemon/status.proto";
+import "protobuf/daemon/token.proto";
+import "protobuf/daemon/purchase.proto";
+import "protobuf/daemon/state.proto";
+import "protobuf/daemon/servers.proto";
+import "protobuf/daemon/nordwhisper_enabled.proto";
 
 service Daemon {
   rpc AccountInfo(Empty) returns (AccountResponse);

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.35.1
 // 	protoc        v3.21.6
-// source: login.proto
+// source: protobuf/daemon/login.proto
 
 package pb
 
@@ -53,11 +53,11 @@ func (x LoginType) String() string {
 }
 
 func (LoginType) Descriptor() protoreflect.EnumDescriptor {
-	return file_login_proto_enumTypes[0].Descriptor()
+	return file_protobuf_daemon_login_proto_enumTypes[0].Descriptor()
 }
 
 func (LoginType) Type() protoreflect.EnumType {
-	return &file_login_proto_enumTypes[0]
+	return &file_protobuf_daemon_login_proto_enumTypes[0]
 }
 
 func (x LoginType) Number() protoreflect.EnumNumber {
@@ -66,7 +66,7 @@ func (x LoginType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LoginType.Descriptor instead.
 func (LoginType) EnumDescriptor() ([]byte, []int) {
-	return file_login_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_login_proto_rawDescGZIP(), []int{0}
 }
 
 type LoginOAuth2Status int32
@@ -105,11 +105,11 @@ func (x LoginOAuth2Status) String() string {
 }
 
 func (LoginOAuth2Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_login_proto_enumTypes[1].Descriptor()
+	return file_protobuf_daemon_login_proto_enumTypes[1].Descriptor()
 }
 
 func (LoginOAuth2Status) Type() protoreflect.EnumType {
-	return &file_login_proto_enumTypes[1]
+	return &file_protobuf_daemon_login_proto_enumTypes[1]
 }
 
 func (x LoginOAuth2Status) Number() protoreflect.EnumNumber {
@@ -118,7 +118,7 @@ func (x LoginOAuth2Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LoginOAuth2Status.Descriptor instead.
 func (LoginOAuth2Status) EnumDescriptor() ([]byte, []int) {
-	return file_login_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_login_proto_rawDescGZIP(), []int{1}
 }
 
 type LoginOAuth2Request struct {
@@ -131,7 +131,7 @@ type LoginOAuth2Request struct {
 
 func (x *LoginOAuth2Request) Reset() {
 	*x = LoginOAuth2Request{}
-	mi := &file_login_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_login_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -143,7 +143,7 @@ func (x *LoginOAuth2Request) String() string {
 func (*LoginOAuth2Request) ProtoMessage() {}
 
 func (x *LoginOAuth2Request) ProtoReflect() protoreflect.Message {
-	mi := &file_login_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_login_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -156,7 +156,7 @@ func (x *LoginOAuth2Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginOAuth2Request.ProtoReflect.Descriptor instead.
 func (*LoginOAuth2Request) Descriptor() ([]byte, []int) {
-	return file_login_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_login_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *LoginOAuth2Request) GetType() LoginType {
@@ -177,7 +177,7 @@ type LoginOAuth2CallbackRequest struct {
 
 func (x *LoginOAuth2CallbackRequest) Reset() {
 	*x = LoginOAuth2CallbackRequest{}
-	mi := &file_login_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_login_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -189,7 +189,7 @@ func (x *LoginOAuth2CallbackRequest) String() string {
 func (*LoginOAuth2CallbackRequest) ProtoMessage() {}
 
 func (x *LoginOAuth2CallbackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_login_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_login_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -202,7 +202,7 @@ func (x *LoginOAuth2CallbackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginOAuth2CallbackRequest.ProtoReflect.Descriptor instead.
 func (*LoginOAuth2CallbackRequest) Descriptor() ([]byte, []int) {
-	return file_login_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_login_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *LoginOAuth2CallbackRequest) GetToken() string {
@@ -230,7 +230,7 @@ type LoginResponse struct {
 
 func (x *LoginResponse) Reset() {
 	*x = LoginResponse{}
-	mi := &file_login_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_login_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -242,7 +242,7 @@ func (x *LoginResponse) String() string {
 func (*LoginResponse) ProtoMessage() {}
 
 func (x *LoginResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_login_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_login_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -255,7 +255,7 @@ func (x *LoginResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
 func (*LoginResponse) Descriptor() ([]byte, []int) {
-	return file_login_proto_rawDescGZIP(), []int{2}
+	return file_protobuf_daemon_login_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *LoginResponse) GetType() int64 {
@@ -283,7 +283,7 @@ type LoginOAuth2Response struct {
 
 func (x *LoginOAuth2Response) Reset() {
 	*x = LoginOAuth2Response{}
-	mi := &file_login_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_login_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -295,7 +295,7 @@ func (x *LoginOAuth2Response) String() string {
 func (*LoginOAuth2Response) ProtoMessage() {}
 
 func (x *LoginOAuth2Response) ProtoReflect() protoreflect.Message {
-	mi := &file_login_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_login_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -308,7 +308,7 @@ func (x *LoginOAuth2Response) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginOAuth2Response.ProtoReflect.Descriptor instead.
 func (*LoginOAuth2Response) Descriptor() ([]byte, []int) {
-	return file_login_proto_rawDescGZIP(), []int{3}
+	return file_protobuf_daemon_login_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *LoginOAuth2Response) GetStatus() LoginOAuth2Status {
@@ -325,10 +325,11 @@ func (x *LoginOAuth2Response) GetUrl() string {
 	return ""
 }
 
-var File_login_proto protoreflect.FileDescriptor
+var File_protobuf_daemon_login_proto protoreflect.FileDescriptor
 
-var file_login_proto_rawDesc = []byte{
-	0x0a, 0x0b, 0x6c, 0x6f, 0x67, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70,
+var file_protobuf_daemon_login_proto_rawDesc = []byte{
+	0x0a, 0x1b, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x6c, 0x6f, 0x67, 0x69, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70,
 	0x62, 0x22, 0x37, 0x0a, 0x12, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x4f, 0x41, 0x75, 0x74, 0x68, 0x32,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x0d, 0x2e, 0x70, 0x62, 0x2e, 0x4c, 0x6f, 0x67, 0x69, 0x6e,
@@ -365,20 +366,20 @@ var file_login_proto_rawDesc = []byte{
 }
 
 var (
-	file_login_proto_rawDescOnce sync.Once
-	file_login_proto_rawDescData = file_login_proto_rawDesc
+	file_protobuf_daemon_login_proto_rawDescOnce sync.Once
+	file_protobuf_daemon_login_proto_rawDescData = file_protobuf_daemon_login_proto_rawDesc
 )
 
-func file_login_proto_rawDescGZIP() []byte {
-	file_login_proto_rawDescOnce.Do(func() {
-		file_login_proto_rawDescData = protoimpl.X.CompressGZIP(file_login_proto_rawDescData)
+func file_protobuf_daemon_login_proto_rawDescGZIP() []byte {
+	file_protobuf_daemon_login_proto_rawDescOnce.Do(func() {
+		file_protobuf_daemon_login_proto_rawDescData = protoimpl.X.CompressGZIP(file_protobuf_daemon_login_proto_rawDescData)
 	})
-	return file_login_proto_rawDescData
+	return file_protobuf_daemon_login_proto_rawDescData
 }
 
-var file_login_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_login_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_login_proto_goTypes = []any{
+var file_protobuf_daemon_login_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_protobuf_daemon_login_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_protobuf_daemon_login_proto_goTypes = []any{
 	(LoginType)(0),                     // 0: pb.LoginType
 	(LoginOAuth2Status)(0),             // 1: pb.LoginOAuth2Status
 	(*LoginOAuth2Request)(nil),         // 2: pb.LoginOAuth2Request
@@ -386,7 +387,7 @@ var file_login_proto_goTypes = []any{
 	(*LoginResponse)(nil),              // 4: pb.LoginResponse
 	(*LoginOAuth2Response)(nil),        // 5: pb.LoginOAuth2Response
 }
-var file_login_proto_depIdxs = []int32{
+var file_protobuf_daemon_login_proto_depIdxs = []int32{
 	0, // 0: pb.LoginOAuth2Request.type:type_name -> pb.LoginType
 	0, // 1: pb.LoginOAuth2CallbackRequest.type:type_name -> pb.LoginType
 	1, // 2: pb.LoginOAuth2Response.status:type_name -> pb.LoginOAuth2Status
@@ -397,28 +398,28 @@ var file_login_proto_depIdxs = []int32{
 	0, // [0:3] is the sub-list for field type_name
 }
 
-func init() { file_login_proto_init() }
-func file_login_proto_init() {
-	if File_login_proto != nil {
+func init() { file_protobuf_daemon_login_proto_init() }
+func file_protobuf_daemon_login_proto_init() {
+	if File_protobuf_daemon_login_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_login_proto_rawDesc,
+			RawDescriptor: file_protobuf_daemon_login_proto_rawDesc,
 			NumEnums:      2,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_login_proto_goTypes,
-		DependencyIndexes: file_login_proto_depIdxs,
-		EnumInfos:         file_login_proto_enumTypes,
-		MessageInfos:      file_login_proto_msgTypes,
+		GoTypes:           file_protobuf_daemon_login_proto_goTypes,
+		DependencyIndexes: file_protobuf_daemon_login_proto_depIdxs,
+		EnumInfos:         file_protobuf_daemon_login_proto_enumTypes,
+		MessageInfos:      file_protobuf_daemon_login_proto_msgTypes,
 	}.Build()
-	File_login_proto = out.File
-	file_login_proto_rawDesc = nil
-	file_login_proto_goTypes = nil
-	file_login_proto_depIdxs = nil
+	File_protobuf_daemon_login_proto = out.File
+	file_protobuf_daemon_login_proto_rawDesc = nil
+	file_protobuf_daemon_login_proto_goTypes = nil
+	file_protobuf_daemon_login_proto_depIdxs = nil
 }

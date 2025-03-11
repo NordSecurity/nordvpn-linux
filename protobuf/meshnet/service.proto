@@ -4,11 +4,11 @@ package meshpb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
 
-import "empty.proto";
-import "fsnotify.proto";
-import "invite.proto";
-import "peer.proto";
-import "service_response.proto";
+import "protobuf/meshnet/empty.proto";
+import "protobuf/meshnet/fsnotify.proto";
+import "protobuf/meshnet/invite.proto";
+import "protobuf/meshnet/peer.proto";
+import "protobuf/meshnet/service_response.proto";
 
 // Meshnet defines a service which handles the meshnet
 // functionality on a single device

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.35.1
 // 	protoc        v3.21.6
-// source: account.proto
+// source: protobuf/daemon/account.proto
 
 package pb
 
@@ -31,7 +31,7 @@ type DedidcatedIPService struct {
 
 func (x *DedidcatedIPService) Reset() {
 	*x = DedidcatedIPService{}
-	mi := &file_account_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_account_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *DedidcatedIPService) String() string {
 func (*DedidcatedIPService) ProtoMessage() {}
 
 func (x *DedidcatedIPService) ProtoReflect() protoreflect.Message {
-	mi := &file_account_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_account_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *DedidcatedIPService) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DedidcatedIPService.ProtoReflect.Descriptor instead.
 func (*DedidcatedIPService) Descriptor() ([]byte, []int) {
-	return file_account_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_account_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *DedidcatedIPService) GetServerIds() []int64 {
@@ -90,7 +90,7 @@ type AccountResponse struct {
 
 func (x *AccountResponse) Reset() {
 	*x = AccountResponse{}
-	mi := &file_account_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_account_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -102,7 +102,7 @@ func (x *AccountResponse) String() string {
 func (*AccountResponse) ProtoMessage() {}
 
 func (x *AccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_account_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_account_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -115,7 +115,7 @@ func (x *AccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountResponse.ProtoReflect.Descriptor instead.
 func (*AccountResponse) Descriptor() ([]byte, []int) {
-	return file_account_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_account_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AccountResponse) GetType() int64 {
@@ -174,11 +174,13 @@ func (x *AccountResponse) GetMfaStatus() TriState {
 	return TriState_UNKNOWN
 }
 
-var File_account_proto protoreflect.FileDescriptor
+var File_protobuf_daemon_account_proto protoreflect.FileDescriptor
 
-var file_account_proto_rawDesc = []byte{
-	0x0a, 0x0d, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
-	0x02, 0x70, 0x62, 0x1a, 0x0c, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+var file_protobuf_daemon_account_proto_rawDesc = []byte{
+	0x0a, 0x1d, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x61, 0x63, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
+	0x02, 0x70, 0x62, 0x1a, 0x1c, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61,
+	0x65, 0x6d, 0x6f, 0x6e, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x22, 0x6b, 0x0a, 0x13, 0x44, 0x65, 0x64, 0x69, 0x64, 0x63, 0x61, 0x74, 0x65, 0x64, 0x49,
 	0x50, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x73, 0x65, 0x72, 0x76,
 	0x65, 0x72, 0x5f, 0x69, 0x64, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x03, 0x52, 0x09, 0x73, 0x65,
@@ -215,24 +217,24 @@ var file_account_proto_rawDesc = []byte{
 }
 
 var (
-	file_account_proto_rawDescOnce sync.Once
-	file_account_proto_rawDescData = file_account_proto_rawDesc
+	file_protobuf_daemon_account_proto_rawDescOnce sync.Once
+	file_protobuf_daemon_account_proto_rawDescData = file_protobuf_daemon_account_proto_rawDesc
 )
 
-func file_account_proto_rawDescGZIP() []byte {
-	file_account_proto_rawDescOnce.Do(func() {
-		file_account_proto_rawDescData = protoimpl.X.CompressGZIP(file_account_proto_rawDescData)
+func file_protobuf_daemon_account_proto_rawDescGZIP() []byte {
+	file_protobuf_daemon_account_proto_rawDescOnce.Do(func() {
+		file_protobuf_daemon_account_proto_rawDescData = protoimpl.X.CompressGZIP(file_protobuf_daemon_account_proto_rawDescData)
 	})
-	return file_account_proto_rawDescData
+	return file_protobuf_daemon_account_proto_rawDescData
 }
 
-var file_account_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_account_proto_goTypes = []any{
+var file_protobuf_daemon_account_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_protobuf_daemon_account_proto_goTypes = []any{
 	(*DedidcatedIPService)(nil), // 0: pb.DedidcatedIPService
 	(*AccountResponse)(nil),     // 1: pb.AccountResponse
 	(TriState)(0),               // 2: pb.TriState
 }
-var file_account_proto_depIdxs = []int32{
+var file_protobuf_daemon_account_proto_depIdxs = []int32{
 	0, // 0: pb.AccountResponse.dedicated_ip_services:type_name -> pb.DedidcatedIPService
 	2, // 1: pb.AccountResponse.mfa_status:type_name -> pb.TriState
 	2, // [2:2] is the sub-list for method output_type
@@ -242,28 +244,28 @@ var file_account_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_account_proto_init() }
-func file_account_proto_init() {
-	if File_account_proto != nil {
+func init() { file_protobuf_daemon_account_proto_init() }
+func file_protobuf_daemon_account_proto_init() {
+	if File_protobuf_daemon_account_proto != nil {
 		return
 	}
-	file_common_proto_init()
+	file_protobuf_daemon_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_account_proto_rawDesc,
+			RawDescriptor: file_protobuf_daemon_account_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_account_proto_goTypes,
-		DependencyIndexes: file_account_proto_depIdxs,
-		MessageInfos:      file_account_proto_msgTypes,
+		GoTypes:           file_protobuf_daemon_account_proto_goTypes,
+		DependencyIndexes: file_protobuf_daemon_account_proto_depIdxs,
+		MessageInfos:      file_protobuf_daemon_account_proto_msgTypes,
 	}.Build()
-	File_account_proto = out.File
-	file_account_proto_rawDesc = nil
-	file_account_proto_goTypes = nil
-	file_account_proto_depIdxs = nil
+	File_protobuf_daemon_account_proto = out.File
+	file_protobuf_daemon_account_proto_rawDesc = nil
+	file_protobuf_daemon_account_proto_goTypes = nil
+	file_protobuf_daemon_account_proto_depIdxs = nil
 }

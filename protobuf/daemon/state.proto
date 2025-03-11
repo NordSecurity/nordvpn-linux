@@ -4,8 +4,8 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-import "settings.proto";
-import "status.proto";
+import "protobuf/daemon/settings.proto";
+import "protobuf/daemon/status.proto";
 
 enum AppStateError {
     FAILED_TO_GET_UID = 0;

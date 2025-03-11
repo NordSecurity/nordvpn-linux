@@ -4,7 +4,7 @@ package meshpb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
 
-import "empty.proto";
+import "protobuf/meshnet/empty.proto";
 
 // ServiceErrorCode defines a set of error codes which handling
 // does not depend on any specific command used.

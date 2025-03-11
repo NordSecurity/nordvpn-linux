@@ -4,7 +4,7 @@ package filesharepb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/fileshare/pb";
 
-import "transfer.proto";
+import "protobuf/fileshare/transfer.proto";
 
 import "google/protobuf/timestamp.proto";
 

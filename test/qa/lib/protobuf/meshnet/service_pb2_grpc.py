@@ -3,11 +3,11 @@
 import grpc
 import warnings
 
-import empty_pb2 as empty__pb2
-import fsnotify_pb2 as fsnotify__pb2
-import invite_pb2 as invite__pb2
-import peer_pb2 as peer__pb2
-import service_response_pb2 as service__response__pb2
+from protobuf.meshnet import empty_pb2 as protobuf_dot_meshnet_dot_empty__pb2
+from protobuf.meshnet import fsnotify_pb2 as protobuf_dot_meshnet_dot_fsnotify__pb2
+from protobuf.meshnet import invite_pb2 as protobuf_dot_meshnet_dot_invite__pb2
+from protobuf.meshnet import peer_pb2 as protobuf_dot_meshnet_dot_peer__pb2
+from protobuf.meshnet import service_response_pb2 as protobuf_dot_meshnet_dot_service__response__pb2
 
 GRPC_GENERATED_VERSION = '1.68.1'
 GRPC_VERSION = grpc.__version__
@@ -22,7 +22,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + f' but the generated code in service_pb2_grpc.py depends on'
+        + f' but the generated code in protobuf/meshnet/service_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -42,138 +42,138 @@ class MeshnetStub(object):
         """
         self.EnableMeshnet = channel.unary_unary(
                 '/meshpb.Meshnet/EnableMeshnet',
-                request_serializer=empty__pb2.Empty.SerializeToString,
-                response_deserializer=service__response__pb2.MeshnetResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.FromString,
                 _registered_method=True)
         self.IsEnabled = channel.unary_unary(
                 '/meshpb.Meshnet/IsEnabled',
-                request_serializer=empty__pb2.Empty.SerializeToString,
-                response_deserializer=service__response__pb2.IsEnabledResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_service__response__pb2.IsEnabledResponse.FromString,
                 _registered_method=True)
         self.DisableMeshnet = channel.unary_unary(
                 '/meshpb.Meshnet/DisableMeshnet',
-                request_serializer=empty__pb2.Empty.SerializeToString,
-                response_deserializer=service__response__pb2.MeshnetResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.FromString,
                 _registered_method=True)
         self.RefreshMeshnet = channel.unary_unary(
                 '/meshpb.Meshnet/RefreshMeshnet',
-                request_serializer=empty__pb2.Empty.SerializeToString,
-                response_deserializer=service__response__pb2.MeshnetResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.FromString,
                 _registered_method=True)
         self.GetInvites = channel.unary_unary(
                 '/meshpb.Meshnet/GetInvites',
-                request_serializer=empty__pb2.Empty.SerializeToString,
-                response_deserializer=invite__pb2.GetInvitesResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_invite__pb2.GetInvitesResponse.FromString,
                 _registered_method=True)
         self.Invite = channel.unary_unary(
                 '/meshpb.Meshnet/Invite',
-                request_serializer=invite__pb2.InviteRequest.SerializeToString,
-                response_deserializer=invite__pb2.InviteResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_invite__pb2.InviteRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_invite__pb2.InviteResponse.FromString,
                 _registered_method=True)
         self.RevokeInvite = channel.unary_unary(
                 '/meshpb.Meshnet/RevokeInvite',
-                request_serializer=invite__pb2.DenyInviteRequest.SerializeToString,
-                response_deserializer=invite__pb2.RespondToInviteResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_invite__pb2.DenyInviteRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.FromString,
                 _registered_method=True)
         self.AcceptInvite = channel.unary_unary(
                 '/meshpb.Meshnet/AcceptInvite',
-                request_serializer=invite__pb2.InviteRequest.SerializeToString,
-                response_deserializer=invite__pb2.RespondToInviteResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_invite__pb2.InviteRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.FromString,
                 _registered_method=True)
         self.DenyInvite = channel.unary_unary(
                 '/meshpb.Meshnet/DenyInvite',
-                request_serializer=invite__pb2.DenyInviteRequest.SerializeToString,
-                response_deserializer=invite__pb2.RespondToInviteResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_invite__pb2.DenyInviteRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.FromString,
                 _registered_method=True)
         self.GetPeers = channel.unary_unary(
                 '/meshpb.Meshnet/GetPeers',
-                request_serializer=empty__pb2.Empty.SerializeToString,
-                response_deserializer=peer__pb2.GetPeersResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.GetPeersResponse.FromString,
                 _registered_method=True)
         self.RemovePeer = channel.unary_unary(
                 '/meshpb.Meshnet/RemovePeer',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.RemovePeerResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.RemovePeerResponse.FromString,
                 _registered_method=True)
         self.ChangePeerNickname = channel.unary_unary(
                 '/meshpb.Meshnet/ChangePeerNickname',
-                request_serializer=peer__pb2.ChangePeerNicknameRequest.SerializeToString,
-                response_deserializer=peer__pb2.ChangeNicknameResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.ChangePeerNicknameRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.ChangeNicknameResponse.FromString,
                 _registered_method=True)
         self.ChangeMachineNickname = channel.unary_unary(
                 '/meshpb.Meshnet/ChangeMachineNickname',
-                request_serializer=peer__pb2.ChangeMachineNicknameRequest.SerializeToString,
-                response_deserializer=peer__pb2.ChangeNicknameResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.ChangeMachineNicknameRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.ChangeNicknameResponse.FromString,
                 _registered_method=True)
         self.AllowRouting = channel.unary_unary(
                 '/meshpb.Meshnet/AllowRouting',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.AllowRoutingResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.AllowRoutingResponse.FromString,
                 _registered_method=True)
         self.DenyRouting = channel.unary_unary(
                 '/meshpb.Meshnet/DenyRouting',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.DenyRoutingResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.DenyRoutingResponse.FromString,
                 _registered_method=True)
         self.AllowIncoming = channel.unary_unary(
                 '/meshpb.Meshnet/AllowIncoming',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.AllowIncomingResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.AllowIncomingResponse.FromString,
                 _registered_method=True)
         self.DenyIncoming = channel.unary_unary(
                 '/meshpb.Meshnet/DenyIncoming',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.DenyIncomingResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.DenyIncomingResponse.FromString,
                 _registered_method=True)
         self.AllowLocalNetwork = channel.unary_unary(
                 '/meshpb.Meshnet/AllowLocalNetwork',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.AllowLocalNetworkResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.AllowLocalNetworkResponse.FromString,
                 _registered_method=True)
         self.DenyLocalNetwork = channel.unary_unary(
                 '/meshpb.Meshnet/DenyLocalNetwork',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.DenyLocalNetworkResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.DenyLocalNetworkResponse.FromString,
                 _registered_method=True)
         self.AllowFileshare = channel.unary_unary(
                 '/meshpb.Meshnet/AllowFileshare',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.AllowFileshareResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.AllowFileshareResponse.FromString,
                 _registered_method=True)
         self.DenyFileshare = channel.unary_unary(
                 '/meshpb.Meshnet/DenyFileshare',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.DenyFileshareResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.DenyFileshareResponse.FromString,
                 _registered_method=True)
         self.EnableAutomaticFileshare = channel.unary_unary(
                 '/meshpb.Meshnet/EnableAutomaticFileshare',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.EnableAutomaticFileshareResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.EnableAutomaticFileshareResponse.FromString,
                 _registered_method=True)
         self.DisableAutomaticFileshare = channel.unary_unary(
                 '/meshpb.Meshnet/DisableAutomaticFileshare',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.DisableAutomaticFileshareResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.DisableAutomaticFileshareResponse.FromString,
                 _registered_method=True)
         self.Connect = channel.unary_unary(
                 '/meshpb.Meshnet/Connect',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.ConnectResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.ConnectResponse.FromString,
                 _registered_method=True)
         self.ConnectCancel = channel.unary_unary(
                 '/meshpb.Meshnet/ConnectCancel',
-                request_serializer=peer__pb2.UpdatePeerRequest.SerializeToString,
-                response_deserializer=peer__pb2.ConnectResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.ConnectResponse.FromString,
                 _registered_method=True)
         self.NotifyNewTransfer = channel.unary_unary(
                 '/meshpb.Meshnet/NotifyNewTransfer',
-                request_serializer=fsnotify__pb2.NewTransferNotification.SerializeToString,
-                response_deserializer=fsnotify__pb2.NotifyNewTransferResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_fsnotify__pb2.NewTransferNotification.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_fsnotify__pb2.NotifyNewTransferResponse.FromString,
                 _registered_method=True)
         self.GetPrivateKey = channel.unary_unary(
                 '/meshpb.Meshnet/GetPrivateKey',
-                request_serializer=empty__pb2.Empty.SerializeToString,
-                response_deserializer=peer__pb2.PrivateKeyResponse.FromString,
+                request_serializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=protobuf_dot_meshnet_dot_peer__pb2.PrivateKeyResponse.FromString,
                 _registered_method=True)
 
 
@@ -383,138 +383,138 @@ def add_MeshnetServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'EnableMeshnet': grpc.unary_unary_rpc_method_handler(
                     servicer.EnableMeshnet,
-                    request_deserializer=empty__pb2.Empty.FromString,
-                    response_serializer=service__response__pb2.MeshnetResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.SerializeToString,
             ),
             'IsEnabled': grpc.unary_unary_rpc_method_handler(
                     servicer.IsEnabled,
-                    request_deserializer=empty__pb2.Empty.FromString,
-                    response_serializer=service__response__pb2.IsEnabledResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_service__response__pb2.IsEnabledResponse.SerializeToString,
             ),
             'DisableMeshnet': grpc.unary_unary_rpc_method_handler(
                     servicer.DisableMeshnet,
-                    request_deserializer=empty__pb2.Empty.FromString,
-                    response_serializer=service__response__pb2.MeshnetResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.SerializeToString,
             ),
             'RefreshMeshnet': grpc.unary_unary_rpc_method_handler(
                     servicer.RefreshMeshnet,
-                    request_deserializer=empty__pb2.Empty.FromString,
-                    response_serializer=service__response__pb2.MeshnetResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.SerializeToString,
             ),
             'GetInvites': grpc.unary_unary_rpc_method_handler(
                     servicer.GetInvites,
-                    request_deserializer=empty__pb2.Empty.FromString,
-                    response_serializer=invite__pb2.GetInvitesResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_invite__pb2.GetInvitesResponse.SerializeToString,
             ),
             'Invite': grpc.unary_unary_rpc_method_handler(
                     servicer.Invite,
-                    request_deserializer=invite__pb2.InviteRequest.FromString,
-                    response_serializer=invite__pb2.InviteResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_invite__pb2.InviteRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_invite__pb2.InviteResponse.SerializeToString,
             ),
             'RevokeInvite': grpc.unary_unary_rpc_method_handler(
                     servicer.RevokeInvite,
-                    request_deserializer=invite__pb2.DenyInviteRequest.FromString,
-                    response_serializer=invite__pb2.RespondToInviteResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_invite__pb2.DenyInviteRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.SerializeToString,
             ),
             'AcceptInvite': grpc.unary_unary_rpc_method_handler(
                     servicer.AcceptInvite,
-                    request_deserializer=invite__pb2.InviteRequest.FromString,
-                    response_serializer=invite__pb2.RespondToInviteResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_invite__pb2.InviteRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.SerializeToString,
             ),
             'DenyInvite': grpc.unary_unary_rpc_method_handler(
                     servicer.DenyInvite,
-                    request_deserializer=invite__pb2.DenyInviteRequest.FromString,
-                    response_serializer=invite__pb2.RespondToInviteResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_invite__pb2.DenyInviteRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.SerializeToString,
             ),
             'GetPeers': grpc.unary_unary_rpc_method_handler(
                     servicer.GetPeers,
-                    request_deserializer=empty__pb2.Empty.FromString,
-                    response_serializer=peer__pb2.GetPeersResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.GetPeersResponse.SerializeToString,
             ),
             'RemovePeer': grpc.unary_unary_rpc_method_handler(
                     servicer.RemovePeer,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.RemovePeerResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.RemovePeerResponse.SerializeToString,
             ),
             'ChangePeerNickname': grpc.unary_unary_rpc_method_handler(
                     servicer.ChangePeerNickname,
-                    request_deserializer=peer__pb2.ChangePeerNicknameRequest.FromString,
-                    response_serializer=peer__pb2.ChangeNicknameResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.ChangePeerNicknameRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.ChangeNicknameResponse.SerializeToString,
             ),
             'ChangeMachineNickname': grpc.unary_unary_rpc_method_handler(
                     servicer.ChangeMachineNickname,
-                    request_deserializer=peer__pb2.ChangeMachineNicknameRequest.FromString,
-                    response_serializer=peer__pb2.ChangeNicknameResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.ChangeMachineNicknameRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.ChangeNicknameResponse.SerializeToString,
             ),
             'AllowRouting': grpc.unary_unary_rpc_method_handler(
                     servicer.AllowRouting,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.AllowRoutingResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.AllowRoutingResponse.SerializeToString,
             ),
             'DenyRouting': grpc.unary_unary_rpc_method_handler(
                     servicer.DenyRouting,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.DenyRoutingResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.DenyRoutingResponse.SerializeToString,
             ),
             'AllowIncoming': grpc.unary_unary_rpc_method_handler(
                     servicer.AllowIncoming,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.AllowIncomingResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.AllowIncomingResponse.SerializeToString,
             ),
             'DenyIncoming': grpc.unary_unary_rpc_method_handler(
                     servicer.DenyIncoming,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.DenyIncomingResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.DenyIncomingResponse.SerializeToString,
             ),
             'AllowLocalNetwork': grpc.unary_unary_rpc_method_handler(
                     servicer.AllowLocalNetwork,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.AllowLocalNetworkResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.AllowLocalNetworkResponse.SerializeToString,
             ),
             'DenyLocalNetwork': grpc.unary_unary_rpc_method_handler(
                     servicer.DenyLocalNetwork,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.DenyLocalNetworkResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.DenyLocalNetworkResponse.SerializeToString,
             ),
             'AllowFileshare': grpc.unary_unary_rpc_method_handler(
                     servicer.AllowFileshare,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.AllowFileshareResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.AllowFileshareResponse.SerializeToString,
             ),
             'DenyFileshare': grpc.unary_unary_rpc_method_handler(
                     servicer.DenyFileshare,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.DenyFileshareResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.DenyFileshareResponse.SerializeToString,
             ),
             'EnableAutomaticFileshare': grpc.unary_unary_rpc_method_handler(
                     servicer.EnableAutomaticFileshare,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.EnableAutomaticFileshareResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.EnableAutomaticFileshareResponse.SerializeToString,
             ),
             'DisableAutomaticFileshare': grpc.unary_unary_rpc_method_handler(
                     servicer.DisableAutomaticFileshare,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.DisableAutomaticFileshareResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.DisableAutomaticFileshareResponse.SerializeToString,
             ),
             'Connect': grpc.unary_unary_rpc_method_handler(
                     servicer.Connect,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.ConnectResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.ConnectResponse.SerializeToString,
             ),
             'ConnectCancel': grpc.unary_unary_rpc_method_handler(
                     servicer.ConnectCancel,
-                    request_deserializer=peer__pb2.UpdatePeerRequest.FromString,
-                    response_serializer=peer__pb2.ConnectResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.ConnectResponse.SerializeToString,
             ),
             'NotifyNewTransfer': grpc.unary_unary_rpc_method_handler(
                     servicer.NotifyNewTransfer,
-                    request_deserializer=fsnotify__pb2.NewTransferNotification.FromString,
-                    response_serializer=fsnotify__pb2.NotifyNewTransferResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_fsnotify__pb2.NewTransferNotification.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_fsnotify__pb2.NotifyNewTransferResponse.SerializeToString,
             ),
             'GetPrivateKey': grpc.unary_unary_rpc_method_handler(
                     servicer.GetPrivateKey,
-                    request_deserializer=empty__pb2.Empty.FromString,
-                    response_serializer=peer__pb2.PrivateKeyResponse.SerializeToString,
+                    request_deserializer=protobuf_dot_meshnet_dot_empty__pb2.Empty.FromString,
+                    response_serializer=protobuf_dot_meshnet_dot_peer__pb2.PrivateKeyResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -544,8 +544,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/EnableMeshnet',
-            empty__pb2.Empty.SerializeToString,
-            service__response__pb2.MeshnetResponse.FromString,
+            protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+            protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -571,8 +571,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/IsEnabled',
-            empty__pb2.Empty.SerializeToString,
-            service__response__pb2.IsEnabledResponse.FromString,
+            protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+            protobuf_dot_meshnet_dot_service__response__pb2.IsEnabledResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -598,8 +598,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/DisableMeshnet',
-            empty__pb2.Empty.SerializeToString,
-            service__response__pb2.MeshnetResponse.FromString,
+            protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+            protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -625,8 +625,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/RefreshMeshnet',
-            empty__pb2.Empty.SerializeToString,
-            service__response__pb2.MeshnetResponse.FromString,
+            protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+            protobuf_dot_meshnet_dot_service__response__pb2.MeshnetResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -652,8 +652,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/GetInvites',
-            empty__pb2.Empty.SerializeToString,
-            invite__pb2.GetInvitesResponse.FromString,
+            protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+            protobuf_dot_meshnet_dot_invite__pb2.GetInvitesResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -679,8 +679,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/Invite',
-            invite__pb2.InviteRequest.SerializeToString,
-            invite__pb2.InviteResponse.FromString,
+            protobuf_dot_meshnet_dot_invite__pb2.InviteRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_invite__pb2.InviteResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -706,8 +706,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/RevokeInvite',
-            invite__pb2.DenyInviteRequest.SerializeToString,
-            invite__pb2.RespondToInviteResponse.FromString,
+            protobuf_dot_meshnet_dot_invite__pb2.DenyInviteRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -733,8 +733,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/AcceptInvite',
-            invite__pb2.InviteRequest.SerializeToString,
-            invite__pb2.RespondToInviteResponse.FromString,
+            protobuf_dot_meshnet_dot_invite__pb2.InviteRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -760,8 +760,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/DenyInvite',
-            invite__pb2.DenyInviteRequest.SerializeToString,
-            invite__pb2.RespondToInviteResponse.FromString,
+            protobuf_dot_meshnet_dot_invite__pb2.DenyInviteRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_invite__pb2.RespondToInviteResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -787,8 +787,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/GetPeers',
-            empty__pb2.Empty.SerializeToString,
-            peer__pb2.GetPeersResponse.FromString,
+            protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.GetPeersResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -814,8 +814,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/RemovePeer',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.RemovePeerResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.RemovePeerResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -841,8 +841,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/ChangePeerNickname',
-            peer__pb2.ChangePeerNicknameRequest.SerializeToString,
-            peer__pb2.ChangeNicknameResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.ChangePeerNicknameRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.ChangeNicknameResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -868,8 +868,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/ChangeMachineNickname',
-            peer__pb2.ChangeMachineNicknameRequest.SerializeToString,
-            peer__pb2.ChangeNicknameResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.ChangeMachineNicknameRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.ChangeNicknameResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -895,8 +895,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/AllowRouting',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.AllowRoutingResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.AllowRoutingResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -922,8 +922,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/DenyRouting',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.DenyRoutingResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.DenyRoutingResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -949,8 +949,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/AllowIncoming',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.AllowIncomingResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.AllowIncomingResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -976,8 +976,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/DenyIncoming',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.DenyIncomingResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.DenyIncomingResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1003,8 +1003,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/AllowLocalNetwork',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.AllowLocalNetworkResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.AllowLocalNetworkResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1030,8 +1030,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/DenyLocalNetwork',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.DenyLocalNetworkResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.DenyLocalNetworkResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1057,8 +1057,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/AllowFileshare',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.AllowFileshareResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.AllowFileshareResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1084,8 +1084,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/DenyFileshare',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.DenyFileshareResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.DenyFileshareResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1111,8 +1111,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/EnableAutomaticFileshare',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.EnableAutomaticFileshareResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.EnableAutomaticFileshareResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1138,8 +1138,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/DisableAutomaticFileshare',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.DisableAutomaticFileshareResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.DisableAutomaticFileshareResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1165,8 +1165,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/Connect',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.ConnectResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.ConnectResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1192,8 +1192,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/ConnectCancel',
-            peer__pb2.UpdatePeerRequest.SerializeToString,
-            peer__pb2.ConnectResponse.FromString,
+            protobuf_dot_meshnet_dot_peer__pb2.UpdatePeerRequest.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.ConnectResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1219,8 +1219,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/NotifyNewTransfer',
-            fsnotify__pb2.NewTransferNotification.SerializeToString,
-            fsnotify__pb2.NotifyNewTransferResponse.FromString,
+            protobuf_dot_meshnet_dot_fsnotify__pb2.NewTransferNotification.SerializeToString,
+            protobuf_dot_meshnet_dot_fsnotify__pb2.NotifyNewTransferResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1246,8 +1246,8 @@ class Meshnet(object):
             request,
             target,
             '/meshpb.Meshnet/GetPrivateKey',
-            empty__pb2.Empty.SerializeToString,
-            peer__pb2.PrivateKeyResponse.FromString,
+            protobuf_dot_meshnet_dot_empty__pb2.Empty.SerializeToString,
+            protobuf_dot_meshnet_dot_peer__pb2.PrivateKeyResponse.FromString,
             options,
             channel_credentials,
             insecure,

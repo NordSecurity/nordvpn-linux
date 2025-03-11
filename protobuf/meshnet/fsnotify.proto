@@ -4,9 +4,9 @@ package meshpb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
 
-import "empty.proto";
-import "peer.proto";
-import "service_response.proto";
+import "protobuf/meshnet/empty.proto";
+import "protobuf/meshnet/peer.proto";
+import "protobuf/meshnet/service_response.proto";
 
 // NewTransferNotification defines a notification structure about a new transfer
 message NewTransferNotification {

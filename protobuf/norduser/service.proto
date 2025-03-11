@@ -4,7 +4,7 @@ package norduserpb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/norduser/pb";
 
-import "norduser.proto";
+import "protobuf/norduser/norduser.proto";
 
 service Norduser {
     rpc Ping(Empty) returns (Empty);

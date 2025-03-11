@@ -4,7 +4,7 @@ package filesharepb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/fileshare/pb";
 
-import "fileshare.proto";
+import "protobuf/fileshare/fileshare.proto";
 
 service Fileshare {
 	// Ping to test connection between CLI and Fileshare daemon

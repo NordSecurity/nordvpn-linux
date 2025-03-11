@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.35.1
 // 	protoc        v3.21.6
-// source: state.proto
+// source: protobuf/daemon/state.proto
 
 package pb
 
@@ -47,11 +47,11 @@ func (x AppStateError) String() string {
 }
 
 func (AppStateError) Descriptor() protoreflect.EnumDescriptor {
-	return file_state_proto_enumTypes[0].Descriptor()
+	return file_protobuf_daemon_state_proto_enumTypes[0].Descriptor()
 }
 
 func (AppStateError) Type() protoreflect.EnumType {
-	return &file_state_proto_enumTypes[0]
+	return &file_protobuf_daemon_state_proto_enumTypes[0]
 }
 
 func (x AppStateError) Number() protoreflect.EnumNumber {
@@ -60,7 +60,7 @@ func (x AppStateError) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AppStateError.Descriptor instead.
 func (AppStateError) EnumDescriptor() ([]byte, []int) {
-	return file_state_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_state_proto_rawDescGZIP(), []int{0}
 }
 
 type ConnectionState int32
@@ -96,11 +96,11 @@ func (x ConnectionState) String() string {
 }
 
 func (ConnectionState) Descriptor() protoreflect.EnumDescriptor {
-	return file_state_proto_enumTypes[1].Descriptor()
+	return file_protobuf_daemon_state_proto_enumTypes[1].Descriptor()
 }
 
 func (ConnectionState) Type() protoreflect.EnumType {
-	return &file_state_proto_enumTypes[1]
+	return &file_protobuf_daemon_state_proto_enumTypes[1]
 }
 
 func (x ConnectionState) Number() protoreflect.EnumNumber {
@@ -109,7 +109,7 @@ func (x ConnectionState) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ConnectionState.Descriptor instead.
 func (ConnectionState) EnumDescriptor() ([]byte, []int) {
-	return file_state_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_state_proto_rawDescGZIP(), []int{1}
 }
 
 type LoginEventType int32
@@ -142,11 +142,11 @@ func (x LoginEventType) String() string {
 }
 
 func (LoginEventType) Descriptor() protoreflect.EnumDescriptor {
-	return file_state_proto_enumTypes[2].Descriptor()
+	return file_protobuf_daemon_state_proto_enumTypes[2].Descriptor()
 }
 
 func (LoginEventType) Type() protoreflect.EnumType {
-	return &file_state_proto_enumTypes[2]
+	return &file_protobuf_daemon_state_proto_enumTypes[2]
 }
 
 func (x LoginEventType) Number() protoreflect.EnumNumber {
@@ -155,7 +155,7 @@ func (x LoginEventType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use LoginEventType.Descriptor instead.
 func (LoginEventType) EnumDescriptor() ([]byte, []int) {
-	return file_state_proto_rawDescGZIP(), []int{2}
+	return file_protobuf_daemon_state_proto_rawDescGZIP(), []int{2}
 }
 
 type UpdateEvent int32
@@ -185,11 +185,11 @@ func (x UpdateEvent) String() string {
 }
 
 func (UpdateEvent) Descriptor() protoreflect.EnumDescriptor {
-	return file_state_proto_enumTypes[3].Descriptor()
+	return file_protobuf_daemon_state_proto_enumTypes[3].Descriptor()
 }
 
 func (UpdateEvent) Type() protoreflect.EnumType {
-	return &file_state_proto_enumTypes[3]
+	return &file_protobuf_daemon_state_proto_enumTypes[3]
 }
 
 func (x UpdateEvent) Number() protoreflect.EnumNumber {
@@ -198,7 +198,7 @@ func (x UpdateEvent) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UpdateEvent.Descriptor instead.
 func (UpdateEvent) EnumDescriptor() ([]byte, []int) {
-	return file_state_proto_rawDescGZIP(), []int{3}
+	return file_protobuf_daemon_state_proto_rawDescGZIP(), []int{3}
 }
 
 type ConnectionStatus struct {
@@ -220,7 +220,7 @@ type ConnectionStatus struct {
 
 func (x *ConnectionStatus) Reset() {
 	*x = ConnectionStatus{}
-	mi := &file_state_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_state_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -232,7 +232,7 @@ func (x *ConnectionStatus) String() string {
 func (*ConnectionStatus) ProtoMessage() {}
 
 func (x *ConnectionStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_state_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_state_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -245,7 +245,7 @@ func (x *ConnectionStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConnectionStatus.ProtoReflect.Descriptor instead.
 func (*ConnectionStatus) Descriptor() ([]byte, []int) {
-	return file_state_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_state_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ConnectionStatus) GetState() ConnectionState {
@@ -328,7 +328,7 @@ type LoginEvent struct {
 
 func (x *LoginEvent) Reset() {
 	*x = LoginEvent{}
-	mi := &file_state_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_state_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -340,7 +340,7 @@ func (x *LoginEvent) String() string {
 func (*LoginEvent) ProtoMessage() {}
 
 func (x *LoginEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_state_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_state_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -353,7 +353,7 @@ func (x *LoginEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginEvent.ProtoReflect.Descriptor instead.
 func (*LoginEvent) Descriptor() ([]byte, []int) {
-	return file_state_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_state_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *LoginEvent) GetType() LoginEventType {
@@ -373,7 +373,7 @@ type AccountModification struct {
 
 func (x *AccountModification) Reset() {
 	*x = AccountModification{}
-	mi := &file_state_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_state_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -385,7 +385,7 @@ func (x *AccountModification) String() string {
 func (*AccountModification) ProtoMessage() {}
 
 func (x *AccountModification) ProtoReflect() protoreflect.Message {
-	mi := &file_state_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_state_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -398,7 +398,7 @@ func (x *AccountModification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AccountModification.ProtoReflect.Descriptor instead.
 func (*AccountModification) Descriptor() ([]byte, []int) {
-	return file_state_proto_rawDescGZIP(), []int{2}
+	return file_protobuf_daemon_state_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *AccountModification) GetExpiresAt() string {
@@ -426,7 +426,7 @@ type AppState struct {
 
 func (x *AppState) Reset() {
 	*x = AppState{}
-	mi := &file_state_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_state_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -438,7 +438,7 @@ func (x *AppState) String() string {
 func (*AppState) ProtoMessage() {}
 
 func (x *AppState) ProtoReflect() protoreflect.Message {
-	mi := &file_state_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_state_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -451,7 +451,7 @@ func (x *AppState) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AppState.ProtoReflect.Descriptor instead.
 func (*AppState) Descriptor() ([]byte, []int) {
-	return file_state_proto_rawDescGZIP(), []int{3}
+	return file_protobuf_daemon_state_proto_rawDescGZIP(), []int{3}
 }
 
 func (m *AppState) GetState() isAppState_State {
@@ -543,12 +543,15 @@ func (*AppState_UpdateEvent) isAppState_State() {}
 
 func (*AppState_AccountModification) isAppState_State() {}
 
-var File_state_proto protoreflect.FileDescriptor
+var File_protobuf_daemon_state_proto protoreflect.FileDescriptor
 
-var file_state_proto_rawDesc = []byte{
-	0x0a, 0x0b, 0x73, 0x74, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70,
-	0x62, 0x1a, 0x0e, 0x73, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x1a, 0x0c, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
+var file_protobuf_daemon_state_proto_rawDesc = []byte{
+	0x0a, 0x1b, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70,
+	0x62, 0x1a, 0x1e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d,
+	0x6f, 0x6e, 0x2f, 0x73, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x1a, 0x1c, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d,
+	0x6f, 0x6e, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
 	0x91, 0x03, 0x0a, 0x10, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74,
 	0x61, 0x74, 0x75, 0x73, 0x12, 0x29, 0x0a, 0x05, 0x73, 0x74, 0x61, 0x74, 0x65, 0x18, 0x01, 0x20,
 	0x01, 0x28, 0x0e, 0x32, 0x13, 0x2e, 0x70, 0x62, 0x2e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74,
@@ -625,20 +628,20 @@ var file_state_proto_rawDesc = []byte{
 }
 
 var (
-	file_state_proto_rawDescOnce sync.Once
-	file_state_proto_rawDescData = file_state_proto_rawDesc
+	file_protobuf_daemon_state_proto_rawDescOnce sync.Once
+	file_protobuf_daemon_state_proto_rawDescData = file_protobuf_daemon_state_proto_rawDesc
 )
 
-func file_state_proto_rawDescGZIP() []byte {
-	file_state_proto_rawDescOnce.Do(func() {
-		file_state_proto_rawDescData = protoimpl.X.CompressGZIP(file_state_proto_rawDescData)
+func file_protobuf_daemon_state_proto_rawDescGZIP() []byte {
+	file_protobuf_daemon_state_proto_rawDescOnce.Do(func() {
+		file_protobuf_daemon_state_proto_rawDescData = protoimpl.X.CompressGZIP(file_protobuf_daemon_state_proto_rawDescData)
 	})
-	return file_state_proto_rawDescData
+	return file_protobuf_daemon_state_proto_rawDescData
 }
 
-var file_state_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_state_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_state_proto_goTypes = []any{
+var file_protobuf_daemon_state_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_protobuf_daemon_state_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_protobuf_daemon_state_proto_goTypes = []any{
 	(AppStateError)(0),           // 0: pb.AppStateError
 	(ConnectionState)(0),         // 1: pb.ConnectionState
 	(LoginEventType)(0),          // 2: pb.LoginEventType
@@ -650,7 +653,7 @@ var file_state_proto_goTypes = []any{
 	(*ConnectionParameters)(nil), // 8: pb.ConnectionParameters
 	(*Settings)(nil),             // 9: pb.Settings
 }
-var file_state_proto_depIdxs = []int32{
+var file_protobuf_daemon_state_proto_depIdxs = []int32{
 	1, // 0: pb.ConnectionStatus.state:type_name -> pb.ConnectionState
 	8, // 1: pb.ConnectionStatus.parameters:type_name -> pb.ConnectionParameters
 	2, // 2: pb.LoginEvent.type:type_name -> pb.LoginEventType
@@ -667,15 +670,15 @@ var file_state_proto_depIdxs = []int32{
 	0, // [0:9] is the sub-list for field type_name
 }
 
-func init() { file_state_proto_init() }
-func file_state_proto_init() {
-	if File_state_proto != nil {
+func init() { file_protobuf_daemon_state_proto_init() }
+func file_protobuf_daemon_state_proto_init() {
+	if File_protobuf_daemon_state_proto != nil {
 		return
 	}
-	file_settings_proto_init()
-	file_status_proto_init()
-	file_state_proto_msgTypes[2].OneofWrappers = []any{}
-	file_state_proto_msgTypes[3].OneofWrappers = []any{
+	file_protobuf_daemon_settings_proto_init()
+	file_protobuf_daemon_status_proto_init()
+	file_protobuf_daemon_state_proto_msgTypes[2].OneofWrappers = []any{}
+	file_protobuf_daemon_state_proto_msgTypes[3].OneofWrappers = []any{
 		(*AppState_Error)(nil),
 		(*AppState_ConnectionStatus)(nil),
 		(*AppState_LoginEvent)(nil),
@@ -687,19 +690,19 @@ func file_state_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_state_proto_rawDesc,
+			RawDescriptor: file_protobuf_daemon_state_proto_rawDesc,
 			NumEnums:      4,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_state_proto_goTypes,
-		DependencyIndexes: file_state_proto_depIdxs,
-		EnumInfos:         file_state_proto_enumTypes,
-		MessageInfos:      file_state_proto_msgTypes,
+		GoTypes:           file_protobuf_daemon_state_proto_goTypes,
+		DependencyIndexes: file_protobuf_daemon_state_proto_depIdxs,
+		EnumInfos:         file_protobuf_daemon_state_proto_enumTypes,
+		MessageInfos:      file_protobuf_daemon_state_proto_msgTypes,
 	}.Build()
-	File_state_proto = out.File
-	file_state_proto_rawDesc = nil
-	file_state_proto_goTypes = nil
-	file_state_proto_depIdxs = nil
+	File_protobuf_daemon_state_proto = out.File
+	file_protobuf_daemon_state_proto_rawDesc = nil
+	file_protobuf_daemon_state_proto_goTypes = nil
+	file_protobuf_daemon_state_proto_depIdxs = nil
 }

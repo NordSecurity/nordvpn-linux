@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.35.1
 // 	protoc        v3.21.6
-// source: settings.proto
+// source: protobuf/daemon/settings.proto
 
 package pb
 
@@ -32,7 +32,7 @@ type SettingsResponse struct {
 
 func (x *SettingsResponse) Reset() {
 	*x = SettingsResponse{}
-	mi := &file_settings_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_settings_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +44,7 @@ func (x *SettingsResponse) String() string {
 func (*SettingsResponse) ProtoMessage() {}
 
 func (x *SettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_settings_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_settings_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +57,7 @@ func (x *SettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SettingsResponse.ProtoReflect.Descriptor instead.
 func (*SettingsResponse) Descriptor() ([]byte, []int) {
-	return file_settings_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_settings_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SettingsResponse) GetType() int64 {
@@ -87,7 +87,7 @@ type AutoconnectData struct {
 
 func (x *AutoconnectData) Reset() {
 	*x = AutoconnectData{}
-	mi := &file_settings_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_settings_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -99,7 +99,7 @@ func (x *AutoconnectData) String() string {
 func (*AutoconnectData) ProtoMessage() {}
 
 func (x *AutoconnectData) ProtoReflect() protoreflect.Message {
-	mi := &file_settings_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_settings_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -112,7 +112,7 @@ func (x *AutoconnectData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AutoconnectData.ProtoReflect.Descriptor instead.
 func (*AutoconnectData) Descriptor() ([]byte, []int) {
-	return file_settings_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_settings_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AutoconnectData) GetEnabled() bool {
@@ -170,7 +170,7 @@ type Settings struct {
 
 func (x *Settings) Reset() {
 	*x = Settings{}
-	mi := &file_settings_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_settings_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -182,7 +182,7 @@ func (x *Settings) String() string {
 func (*Settings) ProtoMessage() {}
 
 func (x *Settings) ProtoReflect() protoreflect.Message {
-	mi := &file_settings_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_settings_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -195,7 +195,7 @@ func (x *Settings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Settings.ProtoReflect.Descriptor instead.
 func (*Settings) Descriptor() ([]byte, []int) {
-	return file_settings_proto_rawDescGZIP(), []int{2}
+	return file_protobuf_daemon_settings_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Settings) GetTechnology() config.Technology {
@@ -336,7 +336,7 @@ type UserSpecificSettings struct {
 
 func (x *UserSpecificSettings) Reset() {
 	*x = UserSpecificSettings{}
-	mi := &file_settings_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_settings_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -348,7 +348,7 @@ func (x *UserSpecificSettings) String() string {
 func (*UserSpecificSettings) ProtoMessage() {}
 
 func (x *UserSpecificSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_settings_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_settings_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -361,7 +361,7 @@ func (x *UserSpecificSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserSpecificSettings.ProtoReflect.Descriptor instead.
 func (*UserSpecificSettings) Descriptor() ([]byte, []int) {
-	return file_settings_proto_rawDescGZIP(), []int{3}
+	return file_protobuf_daemon_settings_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *UserSpecificSettings) GetUid() int64 {
@@ -385,15 +385,20 @@ func (x *UserSpecificSettings) GetTray() bool {
 	return false
 }
 
-var File_settings_proto protoreflect.FileDescriptor
+var File_protobuf_daemon_settings_proto protoreflect.FileDescriptor
 
-var file_settings_proto_rawDesc = []byte{
-	0x0a, 0x0e, 0x73, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x12, 0x02, 0x70, 0x62, 0x1a, 0x0c, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x1a, 0x17, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x74, 0x65, 0x63, 0x68, 0x6e,
-	0x6f, 0x6c, 0x6f, 0x67, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x15, 0x63, 0x6f, 0x6e,
+var file_protobuf_daemon_settings_proto_rawDesc = []byte{
+	0x0a, 0x1e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x73, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x12, 0x02, 0x70, 0x62, 0x1a, 0x1c, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64,
+	0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x2f, 0x63, 0x6f, 0x6d, 0x6d, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x1a, 0x27, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65,
+	0x6d, 0x6f, 0x6e, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x74, 0x65, 0x63, 0x68, 0x6e,
+	0x6f, 0x6c, 0x6f, 0x67, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x25, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x2f, 0x63, 0x6f, 0x6e,
 	0x66, 0x69, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x2e, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x1a, 0x12, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x67, 0x72, 0x6f, 0x75, 0x70,
+	0x74, 0x6f, 0x1a, 0x22, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65,
+	0x6d, 0x6f, 0x6e, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x67, 0x72, 0x6f, 0x75, 0x70,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x48, 0x0a, 0x10, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e,
 	0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79,
 	0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x20,
@@ -464,19 +469,19 @@ var file_settings_proto_rawDesc = []byte{
 }
 
 var (
-	file_settings_proto_rawDescOnce sync.Once
-	file_settings_proto_rawDescData = file_settings_proto_rawDesc
+	file_protobuf_daemon_settings_proto_rawDescOnce sync.Once
+	file_protobuf_daemon_settings_proto_rawDescData = file_protobuf_daemon_settings_proto_rawDesc
 )
 
-func file_settings_proto_rawDescGZIP() []byte {
-	file_settings_proto_rawDescOnce.Do(func() {
-		file_settings_proto_rawDescData = protoimpl.X.CompressGZIP(file_settings_proto_rawDescData)
+func file_protobuf_daemon_settings_proto_rawDescGZIP() []byte {
+	file_protobuf_daemon_settings_proto_rawDescOnce.Do(func() {
+		file_protobuf_daemon_settings_proto_rawDescData = protoimpl.X.CompressGZIP(file_protobuf_daemon_settings_proto_rawDescData)
 	})
-	return file_settings_proto_rawDescData
+	return file_protobuf_daemon_settings_proto_rawDescData
 }
 
-var file_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
-var file_settings_proto_goTypes = []any{
+var file_protobuf_daemon_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_protobuf_daemon_settings_proto_goTypes = []any{
 	(*SettingsResponse)(nil),     // 0: pb.SettingsResponse
 	(*AutoconnectData)(nil),      // 1: pb.AutoconnectData
 	(*Settings)(nil),             // 2: pb.Settings
@@ -486,7 +491,7 @@ var file_settings_proto_goTypes = []any{
 	(config.Protocol)(0),         // 6: config.Protocol
 	(*Allowlist)(nil),            // 7: pb.Allowlist
 }
-var file_settings_proto_depIdxs = []int32{
+var file_protobuf_daemon_settings_proto_depIdxs = []int32{
 	2, // 0: pb.SettingsResponse.data:type_name -> pb.Settings
 	4, // 1: pb.AutoconnectData.server_group:type_name -> config.ServerGroup
 	5, // 2: pb.Settings.technology:type_name -> config.Technology
@@ -501,28 +506,28 @@ var file_settings_proto_depIdxs = []int32{
 	0, // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_settings_proto_init() }
-func file_settings_proto_init() {
-	if File_settings_proto != nil {
+func init() { file_protobuf_daemon_settings_proto_init() }
+func file_protobuf_daemon_settings_proto_init() {
+	if File_protobuf_daemon_settings_proto != nil {
 		return
 	}
-	file_common_proto_init()
+	file_protobuf_daemon_common_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_settings_proto_rawDesc,
+			RawDescriptor: file_protobuf_daemon_settings_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_settings_proto_goTypes,
-		DependencyIndexes: file_settings_proto_depIdxs,
-		MessageInfos:      file_settings_proto_msgTypes,
+		GoTypes:           file_protobuf_daemon_settings_proto_goTypes,
+		DependencyIndexes: file_protobuf_daemon_settings_proto_depIdxs,
+		MessageInfos:      file_protobuf_daemon_settings_proto_msgTypes,
 	}.Build()
-	File_settings_proto = out.File
-	file_settings_proto_rawDesc = nil
-	file_settings_proto_goTypes = nil
-	file_settings_proto_depIdxs = nil
+	File_protobuf_daemon_settings_proto = out.File
+	file_protobuf_daemon_settings_proto_rawDesc = nil
+	file_protobuf_daemon_settings_proto_goTypes = nil
+	file_protobuf_daemon_settings_proto_depIdxs = nil
 }

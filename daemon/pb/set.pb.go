@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.35.1
 // 	protoc        v3.21.6
-// source: set.proto
+// source: protobuf/daemon/set.proto
 
 package pb
 
@@ -54,11 +54,11 @@ func (x SetErrorCode) String() string {
 }
 
 func (SetErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_set_proto_enumTypes[0].Descriptor()
+	return file_protobuf_daemon_set_proto_enumTypes[0].Descriptor()
 }
 
 func (SetErrorCode) Type() protoreflect.EnumType {
-	return &file_set_proto_enumTypes[0]
+	return &file_protobuf_daemon_set_proto_enumTypes[0]
 }
 
 func (x SetErrorCode) Number() protoreflect.EnumNumber {
@@ -67,7 +67,7 @@ func (x SetErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SetErrorCode.Descriptor instead.
 func (SetErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{0}
 }
 
 type SetThreatProtectionLiteStatus int32
@@ -100,11 +100,11 @@ func (x SetThreatProtectionLiteStatus) String() string {
 }
 
 func (SetThreatProtectionLiteStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_set_proto_enumTypes[1].Descriptor()
+	return file_protobuf_daemon_set_proto_enumTypes[1].Descriptor()
 }
 
 func (SetThreatProtectionLiteStatus) Type() protoreflect.EnumType {
-	return &file_set_proto_enumTypes[1]
+	return &file_protobuf_daemon_set_proto_enumTypes[1]
 }
 
 func (x SetThreatProtectionLiteStatus) Number() protoreflect.EnumNumber {
@@ -113,7 +113,7 @@ func (x SetThreatProtectionLiteStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SetThreatProtectionLiteStatus.Descriptor instead.
 func (SetThreatProtectionLiteStatus) EnumDescriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{1}
 }
 
 type SetDNSStatus int32
@@ -152,11 +152,11 @@ func (x SetDNSStatus) String() string {
 }
 
 func (SetDNSStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_set_proto_enumTypes[2].Descriptor()
+	return file_protobuf_daemon_set_proto_enumTypes[2].Descriptor()
 }
 
 func (SetDNSStatus) Type() protoreflect.EnumType {
-	return &file_set_proto_enumTypes[2]
+	return &file_protobuf_daemon_set_proto_enumTypes[2]
 }
 
 func (x SetDNSStatus) Number() protoreflect.EnumNumber {
@@ -165,7 +165,7 @@ func (x SetDNSStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SetDNSStatus.Descriptor instead.
 func (SetDNSStatus) EnumDescriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{2}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{2}
 }
 
 type SetProtocolStatus int32
@@ -201,11 +201,11 @@ func (x SetProtocolStatus) String() string {
 }
 
 func (SetProtocolStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_set_proto_enumTypes[3].Descriptor()
+	return file_protobuf_daemon_set_proto_enumTypes[3].Descriptor()
 }
 
 func (SetProtocolStatus) Type() protoreflect.EnumType {
-	return &file_set_proto_enumTypes[3]
+	return &file_protobuf_daemon_set_proto_enumTypes[3]
 }
 
 func (x SetProtocolStatus) Number() protoreflect.EnumNumber {
@@ -214,7 +214,7 @@ func (x SetProtocolStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SetProtocolStatus.Descriptor instead.
 func (SetProtocolStatus) EnumDescriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{3}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{3}
 }
 
 type SetLANDiscoveryStatus int32
@@ -247,11 +247,11 @@ func (x SetLANDiscoveryStatus) String() string {
 }
 
 func (SetLANDiscoveryStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_set_proto_enumTypes[4].Descriptor()
+	return file_protobuf_daemon_set_proto_enumTypes[4].Descriptor()
 }
 
 func (SetLANDiscoveryStatus) Type() protoreflect.EnumType {
-	return &file_set_proto_enumTypes[4]
+	return &file_protobuf_daemon_set_proto_enumTypes[4]
 }
 
 func (x SetLANDiscoveryStatus) Number() protoreflect.EnumNumber {
@@ -260,7 +260,7 @@ func (x SetLANDiscoveryStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SetLANDiscoveryStatus.Descriptor instead.
 func (SetLANDiscoveryStatus) EnumDescriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{4}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{4}
 }
 
 type SetAutoconnectRequest struct {
@@ -275,7 +275,7 @@ type SetAutoconnectRequest struct {
 
 func (x *SetAutoconnectRequest) Reset() {
 	*x = SetAutoconnectRequest{}
-	mi := &file_set_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -287,7 +287,7 @@ func (x *SetAutoconnectRequest) String() string {
 func (*SetAutoconnectRequest) ProtoMessage() {}
 
 func (x *SetAutoconnectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -300,7 +300,7 @@ func (x *SetAutoconnectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetAutoconnectRequest.ProtoReflect.Descriptor instead.
 func (*SetAutoconnectRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *SetAutoconnectRequest) GetEnabled() bool {
@@ -334,7 +334,7 @@ type SetGenericRequest struct {
 
 func (x *SetGenericRequest) Reset() {
 	*x = SetGenericRequest{}
-	mi := &file_set_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -346,7 +346,7 @@ func (x *SetGenericRequest) String() string {
 func (*SetGenericRequest) ProtoMessage() {}
 
 func (x *SetGenericRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -359,7 +359,7 @@ func (x *SetGenericRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetGenericRequest.ProtoReflect.Descriptor instead.
 func (*SetGenericRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *SetGenericRequest) GetEnabled() bool {
@@ -379,7 +379,7 @@ type SetUint32Request struct {
 
 func (x *SetUint32Request) Reset() {
 	*x = SetUint32Request{}
-	mi := &file_set_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +391,7 @@ func (x *SetUint32Request) String() string {
 func (*SetUint32Request) ProtoMessage() {}
 
 func (x *SetUint32Request) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +404,7 @@ func (x *SetUint32Request) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetUint32Request.ProtoReflect.Descriptor instead.
 func (*SetUint32Request) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{2}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *SetUint32Request) GetValue() uint32 {
@@ -424,7 +424,7 @@ type SetThreatProtectionLiteRequest struct {
 
 func (x *SetThreatProtectionLiteRequest) Reset() {
 	*x = SetThreatProtectionLiteRequest{}
-	mi := &file_set_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -436,7 +436,7 @@ func (x *SetThreatProtectionLiteRequest) String() string {
 func (*SetThreatProtectionLiteRequest) ProtoMessage() {}
 
 func (x *SetThreatProtectionLiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -449,7 +449,7 @@ func (x *SetThreatProtectionLiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetThreatProtectionLiteRequest.ProtoReflect.Descriptor instead.
 func (*SetThreatProtectionLiteRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{3}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *SetThreatProtectionLiteRequest) GetThreatProtectionLite() bool {
@@ -473,7 +473,7 @@ type SetThreatProtectionLiteResponse struct {
 
 func (x *SetThreatProtectionLiteResponse) Reset() {
 	*x = SetThreatProtectionLiteResponse{}
-	mi := &file_set_proto_msgTypes[4]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -485,7 +485,7 @@ func (x *SetThreatProtectionLiteResponse) String() string {
 func (*SetThreatProtectionLiteResponse) ProtoMessage() {}
 
 func (x *SetThreatProtectionLiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[4]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -498,7 +498,7 @@ func (x *SetThreatProtectionLiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetThreatProtectionLiteResponse.ProtoReflect.Descriptor instead.
 func (*SetThreatProtectionLiteResponse) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{4}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{4}
 }
 
 func (m *SetThreatProtectionLiteResponse) GetResponse() isSetThreatProtectionLiteResponse_Response {
@@ -550,7 +550,7 @@ type SetDNSRequest struct {
 
 func (x *SetDNSRequest) Reset() {
 	*x = SetDNSRequest{}
-	mi := &file_set_proto_msgTypes[5]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -562,7 +562,7 @@ func (x *SetDNSRequest) String() string {
 func (*SetDNSRequest) ProtoMessage() {}
 
 func (x *SetDNSRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[5]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -575,7 +575,7 @@ func (x *SetDNSRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDNSRequest.ProtoReflect.Descriptor instead.
 func (*SetDNSRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{5}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *SetDNSRequest) GetDns() []string {
@@ -606,7 +606,7 @@ type SetDNSResponse struct {
 
 func (x *SetDNSResponse) Reset() {
 	*x = SetDNSResponse{}
-	mi := &file_set_proto_msgTypes[6]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -618,7 +618,7 @@ func (x *SetDNSResponse) String() string {
 func (*SetDNSResponse) ProtoMessage() {}
 
 func (x *SetDNSResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[6]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -631,7 +631,7 @@ func (x *SetDNSResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDNSResponse.ProtoReflect.Descriptor instead.
 func (*SetDNSResponse) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{6}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{6}
 }
 
 func (m *SetDNSResponse) GetResponse() isSetDNSResponse_Response {
@@ -681,7 +681,7 @@ type SetKillSwitchRequest struct {
 
 func (x *SetKillSwitchRequest) Reset() {
 	*x = SetKillSwitchRequest{}
-	mi := &file_set_proto_msgTypes[7]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -693,7 +693,7 @@ func (x *SetKillSwitchRequest) String() string {
 func (*SetKillSwitchRequest) ProtoMessage() {}
 
 func (x *SetKillSwitchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[7]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -706,7 +706,7 @@ func (x *SetKillSwitchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetKillSwitchRequest.ProtoReflect.Descriptor instead.
 func (*SetKillSwitchRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{7}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *SetKillSwitchRequest) GetKillSwitch() bool {
@@ -726,7 +726,7 @@ type SetNotifyRequest struct {
 
 func (x *SetNotifyRequest) Reset() {
 	*x = SetNotifyRequest{}
-	mi := &file_set_proto_msgTypes[8]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -738,7 +738,7 @@ func (x *SetNotifyRequest) String() string {
 func (*SetNotifyRequest) ProtoMessage() {}
 
 func (x *SetNotifyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[8]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -751,7 +751,7 @@ func (x *SetNotifyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetNotifyRequest.ProtoReflect.Descriptor instead.
 func (*SetNotifyRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{8}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SetNotifyRequest) GetNotify() bool {
@@ -772,7 +772,7 @@ type SetTrayRequest struct {
 
 func (x *SetTrayRequest) Reset() {
 	*x = SetTrayRequest{}
-	mi := &file_set_proto_msgTypes[9]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -784,7 +784,7 @@ func (x *SetTrayRequest) String() string {
 func (*SetTrayRequest) ProtoMessage() {}
 
 func (x *SetTrayRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[9]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -797,7 +797,7 @@ func (x *SetTrayRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetTrayRequest.ProtoReflect.Descriptor instead.
 func (*SetTrayRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{9}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SetTrayRequest) GetUid() int64 {
@@ -824,7 +824,7 @@ type SetProtocolRequest struct {
 
 func (x *SetProtocolRequest) Reset() {
 	*x = SetProtocolRequest{}
-	mi := &file_set_proto_msgTypes[10]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -836,7 +836,7 @@ func (x *SetProtocolRequest) String() string {
 func (*SetProtocolRequest) ProtoMessage() {}
 
 func (x *SetProtocolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[10]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -849,7 +849,7 @@ func (x *SetProtocolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetProtocolRequest.ProtoReflect.Descriptor instead.
 func (*SetProtocolRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{10}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SetProtocolRequest) GetProtocol() config.Protocol {
@@ -873,7 +873,7 @@ type SetProtocolResponse struct {
 
 func (x *SetProtocolResponse) Reset() {
 	*x = SetProtocolResponse{}
-	mi := &file_set_proto_msgTypes[11]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -885,7 +885,7 @@ func (x *SetProtocolResponse) String() string {
 func (*SetProtocolResponse) ProtoMessage() {}
 
 func (x *SetProtocolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[11]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -898,7 +898,7 @@ func (x *SetProtocolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetProtocolResponse.ProtoReflect.Descriptor instead.
 func (*SetProtocolResponse) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{11}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{11}
 }
 
 func (m *SetProtocolResponse) GetResponse() isSetProtocolResponse_Response {
@@ -948,7 +948,7 @@ type SetTechnologyRequest struct {
 
 func (x *SetTechnologyRequest) Reset() {
 	*x = SetTechnologyRequest{}
-	mi := &file_set_proto_msgTypes[12]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -960,7 +960,7 @@ func (x *SetTechnologyRequest) String() string {
 func (*SetTechnologyRequest) ProtoMessage() {}
 
 func (x *SetTechnologyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[12]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -973,7 +973,7 @@ func (x *SetTechnologyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetTechnologyRequest.ProtoReflect.Descriptor instead.
 func (*SetTechnologyRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{12}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SetTechnologyRequest) GetTechnology() config.Technology {
@@ -994,7 +994,7 @@ type PortRange struct {
 
 func (x *PortRange) Reset() {
 	*x = PortRange{}
-	mi := &file_set_proto_msgTypes[13]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1006,7 +1006,7 @@ func (x *PortRange) String() string {
 func (*PortRange) ProtoMessage() {}
 
 func (x *PortRange) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[13]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1019,7 +1019,7 @@ func (x *PortRange) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PortRange.ProtoReflect.Descriptor instead.
 func (*PortRange) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{13}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *PortRange) GetStartPort() int64 {
@@ -1046,7 +1046,7 @@ type SetAllowlistSubnetRequest struct {
 
 func (x *SetAllowlistSubnetRequest) Reset() {
 	*x = SetAllowlistSubnetRequest{}
-	mi := &file_set_proto_msgTypes[14]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1058,7 +1058,7 @@ func (x *SetAllowlistSubnetRequest) String() string {
 func (*SetAllowlistSubnetRequest) ProtoMessage() {}
 
 func (x *SetAllowlistSubnetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[14]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1071,7 +1071,7 @@ func (x *SetAllowlistSubnetRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetAllowlistSubnetRequest.ProtoReflect.Descriptor instead.
 func (*SetAllowlistSubnetRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{14}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SetAllowlistSubnetRequest) GetSubnet() string {
@@ -1093,7 +1093,7 @@ type SetAllowlistPortsRequest struct {
 
 func (x *SetAllowlistPortsRequest) Reset() {
 	*x = SetAllowlistPortsRequest{}
-	mi := &file_set_proto_msgTypes[15]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1105,7 +1105,7 @@ func (x *SetAllowlistPortsRequest) String() string {
 func (*SetAllowlistPortsRequest) ProtoMessage() {}
 
 func (x *SetAllowlistPortsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[15]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1118,7 +1118,7 @@ func (x *SetAllowlistPortsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetAllowlistPortsRequest.ProtoReflect.Descriptor instead.
 func (*SetAllowlistPortsRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{15}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SetAllowlistPortsRequest) GetIsUdp() bool {
@@ -1156,7 +1156,7 @@ type SetAllowlistRequest struct {
 
 func (x *SetAllowlistRequest) Reset() {
 	*x = SetAllowlistRequest{}
-	mi := &file_set_proto_msgTypes[16]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1168,7 +1168,7 @@ func (x *SetAllowlistRequest) String() string {
 func (*SetAllowlistRequest) ProtoMessage() {}
 
 func (x *SetAllowlistRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[16]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1181,7 +1181,7 @@ func (x *SetAllowlistRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetAllowlistRequest.ProtoReflect.Descriptor instead.
 func (*SetAllowlistRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{16}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{16}
 }
 
 func (m *SetAllowlistRequest) GetRequest() isSetAllowlistRequest_Request {
@@ -1231,7 +1231,7 @@ type SetLANDiscoveryRequest struct {
 
 func (x *SetLANDiscoveryRequest) Reset() {
 	*x = SetLANDiscoveryRequest{}
-	mi := &file_set_proto_msgTypes[17]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1243,7 +1243,7 @@ func (x *SetLANDiscoveryRequest) String() string {
 func (*SetLANDiscoveryRequest) ProtoMessage() {}
 
 func (x *SetLANDiscoveryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[17]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1256,7 +1256,7 @@ func (x *SetLANDiscoveryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetLANDiscoveryRequest.ProtoReflect.Descriptor instead.
 func (*SetLANDiscoveryRequest) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{17}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SetLANDiscoveryRequest) GetEnabled() bool {
@@ -1280,7 +1280,7 @@ type SetLANDiscoveryResponse struct {
 
 func (x *SetLANDiscoveryResponse) Reset() {
 	*x = SetLANDiscoveryResponse{}
-	mi := &file_set_proto_msgTypes[18]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1292,7 +1292,7 @@ func (x *SetLANDiscoveryResponse) String() string {
 func (*SetLANDiscoveryResponse) ProtoMessage() {}
 
 func (x *SetLANDiscoveryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_set_proto_msgTypes[18]
+	mi := &file_protobuf_daemon_set_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1305,7 +1305,7 @@ func (x *SetLANDiscoveryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetLANDiscoveryResponse.ProtoReflect.Descriptor instead.
 func (*SetLANDiscoveryResponse) Descriptor() ([]byte, []int) {
-	return file_set_proto_rawDescGZIP(), []int{18}
+	return file_protobuf_daemon_set_proto_rawDescGZIP(), []int{18}
 }
 
 func (m *SetLANDiscoveryResponse) GetResponse() isSetLANDiscoveryResponse_Response {
@@ -1345,12 +1345,15 @@ func (*SetLANDiscoveryResponse_ErrorCode) isSetLANDiscoveryResponse_Response() {
 
 func (*SetLANDiscoveryResponse_SetLanDiscoveryStatus) isSetLANDiscoveryResponse_Response() {}
 
-var File_set_proto protoreflect.FileDescriptor
+var File_protobuf_daemon_set_proto protoreflect.FileDescriptor
 
-var file_set_proto_rawDesc = []byte{
-	0x0a, 0x09, 0x73, 0x65, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70, 0x62, 0x1a,
-	0x15, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x17, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x74,
+var file_protobuf_daemon_set_proto_rawDesc = []byte{
+	0x0a, 0x19, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x73, 0x65, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70, 0x62, 0x1a,
+	0x25, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f, 0x6e,
+	0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x27, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x74,
 	0x65, 0x63, 0x68, 0x6e, 0x6f, 0x6c, 0x6f, 0x67, 0x79, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
 	0x73, 0x0a, 0x15, 0x53, 0x65, 0x74, 0x41, 0x75, 0x74, 0x6f, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63,
 	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x65, 0x6e, 0x61, 0x62,
@@ -1506,20 +1509,20 @@ var file_set_proto_rawDesc = []byte{
 }
 
 var (
-	file_set_proto_rawDescOnce sync.Once
-	file_set_proto_rawDescData = file_set_proto_rawDesc
+	file_protobuf_daemon_set_proto_rawDescOnce sync.Once
+	file_protobuf_daemon_set_proto_rawDescData = file_protobuf_daemon_set_proto_rawDesc
 )
 
-func file_set_proto_rawDescGZIP() []byte {
-	file_set_proto_rawDescOnce.Do(func() {
-		file_set_proto_rawDescData = protoimpl.X.CompressGZIP(file_set_proto_rawDescData)
+func file_protobuf_daemon_set_proto_rawDescGZIP() []byte {
+	file_protobuf_daemon_set_proto_rawDescOnce.Do(func() {
+		file_protobuf_daemon_set_proto_rawDescData = protoimpl.X.CompressGZIP(file_protobuf_daemon_set_proto_rawDescData)
 	})
-	return file_set_proto_rawDescData
+	return file_protobuf_daemon_set_proto_rawDescData
 }
 
-var file_set_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
-var file_set_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
-var file_set_proto_goTypes = []any{
+var file_protobuf_daemon_set_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_protobuf_daemon_set_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_protobuf_daemon_set_proto_goTypes = []any{
 	(SetErrorCode)(0),                       // 0: pb.SetErrorCode
 	(SetThreatProtectionLiteStatus)(0),      // 1: pb.SetThreatProtectionLiteStatus
 	(SetDNSStatus)(0),                       // 2: pb.SetDNSStatus
@@ -1547,7 +1550,7 @@ var file_set_proto_goTypes = []any{
 	(config.Protocol)(0),                    // 24: config.Protocol
 	(config.Technology)(0),                  // 25: config.Technology
 }
-var file_set_proto_depIdxs = []int32{
+var file_protobuf_daemon_set_proto_depIdxs = []int32{
 	0,  // 0: pb.SetThreatProtectionLiteResponse.error_code:type_name -> pb.SetErrorCode
 	1,  // 1: pb.SetThreatProtectionLiteResponse.set_threat_protection_lite_status:type_name -> pb.SetThreatProtectionLiteStatus
 	0,  // 2: pb.SetDNSResponse.error_code:type_name -> pb.SetErrorCode
@@ -1568,28 +1571,28 @@ var file_set_proto_depIdxs = []int32{
 	0,  // [0:13] is the sub-list for field type_name
 }
 
-func init() { file_set_proto_init() }
-func file_set_proto_init() {
-	if File_set_proto != nil {
+func init() { file_protobuf_daemon_set_proto_init() }
+func file_protobuf_daemon_set_proto_init() {
+	if File_protobuf_daemon_set_proto != nil {
 		return
 	}
-	file_set_proto_msgTypes[4].OneofWrappers = []any{
+	file_protobuf_daemon_set_proto_msgTypes[4].OneofWrappers = []any{
 		(*SetThreatProtectionLiteResponse_ErrorCode)(nil),
 		(*SetThreatProtectionLiteResponse_SetThreatProtectionLiteStatus)(nil),
 	}
-	file_set_proto_msgTypes[6].OneofWrappers = []any{
+	file_protobuf_daemon_set_proto_msgTypes[6].OneofWrappers = []any{
 		(*SetDNSResponse_ErrorCode)(nil),
 		(*SetDNSResponse_SetDnsStatus)(nil),
 	}
-	file_set_proto_msgTypes[11].OneofWrappers = []any{
+	file_protobuf_daemon_set_proto_msgTypes[11].OneofWrappers = []any{
 		(*SetProtocolResponse_ErrorCode)(nil),
 		(*SetProtocolResponse_SetProtocolStatus)(nil),
 	}
-	file_set_proto_msgTypes[16].OneofWrappers = []any{
+	file_protobuf_daemon_set_proto_msgTypes[16].OneofWrappers = []any{
 		(*SetAllowlistRequest_SetAllowlistSubnetRequest)(nil),
 		(*SetAllowlistRequest_SetAllowlistPortsRequest)(nil),
 	}
-	file_set_proto_msgTypes[18].OneofWrappers = []any{
+	file_protobuf_daemon_set_proto_msgTypes[18].OneofWrappers = []any{
 		(*SetLANDiscoveryResponse_ErrorCode)(nil),
 		(*SetLANDiscoveryResponse_SetLanDiscoveryStatus)(nil),
 	}
@@ -1597,19 +1600,19 @@ func file_set_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_set_proto_rawDesc,
+			RawDescriptor: file_protobuf_daemon_set_proto_rawDesc,
 			NumEnums:      5,
 			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_set_proto_goTypes,
-		DependencyIndexes: file_set_proto_depIdxs,
-		EnumInfos:         file_set_proto_enumTypes,
-		MessageInfos:      file_set_proto_msgTypes,
+		GoTypes:           file_protobuf_daemon_set_proto_goTypes,
+		DependencyIndexes: file_protobuf_daemon_set_proto_depIdxs,
+		EnumInfos:         file_protobuf_daemon_set_proto_enumTypes,
+		MessageInfos:      file_protobuf_daemon_set_proto_msgTypes,
 	}.Build()
-	File_set_proto = out.File
-	file_set_proto_rawDesc = nil
-	file_set_proto_goTypes = nil
-	file_set_proto_depIdxs = nil
+	File_protobuf_daemon_set_proto = out.File
+	file_protobuf_daemon_set_proto_rawDesc = nil
+	file_protobuf_daemon_set_proto_goTypes = nil
+	file_protobuf_daemon_set_proto_depIdxs = nil
 }

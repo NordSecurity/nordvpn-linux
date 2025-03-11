@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.6
-// source: service.proto
+// source: protobuf/fileshare/service.proto
 
 package pb
 
@@ -449,5 +449,5 @@ var Fileshare_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "service.proto",
+	Metadata: "protobuf/fileshare/service.proto",
 }

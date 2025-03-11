@@ -4,8 +4,8 @@ package meshpb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/meshnet/pb";
 
-import "empty.proto";
-import "service_response.proto";
+import "protobuf/meshnet/empty.proto";
+import "protobuf/meshnet/service_response.proto";
 
 // GetPeersResponse defines
 message GetPeersResponse {

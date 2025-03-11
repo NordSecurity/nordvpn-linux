@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.6
-// source: service.proto
+// source: protobuf/meshnet/service.proto
 
 package pb
 
@@ -1177,5 +1177,5 @@ var Meshnet_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "service.proto",
+	Metadata: "protobuf/meshnet/service.proto",
 }

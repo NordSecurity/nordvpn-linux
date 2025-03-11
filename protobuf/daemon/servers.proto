@@ -4,7 +4,7 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-import "config/group.proto";
+import "protobuf/daemon/config/group.proto";
 
 enum ServersError {
     NO_ERROR = 0;

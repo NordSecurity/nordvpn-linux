@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.35.1
 // 	protoc        v3.21.6
-// source: token.proto
+// source: protobuf/daemon/token.proto
 
 package pb
 
@@ -34,7 +34,7 @@ type TokenInfoResponse struct {
 
 func (x *TokenInfoResponse) Reset() {
 	*x = TokenInfoResponse{}
-	mi := &file_token_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_token_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -46,7 +46,7 @@ func (x *TokenInfoResponse) String() string {
 func (*TokenInfoResponse) ProtoMessage() {}
 
 func (x *TokenInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_token_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_token_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -59,7 +59,7 @@ func (x *TokenInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenInfoResponse.ProtoReflect.Descriptor instead.
 func (*TokenInfoResponse) Descriptor() ([]byte, []int) {
-	return file_token_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_token_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *TokenInfoResponse) GetType() int64 {
@@ -97,10 +97,11 @@ func (x *TokenInfoResponse) GetTrustedPassOwnerId() string {
 	return ""
 }
 
-var File_token_proto protoreflect.FileDescriptor
+var File_protobuf_daemon_token_proto protoreflect.FileDescriptor
 
-var file_token_proto_rawDesc = []byte{
-	0x0a, 0x0b, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70,
+var file_protobuf_daemon_token_proto_rawDesc = []byte{
+	0x0a, 0x1b, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70,
 	0x62, 0x22, 0xbd, 0x01, 0x0a, 0x11, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x52,
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x74,
@@ -120,22 +121,22 @@ var file_token_proto_rawDesc = []byte{
 }
 
 var (
-	file_token_proto_rawDescOnce sync.Once
-	file_token_proto_rawDescData = file_token_proto_rawDesc
+	file_protobuf_daemon_token_proto_rawDescOnce sync.Once
+	file_protobuf_daemon_token_proto_rawDescData = file_protobuf_daemon_token_proto_rawDesc
 )
 
-func file_token_proto_rawDescGZIP() []byte {
-	file_token_proto_rawDescOnce.Do(func() {
-		file_token_proto_rawDescData = protoimpl.X.CompressGZIP(file_token_proto_rawDescData)
+func file_protobuf_daemon_token_proto_rawDescGZIP() []byte {
+	file_protobuf_daemon_token_proto_rawDescOnce.Do(func() {
+		file_protobuf_daemon_token_proto_rawDescData = protoimpl.X.CompressGZIP(file_protobuf_daemon_token_proto_rawDescData)
 	})
-	return file_token_proto_rawDescData
+	return file_protobuf_daemon_token_proto_rawDescData
 }
 
-var file_token_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_token_proto_goTypes = []any{
+var file_protobuf_daemon_token_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_protobuf_daemon_token_proto_goTypes = []any{
 	(*TokenInfoResponse)(nil), // 0: pb.TokenInfoResponse
 }
-var file_token_proto_depIdxs = []int32{
+var file_protobuf_daemon_token_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -143,27 +144,27 @@ var file_token_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_token_proto_init() }
-func file_token_proto_init() {
-	if File_token_proto != nil {
+func init() { file_protobuf_daemon_token_proto_init() }
+func file_protobuf_daemon_token_proto_init() {
+	if File_protobuf_daemon_token_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_token_proto_rawDesc,
+			RawDescriptor: file_protobuf_daemon_token_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_token_proto_goTypes,
-		DependencyIndexes: file_token_proto_depIdxs,
-		MessageInfos:      file_token_proto_msgTypes,
+		GoTypes:           file_protobuf_daemon_token_proto_goTypes,
+		DependencyIndexes: file_protobuf_daemon_token_proto_depIdxs,
+		MessageInfos:      file_protobuf_daemon_token_proto_msgTypes,
 	}.Build()
-	File_token_proto = out.File
-	file_token_proto_rawDesc = nil
-	file_token_proto_goTypes = nil
-	file_token_proto_depIdxs = nil
+	File_protobuf_daemon_token_proto = out.File
+	file_protobuf_daemon_token_proto_rawDesc = nil
+	file_protobuf_daemon_token_proto_goTypes = nil
+	file_protobuf_daemon_token_proto_depIdxs = nil
 }

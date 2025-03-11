@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v3.21.6
-// source: service.proto
+// source: protobuf/norduser/service.proto
 
 package pb
 
@@ -237,5 +237,5 @@ var Norduser_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "service.proto",
+	Metadata: "protobuf/norduser/service.proto",
 }

@@ -4,7 +4,7 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-import "common.proto";
+import "protobuf/daemon/common.proto";
 
 message DedidcatedIPService {
   repeated int64 server_ids = 1;

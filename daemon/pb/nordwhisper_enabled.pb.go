@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.35.1
 // 	protoc        v3.21.6
-// source: nordwhisper_enabled.proto
+// source: protobuf/daemon/nordwhisper_enabled.proto
 
 package pb
 
@@ -30,7 +30,7 @@ type NordWhisperEnabled struct {
 
 func (x *NordWhisperEnabled) Reset() {
 	*x = NordWhisperEnabled{}
-	mi := &file_nordwhisper_enabled_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_nordwhisper_enabled_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *NordWhisperEnabled) String() string {
 func (*NordWhisperEnabled) ProtoMessage() {}
 
 func (x *NordWhisperEnabled) ProtoReflect() protoreflect.Message {
-	mi := &file_nordwhisper_enabled_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_nordwhisper_enabled_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *NordWhisperEnabled) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NordWhisperEnabled.ProtoReflect.Descriptor instead.
 func (*NordWhisperEnabled) Descriptor() ([]byte, []int) {
-	return file_nordwhisper_enabled_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_nordwhisper_enabled_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *NordWhisperEnabled) GetEnabled() bool {
@@ -65,10 +65,11 @@ func (x *NordWhisperEnabled) GetEnabled() bool {
 	return false
 }
 
-var File_nordwhisper_enabled_proto protoreflect.FileDescriptor
+var File_protobuf_daemon_nordwhisper_enabled_proto protoreflect.FileDescriptor
 
-var file_nordwhisper_enabled_proto_rawDesc = []byte{
-	0x0a, 0x19, 0x6e, 0x6f, 0x72, 0x64, 0x77, 0x68, 0x69, 0x73, 0x70, 0x65, 0x72, 0x5f, 0x65, 0x6e,
+var file_protobuf_daemon_nordwhisper_enabled_proto_rawDesc = []byte{
+	0x0a, 0x29, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x6e, 0x6f, 0x72, 0x64, 0x77, 0x68, 0x69, 0x73, 0x70, 0x65, 0x72, 0x5f, 0x65, 0x6e,
 	0x61, 0x62, 0x6c, 0x65, 0x64, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x02, 0x70, 0x62, 0x22,
 	0x2e, 0x0a, 0x12, 0x4e, 0x6f, 0x72, 0x64, 0x57, 0x68, 0x69, 0x73, 0x70, 0x65, 0x72, 0x45, 0x6e,
 	0x61, 0x62, 0x6c, 0x65, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x65, 0x6e, 0x61, 0x62, 0x6c, 0x65, 0x64,
@@ -80,22 +81,22 @@ var file_nordwhisper_enabled_proto_rawDesc = []byte{
 }
 
 var (
-	file_nordwhisper_enabled_proto_rawDescOnce sync.Once
-	file_nordwhisper_enabled_proto_rawDescData = file_nordwhisper_enabled_proto_rawDesc
+	file_protobuf_daemon_nordwhisper_enabled_proto_rawDescOnce sync.Once
+	file_protobuf_daemon_nordwhisper_enabled_proto_rawDescData = file_protobuf_daemon_nordwhisper_enabled_proto_rawDesc
 )
 
-func file_nordwhisper_enabled_proto_rawDescGZIP() []byte {
-	file_nordwhisper_enabled_proto_rawDescOnce.Do(func() {
-		file_nordwhisper_enabled_proto_rawDescData = protoimpl.X.CompressGZIP(file_nordwhisper_enabled_proto_rawDescData)
+func file_protobuf_daemon_nordwhisper_enabled_proto_rawDescGZIP() []byte {
+	file_protobuf_daemon_nordwhisper_enabled_proto_rawDescOnce.Do(func() {
+		file_protobuf_daemon_nordwhisper_enabled_proto_rawDescData = protoimpl.X.CompressGZIP(file_protobuf_daemon_nordwhisper_enabled_proto_rawDescData)
 	})
-	return file_nordwhisper_enabled_proto_rawDescData
+	return file_protobuf_daemon_nordwhisper_enabled_proto_rawDescData
 }
 
-var file_nordwhisper_enabled_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_nordwhisper_enabled_proto_goTypes = []any{
+var file_protobuf_daemon_nordwhisper_enabled_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_protobuf_daemon_nordwhisper_enabled_proto_goTypes = []any{
 	(*NordWhisperEnabled)(nil), // 0: pb.NordWhisperEnabled
 }
-var file_nordwhisper_enabled_proto_depIdxs = []int32{
+var file_protobuf_daemon_nordwhisper_enabled_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
 	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -103,27 +104,27 @@ var file_nordwhisper_enabled_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_nordwhisper_enabled_proto_init() }
-func file_nordwhisper_enabled_proto_init() {
-	if File_nordwhisper_enabled_proto != nil {
+func init() { file_protobuf_daemon_nordwhisper_enabled_proto_init() }
+func file_protobuf_daemon_nordwhisper_enabled_proto_init() {
+	if File_protobuf_daemon_nordwhisper_enabled_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_nordwhisper_enabled_proto_rawDesc,
+			RawDescriptor: file_protobuf_daemon_nordwhisper_enabled_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_nordwhisper_enabled_proto_goTypes,
-		DependencyIndexes: file_nordwhisper_enabled_proto_depIdxs,
-		MessageInfos:      file_nordwhisper_enabled_proto_msgTypes,
+		GoTypes:           file_protobuf_daemon_nordwhisper_enabled_proto_goTypes,
+		DependencyIndexes: file_protobuf_daemon_nordwhisper_enabled_proto_depIdxs,
+		MessageInfos:      file_protobuf_daemon_nordwhisper_enabled_proto_msgTypes,
 	}.Build()
-	File_nordwhisper_enabled_proto = out.File
-	file_nordwhisper_enabled_proto_rawDesc = nil
-	file_nordwhisper_enabled_proto_goTypes = nil
-	file_nordwhisper_enabled_proto_depIdxs = nil
+	File_protobuf_daemon_nordwhisper_enabled_proto = out.File
+	file_protobuf_daemon_nordwhisper_enabled_proto_rawDesc = nil
+	file_protobuf_daemon_nordwhisper_enabled_proto_goTypes = nil
+	file_protobuf_daemon_nordwhisper_enabled_proto_depIdxs = nil
 }

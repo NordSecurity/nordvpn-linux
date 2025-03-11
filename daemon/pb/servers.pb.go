@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.35.1
 // 	protoc        v3.21.6
-// source: servers.proto
+// source: protobuf/daemon/servers.proto
 
 package pb
 
@@ -54,11 +54,11 @@ func (x ServersError) String() string {
 }
 
 func (ServersError) Descriptor() protoreflect.EnumDescriptor {
-	return file_servers_proto_enumTypes[0].Descriptor()
+	return file_protobuf_daemon_servers_proto_enumTypes[0].Descriptor()
 }
 
 func (ServersError) Type() protoreflect.EnumType {
-	return &file_servers_proto_enumTypes[0]
+	return &file_protobuf_daemon_servers_proto_enumTypes[0]
 }
 
 func (x ServersError) Number() protoreflect.EnumNumber {
@@ -67,7 +67,7 @@ func (x ServersError) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ServersError.Descriptor instead.
 func (ServersError) EnumDescriptor() ([]byte, []int) {
-	return file_servers_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_servers_proto_rawDescGZIP(), []int{0}
 }
 
 type Technology int32
@@ -112,11 +112,11 @@ func (x Technology) String() string {
 }
 
 func (Technology) Descriptor() protoreflect.EnumDescriptor {
-	return file_servers_proto_enumTypes[1].Descriptor()
+	return file_protobuf_daemon_servers_proto_enumTypes[1].Descriptor()
 }
 
 func (Technology) Type() protoreflect.EnumType {
-	return &file_servers_proto_enumTypes[1]
+	return &file_protobuf_daemon_servers_proto_enumTypes[1]
 }
 
 func (x Technology) Number() protoreflect.EnumNumber {
@@ -125,7 +125,7 @@ func (x Technology) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Technology.Descriptor instead.
 func (Technology) EnumDescriptor() ([]byte, []int) {
-	return file_servers_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_servers_proto_rawDescGZIP(), []int{1}
 }
 
 type Server struct {
@@ -142,7 +142,7 @@ type Server struct {
 
 func (x *Server) Reset() {
 	*x = Server{}
-	mi := &file_servers_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -154,7 +154,7 @@ func (x *Server) String() string {
 func (*Server) ProtoMessage() {}
 
 func (x *Server) ProtoReflect() protoreflect.Message {
-	mi := &file_servers_proto_msgTypes[0]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -167,7 +167,7 @@ func (x *Server) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Server.ProtoReflect.Descriptor instead.
 func (*Server) Descriptor() ([]byte, []int) {
-	return file_servers_proto_rawDescGZIP(), []int{0}
+	return file_protobuf_daemon_servers_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Server) GetId() int64 {
@@ -216,7 +216,7 @@ type ServerCity struct {
 
 func (x *ServerCity) Reset() {
 	*x = ServerCity{}
-	mi := &file_servers_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -228,7 +228,7 @@ func (x *ServerCity) String() string {
 func (*ServerCity) ProtoMessage() {}
 
 func (x *ServerCity) ProtoReflect() protoreflect.Message {
-	mi := &file_servers_proto_msgTypes[1]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -241,7 +241,7 @@ func (x *ServerCity) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerCity.ProtoReflect.Descriptor instead.
 func (*ServerCity) Descriptor() ([]byte, []int) {
-	return file_servers_proto_rawDescGZIP(), []int{1}
+	return file_protobuf_daemon_servers_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ServerCity) GetCityName() string {
@@ -269,7 +269,7 @@ type ServerCountry struct {
 
 func (x *ServerCountry) Reset() {
 	*x = ServerCountry{}
-	mi := &file_servers_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -281,7 +281,7 @@ func (x *ServerCountry) String() string {
 func (*ServerCountry) ProtoMessage() {}
 
 func (x *ServerCountry) ProtoReflect() protoreflect.Message {
-	mi := &file_servers_proto_msgTypes[2]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -294,7 +294,7 @@ func (x *ServerCountry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerCountry.ProtoReflect.Descriptor instead.
 func (*ServerCountry) Descriptor() ([]byte, []int) {
-	return file_servers_proto_rawDescGZIP(), []int{2}
+	return file_protobuf_daemon_servers_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ServerCountry) GetCountryCode() string {
@@ -321,7 +321,7 @@ type ServersMap struct {
 
 func (x *ServersMap) Reset() {
 	*x = ServersMap{}
-	mi := &file_servers_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -333,7 +333,7 @@ func (x *ServersMap) String() string {
 func (*ServersMap) ProtoMessage() {}
 
 func (x *ServersMap) ProtoReflect() protoreflect.Message {
-	mi := &file_servers_proto_msgTypes[3]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -346,7 +346,7 @@ func (x *ServersMap) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServersMap.ProtoReflect.Descriptor instead.
 func (*ServersMap) Descriptor() ([]byte, []int) {
-	return file_servers_proto_rawDescGZIP(), []int{3}
+	return file_protobuf_daemon_servers_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ServersMap) GetServersByCountry() []*ServerCountry {
@@ -370,7 +370,7 @@ type ServersResponse struct {
 
 func (x *ServersResponse) Reset() {
 	*x = ServersResponse{}
-	mi := &file_servers_proto_msgTypes[4]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -382,7 +382,7 @@ func (x *ServersResponse) String() string {
 func (*ServersResponse) ProtoMessage() {}
 
 func (x *ServersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_servers_proto_msgTypes[4]
+	mi := &file_protobuf_daemon_servers_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -395,7 +395,7 @@ func (x *ServersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServersResponse.ProtoReflect.Descriptor instead.
 func (*ServersResponse) Descriptor() ([]byte, []int) {
-	return file_servers_proto_rawDescGZIP(), []int{4}
+	return file_protobuf_daemon_servers_proto_rawDescGZIP(), []int{4}
 }
 
 func (m *ServersResponse) GetResponse() isServersResponse_Response {
@@ -435,11 +435,13 @@ func (*ServersResponse_Servers) isServersResponse_Response() {}
 
 func (*ServersResponse_Error) isServersResponse_Response() {}
 
-var File_servers_proto protoreflect.FileDescriptor
+var File_protobuf_daemon_servers_proto protoreflect.FileDescriptor
 
-var file_servers_proto_rawDesc = []byte{
-	0x0a, 0x0d, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
-	0x02, 0x70, 0x62, 0x1a, 0x12, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x67, 0x72, 0x6f, 0x75,
+var file_protobuf_daemon_servers_proto_rawDesc = []byte{
+	0x0a, 0x1d, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f,
+	0x6e, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
+	0x02, 0x70, 0x62, 0x1a, 0x22, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2f, 0x64, 0x61,
+	0x65, 0x6d, 0x6f, 0x6e, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2f, 0x67, 0x72, 0x6f, 0x75,
 	0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xbd, 0x01, 0x0a, 0x06, 0x53, 0x65, 0x72, 0x76,
 	0x65, 0x72, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x02,
 	0x69, 0x64, 0x12, 0x1b, 0x0a, 0x09, 0x68, 0x6f, 0x73, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18,
@@ -496,20 +498,20 @@ var file_servers_proto_rawDesc = []byte{
 }
 
 var (
-	file_servers_proto_rawDescOnce sync.Once
-	file_servers_proto_rawDescData = file_servers_proto_rawDesc
+	file_protobuf_daemon_servers_proto_rawDescOnce sync.Once
+	file_protobuf_daemon_servers_proto_rawDescData = file_protobuf_daemon_servers_proto_rawDesc
 )
 
-func file_servers_proto_rawDescGZIP() []byte {
-	file_servers_proto_rawDescOnce.Do(func() {
-		file_servers_proto_rawDescData = protoimpl.X.CompressGZIP(file_servers_proto_rawDescData)
+func file_protobuf_daemon_servers_proto_rawDescGZIP() []byte {
+	file_protobuf_daemon_servers_proto_rawDescOnce.Do(func() {
+		file_protobuf_daemon_servers_proto_rawDescData = protoimpl.X.CompressGZIP(file_protobuf_daemon_servers_proto_rawDescData)
 	})
-	return file_servers_proto_rawDescData
+	return file_protobuf_daemon_servers_proto_rawDescData
 }
 
-var file_servers_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_servers_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-var file_servers_proto_goTypes = []any{
+var file_protobuf_daemon_servers_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_protobuf_daemon_servers_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_protobuf_daemon_servers_proto_goTypes = []any{
 	(ServersError)(0),       // 0: pb.ServersError
 	(Technology)(0),         // 1: pb.Technology
 	(*Server)(nil),          // 2: pb.Server
@@ -519,7 +521,7 @@ var file_servers_proto_goTypes = []any{
 	(*ServersResponse)(nil), // 6: pb.ServersResponse
 	(config.ServerGroup)(0), // 7: config.ServerGroup
 }
-var file_servers_proto_depIdxs = []int32{
+var file_protobuf_daemon_servers_proto_depIdxs = []int32{
 	7, // 0: pb.Server.server_groups:type_name -> config.ServerGroup
 	1, // 1: pb.Server.technologies:type_name -> pb.Technology
 	2, // 2: pb.ServerCity.servers:type_name -> pb.Server
@@ -534,12 +536,12 @@ var file_servers_proto_depIdxs = []int32{
 	0, // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_servers_proto_init() }
-func file_servers_proto_init() {
-	if File_servers_proto != nil {
+func init() { file_protobuf_daemon_servers_proto_init() }
+func file_protobuf_daemon_servers_proto_init() {
+	if File_protobuf_daemon_servers_proto != nil {
 		return
 	}
-	file_servers_proto_msgTypes[4].OneofWrappers = []any{
+	file_protobuf_daemon_servers_proto_msgTypes[4].OneofWrappers = []any{
 		(*ServersResponse_Servers)(nil),
 		(*ServersResponse_Error)(nil),
 	}
@@ -547,19 +549,19 @@ func file_servers_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_servers_proto_rawDesc,
+			RawDescriptor: file_protobuf_daemon_servers_proto_rawDesc,
 			NumEnums:      2,
 			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_servers_proto_goTypes,
-		DependencyIndexes: file_servers_proto_depIdxs,
-		EnumInfos:         file_servers_proto_enumTypes,
-		MessageInfos:      file_servers_proto_msgTypes,
+		GoTypes:           file_protobuf_daemon_servers_proto_goTypes,
+		DependencyIndexes: file_protobuf_daemon_servers_proto_depIdxs,
+		EnumInfos:         file_protobuf_daemon_servers_proto_enumTypes,
+		MessageInfos:      file_protobuf_daemon_servers_proto_msgTypes,
 	}.Build()
-	File_servers_proto = out.File
-	file_servers_proto_rawDesc = nil
-	file_servers_proto_goTypes = nil
-	file_servers_proto_depIdxs = nil
+	File_protobuf_daemon_servers_proto = out.File
+	file_protobuf_daemon_servers_proto_rawDesc = nil
+	file_protobuf_daemon_servers_proto_goTypes = nil
+	file_protobuf_daemon_servers_proto_depIdxs = nil
 }
