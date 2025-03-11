@@ -214,7 +214,6 @@ func main() {
 		err = eventManager.EnableNotifications(fileshareImplementation)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "failed to enable notifications:", err)
-			os.Exit(int(childprocess.CodeFailedToEnable))
 		}
 	}
 
