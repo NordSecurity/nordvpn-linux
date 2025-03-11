@@ -228,9 +228,10 @@ func main() {
 
 	resolver := network.NewResolver(fw, threatProtectionLiteServers)
 
-	if err := kernel.SetParameter(netCoreRmemMaxKey, netCodeRmemMaxValue); err != nil {
-		log.Println(internal.WarningPrefix, err)
+	if err := SetBufferSizeForHTTP3(); err != nil {
+		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
 	}
+
 	httpClientWithRotator := request.NewStdHTTP()
 	httpClientWithRotator.Transport = createTimedOutTransport(resolver, cfg.FirewallMark, httpCallsSubject, daemonEvents.Service.Connect)
 
