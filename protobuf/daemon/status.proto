@@ -15,9 +15,10 @@ enum ConnectionSource {
 }
 
 enum ConnectionState {
-    DISCONNECTED = 0;
-    CONNECTING = 1;
-    CONNECTED = 2;
+    UNKNOWN_STATE = 0;
+    DISCONNECTED = 1;
+    CONNECTING = 2;
+    CONNECTED = 3;
 }
 
 message ConnectionParameters {

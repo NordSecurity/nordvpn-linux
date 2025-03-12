@@ -96,8 +96,6 @@ type DataDisconnect struct {
 	TargetServerSelection string
 	ThreatProtectionLite  bool
 	ByUser                bool
-	Upload                uint64
-	Download              uint64
 }
 
 type DataAuthorization struct {

@@ -16,12 +16,14 @@ class ConnectionSource(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 
 class ConnectionState(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
+    UNKNOWN_STATE: _ClassVar[ConnectionState]
     DISCONNECTED: _ClassVar[ConnectionState]
     CONNECTING: _ClassVar[ConnectionState]
     CONNECTED: _ClassVar[ConnectionState]
 UNKNOWN_SOURCE: ConnectionSource
 MANUAL: ConnectionSource
 AUTO: ConnectionSource
+UNKNOWN_STATE: ConnectionState
 DISCONNECTED: ConnectionState
 CONNECTING: ConnectionState
 CONNECTED: ConnectionState

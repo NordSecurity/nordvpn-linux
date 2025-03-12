@@ -97,8 +97,8 @@ func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	}
 }
 
-func getConnectEvent(status events.TypeEventStatus, serverData vpn.ServerData, nicName string) events.DataConnect {
-	transferStates, err := tunnel.GetTransferRates(nicName)
+func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataConnect {
+	transferStates, err := tunnel.GetTransferRates(o.nicName)
 	if err != nil {
 		fmt.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
 	}
@@ -106,12 +106,12 @@ func getConnectEvent(status events.TypeEventStatus, serverData vpn.ServerData, n
 	return events.DataConnect{
 		EventStatus:         status,
 		IsMeshnetPeer:       false,
-		TargetServerIP:      serverData.IP.String(),
-		TargetServerCountry: serverData.Country,
-		TargetServerCity:    serverData.City,
-		TargetServerDomain:  serverData.Hostname,
-		TargetServerName:    serverData.Name,
-		IsVirtualLocation:   serverData.VirtualLocation,
+		TargetServerIP:      o.currentServer.IP.String(),
+		TargetServerCountry: o.currentServer.Country,
+		TargetServerCity:    o.currentServer.City,
+		TargetServerDomain:  o.currentServer.Hostname,
+		TargetServerName:    o.currentServer.Name,
+		IsVirtualLocation:   o.currentServer.VirtualLocation,
 		Technology:          config.Technology_NORDWHISPER,
 		Protocol:            config.Protocol_Webtunnel,
 		Upload:              transferStates.Tx,
@@ -130,7 +130,7 @@ func (o *observer) Connecting() {
 	}
 
 	o.notifyConnectionStateChange(vpn.ConnectingState)
-	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusAttempt, o.currentServer, o.nicName))
+	o.eventNotifier.Connected.Publish(o.getConnectEvent(events.StatusAttempt))
 }
 
 func (o *observer) Connected() {
@@ -140,7 +140,7 @@ func (o *observer) Connected() {
 	o.notifyConnectionStateChange(vpn.ConnectedState)
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "connected")
-	o.eventNotifier.Connected.Publish(getConnectEvent(events.StatusSuccess, o.currentServer, o.nicName))
+	o.eventNotifier.Connected.Publish(o.getConnectEvent(events.StatusSuccess))
 }
 
 func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
@@ -151,11 +151,6 @@ func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "disconnected:", reason)
 
-	transferStats, err := tunnel.GetTransferRates(o.nicName)
-	if err != nil {
-		fmt.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
-	}
-
 	byUser := false
 	if reason == quenchBindigns.DisconnectReasonDisconnectRequested {
 		byUser = true
@@ -165,8 +160,6 @@ func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
 		ByUser:     byUser,
 		Technology: config.Technology_NORDWHISPER,
 		Protocol:   config.Protocol_Webtunnel,
-		Upload:     transferStats.Tx,
-		Download:   transferStats.Rx,
 	})
 }
 

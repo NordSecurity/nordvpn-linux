@@ -377,16 +377,10 @@ func (ovpn *OpenVPN) publishConnected() {
 
 // publishDisconnected publishes Connecting event using current stored server data. Thread unsafe.
 func (ovpn *OpenVPN) publishDisconnected(byUser bool) {
-	stats, err := tunnel.GetTransferRates(InterfaceName)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get transfer rates for the tunnel:", err)
-	}
 	ovpn.eventsPublisher.Disconnected.Publish(events.DataDisconnect{
 		ByUser:     byUser,
 		Technology: config.Technology_OPENVPN,
 		Protocol:   ovpn.serverData.Protocol,
-		Upload:     stats.Tx,
-		Download:   stats.Rx,
 	})
 }
 

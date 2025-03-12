@@ -726,17 +726,10 @@ func publishConnectEvent(publisher *vpn.Events,
 }
 
 func publishDisconnectedEvent(publisher *vpn.Events, byUser bool) {
-	transferStats, err := tunnel.GetTransferRates(nordlynx.InterfaceName)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
-	}
-
 	publisher.Disconnected.Publish(events.DataDisconnect{
 		ByUser:     byUser,
 		Technology: config.Technology_NORDLYNX,
-		Protocol:   config.Protocol_UDP,
-		Upload:     transferStats.Tx,
-		Download:   transferStats.Rx})
+		Protocol:   config.Protocol_UDP})
 }
 
 // monitorConnection awaits for incoming state changes from the states chan and publishes appropriate events. Upon
