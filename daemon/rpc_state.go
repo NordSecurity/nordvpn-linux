@@ -115,9 +115,7 @@ func statusStream(stateChan <-chan interface{},
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{
 						ConnectionStatus: &pb.StatusResponse{
 							State:      pb.ConnectionState_DISCONNECTED,
-							ByUser:     true,
-							Upload:     e.Upload,
-							Download:   e.Download,
+							ByUser:     e.ByUser,
 							Technology: e.Technology,
 							Protocol:   e.Protocol,
 						}}}); err != nil {
