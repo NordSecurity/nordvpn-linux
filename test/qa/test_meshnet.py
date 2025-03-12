@@ -105,11 +105,12 @@ def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, filesh
         return meshnet.validate_input_chain(peer_ip, routing, local, incoming, fileshare)
 
     result = False
-    message = ""
+    error_mesage = ""
     for result, message in lib.poll(validate_input):
+        error_mesage = message
         if result:
             break
-    assert result, message
+    assert result, error_mesage
 
     (result, message) = meshnet.validate_forward_chain(peer_ip, routing, local, incoming, fileshare)
     assert result, message
