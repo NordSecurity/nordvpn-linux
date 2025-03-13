@@ -142,6 +142,12 @@ func processHeaders(hide bool, headers http.Header) http.Header {
 	headers = headers.Clone()
 	sensitiveHeaders := []string{
 		"Authorization",
+		"Cookie",
+		"Set-Cookie",
+		"Proxy-Authorization",
+		"X-Api-Key",
+		"X-Amz-Security-Token",
+		"X-Amz-User-Agent",
 	}
 	for _, header := range sensitiveHeaders {
 		if headers.Get(header) != "" {
