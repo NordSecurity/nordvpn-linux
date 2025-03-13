@@ -14,6 +14,13 @@ enum ConnectionSource {
   AUTO = 2;
 }
 
+enum ConnectionState {
+    UNKNOWN_STATE = 0;
+    DISCONNECTED = 1;
+    CONNECTING = 2;
+    CONNECTED = 3;
+}
+
 message ConnectionParameters {
   ConnectionSource source = 1;
   string country = 2;
@@ -22,7 +29,7 @@ message ConnectionParameters {
 }
 
 message StatusResponse {
-  string state = 1;
+  ConnectionState state = 1;
   config.Technology technology = 2;
   config.Protocol protocol = 3;
   string ip = 4;
@@ -36,4 +43,6 @@ message StatusResponse {
   bool virtualLocation = 12;
   ConnectionParameters parameters = 13;
   bool postQuantum = 14;
+  bool is_mesh_peer = 15;
+  bool by_user = 16;
 }

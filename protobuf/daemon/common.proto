@@ -6,7 +6,7 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 enum DaemonApiVersion {
   UNKNOWN_VERSION = 0;
-  CURRENT_VERSION = 1; // set Daemon API version value here e.g. 1,2,3,4 etc.
+  CURRENT_VERSION = 2; // set Daemon API version value here e.g. 1,2,3,4 etc.
 }
 
 message GetDaemonApiVersionRequest {} // empty is ok, for future compatibility

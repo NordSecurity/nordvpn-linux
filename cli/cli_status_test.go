@@ -21,7 +21,7 @@ func TestStatus(t *testing.T) {
 		{
 			name: "connected",
 			resp: &pb.StatusResponse{
-				State:      "Connected",
+				State:      pb.ConnectionState_CONNECTED,
 				Technology: config.Technology_NORDLYNX,
 				Protocol:   config.Protocol_UDP,
 				Hostname:   "Verona",
@@ -47,7 +47,7 @@ Uptime: 13 seconds
 		{
 			name: "disconnected",
 			resp: &pb.StatusResponse{
-				State:  "Disconnected",
+				State:  pb.ConnectionState_DISCONNECTED,
 				Uptime: -1,
 			},
 			expected: `Status: Disconnected
