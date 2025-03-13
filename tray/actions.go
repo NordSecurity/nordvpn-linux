@@ -56,7 +56,6 @@ func (ti *Instance) login() {
 			}
 		}
 	}
-
 }
 
 func (ti *Instance) logout(persistToken bool) bool {
