@@ -158,7 +158,7 @@ func TestJobServers(t *testing.T) {
 	category.Set(t, category.Integration)
 	defer testsCleanup()
 	dm := testNewDataManager()
-	err := JobServers(dm, newMockConfigManager(), &mockServersAPI{}, true)()
+	err := JobServers(dm, &mockServersAPI{}, true)()
 	assert.NoError(t, err)
 
 	t.Run("obfuscated server exists", func(t *testing.T) {
@@ -227,7 +227,7 @@ func TestJobServers_InvalidData(t *testing.T) {
 	category.Set(t, category.Integration)
 	defer testsCleanup()
 	dm := testNewDataManager()
-	err := JobServers(dm, newMockConfigManager(), &mockFailingServersAPI{}, true)()
+	err := JobServers(dm, &mockFailingServersAPI{}, true)()
 	assert.Error(t, err)
 }
 
@@ -247,7 +247,7 @@ func TestJobServers_Valid(t *testing.T) {
 	original := dm.GetServersData().Servers
 	dm.SetServersData(time.Now(), original, "")
 
-	err := JobServers(dm, newMockConfigManager(), &mockFailingServersAPI{}, true)()
+	err := JobServers(dm, &mockFailingServersAPI{}, true)()
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, dm.GetServersData().Servers, original)
 }
@@ -263,7 +263,7 @@ func TestJobServers_Expired(t *testing.T) {
 	dm := testNewDataManager()
 	original, _, _ := mockServersAPI{}.Servers() // do not use filesystem
 	dm.SetServersData(time.Now().Add(time.Duration(-300)*time.Minute), original, "")
-	err := JobServers(dm, newMockConfigManager(), &mockServersAPI{}, true)()
+	err := JobServers(dm, &mockServersAPI{}, true)()
 	assert.NoError(t, err)
 	assert.False(t, reflect.DeepEqual(dm.GetServersData().Servers, original))
 }

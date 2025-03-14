@@ -5,12 +5,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/request"
 )
 
@@ -20,12 +18,15 @@ const (
 	ServersFilename   = "servers.dat"
 )
 
-var Salt = ""
+type vpnChecker struct{}
+
+func (vpnChecker) IsVPNActive() bool {
+	return false
+}
 
 // Downloader is responsible for downloading servers.dat and configs.dat files for .deb and .rpm packages
 func main() {
 	dataPath := os.Args[1]
-	cm := config.NewFilesystemConfigManager(config.SettingsDataFilePath, config.InstallFilePath, Salt, config.NewMachineID(os.ReadFile, os.Hostname), config.StdFilesystemHandle{}, nil)
 	dm := daemon.NewDataManager(dataPath+InsightsFilename, dataPath+ServersFilename, dataPath+countriesFilename, "", events.NewDataUpdateEvents())
 	client := request.NewStdHTTP()
 	validator, err := response.NewNordValidator()
@@ -39,31 +40,12 @@ func main() {
 		client,
 		validator,
 	)
-	netw := networker.NewCombined(
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		nil,
-		0,
-		false,
-	)
-	daemon.JobInsights(dm, api, netw, nil, true)()
+	daemon.JobInsights(dm, api, vpnChecker{}, nil, true)()
 	if err := daemon.JobCountries(dm, api)(); err != nil {
 		log.Fatalln("producing countries cache", err)
 	}
 
-	if err := daemon.JobServers(dm, cm, api, false)(); err != nil {
+	if err := daemon.JobServers(dm, api, false)(); err != nil {
 		log.Fatalln("producing server cache", err)
 	}
 }
