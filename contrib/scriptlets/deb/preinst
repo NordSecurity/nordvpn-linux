@@ -3,8 +3,8 @@
 if [ -x "/snap/bin/nordvpn" ]; then
     echo ""
     echo "====================================================================================="
-    echo "NordVPN application Snap package is already installed!"
-    echo "If you want to install NordVPN from deb package - remove NordVPN snap package first."
+    echo "NordVPN is already installed via Snap."
+    echo "To install the app from a DEB package, first remove the Snap version."
     echo "====================================================================================="
     echo ""
     exit 1
