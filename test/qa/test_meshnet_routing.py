@@ -33,27 +33,23 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     my_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().ip
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
 
-    # Initiate ssh connection via mesh because we are going to lose the main connection
-    ssh_client_mesh = ssh.Ssh(peer_ip, "root", "root")
-    ssh_client_mesh.connect()
-
     try:
-        ssh_client_mesh.exec_command(f"nordvpn mesh peer incoming allow {my_ip}")
+        ssh_client.exec_command(f"nordvpn mesh peer incoming allow {my_ip}")
     except RuntimeError as err:
         if "already allowed" not in err.args[0]:
             raise
     try:
-        ssh_client_mesh.exec_command(f"nordvpn mesh peer routing allow {my_ip}")
+        ssh_client.exec_command(f"nordvpn mesh peer routing allow {my_ip}")
     except RuntimeError as err:
         if "already allowed" not in err.args[0]:
             raise
     try:
-        ssh_client_mesh.exec_command(f"nordvpn mesh peer local {'allow' if local else 'deny'} {my_ip}")
+        ssh_client.exec_command(f"nordvpn mesh peer local {'allow' if local else 'deny'} {my_ip}")
     except RuntimeError as err:
         if "already allowed" not in err.args[0]:
             raise
     try:
-        ssh_client_mesh.exec_command(f"nordvpn set lan-discovery {'on' if lan_discovery else 'off'}")
+        ssh_client.exec_command(f"nordvpn set lan-discovery {'on' if lan_discovery else 'off'}")
     except RuntimeError as err:
         if "already set" not in err.args[0]:
             raise
@@ -67,7 +63,7 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_available()
 
     # Enable killswitch on exitnode
-    ssh_client_mesh.exec_command("nordvpn set killswitch enabled")
+    ssh_client.exec_command("nordvpn set killswitch enabled")
     assert daemon.is_connected()
     assert network.is_not_available()
 
@@ -82,7 +78,7 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_not_available()
 
     # Disable killswitch on exitnode
-    ssh_client_mesh.exec_command("nordvpn set killswitch disabled")
+    ssh_client.exec_command("nordvpn set killswitch disabled")
     assert daemon.is_connected()
     assert network.is_available()
 
@@ -97,41 +93,33 @@ def test_route_traffic_to_each_other():
     peer_hostname = peer_list.get_external_peer().hostname
     peer_pubkey = peer_list.get_external_peer().public_key
 
-    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
-    ssh_client_mesh.connect()
-
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_pubkey)
     assert meshnet.is_connect_successful(output, peer_hostname)
 
     local_hostname = peer_list.get_this_device().hostname
-    output = ssh_client_mesh.exec_command(f"nordvpn mesh peer connect {local_hostname}")
+    output = ssh_client.exec_command(f"nordvpn mesh peer connect {local_hostname}")
     assert meshnet.is_connect_successful(output, local_hostname)
 
     assert network.is_not_available()
-    assert ssh_client_mesh.network.is_not_available()
+    assert ssh_client.network.is_not_available()
 
     sh_no_tty.nordvpn.disconnect()
-    ssh_client_mesh.exec_command("nordvpn disconnect")
-    ssh_client_mesh.disconnect()
+    ssh_client.exec_command("nordvpn disconnect")
 
 
 def test_routing_deny_for_peer_is_peer_no_netting():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
 
-    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
-    ssh_client_mesh.connect()
-
     this_device = peer_list.get_this_device()
-    output = ssh_client_mesh.exec_command("nordvpn mesh peer connect " + this_device.ip)
+    output = ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
     assert meshnet.is_connect_successful(output, this_device.hostname)
 
     sh_no_tty.nordvpn.mesh.peer.routing.deny(peer_hostname)
 
-    assert ssh_client_mesh.network.is_not_available()
+    assert ssh_client.network.is_not_available()
 
-    ssh_client_mesh.exec_command("nordvpn disconnect")
-    ssh_client_mesh.disconnect()
+    ssh_client.exec_command("nordvpn disconnect")
 
 
 def test_route_to_nonexistant_node():
@@ -147,9 +135,6 @@ def test_route_to_nonexistant_node():
 
 def test_route_to_peer_status_valid():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
-
-    ssh_client_mesh = ssh.Ssh(peer_hostname, "root", "root")
-    ssh_client_mesh.connect()
 
     peer_nick = "a-A-a"
     sh_no_tty.nordvpn.mesh.peer.nick.set(peer_hostname, peer_nick)
@@ -199,7 +184,6 @@ def test_route_to_peer_status_valid():
         assert time_connected >= time_passed - 1 and time_connected <= time_passed + 1
 
     sh_no_tty.nordvpn.disconnect()
-    ssh_client_mesh.disconnect()
 
 
 @pytest.mark.skip(reason="Test suit exits, before test can be completed.")

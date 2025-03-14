@@ -14,7 +14,7 @@ _blackholes = []
 
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
-FWMARK = 57841
+FWMARK = 0xe1f1
 
 class PacketCaptureThread(Thread):
     def __init__(self, connection_settings, duration: int):
@@ -245,7 +245,10 @@ def unblock():
 
 def get_external_device_ip() -> str:
     """Returns external device IP."""
-    return requests.get(API_EXTERNAL_IP, timeout=5).json().get("ip")
+    # Make sure new session is used for the HTTP request to avoid failures when jumping to and from
+    # VPN connections
+    with requests.Session() as session:
+        return session.get(API_EXTERNAL_IP, timeout=5).json().get("ip")
 
 
 def generate_traffic(retry=1):

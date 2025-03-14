@@ -8,6 +8,7 @@ from enum import Enum
 import pytest
 import sh
 from lib.shell import sh_no_tty
+from lib import network
 
 from . import daemon, info, logging, login, ssh
 
@@ -34,6 +35,7 @@ class TestUtils:
         os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
         ssh_client.connect()
         daemon.install_peer(ssh_client)
+        TestUtils.allowlist_ssh(ssh_client, network.FWMARK)
 
 
     @staticmethod
@@ -41,7 +43,6 @@ class TestUtils:
         # Preserve other peer log
         dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
         ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
-
         daemon.uninstall_peer(ssh_client)
         ssh_client.disconnect()
 
@@ -79,6 +80,21 @@ class TestUtils:
         ssh_client.exec_command("sudo iptables -F")
 
 
+    @staticmethod
+    def allowlist_ssh(ssh_client: ssh.Ssh, fwmark: int):
+        for rules in TestUtils.ssh_allowlist_rule_args(True, fwmark):
+            ssh_client.exec_command(f"sudo iptables -t mangle -A {' '.join(rules)}")
+        for rules in TestUtils.ssh_allowlist_rule_args(False, fwmark):
+            sh_no_tty.sudo.iptables("-t", "mangle", "-A", *rules)
+
+    @staticmethod
+    def ssh_allowlist_rule_args(incoming: bool, fwmark: int) -> list[list[str]]:
+        prerouting_port_arg = "--dport" if incoming else "--sport"
+        output_port_arg = "--sport" if incoming else "--dport"
+        return [
+                ["PREROUTING", "-p", "tcp", prerouting_port_arg, "22", "-j", "CONNMARK", "--set-xmark", str(fwmark)],
+                ["OUTPUT", "-p", "tcp", output_port_arg, "22", "-j", "MARK", "--set-xmark", str(fwmark)],
+        ]
 
 class PeerName(Enum):
     Hostname = 0
