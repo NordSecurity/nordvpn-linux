@@ -14,6 +14,7 @@ CONNECT_ALIAS = [
 ]
 
 def setup_function(function):  # noqa: ARG001
+    sh.sudo.iptables("-F")
     daemon.start()
     login.login_as("default")
     logging.log()

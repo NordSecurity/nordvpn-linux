@@ -1,4 +1,5 @@
 import logging
+from lib import logging as logg
 import time
 from urllib.parse import quote
 
@@ -56,7 +57,11 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
     time.sleep(2)
     url = f"https://api.nordvpn.com/v1/servers?limit=10&filters[servers.status]=online&filters[servers_technologies]={tech_id}&filters[servers_groups]={group_id}"
     logging.debug(url)
-    server_info = requests.get(url, timeout=5).json()[0]
+    server_info = requests.get(url, timeout=5).json()
+
+    logg.log("FAILED SERVER QUERY")
+    logg.log(server_info)
+    server_info = server_info[0]
     return ServerInfo(server_info=server_info)
 
 
