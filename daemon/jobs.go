@@ -41,7 +41,7 @@ func (r *RPC) StartJobs(
 		log.Println(internal.WarningPrefix, "job insights schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(1*time.Hour), gocron.NewTask(JobServers(r.dm, r.cm, r.serversAPI, true)), gocron.WithName("job servers")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(1*time.Hour), gocron.NewTask(JobServers(r.dm, r.serversAPI, true)), gocron.WithName("job servers")); err != nil {
 		log.Println(internal.WarningPrefix, "job servers schedule error:", err)
 	}
 	// TODO if autoconnect runs before servers job, it will return zero servers list

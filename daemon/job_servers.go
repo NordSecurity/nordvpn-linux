@@ -2,25 +2,18 @@ package daemon
 
 import (
 	"errors"
-	"log"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // JobServers is responsible for population of local server cache which is needed
 // to avoid excess requests to the backend API.
-func JobServers(dm *DataManager, cm config.Manager, api core.ServersAPI, validate bool) func() error {
+func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() error {
 	return func() error {
-		var cfg config.Config
-		err := cm.Load(&cfg)
-		if err != nil {
-			log.Println(internal.ErrorPrefix, err)
-		}
 		// if db is still valid, make sure it's locked and do nothing
 		if validate && dm.ServerDataExists() && dm.IsServersDataValid() {
 			return nil
