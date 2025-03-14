@@ -12,22 +12,25 @@ import (
 
 // Settings returns system daemon settings
 func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse, error) {
+	peer, ok := peer.FromContext(ctx)
+	var uid int64
+	if ok {
+		cred, ok := peer.AuthInfo.(internal.UcredAuth)
+		if !ok {
+			log.Println(internal.ErrorPrefix, "failed to get user ID")
+			return &pb.SettingsResponse{
+				Type: internal.CodeFailure,
+			}, nil
+		}
+		uid = int64(cred.Uid)
+	}
+
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-	}
-
-	ports := pb.Ports{}
-	for port := range cfg.AutoConnectData.Allowlist.Ports.TCP {
-		ports.Tcp = append(ports.Tcp, port)
-	}
-	for port := range cfg.AutoConnectData.Allowlist.Ports.UDP {
-		ports.Udp = append(ports.Udp, port)
-	}
-
-	subnets := []string{}
-	for subnet := range cfg.AutoConnectData.Allowlist.Subnets {
-		subnets = append(subnets, subnet)
+		return &pb.SettingsResponse{
+			Type: internal.CodeConfigError,
+		}, nil
 	}
 
 	// Storing autoconnect parameters was introduced later on so they might not be save in a config yet. We need to
@@ -36,7 +39,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 		cfg.AutoConnectData.City == "" &&
 		cfg.AutoConnectData.Group == config.ServerGroup_UNDEFINED
 	if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" && autoconnectParamsNotSet {
-		// use group tag as a second prameter once it is implemented
+		// use group tag as a second parameter once it is implemented
 		parameters := GetServerParameters(cfg.AutoConnectData.ServerTag,
 			cfg.AutoConnectData.ServerTag,
 			r.dm.GetCountryData().Countries)
@@ -57,52 +60,11 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 		}
 	}
 
-	peer, ok := peer.FromContext(ctx)
-	var uid int64
-	if ok {
-		cred, ok := peer.AuthInfo.(internal.UcredAuth)
-		if !ok {
-			return &pb.SettingsResponse{
-				Type: internal.CodeFailure,
-			}, nil
-		}
-		uid = int64(cred.Uid)
-	}
+	settings := configToProtobuf(&cfg, uid)
 
 	return &pb.SettingsResponse{
 		Type: internal.CodeSuccess,
-		Data: &pb.Settings{
-			Technology: cfg.Technology,
-			Firewall:   cfg.Firewall,
-			Fwmark:     cfg.FirewallMark,
-			Routing:    cfg.Routing.Get(),
-			Analytics:  cfg.Analytics.Get(),
-			KillSwitch: cfg.KillSwitch,
-			AutoConnectData: &pb.AutoconnectData{
-				Enabled:     cfg.AutoConnect,
-				Country:     cfg.AutoConnectData.Country,
-				City:        cfg.AutoConnectData.City,
-				ServerGroup: cfg.AutoConnectData.Group,
-			},
-			Ipv6:                 cfg.IPv6,
-			Meshnet:              cfg.Mesh,
-			Dns:                  cfg.AutoConnectData.DNS,
-			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-			Protocol:             cfg.AutoConnectData.Protocol,
-			LanDiscovery:         cfg.LanDiscovery,
-			Allowlist: &pb.Allowlist{
-				Ports:   &ports,
-				Subnets: subnets,
-			},
-			Obfuscate:       cfg.AutoConnectData.Obfuscate,
-			PostquantumVpn:  cfg.AutoConnectData.PostquantumVpn,
-			VirtualLocation: cfg.VirtualLocation.Get(),
-			UserSettings: &pb.UserSpecificSettings{
-				Uid:    uid,
-				Notify: !cfg.UsersData.NotifyOff[uid],
-				Tray:   !cfg.UsersData.TrayOff[uid],
-			},
-		},
+		Data: settings,
 	}, nil
 }
 
