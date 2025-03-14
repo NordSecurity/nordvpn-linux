@@ -9,9 +9,9 @@ go run \
 	"${WORKDIR}"/cmd/downloader/main.go "${WORKDIR}"/dist/data/
 
 # prefetch templates
-wget -qO - https://downloads.nordcdn.com/configs/templates/ovpn/1.0/template.xslt > "${WORKDIR}"/dist/data/ovpn_template.xslt
-wget -qO - https://downloads.nordcdn.com/configs/templates/ovpn_xor/1.0/template.xslt > "${WORKDIR}"/dist/data/ovpn_xor_template.xslt
-wget -qO - https://downloads.nordcdn.com/configs/dns/cybersec.json > "${WORKDIR}"/dist/data/cybersec.dat
+wget -O "${WORKDIR}"/dist/data/ovpn_template.xslt https://downloads.nordcdn.com/configs/templates/ovpn/1.0/template.xslt 
+wget -O "${WORKDIR}"/dist/data/ovpn_xor_template.xslt https://downloads.nordcdn.com/configs/templates/ovpn_xor/1.0/template.xslt
+wget -O "${WORKDIR}"/dist/data/cybersec.dat https://downloads.nordcdn.com/configs/dns/cybersec.json
  
 chmod 0700 "${WORKDIR}"/dist/data
 chmod 0600 "${WORKDIR}"/dist/data/*
