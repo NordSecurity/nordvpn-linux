@@ -28,6 +28,9 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
+		return &pb.SettingsResponse{
+			Type: internal.CodeConfigError,
+		}, nil
 	}
 
 	// Storing autoconnect parameters was introduced later on so they might not be save in a config yet. We need to
