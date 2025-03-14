@@ -54,6 +54,7 @@ def setup_function(function):  # noqa: ARG001
         login.login_as("default", ssh_client)
         ssh_client.exec_command("nordvpn set notify off")
         ssh_client.exec_command("nordvpn set mesh on")
+        sh.nordvpn.mesh.peer.refresh()
 
         meshnet.are_peers_connected(ssh_client)
 
@@ -84,6 +85,7 @@ def test_meshnet_available_after_update():
 
     local_hostname = parsed_peer_list.get_this_device().hostname
     ssh_client.exec_command(f"nordvpn mesh peer routing allow {local_hostname}")
+    sh.nordvpn.mesh.peer.refresh()
 
     peer_hostname = parsed_peer_list.get_internal_peer().hostname
     output = sh.nordvpn.mesh.peer.connect(peer_hostname)
