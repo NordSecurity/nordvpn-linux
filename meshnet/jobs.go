@@ -34,8 +34,6 @@ func (s *Server) StartJobs() {
 
 func JobRefreshMeshMap(s *Server) func() error {
 	return func() error {
-		// Ignore anything as this is just needed to issue a mesh map update if it is old
-		// enough.
 		resp, err := s.RefreshMeshnet(context.Background(), &pb.Empty{})
 		if err == nil {
 			if resp, ok := resp.Response.(*pb.MeshnetResponse_ServiceError); ok {
