@@ -6,7 +6,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	testmeshnet "github.com/NordSecurity/nordvpn-linux/test/mock/meshnet"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
 	"github.com/stretchr/testify/assert"
@@ -70,7 +69,6 @@ func TestMeshUnsetter_unsetMesh(t *testing.T) {
 				tt.netw,
 				okPublisher{},
 				testnorduser.NewMockNorduserClient(tt.startFileshareErr),
-				&testmeshnet.MockMeshnetRegister{},
 			)
 			err := unsetter.unsetMesh()
 			assert.NoError(t, err)

@@ -84,10 +84,8 @@ func TestStartAutoConnect(t *testing.T) {
 
 type meshRenewChecker struct{}
 
-func (meshRenewChecker) IsRegistrationInfoCorrect() bool   { return true }
-func (meshRenewChecker) Register() error                   { return nil }
-func (meshRenewChecker) GetMeshPrivateKey() (string, bool) { return "", true }
-func (meshRenewChecker) ClearMeshPrivateKey()              {}
+func (meshRenewChecker) IsRegistrationInfoCorrect() bool { return true }
+func (meshRenewChecker) Register() error                 { return nil }
 
 type invitationsAPI struct{}
 

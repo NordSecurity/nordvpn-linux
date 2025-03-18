@@ -56,23 +56,10 @@ func (meshRenewChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, err
 
 type registrationChecker struct {
 	registrationErr error
-	meshPrivateKey  string
 }
 
-func (r *registrationChecker) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
-func (r *registrationChecker) Register() error {
-	if r.registrationErr != nil {
-		return r.registrationErr
-	}
-
-	r.meshPrivateKey = "key"
-	return nil
-}
-
-func (r *registrationChecker) GetMeshPrivateKey() (string, bool) {
-	return r.meshPrivateKey, r.meshPrivateKey != ""
-}
-func (r *registrationChecker) ClearMeshPrivateKey() {}
+func (r registrationChecker) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
+func (r registrationChecker) Register() error                 { return r.registrationErr }
 
 type workingNetworker struct{}
 
@@ -166,7 +153,7 @@ func newMockedServer(
 	server := NewServer(
 		meshRenewChecker{},
 		configManager,
-		&registrationChecker{},
+		registrationChecker{},
 		acceptInvitationsAPI{},
 		&workingNetworker{},
 		&registryApi,
@@ -1360,7 +1347,7 @@ func TestServer_fetchCfg(t *testing.T) {
 		},
 		{
 			name: "auth checker failed",
-			mc:   &registrationChecker{registrationErr: errors.New("some err")},
+			mc:   registrationChecker{registrationErr: errors.New("some err")},
 			err:  generalMeshError(pb.MeshnetErrorCode_NOT_REGISTERED),
 		},
 	} {
@@ -1385,9 +1372,11 @@ func TestServer_fetchCfg(t *testing.T) {
 			// Ignore meshnet settings as they are likely to be changed by reg checker
 			cfg.Mesh = false
 			cfg.MeshDevice = nil
+			cfg.MeshPrivateKey = ""
 			cfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
 			expectedCfg.Mesh = false
 			expectedCfg.MeshDevice = nil
+			expectedCfg.MeshPrivateKey = ""
 			expectedCfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
 
 			assert.EqualValues(t, tt.err, err)
