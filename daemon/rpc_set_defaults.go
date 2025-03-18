@@ -57,8 +57,6 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.Empty) (*pb.Payload, error
 	r.events.Settings.Defaults.Publish(nil)
 	r.events.Settings.Publish(cfg)
 
-	r.meshPrivateKeyController.ClearMeshPrivateKey()
-
 	return &pb.Payload{
 		Type: internal.CodeSuccess,
 	}, nil

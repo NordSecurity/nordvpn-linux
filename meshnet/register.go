@@ -1,11 +1,13 @@
 package meshnet
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	cmesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -13,28 +15,20 @@ import (
 	"github.com/google/uuid"
 )
 
-type PrivateKeyController interface {
-	ClearMeshPrivateKey()
-}
-
 // Checker provides information about meshnet.
 type Checker interface {
 	// IsRegistrationInfoCorrect returns true when device has been registered to meshnet.
 	IsRegistrationInfoCorrect() bool
 	// Register the device
 	Register() error
-	// GetMeshPrivateKey returns meshnet private key and a boolean value indicating if it has been generated
-	GetMeshPrivateKey() (string, bool)
-	PrivateKeyController
 }
 
 // RegisteringChecker does both registration checks and registration, if it's not done.
 type RegisteringChecker struct {
-	cm             config.Manager
-	gen            KeyGenerator
-	meshPrivateKey string
-	reg            cmesh.Registry
-	mu             sync.Mutex
+	cm  config.Manager
+	gen KeyGenerator
+	reg cmesh.Registry
+	mu  sync.Mutex
 }
 
 // NewRegisteringChecker is a default constructor for RegisteringChecker.
@@ -46,9 +40,9 @@ func NewRegisteringChecker(
 	return &RegisteringChecker{cm: cm, gen: gen, reg: reg}
 }
 
-func isRegistrationInfoCorrect(cfg config.Config, meshPrivateKey string) bool {
+func isRegistrationInfoCorrect(cfg config.Config) bool {
 	return cfg.MeshDevice != nil &&
-		meshPrivateKey != "" &&
+		cfg.MeshPrivateKey != "" &&
 		cfg.MeshDevice.ID != uuid.Nil &&
 		cfg.MeshDevice.Address.IsValid()
 }
@@ -66,7 +60,7 @@ func (r *RegisteringChecker) IsRegistrationInfoCorrect() bool {
 		return false
 	}
 
-	if isRegistrationInfoCorrect(cfg, r.meshPrivateKey) {
+	if isRegistrationInfoCorrect(cfg) {
 		return true
 	}
 
@@ -75,12 +69,12 @@ func (r *RegisteringChecker) IsRegistrationInfoCorrect() bool {
 		return false
 	}
 
-	if err := r.cm.SaveWith(meshConfig(cfg.MeshDevice)); err != nil {
+	if err := r.cm.SaveWith(meshConfig(cfg.MeshDevice, cfg.MeshPrivateKey)); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return false
 	}
 
-	return isRegistrationInfoCorrect(cfg, r.meshPrivateKey)
+	return isRegistrationInfoCorrect(cfg)
 }
 
 // Register registers the device in API, even if it was already registered
@@ -97,11 +91,11 @@ func (r *RegisteringChecker) Register() error {
 		return err
 	}
 
-	if err := r.cm.SaveWith(meshConfig(cfg.MeshDevice)); err != nil {
+	if err := r.cm.SaveWith(meshConfig(cfg.MeshDevice, cfg.MeshPrivateKey)); err != nil {
 		return err
 	}
 
-	if !isRegistrationInfoCorrect(cfg, r.meshPrivateKey) {
+	if !isRegistrationInfoCorrect(cfg) {
 		return fmt.Errorf("meshnet registration failure")
 	}
 
@@ -109,7 +103,10 @@ func (r *RegisteringChecker) Register() error {
 }
 
 func (r *RegisteringChecker) register(cfg *config.Config) error {
-	privateKey := r.gen.Private()
+	privateKey := cfg.MeshPrivateKey
+	if privateKey == "" {
+		privateKey = r.gen.Private()
+	}
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	distroName, err := distro.ReleaseName()
 	if err != nil {
@@ -121,32 +118,31 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
 		SupportsRouting: true,
 	})
+	if errors.Is(err, core.ErrConflict) {
+		// We try to keep the same keys as long as possible, but if relogin with different account happens
+		// then they have to be regenerated. There's no way to check if the current mesh device data
+		// belongs to this account or not, so handling this on registering error is the best approach.
+		privateKey = r.gen.Private()
+		peer, err = r.reg.Register(token, cmesh.Machine{
+			HardwareID:      cfg.MachineID,
+			PublicKey:       r.gen.Public(privateKey),
+			OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
+			SupportsRouting: true,
+		})
+	}
 	if err != nil {
-		return fmt.Errorf("registering new mesh machine: %w", err)
+		return err
 	}
 
-	r.meshPrivateKey = privateKey
 	cfg.MeshDevice = peer
+	cfg.MeshPrivateKey = privateKey
 	return nil
 }
 
-func (r *RegisteringChecker) GetMeshPrivateKey() (string, bool) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	return r.meshPrivateKey, r.meshPrivateKey != ""
-}
-
-func (r *RegisteringChecker) ClearMeshPrivateKey() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.meshPrivateKey = ""
-}
-
-func meshConfig(peer *cmesh.Machine) config.SaveFunc {
+func meshConfig(peer *cmesh.Machine, key string) config.SaveFunc {
 	return func(c config.Config) config.Config {
 		c.MeshDevice = peer
+		c.MeshPrivateKey = key
 		return c
 	}
 }

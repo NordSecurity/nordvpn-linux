@@ -29,10 +29,6 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	if !cfg.Mesh {
-		r.meshPrivateKeyController.ClearMeshPrivateKey()
-	}
-
 	r.events.Service.Disconnect.Publish(events.DataDisconnect{
 		Protocol:             cfg.AutoConnectData.Protocol,
 		EventStatus:          events.StatusSuccess,

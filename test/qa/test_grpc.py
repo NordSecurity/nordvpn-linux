@@ -1,10 +1,12 @@
 import threading
 import sh
 import grpc
-import lib
 from collections.abc import Sequence
 from lib import daemon, info, logging, login
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
+
+NORDVPND_SOCKET = 'unix:///run/nordvpn/nordvpnd.sock'
+
 
 def setup_function():  # noqa: ARG001
     daemon.start()
@@ -62,7 +64,7 @@ def test_tunnel_update_notifications_before_and_after_connect():
 
 
 def collect_state_changes(stop_at: int, tracked_states: Sequence[str], timeout: int = 10) -> Sequence[state_pb2.AppState]:
-    with grpc.insecure_channel(lib.NORDVPND_SOCKET) as channel:
+    with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
         stub = service_pb2_grpc.DaemonStub(channel)
         response_stream = stub.SubscribeToStateChanges(
             common_pb2.Empty(), timeout=timeout)
