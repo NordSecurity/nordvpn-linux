@@ -159,7 +159,6 @@ PORTS_RANGE = [
 # Used for integration test coverage
 os.environ["GOCOVERDIR"] = os.environ["WORKDIR"] + "/" + os.environ["COVERDIR"]
 
-NORDVPND_SOCKET = 'unix:///run/nordvpn/nordvpnd.sock'
 
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.
 class ErrorDefer:

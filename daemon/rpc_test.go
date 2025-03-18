@@ -25,7 +25,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
-	testmeshnet "github.com/NordSecurity/nordvpn-linux/test/mock/meshnet"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
@@ -100,7 +99,6 @@ func testRPC() *RPC {
 		nil,
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),
-		&testmeshnet.MockMeshnetRegister{},
 	)
 }
 
