@@ -1,20 +1,19 @@
 package meshnet
 
 import (
+	"context"
 	"log"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 )
 
 func (s *Server) StartJobs() {
 	if _, err := s.scheduler.NewJob(gocron.DurationJob(5*time.Minute), gocron.NewTask(JobRefreshMeshMap(s)), gocron.WithName("job refresh mesh map")); err != nil {
 		log.Println(internal.WarningPrefix, "job refresh meshnet map schedule error:", err)
-	}
-	if _, err := s.scheduler.NewJob(gocron.DurationJob(2*time.Hour), gocron.NewTask(JobRefreshMeshnet(s)), gocron.WithName("job refresh meshnet")); err != nil {
-		log.Println(internal.WarningPrefix, "job refresh meshnet schedule error:", err)
 	}
 
 	if _, err := s.scheduler.NewJob(
@@ -37,15 +36,15 @@ func JobRefreshMeshMap(s *Server) func() error {
 	return func() error {
 		// Ignore anything as this is just needed to issue a mesh map update if it is old
 		// enough.
-		_, _, _, _ = s.fetchPeers()
-		return nil
-	}
-}
-
-func JobRefreshMeshnet(s *Server) func() error {
-	return func() error {
-		// ignore what is returned, try to do it here as light as possible
-		_, _ = s.RefreshMeshnet(nil, nil)
+		resp, err := s.RefreshMeshnet(context.Background(), &pb.Empty{})
+		if err == nil {
+			if resp, ok := resp.Response.(*pb.MeshnetResponse_ServiceError); ok {
+				// Retry after possible failure on the backend server
+				if resp.ServiceError == pb.ServiceErrorCode_API_FAILURE {
+					_, _ = s.RefreshMeshnet(context.Background(), &pb.Empty{})
+				}
+			}
+		}
 		return nil
 	}
 }
