@@ -139,6 +139,7 @@ def test_changelog_after_update():
     changelog_path = "/usr/share/doc/nordvpn/changelog.Debian.gz"
     changelog = sh.dpkg_parsechangelog("-l", changelog_path)
 
-    nordvpn_version = str(sh.nordvpn("-v").split()[2])
+    # take version without checksum as it will never be present in the changelog
+    nordvpn_version = sh.nordvpn("-v").split()[2].split('+')[0]
     assert nordvpn_version in changelog
     assert "*" in changelog
