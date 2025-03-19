@@ -48,22 +48,24 @@ func (m *QuicTransport) NotifyConnect(events.DataConnect) error {
 
 func (m *QuicTransport) executeRequest(req *http.Request) (*http.Response, error) {
 	m.mu.RLock()
-	response, err := m.inner.RoundTrip(req)
+	inner := m.inner
+	m.mu.RUnlock()
+	response, err := inner.RoundTrip(req)
 
 	// check the errors if inner needs to be recreated
 	recreate := shouldRecreate(err)
 
 	// mark that inner needs to be recreated while holding the read lock to be sure shouldRecreate is not replaced before recreation
 	m.shouldRecreate.Store(recreate)
-	m.mu.RUnlock()
 
 	if recreate {
 		log.Println(internal.InfoPrefix, "recreate RoundTripper on error", err)
 		// recreate the inner and retry one more time to execute the same request
 		m.recreateRoundTrip(false)
 		m.mu.RLock()
-		response, err = m.inner.RoundTrip(req)
+		inner := m.inner
 		m.mu.RUnlock()
+		response, err = inner.RoundTrip(req)
 	}
 
 	return response, err
