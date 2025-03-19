@@ -987,7 +987,7 @@ func (s *Server) isMeshOn() bool {
 
 // GetPeers returns a list of this machine meshnet peers
 func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, error) {
-	_, self, peers, grpcErr := s.fetchPeers()
+	_, self, peers, grpcErr := s.fetchPeers(false)
 	if grpcErr != nil {
 		return &pb.GetPeersResponse{
 			Response: &pb.GetPeersResponse_Error{
@@ -1261,7 +1261,7 @@ func (s *Server) fetchCfg() (cfg config.Config, grpcErr *pb.Error) {
 // fetchPeers is a common function used for meshnet functionality. It checks if device is logged
 // into NordVPN, ensures that device is properly registered in meshnet map and returns token, self
 // ID, as well as most recent peer list to be used further in endpoint logic
-func (s *Server) fetchPeers() (
+func (s *Server) fetchPeers(force bool) (
 	token string,
 	self mesh.Machine,
 	peers mesh.MachinePeers,
@@ -1277,7 +1277,7 @@ func (s *Server) fetchPeers() (
 	self = *cfg.MeshDevice
 	var err error
 	var mmap *mesh.MachineMap
-	mmap, err = s.mapper.Map(token, self.ID, false)
+	mmap, err = s.mapper.Map(token, self.ID, force)
 	if err != nil {
 		if errors.Is(err, core.ErrUnauthorized) {
 			if err := s.cm.SaveWith(auth.Logout(
@@ -1319,7 +1319,7 @@ func (s *Server) fetchPeer(identifier string) (
 ) {
 	var err *pb.Error
 	var peers mesh.MachinePeers
-	token, self, peers, err = s.fetchPeers()
+	token, self, peers, err = s.fetchPeers(false)
 	if err != nil {
 		grpcErr = updateGeneralError(err)
 		return

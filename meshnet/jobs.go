@@ -1,7 +1,6 @@
 package meshnet
 
 import (
-	"context"
 	"log"
 	"time"
 
@@ -34,14 +33,10 @@ func (s *Server) StartJobs() {
 
 func JobRefreshMeshMap(s *Server) func() error {
 	return func() error {
-		resp, err := s.RefreshMeshnet(context.Background(), &pb.Empty{})
-		if err == nil {
-			if resp, ok := resp.Response.(*pb.MeshnetResponse_ServiceError); ok {
-				// Retry after possible failure on the backend server
-				if resp.ServiceError == pb.ServiceErrorCode_API_FAILURE {
-					_, _ = s.RefreshMeshnet(context.Background(), &pb.Empty{})
-				}
-			}
+		_, _, _, err := s.fetchPeers(true)
+		if err != nil && err.GetServiceErrorCode() == pb.ServiceErrorCode_API_FAILURE {
+			// Retry after possible failure on the backend server
+			_, _, _, _ = s.fetchPeers(true)
 		}
 		return nil
 	}

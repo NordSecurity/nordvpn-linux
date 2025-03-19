@@ -1461,7 +1461,7 @@ func TestServer_fetchPeers(t *testing.T) {
 			if tt.cm != nil {
 				s.cm = tt.cm
 			}
-			token, self, peers, err := s.fetchPeers()
+			token, self, peers, err := s.fetchPeers(false)
 
 			// Make sure it fetches the same config as cm would
 			var cfg config.Config
