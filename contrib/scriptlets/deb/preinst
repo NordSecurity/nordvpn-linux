@@ -1,5 +1,15 @@
 #!/usr/bin/env bash
 
+if [ -x "/snap/bin/nordvpn" ]; then
+    echo ""
+    echo "====================================================================================="
+    echo "NordVPN is already installed via Snap."
+    echo "To install the app from a DEB package, first remove the Snap version."
+    echo "====================================================================================="
+    echo ""
+    exit 1
+fi
+
 NORDVPN_GROUP="nordvpn"
 DEFAULT_USER=${SUDO_USER:-"$(logname 2> /dev/null)"}
 if [[ ! "$DEFAULT_USER" || "$DEFAULT_USER" == "root" ]]; then
