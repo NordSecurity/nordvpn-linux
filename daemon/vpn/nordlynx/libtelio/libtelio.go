@@ -34,6 +34,7 @@ const (
 )
 
 type lib interface {
+	// ?
 	ConnectToExitNode(publicKey teliogo.PublicKey, allowedIps *[]teliogo.IpNet, endpoint *teliogo.SocketAddr) error
 	ConnectToExitNodePostquantum(identifier *string, publicKey teliogo.PublicKey, allowedIps *[]teliogo.IpNet, endpoint teliogo.SocketAddr) error
 	DisconnectFromExitNodes() error

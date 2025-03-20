@@ -3,12 +3,17 @@
 // Package moose provides convenient wrappers for event sending.
 package moose
 
-// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/amd64/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
-// #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/i386/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armel/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/armhf/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
-// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/aarch64/latest -lmoosenordvpnapp -lmooseworker -lsqlite3
-// #cgo LDFLAGS: -ldl -lm
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-nordvpnapp/current/amd64
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-worker/current/amd64
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-nordvpnapp/current/i386
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-worker/current/i386
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-nordvpnapp/current/armel
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-worker/current/armel
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-nordvpnapp/current/armhf
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-worker/current/armhf
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-nordvpnapp/current/aarch64
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../bin/deps/lib/libmoose-worker/current/aarch64
+// #cgo LDFLAGS: -ldl -lm -lmoosenordvpnapp -lmooseworker -lsqlite3
 import "C"
 
 import (
