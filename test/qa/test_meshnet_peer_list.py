@@ -36,6 +36,8 @@ def base_test_peer_list(filter_list: list[str] | None = None) -> None:
 
         meshnet.set_permissions(remote_hostname, routing=routing_allowed, incoming=incoming_traffic_allowed, fileshare=allows_sending_files)
         ssh_client.meshnet.set_permissions(local_hostname, routing=allows_routing, incoming=allows_incoming_traffic, fileshare=allows_sending_files)
+        sh_no_tty.nordvpn.mesh.peer.refresh()
+        ssh_client.exec_command("nordvpn mesh peer refresh")
 
     local_peer_list = meshnet.get_clean_peer_list(sh_no_tty.nordvpn.mesh.peer.list())
     local_formed_list = meshnet.PeerList.from_str(local_peer_list).parse_peer_list(filter_list)
