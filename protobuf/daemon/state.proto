@@ -41,6 +41,7 @@ enum LoginEventType {
 
 enum UpdateEvent {
     SERVERS_LIST_UPDATE = 0;
+    ACTUAL_IP_UPDATE = 1;
 }
 
 message AccountModification {
@@ -57,4 +58,3 @@ message AppState {
         AccountModification account_modification = 6;
     }
 }
-
