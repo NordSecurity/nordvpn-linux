@@ -85,16 +85,20 @@ func statusStream(stateChan <-chan interface{},
 				}
 
 				connectionParameters := paramsStorage.parameters
-				status := pb.ConnectionStatus{
-					State:             state,
-					ServerIp:          e.TargetServerIP,
-					ServerCountry:     e.TargetServerCountry,
-					ServerCity:        e.TargetServerCity,
-					ServerName:        e.TargetServerName,
-					ServerHostname:    e.TargetServerDomain,
-					IsMeshPeer:        e.IsMeshnetPeer,
-					ByUser:            true,
-					IsVirtualLocation: e.IsVirtualLocation,
+				status := pb.StatusResponse{
+					State:           state,
+					Ip:              e.TargetServerIP,
+					Country:         e.TargetServerCountry,
+					City:            e.TargetServerCity,
+					Name:            e.TargetServerName,
+					Hostname:        e.TargetServerDomain,
+					IsMeshPeer:      e.IsMeshnetPeer,
+					ByUser:          true,
+					VirtualLocation: e.IsVirtualLocation,
+					Upload:          e.Upload,
+					Download:        e.Download,
+					Technology:      e.Technology,
+					Protocol:        e.Protocol,
 					Parameters: &pb.ConnectionParameters{
 						Source:  connectionParameters.ConnectionSource,
 						Country: connectionParameters.Parameters.Country,
@@ -110,11 +114,12 @@ func statusStream(stateChan <-chan interface{},
 			case events.DataDisconnect:
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{
-						ConnectionStatus: &pb.ConnectionStatus{
-							State:  pb.ConnectionState_DISCONNECTED,
-							ByUser: e.ByUser,
-						},
-					}}); err != nil {
+						ConnectionStatus: &pb.StatusResponse{
+							State:      pb.ConnectionState_DISCONNECTED,
+							ByUser:     e.ByUser,
+							Technology: e.Technology,
+							Protocol:   e.Protocol,
+						}}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn disabled failed to send state update:", err)
 				}
 			case pb.LoginEventType:

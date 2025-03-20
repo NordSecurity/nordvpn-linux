@@ -26,8 +26,12 @@ func (c *cmd) Status(ctx *cli.Context) error {
 
 // Status returns ready to print status string.
 func Status(resp *pb.StatusResponse) string {
+	state := "Disconnected"
+	if resp.State == pb.ConnectionState_CONNECTED {
+		state = "Connected"
+	}
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("Status: %s\n", resp.State))
+	b.WriteString(fmt.Sprintf("Status: %s\n", state))
 
 	if resp.Name != "" {
 		serverName := resp.Name

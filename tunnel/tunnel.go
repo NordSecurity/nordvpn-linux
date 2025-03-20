@@ -20,6 +20,31 @@ var (
 	ErrNotFound = errors.New("tunnel not found")
 )
 
+// GetTransferRates retrieves tunnel statistics in a thread safe manner
+func GetTransferRates(nicName string) (Statistics, error) {
+	out, err := os.ReadFile("/sys/class/net/" + nicName + "/statistics/rx_bytes")
+	if err != nil {
+		return Statistics{}, err
+	}
+
+	rx, err := strconv.ParseUint(strings.TrimSpace(string(out)), 10, 64)
+	if err != nil {
+		return Statistics{}, err
+	}
+
+	out, err = os.ReadFile("/sys/class/net/" + nicName + "/statistics/tx_bytes")
+	if err != nil {
+		return Statistics{}, err
+	}
+
+	tx, err := strconv.ParseUint(strings.TrimSpace(string(out)), 10, 64)
+	if err != nil {
+		return Statistics{}, err
+	}
+
+	return Statistics{Tx: tx, Rx: rx}, nil
+}
+
 // T describes tunnel behavior
 // probably needs a better name, though
 type T interface {
@@ -152,25 +177,5 @@ func (t *Tunnel) Up() error {
 
 // TransferRates collects data transfer statistics.
 func (t Tunnel) TransferRates() (Statistics, error) {
-	out, err := os.ReadFile("/sys/class/net/" + t.iface.Name + "/statistics/rx_bytes")
-	if err != nil {
-		return Statistics{}, err
-	}
-
-	rx, err := strconv.ParseUint(strings.TrimSpace(string(out)), 10, 64)
-	if err != nil {
-		return Statistics{}, err
-	}
-
-	out, err = os.ReadFile("/sys/class/net/" + t.iface.Name + "/statistics/tx_bytes")
-	if err != nil {
-		return Statistics{}, err
-	}
-
-	tx, err := strconv.ParseUint(strings.TrimSpace(string(out)), 10, 64)
-	if err != nil {
-		return Statistics{}, err
-	}
-
-	return Statistics{Tx: tx, Rx: rx}, nil
+	return GetTransferRates(t.iface.Name)
 }
