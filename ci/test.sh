@@ -38,7 +38,7 @@ fi
 mkdir -p "${WORKDIR}"/coverage/unit
 
 # single architecture for tests
-export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/amd64/latest"
+export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/current/amd64"
 
 # shellcheck disable=SC2046
 go test ${parallel:+${parallel}} -tags "$tags" -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}") \

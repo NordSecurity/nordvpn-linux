@@ -2,6 +2,9 @@
 set -euxo pipefail
 
 source "${WORKDIR}/ci/export_lib_versions.sh"
+source "${WORKDIR}/ci/populate_current_lib_ver.sh"
+
+lib_root="${WORKDIR}/bin/deps/lib/"
 
 declare -A targets=(
   [amd64]=x86_64-unknown-linux-gnu
@@ -27,16 +30,19 @@ function clone_if_absent() {
   repo_name="${repo_url##*/}"
   repo_name="${repo_name%.git}"
 
+  pushd "${dst_arch_dir}"
   if [[ ! -d "${dst_arch_dir}/${repo_name}" ]]; then
-    pushd "${dst_arch_dir}"
     git clone "${repo_url}"
-
-    pushd "${repo_name}"
-    git checkout "${version}"
-    popd
-
-    popd
   fi
+
+  pushd "${repo_name}"
+  # In case checkout does not work, try to fetch the desired version and check it out again
+  set +e
+  git checkout "${version}" || git fetch origin "${version}"
+  set -e
+  git checkout "${version}"
+  popd
+  popd
 }
 
 function build_rust() {
@@ -56,22 +62,22 @@ function build_rust() {
   popd
 }
 
-function copy_so_files() {
-  if [[ $# -ne 2 ]]; then
-    echo "Two parameters are required for copy_so_files function:"
-    echo "copy_so_files <repo_root> <file_name>"
-    echo -e "\t repo_root - root directory of the repository containing .so file"
-    echo -e "\t file_name - name of the .so file (including .so extension)"
+function link_so_files() {
+  if [[ $# -ne 1 ]]; then
+    echo "One parameter is required for link_so_files function:"
+    echo "link_so_files <library_name>"
+    echo -e "\t library_name - name of the library which so directory to link"
     echo "You passed ${#} arg(s): ${*}"
     exit 1
   fi
-  repo_root=$1
-  file_name=$2
+  library_name=$1
   for arch in "${ARCHS_RUST[@]}"; do
     target_arch="${targets[${arch}]}"
-    mkdir -p "${WORKDIR}/bin/deps/lib/${arch}/latest"
-    cp "${repo_root}/target/${target_arch}/release/${file_name}" \
-      "${WORKDIR}/bin/deps/lib/${arch}/latest/${file_name}"
+    lib_dir="${lib_root}/${library_name}"
+    target_dir="${WORKDIR}/build/foss/${library_name}/target"
+    mkdir -p "${lib_dir}"
+    ln -sfnr "${target_dir}" "${lib_dir}/current"
+    ln -sfn "${target_arch}/release" "${target_dir}/${arch}"
   done
 }
 
@@ -79,9 +85,12 @@ mkdir -p "${WORKDIR}/build/foss"
 
 # ====================[  Build libtelio from source ]=========================
 clone_if_absent "https://github.com/NordSecurity/libtelio.git" "${LIBTELIO_VERSION}" "${WORKDIR}/build/foss"
+
+rm -rf "${lib_root}/current"
+
 # BYPASS_LLT_SECRETS is needed for libtelio builds
 BYPASS_LLT_SECRETS=1 build_rust "${WORKDIR}/build/foss/libtelio"
-copy_so_files "${WORKDIR}/build/foss/libtelio" "libtelio.so"
+link_so_files "libtelio"
 
 # ====================[  Build libdrop from source ]==========================
 clone_if_absent "https://github.com/NordSecurity/libdrop.git" "${LIBDROP_VERSION}" "${WORKDIR}/build/foss"
@@ -109,4 +118,7 @@ mkdir -p "${WORKDIR}/build/foss/libdrop/.cargo"
 echo "${linkers_config}" >"${WORKDIR}/build/foss/libdrop/config.toml"
 
 build_rust "${WORKDIR}/build/foss/libdrop"
-copy_so_files "${WORKDIR}/build/foss/libdrop" "libnorddrop.so"
+link_so_files "libdrop"
+
+populate_current_ver "${lib_root}/current" "${lib_root}/libtelio/${LIBTELIO_VERSION}" "libtelio.so"
+populate_current_ver "${lib_root}/current" "${lib_root}/libdrop/${LIBDROP_VERSION}" "libdrop.so"

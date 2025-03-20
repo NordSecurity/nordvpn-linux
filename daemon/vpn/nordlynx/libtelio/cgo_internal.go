@@ -2,10 +2,10 @@
 
 package libtelio
 
-// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/amd64/latest -ltelio -lsqlite3
-// #cgo 386 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/i386/latest -ltelio -lsqlite3
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/armel/latest -ltelio -lsqlite3
-// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/armhf/latest -ltelio -lsqlite3
-// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/aarch64/latest -ltelio -lsqlite3
-// #cgo LDFLAGS: -ldl -lm
+// #cgo amd64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/libmoose-nordvpnapp/current/amd64
+// #cgo 386 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/libmoose-nordvpnapp/current/i386
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/libmoose-nordvpnapp/current/armel
+// #cgo arm LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/libmoose-nordvpnapp/current/armhf
+// #cgo arm64 LDFLAGS: -L${SRCDIR}/../../../../bin/deps/lib/libmoose-nordvpnapp/current/aarch64
+// #cgo LDFLAGS: -lsqlite3
 import "C"

@@ -8,7 +8,7 @@ binaries=(
   "${WORKDIR}/bin/${ARCH}/nordvpn"
   "${WORKDIR}/bin/${ARCH}/nordvpnd"
   "${WORKDIR}/bin/${ARCH}/nordfileshare"
-  "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
+  "${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn"
   "${WORKDIR}/bin/${ARCH}/norduserd"
 )
 

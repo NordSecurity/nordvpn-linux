@@ -238,8 +238,6 @@ func buildPackage(packageType string, buildFlags string) error {
 	}
 	env["ARCH"] = build.Default.GOARCH
 	env["GOPATH"] = build.Default.GOPATH
-	env["LD_LIBRARY_PATH"] = fmt.Sprintf("./bin/deps/lib/%s/latest", build.Default.GOARCH)
-
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -249,7 +247,7 @@ func buildPackage(packageType string, buildFlags string) error {
 	mg.Deps(Build.Notices)
 
 	// do not build openvpn dependency if it already exists
-	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/%s/latest/openvpn", build.Default.GOARCH)) {
+	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/current/%s/openvpn", build.Default.GOARCH)) {
 		mg.Deps(Build.Openvpn)
 	}
 
@@ -281,7 +279,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	mg.Deps(Build.Notices)
 
 	// do not build openvpn dependency if it already exists
-	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/%s/latest/openvpn", build.Default.GOARCH)) {
+	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/current/%s/openvpn", build.Default.GOARCH)) {
 		mg.Deps(Build.OpenvpnDocker)
 	}
 
