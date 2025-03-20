@@ -16,7 +16,13 @@ BASEDIR="bin/${ARCH}"
 "${STRIP}" "${BASEDIR}"/norduserd
 
 # shellcheck disable=SC2153
-"${STRIP}" "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
+"${STRIP}" "${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn"
+
+mkdir -p "${WORKDIR}/bin/deps/current-dump"
+
+# Snap does not dereference symlinks on its own
+cp -rL "${WORKDIR}/bin/deps/lib/current" "${WORKDIR}/bin/deps/lib/current-dump"
+trap 'rm -rf ${WORKDIR}/bin/deps/lib/current-dump' EXIT
 
 # build snap package
 snapcraft --destructive-mode

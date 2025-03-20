@@ -72,7 +72,7 @@ contents:
     dst: /usr/share/bash-completion/completions/nordvpn
   - src: ${WORKDIR}/dist/autocomplete/zsh_autocomplete
     dst: /usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete
-  - src: ${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn
+  - src: ${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn
     dst: /usr/lib/${NAME}/openvpn
   - src: ${WORKDIR}/contrib/desktop/nordvpn.desktop
     dst: /usr/share/applications/nordvpn.desktop
@@ -125,7 +125,7 @@ contents:
     file_info:
       mode: 0744
 
-  - src: ${WORKDIR}/bin/deps/lib/${ARCH}/latest
+  - src: ${WORKDIR}/bin/deps/lib/current-dump/${ARCH}
     dst: /usr/lib/${NAME}
     type: tree
     file_info:

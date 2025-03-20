@@ -141,8 +141,6 @@ LDFLAGS="-X main.Version=${} \
 #### Production (hardened) builds
 Since Go 1.17 building position independent executables requires using C linker.
 Production builds also use CGo, so the library path has to be given to the C linker.
-Due to Rust's unstable ABI, multiple Rust libraries are compiled into a single library
-called `libfoss.a` and linked into the application.
 C linker also allows adding additional protection known as hardening:
 - [Fortification](https://www.redhat.com/en/blog/enhance-application-security-fortifysource)
 - [Relocation](https://www.redhat.com/en/blog/hardening-elf-binaries-using-relocation-read-only-relro)

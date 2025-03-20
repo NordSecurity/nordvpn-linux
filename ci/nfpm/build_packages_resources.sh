@@ -29,8 +29,8 @@ mkdir -p "${BASEDIR}"/usr/lib/${NAME}
 mkdir -p "${BASEDIR}"/usr/share/man/man1
 
 # shellcheck disable=SC2153
-chmod +x "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
-"${STRIP}" "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
+chmod +x "${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn"
+"${STRIP}" "${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn"
 
 export PKG_VERSION=${VERSION}
 
@@ -38,6 +38,11 @@ cp "${WORKDIR}/bin/${ARCH}/nordvpnd" "${BASEDIR}"/usr/sbin/nordvpnd
 cp "${WORKDIR}/bin/${ARCH}/nordvpn" "${BASEDIR}"/usr/bin/nordvpn
 cp "${WORKDIR}/bin/${ARCH}/nordfileshare" "${BASEDIR}"/usr/lib/${NAME}/nordfileshare
 cp "${WORKDIR}/bin/${ARCH}/norduserd" "${BASEDIR}"/usr/lib/${NAME}/norduserd
+
+# nfpm does not dereference symlinks on its own
+cp -rL "${WORKDIR}/bin/deps/lib/current" "${WORKDIR}/bin/deps/lib/current-dump"
+trap 'rm -rf ${WORKDIR}/bin/deps/lib/current-dump' EXIT
+
 cd "${WORKDIR}"
 
 # extract symbols into files
