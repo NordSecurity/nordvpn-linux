@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+# This hook extracts the 'lvpn-<id>' (case-insensitive) from the current branch name,
+# converts it to uppercase, and prepends it to the commit message in the format:
+# `LVPN-<id>: `
+
+commit_msg_file="$1"
+
+branch_name=$(git rev-parse --abbrev-ref HEAD)
+
+prefix=$(echo "${branch_name}" | sed -En 's/^(lvpn-[0-9]+).*$/\1/ip')
+
+if [ -n "${prefix}" ]; then
+  # prepare commit messae prefix
+  prefix_upper=$(echo "${prefix}" | tr '[:lower:]' '[:upper:]')
+  prefix_formatted="${prefix_upper}: "
+
+  # prepend to commit message
+  existing_msg=$(cat "${commit_msg_file}")
+  if ! echo "${existing_msg}" | grep -q "^${prefix_upper}:"; then
+    {
+      echo "${prefix_formatted}"
+      # add blank line if there is already content in the commit message.
+      [ -n "${existing_msg}" ] && echo "" && echo "${existing_msg}"
+    } >"${commit_msg_file}.tmp" && mv "${commit_msg_file}.tmp" "${commit_msg_file}"
+  fi
+fi
+
+exit 0
