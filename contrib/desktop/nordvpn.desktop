@@ -7,3 +7,4 @@ Icon=nordvpn
 MimeType=x-scheme-handler/nordvpn
 Exec=nordvpn click %u
 Terminal=true
+NoDisplay=true
