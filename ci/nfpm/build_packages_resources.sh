@@ -29,8 +29,8 @@ mkdir -p "${BASEDIR}"/usr/lib/${NAME}
 mkdir -p "${BASEDIR}"/usr/share/man/man1
 
 # shellcheck disable=SC2153
-chmod +x "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
-"${STRIP}" "${WORKDIR}/bin/deps/openvpn/${ARCH}/latest/openvpn"
+chmod +x "${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn"
+"${STRIP}" "${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn"
 
 export PKG_VERSION=${VERSION}
 

@@ -123,6 +123,7 @@ parts:
       - e2fsprogs
       - dbus-x11
       - libnl-genl-3-200
+      - libsqlite3-0
     organize:
       nordvpn: bin/nordvpn
       nordvpnd: bin/nordvpnd
@@ -160,10 +161,10 @@ parts:
     plugin: dump
     source-type: local
     source:
-      - on i386: ./bin/deps/openvpn/i386/latest/
-      - on amd64: ./bin/deps/openvpn/amd64/latest/
-      - on armhf: ./bin/deps/openvpn/armhf/latest/
-      - on arm64: ./bin/deps/openvpn/aarch64/latest/
+      - on i386: ./bin/deps/openvpn/current/i386
+      - on amd64: ./bin/deps/openvpn/current/amd64
+      - on armhf: ./bin/deps/openvpn/current/armhf
+      - on arm64: ./bin/deps/openvpn/current/aarch64
     organize:
       openvpn: usr/lib/nordvpn/openvpn
     stage:
@@ -173,12 +174,12 @@ parts:
     plugin: dump
     source-type: local
     source:
-      - on i386: ./bin/deps/lib/i386/
-      - on amd64: ./bin/deps/lib/amd64/
-      - on armhf: ./bin/deps/lib/armhf/
-      - on arm64: ./bin/deps/lib/aarch64/
+      - on i386: ./bin/deps/lib/current/i386/
+      - on amd64: ./bin/deps/lib/current/amd64/
+      - on armhf: ./bin/deps/lib/current/armhf/
+      - on arm64: ./bin/deps/lib/current/aarch64/
     organize:
-      latest/*: usr/lib/
+      current/*: usr/lib/
     stage:
       - usr/lib/
 
