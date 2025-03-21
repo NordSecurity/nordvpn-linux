@@ -29,16 +29,18 @@ CONNECTING: ConnectionState
 CONNECTED: ConnectionState
 
 class ConnectionParameters(_message.Message):
-    __slots__ = ("source", "country", "city", "group")
+    __slots__ = ("source", "country", "city", "group", "server_id")
     SOURCE_FIELD_NUMBER: _ClassVar[int]
     COUNTRY_FIELD_NUMBER: _ClassVar[int]
     CITY_FIELD_NUMBER: _ClassVar[int]
     GROUP_FIELD_NUMBER: _ClassVar[int]
+    SERVER_ID_FIELD_NUMBER: _ClassVar[int]
     source: ConnectionSource
     country: str
     city: str
     group: _group_pb2.ServerGroup
-    def __init__(self, source: _Optional[_Union[ConnectionSource, str]] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ...) -> None: ...
+    server_id: str
+    def __init__(self, source: _Optional[_Union[ConnectionSource, str]] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ..., server_id: _Optional[str] = ...) -> None: ...
 
 class StatusResponse(_message.Message):
     __slots__ = ("state", "technology", "protocol", "ip", "hostname", "country", "city", "download", "upload", "uptime", "name", "virtualLocation", "parameters", "postQuantum", "is_mesh_peer", "by_user")
