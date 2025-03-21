@@ -26,6 +26,7 @@ message ConnectionParameters {
   string country = 2;
   string city = 3;
   config.ServerGroup group = 4;
+  string server_id = 5;
 }
 
 message StatusResponse {

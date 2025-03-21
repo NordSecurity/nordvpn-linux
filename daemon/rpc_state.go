@@ -100,10 +100,11 @@ func statusStream(stateChan <-chan interface{},
 					Technology:      e.Technology,
 					Protocol:        e.Protocol,
 					Parameters: &pb.ConnectionParameters{
-						Source:  connectionParameters.ConnectionSource,
-						Country: connectionParameters.Parameters.Country,
-						City:    connectionParameters.Parameters.City,
-						Group:   connectionParameters.Parameters.Group,
+						Source:   connectionParameters.ConnectionSource,
+						Country:  connectionParameters.Parameters.Country,
+						City:     connectionParameters.Parameters.City,
+						Group:    connectionParameters.Parameters.Group,
+						ServerId: connectionParameters.Parameters.ServerID,
 					},
 				}
 
@@ -119,7 +120,8 @@ func statusStream(stateChan <-chan interface{},
 							ByUser:     e.ByUser,
 							Technology: e.Technology,
 							Protocol:   e.Protocol,
-						}}}); err != nil {
+						},
+					}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn disabled failed to send state update:", err)
 				}
 			case pb.LoginEventType:
