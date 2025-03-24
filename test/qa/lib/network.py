@@ -123,36 +123,19 @@ def _is_ipv6_internet_reachable(retry=5) -> bool:
     raise last
 
 
-def _is_dns_resolvable(domain = "nordvpn.com", retry=10) -> bool:
+def _is_dns_resolvable(domain = "nordvpn.com", retry=5) -> bool:
     """Returns True when domain resolution is working."""
     i = 0
-    success = False
     while i < retry:
         try:
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ["103.86.96.100"] # specify server so it will not get the result from the docker host
-            logging.log("resolving with nord dns")
             resolver.resolve(domain, 'A', lifetime=5)
-            success = True
+            return True
         except Exception as e:  # noqa: BLE001
-            print(f"_is_dns_resolvable: DNS {domain} FAILURE with nord. Error: {e}")
+            print(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
             time.sleep(1)
             i += 1
-        try:
-            resolver2 = dns.resolver.Resolver()
-            resolver2.nameservers = ["1.1.1.1"] # specify server so it will not get the result from the docker host
-            logging.log("resolving with cloudflare")
-            resolver2.resolve(domain, 'A', lifetime=5)
-            if success:
-                return success
-        except Exception as e:  # noqa: BLE001
-            print(f"_is_dns_resolvable: DNS {domain} FAILURE with cf. Error: {e}")
-            time.sleep(1)
-            i += 1
-    res = requests.get("https://google.com")
-    print(f"_is_dns_resovable: checking no-net sitation after dns check")
-    print(f"_is_dns_resovable: res: {res.content}, status_code: {res.status_code}")
-    time.sleep(100000)
     return False
 
 
