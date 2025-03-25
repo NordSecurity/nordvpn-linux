@@ -766,14 +766,13 @@ func monitorConnection(
 				}
 			case teliogo.NodeStateConnected:
 				if state.PublicKey == connParameters.pubKey {
-					if initialConnection {
-						close(isConnected)
-						initialConnection = false
-					}
-
 					if currentNotifyState != connected {
 						currentNotifyState = connected
 						publishConnectEvent(eventsPublisher, events.StatusSuccess, connParameters.server, state)
+					}
+					if initialConnection {
+						close(isConnected)
+						initialConnection = false
 					}
 				}
 			case teliogo.NodeStateDisconnected:
