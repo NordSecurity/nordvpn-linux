@@ -1579,6 +1579,7 @@ func (netw *Combined) allowFileshareAll() error {
 }
 
 func (netw *Combined) undenyDNS() error {
+	return nil
 	ruleName := "deny-private-dns"
 
 	ruleIndex := slices.Index(netw.rules, ruleName)
@@ -1596,6 +1597,7 @@ func (netw *Combined) undenyDNS() error {
 }
 
 func (netw *Combined) denyDNS() error {
+	return nil
 	ruleName := "deny-private-dns"
 	rules := []firewall.Rule{{
 		Name:           ruleName,
