@@ -108,20 +108,35 @@ func runDocker(
 		containerConfig.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
 	}
 
-	resp, err := docker.ContainerCreate(ctx, &containerConfig, &container.HostConfig{
-		AutoRemove: true,
-		Mounts: []mount.Mount{
-			{
-				Type:   mount.TypeBind,
-				Source: cwd,
-				Target: "/opt",
-			},
-			{
-				Type:   mount.TypeBind,
-				Source: "/lib/modules",
-				Target: "/lib/modules",
-			},
+	mounts := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: cwd,
+			Target: "/opt",
 		},
+		{
+			Type:   mount.TypeBind,
+			Source: "/lib/modules",
+			Target: "/lib/modules",
+		},
+	}
+
+	if env["MOUNT_HOST_GOMODCACHE"] == "1" {
+		goModCache, err := getGoModCache()
+		if err != nil {
+			fmt.Println("Error on retrieving go mod cache on host:", err)
+		} else {
+			mounts = append(mounts, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: goModCache,
+				Target: "/go/pkg/mod",
+			})
+		}
+	}
+
+	resp, err := docker.ContainerCreate(ctx, &containerConfig, &container.HostConfig{
+		AutoRemove:  true,
+		Mounts:      mounts,
 		Privileged:  isPrivileged,
 		Sysctls:     map[string]string{"net.ipv6.conf.all.disable_ipv6": "0"},
 		NetworkMode: container.NetworkMode(network),
@@ -230,4 +245,18 @@ func RemoveDockerNetwork(ctx context.Context, id string) error {
 	}
 
 	return docker.NetworkRemove(ctx, id)
+}
+
+func getGoModCache() (string, error) {
+	// `GOMODCACHE` is not accessible from go code directly during build, therefore it
+	// has to be acquired in a separate process.
+	out, err := exec.Command("go", "env", "GOMODCACHE").CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("executing 'go env GOMODCACHE': %w", err)
+	}
+	goModCache := strings.TrimSpace(string(out))
+	if goModCache == "" {
+		return "", fmt.Errorf("GOMODCACHE is empty")
+	}
+	return goModCache, nil
 }
