@@ -447,6 +447,11 @@ func TestLibtelio_connect(t *testing.T) {
 					State:  teliogo.NodeStateDisconnected,
 					IsExit: true,
 				}
+				// Send one more state which will be ignored just to make sure the
+				// earlier states arrived
+				events <- state{
+					IsExit: false,
+				}
 			},
 		},
 	} {
