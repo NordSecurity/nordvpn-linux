@@ -54,12 +54,14 @@ class ServerCity(_message.Message):
     def __init__(self, city_name: _Optional[str] = ..., servers: _Optional[_Iterable[_Union[Server, _Mapping]]] = ...) -> None: ...
 
 class ServerCountry(_message.Message):
-    __slots__ = ("country_code", "cities")
+    __slots__ = ("country_code", "cities", "country_name")
     COUNTRY_CODE_FIELD_NUMBER: _ClassVar[int]
     CITIES_FIELD_NUMBER: _ClassVar[int]
+    COUNTRY_NAME_FIELD_NUMBER: _ClassVar[int]
     country_code: str
     cities: _containers.RepeatedCompositeFieldContainer[ServerCity]
-    def __init__(self, country_code: _Optional[str] = ..., cities: _Optional[_Iterable[_Union[ServerCity, _Mapping]]] = ...) -> None: ...
+    country_name: str
+    def __init__(self, country_code: _Optional[str] = ..., cities: _Optional[_Iterable[_Union[ServerCity, _Mapping]]] = ..., country_name: _Optional[str] = ...) -> None: ...
 
 class ServersMap(_message.Message):
     __slots__ = ("servers_by_country",)
