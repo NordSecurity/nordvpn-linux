@@ -52,8 +52,8 @@ func (m *Mock) IsVPNActive() bool {
 	return m.VpnActive || m.ConnectRetries > 5
 }
 
-func (*Mock) ConnectionStatus() (networker.ConnectionStatus, error) {
-	return networker.ConnectionStatus{}, nil
+func (*Mock) ConnectionStatus() networker.ConnectionStatus {
+	return networker.ConnectionStatus{}
 }
 
 func (*Mock) EnableFirewall() error  { return nil }
@@ -124,8 +124,8 @@ func (Failing) SetDNS([]string) error { return mock.ErrOnPurpose }
 func (Failing) UnsetDNS() error       { return mock.ErrOnPurpose }
 func (Failing) IsVPNActive() bool     { return false }
 func (Failing) IsMeshnetActive() bool { return false }
-func (Failing) ConnectionStatus() (networker.ConnectionStatus, error) {
-	return networker.ConnectionStatus{}, nil
+func (Failing) ConnectionStatus() networker.ConnectionStatus {
+	return networker.ConnectionStatus{}
 }
 
 func (Failing) EnableFirewall() error                               { return mock.ErrOnPurpose }

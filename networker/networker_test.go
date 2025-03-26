@@ -200,7 +200,8 @@ func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers,
 	lan bool,
 	killswitch bool,
 	enableAllowlist bool,
-	allowlistedSubnets config.Allowlist) error {
+	allowlistedSubnets config.Allowlist,
+) error {
 	e.peers = peers
 	e.LanAvailable = lan
 	return nil
@@ -212,7 +213,8 @@ func (*workingExitNode) Disable() error               { return nil }
 func (e *workingExitNode) ResetFirewall(lan bool,
 	killswitch bool,
 	enableAllowlist bool,
-	allowlist config.Allowlist) error {
+	allowlist config.Allowlist,
+) error {
 	e.LanAvailable = lan
 	return nil
 }
@@ -445,46 +447,6 @@ func TestCombined_Stop(t *testing.T) {
 			netw.vpnet = test.vpn
 			err := netw.stop()
 			assert.ErrorIs(t, err, test.err)
-		})
-	}
-}
-
-func TestCombined_TransferRates(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name     string
-		vpn      vpn.VPN
-		err      error
-		expected tunnel.Statistics
-	}{
-		{
-			name:     "active vpn",
-			vpn:      mock.ActiveVPN{},
-			expected: tunnel.Statistics{Tx: 1337, Rx: 1337},
-		},
-		{
-			name: "inactive vpn",
-			vpn:  mock.WorkingInactiveVPN{},
-			err:  errInactiveVPN,
-		},
-		{
-			name: "nil vpn",
-			err:  errInactiveVPN,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// Test does not rely on any of the values provided via constructor
-			// so it's fine to pass nils to all of them.
-			netw := NewCombined(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, false)
-			// injecting VPN implementation without calling netw.Start
-			netw.vpnet = test.vpn
-			connStus, err := netw.ConnectionStatus()
-			stats := tunnel.Statistics{Tx: connStus.Upload, Rx: connStus.Download}
-			assert.ErrorIs(t, err, test.err)
-			assert.Equal(t, test.expected, stats)
 		})
 	}
 }

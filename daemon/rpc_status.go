@@ -2,9 +2,12 @@ package daemon
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
 // Status of daemon and connection
@@ -17,11 +20,9 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		}, nil
 	}
 
-	var uptime int64
-	if status.StartTime != nil {
-		uptime = int64(time.Since(*status.StartTime))
-	} else {
-		uptime = -1
+	stats, err := tunnel.GetTransferRates(status.TunnelName)
+	if err != nil {
+		log.Printf(internal.WarningPrefix+" failed to get transfer rates of '%s': %+v", status.TunnelName, err)
 	}
 
 	requestedConnParams := r.RequestedConnParams.Get()
@@ -35,9 +36,9 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Name:            status.Name,
 		Country:         status.Country,
 		City:            status.City,
-		Download:        status.Download,
-		Upload:          status.Upload,
-		Uptime:          uptime,
+		Download:        stats.Rx,
+		Upload:          stats.Tx,
+		Uptime:          calculateUptime(status.StartTime),
 		VirtualLocation: status.VirtualLocation,
 		Parameters: &pb.ConnectionParameters{
 			Source:  requestedConnParams.ConnectionSource,
@@ -47,4 +48,14 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		},
 		PostQuantum: status.PostQuantum,
 	}, nil
+}
+
+func calculateUptime(startTime *time.Time) int64 {
+	var uptime int64
+	if startTime != nil {
+		uptime = int64(time.Since(*startTime))
+	} else {
+		uptime = -1
+	}
+	return uptime
 }

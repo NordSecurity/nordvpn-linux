@@ -94,16 +94,14 @@ type ConnectionStatus struct {
 	Country string
 	// City of the other end of the connection
 	City string
-	// Download is the amount of data received through the connection
-	Download uint64
-	// Upload is the amount of data sent through the connection
-	Upload uint64
 	// StartTime time of the connection start
 	StartTime *time.Time
 	// Is virtual server
 	VirtualLocation bool
 	// Is post quantum on
 	PostQuantum bool
+	// Currently set tunnel name
+	TunnelName string
 }
 
 // Networker configures networking for connections.
@@ -263,11 +261,6 @@ func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (Connec
 		return ConnectionStatus{}, errInactiveVPN
 	}
 
-	stats, err := netw.vpnet.Tun().TransferRates()
-	if err != nil {
-		return ConnectionStatus{}, fmt.Errorf("acquiring tun interface transfer rates: %w", err)
-	}
-
 	tech := config.Technology_OPENVPN
 	tunnelName := netw.vpnet.Tun().Interface().Name
 	if netw.vpnet.Tun().Interface().Name == "nordlynx" {
@@ -287,15 +280,15 @@ func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (Connec
 		Hostname:        netw.lastServer.Hostname,
 		Country:         netw.lastServer.Country,
 		City:            netw.lastServer.City,
-		Download:        stats.Rx,
-		Upload:          stats.Tx,
 		VirtualLocation: netw.lastServer.VirtualLocation,
 		PostQuantum:     isActive && actualConnParams.PostQuantum,
+		TunnelName:      tunnelName,
 	}
 
-	if timeOption == UpdateStartTime {
+	switch timeOption {
+	case UpdateStartTime:
 		connectonStatus.StartTime = netw.startTime
-	} else if timeOption == ResetStartTime {
+	case ResetStartTime:
 		connectonStatus.StartTime = nil
 	}
 
