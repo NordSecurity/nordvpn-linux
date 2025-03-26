@@ -8,27 +8,30 @@ import (
 
 type ConnectionParameters struct {
 	ConnectionSource pb.ConnectionSource
-	Parameters       ServerParameters
+	ServerParameters
 }
 
-type ParametersStorage struct {
+// RequestedConnParamsStorage stores connectoin parameters as requested by user.
+//
+// Note that those may not be the same as actual connection parameters.
+type RequestedConnParamsStorage struct {
 	mu         sync.Mutex
 	parameters ConnectionParameters
 }
 
-func (c *ParametersStorage) SetConnectionParameters(connectionSource pb.ConnectionSource, parameters ServerParameters) {
+func (c *RequestedConnParamsStorage) Set(connectionSource pb.ConnectionSource, parameters ServerParameters) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.parameters = ConnectionParameters{
 		ConnectionSource: connectionSource,
-		Parameters:       parameters,
+		ServerParameters: parameters,
 	}
 }
 
-func (c *ParametersStorage) GetConnectionParameters() (ConnectionParameters, error) {
+func (c *RequestedConnParamsStorage) Get() ConnectionParameters {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	return c.parameters, nil
+	return c.parameters
 }

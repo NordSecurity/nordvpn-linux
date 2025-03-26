@@ -184,7 +184,7 @@ func (r *RPC) connect(
 	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
-	r.ConnectionParameters.SetConnectionParameters(pb.ConnectionSource_MANUAL, parameters)
+	r.RequestedConnParams.Set(pb.ConnectionSource_MANUAL, parameters)
 
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)
