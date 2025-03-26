@@ -12,6 +12,7 @@ import (
 	"net/netip"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -30,6 +31,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
+)
+
+type TimeUpdateOption int
+
+const (
+	UpdateStartTime TimeUpdateOption = iota
+	ResetStartTime
 )
 
 var (
@@ -90,10 +98,12 @@ type ConnectionStatus struct {
 	Download uint64
 	// Upload is the amount of data sent through the connection
 	Upload uint64
-	// Uptime since the connection start
-	Uptime *time.Duration
+	// StartTime time of the connection start
+	StartTime *time.Time
 	// Is virtual server
 	VirtualLocation bool
+	// Is post quantum on
+	PostQuantum bool
 }
 
 // Networker configures networking for connections.
@@ -116,7 +126,7 @@ type Networker interface {
 	UnsetDNS() error
 	IsVPNActive() bool
 	IsMeshnetActive() bool
-	ConnectionStatus() (ConnectionStatus, error)
+	ConnectionStatus() ConnectionStatus
 	EnableFirewall() error
 	DisableFirewall() error
 	EnableRouting()
@@ -181,6 +191,7 @@ type Combined struct {
 	// This is used at network changes to know when a new interface was inserted
 	interfaces           mapset.Set[string]
 	isFilesharePermitted bool
+	connectionStatus     atomic.Value
 }
 
 // NewCombined returns a ready made version of
@@ -204,7 +215,7 @@ func NewCombined(
 	fwmark uint32,
 	lanDiscovery bool,
 ) *Combined {
-	return &Combined{
+	combined := &Combined{
 		vpnet:              vpnet,
 		mesh:               mesh,
 		gateway:            gateway,
@@ -226,6 +237,69 @@ func NewCombined(
 		enableLocalTraffic: true,
 		interfaces:         mapset.NewSet[string](),
 	}
+	combined.updateConnectionStatus(ResetStartTime)
+	return combined
+}
+
+// updateConnectionStatus builds the [ConnectionStatus] and updates it in [Combined].
+// In case of an error, empty [ConnectionStatus] is set.
+//
+// Not thread safe.
+func (netw *Combined) updateConnectionStatus(timeOption TimeUpdateOption) {
+	status, err := netw.buildConnectionStatus(timeOption)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to update connection status:", err)
+		status = ConnectionStatus{}
+	}
+
+	netw.connectionStatus.Store(status)
+}
+
+// buildConnectionStatus combines data from various sources and creates [ConnectionStatus].
+//
+// Not thread safe.
+func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (ConnectionStatus, error) {
+	if !netw.isConnectedToVPN() {
+		return ConnectionStatus{}, errInactiveVPN
+	}
+
+	stats, err := netw.vpnet.Tun().TransferRates()
+	if err != nil {
+		return ConnectionStatus{}, fmt.Errorf("acquiring tun interface transfer rates: %w", err)
+	}
+
+	tech := config.Technology_OPENVPN
+	tunnelName := netw.vpnet.Tun().Interface().Name
+	if netw.vpnet.Tun().Interface().Name == "nordlynx" {
+		tech = config.Technology_NORDLYNX
+	} else if tunnelName == internal.NordWhisperInterfaceName {
+		tech = config.Technology_NORDWHISPER
+	}
+
+	actualConnParams, isActive := netw.vpnet.GetConnectionParameters()
+
+	connectonStatus := ConnectionStatus{
+		State:           pb.ConnectionState_CONNECTED,
+		Technology:      tech,
+		Protocol:        netw.lastServer.Protocol,
+		IP:              netw.lastServer.IP,
+		Name:            netw.lastServer.Name,
+		Hostname:        netw.lastServer.Hostname,
+		Country:         netw.lastServer.Country,
+		City:            netw.lastServer.City,
+		Download:        stats.Rx,
+		Upload:          stats.Tx,
+		VirtualLocation: netw.lastServer.VirtualLocation,
+		PostQuantum:     isActive && actualConnParams.PostQuantum,
+	}
+
+	if timeOption == UpdateStartTime {
+		connectonStatus.StartTime = netw.startTime
+	} else if timeOption == ResetStartTime {
+		connectonStatus.StartTime = nil
+	}
+
+	return connectonStatus, nil
 }
 
 // Start VPN connection after preparing the network.
@@ -238,6 +312,7 @@ func (netw *Combined) Start(
 	enableLocalTraffic bool,
 ) (err error) {
 	netw.mu.Lock()
+	defer netw.updateConnectionStatus(UpdateStartTime)
 	defer netw.mu.Unlock()
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
@@ -473,6 +548,7 @@ func (netw *Combined) restart(
 // Stop VPN connection and clean up network after it stopped.
 func (netw *Combined) Stop() error {
 	netw.mu.Lock()
+	defer netw.updateConnectionStatus(ResetStartTime)
 	defer netw.mu.Unlock()
 	if netw.isVpnSet {
 		err := netw.stop()
@@ -544,46 +620,8 @@ func (netw *Combined) switchToNextVpn() {
 }
 
 // ConnectionStatus get connection information
-func (netw *Combined) ConnectionStatus() (ConnectionStatus, error) {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	if !netw.isConnectedToVPN() {
-		return ConnectionStatus{}, errInactiveVPN
-	}
-
-	stats, err := netw.vpnet.Tun().TransferRates()
-	if err != nil {
-		return ConnectionStatus{}, fmt.Errorf("acquiring tun interface transfer rates: %w", err)
-	}
-
-	tech := config.Technology_OPENVPN
-	tunnelName := netw.vpnet.Tun().Interface().Name
-	if netw.vpnet.Tun().Interface().Name == "nordlynx" {
-		tech = config.Technology_NORDLYNX
-	} else if tunnelName == internal.NordWhisperInterfaceName {
-		tech = config.Technology_NORDWHISPER
-	}
-
-	var uptime *time.Duration
-	if netw.startTime != nil {
-		dur := time.Since(*netw.startTime)
-		uptime = &dur
-	}
-
-	return ConnectionStatus{
-		State:           pb.ConnectionState_CONNECTED,
-		Technology:      tech,
-		Protocol:        netw.lastServer.Protocol,
-		IP:              netw.lastServer.IP,
-		Name:            netw.lastServer.Name,
-		Hostname:        netw.lastServer.Hostname,
-		Country:         netw.lastServer.Country,
-		City:            netw.lastServer.City,
-		Download:        stats.Rx,
-		Upload:          stats.Tx,
-		Uptime:          uptime,
-		VirtualLocation: netw.lastServer.VirtualLocation,
-	}, nil
+func (netw *Combined) ConnectionStatus() ConnectionStatus {
+	return netw.connectionStatus.Load().(ConnectionStatus)
 }
 
 // LastServerName returns last used server hostname

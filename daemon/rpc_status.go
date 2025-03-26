@@ -2,39 +2,29 @@ package daemon
 
 import (
 	"context"
-	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // Status of daemon and connection
 func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
-	if !r.netw.IsVPNActive() {
+	status := r.netw.ConnectionStatus()
+	if status.State == pb.ConnectionState_UNKNOWN_STATE || status.State == pb.ConnectionState_DISCONNECTED {
 		return &pb.StatusResponse{
 			State:  pb.ConnectionState_DISCONNECTED,
 			Uptime: -1,
 		}, nil
 	}
 
-	status, _ := r.netw.ConnectionStatus()
-
 	var uptime int64
-	if status.Uptime != nil {
-		uptime = int64(*status.Uptime)
+	if status.StartTime != nil {
+		uptime = int64(time.Since(*status.StartTime))
 	} else {
 		uptime = -1
 	}
 
-	connectionParameters, err := r.ConnectionParameters.GetConnectionParameters()
-	if err != nil {
-		log.Println(internal.WarningPrefix, "failed to read connection parameters:", err)
-	}
-
-	postQuantum := false
-	if connectionParameters, ok := r.netw.GetConnectionParameters(); ok {
-		postQuantum = connectionParameters.PostQuantum
-	}
+	requestedConnParams := r.RequestedConnParams.Get()
 
 	return &pb.StatusResponse{
 		State:           status.State,
@@ -50,11 +40,11 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Uptime:          uptime,
 		VirtualLocation: status.VirtualLocation,
 		Parameters: &pb.ConnectionParameters{
-			Source:  connectionParameters.ConnectionSource,
-			Country: connectionParameters.Parameters.Country,
-			City:    connectionParameters.Parameters.City,
-			Group:   connectionParameters.Parameters.Group,
+			Source:  requestedConnParams.ConnectionSource,
+			Country: requestedConnParams.Country,
+			City:    requestedConnParams.City,
+			Group:   requestedConnParams.Group,
 		},
-		PostQuantum: postQuantum,
+		PostQuantum: status.PostQuantum,
 	}, nil
 }
