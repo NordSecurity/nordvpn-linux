@@ -47,8 +47,14 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn set notify off")
     ssh_client.exec_command("nordvpn set mesh on")
 
-    ssh_client.exec_command("nordvpn mesh peer refresh")
-    sh.nordvpn.mesh.peer.refresh()
+    for _ in range(3):
+        sh.nordvpn.mesh.peer.refresh()
+        ssh_client.exec_command("nordvpn mesh peer refresh")
+        local_peer_list = sh.nordvpn.mesh.peer.list()
+        remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
+        if all("Status: connected" in peer_list for peer_list in (local_peer_list, remote_peer_list)):
+            break
+
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     assert meshnet.is_peer_reachable(peer_list.get_internal_peer())
     assert meshnet.is_peer_reachable(peer_list.get_this_device(), ssh_client=ssh_client)
