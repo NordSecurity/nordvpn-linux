@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
+	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
@@ -2021,4 +2022,110 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			assert.Equal(t, test.lanAvailable, combined.exitNode.(*workingExitNode).LanAvailable)
 		})
 	}
+}
+
+func TestCombined_Start_IsNotBlockingConnectionStatus(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// listen for the start event and notify Connection Status goroutine
+	mockPublisherSubscriber := events.MockPublisherSubscriber[string]{}
+	networkerStarting := make(chan struct{})
+	notifyNetworkerIsStarting := func(event string) error {
+		if event == "starting vpn" {
+			networkerStarting <- struct{}{}
+		}
+		return nil
+	}
+	mockPublisherSubscriber.Subscribe(notifyNetworkerIsStarting)
+
+	netw := NewCombined(
+		&mock.WorkingVPN{},
+		&workingMesh{},
+		workingGateway{},
+		&mockPublisherSubscriber,
+		workingRouter{},
+		&workingDNS{},
+		&workingIpv6{},
+		newWorkingFirewall(),
+		workingAllowlistRouting{},
+		workingDeviceList,
+		&workingRoutingSetup{},
+		&workingHostSetter{},
+		workingRouter{},
+		workingRouter{},
+		&workingExitNode{},
+		0,
+		false,
+	)
+
+	statusGoroutineStarted := make(chan struct{})
+	startingFinished := make(chan struct{})
+
+	// Start Networker goroutine:
+	// - wait for Connection Status goroutine
+	// - then start networker
+	//   - inside, publisher notifies that the `Start` is happening
+	// - then notify that starting process finished
+	go func() {
+		// make sure status goroutine is running, then begin starting networker
+		<-statusGoroutineStarted
+		_ = netw.Start(
+			context.Background(),
+			vpn.Credentials{},
+			vpn.ServerData{},
+			config.NewAllowlist(nil, nil, nil),
+			[]string{"1.1.1.1"},
+			true,
+		)
+		startingFinished <- struct{}{}
+	}()
+
+	// Connection Status goroutine:
+	// - notify Start Networker goroutine that this goroutine is ready
+	// - wait for networker to begin the Start process (notification comes from publisher set up above)
+	// - check status
+	// - then check if this goroutine had to wait for Start Networker goroutine
+	//
+	// This means that [Networker.ConnectionStatus] was run after [Networker.Start] started
+	// and before it finished - so [Networker.ConnectionStatus] was not blocked.
+	didWaitForNetworker := false
+	finishTest := make(chan struct{})
+	go func() {
+		statusGoroutineStarted <- struct{}{}
+		// make sure networker began to start
+		<-networkerStarting
+		_ = netw.ConnectionStatus()
+		select {
+		case <-startingFinished:
+			finishTest <- struct{}{}
+		default:
+			didWaitForNetworker = true
+			finishTest <- struct{}{}
+		}
+	}()
+
+	<-finishTest
+	assert.True(t, didWaitForNetworker)
+}
+
+func TestCombined_ConnectionStatus_TracksStartTime(t *testing.T) {
+	category.Set(t, category.Unit)
+	netw := GetTestCombined()
+	status := netw.ConnectionStatus()
+	assert.Nil(t, status.StartTime)
+
+	_ = netw.Start(
+		context.Background(),
+		vpn.Credentials{},
+		vpn.ServerData{},
+		config.NewAllowlist(nil, nil, nil),
+		[]string{"1.1.1.1"},
+		true,
+	)
+	status = netw.ConnectionStatus()
+	assert.NotNil(t, status.StartTime)
+
+	_ = netw.Stop()
+	status = netw.ConnectionStatus()
+	assert.Nil(t, status.StartTime)
 }

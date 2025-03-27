@@ -310,6 +310,7 @@ func NewAccountUpdateEvents() *AccountUpdateEvents {
 }
 
 type MockPublisherSubscriber[T any] struct {
+	Handler        events.Handler[T]
 	EventPublished bool
 	Event          T
 }
@@ -317,5 +318,11 @@ type MockPublisherSubscriber[T any] struct {
 func (mp *MockPublisherSubscriber[T]) Publish(message T) {
 	mp.EventPublished = true
 	mp.Event = message
+	if mp.Handler != nil {
+		mp.Handler(message)
+	}
 }
-func (*MockPublisherSubscriber[T]) Subscribe(handler events.Handler[T]) {}
+
+func (mp *MockPublisherSubscriber[T]) Subscribe(handler events.Handler[T]) {
+	mp.Handler = handler
+}
