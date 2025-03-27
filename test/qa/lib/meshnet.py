@@ -656,7 +656,7 @@ def get_clean_peer_list(peer_list: str):
     return output
 
 
-def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, peer_name: PeerName = PeerName.Hostname, retry: int = 5) -> bool:
+def is_peer_reachable(peer: Peer, peer_name: PeerName = PeerName.Hostname, ssh_client: ssh.Ssh = None, retry: int = 5) -> bool:
     """Returns True when ping to peer succeeds."""
 
     if peer_name == PeerName.Hostname:

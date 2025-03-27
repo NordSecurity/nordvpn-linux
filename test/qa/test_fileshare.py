@@ -50,7 +50,7 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn mesh peer refresh")
     sh.nordvpn.mesh.peer.refresh()
     peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
-    assert meshnet.is_peer_reachable(ssh_client, peer)
+    assert meshnet.is_peer_reachable(peer)
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
@@ -876,7 +876,7 @@ def test_transfers_persistence():
     time.sleep(1)
 
     assert local_transfer_id in sh.nordvpn.fileshare.list()
-    assert meshnet.is_peer_reachable(ssh_client, peer)  # Wait to reestablish connection for further tests
+    assert meshnet.is_peer_reachable(peer)  # Wait to reestablish connection for further tests
     sh.nordvpn.mesh.peer.refresh()
 
 
@@ -907,7 +907,7 @@ def test_transfers_persistence_load():
 
     peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
     assert len(peer.ip.strip()) != 0
-    assert meshnet.is_peer_reachable(ssh_client, peer)
+    assert meshnet.is_peer_reachable(peer)
 
     min_send_time_ns = 100000000000  # 100s
     min_send_time_itr = 0
