@@ -13,6 +13,7 @@ import pytest
 import sh
 
 from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
+from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -47,8 +48,15 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn set notify off")
     ssh_client.exec_command("nordvpn set mesh on")
 
-    ssh_client.exec_command("nordvpn mesh peer refresh")
     sh.nordvpn.mesh.peer.refresh()
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+
+    while True:
+        local_peer_list = sh_no_tty.nordvpn.mesh.peer.list()
+        remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
+        if all("Status: connected" in peer_list for peer_list in (local_peer_list, remote_peer_list)):
+            break
+        time.sleep(1)
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
