@@ -659,8 +659,6 @@ def get_clean_peer_list(peer_list: str):
 def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, peer_name: PeerName = PeerName.Hostname, retry: int = 5) -> bool:
     """Returns True when ping to peer succeeds."""
 
-    output = ssh_client.exec_command("nordvpn mesh peer list")
-
     if peer_name == PeerName.Hostname:
         peer_hostname = peer.hostname
     elif peer_name == PeerName.Ip:
@@ -677,9 +675,7 @@ def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, peer_name: PeerName = Pee
             print(e.stderr)
             time.sleep(1)
             i += 1
-    print(sh_no_tty.nordvpn.mesh.peer.list())
-    output = ssh_client.exec_command("nordvpn mesh peer list")
-    print(output)
+
     return False
 
 def is_connect_successful(output:str, peer_hostname: str):
