@@ -49,8 +49,6 @@ def setup_module(module):  # noqa: ARG001
 
     ssh_client.exec_command("nordvpn mesh peer refresh")
     sh.nordvpn.mesh.peer.refresh()
-    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
-    assert meshnet.is_peer_reachable(peer)
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
@@ -86,6 +84,9 @@ def teardown_module(module):  # noqa: ARG001
 
 def setup_function(function):  # noqa: ARG001
     logging.log()
+    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    assert meshnet.is_peer_reachable(peer_list.get_internal_peer())
+    assert meshnet.is_peer_reachable(peer_list.get_this_device(), ssh_client=ssh_client)
 
 
 def teardown_function(function):  # noqa: ARG001
@@ -876,7 +877,6 @@ def test_transfers_persistence():
     time.sleep(1)
 
     assert local_transfer_id in sh.nordvpn.fileshare.list()
-    assert meshnet.is_peer_reachable(peer)  # Wait to reestablish connection for further tests
     sh.nordvpn.mesh.peer.refresh()
 
 
