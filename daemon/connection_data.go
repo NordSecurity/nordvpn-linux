@@ -11,7 +11,7 @@ type ConnectionParameters struct {
 	ServerParameters
 }
 
-// RequestedConnParamsStorage stores connectoin parameters as requested by user.
+// RequestedConnParamsStorage stores connection parameters as requested by user.
 //
 // Note that those may not be the same as actual connection parameters.
 type RequestedConnParamsStorage struct {
