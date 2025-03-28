@@ -30,6 +30,7 @@ type DataManager struct {
 	insightsData     InsightsData
 	serversData      ServersData
 	versionData      VersionData
+	accountData      AccountData
 	dataUpdateEvents *events.DataUpdateEvents
 	mu               sync.Mutex
 }
@@ -44,6 +45,7 @@ func NewDataManager(insightsFilePath,
 		insightsData:     InsightsData{filePath: insightsFilePath},
 		serversData:      ServersData{filePath: serversFilePath},
 		versionData:      VersionData{filePath: versionFilePath},
+		accountData:      NewAccountData(),
 		dataUpdateEvents: dataUpdateEvents,
 	}
 }
@@ -384,4 +386,23 @@ func (dm *DataManager) CountryCodeToCountryName(code string) string {
 	}
 
 	return ""
+}
+
+func (dm *DataManager) SetAccountData(accountData *pb.AccountResponse) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	dm.accountData.set(accountData)
+}
+
+func (dm *DataManager) GetAccountData() (*pb.AccountResponse, bool) {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	return dm.accountData.get()
+}
+
+func (dm *DataManager) InvalidateAccountdata() {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	dm.accountData.unset()
 }

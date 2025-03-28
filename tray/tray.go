@@ -41,7 +41,7 @@ type accountInfo struct {
 func (ai *accountInfo) getAccountInfo(client pb.DaemonClient) (*pb.AccountResponse, error) {
 	if time.Since(ai.updateTime) > AccountInfoUpdateInterval {
 		var err error
-		ai.accountInfo, err = client.AccountInfo(context.Background(), &pb.Empty{})
+		ai.accountInfo, err = client.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
 		if err != nil {
 			return nil, err
 		}
