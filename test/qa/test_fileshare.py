@@ -47,10 +47,17 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.exec_command("nordvpn set notify off")
     ssh_client.exec_command("nordvpn set mesh on")
 
-    ssh_client.exec_command("nordvpn mesh peer refresh")
-    sh.nordvpn.mesh.peer.refresh()
-    peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
-    assert meshnet.is_peer_reachable(ssh_client, peer)
+    for _ in range(3):
+        sh.nordvpn.mesh.peer.refresh()
+        ssh_client.exec_command("nordvpn mesh peer refresh")
+        local_peer_list = sh.nordvpn.mesh.peer.list()
+        remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
+        if all("Status: connected" in peer_list for peer_list in (local_peer_list, remote_peer_list)):
+            break
+
+    peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    assert meshnet.is_peer_reachable(peer_list.get_internal_peer())
+    assert meshnet.is_peer_reachable(peer_list.get_this_device(), ssh_client=ssh_client)
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
@@ -66,12 +73,12 @@ def setup_module(module):  # noqa: ARG001
 
 def teardown_module(module):  # noqa: ARG001
     dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
-    # Preserve other peer log
-
-    ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
-
+    ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/daemon-qapeer.log")
+    ssh_client.download_file("/root/.cache/nordvpn/nordfileshare.log", f"{dest_logs_path}/nordfileshare-qapeer.log")
+    ssh_client.download_file("/root/.cache/nordvpn/norduserd.log", f"{dest_logs_path}/norduserd-qapeer.log")
     shutil.copy("/home/qa/.cache/nordvpn/norduserd.log", dest_logs_path)
     shutil.copy("/home/qa/.cache/nordvpn/nordfileshare.log", dest_logs_path)
+
     ssh_client.exec_command("nordvpn set mesh off")
     ssh_client.exec_command("nordvpn set notify on")
     ssh_client.exec_command("nordvpn logout --persist-token")
@@ -876,7 +883,7 @@ def test_transfers_persistence():
     time.sleep(1)
 
     assert local_transfer_id in sh.nordvpn.fileshare.list()
-    assert meshnet.is_peer_reachable(ssh_client, peer)  # Wait to reestablish connection for further tests
+    assert meshnet.is_peer_reachable(peer)  # Wait to reestablish connection for further tests
     sh.nordvpn.mesh.peer.refresh()
 
 
@@ -907,7 +914,7 @@ def test_transfers_persistence_load():
 
     peer = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer()
     assert len(peer.ip.strip()) != 0
-    assert meshnet.is_peer_reachable(ssh_client, peer)
+    assert meshnet.is_peer_reachable(peer)
 
     min_send_time_ns = 100000000000  # 100s
     min_send_time_itr = 0
@@ -1432,7 +1439,7 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
 
     remote_transfer_id = None
     error_message = None
-    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client)):  # noqa: B007
+    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=4):  # noqa: B007
         if remote_transfer_id is not None:
             break
 

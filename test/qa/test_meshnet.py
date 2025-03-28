@@ -40,9 +40,9 @@ def test_meshnet_connect():
 
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer() # Refresh nickname
 
-    assert meshnet.is_peer_reachable(ssh_client, peer, meshnet.PeerName.Hostname)
-    assert meshnet.is_peer_reachable(ssh_client, peer, meshnet.PeerName.Ip)
-    assert meshnet.is_peer_reachable(ssh_client, peer, meshnet.PeerName.Nickname)
+    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Hostname)
+    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Ip)
+    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Nickname)
     assert nickname == peer.nickname
 
     nickname = "local-machine"
@@ -318,4 +318,4 @@ def test_incoming_connections():
     assert not ssh_client.network.ping(local_hostname, retry=1)
 
     ssh_client.exec_command(f"nordvpn mesh peer incoming deny {local_hostname}")
-    assert not meshnet.is_peer_reachable(ssh_client, peer_list.get_external_peer(), retry=1)
+    assert not meshnet.is_peer_reachable(peer_list.get_external_peer(), retry=1)
