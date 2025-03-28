@@ -72,12 +72,12 @@ def setup_module(module):  # noqa: ARG001
 
 def teardown_module(module):  # noqa: ARG001
     dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
-    # Preserve other peer log
-
-    ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
-
+    ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/daemon-qapeer.log")
+    ssh_client.download_file("/root/.cache/nordvpn/nordfileshare.log", f"{dest_logs_path}/nordfileshare-qapeer.log")
+    ssh_client.download_file("/root/.cache/nordvpn/norduserd.log", f"{dest_logs_path}/norduserd-qapeer.log")
     shutil.copy("/home/qa/.cache/nordvpn/norduserd.log", dest_logs_path)
     shutil.copy("/home/qa/.cache/nordvpn/nordfileshare.log", dest_logs_path)
+
     ssh_client.exec_command("nordvpn set mesh off")
     ssh_client.exec_command("nordvpn set notify on")
     ssh_client.exec_command("nordvpn logout --persist-token")
