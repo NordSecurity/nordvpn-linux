@@ -235,7 +235,7 @@ func NewCombined(
 		enableLocalTraffic: true,
 		interfaces:         mapset.NewSet[string](),
 	}
-	combined.updateConnectionStatus(ResetStartTime)
+	combined.connectionStatus.Store(ConnectionStatus{})
 	return combined
 }
 
