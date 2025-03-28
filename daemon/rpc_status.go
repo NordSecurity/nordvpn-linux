@@ -43,18 +43,22 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Hostname:        status.Hostname,
 		Name:            status.Name,
 		Country:         status.Country,
+		CountryCode:     status.CountryCode,
 		City:            status.City,
 		Download:        stats.Rx,
 		Upload:          stats.Tx,
 		Uptime:          calculateUptime(status.StartTime),
 		VirtualLocation: status.VirtualLocation,
 		Parameters: &pb.ConnectionParameters{
-			Source:  requestedConnParams.ConnectionSource,
-			Country: requestedConnParams.Country,
-			City:    requestedConnParams.City,
-			Group:   requestedConnParams.Group,
+			Source:     requestedConnParams.ConnectionSource,
+			Country:    requestedConnParams.Country,
+			City:       requestedConnParams.City,
+			Group:      requestedConnParams.Group,
+			ServerName: requestedConnParams.ServerName,
 		},
+
 		PostQuantum: status.PostQuantum,
+		Obfuscated:  status.Obfuscated,
 	}, nil
 }
 
