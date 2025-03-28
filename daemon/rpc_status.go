@@ -29,6 +29,7 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 	stats, err := tunnel.GetTransferRates(status.TunnelName)
 	if err != nil {
 		log.Printf(internal.WarningPrefix+" failed to get transfer rates of '%s': %+v", status.TunnelName, err)
+		stats = tunnel.Statistics{}
 	}
 
 	requestedConnParams := r.RequestedConnParams.Get()
