@@ -207,7 +207,8 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     # │       └── file
 
     wdir = fileshare.create_directory(0)
-    wfolder = fileshare.create_directory(2, "tmp", parent_dir=wdir.dir_path, file_size=128)
+    file_size = fileshare.FileSize().from_mb(128)
+    wfolder = fileshare.create_directory(2, "tmp", parent_dir=wdir.dir_path, file_size=file_size)
 
     if filesystem_entity == fileshare.FileSystemEntity.FILE:
         filepath = wfolder.paths[0]
@@ -297,7 +298,7 @@ def test_fileshare_transfer_multiple_files(background_send: bool, path_flag: str
     peer_name = random.choice(list(meshnet.PeerName)[:-1])
     peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
-    file_size = 22
+    file_size = fileshare.FileSize().from_mb(22)
     dir1 = fileshare.create_directory(0, "1")
     dir2 = fileshare.create_directory(2, "2", dir1.dir_path)
     dir3 = fileshare.create_directory(2, "3", file_size=file_size)
@@ -420,7 +421,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
     # │       └── file
     # │       └── file
 
-    file_size = 128
+    file_size = fileshare.FileSize().from_mb(128)
 
     wfolder_1 = fileshare.create_directory(2, "1", file_size=file_size)
     wfolder_2 = fileshare.create_directory(2, "2", file_size=file_size)
@@ -606,7 +607,7 @@ def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
 @pytest.mark.parametrize("sender_cancels", [False, True], ids=["receiver_cancels", "sender_cancels"])
 @pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
 def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transfer_entity: fileshare.FileSystemEntity):
-    file_size = 256
+    file_size = fileshare.FileSize().from_mb(256)
     wdir = fileshare.create_directory(0)
     wfolder = fileshare.create_directory(2, parent_dir=wdir.dir_path, file_size=file_size)
 
