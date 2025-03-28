@@ -13,9 +13,15 @@ import (
 // Status of daemon and connection
 func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 	status := r.netw.ConnectionStatus()
-	if status.State == pb.ConnectionState_UNKNOWN_STATE || status.State == pb.ConnectionState_DISCONNECTED {
+	switch status.State {
+	case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_DISCONNECTED:
 		return &pb.StatusResponse{
 			State:  pb.ConnectionState_DISCONNECTED,
+			Uptime: -1,
+		}, nil
+	case pb.ConnectionState_CONNECTING:
+		return &pb.StatusResponse{
+			State:  pb.ConnectionState_CONNECTING,
 			Uptime: -1,
 		}, nil
 	}

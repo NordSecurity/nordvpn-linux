@@ -258,6 +258,12 @@ func (netw *Combined) updateConnectionStatus(timeOption TimeUpdateOption) {
 // Not thread safe.
 func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (ConnectionStatus, error) {
 	if !netw.isConnectedToVPN() {
+		if timeOption == UpdateStartTime {
+			// connection is being initialized
+			return ConnectionStatus{
+				State: pb.ConnectionState_CONNECTING,
+			}, nil
+		}
 		return ConnectionStatus{}, errInactiveVPN
 	}
 
@@ -305,7 +311,8 @@ func (netw *Combined) Start(
 	enableLocalTraffic bool,
 ) (err error) {
 	netw.mu.Lock()
-	defer netw.updateConnectionStatus(UpdateStartTime)
+	netw.updateConnectionStatus(UpdateStartTime)       // update when networker is starting
+	defer netw.updateConnectionStatus(UpdateStartTime) // update when starting is finished
 	defer netw.mu.Unlock()
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
