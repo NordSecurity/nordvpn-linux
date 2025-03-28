@@ -27,6 +27,7 @@ func (c *cmd) Status(ctx *cli.Context) error {
 // Status returns ready to print status string.
 func Status(resp *pb.StatusResponse) string {
 	state := "Disconnected"
+	//exhaustive:ignore
 	switch resp.State {
 	case pb.ConnectionState_CONNECTED:
 		state = "Connected"

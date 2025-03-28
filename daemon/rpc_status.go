@@ -13,6 +13,7 @@ import (
 // Status of daemon and connection
 func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 	status := r.netw.ConnectionStatus()
+	//exhaustive:ignore
 	switch status.State {
 	case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_DISCONNECTED:
 		return &pb.StatusResponse{
