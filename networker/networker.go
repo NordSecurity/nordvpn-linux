@@ -84,6 +84,8 @@ type ConnectionStatus struct {
 	Hostname string
 	// Country of the other end of the connection
 	Country string
+	// CountryCode of the other end of the connection
+	CountryCode string
 	// City of the other end of the connection
 	City string
 	// Download is the amount of data received through the connection

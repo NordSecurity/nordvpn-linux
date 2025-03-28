@@ -7,6 +7,8 @@ import (
 )
 
 type ConnectionParameters struct {
+	// ConnectionString is a string used to establish the connection(if any), for example lt1111
+	ConnectionString string
 	ConnectionSource pb.ConnectionSource
 	Parameters       ServerParameters
 }

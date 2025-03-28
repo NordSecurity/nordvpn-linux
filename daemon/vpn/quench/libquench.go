@@ -104,18 +104,21 @@ func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataCon
 	}
 
 	return events.DataConnect{
-		EventStatus:         status,
-		IsMeshnetPeer:       false,
-		TargetServerIP:      o.currentServer.IP.String(),
-		TargetServerCountry: o.currentServer.Country,
-		TargetServerCity:    o.currentServer.City,
-		TargetServerDomain:  o.currentServer.Hostname,
-		TargetServerName:    o.currentServer.Name,
-		IsVirtualLocation:   o.currentServer.VirtualLocation,
-		Technology:          config.Technology_NORDWHISPER,
-		Protocol:            config.Protocol_Webtunnel,
-		Upload:              transferStates.Tx,
-		Download:            transferStates.Rx,
+		EventStatus:             status,
+		IsMeshnetPeer:           false,
+		TargetServerIP:          o.currentServer.IP.String(),
+		TargetServerCountry:     o.currentServer.Country,
+		TargetServerCountryCode: o.currentServer.CountryCode,
+		TargetServerCity:        o.currentServer.City,
+		TargetServerDomain:      o.currentServer.Hostname,
+		TargetServerName:        o.currentServer.Name,
+		IsVirtualLocation:       o.currentServer.VirtualLocation,
+		Technology:              config.Technology_NORDWHISPER,
+		Protocol:                config.Protocol_Webtunnel,
+		Upload:                  transferStates.Tx,
+		Download:                transferStates.Rx,
+		IsObfuscated:            o.currentServer.Obfuscated,
+		IsPostQuantum:           o.currentServer.PostQuantum,
 	}
 }
 
