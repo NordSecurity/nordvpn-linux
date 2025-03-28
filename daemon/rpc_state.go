@@ -69,7 +69,7 @@ func statusStream(stateChan <-chan interface{},
 	stopChan chan<- struct{},
 	uid int64,
 	srv pb.Daemon_SubscribeToStateChangesServer,
-	paramsStorage *ParametersStorage,
+	requestedConnParamsStorage *RequestedConnParamsStorage,
 ) {
 	for {
 		select {
@@ -84,7 +84,7 @@ func statusStream(stateChan <-chan interface{},
 					state = pb.ConnectionState_CONNECTED
 				}
 
-				connectionParameters := paramsStorage.parameters
+				requestedConnParams := requestedConnParamsStorage.Get()
 				status := pb.StatusResponse{
 					State:           state,
 					Ip:              e.TargetServerIP,
@@ -100,10 +100,10 @@ func statusStream(stateChan <-chan interface{},
 					Technology:      e.Technology,
 					Protocol:        e.Protocol,
 					Parameters: &pb.ConnectionParameters{
-						Source:  connectionParameters.ConnectionSource,
-						Country: connectionParameters.Parameters.Country,
-						City:    connectionParameters.Parameters.City,
-						Group:   connectionParameters.Parameters.Group,
+						Source:  requestedConnParams.ConnectionSource,
+						Country: requestedConnParams.Country,
+						City:    requestedConnParams.City,
+						Group:   requestedConnParams.Group,
 					},
 				}
 
@@ -119,7 +119,8 @@ func statusStream(stateChan <-chan interface{},
 							ByUser:     e.ByUser,
 							Technology: e.Technology,
 							Protocol:   e.Protocol,
-						}}}); err != nil {
+						},
+					}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn disabled failed to send state update:", err)
 				}
 			case pb.LoginEventType:
@@ -169,7 +170,7 @@ func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStat
 	}
 
 	stateChan, stopChan := r.statePublisher.AddSubscriber()
-	statusStream(stateChan, stopChan, uid, srv, &r.ConnectionParameters)
+	statusStream(stateChan, stopChan, uid, srv, &r.RequestedConnParams)
 
 	return nil
 }

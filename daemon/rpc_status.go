@@ -3,38 +3,37 @@ package daemon
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
 // Status of daemon and connection
 func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
-	if !r.netw.IsVPNActive() {
+	status := r.netw.ConnectionStatus()
+	//exhaustive:ignore
+	switch status.State {
+	case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_DISCONNECTED:
 		return &pb.StatusResponse{
 			State:  pb.ConnectionState_DISCONNECTED,
 			Uptime: -1,
 		}, nil
+	case pb.ConnectionState_CONNECTING:
+		return &pb.StatusResponse{
+			State:  pb.ConnectionState_CONNECTING,
+			Uptime: -1,
+		}, nil
 	}
 
-	status, _ := r.netw.ConnectionStatus()
-
-	var uptime int64
-	if status.Uptime != nil {
-		uptime = int64(*status.Uptime)
-	} else {
-		uptime = -1
-	}
-
-	connectionParameters, err := r.ConnectionParameters.GetConnectionParameters()
+	stats, err := tunnel.GetTransferRates(status.TunnelName)
 	if err != nil {
-		log.Println(internal.WarningPrefix, "failed to read connection parameters:", err)
+		log.Printf(internal.WarningPrefix+" failed to get transfer rates of '%s': %+v", status.TunnelName, err)
+		stats = tunnel.Statistics{}
 	}
 
-	postQuantum := false
-	if connectionParameters, ok := r.netw.GetConnectionParameters(); ok {
-		postQuantum = connectionParameters.PostQuantum
-	}
+	requestedConnParams := r.RequestedConnParams.Get()
 
 	return &pb.StatusResponse{
 		State:           status.State,
@@ -45,16 +44,26 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Name:            status.Name,
 		Country:         status.Country,
 		City:            status.City,
-		Download:        status.Download,
-		Upload:          status.Upload,
-		Uptime:          uptime,
+		Download:        stats.Rx,
+		Upload:          stats.Tx,
+		Uptime:          calculateUptime(status.StartTime),
 		VirtualLocation: status.VirtualLocation,
 		Parameters: &pb.ConnectionParameters{
-			Source:  connectionParameters.ConnectionSource,
-			Country: connectionParameters.Parameters.Country,
-			City:    connectionParameters.Parameters.City,
-			Group:   connectionParameters.Parameters.Group,
+			Source:  requestedConnParams.ConnectionSource,
+			Country: requestedConnParams.Country,
+			City:    requestedConnParams.City,
+			Group:   requestedConnParams.Group,
 		},
-		PostQuantum: postQuantum,
+		PostQuantum: status.PostQuantum,
 	}, nil
+}
+
+func calculateUptime(startTime *time.Time) int64 {
+	var uptime int64
+	if startTime != nil {
+		uptime = int64(time.Since(*startTime))
+	} else {
+		uptime = -1
+	}
+	return uptime
 }
