@@ -25,6 +25,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -269,7 +270,7 @@ func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (Connec
 
 	tech := config.Technology_OPENVPN
 	tunnelName := netw.vpnet.Tun().Interface().Name
-	if netw.vpnet.Tun().Interface().Name == "nordlynx" {
+	if netw.vpnet.Tun().Interface().Name == nordlynx.InterfaceName {
 		tech = config.Technology_NORDLYNX
 	} else if tunnelName == internal.NordWhisperInterfaceName {
 		tech = config.Technology_NORDWHISPER
