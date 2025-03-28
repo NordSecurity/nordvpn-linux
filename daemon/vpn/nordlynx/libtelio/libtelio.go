@@ -710,18 +710,21 @@ func publishConnectEvent(publisher *vpn.Events,
 	}
 
 	publisher.Connected.Publish(events.DataConnect{
-		EventStatus:         connectType,
-		TargetServerIP:      server.IP.String(),
-		TargetServerCountry: server.Country,
-		TargetServerCity:    server.City,
-		TargetServerDomain:  server.Hostname,
-		TargetServerName:    name,
-		IsMeshnetPeer:       !state.IsVPN,
-		IsVirtualLocation:   server.VirtualLocation,
-		Technology:          config.Technology_NORDLYNX,
-		Protocol:            config.Protocol_UDP,
-		Upload:              transferStats.Tx,
-		Download:            transferStats.Rx,
+		EventStatus:             connectType,
+		TargetServerIP:          server.IP.String(),
+		TargetServerCountry:     server.Country,
+		TargetServerCountryCode: server.CountryCode,
+		TargetServerCity:        server.City,
+		TargetServerDomain:      server.Hostname,
+		TargetServerName:        name,
+		IsMeshnetPeer:           !state.IsVPN,
+		IsVirtualLocation:       server.VirtualLocation,
+		Technology:              config.Technology_NORDLYNX,
+		Protocol:                config.Protocol_UDP,
+		Upload:                  transferStats.Tx,
+		Download:                transferStats.Rx,
+		IsObfuscated:            server.Obfuscated,
+		IsPostQuantum:           server.PostQuantum,
 	})
 }
 

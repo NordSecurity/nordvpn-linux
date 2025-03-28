@@ -164,6 +164,7 @@ func (r *RPC) connect(
 		Hostname:          server.Hostname,
 		Name:              server.Name,
 		Country:           country.Name,
+		CountryCode:       country.Code,
 		City:              city,
 		Protocol:          cfg.AutoConnectData.Protocol,
 		NordLynxPublicKey: server.NordLynxPublicKey,
