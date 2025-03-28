@@ -17,6 +17,7 @@ import (
 
 func addToServersMap(serversMap []*pb.ServerCountry,
 	countryCode string,
+	countryName string,
 	city string,
 	server *pb.Server) []*pb.ServerCountry {
 	for _, serverCountry := range serversMap {
@@ -44,6 +45,7 @@ func addToServersMap(serversMap []*pb.ServerCountry,
 
 	serverCountry := pb.ServerCountry{
 		CountryCode: countryCode,
+		CountryName: countryName,
 		Cities:      []*pb.ServerCity{&serverCity},
 	}
 
@@ -328,9 +330,9 @@ func TestServers(t *testing.T) {
 	}
 
 	expectedServersOpenVPNTCP := []*pb.ServerCountry{}
-	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "de", "Berlin", &expectedServer1)
-	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "fr", "Paris", &expectedServer2)
-	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "lt", "Vilnius", &expectedServer3)
+	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "de", "Germany", "Berlin", &expectedServer1)
+	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "fr", "France", "Paris", &expectedServer2)
+	expectedServersOpenVPNTCP = addToServersMap(expectedServersOpenVPNTCP, "lt", "Lithuania", "Vilnius", &expectedServer3)
 
 	expectedServer4 := pb.Server{
 		Id:           int64(server4ID),
@@ -362,11 +364,13 @@ func TestServers(t *testing.T) {
 	expectedServersOpenVPNUDPObfuscated = addToServersMap(
 		expectedServersOpenVPNUDPObfuscated,
 		"pl",
+		"Poland",
 		"Warsaw",
 		&expectedServer4)
 	expectedServersOpenVPNUDPObfuscated = addToServersMap(
 		expectedServersOpenVPNUDPObfuscated,
 		"is",
+		"Iceland",
 		"Reykjavik",
 		&expectedServer5)
 
@@ -374,6 +378,7 @@ func TestServers(t *testing.T) {
 	expectedServersWireguardNonVirtual = addToServersMap(
 		expectedServersWireguardNonVirtual,
 		"lt",
+		"Lithuania",
 		"Vilnius",
 		&pb.Server{
 			Id:           int64(server3ID),
@@ -477,9 +482,9 @@ func TestServers(t *testing.T) {
 				return
 			}
 
-			sorterdExpectedServers := sortServersMap(test.expectedResponse.GetServers().GetServersByCountry())
-			sortedActuall := sortServersMap(resp.GetServers().GetServersByCountry())
-			assert.Equal(t, sorterdExpectedServers, sortedActuall)
+			sortedExpectedServers := sortServersMap(test.expectedResponse.GetServers().GetServersByCountry())
+			sortedActual := sortServersMap(resp.GetServers().GetServersByCountry())
+			assert.Equal(t, sortedExpectedServers, sortedActual)
 		})
 	}
 }

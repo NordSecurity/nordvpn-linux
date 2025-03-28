@@ -60,6 +60,8 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 	type serversMap map[string]map[string][]*pb.Server
 
 	sMap := make(serversMap)
+	// map country code to country name
+	countryNames := make(map[string]string)
 
 	for _, server := range internalServers {
 		if !allowVirtual && server.IsVirtualLocation() {
@@ -79,6 +81,7 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 
 		if _, ok := sMap[countryCode]; !ok {
 			sMap[countryCode] = make(map[string][]*pb.Server, 0)
+			countryNames[countryCode] = server.Country().Name
 		}
 
 		if _, ok := sMap[countryCode][cityName]; !ok {
@@ -89,7 +92,7 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 	}
 
 	countries := []*pb.ServerCountry{}
-	for country, cityMap := range sMap {
+	for countryCode, cityMap := range sMap {
 		cities := []*pb.ServerCity{}
 		for city, servers := range cityMap {
 			cities = append(cities, &pb.ServerCity{
@@ -98,7 +101,8 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 			})
 		}
 		countries = append(countries, &pb.ServerCountry{
-			CountryCode: country,
+			CountryCode: countryCode,
+			CountryName: countryNames[countryCode],
 			Cities:      cities,
 		})
 	}

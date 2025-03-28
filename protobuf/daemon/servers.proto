@@ -37,6 +37,7 @@ message ServerCity {
 message ServerCountry {
     string country_code = 1;
     repeated ServerCity cities = 2;
+    string country_name = 3;
 }
 
 message ServersMap {
