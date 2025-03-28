@@ -1440,7 +1440,7 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
 
     remote_transfer_id = None
     error_message = None
-    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client)):  # noqa: B007
+    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=4):  # noqa: B007
         if remote_transfer_id is not None:
             break
 
