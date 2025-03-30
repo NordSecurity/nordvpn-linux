@@ -216,6 +216,10 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 		return fmt.Errorf("setting up vinc: %w", err)
 	}
 
+	if err := tun.BlockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Blocking ARP for tunnel interface:", err)
+	}
+
 	if err := tun.Up(); err != nil {
 		return fmt.Errorf("adding ip address to vnic: %w", err)
 	}
@@ -310,6 +314,9 @@ func (q *Quench) Stop() error {
 		q.vnic = nil
 	}
 
+	if err := q.tun.UnblockARP(); err != nil {
+		log.Println(internal.ErrorPrefix, "Unblocking ARP for tunnel interface:", err)
+	}
 	q.tun = nil
 	q.state = vpn.ExitedState
 

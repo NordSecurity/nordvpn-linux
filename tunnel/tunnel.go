@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/NordSecurity/nordvpn-linux/arptables"
 	"golang.org/x/sys/unix"
 )
 
@@ -178,4 +179,20 @@ func (t *Tunnel) Up() error {
 // TransferRates collects data transfer statistics.
 func (t Tunnel) TransferRates() (Statistics, error) {
 	return GetTransferRates(t.iface.Name)
+}
+
+func (t Tunnel) BlockARP() error {
+	if err := arptables.BlockARP(arptables.RunCommand, t.iface.Name); err != nil {
+		return fmt.Errorf("blocking ARP: %w", err)
+	}
+
+	return nil
+}
+
+func (t Tunnel) UnblockARP() error {
+	if err := arptables.UnblockARP(arptables.RunCommand, t.iface.Name); err != nil {
+		return fmt.Errorf("blocking ARP: %w", err)
+	}
+
+	return nil
 }
