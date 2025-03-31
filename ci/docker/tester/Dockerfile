@@ -15,6 +15,8 @@ RUN apt-get update && \
         wireguard-tools \
         # install python for tests
         python3 python3-pip \
+        # install openssh-server for tests
+        openssh-server \
         # install tshark  \
         tshark \
         # changelog parsing
