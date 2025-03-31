@@ -667,26 +667,11 @@ def is_peer_reachable(peer: Peer, peer_name: PeerName = PeerName.Hostname, ssh_c
         peer_hostname = peer.nickname
 
     if ssh_client is None:
-        i = 0
-        while i < retry:
-            try:
-                return "icmp_seq=" in sh.ping("-c", "1", peer_hostname)
-            except sh.ErrorReturnCode as e:
-                print(e.stdout)
-                print(e.stderr)
-                time.sleep(1)
-                i += 1
-    else:
-        i = 0
-        while i < retry:
-            try:
-                return "icmp_seq=" in ssh_client.exec_command(f"ping -c 1 {peer_hostname}")
-            except RuntimeError as e:
-                print(f"Exception: {e}")
-                time.sleep(1)
-                i += 1
-
-    return False
+        return network.is_internet_reachable(peer_hostname, 22, retry)
+    else:  # noqa: RET505
+        work_dir = os.environ.get("WORKDIR")
+        # Usage: python3 is_host_alive.py <host> [retries] [delay]
+        return "True" in ssh_client.exec_command(f"python3 {work_dir}/test/qa/scripts/is_host_alive.py {peer_hostname} {retry} 1")
 
 def is_connect_successful(output:str, peer_hostname: str):
     return (MSG_ROUTING_SUCCESS % peer_hostname) in output
