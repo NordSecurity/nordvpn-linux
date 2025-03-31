@@ -37,4 +37,7 @@ RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} qa && useradd -l -m -u 
 RUN usermod -a -G wireshark qa
 
 USER qa
-CMD ["exec", "$@"]
+
+COPY ci/docker/tester/entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT [ "/entrypoint.sh" ]
