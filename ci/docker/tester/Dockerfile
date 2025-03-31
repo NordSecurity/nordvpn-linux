@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
-COPY requirements.txt /tmp/requirements.txt
+COPY ci/docker/tester/requirements.txt /tmp/requirements.txt
 
 # Install Debian packages
 RUN apt-get update && \
