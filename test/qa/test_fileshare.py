@@ -1210,11 +1210,29 @@ def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
 
     assert peer_got_transfer, "transfer was not received by peer"
 
-    transfer = sh.nordvpn.fileshare.list(transfer_id)
-    assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "downloaded" in file_entry)
+    for files_downloaded in poll(
+        lambda: fileshare.for_all_files_in_transfer(
+            sh.nordvpn.fileshare.list(transfer_id),
+            expected_files,
+            lambda file_entry: "downloaded" in file_entry,
+        )
+    ):  # noqa: B007
+        if files_downloaded is not None:
+            break
 
-    transfer = ssh_client.exec_command(f"nordvpn fileshare list {transfer_id}")
-    assert fileshare.for_all_files_in_transfer(transfer, expected_files, lambda file_entry: "uploaded" in file_entry)
+    assert files_downloaded, "Files were not downloaded."
+
+    for files_uploaded in poll(
+        lambda: fileshare.for_all_files_in_transfer(
+            ssh_client.exec_command(f"nordvpn fileshare list {transfer_id}"),
+            expected_files,
+            lambda file_entry: "uploaded" in file_entry,
+        )
+    ):  # noqa: B007
+        if files_uploaded is not None:
+            break
+
+    assert files_uploaded, "Files were not uploaded."
 
     assert fileshare.files_from_transfer_exist_in_filesystem(transfer_id, [wfolder])
 
