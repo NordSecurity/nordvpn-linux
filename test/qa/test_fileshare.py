@@ -1329,40 +1329,46 @@ def test_clear():
 
     sh.nordvpn.fileshare.send("--background", peer_address, f"{workdir}/{test_files[1]}")
     time.sleep(1)
-    local_transfer_id1 = fileshare.get_last_transfer()
-    peer_transfer_id1 = fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)
-    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {peer_transfer_id1}")
+    transfer_id_1 = fileshare.get_last_transfer()
+
+    for peer_received_transfer in poll(lambda: transfer_id_1 in fileshare.get_last_transfer(outgoing=False, ssh_client=ssh_client)):  # noqa: B007
+        if peer_received_transfer:
+            break
+
+    assert peer_received_transfer
+
+    ssh_client.exec_command(f"nordvpn fileshare accept --path {workdir} {transfer_id_1}")
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id0)
-    assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id1)
+    assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id_1)
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id0)
-    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
+    assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id_1)
 
     fileshare.clear_history(f"{int(time.time() - transfer_time0)}")
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None
-    assert "completed" in fileshare.find_transfer_by_id(transfers, local_transfer_id1)
+    assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id_1)
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id0)
-    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
+    assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id_1)
 
     fileshare.clear_history(f"{int(time.time() - transfer_time0)} seconds", ssh_client)
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert fileshare.find_transfer_by_id(transfers, peer_transfer_id0) is None
-    assert "completed" in fileshare.find_transfer_by_id(transfers, peer_transfer_id1)
+    assert "completed" in fileshare.find_transfer_by_id(transfers, transfer_id_1)
 
     time.sleep(3)
     fileshare.clear_history("1")
 
     transfers = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     assert fileshare.find_transfer_by_id(transfers, local_transfer_id0) is None
-    assert fileshare.find_transfer_by_id(transfers, local_transfer_id1) is None
+    assert fileshare.find_transfer_by_id(transfers, transfer_id_1) is None
     assert len(transfers.split("\n")) == 6
 
     lines_incoming = sh.nordvpn.fileshare.list("--incoming", _tty_out=False).split("\n")
@@ -1374,7 +1380,7 @@ def test_clear():
 
     transfers = ssh_client.exec_command("nordvpn fileshare list")
     assert fileshare.find_transfer_by_id(transfers, peer_transfer_id0) is None
-    assert fileshare.find_transfer_by_id(transfers, peer_transfer_id1) is None
+    assert fileshare.find_transfer_by_id(transfers, transfer_id_1) is None
     assert len(transfers.split("\n")) == 6
 
     lines_incoming = ssh_client.exec_command("nordvpn fileshare list --incoming").split("\n")
