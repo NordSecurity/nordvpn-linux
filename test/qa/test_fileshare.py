@@ -665,7 +665,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
     transfer_accept_thread.start()
 
     for transfer_in_progress in poll(lambda: "downloading" in fileshare.get_transfer(transfer_id, ssh_client)):
-        if transfer_in_progress is not None:
+        if transfer_in_progress:
             break
 
     assert transfer_in_progress, "transfer is either not started or already completed: " + str(fileshare.get_transfer(transfer_id, ssh_client))
