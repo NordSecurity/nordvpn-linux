@@ -43,8 +43,7 @@ const (
 
 var (
 	// errNilVPN is returned when there is a bug in program logic.
-	errNilVPN      = errors.New("vpn is nil")
-	errInactiveVPN = errors.New("not connected to vpn")
+	errNilVPN = errors.New("vpn is nil")
 	// ErrMeshNotActive to report to outside
 	ErrMeshNotActive = errors.New("mesh is not active")
 	// ErrMeshPeerIsNotRoutable to report to outside
@@ -245,29 +244,30 @@ func NewCombined(
 //
 // Not thread safe.
 func (netw *Combined) updateConnectionStatus(timeOption TimeUpdateOption) {
-	status, err := netw.buildConnectionStatus(timeOption)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to update connection status:", err)
-		status = ConnectionStatus{}
-	}
-
+	status := netw.buildConnectionStatus(timeOption)
 	netw.connectionStatus.Store(status)
 }
 
 // buildConnectionStatus combines data from various sources and creates [ConnectionStatus].
 //
 // Not thread safe.
-func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (ConnectionStatus, error) {
+func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) ConnectionStatus {
+	// 1) We are not connected
 	if !netw.isConnectedToVPN() {
-		if timeOption == UpdateStartTime {
-			// connection is being initialized
+		// 1.1) Either started connection initialization (updating start time and state is not "Connecting")
+		currState := netw.connectionStatus.Load().(ConnectionStatus)
+		if timeOption == UpdateStartTime && currState.State != pb.ConnectionState_CONNECTING {
 			return ConnectionStatus{
 				State: pb.ConnectionState_CONNECTING,
-			}, nil
+			}
 		}
-		return ConnectionStatus{}, errInactiveVPN
+		// 1.2) OR connection is not being initialized. Either this is not a start
+		// time update on networker start, or the start already happened, but we are
+		// still not connected - error or connection cancellation.
+		return ConnectionStatus{State: pb.ConnectionState_DISCONNECTED}
 	}
 
+	// 2) We are connected, figure out connection details.
 	tech := config.Technology_OPENVPN
 	tunnelName := netw.vpnet.Tun().Interface().Name
 	if netw.vpnet.Tun().Interface().Name == nordlynx.InterfaceName {
@@ -299,7 +299,7 @@ func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (Connec
 		connectonStatus.StartTime = nil
 	}
 
-	return connectonStatus, nil
+	return connectonStatus
 }
 
 // Start VPN connection after preparing the network.

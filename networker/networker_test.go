@@ -15,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -2027,37 +2028,68 @@ func TestExitNodeLanAvailability(t *testing.T) {
 func TestCombined_Start_IsNotBlockingConnectionStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	// listen for the start event and notify Connection Status goroutine
-	mockPublisherSubscriber := events.MockPublisherSubscriber[string]{}
+	publisher, ctrl := publisherWithControl()
+	netw := GetTestCombined()
+	netw.publisher = &publisher
+
+	statusGoroutineStarted, startingFinished := spawnNetworker(netw, context.Background())
+
+	// Connection Status goroutine:
+	// - notify Start Networker goroutine that this goroutine is ready
+	// - wait for networker to begin the Start process (notification comes from publisher set up above)
+	// - check status
+	// - allow networker to continue
+	// - then check if this goroutine had to wait for Start Networker goroutine
+	//
+	// This means that [Networker.ConnectionStatus] was run after [Networker.Start] started
+	// and before it finished - so [Networker.ConnectionStatus] was not blocked.
+	didWaitForNetworker := false
+	finishTest := make(chan struct{})
+	go func() {
+		statusGoroutineStarted <- struct{}{}
+		// make sure networker began to start
+		<-ctrl.startingCh
+		_ = netw.ConnectionStatus()
+		ctrl.proceed <- struct{}{}
+		select {
+		case <-startingFinished:
+			finishTest <- struct{}{}
+		default:
+			didWaitForNetworker = true
+			finishTest <- struct{}{}
+		}
+	}()
+
+	<-finishTest
+	assert.True(t, didWaitForNetworker)
+}
+
+func publisherWithControl() (events.MockPublisherSubscriber[string], PublisherCtrl) {
 	networkerStarting := make(chan struct{})
+	proceed := make(chan struct{})
+	ctrl := PublisherCtrl{
+		networkerStarting,
+		proceed,
+	}
+	mockPublisherSubscriber := events.MockPublisherSubscriber[string]{
+		Handler: controlStartingEvent(ctrl),
+	}
+	return mockPublisherSubscriber, ctrl
+}
+
+func controlStartingEvent(ctrl PublisherCtrl) func(event string) error {
+	// listen for the start event and notify Connection Status goroutine
 	notifyNetworkerIsStarting := func(event string) error {
 		if event == "starting vpn" {
-			networkerStarting <- struct{}{}
+			ctrl.startingCh <- struct{}{}
+			<-ctrl.proceed
 		}
 		return nil
 	}
-	mockPublisherSubscriber.Subscribe(notifyNetworkerIsStarting)
+	return notifyNetworkerIsStarting
+}
 
-	netw := NewCombined(
-		&mock.WorkingVPN{},
-		&workingMesh{},
-		workingGateway{},
-		&mockPublisherSubscriber,
-		workingRouter{},
-		&workingDNS{},
-		&workingIpv6{},
-		newWorkingFirewall(),
-		workingAllowlistRouting{},
-		workingDeviceList,
-		&workingRoutingSetup{},
-		&workingHostSetter{},
-		workingRouter{},
-		workingRouter{},
-		&workingExitNode{},
-		0,
-		false,
-	)
-
+func spawnNetworker(netw *Combined, ctx context.Context) (chan struct{}, chan struct{}) {
 	statusGoroutineStarted := make(chan struct{})
 	startingFinished := make(chan struct{})
 
@@ -2070,7 +2102,7 @@ func TestCombined_Start_IsNotBlockingConnectionStatus(t *testing.T) {
 		// make sure status goroutine is running, then begin starting networker
 		<-statusGoroutineStarted
 		_ = netw.Start(
-			context.Background(),
+			ctx,
 			vpn.Credentials{},
 			vpn.ServerData{},
 			config.NewAllowlist(nil, nil, nil),
@@ -2079,33 +2111,12 @@ func TestCombined_Start_IsNotBlockingConnectionStatus(t *testing.T) {
 		)
 		startingFinished <- struct{}{}
 	}()
+	return statusGoroutineStarted, startingFinished
+}
 
-	// Connection Status goroutine:
-	// - notify Start Networker goroutine that this goroutine is ready
-	// - wait for networker to begin the Start process (notification comes from publisher set up above)
-	// - check status
-	// - then check if this goroutine had to wait for Start Networker goroutine
-	//
-	// This means that [Networker.ConnectionStatus] was run after [Networker.Start] started
-	// and before it finished - so [Networker.ConnectionStatus] was not blocked.
-	didWaitForNetworker := false
-	finishTest := make(chan struct{})
-	go func() {
-		statusGoroutineStarted <- struct{}{}
-		// make sure networker began to start
-		<-networkerStarting
-		_ = netw.ConnectionStatus()
-		select {
-		case <-startingFinished:
-			finishTest <- struct{}{}
-		default:
-			didWaitForNetworker = true
-			finishTest <- struct{}{}
-		}
-	}()
-
-	<-finishTest
-	assert.True(t, didWaitForNetworker)
+type PublisherCtrl struct {
+	startingCh chan struct{}
+	proceed    chan struct{}
 }
 
 func TestCombined_ConnectionStatus_TracksStartTime(t *testing.T) {
@@ -2128,4 +2139,121 @@ func TestCombined_ConnectionStatus_TracksStartTime(t *testing.T) {
 	_ = netw.Stop()
 	status = netw.ConnectionStatus()
 	assert.Nil(t, status.StartTime)
+}
+
+func TestCombined_ConnectionStatus_IsDisconnectedOnError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	publisher, ctrl := publisherWithControl()
+	netw := GetTestCombined()
+	netw.publisher = &publisher
+	netw.vpnet = &mock.FailingVPN{}
+
+	statusGoroutineStarted, startingFinished := spawnNetworker(netw, context.Background())
+
+	// - record the status
+	// - notify Start Networker goroutine that this goroutine is ready
+	// - wait for networker to begin the Start process (notification comes from publisher set up above)
+	// - record the status
+	// - allow networker to continue
+	// - wait for networker to finish starting
+	// - record the status again
+	var statuses []pb.ConnectionState
+	statuses = append(statuses, netw.ConnectionStatus().State)
+	statusGoroutineStarted <- struct{}{}
+	// make sure networker began to start
+	<-ctrl.startingCh
+	statuses = append(statuses, netw.ConnectionStatus().State)
+	ctrl.proceed <- struct{}{}
+	<-startingFinished
+	statuses = append(statuses, netw.ConnectionStatus().State)
+
+	assert.Equal(t,
+		[]pb.ConnectionState{
+			pb.ConnectionState_UNKNOWN_STATE,
+			pb.ConnectionState_CONNECTING,
+			pb.ConnectionState_DISCONNECTED,
+		},
+		statuses,
+	)
+}
+
+func TestCombined_ConnectionStatus_IsDisconnectedWhenCancelled(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// listen for the start event and notify Connection Status goroutine
+	publisher, ctrl := publisherWithControl()
+
+	netw := GetTestCombined()
+	netw.publisher = &publisher
+	netw.vpnet = &mock.FailingVPN{}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	statusGoroutineStarted, startingFinished := spawnNetworker(netw, ctx)
+
+	// - record the status
+	// - notify Start Networker goroutine that this goroutine is ready
+	// - wait for networker to begin the Start process (notification comes from publisher set up above)
+	// - record the status
+	// - cancel start process
+	// - allow networker to continue
+	// - record the status again
+	var statuses []pb.ConnectionState
+	statuses = append(statuses, netw.ConnectionStatus().State)
+	statusGoroutineStarted <- struct{}{}
+	// make sure networker began to start
+	<-ctrl.startingCh
+	statuses = append(statuses, netw.ConnectionStatus().State)
+	cancel()
+	ctrl.proceed <- struct{}{}
+	<-startingFinished
+	statuses = append(statuses, netw.ConnectionStatus().State)
+
+	assert.Equal(t,
+		[]pb.ConnectionState{
+			pb.ConnectionState_UNKNOWN_STATE,
+			pb.ConnectionState_CONNECTING,
+			pb.ConnectionState_DISCONNECTED,
+		},
+		statuses,
+	)
+}
+
+func TestCombined_ConnectionStatus_TracksStateProperlyOnSuccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	publisher, ctrl := publisherWithControl()
+	netw := GetTestCombined()
+	netw.publisher = &publisher
+
+	statusGoroutineStarted, startingFinished := spawnNetworker(netw, context.Background())
+
+	// - record the status
+	// - notify Start Networker goroutine that this goroutine is ready
+	// - wait for networker to begin the Start process (notification comes from publisher set up above)
+	// - record the status
+	// - allow networker to continue
+	// - wait for networker to finish starting
+	// - record the status again
+	var statuses []pb.ConnectionState
+	statuses = append(statuses, netw.ConnectionStatus().State)
+	statusGoroutineStarted <- struct{}{}
+	// make sure networker began to start
+	<-ctrl.startingCh
+	statuses = append(statuses, netw.ConnectionStatus().State)
+	ctrl.proceed <- struct{}{}
+	<-startingFinished
+	statuses = append(statuses, netw.ConnectionStatus().State)
+	netw.Stop()
+	statuses = append(statuses, netw.ConnectionStatus().State)
+
+	assert.Equal(t,
+		[]pb.ConnectionState{
+			pb.ConnectionState_UNKNOWN_STATE,
+			pb.ConnectionState_CONNECTING,
+			pb.ConnectionState_CONNECTED,
+			pb.ConnectionState_DISCONNECTED,
+		},
+		statuses,
+	)
 }
