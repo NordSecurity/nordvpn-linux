@@ -77,6 +77,8 @@ def teardown_module(module):  # noqa: ARG001
     ssh_client.download_file("/root/.cache/nordvpn/norduserd.log", f"{dest_logs_path}/norduserd-qapeer.log")
     shutil.copy("/home/qa/.cache/nordvpn/norduserd.log", dest_logs_path)
     shutil.copy("/home/qa/.cache/nordvpn/nordfileshare.log", dest_logs_path)
+    shutil.copy("/home/qa/.config/nordvpn/fileshare_history.db", dest_logs_path)
+    ssh_client.download_file("/root/.config/nordvpn/fileshare_history.db", f"{dest_logs_path}/fileshare_history-qapeer.db")
 
     ssh_client.exec_command("nordvpn set mesh off")
     ssh_client.exec_command("nordvpn set notify on")
