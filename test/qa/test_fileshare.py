@@ -1066,6 +1066,18 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     sh.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
     ssh_client.exec_command("nordvpn mesh peer refresh")
 
+    for local_permissions_refreshed in poll(lambda: ("Allow Sending Files: disabled" in sh_no_tty.nordvpn.mesh.peer.list())):
+        if local_permissions_refreshed:
+            break
+
+    assert local_permissions_refreshed, "Permissions were not refreshed."
+
+    for remote_permissions_refreshed in poll(lambda: ("Allows Sending Files: disabled" in ssh_client.exec_command("nordvpn mesh peer list"))):
+        if remote_permissions_refreshed:
+            break
+
+    assert remote_permissions_refreshed, "Permissions were not refreshed."
+
     # transfer list should not change if transfer request was properly blocked
     expected_transfer_list = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
     expected_transfer_list = expected_transfer_list[expected_transfer_list.index("Incoming"):].strip()
