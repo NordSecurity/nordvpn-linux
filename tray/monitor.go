@@ -368,12 +368,14 @@ func (ti *Instance) setVpnStatus(
 	}
 
 	if ti.state.vpnStatus != vpnStatus {
-		if vpnStatus == pb.ConnectionState_CONNECTED {
+		//exhaustive:ignore
+		switch vpnStatus {
+		case pb.ConnectionState_CONNECTED:
 			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconConnected)
 			}
 			defer notifyConnected()
-		} else {
+		case pb.ConnectionState_DISCONNECTED:
 			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconDisconnected)
 			}
