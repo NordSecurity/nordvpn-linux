@@ -2158,24 +2158,14 @@ func TestCombined_ConnectionStatus_IsDisconnectedOnError(t *testing.T) {
 	// - allow networker to continue
 	// - wait for networker to finish starting
 	// - record the status again
-	var statuses []pb.ConnectionState
-	statuses = append(statuses, netw.ConnectionStatus().State)
+	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
 	statusGoroutineStarted <- struct{}{}
 	// make sure networker began to start
 	<-ctrl.startingCh
-	statuses = append(statuses, netw.ConnectionStatus().State)
+	assert.Equal(t, pb.ConnectionState_CONNECTING, netw.ConnectionStatus().State)
 	ctrl.proceed <- struct{}{}
 	<-startingFinished
-	statuses = append(statuses, netw.ConnectionStatus().State)
-
-	assert.Equal(t,
-		[]pb.ConnectionState{
-			pb.ConnectionState_UNKNOWN_STATE,
-			pb.ConnectionState_CONNECTING,
-			pb.ConnectionState_DISCONNECTED,
-		},
-		statuses,
-	)
+	assert.Equal(t, pb.ConnectionState_DISCONNECTED, netw.ConnectionStatus().State)
 }
 
 func TestCombined_ConnectionStatus_IsDisconnectedWhenCancelled(t *testing.T) {
@@ -2198,25 +2188,15 @@ func TestCombined_ConnectionStatus_IsDisconnectedWhenCancelled(t *testing.T) {
 	// - cancel start process
 	// - allow networker to continue
 	// - record the status again
-	var statuses []pb.ConnectionState
-	statuses = append(statuses, netw.ConnectionStatus().State)
+	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
 	statusGoroutineStarted <- struct{}{}
 	// make sure networker began to start
 	<-ctrl.startingCh
-	statuses = append(statuses, netw.ConnectionStatus().State)
+	assert.Equal(t, pb.ConnectionState_CONNECTING, netw.ConnectionStatus().State)
 	cancel()
 	ctrl.proceed <- struct{}{}
 	<-startingFinished
-	statuses = append(statuses, netw.ConnectionStatus().State)
-
-	assert.Equal(t,
-		[]pb.ConnectionState{
-			pb.ConnectionState_UNKNOWN_STATE,
-			pb.ConnectionState_CONNECTING,
-			pb.ConnectionState_DISCONNECTED,
-		},
-		statuses,
-	)
+	assert.Equal(t, pb.ConnectionState_DISCONNECTED, netw.ConnectionStatus().State)
 }
 
 func TestCombined_ConnectionStatus_TracksStateProperlyOnSuccess(t *testing.T) {
@@ -2235,25 +2215,14 @@ func TestCombined_ConnectionStatus_TracksStateProperlyOnSuccess(t *testing.T) {
 	// - allow networker to continue
 	// - wait for networker to finish starting
 	// - record the status again
-	var statuses []pb.ConnectionState
-	statuses = append(statuses, netw.ConnectionStatus().State)
+	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
 	statusGoroutineStarted <- struct{}{}
 	// make sure networker began to start
 	<-ctrl.startingCh
-	statuses = append(statuses, netw.ConnectionStatus().State)
+	assert.Equal(t, pb.ConnectionState_CONNECTING, netw.ConnectionStatus().State)
 	ctrl.proceed <- struct{}{}
 	<-startingFinished
-	statuses = append(statuses, netw.ConnectionStatus().State)
+	assert.Equal(t, pb.ConnectionState_CONNECTED, netw.ConnectionStatus().State)
 	netw.Stop()
-	statuses = append(statuses, netw.ConnectionStatus().State)
-
-	assert.Equal(t,
-		[]pb.ConnectionState{
-			pb.ConnectionState_UNKNOWN_STATE,
-			pb.ConnectionState_CONNECTING,
-			pb.ConnectionState_CONNECTED,
-			pb.ConnectionState_DISCONNECTED,
-		},
-		statuses,
-	)
+	assert.Equal(t, pb.ConnectionState_DISCONNECTED, netw.ConnectionStatus().State)
 }
