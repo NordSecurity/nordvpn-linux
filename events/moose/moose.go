@@ -19,7 +19,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"math"
 	"net/url"
 	"os/exec"
 	"slices"
@@ -403,7 +402,12 @@ func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
 func (s *Subscriber) NotifySelfRemoved(any) error { return nil }
 
 func (s *Subscriber) NotifyThreatProtectionLite(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data))
+	if s.connectionStartTime.IsZero() {
+		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data)); err != nil {
+			return err
+		}
+	}
+	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue(data))
 }
 
 func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
@@ -461,8 +465,10 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		eventStatus = moose.NordvpnappEventStatusAttempt
 	case events.StatusSuccess:
 		eventStatus = moose.NordvpnappEventStatusSuccess
+		s.mux.Lock()
 		s.connectionStartTime = time.Now()
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
+		s.mux.Unlock()
 	case events.StatusFailure:
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	case events.StatusCanceled:
@@ -553,6 +559,9 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			return err
 		}
 		if data.EventStatus == events.StatusSuccess {
+			if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data.ThreatProtectionLite)); err != nil {
+				return err
+			}
 			return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(true))
 		}
 		return nil
@@ -570,15 +579,13 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	}
 
+	s.mux.Lock()
 	connectionTime := int32(time.Since(s.connectionStartTime).Seconds())
 	if connectionTime <= 0 {
 		connectionTime = -1
 	}
-	// On some arm64 devices connection time is being reported as maxInt32. This may
-	// potentially happen during convertion from float64 to int32.
-	if connectionTime == math.MaxInt32 {
-		connectionTime = int32(time.Now().Unix() - s.connectionStartTime.Unix())
-	}
+	s.connectionStartTime = time.Time{}
+	s.mux.Unlock()
 
 	if s.connectionToMeshnetPeer {
 		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
@@ -664,6 +671,9 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			errToExceptionCode(data.Error),
 			nil,
 		)); err != nil {
+			return err
+		}
+		if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue()); err != nil {
 			return err
 		}
 	}
