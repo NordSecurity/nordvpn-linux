@@ -353,19 +353,15 @@ func (ovpn *OpenVPN) getConnectedConnectingEvent(state events.TypeEventStatus) e
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get transfer rates for the tunnel:", err)
 	}
-	return events.DataConnect{
-		EventStatus:             state,
-		TargetServerIP:          ovpn.serverData.IP.String(),
-		TargetServerCountry:     ovpn.serverData.Country,
-		TargetServerCountryCode: ovpn.serverData.CountryCode,
-		TargetServerCity:        ovpn.serverData.City,
-		Technology:              config.Technology_OPENVPN,
-		Protocol:                ovpn.serverData.Protocol,
-		Upload:                  stats.Tx,
-		Download:                stats.Rx,
-		IsObfuscated:            ovpn.serverData.Obfuscated,
-		IsPostQuantum:           ovpn.serverData.PostQuantum,
-	}
+
+	event := vpn.GetDataConnectEvent(config.Technology_OPENVPN,
+		ovpn.serverData.Protocol,
+		state,
+		ovpn.serverData,
+		stats,
+		false)
+
+	return event
 }
 
 // publishConnecting publishes Connecting event using current stored server data. Thread unsafe.

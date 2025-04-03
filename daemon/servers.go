@@ -593,9 +593,6 @@ func GetServerParameters(serverTag string, groupTag string, countries core.Count
 
 	if countryIndex == -1 {
 		parameters.ServerName = serverTag
-	}
-
-	if countryIndex == -1 {
 		return parameters
 	}
 
