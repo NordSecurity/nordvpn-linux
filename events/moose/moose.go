@@ -105,11 +105,11 @@ func (s *Subscriber) Init() error {
 		return fmt.Errorf("initializing event domain: %w", err)
 	}
 
-	timeBetweenEvents, _ := time.ParseDuration("100ms")
-	timeBetweenBatchesOfEvents, _ := time.ParseDuration("1s")
+	timeBetweenEvents := 100 * time.Millisecond
+	timeBetweenBatchesOfEvents := time.Second
 	if internal.IsProdEnv(s.Environment) {
-		timeBetweenEvents, _ = time.ParseDuration("2s")
-		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
+		timeBetweenEvents = 2 * time.Second
+		timeBetweenBatchesOfEvents = 2 * time.Hour
 	}
 	sendEvents := true
 	var batchSize uint32 = 20
@@ -582,7 +582,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 
 	if s.connectionToMeshnetPeer {
 		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
-			-1,
+			int32(data.Duration.Milliseconds()),
 			eventStatus,
 			moose.NordvpnappEventTriggerUser,
 			connectionTime, // seconds
@@ -641,8 +641,10 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		}
 
 		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
-			-1,
+			int32(data.Duration.Milliseconds()),
 			eventStatus,
+			// App should never disconnect from VPN by itself. It has to receive either
+			// user command (logout, set defaults) or bet shut down.
 			moose.NordvpnappEventTriggerUser,
 			moose.NordvpnappVpnConnectionTriggerNone, // pass proper trigger
 			moose.NordvpnappVpnConnectionPresetNone,
@@ -659,7 +661,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			threatProtection,
 			connectionTime, // seconds
 			"",
-			-1,
+			errToExceptionCode(data.Error),
 			nil,
 		)); err != nil {
 			return err
@@ -943,4 +945,18 @@ func DrainStart(dbPath string) uint32 {
 		20,
 		false,
 	)
+}
+
+func errToExceptionCode(err error) int32 {
+	if err == nil {
+		return -1
+	}
+	errStr := err.Error()
+	switch {
+	case strings.Contains(errStr, "config"):
+		return 1
+	case strings.Contains(errStr, "networker"):
+		return 2
+	}
+	return -1
 }

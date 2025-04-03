@@ -99,6 +99,8 @@ type DataDisconnect struct {
 	TargetServerSelection string
 	ThreatProtectionLite  bool
 	ByUser                bool
+	Duration              time.Duration
+	Error                 error
 }
 
 type DataAuthorization struct {
