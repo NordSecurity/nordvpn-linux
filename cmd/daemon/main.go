@@ -616,7 +616,7 @@ func main() {
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)
 	}
-	if err := netw.Stop(); err != nil {
+	if _, err := rpc.DoDisconnect(); err != nil {
 		log.Println(internal.ErrorPrefix, "disconnecting from VPN:", err)
 	}
 	if err := netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {

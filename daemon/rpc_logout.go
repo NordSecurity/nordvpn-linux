@@ -38,8 +38,8 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
-	if err := r.netw.Stop(); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+	if _, err := r.DoDisconnect(); err != nil {
+		log.Println(internal.ErrorPrefix, "Error while disconnecting", err)
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
