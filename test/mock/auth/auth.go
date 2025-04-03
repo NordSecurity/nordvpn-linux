@@ -2,18 +2,6 @@ package auth
 
 import "github.com/NordSecurity/nordvpn-linux/auth"
 
-// type Checker interface {
-// 	// IsLoggedIn returns true when the user is logged in.
-// 	IsLoggedIn() bool
-// 	// IsMFAEnabled returns true if Multifactor Authentication is enabled.
-// 	IsMFAEnabled() (bool, error)
-// 	// IsVPNExpired is used to check whether the user is allowed to use VPN
-// 	IsVPNExpired() (bool, error)
-// 	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
-// 	// ServerID for that service to NoServerSelected
-// 	GetDedicatedIPServices() ([]DedicatedIPService, error)
-// }
-
 type AuthCheckerMock struct {
 	LoggedIn    bool
 	MFAEnabled  bool

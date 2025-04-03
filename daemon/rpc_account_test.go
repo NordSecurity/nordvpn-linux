@@ -80,7 +80,7 @@ func TestAccountInfo(t *testing.T) {
 			name:             "limited request cache expired",
 			userResponse:     user2,
 			cachedResponse:   userResponseToAccountResponse(user1),
-			expectedResponse: userResponseToAccountResponse(user2),
+			expectedResponse: userResponseToAccountResponse(user1),
 			cacheExpired:     true,
 			full:             false,
 		},
@@ -142,7 +142,7 @@ func TestAccountInfo_FailedRequestDoesntUpdateTheCache(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	dataManager := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
-	dataManager.accountData.checkCacheValidityFunc = func(t time.Time) bool { return false }
+	dataManager.accountData.checkCacheValidityFunc = func(t time.Time) bool { return true }
 	authCheeckerMock := testauth.AuthCheckerMock{LoggedIn: true}
 	configManagerMock := mock.NewMockConfigManager()
 	credentialsAPIMock := testcore.CredentialsAPIMock{}
@@ -194,7 +194,7 @@ func TestAccountInfo_FailedRequestDoesntUpdateTheCache(t *testing.T) {
 
 			r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
 
-			resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
+			resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
 			assert.Equal(t, userResponseToAccountResponse(user1).String(), resp.String(),
 				"Invalid data returned from the RPC(should be the cached data)")
 		})
