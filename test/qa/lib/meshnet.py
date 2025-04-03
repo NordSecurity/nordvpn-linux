@@ -656,10 +656,8 @@ def get_clean_peer_list(peer_list: str):
     return output
 
 
-def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, peer_name: PeerName = PeerName.Hostname, retry: int = 5) -> bool:
+def is_peer_reachable(peer: Peer, peer_name: PeerName = PeerName.Hostname, ssh_client: ssh.Ssh = None, retry: int = 5) -> bool:
     """Returns True when ping to peer succeeds."""
-
-    output = ssh_client.exec_command("nordvpn mesh peer list")
 
     if peer_name == PeerName.Hostname:
         peer_hostname = peer.hostname
@@ -668,19 +666,12 @@ def is_peer_reachable(ssh_client: ssh.Ssh, peer: Peer, peer_name: PeerName = Pee
     elif peer_name == PeerName.Nickname:
         peer_hostname = peer.nickname
 
-    i = 0
-    while i < retry:
-        try:
-            return "icmp_seq=" in sh.ping("-c", "1", peer_hostname)
-        except sh.ErrorReturnCode as e:
-            print(e.stdout)
-            print(e.stderr)
-            time.sleep(1)
-            i += 1
-    print(sh_no_tty.nordvpn.mesh.peer.list())
-    output = ssh_client.exec_command("nordvpn mesh peer list")
-    print(output)
-    return False
+    if ssh_client is None:
+        return network.is_internet_reachable(peer_hostname, 22, retry)
+    else:  # noqa: RET505
+        work_dir = os.environ.get("WORKDIR")
+        # Usage: python3 is_host_alive.py <host> [retries] [delay]
+        return "True" in ssh_client.exec_command(f"python3 {work_dir}/test/qa/scripts/is_host_alive.py {peer_hostname} {retry} 1")
 
 def is_connect_successful(output:str, peer_hostname: str):
     return (MSG_ROUTING_SUCCESS % peer_hostname) in output
