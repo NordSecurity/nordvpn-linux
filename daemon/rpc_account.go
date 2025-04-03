@@ -58,11 +58,8 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		return nil, internal.ErrNotLoggedIn
 	}
 
-	if !req.Full {
-		accountInfo, ok := r.dm.GetAccountData()
-		if ok {
-			return accountInfo, nil
-		}
+	if accountInfo, ok := r.dm.GetAccountData(req.Full); ok {
+		return accountInfo, nil
 	}
 
 	accountInfo := &pb.AccountResponse{}

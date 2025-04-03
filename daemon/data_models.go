@@ -159,7 +159,7 @@ func (data *VersionData) save() error {
 }
 
 func isCacheValid(added time.Time) bool {
-	return time.Now().After(added.Add(accountDataValidityPeriod))
+	return !time.Now().After(added.Add(accountDataValidityPeriod))
 }
 
 type cacheValidityFunc func(time.Time) bool
@@ -187,12 +187,12 @@ func (a *AccountData) unset() {
 	a.accountData = &pb.AccountResponse{}
 }
 
-func (a *AccountData) get() (*pb.AccountResponse, bool) {
+func (a *AccountData) get(respectValidityPeriod bool) (*pb.AccountResponse, bool) {
 	if !a.isSet {
 		return nil, false
 	}
 
-	if a.checkCacheValidityFunc(a.updatedAt) {
+	if respectValidityPeriod && !a.checkCacheValidityFunc(a.updatedAt) {
 		a.isSet = false
 		return nil, false
 	}

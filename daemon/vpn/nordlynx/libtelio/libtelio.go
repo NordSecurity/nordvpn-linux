@@ -337,8 +337,6 @@ func (l *Libtelio) Stop() error {
 			return fmt.Errorf("closing the tunnel: %w", err)
 		}
 	}
-
-	l.currentPrivateKey = ""
 	return nil
 }
 
