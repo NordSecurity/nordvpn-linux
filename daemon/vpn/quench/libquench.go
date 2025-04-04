@@ -98,25 +98,19 @@ func (o *observer) notifyConnectionStateChange(state vpn.State) {
 }
 
 func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataConnect {
-	transferStates, err := tunnel.GetTransferRates(o.nicName)
+	transferStats, err := tunnel.GetTransferRates(o.nicName)
 	if err != nil {
 		fmt.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
 	}
 
-	return events.DataConnect{
-		EventStatus:         status,
-		IsMeshnetPeer:       false,
-		TargetServerIP:      o.currentServer.IP.String(),
-		TargetServerCountry: o.currentServer.Country,
-		TargetServerCity:    o.currentServer.City,
-		TargetServerDomain:  o.currentServer.Hostname,
-		TargetServerName:    o.currentServer.Name,
-		IsVirtualLocation:   o.currentServer.VirtualLocation,
-		Technology:          config.Technology_NORDWHISPER,
-		Protocol:            config.Protocol_Webtunnel,
-		Upload:              transferStates.Tx,
-		Download:            transferStates.Rx,
-	}
+	event := vpn.GetDataConnectEvent(config.Technology_NORDWHISPER,
+		config.Protocol_Webtunnel,
+		status,
+		o.currentServer,
+		transferStats,
+		false)
+
+	return event
 }
 
 func (o *observer) Connecting() {
