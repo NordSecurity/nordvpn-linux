@@ -338,6 +338,20 @@ func (c *Client) connect(client mqtt.Client,
 	}
 }
 
+func publishOnTopic(client mqtt.Client, topic string, payload []byte, ctx context.Context) error {
+	token := client.Publish(topicDelivered, 1, false, payload)
+
+	select {
+	case <-token.Done():
+		if err := token.Error(); err != nil {
+			return fmt.Errorf("publishing on topic: %w", err)
+		}
+	case <-ctx.Done():
+	}
+
+	return nil
+}
+
 func (c *Client) sendDeliveryConfirmation(client mqtt.Client, messageID string, ctx context.Context) error {
 	payload, err := json.Marshal(ConfirmationPayload{
 		MessageID: messageID,
@@ -345,15 +359,12 @@ func (c *Client) sendDeliveryConfirmation(client mqtt.Client, messageID string, 
 	if err != nil {
 		return fmt.Errorf("marshaling confirmation payload: %w", err)
 	}
-	token := client.Publish(topicDelivered, 1, false, payload)
 
-	select {
-	case <-token.Done():
-		if err := token.Error(); err != nil {
-			return fmt.Errorf("failed to pulbish delivery confirmation: %w", err)
-		}
-	case <-ctx.Done():
+	err = publishOnTopic(client, topicDelivered, payload, ctx)
+	if err != nil {
+		return fmt.Errorf("publishing delivery confirmation topic: %w", err)
 	}
+
 	return nil
 }
 
@@ -367,14 +378,9 @@ func (c *Client) sendAcknowledgement(client mqtt.Client, messageID, trackType, a
 		return fmt.Errorf("marshaling acknowledgement payload: %w", err)
 	}
 
-	token := client.Publish(topicAcknowledged, 1, false, payload)
-
-	select {
-	case <-token.Done():
-		if err := token.Error(); err != nil {
-			return fmt.Errorf("failed to pulbish delivery acknowledgement: %w", err)
-		}
-	case <-ctx.Done():
+	err = publishOnTopic(client, topicAcknowledged, payload, ctx)
+	if err != nil {
+		return fmt.Errorf("publishing acknowledgmenet: %w", err)
 	}
 
 	return nil
