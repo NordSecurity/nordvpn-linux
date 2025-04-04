@@ -158,7 +158,7 @@ func (data *VersionData) save() error {
 	return nil
 }
 
-func isCacheValid(added time.Time) bool {
+func isAccountCacheValid(added time.Time) bool {
 	return !time.Now().After(added.Add(accountDataValidityPeriod))
 }
 
@@ -172,7 +172,7 @@ type AccountData struct {
 }
 
 func NewAccountData() AccountData {
-	return AccountData{checkCacheValidityFunc: isCacheValid}
+	return AccountData{checkCacheValidityFunc: isAccountCacheValid}
 }
 
 func (a *AccountData) set(data *pb.AccountResponse) {
