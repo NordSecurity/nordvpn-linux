@@ -1963,9 +1963,14 @@ func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKey
 		}, nil
 	}
 
+	privateKey := cfg.MeshPrivateKey
+	if !cfg.Mesh {
+		privateKey = ""
+	}
+
 	return &pb.PrivateKeyResponse{
 		Response: &pb.PrivateKeyResponse_PrivateKey{
-			PrivateKey: cfg.MeshPrivateKey,
+			PrivateKey: privateKey,
 		},
 	}, nil
 }
