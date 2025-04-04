@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"math/rand"
 	"os"
@@ -34,7 +35,7 @@ type Manager interface {
 	// Load config into a given struct.
 	Load(*Config) error
 	// Reset config to default values.
-	Reset() error
+	Reset(persevereLoginData bool) error
 }
 
 type FilesystemHandle interface {
@@ -145,9 +146,16 @@ func (f *FilesystemConfigManager) save(c Config) error {
 // Reset config values to defaults.
 //
 // Thread-safe.
-func (f *FilesystemConfigManager) Reset() error {
+func (f *FilesystemConfigManager) Reset(persevereLoginData bool) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if persevereLoginData {
+		var cfg Config
+		if err := f.load(&cfg); err != nil {
+			return fmt.Errorf("loading old config: %w", err)
+		}
+		return f.save(*newConfigWithLoginData(f.machineIDGetter, cfg))
+	}
 	return f.save(*newConfig(f.machineIDGetter))
 }
 

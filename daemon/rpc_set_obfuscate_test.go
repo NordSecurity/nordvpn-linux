@@ -29,7 +29,7 @@ func (m *mockObfuscateConfigManager) Load(c *config.Config) error {
 	return nil
 }
 
-func (*mockObfuscateConfigManager) Reset() error {
+func (*mockObfuscateConfigManager) Reset(bool) error {
 	return nil
 }
 

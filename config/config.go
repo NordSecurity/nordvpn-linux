@@ -25,6 +25,23 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 	}
 }
 
+// newConfigWithLoginData returns a clean/default config where login data(TokensData and AutoconnectData.ID) is
+// initialized to values from the parrentConfig.
+func newConfigWithLoginData(machineIDGetter MachineIDGetter, parrentConfig Config) *Config {
+	return &Config{
+		Technology:   Technology_NORDLYNX,
+		Firewall:     true,
+		FirewallMark: defaultFWMarkValue,
+		AutoConnectData: AutoConnectData{
+			ID:       parrentConfig.AutoConnectData.ID,
+			Protocol: Protocol_UDP,
+		},
+		MachineID:  machineIDGetter.GetMachineID(),
+		UsersData:  &UsersData{Notify: UidBoolMap{}, NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
+		TokensData: parrentConfig.TokensData,
+	}
+}
+
 // Config stores application settings and tokens.
 //
 // Config should be evolved is such a way, that it does not

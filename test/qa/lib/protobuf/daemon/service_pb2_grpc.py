@@ -7,6 +7,7 @@ import account_pb2 as account__pb2
 import cities_pb2 as cities__pb2
 import common_pb2 as common__pb2
 import connect_pb2 as connect__pb2
+import defaults_pb2 as defaults__pb2
 import login_pb2 as login__pb2
 import login_with_token_pb2 as login__with__token__pb2
 import logout_pb2 as logout__pb2
@@ -137,7 +138,7 @@ class DaemonStub(object):
                 _registered_method=True)
         self.SetDefaults = channel.unary_unary(
                 '/pb.Daemon/SetDefaults',
-                request_serializer=common__pb2.Empty.SerializeToString,
+                request_serializer=defaults__pb2.SetDefaultsRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetDNS = channel.unary_unary(
@@ -640,7 +641,7 @@ def add_DaemonServicer_to_server(servicer, server):
             ),
             'SetDefaults': grpc.unary_unary_rpc_method_handler(
                     servicer.SetDefaults,
-                    request_deserializer=common__pb2.Empty.FromString,
+                    request_deserializer=defaults__pb2.SetDefaultsRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'SetDNS': grpc.unary_unary_rpc_method_handler(
@@ -1263,7 +1264,7 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/SetDefaults',
-            common__pb2.Empty.SerializeToString,
+            defaults__pb2.SetDefaultsRequest.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,
