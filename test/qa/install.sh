@@ -5,7 +5,7 @@ SUDO=
 if [ "$(id -u)" -ne 0 ]; then
     SUDO=$(command -v sudo 2> /dev/null)
 
-    if [ ! -x "$SUDO" ]; then
+    if [ ! -x "${SUDO}" ]; then
         echo "Error: Run this script as root"
         exit 1
     fi
@@ -14,11 +14,15 @@ fi
 set -e
 ARCH=$(uname -m)
 BASE_URL=https://repo.nordvpn.com
+KEY_BASE_URL=https://repo.nordvpn.com
 KEY_PATH=/gpg/nordvpn_public.asc
 REPO_PATH_DEB=/deb/nordvpn/debian
 REPO_PATH_RPM=/yum/nordvpn/centos
 RELEASE="stable main"
 ASSUME_YES=false
+APP_VERSION=
+PACKAGE="nordvpn"
+NOSECRT=false
 
 # Parse command line arguments. Available arguments are:
 # -n                Non-interactive mode. With this flag present, 'assume yes' or 
@@ -28,7 +32,10 @@ ASSUME_YES=false
 # -d <path|file>    Repository location for debian packages.
 # -v <version>      Debian package version to use.
 # -r <path|file>    Repository location for rpm packages.
-while getopts 'nb:k:d:r:v:' opt
+# -p <package>      Package name to install: <nordvpn> or <nordvpn-release>
+# -a <arch>         Architecture e.g. "noarch" for nordvpn-release rpm case
+# -s                Do not do security checks: allow not signed repo and packages.
+while getopts 'nb:k:d:r:v:p:a:s' opt
 do
     case $opt in
         n) ASSUME_YES=true ;;
@@ -36,13 +43,16 @@ do
         k) KEY_PATH=$OPTARG ;;
         d) REPO_PATH_DEB=$OPTARG ;;
         r) REPO_PATH_RPM=$OPTARG ;;
-        v) RELEASE=$OPTARG ;;
+        v) APP_VERSION=$OPTARG ;;
+        p) PACKAGE=$OPTARG ;;
+        a) ARCH=$OPTARG ;;
+        s) NOSECRT=true ;;
         *) ;;
     esac
 done
 
 # Construct the paths to the package repository and its key
-PUB_KEY=${BASE_URL}${KEY_PATH}
+PUB_KEY=${KEY_BASE_URL}${KEY_PATH}
 REPO_URL_DEB=${BASE_URL}${REPO_PATH_DEB}
 REPO_URL_RPM=${BASE_URL}${REPO_PATH_RPM}
 
@@ -82,6 +92,20 @@ get_install_opts_for() {
     echo ""
 }
 
+get_update_secrt_opts_for_apt() {
+    RETVAL=""
+    if $NOSECRT; then
+        RETVAL="--allow-insecure-repositories"
+    fi
+}
+
+get_install_secrt_opts_for_apt() {
+    RETVAL=""
+    if $NOSECRT; then
+        RETVAL="--allow-unauthenticated"
+    fi
+}
+
 # For any of the following distributions, these steps are performed:
 # 1. Add the NordVPN repository key
 # 2. Add the NordVPN repository
@@ -92,24 +116,35 @@ get_install_opts_for() {
 install_apt() {
     if check_cmd apt-get; then
         get_install_opts_for_apt
-        install_opts="$RETVAL"
+        install_opts="${RETVAL}"
+        get_update_secrt_opts_for_apt
+        update_secrt="${RETVAL}"
+        get_install_secrt_opts_for_apt
+        install_secrt="${RETVAL}"
+
+        export DEBIAN_FRONTEND=noninteractive 
+
         # Ensure apt is set up to work with https sources
-        $SUDO apt-get ${install_opts:-} update
-        $SUDO apt-get ${install_opts:-} install apt-transport-https
+        ${SUDO} apt-get ${install_opts} ${update_secrt} update
+        ${SUDO} apt-get ${install_opts} ${install_secrt} install apt-transport-https
 
         # Add the repository key with either wget or curl
         if check_cmd wget; then
-            wget -qO - "${PUB_KEY}" | $SUDO tee /etc/apt/trusted.gpg.d/nordvpn_public.asc > /dev/null
+            wget -qO - "${PUB_KEY}" | ${SUDO} tee /etc/apt/trusted.gpg.d/nordvpn_public.asc > /dev/null
         elif check_cmd curl; then
-            curl -s "${PUB_KEY}" | $SUDO tee /etc/apt/trusted.gpg.d/nordvpn_public.asc > /dev/null
+            curl -s "${PUB_KEY}" | ${SUDO} tee /etc/apt/trusted.gpg.d/nordvpn_public.asc > /dev/null
         else
             echo "Couldn't find wget or curl - one of them is needed to proceed with the installation"
             exit 1
         fi
 
-        echo "deb ${REPO_URL_DEB} ${RELEASE}" | $SUDO tee /etc/apt/sources.list.d/nordvpn.list
-        $SUDO apt-get ${install_opts:-} update
-        $SUDO apt-get ${install_opts:-} install nordvpn
+        echo "deb ${REPO_URL_DEB} ${RELEASE}" | ${SUDO} tee /etc/apt/sources.list.d/nordvpn-app.list
+        ${SUDO} apt-get ${install_opts} ${update_secrt} update
+        if [ ! -z "$APP_VERSION" ]; then
+            ${SUDO} apt-get ${install_opts} ${install_secrt} install "${PACKAGE}"="$APP_VERSION"
+        else
+            ${SUDO} apt-get ${install_opts} ${install_secrt} install "${PACKAGE}"
+        fi
         exit
     fi
 }
@@ -119,16 +154,20 @@ install_apt() {
 install_yum() {
     if check_cmd yum && check_cmd yum-config-manager; then
         get_install_opts_for_yum
-        install_opts="$RETVAL"
+        install_opts="${RETVAL}"
 
         repo="${REPO_URL_RPM}"
         if [ ! -f "${REPO_URL_RPM}" ]; then
             repo="${repo}/${ARCH}"
         fi
 
-        $SUDO rpm -v --import "${PUB_KEY}"
-        $SUDO yum-config-manager --add-repo "${repo}"
-        $SUDO yum ${install_opts:-} install nordvpn
+        ${SUDO} rpm -v --import "${PUB_KEY}"
+        ${SUDO} yum-config-manager --add-repo "${repo}"
+        if [ ! -z "${APP_VERSION}" ]; then
+            ${SUDO} yum "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+        else
+            ${SUDO} yum "${install_opts}" install --nogpgcheck "${PACKAGE}"
+        fi
         exit
     fi
 }
@@ -137,33 +176,39 @@ install_yum() {
 # (with the dnf package manager)
 install_dnf() {
     if check_cmd dnf5; then
-        # have isolated case for new dnf 5
         get_install_opts_for_dnf
-        install_opts="$RETVAL"
+        install_opts="${RETVAL}"
         
         repo="${REPO_URL_RPM}"
         if [ ! -f "${REPO_URL_RPM}" ]; then
             repo="${repo}/${ARCH}"
         fi
 
-        $SUDO rpm -v --import "${PUB_KEY}"
-        $SUDO dnf5 config-manager addrepo --id="nordvpn" --set=baseurl="${repo}" --set=enabled=1 --overwrite
-        $SUDO dnf5 ${install_opts:-} install nordvpn
+        ${SUDO} rpm -v --import "${PUB_KEY}"
+        ${SUDO} dnf5 config-manager addrepo --id="nordvpn" --set=baseurl="${repo}" --set=enabled=1 --overwrite
+        if [ ! -z "${APP_VERSION}" ]; then
+            ${SUDO} dnf5 "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+        else
+            ${SUDO} dnf5 "${install_opts}" install --nogpgcheck "${PACKAGE}"
+        fi
         exit
     fi
     if check_cmd dnf; then
-        # have isolated case for old dnf 
         get_install_opts_for_dnf
-        install_opts="$RETVAL"
+        install_opts="${RETVAL}"
         
         repo="${REPO_URL_RPM}"
         if [ ! -f "${REPO_URL_RPM}" ]; then
             repo="${repo}/${ARCH}"
         fi
 
-        $SUDO rpm -v --import "${PUB_KEY}"
-        $SUDO dnf config-manager --add-repo "${repo}"
-        $SUDO dnf ${install_opts:-} install nordvpn
+        ${SUDO} rpm -v --import "${PUB_KEY}"
+        ${SUDO} dnf config-manager --add-repo "${repo}"
+        if [ ! -z "${APP_VERSION}" ]; then
+            ${SUDO} dnf "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+        else
+            ${SUDO} dnf "${install_opts}" install --nogpgcheck "${PACKAGE}"
+        fi
         exit
     fi
 }
@@ -177,15 +222,15 @@ install_zypper() {
             exit 1
         fi
         get_install_opts_for_zypper
-        install_opts="$RETVAL"
+        install_opts="${RETVAL}"
         
-        $SUDO rpm -v --import "${PUB_KEY}"
+        ${SUDO} rpm -v --import "${PUB_KEY}"
         if [ -f "${REPO_URL_RPM}" ]; then
-            $SUDO zypper addrepo -f "${REPO_URL_RPM}"
+            ${SUDO} zypper addrepo -f "${REPO_URL_RPM}"
         else 
-            $SUDO zypper addrepo -g -f "${REPO_URL_RPM}/${ARCH}" nordvpn
+            ${SUDO} zypper addrepo -g -f "${REPO_URL_RPM}/${ARCH}" nordvpn
         fi
-        $SUDO zypper ${install_opts:-} install -y nordvpn
+        ${SUDO} zypper $install_opts install -y "${PACKAGE}"
         exit
     fi
 }
