@@ -401,7 +401,7 @@ func (dm *DataManager) GetAccountData(respectValidityPeriod bool) (*pb.AccountRe
 	return dm.accountData.get(respectValidityPeriod)
 }
 
-func (dm *DataManager) InvalidateAccountdata() {
+func (dm *DataManager) InvalidateAccountData() {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 	dm.accountData.unset()
