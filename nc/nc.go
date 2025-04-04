@@ -339,7 +339,7 @@ func (c *Client) connect(client mqtt.Client,
 }
 
 func publishOnTopic(client mqtt.Client, topic string, payload []byte, ctx context.Context) error {
-	token := client.Publish(topicDelivered, 1, false, payload)
+	token := client.Publish(topic, 1, false, payload)
 
 	select {
 	case <-token.Done():
