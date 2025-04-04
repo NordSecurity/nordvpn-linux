@@ -9,6 +9,9 @@ type CredentialsAPIMock struct {
 	NotificationCredentialsResponse       core.NotificationCredentialsResponse
 	NotificationCredentialsRevokeResponse core.NotificationCredentialsRevokeResponse
 	NotificationCredentialsError          error
+
+	CurrentUserResponse core.CurrentUserResponse
+	CurrentUserErr      error
 }
 
 func (c *CredentialsAPIMock) NotificationCredentials(token, appUserID string) (core.NotificationCredentialsResponse, error) {
@@ -35,8 +38,8 @@ func (*CredentialsAPIMock) Services(string) (core.ServicesResponse, error) {
 	return core.ServicesResponse{}, nil
 }
 
-func (*CredentialsAPIMock) CurrentUser(string) (*core.CurrentUserResponse, error) {
-	return nil, nil
+func (c *CredentialsAPIMock) CurrentUser(string) (*core.CurrentUserResponse, error) {
+	return &c.CurrentUserResponse, c.CurrentUserErr
 }
 
 func (*CredentialsAPIMock) DeleteToken(string) error {

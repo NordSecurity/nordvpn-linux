@@ -53,9 +53,13 @@ func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.Dedidcat
 }
 
 // AccountInfo returns user account information.
-func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse, error) {
+func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.AccountResponse, error) {
 	if !r.ac.IsLoggedIn() {
 		return nil, internal.ErrNotLoggedIn
+	}
+
+	if accountInfo, ok := r.dm.GetAccountData(req.Full); ok {
+		return accountInfo, nil
 	}
 
 	accountInfo := &pb.AccountResponse{}
@@ -132,6 +136,7 @@ func (r *RPC) AccountInfo(ctx context.Context, _ *pb.Empty) (*pb.AccountResponse
 	}
 
 	r.events.Service.AccountCheck.Publish(struct{}{})
+	r.dm.SetAccountData(accountInfo)
 
 	return accountInfo, nil
 }

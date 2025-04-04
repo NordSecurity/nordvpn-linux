@@ -33,3 +33,9 @@ class AccountResponse(_message.Message):
     dedicated_ip_services: _containers.RepeatedCompositeFieldContainer[DedidcatedIPService]
     mfa_status: _common_pb2.TriState
     def __init__(self, type: _Optional[int] = ..., username: _Optional[str] = ..., email: _Optional[str] = ..., expires_at: _Optional[str] = ..., dedicated_ip_status: _Optional[int] = ..., last_dedicated_ip_expires_at: _Optional[str] = ..., dedicated_ip_services: _Optional[_Iterable[_Union[DedidcatedIPService, _Mapping]]] = ..., mfa_status: _Optional[_Union[_common_pb2.TriState, str]] = ...) -> None: ...
+
+class AccountRequest(_message.Message):
+    __slots__ = ("full",)
+    FULL_FIELD_NUMBER: _ClassVar[int]
+    full: bool
+    def __init__(self, full: bool = ...) -> None: ...
