@@ -240,10 +240,10 @@ func (r *RPC) connect(
 			t = internal.CodeDisconnected
 			event.EventStatus = events.StatusCanceled
 			event.Error = nil
-			r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
-			r.vpnEvents.Connected.Publish(event)
 		}
 		r.events.Service.Connect.Publish(event)
+		r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
+		r.vpnEvents.Connected.Publish(event)
 		if err := srv.Send(&pb.Payload{
 			Type: t,
 			Data: data,
