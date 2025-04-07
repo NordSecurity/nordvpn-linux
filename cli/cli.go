@@ -1283,6 +1283,8 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 			output += server.Name + "\n"
 		}
 
+		fmt.Print(output)
+
 		if hasGroupFlag {
 			// if --group flag exists don't show the countries
 			return
@@ -1326,18 +1328,19 @@ func parseConnectArgs(ctx *cli.Context) (string, string, error) {
 				return "", "", argsCountError(ctx)
 			}
 
+			// remove group flags, as they were already processed
 			argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
-				// ommit any arguments that succesfully parse as an on/off switch
-				_, boolFromStringErr := nstrings.BoolFromString(arg)
-				isOnOffSwitch := boolFromStringErr == nil
-
-				isGroupFlag := arg == "--"+flagGroup || arg == groupName
-				return isOnOffSwitch || isGroupFlag
+				return arg == "--"+flagGroup || arg == groupName
 			})
 
 			serverGroup = groupName
 		}
 
+		// remove any arguments that succesfully parse as an on/off switch
+		argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
+			_, boolFromStringErr := nstrings.BoolFromString(arg)
+			return boolFromStringErr == nil
+		})
 		serverTag = strings.Join(argsSlice, " ")
 		serverTag = strings.ToLower(serverTag)
 	}
