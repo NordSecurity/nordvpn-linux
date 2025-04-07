@@ -47,24 +47,15 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	// generate server tag from given args
-	var serverTag string
-	if args.Len() > 1 {
-		groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
-		if hasGroupFlag {
-			if groupName == "" {
-				return formatError(argsCountError(ctx))
-			}
-			serverTag = groupName
-		} else {
-			serverTag = strings.Join(args.Slice()[1:], " ")
-			serverTag = strings.ToLower(serverTag)
-		}
+	serverTag, serverGroup, err := parseConnectArgs(ctx)
+	if err != nil {
+		return formatError(err)
 	}
 
 	resp, err := c.client.SetAutoConnect(context.Background(), &pb.SetAutoconnectRequest{
-		Enabled:   flag,
-		ServerTag: serverTag,
+		Enabled:     flag,
+		ServerTag:   serverTag,
+		ServerGroup: serverGroup,
 	})
 	if err != nil {
 		return formatError(err)

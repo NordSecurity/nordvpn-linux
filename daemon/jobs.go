@@ -267,7 +267,9 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 		}
 
 		server := autoconnectServer{}
-		err = r.Connect(&pb.ConnectRequest{ServerTag: cfg.AutoConnectData.ServerTag}, &server)
+		err = r.Connect(&pb.ConnectRequest{ServerTag: cfg.AutoConnectData.ServerTag,
+			ServerGroup: cfg.AutoConnectData.Group.String()},
+			&server)
 		if connectErrorCheck(err) && server.err == nil {
 			log.Println(internal.InfoPrefix, "auto-connect success")
 			r.RequestedConnParams.Set(pb.ConnectionSource_AUTO,
