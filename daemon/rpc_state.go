@@ -79,13 +79,14 @@ func statusStream(stateChan <-chan any,
 		case ev := <-stateChan:
 			switch e := ev.(type) {
 			case events.DataConnect:
-				state := pb.ConnectionState_CONNECTING
-				//exhaustive:ignore
+				var state pb.ConnectionState
 				switch e.EventStatus {
 				case events.StatusSuccess:
 					state = pb.ConnectionState_CONNECTED
 				case events.StatusCanceled, events.StatusFailure:
 					state = pb.ConnectionState_DISCONNECTED
+				case events.StatusAttempt:
+					state = pb.ConnectionState_CONNECTING
 				}
 
 				requestedConnParams := requestedConnParamsStorage.Get()
