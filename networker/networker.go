@@ -214,8 +214,8 @@ func (netw *Combined) Start(
 	enableLocalTraffic bool,
 ) (err error) {
 	netw.mu.Lock()
-	defer netw.updateConnectionStatusAfterStart()
 	defer netw.mu.Unlock()
+	defer netw.updateConnectionStatusAfterStart()
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
 		return netw.restart(ctx, creds, serverData, nameservers)
@@ -487,8 +487,8 @@ func (netw *Combined) restart(
 // Stop VPN connection and clean up network after it stopped.
 func (netw *Combined) Stop() error {
 	netw.mu.Lock()
-	defer netw.updateConnectionStatusAfterStop()
 	defer netw.mu.Unlock()
+	defer netw.updateConnectionStatusAfterStop()
 	if netw.isVpnSet {
 		err := netw.stop()
 		if err != nil && !errors.Is(err, errNilVPN) {
