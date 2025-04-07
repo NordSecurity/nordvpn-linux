@@ -587,12 +587,19 @@ type ServerParameters struct {
 func GetServerParameters(serverTag string, groupTag string, countries core.Countries) ServerParameters {
 	var parameters ServerParameters
 
-	parameters.Group = groupConvert(groupTag)
+	groupFromServerTag := groupConvert(serverTag)
+	if groupFromServerTag != config.ServerGroup_UNDEFINED {
+		parameters.Group = groupFromServerTag
+	} else {
+		parameters.Group = groupConvert(groupTag)
+	}
 
 	countryIndex, cityIndex := locationByName(serverTag, countries)
 
 	if countryIndex == -1 {
-		parameters.ServerName = serverTag
+		if groupFromServerTag == config.ServerGroup_UNDEFINED {
+			parameters.ServerName = serverTag
+		}
 		return parameters
 	}
 
