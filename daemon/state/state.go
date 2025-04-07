@@ -127,7 +127,7 @@ func (s *StatePublisher) NotifySubscriptionChanged(e *pb.AccountModification) er
 	return nil
 }
 
-func (s *StatePublisher) AddSubscriber() (<-chan interface{}, chan<- struct{}) {
+func (s *StatePublisher) AddSubscriber() (<-chan any, chan<- struct{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

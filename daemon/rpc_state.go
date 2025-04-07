@@ -65,7 +65,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 
 // statusStream starts streaming status events received by stateChan to the subscriber. When the stream is stopped(i.e
 // when subscribers stops listening), stopChan will be closed.
-func statusStream(stateChan <-chan interface{},
+func statusStream(stateChan <-chan any,
 	stopChan chan<- struct{},
 	uid int64,
 	srv pb.Daemon_SubscribeToStateChangesServer,
@@ -80,8 +80,12 @@ func statusStream(stateChan <-chan interface{},
 			switch e := ev.(type) {
 			case events.DataConnect:
 				state := pb.ConnectionState_CONNECTING
-				if e.EventStatus == events.StatusSuccess {
+				//exhaustive:ignore
+				switch e.EventStatus {
+				case events.StatusSuccess:
 					state = pb.ConnectionState_CONNECTED
+				case events.StatusCanceled, events.StatusFailure:
+					state = pb.ConnectionState_DISCONNECTED
 				}
 
 				requestedConnParams := requestedConnParamsStorage.Get()
