@@ -146,10 +146,10 @@ func (f *FilesystemConfigManager) save(c Config) error {
 // Reset config values to defaults.
 //
 // Thread-safe.
-func (f *FilesystemConfigManager) Reset(persevereLoginData bool) error {
+func (f *FilesystemConfigManager) Reset(preserveLoginData bool) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if persevereLoginData {
+	if preserveLoginData {
 		var cfg Config
 		if err := f.load(&cfg); err != nil {
 			return fmt.Errorf("loading old config: %w", err)
