@@ -19,6 +19,7 @@ import (
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
+	"github.com/NordSecurity/nordvpn-linux/nstrings"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	snappb "github.com/NordSecurity/nordvpn-linux/snapconf/pb"
 
@@ -1282,8 +1283,6 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 			output += server.Name + "\n"
 		}
 
-		fmt.Print(output)
-
 		if hasGroupFlag {
 			// if --group flag exists don't show the countries
 			return
@@ -1311,4 +1310,37 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 			fmt.Println(server.Name)
 		}
 	}
+}
+
+func parseConnectArgs(ctx *cli.Context) (string, string, error) {
+	args := ctx.Args()
+
+	// generate server tag from given args
+	var serverTag string
+	var serverGroup string
+	if args.Len() > 0 {
+		groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+		argsSlice := args.Slice()
+		if hasGroupFlag {
+			if groupName == "" {
+				return "", "", argsCountError(ctx)
+			}
+
+			argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
+				// ommit any arguments that succesfully parse as an on/off switch
+				_, boolFromStringErr := nstrings.BoolFromString(arg)
+				isOnOffSwitch := boolFromStringErr == nil
+
+				isGroupFlag := arg == "--"+flagGroup || arg == groupName
+				return isOnOffSwitch || isGroupFlag
+			})
+
+			serverGroup = groupName
+		}
+
+		serverTag = strings.Join(argsSlice, " ")
+		serverTag = strings.ToLower(serverTag)
+	}
+
+	return serverTag, serverGroup, nil
 }
