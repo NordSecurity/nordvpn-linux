@@ -1336,7 +1336,7 @@ func parseConnectArgs(ctx *cli.Context) (string, string, error) {
 			serverGroup = groupName
 		}
 
-		// remove any arguments that succesfully parse as an on/off switch
+		// remove any arguments that successfully parse as an on/off switch
 		argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
 			_, boolFromStringErr := nstrings.BoolFromString(arg)
 			return boolFromStringErr == nil
