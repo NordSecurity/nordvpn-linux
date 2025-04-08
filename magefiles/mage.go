@@ -180,7 +180,6 @@ func Download() error {
 		return err
 	}
 
-	environment["ARCH"] = build.Default.GOARCH
 	environment["WORKDIR"] = cwd
 	return sh.RunWith(environment, "ci/check_dependencies.sh")
 }
@@ -197,7 +196,6 @@ func DownloadOpenvpn() error {
 		return err
 	}
 
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 	return sh.RunWith(env, "ci/openvpn/check_dependencies.sh")
 }
@@ -236,7 +234,6 @@ func buildPackage(packageType string, buildFlags string) error {
 	if err != nil {
 		return err
 	}
-	env["ARCH"] = build.Default.GOARCH
 	env["GOPATH"] = build.Default.GOPATH
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -247,7 +244,7 @@ func buildPackage(packageType string, buildFlags string) error {
 	mg.Deps(Build.Notices)
 
 	// do not build openvpn dependency if it already exists
-	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/current/%s/openvpn", build.Default.GOARCH)) {
+	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/current/%s/openvpn", env["ARCH"])) {
 		mg.Deps(Build.Openvpn)
 	}
 
@@ -274,18 +271,17 @@ func (Build) Snap() error {
 }
 
 func buildPackageDocker(ctx context.Context, packageType string, buildFlags string) error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
 	mg.Deps(Build.Data)
 	mg.Deps(mg.F(buildBinariesDocker, buildFlags))
 	mg.Deps(Build.Notices)
 
 	// do not build openvpn dependency if it already exists
-	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/current/%s/openvpn", build.Default.GOARCH)) {
+	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/current/%s/openvpn", env["ARCH"])) {
 		mg.Deps(Build.OpenvpnDocker)
-	}
-
-	env, err := getEnv()
-	if err != nil {
-		return err
 	}
 
 	git, err := getGitInfo()
@@ -293,7 +289,6 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 		return err
 	}
 
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["HASH"] = git.commitHash
@@ -355,7 +350,6 @@ func buildBinaries(buildFlags string) error {
 	if err != nil {
 		return err
 	}
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
@@ -391,7 +385,6 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 	if err != nil {
 		return err
 	}
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["HASH"] = git.commitHash
@@ -425,7 +418,6 @@ func (Build) Openvpn(ctx context.Context) error {
 		return err
 	}
 
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 
 	return sh.RunWith(env, "ci/openvpn/build.sh")
@@ -440,7 +432,6 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 		return err
 	}
 
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = dockerWorkDir
 	return RunDocker(
 		ctx,
@@ -452,15 +443,19 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 
 // Rust dependencies for the host architecture
 func (Build) Rust(ctx context.Context) error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	env := map[string]string{
-		// build only for host architecture by default
-		"ARCHS_RUST": build.Default.GOARCH,
-		"WORKDIR":    cwd,
-	}
+
+	env["WORKDIR"] = cwd
+	env["ARCHS_RUST"] = env["ARCH"]
+
 	return sh.RunWith(env, "ci/build_rust.sh")
 }
 
@@ -472,7 +467,7 @@ func (Build) RustDocker(ctx context.Context) error {
 	}
 
 	// build only for host architecture by default
-	env["ARCHS_RUST"] = build.Default.GOARCH
+	env["ARCHS_RUST"] = env["ARCH"]
 	env["WORKDIR"] = dockerWorkDir
 	if err := RunDocker(
 		ctx,
@@ -517,7 +512,6 @@ func (Test) Go() error {
 		return err
 	}
 	env["WORKDIR"] = cwd
-	env["ARCH"] = build.Default.GOARCH
 
 	return sh.RunWithV(env, "ci/test.sh")
 }
@@ -533,7 +527,6 @@ func (Test) CgoDocker(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 
@@ -558,7 +551,6 @@ func (Test) Hardening(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = dockerWorkDir
 
 	return RunDocker(
@@ -672,7 +664,6 @@ func qa(_ context.Context, testGroup, testPattern string) error {
 		return err
 	}
 
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 
 	return sh.RunWith(env, "ci/test_deb.sh", testGroup, testPattern)
@@ -694,7 +685,6 @@ func qaSnap(_ context.Context, testGroup, testPattern string) error {
 		return err
 	}
 
-	env["ARCH"] = build.Default.GOARCH
 	env["WORKDIR"] = cwd
 
 	return sh.RunWith(env, "ci/test_snap.sh", testGroup, testPattern)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"go/build"
 	"log"
 	"os"
 	"strings"
@@ -17,6 +18,9 @@ func getEnv() (map[string]string, error) {
 	env, err := readVarsFromFile(".env")
 	if err != nil {
 		return nil, err
+	}
+	if env["ARCH"] == "" {
+		env["ARCH"] = build.Default.GOARCH
 	}
 	return env, nil
 }
