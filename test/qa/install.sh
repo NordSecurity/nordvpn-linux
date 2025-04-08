@@ -164,9 +164,9 @@ install_yum() {
         ${SUDO} rpm -v --import "${PUB_KEY}"
         ${SUDO} yum-config-manager --add-repo "${repo}"
         if [ ! -z "${APP_VERSION}" ]; then
-            ${SUDO} yum "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+            ${SUDO} yum ${install_opts} install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
         else
-            ${SUDO} yum "${install_opts}" install --nogpgcheck "${PACKAGE}"
+            ${SUDO} yum ${install_opts} install --nogpgcheck "${PACKAGE}"
         fi
         exit
     fi
@@ -187,9 +187,9 @@ install_dnf() {
         ${SUDO} rpm -v --import "${PUB_KEY}"
         ${SUDO} dnf5 config-manager addrepo --id="nordvpn" --set=baseurl="${repo}" --set=enabled=1 --overwrite
         if [ ! -z "${APP_VERSION}" ]; then
-            ${SUDO} dnf5 "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+            ${SUDO} dnf5 ${install_opts} install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
         else
-            ${SUDO} dnf5 "${install_opts}" install --nogpgcheck "${PACKAGE}"
+            ${SUDO} dnf5 ${install_opts} install --nogpgcheck "${PACKAGE}"
         fi
         exit
     fi
@@ -203,11 +203,12 @@ install_dnf() {
         fi
 
         ${SUDO} rpm -v --import "${PUB_KEY}"
+        ${SUDO} dnf ${install_opts} install 'dnf-command(config-manager)'
         ${SUDO} dnf config-manager --add-repo "${repo}"
         if [ ! -z "${APP_VERSION}" ]; then
-            ${SUDO} dnf "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+            ${SUDO} dnf ${install_opts} install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
         else
-            ${SUDO} dnf "${install_opts}" install --nogpgcheck "${PACKAGE}"
+            ${SUDO} dnf ${install_opts} install --nogpgcheck "${PACKAGE}"
         fi
         exit
     fi
@@ -230,7 +231,7 @@ install_zypper() {
         else 
             ${SUDO} zypper addrepo -g -f "${REPO_URL_RPM}/${ARCH}" nordvpn
         fi
-        ${SUDO} zypper $install_opts install -y "${PACKAGE}"
+        ${SUDO} zypper ${install_opts} install -y "${PACKAGE}"
         exit
     fi
 }
