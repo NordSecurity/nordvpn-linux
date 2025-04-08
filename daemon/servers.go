@@ -605,11 +605,11 @@ func GetServerParameters(serverTag string, groupTag string, countries core.Count
 
 	country := countries[countryIndex]
 	parameters.Country = country.Name
+	parameters.CountryCode = country.Code
 	if cityIndex == -1 {
 		return parameters
 	}
 
 	parameters.City = country.Cities[cityIndex].Name
-	parameters.CountryCode = country.Code
 	return parameters
 }

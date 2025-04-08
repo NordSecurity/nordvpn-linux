@@ -50,11 +50,12 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Uptime:          calculateUptime(status.StartTime),
 		VirtualLocation: status.VirtualLocation,
 		Parameters: &pb.ConnectionParameters{
-			Source:     requestedConnParams.ConnectionSource,
-			Country:    requestedConnParams.Country,
-			City:       requestedConnParams.City,
-			Group:      requestedConnParams.Group,
-			ServerName: requestedConnParams.ServerName,
+			Source:      requestedConnParams.ConnectionSource,
+			Country:     requestedConnParams.Country,
+			City:        requestedConnParams.City,
+			Group:       requestedConnParams.Group,
+			ServerName:  requestedConnParams.ServerName,
+			CountryCode: requestedConnParams.CountryCode,
 		},
 
 		PostQuantum: status.PostQuantum,

@@ -290,6 +290,7 @@ func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (Connec
 		Name:            netw.lastServer.Name,
 		Hostname:        netw.lastServer.Hostname,
 		Country:         netw.lastServer.Country,
+		CountryCode:     netw.lastServer.CountryCode,
 		City:            netw.lastServer.City,
 		VirtualLocation: netw.lastServer.VirtualLocation,
 		PostQuantum:     isActive && actualConnParams.PostQuantum,
