@@ -1316,34 +1316,35 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 
 func parseConnectArgs(ctx *cli.Context) (string, string, error) {
 	args := ctx.Args()
+	if args.Len() == 0 {
+		return "", "", nil
+	}
 
-	// generate server tag from given args
 	var serverTag string
 	var serverGroup string
-	if args.Len() > 0 {
-		groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
-		argsSlice := args.Slice()
-		if hasGroupFlag {
-			if groupName == "" {
-				return "", "", argsCountError(ctx)
-			}
 
-			// remove group flags, as they were already processed
-			argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
-				return arg == "--"+flagGroup || arg == groupName
-			})
-
-			serverGroup = groupName
+	groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+	argsSlice := args.Slice()
+	if hasGroupFlag {
+		if groupName == "" {
+			return "", "", argsCountError(ctx)
 		}
 
-		// remove any arguments that successfully parse as an on/off switch
+		// remove group flags, as they were already processed
 		argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
-			_, boolFromStringErr := nstrings.BoolFromString(arg)
-			return boolFromStringErr == nil
+			return arg == "--"+flagGroup || arg == groupName
 		})
-		serverTag = strings.Join(argsSlice, " ")
-		serverTag = strings.ToLower(serverTag)
+
+		serverGroup = groupName
 	}
+
+	// remove any arguments that successfully parse as an on/off switch
+	argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
+		_, boolFromStringErr := nstrings.BoolFromString(arg)
+		return boolFromStringErr == nil
+	})
+	serverTag = strings.Join(argsSlice, " ")
+	serverTag = strings.ToLower(serverTag)
 
 	return serverTag, serverGroup, nil
 }
