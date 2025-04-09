@@ -67,6 +67,10 @@ And to run a single test:
 
 `mage test:qaDocker fileshare test_accept`
 
+It is possible to run multiple categories with one command by adding all the categories as the first argument in a string seperated by spaces:
+
+`mage test:qaDocker "fileshare meshnet" test`
+
 To run tests without rebuilding everything each time use `test:qaDockerFast` instead of
 `test:qaDocker`.
 
