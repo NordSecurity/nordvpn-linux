@@ -73,12 +73,21 @@ func (s *StatePublisher) NotifyDisconnect(e events.DataDisconnect) error {
 	return nil
 }
 
+func (s *StatePublisher) notifyLoginLogout(status events.TypeEventStatus, eventType pb.LoginEventType) {
+	// skip any event types other than sucess, as subscribers(GUI) do not care about them
+	if status != events.StatusSuccess {
+		return
+	}
+
+	s.notify(eventType)
+}
+
 func (s *StatePublisher) NotifyLogin(e events.DataAuthorization) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	log.Println(internal.DebugPrefix, "notifying about login event")
-	s.notify(pb.LoginEventType_LOGIN)
+	s.notifyLoginLogout(e.EventStatus, pb.LoginEventType_LOGIN)
 
 	return nil
 }
@@ -88,8 +97,7 @@ func (s *StatePublisher) NotifyLogout(e events.DataAuthorization) error {
 	defer s.mu.Unlock()
 
 	log.Println(internal.DebugPrefix, "notifying about logout event")
-	s.notify(pb.LoginEventType_LOGOUT)
-
+	s.notifyLoginLogout(e.EventStatus, pb.LoginEventType_LOGOUT)
 	return nil
 }
 
