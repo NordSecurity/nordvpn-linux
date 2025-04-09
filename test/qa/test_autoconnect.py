@@ -104,6 +104,13 @@ def test_autoconnect_to_ovpn_group(tech, proto, obfuscated, group):
     autoconnect_base_test(group)
 
 
+@pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
+def test_autoconnect_to_obfuscated_group(tech, proto, obfuscated, group):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    autoconnect_base_test(group)
+
+
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_autoconnect_virtual_country(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
