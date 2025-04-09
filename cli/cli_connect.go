@@ -64,10 +64,10 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		return fmt.Errorf("flag provided but not defined: %s", args.Get(1))
 	}
 
-	// generate server tag from given args
-	serverTag := strings.Join(args.Slice(), " ")
-	serverTag = strings.ToLower(serverTag)
-	serverGroup := ctx.String(flagGroup)
+	serverTag, serverGroup, err := parseConnectArgs(ctx)
+	if err != nil {
+		return formatError(err)
+	}
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
