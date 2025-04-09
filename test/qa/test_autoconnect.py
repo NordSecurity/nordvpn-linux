@@ -28,11 +28,9 @@ def autoconnect_base_test(group):
     print(output)
     assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output
 
-    with lib.ErrorDefer(sh.nordvpn.disconnect):
-        daemon.restart()
-        daemon.wait_for_autoconnect()
-        with lib.ErrorDefer(sh.nordvpn.set.autoconnect.off):
-            assert network.is_connected()
+    daemon.restart()
+    daemon.wait_for_autoconnect()
+    assert network.is_connected()
 
     output = sh_no_tty.nordvpn.set.autoconnect.off()
     print(output)
