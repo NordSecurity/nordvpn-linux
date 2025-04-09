@@ -699,9 +699,8 @@ func publishConnectEvent(publisher *vpn.Events,
 	connectType events.TypeEventStatus,
 	server vpn.ServerData,
 	state state) {
-	name := server.Name
 	if !state.IsVPN {
-		name = state.Nickname
+		server.Name = state.Nickname
 	}
 
 	transferStats, err := tunnel.GetTransferRates(nordlynx.InterfaceName)
@@ -709,20 +708,13 @@ func publishConnectEvent(publisher *vpn.Events,
 		log.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
 	}
 
-	publisher.Connected.Publish(events.DataConnect{
-		EventStatus:         connectType,
-		TargetServerIP:      server.IP.String(),
-		TargetServerCountry: server.Country,
-		TargetServerCity:    server.City,
-		TargetServerDomain:  server.Hostname,
-		TargetServerName:    name,
-		IsMeshnetPeer:       !state.IsVPN,
-		IsVirtualLocation:   server.VirtualLocation,
-		Technology:          config.Technology_NORDLYNX,
-		Protocol:            config.Protocol_UDP,
-		Upload:              transferStats.Tx,
-		Download:            transferStats.Rx,
-	})
+	event := vpn.GetDataConnectEvent(config.Technology_NORDLYNX,
+		config.Protocol_UDP,
+		connectType,
+		server,
+		transferStats,
+		!state.IsVPN)
+	publisher.Connected.Publish(event)
 }
 
 func publishDisconnectedEvent(publisher *vpn.Events, byUser bool) {

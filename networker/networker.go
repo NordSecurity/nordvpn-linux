@@ -93,6 +93,8 @@ type ConnectionStatus struct {
 	Hostname string
 	// Country of the other end of the connection
 	Country string
+	// CountryCode of the other end of the connection
+	CountryCode string
 	// City of the other end of the connection
 	City string
 	// StartTime time of the connection start
@@ -101,6 +103,8 @@ type ConnectionStatus struct {
 	VirtualLocation bool
 	// Is post quantum on
 	PostQuantum bool
+	// Is obfuscation on
+	Obfuscated bool
 	// Currently set tunnel name
 	TunnelName string
 }
@@ -286,9 +290,11 @@ func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (Connec
 		Name:            netw.lastServer.Name,
 		Hostname:        netw.lastServer.Hostname,
 		Country:         netw.lastServer.Country,
+		CountryCode:     netw.lastServer.CountryCode,
 		City:            netw.lastServer.City,
 		VirtualLocation: netw.lastServer.VirtualLocation,
 		PostQuantum:     isActive && actualConnParams.PostQuantum,
+		Obfuscated:      isActive && actualConnParams.Obfuscated,
 		TunnelName:      tunnelName,
 	}
 
