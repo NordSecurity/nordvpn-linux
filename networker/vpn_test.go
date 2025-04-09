@@ -9,6 +9,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -62,6 +63,7 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 				nil,
 				0,
 				false,
+				state.NewConnectionInfo(),
 			)
 			// injecting VPN implementation without calling netw.Start
 			netw.vpnet = test.vpn
@@ -178,6 +180,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 		&workingExitNode{},
 		0,
 		false,
+		state.NewConnectionInfo(),
 	)
 
 	nic1Name := "nic1"

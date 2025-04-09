@@ -359,6 +359,7 @@ func main() {
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
 
+	connectionInfo := state.NewConnectionInfo()
 	netw := networker.NewCombined(
 		vpn,
 		mesh,
@@ -396,6 +397,7 @@ func main() {
 			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
+		connectionInfo,
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)
@@ -483,6 +485,8 @@ func main() {
 		statePublisher,
 		sharedContext,
 		rcConfig,
+		internalVpnEvents,
+		connectionInfo,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
