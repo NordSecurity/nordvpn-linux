@@ -23,9 +23,6 @@ def teardown_function(function):  # noqa: ARG001
     sh.nordvpn.set.defaults()
 
 
-MSG_SET_DEFAULTS = "Settings were successfully restored to defaults."
-
-
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 def test_obfuscate_nonobfucated(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -98,7 +95,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
 
@@ -138,7 +135,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
 
     sh.nordvpn.logout("--persist-token")
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
 
@@ -173,7 +170,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert "Status: Disconnected" in sh.nordvpn.status()
 
@@ -199,7 +196,7 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert network.is_available()
@@ -221,7 +218,7 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
 
     assert dns.is_set_for(nameserver)
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     login.login_as("default")
 

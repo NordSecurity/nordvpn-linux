@@ -26,6 +26,7 @@ class Settings:
         key = key.lower()
         return self.settings.get(key, "")
 
+MSG_SET_DEFAULTS = "Settings were successfully restored to defaults."
 
 # Used for test parametrization, when the same test has to be run with different Post-quantum VPN alias.
 PQ_ALIAS = [
