@@ -361,3 +361,22 @@ def test_set_technology_openvpn_post_quantum_enabled():
         sh.nordvpn.set.technology("OPENVPN")
 
     assert "This setting is not compatible with post-quantum encryption. To use OpenVPN, disable post-quantum encryption first." in str(ex.value)
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_autoconnect_enable_twice(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    for _ in range(2):
+        output = sh.nordvpn.set.autoconnect.on()
+        print(output)
+        assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_autoconnect_disable_twice(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    output = sh.nordvpn.set.autoconnect.off()
+    print(str(output))
+    assert settings.MSG_AUTOCONNECT_DISABLE_FAIL in str(output)

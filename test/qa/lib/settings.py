@@ -3,6 +3,9 @@ import random
 import sh
 
 
+MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect is set to 'enabled' successfully."
+MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
+
 class Settings:
     def __init__(self):
         output = sh.nordvpn("settings").strip(" \r-\n")
