@@ -121,7 +121,7 @@ def test_autoconnect_virtual_country_disabled(tech, proto, obfuscated):
     sh.nordvpn.set("virtual-location", "off")
 
     with pytest.raises(sh.ErrorReturnCode_1) as _:
-        output = sh.nordvpn.set.autoconnect.on(country).stdoud.decode("utf-8")
+        output = sh_no_tty.nordvpn.set.autoconnect.on(country)
         assert "Please enable virtual location access to connect to this server." in output
 
 
