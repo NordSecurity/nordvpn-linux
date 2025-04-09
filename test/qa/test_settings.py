@@ -4,7 +4,6 @@ import sh
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
 
-
 def setup_module(module):  # noqa: ARG001
     daemon.start()
 

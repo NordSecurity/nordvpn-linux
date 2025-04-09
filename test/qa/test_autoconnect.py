@@ -127,6 +127,20 @@ def test_autoconnect_virtual_country_disabled(tech, proto, obfuscated):
         assert "Please enable virtual location access to connect to this server." in output
 
 
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_autoconnect_to_unavailable_groups(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    unavailable_groups = daemon.get_unavailable_groups()
+
+    for group in unavailable_groups:
+        with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            sh_no_tty.nordvpn.set.autoconnect.on(group)
+
+        print(ex.value)
+        assert lib.is_connect_unsuccessful(ex)
+
+
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_is_on(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
