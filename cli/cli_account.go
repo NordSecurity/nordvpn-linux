@@ -37,7 +37,7 @@ func displayServiceStatus(serviceName string, serviceStatus int64, expiry string
 }
 
 func (c *cmd) Account(ctx *cli.Context) error {
-	payload, err := c.client.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
+	payload, err := c.client.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
 	if err != nil {
 		return formatError(err)
 	}
