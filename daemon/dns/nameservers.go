@@ -1,6 +1,10 @@
 package dns
 
-import "net"
+import (
+	"math/rand"
+	"net"
+	"time"
+)
 
 const (
 	primaryNameserver4                       = "103.86.96.100"
@@ -19,6 +23,7 @@ type Getter interface {
 }
 
 type NameServers struct {
+	// List of TP servers fetched from cloud
 	servers []string
 }
 
@@ -40,7 +45,7 @@ func (n *NameServers) Get(isThreatProtectionLite bool, ipv6 bool) []string {
 		}
 
 		nameservers = append(nameservers, v4Nameservers...)
-		return nameservers
+		return shuffleNameservers(nameservers)
 	}
 
 	var nameservers []string
@@ -49,9 +54,18 @@ func (n *NameServers) Get(isThreatProtectionLite bool, ipv6 bool) []string {
 	}
 
 	nameservers = append(nameservers, primaryNameserver4, secondaryNameserver4)
-	return nameservers
+	return shuffleNameservers(nameservers)
 }
 
 func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
 	return net.LookupIP(host)
+}
+
+func shuffleNameservers(nameservers []string) []string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	r.Shuffle(len(nameservers), func(i, j int) {
+		nameservers[i], nameservers[j] = nameservers[j], nameservers[i]
+	})
+	return nameservers
 }
