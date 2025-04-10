@@ -440,7 +440,7 @@ def test_connect_to_dedicated_ip(tech, proto, obfuscated, group):
 
     server_info = server.get_hostname_by(group_id=group)
 
-    if "uk1656" in server_info.hostname:
+    if server.get_dedicated_ip() in server_info.hostname:
         connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
     else:
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
