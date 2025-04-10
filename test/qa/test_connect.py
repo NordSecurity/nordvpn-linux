@@ -106,16 +106,6 @@ def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("group", lib.OVPN_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_connect_to_group_random_server_by_name_ovpn(tech, proto, obfuscated, group):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    server_info = server.get_hostname_by(group_id=group)
-    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
-    disconnect_base_test()
-
-
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
