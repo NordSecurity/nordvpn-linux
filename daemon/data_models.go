@@ -159,7 +159,7 @@ func (data *VersionData) save() error {
 }
 
 func isAccountCacheValid(added time.Time) bool {
-	return !time.Now().After(added.Add(accountDataValidityPeriod))
+	return time.Now().Before(added.Add(accountDataValidityPeriod))
 }
 
 type cacheValidityFunc func(time.Time) bool
