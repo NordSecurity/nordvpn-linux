@@ -74,7 +74,7 @@ func (s *StatePublisher) NotifyDisconnect(e events.DataDisconnect) error {
 }
 
 func (s *StatePublisher) notifyLoginLogout(status events.TypeEventStatus, eventType pb.LoginEventType) {
-	// skip any event types other than sucess, as subscribers(GUI) do not care about them
+	// skip any event types other than success, as subscribers(GUI) do not care about them
 	if status != events.StatusSuccess {
 		return
 	}
