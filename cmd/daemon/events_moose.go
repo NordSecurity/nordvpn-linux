@@ -23,11 +23,7 @@ func newAnalytics(
 	subAPI core.SubscriptionAPI,
 	ver, env, id string) *moose.Subscriber {
 	_ = os.Setenv("MOOSE_LOG_FILE", "Stdout")
-	logLevel := "error"
-	if !internal.IsProdEnv(env) {
-		logLevel = "debug"
-	}
-	_ = os.Setenv("MOOSE_LOG", logLevel)
+
 	sub := &moose.Subscriber{
 		EventsDbPath:    eventsDbPath,
 		Config:          fs,
