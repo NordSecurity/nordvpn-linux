@@ -44,8 +44,7 @@ type FilesystemHandle interface {
 	WriteFile(string, []byte, fs.FileMode) error
 }
 
-type StdFilesystemHandle struct {
-}
+type StdFilesystemHandle struct{}
 
 func (StdFilesystemHandle) FileExists(location string) bool {
 	return internal.FileExists(location)
@@ -85,7 +84,8 @@ type FilesystemConfigManager struct {
 func NewFilesystemConfigManager(location, vault, salt string,
 	machineIDGetter MachineIDGetter,
 	fsHandle FilesystemHandle,
-	configPublisher ConfigPublisher) *FilesystemConfigManager {
+	configPublisher ConfigPublisher,
+) *FilesystemConfigManager {
 	return &FilesystemConfigManager{
 		location:        location,
 		vault:           vault,
@@ -147,16 +147,32 @@ func (f *FilesystemConfigManager) save(c Config) error {
 //
 // Thread-safe.
 func (f *FilesystemConfigManager) Reset(preserveLoginData bool) error {
+	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
+	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
+	// published. The assumption here is that publisher is protected with it's own lock.
+	var c Config
+	var err error
+	defer func() {
+		if err == nil && f.configPublisher != nil {
+			f.configPublisher.Publish(&c)
+		}
+	}()
+
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if preserveLoginData {
 		var cfg Config
-		if err := f.load(&cfg); err != nil {
+		err = f.load(&cfg)
+		if err != nil {
 			return fmt.Errorf("loading old config: %w", err)
 		}
-		return f.save(*newConfigWithLoginData(f.machineIDGetter, cfg))
+		c = *newConfigWithLoginData(f.machineIDGetter, cfg)
+		err = f.save(c)
+		return err
 	}
-	return f.save(*newConfig(f.machineIDGetter))
+	c = *newConfig(f.machineIDGetter)
+	err = f.save(c)
+	return err
 }
 
 // Load encrypted config from the filesystem.
