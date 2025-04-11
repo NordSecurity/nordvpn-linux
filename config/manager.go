@@ -35,7 +35,7 @@ type Manager interface {
 	// Load config into a given struct.
 	Load(*Config) error
 	// Reset config to default values.
-	Reset(persevereLoginData bool) error
+	Reset(preserveLoginData bool) error
 }
 
 type FilesystemHandle interface {
