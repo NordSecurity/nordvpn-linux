@@ -198,6 +198,15 @@ func (s *Subscriber) Init() error {
 	return nil
 }
 
+func (s *Subscriber) Stop() error {
+	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
+		return fmt.Errorf("stopping moose worker: %w", err)
+	}
+	if err := s.response(worker.Stop()); err != nil {
+	}
+	return s.response(moose.MooseNordvpnappDeinit())
+}
+
 func (s *Subscriber) NotifyKillswitch(data bool) error {
 	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesKillSwitchEnabledValue(data))
 }

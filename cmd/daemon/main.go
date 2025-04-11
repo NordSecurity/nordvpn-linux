@@ -625,4 +625,7 @@ func main() {
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
+	if err := analytics.Stop(); err != nil {
+		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
+	}
 }
