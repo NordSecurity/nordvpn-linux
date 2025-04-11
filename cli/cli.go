@@ -158,6 +158,10 @@ func NewApp(version, environment, hash, salt string,
 				Name:   "defaults",
 				Usage:  SetDefaultsUsageText,
 				Action: cmd.SetDefaults,
+				Flags: []cli.Flag{&cli.BoolFlag{
+					Name:  flagNoLogout,
+					Usage: NoLogoutUsageText,
+				}},
 			},
 			{
 				Name:        "dns",

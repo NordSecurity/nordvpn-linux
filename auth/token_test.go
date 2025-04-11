@@ -71,7 +71,7 @@ func (cm *memoryConfigManager) Load(c *config.Config) error {
 	return nil
 }
 
-func (cm *memoryConfigManager) Reset() error {
+func (cm *memoryConfigManager) Reset(bool) error {
 	cm.c = config.Config{}
 	return nil
 }

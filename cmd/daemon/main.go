@@ -142,7 +142,7 @@ func main() {
 	var cfg config.Config
 	if err := fsystem.Load(&cfg); err != nil {
 		log.Println(err)
-		if err := fsystem.Reset(); err != nil {
+		if err := fsystem.Reset(false); err != nil {
 			log.Fatalln(err)
 		}
 	}

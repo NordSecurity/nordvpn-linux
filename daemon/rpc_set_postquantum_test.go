@@ -28,7 +28,7 @@ func (m *mockPostquantumVpnConfigManager) Load(c *config.Config) error {
 	return nil
 }
 
-func (*mockPostquantumVpnConfigManager) Reset() error {
+func (*mockPostquantumVpnConfigManager) Reset(bool) error {
 	return nil
 }
 
