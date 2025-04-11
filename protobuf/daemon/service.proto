@@ -23,7 +23,7 @@ import "servers.proto";
 import "nordwhisper_enabled.proto";
 
 service Daemon {
-  rpc AccountInfo(Empty) returns (AccountResponse);
+  rpc AccountInfo(AccountRequest) returns (AccountResponse);
   rpc TokenInfo(Empty) returns (TokenInfoResponse);
   rpc Cities(CitiesRequest) returns (ServerGroupsList);
   rpc Connect(ConnectRequest) returns (stream Payload);

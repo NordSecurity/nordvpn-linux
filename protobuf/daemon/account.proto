@@ -21,3 +21,7 @@ message AccountResponse {
   repeated DedidcatedIPService dedicated_ip_services = 7;
   TriState mfa_status = 8;
 }
+
+message AccountRequest {
+  bool full = 1;
+}

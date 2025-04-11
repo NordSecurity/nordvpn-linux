@@ -6,10 +6,14 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/coreos/go-semver/semver"
 )
+
+const accountDataValidityPeriod = time.Minute
 
 type AppData struct {
 }
@@ -152,4 +156,46 @@ func (data *VersionData) save() error {
 		return err
 	}
 	return nil
+}
+
+func isAccountCacheValid(added time.Time) bool {
+	return time.Now().Before(added.Add(accountDataValidityPeriod))
+}
+
+type cacheValidityFunc func(time.Time) bool
+
+type AccountData struct {
+	accountData            *pb.AccountResponse
+	isSet                  bool
+	updatedAt              time.Time
+	checkCacheValidityFunc cacheValidityFunc
+}
+
+func NewAccountData() AccountData {
+	return AccountData{checkCacheValidityFunc: isAccountCacheValid}
+}
+
+func (a *AccountData) set(data *pb.AccountResponse) {
+	dataCopy := proto.Clone(data).(*pb.AccountResponse)
+	a.accountData = dataCopy
+	a.isSet = true
+	a.updatedAt = time.Now()
+}
+
+func (a *AccountData) unset() {
+	a.isSet = false
+	a.accountData = &pb.AccountResponse{}
+}
+
+func (a *AccountData) get(respectValidityPeriod bool) (*pb.AccountResponse, bool) {
+	if !a.isSet {
+		return nil, false
+	}
+
+	if respectValidityPeriod && !a.checkCacheValidityFunc(a.updatedAt) {
+		a.isSet = false
+		return nil, false
+	}
+
+	return proto.Clone(a.accountData).(*pb.AccountResponse), a.isSet
 }
