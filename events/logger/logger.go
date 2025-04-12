@@ -111,8 +111,8 @@ func dataRequestAPIToString(
 			data.Request.Proto,
 			data.Request.Method,
 			data.Request.URL,
-			headers,
-			string(reqBody),
+			headers, // Ensure headers are properly obfuscated
+			"(request body hidden)", // Do not log request body
 		))
 	}
 	if data.Error != nil {
@@ -142,6 +142,11 @@ func processHeaders(hide bool, headers http.Header) http.Header {
 	headers = headers.Clone()
 	sensitiveHeaders := []string{
 		"Authorization",
+		"Cookie",
+		"Set-Cookie",
+		"Proxy-Authorization",
+		"WWW-Authenticate",
+		"Proxy-Authenticate",
 	}
 	for _, header := range sensitiveHeaders {
 		if headers.Get(header) != "" {
