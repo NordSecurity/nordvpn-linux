@@ -21,6 +21,7 @@ import "purchase.proto";
 import "state.proto";
 import "servers.proto";
 import "nordwhisper_enabled.proto";
+import "defaults.proto";
 
 service Daemon {
   rpc AccountInfo(Empty) returns (AccountResponse);
@@ -40,7 +41,7 @@ service Daemon {
   rpc RateConnection(RateRequest) returns (Payload);
   rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
   rpc SetThreatProtectionLite(SetThreatProtectionLiteRequest) returns (SetThreatProtectionLiteResponse);
-  rpc SetDefaults(Empty) returns (Payload);
+  rpc SetDefaults(SetDefaultsRequest) returns (Payload);
   rpc SetDNS(SetDNSRequest) returns (SetDNSResponse);
   rpc SetFirewall(SetGenericRequest) returns (Payload);
   rpc SetFirewallMark(SetUint32Request) returns (Payload);
