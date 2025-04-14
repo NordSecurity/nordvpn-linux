@@ -67,6 +67,7 @@ const (
 	// for blocking incoming connections into local networks
 	blockLanRule               = "-block-lan-rule-"
 	meshnetFirewallRuleComment = "nordvpn-meshnet"
+	denyPrivateDNSRule         = "deny-private-dns"
 )
 
 // Networker configures networking for connections.
@@ -1571,12 +1572,12 @@ func (netw *Combined) allowFileshareAll() error {
 
 func (netw *Combined) undenyDNS() error {
 	if !netw.dnsDenied {
-		log.Println(internal.DebugPrefix, "attemtp to deny dns when it was not previously denied")
+		log.Println(internal.DebugPrefix, "attemtp to undeny dns when it was not previously denied")
 		return nil
 	}
 
-	if err := netw.fw.Delete([]string{"deny-private-dns"}); err != nil {
-		return err
+	if err := netw.fw.Delete([]string{denyPrivateDNSRule}); err != nil {
+		return fmt.Errorf("deleting deny-private-dns dns rule: %w", err)
 	}
 
 	netw.dnsDenied = false
@@ -1591,7 +1592,7 @@ func (netw *Combined) denyDNS() error {
 	}
 
 	rules := []firewall.Rule{{
-		Name:           "deny-private-dns",
+		Name:           denyPrivateDNSRule,
 		Direction:      firewall.Outbound,
 		Protocols:      []string{"udp", "tcp"},
 		Ports:          []int{53},
