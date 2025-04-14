@@ -615,6 +615,8 @@ func (netw *Combined) stop() error {
 
 	netw.switchToNextVpn()
 	netw.isVpnSet = false
+	netw.lastCreds = vpn.Credentials{}
+
 	return nil
 }
 

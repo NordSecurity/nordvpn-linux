@@ -70,7 +70,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DaemonClient interface {
-	AccountInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AccountResponse, error)
+	AccountInfo(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*AccountResponse, error)
 	TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error)
 	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
@@ -125,7 +125,7 @@ func NewDaemonClient(cc grpc.ClientConnInterface) DaemonClient {
 	return &daemonClient{cc}
 }
 
-func (c *daemonClient) AccountInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AccountResponse, error) {
+func (c *daemonClient) AccountInfo(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*AccountResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AccountResponse)
 	err := c.cc.Invoke(ctx, Daemon_AccountInfo_FullMethodName, in, out, cOpts...)
@@ -606,7 +606,7 @@ func (c *daemonClient) GetDaemonApiVersion(ctx context.Context, in *GetDaemonApi
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility.
 type DaemonServer interface {
-	AccountInfo(context.Context, *Empty) (*AccountResponse, error)
+	AccountInfo(context.Context, *AccountRequest) (*AccountResponse, error)
 	TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error)
 	Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error)
 	Connect(*ConnectRequest, grpc.ServerStreamingServer[Payload]) error
@@ -661,7 +661,7 @@ type DaemonServer interface {
 // pointer dereference when methods are called.
 type UnimplementedDaemonServer struct{}
 
-func (UnimplementedDaemonServer) AccountInfo(context.Context, *Empty) (*AccountResponse, error) {
+func (UnimplementedDaemonServer) AccountInfo(context.Context, *AccountRequest) (*AccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AccountInfo not implemented")
 }
 func (UnimplementedDaemonServer) TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error) {
@@ -818,7 +818,7 @@ func RegisterDaemonServer(s grpc.ServiceRegistrar, srv DaemonServer) {
 }
 
 func _Daemon_AccountInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(AccountRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -830,7 +830,7 @@ func _Daemon_AccountInfo_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: Daemon_AccountInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).AccountInfo(ctx, req.(*Empty))
+		return srv.(DaemonServer).AccountInfo(ctx, req.(*AccountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
