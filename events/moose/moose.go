@@ -19,6 +19,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/url"
 	"os/exec"
 	"slices"
@@ -572,6 +573,11 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	connectionTime := int32(time.Since(s.connectionStartTime).Seconds())
 	if connectionTime <= 0 {
 		connectionTime = -1
+	}
+	// On some arm64 devices connection time is being reported as maxInt32. This may
+	// potentially happen during convertion from float64 to int32.
+	if connectionTime == math.MaxInt32 {
+		connectionTime = int32(time.Now().Unix() - s.connectionStartTime.Unix())
 	}
 
 	if s.connectionToMeshnetPeer {
