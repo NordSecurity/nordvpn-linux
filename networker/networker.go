@@ -155,6 +155,7 @@ type Combined struct {
 	interfaces           mapset.Set[string]
 	isFilesharePermitted bool
 	connectionInfo       *state.ConnectionInfo
+	dnsDenied            bool
 }
 
 // NewCombined returns a ready made version of
@@ -1569,26 +1570,28 @@ func (netw *Combined) allowFileshareAll() error {
 }
 
 func (netw *Combined) undenyDNS() error {
-	ruleName := "deny-private-dns"
-
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex == -1 {
+	if !netw.dnsDenied {
+		log.Println(internal.DebugPrefix, "attemtp to deny dns when it was not previously denied")
 		return nil
 	}
 
-	if err := netw.fw.Delete([]string{ruleName}); err != nil {
+	if err := netw.fw.Delete([]string{"deny-private-dns"}); err != nil {
 		return err
 	}
-	netw.rules = slices.Delete(netw.rules, ruleIndex, ruleIndex+1)
+
+	netw.dnsDenied = false
 
 	return nil
 }
 
 func (netw *Combined) denyDNS() error {
-	ruleName := "deny-private-dns"
+	if netw.dnsDenied {
+		log.Println(internal.DebugPrefix, "attemtp to deny dns when it was already denied")
+		return nil
+	}
+
 	rules := []firewall.Rule{{
-		Name:           ruleName,
+		Name:           "deny-private-dns",
 		Direction:      firewall.Outbound,
 		Protocols:      []string{"udp", "tcp"},
 		Ports:          []int{53},
@@ -1602,17 +1605,12 @@ func (netw *Combined) denyDNS() error {
 		Allow: false,
 	}}
 
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex != -1 {
-		return nil
-	}
-
 	if err := netw.fw.Add(rules); err != nil {
 		return fmt.Errorf("adding deny-private-dns rule to firewall: %w", err)
 	}
 
-	netw.rules = append(netw.rules, ruleName)
+	netw.dnsDenied = true
+
 	return nil
 }
 
