@@ -2,7 +2,7 @@ run:
   timeout: 2m
 
 linters:
-  disable-all: true
+  default: none
   enable:
   - bodyclose
   #- depguard
