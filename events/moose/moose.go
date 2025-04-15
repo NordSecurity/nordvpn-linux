@@ -19,7 +19,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"math"
 	"net/url"
 	"os/exec"
 	"slices"
@@ -105,11 +104,11 @@ func (s *Subscriber) Init() error {
 		return fmt.Errorf("initializing event domain: %w", err)
 	}
 
-	timeBetweenEvents, _ := time.ParseDuration("100ms")
-	timeBetweenBatchesOfEvents, _ := time.ParseDuration("1s")
+	timeBetweenEvents := 100 * time.Millisecond
+	timeBetweenBatchesOfEvents := time.Second
 	if internal.IsProdEnv(s.Environment) {
-		timeBetweenEvents, _ = time.ParseDuration("2s")
-		timeBetweenBatchesOfEvents, _ = time.ParseDuration("2h")
+		timeBetweenEvents = 2 * time.Second
+		timeBetweenBatchesOfEvents = 2 * time.Hour
 	}
 	sendEvents := true
 	var batchSize uint32 = 20
@@ -197,6 +196,15 @@ func (s *Subscriber) Init() error {
 		return fmt.Errorf("setting moose technology: %w", err)
 	}
 	return nil
+}
+
+func (s *Subscriber) Stop() error {
+	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
+		return fmt.Errorf("stopping moose worker: %w", err)
+	}
+	if err := s.response(worker.Stop()); err != nil {
+	}
+	return s.response(moose.MooseNordvpnappDeinit())
 }
 
 func (s *Subscriber) NotifyKillswitch(data bool) error {
@@ -403,7 +411,12 @@ func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
 func (s *Subscriber) NotifySelfRemoved(any) error { return nil }
 
 func (s *Subscriber) NotifyThreatProtectionLite(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data))
+	if s.connectionStartTime.IsZero() {
+		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data)); err != nil {
+			return err
+		}
+	}
+	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue(data))
 }
 
 func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
@@ -461,8 +474,10 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		eventStatus = moose.NordvpnappEventStatusAttempt
 	case events.StatusSuccess:
 		eventStatus = moose.NordvpnappEventStatusSuccess
+		s.mux.Lock()
 		s.connectionStartTime = time.Now()
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
+		s.mux.Unlock()
 	case events.StatusFailure:
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	case events.StatusCanceled:
@@ -553,6 +568,9 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			return err
 		}
 		if data.EventStatus == events.StatusSuccess {
+			if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data.ThreatProtectionLite)); err != nil {
+				return err
+			}
 			return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(true))
 		}
 		return nil
@@ -570,19 +588,17 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	}
 
+	s.mux.Lock()
 	connectionTime := int32(time.Since(s.connectionStartTime).Seconds())
 	if connectionTime <= 0 {
 		connectionTime = -1
 	}
-	// On some arm64 devices connection time is being reported as maxInt32. This may
-	// potentially happen during convertion from float64 to int32.
-	if connectionTime == math.MaxInt32 {
-		connectionTime = int32(time.Now().Unix() - s.connectionStartTime.Unix())
-	}
+	s.connectionStartTime = time.Time{}
+	s.mux.Unlock()
 
 	if s.connectionToMeshnetPeer {
 		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
-			-1,
+			int32(data.Duration.Milliseconds()),
 			eventStatus,
 			moose.NordvpnappEventTriggerUser,
 			connectionTime, // seconds
@@ -641,8 +657,10 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		}
 
 		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
-			-1,
+			int32(data.Duration.Milliseconds()),
 			eventStatus,
+			// App should never disconnect from VPN by itself. It has to receive either
+			// user command (logout, set defaults) or bet shut down.
 			moose.NordvpnappEventTriggerUser,
 			moose.NordvpnappVpnConnectionTriggerNone, // pass proper trigger
 			moose.NordvpnappVpnConnectionPresetNone,
@@ -659,9 +677,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			threatProtection,
 			connectionTime, // seconds
 			"",
-			-1,
+			errToExceptionCode(data.Error),
 			nil,
 		)); err != nil {
+			return err
+		}
+		if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue()); err != nil {
 			return err
 		}
 	}
@@ -943,4 +964,18 @@ func DrainStart(dbPath string) uint32 {
 		20,
 		false,
 	)
+}
+
+func errToExceptionCode(err error) int32 {
+	if err == nil {
+		return -1
+	}
+	errStr := err.Error()
+	switch {
+	case strings.Contains(errStr, "config"):
+		return 1
+	case strings.Contains(errStr, "networker"):
+		return 2
+	}
+	return -1
 }
