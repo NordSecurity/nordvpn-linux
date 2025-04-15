@@ -128,6 +128,9 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 func generateKeys(server core.Server) []string {
 	loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
 	country := server.Country()
+	if country == nil {
+		return []string{}
+	}
 	loweredCountryName := internal.SnakeCase(country.Name)
 	loweredCountryCode := internal.SnakeCase(country.Code)
 	loweredCityName := internal.SnakeCase(country.City.Name)

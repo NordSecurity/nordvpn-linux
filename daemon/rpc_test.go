@@ -353,6 +353,10 @@ func serversList() core.Servers {
 
 	servers := core.Servers{
 		core.Server{
+			ID:   0,
+			Name: "",
+		},
+		core.Server{
 			ID:           1,
 			Name:         "France #1",
 			Hostname:     "fr1.nordvpn.com",
