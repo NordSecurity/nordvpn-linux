@@ -3,7 +3,6 @@ package tunnel
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/netip"
 	"os"
@@ -49,7 +48,7 @@ func GetTransferRates(nicName string) (Statistics, error) {
 // probably needs a better name, though
 type T interface {
 	Interface() net.Interface
-	IPs() []netip.Addr
+	IP() (netip.Addr, bool)
 	TransferRates() (Statistics, error)
 }
 
@@ -59,19 +58,20 @@ type Tunnel struct {
 	// so that we could see changes to the interface at real time
 	// but this would need testing first to check if it actually works
 	iface  net.Interface
-	ips    []netip.Addr
 	prefix netip.Prefix
 }
 
-func New(iface net.Interface, ips []netip.Addr, prefix netip.Prefix) *Tunnel {
-	return &Tunnel{iface: iface, ips: ips, prefix: prefix}
+func New(iface net.Interface, prefix netip.Prefix) *Tunnel {
+	return &Tunnel{iface: iface, prefix: prefix}
 }
 
 // Interface returns the underlying network interface.
 func (t *Tunnel) Interface() net.Interface { return t.iface }
 
-// IPs attached to the tunnel.
-func (t *Tunnel) IPs() []netip.Addr { return t.ips }
+// IP attached to the tunnel.
+func (t *Tunnel) IP() (netip.Addr, bool) {
+	return t.prefix.Addr(), t.prefix.IsValid()
+}
 
 // Statistics defines what information can be collected about the tunnel
 type Statistics struct {
@@ -79,12 +79,13 @@ type Statistics struct {
 	Rx uint64
 }
 
-// Find a tunnel with given IPs.
-func Find(ipAddrs ...netip.Addr) (Tunnel, error) {
+// Find a tunnel with given IP.
+func Find(ip netip.Addr) (Tunnel, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return Tunnel{}, err
 	}
+
 	for _, iface := range ifaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
@@ -97,21 +98,12 @@ func Find(ipAddrs ...netip.Addr) (Tunnel, error) {
 				continue
 			}
 
-			var ips []netip.Addr
-			for _, ip := range ipAddrs {
-				if subnet.Contains(ip) {
-					ips = append(ips, ip)
-				}
+			if subnet.Contains(ip) {
+				return Tunnel{
+					iface:  iface,
+					prefix: subnet,
+				}, nil
 			}
-
-			if len(ips) == 0 {
-				continue
-			}
-
-			return Tunnel{
-				iface: iface,
-				ips:   ips,
-			}, nil
 		}
 	}
 	return Tunnel{}, ErrNotFound
@@ -131,20 +123,7 @@ func addDelAddr(cmd string, ifaceName string, addr string) ([]byte, error) {
 }
 
 func (t *Tunnel) cmdAddrs(cmd string) error {
-	if len(t.ips) > 0 {
-		for _, ip := range t.ips {
-			mask := 10 // unify with other platforms
-			if ip.BitLen() > 32 {
-				mask = ip.BitLen() // ipv6
-			}
-			out, err := addDelAddr(cmd, t.iface.Name, fmt.Sprintf("%s/%d", ip.String(), mask))
-			if err != nil {
-				return fmt.Errorf("%s IP address to interface: %s : %w", cmd, string(out), err)
-			}
-		}
-	} else {
-		addDelAddr(cmd, t.iface.Name, t.prefix.String())
-	}
+	addDelAddr(cmd, t.iface.Name, t.prefix.String())
 	return nil
 }
 

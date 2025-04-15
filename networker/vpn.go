@@ -141,8 +141,10 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 			}()
 		}
 
-		if netw.vpnet.Tun() != nil && len(netw.vpnet.Tun().IPs()) > 0 {
-			ip = netw.vpnet.Tun().IPs()[0]
+		if netw.vpnet.Tun() != nil {
+			if tunnelIP, ok := netw.vpnet.Tun().IP(); ok {
+				ip = tunnelIP
+			}
 		}
 
 		if vpnErr = netw.stop(); vpnErr != nil {
@@ -152,8 +154,10 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	}
 
 	if isMeshStarted {
-		if netw.mesh.Tun() != nil && len(netw.mesh.Tun().IPs()) > 0 {
-			ip = netw.mesh.Tun().IPs()[0]
+		if netw.mesh.Tun() != nil {
+			if meshIP, ok := netw.mesh.Tun().IP(); ok {
+				ip = meshIP
+			}
 		}
 
 		// Don't return on mesh errors yet, still have to try to start VPN

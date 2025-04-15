@@ -138,7 +138,8 @@ type Libtelio struct {
 	mu                sync.Mutex
 }
 
-var defaultIP = netip.MustParseAddr("10.5.0.2")
+// defaultPrefix is the default address used by NordLynx when meshnet is not enabled
+var defaultPrefix = netip.MustParsePrefix("10.5.0.2/32")
 
 func handleTelioConfig(eventPath, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) (*teliogo.Features, error) {
 	cfgString, err := vpnLibCfg.GetConfig(version)
@@ -243,7 +244,7 @@ func (l *Libtelio) Start(
 
 	log.Println(internal.InfoPrefix, "libtelio version:", teliogo.GetVersionTag())
 
-	if err = l.openTunnel(defaultIP, creds.NordLynxPrivateKey); err != nil {
+	if err = l.openTunnel(defaultPrefix, creds.NordLynxPrivateKey); err != nil {
 		return fmt.Errorf("opening the tunnel: %w", err)
 	}
 
@@ -396,7 +397,9 @@ func (l *Libtelio) Enable(ip netip.Addr, privateKey string) (err error) {
 		}
 	}()
 
-	if err = l.openTunnel(ip, privateKey); err != nil {
+	prefix := netip.PrefixFrom(ip, 10)
+
+	if err = l.openTunnel(prefix, privateKey); err != nil {
 		return fmt.Errorf("opening the tunnel: %w", err)
 	}
 
@@ -408,7 +411,7 @@ func (l *Libtelio) Enable(ip netip.Addr, privateKey string) (err error) {
 			return fmt.Errorf("disconnecting from libtelio: %w", err)
 		}
 
-		if err = l.updateTunnel(privateKey, ip); err != nil {
+		if err = l.updateTunnel(privateKey, prefix); err != nil {
 			return fmt.Errorf("updating the tunnel: %w", err)
 		}
 
@@ -553,7 +556,7 @@ func nodeStateToString(state teliogo.NodeState) string {
 }
 
 // openTunnel if not opened already
-func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
+func (l *Libtelio) openTunnel(prefix netip.Prefix, privateKey string) (err error) {
 	if l.tun != nil {
 		return nil
 	}
@@ -597,7 +600,7 @@ func (l *Libtelio) openTunnel(ip netip.Addr, privateKey string) (err error) {
 		return fmt.Errorf("retrieving the interface: %w", err)
 	}
 
-	tun := tunnel.New(*iface, []netip.Addr{ip}, netip.Prefix{})
+	tun := tunnel.New(*iface, prefix)
 
 	err = tun.AddAddrs()
 	if err != nil {
@@ -629,11 +632,11 @@ func (l *Libtelio) closeTunnel() error {
 	return nil
 }
 
-func (l *Libtelio) updateTunnel(privateKey string, ip netip.Addr) error {
+func (l *Libtelio) updateTunnel(privateKey string, prefix netip.Prefix) error {
 	if err := l.tun.DelAddrs(); err != nil {
 		return fmt.Errorf("deleting interface addrs: %w", err)
 	}
-	tun := tunnel.New(l.tun.Interface(), []netip.Addr{ip}, netip.Prefix{})
+	tun := tunnel.New(l.tun.Interface(), prefix)
 	if err := tun.AddAddrs(); err != nil {
 		return fmt.Errorf("adding interface addrs: %w", err)
 	}

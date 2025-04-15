@@ -11,8 +11,8 @@ import (
 type WorkingT struct{}
 
 func (WorkingT) Interface() net.Interface { return En0Interface }
-func (WorkingT) IPs() []netip.Addr {
-	return []netip.Addr{netip.MustParseAddr("127.0.0.1")}
+func (WorkingT) IP() (netip.Addr, bool) {
+	return netip.MustParseAddr("127.0.0.1"), true
 }
 
 func (WorkingT) TransferRates() (tunnel.Statistics, error) {
