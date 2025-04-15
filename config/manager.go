@@ -35,7 +35,7 @@ type Manager interface {
 	// Load config into a given struct.
 	Load(*Config) error
 	// Reset config to default values.
-	Reset(persevereLoginData bool) error
+	Reset(preserveLoginData bool) error
 }
 
 type FilesystemHandle interface {
@@ -146,33 +146,30 @@ func (f *FilesystemConfigManager) save(c Config) error {
 // Reset config values to defaults.
 //
 // Thread-safe.
-func (f *FilesystemConfigManager) Reset(preserveLoginData bool) error {
+func (f *FilesystemConfigManager) Reset(preserveLoginData bool) (retErr error) {
 	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
 	var c Config
-	var err error
 	defer func() {
-		if err == nil && f.configPublisher != nil {
+		if retErr == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(&c)
 		}
 	}()
 
-	f.mu.Lock()
-	defer f.mu.Unlock()
 	if preserveLoginData {
 		var cfg Config
-		err = f.load(&cfg)
-		if err != nil {
-			return fmt.Errorf("loading old config: %w", err)
+		retErr = f.load(&cfg)
+		if retErr != nil {
+			return fmt.Errorf("loading old config: %w", retErr)
 		}
 		c = *newConfigWithLoginData(f.machineIDGetter, cfg)
-		err = f.save(c)
-		return err
+		retErr = f.save(c)
+		return
 	}
 	c = *newConfig(f.machineIDGetter)
-	err = f.save(c)
-	return err
+	retErr = f.save(c)
+	return
 }
 
 // Load encrypted config from the filesystem.
