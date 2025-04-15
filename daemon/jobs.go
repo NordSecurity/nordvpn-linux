@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	heartBeatPeriod = time.Hour * 24
+	heartBeatPeriod = time.Hour * 6
 )
 
 func (r *RPC) StartJobs(
@@ -58,7 +58,7 @@ func (r *RPC) StartJobs(
 		log.Println(internal.WarningPrefix, "job version schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(heartBeatPeriod), gocron.NewTask(JobHeartBeat(heartBeatPublisher, heartBeatPeriod)), gocron.WithName("job heart beat")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(heartBeatPeriod), gocron.NewTask(JobHeartBeat(r.ac, heartBeatPublisher, heartBeatPeriod)), gocron.WithName("job heart beat")); err != nil {
 		log.Println(internal.WarningPrefix, "job heart beat schedule error:", err)
 	}
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(7*24*time.Hour), gocron.NewTask(func() {
@@ -267,7 +267,9 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 		}
 
 		server := autoconnectServer{}
-		err = r.Connect(&pb.ConnectRequest{ServerTag: cfg.AutoConnectData.ServerTag}, &server)
+		err = r.connectWithContext(&pb.ConnectRequest{ServerTag: cfg.AutoConnectData.ServerTag},
+			&server,
+			pb.ConnectionSource_AUTO)
 		if connectErrorCheck(err) && server.err == nil {
 			log.Println(internal.InfoPrefix, "auto-connect success")
 			r.RequestedConnParams.Set(pb.ConnectionSource_AUTO,

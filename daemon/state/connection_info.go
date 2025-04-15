@@ -25,6 +25,8 @@ type ConnectionStatus struct {
 	Hostname string
 	// Country of the other end of the connection
 	Country string
+	// CountryCode of the other end of the connection
+	CountryCode string
 	// City of the other end of the connection
 	City string
 	// StartTime time of the connection start
@@ -33,6 +35,8 @@ type ConnectionStatus struct {
 	VirtualLocation bool
 	// Is post quantum on
 	PostQuantum bool
+	// Is obfuscation on
+	Obfuscated bool
 	// Currently set tunnel name
 	TunnelName string
 }

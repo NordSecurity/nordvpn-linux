@@ -28,6 +28,10 @@ func isDedicatedIP(server core.Server) bool {
 
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
+	return r.connectWithContext(in, srv, pb.ConnectionSource_MANUAL)
+}
+
+func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
 	var err error
 	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
 	// stopped on `ctx.Done()` only if it happens while `netw.Start()` is being executed.
@@ -39,7 +43,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
 	// and have context bypassed to them.
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
-		err = r.connect(ctx, in, srv)
+		err = r.connect(ctx, in, srv, source)
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
 	}
@@ -50,6 +54,7 @@ func (r *RPC) connect(
 	ctx context.Context,
 	in *pb.ConnectRequest,
 	srv pb.Daemon_ConnectServer,
+	source pb.ConnectionSource,
 ) (retErr error) {
 	if !r.ac.IsLoggedIn() {
 		return internal.ErrNotLoggedIn
@@ -79,6 +84,14 @@ func (r *RPC) connect(
 		TargetServerPick:           "",
 		TargetServerPickerResponse: "",
 	}
+
+	defer func() {
+		// reset status to disconnected in case of any error
+		if retErr != nil {
+			r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
+			r.vpnEvents.Connected.Publish(event)
+		}
+	}()
 
 	// Set status to "Connecting" and send the connection attempt event without details
 	// to inform clients about connection attempt as soon as possible so they can react.
@@ -171,6 +184,7 @@ func (r *RPC) connect(
 		Hostname:          server.Hostname,
 		Name:              server.Name,
 		Country:           country.Name,
+		CountryCode:       country.Code,
 		City:              city,
 		Protocol:          cfg.AutoConnectData.Protocol,
 		NordLynxPublicKey: server.NordLynxPublicKey,
@@ -191,7 +205,7 @@ func (r *RPC) connect(
 	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
-	r.RequestedConnParams.Set(pb.ConnectionSource_MANUAL, parameters)
+	r.RequestedConnParams.Set(source, parameters)
 
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)

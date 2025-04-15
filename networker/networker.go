@@ -223,8 +223,8 @@ func (netw *Combined) Start(
 	return netw.start(ctx, creds, serverData, allowlist, nameservers)
 }
 
-// updateConnectionStatus builds the [ConnectionStatus] and updates it in [Combined].
-// In case of an error, empty [ConnectionStatus] is set.
+// updateConnectionStatus builds the [state.ConnectionStatus] and updates it in [Combined].
+// In case of an error, empty [state.ConnectionStatus] is set.
 //
 // Not thread safe.
 func (netw *Combined) updateConnectionStatusAfterStart() {
@@ -250,9 +250,11 @@ func (netw *Combined) updateConnectionStatusAfterStart() {
 		Name:            netw.lastServer.Name,
 		Hostname:        netw.lastServer.Hostname,
 		Country:         netw.lastServer.Country,
+		CountryCode:     netw.lastServer.CountryCode,
 		City:            netw.lastServer.City,
 		VirtualLocation: netw.lastServer.VirtualLocation,
 		PostQuantum:     isActive && actualConnParams.PostQuantum,
+		Obfuscated:      isActive && actualConnParams.Obfuscated,
 		TunnelName:      tunnelName,
 		StartTime:       netw.startTime,
 	}

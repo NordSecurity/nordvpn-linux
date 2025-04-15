@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 
-category="${1}"
+categories="${1}"
 pattern="${2:-}"
 
 export COVERDIR="covdatafiles"
@@ -34,14 +34,17 @@ mkdir -p "${WORKDIR}"/dist/logs
 cd "${WORKDIR}"/test/qa || exit
 
 args=()
-
-case "${category}" in
-    "all")
-        ;;
-    *)
-	args+=("test_${category}.py")
-        ;;
-esac
+read -ra array <<< "$categories"
+for category in "${array[@]}"
+do 
+    case "${category}" in
+        "all")
+            ;;
+        *)
+        args+=("test_${category}.py")
+            ;;
+    esac
+done
 
 case "${pattern}" in
     "")

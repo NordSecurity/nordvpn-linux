@@ -106,16 +106,6 @@ def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("group", lib.OVPN_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_connect_to_group_random_server_by_name_ovpn(tech, proto, obfuscated, group):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    server_info = server.get_hostname_by(group_id=group)
-    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
-    disconnect_base_test()
-
-
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
@@ -441,3 +431,23 @@ def test_connect_to_post_quantum_server(tech, proto, obfuscated):
     assert "preshared key" in sh.sudo.wg.show()
 
     disconnect_base_test()
+
+
+@pytest.mark.parametrize("group", lib.OVPN_GROUPS)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
+def test_connect_to_dedicated_ip(tech, proto, obfuscated, group):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    server_info = server.get_hostname_by(group_id=group)
+
+    if server.get_dedicated_ip() in server_info.hostname:
+        connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+    else:
+        with pytest.raises(sh.ErrorReturnCode_1) as ex:
+            connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
+        print(ex.value)
+        assert "This server isn't currently included in your dedicated IP subscription." in str(ex.value)
+
+    assert network.is_disconnected()
+    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()

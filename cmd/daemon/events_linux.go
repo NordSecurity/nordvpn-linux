@@ -41,6 +41,7 @@ func (*dummyAnalytics) NotifyDeviceLocation(core.Insights) error      { return n
 func (*dummyAnalytics) NotifyLANDiscovery(bool) error                 { return nil }
 func (*dummyAnalytics) NotifyVirtualLocation(bool) error              { return nil }
 func (*dummyAnalytics) NotifyPostquantumVpn(bool) error               { return nil }
+func (*dummyAnalytics) Stop() error                                   { return nil }
 
 func newAnalytics(
 	eventsDbPath string,

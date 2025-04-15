@@ -4,7 +4,6 @@ import sh
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
 
-
 def setup_module(module):  # noqa: ARG001
     daemon.start()
 
@@ -24,15 +23,6 @@ def teardown_function(function):  # noqa: ARG001
     sh.nordvpn.set.defaults()
 
 
-autoconnect_on_parameters = [
-    ("lt16", "on", "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."),
-    ("uk2188", "off", "Turn on obfuscation to connect to obfuscated servers.")
-]
-
-
-MSG_SET_DEFAULTS = "Settings were successfully restored to defaults."
-
-
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 def test_obfuscate_nonobfucated(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -41,54 +31,6 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.obfuscate("on")
         assert "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation." in str(ex.value)
-
-
-@pytest.mark.skip(reason="LVPN-2119")
-@pytest.mark.parametrize(("server", "obfuscated", "error_message"), autoconnect_on_parameters)
-def test_autoconnect_on_server_obfuscation_mismatch(server, obfuscated, error_message):
-    lib.set_technology_and_protocol("openvpn", "tcp", obfuscated)
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.autoconnect.on(server)
-
-    print(ex.value)
-    assert error_message in str(ex.value)
-
-    assert "Auto-connect: disabled" in sh.nordvpn.settings()
-
-    daemon.restart()
-    assert network.is_disconnected()
-
-    sh.nordvpn.set.autoconnect.off()
-
-
-set_obfuscate_parameters = [
-    ("off", "lt16", "We couldn’t turn on obfuscation because the current auto-connect server doesn’t support it. Set a different server for auto-connect to use obfuscation."),
-    ("on", "uk2188", "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. Set a different server for auto-connect, then turn off obfuscation.")
-]
-
-
-@pytest.mark.skip(reason="LVPN-2119")
-@pytest.mark.parametrize(("obfuscate_initial_state", "server", "error_message"), set_obfuscate_parameters)
-def test_set_obfuscate_server_obfuscation_mismatch(obfuscate_initial_state, server, error_message):
-    lib.set_technology_and_protocol("openvpn", "tcp", obfuscate_initial_state)
-
-    output = sh.nordvpn.set.autoconnect.on(server)
-    print(output)
-
-    obfuscate_expected_state = "disabled"
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        if obfuscate_initial_state == "off":
-            sh.nordvpn.set.obfuscate.on()
-        else:
-            obfuscate_expected_state = "enabled"
-            sh.nordvpn.set.obfuscate.off()
-
-    assert f"Obfuscate: {obfuscate_expected_state}" in sh.nordvpn.settings()
-
-    assert error_message in str(ex.value)
-
-    sh.nordvpn.set.autoconnect.off()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1)
@@ -153,7 +95,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
 
@@ -193,7 +135,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
 
     sh.nordvpn.logout("--persist-token")
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
 
@@ -228,7 +170,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert "Status: Disconnected" in sh.nordvpn.status()
 
@@ -254,7 +196,7 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert network.is_available()
@@ -276,7 +218,7 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
 
     assert dns.is_set_for(nameserver)
 
-    assert MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     login.login_as("default")
 
@@ -361,3 +303,22 @@ def test_set_technology_openvpn_post_quantum_enabled():
         sh.nordvpn.set.technology("OPENVPN")
 
     assert "This setting is not compatible with post-quantum encryption. To use OpenVPN, disable post-quantum encryption first." in str(ex.value)
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_autoconnect_enable_twice(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    for _ in range(2):
+        output = sh.nordvpn.set.autoconnect.on()
+        print(output)
+        assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_autoconnect_disable_twice(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    output = sh.nordvpn.set.autoconnect.off()
+    print(str(output))
+    assert settings.MSG_AUTOCONNECT_DISABLE_FAIL in str(output)

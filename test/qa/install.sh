@@ -30,12 +30,13 @@ NOSECRT=false
 # -b <url>          The base URL of the public key and repository locations.
 # -k <path>         Path to the public key for the repository.
 # -d <path|file>    Repository location for debian packages.
+# -w <repo>         Repository release.
 # -v <version>      Debian package version to use.
 # -r <path|file>    Repository location for rpm packages.
 # -p <package>      Package name to install: <nordvpn> or <nordvpn-release>
 # -a <arch>         Architecture e.g. "noarch" for nordvpn-release rpm case
 # -s                Do not do security checks: allow not signed repo and packages.
-while getopts 'nb:k:d:r:v:p:a:s' opt
+while getopts 'nb:k:d:r:v:p:a:sw:' opt
 do
     case $opt in
         n) ASSUME_YES=true ;;
@@ -43,6 +44,7 @@ do
         k) KEY_PATH=$OPTARG ;;
         d) REPO_PATH_DEB=$OPTARG ;;
         r) REPO_PATH_RPM=$OPTARG ;;
+        w) RELEASE=$OPTARG ;;
         v) APP_VERSION=$OPTARG ;;
         p) PACKAGE=$OPTARG ;;
         a) ARCH=$OPTARG ;;
@@ -138,7 +140,7 @@ install_apt() {
             exit 1
         fi
 
-        echo "deb ${REPO_URL_DEB} ${RELEASE}" | ${SUDO} tee /etc/apt/sources.list.d/nordvpn-app.list
+        echo "deb ${REPO_URL_DEB} ${RELEASE}" | ${SUDO} tee /etc/apt/sources.list.d/nordvpn.list
         ${SUDO} apt-get ${install_opts} ${update_secrt} update
         if [ ! -z "$APP_VERSION" ]; then
             ${SUDO} apt-get ${install_opts} ${install_secrt} install "${PACKAGE}"="$APP_VERSION"
@@ -164,9 +166,9 @@ install_yum() {
         ${SUDO} rpm -v --import "${PUB_KEY}"
         ${SUDO} yum-config-manager --add-repo "${repo}"
         if [ ! -z "${APP_VERSION}" ]; then
-            ${SUDO} yum "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+            ${SUDO} yum ${install_opts} install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
         else
-            ${SUDO} yum "${install_opts}" install --nogpgcheck "${PACKAGE}"
+            ${SUDO} yum ${install_opts} install --nogpgcheck "${PACKAGE}"
         fi
         exit
     fi
@@ -187,9 +189,9 @@ install_dnf() {
         ${SUDO} rpm -v --import "${PUB_KEY}"
         ${SUDO} dnf5 config-manager addrepo --id="nordvpn" --set=baseurl="${repo}" --set=enabled=1 --overwrite
         if [ ! -z "${APP_VERSION}" ]; then
-            ${SUDO} dnf5 "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+            ${SUDO} dnf5 ${install_opts} install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
         else
-            ${SUDO} dnf5 "${install_opts}" install --nogpgcheck "${PACKAGE}"
+            ${SUDO} dnf5 ${install_opts} install --nogpgcheck "${PACKAGE}"
         fi
         exit
     fi
@@ -203,11 +205,12 @@ install_dnf() {
         fi
 
         ${SUDO} rpm -v --import "${PUB_KEY}"
+        ${SUDO} dnf ${install_opts} install 'dnf-command(config-manager)'
         ${SUDO} dnf config-manager --add-repo "${repo}"
         if [ ! -z "${APP_VERSION}" ]; then
-            ${SUDO} dnf "${install_opts}" install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
+            ${SUDO} dnf ${install_opts} install --nogpgcheck "${PACKAGE}"-"${APP_VERSION}"."${ARCH}"
         else
-            ${SUDO} dnf "${install_opts}" install --nogpgcheck "${PACKAGE}"
+            ${SUDO} dnf ${install_opts} install --nogpgcheck "${PACKAGE}"
         fi
         exit
     fi
@@ -230,7 +233,7 @@ install_zypper() {
         else 
             ${SUDO} zypper addrepo -g -f "${REPO_URL_RPM}/${ARCH}" nordvpn
         fi
-        ${SUDO} zypper $install_opts install -y "${PACKAGE}"
+        ${SUDO} zypper ${install_opts} install -y "${PACKAGE}"
         exit
     fi
 }
