@@ -352,6 +352,7 @@ func serversList() core.Servers {
 	}
 
 	servers := core.Servers{
+		core.Server{}, // invalid entry - should be removed by cleanup logic
 		core.Server{
 			ID:           1,
 			Name:         "France #1",
@@ -392,6 +393,7 @@ func serversList() core.Servers {
 		},
 		core.Server{
 			ID:        3,
+			Name:      "Lithuania #16",
 			Hostname:  "lt16.nordvpn.com",
 			CreatedAt: "2006-01-02 15:04:05",
 			Station:   "127.0.0.1",
@@ -415,6 +417,7 @@ func serversList() core.Servers {
 		},
 		core.Server{
 			ID:           4,
+			Name:         "Lithuania #15",
 			Hostname:     "lt15.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
@@ -434,6 +437,7 @@ func serversList() core.Servers {
 		},
 		core.Server{
 			ID:           5,
+			Name:         "Lithuania #17",
 			Hostname:     "lt17.nordvpn.com",
 			Status:       core.Online,
 			Technologies: obfuscatedTechnologies,
@@ -452,6 +456,7 @@ func serversList() core.Servers {
 		},
 		core.Server{
 			ID:           7,
+			Name:         "Lithuania #7",
 			Hostname:     "lt7.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
@@ -470,6 +475,7 @@ func serversList() core.Servers {
 		},
 		core.Server{
 			ID:           8,
+			Name:         "Lithuania #8",
 			Hostname:     "lt8.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
@@ -488,6 +494,7 @@ func serversList() core.Servers {
 		},
 		core.Server{
 			ID:           9,
+			Name:         "Lithuania #9",
 			Hostname:     "lt9.nordvpn.com",
 			Status:       core.Offline,
 			Technologies: technologies,
@@ -506,6 +513,7 @@ func serversList() core.Servers {
 		},
 		core.Server{
 			ID:           10,
+			Name:         "Algeria #1",
 			Hostname:     "dz1.nordvpn.com",
 			Status:       core.Online,
 			Technologies: technologies,
@@ -525,6 +533,7 @@ func serversList() core.Servers {
 		},
 		core.Server{
 			ID:           11,
+			Name:         "Algeria #2",
 			Hostname:     "dz2.nordvpn.com",
 			Status:       core.Online,
 			Technologies: obfuscatedTechnologies,
@@ -542,6 +551,9 @@ func serversList() core.Servers {
 			Groups: groups,
 		},
 	}
+
+	// eliminate invalid servers from the list
+	core.CleanServersList(&servers)
 
 	for i, server := range servers {
 		servers[i].Keys = generateKeys(server)

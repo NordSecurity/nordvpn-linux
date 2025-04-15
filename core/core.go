@@ -330,6 +330,10 @@ func (api *DefaultAPI) Servers() (Servers, http.Header, error) {
 	if err = json.NewDecoder(resp.Body).Decode(&ret); err != nil {
 		return nil, nil, err
 	}
+
+	// eliminate invalid servers from the list
+	CleanServersList(&ret)
+
 	return ret, resp.Header, nil
 }
 

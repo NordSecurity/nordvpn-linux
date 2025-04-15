@@ -496,6 +496,28 @@ func (s *Server) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// IsValid returns true if server record is valid.
+func (s *Server) IsValid() bool {
+	return s.Name != "" &&
+		s.Station != "" &&
+		s.Hostname != "" &&
+		len(s.Technologies) > 0 &&
+		len(s.Locations) > 0
+}
+
+// CleanServersList allocation-free list cleaning
+func CleanServersList(servers *Servers) {
+	s := *servers
+	idx := 0
+	for _, item := range s {
+		if item.IsValid() {
+			s[idx] = item
+			idx++
+		}
+	}
+	*servers = s[:idx]
+}
+
 type Groups []Group
 
 type Group struct {
