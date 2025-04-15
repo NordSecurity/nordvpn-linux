@@ -14,7 +14,7 @@ jobs:
         with:
           go-version: '1.22.2'
           cache: false # golangci-lint caching doesn't seem to get along with setup-go caching
-      - uses: golangci/golangci-lint-action@639cd343e1d3b897ff35927a75193d57cfcba299 # v3.6.0
+      - uses: golangci/golangci-lint-action@v7
         with:
           version: v1.55.2
           args: -v --config=.golangci-lint.yml
