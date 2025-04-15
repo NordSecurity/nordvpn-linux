@@ -51,7 +51,6 @@ Example: nordvpn set %s on`
 	SetThreatProtectionLiteAlreadySet = "Threat Protection Lite already set to %s."
 
 	SetDefaultsSuccess = "Settings were successfully restored to defaults."
-	NoLogoutUsageText  = ""
 
 	FirewallRequired = "Firewall must be enabled to use '%s'."
 
