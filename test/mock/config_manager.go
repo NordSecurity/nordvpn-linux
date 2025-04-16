@@ -44,7 +44,7 @@ func (m *ConfigManager) Load(c *config.Config) error {
 	return nil
 }
 
-func (m *ConfigManager) Reset() error {
+func (m *ConfigManager) Reset(bool) error {
 	*m.Cfg = config.Config{}
 	return nil
 }
