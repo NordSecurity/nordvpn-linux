@@ -1318,15 +1318,14 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 // commands. It also accomodates for the issue in github.com/urfave/cli/v2 where a flag is only interpreted as a flag if
 // it's the first agument to the command.
 func parseConnectArgs(ctx *cli.Context) (string, string, error) {
+	groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
 	args := ctx.Args()
-	if args.Len() == 0 {
+	if !args.Present() && !hasGroupFlag {
 		return "", "", nil
 	}
 
 	var serverTag string
 	var serverGroup string
-
-	groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
 	argsSlice := args.Slice()
 	if hasGroupFlag {
 		if groupName == "" {
@@ -1348,6 +1347,7 @@ func parseConnectArgs(ctx *cli.Context) (string, string, error) {
 	})
 	serverTag = strings.Join(argsSlice, " ")
 	serverTag = strings.ToLower(serverTag)
+	serverGroup = strings.ToLower(serverGroup)
 
 	return serverTag, serverGroup, nil
 }
