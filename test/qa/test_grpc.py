@@ -25,7 +25,8 @@ def teardown_function():  # noqa: ARG001
 
 def test_multiple_state_subscribers():
     expected_states = [
-        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
+        status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED,
     ]
 
@@ -47,7 +48,8 @@ def test_multiple_state_subscribers():
 
 def test_tunnel_update_notifications_before_and_after_connect():
     expected_states = [
-        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
+        status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED,
         status_pb2.ConnectionState.DISCONNECTED,
     ]
@@ -83,7 +85,11 @@ def test_is_virtual_location_is_true_for_virtual_location():
 
 
 def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
-    expected_states = [status_pb2.ConnectionState.CONNECTED]
+    expected_states = [
+        status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
+        status_pb2.ConnectionState.CONNECTING, # update with selected location
+        status_pb2.ConnectionState.CONNECTED
+    ]
 
     result = []
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
@@ -100,7 +106,11 @@ def test_is_virtual_is_false_for_non_virtual_location():
 
 
 def test_manual_connection_source_is_present_in_response():
-    expected_states = [status_pb2.ConnectionState.CONNECTED]
+    expected_states = [
+        status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
+        status_pb2.ConnectionState.CONNECTING, # update with selected location
+        status_pb2.ConnectionState.CONNECTED
+    ]
 
     result = []
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes(

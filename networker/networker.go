@@ -12,7 +12,6 @@ import (
 	"net/netip"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -24,6 +23,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -34,17 +34,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type TimeUpdateOption int
-
-const (
-	UpdateStartTime TimeUpdateOption = iota
-	ResetStartTime
-)
-
 var (
 	// errNilVPN is returned when there is a bug in program logic.
-	errNilVPN      = errors.New("vpn is nil")
-	errInactiveVPN = errors.New("not connected to vpn")
+	errNilVPN = errors.New("vpn is nil")
 	// ErrMeshNotActive to report to outside
 	ErrMeshNotActive = errors.New("mesh is not active")
 	// ErrMeshPeerIsNotRoutable to report to outside
@@ -77,38 +69,6 @@ const (
 	meshnetFirewallRuleComment = "nordvpn-meshnet"
 )
 
-// ConnectionStatus of a currently active connection
-type ConnectionStatus struct {
-	// State of the vpn. OpenVPN specific.
-	State pb.ConnectionState
-	// Technology, which may or may not match what's in the config
-	Technology config.Technology
-	// Protocol, which may or may not match what's in the config
-	Protocol config.Protocol
-	// IP of the other end of the connection
-	IP netip.Addr
-	// Name in a human readable form of the other end of the connection
-	Name string
-	// Hostname of the other end of the connection
-	Hostname string
-	// Country of the other end of the connection
-	Country string
-	// CountryCode of the other end of the connection
-	CountryCode string
-	// City of the other end of the connection
-	City string
-	// StartTime time of the connection start
-	StartTime *time.Time
-	// Is virtual server
-	VirtualLocation bool
-	// Is post quantum on
-	PostQuantum bool
-	// Is obfuscation on
-	Obfuscated bool
-	// Currently set tunnel name
-	TunnelName string
-}
-
 // Networker configures networking for connections.
 //
 // At the moment interface is designed to support only VPN connections.
@@ -129,7 +89,7 @@ type Networker interface {
 	UnsetDNS() error
 	IsVPNActive() bool
 	IsMeshnetActive() bool
-	ConnectionStatus() ConnectionStatus
+	ConnectionStatus() state.ConnectionStatus
 	EnableFirewall() error
 	DisableFirewall() error
 	EnableRouting()
@@ -194,7 +154,7 @@ type Combined struct {
 	// This is used at network changes to know when a new interface was inserted
 	interfaces           mapset.Set[string]
 	isFilesharePermitted bool
-	connectionStatus     atomic.Value
+	connectionInfo       *state.ConnectionInfo
 }
 
 // NewCombined returns a ready made version of
@@ -217,8 +177,9 @@ func NewCombined(
 	exitNode forwarder.ForwardChainManager,
 	fwmark uint32,
 	lanDiscovery bool,
+	connectionInfo *state.ConnectionInfo,
 ) *Combined {
-	combined := &Combined{
+	return &Combined{
 		vpnet:              vpnet,
 		mesh:               mesh,
 		gateway:            gateway,
@@ -239,37 +200,36 @@ func NewCombined(
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
 		interfaces:         mapset.NewSet[string](),
+		connectionInfo:     connectionInfo,
 	}
-	combined.connectionStatus.Store(ConnectionStatus{})
-	return combined
 }
 
-// updateConnectionStatus builds the [ConnectionStatus] and updates it in [Combined].
-// In case of an error, empty [ConnectionStatus] is set.
-//
-// Not thread safe.
-func (netw *Combined) updateConnectionStatus(timeOption TimeUpdateOption) {
-	status, err := netw.buildConnectionStatus(timeOption)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to update connection status:", err)
-		status = ConnectionStatus{}
+// Start VPN connection after preparing the network.
+func (netw *Combined) Start(
+	ctx context.Context,
+	creds vpn.Credentials,
+	serverData vpn.ServerData,
+	allowlist config.Allowlist,
+	nameservers config.DNS,
+	enableLocalTraffic bool,
+) (err error) {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+	defer netw.updateConnectionStatusAfterStart()
+	netw.enableLocalTraffic = enableLocalTraffic
+	if netw.isConnectedToVPN() {
+		return netw.restart(ctx, creds, serverData, nameservers)
 	}
-
-	netw.connectionStatus.Store(status)
+	return netw.start(ctx, creds, serverData, allowlist, nameservers)
 }
 
-// buildConnectionStatus combines data from various sources and creates [ConnectionStatus].
+// updateConnectionStatus builds the [state.ConnectionStatus] and updates it in [Combined].
+// In case of an error, empty [state.ConnectionStatus] is set.
 //
 // Not thread safe.
-func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (ConnectionStatus, error) {
+func (netw *Combined) updateConnectionStatusAfterStart() {
 	if !netw.isConnectedToVPN() {
-		if timeOption == UpdateStartTime {
-			// connection is being initialized
-			return ConnectionStatus{
-				State: pb.ConnectionState_CONNECTING,
-			}, nil
-		}
-		return ConnectionStatus{}, errInactiveVPN
+		return
 	}
 
 	tech := config.Technology_OPENVPN
@@ -282,7 +242,7 @@ func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (Connec
 
 	actualConnParams, isActive := netw.vpnet.GetConnectionParameters()
 
-	connectonStatus := ConnectionStatus{
+	connectionStatus := state.ConnectionStatus{
 		State:           pb.ConnectionState_CONNECTED,
 		Technology:      tech,
 		Protocol:        netw.lastServer.Protocol,
@@ -296,36 +256,10 @@ func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (Connec
 		PostQuantum:     isActive && actualConnParams.PostQuantum,
 		Obfuscated:      isActive && actualConnParams.Obfuscated,
 		TunnelName:      tunnelName,
+		StartTime:       netw.startTime,
 	}
 
-	switch timeOption {
-	case UpdateStartTime:
-		connectonStatus.StartTime = netw.startTime
-	case ResetStartTime:
-		connectonStatus.StartTime = nil
-	}
-
-	return connectonStatus, nil
-}
-
-// Start VPN connection after preparing the network.
-func (netw *Combined) Start(
-	ctx context.Context,
-	creds vpn.Credentials,
-	serverData vpn.ServerData,
-	allowlist config.Allowlist,
-	nameservers config.DNS,
-	enableLocalTraffic bool,
-) (err error) {
-	netw.mu.Lock()
-	netw.updateConnectionStatus(UpdateStartTime)       // update when networker is starting
-	defer netw.updateConnectionStatus(UpdateStartTime) // update when starting is finished
-	defer netw.mu.Unlock()
-	netw.enableLocalTraffic = enableLocalTraffic
-	if netw.isConnectedToVPN() {
-		return netw.restart(ctx, creds, serverData, nameservers)
-	}
-	return netw.start(ctx, creds, serverData, allowlist, nameservers)
+	netw.connectionInfo.SetStatus(connectionStatus)
 }
 
 // failureRecover what's possible if vpn start fails
@@ -555,8 +489,8 @@ func (netw *Combined) restart(
 // Stop VPN connection and clean up network after it stopped.
 func (netw *Combined) Stop() error {
 	netw.mu.Lock()
-	defer netw.updateConnectionStatus(ResetStartTime)
 	defer netw.mu.Unlock()
+	defer netw.updateConnectionStatusAfterStop()
 	if netw.isVpnSet {
 		err := netw.stop()
 		if err != nil && !errors.Is(err, errNilVPN) {
@@ -566,6 +500,17 @@ func (netw *Combined) Stop() error {
 		netw.interfaces = mapset.NewSet[string]()
 	}
 	return nil
+}
+
+func (netw *Combined) updateConnectionStatusAfterStop() {
+	if netw.isConnectedToVPN() {
+		return
+	}
+
+	netw.connectionInfo.SetStatus(state.ConnectionStatus{
+		State:     pb.ConnectionState_DISCONNECTED,
+		StartTime: nil,
+	})
 }
 
 func (netw *Combined) stop() error {
@@ -615,8 +560,6 @@ func (netw *Combined) stop() error {
 
 	netw.switchToNextVpn()
 	netw.isVpnSet = false
-	netw.lastCreds = vpn.Credentials{}
-
 	return nil
 }
 
@@ -629,8 +572,8 @@ func (netw *Combined) switchToNextVpn() {
 }
 
 // ConnectionStatus get connection information
-func (netw *Combined) ConnectionStatus() ConnectionStatus {
-	return netw.connectionStatus.Load().(ConnectionStatus)
+func (netw *Combined) ConnectionStatus() state.ConnectionStatus {
+	return netw.connectionInfo.Status()
 }
 
 // LastServerName returns last used server hostname

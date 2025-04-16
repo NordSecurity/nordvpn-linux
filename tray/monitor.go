@@ -368,16 +368,23 @@ func (ti *Instance) setVpnStatus(
 	}
 
 	if ti.state.vpnStatus != vpnStatus {
-		if vpnStatus == pb.ConnectionState_CONNECTED {
+		//exhaustive:ignore
+		switch vpnStatus {
+		case pb.ConnectionState_CONNECTED:
 			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconConnected)
 			}
 			defer notifyConnected()
-		} else {
+		case pb.ConnectionState_DISCONNECTED:
 			if ti.state.systrayRunning {
 				systray.SetIconName(ti.iconDisconnected)
 			}
-			defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.serverName()))
+			// when connection attempt is cancelled, we end up in "Disconnected"
+			// state, but we were not connected to anything at this point,so
+			// ignore the notification
+			if ti.state.serverName() != "" {
+				defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.serverName()))
+			}
 		}
 		ti.state.vpnStatus = vpnStatus
 		changed = true
