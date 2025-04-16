@@ -7,7 +7,7 @@ DESCRIPTOR: _descriptor.FileDescriptor
 class ServerGroup(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     UNDEFINED: _ClassVar[ServerGroup]
-    DoubleVPN: _ClassVar[ServerGroup]
+    DOUBLE_VPN: _ClassVar[ServerGroup]
     ONION_OVER_VPN: _ClassVar[ServerGroup]
     ULTRA_FAST_TV: _ClassVar[ServerGroup]
     ANTI_DDOS: _ClassVar[ServerGroup]
@@ -21,7 +21,7 @@ class ServerGroup(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     ASIA_PACIFIC: _ClassVar[ServerGroup]
     AFRICA_MIDDLE_EAST_INDIA: _ClassVar[ServerGroup]
 UNDEFINED: ServerGroup
-DoubleVPN: ServerGroup
+DOUBLE_VPN: ServerGroup
 ONION_OVER_VPN: ServerGroup
 ULTRA_FAST_TV: ServerGroup
 ANTI_DDOS: ServerGroup
