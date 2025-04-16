@@ -1572,7 +1572,7 @@ func (netw *Combined) allowFileshareAll() error {
 
 func (netw *Combined) undenyDNS() error {
 	if !netw.dnsDenied {
-		log.Println(internal.DebugPrefix, "attemtp to undeny dns when it was not previously denied")
+		log.Println(internal.DebugPrefix, "attemtpt to undeny dns when it was not previously denied")
 		return nil
 	}
 
@@ -1587,7 +1587,7 @@ func (netw *Combined) undenyDNS() error {
 
 func (netw *Combined) denyDNS() error {
 	if netw.dnsDenied {
-		log.Println(internal.DebugPrefix, "attemtp to deny dns when it was already denied")
+		log.Println(internal.DebugPrefix, "attemtpt to deny dns when it was already denied")
 		return nil
 	}
 
