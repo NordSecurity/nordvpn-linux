@@ -13,8 +13,6 @@ import (
 // SetDefaultsUsageText is shown next to defaults command by nordvpn set --help
 const SetDefaultsUsageText = "Restores settings to their default values."
 
-const flagNoLogout = "no-logout"
-
 func (c *cmd) SetDefaults(ctx *cli.Context) error {
 	resp, err := c.client.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: false})
 	if err != nil {
