@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"crypto/rsa"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -24,11 +25,15 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
+	//"gotest.tools/v3/assert"
+
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -288,6 +293,11 @@ func testNewRepoAPI() *RepoAPI {
 }
 
 func serversList() core.Servers {
+	//return serverListFromJson(serverListBadData2)
+	return serversList_OLD()
+}
+
+func serversList_OLD() core.Servers {
 	obfuscatedTechnologies := core.Technologies{
 		core.Technology{
 			ID:    core.OpenVPNTCPObfuscated,
@@ -352,10 +362,6 @@ func serversList() core.Servers {
 	}
 
 	servers := core.Servers{
-		core.Server{
-			ID:   0,
-			Name: "",
-		},
 		core.Server{
 			ID:           1,
 			Name:         "France #1",
@@ -554,6 +560,29 @@ func serversList() core.Servers {
 	return servers
 }
 
+func serverListFromJson(jsonString string) core.Servers {
+	var ret core.Servers
+	reader := strings.NewReader(jsonString)
+	if err := json.NewDecoder(reader).Decode(&ret); err != nil {
+		return nil
+	}
+	return ret
+}
+
+func Test_ServersJson(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rc := serverListFromJson(serverListBadData1)
+	fmt.Println("server list items count:", len(rc))
+
+	assert.Equal(t, 2, len(rc))
+
+	core.CleanServersList(&rc)
+	fmt.Println("server list items count:", len(rc))
+
+	assert.Equal(t, 0, len(rc))
+}
+
 func countriesList() core.Countries {
 	return core.Countries{
 		{
@@ -603,3 +632,284 @@ func countriesList() core.Countries {
 		},
 	}
 }
+
+const serverListBadData1 string = `
+[
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    }
+]
+`
+const serverListBadData2 string = `
+[
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    },
+    {
+        "id": 0,
+        "created_at": "0001-01-01 00:00:00",
+        "updated_at": "0001-01-01 00:00:00",
+        "name": "",
+        "station": "",
+        "ipv6_station": "",
+        "hostname": "",
+        "load": 0,
+        "status": "",
+        "locations": null,
+        "services": null,
+        "technologies": null,
+        "groups": null,
+        "specifications": null,
+        "ips": null
+    }
+]
+`

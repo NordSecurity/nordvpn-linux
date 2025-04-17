@@ -245,8 +245,11 @@ func TestAutoconnect_SavesCorrectServerGroup(t *testing.T) {
 			resp, err := r.SetAutoConnect(context.Background(), &request)
 
 			assert.Nil(t, err)
-			assert.Equal(t, internal.CodeSuccess, resp.Type)
-			assert.Equal(t, test.setServerGroup, mockConfigManager.c.AutoConnectData.Group)
+			assert.NotNil(t, resp)
+			if err == nil && resp != nil {
+				assert.Equal(t, internal.CodeSuccess, resp.Type)
+				assert.Equal(t, test.setServerGroup, mockConfigManager.c.AutoConnectData.Group)
+			}
 		})
 	}
 }
