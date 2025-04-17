@@ -1315,7 +1315,7 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 }
 
 // parseConnectArgs extracts server tag and server group from the arguments provided to the connect and set autoconnect
-// commands. It also accomodates for the issue in github.com/urfave/cli/v2 where a flag is only interpreted as a flag if
+// commands. It also accommodates for the issue in github.com/urfave/cli/v2 where a flag is only interpreted as a flag if
 // it's the first agument to the command.
 func parseConnectArgs(ctx *cli.Context) (string, string, error) {
 	groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
