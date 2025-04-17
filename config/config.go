@@ -25,6 +25,15 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 	}
 }
 
+// newConfigWithLoginData returns a clean/default config where login data(TokensData and AutoconnectData.ID) is
+// initialized to values from the parrentConfig.
+func newConfigWithLoginData(machineIDGetter MachineIDGetter, parrentConfig Config) *Config {
+	cfg := newConfig(machineIDGetter)
+	cfg.AutoConnectData.ID = parrentConfig.AutoConnectData.ID
+	cfg.TokensData = parrentConfig.TokensData
+	return cfg
+}
+
 // Config stores application settings and tokens.
 //
 // Config should be evolved is such a way, that it does not

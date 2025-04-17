@@ -87,7 +87,7 @@ type DaemonClient interface {
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error)
-	SetDefaults(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	SetDefaults(ctx context.Context, in *SetDefaultsRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetDNS(ctx context.Context, in *SetDNSRequest, opts ...grpc.CallOption) (*SetDNSResponse, error)
 	SetFirewall(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetFirewallMark(ctx context.Context, in *SetUint32Request, opts ...grpc.CallOption) (*Payload, error)
@@ -313,7 +313,7 @@ func (c *daemonClient) SetThreatProtectionLite(ctx context.Context, in *SetThrea
 	return out, nil
 }
 
-func (c *daemonClient) SetDefaults(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) SetDefaults(ctx context.Context, in *SetDefaultsRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, Daemon_SetDefaults_FullMethodName, in, out, cOpts...)
@@ -623,7 +623,7 @@ type DaemonServer interface {
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
 	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
 	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error)
-	SetDefaults(context.Context, *Empty) (*Payload, error)
+	SetDefaults(context.Context, *SetDefaultsRequest) (*Payload, error)
 	SetDNS(context.Context, *SetDNSRequest) (*SetDNSResponse, error)
 	SetFirewall(context.Context, *SetGenericRequest) (*Payload, error)
 	SetFirewallMark(context.Context, *SetUint32Request) (*Payload, error)
@@ -712,7 +712,7 @@ func (UnimplementedDaemonServer) SetAutoConnect(context.Context, *SetAutoconnect
 func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetThreatProtectionLite not implemented")
 }
-func (UnimplementedDaemonServer) SetDefaults(context.Context, *Empty) (*Payload, error) {
+func (UnimplementedDaemonServer) SetDefaults(context.Context, *SetDefaultsRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetDefaults not implemented")
 }
 func (UnimplementedDaemonServer) SetDNS(context.Context, *SetDNSRequest) (*SetDNSResponse, error) {
@@ -1110,7 +1110,7 @@ func _Daemon_SetThreatProtectionLite_Handler(srv interface{}, ctx context.Contex
 }
 
 func _Daemon_SetDefaults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(SetDefaultsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1122,7 +1122,7 @@ func _Daemon_SetDefaults_Handler(srv interface{}, ctx context.Context, dec func(
 		FullMethod: Daemon_SetDefaults_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetDefaults(ctx, req.(*Empty))
+		return srv.(DaemonServer).SetDefaults(ctx, req.(*SetDefaultsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
