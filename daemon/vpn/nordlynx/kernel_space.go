@@ -90,7 +90,7 @@ func (k *KernelSpace) Start(
 		return err
 	}
 
-	tun := tunnel.New(*iface, netip.MustParsePrefix("10.5.0.2/32"))
+	tun := tunnel.New(*iface, DefaultPrefix)
 	k.tun = tun
 	if err := pushConfig(tun.Interface(), conf); err != nil {
 		if err := k.stop(); err != nil {

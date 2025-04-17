@@ -122,7 +122,7 @@ func (u *UserSpace) Start(
 
 	u.conn = conn
 
-	tun := tunnel.New(*iface, netip.MustParsePrefix("10.5.0.2/32"))
+	tun := tunnel.New(*iface, DefaultPrefix)
 	u.tun = tun
 	if err := tun.AddAddrs(); err != nil {
 		if err := u.stop(); err != nil {

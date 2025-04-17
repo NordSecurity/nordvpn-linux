@@ -139,8 +139,6 @@ type Libtelio struct {
 }
 
 // defaultPrefix is the default address used by NordLynx when meshnet is not enabled
-var defaultPrefix = netip.MustParsePrefix("10.5.0.2/32")
-
 func handleTelioConfig(eventPath, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) (*teliogo.Features, error) {
 	cfgString, err := vpnLibCfg.GetConfig(version)
 	if err != nil {
@@ -244,7 +242,7 @@ func (l *Libtelio) Start(
 
 	log.Println(internal.InfoPrefix, "libtelio version:", teliogo.GetVersionTag())
 
-	if err = l.openTunnel(defaultPrefix, creds.NordLynxPrivateKey); err != nil {
+	if err = l.openTunnel(nordlynx.DefaultPrefix, creds.NordLynxPrivateKey); err != nil {
 		return fmt.Errorf("opening the tunnel: %w", err)
 	}
 
