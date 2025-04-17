@@ -90,13 +90,7 @@ func (k *KernelSpace) Start(
 		return err
 	}
 
-	interfaceIps := []netip.Addr{netip.MustParseAddr("10.5.0.2")}
-	ipv6, err := vpn.InterfaceIPv6(serverData.IP, interfaceID())
-	if err == nil {
-		interfaceIps = append(interfaceIps, ipv6)
-	}
-
-	tun := tunnel.New(*iface, interfaceIps, netip.Prefix{})
+	tun := tunnel.New(*iface, DefaultPrefix)
 	k.tun = tun
 	if err := pushConfig(tun.Interface(), conf); err != nil {
 		if err := k.stop(); err != nil {

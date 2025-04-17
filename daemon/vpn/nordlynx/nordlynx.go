@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/netip"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -29,13 +30,7 @@ var (
 	errUnrecognizedIpRouteOutput = errors.New("unrecognized output of 'ip route show default'")
 )
 
-// nordlynx client ipv6 address interface id (second portion of the address)
-// nordlynx requires interface id to end with 2
-// firewall rules depend on it
-// agree with infra before changing it
-func interfaceID() [8]byte {
-	return [8]byte{0x0, 0x0, 0x0, 0x11, 0x0, 0x5, 0x0, 0x2}
-}
+var DefaultPrefix = netip.MustParsePrefix("10.5.0.2/32")
 
 // getDefaultIpRouteInterface takes output of the `ip route show default` command and returns the
 // interface/device name. If there are multiple default routes in the output, first one will be returned

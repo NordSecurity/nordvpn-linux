@@ -18,9 +18,9 @@ func TestFind(t *testing.T) {
 	category.Set(t, category.Link)
 
 	tunnelName := "nordtuna"
-	ips := []net.IP{net.IPv4(192, 254, 0, 123)}
+	ip := net.IPv4(192, 254, 0, 123)
 	ipnet := net.IPNet{
-		IP:   ips[0],
+		IP:   ip,
 		Mask: net.IPv4Mask(255, 255, 255, 255),
 	}
 
@@ -28,15 +28,16 @@ func TestFind(t *testing.T) {
 	iface, err := tenus.NewLink(tunnelName)
 	assert.NoError(t, err)
 	assert.NotNil(t, iface)
-	err = iface.SetLinkIp(ips[0], &ipnet)
+	err = iface.SetLinkIp(ip, &ipnet)
 	assert.NoError(t, err)
 
-	ip, ok := netip.AddrFromSlice(ips[0])
+	address, ok := netip.AddrFromSlice(ip)
 	assert.True(t, ok)
-	tun, err := Find(ip)
+	tun, err := Find(address)
 	assert.NoError(t, err)
 	assert.Equal(t, tunnelName, tun.iface.Name)
-	assert.Equal(t, ips, tun.IPs)
+	address, ok = tun.IP()
+	assert.Equal(t, ip, address)
 }
 
 func TestTunnel_TransferRates(t *testing.T) {
@@ -75,7 +76,7 @@ func TestFromDummy(t *testing.T) {
 	got, err := Find(ipAddr)
 	assert.NoError(t, err)
 	assert.Equal(t, ifaceName, got.iface.Name)
-	assert.Equal(t, []netip.Addr{ipAddr}, got.ips)
+	assert.Equal(t, ipAddr, got.prefix.Addr())
 }
 
 func TestTunnelTransferRatesWithSys(t *testing.T) {
@@ -107,14 +108,11 @@ func TestTunnel_AddAddrs(t *testing.T) {
 	iface, err := net.InterfaceByName("lo")
 	assert.NoError(t, err)
 
-	interfaceIps := []netip.Addr{
-		netip.MustParseAddr("10.121.0.2"),
-		netip.MustParseAddr("fe80:d432::1001"),
-	}
-	assert.NotContains(t, getIPs(t, iface), interfaceIps)
+	prefix := netip.MustParsePrefix("10.121.0.2/32")
+	assert.NotContains(t, getIPs(t, iface), prefix.Addr())
 	tunnel := &Tunnel{
-		iface: *iface,
-		ips:   interfaceIps,
+		iface:  *iface,
+		prefix: prefix,
 	}
 
 	err = tunnel.AddAddrs()
@@ -122,7 +120,7 @@ func TestTunnel_AddAddrs(t *testing.T) {
 
 	iface, err = net.InterfaceByName("lo")
 	assert.NoError(t, err)
-	assert.Contains(t, getIPs(t, iface), interfaceIps)
+	assert.Contains(t, getIPs(t, iface), prefix)
 }
 
 func TestTunnel_Up(t *testing.T) {
