@@ -208,7 +208,7 @@ func TestAutoconnect_SavesCorrectServerGroup(t *testing.T) {
 		{
 			testName:       "for double_vpn",
 			serverGroup:    "double_vpn",
-			setServerGroup: config.ServerGroup_DoubleVPN,
+			setServerGroup: config.ServerGroup_DOUBLE_VPN,
 		},
 		{
 			testName:       "for onion_over_vpn",

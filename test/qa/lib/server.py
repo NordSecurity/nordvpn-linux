@@ -3,6 +3,7 @@ import time
 from urllib.parse import quote
 
 import requests
+from . import shell
 
 
 class ServerInfo:
@@ -69,3 +70,28 @@ def get_server_info(server_name):
     country = server_info[0]["locations"][0]["country"]["name"]
 
     return city, country
+
+# TODO: LVPN-7744
+def get_dedicated_ip() -> None | str:
+    """Returns Dedicated IP server name."""
+    token = shell.sh_no_tty.nordvpn.token().split("\n")[1].split(" ")[1]
+
+    headers = {'Accept': 'application/json', 'Authorization': 'Bearer token:' + token}
+    response = requests.get('https://api.nordvpn.com/v1/users/services', headers=headers, timeout=5)
+
+    dedicated_ip_part = ""
+
+    for itm in response.json():
+        if "Dedicated IP" in str(itm):
+            dedicated_ip_part = itm
+            break
+
+    if dedicated_ip_part == "":
+        return None
+
+    dip_server_id = dedicated_ip_part['details']['servers'][0]['id']
+
+    headers = {'Accept': 'application/json'}
+    response = requests.get(f'https://api.nordvpn.com/v1/servers?&filters[servers.id]={dip_server_id}', headers=headers, timeout=5)
+
+    return str(response.json()[0]['hostname'].split(".")[0])

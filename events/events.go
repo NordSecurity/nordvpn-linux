@@ -76,6 +76,7 @@ type DataConnect struct {
 	Technology                 config.Technology
 	TargetServerCity           string
 	TargetServerCountry        string
+	TargetServerCountryCode    string
 	TargetServerDomain         string
 	TargetServerGroup          string
 	TargetServerIP             string
@@ -86,6 +87,8 @@ type DataConnect struct {
 	IsVirtualLocation          bool
 	Upload                     uint64
 	Download                   uint64
+	IsObfuscated               bool
+	IsPostQuantum              bool
 }
 
 type DataDisconnect struct {
@@ -96,6 +99,8 @@ type DataDisconnect struct {
 	TargetServerSelection string
 	ThreatProtectionLite  bool
 	ByUser                bool
+	Duration              time.Duration
+	Error                 error
 }
 
 type DataAuthorization struct {

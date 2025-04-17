@@ -26,6 +26,8 @@ message ConnectionParameters {
   string country = 2;
   string city = 3;
   config.ServerGroup group = 4;
+  string server_name = 5;
+  string country_code = 6;
 }
 
 message StatusResponse {
@@ -45,4 +47,6 @@ message StatusResponse {
   bool postQuantum = 14;
   bool is_mesh_peer = 15;
   bool by_user = 16;
+  string country_code = 17;
+  bool obfuscated = 18;
 }

@@ -65,7 +65,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 
 // statusStream starts streaming status events received by stateChan to the subscriber. When the stream is stopped(i.e
 // when subscribers stops listening), stopChan will be closed.
-func statusStream(stateChan <-chan interface{},
+func statusStream(stateChan <-chan any,
 	stopChan chan<- struct{},
 	uid int64,
 	srv pb.Daemon_SubscribeToStateChangesServer,
@@ -79,9 +79,14 @@ func statusStream(stateChan <-chan interface{},
 		case ev := <-stateChan:
 			switch e := ev.(type) {
 			case events.DataConnect:
-				state := pb.ConnectionState_CONNECTING
-				if e.EventStatus == events.StatusSuccess {
+				var state pb.ConnectionState
+				switch e.EventStatus {
+				case events.StatusSuccess:
 					state = pb.ConnectionState_CONNECTED
+				case events.StatusCanceled, events.StatusFailure:
+					state = pb.ConnectionState_DISCONNECTED
+				case events.StatusAttempt:
+					state = pb.ConnectionState_CONNECTING
 				}
 
 				requestedConnParams := requestedConnParamsStorage.Get()
@@ -89,6 +94,7 @@ func statusStream(stateChan <-chan interface{},
 					State:           state,
 					Ip:              e.TargetServerIP,
 					Country:         e.TargetServerCountry,
+					CountryCode:     e.TargetServerCountryCode,
 					City:            e.TargetServerCity,
 					Name:            e.TargetServerName,
 					Hostname:        e.TargetServerDomain,
@@ -99,11 +105,15 @@ func statusStream(stateChan <-chan interface{},
 					Download:        e.Download,
 					Technology:      e.Technology,
 					Protocol:        e.Protocol,
+					Obfuscated:      e.IsObfuscated,
+					PostQuantum:     e.IsPostQuantum,
 					Parameters: &pb.ConnectionParameters{
-						Source:  requestedConnParams.ConnectionSource,
-						Country: requestedConnParams.Country,
-						City:    requestedConnParams.City,
-						Group:   requestedConnParams.Group,
+						ServerName:  requestedConnParams.ServerName,
+						Source:      requestedConnParams.ConnectionSource,
+						Country:     requestedConnParams.Country,
+						City:        requestedConnParams.City,
+						Group:       requestedConnParams.Group,
+						CountryCode: requestedConnParams.CountryCode,
 					},
 				}
 

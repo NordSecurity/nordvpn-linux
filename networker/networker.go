@@ -12,7 +12,6 @@ import (
 	"net/netip"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -24,6 +23,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -34,17 +34,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-type TimeUpdateOption int
-
-const (
-	UpdateStartTime TimeUpdateOption = iota
-	ResetStartTime
-)
-
 var (
 	// errNilVPN is returned when there is a bug in program logic.
-	errNilVPN      = errors.New("vpn is nil")
-	errInactiveVPN = errors.New("not connected to vpn")
+	errNilVPN = errors.New("vpn is nil")
 	// ErrMeshNotActive to report to outside
 	ErrMeshNotActive = errors.New("mesh is not active")
 	// ErrMeshPeerIsNotRoutable to report to outside
@@ -75,35 +67,8 @@ const (
 	// for blocking incoming connections into local networks
 	blockLanRule               = "-block-lan-rule-"
 	meshnetFirewallRuleComment = "nordvpn-meshnet"
+	denyPrivateDNSRule         = "deny-private-dns"
 )
-
-// ConnectionStatus of a currently active connection
-type ConnectionStatus struct {
-	// State of the vpn. OpenVPN specific.
-	State pb.ConnectionState
-	// Technology, which may or may not match what's in the config
-	Technology config.Technology
-	// Protocol, which may or may not match what's in the config
-	Protocol config.Protocol
-	// IP of the other end of the connection
-	IP netip.Addr
-	// Name in a human readable form of the other end of the connection
-	Name string
-	// Hostname of the other end of the connection
-	Hostname string
-	// Country of the other end of the connection
-	Country string
-	// City of the other end of the connection
-	City string
-	// StartTime time of the connection start
-	StartTime *time.Time
-	// Is virtual server
-	VirtualLocation bool
-	// Is post quantum on
-	PostQuantum bool
-	// Currently set tunnel name
-	TunnelName string
-}
 
 // Networker configures networking for connections.
 //
@@ -125,7 +90,7 @@ type Networker interface {
 	UnsetDNS() error
 	IsVPNActive() bool
 	IsMeshnetActive() bool
-	ConnectionStatus() ConnectionStatus
+	ConnectionStatus() state.ConnectionStatus
 	EnableFirewall() error
 	DisableFirewall() error
 	EnableRouting()
@@ -190,7 +155,8 @@ type Combined struct {
 	// This is used at network changes to know when a new interface was inserted
 	interfaces           mapset.Set[string]
 	isFilesharePermitted bool
-	connectionStatus     atomic.Value
+	connectionInfo       *state.ConnectionInfo
+	dnsDenied            bool
 }
 
 // NewCombined returns a ready made version of
@@ -213,8 +179,9 @@ func NewCombined(
 	exitNode forwarder.ForwardChainManager,
 	fwmark uint32,
 	lanDiscovery bool,
+	connectionInfo *state.ConnectionInfo,
 ) *Combined {
-	combined := &Combined{
+	return &Combined{
 		vpnet:              vpnet,
 		mesh:               mesh,
 		gateway:            gateway,
@@ -235,71 +202,8 @@ func NewCombined(
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
 		interfaces:         mapset.NewSet[string](),
+		connectionInfo:     connectionInfo,
 	}
-	combined.connectionStatus.Store(ConnectionStatus{})
-	return combined
-}
-
-// updateConnectionStatus builds the [ConnectionStatus] and updates it in [Combined].
-// In case of an error, empty [ConnectionStatus] is set.
-//
-// Not thread safe.
-func (netw *Combined) updateConnectionStatus(timeOption TimeUpdateOption) {
-	status, err := netw.buildConnectionStatus(timeOption)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to update connection status:", err)
-		status = ConnectionStatus{}
-	}
-
-	netw.connectionStatus.Store(status)
-}
-
-// buildConnectionStatus combines data from various sources and creates [ConnectionStatus].
-//
-// Not thread safe.
-func (netw *Combined) buildConnectionStatus(timeOption TimeUpdateOption) (ConnectionStatus, error) {
-	if !netw.isConnectedToVPN() {
-		if timeOption == UpdateStartTime {
-			// connection is being initialized
-			return ConnectionStatus{
-				State: pb.ConnectionState_CONNECTING,
-			}, nil
-		}
-		return ConnectionStatus{}, errInactiveVPN
-	}
-
-	tech := config.Technology_OPENVPN
-	tunnelName := netw.vpnet.Tun().Interface().Name
-	if netw.vpnet.Tun().Interface().Name == nordlynx.InterfaceName {
-		tech = config.Technology_NORDLYNX
-	} else if tunnelName == internal.NordWhisperInterfaceName {
-		tech = config.Technology_NORDWHISPER
-	}
-
-	actualConnParams, isActive := netw.vpnet.GetConnectionParameters()
-
-	connectonStatus := ConnectionStatus{
-		State:           pb.ConnectionState_CONNECTED,
-		Technology:      tech,
-		Protocol:        netw.lastServer.Protocol,
-		IP:              netw.lastServer.IP,
-		Name:            netw.lastServer.Name,
-		Hostname:        netw.lastServer.Hostname,
-		Country:         netw.lastServer.Country,
-		City:            netw.lastServer.City,
-		VirtualLocation: netw.lastServer.VirtualLocation,
-		PostQuantum:     isActive && actualConnParams.PostQuantum,
-		TunnelName:      tunnelName,
-	}
-
-	switch timeOption {
-	case UpdateStartTime:
-		connectonStatus.StartTime = netw.startTime
-	case ResetStartTime:
-		connectonStatus.StartTime = nil
-	}
-
-	return connectonStatus, nil
 }
 
 // Start VPN connection after preparing the network.
@@ -312,14 +216,52 @@ func (netw *Combined) Start(
 	enableLocalTraffic bool,
 ) (err error) {
 	netw.mu.Lock()
-	netw.updateConnectionStatus(UpdateStartTime)       // update when networker is starting
-	defer netw.updateConnectionStatus(UpdateStartTime) // update when starting is finished
 	defer netw.mu.Unlock()
+	defer netw.updateConnectionStatusAfterStart()
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
 		return netw.restart(ctx, creds, serverData, nameservers)
 	}
 	return netw.start(ctx, creds, serverData, allowlist, nameservers)
+}
+
+// updateConnectionStatus builds the [state.ConnectionStatus] and updates it in [Combined].
+// In case of an error, empty [state.ConnectionStatus] is set.
+//
+// Not thread safe.
+func (netw *Combined) updateConnectionStatusAfterStart() {
+	if !netw.isConnectedToVPN() {
+		return
+	}
+
+	tech := config.Technology_OPENVPN
+	tunnelName := netw.vpnet.Tun().Interface().Name
+	if netw.vpnet.Tun().Interface().Name == nordlynx.InterfaceName {
+		tech = config.Technology_NORDLYNX
+	} else if tunnelName == internal.NordWhisperInterfaceName {
+		tech = config.Technology_NORDWHISPER
+	}
+
+	actualConnParams, isActive := netw.vpnet.GetConnectionParameters()
+
+	connectionStatus := state.ConnectionStatus{
+		State:           pb.ConnectionState_CONNECTED,
+		Technology:      tech,
+		Protocol:        netw.lastServer.Protocol,
+		IP:              netw.lastServer.IP,
+		Name:            netw.lastServer.Name,
+		Hostname:        netw.lastServer.Hostname,
+		Country:         netw.lastServer.Country,
+		CountryCode:     netw.lastServer.CountryCode,
+		City:            netw.lastServer.City,
+		VirtualLocation: netw.lastServer.VirtualLocation,
+		PostQuantum:     isActive && actualConnParams.PostQuantum,
+		Obfuscated:      isActive && actualConnParams.Obfuscated,
+		TunnelName:      tunnelName,
+		StartTime:       netw.startTime,
+	}
+
+	netw.connectionInfo.SetStatus(connectionStatus)
 }
 
 // failureRecover what's possible if vpn start fails
@@ -549,8 +491,8 @@ func (netw *Combined) restart(
 // Stop VPN connection and clean up network after it stopped.
 func (netw *Combined) Stop() error {
 	netw.mu.Lock()
-	defer netw.updateConnectionStatus(ResetStartTime)
 	defer netw.mu.Unlock()
+	defer netw.updateConnectionStatusAfterStop()
 	if netw.isVpnSet {
 		err := netw.stop()
 		if err != nil && !errors.Is(err, errNilVPN) {
@@ -560,6 +502,17 @@ func (netw *Combined) Stop() error {
 		netw.interfaces = mapset.NewSet[string]()
 	}
 	return nil
+}
+
+func (netw *Combined) updateConnectionStatusAfterStop() {
+	if netw.isConnectedToVPN() {
+		return
+	}
+
+	netw.connectionInfo.SetStatus(state.ConnectionStatus{
+		State:     pb.ConnectionState_DISCONNECTED,
+		StartTime: nil,
+	})
 }
 
 func (netw *Combined) stop() error {
@@ -621,8 +574,8 @@ func (netw *Combined) switchToNextVpn() {
 }
 
 // ConnectionStatus get connection information
-func (netw *Combined) ConnectionStatus() ConnectionStatus {
-	return netw.connectionStatus.Load().(ConnectionStatus)
+func (netw *Combined) ConnectionStatus() state.ConnectionStatus {
+	return netw.connectionInfo.Status()
 }
 
 // LastServerName returns last used server hostname
@@ -1618,26 +1571,28 @@ func (netw *Combined) allowFileshareAll() error {
 }
 
 func (netw *Combined) undenyDNS() error {
-	ruleName := "deny-private-dns"
-
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex == -1 {
+	if !netw.dnsDenied {
+		log.Println(internal.DebugPrefix, "attemtpt to undeny dns when it was not previously denied")
 		return nil
 	}
 
-	if err := netw.fw.Delete([]string{ruleName}); err != nil {
-		return err
+	if err := netw.fw.Delete([]string{denyPrivateDNSRule}); err != nil {
+		return fmt.Errorf("deleting deny-private-dns dns rule: %w", err)
 	}
-	netw.rules = slices.Delete(netw.rules, ruleIndex, ruleIndex+1)
+
+	netw.dnsDenied = false
 
 	return nil
 }
 
 func (netw *Combined) denyDNS() error {
-	ruleName := "deny-private-dns"
+	if netw.dnsDenied {
+		log.Println(internal.DebugPrefix, "attemtpt to deny dns when it was already denied")
+		return nil
+	}
+
 	rules := []firewall.Rule{{
-		Name:           ruleName,
+		Name:           denyPrivateDNSRule,
 		Direction:      firewall.Outbound,
 		Protocols:      []string{"udp", "tcp"},
 		Ports:          []int{53},
@@ -1651,17 +1606,12 @@ func (netw *Combined) denyDNS() error {
 		Allow: false,
 	}}
 
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex != -1 {
-		return nil
-	}
-
 	if err := netw.fw.Add(rules); err != nil {
 		return fmt.Errorf("adding deny-private-dns rule to firewall: %w", err)
 	}
 
-	netw.rules = append(netw.rules, ruleName)
+	netw.dnsDenied = true
+
 	return nil
 }
 

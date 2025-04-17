@@ -37,7 +37,7 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 func groupFilter(groups core.Groups) []config.ServerGroup {
 	filter := []config.ServerGroup{
 		config.ServerGroup_P2P,
-		config.ServerGroup_DoubleVPN,
+		config.ServerGroup_DOUBLE_VPN,
 		config.ServerGroup_ONION_OVER_VPN,
 		config.ServerGroup_DEDICATED_IP,
 		config.ServerGroup_OBFUSCATED,

@@ -53,7 +53,7 @@ class DaemonStub(object):
         """
         self.AccountInfo = channel.unary_unary(
                 '/pb.Daemon/AccountInfo',
-                request_serializer=common__pb2.Empty.SerializeToString,
+                request_serializer=account__pb2.AccountRequest.SerializeToString,
                 response_deserializer=account__pb2.AccountResponse.FromString,
                 _registered_method=True)
         self.TokenInfo = channel.unary_unary(
@@ -556,7 +556,7 @@ def add_DaemonServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'AccountInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.AccountInfo,
-                    request_deserializer=common__pb2.Empty.FromString,
+                    request_deserializer=account__pb2.AccountRequest.FromString,
                     response_serializer=account__pb2.AccountResponse.SerializeToString,
             ),
             'TokenInfo': grpc.unary_unary_rpc_method_handler(
@@ -805,7 +805,7 @@ class Daemon(object):
             request,
             target,
             '/pb.Daemon/AccountInfo',
-            common__pb2.Empty.SerializeToString,
+            account__pb2.AccountRequest.SerializeToString,
             account__pb2.AccountResponse.FromString,
             options,
             channel_credentials,

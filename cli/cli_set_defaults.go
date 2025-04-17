@@ -14,7 +14,7 @@ import (
 const SetDefaultsUsageText = "Restores settings to their default values."
 
 func (c *cmd) SetDefaults(ctx *cli.Context) error {
-	resp, err := c.client.SetDefaults(context.Background(), &pb.Empty{})
+	resp, err := c.client.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: false})
 	if err != nil {
 		return formatError(err)
 	}

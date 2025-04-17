@@ -3,6 +3,10 @@ import random
 import sh
 
 
+MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect is set to 'enabled' successfully."
+MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect is set to 'disabled' successfully."
+MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
+
 class Settings:
     def __init__(self):
         output = sh.nordvpn("settings").strip(" \r-\n")
@@ -22,6 +26,7 @@ class Settings:
         key = key.lower()
         return self.settings.get(key, "")
 
+MSG_SET_DEFAULTS = "Settings were successfully restored to defaults."
 
 # Used for test parametrization, when the same test has to be run with different Post-quantum VPN alias.
 PQ_ALIAS = [

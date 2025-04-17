@@ -19,6 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -61,8 +62,10 @@ type Handler struct {
 	f       func(http.ResponseWriter, *http.Request)
 }
 
-var privateKey *rsa.PrivateKey
-var publicKey ssh.PublicKey
+var (
+	privateKey *rsa.PrivateKey
+	publicKey  ssh.PublicKey
+)
 
 func testRPC() *RPC {
 	api := core.NewDefaultAPI(
@@ -99,6 +102,8 @@ func testRPC() *RPC {
 		nil,
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),
+		vpn.NewInternalVPNEvents(),
+		state.NewConnectionInfo(),
 	)
 }
 
@@ -315,7 +320,7 @@ func serversList() core.Servers {
 			Title: "P2P",
 		},
 		core.Group{
-			ID:    config.ServerGroup_DoubleVPN,
+			ID:    config.ServerGroup_DOUBLE_VPN,
 			Title: "Double VPN",
 		},
 		core.Group{
@@ -357,7 +362,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "France",
+					Country: core.Country{
+						Name: "France",
 						Code: "FR",
 						City: core.City{Name: "Paris"},
 					},
@@ -375,7 +381,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Germany",
+					Country: core.Country{
+						Name: "Germany",
 						Code: "DE",
 						City: core.City{Name: "Berlin"},
 					},
@@ -397,7 +404,8 @@ func serversList() core.Servers {
 			Status: core.Online,
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Lithuania",
+					Country: core.Country{
+						Name: "Lithuania",
 						Code: "LT",
 						City: core.City{Name: "Vilnius"},
 					},
@@ -414,7 +422,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Lithuania",
+					Country: core.Country{
+						Name: "Lithuania",
 						Code: "LT",
 						City: core.City{Name: "Kaunas"},
 					},
@@ -432,7 +441,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Lithuania",
+					Country: core.Country{
+						Name: "Lithuania",
 						Code: "LT",
 						City: core.City{Name: "Vilnius"},
 					},
@@ -449,7 +459,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Lithuania",
+					Country: core.Country{
+						Name: "Lithuania",
 						Code: "LT",
 						City: core.City{Name: "Vilnius"},
 					},
@@ -466,7 +477,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Lithuania",
+					Country: core.Country{
+						Name: "Lithuania",
 						Code: "LT",
 						City: core.City{Name: "Kaunas"},
 					},
@@ -483,7 +495,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Lithuania",
+					Country: core.Country{
+						Name: "Lithuania",
 						Code: "LT",
 						City: core.City{Name: "Kaunas"},
 					},
@@ -500,7 +513,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Algeria",
+					Country: core.Country{
+						Name: "Algeria",
 						Code: "DZ",
 						City: core.City{Name: "Algiers"},
 					},
@@ -518,7 +532,8 @@ func serversList() core.Servers {
 			Station:      "127.0.0.1",
 			Locations: core.Locations{
 				core.Location{
-					Country: core.Country{Name: "Algeria",
+					Country: core.Country{
+						Name: "Algeria",
 						Code: "DZ",
 						City: core.City{Name: "Algiers"},
 					},

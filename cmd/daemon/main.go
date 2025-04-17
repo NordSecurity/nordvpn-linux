@@ -359,6 +359,7 @@ func main() {
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
 
+	connectionInfo := state.NewConnectionInfo()
 	netw := networker.NewCombined(
 		vpn,
 		mesh,
@@ -396,6 +397,7 @@ func main() {
 			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
+		connectionInfo,
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)
@@ -483,6 +485,8 @@ func main() {
 		statePublisher,
 		sharedContext,
 		rcConfig,
+		internalVpnEvents,
+		connectionInfo,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
@@ -616,7 +620,7 @@ func main() {
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)
 	}
-	if err := netw.Stop(); err != nil {
+	if _, err := rpc.DoDisconnect(); err != nil {
 		log.Println(internal.ErrorPrefix, "disconnecting from VPN:", err)
 	}
 	if err := netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
@@ -624,5 +628,8 @@ func main() {
 	}
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
+	}
+	if err := analytics.Stop(); err != nil {
+		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
 	}
 }

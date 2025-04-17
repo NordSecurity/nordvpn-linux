@@ -338,20 +338,37 @@ func (c *Client) connect(client mqtt.Client,
 	}
 }
 
-func (c *Client) sendDeliveryConfirmation(client mqtt.Client, messageID string) error {
+func publishOnTopic(client mqtt.Client, topic string, payload []byte, ctx context.Context) error {
+	token := client.Publish(topic, 1, false, payload)
+
+	select {
+	case <-token.Done():
+		if err := token.Error(); err != nil {
+			return fmt.Errorf("publishing on topic: %w", err)
+		}
+	case <-ctx.Done():
+	}
+
+	return nil
+}
+
+func (c *Client) sendDeliveryConfirmation(client mqtt.Client, messageID string, ctx context.Context) error {
 	payload, err := json.Marshal(ConfirmationPayload{
 		MessageID: messageID,
 	})
 	if err != nil {
 		return fmt.Errorf("marshaling confirmation payload: %w", err)
 	}
-	if token := client.Publish(topicDelivered, 1, false, payload); token.Wait() && token.Error() != nil {
-		return token.Error()
+
+	err = publishOnTopic(client, topicDelivered, payload, ctx)
+	if err != nil {
+		return fmt.Errorf("publishing delivery confirmation topic: %w", err)
 	}
+
 	return nil
 }
 
-func (c *Client) sendAcknowledgement(client mqtt.Client, messageID, trackType, actionSlug string) error {
+func (c *Client) sendAcknowledgement(client mqtt.Client, messageID, trackType, actionSlug string, ctx context.Context) error {
 	payload, err := json.Marshal(AcknowledgementPayload{
 		MessageID:  messageID,
 		TrackType:  trackType,
@@ -360,13 +377,16 @@ func (c *Client) sendAcknowledgement(client mqtt.Client, messageID, trackType, a
 	if err != nil {
 		return fmt.Errorf("marshaling acknowledgement payload: %w", err)
 	}
-	if token := client.Publish(topicAcknowledged, 1, false, payload); token.Wait() && token.Error() != nil {
-		return token.Error()
+
+	err = publishOnTopic(client, topicAcknowledged, payload, ctx)
+	if err != nil {
+		return fmt.Errorf("publishing acknowledgmenet: %w", err)
 	}
+
 	return nil
 }
 
-func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message) {
+func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context.Context) {
 	log.Println(logPrefix, "handle message")
 	var payload RecPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
@@ -388,13 +408,13 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	if err := c.sendDeliveryConfirmation(client, metadata.MessageID); err != nil {
+	if err := c.sendDeliveryConfirmation(client, metadata.MessageID, ctx); err != nil {
 		c.subjectErr.Publish(
 			fmt.Errorf("%s Delivery confirmation: %v", logPrefix, err),
 		)
 	}
 
-	if err := c.sendAcknowledgement(client, metadata.MessageID, trackTypeProcessed, ""); err != nil {
+	if err := c.sendAcknowledgement(client, metadata.MessageID, trackTypeProcessed, "", ctx); err != nil {
 		c.subjectErr.Publish(
 			fmt.Errorf("%s Acknowledgement: %v", logPrefix, err),
 		)
@@ -488,7 +508,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 				case connectionLost:
 					go c.connect(client, false, connectionContext, managementChan, connectedChan)
 				case mqttMessage:
-					c.handleMessage(client, ev.message)
+					c.handleMessage(client, ev.message, connectionContext)
 				case time.Time:
 					log.Println(logPrefix, "new token expiration time:", ev)
 					credsExpirationChan = time.After(time.Until(ev))

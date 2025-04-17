@@ -290,5 +290,6 @@ message PrivateKeyResponse {
 	oneof response {
 		string private_key = 1;
 		ServiceErrorCode service_error_code = 2;
+		MeshnetErrorCode meshnet_error_code = 3;
 	}
 }

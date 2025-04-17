@@ -6,7 +6,7 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/config";
 
 enum ServerGroup {
 	UNDEFINED = 0;
-	DoubleVPN = 1;
+	DOUBLE_VPN = 1;
 	ONION_OVER_VPN = 3;
 	ULTRA_FAST_TV = 5;
 	ANTI_DDOS = 7;

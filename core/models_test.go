@@ -620,13 +620,13 @@ func TestByGroup(t *testing.T) {
 	}{
 		{
 			name:     "has group",
-			group:    Group{ID: config.ServerGroup_DoubleVPN},
-			sg:       config.ServerGroup_DoubleVPN,
+			group:    Group{ID: config.ServerGroup_DOUBLE_VPN},
+			sg:       config.ServerGroup_DOUBLE_VPN,
 			expected: true,
 		},
 		{
 			name:     "doesn't have group",
-			group:    Group{ID: config.ServerGroup_DoubleVPN},
+			group:    Group{ID: config.ServerGroup_DOUBLE_VPN},
 			sg:       config.ServerGroup_ONION_OVER_VPN,
 			expected: false,
 		},

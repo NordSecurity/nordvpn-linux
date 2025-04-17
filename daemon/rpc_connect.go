@@ -10,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
@@ -27,6 +28,10 @@ func isDedicatedIP(server core.Server) bool {
 
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
+	return r.connectWithContext(in, srv, pb.ConnectionSource_MANUAL)
+}
+
+func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
 	var err error
 	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
 	// stopped on `ctx.Done()` only if it happens while `netw.Start()` is being executed.
@@ -38,7 +43,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
 	// and have context bypassed to them.
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
-		err = r.connect(ctx, in, srv)
+		err = r.connect(ctx, in, srv, source)
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
 	}
@@ -49,10 +54,50 @@ func (r *RPC) connect(
 	ctx context.Context,
 	in *pb.ConnectRequest,
 	srv pb.Daemon_ConnectServer,
+	source pb.ConnectionSource,
 ) (retErr error) {
 	if !r.ac.IsLoggedIn() {
 		return internal.ErrNotLoggedIn
 	}
+
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+	}
+
+	event := events.DataConnect{
+		APIHostname:                r.api.Base(),
+		Auto:                       false,
+		Protocol:                   cfg.AutoConnectData.Protocol,
+		Technology:                 cfg.Technology,
+		ThreatProtectionLite:       cfg.AutoConnectData.ThreatProtectionLite,
+		ResponseServersCount:       1,
+		ResponseTime:               0,
+		DurationMs:                 -1,
+		EventStatus:                events.StatusAttempt,
+		ServerFromAPI:              true,
+		TargetServerCity:           "",
+		TargetServerCountry:        "",
+		TargetServerDomain:         "",
+		TargetServerGroup:          "",
+		TargetServerIP:             "",
+		TargetServerPick:           "",
+		TargetServerPickerResponse: "",
+	}
+
+	defer func() {
+		// reset status to disconnected in case of any error
+		if retErr != nil {
+			r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
+			r.vpnEvents.Connected.Publish(event)
+		}
+	}()
+
+	// Set status to "Connecting" and send the connection attempt event without details
+	// to inform clients about connection attempt as soon as possible so they can react.
+	// The details will be filled and delivered to clients later.
+	r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_CONNECTING})
+	r.vpnEvents.Connected.Publish(event)
 
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
@@ -60,11 +105,6 @@ func (r *RPC) connect(
 		return srv.Send(&pb.Payload{Type: internal.CodeTokenRenewError})
 	} else if vpnExpired {
 		return srv.Send(&pb.Payload{Type: internal.CodeAccountExpired})
-	}
-
-	var cfg config.Config
-	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER {
@@ -87,26 +127,6 @@ func (r *RPC) connect(
 
 	// Measure the time it takes to obtain recommended servers list as the connection attempt event duration
 	connectingStartTime := time.Now()
-
-	event := events.DataConnect{
-		APIHostname:                r.api.Base(),
-		Auto:                       false,
-		Protocol:                   cfg.AutoConnectData.Protocol,
-		Technology:                 cfg.Technology,
-		ThreatProtectionLite:       cfg.AutoConnectData.ThreatProtectionLite,
-		ResponseServersCount:       1,
-		ResponseTime:               0,
-		DurationMs:                 -1,
-		EventStatus:                events.StatusAttempt,
-		ServerFromAPI:              true,
-		TargetServerCity:           "",
-		TargetServerCountry:        "",
-		TargetServerDomain:         "",
-		TargetServerGroup:          "",
-		TargetServerIP:             "",
-		TargetServerPick:           "",
-		TargetServerPickerResponse: "",
-	}
 
 	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
@@ -164,6 +184,7 @@ func (r *RPC) connect(
 		Hostname:          server.Hostname,
 		Name:              server.Name,
 		Country:           country.Name,
+		CountryCode:       country.Code,
 		City:              city,
 		Protocol:          cfg.AutoConnectData.Protocol,
 		NordLynxPublicKey: server.NordLynxPublicKey,
@@ -184,7 +205,7 @@ func (r *RPC) connect(
 	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
-	r.RequestedConnParams.Set(pb.ConnectionSource_MANUAL, parameters)
+	r.RequestedConnParams.Set(source, parameters)
 
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)
@@ -235,6 +256,8 @@ func (r *RPC) connect(
 			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
+		r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
+		r.vpnEvents.Connected.Publish(event)
 		if err := srv.Send(&pb.Payload{
 			Type: t,
 			Data: data,

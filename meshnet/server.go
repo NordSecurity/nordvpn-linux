@@ -1963,6 +1963,14 @@ func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKey
 		}, nil
 	}
 
+	if !cfg.Mesh {
+		return &pb.PrivateKeyResponse{
+			Response: &pb.PrivateKeyResponse_MeshnetErrorCode{
+				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_ENABLED,
+			},
+		}, nil
+	}
+
 	return &pb.PrivateKeyResponse{
 		Response: &pb.PrivateKeyResponse_PrivateKey{
 			PrivateKey: cfg.MeshPrivateKey,

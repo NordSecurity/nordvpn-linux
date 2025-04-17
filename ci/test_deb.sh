@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 
-category="${1}"
+categories="${1}"
 pattern="${2:-}"
 
 export COVERDIR="covdatafiles"
@@ -34,14 +34,17 @@ mkdir -p "${WORKDIR}"/dist/logs
 cd "${WORKDIR}"/test/qa || exit
 
 args=()
-
-case "${category}" in
-    "all")
-        ;;
-    *)
-	args+=("test_${category}.py")
-        ;;
-esac
+read -ra array <<< "$categories"
+for category in "${array[@]}"
+do 
+    case "${category}" in
+        "all")
+            ;;
+        *)
+        args+=("test_${category}.py")
+            ;;
+    esac
+done
 
 case "${pattern}" in
     "")
@@ -68,7 +71,7 @@ if [[ -n ${LATTE:-} ]]; then
     fi
 fi
 
-python3 -m pytest -v -x -rsx --execution-timeout 180 --teardown-timeout 25 -o log_cli=true "${args[@]}"
+python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true "${args[@]}"
 
 if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
     sudo sed -i "2d" "/etc/init.d/nordvpn"

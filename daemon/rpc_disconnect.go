@@ -1,7 +1,9 @@
 package daemon
 
 import (
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -10,33 +12,53 @@ import (
 )
 
 func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
-	if !r.netw.IsVPNActive() {
-		if err := r.netw.UnsetFirewall(); err != nil {
-			log.Println(internal.WarningPrefix, "failed to force unset firewall on disconnect:", err)
-		}
+	wasConnected, err := r.DoDisconnect()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return internal.ErrUnhandled
+	}
+	if !wasConnected {
 		return srv.Send(&pb.Payload{
 			Type: internal.CodeVPNNotRunning,
 		})
 	}
+	return srv.Send(&pb.Payload{Type: internal.CodeDisconnected})
+}
 
-	if err := r.netw.Stop(); err != nil {
-		log.Println(internal.ErrorPrefix, err)
-		return internal.ErrUnhandled
+// DoDisconnect is the non-gRPC function for Disconect to be used dirrectly.
+func (r *RPC) DoDisconnect() (bool, error) {
+	startTime := time.Now()
+	if !r.netw.IsVPNActive() {
+		if err := r.netw.UnsetFirewall(); err != nil {
+			log.Println(internal.WarningPrefix, "failed to force unset firewall on disconnect:", err)
+		}
+		return false, nil
 	}
 
 	var cfg config.Config
-	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+	var err error
+	defer func() {
+		status := events.StatusSuccess
+		if err != nil {
+			status = events.StatusFailure
+		}
+		r.events.Service.Disconnect.Publish(events.DataDisconnect{
+			Protocol:             cfg.AutoConnectData.Protocol,
+			EventStatus:          status,
+			Technology:           cfg.Technology,
+			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+			Duration:             time.Since(startTime),
+			Error:                err,
+		})
+	}()
+	if err = r.netw.Stop(); err != nil {
+		err = fmt.Errorf("stopping networker: %w", err)
+		return true, err
+	}
+	if err = r.cm.Load(&cfg); err != nil {
+		err = fmt.Errorf("loading config: %w", err)
+		return true, err
 	}
 
-	r.events.Service.Disconnect.Publish(events.DataDisconnect{
-		Protocol:             cfg.AutoConnectData.Protocol,
-		EventStatus:          events.StatusSuccess,
-		Technology:           cfg.Technology,
-		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-	})
-
-	return srv.Send(&pb.Payload{
-		Type: internal.CodeDisconnected,
-	})
+	return true, nil
 }

@@ -577,24 +577,35 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 }
 
 type ServerParameters struct {
-	Country string
-	City    string
-	Group   config.ServerGroup
+	Country     string
+	City        string
+	Group       config.ServerGroup
+	CountryCode string
+	ServerName  string
 }
 
 func GetServerParameters(serverTag string, groupTag string, countries core.Countries) ServerParameters {
 	var parameters ServerParameters
 
-	parameters.Group = groupConvert(groupTag)
+	groupFromServerTag := groupConvert(serverTag)
+	if groupFromServerTag != config.ServerGroup_UNDEFINED {
+		parameters.Group = groupFromServerTag
+	} else {
+		parameters.Group = groupConvert(groupTag)
+	}
 
 	countryIndex, cityIndex := locationByName(serverTag, countries)
 
 	if countryIndex == -1 {
+		if groupFromServerTag == config.ServerGroup_UNDEFINED {
+			parameters.ServerName = serverTag
+		}
 		return parameters
 	}
 
 	country := countries[countryIndex]
 	parameters.Country = country.Name
+	parameters.CountryCode = country.Code
 	if cityIndex == -1 {
 		return parameters
 	}
