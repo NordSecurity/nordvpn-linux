@@ -320,7 +320,7 @@ func serversList() core.Servers {
 			Title: "P2P",
 		},
 		core.Group{
-			ID:    config.ServerGroup_DoubleVPN,
+			ID:    config.ServerGroup_DOUBLE_VPN,
 			Title: "Double VPN",
 		},
 		core.Group{

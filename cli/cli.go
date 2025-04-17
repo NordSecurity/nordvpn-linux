@@ -19,6 +19,7 @@ import (
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
+	"github.com/NordSecurity/nordvpn-linux/nstrings"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	snappb "github.com/NordSecurity/nordvpn-linux/snapconf/pb"
 
@@ -1311,4 +1312,42 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 			fmt.Println(server.Name)
 		}
 	}
+}
+
+// parseConnectArgs extracts server tag and server group from the arguments provided to the connect and set autoconnect
+// commands. It also accommodates for the issue in github.com/urfave/cli/v2 where a flag is only interpreted as a flag if
+// it's the first agument to the command.
+func parseConnectArgs(ctx *cli.Context) (string, string, error) {
+	groupName, hasGroupFlag := getFlagValue(flagGroup, ctx)
+	args := ctx.Args()
+	if !args.Present() && !hasGroupFlag {
+		return "", "", nil
+	}
+
+	var serverTag string
+	var serverGroup string
+	argsSlice := args.Slice()
+	if hasGroupFlag {
+		if groupName == "" {
+			return "", "", argsCountError(ctx)
+		}
+
+		// remove group flags, as they were already processed
+		argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
+			return arg == "--"+flagGroup || arg == groupName
+		})
+
+		serverGroup = groupName
+	}
+
+	// remove any arguments that successfully parse as an on/off switch
+	argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
+		_, boolFromStringErr := nstrings.BoolFromString(arg)
+		return boolFromStringErr == nil
+	})
+	serverTag = strings.Join(argsSlice, " ")
+	serverTag = strings.ToLower(serverTag)
+	serverGroup = strings.ToLower(serverGroup)
+
+	return serverTag, serverGroup, nil
 }

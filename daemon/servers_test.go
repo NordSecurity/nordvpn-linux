@@ -218,7 +218,7 @@ func TestGroupConvert(t *testing.T) {
 	}{
 		{
 			"Double VPN",
-			config.ServerGroup_DoubleVPN,
+			config.ServerGroup_DOUBLE_VPN,
 		},
 		{
 			"Onion Over VPN",
