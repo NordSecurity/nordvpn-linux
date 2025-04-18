@@ -200,7 +200,7 @@ def test_connect_to_group_additional(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.OVPN_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -248,7 +248,7 @@ def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.OVPN_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -434,7 +434,7 @@ def test_connect_to_post_quantum_server(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("group", lib.OVPN_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_connect_to_dedicated_ip(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
