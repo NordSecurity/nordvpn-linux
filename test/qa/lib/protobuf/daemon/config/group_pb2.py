@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12\x63onfig/group.proto\x12\x06\x63onfig*\x86\x02\n\x0bServerGroup\x12\r\n\tUNDEFINED\x10\x00\x12\x0e\n\nDOUBLE_VPN\x10\x01\x12\x12\n\x0eONION_OVER_VPN\x10\x03\x12\x11\n\rULTRA_FAST_TV\x10\x05\x12\r\n\tANTI_DDOS\x10\x07\x12\x10\n\x0c\x44\x45\x44ICATED_IP\x10\t\x12\x18\n\x14STANDARD_VPN_SERVERS\x10\x0b\x12\x0f\n\x0bNETFLIX_USA\x10\r\x12\x07\n\x03P2P\x10\x0f\x12\x0e\n\nOBFUSCATED\x10\x11\x12\n\n\x06\x45UROPE\x10\x13\x12\x10\n\x0cTHE_AMERICAS\x10\x15\x12\x10\n\x0c\x41SIA_PACIFIC\x10\x17\x12\x1c\n\x18\x41\x46RICA_MIDDLE_EAST_INDIA\x10\x19\x42.Z,github.com/NordSecurity/nordvpn-linux/configb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x12\x63onfig/group.proto\x12\x06\x63onfig*\x8e\x02\n\x0bServerGroup\x12\r\n\tUNDEFINED\x10\x00\x12\x0e\n\nDOUBLE_VPN\x10\x01\x12\x12\n\x0eONION_OVER_VPN\x10\x03\x12\x11\n\rULTRA_FAST_TV\x10\x05\x12\r\n\tANTI_DDOS\x10\x07\x12\x10\n\x0c\x44\x45\x44ICATED_IP\x10\t\x12\x18\n\x14STANDARD_VPN_SERVERS\x10\x0b\x12\x0f\n\x0bNETFLIX_USA\x10\r\x12\x07\n\x03P2P\x10\x0f\x12\x0e\n\nOBFUSCATED\x10\x11\x12\n\n\x06\x45UROPE\x10\x13\x12\x10\n\x0cTHE_AMERICAS\x10\x15\x12\x10\n\x0c\x41SIA_PACIFIC\x10\x17\x12$\n AFRICA_THE_MIDDLE_EAST_AND_INDIA\x10\x19\x42.Z,github.com/NordSecurity/nordvpn-linux/configb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,5 +33,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z,github.com/NordSecurity/nordvpn-linux/config'
   _globals['_SERVERGROUP']._serialized_start=31
-  _globals['_SERVERGROUP']._serialized_end=293
+  _globals['_SERVERGROUP']._serialized_end=301
 # @@protoc_insertion_point(module_scope)
