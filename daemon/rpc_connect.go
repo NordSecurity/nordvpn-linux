@@ -56,6 +56,7 @@ func (r *RPC) connect(
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
 ) (retErr error) {
+
 	if !r.ac.IsLoggedIn() {
 		return internal.ErrNotLoggedIn
 	}
