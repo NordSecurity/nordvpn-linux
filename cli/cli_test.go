@@ -113,3 +113,76 @@ func TestCLICommands(t *testing.T) {
 		})
 	}
 }
+
+func Test_removeFlagFromArgs(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	const flagName = "flag"
+	const argName = "arg1"
+	const otherArgName1 = "arg2"
+	const otherArgName2 = "arg2"
+
+	tests := []struct {
+		name         string
+		args         []string
+		expectedArgs []string
+	}{
+		{
+			name:         "only flag args",
+			args:         []string{"--" + flagName, argName},
+			expectedArgs: []string{},
+		},
+		{
+			name:         "flag arg and preceding arg",
+			args:         []string{otherArgName1, "--" + flagName, argName},
+			expectedArgs: []string{otherArgName1},
+		},
+		{
+			name:         "flag arg and succeeding arg",
+			args:         []string{"--" + flagName, argName, otherArgName1},
+			expectedArgs: []string{otherArgName1},
+		},
+		{
+			name:         "flag arg and succeeding/preceding arg",
+			args:         []string{otherArgName1, "--" + flagName, argName, otherArgName2},
+			expectedArgs: []string{otherArgName1, otherArgName2},
+		},
+		{
+			name:         "flag arg and preceding arg of the same name",
+			args:         []string{argName, "--" + flagName, argName},
+			expectedArgs: []string{argName},
+		},
+		{
+			name:         "flag arg and succeeding arg of the same name",
+			args:         []string{"--" + flagName, argName, argName},
+			expectedArgs: []string{argName},
+		},
+		{
+			name:         "flag arg and succeeding/preceding arg of the same name",
+			args:         []string{argName, "--" + flagName, argName, argName},
+			expectedArgs: []string{argName, argName},
+		},
+		{
+			name:         "no flag value given",
+			args:         []string{"--" + flagName},
+			expectedArgs: []string{},
+		},
+		{
+			name:         "no flag value given preceding arg",
+			args:         []string{argName, "--" + flagName},
+			expectedArgs: []string{argName},
+		},
+		{
+			name:         "no flag value given preceding arg same name as flag name",
+			args:         []string{flagName, "--" + flagName},
+			expectedArgs: []string{flagName},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := removeFlagFromArgs(test.args, flagName)
+			assert.Equal(t, test.expectedArgs, result)
+		})
+	}
+}

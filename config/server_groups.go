@@ -10,6 +10,6 @@ var GroupMap = map[string]ServerGroup{
 	"europe":                           ServerGroup_EUROPE,
 	"the_americas":                     ServerGroup_THE_AMERICAS,
 	"asia_pacific":                     ServerGroup_ASIA_PACIFIC,
-	"africa_the_middle_east_and_india": ServerGroup_AFRICA_MIDDLE_EAST_INDIA,
+	"africa_the_middle_east_and_india": ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA,
 	"obfuscated_servers":               ServerGroup_OBFUSCATED,
 }
