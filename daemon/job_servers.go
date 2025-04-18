@@ -61,6 +61,9 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 		for idx, server := range servers {
 			// store keys to find server easier
 			country := server.Country()
+			// if country == nil {
+			// 	return fmt.Errorf("server does not have location")
+			// }
 
 			servers[idx].Keys = generateKeys(server)
 
@@ -128,6 +131,9 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 func generateKeys(server core.Server) []string {
 	loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
 	country := server.Country()
+	if country == nil {
+		return []string{}
+	}
 	loweredCountryName := internal.SnakeCase(country.Name)
 	loweredCountryCode := internal.SnakeCase(country.Code)
 	loweredCityName := internal.SnakeCase(country.City.Name)
