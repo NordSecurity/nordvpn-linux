@@ -1,5 +1,6 @@
 import pytest
 import sh
+import dns.resolver as dnspy
 
 import lib
 from lib import daemon, dns, info, logging, login, settings
@@ -318,4 +319,31 @@ def test_custom_dns_already_disabled_connected(tech, proto, obfuscated):
         assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in str(ex)
         assert dns.is_set_for(dns.DNS_NORD)
 
+    assert dns.is_unset()
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_custom_dns_order_is_kept(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    nameserver_list = ["8.8.8.8", "1.1.1.1"]
+    sh.nordvpn.set.dns(nameserver_list)
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+        resolver = dnspy.Resolver()
+        if "127.0.0.53" in resolver.nameservers:
+            found = False
+            if tech == "nordlynx":
+                output = sh.resolvectl.status.nordlynx()
+            if tech == "openvpn":
+                output = sh.resolvectl.status.nordtun()
+            for line in output:
+                print(line)
+                if 'DNS Servers' in line:
+                    found = True
+                    servers_str = line.split(": ")[1].rstrip("\n")
+                    servers = servers_str.split(" ")
+                    assert servers == nameserver_list
+            assert found, "Nordlynx/Nordtun device or their DNS servers were not found"
+        else:
+            assert nameserver_list == resolver.nameservers
     assert dns.is_unset()
