@@ -1319,8 +1319,11 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 func removeFlagFromArgs(args []string, flag string) []string {
 	for index, arg := range args {
 		if arg == "--"+flag {
+			if index+1 >= len(args) {
+				return slices.Delete(args, index, index+1)
+			}
 			// return the args slice sans the flag and its argument
-			return append(args[:index], args[index+2:]...)
+			return slices.Delete(args, index, index+2)
 		}
 	}
 

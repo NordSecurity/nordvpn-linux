@@ -162,6 +162,21 @@ func Test_removeFlagFromArgs(t *testing.T) {
 			args:         []string{argName, "--" + flagName, argName, argName},
 			expectedArgs: []string{argName, argName},
 		},
+		{
+			name:         "no flag value given",
+			args:         []string{"--" + flagName},
+			expectedArgs: []string{},
+		},
+		{
+			name:         "no flag value given preceding arg",
+			args:         []string{argName, "--" + flagName},
+			expectedArgs: []string{argName},
+		},
+		{
+			name:         "no flag value given preceding arg same name as flag name",
+			args:         []string{flagName, "--" + flagName},
+			expectedArgs: []string{flagName},
+		},
 	}
 
 	for _, test := range tests {
