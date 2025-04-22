@@ -1239,7 +1239,7 @@ func getFlagValue(name string, ctx *cli.Context) (value string, found bool) {
 	searchFn := func(args []string, argName string) (string, bool) {
 		for index, v := range args {
 			if v == "-"+argName || v == "--"+argName {
-				if index <= len(os.Args)-1 && os.Args[index+1][0] != '-' {
+				if index < len(os.Args)-1 && os.Args[index+1][0] != '-' {
 					// if there is another argument after
 					return os.Args[index+1], true
 				}
@@ -1314,6 +1314,22 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 	}
 }
 
+// removeGroupFlagFromArgs removes flag and its value from args
+// The function assumes that flag value occurs after flag name, i.e --<flag> <value>
+func removeFlagFromArgs(args []string, flag string) []string {
+	for index, arg := range args {
+		if arg == "--"+flag {
+			if index+1 >= len(args) {
+				return slices.Delete(args, index, index+1)
+			}
+			// return the args slice sans the flag and its argument
+			return slices.Delete(args, index, index+2)
+		}
+	}
+
+	return args
+}
+
 // parseConnectArgs extracts server tag and server group from the arguments provided to the connect and set autoconnect
 // commands. It also accommodates for the issue in github.com/urfave/cli/v2 where a flag is only interpreted as a flag if
 // it's the first agument to the command.
@@ -1332,10 +1348,10 @@ func parseConnectArgs(ctx *cli.Context) (string, string, error) {
 			return "", "", argsCountError(ctx)
 		}
 
-		// remove group flags, as they were already processed
-		argsSlice = slices.DeleteFunc(argsSlice, func(arg string) bool {
-			return arg == "--"+flagGroup || arg == groupName
-		})
+		// remove group flags if present, as they were already processed
+		if slices.Contains(argsSlice, "--"+flagGroup) {
+			argsSlice = removeFlagFromArgs(argsSlice, flagGroup)
+		}
 
 		serverGroup = groupName
 	}
