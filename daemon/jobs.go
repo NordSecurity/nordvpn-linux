@@ -267,10 +267,17 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 		}
 
 		server := autoconnectServer{}
+
+		groupTag := ""
+		if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
+			cfg.AutoConnectData.ServerTag != strings.ToLower(cfg.AutoConnectData.Group.String()) {
+			groupTag = cfg.AutoConnectData.Group.String()
+		}
+
 		err = r.connectWithContext(
 			&pb.ConnectRequest{
 				ServerTag:   cfg.AutoConnectData.ServerTag,
-				ServerGroup: cfg.AutoConnectData.Group.String()},
+				ServerGroup: groupTag},
 			&server,
 			pb.ConnectionSource_AUTO)
 		if connectErrorCheck(err) && server.err == nil {
