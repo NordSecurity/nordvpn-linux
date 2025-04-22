@@ -1239,7 +1239,7 @@ func getFlagValue(name string, ctx *cli.Context) (value string, found bool) {
 	searchFn := func(args []string, argName string) (string, bool) {
 		for index, v := range args {
 			if v == "-"+argName || v == "--"+argName {
-				if index <= len(os.Args)-1 && os.Args[index+1][0] != '-' {
+				if index < len(os.Args)-1 && os.Args[index+1][0] != '-' {
 					// if there is another argument after
 					return os.Args[index+1], true
 				}
