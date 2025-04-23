@@ -73,15 +73,14 @@ import (
 
 // Values set when building the application
 var (
-	Salt          = ""
-	Version       = "0.0.0"
-	Environment   = ""
-	PackageType   = ""
-	Arch          = ""
-	Port          = 6960
-	ConnType      = "unix"
-	ConnURL       = internal.DaemonSocket
-	FirebaseToken = "" // If this is moved to another package the scripts need to be updated
+	Salt        = ""
+	Version     = "0.0.0"
+	Environment = ""
+	PackageType = ""
+	Arch        = ""
+	Port        = 6960
+	ConnType    = "unix"
+	ConnURL     = internal.DaemonSocket
 )
 
 // Environment constants
@@ -147,7 +146,7 @@ func main() {
 		}
 	}
 
-	rcConfig := getRemoteConfigGetter(fsystem)
+	rcConfig := getRemoteConfigGetter(Version)
 
 	// Events
 

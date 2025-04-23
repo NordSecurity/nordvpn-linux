@@ -19,14 +19,9 @@ const (
 	SetTechnologyUsageText     = "Sets the technology"
 	SetTechnologyArgsUsageText = `<technology>`
 	SetTechnologyDescription   = `Use this command to set the technology.
-Supported values for <technology>: %s.
+Supported values for <technology>: OPENVPN, NORDLYNX or NORDWHISPER.
 
 Example: 'nordvpn set technology OPENVPN'`
-
-	// Used when NordWhisper technology is disabled
-	SupportedValuesWithoutNordWhisper = "OPENVPN or NORDLYNX"
-	// Used when NordWhisper technology is enabled
-	SupportedValuesWithNordWhisper = "OPENVPN, NORDLYNX or NORDWHISPER"
 )
 
 func (c *cmd) SetTechnology(ctx *cli.Context) error {
