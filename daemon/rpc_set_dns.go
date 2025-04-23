@@ -26,9 +26,11 @@ func (r *RPC) SetDNS(ctx context.Context, in *pb.SetDNSRequest) (*pb.SetDNSRespo
 		}, nil
 	}
 
-	slices.Sort(nameservers)
-	slices.Sort(cfg.AutoConnectData.DNS)
-	if slices.Equal(nameservers, cfg.AutoConnectData.DNS) {
+	nameserverCheck := slices.Clone(nameservers)
+	autoConnectDataCheck := slices.Clone(cfg.AutoConnectData.DNS)
+	slices.Sort(nameserverCheck)
+	slices.Sort(autoConnectDataCheck)
+	if slices.Equal(nameserverCheck, autoConnectDataCheck) {
 		return &pb.SetDNSResponse{
 			Response: &pb.SetDNSResponse_ErrorCode{ErrorCode: pb.SetErrorCode_ALREADY_SET},
 		}, nil
