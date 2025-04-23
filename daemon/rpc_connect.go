@@ -33,7 +33,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 
 func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
 	var err error
-	var payload *pb.Payload
+	var didFail bool
 	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
 	// stopped on `ctx.Done()` only if it happens while `netw.Start()` is being executed.
 	// Otherwise:
@@ -44,26 +44,18 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
 	// and have context bypassed to them.
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
-		payload, err = r.connect(ctx, in, srv, source)
+		didFail, err = r.connect(ctx, in, srv, source)
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
 	}
 
 	// set connection status to "Disconnected"
-	if payload != nil || err != nil {
+	if didFail || err != nil {
 		r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
 		r.vpnEvents.Connected.Publish(events.DataConnect{EventStatus: events.StatusFailure})
 	}
 
-	if err != nil {
-		return err
-	}
-
-	if payload != nil {
-		return srv.Send(payload)
-	}
-
-	return nil
+	return err
 }
 
 func (r *RPC) connect(
@@ -71,9 +63,9 @@ func (r *RPC) connect(
 	in *pb.ConnectRequest,
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
-) (payload *pb.Payload, retErr error) {
+) (didFail bool, retErr error) {
 	if !r.ac.IsLoggedIn() {
-		return nil, internal.ErrNotLoggedIn
+		return false, internal.ErrNotLoggedIn
 	}
 
 	var cfg config.Config
@@ -110,13 +102,13 @@ func (r *RPC) connect(
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
-		return &pb.Payload{Type: internal.CodeTokenRenewError}, nil
+		return true, srv.Send(&pb.Payload{Type: internal.CodeTokenRenewError})
 	} else if vpnExpired {
-		return &pb.Payload{Type: internal.CodeAccountExpired}, nil
+		return true, srv.Send(&pb.Payload{Type: internal.CodeAccountExpired})
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
-		return &pb.Payload{Type: internal.CodeTechnologyDisabled}, nil
+		return true, srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
 	}
 
 	insights := r.dm.GetInsightsData().Insights
@@ -133,10 +125,10 @@ func (r *RPC) connect(
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {
-			return &pb.Payload{Type: errorCode.Code}, nil
+			return true, srv.Send(&pb.Payload{Type: errorCode.Code})
 		}
 
-		return nil, err
+		return false, err
 	}
 
 	country, err := server.Locations.Country()
@@ -153,7 +145,7 @@ func (r *RPC) connect(
 		ip, err := server.IPv4()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, err)
-			return nil, internal.ErrUnhandled
+			return false, internal.ErrUnhandled
 		}
 		r.endpoint = network.NewIPv4Endpoint(ip)
 	}
@@ -161,7 +153,7 @@ func (r *RPC) connect(
 	subnet, err := r.endpoint.Network()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return nil, internal.ErrUnhandled
+		return false, internal.ErrUnhandled
 	}
 	r.lastServer = *server
 
@@ -260,7 +252,7 @@ func (r *RPC) connect(
 		}); err != nil {
 			log.Println(internal.ErrorPrefix, err)
 		}
-		return nil, nil
+		return false, nil
 	}
 
 	// If server has at least one IPv6 address
@@ -279,7 +271,7 @@ func (r *RPC) connect(
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	return nil, nil
+	return false, nil
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)
