@@ -139,8 +139,8 @@ type Libtelio struct {
 }
 
 // defaultPrefix is the default address used by NordLynx when meshnet is not enabled
-func handleTelioConfig(eventPath, version string, prod bool, vpnLibCfg vpn.LibConfigGetter) (*teliogo.Features, error) {
-	cfgString, err := vpnLibCfg.GetConfig(version)
+func handleTelioConfig(eventPath string, prod bool, vpnLibCfg vpn.LibConfigGetter) (*teliogo.Features, error) {
+	cfgString, err := vpnLibCfg.GetConfig()
 	if err != nil {
 		return nil, fmt.Errorf("getting telio config json string: %w", err)
 	}
@@ -167,11 +167,16 @@ func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) *te
 	return nil
 }
 
-func New(prod bool, eventPath string, fwmark uint32,
-	vpnLibCfg vpn.LibConfigGetter, appVersion string, eventsPublisher *vpn.Events,
+func New(
+	prod bool,
+	eventPath string,
+	fwmark uint32,
+	vpnLibCfg vpn.LibConfigGetter,
+	appVersion string,
+	eventsPublisher *vpn.Events,
 ) (*Libtelio, error) {
 	events := make(chan state)
-	features, err := handleTelioConfig(eventPath, appVersion, prod, vpnLibCfg)
+	features, err := handleTelioConfig(eventPath, prod, vpnLibCfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get telio config:", err)
 
@@ -179,6 +184,9 @@ func New(prod bool, eventPath string, fwmark uint32,
 			EnableDirect().
 			EnableLana(eventPath, prod).
 			EnableNurse().
+			EnableBatterySavingDefaults().
+			EnableFlushEventsOnStopTimeoutSeconds().
+			EnableNicknames().
 			Build()
 
 		defaultTelioConfig.Nurse.HeartbeatInterval = defaultHeartbeatInterval

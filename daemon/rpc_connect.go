@@ -107,20 +107,8 @@ func (r *RPC) connect(
 		return srv.Send(&pb.Payload{Type: internal.CodeAccountExpired})
 	}
 
-	if cfg.Technology == config.Technology_NORDWHISPER {
-		if !features.NordWhisperEnabled {
-			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
-		}
-
-		nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to retrieve remote config for NordWhisper:", err)
-			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
-		}
-
-		if !nordWhisperEnabled {
-			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
-		}
+	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
+		return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
 	}
 
 	insights := r.dm.GetInsightsData().Insights

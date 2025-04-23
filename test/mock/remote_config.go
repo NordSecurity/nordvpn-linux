@@ -9,10 +9,10 @@ func NewRemoteConfigMock() *RemoteConfigMock {
 	return &RemoteConfigMock{}
 }
 
-func (r *RemoteConfigMock) GetTelioConfig(version string) (string, error) {
+func (r *RemoteConfigMock) GetTelioConfig() (string, error) {
 	return "", nil
 }
 
-func (r *RemoteConfigMock) GetNordWhisperEnabled(version string) (bool, error) {
+func (r *RemoteConfigMock) GetNordWhisperEnabled() (bool, error) {
 	return r.NordWhisperEnabled, r.GetNordWhisperErr
 }

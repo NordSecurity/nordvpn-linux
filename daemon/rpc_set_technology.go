@@ -20,21 +20,6 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 				Type: internal.CodeFeatureHidden,
 			}, nil
 		}
-		nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to determine if NordWhisper is enabled by remote config:", err)
-			return &pb.Payload{
-				Type: internal.CodeFeatureHidden,
-			}, nil
-		}
-
-		if !nordWhisperEnabled {
-			log.Println(internal.ErrorPrefix,
-				"user requested a NordWhisper technology but the feature is hidden based on remote config flag")
-			return &pb.Payload{
-				Type: internal.CodeFeatureHidden,
-			}, nil
-		}
 	}
 
 	var cfg config.Config
