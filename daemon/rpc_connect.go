@@ -33,6 +33,7 @@ func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retEr
 
 func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
 	var err error
+	var payload *pb.Payload
 	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
 	// stopped on `ctx.Done()` only if it happens while `netw.Start()` is being executed.
 	// Otherwise:
@@ -43,11 +44,26 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
 	// and have context bypassed to them.
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
-		err = r.connect(ctx, in, srv, source)
+		payload, err = r.connect(ctx, in, srv, source)
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
 	}
-	return err
+
+	// set connection status to "Disconnected"
+	if payload != nil || err != nil {
+		r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
+		r.vpnEvents.Connected.Publish(events.DataConnect{EventStatus: events.StatusFailure})
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if payload != nil {
+		return srv.Send(payload)
+	}
+
+	return nil
 }
 
 func (r *RPC) connect(
@@ -55,9 +71,9 @@ func (r *RPC) connect(
 	in *pb.ConnectRequest,
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
-) (retErr error) {
+) (payload *pb.Payload, retErr error) {
 	if !r.ac.IsLoggedIn() {
-		return internal.ErrNotLoggedIn
+		return nil, internal.ErrNotLoggedIn
 	}
 
 	var cfg config.Config
@@ -85,14 +101,6 @@ func (r *RPC) connect(
 		TargetServerPickerResponse: "",
 	}
 
-	defer func() {
-		// reset status to disconnected in case of any error
-		if retErr != nil {
-			r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
-			r.vpnEvents.Connected.Publish(event)
-		}
-	}()
-
 	// Set status to "Connecting" and send the connection attempt event without details
 	// to inform clients about connection attempt as soon as possible so they can react.
 	// The details will be filled and delivered to clients later.
@@ -102,24 +110,24 @@ func (r *RPC) connect(
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
-		return srv.Send(&pb.Payload{Type: internal.CodeTokenRenewError})
+		return &pb.Payload{Type: internal.CodeTokenRenewError}, nil
 	} else if vpnExpired {
-		return srv.Send(&pb.Payload{Type: internal.CodeAccountExpired})
+		return &pb.Payload{Type: internal.CodeAccountExpired}, nil
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER {
 		if !features.NordWhisperEnabled {
-			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+			return &pb.Payload{Type: internal.CodeTechnologyDisabled}, nil
 		}
 
 		nordWhisperEnabled, err := r.remoteConfigGetter.GetNordWhisperEnabled(r.version)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "failed to retrieve remote config for NordWhisper:", err)
-			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+			return &pb.Payload{Type: internal.CodeTechnologyDisabled}, nil
 		}
 
 		if !nordWhisperEnabled {
-			return srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
+			return &pb.Payload{Type: internal.CodeTechnologyDisabled}, nil
 		}
 	}
 
@@ -137,10 +145,10 @@ func (r *RPC) connect(
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {
-			return srv.Send(&pb.Payload{Type: errorCode.Code})
+			return &pb.Payload{Type: errorCode.Code}, nil
 		}
 
-		return err
+		return nil, err
 	}
 
 	country, err := server.Locations.Country()
@@ -157,7 +165,7 @@ func (r *RPC) connect(
 		ip, err := server.IPv4()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, err)
-			return internal.ErrUnhandled
+			return nil, internal.ErrUnhandled
 		}
 		r.endpoint = network.NewIPv4Endpoint(ip)
 	}
@@ -165,7 +173,7 @@ func (r *RPC) connect(
 	subnet, err := r.endpoint.Network()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return internal.ErrUnhandled
+		return nil, internal.ErrUnhandled
 	}
 	r.lastServer = *server
 
@@ -264,7 +272,7 @@ func (r *RPC) connect(
 		}); err != nil {
 			log.Println(internal.ErrorPrefix, err)
 		}
-		return nil
+		return nil, nil
 	}
 
 	// If server has at least one IPv6 address
@@ -283,7 +291,7 @@ func (r *RPC) connect(
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	return nil
+	return nil, nil
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)
