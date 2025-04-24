@@ -111,7 +111,7 @@ func (s *StatePublisher) NotifyConfigChanged(e config.DataConfigChange) error {
 
 	log.Println(internal.DebugPrefix, "notifying about config change:", e.Caller)
 
-	s.notify(e)
+	s.notify(e.Config)
 
 	return nil
 }
