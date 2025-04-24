@@ -370,14 +370,24 @@ func Test_maskPublicKey(t *testing.T) {
 }
 
 type subscriber struct {
-	mu      sync.RWMutex
-	counter int
+	mu               sync.RWMutex
+	counter          int
+	eventsReceivedWG *sync.WaitGroup
+}
+
+func NewSubscriber(eventsReceivedWG *sync.WaitGroup) subscriber {
+	return subscriber{
+		eventsReceivedWG: eventsReceivedWG,
+	}
 }
 
 func (s *subscriber) NotifyConnect(events.DataConnect) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.counter++
+	s.eventsReceivedWG.Done()
+
 	return nil
 }
 func (s *subscriber) NotifyDisconnect(events.DataDisconnect) error {
@@ -387,6 +397,7 @@ func (s *subscriber) NotifyDisconnect(events.DataDisconnect) error {
 func (s *subscriber) Counter() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	return s.counter
 }
 
@@ -397,16 +408,15 @@ func TestLibtelio_connect(t *testing.T) {
 		err    error
 		active bool
 		events int
-		body   func(context.CancelFunc, chan<- state, *sync.WaitGroup, *sync.WaitGroup)
+		body   func(context.CancelFunc, chan<- state, *sync.WaitGroup)
 	}{
 		{
 			name:   "ctx done before connection established",
 			err:    context.Canceled,
 			active: false,
 			events: 0,
-			body: func(cf context.CancelFunc, _ chan<- state, _ *sync.WaitGroup, eventsSentWG *sync.WaitGroup) {
+			body: func(cf context.CancelFunc, _ chan<- state, _ *sync.WaitGroup) {
 				cf()
-				eventsSentWG.Done()
 			},
 		},
 		{
@@ -414,12 +424,11 @@ func TestLibtelio_connect(t *testing.T) {
 			err:    nil,
 			active: true,
 			events: 1,
-			body: func(cf context.CancelFunc, events chan<- state, _ *sync.WaitGroup, eventsSentWG *sync.WaitGroup) {
+			body: func(cf context.CancelFunc, events chan<- state, _ *sync.WaitGroup) {
 				events <- state{
 					State:  teliogo.NodeStateConnected,
 					IsExit: true,
 				}
-				eventsSentWG.Done()
 			},
 		},
 		{
@@ -427,7 +436,7 @@ func TestLibtelio_connect(t *testing.T) {
 			err:    nil,
 			active: true,
 			events: 4,
-			body: func(cf context.CancelFunc, events chan<- state, connectionEstablishedWG *sync.WaitGroup, eventsSentWG *sync.WaitGroup) {
+			body: func(cf context.CancelFunc, events chan<- state, connectionEstablishedWG *sync.WaitGroup) {
 				events <- state{
 					State:  teliogo.NodeStateConnected,
 					IsExit: true,
@@ -445,6 +454,7 @@ func TestLibtelio_connect(t *testing.T) {
 					State:  teliogo.NodeStateConnected,
 					IsExit: true,
 				}
+				time.Sleep(3 * time.Second)
 				events <- state{
 					State:  teliogo.NodeStateDisconnected,
 					IsExit: true,
@@ -454,16 +464,17 @@ func TestLibtelio_connect(t *testing.T) {
 				events <- state{
 					IsExit: false,
 				}
-
-				eventsSentWG.Done()
 			},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			events := make(chan state, 1)
 			pub := vpn.NewInternalVPNEvents()
-			sub := &subscriber{}
-			pub.Subscribe(sub)
+
+			eventsReceivedWG := sync.WaitGroup{}
+			eventsReceivedWG.Add(tt.events)
+			sub := NewSubscriber(&eventsReceivedWG)
+			pub.Subscribe(&sub)
 			// Create instance
 			libtelio := &Libtelio{
 				lib:             mockLib{},
@@ -489,16 +500,26 @@ func TestLibtelio_connect(t *testing.T) {
 			// Wait until goroutine starts
 			connectionInitiatedWG.Wait()
 
-			eventsSentWG := sync.WaitGroup{}
-			eventsSentWG.Add(1)
-			tt.body(cancel, events, &connectionEstablishedWG, &eventsSentWG)
+			tt.body(cancel, events, &connectionEstablishedWG)
 
 			// Wait until goroutine stops
 			connectionEstablishedWG.Wait()
 			assert.ErrorIs(t, tt.err, err)
 			assert.Equal(t, tt.active, libtelio.active)
 
-			eventsSentWG.Wait()
+			if tt.events > 0 {
+				eventsReceivedChan := make(chan interface{})
+				go func() {
+					eventsReceivedWG.Wait()
+					close(eventsReceivedChan)
+				}()
+				select {
+				case <-eventsReceivedChan:
+				case <-time.After(time.Millisecond * 10):
+					assert.Fail(t, "timeout when waiting for events")
+				}
+			}
+
 			assert.Equal(t, tt.events, sub.Counter())
 		})
 	}
