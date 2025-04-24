@@ -105,11 +105,12 @@ func (s *StatePublisher) NotifyMFA(bool) error {
 	return nil
 }
 
-func (s *StatePublisher) NotifyConfigChanged(e *config.Config) error {
+func (s *StatePublisher) NotifyConfigChanged(e config.DataConfigChange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.DebugPrefix, "notifying about config change")
+	log.Println(internal.DebugPrefix, "notifying about config change:", e.Caller)
+
 	s.notify(e)
 
 	return nil
