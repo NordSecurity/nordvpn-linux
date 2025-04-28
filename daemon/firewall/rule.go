@@ -84,6 +84,7 @@ type Rule struct {
 	SourcePorts      []int  `json:"source_ports"`
 	DestinationPorts []int  `json:"destination_ports"`
 	Comment          string `json:"comment"`
+	Physical		 bool 	`json:"physical"`
 }
 
 func (r Rule) Equal(other Rule) bool {

@@ -263,17 +263,21 @@ func TestToInputSlice(t *testing.T) {
 	tests := []struct {
 		name     string
 		ruleType firewall.Direction
+		physical bool
 		out      []ruleChain
 	}{
-		{name: "inbound", ruleType: firewall.Inbound, out: []ruleChain{chainInput}},
-		{name: "outbound", ruleType: firewall.Outbound, out: []ruleChain{chainOutput}},
-		{name: "two way", ruleType: firewall.TwoWay, out: []ruleChain{chainInput, chainOutput}},
-		{name: "forward", ruleType: firewall.Forward, out: []ruleChain{chainForward}},
-		{name: "invalid type", ruleType: 500, out: nil},
+		{name: "inbound non phys", ruleType: firewall.Inbound, physical: false, out: []ruleChain{chainInput}},
+		{name: "outbound non phys", ruleType: firewall.Outbound, physical: false, out: []ruleChain{chainOutput}},
+		{name: "two way non phys", ruleType: firewall.TwoWay, physical: false, out: []ruleChain{chainInput, chainOutput}},
+		{name: "inbound phys", ruleType: firewall.Inbound, physical: true, out: []ruleChain{chainPrerouting}},
+		{name: "outbound phys", ruleType: firewall.Outbound, physical: true, out: []ruleChain{chainPostrouting}},
+		{name: "two way phys", ruleType: firewall.TwoWay, physical: true, out: []ruleChain{chainPrerouting, chainPostrouting}},
+		{name: "forward", ruleType: firewall.Forward, out: []ruleChain{chainForward}, physical: false},
+		{name: "invalid type", ruleType: 500, out: nil, physical: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out := toChainSlice(tt.ruleType)
+			out := toChainSlice(tt.ruleType, tt.physical)
 			assert.Equal(t, tt.out, out)
 		})
 	}

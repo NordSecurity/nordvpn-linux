@@ -649,17 +649,17 @@ func (netw *Combined) blockTraffic() error {
 	}
 
 	// block FORWARD as well !!!
-	err = netw.fw.Add([]firewall.Rule{
-		{
-			Name:       "drop-fw",
-			Direction:  firewall.Forward,
-			Interfaces: ifaces,
-			Allow:      false,
-		},
-	})
-	if err != nil {
-		return err
-	}
+	// err = netw.fw.Add([]firewall.Rule{
+	// 	{
+	// 		Name:       "drop-fw",
+	// 		Direction:  firewall.Forward,
+	// 		Interfaces: ifaces,
+	// 		Allow:      false,
+	// 	},
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
 	// block INPUT & OUTPUT
 	return netw.fw.Add([]firewall.Rule{
@@ -668,14 +668,15 @@ func (netw *Combined) blockTraffic() error {
 			Direction:  firewall.TwoWay,
 			Interfaces: ifaces,
 			Allow:      false,
+			Physical:   true,
 		},
 	})
 }
 
 func (netw *Combined) unblockTraffic() error {
-	if err := netw.fw.Delete([]string{"drop-fw"}); err != nil {
-		return err
-	}
+	// if err := netw.fw.Delete([]string{"drop-fw"}); err != nil {
+	// 	return err
+	// }
 	return netw.fw.Delete([]string{"drop"})
 }
 
@@ -735,6 +736,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Allow:       true,
 			Ipv6Only:    true,
 			Icmpv6Types: []int{1, 2, 3, 4, 128, 129},
+			Physical:    true,
 		},
 		{
 			Name:        "vpn_allowlist_icmp6_address",
@@ -745,6 +747,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Ipv6Only:    true,
 			Icmpv6Types: []int{133, 134, 135, 136, 141, 142, 148, 149},
 			HopLimit:    255,
+			Physical:    true,
 		},
 		{
 			Name:       "vpn_allowlist_icmp6_multicast",
@@ -759,6 +762,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Allow:       true,
 			Ipv6Only:    true,
 			Icmpv6Types: []int{130, 131, 132, 143, 151, 152, 153},
+			Physical:    true,
 		},
 		{
 			Name:       "vpn_allowlist_dhcp6_in",
@@ -773,6 +777,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Direction:        firewall.Inbound,
 			Allow:            true,
 			Ipv6Only:         true,
+			Physical:         true,
 		},
 		{
 			Name:       "vpn_allowlist_dhcp6_out",
@@ -787,6 +792,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Direction:        firewall.Outbound,
 			Allow:            true,
 			Ipv6Only:         true,
+			Physical:         true,
 		},
 	})
 	if err != nil {
@@ -941,6 +947,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			RemoteNetworks: subnets,
 			Direction:      firewall.TwoWay,
 			Allow:          true,
+			Physical:       true,
 		})
 	}
 
@@ -966,6 +973,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 				Direction:  firewall.TwoWay,
 				Ports:      ports,
 				Allow:      true,
+				Physical:   true,
 			})
 			if err := netw.allowlistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
 				return errors.Join(fmt.Errorf("enabling allowlist routing"), err)
@@ -1066,6 +1074,7 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 			Direction:  firewall.TwoWay,
 			Marks:      []uint32{netw.fwmark},
 			Allow:      true,
+			Physical:   true,
 		},
 	}); err != nil {
 		return err
@@ -1603,7 +1612,8 @@ func (netw *Combined) denyDNS() error {
 			netip.MustParsePrefix("192.168.0.0/16"),
 			netip.MustParsePrefix("169.254.0.0/16"),
 		},
-		Allow: false,
+		Allow:    false,
+		Physical: true,
 	}}
 
 	if err := netw.fw.Add(rules); err != nil {
