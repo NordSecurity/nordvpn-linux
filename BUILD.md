@@ -1,3 +1,4 @@
+
 # Table of contents
 1. [How to setup the development environment](#how-to-setup-the-development-environment)
 1. [Building](#building)
