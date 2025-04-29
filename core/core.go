@@ -24,17 +24,21 @@ const (
 	linuxPlatformID = 500
 )
 
+type ServicesAPI interface {
+	Services(token string) (ServicesResponse, error)
+}
+
 type CredentialsAPI interface {
 	NotificationCredentials(token, appUserID string) (NotificationCredentialsResponse, error)
 	NotificationCredentialsRevoke(token, appUserID string, purgeSession bool) (NotificationCredentialsRevokeResponse, error)
 	ServiceCredentials(string) (*CredentialsResponse, error)
 	TokenRenew(token string, idempotencyKey uuid.UUID) (*TokenRenewResponse, error)
-	Services(string) (ServicesResponse, error)
 	CurrentUser(string) (*CurrentUserResponse, error)
 	DeleteToken(string) error
 	TrustedPassToken(string) (*TrustedPassTokenResponse, error)
 	MultifactorAuthStatus(string) (*MultifactorAuthStatusResponse, error)
 	Logout(token string) error
+	ServicesAPI
 }
 
 type InsightsAPI interface {

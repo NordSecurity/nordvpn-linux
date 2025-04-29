@@ -44,6 +44,13 @@ const (
 	NordWhisperTech ServerTechnology = 51
 )
 
+type ServiceID int64
+
+const (
+	VPNServiceID         ServiceID = 1
+	DedicatedIPServiceID ServiceID = 11
+)
+
 type ServerBy int
 
 const (
@@ -127,8 +134,8 @@ type ServiceData struct {
 }
 
 type Service struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	ID   ServiceID `json:"id"`
+	Name string    `json:"name"`
 }
 
 type ServiceServer struct {

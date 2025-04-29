@@ -37,11 +37,6 @@ type Checker interface {
 	GetDedicatedIPServices() ([]DedicatedIPService, error)
 }
 
-const (
-	VPNServiceID         = 1
-	DedicatedIPServiceID = 11
-)
-
 type expirationChecker interface {
 	// isExpired checks if date in '2006-01-02 15:04:05' format has passed
 	isExpired(date string) bool
@@ -180,7 +175,7 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 
 	dipServices := []DedicatedIPService{}
 	for _, service := range services {
-		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
+		if service.Service.ID == core.DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
 			serverIDs := []int64{}
 			for _, server := range service.Details.Servers {
 				serverIDs = append(serverIDs, server.ID)
@@ -321,7 +316,7 @@ func (r *RenewingChecker) fetchSaveServices(userId int64, data *config.TokenData
 	}
 
 	for _, service := range services {
-		if service.Service.ID == VPNServiceID { // VPN service
+		if service.Service.ID == core.VPNServiceID { // VPN service
 			data.ServiceExpiry = service.ExpiresAt
 		}
 	}

@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events/moose"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -20,7 +19,7 @@ var (
 func newAnalytics(
 	eventsDbPath string,
 	fs *config.FilesystemConfigManager,
-	subAPI core.SubscriptionAPI,
+	subAPI moose.SubscribtionServicesAPI,
 	ver, env, id string) *moose.Subscriber {
 	_ = os.Setenv("MOOSE_LOG_FILE", "Stdout")
 
