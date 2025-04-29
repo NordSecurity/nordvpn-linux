@@ -91,18 +91,18 @@ func TestIsConnected(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ch := make(chan state, 1)
-			var wg sync.WaitGroup
-			wg.Add(1)
+			var connectionEstablishedWG sync.WaitGroup
+			connectionEstablishedWG.Add(1)
 			go func() {
 				ch <- test.state
-				wg.Done()
+				connectionEstablishedWG.Done()
 			}()
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 			defer cancel()
 			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents())
 
-			wg.Wait()
+			connectionEstablishedWG.Wait()
 			select {
 			case _, ok := <-isConnectedC:
 				assert.Equal(t, test.channelClosed, !ok)
@@ -370,14 +370,24 @@ func Test_maskPublicKey(t *testing.T) {
 }
 
 type subscriber struct {
-	mu      sync.RWMutex
-	counter int
+	mu               sync.RWMutex
+	counter          int
+	eventsReceivedWG *sync.WaitGroup
+}
+
+func NewSubscriber(eventsReceivedWG *sync.WaitGroup) subscriber {
+	return subscriber{
+		eventsReceivedWG: eventsReceivedWG,
+	}
 }
 
 func (s *subscriber) NotifyConnect(events.DataConnect) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
 	s.counter++
+	s.eventsReceivedWG.Done()
+
 	return nil
 }
 func (s *subscriber) NotifyDisconnect(events.DataDisconnect) error {
@@ -387,6 +397,7 @@ func (s *subscriber) NotifyDisconnect(events.DataDisconnect) error {
 func (s *subscriber) Counter() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	return s.counter
 }
 
@@ -425,13 +436,13 @@ func TestLibtelio_connect(t *testing.T) {
 			err:    nil,
 			active: true,
 			events: 4,
-			body: func(cf context.CancelFunc, events chan<- state, wg *sync.WaitGroup) {
+			body: func(cf context.CancelFunc, events chan<- state, connectionEstablishedWG *sync.WaitGroup) {
 				events <- state{
 					State:  teliogo.NodeStateConnected,
 					IsExit: true,
 				}
 				// make sure context is canceled after function exited
-				wg.Wait()
+				connectionEstablishedWG.Wait()
 				cf()
 
 				// Check that events are still received
@@ -443,6 +454,7 @@ func TestLibtelio_connect(t *testing.T) {
 					State:  teliogo.NodeStateConnected,
 					IsExit: true,
 				}
+				time.Sleep(3 * time.Second)
 				events <- state{
 					State:  teliogo.NodeStateDisconnected,
 					IsExit: true,
@@ -458,8 +470,11 @@ func TestLibtelio_connect(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			events := make(chan state, 1)
 			pub := vpn.NewInternalVPNEvents()
-			sub := &subscriber{}
-			pub.Subscribe(sub)
+
+			eventsReceivedWG := sync.WaitGroup{}
+			eventsReceivedWG.Add(tt.events)
+			sub := NewSubscriber(&eventsReceivedWG)
+			pub.Subscribe(&sub)
 			// Create instance
 			libtelio := &Libtelio{
 				lib:             mockLib{},
@@ -471,26 +486,40 @@ func TestLibtelio_connect(t *testing.T) {
 
 			// connect ctx
 			ctx, cancel := context.WithCancel(context.Background())
-			startWg := sync.WaitGroup{}
-			endWg := sync.WaitGroup{}
-			startWg.Add(1)
-			endWg.Add(1)
+			connectionInitiatedWG := sync.WaitGroup{}
+			connectionEstablishedWG := sync.WaitGroup{}
+			connectionInitiatedWG.Add(1)
+			connectionEstablishedWG.Add(1)
 			var err error
 			go func() {
-				startWg.Done()
+				connectionInitiatedWG.Done()
 				err = libtelio.connect(ctx, netip.Addr{}, "", false)
-				endWg.Done()
+				connectionEstablishedWG.Done()
 			}()
 
 			// Wait until goroutine starts
-			startWg.Wait()
+			connectionInitiatedWG.Wait()
 
-			tt.body(cancel, events, &endWg)
+			tt.body(cancel, events, &connectionEstablishedWG)
 
 			// Wait until goroutine stops
-			endWg.Wait()
+			connectionEstablishedWG.Wait()
 			assert.ErrorIs(t, tt.err, err)
 			assert.Equal(t, tt.active, libtelio.active)
+
+			if tt.events > 0 {
+				eventsReceivedChan := make(chan interface{})
+				go func() {
+					eventsReceivedWG.Wait()
+					close(eventsReceivedChan)
+				}()
+				select {
+				case <-eventsReceivedChan:
+				case <-time.After(time.Millisecond * 10):
+					assert.Fail(t, "timeout when waiting for events")
+				}
+			}
+
 			assert.Equal(t, tt.events, sub.Counter())
 		})
 	}
