@@ -20,8 +20,7 @@ ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Hash=${HASH}' \
 	-X 'main.Arch=${ARCH}' \
 	-X 'main.PackageType=${PACKAGE:-deb}' \
-	-X 'main.Salt=${SALT}' \
-	-X 'main.FirebaseToken=${FIREBASE_TOKEN:-""}'"
+	-X 'main.Salt=${SALT}'"
 
 declare -A names_map=(
 	[cli]=nordvpn

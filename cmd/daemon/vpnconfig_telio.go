@@ -10,5 +10,5 @@ import (
 )
 
 func vpnLibConfigGetterImplementation(cm config.Manager, rcConfig remote.RemoteConfigGetter) vpn.LibConfigGetter {
-	return libtelio.NewTelioConfig(rcConfig)
+	return libtelio.NewTelioConfig(rcConfig.GetTelioConfig)
 }
