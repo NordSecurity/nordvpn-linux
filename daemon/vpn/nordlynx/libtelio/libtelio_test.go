@@ -21,7 +21,6 @@ import (
 )
 
 const (
-	exampleAppVersion                  = "3.16.3"
 	exampleDeviceID                    = "11111"
 	exampleEventPath                   = "/var/data.db"
 	vpnPeersPersistentKeepaliveSeconds = uint32(25)
@@ -158,7 +157,7 @@ func Test_TelioConfig(t *testing.T) {
 
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfig}
 
-	actualCfg, err := handleTelioConfig(exampleEventPath, exampleAppVersion, true, &remoteConfigGetter)
+	actualCfg, err := handleTelioConfig(exampleEventPath, true, &remoteConfigGetter)
 
 	assert.NoError(t, err)
 
@@ -182,7 +181,7 @@ func Test_TelioConfigLanaDisabled(t *testing.T) {
 
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfigLanaDisabled}
 
-	cfg, err := handleTelioConfig(exampleEventPath, exampleAppVersion, true, &remoteConfigGetter)
+	cfg, err := handleTelioConfig(exampleEventPath, true, &remoteConfigGetter)
 
 	assert.NoError(t, err)
 
@@ -195,7 +194,7 @@ func Test_TelioConfigAllDisabled(t *testing.T) {
 
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfigAllDisabled}
 
-	cfg, err := handleTelioConfig(exampleEventPath, exampleAppVersion, true, &remoteConfigGetter)
+	cfg, err := handleTelioConfig(exampleEventPath, true, &remoteConfigGetter)
 
 	assert.NoError(t, err)
 
@@ -308,7 +307,7 @@ type mockVersionGetter struct {
 	remoteConfig string
 }
 
-func (m *mockVersionGetter) GetConfig(string) (string, error) {
+func (m *mockVersionGetter) GetConfig() (string, error) {
 	return m.remoteConfig, nil
 }
 

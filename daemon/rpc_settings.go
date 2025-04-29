@@ -76,16 +76,12 @@ func (r *RPC) SettingsProtocols(ctx context.Context, _ *pb.Empty) (*pb.Payload, 
 }
 
 func (r *RPC) SettingsTechnologies(ctx context.Context, _ *pb.Empty) (*pb.Payload, error) {
-	technologies := []string{
-		config.Technology_OPENVPN.String(), config.Technology_NORDLYNX.String(),
-	}
-
-	if r.isNordWhisperEnabled() {
-		technologies = append(technologies, config.Technology_NORDWHISPER.String())
-	}
-
 	return &pb.Payload{
 		Type: internal.CodeSuccess,
-		Data: technologies,
+		Data: []string{
+			config.Technology_OPENVPN.String(),
+			config.Technology_NORDLYNX.String(),
+			config.Technology_NORDWHISPER.String(),
+		},
 	}, nil
 }

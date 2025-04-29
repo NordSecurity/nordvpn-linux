@@ -15,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 
@@ -255,7 +256,7 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 			return err
 		}
 
-		if cfg.Technology == config.Technology_NORDWHISPER && !r.isNordWhisperEnabled() {
+		if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
 			log.Println(internal.DebugPrefix,
 				"technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
 			if err := r.fallbackTechnology(config.Technology_NORDLYNX); err != nil {
