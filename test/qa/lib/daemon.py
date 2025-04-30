@@ -7,6 +7,7 @@ import time
 import sh
 
 from . import logging, ssh
+from lib.shell import sh_no_tty
 
 
 def _rewrite_log_path():
@@ -36,6 +37,7 @@ def is_connected() -> bool:
 def is_disconnected() -> bool:
     """Returns True when not connected to VPN."""
     try:
+        print(sh_no_tty.nordvpn.status())
         return "Disconnected" in sh.nordvpn.status()
     except sh.ErrorReturnCode:
         return False
