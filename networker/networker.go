@@ -661,7 +661,7 @@ func (netw *Combined) blockTraffic() error {
 	// 	return err
 	// }
 
-	// block INPUT & OUTPUT
+	// block PREROUTING & POSTROUTING
 	return netw.fw.Add([]firewall.Rule{
 		{
 			Name:       "drop",
