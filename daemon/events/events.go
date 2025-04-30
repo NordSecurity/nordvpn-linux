@@ -250,13 +250,12 @@ func (l *LoginEvents) Subscribe(to LoginPublisher) {
 }
 
 // Config changes
-
 type ConfigPublisher interface {
-	NotifyConfigChanged(cfg *config.Config) error
+	NotifyConfigChanged(cfg config.DataConfigChange) error
 }
 
 type ConfigEvents struct {
-	Config events.PublishSubcriber[*config.Config]
+	Config events.PublishSubcriber[config.DataConfigChange]
 }
 
 func (c *ConfigEvents) Subscribe(to ConfigPublisher) {
@@ -265,7 +264,7 @@ func (c *ConfigEvents) Subscribe(to ConfigPublisher) {
 
 func NewConfigEvents() *ConfigEvents {
 	return &ConfigEvents{
-		Config: &subs.Subject[*config.Config]{},
+		Config: &subs.Subject[config.DataConfigChange]{},
 	}
 }
 

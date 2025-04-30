@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -27,6 +28,15 @@ var errNoInstallFile = errors.New("install file doesn't exist")
 
 // SaveFunc is used by Manager to save the config.
 type SaveFunc func(Config) Config
+
+func getCaller() string {
+	// we need to skip two frames, one for getCaller, and one for caller of getCaller
+	_, file, line, ok := runtime.Caller(2)
+	if ok {
+		return fmt.Sprintf("%s:%d", file, line)
+	}
+	return ""
+}
 
 // Manager is responsible for persisting and retrieving the config.
 type Manager interface {
@@ -62,8 +72,14 @@ func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileM
 	return os.WriteFile(location, data, mode)
 }
 
+type DataConfigChange struct {
+	Config *Config
+	// Caller contains file and line number of the call to update the config
+	Caller string
+}
+
 type ConfigPublisher interface {
-	Publish(*Config)
+	Publish(DataConfigChange)
 }
 
 // FilesystemConfigManager implements config persistence and retrieval from disk.
@@ -103,11 +119,15 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
+	caller := getCaller()
 	var c Config
 	var err error
 	defer func() {
 		if err == nil && f.configPublisher != nil {
-			f.configPublisher.Publish(&c)
+			f.configPublisher.Publish(DataConfigChange{
+				Config: &c,
+				Caller: caller,
+			})
 		}
 	}()
 
@@ -150,10 +170,14 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool) (retErr error) {
 	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
+	caller := getCaller()
 	var c Config
 	defer func() {
 		if retErr == nil && f.configPublisher != nil {
-			f.configPublisher.Publish(&c)
+			f.configPublisher.Publish(DataConfigChange{
+				Config: &c,
+				Caller: caller,
+			})
 		}
 	}()
 
