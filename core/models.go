@@ -505,17 +505,13 @@ func (s *Server) IsValid() bool {
 		len(s.Locations) > 0
 }
 
-// CleanServersList allocation-free list cleaning
-func CleanServersList(servers *Servers) {
-	s := *servers
-	idx := 0
-	for _, item := range s {
-		if item.IsValid() {
-			s[idx] = item
-			idx++
+func (s *Servers) Validate() error {
+	for idx, itm := range *s {
+		if !itm.IsValid() {
+			return fmt.Errorf("found invalid server record at [%d/%d]", idx, len(*s))
 		}
 	}
-	*servers = s[:idx]
+	return nil
 }
 
 type Groups []Group

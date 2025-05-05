@@ -352,7 +352,6 @@ func serversList() core.Servers {
 	}
 
 	servers := core.Servers{
-		core.Server{}, // invalid entry - should be removed by cleanup logic
 		core.Server{
 			ID:           1,
 			Name:         "France #1",
@@ -552,8 +551,10 @@ func serversList() core.Servers {
 		},
 	}
 
-	// eliminate invalid servers from the list
-	core.CleanServersList(&servers)
+	// if at least one record is not valid - reject whole list, asuming something wrong is with whole list
+	if err := servers.Validate(); err != nil {
+		return nil
+	}
 
 	for i, server := range servers {
 		servers[i].Keys = generateKeys(server)
