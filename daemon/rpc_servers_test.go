@@ -488,3 +488,18 @@ func TestServers(t *testing.T) {
 		})
 	}
 }
+
+func TestServersValidation(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// here expecting valid list of servers
+	servers := serversList()
+
+	assert.NotNil(t, servers)
+	assert.NoError(t, servers.Validate())
+
+	// adding invalid record to the servers list
+	servers = append(servers, core.Server{})
+
+	assert.Error(t, servers.Validate())
+}
