@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -46,7 +45,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 
 	if cfg.KillSwitch {
 		if err := r.netw.UnsetKillSwitch(); err != nil {
-			fmt.Println(internal.ErrorPrefix, "failed to unset killswitch:", err)
+			log.Println(internal.ErrorPrefix, "failed to unset killswitch:", err)
 		}
 	}
 
