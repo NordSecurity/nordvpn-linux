@@ -496,6 +496,24 @@ func (s *Server) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// IsValid returns true if server record is valid.
+func (s *Server) IsValid() bool {
+	return s.Name != "" &&
+		s.Station != "" &&
+		s.Hostname != "" &&
+		len(s.Technologies) > 0 &&
+		len(s.Locations) > 0
+}
+
+func (s *Servers) Validate() error {
+	for idx, itm := range *s {
+		if !itm.IsValid() {
+			return fmt.Errorf("found invalid server record at [%d/%d]", idx, len(*s))
+		}
+	}
+	return nil
+}
+
 type Groups []Group
 
 type Group struct {

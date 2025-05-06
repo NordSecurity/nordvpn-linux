@@ -330,6 +330,12 @@ func (api *DefaultAPI) Servers() (Servers, http.Header, error) {
 	if err = json.NewDecoder(resp.Body).Decode(&ret); err != nil {
 		return nil, nil, err
 	}
+
+	// if at least one record is not valid - reject whole list, assuming something wrong is with whole list
+	if err = ret.Validate(); err != nil {
+		return nil, nil, err
+	}
+
 	return ret, resp.Header, nil
 }
 
@@ -389,6 +395,11 @@ func (api *DefaultAPI) RecommendedServers(filter ServersFilter, longitude, latit
 
 	var ret Servers
 	if err = json.NewDecoder(resp.Body).Decode(&ret); err != nil {
+		return nil, nil, err
+	}
+
+	// if at least one record is not valid - reject whole list, assuming something wrong is with whole list
+	if err = ret.Validate(); err != nil {
 		return nil, nil, err
 	}
 
