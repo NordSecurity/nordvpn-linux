@@ -398,7 +398,7 @@ func (api *DefaultAPI) RecommendedServers(filter ServersFilter, longitude, latit
 		return nil, nil, err
 	}
 
-	// if at least one record is not valid - reject whole list, asuming something wrong is with whole list
+	// if at least one record is not valid - reject whole list, assuming something wrong is with whole list
 	if err = ret.Validate(); err != nil {
 		return nil, nil, err
 	}

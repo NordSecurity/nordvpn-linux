@@ -551,7 +551,7 @@ func serversList() core.Servers {
 		},
 	}
 
-	// if at least one record is not valid - reject whole list, asuming something wrong is with whole list
+	// if at least one record is not valid - reject whole list, assuming something wrong is with whole list
 	if err := servers.Validate(); err != nil {
 		return nil
 	}
