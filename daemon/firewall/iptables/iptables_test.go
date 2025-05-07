@@ -1021,14 +1021,17 @@ func containsSlice(t *testing.T, list, sublist []string) bool {
 
 func getSystemRules(supportedIPTables []string) (map[string][]string, error) {
 	rules := make(map[string][]string)
+	tables := []string{"mangle", "filter"}
 	for _, cmd := range supportedIPTables {
-		out, err := exec.Command(cmd, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
-		if err != nil {
-			return nil, fmt.Errorf("executing '%s -S': %w: %s", cmd, err, out)
-		}
 		var res []string
-		for _, line := range strings.Split(string(out), "\n") {
-			res = append(res, trimPrefixes(line, "-A"))
+		for _, table := range tables{
+			out, err := exec.Command(cmd, "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
+			if err != nil {
+				return nil, fmt.Errorf("executing '%s -S': %w: %s", cmd, err, out)
+			}
+			for _, line := range strings.Split(string(out), "\n") {
+				res = append(res, trimPrefixes(line, "-A"))
+			}
 		}
 		rules[cmd] = res
 	}

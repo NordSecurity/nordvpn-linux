@@ -4,7 +4,6 @@ package allowlist
 import (
 	"bytes"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
@@ -13,7 +12,6 @@ import (
 const (
 	RuleComment = "nordvpn_allowlist"
 	iptablesCmd = "iptables"
-	iptablesSave = "iptables-save"
 )
 
 type Routing interface {
@@ -94,8 +92,9 @@ func routePortsToIPTables(commandFunc runCommandFunc, port string, protocol stri
 }
 
 func clearRouting(commandFunc runCommandFunc) error {
-	args := []string{"-t", "mangle"}
-	out, err := exec.Command(iptablesSave, args...).CombinedOutput()
+	table_args := []string{"-t", "mangle"}
+	list_args := append(table_args, "-S")
+	out, err := commandFunc(iptablesCmd, list_args...)
 	if err != nil {
 		return fmt.Errorf("iptables listing rules: %w: %s", err, string(out))
 	}
@@ -108,8 +107,8 @@ func clearRouting(commandFunc runCommandFunc) error {
 		if strings.Contains(string(line), RuleComment) {
 			lineParts := strings.Fields(string(line[:]))
 			lineParts[0] = "-D"
-			args = append(args, lineParts...)			
-			out, err := commandFunc(iptablesCmd, args...)
+			delete_args := append(table_args, lineParts...)
+			out, err := commandFunc(iptablesCmd, delete_args...)
 			if err != nil {
 				return fmt.Errorf("iptables deleting rule: %w: %s", err, string(out))
 			}
