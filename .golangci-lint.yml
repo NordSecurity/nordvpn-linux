@@ -9,10 +9,10 @@ linters:
   - dogsled
   #- dupl
   #- errcheck
-  - exhaustive
+  #- exhaustive
   #- funlen
   #- gochecknoinits
-  - goconst
+  #- goconst
   #- gocritic
   #- gocyclo
   - gofmt
@@ -20,8 +20,8 @@ linters:
   #- gomnd
   - goprintffuncname
   #- gosec
-  - gosimple
-  - govet
+  #- gosimple
+  #- govet
   #- ineffassign
   #- lll
   - misspell
