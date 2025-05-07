@@ -71,7 +71,7 @@ func NewServer(
 	norduser service.NorduserFileshareClient,
 	connectContext *sharedctx.Context,
 ) *Server {
-	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
+	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC), gocron.WithLimitConcurrentJobs(1, gocron.LimitModeReschedule))
 	return &Server{
 		ac:             ac,
 		cm:             cm,

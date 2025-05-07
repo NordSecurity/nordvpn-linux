@@ -2,7 +2,6 @@ package meshnet
 
 import (
 	"log"
-	"sync"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
@@ -62,9 +61,6 @@ func JobMonitorFileshareProcess(s *Server) func() error {
 }
 
 func (j *monitorFileshareProcessJob) run() error {
-	j.mu.Lock()
-	defer j.mu.Unlock()
-
 	if !j.meshChecker.isMeshOn() {
 		if j.isFileshareAllowed {
 			if err := j.rulesController.ForbidFileshare(); err == nil {
@@ -96,7 +92,6 @@ type monitorFileshareProcessJob struct {
 	meshChecker        meshChecker
 	rulesController    rulesController
 	processChecker     processChecker
-	mu                 sync.Mutex
 }
 
 type meshChecker interface {
