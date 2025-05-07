@@ -182,7 +182,7 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
     return result
 
 
-def __rules_allowlist_port_chain_prerouting(interface: str, ports_udp: list[Port], ports_tcp: list[Port]):
+def __rules_allowlist_port_chain_prerouting(ports_udp: list[Port], ports_tcp: list[Port]):
     result = []
 
     for port in ports_udp:
@@ -214,7 +214,7 @@ def __rules_allowlist_port_chain_input(interface: str, ports_udp: list[Port], po
     return result
 
 
-def __rules_allowlist_port_chain_output(interface: str, ports_udp: list[Port], ports_tcp: list[Port]):
+def __rules_allowlist_port_chain_output(ports_udp: list[Port], ports_tcp: list[Port]):
     result = []
 
     for port in ports_udp:

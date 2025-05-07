@@ -473,7 +473,7 @@ func TestRuleToIPTables(t *testing.T) {
 			rule: firewall.Rule{
 				Direction:      firewall.Outbound,
 				RemoteNetworks: []netip.Prefix{net1111},
-				Physical: true,
+				Physical:       true,
 			},
 			ipv4TablesRules: []string{"POSTROUTING -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP"},
 		},
@@ -482,7 +482,7 @@ func TestRuleToIPTables(t *testing.T) {
 			rule: firewall.Rule{
 				Direction:      firewall.TwoWay,
 				RemoteNetworks: []netip.Prefix{net1111},
-				Physical: true,
+				Physical:       true,
 			},
 			ipv4TablesRules: []string{
 				"PREROUTING -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
@@ -513,7 +513,7 @@ func TestRuleToIPTables(t *testing.T) {
 			rule: firewall.Rule{
 				Direction:  firewall.TwoWay,
 				Interfaces: []net.Interface{{Name: "lo"}, {Name: "eth0"}},
-				Physical: true,
+				Physical:   true,
 			},
 			ipv4TablesRules: []string{
 				"PREROUTING -i lo -m comment --comment nordvpn -j DROP",
@@ -552,7 +552,7 @@ func TestRuleToIPTables(t *testing.T) {
 				Direction:      firewall.Outbound,
 				RemoteNetworks: []netip.Prefix{net1111, net2220, netIpv6},
 				Interfaces:     []net.Interface{{Name: "lo"}, {Name: "eth0"}},
-				Physical: true,
+				Physical:       true,
 			},
 			ipv4TablesRules: []string{
 				"POSTROUTING -o lo -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
@@ -626,7 +626,7 @@ func TestRuleToIPTables(t *testing.T) {
 				Direction:      firewall.TwoWay,
 				RemoteNetworks: []netip.Prefix{net1111},
 				Ports:          []int(nil),
-				Physical: true,
+				Physical:       true,
 			},
 			ipv4TablesRules: []string{
 				"PREROUTING -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
@@ -651,7 +651,7 @@ func TestRuleToIPTables(t *testing.T) {
 				Direction:      firewall.TwoWay,
 				RemoteNetworks: []netip.Prefix{net1111},
 				Ports:          []int{0},
-				Physical: true,
+				Physical:       true,
 			},
 			ipv4TablesRules: []string{
 				"PREROUTING -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
@@ -678,7 +678,7 @@ func TestRuleToIPTables(t *testing.T) {
 				Direction:      firewall.TwoWay,
 				RemoteNetworks: []netip.Prefix{net1111},
 				Ports:          []int{111},
-				Physical: true,
+				Physical:       true,
 			},
 			ipv4TablesRules: []string{
 				"PREROUTING -s 1.1.1.1/32 --sport 111:111 -m comment --comment nordvpn -j DROP",
@@ -709,7 +709,7 @@ func TestRuleToIPTables(t *testing.T) {
 				Direction:      firewall.TwoWay,
 				RemoteNetworks: []netip.Prefix{net1111},
 				Ports:          []int{0, 111},
-				Physical: true,
+				Physical:       true,
 			},
 			ipv4TablesRules: []string{
 				"PREROUTING -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
@@ -748,7 +748,7 @@ func TestRuleToIPTables(t *testing.T) {
 				RemoteNetworks: []netip.Prefix{
 					net1111,
 				},
-				Allow: true,
+				Allow:    true,
 				Physical: true,
 			},
 			ipv4TablesRules: []string{
@@ -783,7 +783,7 @@ func TestRuleToIPTables(t *testing.T) {
 				RemoteNetworks: []netip.Prefix{
 					net1111,
 				},
-				Allow: true,
+				Allow:    true,
 				Physical: true,
 			},
 			ipv4TablesRules: []string{
@@ -818,7 +818,7 @@ func TestRuleToIPTables(t *testing.T) {
 				RemoteNetworks: []netip.Prefix{
 					net1111,
 				},
-				Allow: true,
+				Allow:    true,
 				Physical: true,
 			},
 			ipv4TablesRules: []string{
@@ -855,7 +855,7 @@ func TestRuleToIPTables(t *testing.T) {
 				RemoteNetworks: []netip.Prefix{
 					net1111,
 				},
-				Allow: true,
+				Allow:    true,
 				Physical: true,
 			},
 			ipv4TablesRules: []string{
@@ -1021,14 +1021,17 @@ func containsSlice(t *testing.T, list, sublist []string) bool {
 
 func getSystemRules(supportedIPTables []string) (map[string][]string, error) {
 	rules := make(map[string][]string)
+	tables := []string{"mangle", "filter"}
 	for _, cmd := range supportedIPTables {
-		out, err := exec.Command(cmd, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
-		if err != nil {
-			return nil, fmt.Errorf("executing '%s -S': %w: %s", cmd, err, out)
-		}
 		var res []string
-		for _, line := range strings.Split(string(out), "\n") {
-			res = append(res, trimPrefixes(line, "-A"))
+		for _, table := range tables {
+			out, err := exec.Command(cmd, "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
+			if err != nil {
+				return nil, fmt.Errorf("executing '%s -S': %w: %s", cmd, err, out)
+			}
+			for _, line := range strings.Split(string(out), "\n") {
+				res = append(res, trimPrefixes(line, "-A"))
+			}
 		}
 		rules[cmd] = res
 	}
