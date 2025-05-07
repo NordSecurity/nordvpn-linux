@@ -59,10 +59,9 @@ func TestIPTables_routingPorts(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_getCleanupIPTablesRules(t *testing.T) {
+func Test_clearRouting(t *testing.T) {
 	type args struct {
 		commandFunc runCommandFunc
-		chain       string
 	}
 	tests := []struct {
 		name    string
@@ -73,7 +72,6 @@ func Test_getCleanupIPTablesRules(t *testing.T) {
 			name: "Cleanup of iptables rules",
 			args: args{
 				commandFunc: workingCommandFunc,
-				chain:       "0x123",
 			},
 			wantErr: true,
 		},
@@ -81,14 +79,13 @@ func Test_getCleanupIPTablesRules(t *testing.T) {
 			name: "Failing cleanup",
 			args: args{
 				commandFunc: failingCommandFunc,
-				chain:       "0x123",
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := getCleanupIPTablesRules(tt.args.commandFunc, tt.args.chain); (err != nil) != tt.wantErr {
+			if err := clearRouting(tt.args.commandFunc); (err != nil) != tt.wantErr {
 				t.Errorf("getCleanupIPTablesRules() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

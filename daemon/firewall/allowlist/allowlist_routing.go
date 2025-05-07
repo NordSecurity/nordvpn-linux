@@ -4,6 +4,7 @@ package allowlist
 import (
 	"bytes"
 	"fmt"
+	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
@@ -12,6 +13,7 @@ import (
 const (
 	RuleComment = "nordvpn_allowlist"
 	iptablesCmd = "iptables"
+	iptablesSave = "iptables-save"
 )
 
 type Routing interface {
@@ -61,7 +63,7 @@ func routePortsToIPTables(commandFunc runCommandFunc, port string, protocol stri
 		// already set or error happened
 		return err
 	}
-	// iptables -t mangle -I PREROUTING -p tcp --dport 22 -j MARK --set-mark 0xe1f1 -m comment --comment "nordvpn"
+	// iptables -t mangle -I PREROUTING -p tcp --dport 22 -j MARK --set-mark 0xe1f1 -m comment --comment "nordvpn_allowlist"
 	args := fmt.Sprintf(
 		"-t mangle -I PREROUTING -p %s --dport %s -j MARK --set-mark %s -m comment --comment %s",
 		protocol,
@@ -75,7 +77,7 @@ func routePortsToIPTables(commandFunc runCommandFunc, port string, protocol stri
 		return fmt.Errorf("iptables inserting rule: %w: %s", err, string(out))
 	}
 
-	// iptables -t mangle -I OUTPUT -p tcp --sport 22 -j MARK --set-mark 0xe1f1 -m comment --comment "nordvpn"
+	// iptables -t mangle -I OUTPUT -p tcp --sport 22 -j MARK --set-mark 0xe1f1 -m comment --comment "nordvpn_allowlist"
 	args = fmt.Sprintf(
 		"-t mangle -I OUTPUT -p %s --sport %s -j MARK --set-mark %s -m comment --comment %s",
 		protocol,
@@ -91,10 +93,9 @@ func routePortsToIPTables(commandFunc runCommandFunc, port string, protocol stri
 	return nil
 }
 
-func getCleanupIPTablesRules(commandFunc runCommandFunc, chain string) error {
-	args := "-t mangle -L " + chain + " -v -n --line-numbers"
-
-	out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
+func clearRouting(commandFunc runCommandFunc) error {
+	args := []string{"-t", "mangle"}
+	out, err := exec.Command(iptablesSave, args...).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("iptables listing rules: %w: %s", err, string(out))
 	}
@@ -106,26 +107,13 @@ func getCleanupIPTablesRules(commandFunc runCommandFunc, chain string) error {
 		// check for comment name in rule
 		if strings.Contains(string(line), RuleComment) {
 			lineParts := strings.Fields(string(line[:]))
-			ruleno := lineParts[0]
-			args := "-t mangle -D " + chain + " %s"
-			args = fmt.Sprintf(args, ruleno)
-			// #nosec G204 -- input is properly sanitized
-			out, err := commandFunc(iptablesCmd, strings.Split(args, " ")...)
+			lineParts[0] = "-D"
+			args = append(args, lineParts...)			
+			out, err := commandFunc(iptablesCmd, args...)
 			if err != nil {
 				return fmt.Errorf("iptables deleting rule: %w: %s", err, string(out))
 			}
-			return getCleanupIPTablesRules(commandFunc, chain)
-		}
-	}
-	return nil
-}
-
-func clearRouting(commandFunc runCommandFunc) error {
-	chains := []string{"PREROUTING", "OUTPUT"}
-	for _, chain := range chains {
-		err := getCleanupIPTablesRules(commandFunc, chain)
-		if err != nil {
-			return err
+			return clearRouting(commandFunc)
 		}
 	}
 	return nil
