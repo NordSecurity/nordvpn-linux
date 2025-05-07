@@ -8,10 +8,12 @@ from . import Port, Protocol, daemon, logging, dns
 IP_ROUTE_TABLE = 205
 
 # Rules for killswitch
+# mangle
 # -A PREROUTING -i {iface} -m comment --comment nordvpn -j DROP
 # -A POSTROUTING -o {iface} -m comment --comment nordvpn -j DROP
 
 # Rules for firewall
+# mangle
 # -A PREROUTING -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A PREROUTING -i {iface} -m comment --comment nordvpn -j DROP
 # -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
@@ -19,16 +21,19 @@ IP_ROUTE_TABLE = 205
 # -A POSTROUTING -o {iface} -m comment --comment nordvpn -j DROP
 
 # Rules for allowlisted subnet
+# mangle
 # -A PREROUTING -s {subnet_ip} -i {iface} -m comment --comment nordvpn -j ACCEPT
 # -A PREROUTING -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A PREROUTING -i {iface} -m comment --comment nordvpn -j DROP
-# -A FORWARD -d {subnet_ip} -o {iface} -m comment --comment nordvpn -j ACCEPT
 # -A POSTROUTING -d {subnet_ip} -o {iface} -m comment --comment nordvpn -j ACCEPT
 # -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A POSTROUTING -o {iface} -m comment --comment nordvpn -j DROP
+# filter
+# -A FORWARD -d {subnet_ip} -o {iface} -m comment --comment nordvpn -j ACCEPT
 
 # Rules for allowlisted port
+# mangle
 # -A PREROUTING -p udp -m udp --dport {port} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
 # -A PREROUTING -p tcp -m tcp --dport {port} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
 # -A PREROUTING -i {iface} -p udp -m udp --dport {port} -m comment --comment nordvpn -j ACCEPT
@@ -48,6 +53,7 @@ IP_ROUTE_TABLE = 205
 # -A POSTROUTING -o {iface} -m comment --comment nordvpn -j DROP
 
 # Rules for allowlisted ports range
+# mangle
 # -A PREROUTING -p udp -m udp --dport {port_start}:{port_end} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
 # -A PREROUTING -p tcp -m tcp --dport {port_start}:{port_end} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
 # -A PREROUTING -i {iface} -p udp -m udp --dport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
@@ -66,31 +72,30 @@ IP_ROUTE_TABLE = 205
 # -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A POSTROUTING -o {iface} -m comment --comment nordvpn -j DROP
 
-# same thing as port but for one protocol? deletable?
 # Rules for allowlisted port and protocol
-# -A INPUT -i {iface} -p {protocol} -m {protocol} --dport {port} -m comment --comment nordvpn -j ACCEPT
-# -A INPUT -i {iface} -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn -j ACCEPT
-# -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-# -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
-# -A FORWARD -o {iface} -m comment --comment nordvpn -j DROP
-# -A OUTPUT -o {iface} -p {protocol} -m {protocol} --dport {port} -m comment --comment nordvpn -j ACCEPT
-# -A OUTPUT -o {iface} -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn -j ACCEPT
-# -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-# -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-# -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
+# mangle
+# -A PREROUTING -i {iface} -p {protocol} -m {protocol} --dport {port} -m comment --comment nordvpn -j ACCEPT
+# -A PREROUTING -i {iface} -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn -j ACCEPT
+# -A PREROUTING -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+# -A PREROUTING -i {iface} -m comment --comment nordvpn -j DROP
+# -A POSTROUTING -o {iface} -p {protocol} -m {protocol} --dport {port} -m comment --comment nordvpn -j ACCEPT
+# -A POSTROUTING -o {iface} -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn -j ACCEPT
+# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+# -A POSTROUTING -o {iface} -m comment --comment nordvpn -j DROP
 
-# same thing again
 # Rules for allowlisted ports range and protocol
-# -A INPUT -i {iface} -p {protocol} -m {protocol} --sport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
-# -A INPUT -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-# -A INPUT -i {iface} -m comment --comment nordvpn -j DROP
-# -A OUTPUT -o {iface} -p {protocol} -m {protocol} --dport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
-# -A OUTPUT -o {iface} -p {protocol} -m {protocol} --sport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
-# -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-# -A OUTPUT -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-# -A OUTPUT -o {iface} -m comment --comment nordvpn -j DROP
+# mangle
+# -A PREROUTING -i {iface} -p {protocol} -m {protocol} --sport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
+# -A PREROUTING -i {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+# -A PREROUTING -i {iface} -m comment --comment nordvpn -j DROP
+# -A POSTROUTING -o {iface} -p {protocol} -m {protocol} --dport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
+# -A POSTROUTING -o {iface} -p {protocol} -m {protocol} --sport {port_start}:{port_end} -m comment --comment nordvpn -j ACCEPT
+# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+# -A POSTROUTING -o {iface} -m comment --comment nordvpn -j DROP
 
-INPUT_LAN_DISCOVERY_RULES = [
+PREROUTING_LAN_DISCOVERY_RULES = [
     "-A PREROUTING -s 169.254.0.0/16 -i eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A PREROUTING -s 192.168.0.0/16 -i eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A PREROUTING -s 172.16.0.0/12 -i eth0 -m comment --comment nordvpn -j ACCEPT",
@@ -104,7 +109,7 @@ FORWARD_LAN_DISCOVERY_RULES = [
     "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
 ]
 
-OUTPUT_LAN_DISCOVERY_RULES = [
+POSTROUTING_LAN_DISCOVERY_RULES = [
     "-A POSTROUTING -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A POSTROUTING -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A POSTROUTING -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -j ACCEPT",
@@ -155,7 +160,7 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
 
     for subnet in subnets:
         result += (f"-A PREROUTING -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT", )
-
+    # result.reverse()
     return result
 
 
@@ -164,7 +169,7 @@ def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
 
     for subnet in subnets:
         result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn-allowlist-transient -j ACCEPT", )
-
+    # result.reverse()
     return result
 
 
@@ -173,7 +178,7 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
 
     for subnet in subnets:
         result += (f"-A POSTROUTING -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
-
+    # result.reverse()
     return result
 
 
@@ -264,12 +269,12 @@ def _get_rules_allowlist_subnet_on(interface: str, subnets: list[str]):
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
     result.extend(__rules_connmark_chain_input(interface))
 
-    result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
     # result.extend(__rules_block_forwarding(interface))
     result.extend(__rules_block_dns_port())
 
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
     result.extend(__rules_connmark_chain_output(interface))
+    result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
 
     return result
 
@@ -281,11 +286,11 @@ def _get_rules_allowlist_port_on(interface: str, ports: list[Port]):
 
     result = []
     result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
-    result.extend(__rules_allowlist_port_chain_prerouting(interface, ports_udp, ports_tcp))
+    result.extend(__rules_allowlist_port_chain_prerouting(ports_udp, ports_tcp))
     result.extend(__rules_connmark_chain_input(interface))
 
     # result.extend(__rules_block_forwarding(interface))
-    result.extend(__rules_allowlist_port_chain_output(interface, ports_udp, ports_tcp))
+    result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
     result.extend(__rules_block_dns_port())
     result.extend(__rules_allowlist_port_chain_postrouting(interface, ports_udp, ports_tcp))
 
@@ -299,18 +304,18 @@ def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], 
 
     result = []
     result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
-    result.extend(__rules_allowlist_port_chain_prerouting(interface, ports_udp, ports_tcp))
+    result.extend(__rules_allowlist_port_chain_prerouting(ports_udp, ports_tcp))
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
     result.extend(__rules_connmark_chain_input(interface))
 
-    result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
     # result.extend(__rules_block_forwarding(interface))
-    result.extend(__rules_allowlist_port_chain_output(interface, ports_udp, ports_tcp))
+    result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
     result.extend(__rules_block_dns_port())
     result.extend(__rules_allowlist_port_chain_postrouting(interface, ports_udp, ports_tcp))
 
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
     result.extend(__rules_connmark_chain_output(interface))
+    result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
 
     return result
 
