@@ -217,7 +217,7 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Allowlist.Publish(events.DataAllowlist{
 		TCPPorts: cfg.AutoConnectData.Allowlist.Ports.TCP.ToSlice(),
 		UDPPorts: cfg.AutoConnectData.Allowlist.Ports.UDP.ToSlice(),
-		Subnets:  cfg.AutoConnectData.Allowlist.Subnets.ToSlice(),
+		Subnets:  cfg.AutoConnectData.Allowlist.Subnets,
 	})
 	s.Meshnet.Publish(cfg.Mesh)
 	s.Ipv6.Publish(cfg.IPv6)

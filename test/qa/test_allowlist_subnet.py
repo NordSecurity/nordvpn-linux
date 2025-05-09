@@ -67,7 +67,6 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
 
     ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
-
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
     assert firewall.is_active(None, ip_addresses_with_subnet)
     assert my_ip == network.get_external_device_ip()

@@ -81,7 +81,7 @@ func (en *Forwarder) ResetFirewall(lanAvailable bool,
 			en.interfaceNames,
 			killswitch,
 			enableAllowlist,
-			allowlist.GetSubnets()); err != nil {
+			allowlist.Subnets); err != nil {
 			return fmt.Errorf("reseting allowlist rules: %w", err)
 		}
 
@@ -130,7 +130,7 @@ func (en *Forwarder) resetPeers(lanAvailable bool, killswitch bool, enableAllowl
 		en.runCommandFunc,
 		killswitch,
 		enableAllowlist,
-		allowlist.GetSubnets()); err != nil {
+		allowlist.Subnets); err != nil {
 		return err
 	}
 
