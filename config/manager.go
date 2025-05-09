@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -228,6 +229,8 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 	}
 
 	decrypted, err := internal.Decrypt(data, pass)
+	log.Println("DECRYPTED CONFIG")
+	log.Println(string(decrypted))
 	if err != nil {
 		return err
 	}

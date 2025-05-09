@@ -20,7 +20,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 	}
 
 	subnets := []string{}
-	for subnet := range cfg.AutoConnectData.Allowlist.Subnets {
+	for _, subnet := range cfg.AutoConnectData.Allowlist.Subnets {
 		subnets = append(subnets, subnet)
 	}
 

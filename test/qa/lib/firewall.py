@@ -160,7 +160,7 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
 
     for subnet in subnets:
         result += (f"-A PREROUTING -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT", )
-    # result.reverse()
+    result.reverse() # reverse() is needed because we always insert our rules, so newest one is always on top
     return result
 
 
@@ -169,7 +169,7 @@ def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
 
     for subnet in subnets:
         result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn-allowlist-transient -j ACCEPT", )
-    # result.reverse()
+    result.reverse()
     return result
 
 
@@ -178,7 +178,7 @@ def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
 
     for subnet in subnets:
         result += (f"-A POSTROUTING -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
-    # result.reverse()
+    result.reverse()
     return result
 
 

@@ -333,7 +333,7 @@ func (netw *Combined) start(
 		serverData.IP.Is6(),
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
-		allowlist.Subnets.ToSlice(),
+		allowlist.Subnets,
 	); err != nil {
 		return err
 	}
@@ -538,7 +538,7 @@ func (netw *Combined) stop() error {
 			false,
 			true, // by default, enableLocalTraffic=true
 			netw.lanDiscovery,
-			netw.allowlist.Subnets.ToSlice(),
+			netw.allowlist.Subnets,
 		); err != nil {
 			return fmt.Errorf("netw stop, adjusting routing rules: %w", err)
 		}
@@ -926,7 +926,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	rules := []firewall.Rule{}
 	var subnets []netip.Prefix
 
-	for cidr := range allowlist.Subnets {
+	for _, cidr := range allowlist.Subnets {
 		subnet, err := netip.ParsePrefix(cidr)
 		if err != nil {
 			return errors.Join(fmt.Errorf("parsing subnet CIDR"), err)
@@ -1008,7 +1008,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		false,
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
-		netw.allowlist.Subnets.ToSlice(),
+		netw.allowlist.Subnets,
 	); err != nil {
 		return fmt.Errorf(
 			"setting routing rules: %w",
@@ -1255,7 +1255,7 @@ func (netw *Combined) setMesh(
 		false,
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
-		netw.allowlist.Subnets.ToSlice(),
+		netw.allowlist.Subnets,
 	); err != nil {
 		return fmt.Errorf(
 			"setting routing rules: %w",
@@ -1810,7 +1810,7 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 			netw.lastServer.IP.Is6(),
 			netw.enableLocalTraffic,
 			netw.lanDiscovery,
-			netw.allowlist.Subnets.ToSlice(),
+			netw.allowlist.Subnets,
 		); err != nil {
 			log.Println(
 				internal.ErrorPrefix,

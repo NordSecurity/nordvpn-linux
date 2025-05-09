@@ -3,6 +3,7 @@ package forwarder
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/netip"
 	"strings"
 )
@@ -195,6 +196,7 @@ func removeAllowlistRules(commandFunc runCommandFunc) error {
 func addAllowlistRules(commandFunc runCommandFunc, interfaceNames []string, allowlistedSubnets []string) error {
 	for _, iface := range interfaceNames {
 		for _, subnet := range allowlistedSubnets {
+			log.Printf("========adding %s subnet\n", subnet)
 			cmd := fmt.Sprintf("-I FORWARD -d %s -o %s -m comment --comment %s -j ACCEPT",
 				subnet,
 				iface,
