@@ -315,7 +315,7 @@ func toTargetSlice(allowPackets bool, chain ruleChain, marks []uint32) []ruleTar
 		targets = append(targets, drop)
 	}
 	// connmark is meant for OUTPUT and POSTROUTING chains only
-	if (chain == chainOutput || chain == chainPostrouting) && (len(marks) > 0 && marks[0] != 0){
+	if (chain == chainOutput || chain == chainPostrouting) && (len(marks) > 0 && marks[0] != 0) {
 		targets = append(targets, connmark)
 	}
 	return targets
@@ -367,9 +367,9 @@ func generateIPTablesRule(
 ) string {
 	var chain, remoteAddrFlag, localAddrFlag, ifaceFlag string
 
-	switch direction{
+	switch direction {
 	case chainInput, chainPrerouting:
-		if direction == chainPrerouting{
+		if direction == chainPrerouting {
 			chain = "PREROUTING"
 		} else {
 			chain = "INPUT"
@@ -378,7 +378,7 @@ func generateIPTablesRule(
 		localAddrFlag = "-d"
 		ifaceFlag = "-i"
 	case chainOutput, chainPostrouting:
-		if direction == chainPostrouting{
+		if direction == chainPostrouting {
 			chain = "POSTROUTING"
 		} else {
 			chain = "OUTPUT"

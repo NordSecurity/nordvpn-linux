@@ -64,7 +64,7 @@ func TestSetAllowlist_Subnet(t *testing.T) {
 			name:               "add subnet to non-empty allowlist success",
 			subnet:             subnet1,
 			currentAllowlist:   config.NewAllowlist([]int64{5001}, []int64{6001}, []string{subnet2, subnet3}),
-			expectedAllowlist:  config.NewAllowlist([]int64{5001}, []int64{6001}, []string{subnet1, subnet2, subnet3}),
+			expectedAllowlist:  config.NewAllowlist([]int64{5001}, []int64{6001}, []string{subnet2, subnet3, subnet1}),
 			expectedReturnCode: internal.CodeSuccess,
 		},
 		{
@@ -102,7 +102,6 @@ func TestSetAllowlist_Subnet(t *testing.T) {
 					},
 				},
 			}
-
 			response, _ := r.SetAllowlist(context.Background(), &req)
 			assert.Equal(t,
 				test.expectedAllowlist,

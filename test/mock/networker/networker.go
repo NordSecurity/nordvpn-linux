@@ -77,7 +77,7 @@ func (m *Mock) UnsetAllowlist() error {
 
 	m.Allowlist.Ports.TCP = make(config.PortSet)
 	m.Allowlist.Ports.UDP = make(config.PortSet)
-	m.Allowlist.Subnets = make(config.Subnets)
+	m.Allowlist.Subnets = make([]string, 0)
 	return nil
 }
 

@@ -182,7 +182,7 @@ func TestResetPeers_LANDiscoveryEnabled(t *testing.T) {
 	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 
 	err := server.ResetPeers(peers, true, false, false, config.Allowlist{
-		Subnets: config.Subnets{"192.168.0.1/32": true},
+		Subnets: []string{"192.168.0.1/32"},
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	})
 	assert.NoError(t, err)
@@ -233,7 +233,7 @@ func TestResetPeers_LANDiscoveryDisabled(t *testing.T) {
 	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 
 	err := server.ResetPeers(peers, false, false, false, config.Allowlist{
-		Subnets: config.Subnets{"192.168.0.1/32": true},
+		Subnets: []string{"192.168.0.1/32"},
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	})
 	assert.NoError(t, err)
@@ -344,7 +344,7 @@ func TestSetAllowlist(t *testing.T) {
 			commandExecutor.err = nil
 
 			err := server.ResetPeers(peers, false, false, false, config.Allowlist{
-				Subnets: config.Subnets{initialNetwork: true},
+				Subnets: []string{initialNetwork},
 			})
 			assert.NoError(t, err)
 			// clean expected commands as ResetPeers is covered by other tests
@@ -353,7 +353,7 @@ func TestSetAllowlist(t *testing.T) {
 			commandExecutor.err = test.err
 
 			err = server.ResetFirewall(false, false, false, config.Allowlist{
-				Subnets: config.Subnets{"192.168.0.1/32": true, "1.2.3.4/32": true},
+				Subnets: []string{"192.168.0.1/32", "1.2.3.4/32"},
 				Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 			})
 			assert.ErrorIs(t, err, test.err)
@@ -459,7 +459,7 @@ func TestFirewall_AllowlistOrdering(t *testing.T) {
 	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 	server.enabled = true
 
-	server.ResetFirewall(true, false, true, config.Allowlist{Subnets: config.Subnets{"1.1.1.1/32": true}})
+	server.ResetFirewall(true, false, true, config.Allowlist{Subnets: []string{"1.1.1.1/32"}})
 
 	expectedCommands := []string{
 		// list nat rules, no rules are currently present so furhter actions will be taken on the nat table

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/netip"
+	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -23,13 +24,13 @@ func containsPrivateNetwork(subnet string) bool {
 }
 
 // isSubnetValid returns true if subnet is valid and false and appropriate error code when it's invalid.
-func isSubnetValid(subnet string, currentSubnets config.Subnets, remove bool) (bool, int64) {
+func isSubnetValid(subnet string, currentSubnets []string, remove bool) (bool, int64) {
 	_, _, err := net.ParseCIDR(subnet)
 	if err != nil {
 		return false, internal.CodeAllowlistInvalidSubnet
 	}
 
-	if _, ok := currentSubnets[subnet]; ok != remove {
+	if slices.Contains(currentSubnets, subnet) != remove {
 		return false, internal.CodeAllowlistSubnetNoop
 	}
 
@@ -135,7 +136,7 @@ func (r *RPC) handleNewAllowlist(allowlist config.Allowlist) int64 {
 	r.events.Settings.Allowlist.Publish(events.DataAllowlist{
 		TCPPorts: allowlist.GetTCPPorts(),
 		UDPPorts: allowlist.GetUDPPorts(),
-		Subnets:  allowlist.GetSubnets(),
+		Subnets:  allowlist.Subnets,
 	})
 
 	return internal.CodeSuccess
