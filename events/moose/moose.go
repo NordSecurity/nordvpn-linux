@@ -38,6 +38,11 @@ import (
 	worker "moose/worker"
 )
 
+type SubscribtionServicesAPI interface {
+	core.SubscriptionAPI
+	core.ServicesAPI
+}
+
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
 	EventsDbPath            string
@@ -47,7 +52,7 @@ type Subscriber struct {
 	Domain                  string
 	Subdomain               string
 	DeviceID                string
-	SubscriptionAPI         core.SubscriptionAPI
+	SubscriptionAPI         SubscribtionServicesAPI
 	currentDomain           string
 	connectionStartTime     time.Time
 	connectionToMeshnetPeer bool
@@ -204,7 +209,8 @@ func (s *Subscriber) Stop() error {
 	}
 	if err := s.response(worker.Stop()); err != nil {
 	}
-	return s.response(moose.MooseNordvpnappDeinit())
+	err := s.response(moose.MooseNordvpnappDeinit())
+	return err
 }
 
 func (s *Subscriber) NotifyKillswitch(data bool) error {
@@ -736,6 +742,10 @@ func (s *Subscriber) fetchSubscriptions() error {
 	}
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 
+	if err := s.fetchServices(token); err != nil {
+		return fmt.Errorf("fetching services: %w", err)
+	}
+
 	payments, err := s.SubscriptionAPI.Payments(token)
 	if err != nil {
 		return fmt.Errorf("fetching payments: %w", err)
@@ -951,6 +961,28 @@ func (s *Subscriber) updateEventDomain() error {
 		domainUrl.Host = s.Subdomain + "." + domainUrl.Host
 	}
 	s.currentDomain = domainUrl.String()
+	return nil
+}
+
+func (s *Subscriber) fetchServices(token string) error {
+	services, err := s.SubscriptionAPI.Services(token)
+	if err != nil {
+		return fmt.Errorf("fetching services: %w", err)
+	}
+
+	vpnServiceIdx := slices.IndexFunc(services, func(service core.ServiceData) bool {
+		return service.Service.ID == core.VPNServiceID
+	})
+	if vpnServiceIdx == -1 {
+		return fmt.Errorf("VPN service not found")
+	}
+
+	vpnServiceExpirationDate := services[vpnServiceIdx].ExpiresAt
+
+	if err := s.response(moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt(vpnServiceExpirationDate)); err != nil {
+		return fmt.Errorf("setting expiration date context: %w", err)
+	}
+
 	return nil
 }
 
