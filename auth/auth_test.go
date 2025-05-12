@@ -292,7 +292,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 	dipService1 := core.ServiceData{
 		ExpiresAt: dipService1ExpDate,
 		Service: core.Service{
-			ID: DedicatedIPServiceID,
+			ID: core.DedicatedIPServiceID,
 		},
 		Details: core.ServiceDetails{
 			Servers: []core.ServiceServer{
@@ -306,7 +306,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 	dipService2 := core.ServiceData{
 		ExpiresAt: dipService2ExpDate,
 		Service: core.Service{
-			ID: DedicatedIPServiceID,
+			ID: core.DedicatedIPServiceID,
 		},
 		Details: core.ServiceDetails{
 			Servers: []core.ServiceServer{
@@ -319,7 +319,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 	dipService3 := core.ServiceData{
 		ExpiresAt: dipService3ExpDate,
 		Service: core.Service{
-			ID: DedicatedIPServiceID,
+			ID: core.DedicatedIPServiceID,
 		},
 		Details: core.ServiceDetails{
 			Servers: []core.ServiceServer{
@@ -333,7 +333,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 	expiredDIPService := core.ServiceData{
 		ExpiresAt: expiredDate,
 		Service: core.Service{
-			ID: DedicatedIPServiceID,
+			ID: core.DedicatedIPServiceID,
 		},
 		Details: core.ServiceDetails{
 			Servers: []core.ServiceServer{
@@ -346,14 +346,14 @@ func TestGetDedicatedIPServices(t *testing.T) {
 	dipServiceNoServer := core.ServiceData{
 		ExpiresAt: dipServiceNoServerExpirationDate,
 		Service: core.Service{
-			ID: DedicatedIPServiceID,
+			ID: core.DedicatedIPServiceID,
 		},
 	}
 
 	vpnService := core.ServiceData{
 		ExpiresAt: "2050-08-22 00:00:00",
 		Service: core.Service{
-			ID: VPNServiceID,
+			ID: core.VPNServiceID,
 		},
 	}
 
