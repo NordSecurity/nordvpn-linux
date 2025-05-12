@@ -43,6 +43,12 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}, nil
 	}
 
+	if cfg.KillSwitch {
+		if err := r.netw.UnsetKillSwitch(); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to unset killswitch:", err)
+		}
+	}
+
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
