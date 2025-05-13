@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -14,6 +15,13 @@ import (
 
 	"github.com/google/uuid"
 )
+
+// DelayFunc blocks the app for a duration of time
+type DelayFunc func(duration time.Duration)
+
+func delayFunc(duration time.Duration) {
+	time.Sleep(duration)
+}
 
 // Checker provides information about meshnet.
 type Checker interface {
@@ -25,10 +33,11 @@ type Checker interface {
 
 // RegisteringChecker does both registration checks and registration, if it's not done.
 type RegisteringChecker struct {
-	cm  config.Manager
-	gen KeyGenerator
-	reg cmesh.Registry
-	mu  sync.Mutex
+	cm        config.Manager
+	gen       KeyGenerator
+	reg       cmesh.Registry
+	mu        sync.Mutex
+	delayFunc DelayFunc
 }
 
 // NewRegisteringChecker is a default constructor for RegisteringChecker.
@@ -37,7 +46,7 @@ func NewRegisteringChecker(
 	gen KeyGenerator,
 	reg cmesh.Registry,
 ) *RegisteringChecker {
-	return &RegisteringChecker{cm: cm, gen: gen, reg: reg}
+	return &RegisteringChecker{cm: cm, gen: gen, reg: reg, delayFunc: delayFunc}
 }
 
 func isRegistrationInfoCorrect(cfg config.Config) bool {
@@ -103,8 +112,11 @@ func (r *RegisteringChecker) Register() error {
 }
 
 func (r *RegisteringChecker) register(cfg *config.Config) error {
+	newKey := false
+
 	privateKey := cfg.MeshPrivateKey
 	if privateKey == "" {
+		newKey = true
 		privateKey = r.gen.Private()
 	}
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
@@ -129,9 +141,17 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 			OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
 			SupportsRouting: true,
 		})
+		newKey = true
 	}
 	if err != nil {
 		return err
+	}
+
+	if newKey {
+		// There is a delay in the backend between registering a new key and when that key is recognized, so we need to wait
+		// some time, otherwise connection will fail.
+		const delayAfterNewKey time.Duration = time.Second * 5
+		r.delayFunc(delayAfterNewKey)
 	}
 
 	cfg.MeshDevice = peer
