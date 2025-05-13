@@ -5,7 +5,6 @@ package firewall
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -61,7 +60,7 @@ func (fw *Firewall) Add(rules []Rule) error {
 			}
 			fw.publisher.Publish(fmt.Sprintf("replacing existing rule %s", rule.Name))
 		}
-		log.Printf("ADDING RULE: %v", rule)
+
 		if err := fw.current.Add(rule); err != nil {
 			return NewError(fmt.Errorf("adding %s: %w", rule.Name, err))
 		}

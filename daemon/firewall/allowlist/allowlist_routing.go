@@ -112,7 +112,6 @@ func clearRouting(commandFunc runCommandFunc) error {
 			if err != nil {
 				return fmt.Errorf("iptables deleting rule: %w: %s", err, string(out))
 			}
-			return clearRouting(commandFunc)
 		}
 	}
 	return nil

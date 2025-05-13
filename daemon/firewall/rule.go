@@ -84,7 +84,9 @@ type Rule struct {
 	SourcePorts      []int  `json:"source_ports"`
 	DestinationPorts []int  `json:"destination_ports"`
 	Comment          string `json:"comment"`
-	Physical         bool   `json:"physical"`
+	// Physical indicates rule being in mangle table, which prevents
+	// any leaks that are caused by rule changes in filter table done by other processes
+	Physical bool `json:"physical"`
 }
 
 func (r Rule) Equal(other Rule) bool {

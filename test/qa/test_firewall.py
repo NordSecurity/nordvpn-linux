@@ -217,10 +217,6 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
             for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
                 assert rule in rules, f"{rule} prerouting rule not found in iptables."
 
-            rules = os.popen("sudo iptables -S FORWARD").read()
-            for rule in firewall.FORWARD_LAN_DISCOVERY_RULES:
-                assert rule in rules, f"{rule} forward rule not found in iptables."
-
             rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
             for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
                 assert rule in rules, f"{rule} postrouting rule not found in iptables"
@@ -230,10 +226,6 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
             rules = os.popen("sudo iptables -S PREROUTING -t mangle").read()
             for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} prerouting rule found in iptables."
-
-            rules = os.popen("sudo iptables -S FORWARD").read()
-            for rule in firewall.FORWARD_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} forward rule found in iptables."
 
             rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
             for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
@@ -256,9 +248,6 @@ def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
             rules = os.popen("sudo iptables -S PREROUTING -t mangle").read()
             assert f"-A PREROUTING -s {subnet} -i eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the INPUT chain when LAN discovery was enabled."
 
-            rules = os.popen("sudo iptables -S FORWARD").read()
-            assert f"-A FORWARD -d {subnet} -o eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the FORWARD chain when LAN discovery was enabled."
-
             rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
             assert f"-A POSTROUTING -s {subnet} -o eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the OUTPUT chain when LAN discovery was enabled."
 
@@ -267,10 +256,6 @@ def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
             rules = os.popen("sudo iptables -S PREROUTING").read()
             for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} prerouting rule not found in iptables."
-
-            rules = os.popen("sudo iptables -S FORWARD").read()
-            for rule in firewall.FORWARD_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} forward rule not found in iptables."
 
             rules = os.popen("sudo iptables -S POSTROUTING").read()
             for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:

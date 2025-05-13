@@ -21,9 +21,8 @@ type ForwardChainManager interface {
 	ResetPeers(peers mesh.MachinePeers,
 		lanAvailable bool,
 		killswitch bool,
-		enableAllowlist bool,
 		allowlist config.Allowlist) error
-	ResetFirewall(lanAvailable bool, killswitch bool, enableAllowlist bool, allowlist config.Allowlist) error
+	ResetFirewall(lanAvailable bool, killswitch bool, allowlist config.Allowlist) error
 	Disable() error
 }
 
@@ -71,18 +70,10 @@ func (en *Forwarder) Enable() error {
 // rules will be affected.
 func (en *Forwarder) ResetFirewall(lanAvailable bool,
 	killswitch bool,
-	enableAllowlist bool,
 	allowlist config.Allowlist) error {
 	if !en.enabled {
 		if err := en.allowlistManager.disableAllowlist(); err != nil {
 			return fmt.Errorf("disabling peer allowlist: %w", err)
-		}
-		if err := resetAllowlistRules(en.runCommandFunc,
-			en.interfaceNames,
-			killswitch,
-			enableAllowlist,
-			allowlist.Subnets); err != nil {
-			return fmt.Errorf("reseting allowlist rules: %w", err)
 		}
 
 		return nil
@@ -90,7 +81,7 @@ func (en *Forwarder) ResetFirewall(lanAvailable bool,
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
-	if err := en.resetPeers(lanAvailable, killswitch, enableAllowlist, allowlist); err != nil {
+	if err := en.resetPeers(lanAvailable, killswitch, allowlist); err != nil {
 		return fmt.Errorf("reseting peers: %w", err)
 	}
 
@@ -101,16 +92,15 @@ func (en *Forwarder) ResetFirewall(lanAvailable bool,
 func (en *Forwarder) ResetPeers(peers mesh.MachinePeers,
 	lanAvailable bool,
 	killswitch bool,
-	enableAllowlist bool,
 	allowlist config.Allowlist) error {
 	en.mu.Lock()
 	defer en.mu.Unlock()
 
 	en.peers = peers
-	return en.resetPeers(lanAvailable, killswitch, enableAllowlist, allowlist)
+	return en.resetPeers(lanAvailable, killswitch, allowlist)
 }
 
-func (en *Forwarder) resetPeers(lanAvailable bool, killswitch bool, enableAllowlist bool, allowlist config.Allowlist) error {
+func (en *Forwarder) resetPeers(lanAvailable bool, killswitch bool, allowlist config.Allowlist) error {
 	trafficPeers := make([]TrafficPeer, 0, len(en.peers))
 	for _, peer := range en.peers {
 		if peer.Address.IsValid() {
@@ -128,9 +118,7 @@ func (en *Forwarder) resetPeers(lanAvailable bool, killswitch bool, enableAllowl
 	if err := resetForwardTraffic(trafficPeers,
 		en.interfaceNames,
 		en.runCommandFunc,
-		killswitch,
-		enableAllowlist,
-		allowlist.Subnets); err != nil {
+		killswitch); err != nil {
 		return err
 	}
 

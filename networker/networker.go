@@ -969,7 +969,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
 	if err := netw.exitNode.ResetFirewall(lanAvailable,
 		netw.isKillSwitchSet,
-		netw.isNetworkSet,
 		allowlist); err != nil {
 		return fmt.Errorf("resseting forward firewall: %w", err)
 	}
@@ -1067,7 +1066,6 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 
 	if err := netw.exitNode.ResetFirewall(netw.lanDiscovery,
 		true,
-		netw.isNetworkSet,
 		netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after enabling killswitch: ",
@@ -1103,7 +1101,7 @@ func (netw *Combined) unsetNetwork() error {
 	}
 
 	// Passing true because LAN is always available when network is unset
-	if err := netw.exitNode.ResetFirewall(true, false, false, netw.allowlist); err != nil {
+	if err := netw.exitNode.ResetFirewall(true, false, netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after disabling killswitch: ",
 			err)
@@ -1330,7 +1328,6 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	err = netw.exitNode.ResetPeers(cfg.Peers,
 		lanAvailable,
 		netw.isKillSwitchSet,
-		netw.isNetworkSet,
 		netw.allowlist)
 	if err != nil {
 		return err
@@ -1731,7 +1728,6 @@ func (netw *Combined) ResetRouting(peer mesh.MachinePeer, peers mesh.MachinePeer
 	if err := netw.exitNode.ResetPeers(peers,
 		lanAvailable,
 		netw.isKillSwitchSet,
-		netw.isNetworkSet,
 		netw.allowlist); err != nil {
 		return err
 	}
@@ -1803,7 +1799,6 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 
 	if err := netw.exitNode.ResetFirewall(lanAvailable,
 		netw.isKillSwitchSet,
-		netw.isNetworkSet,
 		netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after enabling lan discovery:",

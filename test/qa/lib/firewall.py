@@ -29,8 +29,6 @@ IP_ROUTE_TABLE = 205
 # -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
 # -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
 # -A POSTROUTING -o {iface} -m comment --comment nordvpn -j DROP
-# filter
-# -A FORWARD -d {subnet_ip} -o {iface} -m comment --comment nordvpn -j ACCEPT
 
 # Rules for allowlisted port
 # mangle
@@ -102,13 +100,6 @@ PREROUTING_LAN_DISCOVERY_RULES = [
     "-A PREROUTING -s 10.0.0.0/8 -i eth0 -m comment --comment nordvpn -j ACCEPT",
 ]
 
-FORWARD_LAN_DISCOVERY_RULES = [
-    "-A FORWARD -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
-    "-A FORWARD -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
-    "-A FORWARD -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
-    "-A FORWARD -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
-]
-
 POSTROUTING_LAN_DISCOVERY_RULES = [
     "-A POSTROUTING -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
     "-A POSTROUTING -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -j ACCEPT",
@@ -123,13 +114,6 @@ def __rules_connmark_chain_input(interface: str):
             f"-A PREROUTING -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
             f"-A PREROUTING -i {interface} -m comment --comment nordvpn -j DROP",
         ]
-
-
-# def __rules_block_forwarding(interface: str):
-#     return \
-#         [
-#             f"-A FORWARD -o {interface} -m comment --comment nordvpn -j DROP",
-#         ]
 
 
 def __rules_block_dns_port():
@@ -161,15 +145,6 @@ def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
     for subnet in subnets:
         result += (f"-A PREROUTING -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT", )
     result.reverse() # reverse() is needed because we always insert our rules, so newest one is always on top
-    return result
-
-
-def __rules_allowlist_subnet_chain_forward(interface: str, subnets: list[str]):
-    result = []
-
-    for subnet in subnets:
-        result += (f"-A FORWARD -d {subnet} -o {interface} -m comment --comment nordvpn-allowlist-transient -j ACCEPT", )
-    result.reverse()
     return result
 
 
@@ -251,7 +226,6 @@ def _get_rules_killswitch_on(interface: str):
 
     result.extend(__rules_connmark_chain_input(interface))
 
-    # result.extend(__rules_block_forwarding(interface))
     result.extend(__rules_block_dns_port())
 
     result.extend(__rules_connmark_chain_output(interface))
@@ -269,12 +243,10 @@ def _get_rules_allowlist_subnet_on(interface: str, subnets: list[str]):
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
     result.extend(__rules_connmark_chain_input(interface))
 
-    # result.extend(__rules_block_forwarding(interface))
     result.extend(__rules_block_dns_port())
 
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
     result.extend(__rules_connmark_chain_output(interface))
-    result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
 
     return result
 
@@ -289,7 +261,6 @@ def _get_rules_allowlist_port_on(interface: str, ports: list[Port]):
     result.extend(__rules_allowlist_port_chain_prerouting(ports_udp, ports_tcp))
     result.extend(__rules_connmark_chain_input(interface))
 
-    # result.extend(__rules_block_forwarding(interface))
     result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
     result.extend(__rules_block_dns_port())
     result.extend(__rules_allowlist_port_chain_postrouting(interface, ports_udp, ports_tcp))
@@ -308,14 +279,12 @@ def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], 
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
     result.extend(__rules_connmark_chain_input(interface))
 
-    # result.extend(__rules_block_forwarding(interface))
     result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
     result.extend(__rules_block_dns_port())
     result.extend(__rules_allowlist_port_chain_postrouting(interface, ports_udp, ports_tcp))
 
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
     result.extend(__rules_connmark_chain_output(interface))
-    result.extend(__rules_allowlist_subnet_chain_forward(interface, subnets))
 
     return result
 
@@ -354,7 +323,6 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
     print(sh.ip.route())
 
     expected_rules = _get_firewall_rules(ports, subnets)
-    # expected_rules.sort()
     print("\nExpected rules:")
     logging.log("\nExpected rules:")
     for rule in expected_rules:
@@ -362,7 +330,6 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
         logging.log(rule)
 
     current_rules = _get_iptables_rules()
-    # current_rules.sort()
     print("\nCurrent rules:")
     logging.log("\nCurrent rules:")
     for rule in current_rules:
@@ -385,7 +352,6 @@ def is_empty() -> bool:
 
 
 def _get_iptables_rules() -> list[str]:
-    # TODO: add full ipv6 support, separate task #LVPN-3684
     print("Using iptables")
     mangle_fw_lines = os.popen("sudo iptables -S -t mangle").read()
     mangle_fw_list = mangle_fw_lines.split('\n')[5:-1]

@@ -3,7 +3,6 @@ package forwarder
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/netip"
 	"strings"
 )
@@ -189,47 +188,6 @@ func enableFiltering(commandFunc runCommandFunc) error {
 	return nil
 }
 
-func removeAllowlistRules(commandFunc runCommandFunc) error {
-	return clearRules(commandFunc, "FORWARD", "filter", allowlistTranisentFilterRuleComment)
-}
-
-func addAllowlistRules(commandFunc runCommandFunc, interfaceNames []string, allowlistedSubnets []string) error {
-	for _, iface := range interfaceNames {
-		for _, subnet := range allowlistedSubnets {
-			log.Printf("========adding %s subnet\n", subnet)
-			cmd := fmt.Sprintf("-I FORWARD -d %s -o %s -m comment --comment %s -j ACCEPT",
-				subnet,
-				iface,
-				allowlistTranisentFilterRuleComment)
-			cmdArgs := strings.Split(cmd, " ")
-			_, err := commandFunc(iptablesCmd, cmdArgs...)
-			if err != nil {
-				return fmt.Errorf("allowing local traffic for subnet %s from interface %s: %W",
-					subnet, iface, err)
-			}
-		}
-	}
-	return nil
-}
-
-func resetAllowlistRules(commandFunc runCommandFunc,
-	interfaceNames []string,
-	killswitch bool,
-	enableAllowlist bool,
-	allowlistedSubnets []string) error {
-	if err := removeAllowlistRules(commandFunc); err != nil {
-		return fmt.Errorf("removing allowlisted subnets: %w", err)
-	}
-
-	if enableAllowlist || killswitch {
-		if err := addAllowlistRules(commandFunc, interfaceNames, allowlistedSubnets); err != nil {
-			return fmt.Errorf("adding allowlisted subnets: %w", err)
-		}
-	}
-
-	return nil
-}
-
 type TrafficPeer struct {
 	IP           netip.Prefix
 	Routing      bool
@@ -240,9 +198,7 @@ func resetForwardTraffic(
 	peers []TrafficPeer,
 	interfaceNames []string,
 	commandFunc runCommandFunc,
-	killswitch bool,
-	enableAllowlist bool,
-	allowlistedSubnets []string) error {
+	killswitch bool) error {
 	if err := clearMasquerading(commandFunc); err != nil {
 		return fmt.Errorf("clearing masquerade rules: %w", err)
 	}
@@ -272,12 +228,6 @@ func resetForwardTraffic(
 					peer, err,
 				)
 			}
-		}
-	}
-
-	if enableAllowlist || killswitch {
-		if err := addAllowlistRules(commandFunc, interfaceNames, allowlistedSubnets); err != nil {
-			return fmt.Errorf("adding allowlist rules: %w", err)
 		}
 	}
 
