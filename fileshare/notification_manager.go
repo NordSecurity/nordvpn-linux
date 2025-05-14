@@ -223,8 +223,8 @@ type NotificationManager struct {
 	fileshare          Fileshare
 	openFileFunc       func(string)
 	defaultDownloadDir string
-	// fileLock guards OpenFile and NotifyFile operations, as they cannot be performed at the same time
-	fileLock sync.Mutex
+	// fileOperationLock guards OpenFile and NotifyFile operations, as they cannot be performed at the same time
+	fileOperationLock sync.Mutex
 }
 
 // NewNotificationManager creates a new notification
@@ -260,8 +260,8 @@ func (nm *NotificationManager) Disable() {
 
 // OpenFile associated with notificationID
 func (nm *NotificationManager) OpenFile(notificationID uint32) {
-	nm.fileLock.Lock()
-	defer nm.fileLock.Unlock()
+	nm.fileOperationLock.Lock()
+	defer nm.fileOperationLock.Unlock()
 
 	if filename, ok := nm.notifications.GetAndDeleteFileNotification(notificationID); ok {
 		nm.openFileFunc(filename)
@@ -324,8 +324,8 @@ func (nm *NotificationManager) NotifyFile(filename string, direction pb.Directio
 		// 2. User clicks Open File, OpenFile is called.
 		// 3. Because AddFileNotification was not called at this point, the requested file notification is not found and
 		// the operation fails.
-		nm.fileLock.Lock()
-		defer nm.fileLock.Unlock()
+		nm.fileOperationLock.Lock()
+		defer nm.fileOperationLock.Unlock()
 		if notificationID, err := nm.notifier.SendNotification(summary, filename, []Action{{actionKeyOpenFile, "Open"}}); err == nil {
 			nm.notifications.AddFileNotification(notificationID, filename)
 		} else {
@@ -446,6 +446,8 @@ func (nm *NotificationManager) NotifyAutoacceptFailed(transferID string, peer st
 
 // CloseNotification cleans up any data associated with notificationID
 func (nm *NotificationManager) CloseNotification(notificationID uint32) {
+	nm.fileOperationLock.Lock()
+	defer nm.fileOperationLock.Unlock()
 	nm.notifications.GetAndDeleteFileNotification(notificationID)
 	nm.notifications.GetAndDeleteTransferNotification(notificationID)
 }
