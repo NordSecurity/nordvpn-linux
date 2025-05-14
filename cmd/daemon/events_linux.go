@@ -3,6 +3,7 @@
 package main
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -47,6 +48,7 @@ func newAnalytics(
 	eventsDbPath string,
 	fs *config.FilesystemConfigManager,
 	subAPI core.SubscriptionAPI,
+	httpClient http.Client,
 	version, env, id string) *dummyAnalytics {
 	return &dummyAnalytics{}
 }

@@ -4,6 +4,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -21,6 +22,7 @@ func newAnalytics(
 	eventsDbPath string,
 	fs *config.FilesystemConfigManager,
 	subAPI core.SubscriptionAPI,
+	httpClient http.Client,
 	ver, env, id string) *moose.Subscriber {
 	_ = os.Setenv("MOOSE_LOG_FILE", "Stdout")
 
@@ -34,7 +36,7 @@ func newAnalytics(
 		DeviceID:        id,
 		SubscriptionAPI: subAPI,
 	}
-	if err := sub.Init(); err != nil {
+	if err := sub.Init(httpClient); err != nil {
 		log.Println(internal.ErrorPrefix, "MOOSE: Initialization error:", err)
 	}
 	return sub
