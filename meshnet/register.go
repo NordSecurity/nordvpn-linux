@@ -19,10 +19,6 @@ import (
 // DelayFunc blocks the app for a duration of time
 type DelayFunc func(duration time.Duration)
 
-func delayFunc(duration time.Duration) {
-	time.Sleep(duration)
-}
-
 // Checker provides information about meshnet.
 type Checker interface {
 	// IsRegistrationInfoCorrect returns true when device has been registered to meshnet.
@@ -46,7 +42,7 @@ func NewRegisteringChecker(
 	gen KeyGenerator,
 	reg cmesh.Registry,
 ) *RegisteringChecker {
-	return &RegisteringChecker{cm: cm, gen: gen, reg: reg, delayFunc: delayFunc}
+	return &RegisteringChecker{cm: cm, gen: gen, reg: reg, delayFunc: time.Sleep}
 }
 
 func isRegistrationInfoCorrect(cfg config.Config) bool {
