@@ -17,11 +17,8 @@ type StdOpt func(*http.Client)
 // NewStdHTTP returns standard library's http client with opts.
 func NewStdHTTP(opts ...StdOpt) *http.Client {
 	client := &http.Client{
-		Transport: &http.Transport{
-			DialContext:         (&net.Dialer{Timeout: TransportTimeout}).DialContext,
-			TLSHandshakeTimeout: TransportTimeout,
-		},
-		Timeout: DefaultTimeout,
+		Transport: NewStdTransport(),
+		Timeout:   DefaultTimeout,
 	}
 
 	for _, opt := range opts {
@@ -29,4 +26,11 @@ func NewStdHTTP(opts ...StdOpt) *http.Client {
 	}
 
 	return client
+}
+
+func NewStdTransport() http.RoundTripper {
+	return &http.Transport{
+		DialContext:         (&net.Dialer{Timeout: TransportTimeout}).DialContext,
+		TLSHandshakeTimeout: TransportTimeout,
+	}
 }
