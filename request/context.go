@@ -11,11 +11,11 @@ type ContextRoundTripper struct {
 	ctx   context.Context
 }
 
-// NewCancellableRoundTripper creates a new ContextRoundTripper.
+// NewContextRoundTripper creates a new ContextRoundTripper.
 // ctx is added to request passing through the RoundTripper.
-func NewCancellableRoundTripper(ctx context.Context) *ContextRoundTripper {
+func NewContextRoundTripper(inner http.RoundTripper, ctx context.Context) *ContextRoundTripper {
 	return &ContextRoundTripper{
-		inner: http.DefaultTransport,
+		inner: inner,
 		ctx:   ctx,
 	}
 }

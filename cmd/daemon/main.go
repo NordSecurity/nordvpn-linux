@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	_ "embed"
 	"errors"
@@ -206,9 +207,19 @@ func main() {
 	}
 
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
+
+	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
+
 	// simple standard http client with dialer wrapped inside
 	httpClientSimple := request.NewStdHTTP()
-	httpClientSimple.Transport = request.NewPublishingRoundTripper(httpClientSimple.Transport, httpCallsSubject)
+	httpClientSimple.Transport = request.NewHTTPReTransport(
+		1, 1, "HTTP/1.1", func() http.RoundTripper {
+			return request.NewPublishingRoundTripper(
+				request.NewContextRoundTripper(request.NewStdTransport(), httpGlobalCtx),
+				httpCallsSubject,
+			)
+		}, nil)
+
 	cdnAPI := core.NewCDNAPI(
 		userAgent,
 		core.CDNURL,
@@ -232,7 +243,13 @@ func main() {
 	}
 
 	httpClientWithRotator := request.NewStdHTTP()
-	httpClientWithRotator.Transport = createTimedOutTransport(resolver, cfg.FirewallMark, httpCallsSubject, daemonEvents.Service.Connect)
+	httpClientWithRotator.Transport = createTimedOutTransport(
+		resolver,
+		cfg.FirewallMark,
+		httpCallsSubject,
+		daemonEvents.Service.Connect,
+		httpGlobalCtx,
+	)
 
 	defaultAPI := core.NewDefaultAPI(
 		userAgent,
@@ -294,7 +311,7 @@ func main() {
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
 
-	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, Version, Environment, deviceID)
+	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, *httpClientSimple, Version, Environment, deviceID)
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	daemonEvents.Subscribe(analytics)
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
@@ -615,6 +632,8 @@ func main() {
 	internal.WaitSignal()
 	s.Stop()
 	norduserService.StopAll()
+
+	httpCancel()
 
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)
