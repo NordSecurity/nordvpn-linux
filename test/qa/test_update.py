@@ -6,7 +6,8 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, fileshare, login, meshnet, network, poll, ssh
+from lib import daemon, fileshare, login, meshnet, network, poll, ssh, logging
+from lib.shell import sh_no_tty
 from test_connect import connect_base_test, disconnect_base_test
 
 PROJECT_ROOT = os.environ['WORKDIR']
@@ -61,6 +62,7 @@ def setup_function(function):  # noqa: ARG001
 
 def teardown_function(function):  # noqa: ARG001
     if TestData.INVOLVES_MESHNET:
+        logging.log(data="Disable meshnet")
         ssh_client.exec_command("rm -rf /root/Downloads/*")
 
         sh.nordvpn.set.mesh.off()
@@ -69,16 +71,18 @@ def teardown_function(function):  # noqa: ARG001
         daemon.stop_peer(ssh_client)
 
         dest_logs_path = f"{PROJECT_ROOT}/dist/logs"
-        ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
+        meshnet.download_remote_peer_logs(ssh_client=ssh_client, dest_logs_path=dest_logs_path)
         shutil.copy("/home/qa/.cache/nordvpn/norduserd.log", dest_logs_path)
         shutil.copy("/home/qa/.cache/nordvpn/nordfileshare.log", dest_logs_path)
 
         daemon.uninstall_peer(ssh_client)
     daemon.stop() # TODO: LVPN-6403
+    assert network.is_disconnected()
+
 
 
 def test_meshnet_available_after_update():
-    meshnet_help_page = sh.nordvpn.meshnet("--help", _tty_out=False)
+    meshnet_help_page = sh_no_tty.nordvpn.meshnet("--help")
     assert "Learn more: https://meshnet.nordvpn.com/" in meshnet_help_page
 
     parsed_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
@@ -109,7 +113,7 @@ def test_fileshare_available_after_update():
 
     fileshare.start_transfer(peer_hostname, wdir.dir_path)
 
-    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client)):  # noqa: B007
+    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=5):  # noqa: B007
         if remote_transfer_id is not None:
             break
 
