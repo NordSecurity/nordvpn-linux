@@ -109,6 +109,7 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 			// -w does not accept arguments on older iptables versions
 			args := fmt.Sprintf("%s %s -w "+internal.SecondsToWaitForIptablesLock, flag, ipTableRule)
 			// #nosec G204 -- input is properly sanitized
+			log.Println("FW:", args)
 			out, err := exec.Command(iptableVersion, strings.Split(args, " ")...).CombinedOutput()
 			if err != nil {
 				if flag == "-D" && strings.Contains(string(out), "does a matching rule exist in that chain") {
