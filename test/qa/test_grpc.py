@@ -44,7 +44,7 @@ def test_multiple_state_subscribers():
             states = collect_state_changes(len(expected_states), ['connection_status'])
             with lock:
                 results[i] = states
-        except Exception:
+        except BaseException: # noqa: BLE001
             with lock:
                 exceptions[i] = traceback.format_exc()
 
@@ -64,7 +64,7 @@ def test_multiple_state_subscribers():
         thread.join()
 
     if exceptions:
-        raise RuntimeError(f"Exceptions in threads:\n" + "\n".join(exceptions.values()))
+        raise RuntimeError("Exceptions in threads:\n" + "\n".join(exceptions.values()))
 
     for i in range(num_threads):
         assert all(a.connection_status.state == b for a, b in zip(
