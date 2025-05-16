@@ -17,5 +17,5 @@ jobs:
       trigger-token: ${{ secrets.TRIGGER_TOKEN }}
       project-id: ${{ secrets.PROJECT_ID }}
     with:
-      cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
-      triggered-ref: main
+      cancel-outdated-pipelines: ${{ github.ref_name != 'LVPN-7902' }}
+      triggered-ref: LVPN-7902
