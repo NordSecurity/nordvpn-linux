@@ -2,6 +2,7 @@ package vpn
 
 import (
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
@@ -24,9 +25,9 @@ func NewInternalVPNEvents() *Events {
 	}
 }
 
-func (e *Events) Subscribe(to InternalVPNPublisher) {
-	e.Connected.Subscribe(to.NotifyConnect)
-	e.Disconnected.Subscribe(to.NotifyDisconnect)
+func (e *Events) Subscribe(to *state.ConnectionInfo) {
+	e.Connected.Subscribe(to.ConnectionStatusNotifyConnect)
+	e.Disconnected.Subscribe(to.ConnectionStatusNotifyDisconnect)
 }
 
 func GetDataConnectEvent(technology config.Technology,
@@ -51,5 +52,8 @@ func GetDataConnectEvent(technology config.Technology,
 		Download:                tunnelStatistics.Rx,
 		IsObfuscated:            server.Obfuscated,
 		IsPostQuantum:           server.PostQuantum,
+		IP:                      server.IP,
+		Name:                    server.Name,
+		Hostname:                server.Hostname,
 	}
 }

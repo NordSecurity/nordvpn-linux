@@ -3,6 +3,7 @@ package events
 
 import (
 	"net/http"
+	"net/netip"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -89,6 +90,15 @@ type DataConnect struct {
 	Download                   uint64
 	IsObfuscated               bool
 	IsPostQuantum              bool
+	IP                         netip.Addr
+	Name                       string
+	Hostname                   string
+	StartTime                  *time.Time
+	TunnelName                 string
+}
+
+// Used to provide notifications for internal listeners of ConnectionStatus
+type DataConnectChangeNotif struct {
 }
 
 type DataDisconnect struct {
