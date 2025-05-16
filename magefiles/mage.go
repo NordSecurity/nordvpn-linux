@@ -20,7 +20,7 @@ const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.3.4"
 	imagePackager          = registryPrefix + "packager:1.3.1"
-	imageSnapPackager      = registryPrefix + "snaper:0.0.4"
+	imageSnapPackager      = registryPrefix + "snaper:1.0.0"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.1"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.3.6"
@@ -35,7 +35,7 @@ const (
 )
 
 // Aliases shorthands for daily commands
-var Aliases = map[string]interface{}{
+var Aliases = map[string]any{
 	"bb":  Build.Binaries,
 	"bbd": Build.BinariesDocker,
 	"bd":  Build.Deb,
@@ -295,11 +295,14 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["PACKAGE"] = devPackageType
 	env["VERSION"] = git.versionTag
 	if packageType == "snap" {
-		return RunDocker(
+		return RunDockerWithSettings(
 			ctx,
 			env,
 			imageSnapPackager,
 			[]string{"ci/build_snap.sh"},
+			// snapcraft needs to be run as privileged, because it's
+			// installing packages and has access to apt sources
+			DockerSettings{Privileged: true},
 		)
 	}
 	return RunDocker(
@@ -615,7 +618,7 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 		return fmt.Errorf("%w (while creating network)", err)
 	}
 
-	containerStoppedChan := make(chan interface{})
+	containerStoppedChan := make(chan any)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
