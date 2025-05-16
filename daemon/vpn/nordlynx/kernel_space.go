@@ -45,24 +45,6 @@ func (k *KernelSpace) Start(
 		return vpn.ErrVPNAIsAlreadyStarted
 	}
 
-	event := events.DataConnect{
-		EventStatus:         events.StatusAttempt,
-		TargetServerIP:      serverData.IP.String(),
-		TargetServerCountry: serverData.Country,
-		TargetServerCity:    serverData.City,
-		IsVirtualLocation:   serverData.VirtualLocation,
-	}
-
-	k.eventsPublisher.Connected.Publish(event)
-	defer func() {
-		if err != nil {
-			k.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
-			return
-		}
-		event.EventStatus = events.StatusSuccess
-		k.eventsPublisher.Connected.Publish(event)
-	}()
-
 	conf := wgQuickConfig(
 		creds.NordLynxPrivateKey,
 		k.fwmark,
@@ -92,6 +74,29 @@ func (k *KernelSpace) Start(
 
 	tun := tunnel.New(*iface, DefaultPrefix)
 	k.tun = tun
+
+	event := events.DataConnect{
+		EventStatus:         events.StatusAttempt,
+		TargetServerIP:      serverData.IP.String(),
+		TargetServerCountry: serverData.Country,
+		TargetServerCity:    serverData.City,
+		IsVirtualLocation:   serverData.VirtualLocation,
+		IP:                  serverData.IP,
+		Name:                serverData.Name,
+		Hostname:            serverData.Hostname,
+		TunnelName:          k.tun.Interface().Name,
+	}
+
+	k.eventsPublisher.Connected.Publish(event)
+	defer func() {
+		if err != nil {
+			k.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
+			return
+		}
+		event.EventStatus = events.StatusSuccess
+		k.eventsPublisher.Connected.Publish(event)
+	}()
+
 	if err := pushConfig(tun.Interface(), conf); err != nil {
 		if err := k.stop(); err != nil {
 			log.Println(internal.WarningPrefix, err)

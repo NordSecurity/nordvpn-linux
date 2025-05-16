@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/netip"
 	"sync"
+	"time"
 
 	quenchBindigns "quench"
 
@@ -109,6 +110,12 @@ func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataCon
 		o.currentServer,
 		transferStats,
 		false)
+
+	event.TunnelName = o.nicName
+	if status == events.StatusSuccess {
+		start := time.Now()
+		event.StartTime = &start
+	}
 
 	return event
 }

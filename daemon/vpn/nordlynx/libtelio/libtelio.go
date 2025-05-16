@@ -279,7 +279,7 @@ func (l *Libtelio) connect(
 	isConnectedC := isConnected(ctx,
 		l.events,
 		connParameters{pubKey: serverPublicKey, server: l.currentServer},
-		l.eventsPublisher)
+		l.eventsPublisher, l.tun)
 
 	var err error
 	endpoint := net.JoinHostPort(serverIP.String(), "51820")
@@ -683,7 +683,7 @@ func isConnected(ctx context.Context,
 	stateCh <-chan state,
 	connParams connParameters,
 	eventsPublisher *vpn.Events,
-) <-chan interface{} {
+	tun *tunnel.Tunnel) <-chan interface{} {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -691,7 +691,7 @@ func isConnected(ctx context.Context,
 	connectedCh := make(chan interface{})
 	go func() {
 		wg.Done() // signal that goroutine has started
-		monitorConnection(ctx, stateCh, connectedCh, connParams, eventsPublisher)
+		monitorConnection(ctx, stateCh, connectedCh, connParams, eventsPublisher, tun)
 	}()
 
 	wg.Wait() // wait until goroutine is started
@@ -707,7 +707,8 @@ type connParameters struct {
 func publishConnectEvent(publisher *vpn.Events,
 	connectType events.TypeEventStatus,
 	server vpn.ServerData,
-	state state) {
+	state state,
+	tun *tunnel.Tunnel) {
 	if !state.IsVPN {
 		server.Name = state.Nickname
 	}
@@ -723,6 +724,12 @@ func publishConnectEvent(publisher *vpn.Events,
 		server,
 		transferStats,
 		!state.IsVPN)
+	event.TunnelName = tun.Interface().Name
+
+	if connectType == events.StatusSuccess {
+		start := time.Now()
+		event.StartTime = &start
+	}
 	publisher.Connected.Publish(event)
 }
 
@@ -742,7 +749,7 @@ func monitorConnection(
 	isConnected chan<- interface{},
 	connParameters connParameters,
 	eventsPublisher *vpn.Events,
-) {
+	tun *tunnel.Tunnel) {
 	type notifyState int
 	const (
 		disconnected notifyState = iota
@@ -763,13 +770,13 @@ func monitorConnection(
 			case teliogo.NodeStateConnecting:
 				if currentNotifyState != connecting {
 					currentNotifyState = connecting
-					publishConnectEvent(eventsPublisher, events.StatusAttempt, connParameters.server, state)
+					publishConnectEvent(eventsPublisher, events.StatusAttempt, connParameters.server, state, tun)
 				}
 			case teliogo.NodeStateConnected:
 				if state.PublicKey == connParameters.pubKey {
 					if currentNotifyState != connected {
 						currentNotifyState = connected
-						publishConnectEvent(eventsPublisher, events.StatusSuccess, connParameters.server, state)
+						publishConnectEvent(eventsPublisher, events.StatusSuccess, connParameters.server, state, tun)
 					}
 					if initialConnection {
 						close(isConnected)
