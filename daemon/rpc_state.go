@@ -20,9 +20,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 	}
 
 	subnets := []string{}
-	for subnet := range cfg.AutoConnectData.Allowlist.Subnets {
-		subnets = append(subnets, subnet)
-	}
+	subnets = append(subnets, cfg.AutoConnectData.Allowlist.Subnets...)
 
 	notifyOff := cfg.UsersData.NotifyOff[uid]
 	trayOff := cfg.UsersData.TrayOff[uid]

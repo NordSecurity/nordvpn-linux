@@ -36,12 +36,12 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 	if in.GetEnabled() {
 		// Make a new list of allowlist of subnets based on the old allowlist, filter all of the
 		// private networks as they will be allowed by lan-discovery.
-		subnets = make(config.Subnets)
-		for subnet := range cfg.AutoConnectData.Allowlist.Subnets {
+		subnets = make([]string, 0)
+		for _, subnet := range cfg.AutoConnectData.Allowlist.Subnets {
 			if prefix, err := netip.ParsePrefix(subnet); err != nil {
 				log.Println("Failed to parse subnet: ", err)
 			} else if !prefix.Addr().IsPrivate() && !prefix.Addr().IsLinkLocalUnicast() {
-				subnets[subnet] = true
+				subnets = append(subnets, subnet)
 			} else {
 				status = pb.SetLANDiscoveryStatus_DISCOVERY_CONFIGURED_ALLOWLIST_RESET
 			}
@@ -77,7 +77,7 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 		r.events.Settings.Allowlist.Publish(events.DataAllowlist{
 			TCPPorts: cfg.AutoConnectData.Allowlist.Ports.TCP.ToSlice(),
 			UDPPorts: cfg.AutoConnectData.Allowlist.Ports.UDP.ToSlice(),
-			Subnets:  subnets.ToSlice(),
+			Subnets:  subnets,
 		})
 	}
 

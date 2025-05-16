@@ -41,7 +41,7 @@ func newAllowlist(runCommandFunc runCommandFunc) allowlistManager {
 
 // allowlistToFirewall adds forwarding rules for subnets and ports in the allowlist
 func allowlistToFirewall(allowlist config.Allowlist, peers mesh.MachinePeers, op operation, commandFunc runCommandFunc) error {
-	for subnet := range allowlist.Subnets {
+	for _, subnet := range allowlist.Subnets {
 		parsedSubnet, err := netip.ParsePrefix(subnet)
 		if err != nil {
 			return fmt.Errorf("failed to parse subnet: %w", err)

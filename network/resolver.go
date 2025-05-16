@@ -74,6 +74,7 @@ func allowlistIP(fw firewall.Service, name string, ips ...netip.Addr) error {
 			Interfaces:     ifaces,
 			Direction:      firewall.TwoWay,
 			Allow:          true,
+			Physical:       true,
 		},
 	}); err != nil {
 		return fmt.Errorf("adding firewall rule %s for %+v: %w", name, ips, err)

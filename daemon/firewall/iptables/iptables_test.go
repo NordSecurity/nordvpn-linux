@@ -74,6 +74,14 @@ func TestGenerateIPTablesRule(t *testing.T) {
 			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
 			rule: "INPUT -m comment --comment nordvpn -j ACCEPT",
 		}, {
+			chain: chainPostrouting, target: drop, iface: "", remoteNet: "", protocol: "",
+			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
+			rule: "POSTROUTING -m comment --comment nordvpn -j DROP",
+		}, {
+			chain: chainPrerouting, target: accept, iface: "", remoteNet: "", protocol: "",
+			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
+			rule: "PREROUTING -m comment --comment nordvpn -j ACCEPT",
+		}, {
 			chain: chainForward, target: drop, iface: "", remoteNet: "", protocol: "",
 			port: PortRange{0, 0}, module: "", stateFlag: "", chainPrefix: "",
 			rule: "FORWARD -m comment --comment nordvpn -j DROP",
@@ -102,6 +110,22 @@ func TestGenerateIPTablesRule(t *testing.T) {
 			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "OUTPUT -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
 		}, {
+			chain: chainPostrouting, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
+			rule: "POSTROUTING -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j DROP",
+		}, {
+			chain: chainPostrouting, target: drop, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
+			rule: "POSTROUTING -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j DROP",
+		}, {
+			chain: chainPostrouting, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
+			rule: "POSTROUTING -o lo -d 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
+		}, {
+			chain: chainPostrouting, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
+			rule: "POSTROUTING -o lo -d 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
+		}, {
 			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
 			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
@@ -117,6 +141,22 @@ func TestGenerateIPTablesRule(t *testing.T) {
 			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "udp", stateFlag: "", chainPrefix: "", portFlag: "--dport",
 			rule: "INPUT -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
+		}, {
+			chain: chainPrerouting, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--sport",
+			rule: "PREROUTING -i lo -s 1.1.1.1/32 -p tcp --sport 555:555 -m comment --comment nordvpn -j ACCEPT",
+		}, {
+			chain: chainPrerouting, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "tcp",
+			port: PortRange{555, 555}, module: "", stateFlag: "", chainPrefix: "", portFlag: "--dport",
+			rule: "PREROUTING -i lo -s 1.1.1.1/32 -p tcp --dport 555:555 -m comment --comment nordvpn -j ACCEPT",
+		}, {
+			chain: chainPrerouting, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
+			port: PortRange{555, 555}, module: "udp", stateFlag: "", chainPrefix: "", portFlag: "--sport",
+			rule: "PREROUTING -i lo -s 1.1.1.1/32 -p udp --sport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
+		}, {
+			chain: chainPrerouting, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
+			port: PortRange{555, 555}, module: "udp", stateFlag: "", chainPrefix: "", portFlag: "--dport",
+			rule: "PREROUTING -i lo -s 1.1.1.1/32 -p udp --dport 555:555 -m udp -m comment --comment nordvpn -j ACCEPT",
 		}, {
 			chain: chainInput, target: accept, iface: "lo", remoteNet: "1.1.1.1/32", protocol: "udp",
 			port: PortRange{555, 555}, module: "conntrack", stateFlag: "--ctstate",
@@ -174,6 +214,15 @@ func TestGenerateIPTablesRule(t *testing.T) {
 		}, {
 			chain: chainOutput, target: connmark, mark: 0x123,
 			rule: "OUTPUT -m mark --mark 0x123 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
+		}, {
+			chain: chainPrerouting, target: accept, mark: 0x123,
+			rule: "PREROUTING -m connmark --mark 0x123 -m comment --comment nordvpn -j ACCEPT",
+		}, {
+			chain: chainPostrouting, target: accept, mark: 0x123,
+			rule: "POSTROUTING -m connmark --mark 0x123 -m comment --comment nordvpn -j ACCEPT",
+		}, {
+			chain: chainPostrouting, target: connmark, mark: 0x123,
+			rule: "POSTROUTING -m mark --mark 0x123 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
 		},
 	}
 
@@ -263,17 +312,21 @@ func TestToInputSlice(t *testing.T) {
 	tests := []struct {
 		name     string
 		ruleType firewall.Direction
+		physical bool
 		out      []ruleChain
 	}{
-		{name: "inbound", ruleType: firewall.Inbound, out: []ruleChain{chainInput}},
-		{name: "outbound", ruleType: firewall.Outbound, out: []ruleChain{chainOutput}},
-		{name: "two way", ruleType: firewall.TwoWay, out: []ruleChain{chainInput, chainOutput}},
-		{name: "forward", ruleType: firewall.Forward, out: []ruleChain{chainForward}},
-		{name: "invalid type", ruleType: 500, out: nil},
+		{name: "inbound non phys", ruleType: firewall.Inbound, physical: false, out: []ruleChain{chainInput}},
+		{name: "outbound non phys", ruleType: firewall.Outbound, physical: false, out: []ruleChain{chainOutput}},
+		{name: "two way non phys", ruleType: firewall.TwoWay, physical: false, out: []ruleChain{chainInput, chainOutput}},
+		{name: "inbound phys", ruleType: firewall.Inbound, physical: true, out: []ruleChain{chainPrerouting}},
+		{name: "outbound phys", ruleType: firewall.Outbound, physical: true, out: []ruleChain{chainPostrouting}},
+		{name: "two way phys", ruleType: firewall.TwoWay, physical: true, out: []ruleChain{chainPrerouting, chainPostrouting}},
+		{name: "forward", ruleType: firewall.Forward, out: []ruleChain{chainForward}, physical: false},
+		{name: "invalid type", ruleType: 500, out: nil, physical: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out := toChainSlice(tt.ruleType)
+			out := toChainSlice(tt.ruleType, tt.physical)
 			assert.Equal(t, tt.out, out)
 		})
 	}
@@ -328,6 +381,20 @@ func TestToTargetSlice(t *testing.T) {
 			name:         "drop outgoing packets with mark",
 			allowPackets: false,
 			chain:        chainOutput,
+			marks:        []uint32{0x123},
+			out:          []ruleTarget{drop, connmark},
+		},
+		{
+			name:         "drop prerouting incoming packets with mark",
+			allowPackets: false,
+			chain:        chainPrerouting,
+			marks:        []uint32{0x123},
+			out:          []ruleTarget{drop},
+		},
+		{
+			name:         "drop postrouting outgoing packets with mark",
+			allowPackets: false,
+			chain:        chainPostrouting,
 			marks:        []uint32{0x123},
 			out:          []ruleTarget{drop, connmark},
 		},
@@ -396,6 +463,33 @@ func TestRuleToIPTables(t *testing.T) {
 			},
 		},
 		{
+			name:            "empty outbound physical rule",
+			rule:            firewall.Rule{Direction: firewall.Outbound, Physical: true},
+			ipv4TablesRules: []string{"POSTROUTING -m comment --comment nordvpn -j DROP"},
+			ipv6TablesRules: []string{"POSTROUTING -m comment --comment nordvpn -j DROP"},
+		},
+		{
+			name: "outbound physical rule",
+			rule: firewall.Rule{
+				Direction:      firewall.Outbound,
+				RemoteNetworks: []netip.Prefix{net1111},
+				Physical:       true,
+			},
+			ipv4TablesRules: []string{"POSTROUTING -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP"},
+		},
+		{
+			name: "two way physical rule",
+			rule: firewall.Rule{
+				Direction:      firewall.TwoWay,
+				RemoteNetworks: []netip.Prefix{net1111},
+				Physical:       true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
 			name: "multi interfaces only",
 			rule: firewall.Rule{
 				Direction:  firewall.TwoWay,
@@ -415,6 +509,26 @@ func TestRuleToIPTables(t *testing.T) {
 			},
 		},
 		{
+			name: "multi interfaces only physical",
+			rule: firewall.Rule{
+				Direction:  firewall.TwoWay,
+				Interfaces: []net.Interface{{Name: "lo"}, {Name: "eth0"}},
+				Physical:   true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -i lo -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -o lo -m comment --comment nordvpn -j DROP",
+				"PREROUTING -i eth0 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP",
+			},
+			ipv6TablesRules: []string{
+				"PREROUTING -i lo -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -o lo -m comment --comment nordvpn -j DROP",
+				"PREROUTING -i eth0 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
 			name: "multi interfaces and networks rule",
 			rule: firewall.Rule{
 				Direction:      firewall.Outbound,
@@ -430,6 +544,25 @@ func TestRuleToIPTables(t *testing.T) {
 			ipv6TablesRules: []string{
 				"OUTPUT -o lo -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -o eth0 -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
+			name: "multi interfaces and networks physical rule",
+			rule: firewall.Rule{
+				Direction:      firewall.Outbound,
+				RemoteNetworks: []netip.Prefix{net1111, net2220, netIpv6},
+				Interfaces:     []net.Interface{{Name: "lo"}, {Name: "eth0"}},
+				Physical:       true,
+			},
+			ipv4TablesRules: []string{
+				"POSTROUTING -o lo -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -o lo -d 2.2.2.0/24 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -o eth0 -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -o eth0 -d 2.2.2.0/24 -m comment --comment nordvpn -j DROP",
+			},
+			ipv6TablesRules: []string{
+				"POSTROUTING -o lo -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -o eth0 -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
 			},
 		},
 		{
@@ -488,6 +621,19 @@ func TestRuleToIPTables(t *testing.T) {
 			},
 		},
 		{
+			name: "two way physical rule - nil ports",
+			rule: firewall.Rule{
+				Direction:      firewall.TwoWay,
+				RemoteNetworks: []netip.Prefix{net1111},
+				Ports:          []int(nil),
+				Physical:       true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
 			name: "two way rule - one port (0)",
 			rule: firewall.Rule{
 				Direction:      firewall.TwoWay,
@@ -497,6 +643,19 @@ func TestRuleToIPTables(t *testing.T) {
 			ipv4TablesRules: []string{
 				"INPUT -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
+			name: "two way physical rule - one port (0)",
+			rule: firewall.Rule{
+				Direction:      firewall.TwoWay,
+				RemoteNetworks: []netip.Prefix{net1111},
+				Ports:          []int{0},
+				Physical:       true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
 			},
 		},
 		{
@@ -514,6 +673,21 @@ func TestRuleToIPTables(t *testing.T) {
 			},
 		},
 		{
+			name: "two way physical rule - one port (111)",
+			rule: firewall.Rule{
+				Direction:      firewall.TwoWay,
+				RemoteNetworks: []netip.Prefix{net1111},
+				Ports:          []int{111},
+				Physical:       true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 --sport 111:111 -m comment --comment nordvpn -j DROP",
+				"PREROUTING -s 1.1.1.1/32 --dport 111:111 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -d 1.1.1.1/32 --sport 111:111 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -d 1.1.1.1/32 --dport 111:111 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
 			name: "two way rule - two ports (0, 111)",
 			rule: firewall.Rule{
 				Direction:      firewall.TwoWay,
@@ -527,6 +701,23 @@ func TestRuleToIPTables(t *testing.T) {
 				"INPUT -s 1.1.1.1/32 --dport 111:111 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -d 1.1.1.1/32 --sport 111:111 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -d 1.1.1.1/32 --dport 111:111 -m comment --comment nordvpn -j DROP",
+			},
+		},
+		{
+			name: "two way physical rule - two ports (0, 111)",
+			rule: firewall.Rule{
+				Direction:      firewall.TwoWay,
+				RemoteNetworks: []netip.Prefix{net1111},
+				Ports:          []int{0, 111},
+				Physical:       true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
+				"PREROUTING -s 1.1.1.1/32 --sport 111:111 -m comment --comment nordvpn -j DROP",
+				"PREROUTING -s 1.1.1.1/32 --dport 111:111 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -d 1.1.1.1/32 --sport 111:111 -m comment --comment nordvpn -j DROP",
+				"POSTROUTING -d 1.1.1.1/32 --dport 111:111 -m comment --comment nordvpn -j DROP",
 			},
 		},
 		{
@@ -547,6 +738,24 @@ func TestRuleToIPTables(t *testing.T) {
 			},
 		},
 		{
+			name: "unblock destination ports physical rule",
+			rule: firewall.Rule{
+				Name:           "unblock source ports",
+				Direction:      firewall.Inbound,
+				Protocols:      []string{"tcp"},
+				Ports:          []int{111},
+				PortsDirection: firewall.Destination,
+				RemoteNetworks: []netip.Prefix{
+					net1111,
+				},
+				Allow:    true,
+				Physical: true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 -p tcp --dport 111:111 -m comment --comment nordvpn -j ACCEPT",
+			},
+		},
+		{
 			name: "unblock source ports rule",
 			rule: firewall.Rule{
 				Name:           "unblock source ports",
@@ -561,6 +770,24 @@ func TestRuleToIPTables(t *testing.T) {
 			},
 			ipv4TablesRules: []string{
 				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
+			},
+		},
+		{
+			name: "unblock source ports physical rule",
+			rule: firewall.Rule{
+				Name:           "unblock source ports",
+				Direction:      firewall.Inbound,
+				Protocols:      []string{"tcp"},
+				Ports:          []int{111},
+				PortsDirection: firewall.Source,
+				RemoteNetworks: []netip.Prefix{
+					net1111,
+				},
+				Allow:    true,
+				Physical: true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
 			},
 		},
 		{
@@ -581,6 +808,24 @@ func TestRuleToIPTables(t *testing.T) {
 			},
 		},
 		{
+			name: "unblock source ports range physical rule",
+			rule: firewall.Rule{
+				Name:           "unblock source ports",
+				Direction:      firewall.Inbound,
+				Protocols:      []string{"tcp"},
+				Ports:          []int{111, 112},
+				PortsDirection: firewall.Source,
+				RemoteNetworks: []netip.Prefix{
+					net1111,
+				},
+				Allow:    true,
+				Physical: true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:112 -m comment --comment nordvpn -j ACCEPT",
+			},
+		},
+		{
 			name: "unblock multiple source ports rule",
 			rule: firewall.Rule{
 				Name:           "unblock source ports",
@@ -597,6 +842,26 @@ func TestRuleToIPTables(t *testing.T) {
 				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
 				"INPUT -s 1.1.1.1/32 -p tcp --sport 222:222 -m comment --comment nordvpn -j ACCEPT",
 				"INPUT -s 1.1.1.1/32 -p tcp --sport 333:333 -m comment --comment nordvpn -j ACCEPT",
+			},
+		},
+		{
+			name: "unblock multiple source ports rule",
+			rule: firewall.Rule{
+				Name:           "unblock source ports",
+				Direction:      firewall.Inbound,
+				Protocols:      []string{"tcp"},
+				Ports:          []int{111, 222, 333},
+				PortsDirection: firewall.Source,
+				RemoteNetworks: []netip.Prefix{
+					net1111,
+				},
+				Allow:    true,
+				Physical: true,
+			},
+			ipv4TablesRules: []string{
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 222:222 -m comment --comment nordvpn -j ACCEPT",
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 333:333 -m comment --comment nordvpn -j ACCEPT",
 			},
 		},
 	}
@@ -636,6 +901,15 @@ func TestFirewall_AddDeleteRules(t *testing.T) {
 		},
 		{name: "single accept rule", rules: map[string]firewall.Rule{
 			"allow_lo_interface": {Direction: firewall.TwoWay, Allow: true, Interfaces: []net.Interface{{Name: "lo"}}}},
+		},
+		{name: "connection drop physical rule", rules: map[string]firewall.Rule{
+			"drop_connection": {Direction: firewall.TwoWay, Allow: false, Physical: true}},
+		},
+		{name: "connection accept physical rule", rules: map[string]firewall.Rule{
+			"allow_connection": {Direction: firewall.TwoWay, Allow: true, Physical: true}},
+		},
+		{name: "single accept physical rule", rules: map[string]firewall.Rule{
+			"allow_lo_interface": {Direction: firewall.TwoWay, Allow: true, Interfaces: []net.Interface{{Name: "lo"}}, Physical: true}},
 		},
 	}
 	for _, tt := range tests {
@@ -747,14 +1021,17 @@ func containsSlice(t *testing.T, list, sublist []string) bool {
 
 func getSystemRules(supportedIPTables []string) (map[string][]string, error) {
 	rules := make(map[string][]string)
+	tables := []string{"mangle", "filter"}
 	for _, cmd := range supportedIPTables {
-		out, err := exec.Command(cmd, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
-		if err != nil {
-			return nil, fmt.Errorf("executing '%s -S': %w: %s", cmd, err, out)
-		}
 		var res []string
-		for _, line := range strings.Split(string(out), "\n") {
-			res = append(res, trimPrefixes(line, "-A"))
+		for _, table := range tables {
+			out, err := exec.Command(cmd, "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
+			if err != nil {
+				return nil, fmt.Errorf("executing '%s -S': %w: %s", cmd, err, out)
+			}
+			for _, line := range strings.Split(string(out), "\n") {
+				res = append(res, trimPrefixes(line, "-A"))
+			}
 		}
 		rules[cmd] = res
 	}

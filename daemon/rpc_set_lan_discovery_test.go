@@ -24,17 +24,17 @@ func getEmptyAllowlist(t *testing.T) config.Allowlist {
 			TCP: make(config.PortSet),
 			UDP: make(config.PortSet),
 		},
-		Subnets: make(config.Subnets),
+		Subnets: make([]string, 0),
 	}
 }
 
 func addLANToAllowlist(t *testing.T, allowlist config.Allowlist) config.Allowlist {
 	t.Helper()
 
-	allowlist.Subnets["10.0.0.0/8"] = true
-	allowlist.Subnets["172.16.0.0/12"] = true
-	allowlist.Subnets["192.168.0.0/16"] = true
-	allowlist.Subnets["169.254.0.0/16"] = true
+	allowlist.Subnets = append(allowlist.Subnets, "10.0.0.0/8")
+	allowlist.Subnets = append(allowlist.Subnets, "172.16.0.0/12")
+	allowlist.Subnets = append(allowlist.Subnets, "192.168.0.0/16")
+	allowlist.Subnets = append(allowlist.Subnets, "169.254.0.0/16")
 
 	return allowlist
 }
@@ -43,18 +43,18 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	allowlistLAN := config.Allowlist{
-		Subnets: map[string]bool{
-			"10.0.0.0/8":     true,
-			"172.16.0.0/12":  true,
-			"192.168.0.0/16": true,
-			"169.254.0.0/16": true,
+		Subnets: []string{
+			"10.0.0.0/8",
+			"172.16.0.0/12",
+			"192.168.0.0/16",
+			"169.254.0.0/16",
 		},
 	}
 
 	getAllowlist := func() config.Allowlist {
 		allowlist := getEmptyAllowlist(t)
-		allowlist.Subnets["207.240.205.230/24"] = true
-		allowlist.Subnets["18.198.160.194/12"] = true
+		allowlist.Subnets = append(allowlist.Subnets, "207.240.205.230/24")
+		allowlist.Subnets = append(allowlist.Subnets, "18.198.160.194/12")
 		allowlist.Ports.TCP[2000] = true
 		allowlist.Ports.UDP[3000] = true
 		return allowlist

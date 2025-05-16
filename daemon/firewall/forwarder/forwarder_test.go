@@ -134,7 +134,7 @@ func TestResetPeersExitnode(t *testing.T) {
 
 	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 
-	server.ResetPeers(peers, true, false, false, config.Allowlist{})
+	server.ResetPeers(peers, true, false, config.Allowlist{})
 
 	expectedCommands := []string{
 		// List nat table so that old nat rules can be deleted. All existing rules should be deleted.
@@ -181,8 +181,8 @@ func TestResetPeers_LANDiscoveryEnabled(t *testing.T) {
 	commandExecutor := CommandExecutorMock{}
 	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 
-	err := server.ResetPeers(peers, true, false, false, config.Allowlist{
-		Subnets: config.Subnets{"192.168.0.1/32": true},
+	err := server.ResetPeers(peers, true, false, config.Allowlist{
+		Subnets: []string{"192.168.0.1/32"},
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	})
 	assert.NoError(t, err)
@@ -232,8 +232,8 @@ func TestResetPeers_LANDiscoveryDisabled(t *testing.T) {
 	commandExecutor := CommandExecutorMock{}
 	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 
-	err := server.ResetPeers(peers, false, false, false, config.Allowlist{
-		Subnets: config.Subnets{"192.168.0.1/32": true},
+	err := server.ResetPeers(peers, false, false, config.Allowlist{
+		Subnets: []string{"192.168.0.1/32"},
 		Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 	})
 	assert.NoError(t, err)
@@ -321,7 +321,6 @@ func TestSetAllowlist(t *testing.T) {
 				"iptables -D FORWARD -s 192.168.0.1 -j ACCEPT -m comment --comment nordvpn-exitnode-peer-allowlist -d 192.168.0.0/16",
 				"iptables -D FORWARD -s 192.168.0.3 -j ACCEPT -m comment --comment nordvpn-exitnode-peer-allowlist -d 192.168.0.0/16",
 				"iptables -D FORWARD -s 202.242.38.68 -j ACCEPT -m comment --comment nordvpn-exitnode-peer-allowlist -d 192.168.0.0/16",
-				"iptables -t filter -S FORWARD",
 			},
 		},
 		{
@@ -343,8 +342,8 @@ func TestSetAllowlist(t *testing.T) {
 
 			commandExecutor.err = nil
 
-			err := server.ResetPeers(peers, false, false, false, config.Allowlist{
-				Subnets: config.Subnets{initialNetwork: true},
+			err := server.ResetPeers(peers, false, false, config.Allowlist{
+				Subnets: []string{initialNetwork},
 			})
 			assert.NoError(t, err)
 			// clean expected commands as ResetPeers is covered by other tests
@@ -352,8 +351,8 @@ func TestSetAllowlist(t *testing.T) {
 
 			commandExecutor.err = test.err
 
-			err = server.ResetFirewall(false, false, false, config.Allowlist{
-				Subnets: config.Subnets{"192.168.0.1/32": true, "1.2.3.4/32": true},
+			err = server.ResetFirewall(false, false, config.Allowlist{
+				Subnets: []string{"192.168.0.1/32", "1.2.3.4/32"},
 				Ports:   config.Ports{TCP: map[int64]bool{1000: true}, UDP: map[int64]bool{2000: true, 2001: true}},
 			})
 			assert.ErrorIs(t, err, test.err)
@@ -459,7 +458,7 @@ func TestFirewall_AllowlistOrdering(t *testing.T) {
 	server := NewForwarder(interfaces, commandExecutor.Execute, &mock.SysctlSetterMock{})
 	server.enabled = true
 
-	server.ResetFirewall(true, false, true, config.Allowlist{Subnets: config.Subnets{"1.1.1.1/32": true}})
+	server.ResetFirewall(true, false, config.Allowlist{Subnets: []string{"1.1.1.1/32"}})
 
 	expectedCommands := []string{
 		// list nat rules, no rules are currently present so furhter actions will be taken on the nat table
@@ -476,10 +475,6 @@ func TestFirewall_AllowlistOrdering(t *testing.T) {
 		"iptables -t filter -D FORWARD -s 100.64.0.0/10 -d 172.16.0.0/12 -j DROP -m comment --comment nordvpn-exitnode-transient",
 		"iptables -t filter -D FORWARD -s 100.64.0.0/10 -d 192.168.0.0/16 -j DROP -m comment --comment nordvpn-exitnode-transient",
 		"iptables -t filter -D FORWARD -s 100.64.0.0/10 -d 169.254.0.0/16 -j DROP -m comment --comment nordvpn-exitnode-transient",
-		// add FORWARDING rules for subnets present in the current allowlist
-		// 2.2.2.2/32 is not added as it is not present in the allowlist
-		"iptables -I FORWARD -d 1.1.1.1/32 -o eth0 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
-		"iptables -I FORWARD -d 1.1.1.1/32 -o eth1 -m comment --comment nordvpn-allowlist-transient -j ACCEPT",
 		// add rules to drop traffic to local subnets from meshnet peers
 		"iptables -t filter -D FORWARD -s 100.64.0.0/10 -d 10.0.0.0/8 -j DROP -m comment --comment nordvpn-exitnode-transient",
 		"iptables -t filter -I FORWARD -s 100.64.0.0/10 -d 10.0.0.0/8 -j DROP -m comment --comment nordvpn-exitnode-transient",
