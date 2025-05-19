@@ -191,6 +191,7 @@ func (r *RPC) connect(
 
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
+	event.TargetServerGroup = determineTargetServerGroup(server, parameters)
 
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)
@@ -274,6 +275,25 @@ func (r *RPC) connect(
 // It ensures the returned value is at least 1 millisecond
 func getElapsedTime(startTime time.Time) int {
 	return max(int(time.Since(startTime).Milliseconds()), 1)
+}
+
+func determineTargetServerGroup(server *core.Server, parameters ServerParameters) string {
+	groupIndex := slices.IndexFunc(server.Groups, func(e core.Group) bool { return e.ID == parameters.Group })
+	if groupIndex != -1 {
+		return server.Groups[groupIndex].Title
+	}
+
+	obfuscatedIndex := slices.IndexFunc(server.Groups, func(e core.Group) bool { return e.ID == config.ServerGroup_OBFUSCATED })
+	if obfuscatedIndex != -1 {
+		return server.Groups[obfuscatedIndex].Title
+	}
+
+	standardServers := slices.IndexFunc(server.Groups, func(e core.Group) bool { return e.ID == config.ServerGroup_STANDARD_VPN_SERVERS })
+	if standardServers != -1 {
+		return server.Groups[standardServers].Title
+	}
+
+	return ""
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)
