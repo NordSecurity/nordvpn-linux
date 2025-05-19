@@ -78,6 +78,7 @@ class TestUtils:
         daemon.stop()
         sh_no_tty.sudo.iptables("-F")
         ssh_client.exec_command("sudo iptables -F")
+        assert network.is_disconnected()
 
 
     @staticmethod

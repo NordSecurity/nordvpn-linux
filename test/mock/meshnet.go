@@ -98,3 +98,10 @@ type CachingMapperMock struct {
 func (m *CachingMapperMock) Map(_ string, _ uuid.UUID, _ bool) (*mesh.MachineMap, error) {
 	return m.Value, m.Error
 }
+
+type RegistrationCheckerMock struct {
+	registrationErr error
+}
+
+func (r RegistrationCheckerMock) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
+func (r RegistrationCheckerMock) Register() error                 { return r.registrationErr }
