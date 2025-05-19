@@ -10,6 +10,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -18,12 +19,17 @@ import (
 
 type DockerSettings struct {
 	Privileged        bool
-	Daemonize         bool               // Container is run in background, output is not available then
-	DaemonizeStopChan chan<- interface{} // Value will be sent on this channel when daemonized docker container is stopped
+	Daemonize         bool       // Container is run in background, output is not available then
+	DaemonizeStopChan chan<- any // Value will be sent on this channel when daemonized docker container is stopped
 	Network           string
 }
 
-func RunDocker(ctx context.Context, env map[string]string, image string, cmd []string) error {
+func RunDocker(
+	ctx context.Context,
+	env map[string]string,
+	image string,
+	cmd []string,
+) error {
 	settings := DockerSettings{}
 	return runDocker(ctx, env, image, cmd, settings.Privileged, settings.Daemonize, nil, settings.Network)
 }
@@ -54,14 +60,22 @@ func BuildDocker(dockerfile, tag string) error {
 func runDocker(
 	ctx context.Context,
 	env map[string]string,
-	image string,
+	img string,
 	cmd []string,
 	isPrivileged bool,
 	daemonize bool,
-	containerStoppedChan chan<- interface{},
+	containerStoppedChan chan<- any,
 	network string,
 ) error {
 	fmt.Println("creating docker client")
+	defer func() {
+		if !isPrivileged {
+			return
+		}
+		if err := fixPermissions(); err != nil {
+			fmt.Println("failed to fix permissions", err)
+		}
+	}()
 	docker, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return err
@@ -75,21 +89,21 @@ func runDocker(
 			return err
 		}
 
-		imageIndex := slices.IndexFunc(list, func(imageSummary types.ImageSummary) bool {
-			tagIndex := slices.Index(imageSummary.RepoTags, image)
+		imageIndex := slices.IndexFunc(list, func(imageSummary image.Summary) bool {
+			tagIndex := slices.Index(imageSummary.RepoTags, img)
 			return tagIndex != -1
 		})
 		pullImage = imageIndex == -1
 	}
 
 	if pullImage {
-		fmt.Printf("pulling docker image %s\n", image)
-		if err := pullDocker(ctx, docker, image); err != nil {
+		fmt.Printf("pulling docker image %s\n", img)
+		if err := pullDocker(ctx, docker, img); err != nil {
 			return err
 		}
 	}
 
-	name := getNameFromImage(image)
+	name := getNameFromImage(img)
 	fmt.Printf("creating %s docker container\n", name)
 
 	cwd, err := os.Getwd()
@@ -98,7 +112,7 @@ func runDocker(
 	}
 
 	containerConfig := container.Config{
-		Image:      image,
+		Image:      img,
 		Cmd:        cmd,
 		Env:        envMapToList(env),
 		WorkingDir: "/opt",
@@ -134,19 +148,21 @@ func runDocker(
 		}
 	}
 
-	resp, err := docker.ContainerCreate(ctx, &containerConfig, &container.HostConfig{
+	hostConfig := container.HostConfig{
 		AutoRemove:  true,
 		Mounts:      mounts,
 		Privileged:  isPrivileged,
 		Sysctls:     map[string]string{"net.ipv6.conf.all.disable_ipv6": "0"},
 		NetworkMode: container.NetworkMode(network),
-	}, nil, nil, name)
+	}
+
+	resp, err := docker.ContainerCreate(ctx, &containerConfig, &hostConfig, nil, nil, name)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("starting %s docker container\n", name)
-	if err := docker.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+	if err := docker.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
 		return err
 	}
 
@@ -167,7 +183,7 @@ func runDocker(
 
 	fmt.Printf("waiting for %s docker container to finish\n", name)
 	statusCh, errCh := docker.ContainerWait(ctx, resp.ID, container.WaitConditionRemoved)
-	attach, err := docker.ContainerAttach(ctx, resp.ID, types.ContainerAttachOptions{
+	attach, err := docker.ContainerAttach(ctx, resp.ID, container.AttachOptions{
 		Stream: true,
 		Stdin:  true,
 		Stdout: true,
@@ -195,6 +211,27 @@ func runDocker(
 			}
 		}
 	}
+}
+
+func fixPermissions() error {
+	fmt.Println("fixing permissions")
+	user := os.Getenv("USER")
+	if user == "" {
+		return fmt.Errorf("USER environment variable not set")
+	}
+
+	ug := fmt.Sprintf("%s:%s", user, user)
+	cmd := exec.Command("sudo", "chown", "-R", ug, ".")
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	fmt.Println("Permissions updated successfully.")
+	return nil
 }
 
 func pullDocker(
