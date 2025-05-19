@@ -72,7 +72,6 @@ func runDocker(
 		if !isPrivileged {
 			return
 		}
-		fmt.Println("fixing permissions")
 		if err := fixPermissions(); err != nil {
 			fmt.Println("failed to fix permissions", err)
 		}
@@ -215,6 +214,7 @@ func runDocker(
 }
 
 func fixPermissions() error {
+	fmt.Println("fixing permissions")
 	user := os.Getenv("USER")
 	if user == "" {
 		return fmt.Errorf("USER environment variable not set")
