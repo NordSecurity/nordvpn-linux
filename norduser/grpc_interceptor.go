@@ -46,9 +46,10 @@ func (n *StartNorduserdMiddleware) middleware(ctx context.Context) {
 	}
 }
 
-func (n *StartNorduserdMiddleware) StreamMiddleware(srv interface{},
+func (n *StartNorduserdMiddleware) StreamMiddleware(srv any,
 	ss grpc.ServerStream,
-	info *grpc.StreamServerInfo) error {
+	info *grpc.StreamServerInfo,
+) error {
 	n.middleware(ss.Context())
 
 	return nil
@@ -56,8 +57,9 @@ func (n *StartNorduserdMiddleware) StreamMiddleware(srv interface{},
 
 func (n *StartNorduserdMiddleware) UnaryMiddleware(
 	ctx context.Context,
-	req interface{},
-	info *grpc.UnaryServerInfo) (interface{}, error) {
+	req any,
+	info *grpc.UnaryServerInfo,
+) (any, error) {
 	n.middleware(ctx)
 
 	return nil, nil

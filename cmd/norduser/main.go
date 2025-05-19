@@ -18,8 +18,11 @@ import (
 	"golang.org/x/net/netutil"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
+	consentpb "github.com/NordSecurity/nordvpn-linux/analytics/pb"
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
@@ -66,9 +69,11 @@ func addAutostart() (string, error) {
 
 func startTray(quitChan chan<- norduser.StopRequest) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
-	conn, err := grpc.Dial(
+	trayState := tray.TrayState{}
+	conn, err := grpc.NewClient(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(newConsentInterceptor(&trayState)),
 	)
 
 	var client daemonpb.DaemonClient
@@ -79,7 +84,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 		return
 	}
 
-	fileshareConn, err := grpc.Dial(
+	fileshareConn, err := grpc.NewClient(
 		fileshare_process.FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -92,7 +97,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 		return
 	}
 
-	ti := tray.NewTrayInstance(client, fileshareClient, quitChan)
+	ti := tray.NewTrayInstance(&trayState, client, fileshareClient, quitChan)
 	ti.Start()
 
 	onExit := func() {
@@ -117,10 +122,45 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	}
 }
 
+func newConsentInterceptor(trayState *tray.TrayState) grpc.UnaryClientInterceptor {
+	return func(
+		ctx context.Context,
+		method string,
+		req, reply any,
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		if err == nil {
+			trayState.UpdateConsent(true)
+			return nil
+		}
+
+		st, ok := status.FromError(err)
+		if !ok {
+			// non-gRPC error - just pass it through
+			return err
+		}
+
+		if st.Code() == codes.FailedPrecondition {
+			for _, d := range st.Details() {
+				switch d.(type) {
+				case *consentpb.ErrMissingConsent:
+					trayState.UpdateConsent(false)
+					return err
+				}
+			}
+		}
+
+		return err
+	}
+}
+
 func shouldEnableFileshare(uid uint32) (bool, error) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 
-	grpcConn, err := grpc.Dial(
+	grpcConn, err := grpc.NewClient(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
@@ -166,8 +206,8 @@ func setupLog() {
 
 func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	fileshareManagementChan chan<- norduser.FileshareManagementMsg,
-	fileshareShutdownChan <-chan interface{},
-	logoutChan <-chan interface{},
+	fileshareShutdownChan <-chan any,
+	logoutChan <-chan any,
 	grpcServer *grpc.Server,
 	onShutdown func(bool),
 ) {
@@ -215,7 +255,7 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	}
 }
 
-func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan interface{}) {
+func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan any) {
 	fileshareManagementChan, fileshareShutdownChan := norduser.StartFileshareManagementLoop()
 	if enable, err := shouldEnableFileshare(uid); err != nil {
 		log.Println(internal.ErrorPrefix, "Failed to determine if fileshare should be enabled on startup:", err)
@@ -263,7 +303,7 @@ func startSnap() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	logoutChan := make(chan interface{})
+	logoutChan := make(chan any)
 	go func() {
 		if err := norduser.WaitForLogout(usr.Username, logoutChan); err != nil {
 			log.Println(internal.ErrorPrefix, "failed to start logout monitor:", err)
@@ -369,7 +409,7 @@ func start() {
 	log.Println(internal.InfoPrefix, "Norduser daemon has started")
 
 	// logoutChan is not needed in non-snap environment, as startup/shutdown on login/logout is managed by the main daemon
-	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, make(<-chan interface{}),
+	waitForShutdown(stopChan, fileshareManagementChan, fileshareShutdownChan, make(<-chan any),
 		grpcServer,
 		func(disable bool) {})
 }

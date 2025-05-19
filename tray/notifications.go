@@ -84,7 +84,6 @@ func (n *dbusNotifier) sendNotification(summary string, body string) error {
 
 func newNotifier() (notify.Notifier, error) {
 	dbusConn, err := dbus.SessionBusPrivate()
-
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +105,6 @@ func newNotifier() (notify.Notifier, error) {
 	}
 
 	ntf, err := notify.New(dbusConn)
-
 	if err != nil {
 		return nil, err
 	}

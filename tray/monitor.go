@@ -319,16 +319,18 @@ func messageForDaemonError(err error) string {
 		}
 	}
 
+	if strings.Contains(errorMessage, internal.MissingConsentMsg) {
+		return internal.ErrConsentMissing.Error()
+	}
+
 	return internal.ErrDaemonConnectionRefused.Error()
 }
 
 func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 	changed := false
-	daemonAvailable := false
-
-	if (errorMessage == "") || (errorMessage == cli.ErrUpdateAvailable.Error()) {
-		daemonAvailable = true
-	}
+	daemonAvailable := errorMessage == "" ||
+		errorMessage == cli.ErrUpdateAvailable.Error() ||
+		strings.Contains(errorMessage, internal.MissingConsentMsg)
 
 	ti.state.mu.Lock()
 

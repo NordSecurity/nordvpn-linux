@@ -7,14 +7,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-type StreamMiddleware func(srv interface{},
+type StreamMiddleware func(srv any,
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo) error
 
 type UnaryMiddleware func(
 	ctx context.Context,
-	req interface{},
-	info *grpc.UnaryServerInfo) (interface{}, error)
+	req any,
+	info *grpc.UnaryServerInfo) (any, error)
 
 type Middleware struct {
 	streamMiddleware []StreamMiddleware
@@ -34,10 +34,11 @@ func (m *Middleware) AddUnaryMiddleware(middleware UnaryMiddleware) {
 //	opts := []grpc.ServerOption{}
 //	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 //	s := grpc.NewServer(opts...)
-func (m *Middleware) StreamIntercept(srv interface{},
+func (m *Middleware) StreamIntercept(srv any,
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo,
-	handler grpc.StreamHandler) error {
+	handler grpc.StreamHandler,
+) error {
 	for _, m := range m.streamMiddleware {
 		if err := m(srv, ss, info); err != nil {
 			return err
@@ -53,10 +54,10 @@ func (m *Middleware) StreamIntercept(srv interface{},
 //	s := grpc.NewServer(opts...)
 func (m *Middleware) UnaryIntercept(
 	ctx context.Context,
-	req interface{},
+	req any,
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
-) (interface{}, error) {
+) (any, error) {
 	for _, m := range m.unaryMiddleware {
 		if _, err := m(ctx, req, info); err != nil {
 			return nil, err

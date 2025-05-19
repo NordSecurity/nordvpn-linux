@@ -19,6 +19,7 @@ import (
 
 	"golang.org/x/net/netutil"
 
+	"github.com/NordSecurity/nordvpn-linux/analytics"
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -130,7 +131,7 @@ func main() {
 
 	// Config
 	configEvents := daemonevents.NewConfigEvents()
-	fsystem := config.NewFilesystemConfigManager(
+	cfgManager := config.NewFilesystemConfigManager(
 		config.SettingsDataFilePath,
 		config.InstallFilePath,
 		Salt,
@@ -139,9 +140,9 @@ func main() {
 		configEvents.Config,
 	)
 	var cfg config.Config
-	if err := fsystem.Load(&cfg); err != nil {
+	if err := cfgManager.Load(&cfg); err != nil {
 		log.Println(err)
-		if err := fsystem.Reset(false); err != nil {
+		if err := cfgManager.Reset(false); err != nil {
 			log.Fatalln(err)
 		}
 	}
@@ -294,17 +295,17 @@ func main() {
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
 
-	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, Version, Environment, deviceID)
-	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
-	daemonEvents.Subscribe(analytics)
+	analyticsSub := newAnalytics(eventsDbPath, cfgManager, defaultAPI, Version, Environment, deviceID)
+	heartBeatSubject.Subscribe(analyticsSub.NotifyHeartBeat)
+	daemonEvents.Subscribe(analyticsSub)
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
 
-	if fsystem.NewInstallation {
+	if cfgManager.NewInstallation {
 		daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "first_open", ItemType: "button", ItemValue: "first_open", FormReference: "daemon"})
 	}
 
-	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
+	vpnLibConfigGetter := vpnLibConfigGetterImplementation(cfgManager, rcConfig)
 
 	internalVpnEvents := vpn.NewInternalVPNEvents()
 
@@ -414,17 +415,17 @@ func main() {
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
 	meshnetChecker := meshnet.NewRegisteringChecker(
-		fsystem,
+		cfgManager,
 		keygen,
 		meshRegistry,
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
-		meshMapper, meshnetChecker, fsystem, netw,
+		meshMapper, meshnetChecker, cfgManager, netw,
 	).NotifyPeerUpdate)
 
 	meshUnsetter := meshunsetter.NewMeshnet(
-		fsystem,
+		cfgManager,
 		netw,
 		errSubject,
 		norduserClient,
@@ -434,7 +435,7 @@ func main() {
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
 	authChecker := auth.NewRenewingChecker(
-		fsystem,
+		cfgManager,
 		defaultAPI,
 		daemonEvents.User.MFA,
 		daemonEvents.User.Logout,
@@ -447,7 +448,7 @@ func main() {
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
-		nc.NewCredsFetcher(defaultAPI, fsystem))
+		nc.NewCredsFetcher(defaultAPI, cfgManager))
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
 	dataUpdateEvents.Subscribe(statePublisher)
@@ -463,7 +464,7 @@ func main() {
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
 		authChecker,
-		fsystem,
+		cfgManager,
 		dm,
 		defaultAPI,
 		defaultAPI,
@@ -479,7 +480,7 @@ func main() {
 		debugSubject,
 		threatProtectionLiteServers,
 		notificationClient,
-		analytics,
+		analyticsSub,
 		norduserService,
 		statePublisher,
 		sharedContext,
@@ -489,7 +490,7 @@ func main() {
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
-		fsystem,
+		cfgManager,
 		meshnetChecker,
 		inviter.NewNotifyingInviter(defaultAPI, meshnetEvents.PeerUpdate),
 		netw,
@@ -521,15 +522,19 @@ func main() {
 
 	middleware := grpcmiddleware.Middleware{}
 	if snapconf.IsUnderSnap() {
-		checker := snapconf.NewSnapChecker(errSubject)
-		middleware.AddStreamMiddleware(checker.StreamInterceptor)
-		middleware.AddUnaryMiddleware(checker.UnaryInterceptor)
+		snapChecker := snapconf.NewSnapChecker(errSubject)
+		middleware.AddStreamMiddleware(snapChecker.StreamInterceptor)
+		middleware.AddUnaryMiddleware(snapChecker.UnaryInterceptor)
 	} else {
 		// in non snap environment, norduser is started on the daemon side on every command
 		norduserMiddleware := norduser.NewStartNorduserMiddleware(norduserService)
 		middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
 		middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 	}
+
+	consentChecker := analytics.NewConsentChecker(cfgManager)
+	middleware.AddUnaryMiddleware(consentChecker.UnaryInterceptor)
+	middleware.AddStreamMiddleware(consentChecker.StreamInterceptor)
 
 	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))
@@ -628,7 +633,7 @@ func main() {
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
-	if err := analytics.Stop(); err != nil {
+	if err := analyticsSub.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
 	}
 }

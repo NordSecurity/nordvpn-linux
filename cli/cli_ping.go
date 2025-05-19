@@ -20,6 +20,12 @@ func (c *cmd) Ping() error {
 		if snapErr := RetrieveSnapConnsError(err); snapErr != nil {
 			return err
 		}
+		if strings.Contains(err.Error(), internal.MissingConsentMsg) {
+			// NOTE: CLI ping doesn't need to fail with consent error.
+			// For CLI, specific calls need to fail to trigger consent flow.
+			return nil
+		}
+
 		return internal.ErrDaemonConnectionRefused
 	}
 

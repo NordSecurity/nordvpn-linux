@@ -1,6 +1,7 @@
 package tray
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"runtime"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/systray"
+	"github.com/godbus/dbus/v5"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -86,6 +88,24 @@ func addDaemonErrorSection(ti *Instance) {
 	}
 	mError := systray.AddMenuItem(ti.state.daemonError, ti.state.daemonError)
 	mError.Disable()
+}
+
+func addConsentSection() {
+	// XXX: change the string
+	m := systray.AddMenuItem("Accept consent", "Accept consent")
+	m.Disable()
+
+	mConsent := systray.AddMenuItem("Consent", "Consent")
+
+	go func() {
+		for {
+			_, open := <-mConsent.ClickedCh
+			if !open {
+				return
+			}
+			openURI("nordvpn://consent")
+		}
+	}()
 }
 
 func addVpnSection(ti *Instance) {
@@ -180,6 +200,34 @@ func addAccountSection(ti *Instance) {
 			}
 		}()
 	}
+}
+
+func openURI(uri string) {
+	if err := tryDbus(uri); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to open URI using D-Bus", err)
+	}
+}
+
+func tryDbus(uri string) error {
+	conn, err := dbus.SessionBus()
+	if err != nil {
+		return fmt.Errorf("failed to connect to session bus: %w", err)
+	}
+
+	obj := conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	call := obj.CallWithContext(ctx,
+		"org.freedesktop.portal.OpenURI.OpenURI", 0,
+		"", uri, map[string]dbus.Variant{},
+	)
+	if call.Err != nil {
+		return fmt.Errorf("DBus OpenURI failed: %w", call.Err)
+	}
+
+	return nil
 }
 
 func addSettingsSection(ti *Instance) {

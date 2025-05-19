@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -23,6 +24,7 @@ func (c *cmd) Version(ctx *cli.Context) error {
 		if snapErr := RetrieveSnapConnsError(err); snapErr != nil {
 			return err
 		}
+		color.Green("###############    5")
 		return internal.ErrDaemonConnectionRefused
 	}
 
@@ -30,6 +32,7 @@ func (c *cmd) Version(ctx *cli.Context) error {
 	case internal.CodeOffline:
 		return ErrInternetConnection
 	case internal.CodeDaemonOffline:
+		color.Green("###############    6")
 		return internal.ErrDaemonConnectionRefused
 	case internal.CodeOutdated:
 	case internal.CodeSuccess:

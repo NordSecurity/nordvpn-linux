@@ -22,4 +22,6 @@ var (
 	ErrNotLoggedIn           = errors.New("you are not logged in")
 	ErrVirtualServerSelected = errors.New(SpecifiedServerIsVirtualLocation)
 	ErrNoNetWhenLoggingIn    = errors.New("You’re offline.\nWe can’t run this action without an internet connection. Please check it and try again.")
+	// XXX: Docs
+	ErrConsentMissing = errors.New(MissingConsentMsg)
 )

@@ -125,7 +125,7 @@ func NewConnChecker(
 }
 
 func (c *ConnChecker) StreamInterceptor(
-	srv interface{},
+	srv any,
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo,
 ) error {
@@ -137,9 +137,9 @@ func (c *ConnChecker) StreamInterceptor(
 
 func (c *ConnChecker) UnaryInterceptor(
 	ctx context.Context,
-	req interface{},
+	req any,
 	info *grpc.UnaryServerInfo,
-) (interface{}, error) {
+) (any, error) {
 	if err := c.PermissionCheck(); err != nil {
 		return nil, err
 	}
@@ -268,7 +268,7 @@ func RealUserHomeDir() string {
 	if homeDir == dir {
 		// For non-classic snaps, HOME environment variable is re-written to SNAP_USER_DATA
 		// Typical value: /home/_user_name_/snap/_snap_name_/_snap_revision_
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			dir = filepath.Dir(dir)
 		}
 		return dir

@@ -8,6 +8,7 @@ protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/cities.proto
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/common.proto -I protobuf/daemon
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/connect.proto
+protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/consent.proto -I protobuf/daemon
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/countries.proto
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/login.proto -I protobuf/daemon
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/logout.proto -I protobuf/daemon
@@ -43,13 +44,13 @@ mkdir -p "${outDir}"
 touch "${outDir}"/__init__.py
 
 python3 -m grpc_tools.protoc \
-	--proto_path="${PWD}"/protobuf/daemon \
-	--python_out="${outDir}" \
-	--pyi_out="${outDir}" \
-	"${PWD}"/protobuf/daemon/*.proto \
-	"${PWD}"/protobuf/daemon/config/*.proto
+  --proto_path="${PWD}"/protobuf/daemon \
+  --python_out="${outDir}" \
+  --pyi_out="${outDir}" \
+  "${PWD}"/protobuf/daemon/*.proto \
+  "${PWD}"/protobuf/daemon/config/*.proto
 
 python3 -m grpc_tools.protoc \
-	--proto_path="${PWD}"/protobuf/daemon \
-	--grpc_python_out="${outDir}" \
-	"${PWD}"/protobuf/daemon/service.proto
+  --proto_path="${PWD}"/protobuf/daemon \
+  --grpc_python_out="${outDir}" \
+  "${PWD}"/protobuf/daemon/service.proto

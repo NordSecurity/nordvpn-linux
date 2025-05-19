@@ -30,4 +30,7 @@ const (
 
 	// Error message when the server is a virtual location, but user has virtual-location off
 	SpecifiedServerIsVirtualLocation = "Please enable virtual location access to connect to this server."
+
+	// XXX: docs
+	MissingConsentMsg = "analytics consent is missing"
 )

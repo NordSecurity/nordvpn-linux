@@ -89,7 +89,7 @@ func main() {
 	log.SetOutput(fileLogger)
 
 	loaderInterceptor := cli.LoaderInterceptor{}
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		DaemonURL,
 		// Insecure credentials are OK because the connection is completely local and
 		// protected by file permissions
@@ -97,7 +97,7 @@ func main() {
 		grpc.WithUnaryInterceptor(loaderInterceptor.UnaryInterceptor),
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),
 	)
-	fileshareConn, err := grpc.Dial(
+	fileshareConn, err := grpc.NewClient(
 		fileshare_process.FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(loaderInterceptor.UnaryInterceptor),

@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/NordSecurity/nordvpn-linux/analytics"
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -104,8 +105,8 @@ func NewApp(version, environment, hash, salt string,
 	cli.CommandHelpTemplate = CommandHelpTemplate
 	// Configure line wrapping for command descriptions
 	width, _, err := term.GetSize(int(os.Stdout.Fd()))
-	cli.HelpPrinter = func(w io.Writer, templ string, data interface{}) {
-		funcMap := map[string]interface{}{"wrapAt": func() int { return width }}
+	cli.HelpPrinter = func(w io.Writer, templ string, data any) {
+		funcMap := map[string]any{"wrapAt": func() int { return width }}
 		cli.HelpPrinterCustom(w, templ, data, funcMap)
 	}
 
@@ -969,8 +970,9 @@ type LoaderInterceptor struct {
 	enabled bool
 }
 
-func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string, req interface{}, reply interface{}, cc *grpc.ClientConn,
-	invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string, req any, reply any, cc *grpc.ClientConn,
+	invoker grpc.UnaryInvoker, opts ...grpc.CallOption,
+) error {
 	if i.enabled {
 		loader := NewLoader()
 		loader.Start()
@@ -982,7 +984,8 @@ func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string,
 }
 
 func (i *LoaderInterceptor) StreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string,
-	streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	streamer grpc.Streamer, opts ...grpc.CallOption,
+) (grpc.ClientStream, error) {
 	stream, err := streamer(ctx, desc, cc, method, opts...)
 	return loaderStream{ClientStream: stream, loaderEnabled: i.enabled}, err
 }
@@ -1022,7 +1025,7 @@ type loaderStream struct {
 	loaderEnabled bool
 }
 
-func (s loaderStream) RecvMsg(m interface{}) error {
+func (s loaderStream) RecvMsg(m any) error {
 	if s.loaderEnabled {
 		loader := NewLoader()
 		loader.Start()
@@ -1050,7 +1053,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 			}
 			switch {
 			case errors.Is(err, ErrUpdateAvailable):
-				color.Yellow(fmt.Sprintf(UpdateAvailableMessage))
+				color.Yellow(fmt.Sprint(UpdateAvailableMessage))
 			case errors.Is(err, ErrInternetConnection):
 				color.Red(ErrInternetConnection.Error())
 				os.Exit(1)
@@ -1091,6 +1094,12 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 				color.Red(MsgMeshnetVersionNotSupported)
 				os.Exit(1)
 			}
+
+			if analytics.IsMissingConsent(err) {
+				// XXX: error handling
+				analytics.StartConsentFlow(c.client)
+			}
+
 			return err
 		}
 		return nil

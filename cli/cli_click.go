@@ -10,13 +10,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/analytics"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
 func waitForInput(timeout bool) {
-	inputChan := make(chan interface{})
+	inputChan := make(chan any)
 	go func() {
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 		close(inputChan)
@@ -83,6 +84,10 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 					return formatError(err)
 				}
 				return nil
+
+			case "consent":
+				// XXX: error handling
+				analytics.StartConsentFlow(c.client)
 			}
 		}
 	}

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -11,8 +12,8 @@ import (
 
 var notAlphanumeric = regexp.MustCompile(`[^0-9a-zA-Z \-_]+`)
 
-func StringsToInterfaces(strings []string) []interface{} {
-	interfaces := make([]interface{}, len(strings))
+func StringsToInterfaces(strings []string) []any {
+	interfaces := make([]any, len(strings))
 	for i, s := range strings {
 		interfaces[i] = s
 	}
@@ -44,12 +45,7 @@ func RemoveNonAlphanumeric(name string) string {
 }
 
 func StringsContains(haystack []string, needle string) bool {
-	for _, item := range haystack {
-		if item == needle {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(haystack, needle)
 }
 
 func StringsGetNext(haystack []string, needle string) string {
@@ -63,7 +59,7 @@ func StringsGetNext(haystack []string, needle string) string {
 }
 
 func IntsToStrings(numbers []int) []string {
-	if !(len(numbers) > 0) {
+	if len(numbers) <= 0 {
 		return nil
 	}
 	strs := make([]string, 0, len(numbers))

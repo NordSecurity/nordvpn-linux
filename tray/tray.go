@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -66,44 +65,22 @@ type Instance struct {
 	updateChan       chan bool
 	iconConnected    string
 	iconDisconnected string
-	state            trayState
+	state            *TrayState
 	quitChan         chan<- norduser.StopRequest
 }
 
-type trayState struct {
-	systrayRunning      bool
-	daemonAvailable     bool
-	loggedIn            bool
-	vpnActive           bool
-	notificationsStatus Status
-	trayStatus          Status
-	daemonError         string
-	accountName         string
-	vpnStatus           pb.ConnectionState
-	vpnName             string
-	vpnHostname         string
-	vpnCity             string
-	vpnCountry          string
-	vpnVirtualLocation  bool
-	mu                  sync.RWMutex
-}
-
-// Not thread safe. Lock mu before using
-func (state *trayState) serverName() string {
-	vpnServerName := state.vpnName
-	if vpnServerName == "" {
-		vpnServerName = state.vpnHostname
+func NewTrayInstance(
+	state *TrayState,
+	client pb.DaemonClient,
+	fileshareClient filesharepb.FileshareClient,
+	quitChan chan<- norduser.StopRequest,
+) *Instance {
+	return &Instance{
+		client:          client,
+		fileshareClient: fileshareClient,
+		quitChan:        quitChan,
+		state:           state,
 	}
-	if vpnServerName != "" {
-		if state.vpnVirtualLocation {
-			vpnServerName += " - Virtual"
-		}
-	}
-	return vpnServerName
-}
-
-func NewTrayInstance(client pb.DaemonClient, fileshareClient filesharepb.FileshareClient, quitChan chan<- norduser.StopRequest) *Instance {
-	return &Instance{client: client, fileshareClient: fileshareClient, quitChan: quitChan}
 }
 
 func (ti *Instance) WaitInitialTrayStatus() Status {
@@ -164,22 +141,8 @@ func (ti *Instance) OnReady() {
 
 	go func() {
 		for {
-			ti.state.mu.RLock()
-			if ti.state.daemonAvailable {
-				if ti.state.loggedIn {
-					addVpnSection(ti)
-				}
-				addSettingsSection(ti)
-				addAccountSection(ti)
-			}
-			if ti.state.daemonError != "" {
-				addDaemonErrorSection(ti)
-			}
-			ti.state.mu.RUnlock()
-			if ti.debugMode {
-				addDebugSection(ti)
-			}
-			addQuitItem(ti)
+			ti.buildMenuItems()
+
 			systray.Refresh()
 			<-ti.redrawChan
 			ti.state.mu.RLock()
@@ -194,4 +157,30 @@ func (ti *Instance) OnReady() {
 			systray.ResetMenu()
 		}
 	}()
+}
+
+func (ti *Instance) buildMenuItems() {
+	ti.state.mu.RLock()
+	defer ti.state.mu.RUnlock()
+
+	if !ti.state.wasConsentGiven {
+		addConsentSection()
+		addQuitItem(ti)
+		return
+	}
+
+	if ti.state.daemonAvailable {
+		if ti.state.loggedIn {
+			addVpnSection(ti)
+		}
+		addSettingsSection(ti)
+		addAccountSection(ti)
+	}
+	if ti.state.daemonError != "" {
+		addDaemonErrorSection(ti)
+	}
+	if ti.debugMode {
+		addDebugSection(ti)
+	}
+	addQuitItem(ti)
 }

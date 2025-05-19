@@ -17,7 +17,7 @@ type Event struct {
 	Timestamp int64
 }
 
-type EventKind interface{}
+type EventKind any
 
 type EventKindRequestReceived struct {
 	Peer       string
