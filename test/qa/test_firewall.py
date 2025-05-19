@@ -231,9 +231,9 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
             for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} postrouting rule found in iptables"
 
-
+@pytest.mark.parametrize('execution_number', range(50))
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
+def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated, execution_number):
     with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)

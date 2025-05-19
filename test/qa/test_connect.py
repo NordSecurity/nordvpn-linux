@@ -37,6 +37,10 @@ def get_alias() -> str:
     """
     return random.choice(CONNECT_ALIAS)
 
+@pytest.mark.parametrize('execution_number', range(50))
+def test_daemon_teardown_error(execution_number):
+    assert True
+
 
 def connect_base_test(connection_settings, group=(), name="", hostname=""):
     print(connection_settings)
@@ -136,8 +140,9 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated
 
 
 # for Nordlynx normally the tunnel is not recreated
+@pytest.mark.parametrize('execution_number', range(50))
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
-def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
+def test_connect_network_restart_nordlynx(tech, proto, obfuscated, execution_number):
     if daemon.is_init_systemd():
         pytest.skip("LVPN-5733")
 

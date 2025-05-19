@@ -187,6 +187,7 @@ func (c *ChildProcessNorduser) Stop(uid uint32, wait bool) error {
 }
 
 func (c *ChildProcessNorduser) StopAll() {
+	log.Println("fork.go: entering norduserservice stopall")
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -200,17 +201,18 @@ func (c *ChildProcessNorduser) StopAll() {
 			log.Println(internal.ErrorPrefix, "failed to send a signal to norduserd:", err)
 		}
 	}
-
+	log.Println("fork.go: sent kill")
 	doneChan := make(chan interface{})
 	go func() {
 		c.wg.Wait()
 		doneChan <- struct{}{}
 	}()
-
+	log.Println("fork.go: entering select")
 	select {
 	case <-doneChan:
 	case <-time.After(10 * time.Second):
 	}
+	
 }
 
 func (c *ChildProcessNorduser) Restart(uid uint32) error {

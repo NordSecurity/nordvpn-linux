@@ -619,16 +619,21 @@ func main() {
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)
 	}
+	log.Println("nc stopped")
 	if _, err := rpc.DoDisconnect(); err != nil {
 		log.Println(internal.ErrorPrefix, "disconnecting from VPN:", err)
 	}
+	log.Println("disconnected from vpn")
 	if err := netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
 		log.Println(internal.ErrorPrefix, "disconnecting from meshnet:", err)
 	}
+	log.Println("disconnected from meshnet")
 	if err := rpc.StopKillSwitch(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
 	}
+	log.Println("stopped killswitch")
 	if err := analytics.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
 	}
+	log.Println("stopped analytics")
 }
