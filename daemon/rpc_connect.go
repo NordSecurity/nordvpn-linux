@@ -234,6 +234,7 @@ func (r *RPC) connect(
 
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
+	event.TargetServerGroup = determineTargetServerGroup(server, parameters)
 
 	event.ServerFromAPI = remote
 	event.TargetServerSelection = determineServerSelectionRule(parameters)
