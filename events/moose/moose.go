@@ -17,8 +17,10 @@ package moose
 import "C"
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/url"
 	"os/exec"
 	"slices"
@@ -32,6 +34,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	moose "moose/events"
@@ -53,6 +56,7 @@ type Subscriber struct {
 	connectionToMeshnetPeer bool
 	enabled                 bool
 	initialHeartbeatSent    bool
+	workerCancelFunc        context.CancelFunc
 	mux                     sync.RWMutex
 }
 
@@ -114,7 +118,13 @@ func (s *Subscriber) Init() error {
 	var batchSize uint32 = 20
 	compressRequest := true
 
-	if err := s.response(uint32(worker.Start(
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	s.workerCancelFunc = cancelFunc
+	client := worker.NewHttpClientContext(s.currentDomain)
+	httpClient := request.NewStdHTTP()
+	httpClient.Transport = request.NewCancellableRoundTripper(ctx)
+	client.Client = *httpClient
+	if err := s.response(uint32(worker.StartWithClient(
 		s.EventsDbPath,
 		s.currentDomain,
 		uint64(timeBetweenEvents.Milliseconds()),
@@ -122,6 +132,7 @@ func (s *Subscriber) Init() error {
 		sendEvents,
 		batchSize,
 		compressRequest,
+		&client,
 	))); err != nil {
 		return fmt.Errorf("starting worker: %w", err)
 	}
@@ -199,12 +210,25 @@ func (s *Subscriber) Init() error {
 }
 
 func (s *Subscriber) Stop() error {
+	log.Println(internal.DebugPrefix, "cancelling worker")
+	s.workerCancelFunc()
+
+	log.Println(internal.DebugPrefix, "flushing changes")
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
+		return fmt.Errorf("flushing changes: %w", err)
+	}
+
+	log.Println(internal.DebugPrefix, "stopping worker")
+	if err := s.response(worker.Stop()); err != nil {
 		return fmt.Errorf("stopping moose worker: %w", err)
 	}
-	if err := s.response(worker.Stop()); err != nil {
+
+	log.Println(internal.DebugPrefix, "deinitializing")
+	if err := s.response(moose.MooseNordvpnappDeinit()); err != nil {
+		return fmt.Errorf("deinitializing: %w", err)
 	}
-	return s.response(moose.MooseNordvpnappDeinit())
+
+	return nil
 }
 
 func (s *Subscriber) NotifyKillswitch(data bool) error {
