@@ -37,6 +37,8 @@ const (
 	chainInput ruleChain = iota
 	chainOutput
 	chainForward
+	chainPrerouting
+	chainPostrouting
 )
 
 type PortRange struct {
@@ -91,6 +93,7 @@ func (ipt *IPTables) Delete(rule firewall.Rule) error {
 }
 
 func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
+	tableFlag := "filter"
 	flag := "-D"
 	errStr := "deleting"
 	if add {
@@ -99,6 +102,9 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 	}
 	module, stateFlag := ipt.getStateModule(rule)
 	allRules := ruleToIPTables(rule, module, stateFlag, ipt.chainPrefix)
+	if rule.Physical {
+		tableFlag = "mangle"
+	}
 
 	for _, iptableVersion := range ipt.supportedIPTables {
 		ipTablesRules, ok := allRules[iptableVersion]
@@ -107,7 +113,7 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 		}
 		for _, ipTableRule := range ipTablesRules {
 			// -w does not accept arguments on older iptables versions
-			args := fmt.Sprintf("%s %s -w "+internal.SecondsToWaitForIptablesLock, flag, ipTableRule)
+			args := fmt.Sprintf("-t %s %s %s -w "+internal.SecondsToWaitForIptablesLock, tableFlag, flag, ipTableRule)
 			// #nosec G204 -- input is properly sanitized
 			out, err := exec.Command(iptableVersion, strings.Split(args, " ")...).CombinedOutput()
 			if err != nil {
@@ -201,7 +207,7 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 			for _, localNetwork := range rule.LocalNetworks {
 				for _, pRange := range PortsToPortRanges(rule.Ports) {
 					for _, protocol := range rule.Protocols {
-						for _, chain := range toChainSlice(rule.Direction) {
+						for _, chain := range toChainSlice(rule.Direction, rule.Physical) {
 							for _, icmpv6Type := range defaultIcmpv6(rule.Icmpv6Types) {
 								for _, target := range toTargetSlice(rule.Allow, chain, rule.Marks) {
 									for _, mark := range rule.Marks {
@@ -281,14 +287,20 @@ func PortsToPortRanges(ports []int) []PortRange {
 
 // toChainSlice returns a slice of which iptables have to be created.
 // E. g. for inbound rule we create 1 rule in INPUT chain, for outbound - 1 rule in OUTPUT chain, For TwoWay - rule per both chains
-func toChainSlice(direction firewall.Direction) []ruleChain {
+func toChainSlice(direction firewall.Direction, physical bool) []ruleChain {
+	incomingChain := chainInput
+	outgoingChain := chainOutput
+	if physical {
+		incomingChain = chainPrerouting
+		outgoingChain = chainPostrouting
+	}
 	switch direction {
 	case firewall.Inbound:
-		return []ruleChain{chainInput}
+		return []ruleChain{incomingChain}
 	case firewall.Outbound:
-		return []ruleChain{chainOutput}
+		return []ruleChain{outgoingChain}
 	case firewall.TwoWay:
-		return []ruleChain{chainInput, chainOutput}
+		return []ruleChain{incomingChain, outgoingChain}
 	case firewall.Forward:
 		return []ruleChain{chainForward}
 	}
@@ -302,12 +314,8 @@ func toTargetSlice(allowPackets bool, chain ruleChain, marks []uint32) []ruleTar
 	} else {
 		targets = append(targets, drop)
 	}
-
-	if chain != chainOutput { // connmark is meant for OUTPUT chain only
-		return targets
-	}
-
-	if len(marks) > 0 && marks[0] != 0 {
+	// connmark is meant for OUTPUT and POSTROUTING chains only
+	if (chain == chainOutput || chain == chainPostrouting) && (len(marks) > 0 && marks[0] != 0) {
 		targets = append(targets, connmark)
 	}
 	return targets
@@ -360,13 +368,21 @@ func generateIPTablesRule(
 	var chain, remoteAddrFlag, localAddrFlag, ifaceFlag string
 
 	switch direction {
-	case chainInput:
-		chain = "INPUT"
+	case chainInput, chainPrerouting:
+		if direction == chainPrerouting {
+			chain = "PREROUTING"
+		} else {
+			chain = "INPUT"
+		}
 		remoteAddrFlag = "-s"
 		localAddrFlag = "-d"
 		ifaceFlag = "-i"
-	case chainOutput:
-		chain = "OUTPUT"
+	case chainOutput, chainPostrouting:
+		if direction == chainPostrouting {
+			chain = "POSTROUTING"
+		} else {
+			chain = "OUTPUT"
+		}
 		remoteAddrFlag = "-d"
 		localAddrFlag = "-s"
 		ifaceFlag = "-o"
@@ -439,7 +455,6 @@ func generateIPTablesRule(
 	if len(comment) > 0 {
 		acceptComment = " -m comment --comment " + comment
 	}
-
 	return rule + acceptComment + jump + string(target)
 }
 

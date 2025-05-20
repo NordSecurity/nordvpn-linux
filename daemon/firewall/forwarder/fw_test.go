@@ -49,9 +49,7 @@ func TestFiltering(t *testing.T) {
 		[]TrafficPeer{{ip, true, false}},
 		interfaceNames,
 		commandFunc,
-		false,
-		false,
-		[]string{})
+		false)
 	assert.NoError(t, err)
 
 	rc, err = checkFilteringRule(ip.String(), commandFunc)
@@ -204,7 +202,7 @@ func TestResetPeersTraffic(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%+v", test.peers), func(t *testing.T) {
-			err = resetForwardTraffic(test.peers, interfaceNames, commandFunc, false, false, []string{})
+			err = resetForwardTraffic(test.peers, interfaceNames, commandFunc, false)
 			assert.NoError(t, err)
 
 			for i, peer := range test.peers {

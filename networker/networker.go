@@ -333,7 +333,7 @@ func (netw *Combined) start(
 		serverData.IP.Is6(),
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
-		allowlist.Subnets.ToSlice(),
+		allowlist.Subnets,
 	); err != nil {
 		return err
 	}
@@ -538,7 +538,7 @@ func (netw *Combined) stop() error {
 			false,
 			true, // by default, enableLocalTraffic=true
 			netw.lanDiscovery,
-			netw.allowlist.Subnets.ToSlice(),
+			netw.allowlist.Subnets,
 		); err != nil {
 			return fmt.Errorf("netw stop, adjusting routing rules: %w", err)
 		}
@@ -648,34 +648,19 @@ func (netw *Combined) blockTraffic() error {
 		return err
 	}
 
-	// block FORWARD as well !!!
-	err = netw.fw.Add([]firewall.Rule{
-		{
-			Name:       "drop-fw",
-			Direction:  firewall.Forward,
-			Interfaces: ifaces,
-			Allow:      false,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	// block INPUT & OUTPUT
+	// block PREROUTING & POSTROUTING
 	return netw.fw.Add([]firewall.Rule{
 		{
 			Name:       "drop",
 			Direction:  firewall.TwoWay,
 			Interfaces: ifaces,
 			Allow:      false,
+			Physical:   true,
 		},
 	})
 }
 
 func (netw *Combined) unblockTraffic() error {
-	if err := netw.fw.Delete([]string{"drop-fw"}); err != nil {
-		return err
-	}
 	return netw.fw.Delete([]string{"drop"})
 }
 
@@ -735,6 +720,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Allow:       true,
 			Ipv6Only:    true,
 			Icmpv6Types: []int{1, 2, 3, 4, 128, 129},
+			Physical:    true,
 		},
 		{
 			Name:        "vpn_allowlist_icmp6_address",
@@ -745,6 +731,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Ipv6Only:    true,
 			Icmpv6Types: []int{133, 134, 135, 136, 141, 142, 148, 149},
 			HopLimit:    255,
+			Physical:    true,
 		},
 		{
 			Name:       "vpn_allowlist_icmp6_multicast",
@@ -759,6 +746,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Allow:       true,
 			Ipv6Only:    true,
 			Icmpv6Types: []int{130, 131, 132, 143, 151, 152, 153},
+			Physical:    true,
 		},
 		{
 			Name:       "vpn_allowlist_dhcp6_in",
@@ -773,6 +761,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Direction:        firewall.Inbound,
 			Allow:            true,
 			Ipv6Only:         true,
+			Physical:         true,
 		},
 		{
 			Name:       "vpn_allowlist_dhcp6_out",
@@ -787,6 +776,7 @@ func (netw *Combined) allowIPv6Traffic() error {
 			Direction:        firewall.Outbound,
 			Allow:            true,
 			Ipv6Only:         true,
+			Physical:         true,
 		},
 	})
 	if err != nil {
@@ -910,7 +900,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	if err != nil {
 		return err
 	}
-
 	// allow traffic to LAN - only when user enabled lan-discovery
 	if netw.lanDiscovery {
 		allowlist = addLANPermissions(allowlist)
@@ -919,8 +908,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	// start adding set of rules
 	rules := []firewall.Rule{}
 	var subnets []netip.Prefix
-
-	for cidr := range allowlist.Subnets {
+	for _, cidr := range allowlist.Subnets {
 		subnet, err := netip.ParsePrefix(cidr)
 		if err != nil {
 			return errors.Join(fmt.Errorf("parsing subnet CIDR"), err)
@@ -941,6 +929,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			RemoteNetworks: subnets,
 			Direction:      firewall.TwoWay,
 			Allow:          true,
+			Physical:       true,
 		})
 	}
 
@@ -966,6 +955,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 				Direction:  firewall.TwoWay,
 				Ports:      ports,
 				Allow:      true,
+				Physical:   true,
 			})
 			if err := netw.allowlistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
 				return errors.Join(fmt.Errorf("enabling allowlist routing"), err)
@@ -979,7 +969,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
 	if err := netw.exitNode.ResetFirewall(lanAvailable,
 		netw.isKillSwitchSet,
-		netw.isNetworkSet,
 		allowlist); err != nil {
 		return fmt.Errorf("resseting forward firewall: %w", err)
 	}
@@ -1000,7 +989,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		false,
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
-		netw.allowlist.Subnets.ToSlice(),
+		netw.allowlist.Subnets,
 	); err != nil {
 		return fmt.Errorf(
 			"setting routing rules: %w",
@@ -1038,7 +1027,6 @@ func (netw *Combined) unsetAllowlist() error {
 			return fmt.Errorf("unsetting deny dns: %w", err)
 		}
 	}
-
 	return nil
 }
 
@@ -1066,6 +1054,7 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 			Direction:  firewall.TwoWay,
 			Marks:      []uint32{netw.fwmark},
 			Allow:      true,
+			Physical:   true,
 		},
 	}); err != nil {
 		return err
@@ -1077,7 +1066,6 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 
 	if err := netw.exitNode.ResetFirewall(netw.lanDiscovery,
 		true,
-		netw.isNetworkSet,
 		netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after enabling killswitch: ",
@@ -1113,7 +1101,7 @@ func (netw *Combined) unsetNetwork() error {
 	}
 
 	// Passing true because LAN is always available when network is unset
-	if err := netw.exitNode.ResetFirewall(true, false, false, netw.allowlist); err != nil {
+	if err := netw.exitNode.ResetFirewall(true, false, netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after disabling killswitch: ",
 			err)
@@ -1246,7 +1234,7 @@ func (netw *Combined) setMesh(
 		false,
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
-		netw.allowlist.Subnets.ToSlice(),
+		netw.allowlist.Subnets,
 	); err != nil {
 		return fmt.Errorf(
 			"setting routing rules: %w",
@@ -1340,7 +1328,6 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	err = netw.exitNode.ResetPeers(cfg.Peers,
 		lanAvailable,
 		netw.isKillSwitchSet,
-		netw.isNetworkSet,
 		netw.allowlist)
 	if err != nil {
 		return err
@@ -1603,7 +1590,8 @@ func (netw *Combined) denyDNS() error {
 			netip.MustParsePrefix("192.168.0.0/16"),
 			netip.MustParsePrefix("169.254.0.0/16"),
 		},
-		Allow: false,
+		Allow:    false,
+		Physical: true,
 	}}
 
 	if err := netw.fw.Add(rules); err != nil {
@@ -1740,7 +1728,6 @@ func (netw *Combined) ResetRouting(peer mesh.MachinePeer, peers mesh.MachinePeer
 	if err := netw.exitNode.ResetPeers(peers,
 		lanAvailable,
 		netw.isKillSwitchSet,
-		netw.isNetworkSet,
 		netw.allowlist); err != nil {
 		return err
 	}
@@ -1800,7 +1787,7 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 			netw.lastServer.IP.Is6(),
 			netw.enableLocalTraffic,
 			netw.lanDiscovery,
-			netw.allowlist.Subnets.ToSlice(),
+			netw.allowlist.Subnets,
 		); err != nil {
 			log.Println(
 				internal.ErrorPrefix,
@@ -1812,7 +1799,6 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 
 	if err := netw.exitNode.ResetFirewall(lanAvailable,
 		netw.isKillSwitchSet,
-		netw.isNetworkSet,
 		netw.allowlist); err != nil {
 		log.Println(internal.ErrorPrefix,
 			"failed to reset peers firewall rules after enabling lan discovery:",

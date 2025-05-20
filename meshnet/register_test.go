@@ -3,6 +3,7 @@ package meshnet
 import (
 	"net/netip"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -35,20 +36,35 @@ func (r *registry) Register(token string, self mesh.Machine) (*mesh.Machine, err
 	}, nil
 }
 
+type delayChecker struct {
+	called bool
+}
+
+func (d *delayChecker) Delay(duration time.Duration) {
+	d.called = true
+}
+
 func TestRegister_NotYetRegistered(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	delayChecker := delayChecker{}
+
 	cm := &mock.ConfigManager{}
 	rc := NewRegisteringChecker(cm, &generator{}, &registry{})
+	rc.delayFunc = delayChecker.Delay
+
 	err := rc.Register()
 	assert.NoError(t, err)
 	assert.Equal(t, privateKey, cm.Cfg.MeshPrivateKey)
 	assert.Equal(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 	assert.Equal(t, registryIP, cm.Cfg.MeshDevice.Address.String())
+	assert.True(t, delayChecker.called, "App did not block after registering a new mesh key.")
 }
 
 func TestRegister_AlreadyRegistered(t *testing.T) {
 	category.Set(t, category.Unit)
+
+	delayChecker := delayChecker{}
 
 	cm := &mock.ConfigManager{
 		Cfg: &config.Config{
@@ -60,11 +76,14 @@ func TestRegister_AlreadyRegistered(t *testing.T) {
 		},
 	}
 	rc := NewRegisteringChecker(cm, &generator{}, &registry{})
+	rc.delayFunc = delayChecker.Delay
+
 	err := rc.Register()
 	assert.NoError(t, err)
 	assert.NotEqual(t, privateKey, cm.Cfg.MeshPrivateKey) // Existing private key should be kept
 	assert.Equal(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 	assert.Equal(t, registryIP, cm.Cfg.MeshDevice.Address.String())
+	assert.False(t, delayChecker.called, "App blocked when no new mesh key was registered.")
 }
 
 func TestIsRegistered_NotYetRegistered(t *testing.T) {
@@ -117,11 +136,16 @@ func TestIsRegistered_NotYetRegistered(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cm := &mock.ConfigManager{Cfg: test.cfg}
 			rc := NewRegisteringChecker(cm, &generator{}, &registry{})
+			delayChecker := delayChecker{}
+			rc.delayFunc = delayChecker.Delay
 			ok := rc.IsRegistrationInfoCorrect()
 			assert.True(t, ok)
 			assert.Equal(t, test.newPrivateKey, privateKey == cm.Cfg.MeshPrivateKey)
 			assert.Equal(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 			assert.Equal(t, registryIP, cm.Cfg.MeshDevice.Address.String())
+			if test.newPrivateKey {
+				assert.True(t, delayChecker.called, "App did not block after registering a new mesh key.")
+			}
 		})
 	}
 }
@@ -138,11 +162,14 @@ func TestIsRegistered_AlreadyRegistered(t *testing.T) {
 			},
 		},
 	}
+	delayChecker := delayChecker{}
 	rc := NewRegisteringChecker(cm, &generator{}, &registry{})
+	rc.delayFunc = delayChecker.Delay
 	ok := rc.IsRegistrationInfoCorrect()
 	assert.True(t, ok)
 	// Registration should not be done, values should not change
 	assert.NotEqual(t, privateKey, cm.Cfg.MeshPrivateKey)
 	assert.NotEqual(t, registryUUID, cm.Cfg.MeshDevice.ID.String())
 	assert.NotEqual(t, registryIP, cm.Cfg.MeshDevice.Address.String())
+	assert.False(t, delayChecker.called, "App blocked when no new mesh key was registered.")
 }

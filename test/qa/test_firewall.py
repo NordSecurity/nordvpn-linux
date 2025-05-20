@@ -213,31 +213,23 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
             if not before_connect:
                 sh.nordvpn.set("lan-discovery", "on")
 
-            rules = os.popen("sudo iptables -S INPUT").read()
-            for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
-                assert rule in rules, f"{rule} input rule not found in iptables."
+            rules = os.popen("sudo iptables -S PREROUTING -t mangle").read()
+            for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
+                assert rule in rules, f"{rule} prerouting rule not found in iptables."
 
-            rules = os.popen("sudo iptables -S FORWARD").read()
-            for rule in firewall.FORWARD_LAN_DISCOVERY_RULES:
-                assert rule in rules, f"{rule} input rule not found in iptables."
-
-            rules = os.popen("sudo iptables -S OUTPUT").read()
-            for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
-                assert rule in rules, f"{rule} output rule not found in iptables"
+            rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
+            for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
+                assert rule in rules, f"{rule} postrouting rule not found in iptables"
 
             sh.nordvpn.set("lan-discovery", "off")
 
-            rules = os.popen("sudo iptables -S INPUT").read()
-            for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} input rule not found in iptables."
+            rules = os.popen("sudo iptables -S PREROUTING -t mangle").read()
+            for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
+                assert rule not in rules, f"{rule} prerouting rule found in iptables."
 
-            rules = os.popen("sudo iptables -S FORWARD").read()
-            for rule in firewall.FORWARD_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} input rule not found in iptables."
-
-            rules = os.popen("sudo iptables -S OUTPUT").read()
-            for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} output rule not found in iptables"
+            rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
+            for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
+                assert rule not in rules, f"{rule} postrouting rule found in iptables"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -253,25 +245,18 @@ def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
             sh.nordvpn.allowlist.add.subnet(subnet)
             sh.nordvpn.set("lan-discovery", "on")
 
-            rules = os.popen("sudo iptables -S INPUT").read()
-            assert f"-A INPUT -s {subnet} -i eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the INPUT chain when LAN discovery was enabled."
+            rules = os.popen("sudo iptables -S PREROUTING -t mangle").read()
+            assert f"-A PREROUTING -s {subnet} -i eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the INPUT chain when LAN discovery was enabled."
 
-            rules = os.popen("sudo iptables -S FORWARD").read()
-            assert f"-A FORWARD -d {subnet} -o eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the FORWARD chain when LAN discovery was enabled."
-
-            rules = os.popen("sudo iptables -S OUTPUT").read()
-            assert f"-A OUTPUT -s {subnet} -o eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the OUTPUT chain when LAN discovery was enabled."
+            rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
+            assert f"-A POSTROUTING -s {subnet} -o eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the OUTPUT chain when LAN discovery was enabled."
 
             sh.nordvpn.set("lan-discovery", "off")
 
-            rules = os.popen("sudo iptables -S INPUT").read()
-            for rule in firewall.INPUT_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} input rule not found in iptables."
+            rules = os.popen("sudo iptables -S PREROUTING").read()
+            for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
+                assert rule not in rules, f"{rule} prerouting rule not found in iptables."
 
-            rules = os.popen("sudo iptables -S FORWARD").read()
-            for rule in firewall.FORWARD_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} input rule not found in iptables."
-
-            rules = os.popen("sudo iptables -S OUTPUT").read()
-            for rule in firewall.OUTPUT_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} output rule not found in iptables"
+            rules = os.popen("sudo iptables -S POSTROUTING").read()
+            for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
+                assert rule not in rules, f"{rule} postrouting rule not found in iptables"

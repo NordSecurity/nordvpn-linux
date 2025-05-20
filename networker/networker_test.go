@@ -203,7 +203,6 @@ func (e *workingExitNode) Enable() error {
 func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers,
 	lan bool,
 	killswitch bool,
-	enableAllowlist bool,
 	allowlistedSubnets config.Allowlist,
 ) error {
 	e.peers = peers
@@ -216,7 +215,6 @@ func (*workingExitNode) Disable() error               { return nil }
 
 func (e *workingExitNode) ResetFirewall(lan bool,
 	killswitch bool,
-	enableAllowlist bool,
 	allowlist config.Allowlist,
 ) error {
 	e.LanAvailable = lan

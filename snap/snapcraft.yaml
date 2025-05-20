@@ -219,7 +219,8 @@ parts:
     source-type: local
     source: dist
     organize:
-      THIRD-PARTY-NOTICES.md: usr/share/licenses/nordvpn/THIRD-PARTY-NOTICES.md
+      THIRD-PARTY-NOTICES.md:
+        usr/share/licenses/nordvpn/THIRD-PARTY-NOTICES.md
         # Snap does not support manpages. In order to enable them, after installing snap, execute:
         #
         # sudo ln -s /snap/nordvpn/current/usr/share/man/man1/nordvpn.1.gz /usr/share/man/man1/nordvpn.1.gz

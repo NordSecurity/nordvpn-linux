@@ -1,6 +1,8 @@
 package networker
 
 import (
+	"slices"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 )
 
@@ -13,15 +15,11 @@ func addLANPermissions(allowlist config.Allowlist) config.Allowlist {
 		"192.168.0.0/16",
 		"169.254.0.0/16"}
 
-	newSubnets := make(config.Subnets)
-
-	for subnet := range allowlist.Subnets {
-		newSubnets[subnet] = true
-	}
-
+	var newSubnets []string
+	copy(newSubnets, allowlist.Subnets)
 	for _, network := range localNetworks {
-		if _, ok := newSubnets[network]; !ok {
-			newSubnets[network] = true
+		if !slices.Contains(newSubnets, network) {
+			newSubnets = append(newSubnets, network)
 		}
 	}
 

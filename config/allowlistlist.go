@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"slices"
 )
 
 // NewAllowlist ready to use
@@ -16,24 +17,19 @@ func NewAllowlist(udpPorts []int64, tcpPorts []int64, subnets []string) Allowlis
 		tcp[port] = true
 	}
 
-	subs := map[string]bool{}
-	for _, sub := range subnets {
-		subs[sub] = true
-	}
-
 	return Allowlist{
 		Ports: Ports{
 			UDP: udp,
 			TCP: tcp,
 		},
-		Subnets: subs,
+		Subnets: subnets,
 	}
 }
 
 // Allowlist is a collection of ports and subnets
 type Allowlist struct {
-	Ports   Ports   `json:"ports"`
-	Subnets Subnets `json:"subnets"`
+	Ports   Ports    `json:"ports"`
+	Subnets []string `json:"subnets"` // TODO change to netip.Prefix and refactor
 }
 
 func (a *Allowlist) UpdateUDPPorts(ports []int64, remove bool) {
@@ -58,9 +54,9 @@ func (a *Allowlist) UpdateTCPPorts(ports []int64, remove bool) {
 
 func (a *Allowlist) UpdateSubnets(subnet string, remove bool) {
 	if remove {
-		delete(a.Subnets, subnet)
+		a.Subnets = slices.DeleteFunc(a.Subnets, func(element string) bool { return element == subnet })
 	} else {
-		a.Subnets[subnet] = true
+		a.Subnets = append(a.Subnets, subnet)
 	}
 }
 
@@ -82,54 +78,6 @@ func (a *Allowlist) GetTCPPorts() []int64 {
 	}
 
 	return ports
-}
-
-// GetSubnets returns a slice of all subnets within the allowlist
-func (a *Allowlist) GetSubnets() []string {
-	subnets := []string{}
-	for subnet := range a.Subnets {
-		subnets = append(subnets, subnet)
-	}
-
-	return subnets
-}
-
-// Subnets is a set of subnets.
-type Subnets map[string]bool
-
-// MarshalJSON into []string.
-func (s Subnets) MarshalJSON() ([]byte, error) {
-	var subnets []string
-	for subnet := range s {
-		subnets = append(subnets, subnet)
-	}
-
-	return json.Marshal(subnets)
-}
-
-// UnmarshalJSON into map[string]bool.
-func (s *Subnets) UnmarshalJSON(b []byte) error {
-	var i []string
-	err := json.Unmarshal(b, &i)
-	if err != nil {
-		return err
-	}
-
-	subnets := map[string]bool{}
-	for _, subnet := range i {
-		subnets[subnet] = true
-	}
-
-	*s = subnets
-	return nil
-}
-
-func (s *Subnets) ToSlice() []string {
-	result := make([]string, 0, len(*s))
-	for subnet := range *s {
-		result = append(result, subnet)
-	}
-	return result
 }
 
 // Ports is a collection of TCP and UDP ports.

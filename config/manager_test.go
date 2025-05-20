@@ -42,8 +42,8 @@ func TestFilesystem(t *testing.T) {
 				c.AutoConnectData.Allowlist.Ports.UDP = map[int64]bool{
 					53: true,
 				}
-				c.AutoConnectData.Allowlist.Subnets = map[string]bool{
-					"1.1.1.1/32": true,
+				c.AutoConnectData.Allowlist.Subnets = []string{
+					"1.1.1.1/32",
 				}
 				return c
 			},
