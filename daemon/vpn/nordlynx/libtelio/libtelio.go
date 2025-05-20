@@ -66,41 +66,78 @@ func (cb eventCb) Event(payload teliogo.Event) *teliogo.TelioError {
 	return cb(payload)
 }
 
-func eventCallback(states chan<- state) eventCb {
+func eventCallbackWrap(callbackHandler *telioCallbackHandler) eventCb {
 	return func(e teliogo.Event) *teliogo.TelioError {
-		eventBytes, err := json.Marshal(&e)
-		if err != nil {
-			log.Printf(internal.WarningPrefix+" can't marshal telio Event %T: %s\n", e, err)
-		} else {
-			log.Printf(internal.InfoPrefix+" received event %T: %s\n", e, maskPublicKey(string(eventBytes)))
-		}
+		return callbackHandler.handleEvent(e)
+	}
+}
 
-		var st state
-		switch evt := e.(type) {
-		case teliogo.EventNode:
-			var nickname string
-			if evt.Body.Nickname != nil {
-				nickname = *evt.Body.Nickname
-			}
-			st = state{
-				Nickname:  nickname,
-				State:     evt.Body.State,
-				PublicKey: evt.Body.PublicKey,
-				IsVPN:     evt.Body.IsVpn,
-				IsExit:    evt.Body.IsExit,
-			}
-		default:
-			// ignore
-			return nil
-		}
+type callbackHandler interface {
+	handleEvent(teliogo.Event) *teliogo.TelioError
+	setMonitoringContext(ctx context.Context)
+}
 
-		select {
-		case states <- st:
-		default: // drop if nobody is listening
-		}
+type telioCallbackHandler struct {
+	mu                sync.Mutex
+	statesChan        chan<- state
+	monitoringContext context.Context
+}
 
+func newTelioCallbackHandler(statesChan chan<- state) *telioCallbackHandler {
+	return &telioCallbackHandler{statesChan: statesChan}
+}
+
+func (t *telioCallbackHandler) handleEvent(e teliogo.Event) *teliogo.TelioError {
+	t.mu.Lock()
+	defer func() {
+		t.mu.Unlock()
+	}()
+
+	eventBytes, err := json.Marshal(&e)
+	if err != nil {
+		log.Printf(internal.WarningPrefix+" can't marshal telio Event %T: %s\n", e, err)
+	} else {
+		log.Printf(internal.InfoPrefix+" received event %T: %s\n", e, maskPublicKey(string(eventBytes)))
+	}
+
+	var st state
+	switch evt := e.(type) {
+	case teliogo.EventNode:
+		var nickname string
+		if evt.Body.Nickname != nil {
+			nickname = *evt.Body.Nickname
+		}
+		st = state{
+			Nickname:  nickname,
+			State:     evt.Body.State,
+			PublicKey: evt.Body.PublicKey,
+			IsVPN:     evt.Body.IsVpn,
+			IsExit:    evt.Body.IsExit,
+		}
+	default:
+		// ignore
 		return nil
 	}
+
+	if t.monitoringContext != nil {
+		select {
+		case t.statesChan <- st:
+		case <-t.monitoringContext.Done(): // drop if nobody is listening
+			if t.monitoringContext.Err() != nil {
+				log.Println(internal.ErrorPrefix, "canceling event monitoring:", t.monitoringContext.Err())
+			}
+			t.monitoringContext = nil
+		}
+	}
+
+	return nil
+}
+
+func (t *telioCallbackHandler) setMonitoringContext(ctx context.Context) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.monitoringContext = ctx
 }
 
 // Libtelio wrapper around generated Go bindings.
@@ -135,6 +172,7 @@ type Libtelio struct {
 	isKernelDisabled  bool
 	fwmark            uint32
 	eventsPublisher   *vpn.Events
+	callbackHandler   callbackHandler
 	mu                sync.Mutex
 }
 
@@ -204,7 +242,8 @@ func New(
 
 	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
 	teliogo.SetGlobalLogger(teliogo.TelioLogLevelInfo, loggerCb)
-	lib, err := teliogo.NewTelio(*features, eventCallback(events))
+	telioCallbackHandler := newTelioCallbackHandler(events)
+	lib, err := teliogo.NewTelio(*features, eventCallbackWrap(telioCallbackHandler))
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to create telio instance:", err)
 		return nil, err
@@ -216,6 +255,7 @@ func New(
 		state:           vpn.ExitedState,
 		fwmark:          fwmark,
 		eventsPublisher: eventsPublisher,
+		callbackHandler: telioCallbackHandler,
 	}, nil
 }
 
@@ -274,6 +314,8 @@ func (l *Libtelio) connect(
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	l.cancelConnectionMonitor = cancel
+
+	l.callbackHandler.setMonitoringContext(ctx)
 
 	// Start monitoring connection events before connecting to not miss any
 	isConnectedC := isConnected(ctx,
