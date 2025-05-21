@@ -12,7 +12,9 @@ import (
 const defaultFWMarkValue uint32 = 0xe1f1
 
 func newConfig(machineIDGetter MachineIDGetter) *Config {
+	// XXX: new config needs to be updatd with breaking changes
 	return &Config{
+		Version:      4, // XXX: move to something like "currentVersion"
 		Technology:   Technology_NORDLYNX,
 		Firewall:     true,
 		FirewallMark: defaultFWMarkValue,
@@ -20,7 +22,7 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 			Protocol: Protocol_UDP,
 		},
 		MachineID:  machineIDGetter.GetMachineID(),
-		UsersData:  &UsersData{Notify: UidBoolMap{}, NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
+		UsersData:  &UsersData{NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
 		TokensData: map[int64]TokenData{},
 	}
 }
@@ -39,11 +41,12 @@ func newConfigWithLoginData(machineIDGetter MachineIDGetter, parrentConfig Confi
 // Config should be evolved is such a way, that it does not
 // require any use of constructors by the caller.
 type Config struct {
+	Version      int        `json:"version"`
 	Technology   Technology `json:"technology,omitempty"`
 	Firewall     bool       `json:"firewall"` // omitempty breaks this
 	FirewallMark uint32     `json:"fwmark"`
 	Routing      TrueField  `json:"routing"`
-	Analytics    TrueField  `json:"analytics"`
+	Analytics    Analytics  `json:"analytics"`
 	Mesh         bool       `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
 	MeshPrivateKey  string              `json:"mesh_private_key"`
@@ -104,4 +107,22 @@ type meshnet struct {
 
 func (d *NCData) IsUserIDEmpty() bool {
 	return d.UserID == uuid.Nil
+}
+
+type Analytics struct {
+	Basic    bool `json:"basic"`
+	Extended bool `json:"extended"`
+}
+
+func (a Analytics) Get() bool {
+	return a.Basic
+}
+
+func (a *Analytics) Set(val bool) {
+	a.Basic = val
+}
+
+// XXX: docs
+type header struct {
+	Version *int `json:"version,omitempty"`
 }

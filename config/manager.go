@@ -232,18 +232,11 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 		return err
 	}
 
-	// this overrides default values
-	if err := json.Unmarshal(decrypted, c); err != nil {
+	cfg, err := f.upgradeIfNeeded(decrypted)
+	if err != nil {
 		return err
 	}
-
-	// Translate old 'notify' setting to the new 'notify_off'
-	// To be removed in a new major version
-	for uid, val := range c.UsersData.Notify {
-		if !val {
-			c.UsersData.NotifyOff[uid] = true
-		}
-	}
+	*c = *cfg
 
 	return nil
 }
@@ -294,7 +287,7 @@ func generateKey() []byte {
 	source := rand.NewSource(time.Now().UnixNano())
 	// #nosec G404 -- config encryption will go away after OSS
 	r := rand.New(source)
-	for i := 0; i < 32; i++ {
+	for range 32 {
 		character := r.Intn(max-min) + min
 		key = append(key, byte(character))
 	}
