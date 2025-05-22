@@ -709,7 +709,6 @@ func publishConnectEvent(publisher *vpn.Events,
 	server vpn.ServerData,
 	state state,
 	tun tunnel.T) {
-
 	if !state.IsVPN {
 		server.Name = state.Nickname
 	}
