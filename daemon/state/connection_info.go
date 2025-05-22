@@ -49,6 +49,11 @@ type ConnectionStatus struct {
 	MeshnetPeer bool
 }
 
+type InternalVPNPublisher interface {
+	ConnectionStatusNotifyConnect(e events.DataConnect) error
+	ConnectionStatusNotifyDisconnect(_ events.DataDisconnect) error
+}
+
 // ConnectionInfo stores data about currently active connection
 type ConnectionInfo struct {
 	status        ConnectionStatus

@@ -8,11 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
-type InternalVPNPublisher interface {
-	NotifyConnect(events.DataConnect) error
-	NotifyDisconnect(events.DataDisconnect) error
-}
-
 type Events struct {
 	Connected    events.PublishSubcriber[events.DataConnect]
 	Disconnected events.PublishSubcriber[events.DataDisconnect]
@@ -25,7 +20,7 @@ func NewInternalVPNEvents() *Events {
 	}
 }
 
-func (e *Events) Subscribe(to *state.ConnectionInfo) {
+func (e *Events) Subscribe(to state.InternalVPNPublisher) {
 	e.Connected.Subscribe(to.ConnectionStatusNotifyConnect)
 	e.Disconnected.Subscribe(to.ConnectionStatusNotifyDisconnect)
 }
