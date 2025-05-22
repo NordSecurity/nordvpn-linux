@@ -11,9 +11,11 @@ import (
 	"time"
 
 	teliogo "github.com/NordSecurity/libtelio-go/v5"
+	info_state "github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/tunnel"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
@@ -98,8 +100,9 @@ func TestIsConnected(t *testing.T) {
 			}()
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
+			tun := tunnel.Tunnel{}
 			defer cancel()
-			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents())
+			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents(), &tun)
 
 			connectionEstablishedWG.Wait()
 			select {
@@ -372,6 +375,7 @@ type subscriber struct {
 	mu               sync.RWMutex
 	counter          int
 	eventsReceivedWG *sync.WaitGroup
+	c                info_state.ConnectionStatus
 }
 
 func NewSubscriber(eventsReceivedWG *sync.WaitGroup) subscriber {
@@ -379,6 +383,16 @@ func NewSubscriber(eventsReceivedWG *sync.WaitGroup) subscriber {
 		eventsReceivedWG: eventsReceivedWG,
 	}
 }
+
+func (s *subscriber) ConnectionStatusNotifyConnect(data events.DataConnect) error {
+	return nil
+}
+
+func (s *subscriber) ConnectionStatusNotifyDisconnect(data events.DataDisconnect) error {
+	return nil
+}
+
+func (s *subscriber) Subscribe(_ info_state.InternalStateChangeNotif) {}
 
 func (s *subscriber) NotifyConnect(events.DataConnect) error {
 	s.mu.Lock()
