@@ -2,11 +2,15 @@ package vpn
 
 import (
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
+
+type InternalVPNPublisher interface {
+	ConnectionStatusNotifyConnect(e events.DataConnect) error
+	ConnectionStatusNotifyDisconnect(_ events.DataDisconnect) error
+}
 
 type Events struct {
 	Connected    events.PublishSubcriber[events.DataConnect]
@@ -20,7 +24,7 @@ func NewInternalVPNEvents() *Events {
 	}
 }
 
-func (e *Events) Subscribe(to state.InternalVPNPublisher) {
+func (e *Events) Subscribe(to InternalVPNPublisher) {
 	e.Connected.Subscribe(to.ConnectionStatusNotifyConnect)
 	e.Disconnected.Subscribe(to.ConnectionStatusNotifyDisconnect)
 }
