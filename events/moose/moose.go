@@ -17,10 +17,10 @@ package moose
 import "C"
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os/exec"
 	"slices"
@@ -34,7 +34,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	moose "moose/events"
@@ -56,7 +55,6 @@ type Subscriber struct {
 	connectionToMeshnetPeer bool
 	enabled                 bool
 	initialHeartbeatSent    bool
-	workerCancelFunc        context.CancelFunc
 	mux                     sync.RWMutex
 }
 
@@ -90,7 +88,7 @@ func (s *Subscriber) isEnabled() bool {
 
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
 // Disabled case should be handled by `set_opt_out` value.
-func (s *Subscriber) Init() error {
+func (s *Subscriber) Init(httpClient http.Client) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	var cfg config.Config
@@ -118,12 +116,8 @@ func (s *Subscriber) Init() error {
 	var batchSize uint32 = 20
 	compressRequest := true
 
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	s.workerCancelFunc = cancelFunc
 	client := worker.NewHttpClientContext(s.currentDomain)
-	httpClient := request.NewStdHTTP()
-	httpClient.Transport = request.NewCancellableRoundTripper(ctx)
-	client.Client = *httpClient
+	client.Client = httpClient
 	if err := s.response(uint32(worker.StartWithClient(
 		s.EventsDbPath,
 		s.currentDomain,
@@ -210,9 +204,6 @@ func (s *Subscriber) Init() error {
 }
 
 func (s *Subscriber) Stop() error {
-	log.Println(internal.DebugPrefix, "cancelling worker")
-	s.workerCancelFunc()
-
 	log.Println(internal.DebugPrefix, "flushing changes")
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
 		return fmt.Errorf("flushing changes: %w", err)

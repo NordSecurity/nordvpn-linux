@@ -93,7 +93,7 @@ func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 	}
 }
 
-func createH3Transport() *http3.Transport {
+func createH3Transport() http.RoundTripper {
 	pool, err := x509.SystemCertPool()
 	if err != nil {
 		log.Fatal(err)
@@ -140,6 +140,7 @@ func createTimedOutTransport(
 	fwmark uint32,
 	httpCallsSubject events.Publisher[events.DataRequestAPI],
 	connectSubject events.PublishSubcriber[events.DataConnect],
+	ctx context.Context,
 ) http.RoundTripper {
 	transportsStr := os.Getenv(envHTTPTransportsKey)
 	log.Println(internal.InfoPrefix, "http transports to use (environment):", transportsStr)
@@ -150,13 +151,19 @@ func createTimedOutTransport(
 	containsH3 := slices.Contains(transportTypes, "http3")
 
 	var h1Transport *request.HTTPReTransport
-	var h3Transport *request.QuicTransport
+	var h3Transport *request.HTTPReTransport
 	if containsH1 {
-		h1Transport = request.NewHTTPReTransport(createH1Transport(resolver, fwmark))
+		h1Transport = request.NewHTTPReTransport(
+			1,
+			1,
+			"HTTP/1.1",
+			createH1Transport(resolver, fwmark),
+			nil,
+		)
 		connectSubject.Subscribe(h1Transport.NotifyConnect)
 		if !containsH3 {
 			return request.NewPublishingRoundTripper(
-				h1Transport,
+				request.NewContextRoundTripper(h1Transport, ctx),
 				httpCallsSubject,
 			)
 		}
@@ -165,11 +172,17 @@ func createTimedOutTransport(
 		if err := SetBufferSizeForHTTP3(); err != nil {
 			log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
 		}
-		h3Transport = request.NewQuicTransport(createH3Transport)
+		h3Transport = request.NewHTTPReTransport(
+			3,
+			0,
+			"HTTP/3",
+			createH3Transport,
+			shouldRetryHTTP3,
+		)
 		connectSubject.Subscribe(h3Transport.NotifyConnect)
 		if !containsH1 {
 			return request.NewPublishingRoundTripper(
-				h3Transport,
+				request.NewContextRoundTripper(h3Transport, ctx),
 				httpCallsSubject,
 			)
 		}
@@ -183,4 +196,11 @@ func createTimedOutTransport(
 
 	rotatingRoundTriper := request.NewRotatingRoundTripper(h1Transport, h3Transport, time.Hour)
 	return request.NewPublishingRoundTripper(rotatingRoundTriper, httpCallsSubject)
+}
+
+func shouldRetryHTTP3(err error) bool {
+	return err != nil &&
+		(strings.Contains(err.Error(), "Application error 0x100") ||
+			strings.Contains(err.Error(), "no recent network activity") ||
+			strings.Contains(err.Error(), "Timeout exceeded while awaiting headers"))
 }
