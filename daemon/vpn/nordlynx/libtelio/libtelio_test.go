@@ -5,13 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/netip"
 	"sync"
 	"testing"
 	"time"
 
 	teliogo "github.com/NordSecurity/libtelio-go/v5"
-	info_state "github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -49,6 +49,14 @@ func (mockLib) StartNamed(teliogo.SecretKey, teliogo.TelioAdapterType, string) e
 func (mockLib) Stop() error                                                          { return nil }
 func (mockLib) SetFwmark(uint32) error                                               { return nil }
 func (mockLib) SetSecretKey(teliogo.SecretKey) error                                 { return nil }
+
+type mockTunnel struct{}
+
+func (mockTunnel) TransferRates() (tunnel.Statistics, error) { return tunnel.Statistics{}, nil }
+func (mockTunnel) Interface() net.Interface                  { return net.Interface{Name: "nordlynx"} }
+func (mockTunnel) IP() (netip.Addr, bool)                    { return netip.Addr{}, true }
+func (mockTunnel) AddAddrs() error                           { return nil }
+func (mockTunnel) DelAddrs() error                           { return nil }
 
 func TestIsConnected(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -100,9 +108,8 @@ func TestIsConnected(t *testing.T) {
 			}()
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
-			tun := tunnel.Tunnel{}
 			defer cancel()
-			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents(), &tun)
+			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents(), mockTunnel{})
 
 			connectionEstablishedWG.Wait()
 			select {
@@ -375,7 +382,6 @@ type subscriber struct {
 	mu               sync.RWMutex
 	counter          int
 	eventsReceivedWG *sync.WaitGroup
-	c                info_state.ConnectionStatus
 }
 
 func NewSubscriber(eventsReceivedWG *sync.WaitGroup) subscriber {
@@ -385,26 +391,16 @@ func NewSubscriber(eventsReceivedWG *sync.WaitGroup) subscriber {
 }
 
 func (s *subscriber) ConnectionStatusNotifyConnect(data events.DataConnect) error {
-	return nil
-}
-
-func (s *subscriber) ConnectionStatusNotifyDisconnect(data events.DataDisconnect) error {
-	return nil
-}
-
-func (s *subscriber) Subscribe(_ info_state.InternalStateChangeNotif) {}
-
-func (s *subscriber) NotifyConnect(events.DataConnect) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.counter++
 	s.eventsReceivedWG.Done()
-
 	return nil
 }
-func (s *subscriber) NotifyDisconnect(events.DataDisconnect) error {
-	return s.NotifyConnect(events.DataConnect{})
+
+func (s *subscriber) ConnectionStatusNotifyDisconnect(_ events.DataDisconnect) error {
+	return s.ConnectionStatusNotifyConnect(events.DataConnect{})
 }
 
 func (s *subscriber) Counter() int {
@@ -495,6 +491,7 @@ func TestLibtelio_connect(t *testing.T) {
 				state:           vpn.ExitedState,
 				fwmark:          123,
 				eventsPublisher: pub,
+				tun:             mockTunnel{},
 			}
 
 			// connect ctx

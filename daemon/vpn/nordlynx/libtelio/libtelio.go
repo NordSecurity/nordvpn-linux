@@ -125,7 +125,7 @@ type Libtelio struct {
 	events                  <-chan state
 	cancelConnectionMonitor func()
 	active                  bool
-	tun                     *tunnel.Tunnel
+	tun                     tunnel.T
 	// This must be the one given from the public interface and
 	// retrieved from the API
 	currentServer     vpn.ServerData
@@ -683,7 +683,7 @@ func isConnected(ctx context.Context,
 	stateCh <-chan state,
 	connParams connParameters,
 	eventsPublisher *vpn.Events,
-	tun *tunnel.Tunnel) <-chan interface{} {
+	tun tunnel.T) <-chan interface{} {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -708,7 +708,8 @@ func publishConnectEvent(publisher *vpn.Events,
 	connectType events.TypeEventStatus,
 	server vpn.ServerData,
 	state state,
-	tun *tunnel.Tunnel) {
+	tun tunnel.T) {
+
 	if !state.IsVPN {
 		server.Name = state.Nickname
 	}
@@ -724,6 +725,7 @@ func publishConnectEvent(publisher *vpn.Events,
 		server,
 		transferStats,
 		!state.IsVPN)
+	//TODO(skubiak): check if tunnel can't be set directly in ConnectionInfo
 	event.TunnelName = tun.Interface().Name
 
 	if connectType == events.StatusSuccess {
@@ -749,7 +751,7 @@ func monitorConnection(
 	isConnected chan<- interface{},
 	connParameters connParameters,
 	eventsPublisher *vpn.Events,
-	tun *tunnel.Tunnel) {
+	tun tunnel.T) {
 	type notifyState int
 	const (
 		disconnected notifyState = iota
