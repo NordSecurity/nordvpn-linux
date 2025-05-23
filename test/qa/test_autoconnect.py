@@ -91,8 +91,15 @@ def test_autoconnect_to_standard_group(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES[:-1])
 def test_autoconnect_to_additional_group(tech, proto, obfuscated, group):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    autoconnect_base_test(group)
+
+
+@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS[2:])
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC3)
+def test_nordwhisper_autoconnect_to_additional_group(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     autoconnect_base_test(group)
 

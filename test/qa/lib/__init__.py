@@ -16,6 +16,7 @@ STANDARD_TECHNOLOGIES = [
     ("openvpn", "udp", "off"),
     ("openvpn", "tcp", "off"),
     ("nordlynx", "", ""),
+    ("nordwhisper", "", "")
 ]
 
 # Used for test parametrization, when the same test has to be run for obfuscated technologies.
@@ -40,6 +41,9 @@ TECHNOLOGIES_BASIC1 = [
 ]
 TECHNOLOGIES_BASIC2 = [
     ("openvpn", "udp", "off"),
+]
+TECHNOLOGIES_BASIC3 = [
+    ("nordwhisper", "", ""),
 ]
 
 # no obfuscated servers with ipv6 2021/05/24

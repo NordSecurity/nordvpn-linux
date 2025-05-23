@@ -55,7 +55,7 @@ def test_routing_enabled_connect(tech, proto, obfuscated):
     assert SUBNET_3 in policy_rules
 
     policy_routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    network_interface = "nordtun" if tech == "openvpn" else "qtun" if tech == "nordwhisper" else "nordlynx"
     assert network_interface in policy_routes
 
     assert settings.is_routing_enabled()
@@ -78,7 +78,7 @@ def test_routing_disabled_connect(tech, proto, obfuscated):
     assert "fwmark" not in sh.ip.rule.show.table(firewall.IP_ROUTE_TABLE)
     assert SUBNET_1 not in sh.ip.route()
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    network_interface = "nordtun" if tech == "openvpn" else "qtun" if tech == "nordwhisper" else "nordlynx"
     assert network_interface not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert MSG_ROUTING_ON_ALREADY in sh.nordvpn.set.routing.on()
@@ -90,7 +90,7 @@ def test_routing_disabled_connect(tech, proto, obfuscated):
 def test_connected_routing_disable_enable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    network_interface = "nordtun" if tech == "openvpn" else "qtun" if tech == "nordwhisper" else "nordlynx"
 
     print(sh.nordvpn.connect())
     assert network.is_available()
@@ -113,7 +113,7 @@ def test_connected_routing_disable_enable(tech, proto, obfuscated):
 def test_connected_routing_enable_disable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    network_interface = "nordtun" if tech == "openvpn" else "qtun" if tech == "nordwhisper" else "nordlynx"
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
     assert not settings.is_routing_enabled()
@@ -167,7 +167,7 @@ def test_routing_already_disabled(tech, proto, obfuscated):
 def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    network_interface = "nordtun" if tech == "openvpn" else "qtun" if tech == "nordwhisper" else "nordlynx"
 
     print(sh.nordvpn.connect())
 
@@ -196,7 +196,7 @@ def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated)
 def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
+    network_interface = "nordtun" if tech == "openvpn" else "qtun" if tech == "nordwhisper" else "nordlynx"
 
     print(sh.nordvpn.connect())
 
