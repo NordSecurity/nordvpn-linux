@@ -63,12 +63,10 @@ func (s *StatePublisher) NotifyChangeState(e events.DataConnectChangeNotif) erro
 }
 
 func (s *StatePublisher) NotifyConnect(_ events.DataConnect) error {
-	//TODO(skubiak): fix corresponding UT
 	return nil
 }
 
 func (s *StatePublisher) NotifyDisconnect(_ events.DataDisconnect) error {
-	//TODO(skubiak): fix corresponding UT
 	return nil
 }
 
