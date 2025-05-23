@@ -58,6 +58,68 @@ class PacketCaptureThread(Thread):
         return tshark_result.strip()
 
 
+class RouteInfo:
+    def __init__(self, ip_route_line: str):
+        self.destination = None
+        self.gateway = None
+        self.interface = None
+        self.metric = None
+        self.src = None
+        self.scope = None
+        self.proto = None
+        self.type = None
+
+        self._parse_line(ip_route_line)
+
+    def _parse_line(self, line: str):
+        tokens = line.strip().split()
+        if not tokens:
+            return
+
+        # The first token is either a CIDR or "default"
+        self.destination = tokens[0]
+
+        self.gateway = self._extract_token(tokens, 'via')
+        self.interface = self._extract_token(tokens, 'dev')
+        self.metric = self._extract_token(tokens, 'metric', convert=int)
+        self.src = self._extract_token(tokens, 'src')
+        self.scope = self._extract_token(tokens, 'scope')
+        self.proto = self._extract_token(tokens, 'proto')
+        self.type = self._extract_token(tokens, 'type')
+
+    def _extract_token(self, tokens, key, convert=str):
+        try:
+            return convert(tokens[tokens.index(key) + 1])
+        except (ValueError, IndexError):
+            return None
+
+    def __repr__(self):
+        return (
+            f"<RouteInfo destination={self.destination}, gateway={self.gateway}, "
+            f"interface={self.interface}, metric={self.metric}, src={self.src}, "
+            f"scope={self.scope}, proto={self.proto}, type={self.type}>"
+        )
+
+    def routes_ip(self, ip: str) -> bool:
+        result = sh.ip.route.get(ip).stdout.decode().strip()
+        tokens = result.split()
+
+        resolved_dev = self._extract_token(tokens, 'dev')
+        resolved_via = self._extract_token(tokens, 'via')
+        resolved_src = self._extract_token(tokens, 'src')
+
+        if self.interface and resolved_dev != self.interface:
+            return False
+        if self.gateway and resolved_via and resolved_via != self.gateway:
+            return False
+        return not(self.src and resolved_src and resolved_src != self.src)
+
+    @staticmethod
+    def default_route_info() -> "RouteInfo":
+        output = sh.ip.route.show("default").stdout.decode()
+        return RouteInfo(output)
+
+
 def capture_traffic(connection_settings, duration: int=5) -> str:
     """Returns count of captured packets."""
 
