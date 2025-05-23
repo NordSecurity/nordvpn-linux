@@ -39,8 +39,9 @@ def is_disconnected() -> bool:
     try:
         print(sh_no_tty.nordvpn.status())
         return "Disconnected" in sh.nordvpn.status()
-    except sh.ErrorReturnCode:
-        return False
+    except sh.ErrorReturnCode as ex:
+        logging.log(data=f"is_disconnected: {ex}")
+        return True
 
 
 def is_killswitch_on():
