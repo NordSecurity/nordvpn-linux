@@ -121,4 +121,4 @@ build_rust "${WORKDIR}/build/foss/libdrop"
 link_so_files "libdrop"
 
 populate_current_ver "${lib_root}/current" "${lib_root}/libtelio/${LIBTELIO_VERSION}" "libtelio.so"
-populate_current_ver "${lib_root}/current" "${lib_root}/libdrop/${LIBDROP_VERSION}" "libdrop.so"
+populate_current_ver "${lib_root}/current" "${lib_root}/libdrop/${LIBDROP_VERSION}" "libnorddrop.so"
