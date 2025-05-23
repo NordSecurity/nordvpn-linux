@@ -724,7 +724,6 @@ func publishConnectEvent(publisher *vpn.Events,
 		server,
 		transferStats,
 		!state.IsVPN)
-	//TODO(skubiak): check if tunnel can't be set directly in ConnectionInfo
 	event.TunnelName = tun.Interface().Name
 
 	if connectType == events.StatusSuccess {

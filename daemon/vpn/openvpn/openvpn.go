@@ -453,7 +453,6 @@ func stage1Handler(
 			}
 		case *gopenvpn.StateEvent:
 			state := event.NewState()
-			//TODO (skubiak): double-check if that's safe!
 			defer ovpn.setState(state)
 			switch vpn.State(state) { //nolint:exhaustive
 			case vpn.ReconnectingState:
