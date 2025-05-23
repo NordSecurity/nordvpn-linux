@@ -16,6 +16,15 @@ STANDARD_TECHNOLOGIES = [
     ("openvpn", "udp", "off"),
     ("openvpn", "tcp", "off"),
     ("nordlynx", "", ""),
+    ("nordwhisper", "", "")
+]
+
+# Used for test parametrization, when the tested functionality does not work with obfuscated and NordWhisper.
+STANDARD_TECHNOLOGIES_NO_NORDWHISPER = [
+    # technology, protocol, obfuscation,
+    ("openvpn", "udp", "off"),
+    ("openvpn", "tcp", "off"),
+    ("nordlynx", "", ""),
 ]
 
 # Used for test parametrization, when the same test has to be run for obfuscated technologies.
@@ -40,6 +49,9 @@ TECHNOLOGIES_BASIC1 = [
 ]
 TECHNOLOGIES_BASIC2 = [
     ("openvpn", "udp", "off"),
+]
+NORDWHISPER_TECHNOLOGY = [
+    ("nordwhisper", "", ""),
 ]
 
 # no obfuscated servers with ipv6 2021/05/24
@@ -68,6 +80,12 @@ STANDARD_GROUPS = [
 ADDITIONAL_GROUPS = [
     "Double_VPN",
     "Onion_Over_VPN",
+    "Standard_VPN_Servers",
+    "P2P",
+]
+
+# Used for test parametrization with NordWhisper, since other additional groups are not supported with this technology.
+ADDITIONAL_GROUPS_NORDWHISPER = [
     "Standard_VPN_Servers",
     "P2P",
 ]
