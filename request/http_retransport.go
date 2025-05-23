@@ -62,8 +62,9 @@ func (m *HTTPReTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 // NotifyConnect initiates re-creating the inner round tripper when called.
 func (m *HTTPReTransport) NotifyConnect(events.DataConnect) error {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
-	m.recreateRoundTrip(m.counter)
+	counter := m.counter
+	m.mu.RUnlock()
+	m.recreateRoundTrip(counter)
 	return nil
 }
 
