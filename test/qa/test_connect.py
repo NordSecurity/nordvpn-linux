@@ -52,7 +52,7 @@ def disconnect_base_test():
     print(output)
     assert lib.is_disconnect_successful(output)
     assert network.is_disconnected()
-    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()
+    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a() and "qtun" not in sh.ip.a()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -85,8 +85,19 @@ def test_connect_to_server_random_by_name(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES[:-1])
 def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscated, group):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    server_info = server.get_hostname_by(tech, proto, obfuscated, group)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
+    disconnect_base_test()
+
+
+@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS[2:])
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC3)
+def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     server_info = server.get_hostname_by(tech, proto, obfuscated, group)
@@ -191,8 +202,17 @@ def test_connect_to_group_standard(tech, proto, obfuscated, group):
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES[:-1])
 def test_connect_to_group_additional(tech, proto, obfuscated, group):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    connect_base_test((tech, proto, obfuscated), group)
+    disconnect_base_test()
+
+
+@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS[2:])
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC3)
+def test_nordwhisper_connect_to_group_additional(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), group)
@@ -386,6 +406,8 @@ def test_status_connected(tech, proto, obfuscated):
 
     if tech == "openvpn":
         assert proto.upper() in status_info["current protocol"]
+    elif tech == "nordwhisper":
+        assert "Webtunnel" in status_info["current protocol"]
     else:
         assert "UDP" in status_info["current protocol"]
 

@@ -31,6 +31,7 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
                 },
             },
             "nordlynx": 35,
+            "nordwhisper": 51,
         }
         if protocol != "":
             tech_id = tech_ids[technology][protocol][f"{obfuscated}"]

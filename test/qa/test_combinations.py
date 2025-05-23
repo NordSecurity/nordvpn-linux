@@ -75,6 +75,8 @@ def test_status_change_technology_and_protocol(
 
     if source_tech == "openvpn":
         assert source_proto.upper() in sh.nordvpn.status()
+    elif source_tech == "nordwhisper":
+        assert "Webtunnel" in sh.nordvpn.status()
     else:
         assert "UDP" in sh.nordvpn.status()
 
@@ -83,6 +85,8 @@ def test_status_change_technology_and_protocol(
 
     if source_tech == "openvpn":
         assert source_tech.upper() in sh.nordvpn.status()
+    elif source_tech == "nordwhisper":
+        assert "Webtunnel" in sh.nordvpn.status()
     else:
         assert "UDP" in sh.nordvpn.status()
 
@@ -110,6 +114,8 @@ def test_status_change_technology_and_protocol_reconnect(
 
     if target_tech == "openvpn":
         assert target_proto.upper() in sh.nordvpn.status()
+    elif target_tech == "nordwhisper":
+        assert "Webtunnel" in sh.nordvpn.status()
     else:
         assert "UDP" in sh.nordvpn.status()
 
