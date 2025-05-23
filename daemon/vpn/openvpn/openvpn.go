@@ -360,6 +360,13 @@ func (ovpn *OpenVPN) getConnectedConnectingEvent(state events.TypeEventStatus) e
 		ovpn.serverData,
 		stats,
 		false)
+	if ovpn.tun != nil {
+		event.TunnelName = ovpn.tun.Interface().Name
+	}
+	if state == events.StatusSuccess {
+		start := time.Now()
+		event.StartTime = &start
+	}
 
 	return event
 }
@@ -446,7 +453,7 @@ func stage1Handler(
 			}
 		case *gopenvpn.StateEvent:
 			state := event.NewState()
-			ovpn.setState(state)
+			defer ovpn.setState(state)
 			switch vpn.State(state) { //nolint:exhaustive
 			case vpn.ReconnectingState:
 				switch event.Description() {

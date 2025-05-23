@@ -50,6 +50,8 @@ type T interface {
 	Interface() net.Interface
 	IP() (netip.Addr, bool)
 	TransferRates() (Statistics, error)
+	AddAddrs() error
+	DelAddrs() error
 }
 
 // Tunnel encrypts and decrypts network traffic.
