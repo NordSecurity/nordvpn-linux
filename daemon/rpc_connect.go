@@ -96,7 +96,6 @@ func (r *RPC) connect(
 	// Set status to "Connecting" and send the connection attempt event without details
 	// to inform clients about connection attempt as soon as possible so they can react.
 	// The details will be filled and delivered to clients later.
-	r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_CONNECTING})
 	r.vpnEvents.Connected.Publish(event)
 
 	vpnExpired, err := r.ac.IsVPNExpired()
@@ -234,6 +233,12 @@ func (r *RPC) connect(
 		true, // here vpn connect - enable routing to local LAN
 	)
 	if err != nil {
+
+		disconnectEvent := events.DataDisconnect{
+			EventStatus: events.StatusFailure,
+			Duration:    time.Duration(max(int(time.Since(connectingStartTime).Milliseconds()), 1)) * time.Millisecond,
+			Error:       err,
+		}
 		event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 		event.Error = err
 		event.EventStatus = events.StatusFailure
@@ -244,8 +249,7 @@ func (r *RPC) connect(
 			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
-		r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
-		r.vpnEvents.Connected.Publish(event)
+		r.vpnEvents.Disconnected.Publish(disconnectEvent)
 		if err := srv.Send(&pb.Payload{
 			Type: t,
 			Data: data,
