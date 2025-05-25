@@ -233,7 +233,6 @@ func (r *RPC) connect(
 		true, // here vpn connect - enable routing to local LAN
 	)
 	if err != nil {
-
 		disconnectEvent := events.DataDisconnect{
 			EventStatus: events.StatusFailure,
 			Duration:    time.Duration(max(int(time.Since(connectingStartTime).Milliseconds()), 1)) * time.Millisecond,
