@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
@@ -51,8 +50,7 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 
 	// set connection status to "Disconnected"
 	if didFail || err != nil {
-		r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
-		r.vpnEvents.Connected.Publish(events.DataConnect{EventStatus: events.StatusFailure})
+		r.vpnEvents.Disconnected.Publish(events.DataDisconnect{EventStatus: events.StatusFailure})
 	}
 
 	return err
