@@ -363,10 +363,6 @@ func (ovpn *OpenVPN) getConnectedConnectingEvent(state events.TypeEventStatus) e
 	if ovpn.tun != nil {
 		event.TunnelName = ovpn.tun.Interface().Name
 	}
-	if state == events.StatusSuccess {
-		start := time.Now()
-		event.StartTime = &start
-	}
 
 	return event
 }

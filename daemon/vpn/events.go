@@ -8,8 +8,8 @@ import (
 )
 
 type InternalVPNPublisher interface {
-	ConnectionStatusNotifyConnect(e events.DataConnect) error
-	ConnectionStatusNotifyDisconnect(_ events.DataDisconnect) error
+	ConnectionStatusNotifyConnect(events.DataConnect) error
+	ConnectionStatusNotifyDisconnect(events.DataDisconnect) error
 }
 
 type Events struct {

@@ -187,7 +187,7 @@ func (r *RPC) connect(
 	event.TargetServerCountry = country.Name
 	event.TargetServerDomain = server.Hostname
 	event.TargetServerIP = subnet.Addr().String()
-	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+	event.DurationMs = getElapsedTime(connectingStartTime)
 
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
@@ -204,7 +204,7 @@ func (r *RPC) connect(
 		// and no connect success or connect failure event was sent.
 		if retErr != nil && event.EventStatus == events.StatusAttempt {
 			event.EventStatus = events.StatusFailure
-			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+			event.DurationMs = getElapsedTime(connectingStartTime)
 			r.events.Service.Connect.Publish(event)
 		}
 	}()
@@ -233,10 +233,10 @@ func (r *RPC) connect(
 	if err != nil {
 		disconnectEvent := events.DataDisconnect{
 			EventStatus: events.StatusFailure,
-			Duration:    time.Duration(max(int(time.Since(connectingStartTime).Milliseconds()), 1)) * time.Millisecond,
+			Duration:    time.Duration(getElapsedTime(connectingStartTime)) * time.Millisecond,
 			Error:       err,
 		}
-		event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+		event.DurationMs = getElapsedTime(connectingStartTime)
 		event.Error = err
 		event.EventStatus = events.StatusFailure
 		t := internal.CodeFailure
@@ -265,7 +265,7 @@ func (r *RPC) connect(
 		}
 	}
 	event.EventStatus = events.StatusSuccess
-	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+	event.DurationMs = getElapsedTime(connectingStartTime)
 	r.events.Service.Connect.Publish(event)
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
@@ -273,6 +273,12 @@ func (r *RPC) connect(
 	}
 
 	return false, nil
+}
+
+// getElapsedTime calculates the time elapsed since the given start time in milliseconds.
+// It ensures the returned value is at least 1 millisecond
+func getElapsedTime(startTime time.Time) int {
+	return max(int(time.Since(startTime).Milliseconds()), 1)
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)
