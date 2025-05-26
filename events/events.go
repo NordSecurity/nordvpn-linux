@@ -97,9 +97,8 @@ type DataConnect struct {
 	TunnelName                 string
 }
 
-// Used to provide notifications for internal listeners of ConnectionStatus
-type DataConnectChangeNotif struct {
-}
+// DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus
+type DataConnectChangeNotif struct{}
 
 type DataDisconnect struct {
 	Protocol              config.Protocol

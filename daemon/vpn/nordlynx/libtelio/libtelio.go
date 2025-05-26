@@ -725,11 +725,6 @@ func publishConnectEvent(publisher *vpn.Events,
 		transferStats,
 		!state.IsVPN)
 	event.TunnelName = tun.Interface().Name
-
-	if connectType == events.StatusSuccess {
-		start := time.Now()
-		event.StartTime = &start
-	}
 	publisher.Connected.Publish(event)
 }
 

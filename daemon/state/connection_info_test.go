@@ -14,19 +14,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type test_subscriber struct {
+type TestSubscriber struct {
 	notificationCounter int
 	wg                  *sync.WaitGroup
 }
 
-func (s *test_subscriber) NotifyChangeState(e events.DataConnectChangeNotif) error {
+func (s *TestSubscriber) NotifyChangeState(e events.DataConnectChangeNotif) error {
 	s.notificationCounter++
 	s.wg.Done()
 	return nil
 }
 
-func NewTestSubscriber(wg *sync.WaitGroup) *test_subscriber {
-	return &test_subscriber{
+func NewTestSubscriber(wg *sync.WaitGroup) *TestSubscriber {
+	return &TestSubscriber{
 		notificationCounter: 0,
 		wg:                  wg,
 	}

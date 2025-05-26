@@ -50,6 +50,8 @@ type ConnectionStatus struct {
 }
 
 // ConnectionInfo stores data about currently active connection
+// and provides notifications about changes for the internal listeners
+// whenver an update of connection status happens
 type ConnectionInfo struct {
 	status        ConnectionStatus
 	mu            sync.RWMutex
@@ -81,6 +83,11 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 	if e.EventStatus == events.StatusAttempt {
 		connectionStatus = pb.ConnectionState_CONNECTING
 	}
+	var startTime *time.Time = nil
+	if e.EventStatus == events.StatusSuccess {
+		start := time.Now()
+		startTime = &start
+	}
 	c.SetStatus(ConnectionStatus{
 		State:           connectionStatus,
 		Technology:      e.Technology,
@@ -91,7 +98,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 		Country:         e.TargetServerCountry,
 		CountryCode:     e.TargetServerCountryCode,
 		City:            e.TargetServerCity,
-		StartTime:       e.StartTime,
+		StartTime:       startTime,
 		VirtualLocation: e.IsVirtualLocation,
 		PostQuantum:     e.IsPostQuantum,
 		Obfuscated:      e.IsObfuscated,
@@ -102,7 +109,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 	return nil
 }
 
-func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(_ events.DataDisconnect) error {
+func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(events.DataDisconnect) error {
 	c.SetStatus(ConnectionStatus{
 		State:     pb.ConnectionState_DISCONNECTED,
 		StartTime: nil,
