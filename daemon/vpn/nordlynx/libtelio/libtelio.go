@@ -88,11 +88,6 @@ func newTelioCallbackHandler(statesChan chan<- state) *telioCallbackHandler {
 }
 
 func (t *telioCallbackHandler) handleEvent(e teliogo.Event) *teliogo.TelioError {
-	t.mu.Lock()
-	defer func() {
-		t.mu.Unlock()
-	}()
-
 	eventBytes, err := json.Marshal(&e)
 	if err != nil {
 		log.Printf(internal.WarningPrefix+" can't marshal telio Event %T: %s\n", e, err)
@@ -120,6 +115,9 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) *teliogo.TelioError 
 	}
 
 	if t.monitoringContext != nil {
+		t.mu.Lock()
+		defer t.mu.Unlock()
+
 		select {
 		case t.statesChan <- st:
 		case <-t.monitoringContext.Done(): // drop if nobody is listening
@@ -138,6 +136,40 @@ func (t *telioCallbackHandler) setMonitoringContext(ctx context.Context) {
 	defer t.mu.Unlock()
 
 	t.monitoringContext = ctx
+}
+
+func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Context) {
+	buff := []state{}
+
+	nextLogTime := time.Now()
+
+	events := 0
+	for {
+		if len(buff) != 0 {
+			select {
+			case event := <-recvChan:
+				buff = append(buff, event)
+				events++
+			case sendChan <- buff[0]:
+				buff = buff[1:]
+			case <-ctx.Done():
+				return
+			}
+		} else {
+			select {
+			case event := <-recvChan:
+				buff = append(buff, event)
+				events++
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if time.Now().After(nextLogTime) && len(buff) > 0 {
+			log.Println(internal.DebugPrefix, len(buff), "events in telio event queue, received", events, "in 10s.")
+			nextLogTime = time.Now().Add(time.Second * 10)
+		}
+	}
 }
 
 // Libtelio wrapper around generated Go bindings.
@@ -314,12 +346,14 @@ func (l *Libtelio) connect(
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	l.cancelConnectionMonitor = cancel
-
 	l.callbackHandler.setMonitoringContext(ctx)
+
+	bufferedEventsChan := make(chan state)
+	go eventsBuffer(l.events, bufferedEventsChan, ctx)
 
 	// Start monitoring connection events before connecting to not miss any
 	isConnectedC := isConnected(ctx,
-		l.events,
+		bufferedEventsChan,
 		connParameters{pubKey: serverPublicKey, server: l.currentServer},
 		l.eventsPublisher,
 		l.tun)
@@ -795,11 +829,19 @@ func monitorConnection(
 		connected
 	)
 
+	ev := 1
 	currentNotifyState := disconnected
 	initialConnection := true
 	for {
 		select {
 		case state := <-states:
+			if ev == 3 {
+				time.Sleep(1 * time.Second)
+				ev = 0
+			}
+
+			ev++
+
 			if !state.IsExit {
 				break
 			}
