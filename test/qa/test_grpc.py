@@ -81,10 +81,11 @@ def test_tunnel_update_notifications_before_and_after_connect():
 
     result = []
     barrier = threading.Barrier(2)  # One for main thread, one for worker
+    lock = threading.Lock()
 
     thread = threading.Thread(
         target=state_listener_worker,
-        args=(expected_states, result, barrier)
+        args=(expected_states, result, barrier, lock)
     )
     thread.start()
 
@@ -128,10 +129,11 @@ def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
 
     result = []
     barrier = threading.Barrier(2)  # One for main thread, one for worker
+    lock = threading.Lock()
 
     thread = threading.Thread(
         target=state_listener_worker,
-        args=(expected_states, result, barrier)
+        args=(expected_states, result, barrier, lock)
     )
     thread.start()
 
@@ -150,9 +152,10 @@ def test_is_virtual_is_false_for_non_virtual_location():
     check_is_virtual_location_in_response("Poland", False)
 
 
-def state_listener_worker(expected_states, result_container, barrier):
+def state_listener_worker(expected_states, result_container, barrier, lock):
     barrier.wait()
-    result_container.extend(collect_state_changes(len(expected_states), ['connection_status']))
+    with lock:
+        result_container.extend(collect_state_changes(len(expected_states), ['connection_status']))
 
 
 def test_manual_connection_source_is_present_in_response():
@@ -164,10 +167,11 @@ def test_manual_connection_source_is_present_in_response():
 
     result = []
     barrier = threading.Barrier(2)  # One for the main thread, one for the worker
+    lock = threading.Lock()
 
     thread = threading.Thread(
         target=state_listener_worker,
-        args=(expected_states, result, barrier)
+        args=(expected_states, result, barrier, lock)
     )
     thread.start()
 
