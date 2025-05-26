@@ -106,12 +106,8 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("initializing event domain: %w", err)
 	}
 
-	timeBetweenEvents := 100 * time.Millisecond
-	timeBetweenBatchesOfEvents := time.Second
-	if internal.IsProdEnv(s.Environment) {
-		timeBetweenEvents = 2 * time.Second
-		timeBetweenBatchesOfEvents = 2 * time.Hour
-	}
+	singleInterval := time.Second
+	sequenceInterval := time.Second * 5
 	sendEvents := true
 	var batchSize uint32 = 20
 	compressRequest := true
@@ -121,8 +117,8 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if err := s.response(uint32(worker.StartWithClient(
 		s.EventsDbPath,
 		s.currentDomain,
-		uint64(timeBetweenEvents.Milliseconds()),
-		uint64(timeBetweenBatchesOfEvents.Milliseconds()),
+		uint64(singleInterval.Milliseconds()),
+		uint64(sequenceInterval.Milliseconds()),
 		sendEvents,
 		batchSize,
 		compressRequest,
