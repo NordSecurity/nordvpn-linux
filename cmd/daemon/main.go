@@ -316,8 +316,11 @@ func main() {
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	daemonEvents.Subscribe(analytics)
 
-	firstopenNotifier := firstopen.NewNotifier(fsystem, daemonEvents.Service.UiItemsClick)
-	daemonEvents.Service.DeviceLocation.Subscribe(firstopenNotifier.NotifyOnceAppJustInstalled)
+	firstopen.RegisterNotifier(
+		fsystem,
+		daemonEvents.Service.DeviceLocation,
+		daemonEvents.Service.UiItemsClick,
+	)
 
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
