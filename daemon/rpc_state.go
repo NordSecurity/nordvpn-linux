@@ -7,7 +7,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/tunnel"
 	"google.golang.org/grpc/peer"
 )
 
@@ -79,23 +78,24 @@ func statusStream(stateChan <-chan any,
 		case ev := <-stateChan:
 			switch e := ev.(type) {
 			case events.DataConnectChangeNotif:
-				currentStatus := r.connectionInfo.Status()
 				requestedConnParams := requestedConnParamsStorage.Get()
 				status := pb.StatusResponse{
-					State:           currentStatus.State,
-					Ip:              currentStatus.IP.String(),
-					Country:         currentStatus.Country,
-					CountryCode:     currentStatus.CountryCode,
-					City:            currentStatus.City,
-					Name:            currentStatus.Name,
-					Hostname:        currentStatus.Hostname,
-					IsMeshPeer:      currentStatus.MeshnetPeer,
+					State:           e.Status.State,
+					Ip:              e.Status.IP.String(),
+					Country:         e.Status.Country,
+					CountryCode:     e.Status.CountryCode,
+					City:            e.Status.City,
+					Name:            e.Status.Name,
+					Hostname:        e.Status.Hostname,
+					IsMeshPeer:      e.Status.MeshnetPeer,
 					ByUser:          true,
-					VirtualLocation: currentStatus.VirtualLocation,
-					Technology:      currentStatus.Technology,
-					Protocol:        currentStatus.Protocol,
-					Obfuscated:      currentStatus.Obfuscated,
-					PostQuantum:     currentStatus.PostQuantum,
+					VirtualLocation: e.Status.VirtualLocation,
+					Technology:      e.Status.Technology,
+					Protocol:        e.Status.Protocol,
+					Obfuscated:      e.Status.Obfuscated,
+					PostQuantum:     e.Status.PostQuantum,
+					Upload:          e.Status.Tx,
+					Download:        e.Status.Rx,
 					Parameters: &pb.ConnectionParameters{
 						ServerName:  requestedConnParams.ServerName,
 						Source:      requestedConnParams.ConnectionSource,
@@ -106,14 +106,6 @@ func statusStream(stateChan <-chan any,
 					},
 				}
 
-				if currentStatus.State == pb.ConnectionState_CONNECTED {
-					transferStats, err := tunnel.GetTransferRates(currentStatus.TunnelName)
-					if err != nil {
-						log.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
-					}
-					status.Upload = transferStats.Tx
-					status.Download = transferStats.Rx
-				}
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{ConnectionStatus: &status}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn enabled failed to send state update:", err)

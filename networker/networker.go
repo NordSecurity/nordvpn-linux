@@ -24,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -90,7 +91,7 @@ type Networker interface {
 	UnsetDNS() error
 	IsVPNActive() bool
 	IsMeshnetActive() bool
-	ConnectionStatus() state.ConnectionStatus
+	ConnectionStatus() types.ConnectionStatus
 	EnableFirewall() error
 	DisableFirewall() error
 	EnableRouting()
@@ -225,8 +226,8 @@ func (netw *Combined) Start(
 	return netw.start(ctx, creds, serverData, allowlist, nameservers)
 }
 
-// updateConnectionStatus builds the [state.ConnectionStatus] and updates it in [Combined].
-// In case of an error, empty [state.ConnectionStatus] is set.
+// updateConnectionStatus builds the [types.ConnectionStatus] and updates it in [Combined].
+// In case of an error, empty [types.ConnectionStatus] is set.
 //
 // Not thread safe.
 func (netw *Combined) updateConnectionStatusAfterStart() {
@@ -244,7 +245,7 @@ func (netw *Combined) updateConnectionStatusAfterStart() {
 
 	actualConnParams, isActive := netw.vpnet.GetConnectionParameters()
 
-	connectionStatus := state.ConnectionStatus{
+	connectionStatus := types.ConnectionStatus{
 		State:           pb.ConnectionState_CONNECTED,
 		Technology:      tech,
 		Protocol:        netw.lastServer.Protocol,
@@ -509,7 +510,7 @@ func (netw *Combined) updateConnectionStatusAfterStop() {
 		return
 	}
 
-	netw.connectionInfo.SetStatus(state.ConnectionStatus{
+	netw.connectionInfo.SetStatus(types.ConnectionStatus{
 		State:     pb.ConnectionState_DISCONNECTED,
 		StartTime: nil,
 	})
@@ -574,7 +575,7 @@ func (netw *Combined) switchToNextVpn() {
 }
 
 // ConnectionStatus get connection information
-func (netw *Combined) ConnectionStatus() state.ConnectionStatus {
+func (netw *Combined) ConnectionStatus() types.ConnectionStatus {
 	return netw.connectionInfo.Status()
 }
 

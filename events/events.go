@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 )
 
 // Handler is used to process messages.
@@ -98,7 +99,9 @@ type DataConnect struct {
 }
 
 // DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus
-type DataConnectChangeNotif struct{}
+type DataConnectChangeNotif struct {
+	Status types.ConnectionStatus
+}
 
 type DataDisconnect struct {
 	Protocol              config.Protocol

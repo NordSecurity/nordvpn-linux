@@ -449,7 +449,7 @@ func stage1Handler(
 			}
 		case *gopenvpn.StateEvent:
 			state := event.NewState()
-			defer ovpn.setState(state)
+			ovpn.setState(state)
 			switch vpn.State(state) { //nolint:exhaustive
 			case vpn.ReconnectingState:
 				switch event.Description() {

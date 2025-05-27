@@ -2,17 +2,14 @@ package daemon
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
 // Status of daemon and connection
 func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
-	status := r.connectionInfo.Status()
+	status := r.connectionInfo.StatusWithTransferRates()
 	//exhaustive:ignore
 	switch status.State {
 	case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_DISCONNECTED:
@@ -27,12 +24,6 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		}, nil
 	}
 
-	stats, err := tunnel.GetTransferRates(status.TunnelName)
-	if err != nil {
-		log.Printf(internal.WarningPrefix+" failed to get transfer rates of '%s': %+v", status.TunnelName, err)
-		stats = tunnel.Statistics{}
-	}
-
 	requestedConnParams := r.RequestedConnParams.Get()
 
 	return &pb.StatusResponse{
@@ -45,8 +36,8 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Country:         status.Country,
 		CountryCode:     status.CountryCode,
 		City:            status.City,
-		Download:        stats.Rx,
-		Upload:          stats.Tx,
+		Download:        status.Rx,
+		Upload:          status.Tx,
 		Uptime:          calculateUptime(status.StartTime),
 		VirtualLocation: status.VirtualLocation,
 		Parameters: &pb.ConnectionParameters{
