@@ -418,7 +418,6 @@ func main() {
 			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
-		connectionInfo,
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)
