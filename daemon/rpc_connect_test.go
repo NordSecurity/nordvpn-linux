@@ -15,7 +15,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -320,4 +319,287 @@ func TestRpcReconnect(t *testing.T) {
 	rpc.netw = &testnetworker.Mock{}
 	err = rpc.Connect(&pb.ConnectRequest{}, &mockRPCServer{})
 	assert.NoError(t, err)
+}
+
+func Test_determineServerSelectionRule(t *testing.T) {
+	tests := []struct {
+		name   string
+		params ServerParameters
+		want   string
+	}{
+		{
+			name:   "All empty params returns RECOMMENDED",
+			params: ServerParameters{},
+			want:   ServerSelectionRule_RECOMMENDED.String(),
+		},
+		{
+			name: "Country, country-code, city is set returns CITY",
+			params: ServerParameters{
+				Country:     "Germany",
+				City:        "Berlin",
+				CountryCode: "DE",
+			},
+			want: ServerSelectionRule_CITY.String(),
+		},
+		{
+			name: "Country, country-code set, group undefined returns COUNTRY",
+			params: ServerParameters{
+				Country:     "Lithuania",
+				Group:       config.ServerGroup_UNDEFINED,
+				CountryCode: "LT",
+			},
+			want: ServerSelectionRule_COUNTRY.String(),
+		},
+		{
+			name: "Country, country code, group set returns COUNTRY_WITH_GROUP",
+			params: ServerParameters{
+				Country:     "Lithuania",
+				Group:       config.ServerGroup_OBFUSCATED,
+				CountryCode: "LT",
+			},
+			want: ServerSelectionRule_COUNTRY_WITH_GROUP.String(),
+		},
+		{
+			name: "ServerName set, group undefined returns SPECIFIC_SERVER",
+			params: ServerParameters{
+				ServerName: "lt11",
+				Group:      config.ServerGroup_UNDEFINED,
+			},
+			want: ServerSelectionRule_SPECIFIC_SERVER.String(),
+		},
+		{
+			name: "ServerName set, group set returns SPECIFIC_SERVER_WITH_GROUP",
+			params: ServerParameters{
+				ServerName: "lt11",
+				Group:      config.ServerGroup_OBFUSCATED,
+			},
+			want: ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String(),
+		},
+		{
+			name: "Group set returns GROUP",
+			params: ServerParameters{
+				Group: config.ServerGroup_OBFUSCATED,
+			},
+			want: ServerSelectionRule_GROUP.String(),
+		},
+		{
+			name: "Unknown combination returns RECOMMENDED",
+			params: ServerParameters{
+				Country:     "",
+				City:        "",
+				Group:       config.ServerGroup_UNDEFINED,
+				CountryCode: "",
+				ServerName:  "",
+			},
+			want: ServerSelectionRule_RECOMMENDED.String(),
+		},
+		{
+			name: "All fields set (should match first case that triggers)",
+			params: ServerParameters{
+				Country:     "Germany",
+				City:        "Berlin",
+				Group:       config.ServerGroup_OBFUSCATED,
+				CountryCode: "DE",
+				ServerName:  "de123",
+			},
+			want: "",
+		},
+		{
+			name: "Only ServerName set, others empty/undefined",
+			params: ServerParameters{
+				ServerName: "us123",
+				Group:      config.ServerGroup_UNDEFINED,
+			},
+			want: ServerSelectionRule_SPECIFIC_SERVER.String(),
+		},
+		{
+			name: "Only Group set, others empty/undefined",
+			params: ServerParameters{
+				Group: config.ServerGroup_DOUBLE_VPN,
+			},
+			want: ServerSelectionRule_GROUP.String(),
+		},
+		{
+			name: "Country and ServerName set, group undefined",
+			params: ServerParameters{
+				Country:    "France",
+				ServerName: "fr123",
+				Group:      config.ServerGroup_UNDEFINED,
+			},
+			want: "",
+		},
+		{
+			name: "Country, City, ServerName, group undefined",
+			params: ServerParameters{
+				Country:    "France",
+				City:       "Paris",
+				ServerName: "fr123",
+				Group:      config.ServerGroup_UNDEFINED,
+			},
+			want: "",
+		},
+		{
+			name: "Country, City, ServerName, group set",
+			params: ServerParameters{
+				Country:    "France",
+				City:       "Paris",
+				ServerName: "fr123",
+				Group:      config.ServerGroup_OBFUSCATED,
+			},
+			want: "",
+		},
+		{
+			name: "Country set, group set to UNDEFINED, ServerName set",
+			params: ServerParameters{
+				Country:    "Italy",
+				Group:      config.ServerGroup_UNDEFINED,
+				ServerName: "it123",
+			},
+			want: "",
+		},
+		{
+			name: "Country set, group set, ServerName set",
+			params: ServerParameters{
+				Country:    "Italy",
+				Group:      config.ServerGroup_DOUBLE_VPN,
+				ServerName: "it123",
+			},
+			want: "",
+		},
+		{
+			name: "ServerName set, group set to undefined, City set",
+			params: ServerParameters{
+				ServerName: "es123",
+				Group:      config.ServerGroup_UNDEFINED,
+				City:       "Madrid",
+			},
+			want: "",
+		},
+		{
+			name: "ServerName set, group set, City set",
+			params: ServerParameters{
+				ServerName: "es123",
+				Group:      config.ServerGroup_DOUBLE_VPN,
+				City:       "Madrid",
+			},
+			want: "",
+		},
+		{
+			name: "Group is UNDEFINED, all other fields empty",
+			params: ServerParameters{
+				Group: config.ServerGroup_UNDEFINED,
+			},
+			want: ServerSelectionRule_RECOMMENDED.String(),
+		},
+		{
+			name: "Edge: Group is invalid (not in enum), should fallback to invalid/empty",
+			params: ServerParameters{
+				Group: config.ServerGroup(9999),
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := determineServerSelectionRule(tt.params)
+			if got != tt.want {
+				t.Errorf("determineServerSelectionRule() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+func Test_determineServerGroup(t *testing.T) {
+	tests := []struct {
+		name   string
+		params ServerParameters
+		want   string
+	}{
+		{
+			name:   "Group is UNDEFINED returns empty string",
+			params: ServerParameters{Group: config.ServerGroup_UNDEFINED},
+			want:   "",
+		},
+		{
+			name:   "Group is DOUBLE_VPN returns DOUBLE_VPN",
+			params: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			want:   config.ServerGroup_DOUBLE_VPN.String(),
+		},
+		{
+			name:   "Group is ONION_OVER_VPN returns ONION_OVER_VPN",
+			params: ServerParameters{Group: config.ServerGroup_ONION_OVER_VPN},
+			want:   config.ServerGroup_ONION_OVER_VPN.String(),
+		},
+		{
+			name:   "Group is ULTRA_FAST_TV returns ULTRA_FAST_TV",
+			params: ServerParameters{Group: config.ServerGroup_ULTRA_FAST_TV},
+			want:   config.ServerGroup_ULTRA_FAST_TV.String(),
+		},
+		{
+			name:   "Group is ANTI_DDOS returns ANTI_DDOS",
+			params: ServerParameters{Group: config.ServerGroup_ANTI_DDOS},
+			want:   config.ServerGroup_ANTI_DDOS.String(),
+		},
+		{
+			name:   "Group is DEDICATED_IP returns DEDICATED_IP",
+			params: ServerParameters{Group: config.ServerGroup_DEDICATED_IP},
+			want:   config.ServerGroup_DEDICATED_IP.String(),
+		},
+		{
+			name:   "Group is STANDARD_VPN_SERVERS returns STANDARD_VPN_SERVERS",
+			params: ServerParameters{Group: config.ServerGroup_STANDARD_VPN_SERVERS},
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS.String(),
+		},
+		{
+			name:   "Group is NETFLIX_USA returns NETFLIX_USA",
+			params: ServerParameters{Group: config.ServerGroup_NETFLIX_USA},
+			want:   config.ServerGroup_NETFLIX_USA.String(),
+		},
+		{
+			name:   "Group is P2P returns P2P",
+			params: ServerParameters{Group: config.ServerGroup_P2P},
+			want:   config.ServerGroup_P2P.String(),
+		},
+		{
+			name:   "Group is OBFUSCATED returns OBFUSCATED",
+			params: ServerParameters{Group: config.ServerGroup_OBFUSCATED},
+			want:   config.ServerGroup_OBFUSCATED.String(),
+		},
+		{
+			name:   "Group is EUROPE returns EUROPE",
+			params: ServerParameters{Group: config.ServerGroup_EUROPE},
+			want:   config.ServerGroup_EUROPE.String(),
+		},
+		{
+			name:   "Group is THE_AMERICAS returns THE_AMERICAS",
+			params: ServerParameters{Group: config.ServerGroup_THE_AMERICAS},
+			want:   config.ServerGroup_THE_AMERICAS.String(),
+		},
+		{
+			name:   "Group is ASIA_PACIFIC returns ASIA_PACIFIC",
+			params: ServerParameters{Group: config.ServerGroup_ASIA_PACIFIC},
+			want:   config.ServerGroup_ASIA_PACIFIC.String(),
+		},
+		{
+			name:   "Group is AFRICA_THE_MIDDLE_EAST_AND_INDIA returns AFRICA_THE_MIDDLE_EAST_AND_INDIA",
+			params: ServerParameters{Group: config.ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA},
+			want:   config.ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA.String(),
+		},
+		{
+			name:   "Group is invalid (not in enum) returns string representation",
+			params: ServerParameters{Group: config.ServerGroup(9999)},
+			want:   config.ServerGroup(9999).String(),
+		},
+		{
+			name:   "Group is not set (zero value) returns empty string",
+			params: ServerParameters{},
+			want:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := determineServerGroup(tt.params); got != tt.want {
+				t.Errorf("determineServerGroup() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
