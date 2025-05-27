@@ -551,9 +551,24 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 
 		var rule moose.NordvpnappServerSelectionRule
 		switch data.TargetServerSelection {
-		default:
+		case config.ServerSelectionRule_RECOMMENDED.String():
 			rule = moose.NordvpnappServerSelectionRuleRecommended
+		case config.ServerSelectionRule_CITY.String():
+			rule = moose.NordvpnappServerSelectionRuleCity
+		case config.ServerSelectionRule_COUNTRY.String():
+			rule = moose.NordvpnappServerSelectionRuleCountry
+		case config.ServerSelectionRule_SPECIFIC_SERVER.String():
+			rule = moose.NordvpnappServerSelectionRuleSpecificServer
+		case config.ServerSelectionRule_GROUP.String():
+			rule = moose.NordvpnappServerSelectionRuleSpecialtyServer
+		case config.ServerSelectionRule_COUNTRY_WITH_GROUP.String():
+			rule = moose.NordvpnappServerSelectionRuleSpecialtyServerWithCountry
+		case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String():
+			rule = moose.NordvpnappServerSelectionRuleSpecialtyServerWithSpecificServer
+		default:
+			rule = moose.NordvpnappServerSelectionRuleNone
 		}
+
 		if err := s.response(moose.NordvpnappSendServiceQualityServersConnect(
 			int32(data.DurationMs),
 			eventStatus,
@@ -656,8 +671,22 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 
 		var rule moose.NordvpnappServerSelectionRule
 		switch data.TargetServerSelection {
-		default:
+		case config.ServerSelectionRule_RECOMMENDED.String():
 			rule = moose.NordvpnappServerSelectionRuleRecommended
+		case config.ServerSelectionRule_CITY.String():
+			rule = moose.NordvpnappServerSelectionRuleCity
+		case config.ServerSelectionRule_COUNTRY.String():
+			rule = moose.NordvpnappServerSelectionRuleCountry
+		case config.ServerSelectionRule_SPECIFIC_SERVER.String():
+			rule = moose.NordvpnappServerSelectionRuleSpecificServer
+		case config.ServerSelectionRule_GROUP.String():
+			rule = moose.NordvpnappServerSelectionRuleSpecialtyServer
+		case config.ServerSelectionRule_COUNTRY_WITH_GROUP.String():
+			rule = moose.NordvpnappServerSelectionRuleSpecialtyServerWithCountry
+		case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String():
+			rule = moose.NordvpnappServerSelectionRuleSpecialtyServerWithSpecificServer
+		default:
+			rule = moose.NordvpnappServerSelectionRuleNone
 		}
 
 		var threatProtection moose.NordvpnappOptBool
