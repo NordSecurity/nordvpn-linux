@@ -56,6 +56,85 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	return err
 }
 
+type ServerSelectionRule int
+
+const (
+	ServerSelectionRule_RECOMMENDED ServerSelectionRule = iota
+	ServerSelectionRule_CITY
+	ServerSelectionRule_COUNTRY
+	ServerSelectionRule_SPECIFIC_SERVER
+	ServerSelectionRule_GROUP
+	ServerSelectionRule_COUNTRY_WITH_GROUP
+	ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP
+)
+
+func (r ServerSelectionRule) String() string {
+	switch r {
+	case ServerSelectionRule_RECOMMENDED:
+		return "RECOMMENDED"
+	case ServerSelectionRule_CITY:
+		return "CITY"
+	case ServerSelectionRule_COUNTRY:
+		return "COUNTRY"
+	case ServerSelectionRule_SPECIFIC_SERVER:
+		return "SPECIFIC_SERVER"
+	case ServerSelectionRule_GROUP:
+		return "GROUP"
+	case ServerSelectionRule_COUNTRY_WITH_GROUP:
+		return "COUNTRY_WITH_GROUP"
+	case ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
+		return "SPECIFIC_SERVER_WITH_GROUP"
+	default:
+		return "UNKNOWN"
+	}
+}
+
+func determineServerSelectionRule(params ServerParameters) string {
+	// defensive checks for all fields
+	hasCountry := params.Country != ""
+	hasCity := params.City != ""
+	hasGroup := params.Group != config.ServerGroup_UNDEFINED
+	hasServer := params.ServerName != ""
+	hasCountryCode := params.CountryCode != ""
+
+	switch {
+	case params.Undefined():
+		return ServerSelectionRule_RECOMMENDED.String()
+
+	case hasCountry && hasCity && !hasGroup && !hasServer && hasCountryCode:
+		return ServerSelectionRule_CITY.String()
+
+	case hasCountry && !hasCity && !hasGroup && !hasServer && hasCountryCode:
+		return ServerSelectionRule_COUNTRY.String()
+
+	case hasCountry && !hasCity && hasGroup && !hasServer && hasCountryCode:
+		return ServerSelectionRule_COUNTRY_WITH_GROUP.String()
+
+	case !hasCountry && !hasCity && !hasGroup && hasServer && !hasCountryCode:
+		return ServerSelectionRule_SPECIFIC_SERVER.String()
+
+	case !hasCountry && !hasCity && hasGroup && hasServer && !hasCountryCode:
+		return ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String()
+
+	case !hasCountry && !hasCity && hasGroup && !hasServer && !hasCountryCode:
+		if _, ok := config.ServerGroup_name[int32(params.Group.Number())]; ok {
+			return ServerSelectionRule_GROUP.String()
+		}
+	}
+
+	// Fallback for any unexpected combination
+	log.Println("Failed to determine server-selection-rule:", params)
+	return ""
+}
+
+func determineServerGroup(params ServerParameters) string {
+	if params.Group != config.ServerGroup_UNDEFINED {
+		return params.Group.String()
+	}
+
+	return ""
+}
+
 func (r *RPC) connect(
 	ctx context.Context,
 	in *pb.ConnectRequest,
@@ -81,9 +160,11 @@ func (r *RPC) connect(
 		ResponseTime:               0,
 		DurationMs:                 -1,
 		EventStatus:                events.StatusAttempt,
+		TargetServerSelection:      "",
 		ServerFromAPI:              true,
 		TargetServerCity:           "",
 		TargetServerCountry:        "",
+		TargetServerCountryCode:    "",
 		TargetServerDomain:         "",
 		TargetServerGroup:          "",
 		TargetServerIP:             "",
@@ -118,6 +199,7 @@ func (r *RPC) connect(
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
 
+	// refactor this selectServer function
 	server, remote, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
@@ -192,6 +274,16 @@ func (r *RPC) connect(
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
 	event.TargetServerGroup = determineTargetServerGroup(server, parameters)
+
+	event.ServerFromAPI = remote
+	event.TargetServerSelection = determineServerSelectionRule(parameters)
+	event.TargetServerCity = country.City.Name
+	event.TargetServerCountry = country.Name
+	event.TargetServerCountryCode = country.Code
+	event.TargetServerDomain = server.Hostname
+	event.TargetServerGroup = determineServerGroup(parameters)
+	event.TargetServerIP = subnet.Addr().String()
+	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)
