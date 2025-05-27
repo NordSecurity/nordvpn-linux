@@ -732,3 +732,88 @@ func TestPickServer(t *testing.T) {
 		})
 	}
 }
+
+func TestGetServerParameters(t *testing.T) {
+	category.Set(t, category.Unit)
+	tests := []struct {
+		name     string
+		tag      string
+		group    string
+		expected ServerParameters
+	}{
+		{
+			name:     "group found for group name",
+			group:    "p2p",
+			tag:      "",
+			expected: ServerParameters{Group: config.ServerGroup_P2P},
+		},
+		{
+			name:     "group name is in tag field",
+			group:    "",
+			tag:      "p2p",
+			expected: ServerParameters{Group: config.ServerGroup_P2P},
+		},
+		{
+			name:     "country name",
+			group:    "",
+			tag:      "germany",
+			expected: ServerParameters{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE"},
+		},
+		{
+			name:     "country code",
+			group:    "",
+			tag:      "De",
+			expected: ServerParameters{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE"},
+		},
+		{
+			name:     "country code + group",
+			group:    "p2p",
+			tag:      "De",
+			expected: ServerParameters{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE"},
+		},
+		{
+			name:     "city name",
+			group:    "",
+			tag:      "berlin",
+			expected: ServerParameters{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", City: "Berlin"},
+		},
+		{
+			name:     "country name + city",
+			group:    "",
+			tag:      "germany berlin",
+			expected: ServerParameters{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", City: "Berlin"},
+		},
+		{
+			name:     "country code + city",
+			group:    "",
+			tag:      "de berlin",
+			expected: ServerParameters{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", City: "Berlin"},
+		},
+		{
+			name:     "country code + city + group",
+			group:    "p2p",
+			tag:      "de berlin",
+			expected: ServerParameters{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE", City: "Berlin"},
+		},
+		{
+			name:     "server name",
+			group:    "",
+			tag:      "de123",
+			expected: ServerParameters{Group: config.ServerGroup_UNDEFINED, ServerName: "de123"},
+		},
+		{
+			name:     "server name + group",
+			group:    "p2p",
+			tag:      "de123",
+			expected: ServerParameters{Group: config.ServerGroup_P2P, ServerName: "de123"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			params := GetServerParameters(test.tag, test.group, countriesList())
+
+			assert.Equal(t, test.expected, params)
+		})
+	}
+}

@@ -20,7 +20,7 @@ The application manages:
 The project follows https://semver.org/. Version tags and release branches must be named accordingly.
 
 # Contributing
-We are happy to accept contibutions for the project. Please check out [Contribute.md](./CONTRIBUTE.md) file for more details on how to do so.
+We are happy to accept contributions for the project. Please check out [Contribute.md](./CONTRIBUTE.md) file for more details on how to do so.
 
 # Building
 You can find everything related to building, testing and environment setup in [BUILD.md](BUILD.md).
