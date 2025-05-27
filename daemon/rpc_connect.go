@@ -161,7 +161,6 @@ func (r *RPC) connect(
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
 
-	// refactor this selectServer function
 	server, remote, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
