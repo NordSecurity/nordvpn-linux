@@ -19,56 +19,79 @@ type TestSubscriber struct {
 	wg                  *sync.WaitGroup
 }
 
-func (s *TestSubscriber) NotifyChangeState(e events.DataConnectChangeNotif) error {
+func NewTestSubscriber() *TestSubscriber {
+	return &TestSubscriber{
+		notificationCounter: 0,
+		wg:                  &sync.WaitGroup{},
+	}
+}
+
+func (s *TestSubscriber) NotifyChangeState(events.DataConnectChangeNotif) error {
 	s.notificationCounter++
 	s.wg.Done()
 	return nil
 }
 
-func NewTestSubscriber(wg *sync.WaitGroup) *TestSubscriber {
-	return &TestSubscriber{
-		notificationCounter: 0,
-		wg:                  wg,
+func (s *TestSubscriber) ExpectEvents(count int) {
+	s.wg.Add(count)
+}
+
+type testFixture struct {
+	sut            *ConnectionInfo
+	subscriber     *TestSubscriber
+	internalEvents *vpn.Events
+	done           chan struct{}
+}
+
+func newTestFixture(t *testing.T) *testFixture {
+	t.Helper()
+
+	s := NewTestSubscriber()
+	sut := NewConnectionInfo()
+	events := vpn.NewInternalVPNEvents()
+
+	events.Subscribe(sut)
+	sut.Subscribe(s)
+
+	return &testFixture{
+		sut:            sut,
+		subscriber:     s,
+		internalEvents: events,
+		done:           make(chan struct{}),
+	}
+}
+
+func (f *testFixture) waitForCompletion(t *testing.T) {
+	t.Helper()
+	select {
+	case <-f.done:
+	case <-time.After(1 * time.Second):
+		t.Fatal("Timeout waiting for subscriber notifications")
 	}
 }
 
 func TestConnectionInfo_InternalEventShallBePublishedWhenStateEventsAreReceived(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	s := NewTestSubscriber(&wg)
-	sut := NewConnectionInfo()
-	internalVpnEvents := vpn.NewInternalVPNEvents()
-	internalVpnEvents.Subscribe(sut)
-	sut.Subscribe(s)
+	tf := newTestFixture(t)
+	tf.subscriber.ExpectEvents(2)
 
-	internalVpnEvents.Connected.Publish(events.DataConnect{})
-	internalVpnEvents.Disconnected.Publish(events.DataDisconnect{})
-	done := make(chan struct{})
 	go func() {
-		wg.Wait()
-		close(done)
+		tf.internalEvents.Connected.Publish(events.DataConnect{})
+		tf.internalEvents.Disconnected.Publish(events.DataDisconnect{})
+		tf.subscriber.wg.Wait()
+		close(tf.done)
 	}()
 
-	select {
-	case <-done:
-	case <-time.After(1 * time.Second):
-		t.Fatal("Timeout waiting for subscriber notifications")
-	}
-	assert.Equal(t, s.notificationCounter, 2)
+	tf.waitForCompletion(t)
+	assert.Equal(t, tf.subscriber.notificationCounter, 2)
 }
 
 func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	s := NewTestSubscriber(&wg)
-	sut := NewConnectionInfo()
-	internalVpnEvents := vpn.NewInternalVPNEvents()
-	internalVpnEvents.Subscribe(sut)
-	sut.Subscribe(s)
+	tf := newTestFixture(t)
+	tf.subscriber.ExpectEvents(1)
 
 	event := events.DataConnect{
 		Technology:              config.Technology_OPENVPN,
@@ -87,21 +110,16 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 		TunnelName:              "tun0",
 		IsMeshnetPeer:           false,
 	}
-	internalVpnEvents.Connected.Publish(event)
 
-	done := make(chan struct{})
 	go func() {
-		wg.Wait()
-		close(done)
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+		close(tf.done)
 	}()
 
-	select {
-	case <-done:
-	case <-time.After(1 * time.Second):
-		t.Fatal("Timeout waiting for subscriber notifications")
-	}
+	tf.waitForCompletion(t)
 
-	status := sut.Status()
+	status := tf.sut.Status()
 	assert.Equal(t, pb.ConnectionState_CONNECTED, status.State)
 	assert.Equal(t, event.Technology, status.Technology)
 	assert.Equal(t, event.Protocol, status.Protocol)
@@ -121,29 +139,75 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 func TestConnectionInfo_VerifyDataDisconnectConversionToConnectionStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-	s := NewTestSubscriber(&wg)
-	sut := NewConnectionInfo()
-	internalVpnEvents := vpn.NewInternalVPNEvents()
-	internalVpnEvents.Subscribe(sut)
-	sut.Subscribe(s)
+	tf := newTestFixture(t)
+	tf.subscriber.ExpectEvents(1)
 
-	internalVpnEvents.Disconnected.Publish(events.DataDisconnect{})
-
-	done := make(chan struct{})
 	go func() {
-		wg.Wait()
-		close(done)
+		tf.internalEvents.Disconnected.Publish(events.DataDisconnect{})
+		tf.subscriber.wg.Wait()
+		close(tf.done)
 	}()
 
-	select {
-	case <-done:
-	case <-time.After(1 * time.Second):
-		t.Fatal("Timeout waiting for subscriber notifications")
-	}
+	tf.waitForCompletion(t)
 
-	status := sut.Status()
+	status := tf.sut.Status()
 	assert.Equal(t, pb.ConnectionState_DISCONNECTED, status.State)
+	assert.Nil(t, status.StartTime)
+}
+
+func TestConnectionInfo_TracksStateProperlyOnSuccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tf := newTestFixture(t)
+	tf.subscriber.ExpectEvents(1)
+
+	go func() {
+		assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, tf.sut.Status().State)
+
+		event := events.DataConnect{EventStatus: events.StatusSuccess}
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+
+		assert.Equal(t, pb.ConnectionState_CONNECTED, tf.sut.Status().State)
+
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Disconnected.Publish(events.DataDisconnect{})
+		tf.subscriber.wg.Wait()
+		close(tf.done)
+	}()
+
+	tf.waitForCompletion(t)
+	assert.Equal(t, pb.ConnectionState_DISCONNECTED, tf.sut.Status().State)
+}
+
+func TestConnectionInfo_TracksStartTime(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tf := newTestFixture(t)
+	tf.subscriber.ExpectEvents(1)
+
+	go func() {
+		status := tf.sut.Status()
+		assert.Nil(t, status.StartTime)
+
+		event := events.DataConnect{
+			EventStatus: events.StatusSuccess,
+			StartTime:   &time.Time{},
+		}
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.NotNil(t, status.StartTime)
+
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Disconnected.Publish(events.DataDisconnect{})
+		tf.subscriber.wg.Wait()
+		close(tf.done)
+	}()
+
+	tf.waitForCompletion(t)
+
+	status := tf.sut.Status()
 	assert.Nil(t, status.StartTime)
 }

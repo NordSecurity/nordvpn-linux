@@ -60,7 +60,7 @@ func (cs *ConnectionInfo) Status() types.ConnectionStatus {
 	return cs.status
 }
 
-func (cs *ConnectionInfo) SetStatus(s types.ConnectionStatus) {
+func (cs *ConnectionInfo) setStatus(s types.ConnectionStatus) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	cs.status = s
@@ -99,7 +99,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 		Rx:              Rx,
 		Tx:              Tx,
 	}
-	c.SetStatus(status)
+	c.setStatus(status)
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
 	return nil
 }
@@ -109,7 +109,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(events.DataDisconnect)
 		State:     pb.ConnectionState_DISCONNECTED,
 		StartTime: nil,
 	}
-	c.SetStatus(status)
+	c.setStatus(status)
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
 	return nil
 }
