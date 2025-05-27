@@ -68,7 +68,6 @@ func statusStream(stateChan <-chan any,
 	uid int64,
 	srv pb.Daemon_SubscribeToStateChangesServer,
 	requestedConnParamsStorage *RequestedConnParamsStorage,
-	r *RPC,
 ) {
 	for {
 		select {
@@ -169,7 +168,7 @@ func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStat
 	}
 
 	stateChan, stopChan := r.statePublisher.AddSubscriber()
-	statusStream(stateChan, stopChan, uid, srv, &r.RequestedConnParams, r)
+	statusStream(stateChan, stopChan, uid, srv, &r.RequestedConnParams)
 
 	return nil
 }
