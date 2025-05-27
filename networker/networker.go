@@ -1154,8 +1154,12 @@ func (netw *Combined) SetVPN(v vpn.VPN) {
 
 // Refresh peer list.
 func (netw *Combined) Refresh(c mesh.MachineMap) error {
+	log.Println(internal.DebugPrefix+"mesh-refresh", "lock netw mutex")
 	netw.mu.Lock()
-	defer netw.mu.Unlock()
+	defer func() {
+		log.Println(internal.DebugPrefix+"mesh-refresh", "unlock netw mutex")
+		netw.mu.Unlock()
+	}()
 	return netw.refresh(c)
 }
 
@@ -1268,6 +1272,7 @@ func (netw *Combined) setMesh(
 }
 
 func (netw *Combined) refresh(cfg mesh.MachineMap) error {
+	log.Println(internal.DebugPrefix+"mesh-refresh", "start refreshing meshnet")
 	if err := netw.defaultMeshUnBlock(); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}
@@ -1359,6 +1364,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		return err
 	}
 
+	log.Println(internal.DebugPrefix+"mesh-refresh", "done refreshing meshnet")
 	netw.publisher.Publish("refreshing mesh")
 	return nil
 }

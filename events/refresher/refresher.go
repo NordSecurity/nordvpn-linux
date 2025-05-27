@@ -39,6 +39,7 @@ func NewMeshnet(
 
 // NotifyPeerUpdate refreshes meshnet peers.
 func (m *Meshnet) NotifyPeerUpdate(peerIds []string) error {
+	log.Println(internal.DebugPrefix+"-mesh-refresh", "notified about peer update")
 	var cfg config.Config
 	if err := m.man.Load(&cfg); err != nil {
 		return err
@@ -70,5 +71,7 @@ func (m *Meshnet) NotifyPeerUpdate(peerIds []string) error {
 		}
 	}
 	// TODO: check if this should not be called only when current machine is affected
-	return m.netw.Refresh(*resp)
+	err = m.netw.Refresh(*resp)
+	log.Println(internal.DebugPrefix+"-mesh-refresh", "finished handling notification")
+	return err
 }

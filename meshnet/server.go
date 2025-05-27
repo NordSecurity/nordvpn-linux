@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -380,6 +381,7 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 
 // RefreshMeshnet updates peer configuration.
 func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse, error) {
+	log.Println(internal.DebugPrefix+"mesh-refresh", "refresh meshnet request")
 	if !s.ac.IsLoggedIn() {
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
@@ -440,6 +442,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		}, nil
 	}
 
+	log.Println(internal.DebugPrefix+"mesh-refresh", "refresh meshnet request start refresh")
 	if err := s.netw.Refresh(*resp); err != nil {
 		s.pub.Publish(err)
 		return &pb.MeshnetResponse{
@@ -449,6 +452,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		}, nil
 	}
 
+	log.Println(internal.DebugPrefix+"mesh-refresh", "refresh meshnet request handled")
 	return &pb.MeshnetResponse{
 		Response: &pb.MeshnetResponse_Empty{},
 	}, nil
