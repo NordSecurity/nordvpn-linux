@@ -50,7 +50,7 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 
 	// set connection status to "Disconnected"
 	if didFail || err != nil {
-		r.vpnEvents.Disconnected.Publish(events.DataDisconnect{EventStatus: events.StatusFailure})
+		r.vpnEvents.Disconnected.Publish(events.DataDisconnect{})
 	}
 
 	return err
@@ -231,11 +231,6 @@ func (r *RPC) connect(
 		true, // here vpn connect - enable routing to local LAN
 	)
 	if err != nil {
-		disconnectEvent := events.DataDisconnect{
-			EventStatus: events.StatusFailure,
-			Duration:    time.Duration(getElapsedTime(connectingStartTime)) * time.Millisecond,
-			Error:       err,
-		}
 		event.DurationMs = getElapsedTime(connectingStartTime)
 		event.Error = err
 		event.EventStatus = events.StatusFailure
@@ -246,7 +241,7 @@ func (r *RPC) connect(
 			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
-		r.vpnEvents.Disconnected.Publish(disconnectEvent)
+		r.vpnEvents.Disconnected.Publish(events.DataDisconnect{})
 		if err := srv.Send(&pb.Payload{
 			Type: t,
 			Data: data,
