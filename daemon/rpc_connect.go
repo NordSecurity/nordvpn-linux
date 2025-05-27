@@ -56,39 +56,6 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	return err
 }
 
-type ServerSelectionRule int
-
-const (
-	ServerSelectionRule_RECOMMENDED ServerSelectionRule = iota
-	ServerSelectionRule_CITY
-	ServerSelectionRule_COUNTRY
-	ServerSelectionRule_SPECIFIC_SERVER
-	ServerSelectionRule_GROUP
-	ServerSelectionRule_COUNTRY_WITH_GROUP
-	ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP
-)
-
-func (r ServerSelectionRule) String() string {
-	switch r {
-	case ServerSelectionRule_RECOMMENDED:
-		return "RECOMMENDED"
-	case ServerSelectionRule_CITY:
-		return "CITY"
-	case ServerSelectionRule_COUNTRY:
-		return "COUNTRY"
-	case ServerSelectionRule_SPECIFIC_SERVER:
-		return "SPECIFIC_SERVER"
-	case ServerSelectionRule_GROUP:
-		return "GROUP"
-	case ServerSelectionRule_COUNTRY_WITH_GROUP:
-		return "COUNTRY_WITH_GROUP"
-	case ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
-		return "SPECIFIC_SERVER_WITH_GROUP"
-	default:
-		return "UNKNOWN"
-	}
-}
-
 func determineServerSelectionRule(params ServerParameters) string {
 	// defensive checks for all fields
 	hasCountry := params.Country != ""
@@ -99,26 +66,26 @@ func determineServerSelectionRule(params ServerParameters) string {
 
 	switch {
 	case params.Undefined():
-		return ServerSelectionRule_RECOMMENDED.String()
+		return config.ServerSelectionRule_RECOMMENDED.String()
 
 	case hasCountry && hasCity && !hasGroup && !hasServer && hasCountryCode:
-		return ServerSelectionRule_CITY.String()
+		return config.ServerSelectionRule_CITY.String()
 
 	case hasCountry && !hasCity && !hasGroup && !hasServer && hasCountryCode:
-		return ServerSelectionRule_COUNTRY.String()
+		return config.ServerSelectionRule_COUNTRY.String()
 
 	case hasCountry && !hasCity && hasGroup && !hasServer && hasCountryCode:
-		return ServerSelectionRule_COUNTRY_WITH_GROUP.String()
+		return config.ServerSelectionRule_COUNTRY_WITH_GROUP.String()
 
 	case !hasCountry && !hasCity && !hasGroup && hasServer && !hasCountryCode:
-		return ServerSelectionRule_SPECIFIC_SERVER.String()
+		return config.ServerSelectionRule_SPECIFIC_SERVER.String()
 
 	case !hasCountry && !hasCity && hasGroup && hasServer && !hasCountryCode:
-		return ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String()
+		return config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String()
 
 	case !hasCountry && !hasCity && hasGroup && !hasServer && !hasCountryCode:
 		if _, ok := config.ServerGroup_name[int32(params.Group.Number())]; ok {
-			return ServerSelectionRule_GROUP.String()
+			return config.ServerSelectionRule_GROUP.String()
 		}
 	}
 

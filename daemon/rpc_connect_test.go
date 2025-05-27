@@ -330,7 +330,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		{
 			name:   "All empty params returns RECOMMENDED",
 			params: ServerParameters{},
-			want:   ServerSelectionRule_RECOMMENDED.String(),
+			want:   config.ServerSelectionRule_RECOMMENDED.String(),
 		},
 		{
 			name: "Country, country-code, city is set returns CITY",
@@ -339,7 +339,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				City:        "Berlin",
 				CountryCode: "DE",
 			},
-			want: ServerSelectionRule_CITY.String(),
+			want: config.ServerSelectionRule_CITY.String(),
 		},
 		{
 			name: "Country, country-code set, group undefined returns COUNTRY",
@@ -348,7 +348,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Group:       config.ServerGroup_UNDEFINED,
 				CountryCode: "LT",
 			},
-			want: ServerSelectionRule_COUNTRY.String(),
+			want: config.ServerSelectionRule_COUNTRY.String(),
 		},
 		{
 			name: "Country, country code, group set returns COUNTRY_WITH_GROUP",
@@ -357,7 +357,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Group:       config.ServerGroup_OBFUSCATED,
 				CountryCode: "LT",
 			},
-			want: ServerSelectionRule_COUNTRY_WITH_GROUP.String(),
+			want: config.ServerSelectionRule_COUNTRY_WITH_GROUP.String(),
 		},
 		{
 			name: "ServerName set, group undefined returns SPECIFIC_SERVER",
@@ -365,7 +365,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "lt11",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
-			want: ServerSelectionRule_SPECIFIC_SERVER.String(),
+			want: config.ServerSelectionRule_SPECIFIC_SERVER.String(),
 		},
 		{
 			name: "ServerName set, group set returns SPECIFIC_SERVER_WITH_GROUP",
@@ -373,14 +373,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "lt11",
 				Group:      config.ServerGroup_OBFUSCATED,
 			},
-			want: ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String(),
+			want: config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String(),
 		},
 		{
 			name: "Group set returns GROUP",
 			params: ServerParameters{
 				Group: config.ServerGroup_OBFUSCATED,
 			},
-			want: ServerSelectionRule_GROUP.String(),
+			want: config.ServerSelectionRule_GROUP.String(),
 		},
 		{
 			name: "Unknown combination returns RECOMMENDED",
@@ -391,7 +391,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				CountryCode: "",
 				ServerName:  "",
 			},
-			want: ServerSelectionRule_RECOMMENDED.String(),
+			want: config.ServerSelectionRule_RECOMMENDED.String(),
 		},
 		{
 			name: "All fields set (should match first case that triggers)",
@@ -410,14 +410,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "us123",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
-			want: ServerSelectionRule_SPECIFIC_SERVER.String(),
+			want: config.ServerSelectionRule_SPECIFIC_SERVER.String(),
 		},
 		{
 			name: "Only Group set, others empty/undefined",
 			params: ServerParameters{
 				Group: config.ServerGroup_DOUBLE_VPN,
 			},
-			want: ServerSelectionRule_GROUP.String(),
+			want: config.ServerSelectionRule_GROUP.String(),
 		},
 		{
 			name: "Country and ServerName set, group undefined",
@@ -489,7 +489,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 			params: ServerParameters{
 				Group: config.ServerGroup_UNDEFINED,
 			},
-			want: ServerSelectionRule_RECOMMENDED.String(),
+			want: config.ServerSelectionRule_RECOMMENDED.String(),
 		},
 		{
 			name: "Edge: Group is invalid (not in enum), should fallback to invalid/empty",
