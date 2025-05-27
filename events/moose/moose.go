@@ -388,7 +388,7 @@ func (s *Subscriber) NotifyDeviceLocation(insights core.Insights) error {
 	if err := s.response(moose.NordvpnappSetContextDeviceLocationCity(insights.City)); err != nil {
 		return fmt.Errorf("setting moose device location city: %w", err)
 	}
-	if err := s.response(moose.NordvpnappSetContextDeviceLocationCountry(insights.Country)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextDeviceLocationCountry(insights.CountryCode)); err != nil {
 		return fmt.Errorf("setting moose device location country: %w", err)
 	}
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIspValue(insights.Isp)); err != nil {
@@ -565,7 +565,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			data.TargetServerGroup,
 			data.TargetServerDomain,
 			data.TargetServerIP,
-			data.TargetServerCountry,
+			data.TargetServerCountryCode,
 			data.TargetServerCity,
 			protocol,
 			technology,
