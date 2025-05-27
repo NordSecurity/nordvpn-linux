@@ -181,39 +181,61 @@ func TestAutoconnect(t *testing.T) {
 	}
 }
 
-func TestAutoconnect_SavesCorrectServerGroup(t *testing.T) {
+func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		testName       string
-		serverGroup    string
-		config         config.Config
-		setServerGroup config.ServerGroup
+		testName    string
+		serverGroup string
+		tag         string
+		expected    config.AutoConnectData
 	}{
 		{
-			testName:       "for standard",
-			serverGroup:    "standard_vpn_servers",
-			setServerGroup: config.ServerGroup_STANDARD_VPN_SERVERS,
+			testName:    "for standard",
+			serverGroup: "standard_vpn_servers",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_STANDARD_VPN_SERVERS},
 		},
 		{
-			testName:       "for p2p",
-			serverGroup:    "p2p",
-			setServerGroup: config.ServerGroup_P2P,
+			testName:    "for p2p",
+			serverGroup: "p2p",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P},
 		},
 		{
-			testName:       "for obfuscated servers",
-			serverGroup:    "obfuscated_servers",
-			setServerGroup: config.ServerGroup_OBFUSCATED,
+			testName:    "for obfuscated servers",
+			serverGroup: "obfuscated_servers",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
 		},
 		{
-			testName:       "for double_vpn",
-			serverGroup:    "double_vpn",
-			setServerGroup: config.ServerGroup_DOUBLE_VPN,
+			testName:    "for double_vpn",
+			serverGroup: "double_vpn",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN},
 		},
 		{
-			testName:       "for onion_over_vpn",
-			serverGroup:    "onion_over_vpn",
-			setServerGroup: config.ServerGroup_ONION_OVER_VPN,
+			testName:    "for onion_over_vpn",
+			serverGroup: "onion_over_vpn",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_ONION_OVER_VPN},
+		},
+		{
+			testName:    "group name is in tag",
+			serverGroup: "",
+			tag:         "p2p",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P, ServerTag: "p2p"},
+		},
+		{
+			testName: "for country name",
+			tag:      "germany",
+			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "DE", ServerTag: "germany"},
+		},
+		{
+			testName: "for country code and city name",
+			tag:      "de berlin",
+			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "DE", City: "Berlin", ServerTag: "de berlin"},
+		},
+		{
+			testName:    "for country code, city name and group",
+			tag:         "de berlin",
+			serverGroup: "p2p",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P, Country: "DE", City: "Berlin", ServerTag: "de berlin"},
 		},
 	}
 
@@ -226,7 +248,14 @@ func TestAutoconnect_SavesCorrectServerGroup(t *testing.T) {
 				Autoconnect: &mockPublisherSubscriber,
 			},
 		}
-		dm := DataManager{serversData: ServersData{Servers: serversList()}}
+		dm := DataManager{
+			serversData: ServersData{
+				Servers: serversList(),
+			},
+			countryData: CountryData{
+				Countries: countriesList(),
+			},
+		}
 		r := RPC{
 			cm:         mockConfigManager,
 			ac:         mockAuthChecker,
@@ -236,7 +265,7 @@ func TestAutoconnect_SavesCorrectServerGroup(t *testing.T) {
 		}
 		request := pb.SetAutoconnectRequest{
 			Enabled:     true,
-			ServerTag:   "DE",
+			ServerTag:   test.tag,
 			ServerGroup: test.serverGroup,
 		}
 
@@ -247,7 +276,11 @@ func TestAutoconnect_SavesCorrectServerGroup(t *testing.T) {
 			assert.Nil(t, err)
 			assert.NotNil(t, resp)
 			assert.Equal(t, internal.CodeSuccess, resp.Type)
-			assert.Equal(t, test.setServerGroup, mockConfigManager.c.AutoConnectData.Group)
+
+			assert.Equal(t, test.expected.ServerTag, mockConfigManager.c.AutoConnectData.ServerTag)
+			assert.Equal(t, test.expected.Country, mockConfigManager.c.AutoConnectData.Country)
+			assert.Equal(t, test.expected.City, mockConfigManager.c.AutoConnectData.City)
+			assert.Equal(t, test.expected.Group, mockConfigManager.c.AutoConnectData.Group)
 		})
 	}
 }

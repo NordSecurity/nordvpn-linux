@@ -214,10 +214,6 @@ func (a *autoconnectServer) Send(data *pb.Payload) error {
 
 type GetTimeoutFunc func(tries int) time.Duration
 
-func connectErrorCheck(err error) bool {
-	return err == nil
-}
-
 func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 	log.Println(internal.DebugPrefix,
 		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
@@ -249,54 +245,67 @@ func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
 			return nil
 		}
 
-		var cfg config.Config
-		err := r.cm.Load(&cfg)
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "auto-connect failed:", err)
-			return err
-		}
-
-		if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
-			log.Println(internal.DebugPrefix,
-				"technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
-			if err := r.fallbackTechnology(config.Technology_NORDLYNX); err != nil {
-				log.Println(internal.ErrorPrefix, "failed to fall back to NordLynx technology, will try OpenVPN")
-				if err := r.fallbackTechnology(config.Technology_OPENVPN); err != nil {
-					return fmt.Errorf("falling back to OpenVPN technology: %s", err)
-				}
-			}
-		}
-
-		server := autoconnectServer{}
-
-		groupTag := ""
-		if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
-			cfg.AutoConnectData.ServerTag != strings.ToLower(cfg.AutoConnectData.Group.String()) {
-			groupTag = cfg.AutoConnectData.Group.String()
-		}
-
-		err = r.connectWithContext(
-			&pb.ConnectRequest{
-				ServerTag:   cfg.AutoConnectData.ServerTag,
-				ServerGroup: groupTag},
-			&server,
-			pb.ConnectionSource_AUTO)
-		if connectErrorCheck(err) && server.err == nil {
-			log.Println(internal.InfoPrefix, "auto-connect success")
-			r.RequestedConnParams.Set(pb.ConnectionSource_AUTO,
-				ServerParameters{
-					Country: cfg.AutoConnectData.Country,
-					City:    cfg.AutoConnectData.City,
-					Group:   cfg.AutoConnectData.Group,
-				})
+		if err := r.doAutoConnect(); err == nil {
 			return nil
 		}
-		log.Println(internal.ErrorPrefix, "auto-connect failed, err1:", server.err, "| err2:", err)
 		tryAfterDuration := timeoutFn(tries)
 		tries++
 		log.Println(internal.WarningPrefix, "will retry(", tries, ") auto-connect after:", tryAfterDuration)
 		<-time.After(tryAfterDuration)
 	}
+}
+
+func (r *RPC) doAutoConnect() error {
+	var cfg config.Config
+	err := r.cm.Load(&cfg)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "auto-connect failed:", err)
+		return err
+	}
+
+	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
+		log.Println(internal.DebugPrefix,
+			"technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
+		if err := r.fallbackTechnology(config.Technology_NORDLYNX); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to fall back to NordLynx technology, will try OpenVPN")
+			if err := r.fallbackTechnology(config.Technology_OPENVPN); err != nil {
+				return fmt.Errorf("falling back to OpenVPN technology: %s", err)
+			}
+		}
+	}
+
+	server := autoconnectServer{}
+
+	groupTag := ""
+	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
+		cfg.AutoConnectData.ServerTag != strings.ToLower(cfg.AutoConnectData.Group.String()) &&
+		cfg.AutoConnectData.ServerTag != config.GroupTitleForId(cfg.AutoConnectData.Group) {
+		groupTag = cfg.AutoConnectData.Group.String()
+	}
+
+	err = r.connectWithContext(
+		&pb.ConnectRequest{
+			ServerTag:   cfg.AutoConnectData.ServerTag,
+			ServerGroup: groupTag,
+		},
+		&server,
+		pb.ConnectionSource_AUTO,
+	)
+	if err == nil && server.err == nil {
+		log.Println(internal.InfoPrefix, "auto-connect success")
+		r.RequestedConnParams.Set(
+			pb.ConnectionSource_AUTO,
+			ServerParameters{
+				Country: cfg.AutoConnectData.Country,
+				City:    cfg.AutoConnectData.City,
+				Group:   cfg.AutoConnectData.Group,
+			},
+		)
+		return nil
+	}
+	log.Println(internal.ErrorPrefix, "auto-connect failed, err1:", server.err, "| err2:", err)
+
+	return errors.Join(err, server.err)
 }
 
 func meshErrorCheck(err error) bool {

@@ -40,9 +40,11 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 		cfg.AutoConnectData.Group == config.ServerGroup_UNDEFINED
 	if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" && autoconnectParamsNotSet {
 		// use group tag as a second parameter once it is implemented
-		parameters := GetServerParameters(cfg.AutoConnectData.ServerTag,
+		parameters := GetServerParameters(
 			cfg.AutoConnectData.ServerTag,
-			r.dm.GetCountryData().Countries)
+			cfg.AutoConnectData.ServerTag,
+			r.dm.GetCountryData().Countries,
+		)
 		cfg.AutoConnectData.Country = parameters.Country
 		cfg.AutoConnectData.City = parameters.City
 		cfg.AutoConnectData.Group = parameters.Group

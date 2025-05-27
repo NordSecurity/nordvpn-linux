@@ -64,7 +64,8 @@ type Config struct {
 }
 
 type AutoConnectData struct {
-	ID        int64  `json:"id,omitempty"`
+	ID int64 `json:"id,omitempty"`
+	// TODO: remove this in v4 and only use the country, city and group fields
 	ServerTag string `json:"server_tag,omitempty"`
 	Country   string
 	City      string
