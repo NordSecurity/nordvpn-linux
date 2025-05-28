@@ -17,12 +17,12 @@ import (
 
 // Router uses `ip rule` under the hood
 type Router struct {
-	rpFilterManager routes.RPFilterManager
-	ifgroupManager  ifgroup.Manager
-	tableID         uint
-	fwmark          uint32
-	allowSubnets    []string
-	mu              sync.Mutex
+	rpFilterManager      routes.RPFilterManager
+	ifgroupManager       ifgroup.Manager
+	tableID              uint
+	fwmark               uint32
+	subnetToRulePriority map[string]uint
+	mu                   sync.Mutex
 }
 
 // NewRouter is a default constructor for Router
@@ -32,9 +32,10 @@ func NewRouter(
 	fwmark uint32,
 ) *Router {
 	return &Router{
-		rpFilterManager: rpFilterManager,
-		ifgroupManager:  ifgroupManager,
-		fwmark:          fwmark,
+		rpFilterManager:      rpFilterManager,
+		ifgroupManager:       ifgroupManager,
+		fwmark:               fwmark,
+		subnetToRulePriority: make(map[string]uint),
 	}
 }
 
@@ -73,7 +74,7 @@ func (r *Router) SetupRoutingRules(
 			if err := removeFwmarkRule(r.fwmark, ipv6); err != nil {
 				log.Println(internal.DeferPrefix, err)
 			}
-			removeAllowSubnetRules(allowSubnets, ipv6)
+			r.removeAllowSubnetRules(ipv6)
 		}
 	}()
 
@@ -119,26 +120,33 @@ func (r *Router) SetupRoutingRules(
 		}
 
 		// cleanup previous allow subnets
-		removeAllowSubnetRules(r.allowSubnets, ipv6)
+		r.removeAllowSubnetRules(ipv6)
 
 		// on top, add allowlisted subnet routing rules
 		for _, subnet := range allowSubnets {
-			subnetRuleID, err := calculateRulePriority(ipv6)
-			if err != nil {
-				return err
-			}
 			_, subnetIPNet, err := net.ParseCIDR(subnet)
 			if err != nil {
 				return err
 			}
+
+			if _, ok := r.subnetToRulePriority[subnetIPNet.String()]; ok {
+				continue
+			}
+
+			subnetRuleID, err := calculateRulePriority(ipv6)
+			if err != nil {
+				return err
+			}
+
 			if err := addAllowSubnetRule(subnetRuleID, subnetIPNet, ipv6); err != nil {
 				return err
 			}
+
+			if _, ok := r.subnetToRulePriority[subnetIPNet.String()]; !ok {
+				r.subnetToRulePriority[subnetIPNet.String()] = subnetRuleID
+			}
 		}
 	}
-
-	// remember what allow subnets are in use to be able to cleanup
-	r.allowSubnets = internal.CopyStringSlice(allowSubnets)
 
 	return nil
 }
@@ -182,7 +190,7 @@ func (r *Router) CleanupRouting() error {
 		}
 
 		// Remove allowlist subnet routing rules
-		removeAllowSubnetRules(r.allowSubnets, ipv6)
+		r.removeAllowSubnetRules(ipv6)
 	}
 
 	if err := r.rpFilterManager.Unset(); err != nil {
@@ -196,6 +204,21 @@ func (r *Router) CleanupRouting() error {
 	r.tableID = 0
 
 	return nil
+}
+
+// removeAllowSubnetRules remove all allow subnet rules
+func (r *Router) removeAllowSubnetRules(ipv6 bool) {
+	for subnet, priority := range r.subnetToRulePriority {
+		_, subnetIPNet, err := net.ParseCIDR(subnet)
+		if err != nil {
+			continue
+		}
+		if err := removeAllowSubnetRule(priority, subnetIPNet, ipv6); err != nil {
+			log.Println(internal.ErrorPrefix, err)
+		}
+	}
+
+	r.subnetToRulePriority = make(map[string]uint)
 }
 
 func (r *Router) TableID() uint {
@@ -376,25 +399,12 @@ func addAllowSubnetRule(prioID uint, subnet *net.IPNet, ipv6 bool) error {
 	return nil
 }
 
-// removeAllowSubnetRules remove all allow subnet rules
-func removeAllowSubnetRules(subnets []string, ipv6 bool) {
-	for _, subnet := range subnets {
-		_, subnetIPNet, err := net.ParseCIDR(subnet)
-		if err != nil {
-			continue
-		}
-		if err := removeAllowSubnetRule(subnetIPNet, ipv6); err != nil {
-			log.Println(internal.ErrorPrefix, err)
-		}
-	}
-}
-
 // removeAllowSubnetRule remove allow subnet rule
-func removeAllowSubnetRule(subnet *net.IPNet, ipv6 bool) error {
+func removeAllowSubnetRule(prioID uint, subnet *net.IPNet, ipv6 bool) error {
 	if subnet == nil {
 		return fmt.Errorf("subnet cannot be nil")
 	}
-	if err := netlink.RuleDel(allowSubnetRule(-1, subnet, ipv6)); err != nil {
+	if err := netlink.RuleDel(allowSubnetRule(int(prioID), subnet, ipv6)); err != nil {
 		return fmt.Errorf("removing allow subnet rule: %w", err)
 	}
 	return nil
