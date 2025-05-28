@@ -114,9 +114,9 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) *teliogo.TelioError 
 		return nil
 	}
 
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	if t.monitoringContext != nil {
-		t.mu.Lock()
-		defer t.mu.Unlock()
 
 		select {
 		case t.statesChan <- st:
@@ -170,6 +170,7 @@ func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Cont
 		if time.Now().After(nextLogTime) && len(buff) > 0 {
 			log.Println(internal.DebugPrefix, len(buff), "events in telio event queue, received", events, "in 10s.")
 			nextLogTime = time.Now().Add(time.Second * 10)
+			events = 0
 		}
 	}
 }
@@ -831,18 +832,11 @@ func monitorConnection(
 		connected
 	)
 
-	ev := 1
 	currentNotifyState := disconnected
 	initialConnection := true
 	for {
 		select {
 		case state := <-states:
-			if ev == 3 {
-				time.Sleep(1 * time.Second)
-				ev = 0
-			}
-
-			ev++
 
 			if !state.IsExit {
 				break
