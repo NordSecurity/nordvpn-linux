@@ -42,12 +42,12 @@ func registerNotifier(
 	uiItemsClick events.Publisher[events.UiItemsAction],
 	guard *sync.Once,
 ) {
-	notifier := FirstOpenNotifier{
-		cm:           cm,
-		uiItemsClick: uiItemsClick,
-		guard:        guard,
-	}
 	if cm.NewInstallation && !published.Load() {
+		notifier := FirstOpenNotifier{
+			cm:           cm,
+			uiItemsClick: uiItemsClick,
+			guard:        guard,
+		}
 		deviceLocation.Subscribe(notifier.notifyOnceAppJustInstalled)
 	}
 }
