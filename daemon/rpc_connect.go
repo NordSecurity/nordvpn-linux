@@ -56,42 +56,45 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	return err
 }
 
-func determineServerSelectionRule(params ServerParameters) string {
+// determineServerSelectionRule determines the server selection rule based on the provided
+// parameters.
+func determineServerSelectionRule(params ServerParameters) config.ServerSelectionRule {
 	// defensive checks for all fields
 	hasCountry := params.Country != ""
 	hasCity := params.City != ""
 	hasGroup := params.Group != config.ServerGroup_UNDEFINED
 	hasServer := params.ServerName != ""
-	hasCountryCode := params.CountryCode != ""
 
 	switch {
 	case params.Undefined():
-		return config.ServerSelectionRule_RECOMMENDED.String()
+		return config.ServerSelectionRuleRecommended
 
-	case hasCountry && hasCity && !hasGroup && !hasServer && hasCountryCode:
-		return config.ServerSelectionRule_CITY.String()
+	case hasCountry && hasCity && !hasGroup && !hasServer:
+		return config.ServerSelectionRuleCity
 
-	case hasCountry && !hasCity && !hasGroup && !hasServer && hasCountryCode:
-		return config.ServerSelectionRule_COUNTRY.String()
+	case hasCountry && !hasCity && !hasGroup && !hasServer:
+		return config.ServerSelectionRuleCountry
 
-	case hasCountry && !hasCity && hasGroup && !hasServer && hasCountryCode:
-		return config.ServerSelectionRule_COUNTRY_WITH_GROUP.String()
+	case hasCountry && !hasCity && hasGroup && !hasServer:
+		return config.ServerSelectionRuleCountryWithGroup
 
-	case !hasCountry && !hasCity && !hasGroup && hasServer && !hasCountryCode:
-		return config.ServerSelectionRule_SPECIFIC_SERVER.String()
+	case !hasCountry && !hasCity && !hasGroup && hasServer:
+		return config.ServerSelectionRuleSpecificServer
 
-	case !hasCountry && !hasCity && hasGroup && hasServer && !hasCountryCode:
-		return config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP.String()
+	case !hasCountry && !hasCity && hasGroup && hasServer:
+		return config.ServerSelectionRuleSpecificServerWithGroup
 
-	case !hasCountry && !hasCity && hasGroup && !hasServer && !hasCountryCode:
+	case !hasCountry && !hasCity && hasGroup && !hasServer:
 		if _, ok := config.ServerGroup_name[int32(params.Group.Number())]; ok {
-			return config.ServerSelectionRule_GROUP.String()
+			return config.ServerSelectionRuleGroup
 		}
 	}
 
 	// Fallback for any unexpected combination
-	log.Println(internal.WarningPrefix, "Failed to determine 'ServerSelectionRule':", params)
-	return ""
+	log.Println(internal.WarningPrefix,
+		"Failed to determine 'ServerSelectionRule':", params,
+		". Defaulting to :", config.ServerSelectionRuleNone)
+	return config.ServerSelectionRuleNone
 }
 
 func (r *RPC) connect(
@@ -119,7 +122,7 @@ func (r *RPC) connect(
 		ResponseTime:               0,
 		DurationMs:                 -1,
 		EventStatus:                events.StatusAttempt,
-		TargetServerSelection:      "",
+		TargetServerSelection:      config.ServerSelectionRuleNone,
 		ServerFromAPI:              true,
 		TargetServerCity:           "",
 		TargetServerCountry:        "",
@@ -326,6 +329,8 @@ func getElapsedTime(startTime time.Time) int {
 	return max(int(time.Since(startTime).Milliseconds()), 1)
 }
 
+// determineTargetServerGroup returns the title of the server group based on the selected server and
+// parameters. This function assumes parameters are already validated and contains a valid group ID.
 func determineTargetServerGroup(server *core.Server, parameters ServerParameters) string {
 	findServerGroupTitle := func(gid config.ServerGroup) (string, bool) {
 		index := slices.IndexFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
