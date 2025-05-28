@@ -9,7 +9,7 @@ toolchain go1.22.2
 // may also need to update versions in `./lib-versions.env` file.
 require (
 	github.com/NordSecurity/libdrop-go/v8 v8.0.0-20241017064027-670787595588
-	github.com/NordSecurity/libtelio-go/v5 v5.1.9
+	github.com/NordSecurity/libtelio-go/v5 v5.4.0
 )
 
 require (
