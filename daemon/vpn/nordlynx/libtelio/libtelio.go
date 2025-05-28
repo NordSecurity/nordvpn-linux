@@ -125,6 +125,8 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) *teliogo.TelioError 
 				log.Println(internal.ErrorPrefix, "canceling event monitoring:", t.monitoringContext.Err())
 			}
 			t.monitoringContext = nil
+		case <-time.After(1 * time.Second):
+			log.Println(internal.ErrorPrefix, "telio event was dropped because of timeout:", st)
 		}
 	}
 
