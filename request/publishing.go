@@ -24,12 +24,19 @@ func NewPublishingRoundTripper(
 
 func (rt *PublishingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	startTime := time.Now()
+	rt.publisher.Publish(events.DataRequestAPI{
+		Request:   req,
+		Error:     nil,
+		Duration:  time.Since(startTime),
+		IsAttempt: true,
+	})
 	resp, err := rt.roundTripper.RoundTrip(req)
 	rt.publisher.Publish(events.DataRequestAPI{
-		Request:  req,
-		Response: resp,
-		Error:    err,
-		Duration: time.Since(startTime),
+		Request:   req,
+		Response:  resp,
+		Error:     err,
+		Duration:  time.Since(startTime),
+		IsAttempt: false,
 	})
 	return resp, err
 }
