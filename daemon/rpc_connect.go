@@ -94,14 +94,6 @@ func determineServerSelectionRule(params ServerParameters) string {
 	return ""
 }
 
-func determineServerGroup(params ServerParameters) string {
-	if params.Group != config.ServerGroup_UNDEFINED {
-		return params.Group.String()
-	}
-
-	return ""
-}
-
 func (r *RPC) connect(
 	ctx context.Context,
 	in *pb.ConnectRequest,
@@ -239,7 +231,6 @@ func (r *RPC) connect(
 
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
-	event.TargetServerGroup = determineTargetServerGroup(server, parameters)
 
 	event.ServerFromAPI = remote
 	event.TargetServerSelection = determineServerSelectionRule(parameters)
@@ -247,7 +238,7 @@ func (r *RPC) connect(
 	event.TargetServerCountry = country.Name
 	event.TargetServerCountryCode = country.Code
 	event.TargetServerDomain = server.Hostname
-	event.TargetServerGroup = determineServerGroup(parameters)
+	event.TargetServerGroup = determineTargetServerGroup(server, parameters)
 	event.TargetServerIP = subnet.Addr().String()
 	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 
@@ -336,19 +327,26 @@ func getElapsedTime(startTime time.Time) int {
 }
 
 func determineTargetServerGroup(server *core.Server, parameters ServerParameters) string {
-	groupIndex := slices.IndexFunc(server.Groups, func(e core.Group) bool { return e.ID == parameters.Group })
-	if groupIndex != -1 {
-		return server.Groups[groupIndex].Title
+	findServerGroupTitle := func(gid config.ServerGroup) (string, bool) {
+		index := slices.IndexFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
+		if index != -1 {
+			return server.Groups[index].Title, true
+		}
+		return "", false
 	}
 
-	obfuscatedIndex := slices.IndexFunc(server.Groups, func(e core.Group) bool { return e.ID == config.ServerGroup_OBFUSCATED })
-	if obfuscatedIndex != -1 {
-		return server.Groups[obfuscatedIndex].Title
+	if parameters.Group != config.ServerGroup_UNDEFINED {
+		if title, ok := findServerGroupTitle(parameters.Group); ok {
+			return title
+		}
 	}
 
-	standardServers := slices.IndexFunc(server.Groups, func(e core.Group) bool { return e.ID == config.ServerGroup_STANDARD_VPN_SERVERS })
-	if standardServers != -1 {
-		return server.Groups[standardServers].Title
+	if title, ok := findServerGroupTitle(config.ServerGroup_OBFUSCATED); ok {
+		return title
+	}
+
+	if title, ok := findServerGroupTitle(config.ServerGroup_STANDARD_VPN_SERVERS); ok {
+		return title
 	}
 
 	return ""
