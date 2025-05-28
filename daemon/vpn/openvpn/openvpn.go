@@ -449,6 +449,7 @@ func stage1Handler(
 			}
 		case *gopenvpn.StateEvent:
 			state := event.NewState()
+			ovpn.setState(state)
 			switch vpn.State(state) { //nolint:exhaustive
 			case vpn.ReconnectingState:
 				switch event.Description() {
@@ -487,7 +488,8 @@ func stage1Handler(
 				ovpn.setTun(tunnel)
 				// #nosec G104 -- it's okay to ignore an error here
 				internal.FileDelete(openVPNConfigFileName)
-				ovpn.setState(state)
+				//publish event again, so the tunnel is for sure updated in the ConnectionInfo
+				ovpn.publishConnected()
 				return nil
 			}
 		}
