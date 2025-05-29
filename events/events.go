@@ -126,9 +126,10 @@ type DataRequestAPI struct {
 	// Note: Never use `Request.Body`, use `Request.GetBody` instead
 	Request *http.Request
 	// Note: In case you read `Response.Body`, make sure it is set to what it was before
-	Response  *http.Response
-	Duration  time.Duration
-	Error     error
+	Response *http.Response
+	Duration time.Duration
+	Error    error
+	// IsAttempt indicates if whether the event represents an attempt
 	IsAttempt bool
 }
 
