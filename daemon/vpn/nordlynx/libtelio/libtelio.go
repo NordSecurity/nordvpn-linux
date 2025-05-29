@@ -141,17 +141,31 @@ func (t *telioCallbackHandler) setMonitoringContext(ctx context.Context) {
 }
 
 func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Context) {
+	const numEventsLimit = 200
+	const numEventsDrop = numEventsLimit / 2
+
 	buff := []state{}
 
 	nextLogTime := time.Now()
 
 	events := 0
+	handleNewEvent := func(buff []state, event state) []state {
+		buff = append(buff, event)
+		events++
+		if len(buff) >= numEventsLimit {
+			log.Println(internal.WarningPrefix,
+				"over", numEventsLimit, "events in the telio event buffer, dropping", numEventsDrop, "events")
+			return buff[numEventsDrop:]
+		}
+
+		return buff
+	}
+
 	for {
 		if len(buff) != 0 {
 			select {
 			case event := <-recvChan:
-				buff = append(buff, event)
-				events++
+				buff = handleNewEvent(buff, event)
 			case sendChan <- buff[0]:
 				buff = buff[1:]
 			case <-ctx.Done():
@@ -160,8 +174,7 @@ func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Cont
 		} else {
 			select {
 			case event := <-recvChan:
-				buff = append(buff, event)
-				events++
+				buff = handleNewEvent(buff, event)
 			case <-ctx.Done():
 				return
 			}
@@ -837,6 +850,7 @@ func monitorConnection(
 	for {
 		select {
 		case state := <-states:
+			time.Sleep(1 * time.Second)
 
 			if !state.IsExit {
 				break
