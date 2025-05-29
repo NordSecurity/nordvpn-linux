@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"os"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,6 +23,7 @@ const (
 	NotifierStartDelay        = 3 * time.Second
 	PollingUpdateInterval     = 5 * time.Second
 	PollingFullUpdateInterval = 60 * time.Second
+	CountryListUpdateInterval = 60 * time.Minute
 	AccountInfoUpdateInterval = 24 * time.Hour
 )
 
@@ -62,6 +65,51 @@ func (ai *accountInfo) reset() {
 	ai.accountInfo = nil
 }
 
+type CountryPicker struct {
+	mu         sync.RWMutex
+	countries  []string
+	updateTime time.Time
+}
+
+func (cp *CountryPicker) list(client pb.DaemonClient) ([]string, error) {
+	cp.mu.RLock()
+	canUpdate := time.Since(cp.updateTime) > CountryListUpdateInterval
+	cp.mu.RUnlock()
+
+	if canUpdate {
+		resp, err := client.Countries(context.Background(), &pb.Empty{})
+		if err != nil {
+			return nil, err
+		}
+		result := sortedCountries(resp.Servers)
+
+		cp.mu.Lock()
+		cp.countries = result
+		cp.updateTime = time.Now()
+		cp.mu.Unlock()
+	}
+
+	cp.mu.RLock()
+	out := append([]string(nil), cp.countries...)
+	cp.mu.RUnlock()
+	return out, nil
+}
+
+func sortedCountries(sgs []*pb.ServerGroup) []string {
+	set := make(map[string]struct{}, len(sgs))
+	for _, sg := range sgs {
+		if c := strings.TrimSpace(sg.Name); c != "" {
+			set[c] = struct{}{}
+		}
+	}
+	list := make([]string, 0, len(set))
+	for k := range set {
+		list = append(list, k)
+	}
+	sort.Strings(list)
+	return list
+}
+
 type Instance struct {
 	client           pb.DaemonClient
 	fileshareClient  filesharepb.FileshareClient
@@ -92,6 +140,8 @@ type trayState struct {
 	vpnCity             string
 	vpnCountry          string
 	vpnVirtualLocation  bool
+	countries           CountryPicker
+	recent              *RecentConnections
 	mu                  sync.RWMutex
 }
 
@@ -168,6 +218,9 @@ func (ti *Instance) OnExit() {
 func (ti *Instance) OnReady() {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
+
+	ti.state.recent = NewRecentConnections()
+	_ = ti.state.recent.Load()
 
 	ti.state.mu.Lock()
 	if ti.state.vpnStatus == pb.ConnectionState_DISCONNECTED {
