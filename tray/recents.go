@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"sync"
 )
 
 type RecentConnections struct {
-	mu   sync.RWMutex
 	List []string `json:"recent"`
 	Max  int      `json:"-"`
 }
@@ -21,9 +19,6 @@ func NewRecentConnections() *RecentConnections {
 }
 
 func (rc *RecentConnections) Add(country string) {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
-
 	for i, c := range rc.List {
 		if c == country {
 			rc.List = append(rc.List[:i], rc.List[i+1:]...)
@@ -37,15 +32,10 @@ func (rc *RecentConnections) Add(country string) {
 }
 
 func (rc *RecentConnections) Snapshot() []string {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
 	return append([]string(nil), rc.List...)
 }
 
 func (rc *RecentConnections) Save() error {
-	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-
 	path, err := getRecentsFilePath()
 	if err != nil {
 		return err
@@ -92,8 +82,6 @@ func (rc *RecentConnections) Load() error {
 		}
 		return err
 	}
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
 	return json.Unmarshal(data, rc)
 }
 
