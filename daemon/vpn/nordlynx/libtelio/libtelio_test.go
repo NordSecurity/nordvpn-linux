@@ -29,6 +29,11 @@ const (
 	stunPersistentKeepaliveSeconds     = uint32(25)
 )
 
+type callbackHandlerStub struct{}
+
+func (callbackHandlerStub) handleEvent(teliogo.Event) *teliogo.TelioError { return nil }
+func (callbackHandlerStub) setMonitoringContext(ctx context.Context)      {}
+
 type mockLib struct{}
 
 func (mockLib) ConnectToExitNode(teliogo.PublicKey, *[]teliogo.IpNet, *teliogo.SocketAddr) error {
@@ -114,7 +119,8 @@ func TestIsConnected(t *testing.T) {
 
 func TestEventCallback_DoesntBlock(t *testing.T) {
 	stateC := make(chan state)
-	cb := eventCallback(stateC)
+	callbackHandler := newTelioCallbackHandler(stateC)
+	cb := eventCallbackWrap(callbackHandler)
 	var event teliogo.Event
 
 	returnedC := make(chan any)
@@ -481,6 +487,7 @@ func TestLibtelio_connect(t *testing.T) {
 				state:           vpn.ExitedState,
 				fwmark:          123,
 				eventsPublisher: pub,
+				callbackHandler: callbackHandlerStub{},
 			}
 
 			// connect ctx
@@ -521,5 +528,59 @@ func TestLibtelio_connect(t *testing.T) {
 
 			assert.Equal(t, tt.events, sub.Counter())
 		})
+	}
+}
+
+func Test_EventCallback(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stateChan := make(chan state)
+	callbackHandler := newTelioCallbackHandler(stateChan)
+
+	var wg sync.WaitGroup
+	callbackHandlerEventNonBlocking := func() {
+		callbackHandler.handleEvent(teliogo.EventNode{})
+		// in this case Event should not block, as no context was provided, so we can wait until the function exits
+		wg.Done()
+	}
+
+	wg.Add(1)
+	go callbackHandlerEventNonBlocking()
+	wg.Wait()
+
+	select {
+	case <-stateChan:
+		assert.Fail(t, "Event sent when no context was provided.")
+	default:
+	}
+
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	// add a context, callbackHandled should start sending events via stateChan
+	callbackHandler.setMonitoringContext(ctx)
+
+	wg.Add(1)
+	go func() {
+		wg.Done()
+		callbackHandler.handleEvent(teliogo.EventNode{})
+	}()
+	wg.Wait()
+
+	select {
+	case <-stateChan:
+	case <-time.After(5 * time.Second):
+		cancelFunc()
+		assert.Fail(t, "Event not sent when context was provieded")
+	}
+
+	cancelFunc()
+
+	wg.Add(1)
+	go callbackHandlerEventNonBlocking()
+	wg.Wait()
+
+	select {
+	case <-stateChan:
+		assert.Fail(t, "Event sent when no context was provided.")
+	default:
 	}
 }
