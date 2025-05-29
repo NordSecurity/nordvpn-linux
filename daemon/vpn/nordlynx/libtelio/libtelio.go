@@ -117,7 +117,6 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) *teliogo.TelioError 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.monitoringContext != nil {
-
 		select {
 		case t.statesChan <- st:
 		case <-t.monitoringContext.Done(): // drop if nobody is listening
