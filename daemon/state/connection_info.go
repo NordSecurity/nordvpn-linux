@@ -49,9 +49,10 @@ func (cs *ConnectionInfo) getTransferRatesForTunnel(tunnelName string) (uint64, 
 // StatusWithTransferRates returns the current connection status with updated transfer rates
 func (cs *ConnectionInfo) StatusWithTransferRates() types.ConnectionStatus {
 	cs.mu.RLock()
-	defer cs.mu.RUnlock()
-	cs.status.Tx, cs.status.Rx = cs.getTransferRatesForTunnel(cs.status.TunnelName)
-	return cs.status
+	status := cs.status
+	cs.mu.RUnlock()
+	status.Tx, status.Rx = cs.getTransferRatesForTunnel(status.TunnelName)
+	return status
 }
 
 func (cs *ConnectionInfo) Status() types.ConnectionStatus {
@@ -81,23 +82,23 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 	}
 
 	status := types.ConnectionStatus{
-		State:           connectionStatus,
-		Technology:      e.Technology,
-		Protocol:        e.Protocol,
-		IP:              e.IP,
-		Name:            e.Name,
-		Hostname:        e.Hostname,
-		Country:         e.TargetServerCountry,
-		CountryCode:     e.TargetServerCountryCode,
-		City:            e.TargetServerCity,
-		StartTime:       startTime,
-		VirtualLocation: e.IsVirtualLocation,
-		PostQuantum:     e.IsPostQuantum,
-		Obfuscated:      e.IsObfuscated,
-		TunnelName:      e.TunnelName,
-		MeshnetPeer:     e.IsMeshnetPeer,
-		Rx:              Rx,
-		Tx:              Tx,
+		State:             connectionStatus,
+		Technology:        e.Technology,
+		Protocol:          e.Protocol,
+		IP:                e.IP,
+		Name:              e.Name,
+		Hostname:          e.Hostname,
+		Country:           e.TargetServerCountry,
+		CountryCode:       e.TargetServerCountryCode,
+		City:              e.TargetServerCity,
+		StartTime:         startTime,
+		IsVirtualLocation: e.IsVirtualLocation,
+		IsPostQuantum:     e.IsPostQuantum,
+		IsObfuscated:      e.IsObfuscated,
+		TunnelName:        e.TunnelName,
+		IsMeshnetPeer:     e.IsMeshnetPeer,
+		Rx:                Rx,
+		Tx:                Tx,
 	}
 	c.setStatus(status)
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})

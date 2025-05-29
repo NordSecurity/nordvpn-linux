@@ -129,11 +129,11 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 	assert.Equal(t, event.TargetServerCountry, status.Country)
 	assert.Equal(t, event.TargetServerCountryCode, status.CountryCode)
 	assert.Equal(t, event.TargetServerCity, status.City)
-	assert.Equal(t, event.IsVirtualLocation, status.VirtualLocation)
-	assert.Equal(t, event.IsPostQuantum, status.PostQuantum)
-	assert.Equal(t, event.IsObfuscated, status.Obfuscated)
+	assert.Equal(t, event.IsVirtualLocation, status.IsVirtualLocation)
+	assert.Equal(t, event.IsPostQuantum, status.IsPostQuantum)
+	assert.Equal(t, event.IsObfuscated, status.IsObfuscated)
 	assert.Equal(t, event.TunnelName, status.TunnelName)
-	assert.Equal(t, event.IsMeshnetPeer, status.MeshnetPeer)
+	assert.Equal(t, event.IsMeshnetPeer, status.IsMeshnetPeer)
 }
 
 func TestConnectionInfo_VerifyDataDisconnectConversionToConnectionStatus(t *testing.T) {

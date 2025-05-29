@@ -279,7 +279,8 @@ func (l *Libtelio) connect(
 	isConnectedC := isConnected(ctx,
 		l.events,
 		connParameters{pubKey: serverPublicKey, server: l.currentServer},
-		l.eventsPublisher, l.tun)
+		l.eventsPublisher,
+		l.tun)
 
 	var err error
 	endpoint := net.JoinHostPort(serverIP.String(), "51820")
