@@ -162,11 +162,16 @@ func addVpnSection(ti *Instance) {
 				if !open {
 					return
 				}
+				ti.state.mu.Lock()
+				ti.state.recent.Add(c)
+				ti.state.mu.Unlock()
+				_ = ti.state.recent.Save()
+				ti.updateChan <- false
+
 				if ti.connect(c, "") {
 					ti.updateChan <- true
-					ti.state.recent.Add(ti.state.vpnCountry)
-					_ = ti.state.recent.Save()
 				}
+
 			}
 		}(c, item)
 	}
@@ -191,6 +196,12 @@ func addVpnSection(ti *Instance) {
 				if !open {
 					return
 				}
+				ti.state.mu.Lock()
+				ti.state.recent.Add(c)
+				ti.state.mu.Unlock()
+				_ = ti.state.recent.Save()
+				ti.updateChan <- false
+
 				if ti.connect(c, "") {
 					ti.updateChan <- true
 				}
