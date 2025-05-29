@@ -103,12 +103,10 @@ func sortedConnections(sgs []*pb.ServerGroup) []string {
 			set[c] = struct{}{}
 		}
 	}
-
 	list := make([]string, 0, len(set))
 	for k := range set {
 		list = append(list, k)
 	}
-
 	sort.Strings(list)
 	return list
 }
@@ -220,6 +218,9 @@ func (ti *Instance) OnExit() {
 func (ti *Instance) OnReady() {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
+
+	ti.state.recent = NewRecentConnections()
+	_ = ti.state.recent.Load()
 
 	ti.state.mu.Lock()
 	if ti.state.vpnStatus == pb.ConnectionState_DISCONNECTED {
