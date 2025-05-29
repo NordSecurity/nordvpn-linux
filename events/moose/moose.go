@@ -744,10 +744,10 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	}
 
 	var eventStatus moose.NordvpnappEventStatus
-	if data.IsAttempt {
-		eventStatus = moose.NordvpnappEventStatusAttempt
-	} else if data.Error != nil {
+	if data.Error != nil {
 		eventStatus = moose.NordvpnappEventStatusSuccess
+	} else if data.IsAttempt {
+		eventStatus = moose.NordvpnappEventStatusAttempt
 	} else {
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	}
