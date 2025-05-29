@@ -31,15 +31,15 @@ type ConnectionStatus struct {
 	// StartTime time of the connection start
 	StartTime *time.Time
 	// Is virtual server
-	VirtualLocation bool
+	IsVirtualLocation bool
 	// Is post quantum on
-	PostQuantum bool
+	IsPostQuantum bool
 	// Is obfuscation on
-	Obfuscated bool
+	IsObfuscated bool
 	// Currently set tunnel name
 	TunnelName string
 	// Is meshnet peer on
-	MeshnetPeer bool
+	IsMeshnetPeer bool
 	// Number of bytes transferred
 	Rx uint64
 	// Number of bytes uploaded

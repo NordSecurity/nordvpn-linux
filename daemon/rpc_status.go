@@ -39,7 +39,7 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Download:        status.Rx,
 		Upload:          status.Tx,
 		Uptime:          calculateUptime(status.StartTime),
-		VirtualLocation: status.VirtualLocation,
+		VirtualLocation: status.IsVirtualLocation,
 		Parameters: &pb.ConnectionParameters{
 			Source:      requestedConnParams.ConnectionSource,
 			Country:     requestedConnParams.Country,
@@ -49,8 +49,8 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 			CountryCode: requestedConnParams.CountryCode,
 		},
 
-		PostQuantum: status.PostQuantum,
-		Obfuscated:  status.Obfuscated,
+		PostQuantum: status.IsPostQuantum,
+		Obfuscated:  status.IsObfuscated,
 	}, nil
 }
 
