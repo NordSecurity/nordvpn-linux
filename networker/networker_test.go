@@ -1676,6 +1676,9 @@ func TestCombined_Refresh(t *testing.T) {
 		Peers: peers,
 	}
 
+	err := netw.SetMesh(machineMap, netip.MustParseAddr("100.64.0.100"), "key")
+	assert.Nil(t, err)
+
 	netw.Refresh(machineMap)
 
 	assert.Equal(t, 2, len(hostSetter.hosts), "%d DNS hosts were configured, expected 2.", len(hostSetter.hosts))

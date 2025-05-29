@@ -1156,7 +1156,11 @@ func (netw *Combined) SetVPN(v vpn.VPN) {
 func (netw *Combined) Refresh(c mesh.MachineMap) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.refresh(c)
+	if netw.isMeshnetSet {
+		return netw.refresh(c)
+	}
+
+	return meshnet.ErrMeshnetNotEnabled
 }
 
 func (netw *Combined) SetMesh(

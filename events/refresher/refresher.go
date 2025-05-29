@@ -5,7 +5,6 @@ specific events.
 package refresher
 
 import (
-	"errors"
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -45,11 +44,11 @@ func (m *Meshnet) NotifyPeerUpdate(peerIds []string) error {
 	}
 
 	if !cfg.Mesh {
-		return errors.New("meshnet not enabled")
+		return meshn.ErrMeshnetNotEnabled
 	}
 
 	if !m.checker.IsRegistrationInfoCorrect() {
-		return errors.New("not registered to meshnet")
+		return meshn.ErrDeviceNotRegistered
 	}
 
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token

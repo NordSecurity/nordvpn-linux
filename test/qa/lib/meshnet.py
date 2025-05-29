@@ -189,6 +189,9 @@ class Peer:
             case PeerName.Pubkey:
                 return self.public_key
 
+    def is_connected(self) -> bool:
+        return self.status == "connected"
+
     @staticmethod
     def _convert_to_str(value):
         return "enabled" if value else "disabled"
@@ -276,6 +279,11 @@ class PeerList:
     def clear_external_peer_list(self):
         self.external_peers = []
 
+    def find_peer(self, peer: str) -> Peer:
+        for peer_info in self.external_peers + self.internal_peers:
+            if peer_info.ip == peer or peer_info.hostname == peer or peer_info.nickname == peer:
+                return peer_info
+        raise Exception("peer not found")
 
 
     def parse_peer_list(self, filter_list: str | None = None) -> list[str]:
@@ -705,3 +713,12 @@ def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 3) -> None:
     logging.log(f"=== local_peer_list ===\n{local_peer_list}\n")
     logging.log(f"=== remote_peer_list ===\n{remote_peer_list}\n")
     pytest.fail("Peers do not see each other as connected.")
+
+
+def download_remote_peer_logs(ssh_client: ssh.Ssh, dest_logs_path: str) -> None:
+    try:
+        ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
+        ssh_client.download_file("/root/.cache/nordvpn/norduserd.log", f"{dest_logs_path}/norduserd-other.log")
+        ssh_client.download_file("/root/.cache/nordvpn/nordfileshare.log", f"{dest_logs_path}/nordfileshare-other.log")
+    except Exception as e: # noqa: BLE001
+        logging.log(f"failed to download peer logs: {e}")
