@@ -113,7 +113,7 @@ func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataCon
 	return event
 }
 
-func (o *observer) Connecting() {
+func (o *observer) Connecting(uint32) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -127,7 +127,7 @@ func (o *observer) Connecting() {
 	o.eventNotifier.Connected.Publish(o.getConnectEvent(events.StatusAttempt))
 }
 
-func (o *observer) Connected() {
+func (o *observer) Connected(uint32) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -137,7 +137,7 @@ func (o *observer) Connected() {
 	o.eventNotifier.Connected.Publish(o.getConnectEvent(events.StatusSuccess))
 }
 
-func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
+func (o *observer) Disconnected(_ uint32, reason quenchBindigns.DisconnectReason) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -243,7 +243,7 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 
 	q.observer.SetServerData(server)
 
-	err = vnic.Connect(string(jsonConfig), &quenchCreds)
+	_, err = vnic.Connect(string(jsonConfig), &quenchCreds)
 	if err != nil {
 		return fmt.Errorf("connecting to a quench server: %w", err)
 	}
@@ -289,9 +289,7 @@ func (q *Quench) Stop() error {
 	q.state = vpn.ExitingState
 
 	if q.vnic != nil {
-		if err := q.vnic.Disconnect(); err != nil {
-			return fmt.Errorf("disconnecting from a quench server: %w", err)
-		}
+		q.vnic.Disconnect()
 
 		for {
 			ev := <-eventsChan
