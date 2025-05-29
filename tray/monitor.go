@@ -97,6 +97,29 @@ func (ti *Instance) updateVpnStatus() bool {
 	return ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation) || changed
 }
 
+func (ti *Instance) updateCountriesList() bool {
+	ti.state.mu.Lock()
+	oldList := append([]string(nil), ti.state.countries.countries...)
+	ti.state.mu.Unlock()
+
+	newList, err := ti.state.countries.list(ti.client)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "Error retrieving available country list:", err)
+		return false
+	}
+
+	if len(oldList) != len(newList) {
+		return true
+	}
+	for i := range oldList {
+		if oldList[i] != newList[i] {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (ti *Instance) updateSettings() bool {
 	const errorRetrievingSettingsLog = "Error retrieving settings:"
 	changed := false
@@ -249,6 +272,7 @@ func (ti *Instance) pollingMonitor() {
 					ti.redraw(ti.updateAccountInfo())
 				}
 				ti.redraw(ti.updateVpnStatus())
+				ti.redraw(ti.updateCountriesList())
 				if fullUpdate {
 					fullUpdateLast = time.Now()
 				}
