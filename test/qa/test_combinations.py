@@ -71,20 +71,26 @@ def test_status_change_technology_and_protocol(
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
     sh.nordvpn(get_alias())
-    assert source_tech.upper() in sh.nordvpn.status()
+    status_info = daemon.get_status_data()
+
+    assert source_tech.upper() in status_info["current technology"]
 
     if source_tech == "openvpn":
-        assert source_proto.upper() in sh.nordvpn.status()
+        assert source_proto.upper() in status_info["current protocol"]
+    elif source_tech == "nordwhisper":
+        assert "Webtunnel" in status_info["current protocol"]
     else:
-        assert "UDP" in sh.nordvpn.status()
+        assert "UDP" in status_info["current protocol"]
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-    assert source_tech.upper() in sh.nordvpn.status()
+    assert source_tech.upper() in status_info["current technology"]
 
     if source_tech == "openvpn":
-        assert source_tech.upper() in sh.nordvpn.status()
+        assert source_proto.upper() in status_info["current protocol"]
+    elif source_tech == "nordwhisper":
+        assert "Webtunnel" in status_info["current protocol"]
     else:
-        assert "UDP" in sh.nordvpn.status()
+        assert "UDP" in status_info["current protocol"]
 
     disconnect_base_test()
 
@@ -104,14 +110,18 @@ def test_status_change_technology_and_protocol_reconnect(
     disconnect_base_test()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-    sh.nordvpn(get_alias())
 
-    assert target_tech.upper() in sh.nordvpn.status()
+    sh.nordvpn(get_alias())
+    status_info = daemon.get_status_data()
+
+    assert target_tech.upper() in status_info["current technology"]
 
     if target_tech == "openvpn":
-        assert target_proto.upper() in sh.nordvpn.status()
+        assert target_proto.upper() in status_info["current protocol"]
+    elif target_tech == "nordwhisper":
+        assert "Webtunnel" in status_info["current protocol"]
     else:
-        assert "UDP" in sh.nordvpn.status()
+        assert "UDP" in status_info["current protocol"]
 
     disconnect_base_test()
 
