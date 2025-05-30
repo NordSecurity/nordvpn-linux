@@ -314,6 +314,7 @@ func main() {
 
 	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, *httpClientSimple, Version, Environment, deviceID)
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
+	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
 	daemonEvents.Subscribe(analytics)
 
 	firstopen.RegisterNotifier(
