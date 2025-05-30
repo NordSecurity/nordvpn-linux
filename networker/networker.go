@@ -21,11 +21,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
-	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
-	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
@@ -90,7 +87,6 @@ type Networker interface {
 	UnsetDNS() error
 	IsVPNActive() bool
 	IsMeshnetActive() bool
-	ConnectionStatus() state.ConnectionStatus
 	EnableFirewall() error
 	DisableFirewall() error
 	EnableRouting()
@@ -155,7 +151,6 @@ type Combined struct {
 	// This is used at network changes to know when a new interface was inserted
 	interfaces           mapset.Set[string]
 	isFilesharePermitted bool
-	connectionInfo       *state.ConnectionInfo
 	dnsDenied            bool
 }
 
@@ -179,7 +174,6 @@ func NewCombined(
 	exitNode forwarder.ForwardChainManager,
 	fwmark uint32,
 	lanDiscovery bool,
-	connectionInfo *state.ConnectionInfo,
 ) *Combined {
 	return &Combined{
 		vpnet:              vpnet,
@@ -202,7 +196,6 @@ func NewCombined(
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
 		interfaces:         mapset.NewSet[string](),
-		connectionInfo:     connectionInfo,
 	}
 }
 
@@ -217,51 +210,11 @@ func (netw *Combined) Start(
 ) (err error) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	defer netw.updateConnectionStatusAfterStart()
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
 		return netw.restart(ctx, creds, serverData, nameservers)
 	}
 	return netw.start(ctx, creds, serverData, allowlist, nameservers)
-}
-
-// updateConnectionStatus builds the [state.ConnectionStatus] and updates it in [Combined].
-// In case of an error, empty [state.ConnectionStatus] is set.
-//
-// Not thread safe.
-func (netw *Combined) updateConnectionStatusAfterStart() {
-	if !netw.isConnectedToVPN() {
-		return
-	}
-
-	tech := config.Technology_OPENVPN
-	tunnelName := netw.vpnet.Tun().Interface().Name
-	if netw.vpnet.Tun().Interface().Name == nordlynx.InterfaceName {
-		tech = config.Technology_NORDLYNX
-	} else if tunnelName == internal.NordWhisperInterfaceName {
-		tech = config.Technology_NORDWHISPER
-	}
-
-	actualConnParams, isActive := netw.vpnet.GetConnectionParameters()
-
-	connectionStatus := state.ConnectionStatus{
-		State:           pb.ConnectionState_CONNECTED,
-		Technology:      tech,
-		Protocol:        netw.lastServer.Protocol,
-		IP:              netw.lastServer.IP,
-		Name:            netw.lastServer.Name,
-		Hostname:        netw.lastServer.Hostname,
-		Country:         netw.lastServer.Country,
-		CountryCode:     netw.lastServer.CountryCode,
-		City:            netw.lastServer.City,
-		VirtualLocation: netw.lastServer.VirtualLocation,
-		PostQuantum:     isActive && actualConnParams.PostQuantum,
-		Obfuscated:      isActive && actualConnParams.Obfuscated,
-		TunnelName:      tunnelName,
-		StartTime:       netw.startTime,
-	}
-
-	netw.connectionInfo.SetStatus(connectionStatus)
 }
 
 // failureRecover what's possible if vpn start fails
@@ -492,7 +445,6 @@ func (netw *Combined) restart(
 func (netw *Combined) Stop() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	defer netw.updateConnectionStatusAfterStop()
 	if netw.isVpnSet {
 		err := netw.stop()
 		if err != nil && !errors.Is(err, errNilVPN) {
@@ -502,17 +454,6 @@ func (netw *Combined) Stop() error {
 		netw.interfaces = mapset.NewSet[string]()
 	}
 	return nil
-}
-
-func (netw *Combined) updateConnectionStatusAfterStop() {
-	if netw.isConnectedToVPN() {
-		return
-	}
-
-	netw.connectionInfo.SetStatus(state.ConnectionStatus{
-		State:     pb.ConnectionState_DISCONNECTED,
-		StartTime: nil,
-	})
 }
 
 func (netw *Combined) stop() error {
@@ -571,11 +512,6 @@ func (netw *Combined) switchToNextVpn() {
 		netw.vpnet = netw.nextVPN
 		netw.nextVPN = nil
 	}
-}
-
-// ConnectionStatus get connection information
-func (netw *Combined) ConnectionStatus() state.ConnectionStatus {
-	return netw.connectionInfo.Status()
 }
 
 // LastServerName returns last used server hostname

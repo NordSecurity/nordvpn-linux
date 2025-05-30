@@ -76,35 +76,25 @@ func statusStream(stateChan <-chan any,
 			return
 		case ev := <-stateChan:
 			switch e := ev.(type) {
-			case events.DataConnect:
-				var state pb.ConnectionState
-				switch e.EventStatus {
-				case events.StatusSuccess:
-					state = pb.ConnectionState_CONNECTED
-				case events.StatusCanceled, events.StatusFailure:
-					state = pb.ConnectionState_DISCONNECTED
-				case events.StatusAttempt:
-					state = pb.ConnectionState_CONNECTING
-				}
-
+			case events.DataConnectChangeNotif:
 				requestedConnParams := requestedConnParamsStorage.Get()
 				status := pb.StatusResponse{
-					State:           state,
-					Ip:              e.TargetServerIP,
-					Country:         e.TargetServerCountry,
-					CountryCode:     e.TargetServerCountryCode,
-					City:            e.TargetServerCity,
-					Name:            e.TargetServerName,
-					Hostname:        e.TargetServerDomain,
-					IsMeshPeer:      e.IsMeshnetPeer,
+					State:           e.Status.State,
+					Ip:              e.Status.IP.String(),
+					Country:         e.Status.Country,
+					CountryCode:     e.Status.CountryCode,
+					City:            e.Status.City,
+					Name:            e.Status.Name,
+					Hostname:        e.Status.Hostname,
+					IsMeshPeer:      e.Status.IsMeshnetPeer,
 					ByUser:          true,
-					VirtualLocation: e.IsVirtualLocation,
-					Upload:          e.Upload,
-					Download:        e.Download,
-					Technology:      e.Technology,
-					Protocol:        e.Protocol,
-					Obfuscated:      e.IsObfuscated,
-					PostQuantum:     e.IsPostQuantum,
+					VirtualLocation: e.Status.IsVirtualLocation,
+					Technology:      e.Status.Technology,
+					Protocol:        e.Status.Protocol,
+					Obfuscated:      e.Status.IsObfuscated,
+					PostQuantum:     e.Status.IsPostQuantum,
+					Upload:          e.Status.Tx,
+					Download:        e.Status.Rx,
 					Parameters: &pb.ConnectionParameters{
 						ServerName:  requestedConnParams.ServerName,
 						Source:      requestedConnParams.ConnectionSource,

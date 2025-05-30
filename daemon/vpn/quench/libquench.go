@@ -110,6 +110,8 @@ func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataCon
 		transferStats,
 		false)
 
+	event.TunnelName = o.nicName
+
 	return event
 }
 

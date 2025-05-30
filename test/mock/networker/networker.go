@@ -8,7 +8,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 )
@@ -50,10 +49,6 @@ func (*Mock) UnsetDNS() error { return nil }
 func (m *Mock) IsVPNActive() bool {
 	m.ConnectRetries++
 	return m.VpnActive || m.ConnectRetries > 5
-}
-
-func (*Mock) ConnectionStatus() state.ConnectionStatus {
-	return state.ConnectionStatus{}
 }
 
 func (*Mock) EnableFirewall() error  { return nil }
@@ -124,9 +119,6 @@ func (Failing) SetDNS([]string) error { return mock.ErrOnPurpose }
 func (Failing) UnsetDNS() error       { return mock.ErrOnPurpose }
 func (Failing) IsVPNActive() bool     { return false }
 func (Failing) IsMeshnetActive() bool { return false }
-func (Failing) ConnectionStatus() state.ConnectionStatus {
-	return state.ConnectionStatus{}
-}
 
 func (Failing) EnableFirewall() error                               { return mock.ErrOnPurpose }
 func (Failing) DisableFirewall() error                              { return mock.ErrOnPurpose }

@@ -360,6 +360,9 @@ func (ovpn *OpenVPN) getConnectedConnectingEvent(state events.TypeEventStatus) e
 		ovpn.serverData,
 		stats,
 		false)
+	if ovpn.tun != nil {
+		event.TunnelName = ovpn.tun.Interface().Name
+	}
 
 	return event
 }
@@ -485,6 +488,8 @@ func stage1Handler(
 				ovpn.setTun(tunnel)
 				// #nosec G104 -- it's okay to ignore an error here
 				internal.FileDelete(openVPNConfigFileName)
+				//publish event again, so the tunnel is for sure updated in the ConnectionInfo
+				ovpn.publishConnected()
 				return nil
 			}
 		}

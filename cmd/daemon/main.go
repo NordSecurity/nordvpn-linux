@@ -374,12 +374,13 @@ func main() {
 		cfg.Routing.Get(),
 	)
 
+	connectionInfo := state.NewConnectionInfo()
 	statePublisher := state.NewState()
-	internalVpnEvents.Subscribe(statePublisher)
+	internalVpnEvents.Subscribe(connectionInfo)
+	connectionInfo.Subscribe(statePublisher)
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
 
-	connectionInfo := state.NewConnectionInfo()
 	netw := networker.NewCombined(
 		vpn,
 		mesh,
@@ -417,7 +418,6 @@ func main() {
 			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
-		connectionInfo,
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)

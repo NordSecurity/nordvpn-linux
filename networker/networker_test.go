@@ -12,12 +12,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
-	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
-	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
-	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
@@ -48,7 +45,6 @@ func GetTestCombined() *Combined {
 		&workingExitNode{},
 		0,
 		false,
-		state.NewConnectionInfo(),
 	)
 }
 
@@ -376,7 +372,6 @@ func TestCombined_Start(t *testing.T) {
 				&workingExitNode{},
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			err := netw.Start(
 				context.Background(),
@@ -446,7 +441,6 @@ func TestCombined_Stop(t *testing.T) {
 				&workingExitNode{},
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			netw.vpnet = test.vpn
 			err := netw.stop()
@@ -510,7 +504,6 @@ func TestCombined_SetDNS(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			netw.vpnet = &mock.WorkingVPN{}
 			err := netw.setDNS(test.nameservers)
@@ -559,7 +552,6 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			err := netw.UnsetDNS()
 			assert.Equal(t, test.hasError, err != nil)
@@ -623,7 +615,6 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 				newWorkingExitNode(),
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.ErrorIs(t, netw.resetAllowlist(), test.err)
 		})
@@ -684,7 +675,6 @@ func TestCombined_BlockTraffic(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.ErrorIs(t, netw.blockTraffic(), test.err)
 		})
@@ -732,7 +722,6 @@ func TestCombined_UnblockTraffic(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.ErrorIs(t, netw.unblockTraffic(), test.err)
 		})
@@ -793,7 +782,6 @@ func TestCombined_AllowIPv6Traffic(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.ErrorIs(t, netw.allowIPv6Traffic(), test.err)
 		})
@@ -841,7 +829,6 @@ func TestCombined_StopAllowedIPv6Traffic(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.ErrorIs(t, netw.stopAllowedIPv6Traffic(), test.err)
 		})
@@ -939,7 +926,6 @@ func TestCombined_SetAllowlist(t *testing.T) {
 				newWorkingExitNode(),
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.ErrorIs(t, netw.setAllowlist(test.allowlist), test.err)
 		})
@@ -997,7 +983,6 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 				newWorkingExitNode(),
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			err := netw.unsetAllowlist()
 			assert.ErrorIs(t, err, test.err)
@@ -1077,7 +1062,6 @@ func TestCombined_SetNetwork(t *testing.T) {
 				&workingExitNode{},
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.False(t, netw.IsNetworkSet())
 			err := netw.setNetwork(
@@ -1142,7 +1126,6 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 				&workingExitNode{},
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.ErrorIs(t, netw.unsetNetwork(), test.err)
 		})
@@ -1191,7 +1174,6 @@ func TestCombined_SetMesh(t *testing.T) {
 				&workingExitNode{},
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			assert.ErrorIs(t, test.err, netw.SetMesh(
 				mesh.MachineMap{},
@@ -1244,7 +1226,6 @@ func TestCombined_UnSetMesh(t *testing.T) {
 				&workingExitNode{},
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			netw.isMeshnetSet = true
 			assert.ErrorIs(t, test.err, netw.UnSetMesh())
@@ -1302,7 +1283,6 @@ func TestCombined_Reconnect(t *testing.T) {
 				&workingExitNode{},
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			// activate meshnet
 			assert.ErrorIs(t, test.err, netw.SetMesh(
@@ -1383,7 +1363,6 @@ func TestCombined_allowIncoming(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), test.lanAllowed)
 
@@ -1454,7 +1433,6 @@ func TestCombined_blockIncoming(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), true)
 			assert.Nil(t, err)
@@ -1514,7 +1492,6 @@ func TestCombined_allowGeneratedRule(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), true)
 			assert.Equal(t, nil, err)
@@ -1558,7 +1535,6 @@ func TestCombined_BlockNonExistingRuleFail(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			// Should fail to block rule non existing
 			expectedErrorMsg := fmt.Sprintf("allow rule does not exist for %s", test.ruleName)
@@ -1605,7 +1581,6 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 				nil,
 				0,
 				false,
-				state.NewConnectionInfo(),
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), false)
 			assert.Equal(t, nil, err)
@@ -1641,7 +1616,6 @@ func TestCombined_Refresh(t *testing.T) {
 		exitNode,
 		0,
 		false,
-		state.NewConnectionInfo(),
 	)
 
 	machineHostName := "test-fuji.nord"
@@ -1827,7 +1801,6 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 		&workingExitNode{},
 		0,
 		false,
-		state.NewConnectionInfo(),
 	)
 
 	ctx := context.Background()
@@ -2049,206 +2022,4 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			assert.Equal(t, test.lanAvailable, combined.exitNode.(*workingExitNode).LanAvailable)
 		})
 	}
-}
-
-func TestCombined_Start_IsNotBlockingConnectionStatus(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	publisher, ctrl := publisherWithControl()
-	netw := GetTestCombined()
-	netw.publisher = &publisher
-
-	statusGoroutineStarted, startingFinished := spawnNetworker(netw, context.Background())
-
-	// Connection Status goroutine:
-	// - notify Start Networker goroutine that this goroutine is ready
-	// - wait for networker to begin the Start process (notification comes from publisher set up above)
-	// - check status
-	// - allow networker to continue
-	// - then check if this goroutine had to wait for Start Networker goroutine
-	//
-	// This means that [Networker.ConnectionStatus] was run after [Networker.Start] started
-	// and before it finished - so [Networker.ConnectionStatus] was not blocked.
-	didWaitForNetworker := false
-	finishTest := make(chan struct{})
-	go func() {
-		statusGoroutineStarted <- struct{}{}
-		// make sure networker began to start
-		<-ctrl.startingCh
-		_ = netw.ConnectionStatus()
-		ctrl.proceed <- struct{}{}
-		select {
-		case <-startingFinished:
-			finishTest <- struct{}{}
-		default:
-			didWaitForNetworker = true
-			finishTest <- struct{}{}
-		}
-	}()
-
-	<-finishTest
-	assert.True(t, didWaitForNetworker)
-}
-
-func publisherWithControl() (events.MockPublisherSubscriber[string], PublisherCtrl) {
-	networkerStarting := make(chan struct{})
-	proceed := make(chan struct{})
-	ctrl := PublisherCtrl{
-		networkerStarting,
-		proceed,
-	}
-	mockPublisherSubscriber := events.MockPublisherSubscriber[string]{
-		Handler: controlStartingEvent(ctrl),
-	}
-	return mockPublisherSubscriber, ctrl
-}
-
-func controlStartingEvent(ctrl PublisherCtrl) func(event string) error {
-	// listen for the start event and notify Connection Status goroutine
-	notifyNetworkerIsStarting := func(event string) error {
-		if event == "starting vpn" {
-			ctrl.startingCh <- struct{}{}
-			<-ctrl.proceed
-		}
-		return nil
-	}
-	return notifyNetworkerIsStarting
-}
-
-func spawnNetworker(netw *Combined, ctx context.Context) (chan struct{}, chan struct{}) {
-	statusGoroutineStarted := make(chan struct{})
-	startingFinished := make(chan struct{})
-
-	// Start Networker goroutine:
-	// - wait for Connection Status goroutine
-	// - then start networker
-	//   - inside, publisher notifies that the `Start` is happening
-	// - then notify that starting process finished
-	go func() {
-		// make sure status goroutine is running, then begin starting networker
-		<-statusGoroutineStarted
-		_ = netw.Start(
-			ctx,
-			vpn.Credentials{},
-			vpn.ServerData{},
-			config.NewAllowlist(nil, nil, nil),
-			[]string{"1.1.1.1"},
-			true,
-		)
-		startingFinished <- struct{}{}
-	}()
-	return statusGoroutineStarted, startingFinished
-}
-
-type PublisherCtrl struct {
-	startingCh chan struct{}
-	proceed    chan struct{}
-}
-
-func TestCombined_ConnectionStatus_TracksStartTime(t *testing.T) {
-	category.Set(t, category.Unit)
-	netw := GetTestCombined()
-	status := netw.ConnectionStatus()
-	assert.Nil(t, status.StartTime)
-
-	_ = netw.Start(
-		context.Background(),
-		vpn.Credentials{},
-		vpn.ServerData{},
-		config.NewAllowlist(nil, nil, nil),
-		[]string{"1.1.1.1"},
-		true,
-	)
-	status = netw.ConnectionStatus()
-	assert.NotNil(t, status.StartTime)
-
-	_ = netw.Stop()
-	status = netw.ConnectionStatus()
-	assert.Nil(t, status.StartTime)
-}
-
-func TestCombined_ConnectionStatus_IsNotUpdatedOnError(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	publisher, ctrl := publisherWithControl()
-	netw := GetTestCombined()
-	netw.publisher = &publisher
-	netw.vpnet = &mock.FailingVPN{}
-
-	statusGoroutineStarted, startingFinished := spawnNetworker(netw, context.Background())
-
-	// - record the status
-	// - notify Start Networker goroutine that this goroutine is ready
-	// - wait for networker to begin the Start process (notification comes from publisher set up above)
-	// - record the status
-	// - allow networker to continue
-	// - wait for networker to finish starting
-	// - record the status again
-	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
-	statusGoroutineStarted <- struct{}{}
-	// make sure networker began to start
-	<-ctrl.startingCh
-	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
-	ctrl.proceed <- struct{}{}
-	<-startingFinished
-	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
-}
-
-func TestCombined_ConnectionStatus_IsNotUpdatedOnCancel(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	// listen for the start event and notify Connection Status goroutine
-	publisher, ctrl := publisherWithControl()
-
-	netw := GetTestCombined()
-	netw.publisher = &publisher
-	netw.vpnet = &mock.FailingVPN{}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	statusGoroutineStarted, startingFinished := spawnNetworker(netw, ctx)
-
-	// - record the status
-	// - notify Start Networker goroutine that this goroutine is ready
-	// - wait for networker to begin the Start process (notification comes from publisher set up above)
-	// - record the status
-	// - cancel start process
-	// - allow networker to continue
-	// - record the status again
-	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
-	statusGoroutineStarted <- struct{}{}
-	// make sure networker began to start
-	<-ctrl.startingCh
-	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
-	cancel()
-	ctrl.proceed <- struct{}{}
-	<-startingFinished
-	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
-}
-
-func TestCombined_ConnectionStatus_TracksStateProperlyOnSuccess(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	publisher, ctrl := publisherWithControl()
-	netw := GetTestCombined()
-	netw.publisher = &publisher
-
-	statusGoroutineStarted, startingFinished := spawnNetworker(netw, context.Background())
-
-	// - record the status
-	// - notify Start Networker goroutine that this goroutine is ready
-	// - wait for networker to begin the Start process (notification comes from publisher set up above)
-	// - record the status
-	// - allow networker to continue
-	// - wait for networker to finish starting
-	// - record the status again
-	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
-	statusGoroutineStarted <- struct{}{}
-	// make sure networker began to start
-	<-ctrl.startingCh
-	assert.Equal(t, pb.ConnectionState_UNKNOWN_STATE, netw.ConnectionStatus().State)
-	ctrl.proceed <- struct{}{}
-	<-startingFinished
-	assert.Equal(t, pb.ConnectionState_CONNECTED, netw.ConnectionStatus().State)
-	netw.Stop()
-	assert.Equal(t, pb.ConnectionState_DISCONNECTED, netw.ConnectionStatus().State)
 }

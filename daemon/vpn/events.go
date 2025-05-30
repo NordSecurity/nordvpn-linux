@@ -8,8 +8,8 @@ import (
 )
 
 type InternalVPNPublisher interface {
-	NotifyConnect(events.DataConnect) error
-	NotifyDisconnect(events.DataDisconnect) error
+	ConnectionStatusNotifyConnect(events.DataConnect) error
+	ConnectionStatusNotifyDisconnect(events.DataDisconnect) error
 }
 
 type Events struct {
@@ -25,8 +25,8 @@ func NewInternalVPNEvents() *Events {
 }
 
 func (e *Events) Subscribe(to InternalVPNPublisher) {
-	e.Connected.Subscribe(to.NotifyConnect)
-	e.Disconnected.Subscribe(to.NotifyDisconnect)
+	e.Connected.Subscribe(to.ConnectionStatusNotifyConnect)
+	e.Disconnected.Subscribe(to.ConnectionStatusNotifyDisconnect)
 }
 
 func GetDataConnectEvent(technology config.Technology,
@@ -51,5 +51,8 @@ func GetDataConnectEvent(technology config.Technology,
 		Download:                tunnelStatistics.Rx,
 		IsObfuscated:            server.Obfuscated,
 		IsPostQuantum:           server.PostQuantum,
+		IP:                      server.IP,
+		Name:                    server.Name,
+		Hostname:                server.Hostname,
 	}
 }
