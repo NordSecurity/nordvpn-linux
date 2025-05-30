@@ -27,6 +27,14 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
+def get_network_interface(tech):
+    if tech == "openvpn":
+        return "nordtun"
+    if tech == "nordwhisper":
+        return "qtun"
+    return "nordlynx"
+
+
 SUBNET_1 = "2.2.2.2"
 SUBNET_2 = "3.3.3.3"
 SUBNET_3 = "4.4.4.4"
@@ -55,8 +63,7 @@ def test_routing_enabled_connect(tech, proto, obfuscated):
     assert SUBNET_3 in policy_rules
 
     policy_routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
-    assert network_interface in policy_routes
+    assert get_network_interface(tech) in policy_routes
 
     assert settings.is_routing_enabled()
 
@@ -78,8 +85,7 @@ def test_routing_disabled_connect(tech, proto, obfuscated):
     assert "fwmark" not in sh.ip.rule.show.table(firewall.IP_ROUTE_TABLE)
     assert SUBNET_1 not in sh.ip.route()
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
-    assert network_interface not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    assert get_network_interface(tech) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert MSG_ROUTING_ON_ALREADY in sh.nordvpn.set.routing.on()
     assert settings.is_routing_enabled()
@@ -90,20 +96,18 @@ def test_routing_disabled_connect(tech, proto, obfuscated):
 def test_connected_routing_disable_enable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
-
     print(sh.nordvpn.connect())
     assert network.is_available()
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
     assert not settings.is_routing_enabled()
-    assert network_interface not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    assert get_network_interface(tech) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert "mark" not in sh.ip.rule()
     assert network.is_not_available()
 
     assert MSG_ROUTING_ON in sh.nordvpn.set.routing.on()
     assert settings.is_routing_enabled()
-    assert network_interface in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    assert get_network_interface(tech) in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert "mark" in sh.ip.rule()
     assert network.is_available()
 
@@ -113,8 +117,6 @@ def test_connected_routing_disable_enable(tech, proto, obfuscated):
 def test_connected_routing_enable_disable(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
-
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
     assert not settings.is_routing_enabled()
 
@@ -123,13 +125,13 @@ def test_connected_routing_enable_disable(tech, proto, obfuscated):
 
     assert MSG_ROUTING_ON in sh.nordvpn.set.routing.on()
     assert settings.is_routing_enabled()
-    assert network_interface in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    assert get_network_interface(tech) in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert "mark" in sh.ip.rule()
     assert network.is_available()
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
     assert not settings.is_routing_enabled()
-    assert network_interface not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    assert get_network_interface(tech) not in sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert "mark" not in sh.ip.rule()
     assert network.is_not_available()
 
@@ -167,27 +169,25 @@ def test_routing_already_disabled(tech, proto, obfuscated):
 def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
-
     print(sh.nordvpn.connect())
 
     routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert network_interface in routes
+    assert get_network_interface(tech) in routes
     assert "mark" in rules
     assert network.is_available()
 
     lib.set_routing("off")
     routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert network_interface not in routes
+    assert get_network_interface(tech) not in routes
     assert "mark" not in rules
     assert network.is_not_available()
 
     lib.set_routing("on")
     routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert network_interface in routes
+    assert get_network_interface(tech) in routes
     assert "mark" in rules
     assert network.is_available()
 
@@ -196,13 +196,11 @@ def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated)
 def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    network_interface = "nordtun" if tech == "openvpn" else "nordlynx"
-
     print(sh.nordvpn.connect())
 
     routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     rules = sh.ip.rule()
-    assert f"default dev {network_interface}" in routes
+    assert f"default dev {get_network_interface(tech)}" in routes
     assert "mark" in rules
     assert network.is_available()
 
@@ -223,9 +221,9 @@ def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
 
         routes = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
         rules = sh.ip.rule()
-        assert f"default dev {network_interface}" in routes
+        assert f"default dev {get_network_interface(tech)}" in routes
         assert "mark" in rules
         assert network.is_available()
 
         routes = sh.ip.route.show.table("main")
-        assert f"default dev {network_interface}" not in routes
+        assert f"default dev {get_network_interface(tech)}" not in routes

@@ -47,6 +47,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
 	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/events/firstopen"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
 	"github.com/NordSecurity/nordvpn-linux/events/meshunsetter"
 	"github.com/NordSecurity/nordvpn-linux/events/refresher"
@@ -315,12 +316,15 @@ func main() {
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
 	daemonEvents.Subscribe(analytics)
+
+	firstopen.RegisterNotifier(
+		fsystem,
+		daemonEvents.Service.DeviceLocation,
+		daemonEvents.Service.UiItemsClick,
+	)
+
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
-
-	if fsystem.NewInstallation {
-		daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "first_open", ItemType: "button", ItemValue: "first_open", FormReference: "daemon"})
-	}
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
