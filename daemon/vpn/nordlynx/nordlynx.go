@@ -30,7 +30,7 @@ var (
 	errUnrecognizedIpRouteOutput = errors.New("unrecognized output of 'ip route show default'")
 )
 
-var DefaultPrefix = netip.MustParsePrefix("10.5.0.2/32")
+var DefaultPrefix = netip.MustParsePrefix("10.5.0.2/16")
 
 // getDefaultIpRouteInterface takes output of the `ip route show default` command and returns the
 // interface/device name. If there are multiple default routes in the output, first one will be returned
