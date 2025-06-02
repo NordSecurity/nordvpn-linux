@@ -733,6 +733,8 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	if data.Request == nil {
 		return fmt.Errorf("request nil")
 	}
+
+	//for attempt events response_code shall be set to 0
 	responseCode := 0
 	if data.Response != nil {
 		responseCode = data.Response.StatusCode
@@ -753,8 +755,14 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	} else {
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	}
+
+	//for attempt events duration shall be set to 0
+	duration := int32(0)
+	if !data.IsAttempt {
+		duration = int32(data.Duration.Milliseconds())
+	}
 	return s.response(fn(
-		int32(data.Duration.Milliseconds()),
+		duration,
 		eventStatus,
 		moose.NordvpnappEventTriggerApp,
 		data.Request.URL.Host,
