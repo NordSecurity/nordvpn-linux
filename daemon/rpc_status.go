@@ -9,7 +9,7 @@ import (
 
 // Status of daemon and connection
 func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
-	status := r.connectionInfo.StatusWithTransferRates()
+	status := r.connectionInfo.Status()
 	//exhaustive:ignore
 	switch status.State {
 	case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_DISCONNECTED:

@@ -46,19 +46,13 @@ func (cs *ConnectionInfo) getTransferRatesForTunnel(tunnelName string) (uint64, 
 	return transferStats.Tx, transferStats.Rx
 }
 
-// StatusWithTransferRates returns the current connection status with updated transfer rates
-func (cs *ConnectionInfo) StatusWithTransferRates() types.ConnectionStatus {
+// Status returns the current connection status with updated transfer rates
+func (cs *ConnectionInfo) Status() types.ConnectionStatus {
 	cs.mu.RLock()
 	status := cs.status
 	cs.mu.RUnlock()
 	status.Tx, status.Rx = cs.getTransferRatesForTunnel(status.TunnelName)
 	return status
-}
-
-func (cs *ConnectionInfo) Status() types.ConnectionStatus {
-	cs.mu.RLock()
-	defer cs.mu.RUnlock()
-	return cs.status
 }
 
 func (cs *ConnectionInfo) setStatus(s types.ConnectionStatus) {
