@@ -556,6 +556,7 @@ func main() {
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))
 	s := grpc.NewServer(opts...)
 
+	log.Println("test")
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
 	// Start jobs
