@@ -526,7 +526,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return err
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue("n/a")); err != nil {
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue(moose.UnavailableEventParameterValue)); err != nil {
 		return err
 	}
 
