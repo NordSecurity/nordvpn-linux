@@ -849,8 +849,6 @@ func monitorConnection(
 	for {
 		select {
 		case state := <-states:
-			time.Sleep(1 * time.Second)
-
 			if !state.IsExit {
 				break
 			}
