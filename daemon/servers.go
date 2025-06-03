@@ -584,6 +584,15 @@ type ServerParameters struct {
 	ServerName  string
 }
 
+// Undefined returns true if all fields of the ServerParameters struct are unset or empty.
+func (sp ServerParameters) Undefined() bool {
+	return sp.Country == "" &&
+		sp.City == "" &&
+		sp.Group == config.ServerGroup_UNDEFINED &&
+		sp.CountryCode == "" &&
+		sp.ServerName == ""
+}
+
 func GetServerParameters(serverTag string, groupTag string, countries core.Countries) ServerParameters {
 	var parameters ServerParameters
 

@@ -74,7 +74,7 @@ type DataConnect struct {
 	DurationMs                 int
 	ServerFromAPI              bool
 	EventStatus                TypeEventStatus
-	TargetServerSelection      string
+	TargetServerSelection      config.ServerSelectionRule
 	Technology                 config.Technology
 	TargetServerCity           string
 	TargetServerCountry        string
@@ -108,7 +108,7 @@ type DataDisconnect struct {
 	ServerFromAPI         bool
 	EventStatus           TypeEventStatus
 	Technology            config.Technology
-	TargetServerSelection string
+	TargetServerSelection config.ServerSelectionRule
 	ThreatProtectionLite  bool
 	ByUser                bool
 	Duration              time.Duration

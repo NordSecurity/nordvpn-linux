@@ -56,6 +56,47 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	return err
 }
 
+// determineServerSelectionRule determines the server selection rule based on the provided
+// parameters.
+func determineServerSelectionRule(params ServerParameters) config.ServerSelectionRule {
+	// defensive checks for all fields
+	hasCountry := params.Country != ""
+	hasCity := params.City != ""
+	hasGroup := params.Group != config.ServerGroup_UNDEFINED
+	hasServer := params.ServerName != ""
+
+	switch {
+	case params.Undefined():
+		return config.ServerSelectionRuleRecommended
+
+	case hasCountry && hasCity && !hasGroup && !hasServer:
+		return config.ServerSelectionRuleCity
+
+	case hasCountry && !hasCity && !hasGroup && !hasServer:
+		return config.ServerSelectionRuleCountry
+
+	case hasCountry && !hasCity && hasGroup && !hasServer:
+		return config.ServerSelectionRuleCountryWithGroup
+
+	case !hasCountry && !hasCity && !hasGroup && hasServer:
+		return config.ServerSelectionRuleSpecificServer
+
+	case !hasCountry && !hasCity && hasGroup && hasServer:
+		return config.ServerSelectionRuleSpecificServerWithGroup
+
+	case !hasCountry && !hasCity && hasGroup && !hasServer:
+		if _, ok := config.ServerGroup_name[int32(params.Group.Number())]; ok {
+			return config.ServerSelectionRuleGroup
+		}
+	}
+
+	// Fallback for any unexpected combination
+	log.Println(internal.WarningPrefix,
+		"Failed to determine 'ServerSelectionRule':", params,
+		". Defaulting to :", config.ServerSelectionRuleNone)
+	return config.ServerSelectionRuleNone
+}
+
 func (r *RPC) connect(
 	ctx context.Context,
 	in *pb.ConnectRequest,
@@ -81,9 +122,11 @@ func (r *RPC) connect(
 		ResponseTime:               0,
 		DurationMs:                 -1,
 		EventStatus:                events.StatusAttempt,
+		TargetServerSelection:      config.ServerSelectionRuleNone,
 		ServerFromAPI:              true,
 		TargetServerCity:           "",
 		TargetServerCountry:        "",
+		TargetServerCountryCode:    "",
 		TargetServerDomain:         "",
 		TargetServerGroup:          "",
 		TargetServerIP:             "",
@@ -192,6 +235,16 @@ func (r *RPC) connect(
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
 
+	event.ServerFromAPI = remote
+	event.TargetServerSelection = determineServerSelectionRule(parameters)
+	event.TargetServerCity = country.City.Name
+	event.TargetServerCountry = country.Name
+	event.TargetServerCountryCode = country.Code
+	event.TargetServerDomain = server.Hostname
+	event.TargetServerGroup = determineTargetServerGroup(server, parameters)
+	event.TargetServerIP = subnet.Addr().String()
+	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)
 
@@ -274,6 +327,34 @@ func (r *RPC) connect(
 // It ensures the returned value is at least 1 millisecond
 func getElapsedTime(startTime time.Time) int {
 	return max(int(time.Since(startTime).Milliseconds()), 1)
+}
+
+// determineTargetServerGroup returns the title of the server group based on the selected server and
+// parameters. This function assumes parameters are already validated and contains a valid group ID.
+func determineTargetServerGroup(server *core.Server, parameters ServerParameters) string {
+	findServerGroupTitle := func(gid config.ServerGroup) (string, bool) {
+		index := slices.IndexFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
+		if index != -1 {
+			return server.Groups[index].Title, true
+		}
+		return "", false
+	}
+
+	if parameters.Group != config.ServerGroup_UNDEFINED {
+		if title, ok := findServerGroupTitle(parameters.Group); ok {
+			return title
+		}
+	}
+
+	if title, ok := findServerGroupTitle(config.ServerGroup_OBFUSCATED); ok {
+		return title
+	}
+
+	if title, ok := findServerGroupTitle(config.ServerGroup_STANDARD_VPN_SERVERS); ok {
+		return title
+	}
+
+	return ""
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)
