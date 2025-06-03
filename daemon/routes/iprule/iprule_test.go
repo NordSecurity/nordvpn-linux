@@ -1,9 +1,12 @@
 package iprule
 
 import (
+	"net"
+	"slices"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/vishvananda/netlink"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -182,4 +185,66 @@ func TestCustomTable(t *testing.T) {
 	prioID2, err := calculateRulePriority(false)
 	assert.NoError(t, err)
 	assert.Greater(t, prioID, prioID2)
+}
+
+func TestAddAllowlistRules(t *testing.T) {
+	category.Set(t, category.Route)
+
+	rulesBeforeAdd, err := netlink.RuleList(netlink.FAMILY_V4)
+	assert.NoError(t, err, "Failed to save previous state for ip rules: %s", err)
+
+	router := Router{
+		subnetToRulePriority: make(map[string]uint),
+	}
+
+	allowlist := []string{
+		// two /0 subnets should be simplified to a single default route
+		"35.74.174.235/0",
+		"4.246.215.86/0",
+		"103.238.215.35/24",
+		"237.164.3.235/32",
+	}
+
+	err = router.addAllowlistRules(allowlist, false)
+	assert.NoError(t, err, "Unexpected error when adding allowlist rules: %s", err)
+
+	rulesAfterAdd, err := netlink.RuleList(netlink.FAMILY_V4)
+
+	assert.NoError(t, err, "Failed to save new state for ip rules: %s", err)
+	// ignore rules that existed before the test for validation purposes
+	rulesAfterAdd = slices.DeleteFunc(rulesAfterAdd, func(rule netlink.Rule) bool {
+		idx := slices.Index(rulesBeforeAdd, rule)
+		return idx != -1
+	})
+
+	expectedSubnets := []*net.IPNet{
+		nil, // in case of netlink, nil is equivalent to default subnet(35.74.174.235/0 and 4.246.215.86/0)
+		{
+			IP:   net.IPv4(103, 238, 215, 0),
+			Mask: net.CIDRMask(24, 32),
+		},
+		{
+			IP:   net.IPv4(237, 164, 3, 235),
+			Mask: net.CIDRMask(32, 32),
+		},
+	}
+
+	for _, subnet := range expectedSubnets {
+		ruleIdx := slices.IndexFunc(rulesAfterAdd, func(rule netlink.Rule) bool {
+			return subnet.String() == rule.Dst.String()
+		})
+		assert.NotEqual(t, -1, ruleIdx, "Desired subnet %s not added to ip rules.", subnet.String())
+	}
+
+	router.removeAllowSubnetRules(false)
+	rulesAfterRemove, err := netlink.RuleList(netlink.FAMILY_V4)
+	assert.NoError(t, err, "Failed to save prevous state for ip rules: %s", err)
+
+	assert.Equal(t, len(rulesBeforeAdd), len(rulesAfterRemove),
+		"IP rules were not restored to the previous state after removal.")
+
+	for ruleIndex, rule := range rulesBeforeAdd {
+		assert.Equal(t, rule, rulesAfterRemove[ruleIndex],
+			"IP rules were not restored to the previous state after removal.")
+	}
 }
