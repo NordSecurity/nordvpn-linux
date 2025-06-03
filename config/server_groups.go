@@ -13,3 +13,14 @@ var GroupMap = map[string]ServerGroup{
 	"africa_the_middle_east_and_india": ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA,
 	"obfuscated_servers":               ServerGroup_OBFUSCATED,
 }
+
+// GroupTitleForId converts group ID to group lowercase title
+func GroupTitleForId(group ServerGroup) string {
+	for k, v := range GroupMap {
+		if v == group {
+			return k
+		}
+	}
+
+	return ""
+}

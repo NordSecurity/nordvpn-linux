@@ -74,7 +74,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			c.AutoConnectData = config.AutoConnectData{
 				ID:                   cfg.AutoConnectData.ID,
 				ServerTag:            serverTag,
-				Country:              parameters.Country,
+				Country:              parameters.CountryCode,
 				City:                 parameters.City,
 				Group:                parameters.Group,
 				Protocol:             cfg.AutoConnectData.Protocol,
