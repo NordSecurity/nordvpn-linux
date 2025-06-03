@@ -15,11 +15,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-var (
-	// ErrMissingExchangeToken is returned when login was successful but
-	// there is not enough data to request the token
-	ErrMissingExchangeToken = errors.New("exchange token not provided")
-)
+// ErrMissingExchangeToken is returned when login was successful but
+// there is not enough data to request the token
+var ErrMissingExchangeToken = errors.New("exchange token not provided")
 
 type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
 
@@ -29,6 +27,14 @@ var lastLoginAttemptTime time.Time
 
 // Login the user with given token
 func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error) {
+	// check analytics consent
+	// XXX: Do this for other login endpoints also
+	if !IsConsentFlowCompleted(r.cm) {
+		return &pb.LoginResponse{
+			Type: internal.CodeConsentMissing,
+		}, nil
+	}
+
 	if !isTokenValid(in.GetToken()) {
 		return &pb.LoginResponse{
 			Type: internal.CodeTokenInvalid,
@@ -170,7 +176,8 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 		if strings.Contains(err.Error(), "network is unreachable") ||
 			strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers") {
 			return &pb.LoginOAuth2Response{
-				Status: pb.LoginOAuth2Status_NO_NET}, nil
+				Status: pb.LoginOAuth2Status_NO_NET,
+			}, nil
 		}
 
 		return &pb.LoginOAuth2Response{
