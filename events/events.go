@@ -129,6 +129,8 @@ type DataRequestAPI struct {
 	Response *http.Response
 	Duration time.Duration
 	Error    error
+	// IsAttempt indicates whether the event represents an attempt
+	IsAttempt bool
 }
 
 // Analytics analytics handling engine interface
