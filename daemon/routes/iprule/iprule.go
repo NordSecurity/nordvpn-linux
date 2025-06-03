@@ -127,17 +127,20 @@ func (r *Router) SetupRoutingRules(
 	return nil
 }
 
+// addAllowlistRules adds ip rules based on the allowlist. subnets is a list of addresses, if multiple addresses belong
+// to the same network, only one rule for that network will be added.
 func (r *Router) addAllowlistRules(subnets []string, ipv6 bool) error {
 	// cleanup previous allow subnets
 	r.removeAllowSubnetRules(ipv6)
 
-	// on top, add allowlisted subnet routing rules
 	for _, subnet := range subnets {
 		_, subnetIPNet, err := net.ParseCIDR(subnet)
 		if err != nil {
 			return fmt.Errorf("parsing subnet: %w", err)
 		}
 
+		// It's possible that multiple addresses belonging to a single network were added. In this case, if a rule for
+		// that network already exists, we can skip subsequent operations for that address.
 		if _, ok := r.subnetToRulePriority[subnetIPNet.String()]; ok {
 			continue
 		}
