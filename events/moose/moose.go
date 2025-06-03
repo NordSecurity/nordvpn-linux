@@ -740,10 +740,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		responseCode = data.Response.StatusCode
 	}
 
-	fn, err := pickNotifier(data.Request.URL.Path)
-	if err != nil {
-		return err
-	}
+	notifierFunc := pickNotifier(data.Request.URL.Path)
 
 	var eventStatus moose.NordvpnappEventStatus
 	if data.Error == nil {
@@ -761,7 +758,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	if !data.IsAttempt {
 		duration = int32(data.Duration.Milliseconds())
 	}
-	return s.response(fn(
+	return s.response(notifierFunc(
 		duration,
 		eventStatus,
 		moose.NordvpnappEventTriggerApp,
