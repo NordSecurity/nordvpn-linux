@@ -217,20 +217,23 @@ func TestAddAllowlistRules(t *testing.T) {
 		return idx != -1
 	})
 
-	_, subnet2, _ := net.ParseCIDR("103.238.215.35/24")
-	_, subnet3, _ := net.ParseCIDR("237.164.3.235/32")
-
 	expectedSubnets := []*net.IPNet{
 		nil, // in case of netlink, nil is equivalent to default subnet(35.74.174.235/0 and 4.246.215.86/0)
-		subnet2,
-		subnet3,
+		{
+			IP:   net.IPv4(103, 238, 215, 0),
+			Mask: net.CIDRMask(24, 32),
+		},
+		{
+			IP:   net.IPv4(237, 164, 3, 235),
+			Mask: net.CIDRMask(32, 32),
+		},
 	}
 
 	for _, subnet := range expectedSubnets {
 		ruleIdx := slices.IndexFunc(rulesAfterAdd, func(rule netlink.Rule) bool {
 			return subnet.String() == rule.Dst.String()
 		})
-		assert.NotEqual(t, -1, ruleIdx, "Desired subnet not added to ip rules.")
+		assert.NotEqual(t, -1, ruleIdx, "Desired subnet %s not added to ip rules.", subnet.String())
 	}
 
 	router.removeAllowSubnetRules(false)
