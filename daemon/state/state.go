@@ -53,23 +53,12 @@ func (s *StatePublisher) notify(e any) {
 	s.subscribers = newSubs
 }
 
-func (s *StatePublisher) NotifyConnect(e events.DataConnect) error {
+func (s *StatePublisher) NotifyChangeState(e events.DataConnectChangeNotif) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Printf(internal.DebugPrefix+" notifying about connect event: %+v", e)
+	log.Printf(internal.DebugPrefix+" notifying about data connect change event: %+v", e)
 	s.notify(e)
-
-	return nil
-}
-
-func (s *StatePublisher) NotifyDisconnect(e events.DataDisconnect) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	log.Printf(internal.DebugPrefix+" notifying about disconnect event: %+v", e)
-	s.notify(e)
-
 	return nil
 }
 

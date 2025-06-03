@@ -3,9 +3,11 @@ package events
 
 import (
 	"net/http"
+	"net/netip"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 )
 
 // Handler is used to process messages.
@@ -89,6 +91,16 @@ type DataConnect struct {
 	Download                   uint64
 	IsObfuscated               bool
 	IsPostQuantum              bool
+	IP                         netip.Addr
+	Name                       string
+	Hostname                   string
+	StartTime                  *time.Time
+	TunnelName                 string
+}
+
+// DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus
+type DataConnectChangeNotif struct {
+	Status types.ConnectionStatus
 }
 
 type DataDisconnect struct {
