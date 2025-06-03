@@ -113,6 +113,7 @@ const (
 )
 
 func main() {
+	time.Sleep(10 * time.Second)
 	// pprof
 	if internal.IsDevEnv(Environment) {
 		go func() {
@@ -559,6 +560,10 @@ func main() {
 
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
+
+	consentChecker := daemon.NewConsentChecker(fsystem, defaultAPI, authChecker)
+	consentChecker.PrepareDaemonIfConsentNotCompleted()
+
 	// Start jobs
 
 	go func() {

@@ -20,7 +20,7 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 			Protocol: Protocol_UDP,
 		},
 		MachineID:  machineIDGetter.GetMachineID(),
-		UsersData:  &UsersData{Notify: UidBoolMap{}, NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
+		UsersData:  &UsersData{NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
 		TokensData: map[int64]TokenData{},
 	}
 }
@@ -43,10 +43,11 @@ type Config struct {
 	Firewall     bool       `json:"firewall"` // omitempty breaks this
 	FirewallMark uint32     `json:"fwmark"`
 	Routing      TrueField  `json:"routing"`
-	// Analytics is deprecated, not deleted from the config for backwards compatibility
-	Analytics        TrueField        `json:"analytics"`
-	AnalyticsConsent AnalyticsConsent `json:"analytics_consent,omitempty"`
-	Mesh             bool             `json:"mesh"`
+	// XXX: create ticket for this
+	Analytics TrueField `json:"analytics"` // remove in 4.2
+	// XXX: docs
+	AnalyticsConsent *bool `json:"analyticsConsent"`
+	Mesh             bool  `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
 	MeshPrivateKey  string              `json:"mesh_private_key"`
 	MeshDevice      *mesh.Machine       `json:"mesh_device"`
