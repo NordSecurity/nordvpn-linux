@@ -119,32 +119,40 @@ func (r *Router) SetupRoutingRules(
 			}
 		}
 
-		// cleanup previous allow subnets
-		r.removeAllowSubnetRules(ipv6)
+		if err := r.addAllowlistRules(allowSubnets, ipv6); err != nil {
+			return fmt.Errorf("adding allowlist rules: %w", err)
+		}
+	}
 
-		// on top, add allowlisted subnet routing rules
-		for _, subnet := range allowSubnets {
-			_, subnetIPNet, err := net.ParseCIDR(subnet)
-			if err != nil {
-				return err
-			}
+	return nil
+}
 
-			if _, ok := r.subnetToRulePriority[subnetIPNet.String()]; ok {
-				continue
-			}
+func (r *Router) addAllowlistRules(subnets []string, ipv6 bool) error {
+	// cleanup previous allow subnets
+	r.removeAllowSubnetRules(ipv6)
 
-			subnetRuleID, err := calculateRulePriority(ipv6)
-			if err != nil {
-				return err
-			}
+	// on top, add allowlisted subnet routing rules
+	for _, subnet := range subnets {
+		_, subnetIPNet, err := net.ParseCIDR(subnet)
+		if err != nil {
+			return fmt.Errorf("parsing subnet: %w", err)
+		}
 
-			if err := addAllowSubnetRule(subnetRuleID, subnetIPNet, ipv6); err != nil {
-				return err
-			}
+		if _, ok := r.subnetToRulePriority[subnetIPNet.String()]; ok {
+			continue
+		}
 
-			if _, ok := r.subnetToRulePriority[subnetIPNet.String()]; !ok {
-				r.subnetToRulePriority[subnetIPNet.String()] = subnetRuleID
-			}
+		subnetRuleID, err := calculateRulePriority(ipv6)
+		if err != nil {
+			return fmt.Errorf("calculating rule priority: %w", err)
+		}
+
+		if err := addAllowSubnetRule(subnetRuleID, subnetIPNet, ipv6); err != nil {
+			return fmt.Errorf("adding allowlist subnet rule: %w", err)
+		}
+
+		if _, ok := r.subnetToRulePriority[subnetIPNet.String()]; !ok {
+			r.subnetToRulePriority[subnetIPNet.String()] = subnetRuleID
 		}
 	}
 
