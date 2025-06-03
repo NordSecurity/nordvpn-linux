@@ -2,6 +2,7 @@ package nordlynx
 
 import (
 	"net"
+	"net/netip"
 	"os/exec"
 	"strings"
 	"testing"
@@ -55,6 +56,11 @@ func TestGetDefaultIpRouteInterface(t *testing.T) {
 			assert.Equal(t, err, test.expectedError)
 		})
 	}
+}
+
+func TestNordLynxDefaultIp(t *testing.T) {
+	category.Set(t, category.Unit)
+	assert.Equal(t, DefaultPrefix, netip.MustParsePrefix("10.5.0.2/16"))
 }
 
 func TestGetDefaultIpRouteInterfaceFromCommandOutput(t *testing.T) {

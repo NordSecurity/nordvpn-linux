@@ -470,6 +470,45 @@ def test_connect_to_post_quantum_server(tech, proto, obfuscated):
     disconnect_base_test()
 
 
+def test_check_routing_table_for_lan():
+    # check that the routing table is correctly configured when LAN is enabled and that the tunnel IP is correct
+    lib.set_technology_and_protocol("nordlynx", "", "")
+
+    default_route = network.RouteInfo.default_route_info()
+    connect_base_test(("nordlynx", "", ""))
+
+    # check the tunnel IP
+    nordlynx_route = network.RouteInfo(sh.ip.route.show.dev("nordlynx").stdout.decode())
+    assert nordlynx_route.destination == "10.5.0.0/16"
+    assert nordlynx_route.src == "10.5.0.2"
+
+    lan_ips = [
+        "10.0.0.1",
+        "172.16.0.1",
+        "192.168.0.1",
+        "169.254.0.1",
+    ]
+
+    private_vpn_ip = "10.5.0.1"
+
+    # check LAN IP is not routed thru main
+    assert all(not default_route.routes_ip(ip) for ip in lan_ips)
+    assert not default_route.routes_ip(private_vpn_ip)
+    assert nordlynx_route.routes_ip(private_vpn_ip)
+
+    # enable LAN discovery
+    sh.nordvpn.set("lan-discovery", "on")
+
+    # check LAN IP is routed thru main
+    assert all(default_route.routes_ip(ip) for ip in lan_ips)
+
+    # IP from VPN private range is routed thru nordlynx interface
+    assert not default_route.routes_ip(private_vpn_ip)
+    assert nordlynx_route.routes_ip(private_vpn_ip)
+
+    disconnect_base_test()
+
+
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_dedicated_ip(tech, proto, obfuscated, group):
