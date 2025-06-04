@@ -4,6 +4,8 @@ package daemon
 
 import (
 	"log"
+	"strings"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -14,19 +16,19 @@ import (
 type countryCode string
 
 var countryCodeToConsentMode = map[countryCode]consentMode{
-	"US": standard,
-	"CA": standard,
-	"JP": standard,
-	"AU": standard,
+	countryCode("us"): consentModeStandard,
+	countryCode("ca"): consentModeStandard,
+	countryCode("jp"): consentModeStandard,
+	countryCode("au"): consentModeStandard,
 }
 
 type consentMode uint
 
 const (
-	// standard mode describes countries with loose legal requirements regarding analytics consent
-	standard consentMode = iota
-	// GDPR mode describes countries with stirct analytics consent requirements
-	GDPR
+	// consentModeStandard mode describes countries with loose legal requirements regarding analytics consent
+	consentModeStandard consentMode = iota
+	// consentModeGDPR mode describes countries with stirct analytics consent requirements
+	consentModeGDPR
 )
 
 type AnalyticsConsentChecker struct {
@@ -43,7 +45,7 @@ func NewConsentChecker(
 	return &AnalyticsConsentChecker{cm, API, authChecker}
 }
 
-// PrepareDaemonIfConsentNotCompleted sets up the deamon for analytics consent flow.
+// PrepareDaemonIfConsentNotCompleted sets up the daemon for analytics consent flow.
 //
 // If consent flow was completed, this is no-op. Otherwise:
 //
@@ -64,25 +66,31 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	consentMode := acc.consentModeFromUserLocation()
 
 	// logout user if in GDPR consent mode
-	if consentMode == GDPR && acc.authChecker.IsLoggedIn() {
-		if err := acc.doLightLogout(); err != nil {
-			// XXX: improve this
-			log.Println(internal.ErrorPrefix, "failed to logout the user:", err)
+	if consentMode == consentModeGDPR && acc.authChecker.IsLoggedIn() {
+		if err := retryIfFailed(acc.doLightLogout); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to perform light logout:", err)
 		}
 	}
 
 	// standard mode has analytics enabled by default and no required
 	// consent flow, so update the config with `AnalyticsConsent := true`
-	if consentMode == standard {
-		if err := acc.cm.SaveWith(func(c config.Config) config.Config {
-			enabled := true
-			c.AnalyticsConsent = &enabled
-			return c
-		}); err != nil {
-			// XXX: improve and what's next?
+	if consentMode == consentModeStandard {
+		if err := retryIfFailed(acc.setConsentTrue); err != nil {
 			log.Println(internal.ErrorPrefix, "failed to save analytics consent", err)
 		}
 	}
+}
+
+func retryIfFailed(fn func() error) error {
+	return internal.Retry(3, time.Millisecond*200, fn)
+}
+
+func (acc *AnalyticsConsentChecker) setConsentTrue() error {
+	return acc.cm.SaveWith(func(c config.Config) config.Config {
+		enabled := true
+		c.AnalyticsConsent = &enabled
+		return c
+	})
 }
 
 // IsConsentFlowCompleted reads configuration file and
@@ -108,36 +116,38 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	var cfg config.Config
 	if err := acc.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to load config when determining consent mode:", err)
-		// fallback to strict mode in case of an issue
-		return GDPR
+		// fallback to strict mode in case of an issue with config
+		return consentModeGDPR
 	}
 
 	// can't determine user location with KS on, fallback to strict mode
 	if cfg.KillSwitch {
-		return GDPR
+		log.Println(internal.WarningPrefix, "KillSwitch active, falling back to GDPR mode")
+		return consentModeGDPR
 	}
 
+	// fallback to strict mode in case of an issue with API
 	insights, err := acc.API.Insights()
-	if insights == nil || err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get insights: (insights, error) =", insights, err)
-		// fallback to strict mode in case of an issue
-		return GDPR
+	if err != nil {
+		log.Println(internal.WarningPrefix, "insights api error, falling back to GDRP mode:", err)
+		return consentModeGDPR
 	}
 
-	return modeForCountryCode(countryCode(insights.CountryCode))
+	// fallback to strict mode in case of nil response
+	if insights == nil {
+		log.Println(internal.WarningPrefix, "insigts data is nil, falling back to GDPR mode")
+		return consentModeGDPR
+	}
+
+	return modeForCountryCode(countryCode(strings.ToLower(insights.CountryCode)))
 }
 
 func (acc *AnalyticsConsentChecker) doLightLogout() error {
-	if err := acc.cm.SaveWith(func(c config.Config) config.Config {
+	return acc.cm.SaveWith(func(c config.Config) config.Config {
 		delete(c.TokensData, c.AutoConnectData.ID)
 		c.AutoConnectData.ID = 0
-		c.Mesh = false
-		c.MeshPrivateKey = ""
 		return c
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 // modeForCountryCode returns analytics consent mode.
@@ -147,7 +157,7 @@ func (acc *AnalyticsConsentChecker) doLightLogout() error {
 func modeForCountryCode(cc countryCode) consentMode {
 	mode, ok := countryCodeToConsentMode[cc]
 	if !ok {
-		return GDPR
+		return consentModeGDPR
 	}
 	return mode
 }
