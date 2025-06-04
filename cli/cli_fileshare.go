@@ -47,7 +47,6 @@ func statusLoop(fileshareClient pb.FileshareClient, client transferStatusClient,
 		defer close(transferErrorChan)
 		for {
 			resp, err := client.Recv()
-
 			if err != nil {
 				if err != io.EOF {
 					transferErrorChan <- err
@@ -116,7 +115,7 @@ func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(internal.UnhandledMessage))
 	}
 
-	if !resp.GetValue() {
+	if !resp.GetIsLoggedIn() {
 		return formatError(fmt.Errorf(MsgFileshareUserNotLoggedIn))
 	}
 
@@ -341,7 +340,7 @@ func (c *cmd) FileshareClear(ctx *cli.Context) error {
 
 	var resp *pb.Error
 	var err error
-	var until = time.Now()
+	until := time.Now()
 
 	args := ctx.Args()
 	if args.Get(0) != "all" {

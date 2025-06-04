@@ -12,6 +12,7 @@ import (
 const defaultFWMarkValue uint32 = 0xe1f1
 
 func newConfig(machineIDGetter MachineIDGetter) *Config {
+	areAnalyticsAllowed := false
 	return &Config{
 		Technology:   Technology_NORDLYNX,
 		Firewall:     true,
@@ -22,16 +23,10 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 		MachineID:  machineIDGetter.GetMachineID(),
 		UsersData:  &UsersData{NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
 		TokensData: map[int64]TokenData{},
+		// FIXME: This is set to false now to not break the app as the full consent flow
+		// is not yet implemented. This will be addressed in LVPN-8137
+		AnalyticsConsent: &areAnalyticsAllowed,
 	}
-}
-
-// newConfigWithLoginData returns a clean/default config where login data(TokensData and AutoconnectData.ID) is
-// initialized to values from the parrentConfig.
-func newConfigWithLoginData(machineIDGetter MachineIDGetter, parrentConfig Config) *Config {
-	cfg := newConfig(machineIDGetter)
-	cfg.AutoConnectData.ID = parrentConfig.AutoConnectData.ID
-	cfg.TokensData = parrentConfig.TokensData
-	return cfg
 }
 
 // Config stores application settings and tokens.
@@ -43,7 +38,7 @@ type Config struct {
 	Firewall     bool       `json:"firewall"` // omitempty breaks this
 	FirewallMark uint32     `json:"fwmark"`
 	Routing      TrueField  `json:"routing"`
-	// XXX: create ticket for this
+	// Deprected: In v4, this field is no longer used. Use `AnalyticsConsent` field instead.
 	Analytics TrueField `json:"analytics"` // remove in 4.2
 	// AnalyticsConsent describes user decision about extra analytics.
 	// If nil, the consent flow was not yet completed by user.
@@ -65,6 +60,21 @@ type Config struct {
 	RCLastUpdate    time.Time           `json:"rc_last_update,omitempty"`
 	// Indicates whether the virtual servers are used. True by default
 	VirtualLocation TrueField `json:"virtual_location,omitempty"`
+}
+
+// WithLoginData makes a copy of current configuration
+// with login data values from `other` configuration.
+func (c Config) WithLoginData(other *Config) Config {
+	c.AutoConnectData.ID = other.AutoConnectData.ID
+	c.TokensData = other.TokensData
+	return c
+}
+
+// WithAnalyticsConsent makes a copy of current configuration
+// with analytics consent values from `other` configuration.
+func (c Config) WithAnalyticsConsent(value bool) Config {
+	c.AnalyticsConsent = &value
+	return c
 }
 
 type AutoConnectData struct {

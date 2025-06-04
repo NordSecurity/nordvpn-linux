@@ -30,7 +30,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 		Firewall:   cfg.Firewall,
 		Fwmark:     cfg.FirewallMark,
 		Routing:    cfg.Routing.Get(),
-		Analytics:  cfg.Analytics.Get(),
+		Analytics:  cfg.AnalyticsConsent,
 		KillSwitch: cfg.KillSwitch,
 		AutoConnectData: &pb.AutoconnectData{
 			Enabled:     cfg.AutoConnect,
