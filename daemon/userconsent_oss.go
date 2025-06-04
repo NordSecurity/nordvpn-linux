@@ -8,7 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
-// XXX: docs
+// AnalyticsConsentChecker here is a no-op stub struct used when there is no moose.
 type AnalyticsConsentChecker struct{}
 
 func NewConsentChecker(

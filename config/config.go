@@ -45,7 +45,8 @@ type Config struct {
 	Routing      TrueField  `json:"routing"`
 	// XXX: create ticket for this
 	Analytics TrueField `json:"analytics"` // remove in 4.2
-	// XXX: docs
+	// AnalyticsConsent describes user decision about extra analytics.
+	// If nil, the consent flow was not yet completed by user.
 	AnalyticsConsent *bool `json:"analyticsConsent"`
 	Mesh             bool  `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
