@@ -171,28 +171,34 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool) (retErr error) {
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
 	caller := getCaller()
-	var c Config
+	var newCfg Config
 	defer func() {
 		if retErr == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(DataConfigChange{
-				Config: &c,
+				Config: &newCfg,
 				Caller: caller,
 			})
 		}
 	}()
 
-	if preserveLoginData {
-		var cfg Config
-		retErr = f.load(&cfg)
-		if retErr != nil {
-			return fmt.Errorf("loading old config: %w", retErr)
-		}
-		c = *newConfigWithLoginData(f.machineIDGetter, cfg)
-		retErr = f.save(c)
-		return
+	var current Config
+	retErr = f.load(&current)
+	if retErr != nil {
+		return fmt.Errorf("loading old config: %w", retErr)
 	}
-	c = *newConfig(f.machineIDGetter)
-	retErr = f.save(c)
+
+	newCfg = *newConfig(f.machineIDGetter)
+
+	// never reset analytics consent to default if it was set already
+	if current.AnalyticsConsent != nil {
+		newCfg = newCfg.WithAnalyticsConsent(*current.AnalyticsConsent)
+	}
+
+	if preserveLoginData {
+		newCfg = newCfg.WithLoginData(&current)
+	}
+
+	retErr = f.save(newCfg)
 	return
 }
 
