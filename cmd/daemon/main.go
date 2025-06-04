@@ -113,6 +113,7 @@ const (
 )
 
 func main() {
+	// XXX: remove
 	time.Sleep(10 * time.Second)
 	// pprof
 	if internal.IsDevEnv(Environment) {
