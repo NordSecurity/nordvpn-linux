@@ -30,7 +30,7 @@ message Settings {
   bool meshnet = 6;
   bool routing = 7;
   uint32 fwmark = 8;
-  bool analytics = 9;
+  optional bool analytics = 9;
   repeated string dns = 10;
   bool threat_protection_lite = 11;
   config.Protocol protocol = 12;
