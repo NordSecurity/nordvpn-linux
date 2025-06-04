@@ -43,8 +43,10 @@ type Config struct {
 	Firewall     bool       `json:"firewall"` // omitempty breaks this
 	FirewallMark uint32     `json:"fwmark"`
 	Routing      TrueField  `json:"routing"`
-	Analytics    TrueField  `json:"analytics"`
-	Mesh         bool       `json:"mesh"`
+	// Analytics is deprecated, not deleted from the config for backwards compatibility
+	Analytics        TrueField `json:"analytics"`
+	AnalyticsConsent bool      `json:"analytics_consent,omitempty"`
+	Mesh             bool      `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
 	MeshPrivateKey  string              `json:"mesh_private_key"`
 	MeshDevice      *mesh.Machine       `json:"mesh_device"`

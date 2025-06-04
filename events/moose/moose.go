@@ -68,7 +68,7 @@ func (s *Subscriber) Enable() error {
 		return nil
 	}
 	s.enabled = true
-	return s.response(moose.MooseNordvpnappSetOptIn(true))
+	return s.response(moose.MooseNordvpnappSetConsentLevel(true))
 }
 
 // Disable moose analytics engine
@@ -79,7 +79,7 @@ func (s *Subscriber) Disable() error {
 		return nil
 	}
 	s.enabled = false
-	return s.response(moose.MooseNordvpnappSetOptIn(false))
+	return s.response(moose.MooseNordvpnappSetConsentLevel(false))
 }
 
 func (s *Subscriber) isEnabled() bool {
@@ -137,7 +137,7 @@ func (s *Subscriber) Init() error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
-	s.enabled = cfg.Analytics.Get()
+	s.enabled = cfg.AnalyticsConsent
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
 		internal.IsProdEnv(s.Environment),
