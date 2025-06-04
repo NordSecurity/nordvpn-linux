@@ -463,6 +463,7 @@ func (s *Server) Invite(
 	ctx context.Context,
 	req *pb.InviteRequest,
 ) (*pb.InviteResponse, error) {
+	log.Println(internal.DebugPrefix + "-mesh-inv-send")
 	s.daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "send_invitation", ItemType: "textbox", ItemValue: "send_invitation", FormReference: "cli"})
 
 	if !s.ac.IsLoggedIn() {
@@ -500,6 +501,7 @@ func (s *Server) Invite(
 	}
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
+	log.Println(internal.DebugPrefix+"-mesh-inv-send", "send invite")
 	err := s.invitationAPI.Invite(
 		tokenData.Token,
 		cfg.MeshDevice.ID,
@@ -510,6 +512,7 @@ func (s *Server) Invite(
 		req.GetAllowFileshare(),
 	)
 	if err != nil {
+		log.Println(internal.DebugPrefix+"-mesh-inv-send", "publish err")
 		s.pub.Publish(fmt.Errorf("sending invitation: %w", err))
 		if errors.Is(err, core.ErrTooManyRequests) {
 			return &pb.InviteResponse{
@@ -568,6 +571,7 @@ func (s *Server) Invite(
 		}, nil
 	}
 
+	log.Println(internal.DebugPrefix+"-mesh-inv-send", "send response")
 	return &pb.InviteResponse{
 		Response: &pb.InviteResponse_Empty{},
 	}, nil

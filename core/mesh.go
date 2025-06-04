@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 
 	"github.com/google/uuid"
 )
@@ -394,6 +396,7 @@ func (api *DefaultAPI) Invite(
 		return err
 	}
 
+	log.Println(internal.DebugPrefix+"-mesh-inv-send", "do request")
 	resp, err := api.request(
 		fmt.Sprintf(urlInvitationSend, self.String()),
 		http.MethodPost,
@@ -401,11 +404,16 @@ func (api *DefaultAPI) Invite(
 		token,
 	)
 
+	log.Println(internal.DebugPrefix+"-mesh-inv-send", "done request")
 	if err != nil {
 		return err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		log.Println(internal.DebugPrefix+"-mesh-inv-send", "close body")
+		resp.Body.Close()
+		log.Println(internal.DebugPrefix+"-mesh-inv-send", "closed body")
+	}()
 
 	return ExtractError(resp)
 }
