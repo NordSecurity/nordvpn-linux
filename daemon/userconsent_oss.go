@@ -28,5 +28,4 @@ func IsConsentFlowCompleted(_ config.Manager) bool {
 // PrepareDaemonIfConsentNotCompleted is a no-op stub used when there is no moose.
 func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// nothing to do on non-moose app
-	return
 }

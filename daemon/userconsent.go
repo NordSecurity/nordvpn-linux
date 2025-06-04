@@ -27,22 +27,22 @@ type consentMode uint
 const (
 	// consentModeStandard mode describes countries with loose legal requirements regarding analytics consent
 	consentModeStandard consentMode = iota
-	// consentModeGDPR mode describes countries with stirct analytics consent requirements
+	// consentModeGDPR mode describes countries with strict analytics consent requirements
 	consentModeGDPR
 )
 
 type AnalyticsConsentChecker struct {
-	cm          *config.FilesystemConfigManager
-	API         *core.DefaultAPI
-	authChecker *auth.RenewingChecker
+	cm          config.Manager
+	insightsAPI core.InsightsAPI
+	authChecker auth.Checker
 }
 
 func NewConsentChecker(
-	cm *config.FilesystemConfigManager,
-	API *core.DefaultAPI,
-	authChecker *auth.RenewingChecker,
+	cm config.Manager,
+	insightsAPI core.InsightsAPI,
+	authChecker auth.Checker,
 ) *AnalyticsConsentChecker {
-	return &AnalyticsConsentChecker{cm, API, authChecker}
+	return &AnalyticsConsentChecker{cm, insightsAPI, authChecker}
 }
 
 // PrepareDaemonIfConsentNotCompleted sets up the daemon for analytics consent flow.
@@ -127,7 +127,7 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	}
 
 	// fallback to strict mode in case of an issue with API
-	insights, err := acc.API.Insights()
+	insights, err := acc.insightsAPI.Insights()
 	if err != nil {
 		log.Println(internal.WarningPrefix, "insights api error, falling back to GDRP mode:", err)
 		return consentModeGDPR
