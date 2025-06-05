@@ -37,6 +37,8 @@ func (ti *Instance) login() {
 		return
 	}
 
+	// will be addressed in LVPN-8137
+	//exhaustive:ignore
 	switch loginResp.Status {
 	case pb.LoginStatus_UNKNOWN_OAUTH2_ERROR:
 		ti.notify("Login error: %s", internal.ErrUnhandled)
