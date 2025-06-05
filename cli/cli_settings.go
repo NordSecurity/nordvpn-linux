@@ -39,7 +39,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.GetFirewall()))
 	fmt.Printf("Firewall Mark: 0x%x\n", settings.GetFwmark())
 	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
-	fmt.Printf("Analytics: %+v\n", nstrings.GetBoolLabel(settings.GetAnalytics()))
+	fmt.Printf("Analytics: %+v\n", nstrings.GetTriStateLabel(settings.Analytics))
 	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
 	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
 	if settings.Technology == config.Technology_OPENVPN {
@@ -97,7 +97,7 @@ func displayAllowlist(allowlist *pb.Allowlist) {
 			})
 			allowlistedRanges := make([]PortRange, 0)
 			for _, port := range allPorts {
-				//find current iteration's protocols
+				// find current iteration's protocols
 				var protos []string
 				if index := slices.Index(udpPorts, port); index != -1 {
 					protos = append(protos, "UDP")
@@ -113,11 +113,11 @@ func displayAllowlist(allowlist *pb.Allowlist) {
 					lastProtos = last.protocols
 					lastEndPort = last.end
 				}
-				//check if the range allowlist range continues or should we be starting a new one
+				// check if the range allowlist range continues or should we be starting a new one
 				if !slices.Equal(protos, lastProtos) || client.InterfaceToInt64(port)-lastEndPort > 1 {
 					allowlistedRanges = append(allowlistedRanges, PortRange{start: client.InterfaceToInt64(port), protocols: protos})
 				}
-				//populate the range
+				// populate the range
 				allowlistedRanges[len(allowlistedRanges)-1].end = client.InterfaceToInt64(port)
 			}
 			fmt.Printf("Allowlisted ports:\n")
