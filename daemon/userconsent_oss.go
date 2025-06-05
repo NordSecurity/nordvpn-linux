@@ -12,9 +12,10 @@ import (
 type AnalyticsConsentChecker struct{}
 
 func NewConsentChecker(
-	cm *config.FilesystemConfigManager,
-	API *core.DefaultAPI,
-	authChecker *auth.RenewingChecker,
+	_ bool,
+	_ *config.FilesystemConfigManager,
+	_ *core.DefaultAPI,
+	_ *auth.RenewingChecker,
 ) *AnalyticsConsentChecker {
 	return &AnalyticsConsentChecker{}
 }

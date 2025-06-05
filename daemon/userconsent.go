@@ -5,6 +5,7 @@ package daemon
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
@@ -43,17 +44,19 @@ func (c consentMode) String() string {
 }
 
 type AnalyticsConsentChecker struct {
+	isDevEnv    bool
 	cm          config.Manager
 	insightsAPI core.InsightsAPI
 	authChecker auth.Checker
 }
 
 func NewConsentChecker(
+	isDevEnv bool,
 	cm config.Manager,
 	insightsAPI core.InsightsAPI,
 	authChecker auth.Checker,
 ) *AnalyticsConsentChecker {
-	return &AnalyticsConsentChecker{cm, insightsAPI, authChecker}
+	return &AnalyticsConsentChecker{isDevEnv, cm, insightsAPI, authChecker}
 }
 
 // PrepareDaemonIfConsentNotCompleted sets up the daemon for analytics consent flow.
@@ -147,7 +150,17 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 		return consentModeGDPR
 	}
 
-	mode := modeForCountryCode(countryCode(strings.ToLower(insights.CountryCode)))
+	cc := insights.CountryCode
+	// allow override of country code in dev mode
+	if acc.isDevEnv {
+		envVarCC, exists := os.LookupEnv("NORDVPN_USER_CC")
+		if exists {
+			log.Println(internal.DebugPrefix, "overriding user's coutry code to", envVarCC)
+			cc = envVarCC
+		}
+	}
+
+	mode := modeForCountryCode(countryCode(strings.ToLower(cc)))
 	log.Printf(internal.DebugPrefix+" consent mode for country code '%s': %s", insights.CountryCode, mode)
 	return mode
 }
