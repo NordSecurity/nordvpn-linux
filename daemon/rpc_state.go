@@ -114,18 +114,6 @@ func statusStream(stateChan <-chan any,
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{ConnectionStatus: &status}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn enabled failed to send state update:", err)
 				}
-			case events.DataDisconnect:
-				if err := srv.Send(
-					&pb.AppState{State: &pb.AppState_ConnectionStatus{
-						ConnectionStatus: &pb.StatusResponse{
-							State:      pb.ConnectionState_DISCONNECTED,
-							ByUser:     e.ByUser,
-							Technology: e.Technology,
-							Protocol:   e.Protocol,
-						},
-					}}); err != nil {
-					log.Println(internal.ErrorPrefix, "vpn disabled failed to send state update:", err)
-				}
 			case pb.LoginEventType:
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_LoginEvent{
