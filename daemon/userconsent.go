@@ -3,6 +3,7 @@
 package daemon
 
 import (
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -30,6 +31,17 @@ const (
 	// consentModeGDPR mode describes countries with strict analytics consent requirements
 	consentModeGDPR
 )
+
+func (c consentMode) String() string {
+	switch c {
+	case consentModeStandard:
+		return "standard"
+	case consentModeGDPR:
+		return "GDPR"
+	default:
+		return fmt.Sprintf("consentMode(%d)", uint(c))
+	}
+}
 
 type AnalyticsConsentChecker struct {
 	cm          config.Manager
@@ -68,7 +80,7 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// logout user if in GDPR consent mode
 	if consentMode == consentModeGDPR && acc.authChecker.IsLoggedIn() {
 		if err := retryIfFailed(acc.doLightLogout); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to perform light logout:", err)
+			log.Println(internal.WarningPrefix, "failed to perform light logout:", err)
 		}
 	}
 
@@ -76,7 +88,7 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// consent flow, so update the config with `AnalyticsConsent := true`
 	if consentMode == consentModeStandard {
 		if err := retryIfFailed(acc.setConsentTrue); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to save analytics consent", err)
+			log.Println(internal.WarningPrefix, "failed to save analytics consent", err)
 		}
 	}
 }
@@ -115,7 +127,7 @@ func IsConsentFlowCompleted(cm config.Manager) bool {
 func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	var cfg config.Config
 	if err := acc.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to load config when determining consent mode:", err)
+		log.Println(internal.WarningPrefix, "failed to load config, falling back to GDPR mode:", err)
 		// fallback to strict mode in case of an issue with config
 		return consentModeGDPR
 	}
@@ -139,7 +151,9 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 		return consentModeGDPR
 	}
 
-	return modeForCountryCode(countryCode(strings.ToLower(insights.CountryCode)))
+	mode := modeForCountryCode(countryCode(strings.ToLower(insights.CountryCode)))
+	log.Printf(internal.DebugPrefix+" consent mode for country code '%s': %s", insights.CountryCode, mode)
+	return mode
 }
 
 func (acc *AnalyticsConsentChecker) doLightLogout() error {
