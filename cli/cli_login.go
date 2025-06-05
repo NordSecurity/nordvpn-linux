@@ -55,6 +55,8 @@ func (c *cmd) login(requestType pb.LoginType) error {
 		return formatError(err)
 	}
 
+	// will be addressed in LVPN-8136
+	//exhaustive:ignore
 	switch resp.Status {
 	case pb.LoginStatus_UNKNOWN_OAUTH2_ERROR:
 		return formatError(internal.ErrUnhandled)
