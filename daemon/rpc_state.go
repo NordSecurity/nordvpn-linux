@@ -77,7 +77,6 @@ func statusStream(stateChan <-chan any,
 		case ev := <-stateChan:
 			switch e := ev.(type) {
 			case events.DataConnectChangeNotif:
-				requestedConnParams := requestedConnParamsStorage.Get()
 				status := pb.StatusResponse{
 					State:           e.Status.State,
 					Ip:              e.Status.IP.String(),
@@ -95,14 +94,20 @@ func statusStream(stateChan <-chan any,
 					PostQuantum:     e.Status.IsPostQuantum,
 					Upload:          e.Status.Tx,
 					Download:        e.Status.Rx,
-					Parameters: &pb.ConnectionParameters{
+				}
+
+				// for disconnected state connection parameters shall be left empty
+				// otherwise e.g. GUI displays incorrect message when disconnected
+				if status.State != pb.ConnectionState_DISCONNECTED {
+					requestedConnParams := requestedConnParamsStorage.Get()
+					status.Parameters = &pb.ConnectionParameters{
 						ServerName:  requestedConnParams.ServerName,
 						Source:      requestedConnParams.ConnectionSource,
 						Country:     requestedConnParams.Country,
 						City:        requestedConnParams.City,
 						Group:       requestedConnParams.Group,
 						CountryCode: requestedConnParams.CountryCode,
-					},
+					}
 				}
 
 				if err := srv.Send(
