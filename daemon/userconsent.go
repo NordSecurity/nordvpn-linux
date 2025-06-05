@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -79,22 +78,19 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 
 	// logout user if in GDPR consent mode
 	if consentMode == consentModeGDPR && acc.authChecker.IsLoggedIn() {
-		if err := retryIfFailed(acc.doLightLogout); err != nil {
+		if err := acc.doLightLogout(); err != nil {
 			log.Println(internal.WarningPrefix, "failed to perform light logout:", err)
 		}
+		return
 	}
 
 	// standard mode has analytics enabled by default and no required
 	// consent flow, so update the config with `AnalyticsConsent := true`
 	if consentMode == consentModeStandard {
-		if err := retryIfFailed(acc.setConsentTrue); err != nil {
+		if err := acc.setConsentTrue(); err != nil {
 			log.Println(internal.WarningPrefix, "failed to save analytics consent", err)
 		}
 	}
-}
-
-func retryIfFailed(fn func() error) error {
-	return internal.Retry(3, time.Millisecond*200, fn)
 }
 
 func (acc *AnalyticsConsentChecker) setConsentTrue() error {
