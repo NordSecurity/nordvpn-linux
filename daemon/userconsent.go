@@ -25,7 +25,7 @@ var countryCodeToConsentMode = map[countryCode]consentMode{
 type consentMode uint
 
 const (
-	// consentModeStandard mode describes countries with loose legal requirements regarding analytics consent
+	// consentModeStandard mode describes countries with less strict analytics consent requirements
 	consentModeStandard consentMode = iota
 	// consentModeGDPR mode describes countries with strict analytics consent requirements
 	consentModeGDPR
