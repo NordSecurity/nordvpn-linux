@@ -38,8 +38,6 @@ type Config struct {
 	Firewall     bool       `json:"firewall"` // omitempty breaks this
 	FirewallMark uint32     `json:"fwmark"`
 	Routing      TrueField  `json:"routing"`
-	// Deprected: In v4, this field is no longer used. Use `AnalyticsConsent` field instead.
-	Analytics TrueField `json:"analytics"` // remove in 4.2
 	// AnalyticsConsent describes user decision about extra analytics.
 	// If nil, the consent flow was not yet completed by user.
 	AnalyticsConsent *bool `json:"analytics_consent"`
