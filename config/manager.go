@@ -191,11 +191,11 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool) (retErr error) {
 
 	// never reset analytics consent to default if it was set already
 	if current.AnalyticsConsent != nil {
-		newCfg = newCfg.WithAnalyticsConsent(*current.AnalyticsConsent)
+		newCfg = newCfg.withAnalyticsConsent(*current.AnalyticsConsent)
 	}
 
 	if preserveLoginData {
-		newCfg = newCfg.WithLoginData(&current)
+		newCfg = newCfg.withLoginData(&current)
 	}
 
 	retErr = f.save(newCfg)

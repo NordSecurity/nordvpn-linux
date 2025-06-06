@@ -62,7 +62,7 @@ type Config struct {
 
 // WithLoginData makes a copy of current configuration
 // with login data values from `other` configuration.
-func (c Config) WithLoginData(other *Config) Config {
+func (c Config) withLoginData(other *Config) Config {
 	c.AutoConnectData.ID = other.AutoConnectData.ID
 	c.TokensData = other.TokensData
 	return c
@@ -70,7 +70,7 @@ func (c Config) WithLoginData(other *Config) Config {
 
 // WithAnalyticsConsent makes a copy of current configuration
 // with analytics consent values from `other` configuration.
-func (c Config) WithAnalyticsConsent(value bool) Config {
+func (c Config) withAnalyticsConsent(value bool) Config {
 	c.AnalyticsConsent = &value
 	return c
 }
