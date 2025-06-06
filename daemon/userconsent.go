@@ -153,8 +153,7 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	cc := insights.CountryCode
 	// allow override of country code in dev mode
 	if acc.isDevEnv {
-		envVarCC, exists := os.LookupEnv("NORDVPN_USER_CC")
-		if exists {
+		if envVarCC, exists := os.LookupEnv("NORDVPN_USER_CC"); exists {
 			log.Println(internal.DebugPrefix, "overriding user's coutry code to", envVarCC)
 			cc = envVarCC
 		}
