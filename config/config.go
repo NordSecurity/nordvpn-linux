@@ -42,7 +42,7 @@ type Config struct {
 	Analytics TrueField `json:"analytics"` // remove in 4.2
 	// AnalyticsConsent describes user decision about extra analytics.
 	// If nil, the consent flow was not yet completed by user.
-	AnalyticsConsent *bool `json:"analyticsConsent"`
+	AnalyticsConsent *bool `json:"analytics_consent"`
 	Mesh             bool  `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
 	MeshPrivateKey  string              `json:"mesh_private_key"`
