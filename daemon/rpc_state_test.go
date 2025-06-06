@@ -11,8 +11,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/v3/assert"
 )
 
 const (
