@@ -64,6 +64,7 @@ const (
 	CodeFeatureHidden                  int64 = 3050
 	CodeTechnologyDisabled             int64 = 3051
 	CodeNotInNordVPNGroup              int64 = 3052
+	CodeConsentMissing                 int64 = 3052
 )
 
 type ErrorWithCode struct {

@@ -31,10 +31,10 @@ service Daemon {
   rpc Countries(Empty) returns (ServerGroupsList);
   rpc Disconnect(Empty) returns (stream Payload);
   rpc Groups(Empty) returns (ServerGroupsList);
-  rpc IsLoggedIn(Empty) returns (Bool);
+  rpc IsLoggedIn(Empty) returns (IsLoggedInResponse);
   rpc LoginWithToken(LoginWithTokenRequest) returns (LoginResponse);
   rpc LoginOAuth2(LoginOAuth2Request) returns (LoginOAuth2Response);
-  rpc LoginOAuth2Callback(LoginOAuth2CallbackRequest) returns (Empty);
+  rpc LoginOAuth2Callback(LoginOAuth2CallbackRequest) returns (LoginOAuth2CallbackResponse);
   rpc Logout(LogoutRequest) returns (Payload);
   rpc Ping(Empty) returns (PingResponse);
   rpc RateConnection(RateRequest) returns (Payload);

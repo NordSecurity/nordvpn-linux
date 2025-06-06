@@ -45,7 +45,7 @@ func (ti *Instance) updateLoginStatus() bool {
 		return ti.updateDaemonConnectionStatus(messageForDaemonError(err))
 	}
 
-	loggedIn := resp.GetValue()
+	loggedIn := resp.GetIsLoggedIn()
 
 	if !loggedIn && ti.state.loggedIn && ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		// reset the VPN info if the user logs out while connected to VPN

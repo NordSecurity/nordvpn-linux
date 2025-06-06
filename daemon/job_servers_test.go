@@ -89,7 +89,7 @@ type mockConfigManager struct {
 func newMockConfigManager() *mockConfigManager {
 	return &mockConfigManager{c: config.Config{
 		Firewall:  true,
-		UsersData: &config.UsersData{Notify: config.UidBoolMap{}, NotifyOff: config.UidBoolMap{}, TrayOff: config.UidBoolMap{}},
+		UsersData: &config.UsersData{NotifyOff: config.UidBoolMap{}, TrayOff: config.UidBoolMap{}},
 		TokensData: map[int64]config.TokenData{
 			1337: {
 				OpenVPNUsername: "bad",

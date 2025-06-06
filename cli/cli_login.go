@@ -24,7 +24,7 @@ const (
 
 func (c *cmd) Login(ctx *cli.Context) error {
 	resp, err := c.client.IsLoggedIn(context.Background(), &pb.Empty{})
-	if err != nil || resp.GetValue() {
+	if err != nil || resp.GetIsLoggedIn() {
 		return formatError(internal.ErrAlreadyLoggedIn)
 	}
 
@@ -55,14 +55,16 @@ func (c *cmd) login(requestType pb.LoginType) error {
 		return formatError(err)
 	}
 
+	// will be addressed in LVPN-8136
+	//exhaustive:ignore
 	switch resp.Status {
-	case pb.LoginOAuth2Status_UNKNOWN_OAUTH2_ERROR:
+	case pb.LoginStatus_UNKNOWN_OAUTH2_ERROR:
 		return formatError(internal.ErrUnhandled)
-	case pb.LoginOAuth2Status_NO_NET:
+	case pb.LoginStatus_NO_NET:
 		return formatError(internal.ErrNoNetWhenLoggingIn)
-	case pb.LoginOAuth2Status_ALREADY_LOGGED_IN:
+	case pb.LoginStatus_ALREADY_LOGGED_IN:
 		return formatError(internal.ErrAlreadyLoggedIn)
-	case pb.LoginOAuth2Status_SUCCESS:
+	case pb.LoginStatus_SUCCESS:
 		if url := resp.Url; url != "" {
 			color.Green("Continue in the browser: %s", url)
 		} else {

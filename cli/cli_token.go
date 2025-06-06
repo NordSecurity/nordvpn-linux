@@ -17,7 +17,7 @@ const (
 
 func (c *cmd) TokenInfo(ctx *cli.Context) error {
 	resp, err := c.client.IsLoggedIn(context.Background(), &pb.Empty{})
-	if err != nil || !resp.GetValue() {
+	if err != nil || !resp.GetIsLoggedIn() {
 		return formatError(internal.ErrNotLoggedIn)
 	}
 

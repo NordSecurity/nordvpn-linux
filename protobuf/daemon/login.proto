@@ -24,14 +24,24 @@ message LoginResponse {
   string url = 5;
 }
 
-enum LoginOAuth2Status {
+enum LoginStatus {
   SUCCESS = 0;
   UNKNOWN_OAUTH2_ERROR = 1;
   ALREADY_LOGGED_IN = 2;
   NO_NET = 3;
+  CONSENT_MISSING = 4;
 }
 
 message LoginOAuth2Response {
-  LoginOAuth2Status status = 1;
+  LoginStatus status = 1;
   string url = 2;
+}
+
+message LoginOAuth2CallbackResponse {
+  LoginStatus status = 1;
+}
+
+message IsLoggedInResponse {
+  bool is_logged_in = 1;
+  LoginStatus status = 2;
 }

@@ -11,6 +11,7 @@ var boolFromStringError = "bool: failed to parse from string: %s"
 const (
 	enabled  = "enabled"
 	disabled = "disabled"
+	notSet   = "not set"
 )
 
 var falseMap = map[string]bool{
@@ -70,6 +71,17 @@ func GetBools() []string {
 // GetBoolLabel returns disabled if false, enabled otherwise
 func GetBoolLabel(option bool) string {
 	if option {
+		return enabled
+	}
+	return disabled
+}
+
+// GetTriStateLabel returns disabled if false, enabled if true and not set otherwise.
+func GetTriStateLabel(option *bool) string {
+	if option == nil {
+		return notSet
+	}
+	if *option {
 		return enabled
 	}
 	return disabled

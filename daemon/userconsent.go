@@ -1,0 +1,173 @@
+//go:build moose
+
+package daemon
+
+import (
+	"fmt"
+	"log"
+	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/auth"
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+)
+
+type countryCode string
+
+var countryCodeToConsentMode = map[countryCode]consentMode{
+	countryCode("us"): consentModeStandard,
+	countryCode("ca"): consentModeStandard,
+	countryCode("jp"): consentModeStandard,
+	countryCode("au"): consentModeStandard,
+}
+
+type consentMode uint
+
+const (
+	// consentModeStandard mode describes countries with less strict analytics consent requirements
+	consentModeStandard consentMode = iota
+	// consentModeGDPR mode describes countries with strict analytics consent requirements
+	consentModeGDPR
+)
+
+func (c consentMode) String() string {
+	switch c {
+	case consentModeStandard:
+		return "standard"
+	case consentModeGDPR:
+		return "GDPR"
+	default:
+		return fmt.Sprintf("consentMode(%d)", uint(c))
+	}
+}
+
+type AnalyticsConsentChecker struct {
+	cm          config.Manager
+	insightsAPI core.InsightsAPI
+	authChecker auth.Checker
+}
+
+func NewConsentChecker(
+	cm config.Manager,
+	insightsAPI core.InsightsAPI,
+	authChecker auth.Checker,
+) *AnalyticsConsentChecker {
+	return &AnalyticsConsentChecker{cm, insightsAPI, authChecker}
+}
+
+// PrepareDaemonIfConsentNotCompleted sets up the daemon for analytics consent flow.
+//
+// If consent flow was completed, this is no-op. Otherwise:
+//
+// - using Insights API find user location
+// - based on the location determine if user is in standard consent mode or GDPR mode (more strict)
+//
+// - for GDPR mode:
+//   - do light logout, it forces the user to login to application which triggers consent flow
+//
+// - for standard mode:
+//   - save consent as completed and accepted, no consent flow for standard mode countries
+func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
+	if IsConsentFlowCompleted(acc.cm) {
+		// nothing to do
+		return
+	}
+
+	consentMode := acc.consentModeFromUserLocation()
+
+	// logout user if in GDPR consent mode
+	if consentMode == consentModeGDPR && acc.authChecker.IsLoggedIn() {
+		if err := acc.doLightLogout(); err != nil {
+			log.Println(internal.WarningPrefix, "failed to perform light logout:", err)
+		}
+		return
+	}
+
+	// standard mode has analytics enabled by default and no required
+	// consent flow, so update the config with `AnalyticsConsent := true`
+	if consentMode == consentModeStandard {
+		if err := acc.setConsentTrue(); err != nil {
+			log.Println(internal.WarningPrefix, "failed to save analytics consent", err)
+		}
+	}
+}
+
+func (acc *AnalyticsConsentChecker) setConsentTrue() error {
+	return acc.cm.SaveWith(func(c config.Config) config.Config {
+		enabled := true
+		c.AnalyticsConsent = &enabled
+		return c
+	})
+}
+
+// IsConsentFlowCompleted reads configuration file and
+// checks if `AnalyticsConsent` field is set.
+func IsConsentFlowCompleted(cm config.Manager) bool {
+	var cfg config.Config
+	if err := cm.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to load config when checking consent flow", err)
+		return false
+	}
+	return cfg.AnalyticsConsent != nil
+}
+
+// consentModeFromUserLocation in a happy path, uses Insights API to get user's
+// location and compares it to list of countries in standard mode, if not on the
+// list, then user is in GDPR country.
+//
+// Additionally:
+// - in case of issue with reading configuration, fallback to GDPR mode
+// - if user has KillSwitch enabled, no traffic is going out, fallback to GDPR mode
+// - if there is an issue with making API request, fallback to GDPR mode
+func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
+	var cfg config.Config
+	if err := acc.cm.Load(&cfg); err != nil {
+		log.Println(internal.WarningPrefix, "failed to load config, falling back to GDPR mode:", err)
+		// fallback to strict mode in case of an issue with config
+		return consentModeGDPR
+	}
+
+	// can't determine user location with KS on, fallback to strict mode
+	if cfg.KillSwitch {
+		log.Println(internal.WarningPrefix, "KillSwitch active, falling back to GDPR mode")
+		return consentModeGDPR
+	}
+
+	// fallback to strict mode in case of an issue with API
+	insights, err := acc.insightsAPI.Insights()
+	if err != nil {
+		log.Println(internal.WarningPrefix, "insights api error, falling back to GDRP mode:", err)
+		return consentModeGDPR
+	}
+
+	// fallback to strict mode in case of nil response
+	if insights == nil {
+		log.Println(internal.WarningPrefix, "insigts data is nil, falling back to GDPR mode")
+		return consentModeGDPR
+	}
+
+	mode := modeForCountryCode(countryCode(strings.ToLower(insights.CountryCode)))
+	log.Printf(internal.DebugPrefix+" consent mode for country code '%s': %s", insights.CountryCode, mode)
+	return mode
+}
+
+func (acc *AnalyticsConsentChecker) doLightLogout() error {
+	return acc.cm.SaveWith(func(c config.Config) config.Config {
+		delete(c.TokensData, c.AutoConnectData.ID)
+		c.AutoConnectData.ID = 0
+		return c
+	})
+}
+
+// modeForCountryCode returns analytics consent mode.
+//
+// It uses country code and list of countries in standard mode to check it.
+// Countries not on the standard mode list fall into GDPR mode.
+func modeForCountryCode(cc countryCode) consentMode {
+	mode, ok := countryCodeToConsentMode[cc]
+	if !ok {
+		return consentModeGDPR
+	}
+	return mode
+}
