@@ -560,7 +560,12 @@ func main() {
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
 
-	consentChecker := daemon.NewConsentChecker(fsystem, defaultAPI, authChecker)
+	consentChecker := daemon.NewConsentChecker(
+		internal.IsDevEnv(Environment),
+		fsystem,
+		defaultAPI,
+		authChecker,
+	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
 	// Start jobs
