@@ -136,6 +136,79 @@ func addVpnSection(ti *Instance) {
 			ti.updateChan <- true
 		}()
 	}
+
+	countryPicker := systray.AddMenuItem("Country Picker", "Choose Country")
+	ti.state.mu.RLock()
+	countries := append([]string(nil), ti.state.countries.countries...)
+	recents := ti.state.recent.Snapshot()
+	current := ti.state.vpnCountry
+	ti.state.mu.RUnlock()
+	added := map[string]bool{}
+
+	for _, c := range recents {
+		if added[c] {
+			continue
+		}
+		added[c] = true
+		prefix := "↻ "
+		if c == current {
+			prefix = "✓ "
+		}
+		item := countryPicker.AddSubMenuItem(prefix+c, "Reconnect to "+c)
+
+		go func(c string, mi *systray.MenuItem) {
+			for {
+				_, open := <-mi.ClickedCh
+				if !open {
+					return
+				}
+				ti.state.mu.Lock()
+				ti.state.recent.Add(c)
+				ti.state.mu.Unlock()
+				_ = ti.state.recent.Save()
+				ti.updateChan <- false
+
+				if ti.connect(c, "") {
+					ti.updateChan <- true
+				}
+
+			}
+		}(c, item)
+	}
+
+	if len(added) > 0 {
+		countryPicker.AddSeparator()
+	}
+
+	for _, c := range countries {
+		if added[c] {
+			continue
+		}
+		added[c] = true
+		title := c
+		if c == current {
+			title = "✓ " + c
+		}
+		item := countryPicker.AddSubMenuItem(title, "Connect to "+c)
+		go func(c string, mi *systray.MenuItem) {
+			for {
+				_, open := <-mi.ClickedCh
+				if !open {
+					return
+				}
+				ti.state.mu.Lock()
+				ti.state.recent.Add(c)
+				ti.state.mu.Unlock()
+				_ = ti.state.recent.Save()
+				ti.updateChan <- false
+
+				if ti.connect(c, "") {
+					ti.updateChan <- true
+				}
+			}
+		}(c, item)
+	}
+
 	systray.AddSeparator()
 }
 
