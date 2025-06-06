@@ -2,6 +2,7 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -1360,4 +1361,23 @@ func parseConnectArgs(ctx *cli.Context) (string, string, error) {
 	serverGroup = strings.ToLower(serverGroup)
 
 	return serverTag, serverGroup, nil
+}
+
+// readForConfirmation from the reader with a given prompt.
+// In case of any invalid input or just enter, return false.
+func readForConfirmation(r io.Reader, prompt string, defaultValue bool) bool {
+	if defaultValue {
+		fmt.Printf("%s [Y/n] ", prompt)
+	} else {
+		fmt.Printf("%s [y/N] ", prompt)
+	}
+	answer, _, _ := bufio.NewReader(r).ReadRune()
+	switch answer {
+	case 'y', 'Y':
+		return true
+	case 'n', 'N':
+		return false
+	default:
+		return defaultValue
+	}
 }
