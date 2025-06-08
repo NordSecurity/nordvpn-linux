@@ -5,10 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/auth"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/insights"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,31 +54,32 @@ func TestModeForCountryCode_CaseInsensitive(t *testing.T) {
 func TestIsConsentFlowCompleted(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	enabled := true
 	tests := []struct {
 		name     string
-		manager  *fakeConfigManager
+		manager  config.Manager
 		expected bool
 	}{
 		{
 			name:     "Load error -> false",
-			manager:  &fakeConfigManager{loadErr: errors.New("load failure")},
+			manager:  &mock.ConfigManager{LoadErr: errors.New("load failure")},
 			expected: false,
 		},
 		{
 			name:     "AnalyticsConsent nil -> false",
-			manager:  &fakeConfigManager{cfg: config.Config{AnalyticsConsent: nil}},
+			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: nil}},
 			expected: false,
 		},
 		{
 			name:     "AnalyticsConsent non-nil -> true",
-			manager:  &fakeConfigManager{cfg: config.Config{AnalyticsConsent: func() *bool { b := true; return &b }()}},
+			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: &enabled}},
 			expected: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			consentChecker := NewConsentChecker(tt.manager, &fakeInsights{}, &fakeAuthChecker{})
+			consentChecker := NewConsentChecker(tt.manager, &insights.InsightsMock{}, &auth.AuthCheckerMock{})
 			got := consentChecker.IsConsentFlowCompleted()
 			assert.Equal(t, got, tt.expected)
 		})
@@ -134,9 +137,9 @@ func TestConsentModeFromUserLocation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cm := &fakeConfigManager{cfg: tt.initialConfig, loadErr: tt.loadErr}
-			api := &fakeInsights{insightsResult: tt.apiInsights, err: tt.apiErr}
-			authChk := &fakeAuthChecker{loggedIn: tt.authLoggedIn}
+			cm := &mock.ConfigManager{Cfg: &tt.initialConfig, LoadErr: tt.loadErr}
+			api := &insights.InsightsMock{InsightsResult: tt.apiInsights, Err: tt.apiErr}
+			authChk := &auth.AuthCheckerMock{LoggedIn: tt.authLoggedIn}
 
 			acc := &AnalyticsConsentChecker{cm: cm, insightsAPI: api, authChecker: authChk}
 			got := acc.consentModeFromUserLocation()
@@ -147,17 +150,17 @@ func TestConsentModeFromUserLocation(t *testing.T) {
 
 func TestSetConsentTrue(t *testing.T) {
 	category.Set(t, category.Unit)
-	cm := &fakeConfigManager{cfg: config.Config{AnalyticsConsent: nil}}
+	cm := &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: nil}}
 	acc := &AnalyticsConsentChecker{cm: cm}
-	assert.False(t, cm.saved)
-	assert.Nil(t, cm.cfg.AnalyticsConsent)
+	assert.False(t, cm.Saved)
+	assert.Nil(t, cm.Cfg.AnalyticsConsent)
 
 	err := acc.setConsentTrue()
 
 	assert.NoError(t, err)
-	assert.True(t, cm.saved)
-	assert.NotNil(t, cm.cfg.AnalyticsConsent)
-	assert.True(t, *cm.cfg.AnalyticsConsent)
+	assert.True(t, cm.Saved)
+	assert.NotNil(t, cm.Cfg.AnalyticsConsent)
+	assert.True(t, *cm.Cfg.AnalyticsConsent)
 }
 
 func TestDoLightLogout(t *testing.T) {
@@ -166,18 +169,18 @@ func TestDoLightLogout(t *testing.T) {
 		TokensData:      map[int64]config.TokenData{42: {}},
 		AutoConnectData: config.AutoConnectData{ID: 42},
 	}
-	cm := &fakeConfigManager{cfg: cfg}
+	cm := &mock.ConfigManager{Cfg: &cfg}
 	acc := &AnalyticsConsentChecker{cm: cm}
-	assert.False(t, cm.saved)
-	assert.True(t, len(cm.cfg.TokensData) > 0)
-	assert.True(t, cm.cfg.AutoConnectData.ID != 0)
+	assert.False(t, cm.Saved)
+	assert.True(t, len(cm.Cfg.TokensData) > 0)
+	assert.True(t, cm.Cfg.AutoConnectData.ID != 0)
 
 	err := acc.doLightLogout()
 
 	assert.NoError(t, err)
-	assert.True(t, cm.saved)
-	assert.Zero(t, len(cm.cfg.TokensData))
-	assert.Zero(t, cm.cfg.AutoConnectData.ID)
+	assert.True(t, cm.Saved)
+	assert.Zero(t, len(cm.Cfg.TokensData))
+	assert.Zero(t, cm.Cfg.AutoConnectData.ID)
 }
 
 func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
@@ -209,7 +212,7 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 		{
 			name:               "standard country -> set consent",
 			initialConfig:      config.Config{AnalyticsConsent: nil},
-			apiInsights:        &fakeInsights{insightsResult: &core.Insights{CountryCode: "ca"}},
+			apiInsights:        &insights.InsightsMock{InsightsResult: &core.Insights{CountryCode: "ca"}},
 			expectedSaved:      true,
 			expectedConsentSet: true,
 			expectedConsentVal: true,
@@ -223,7 +226,7 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 				TokensData:       map[int64]config.TokenData{42: {}},
 				AutoConnectData:  config.AutoConnectData{ID: 42},
 			},
-			apiInsights:        &fakeInsights{insightsResult: &core.Insights{CountryCode: "fr"}},
+			apiInsights:        &insights.InsightsMock{InsightsResult: &core.Insights{CountryCode: "fr"}},
 			authLoggedIn:       true,
 			expectedSaved:      true,
 			expectedConsentSet: false,
@@ -233,7 +236,7 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 		{
 			name:               "GDPR country & not logged in",
 			initialConfig:      config.Config{AnalyticsConsent: nil},
-			apiInsights:        &fakeInsights{insightsResult: &core.Insights{CountryCode: "fr"}},
+			apiInsights:        &insights.InsightsMock{InsightsResult: &core.Insights{CountryCode: "fr"}},
 			authLoggedIn:       false,
 			expectedSaved:      false,
 			expectedConsentSet: false,
@@ -244,79 +247,22 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cm := &fakeConfigManager{cfg: tt.initialConfig, loadErr: tt.loadErr}
+			cm := &mock.ConfigManager{Cfg: &tt.initialConfig, LoadErr: tt.loadErr}
 			api := tt.apiInsights
-			authChk := &fakeAuthChecker{loggedIn: tt.authLoggedIn}
+			authChk := &auth.AuthCheckerMock{LoggedIn: tt.authLoggedIn}
 
 			acc := &AnalyticsConsentChecker{cm: cm, insightsAPI: api, authChecker: authChk}
 			acc.PrepareDaemonIfConsentNotCompleted()
 
-			assert.Equal(t, cm.saved, tt.expectedSaved)
+			assert.Equal(t, cm.Saved, tt.expectedSaved)
 			if tt.expectedConsentSet {
-				assert.NotNil(t, cm.cfg.AnalyticsConsent)
-				assert.Equal(t, *cm.cfg.AnalyticsConsent, tt.expectedConsentVal)
+				assert.NotNil(t, cm.Cfg.AnalyticsConsent)
+				assert.Equal(t, *cm.Cfg.AnalyticsConsent, tt.expectedConsentVal)
 			} else {
-				assert.Nil(t, cm.cfg.AnalyticsConsent)
+				assert.Nil(t, cm.Cfg.AnalyticsConsent)
 			}
-			assert.Equal(t, len(cm.cfg.TokensData), tt.expectedTokensLen)
-			assert.Equal(t, cm.cfg.AutoConnectData.ID, tt.expectedAutoConnID)
+			assert.Equal(t, len(cm.Cfg.TokensData), tt.expectedTokensLen)
+			assert.Equal(t, cm.Cfg.AutoConnectData.ID, tt.expectedAutoConnID)
 		})
 	}
-}
-
-type fakeConfigManager struct {
-	cfg     config.Config
-	loadErr error
-	saveErr error
-	saved   bool
-}
-
-func (f *fakeConfigManager) Load(c *config.Config) error {
-	if f.loadErr != nil {
-		return f.loadErr
-	}
-	*c = f.cfg
-	return nil
-}
-
-func (f *fakeConfigManager) SaveWith(fn config.SaveFunc) error {
-	if f.saveErr != nil {
-		return f.saveErr
-	}
-	f.cfg = fn(f.cfg)
-	f.saved = true
-	return nil
-}
-
-func (f *fakeConfigManager) Reset(preserveLoginData bool) error {
-	return nil
-}
-
-type fakeInsights struct {
-	insightsResult *core.Insights
-	err            error
-}
-
-func (f *fakeInsights) Insights() (*core.Insights, error) {
-	return f.insightsResult, f.err
-}
-
-type fakeAuthChecker struct {
-	loggedIn bool
-}
-
-func (f *fakeAuthChecker) IsLoggedIn() bool {
-	return f.loggedIn
-}
-
-func (f *fakeAuthChecker) IsMFAEnabled() (bool, error) {
-	return false, nil
-}
-
-func (f *fakeAuthChecker) IsVPNExpired() (bool, error) {
-	return false, nil
-}
-
-func (f *fakeAuthChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
-	return []auth.DedicatedIPService{}, nil
 }
