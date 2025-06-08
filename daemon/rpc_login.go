@@ -27,7 +27,7 @@ var lastLoginAttemptTime time.Time
 
 // Login the user with given token
 func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error) {
-	if !IsConsentFlowCompleted(r.cm) {
+	if !r.consentChecker.IsConsentFlowCompleted() {
 		return &pb.LoginResponse{
 			Type: internal.CodeConsentMissing,
 		}, nil
@@ -149,7 +149,7 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 
 // LoginOAuth2 is called when logging in with OAuth2.
 func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.LoginOAuth2Response, error) {
-	if !IsConsentFlowCompleted(r.cm) {
+	if !r.consentChecker.IsConsentFlowCompleted() {
 		return &pb.LoginOAuth2Response{
 			Status: pb.LoginStatus_CONSENT_MISSING,
 		}, nil
@@ -197,7 +197,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 
 // LoginOAuth2Callback is called by the browser via cli during OAuth2 login.
 func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2CallbackRequest) (payload *pb.LoginOAuth2CallbackResponse, retErr error) {
-	if !IsConsentFlowCompleted(r.cm) {
+	if !r.consentChecker.IsConsentFlowCompleted() {
 		return &pb.LoginOAuth2CallbackResponse{
 			Status: pb.LoginStatus_CONSENT_MISSING,
 		}, nil
@@ -269,7 +269,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 }
 
 func (r *RPC) IsLoggedIn(ctx context.Context, _ *pb.Empty) (*pb.IsLoggedInResponse, error) {
-	if !IsConsentFlowCompleted(r.cm) {
+	if !r.consentChecker.IsConsentFlowCompleted() {
 		return &pb.IsLoggedInResponse{
 			Status: pb.LoginStatus_CONSENT_MISSING,
 		}, nil

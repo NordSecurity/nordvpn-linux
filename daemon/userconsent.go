@@ -1,5 +1,3 @@
-//go:build moose
-
 package daemon
 
 import (
@@ -20,6 +18,11 @@ var countryCodeToConsentMode = map[countryCode]consentMode{
 	countryCode("ca"): consentModeStandard,
 	countryCode("jp"): consentModeStandard,
 	countryCode("au"): consentModeStandard,
+}
+
+type ConsentChecker interface {
+	PrepareDaemonIfConsentNotCompleted()
+	IsConsentFlowCompleted() bool
 }
 
 type consentMode uint
@@ -69,7 +72,7 @@ func NewConsentChecker(
 // - for standard mode:
 //   - save consent as completed and accepted, no consent flow for standard mode countries
 func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
-	if IsConsentFlowCompleted(acc.cm) {
+	if acc.IsConsentFlowCompleted() {
 		// nothing to do
 		return
 	}
@@ -93,23 +96,23 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	}
 }
 
+// IsConsentFlowCompleted reads configuration file and
+// checks if `AnalyticsConsent` field is set.
+func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
+	var cfg config.Config
+	if err := acc.cm.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to load config when checking consent flow", err)
+		return false
+	}
+	return cfg.AnalyticsConsent != nil
+}
+
 func (acc *AnalyticsConsentChecker) setConsentTrue() error {
 	return acc.cm.SaveWith(func(c config.Config) config.Config {
 		enabled := true
 		c.AnalyticsConsent = &enabled
 		return c
 	})
-}
-
-// IsConsentFlowCompleted reads configuration file and
-// checks if `AnalyticsConsent` field is set.
-func IsConsentFlowCompleted(cm config.Manager) bool {
-	var cfg config.Config
-	if err := cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to load config when checking consent flow", err)
-		return false
-	}
-	return cfg.AnalyticsConsent != nil
 }
 
 // consentModeFromUserLocation in a happy path, uses Insights API to get user's

@@ -59,6 +59,7 @@ type RPC struct {
 	remoteConfigGetter  remote.RemoteConfigGetter
 	vpnEvents           *vpn.Events
 	connectionInfo      *state.ConnectionInfo
+	consentChecker      ConsentChecker
 	pb.UnimplementedDaemonServer
 }
 
@@ -88,6 +89,7 @@ func NewRPC(
 	remoteConfigGetter remote.RemoteConfigGetter,
 	vpnEvents *vpn.Events,
 	connectionInfo *state.ConnectionInfo,
+	consentChecker ConsentChecker,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{

@@ -1,5 +1,3 @@
-//go:build moose
-
 package daemon
 
 import (
@@ -78,7 +76,8 @@ func TestIsConsentFlowCompleted(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := IsConsentFlowCompleted(tt.manager)
+			consentChecker := NewConsentChecker(tt.manager, &fakeInsights{}, &fakeAuthChecker{})
+			got := consentChecker.IsConsentFlowCompleted()
 			assert.Equal(t, got, tt.expected)
 		})
 	}

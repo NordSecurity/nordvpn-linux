@@ -481,6 +481,9 @@ func main() {
 		dataUpdateEvents,
 	)
 
+	consentChecker := newConsentChecker(fsystem, defaultAPI, authChecker)
+	consentChecker.PrepareDaemonIfConsentNotCompleted()
+
 	sharedContext := sharedctx.New()
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
@@ -508,6 +511,7 @@ func main() {
 		rcConfig,
 		internalVpnEvents,
 		connectionInfo,
+		consentChecker,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
@@ -559,9 +563,6 @@ func main() {
 
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
-
-	consentChecker := daemon.NewConsentChecker(fsystem, defaultAPI, authChecker)
-	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
 	// Start jobs
 
