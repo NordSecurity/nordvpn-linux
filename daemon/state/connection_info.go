@@ -55,11 +55,9 @@ func (cs *ConnectionInfo) Status() types.ConnectionStatus {
 	// thus it is OK to not synchronize them each time
 	cs.mu.RLock()
 	status := cs.status
-	tunnelName := cs.status.TunnelName
-	connectionState := cs.status.State
 	cs.mu.RUnlock()
-	if connectionState == pb.ConnectionState_CONNECTED {
-		status.Tx, status.Rx = cs.getTransferRatesForTunnel(tunnelName)
+	if status.State == pb.ConnectionState_CONNECTED {
+		status.Tx, status.Rx = cs.getTransferRatesForTunnel(status.TunnelName)
 	}
 	return status
 }

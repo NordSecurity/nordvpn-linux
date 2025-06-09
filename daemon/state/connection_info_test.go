@@ -214,7 +214,7 @@ func TestConnectionInfo_TracksStartTime(t *testing.T) {
 	assert.Nil(t, status.StartTime)
 }
 
-func TestConnectionInfo_TransferRatersShallBeProvidedOnlyForConnectedState(t *testing.T) {
+func TestConnectionInfo_TransferRatesShallBeProvidedOnlyForConnectedState(t *testing.T) {
 	category.Set(t, category.Unit)
 	tf := newTestFixture(t)
 	tf.subscriber.ExpectEvents(1)
