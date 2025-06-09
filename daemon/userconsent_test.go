@@ -2,7 +2,7 @@ package daemon
 
 import (
 	"errors"
-	"strings"
+	"fmt"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -18,35 +18,22 @@ func TestModeForCountryCode(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		code     countryCode
+		code     core.CountryCode
 		expected consentMode
 	}{
-		{countryCode("us"), consentModeStandard},
-		{countryCode("ca"), consentModeStandard},
-		{countryCode("jp"), consentModeStandard},
-		{countryCode("au"), consentModeStandard},
-		{countryCode("fr"), consentModeGDPR},
-		{countryCode("zz"), consentModeGDPR},
-		{countryCode(""), consentModeGDPR},
+		{core.NewCountryCode("us"), consentModeStandard},
+		{core.NewCountryCode("ca"), consentModeStandard},
+		{core.NewCountryCode("jp"), consentModeStandard},
+		{core.NewCountryCode("au"), consentModeStandard},
+		{core.NewCountryCode("fr"), consentModeGDPR},
+		{core.NewCountryCode("zz"), consentModeGDPR},
+		{core.NewCountryCode(""), consentModeGDPR},
 	}
 
 	for _, tt := range tests {
-		t.Run(string(tt.code), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%s", tt.code), func(t *testing.T) {
 			mode := modeForCountryCode(tt.code)
 			assert.Equal(t, mode, tt.expected)
-		})
-	}
-}
-
-func TestModeForCountryCode_CaseInsensitive(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	codes := []string{"US", "Us", "uS", "us"}
-	for _, codeStr := range codes {
-		t.Run(codeStr, func(t *testing.T) {
-			cc := countryCode(strings.ToLower(codeStr))
-			mode := modeForCountryCode(cc)
-			assert.Equal(t, mode, consentModeStandard)
 		})
 	}
 }
