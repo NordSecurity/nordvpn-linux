@@ -119,5 +119,6 @@ func NewRPC(
 		remoteConfigGetter: remoteConfigGetter,
 		vpnEvents:          vpnEvents,
 		connectionInfo:     connectionInfo,
+		consentChecker:     consentChecker,
 	}
 }

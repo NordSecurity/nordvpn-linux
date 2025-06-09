@@ -24,11 +24,12 @@ _sym_db = _symbol_database.Default()
 
 import common_pb2 as common__pb2
 from config import technology_pb2 as config_dot_technology__pb2
+from config import analytics_consent_pb2 as config_dot_analytics__consent__pb2
 from config import protocol_pb2 as config_dot_protocol__pb2
 from config import group_pb2 as config_dot_group__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0esettings.proto\x12\x02pb\x1a\x0c\x63ommon.proto\x1a\x17\x63onfig/technology.proto\x1a\x15\x63onfig/protocol.proto\x1a\x12\x63onfig/group.proto\"<\n\x10SettingsResponse\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x1a\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x0c.pb.Settings\"l\n\x0f\x41utoconnectData\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\x12\x0f\n\x07\x63ountry\x18\x02 \x01(\t\x12\x0c\n\x04\x63ity\x18\x03 \x01(\t\x12)\n\x0cserver_group\x18\x04 \x01(\x0e\x32\x13.config.ServerGroup\"\xef\x03\n\x08Settings\x12&\n\ntechnology\x18\x01 \x01(\x0e\x32\x12.config.Technology\x12\x10\n\x08\x66irewall\x18\x02 \x01(\x08\x12\x13\n\x0bkill_switch\x18\x03 \x01(\x08\x12.\n\x11\x61uto_connect_data\x18\x04 \x01(\x0b\x32\x13.pb.AutoconnectData\x12\x0c\n\x04ipv6\x18\x05 \x01(\x08\x12\x0f\n\x07meshnet\x18\x06 \x01(\x08\x12\x0f\n\x07routing\x18\x07 \x01(\x08\x12\x0e\n\x06\x66wmark\x18\x08 \x01(\r\x12\x16\n\tanalytics\x18\t \x01(\x08H\x00\x88\x01\x01\x12\x0b\n\x03\x64ns\x18\n \x03(\t\x12\x1e\n\x16threat_protection_lite\x18\x0b \x01(\x08\x12\"\n\x08protocol\x18\x0c \x01(\x0e\x32\x10.config.Protocol\x12\x15\n\rlan_discovery\x18\r \x01(\x08\x12 \n\tallowlist\x18\x0e \x01(\x0b\x32\r.pb.Allowlist\x12\x11\n\tobfuscate\x18\x0f \x01(\x08\x12\x17\n\x0fvirtualLocation\x18\x10 \x01(\x08\x12\x17\n\x0fpostquantum_vpn\x18\x11 \x01(\x08\x12/\n\ruser_settings\x18\x12 \x01(\x0b\x32\x18.pb.UserSpecificSettingsB\x0c\n\n_analytics\"A\n\x14UserSpecificSettings\x12\x0b\n\x03uid\x18\x01 \x01(\x03\x12\x0e\n\x06notify\x18\x02 \x01(\x08\x12\x0c\n\x04tray\x18\x03 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0esettings.proto\x12\x02pb\x1a\x0c\x63ommon.proto\x1a\x17\x63onfig/technology.proto\x1a\x1e\x63onfig/analytics_consent.proto\x1a\x15\x63onfig/protocol.proto\x1a\x12\x63onfig/group.proto\"<\n\x10SettingsResponse\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x1a\n\x04\x64\x61ta\x18\x02 \x01(\x0b\x32\x0c.pb.Settings\"l\n\x0f\x41utoconnectData\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\x12\x0f\n\x07\x63ountry\x18\x02 \x01(\t\x12\x0c\n\x04\x63ity\x18\x03 \x01(\t\x12)\n\x0cserver_group\x18\x04 \x01(\x0e\x32\x13.config.ServerGroup\"\xf9\x03\n\x08Settings\x12&\n\ntechnology\x18\x01 \x01(\x0e\x32\x12.config.Technology\x12\x10\n\x08\x66irewall\x18\x02 \x01(\x08\x12\x13\n\x0bkill_switch\x18\x03 \x01(\x08\x12.\n\x11\x61uto_connect_data\x18\x04 \x01(\x0b\x32\x13.pb.AutoconnectData\x12\x0c\n\x04ipv6\x18\x05 \x01(\x08\x12\x0f\n\x07meshnet\x18\x06 \x01(\x08\x12\x0f\n\x07routing\x18\x07 \x01(\x08\x12\x0e\n\x06\x66wmark\x18\x08 \x01(\r\x12.\n\x11\x61nalytics_consent\x18\t \x01(\x0e\x32\x13.config.ConsentMode\x12\x0b\n\x03\x64ns\x18\n \x03(\t\x12\x1e\n\x16threat_protection_lite\x18\x0b \x01(\x08\x12\"\n\x08protocol\x18\x0c \x01(\x0e\x32\x10.config.Protocol\x12\x15\n\rlan_discovery\x18\r \x01(\x08\x12 \n\tallowlist\x18\x0e \x01(\x0b\x32\r.pb.Allowlist\x12\x11\n\tobfuscate\x18\x0f \x01(\x08\x12\x17\n\x0fvirtualLocation\x18\x10 \x01(\x08\x12\x17\n\x0fpostquantum_vpn\x18\x11 \x01(\x08\x12/\n\ruser_settings\x18\x12 \x01(\x0b\x32\x18.pb.UserSpecificSettings\"A\n\x14UserSpecificSettings\x12\x0b\n\x03uid\x18\x01 \x01(\x03\x12\x0e\n\x06notify\x18\x02 \x01(\x08\x12\x0c\n\x04tray\x18\x03 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,12 +37,12 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'settings_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
-  _globals['_SETTINGSRESPONSE']._serialized_start=104
-  _globals['_SETTINGSRESPONSE']._serialized_end=164
-  _globals['_AUTOCONNECTDATA']._serialized_start=166
-  _globals['_AUTOCONNECTDATA']._serialized_end=274
-  _globals['_SETTINGS']._serialized_start=277
-  _globals['_SETTINGS']._serialized_end=772
-  _globals['_USERSPECIFICSETTINGS']._serialized_start=774
-  _globals['_USERSPECIFICSETTINGS']._serialized_end=839
+  _globals['_SETTINGSRESPONSE']._serialized_start=136
+  _globals['_SETTINGSRESPONSE']._serialized_end=196
+  _globals['_AUTOCONNECTDATA']._serialized_start=198
+  _globals['_AUTOCONNECTDATA']._serialized_end=306
+  _globals['_SETTINGS']._serialized_start=309
+  _globals['_SETTINGS']._serialized_end=814
+  _globals['_USERSPECIFICSETTINGS']._serialized_start=816
+  _globals['_USERSPECIFICSETTINGS']._serialized_end=881
 # @@protoc_insertion_point(module_scope)
