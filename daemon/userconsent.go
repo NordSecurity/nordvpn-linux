@@ -3,7 +3,6 @@ package daemon
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -11,13 +10,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-type countryCode string
-
-var countryCodeToConsentMode = map[countryCode]consentMode{
-	countryCode("us"): consentModeStandard,
-	countryCode("ca"): consentModeStandard,
-	countryCode("jp"): consentModeStandard,
-	countryCode("au"): consentModeStandard,
+var countryCodeToConsentMode = map[core.CountryCode]consentMode{
+	core.NewCountryCode("us"): consentModeStandard,
+	core.NewCountryCode("ca"): consentModeStandard,
+	core.NewCountryCode("jp"): consentModeStandard,
+	core.NewCountryCode("au"): consentModeStandard,
 }
 
 type ConsentChecker interface {
@@ -149,7 +146,7 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 		return consentModeGDPR
 	}
 
-	mode := modeForCountryCode(countryCode(strings.ToLower(insights.CountryCode)))
+	mode := modeForCountryCode(core.NewCountryCode(insights.CountryCode))
 	log.Printf(internal.DebugPrefix+" consent mode for country code '%s': %s", insights.CountryCode, mode)
 	return mode
 }
@@ -164,9 +161,9 @@ func (acc *AnalyticsConsentChecker) doLightLogout() error {
 
 // modeForCountryCode returns analytics consent mode.
 //
-// It uses country code and list of countries in standard mode to check it.
-// Countries not on the standard mode list fall into GDPR mode.
-func modeForCountryCode(cc countryCode) consentMode {
+// It uses country code and list of lowercase county codes in standard mode to
+// check it. Countries not on the standard mode list fall into GDPR mode.
+func modeForCountryCode(cc core.CountryCode) consentMode {
 	mode, ok := countryCodeToConsentMode[cc]
 	if !ok {
 		return consentModeGDPR
