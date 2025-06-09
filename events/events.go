@@ -103,6 +103,40 @@ type DataConnectChangeNotif struct {
 	Status types.ConnectionStatus
 }
 
+type ContextValue struct {
+	Path  string
+	Value any
+}
+type MooseDebuggerEvent struct {
+	JsonData             string
+	GeneralContextPaths  []string
+	KeyBasedContextPaths []ContextValue
+}
+
+// WithJsonData adds JSON payload to the developer event
+func (e *MooseDebuggerEvent) WithJsonData(json string) *MooseDebuggerEvent {
+	e.JsonData = json
+	return e
+}
+
+func (e *MooseDebuggerEvent) WithKeyBasedContextPaths(paths ...ContextValue) *MooseDebuggerEvent {
+	e.KeyBasedContextPaths = append(e.KeyBasedContextPaths, paths...)
+	return e
+}
+
+func (e *MooseDebuggerEvent) WithGlobalContextPaths(paths ...string) *MooseDebuggerEvent {
+	e.GeneralContextPaths = append(e.GeneralContextPaths, paths...)
+	return e
+}
+
+func NewMooseDebuggerEvent(jsonData string) *MooseDebuggerEvent {
+	return &MooseDebuggerEvent{
+		JsonData:             jsonData,
+		GeneralContextPaths:  make([]string, 0),
+		KeyBasedContextPaths: make([]ContextValue, 0),
+	}
+}
+
 type DataDisconnect struct {
 	Protocol              config.Protocol
 	ServerFromAPI         bool

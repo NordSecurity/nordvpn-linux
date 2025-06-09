@@ -9,6 +9,7 @@ import (
 
 // Status of daemon and connection
 func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
+
 	status := r.connectionInfo.Status()
 	//exhaustive:ignore
 	switch status.State {
