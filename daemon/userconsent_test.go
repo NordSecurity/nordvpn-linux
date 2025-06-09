@@ -64,7 +64,7 @@ func TestIsConsentFlowCompleted(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			consentChecker := NewConsentChecker(tt.manager, &insights.InsightsMock{}, &auth.AuthCheckerMock{})
+			consentChecker := NewConsentChecker(false, tt.manager, &insights.InsightsMock{}, &auth.AuthCheckerMock{})
 			got := consentChecker.IsConsentFlowCompleted()
 			assert.Equal(t, got, tt.expected)
 		})

@@ -107,7 +107,7 @@ func testRPC() *RPC {
 		mock.NewRemoteConfigMock(),
 		vpn.NewInternalVPNEvents(),
 		state.NewConnectionInfo(),
-		NewConsentChecker(cm, api, &workingLoginChecker{}),
+		NewConsentChecker(false, cm, api, &workingLoginChecker{}),
 	)
 }
 
