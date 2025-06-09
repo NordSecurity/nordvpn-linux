@@ -127,7 +127,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
-	s.enabled = cfg.Analytics.Get()
+	s.enabled = cfg.AnalyticsConsent == config.ConsentMode_ALLOWED
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
 		internal.IsProdEnv(s.Environment),

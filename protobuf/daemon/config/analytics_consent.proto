@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package config;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/config";
+
+enum ConsentMode {
+	NONE = 0;
+	ALLOWED = 1;
+	FORBIDDEN = 2;
+}

@@ -26,12 +26,12 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 	trayOff := cfg.UsersData.TrayOff[uid]
 
 	settings := pb.Settings{
-		Technology: cfg.Technology,
-		Firewall:   cfg.Firewall,
-		Fwmark:     cfg.FirewallMark,
-		Routing:    cfg.Routing.Get(),
-		Analytics:  cfg.AnalyticsConsent,
-		KillSwitch: cfg.KillSwitch,
+		Technology:       cfg.Technology,
+		Firewall:         cfg.Firewall,
+		Fwmark:           cfg.FirewallMark,
+		Routing:          cfg.Routing.Get(),
+		AnalyticsConsent: cfg.AnalyticsConsent,
+		KillSwitch:       cfg.KillSwitch,
 		AutoConnectData: &pb.AutoconnectData{
 			Enabled:     cfg.AutoConnect,
 			Country:     cfg.AutoConnectData.Country,

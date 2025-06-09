@@ -54,7 +54,6 @@ func TestModeForCountryCode_CaseInsensitive(t *testing.T) {
 func TestIsConsentFlowCompleted(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	enabled := true
 	tests := []struct {
 		name     string
 		manager  config.Manager
@@ -66,13 +65,13 @@ func TestIsConsentFlowCompleted(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "AnalyticsConsent nil -> false",
-			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: nil}},
+			name:     "AnalyticsConsent none -> false",
+			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentMode_NONE}},
 			expected: false,
 		},
 		{
-			name:     "AnalyticsConsent non-nil -> true",
-			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: &enabled}},
+			name:     "AnalyticsConsent != None -> true",
+			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentMode_ALLOWED}},
 			expected: true,
 		},
 	}
@@ -150,17 +149,17 @@ func TestConsentModeFromUserLocation(t *testing.T) {
 
 func TestSetConsentTrue(t *testing.T) {
 	category.Set(t, category.Unit)
-	cm := &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: nil}}
+	cm := &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentMode_NONE}}
 	acc := &AnalyticsConsentChecker{cm: cm}
 	assert.False(t, cm.Saved)
-	assert.Nil(t, cm.Cfg.AnalyticsConsent)
+	assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentMode_NONE)
 
-	err := acc.setConsentTrue()
+	err := acc.setConsentAllowed()
 
 	assert.NoError(t, err)
 	assert.True(t, cm.Saved)
 	assert.NotNil(t, cm.Cfg.AnalyticsConsent)
-	assert.True(t, *cm.Cfg.AnalyticsConsent)
+	assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentMode_ALLOWED)
 }
 
 func TestDoLightLogout(t *testing.T) {
@@ -186,7 +185,6 @@ func TestDoLightLogout(t *testing.T) {
 func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	truePtr := true
 	tests := []struct {
 		name               string
 		initialConfig      config.Config
@@ -196,33 +194,33 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 		authLoggedIn       bool
 		expectedSaved      bool
 		expectedConsentSet bool
-		expectedConsentVal bool
+		expectedConsentVal config.ConsentMode
 		expectedTokensLen  int
 		expectedAutoConnID int64
 	}{
 		{
 			name:               "consent already completed",
-			initialConfig:      config.Config{AnalyticsConsent: &truePtr},
+			initialConfig:      config.Config{AnalyticsConsent: config.ConsentMode_ALLOWED},
 			expectedSaved:      false,
 			expectedConsentSet: true,
-			expectedConsentVal: true,
+			expectedConsentVal: config.ConsentMode_ALLOWED,
 			expectedTokensLen:  0,
 			expectedAutoConnID: 0,
 		},
 		{
 			name:               "standard country -> set consent",
-			initialConfig:      config.Config{AnalyticsConsent: nil},
+			initialConfig:      config.Config{AnalyticsConsent: config.ConsentMode_NONE},
 			apiInsights:        &insights.InsightsMock{InsightsResult: &core.Insights{CountryCode: "ca"}},
 			expectedSaved:      true,
 			expectedConsentSet: true,
-			expectedConsentVal: true,
+			expectedConsentVal: config.ConsentMode_ALLOWED,
 			expectedTokensLen:  0,
 			expectedAutoConnID: 0,
 		},
 		{
 			name: "GDPR country & logged in -> do light logout",
 			initialConfig: config.Config{
-				AnalyticsConsent: nil,
+				AnalyticsConsent: config.ConsentMode_NONE,
 				TokensData:       map[int64]config.TokenData{42: {}},
 				AutoConnectData:  config.AutoConnectData{ID: 42},
 			},
@@ -235,7 +233,7 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 		},
 		{
 			name:               "GDPR country & not logged in",
-			initialConfig:      config.Config{AnalyticsConsent: nil},
+			initialConfig:      config.Config{AnalyticsConsent: config.ConsentMode_NONE},
 			apiInsights:        &insights.InsightsMock{InsightsResult: &core.Insights{CountryCode: "fr"}},
 			authLoggedIn:       false,
 			expectedSaved:      false,
@@ -257,9 +255,9 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 			assert.Equal(t, cm.Saved, tt.expectedSaved)
 			if tt.expectedConsentSet {
 				assert.NotNil(t, cm.Cfg.AnalyticsConsent)
-				assert.Equal(t, *cm.Cfg.AnalyticsConsent, tt.expectedConsentVal)
+				assert.Equal(t, cm.Cfg.AnalyticsConsent, tt.expectedConsentVal)
 			} else {
-				assert.Nil(t, cm.Cfg.AnalyticsConsent)
+				assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentMode_NONE)
 			}
 			assert.Equal(t, len(cm.Cfg.TokensData), tt.expectedTokensLen)
 			assert.Equal(t, cm.Cfg.AutoConnectData.ID, tt.expectedAutoConnID)

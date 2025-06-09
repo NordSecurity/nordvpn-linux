@@ -12,7 +12,6 @@ import (
 const defaultFWMarkValue uint32 = 0xe1f1
 
 func newConfig(machineIDGetter MachineIDGetter) *Config {
-	areAnalyticsAllowed := false
 	return &Config{
 		Technology:   Technology_NORDLYNX,
 		Firewall:     true,
@@ -23,9 +22,9 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 		MachineID:  machineIDGetter.GetMachineID(),
 		UsersData:  &UsersData{NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
 		TokensData: map[int64]TokenData{},
-		// FIXME: This is set to false now to not break the app as the full consent flow
+		// FIXME: This is set to some value now to not break the app as the full consent flow
 		// is not yet implemented. This will be addressed in LVPN-8137
-		AnalyticsConsent: &areAnalyticsAllowed,
+		AnalyticsConsent: ConsentMode_FORBIDDEN,
 	}
 }
 
@@ -40,8 +39,8 @@ type Config struct {
 	Routing      TrueField  `json:"routing"`
 	// AnalyticsConsent describes user decision about extra analytics.
 	// If nil, the consent flow was not yet completed by user.
-	AnalyticsConsent *bool `json:"analytics_consent"`
-	Mesh             bool  `json:"mesh"`
+	AnalyticsConsent ConsentMode `json:"analytics_consent"`
+	Mesh             bool        `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
 	MeshPrivateKey  string              `json:"mesh_private_key"`
 	MeshDevice      *mesh.Machine       `json:"mesh_device"`
@@ -70,8 +69,8 @@ func (c Config) withLoginData(other *Config) Config {
 
 // WithAnalyticsConsent makes a copy of current configuration
 // with analytics consent values from `other` configuration.
-func (c Config) withAnalyticsConsent(value bool) Config {
-	c.AnalyticsConsent = &value
+func (c Config) withAnalyticsConsent(value ConsentMode) Config {
+	c.AnalyticsConsent = value
 	return c
 }
 

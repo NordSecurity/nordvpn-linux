@@ -90,7 +90,7 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// standard mode has analytics enabled by default and no required
 	// consent flow, so update the config with `AnalyticsConsent := true`
 	if consentMode == consentModeStandard {
-		if err := acc.setConsentTrue(); err != nil {
+		if err := acc.setConsentAllowed(); err != nil {
 			log.Println(internal.WarningPrefix, "failed to save analytics consent", err)
 		}
 	}
@@ -104,13 +104,12 @@ func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
 		log.Println(internal.ErrorPrefix, "failed to load config when checking consent flow", err)
 		return false
 	}
-	return cfg.AnalyticsConsent != nil
+	return cfg.AnalyticsConsent != config.ConsentMode_NONE
 }
 
-func (acc *AnalyticsConsentChecker) setConsentTrue() error {
+func (acc *AnalyticsConsentChecker) setConsentAllowed() error {
 	return acc.cm.SaveWith(func(c config.Config) config.Config {
-		enabled := true
-		c.AnalyticsConsent = &enabled
+		c.AnalyticsConsent = config.ConsentMode_ALLOWED
 		return c
 	})
 }
