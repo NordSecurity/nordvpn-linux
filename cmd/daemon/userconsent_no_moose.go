@@ -24,6 +24,7 @@ func (acc *NoOpConsentChecker) IsConsentFlowCompleted() bool {
 }
 
 func newConsentChecker(
+	_ bool,
 	_ config.Manager,
 	_ core.InsightsAPI,
 	_ auth.Checker,

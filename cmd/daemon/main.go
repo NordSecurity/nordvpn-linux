@@ -481,7 +481,12 @@ func main() {
 		dataUpdateEvents,
 	)
 
-	consentChecker := newConsentChecker(fsystem, defaultAPI, authChecker)
+	consentChecker := newConsentChecker(
+		internal.IsDevEnv(Environment),
+		fsystem,
+		defaultAPI,
+		authChecker,
+	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
 	sharedContext := sharedctx.New()
