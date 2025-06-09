@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const loopBackInterface = "lo"
+
 type TestSubscriber struct {
 	notificationCounter int
 	wg                  *sync.WaitGroup
@@ -203,6 +205,68 @@ func TestConnectionInfo_TracksStartTime(t *testing.T) {
 		tf.subscriber.ExpectEvents(1)
 		tf.internalEvents.Disconnected.Publish(events.DataDisconnect{})
 		tf.subscriber.wg.Wait()
+		close(tf.done)
+	}()
+
+	tf.waitForCompletion(t)
+
+	status := tf.sut.Status()
+	assert.Nil(t, status.StartTime)
+}
+
+func TestConnectionInfo_TransferRatersShallBeProvidedOnlyForConnectedState(t *testing.T) {
+	category.Set(t, category.Unit)
+	tf := newTestFixture(t)
+	tf.subscriber.ExpectEvents(1)
+
+	go func() {
+		status := tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		event := events.DataConnect{
+			EventStatus: events.StatusAttempt,
+			TunnelName:  loopBackInterface,
+		}
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		event = events.DataConnect{
+			EventStatus: events.StatusSuccess,
+			TunnelName:  loopBackInterface,
+		}
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.NotZero(t, status.Tx)
+		assert.NotZero(t, status.Rx)
+
+		event = events.DataConnect{
+			EventStatus: events.StatusFailure,
+			TunnelName:  loopBackInterface,
+		}
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Disconnected.Publish(events.DataDisconnect{})
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
 		close(tf.done)
 	}()
 
