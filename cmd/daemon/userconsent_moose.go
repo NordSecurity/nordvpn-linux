@@ -10,9 +10,10 @@ import (
 )
 
 func newConsentChecker(
+	isDevEnv bool,
 	cm config.Manager,
 	insightsAPI core.InsightsAPI,
 	authChecker auth.Checker,
 ) daemon.ConsentChecker {
-	return daemon.NewConsentChecker(cm, insightsAPI, authChecker)
+	return daemon.NewConsentChecker(isDevEnv, cm, insightsAPI, authChecker)
 }
