@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -31,7 +30,7 @@ func TestModeForCountryCode(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%s", tt.code), func(t *testing.T) {
+		t.Run(tt.code.String(), func(t *testing.T) {
 			mode := modeForCountryCode(tt.code)
 			assert.Equal(t, mode, tt.expected)
 		})

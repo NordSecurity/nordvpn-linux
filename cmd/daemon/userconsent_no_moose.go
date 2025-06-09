@@ -13,12 +13,12 @@ import (
 type NoOpConsentChecker struct{}
 
 // PrepareDaemonIfConsentNotCompleted is a no-op stub used when there is no moose.
-func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
+func (acc *NoOpConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// nothing to do on non-moose app
 }
 
 // IsConsentFlowCompleted is a stub used when there is no moose.
-func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted(_ config.Manager) bool {
+func (acc *NoOpConsentChecker) IsConsentFlowCompleted() bool {
 	// consent is considered as always completed on non-moose app
 	return true
 }
