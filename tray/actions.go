@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/client"
@@ -15,13 +16,25 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/godbus/dbus/v5"
 )
 
 // The pattern for actions is to return 'true' on success and 'false' (along with emitting a notification) on failure
 
 func (ti *Instance) login() {
 	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
-	if err != nil || resp.GetIsLoggedIn() {
+	if err != nil {
+		ti.notify("Login failed")
+		log.Println(internal.ErrorPrefix, "Failed to login:", err)
+		return
+	}
+	if resp.Status == pb.LoginStatus_CONSENT_MISSING {
+		// ask user for consent by opening terminal with consent flow
+		openURI("nordvpn://consent")
+		return
+	}
+
+	if resp.GetIsLoggedIn() {
 		ti.notify("You are already logged in")
 		return
 	}
@@ -45,8 +58,10 @@ func (ti *Instance) login() {
 	case pb.LoginStatus_ALREADY_LOGGED_IN:
 		ti.notify(internal.ErrAlreadyLoggedIn.Error())
 	case pb.LoginStatus_CONSENT_MISSING:
-		// will be addressed in LVPN-8137
-		ti.notify("Not implemented yet")
+		// NOTE: This should never happen, because analytics consent is
+		// triggered above, so at this point it should already be completed.
+		ti.notify(internal.ErrAnalyticsConsentMissing.Error())
+		log.Println(internal.ErrorPrefix, "analytics consent should be already completed at this point")
 	case pb.LoginStatus_SUCCESS:
 		if url := loginResp.Url; url != "" {
 			// #nosec G204 -- user input is not passed in
@@ -59,6 +74,34 @@ func (ti *Instance) login() {
 			}
 		}
 	}
+}
+
+func openURI(uri string) {
+	if err := tryDbus(uri); err != nil {
+		log.Printf(internal.ErrorPrefix+" failed to open URI '%s' using D-Bus: %v\n", uri, err)
+	}
+}
+
+func tryDbus(uri string) error {
+	conn, err := dbus.SessionBus()
+	if err != nil {
+		return fmt.Errorf("failed to connect to session bus: %w", err)
+	}
+
+	obj := conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	call := obj.CallWithContext(ctx,
+		"org.freedesktop.portal.OpenURI.OpenURI", 0,
+		"", uri, map[string]dbus.Variant{},
+	)
+	if call.Err != nil {
+		return fmt.Errorf("DBus OpenURI failed: %w", call.Err)
+	}
+
+	return nil
 }
 
 func (ti *Instance) logout(persistToken bool) bool {

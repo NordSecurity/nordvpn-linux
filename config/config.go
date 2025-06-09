@@ -19,12 +19,10 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 		AutoConnectData: AutoConnectData{
 			Protocol: Protocol_UDP,
 		},
-		MachineID:  machineIDGetter.GetMachineID(),
-		UsersData:  &UsersData{NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
-		TokensData: map[int64]TokenData{},
-		// FIXME: This is set to some value now to not break the app as the full consent flow
-		// is not yet implemented. This will be addressed in LVPN-8137
-		AnalyticsConsent: ConsentMode_FORBIDDEN,
+		MachineID:        machineIDGetter.GetMachineID(),
+		UsersData:        &UsersData{NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
+		TokensData:       map[int64]TokenData{},
+		AnalyticsConsent: ConsentMode_NONE,
 	}
 }
 

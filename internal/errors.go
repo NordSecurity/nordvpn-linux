@@ -19,7 +19,10 @@ var (
 	ErrAlreadyLoggedIn = errors.New("you are already logged in")
 	// ErrNotLoggedIn is returned when the caller is expected to be logged in
 	// but is not
-	ErrNotLoggedIn           = errors.New("you are not logged in")
-	ErrVirtualServerSelected = errors.New(SpecifiedServerIsVirtualLocation)
-	ErrNoNetWhenLoggingIn    = errors.New("You’re offline.\nWe can’t run this action without an internet connection. Please check it and try again.")
+	ErrNotLoggedIn = errors.New("you are not logged in")
+	// ErrAnalyticsConsentMissing is returned when user tries to login via tray
+	// but settings analytics consent failed for some reason. This should not happen.
+	ErrAnalyticsConsentMissing = errors.New("analytics consent is requried before continuing")
+	ErrVirtualServerSelected   = errors.New(SpecifiedServerIsVirtualLocation)
+	ErrNoNetWhenLoggingIn      = errors.New("You’re offline.\nWe can’t run this action without an internet connection. Please check it and try again.")
 )
