@@ -79,7 +79,9 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 
 	consentMode := acc.consentModeFromUserLocation()
 
-	// logout user if in GDPR consent mode
+	// logout user if in GDPR consent mode so that any client trying to log in
+	// will get the status informing it that user needs to complete analytics
+	// consent flow
 	if consentMode == consentModeGDPR && acc.authChecker.IsLoggedIn() {
 		if err := acc.doLightLogout(); err != nil {
 			log.Println(internal.WarningPrefix, "failed to perform light logout:", err)
@@ -163,6 +165,13 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	return mode
 }
 
+// doLightLogout performs minimal logout operation which will result in
+// `auth.Checker.IsLoggedIn` returning false.
+//
+// The logout operation is needed to direct user to go through `login` command
+// which will trigger consent flow, but at the same time we don't want to
+// make full, invasive logout with token invalidation, meshnet key removal etc.,
+// so we are doing minimal work which will require user to trigger login.
 func (acc *AnalyticsConsentChecker) doLightLogout() error {
 	return acc.cm.SaveWith(func(c config.Config) config.Config {
 		delete(c.TokensData, c.AutoConnectData.ID)
