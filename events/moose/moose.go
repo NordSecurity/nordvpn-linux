@@ -22,7 +22,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
@@ -31,6 +30,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
+	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -620,6 +621,50 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		"",
 		nil,
 	))
+}
+
+func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
+	switch metric {
+	case telemetry.MetricDesktopEnvironment:
+		if value.(string) == "" {
+			if err := s.response(moose.NordvpnappUnsetContextDeviceDesktopEnvironment()); err != nil {
+				return fmt.Errorf("unsetting desktop-environment: %w", err)
+			}
+		} else {
+			if err := s.response(moose.NordvpnappSetContextDeviceDesktopEnvironment(value.(string))); err != nil {
+				return fmt.Errorf("setting desktop-environment: %w", err)
+			}
+		}
+
+	case telemetry.MetricDisplayProtocol:
+		// TODO: missing moose metric support (e.g. NordvpnappSetContextDeviceDisplayProtocol)
+		switch value.(telemetrypb.DisplayProtocol) {
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNSPECIFIED:
+			// unset display protocol
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_WAYLAND:
+			// set 'wayland' metric
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_X11:
+			// set 'x11' metric
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNKNOWN:
+		default:
+			// set 'unknown' metric (e.g. NordvpnappUnsetContextDeviceDisplayProtocol)
+		}
+
+	case telemetry.MetricCustom:
+		field, ok := value.(telemetry.CustomField)
+		if !ok {
+			return fmt.Errorf("unsupported custom-field value type")
+		}
+
+		switch field {
+		// add custom fields if any
+		}
+
+	default:
+		return fmt.Errorf("unsupported metric received (id=%d)", metric)
+	}
+
+	return nil
 }
 
 func (s *Subscriber) fetchSubscriptions() error {

@@ -34,6 +34,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
@@ -42,6 +43,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norouter"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norule"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
+	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
@@ -547,8 +549,11 @@ func main() {
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
 
-	// Start jobs
+	// initialize and register telemetry service with grpc server
+	telemetryService := telemetry.New(analytics.OnTelemetry)
+	telemetrypb.RegisterTelemetryServiceServer(s, telemetryService)
 
+	// Start jobs
 	go func() {
 		var (
 			listener net.Listener
