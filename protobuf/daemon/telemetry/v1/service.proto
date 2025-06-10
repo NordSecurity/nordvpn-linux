@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+// Telemetry v1 defines service and message structure used to transmit client
+// system metadata (e.g. OS, architecture, display protocol, etc.) to the daemon
+package telemetry.v1;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1;telemetrypb";
+
+import "google/protobuf/empty.proto";
+import "fields.proto";
+
+service TelemetryService {
+  // Reports the desktop environment name (e.g. gnome, kde, unity)
+  rpc SetDesktopEnvironment(DesktopEnvironmentRequest)
+      returns (google.protobuf.Empty);
+
+  // Reports the active display protocol (e.g. x11, wayland)
+  rpc SetDisplayProtocol(DisplayProtocolRequest)
+      returns (google.protobuf.Empty);
+
+  // Reports a generic entry for flexible extension
+  rpc SetCustomEntry(CustomEntry) returns (google.protobuf.Empty);
+}
