@@ -59,7 +59,7 @@ type Config struct {
 	VirtualLocation TrueField `json:"virtual_location,omitempty"`
 }
 
-// WithLoginData makes a copy of current configuration
+// withLoginData makes a copy of current configuration
 // with login data values from `other` configuration.
 func (c Config) withLoginData(other *Config) Config {
 	c.AutoConnectData.ID = other.AutoConnectData.ID
@@ -67,7 +67,7 @@ func (c Config) withLoginData(other *Config) Config {
 	return c
 }
 
-// WithAnalyticsConsent makes a copy of current configuration
+// withAnalyticsConsent makes a copy of current configuration
 // with analytics consent values from `other` configuration.
 func (c Config) withAnalyticsConsent(value ConsentMode) Config {
 	c.AnalyticsConsent = value
