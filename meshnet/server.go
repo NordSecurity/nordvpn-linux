@@ -1879,9 +1879,14 @@ func (s *Server) connect(
 	// Measure the time it takes to obtain tokens as the connection attempt event duration
 	connectingStartTime := time.Now()
 	event := events.DataConnect{
-		IsMeshnetPeer: true,
-		DurationMs:    -1,
-		EventStatus:   events.StatusAttempt,
+		Technology:         cfg.Technology,
+		Protocol:           cfg.AutoConnectData.Protocol,
+		IsMeshnetPeer:      true,
+		TargetServerIP:     peer.Address,
+		TargetServerDomain: peer.Hostname,
+		TargetServerName:   peer.Nickname,
+		DurationMs:         -1,
+		EventStatus:        events.StatusAttempt,
 	}
 
 	// Send the connection attempt event
@@ -1899,7 +1904,6 @@ func (s *Server) connect(
 		vpn.ServerData{
 			IP:                peer.Address,
 			Hostname:          peer.Hostname,
-			Name:              peer.Nickname,
 			Protocol:          config.Protocol_UDP,
 			NordLynxPublicKey: peer.PublicKey,
 		},

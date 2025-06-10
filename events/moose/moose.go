@@ -444,7 +444,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		serverListOriginToInternalType(data.ServerFromAPI),
 		data.TargetServerGroup,
 		data.TargetServerDomain,
-		data.TargetServerIP,
+		data.TargetServerIP.String(),
 		data.TargetServerCountryCode,
 		data.TargetServerCity,
 		connectionProtocolToInternalType(data.Protocol),

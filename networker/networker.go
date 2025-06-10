@@ -12,7 +12,6 @@ import (
 	"net/netip"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -135,7 +134,6 @@ type Combined struct {
 	allowlist          config.Allowlist
 	lastServer         vpn.ServerData
 	lastCreds          vpn.Credentials
-	startTime          *time.Time
 	lastNameservers    []string
 	lastPrivateKey     string
 	ipv6Enabled        bool
@@ -299,8 +297,6 @@ func (netw *Combined) start(
 	netw.lastServer = serverData
 	netw.lastCreds = creds
 	netw.lastNameservers = nameservers
-	start := time.Now()
-	netw.startTime = &start
 	netw.interfaces = device.InterfacesWithDefaultRoute(mapset.NewSet(netw.vpnet.Tun().Interface().Name))
 	return nil
 }
@@ -436,8 +432,6 @@ func (netw *Combined) restart(
 
 	netw.lastServer = serverData
 	netw.lastCreds = creds
-	start := time.Now()
-	netw.startTime = &start
 	return nil
 }
 
