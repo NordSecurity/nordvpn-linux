@@ -1,6 +1,8 @@
 package service
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -140,6 +142,11 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	// dir, where user usually does not have access.
 	cmd.Env = append(cmd.Env, "HOME="+home)
 
+	err = mergeUserSessionEnv(uid, gid, &cmd.Env)
+	if err != nil {
+		log.Println(internal.WarningPrefix, "failed to retrieve user session's environment: %v", err)
+	}
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("starting the process: %w", err)
 	}
@@ -233,6 +240,40 @@ func (c *ChildProcessNorduser) Restart(uid uint32) error {
 			}
 		}
 		return fmt.Errorf("sending SIGHUP to norduserd: %w", err)
+	}
+
+	return nil
+}
+
+// mergeUserSessionEnv tries to gather all environment variables from user session and merge with
+// the provided environment
+func mergeUserSessionEnv(uid, gid uint32, currentEnv *[]string) error {
+	userRtDir := fmt.Sprintf("/run/user/%d", uid)
+
+	cmd := exec.Command("systemctl", "--user", "show-environment")
+	cmd.Env = []string{"XDG_RUNTIME_DIR=" + userRtDir}
+
+	nordvpnGid, err := internal.GetNordvpnGid()
+	if err != nil {
+		return fmt.Errorf("determining nordvpn gid: %w", err)
+	}
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Credential: &syscall.Credential{
+			Uid:    uid,
+			Gid:    gid,
+			Groups: []uint32{uint32(nordvpnGid)},
+		},
+	}
+
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("could not fetch user environment: %w", err)
+	}
+
+	scanner := bufio.NewScanner(bytes.NewReader(output))
+	for scanner.Scan() {
+		*currentEnv = append(*currentEnv, scanner.Text())
 	}
 
 	return nil
