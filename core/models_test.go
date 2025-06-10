@@ -979,7 +979,7 @@ func TestNordWhisperPort_UnmarshalJSON(t *testing.T) {
 	}
 }
 
-func TestNewCountryCode_SetsCoutryCodeToLowercase(t *testing.T) {
+func TestNewCountryCode_SetsCountryCodeToLowercase(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	codes := []string{"US", "Us", "uS"}
