@@ -379,6 +379,8 @@ func main() {
 	statePublisher := state.NewState()
 	internalVpnEvents.Subscribe(connectionInfo)
 	connectionInfo.Subscribe(statePublisher)
+	daemonEvents.Service.Connect.Subscribe(connectionInfo.ConnectionStatusNotifyConnect)
+	daemonEvents.Service.Disconnect.Subscribe(connectionInfo.ConnectionStatusNotifyDisconnect)
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
 
@@ -506,7 +508,6 @@ func main() {
 		statePublisher,
 		sharedContext,
 		rcConfig,
-		internalVpnEvents,
 		connectionInfo,
 	)
 	meshService := meshnet.NewServer(

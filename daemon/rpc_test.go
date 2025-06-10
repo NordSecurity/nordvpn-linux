@@ -102,7 +102,6 @@ func testRPC() *RPC {
 		nil,
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),
-		vpn.NewInternalVPNEvents(),
 		state.NewConnectionInfo(),
 	)
 }

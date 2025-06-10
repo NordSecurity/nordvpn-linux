@@ -19,7 +19,6 @@ import (
 
 	gopenvpn "github.com/NordSecurity/gopenvpn/openvpn"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -203,7 +202,7 @@ func (ovpn *OpenVPN) Start(
 // Stop stops openvpn process
 func (ovpn *OpenVPN) Stop() error {
 	ovpn.Lock()
-	ovpn.publishDisconnected(true)
+	ovpn.eventsPublisher.Disconnected.Publish(events.StatusSuccess)
 	if ovpn.active {
 		ovpn.Unlock()
 		return ovpn.stop()
@@ -318,19 +317,25 @@ func (ovpn *OpenVPN) setState(arg string) {
 	switch ovpn.state {
 	case vpn.ConnectedState:
 		if ovpn.publishedState != vpn.ConnectedState {
-			ovpn.publishConnected()
+			ovpn.eventsPublisher.Connected.Publish(vpn.ConnectEvent{
+				Status:     events.StatusSuccess,
+				TunnelName: InterfaceName,
+			})
 			ovpn.publishedState = vpn.ConnectedState
 		}
 	case vpn.ExitingState:
 		// ignore ExitingState, as we do not want to notify about intermediate stages for disconnection
 	case vpn.ExitedState:
 		if ovpn.publishedState != vpn.ExitedState {
-			ovpn.publishDisconnected(false)
+			ovpn.eventsPublisher.Disconnected.Publish(events.StatusSuccess)
 			ovpn.publishedState = vpn.ExitedState
 		}
 	default:
 		if ovpn.publishedState != vpn.ConnectingState {
-			ovpn.publishConnecting()
+			ovpn.eventsPublisher.Connected.Publish(vpn.ConnectEvent{
+				Status:     events.StatusAttempt,
+				TunnelName: InterfaceName,
+			})
 			ovpn.publishedState = vpn.ConnectingState
 		}
 	}
@@ -346,38 +351,6 @@ func (ovpn *OpenVPN) getSubstate() vpn.Substate {
 	ovpn.Lock()
 	defer ovpn.Unlock()
 	return ovpn.substate
-}
-
-func (ovpn *OpenVPN) getConnectedConnectingEvent(state events.TypeEventStatus) events.DataConnect {
-	event := vpn.GetDataConnectEvent(config.Technology_OPENVPN,
-		ovpn.serverData.Protocol,
-		state,
-		ovpn.serverData,
-		false)
-	if ovpn.tun != nil {
-		event.TunnelName = ovpn.tun.Interface().Name
-	}
-
-	return event
-}
-
-// publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
-func (ovpn *OpenVPN) publishConnecting() {
-	ovpn.eventsPublisher.Connected.Publish(ovpn.getConnectedConnectingEvent(events.StatusAttempt))
-}
-
-// publishConnecting publishes Connecting event using current stored server data. Thread unsafe.
-func (ovpn *OpenVPN) publishConnected() {
-	ovpn.eventsPublisher.Connected.Publish(ovpn.getConnectedConnectingEvent(events.StatusSuccess))
-}
-
-// publishDisconnected publishes Connecting event using current stored server data. Thread unsafe.
-func (ovpn *OpenVPN) publishDisconnected(byUser bool) {
-	ovpn.eventsPublisher.Disconnected.Publish(events.DataDisconnect{
-		ByUser:     byUser,
-		Technology: config.Technology_OPENVPN,
-		Protocol:   ovpn.serverData.Protocol,
-	})
 }
 
 func startOpenVPN(process *exec.Cmd) error {
@@ -483,7 +456,10 @@ func stage1Handler(
 				// #nosec G104 -- it's okay to ignore an error here
 				internal.FileDelete(openVPNConfigFileName)
 				//publish event again, so the tunnel is for sure updated in the ConnectionInfo
-				ovpn.publishConnected()
+				ovpn.eventsPublisher.Connected.Publish(vpn.ConnectEvent{
+					Status:     events.StatusSuccess,
+					TunnelName: InterfaceName,
+				})
 				return nil
 			}
 		}
