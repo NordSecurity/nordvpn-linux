@@ -3,7 +3,7 @@ package sysinfo
 import "strings"
 
 // getDesktopEnvironment retrieves currently used desktop environment type otherwise 'none'
-func getDesktopEnvironment(readEnv EnvReader) string {
+func getDesktopEnvironment(readEnv envReader) string {
 	de := readEnv("XDG_CURRENT_DESKTOP")
 	if de == "" {
 		de = readEnv("DESKTOP_SESSION")
