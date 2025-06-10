@@ -224,6 +224,8 @@ func TestConnectionInfo_TransferRatesShallBeProvidedOnlyForConnectedState(t *tes
 		assert.Zero(t, status.Tx)
 		assert.Zero(t, status.Rx)
 
+		// connecting with valid TunnelName
+		// transfer rates should be zero
 		event := events.DataConnect{
 			EventStatus: events.StatusAttempt,
 			TunnelName:  loopBackInterface,
@@ -235,6 +237,8 @@ func TestConnectionInfo_TransferRatesShallBeProvidedOnlyForConnectedState(t *tes
 		assert.Zero(t, status.Tx)
 		assert.Zero(t, status.Rx)
 
+		// connected with valid TunnelName
+		// transfer rates should be non zero
 		event = events.DataConnect{
 			EventStatus: events.StatusSuccess,
 			TunnelName:  loopBackInterface,
@@ -247,6 +251,8 @@ func TestConnectionInfo_TransferRatesShallBeProvidedOnlyForConnectedState(t *tes
 		assert.NotZero(t, status.Tx)
 		assert.NotZero(t, status.Rx)
 
+		// connection failed with valid TunnelName
+		// transfer rates should be zero
 		event = events.DataConnect{
 			EventStatus: events.StatusFailure,
 			TunnelName:  loopBackInterface,
@@ -259,8 +265,22 @@ func TestConnectionInfo_TransferRatesShallBeProvidedOnlyForConnectedState(t *tes
 		assert.Zero(t, status.Tx)
 		assert.Zero(t, status.Rx)
 
+		// disconnected
+		// transfer rates should be zero
 		tf.subscriber.ExpectEvents(1)
 		tf.internalEvents.Disconnected.Publish(events.DataDisconnect{})
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		// connected with empty TunnelName
+		// transfer rates should be zero
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Connected.Publish(events.DataConnect{
+			EventStatus: events.StatusSuccess,
+		})
 		tf.subscriber.wg.Wait()
 
 		status = tf.sut.Status()
@@ -271,7 +291,4 @@ func TestConnectionInfo_TransferRatesShallBeProvidedOnlyForConnectedState(t *tes
 	}()
 
 	tf.waitForCompletion(t)
-
-	status := tf.sut.Status()
-	assert.Nil(t, status.StartTime)
 }

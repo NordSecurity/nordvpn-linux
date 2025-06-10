@@ -47,6 +47,7 @@ func (cs *ConnectionInfo) getTransferRatesForTunnel(tunnelName string) (uint64, 
 }
 
 // Status returns the current connection status with updated transfer rates if internal state is connected
+// and tunnel name is set
 func (cs *ConnectionInfo) Status() types.ConnectionStatus {
 	// we keep read lock in here, because the Tx/Rx rates are
 	// a) merely point-in-time values
@@ -56,7 +57,7 @@ func (cs *ConnectionInfo) Status() types.ConnectionStatus {
 	cs.mu.RLock()
 	status := cs.status
 	cs.mu.RUnlock()
-	if status.State == pb.ConnectionState_CONNECTED {
+	if status.State == pb.ConnectionState_CONNECTED && status.TunnelName != "" {
 		status.Tx, status.Rx = cs.getTransferRatesForTunnel(status.TunnelName)
 	}
 	return status
@@ -79,7 +80,9 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 		connectionStatus = pb.ConnectionState_CONNECTED
 		start := time.Now()
 		startTime = &start
-		Tx, Rx = c.getTransferRatesForTunnel(e.TunnelName)
+		if e.TunnelName != "" {
+			Tx, Rx = c.getTransferRatesForTunnel(e.TunnelName)
+		}
 	}
 
 	status := types.ConnectionStatus{
