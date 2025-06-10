@@ -75,25 +75,14 @@ func (k *KernelSpace) Start(
 	tun := tunnel.New(*iface, DefaultPrefix)
 	k.tun = tun
 
-	event := events.DataConnect{
-		EventStatus:         events.StatusAttempt,
-		TargetServerIP:      serverData.IP.String(),
-		TargetServerCountry: serverData.Country,
-		TargetServerCity:    serverData.City,
-		IsVirtualLocation:   serverData.VirtualLocation,
-		IP:                  serverData.IP,
-		Name:                serverData.Name,
-		Hostname:            serverData.Hostname,
-		TunnelName:          k.tun.Interface().Name,
-	}
-
+	event := vpn.ConnectEvent{Status: events.StatusAttempt, TunnelName: InterfaceName}
 	k.eventsPublisher.Connected.Publish(event)
 	defer func() {
 		if err != nil {
-			k.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
+			k.eventsPublisher.Disconnected.Publish(events.StatusFailure)
 			return
 		}
-		event.EventStatus = events.StatusSuccess
+		event.Status = events.StatusSuccess
 		k.eventsPublisher.Connected.Publish(event)
 	}()
 
@@ -134,7 +123,6 @@ func (k *KernelSpace) Start(
 func (k *KernelSpace) Stop() error {
 	k.Lock()
 	defer k.Unlock()
-	k.eventsPublisher.Disconnected.Publish(events.DataDisconnect{})
 	if k.state == vpn.ConnectingState {
 		k.state = vpn.ExitingState
 		return nil
