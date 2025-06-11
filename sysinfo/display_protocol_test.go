@@ -2,9 +2,13 @@ package sysinfo
 
 import (
 	"testing"
+
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 )
 
 func Test_getDisplayProtocol(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name   string
 		envVar string
