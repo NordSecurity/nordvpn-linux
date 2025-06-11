@@ -1,8 +1,13 @@
 package tray
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/NordSecurity/nordvpn-linux/test/category"
+)
 
 func Test_selectIcon(t *testing.T) {
+	category.Set(t, category.Unit)
 	type args struct {
 		desktopEnv string
 	}
