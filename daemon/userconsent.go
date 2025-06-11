@@ -166,16 +166,21 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 }
 
 // doLightLogout performs minimal logout operation which will result in
-// `auth.Checker.IsLoggedIn` returning false.
+// `auth.Checker.IsLoggedIn` returning false and meshnet being disabled.
 //
 // The logout operation is needed to direct user to go through `login` command
 // which will trigger consent flow, but at the same time we don't want to
-// make full, invasive logout with token invalidation, meshnet key removal etc.,
-// so we are doing minimal work which will require user to trigger login.
+// make full, invasive logout with token invalidation etc., so we are doing
+// minimal work which will require user to trigger login.
+// Meshnet also has to be disabled because the startup happens on daemon start
+// and it's not retried later, so logged out account won't have meshnet working
+// even if it was enabled in the configuration during startup.
 func (acc *AnalyticsConsentChecker) doLightLogout() error {
 	return acc.cm.SaveWith(func(c config.Config) config.Config {
 		delete(c.TokensData, c.AutoConnectData.ID)
 		c.AutoConnectData.ID = 0
+		c.Mesh = false
+		c.MeshPrivateKey = ""
 		return c
 	})
 }
