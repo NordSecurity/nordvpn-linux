@@ -5,6 +5,7 @@ from collections import namedtuple
 
 import paramiko
 import pytest
+import socket
 
 import lib
 
@@ -27,9 +28,15 @@ class Ssh:
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
     def exec_command(self, command: str) -> str:
-        _, stdout, stderr = self.client.exec_command(command, timeout=10)
-        output = stdout.read().decode()
-        error = stderr.read().decode()
+        _, stdout, stderr = self.client.exec_command(command, timeout=30)
+        try:
+            output = stdout.read().decode()
+            error = stderr.read().decode()
+        except socket.timeout:
+            stdout.close()
+            stderr.close()
+            raise RuntimeError("Socked timed out.")
+
         if stdout.channel.recv_exit_status() != 0:
             msg = f'{output} {error}'
             raise RuntimeError(msg)
