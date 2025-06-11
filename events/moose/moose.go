@@ -37,6 +37,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	moose "moose/events"
 	worker "moose/worker"
@@ -129,11 +130,6 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return err
 	}
 
-	deviceType := "server"
-	if _, err := exec.LookPath("xrandr"); err == nil {
-		deviceType = "desktop"
-	}
-
 	err := s.updateEventDomain()
 	if err != nil {
 		return fmt.Errorf("initializing event domain: %w", err)
@@ -212,16 +208,9 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if err := s.response(moose.NordvpnappSetContextDeviceFp(s.DeviceID)); err != nil {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
-	var deviceT moose.NordvpnappDeviceType
-	switch deviceType {
-	case "desktop":
-		deviceT = moose.NordvpnappDeviceTypeDesktop
-	case "server":
-		deviceT = moose.NordvpnappDeviceTypeServer
-	default:
-		deviceT = moose.NordvpnappDeviceTypeUndefined
-	}
-	if err := s.response(moose.NordvpnappSetContextDeviceType(deviceT)); err != nil {
+
+	dt := deviceTypeToInternalType(sysinfo.GetDeviceType())
+	if err := s.response(moose.NordvpnappSetContextDeviceType(dt)); err != nil {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}
 
@@ -1012,4 +1001,19 @@ func threatProtectionLiteToInternalType(enabled bool) moose.NordvpnappOptBool {
 
 	return moose.NordvpnappOptBoolFalse
 
+}
+
+func deviceTypeToInternalType(deviceType sysinfo.DeviceType) moose.NordvpnappDeviceType {
+	var dt moose.NordvpnappDeviceType
+
+	switch deviceType {
+	case sysinfo.DeviceTypeDesktop:
+		dt = moose.NordvpnappDeviceTypeDesktop
+	case sysinfo.DeviceTypeServer:
+		dt = moose.NordvpnappDeviceTypeServer
+	default:
+		dt = moose.NordvpnappDeviceTypeUndefined
+	}
+
+	return dt
 }
