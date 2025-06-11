@@ -26,7 +26,9 @@ const (
 )
 
 const (
-	GeneralInfo int = iota + 9600
+	// Use different ports than rpc package does to avoid port collision when all tests are
+	// executed.
+	GeneralInfo int = iota + 9602
 	InvalidInfo
 )
 
