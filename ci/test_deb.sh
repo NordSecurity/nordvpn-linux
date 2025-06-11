@@ -71,8 +71,8 @@ if [[ -n ${LATTE:-} ]]; then
     fi
 fi
 
-python3 -m pip install -r /opt/ci/docker/tester/requirements.txt
-python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true --html=artifacts/report.html "${args[@]}"
+python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true \
+--html=artifacts/report.html --self-contained-html  --junitxml=artifacts/results.xml "${args[@]}"
 
 if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
     sudo sed -i "2d" "/etc/init.d/nordvpn"
