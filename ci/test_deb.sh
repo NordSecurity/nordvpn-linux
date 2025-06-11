@@ -71,7 +71,7 @@ if [[ -n ${LATTE:-} ]]; then
     fi
 fi
 
-python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true --html=reports/report.html "${args[@]}"
+python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true --html=artifacts/report.html "${args[@]}"
 
 if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
     sudo sed -i "2d" "/etc/init.d/nordvpn"
