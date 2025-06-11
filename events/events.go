@@ -87,8 +87,6 @@ type DataConnect struct {
 	TargetServerName           string
 	Error                      error
 	IsVirtualLocation          bool
-	Upload                     uint64
-	Download                   uint64
 	IsObfuscated               bool
 	IsPostQuantum              bool
 	IP                         netip.Addr
