@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const loopBackInterface = "lo"
+
 type TestSubscriber struct {
 	notificationCounter int
 	wg                  *sync.WaitGroup
@@ -210,4 +212,83 @@ func TestConnectionInfo_TracksStartTime(t *testing.T) {
 
 	status := tf.sut.Status()
 	assert.Nil(t, status.StartTime)
+}
+
+func TestConnectionInfo_TransferRatesShallBeProvidedOnlyForConnectedState(t *testing.T) {
+	category.Set(t, category.Unit)
+	tf := newTestFixture(t)
+	tf.subscriber.ExpectEvents(1)
+
+	go func() {
+		status := tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		// connecting with valid TunnelName
+		// transfer rates should be zero
+		event := events.DataConnect{
+			EventStatus: events.StatusAttempt,
+			TunnelName:  loopBackInterface,
+		}
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		// connected with valid TunnelName
+		// transfer rates should be non zero
+		event = events.DataConnect{
+			EventStatus: events.StatusSuccess,
+			TunnelName:  loopBackInterface,
+		}
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.NotZero(t, status.Tx)
+		assert.NotZero(t, status.Rx)
+
+		// connection failed with valid TunnelName
+		// transfer rates should be zero
+		event = events.DataConnect{
+			EventStatus: events.StatusFailure,
+			TunnelName:  loopBackInterface,
+		}
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Connected.Publish(event)
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		// disconnected
+		// transfer rates should be zero
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Disconnected.Publish(events.DataDisconnect{})
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		// connected with empty TunnelName
+		// transfer rates should be zero
+		tf.subscriber.ExpectEvents(1)
+		tf.internalEvents.Connected.Publish(events.DataConnect{
+			EventStatus: events.StatusSuccess,
+		})
+		tf.subscriber.wg.Wait()
+
+		status = tf.sut.Status()
+		assert.Zero(t, status.Tx)
+		assert.Zero(t, status.Rx)
+
+		close(tf.done)
+	}()
+
+	tf.waitForCompletion(t)
 }
