@@ -11,13 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-var countryCodeToConsentMode = map[core.CountryCode]consentMode{
-	core.NewCountryCode("us"): consentModeStandard,
-	core.NewCountryCode("ca"): consentModeStandard,
-	core.NewCountryCode("jp"): consentModeStandard,
-	core.NewCountryCode("au"): consentModeStandard,
-}
-
 type ConsentChecker interface {
 	PrepareDaemonIfConsentNotCompleted()
 	IsConsentFlowCompleted() bool
@@ -190,9 +183,10 @@ func (acc *AnalyticsConsentChecker) doLightLogout() error {
 // It uses country code and list of lowercase county codes in standard mode to
 // check it. Countries not on the standard mode list fall into GDPR mode.
 func modeForCountryCode(cc core.CountryCode) consentMode {
-	mode, ok := countryCodeToConsentMode[cc]
-	if !ok {
+	switch cc.String() {
+	case "us", "ca", "jp", "au":
+		return consentModeStandard
+	default:
 		return consentModeGDPR
 	}
-	return mode
 }
