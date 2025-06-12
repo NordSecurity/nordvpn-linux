@@ -77,7 +77,7 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// consent flow
 	if consentMode == consentModeGDPR && acc.authChecker.IsLoggedIn() {
 		if err := acc.doLightLogout(); err != nil {
-			log.Println(internal.WarningPrefix, "failed to perform light logout:", err)
+			log.Println(internal.WarningPrefix, "failed to perform light logout when user in gdpr mode:", err)
 		}
 		return
 	}
@@ -86,7 +86,7 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// consent flow, so update the config with `AnalyticsConsent := true`
 	if consentMode == consentModeStandard {
 		if err := acc.setConsentAllowed(); err != nil {
-			log.Println(internal.WarningPrefix, "failed to save analytics consent", err)
+			log.Println(internal.WarningPrefix, "failed to set analytics consent to allowed when user in standard-mode:", err)
 		}
 	}
 }
