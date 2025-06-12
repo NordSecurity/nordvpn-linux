@@ -51,7 +51,7 @@ esac
 # fi
 
 python3 -m pytest -v --disable-pytest-warnings --timeout 180 -x -rsx --timeout-method=signal -o log_cli=true \
---html=artifacts/report.html --self-contained-html  --junitxml=artifacts/results.xml "${args[@]}"
+--html=artifacts/report.html --self-contained-html  --junitxml=artifacts/report.xml "${args[@]}"
 
 # if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
 #     sudo sed -i "2d" "/etc/init.d/nordvpn"
