@@ -40,6 +40,8 @@ import (
 	worker "moose/worker"
 )
 
+type mooseConsentFunc func(bool) uint32
+
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
 	EventsDbPath            string
@@ -53,37 +55,62 @@ type Subscriber struct {
 	currentDomain           string
 	connectionStartTime     time.Time
 	connectionToMeshnetPeer bool
-	enabled                 bool
+	consent                 config.AnalyticsConsent
 	initialHeartbeatSent    bool
+	mooseOptInFunc          mooseConsentFunc
+	mooseConsentLevelFunc   mooseConsentFunc
 	mux                     sync.RWMutex
+}
+
+func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error {
+	if s.consent == newState {
+		return nil
+	}
+
+	if newState == config.ConsentUndefined {
+		return fmt.Errorf("analytics consent cannot be set to and undefined state")
+	}
+
+	if s.consent == config.ConsentUndefined {
+		log.Println(internal.DebugPrefix, "enabling analytics")
+		if err := s.response(s.mooseOptInFunc(true)); err != nil {
+			return fmt.Errorf("enabling essential analytics: %w", err)
+		}
+	}
+
+	enabled := false
+	if newState == config.ConsentGranted {
+		enabled = true
+	}
+
+	if err := s.response(s.mooseConsentLevelFunc(enabled)); err != nil {
+		s.consent = config.ConsentDenied
+		return fmt.Errorf("setting new consent level: %w", err)
+	}
+
+	s.consent = newState
+
+	return nil
 }
 
 // Enable moose analytics engine
 func (s *Subscriber) Enable() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if s.enabled {
-		return nil
-	}
-	s.enabled = true
-	return s.response(moose.MooseNordvpnappSetOptIn(true))
+	return s.changeConsentState(config.ConsentGranted)
 }
 
 // Disable moose analytics engine
 func (s *Subscriber) Disable() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if !s.enabled {
-		return nil
-	}
-	s.enabled = false
-	return s.response(moose.MooseNordvpnappSetOptIn(false))
+	return s.changeConsentState(config.ConsentDenied)
 }
 
 func (s *Subscriber) isEnabled() bool {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
-	return s.enabled
+	return s.consent == config.ConsentGranted
 }
 
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
@@ -91,6 +118,10 @@ func (s *Subscriber) isEnabled() bool {
 func (s *Subscriber) Init(httpClient http.Client) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+
+	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
+	s.mooseOptInFunc = moose.MooseNordvpnappSetOptIn
+
 	var cfg config.Config
 	if err := s.Config.Load(&cfg); err != nil {
 		return err
@@ -127,18 +158,27 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
-	s.enabled = cfg.Analytics.Get()
+	sendAllEvents := cfg.AnalyticsConsent == config.ConsentGranted
+
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
 		internal.IsProdEnv(s.Environment),
 		s,
 		s,
-		s.enabled,
+		sendAllEvents,
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
 		}
 	}
+
+	if cfg.AnalyticsConsent == config.ConsentUndefined {
+		if err := s.response(s.mooseOptInFunc(false)); err != nil {
+			return fmt.Errorf("failed to opt out of analytics: %w", err)
+		}
+	}
+
+	s.consent = cfg.AnalyticsConsent
 
 	applicationName := "linux-app"
 	if snapconf.IsUnderSnap() {
@@ -580,7 +620,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 }
 
 func (s *Subscriber) fetchSubscriptions() error {
-	if !s.enabled {
+	if s.consent == config.ConsentUndefined {
 		return nil
 	}
 	var cfg config.Config
