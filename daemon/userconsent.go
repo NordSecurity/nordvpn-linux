@@ -147,7 +147,7 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 
 	// fallback to strict mode in case of nil response
 	if insights == nil {
-		log.Println(internal.WarningPrefix, "insigts data is nil, falling back to GDPR mode")
+		log.Println(internal.WarningPrefix, "insights data is nil, falling back to GDPR mode")
 		return consentModeGDPR
 	}
 
@@ -155,7 +155,7 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	// allow override of country code in dev mode
 	if acc.isDevEnv {
 		if envVarCC, exists := os.LookupEnv("NORDVPN_USER_CC"); exists {
-			log.Println(internal.DebugPrefix, "overriding user's coutry code to", envVarCC)
+			log.Println(internal.DebugPrefix, "overriding user's country code to", envVarCC)
 			cc = envVarCC
 		}
 	}
