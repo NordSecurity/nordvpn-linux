@@ -99,7 +99,13 @@ func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
 		log.Println(internal.ErrorPrefix, "failed to load config when checking consent flow", err)
 		return false
 	}
-	return cfg.AnalyticsConsent != config.ConsentMode_NONE
+	switch cfg.AnalyticsConsent {
+	case config.ConsentMode_ALLOWED, config.ConsentMode_FORBIDDEN:
+		return true
+	case config.ConsentMode_NONE:
+		return false
+	}
+	return false
 }
 
 func (acc *AnalyticsConsentChecker) setConsentAllowed() error {
