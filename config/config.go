@@ -38,7 +38,7 @@ type Config struct {
 	FirewallMark uint32     `json:"fwmark"`
 	Routing      TrueField  `json:"routing"`
 	// AnalyticsConsent describes user decision about extra analytics.
-	// If nil, the consent flow was not yet completed by user.
+	// If `ConsentMode_NONE`, the consent flow was not yet completed by user.
 	AnalyticsConsent ConsentMode `json:"analytics_consent"`
 	Mesh             bool        `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
