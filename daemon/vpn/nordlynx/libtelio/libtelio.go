@@ -804,17 +804,10 @@ func publishConnectEvent(publisher *vpn.Events,
 	if !state.IsVPN {
 		server.Name = state.Nickname
 	}
-
-	transferStats, err := tunnel.GetTransferRates(nordlynx.InterfaceName)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
-	}
-
 	event := vpn.GetDataConnectEvent(config.Technology_NORDLYNX,
 		config.Protocol_UDP,
 		connectType,
 		server,
-		transferStats,
 		!state.IsVPN)
 	event.TunnelName = tun.Interface().Name
 	publisher.Connected.Publish(event)
