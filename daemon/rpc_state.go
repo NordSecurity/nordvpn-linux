@@ -76,60 +76,43 @@ func statusStream(stateChan <-chan any,
 			return
 		case ev := <-stateChan:
 			switch e := ev.(type) {
-			case events.DataConnect:
-				var state pb.ConnectionState
-				switch e.EventStatus {
-				case events.StatusSuccess:
-					state = pb.ConnectionState_CONNECTED
-				case events.StatusCanceled, events.StatusFailure:
-					state = pb.ConnectionState_DISCONNECTED
-				case events.StatusAttempt:
-					state = pb.ConnectionState_CONNECTING
+			case events.DataConnectChangeNotif:
+				status := pb.StatusResponse{
+					State:           e.Status.State,
+					Ip:              e.Status.IP.String(),
+					Country:         e.Status.Country,
+					CountryCode:     e.Status.CountryCode,
+					City:            e.Status.City,
+					Name:            e.Status.Name,
+					Hostname:        e.Status.Hostname,
+					IsMeshPeer:      e.Status.IsMeshnetPeer,
+					ByUser:          true,
+					VirtualLocation: e.Status.IsVirtualLocation,
+					Technology:      e.Status.Technology,
+					Protocol:        e.Status.Protocol,
+					Obfuscated:      e.Status.IsObfuscated,
+					PostQuantum:     e.Status.IsPostQuantum,
+					Upload:          e.Status.Tx,
+					Download:        e.Status.Rx,
 				}
 
-				requestedConnParams := requestedConnParamsStorage.Get()
-				status := pb.StatusResponse{
-					State:           state,
-					Ip:              e.TargetServerIP,
-					Country:         e.TargetServerCountry,
-					CountryCode:     e.TargetServerCountryCode,
-					City:            e.TargetServerCity,
-					Name:            e.TargetServerName,
-					Hostname:        e.TargetServerDomain,
-					IsMeshPeer:      e.IsMeshnetPeer,
-					ByUser:          true,
-					VirtualLocation: e.IsVirtualLocation,
-					Upload:          e.Upload,
-					Download:        e.Download,
-					Technology:      e.Technology,
-					Protocol:        e.Protocol,
-					Obfuscated:      e.IsObfuscated,
-					PostQuantum:     e.IsPostQuantum,
-					Parameters: &pb.ConnectionParameters{
+				// for disconnected state connection parameters shall be left empty
+				// otherwise e.g. GUI displays incorrect message when disconnected
+				if status.State != pb.ConnectionState_DISCONNECTED {
+					requestedConnParams := requestedConnParamsStorage.Get()
+					status.Parameters = &pb.ConnectionParameters{
 						ServerName:  requestedConnParams.ServerName,
 						Source:      requestedConnParams.ConnectionSource,
 						Country:     requestedConnParams.Country,
 						City:        requestedConnParams.City,
 						Group:       requestedConnParams.Group,
 						CountryCode: requestedConnParams.CountryCode,
-					},
+					}
 				}
 
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{ConnectionStatus: &status}}); err != nil {
 					log.Println(internal.ErrorPrefix, "vpn enabled failed to send state update:", err)
-				}
-			case events.DataDisconnect:
-				if err := srv.Send(
-					&pb.AppState{State: &pb.AppState_ConnectionStatus{
-						ConnectionStatus: &pb.StatusResponse{
-							State:      pb.ConnectionState_DISCONNECTED,
-							ByUser:     e.ByUser,
-							Technology: e.Technology,
-							Protocol:   e.Protocol,
-						},
-					}}); err != nil {
-					log.Println(internal.ErrorPrefix, "vpn disabled failed to send state update:", err)
 				}
 			case pb.LoginEventType:
 				if err := srv.Send(

@@ -18,3 +18,6 @@ func (WorkingT) IP() (netip.Addr, bool) {
 func (WorkingT) TransferRates() (tunnel.Statistics, error) {
 	return tunnel.Statistics{Tx: 1337, Rx: 1337}, nil
 }
+
+func (WorkingT) AddAddrs() error { return nil }
+func (WorkingT) DelAddrs() error { return nil }

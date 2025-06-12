@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/netip"
 	"sync"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/tunnel"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
@@ -28,6 +30,11 @@ const (
 	proxyingPersistentKeepaliveSeconds = uint32(25)
 	stunPersistentKeepaliveSeconds     = uint32(25)
 )
+
+type callbackHandlerStub struct{}
+
+func (callbackHandlerStub) handleEvent(teliogo.Event) *teliogo.TelioError { return nil }
+func (callbackHandlerStub) setMonitoringContext(ctx context.Context)      {}
 
 type mockLib struct{}
 
@@ -47,6 +54,14 @@ func (mockLib) StartNamed(teliogo.SecretKey, teliogo.TelioAdapterType, string) e
 func (mockLib) Stop() error                                                          { return nil }
 func (mockLib) SetFwmark(uint32) error                                               { return nil }
 func (mockLib) SetSecretKey(teliogo.SecretKey) error                                 { return nil }
+
+type mockTunnel struct{}
+
+func (mockTunnel) TransferRates() (tunnel.Statistics, error) { return tunnel.Statistics{}, nil }
+func (mockTunnel) Interface() net.Interface                  { return net.Interface{Name: "nordlynx"} }
+func (mockTunnel) IP() (netip.Addr, bool)                    { return netip.Addr{}, true }
+func (mockTunnel) AddAddrs() error                           { return nil }
+func (mockTunnel) DelAddrs() error                           { return nil }
 
 func TestIsConnected(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -99,7 +114,7 @@ func TestIsConnected(t *testing.T) {
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 			defer cancel()
-			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents())
+			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents(), mockTunnel{})
 
 			connectionEstablishedWG.Wait()
 			select {
@@ -114,7 +129,8 @@ func TestIsConnected(t *testing.T) {
 
 func TestEventCallback_DoesntBlock(t *testing.T) {
 	stateC := make(chan state)
-	cb := eventCallback(stateC)
+	callbackHandler := newTelioCallbackHandler(stateC)
+	cb := eventCallbackWrap(callbackHandler)
 	var event teliogo.Event
 
 	returnedC := make(chan any)
@@ -380,17 +396,17 @@ func NewSubscriber(eventsReceivedWG *sync.WaitGroup) subscriber {
 	}
 }
 
-func (s *subscriber) NotifyConnect(events.DataConnect) error {
+func (s *subscriber) ConnectionStatusNotifyConnect(data events.DataConnect) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.counter++
 	s.eventsReceivedWG.Done()
-
 	return nil
 }
-func (s *subscriber) NotifyDisconnect(events.DataDisconnect) error {
-	return s.NotifyConnect(events.DataConnect{})
+
+func (s *subscriber) ConnectionStatusNotifyDisconnect(_ events.DataDisconnect) error {
+	return s.ConnectionStatusNotifyConnect(events.DataConnect{})
 }
 
 func (s *subscriber) Counter() int {
@@ -481,6 +497,8 @@ func TestLibtelio_connect(t *testing.T) {
 				state:           vpn.ExitedState,
 				fwmark:          123,
 				eventsPublisher: pub,
+				tun:             mockTunnel{},
+				callbackHandler: callbackHandlerStub{},
 			}
 
 			// connect ctx
@@ -521,5 +539,59 @@ func TestLibtelio_connect(t *testing.T) {
 
 			assert.Equal(t, tt.events, sub.Counter())
 		})
+	}
+}
+
+func Test_EventCallback(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stateChan := make(chan state)
+	callbackHandler := newTelioCallbackHandler(stateChan)
+
+	var wg sync.WaitGroup
+	callbackHandlerEventNonBlocking := func() {
+		callbackHandler.handleEvent(teliogo.EventNode{})
+		// in this case Event should not block, as no context was provided, so we can wait until the function exits
+		wg.Done()
+	}
+
+	wg.Add(1)
+	go callbackHandlerEventNonBlocking()
+	wg.Wait()
+
+	select {
+	case <-stateChan:
+		assert.Fail(t, "Event sent when no context was provided.")
+	default:
+	}
+
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	// add a context, callbackHandled should start sending events via stateChan
+	callbackHandler.setMonitoringContext(ctx)
+
+	wg.Add(1)
+	go func() {
+		wg.Done()
+		callbackHandler.handleEvent(teliogo.EventNode{})
+	}()
+	wg.Wait()
+
+	select {
+	case <-stateChan:
+	case <-time.After(5 * time.Second):
+		cancelFunc()
+		assert.Fail(t, "Event not sent when context was provieded")
+	}
+
+	cancelFunc()
+
+	wg.Add(1)
+	go callbackHandlerEventNonBlocking()
+	wg.Wait()
+
+	select {
+	case <-stateChan:
+		assert.Fail(t, "Event sent when no context was provided.")
+	default:
 	}
 }

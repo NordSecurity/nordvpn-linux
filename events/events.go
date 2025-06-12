@@ -3,9 +3,11 @@ package events
 
 import (
 	"net/http"
+	"net/netip"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 )
 
 // Handler is used to process messages.
@@ -72,7 +74,7 @@ type DataConnect struct {
 	DurationMs                 int
 	ServerFromAPI              bool
 	EventStatus                TypeEventStatus
-	TargetServerSelection      string
+	TargetServerSelection      config.ServerSelectionRule
 	Technology                 config.Technology
 	TargetServerCity           string
 	TargetServerCountry        string
@@ -85,10 +87,18 @@ type DataConnect struct {
 	TargetServerName           string
 	Error                      error
 	IsVirtualLocation          bool
-	Upload                     uint64
-	Download                   uint64
 	IsObfuscated               bool
 	IsPostQuantum              bool
+	IP                         netip.Addr
+	Name                       string
+	Hostname                   string
+	StartTime                  *time.Time
+	TunnelName                 string
+}
+
+// DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus
+type DataConnectChangeNotif struct {
+	Status types.ConnectionStatus
 }
 
 type DataDisconnect struct {
@@ -96,7 +106,7 @@ type DataDisconnect struct {
 	ServerFromAPI         bool
 	EventStatus           TypeEventStatus
 	Technology            config.Technology
-	TargetServerSelection string
+	TargetServerSelection config.ServerSelectionRule
 	ThreatProtectionLite  bool
 	ByUser                bool
 	Duration              time.Duration
@@ -117,6 +127,8 @@ type DataRequestAPI struct {
 	Response *http.Response
 	Duration time.Duration
 	Error    error
+	// IsAttempt indicates whether the event represents an attempt
+	IsAttempt bool
 }
 
 // Analytics analytics handling engine interface

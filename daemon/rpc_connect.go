@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
@@ -51,11 +50,51 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 
 	// set connection status to "Disconnected"
 	if didFail || err != nil {
-		r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
-		r.vpnEvents.Connected.Publish(events.DataConnect{EventStatus: events.StatusFailure})
+		r.vpnEvents.Disconnected.Publish(events.DataDisconnect{})
 	}
 
 	return err
+}
+
+// determineServerSelectionRule determines the server selection rule based on the provided
+// parameters.
+func determineServerSelectionRule(params ServerParameters) config.ServerSelectionRule {
+	// defensive checks for all fields
+	hasCountry := params.Country != ""
+	hasCity := params.City != ""
+	hasGroup := params.Group != config.ServerGroup_UNDEFINED
+	hasServer := params.ServerName != ""
+
+	switch {
+	case params.Undefined():
+		return config.ServerSelectionRuleRecommended
+
+	case hasCountry && hasCity && !hasGroup && !hasServer:
+		return config.ServerSelectionRuleCity
+
+	case hasCountry && !hasCity && !hasGroup && !hasServer:
+		return config.ServerSelectionRuleCountry
+
+	case hasCountry && !hasCity && hasGroup && !hasServer:
+		return config.ServerSelectionRuleCountryWithGroup
+
+	case !hasCountry && !hasCity && !hasGroup && hasServer:
+		return config.ServerSelectionRuleSpecificServer
+
+	case !hasCountry && !hasCity && hasGroup && hasServer:
+		return config.ServerSelectionRuleSpecificServerWithGroup
+
+	case !hasCountry && !hasCity && hasGroup && !hasServer:
+		if _, ok := config.ServerGroup_name[int32(params.Group.Number())]; ok {
+			return config.ServerSelectionRuleGroup
+		}
+	}
+
+	// Fallback for any unexpected combination
+	log.Println(internal.WarningPrefix,
+		"Failed to determine 'ServerSelectionRule':", params,
+		". Defaulting to :", config.ServerSelectionRuleNone)
+	return config.ServerSelectionRuleNone
 }
 
 func (r *RPC) connect(
@@ -83,9 +122,11 @@ func (r *RPC) connect(
 		ResponseTime:               0,
 		DurationMs:                 -1,
 		EventStatus:                events.StatusAttempt,
+		TargetServerSelection:      config.ServerSelectionRuleNone,
 		ServerFromAPI:              true,
 		TargetServerCity:           "",
 		TargetServerCountry:        "",
+		TargetServerCountryCode:    "",
 		TargetServerDomain:         "",
 		TargetServerGroup:          "",
 		TargetServerIP:             "",
@@ -96,7 +137,6 @@ func (r *RPC) connect(
 	// Set status to "Connecting" and send the connection attempt event without details
 	// to inform clients about connection attempt as soon as possible so they can react.
 	// The details will be filled and delivered to clients later.
-	r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_CONNECTING})
 	r.vpnEvents.Connected.Publish(event)
 
 	vpnExpired, err := r.ac.IsVPNExpired()
@@ -190,10 +230,20 @@ func (r *RPC) connect(
 	event.TargetServerCountry = country.Name
 	event.TargetServerDomain = server.Hostname
 	event.TargetServerIP = subnet.Addr().String()
-	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+	event.DurationMs = getElapsedTime(connectingStartTime)
 
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
+
+	event.ServerFromAPI = remote
+	event.TargetServerSelection = determineServerSelectionRule(parameters)
+	event.TargetServerCity = country.City.Name
+	event.TargetServerCountry = country.Name
+	event.TargetServerCountryCode = country.Code
+	event.TargetServerDomain = server.Hostname
+	event.TargetServerGroup = determineTargetServerGroup(server, parameters)
+	event.TargetServerIP = subnet.Addr().String()
+	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
 
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)
@@ -207,7 +257,7 @@ func (r *RPC) connect(
 		// and no connect success or connect failure event was sent.
 		if retErr != nil && event.EventStatus == events.StatusAttempt {
 			event.EventStatus = events.StatusFailure
-			event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+			event.DurationMs = getElapsedTime(connectingStartTime)
 			r.events.Service.Connect.Publish(event)
 		}
 	}()
@@ -234,7 +284,7 @@ func (r *RPC) connect(
 		true, // here vpn connect - enable routing to local LAN
 	)
 	if err != nil {
-		event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+		event.DurationMs = getElapsedTime(connectingStartTime)
 		event.Error = err
 		event.EventStatus = events.StatusFailure
 		t := internal.CodeFailure
@@ -244,8 +294,7 @@ func (r *RPC) connect(
 			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
-		r.connectionInfo.SetStatus(state.ConnectionStatus{State: pb.ConnectionState_DISCONNECTED, StartTime: nil})
-		r.vpnEvents.Connected.Publish(event)
+		r.vpnEvents.Disconnected.Publish(events.DataDisconnect{})
 		if err := srv.Send(&pb.Payload{
 			Type: t,
 			Data: data,
@@ -264,7 +313,7 @@ func (r *RPC) connect(
 		}
 	}
 	event.EventStatus = events.StatusSuccess
-	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+	event.DurationMs = getElapsedTime(connectingStartTime)
 	r.events.Service.Connect.Publish(event)
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
@@ -272,6 +321,40 @@ func (r *RPC) connect(
 	}
 
 	return false, nil
+}
+
+// getElapsedTime calculates the time elapsed since the given start time in milliseconds.
+// It ensures the returned value is at least 1 millisecond
+func getElapsedTime(startTime time.Time) int {
+	return max(int(time.Since(startTime).Milliseconds()), 1)
+}
+
+// determineTargetServerGroup returns the title of the server group based on the selected server and
+// parameters. This function assumes parameters are already validated and contains a valid group ID.
+func determineTargetServerGroup(server *core.Server, parameters ServerParameters) string {
+	findServerGroupTitle := func(gid config.ServerGroup) (string, bool) {
+		index := slices.IndexFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
+		if index != -1 {
+			return server.Groups[index].Title, true
+		}
+		return "", false
+	}
+
+	if parameters.Group != config.ServerGroup_UNDEFINED {
+		if title, ok := findServerGroupTitle(parameters.Group); ok {
+			return title
+		}
+	}
+
+	if title, ok := findServerGroupTitle(config.ServerGroup_OBFUSCATED); ok {
+		return title
+	}
+
+	if title, ok := findServerGroupTitle(config.ServerGroup_STANDARD_VPN_SERVERS); ok {
+		return title
+	}
+
+	return ""
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)

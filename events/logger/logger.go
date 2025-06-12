@@ -43,14 +43,21 @@ func (Subscriber) NotifyError(err error) error {
 }
 
 func (Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
-	log.Printf("%s HTTP CALL %s",
-		internal.InfoPrefix,
-		dataRequestAPIToString(data, nil, nil, true),
-	)
+	// do not log attempt events
+	if !data.IsAttempt {
+		log.Printf("%s HTTP CALL %s",
+			internal.InfoPrefix,
+			dataRequestAPIToString(data, nil, nil, true),
+		)
+	}
 	return nil
 }
 
 func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
+	// do not log attempt events
+	if data.IsAttempt {
+		return nil
+	}
 	var reqBodyBytes []byte
 	// Additional read of request body. Do not use in production builds
 	if data.Request != nil && data.Request.GetBody != nil {

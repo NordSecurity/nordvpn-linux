@@ -98,17 +98,13 @@ func (o *observer) notifyConnectionStateChange(state vpn.State) {
 }
 
 func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataConnect {
-	transferStats, err := tunnel.GetTransferRates(o.nicName)
-	if err != nil {
-		fmt.Println(internal.ErrorPrefix, "failed to get transfer rates for tunnel:", err)
-	}
-
 	event := vpn.GetDataConnectEvent(config.Technology_NORDWHISPER,
 		config.Protocol_Webtunnel,
 		status,
 		o.currentServer,
-		transferStats,
 		false)
+
+	event.TunnelName = o.nicName
 
 	return event
 }

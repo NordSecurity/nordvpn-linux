@@ -3,8 +3,6 @@
 package moose
 
 import (
-	"fmt"
-
 	moose "moose/events"
 )
 
@@ -42,23 +40,23 @@ func noSuchEndpoint(
 	return 0
 }
 
-func pickNotifier(endpoint string) (notifyRequest, error) {
+func pickNotifier(endpoint string) notifyRequest {
 	switch endpoint {
 	case "/v1/servers":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestServers, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestServers
 	case "/v1/servers/recommendations":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestServersRecommendations, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestServersRecommendations
 	case "/v1/users/current":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestCurrentUser, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestCurrentUser
 	case "/v1/users/services":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestUserServices, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestUserServices
 	case "/v1/users/services/credentials":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestServiceCredentials, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestServiceCredentials
 	case "/v1/users/tokens":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestTokenCreation, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestTokenCreation
 	case "/v1/users/tokens/renew":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestTokenRenew, nil
+		return moose.NordvpnappSendServiceQualityApiRequestRequestTokenRenew
 	default:
-		return noSuchEndpoint, fmt.Errorf("%s is not important to moose", endpoint)
+		return noSuchEndpoint
 	}
 }

@@ -41,6 +41,13 @@ func (failingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, 
 	return nil, fmt.Errorf("Not implemented")
 }
 
+func updateAutoconnectData(c *mockConfigManager, data config.AutoConnectData) {
+	c.c.AutoConnectData.ServerTag = data.ServerTag
+	c.c.AutoConnectData.Country = data.Country
+	c.c.AutoConnectData.City = data.City
+	c.c.AutoConnectData.Group = data.Group
+}
+
 func TestStartAutoConnect(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -57,7 +64,7 @@ func TestStartAutoConnect(t *testing.T) {
 		{
 			name:        "config load fail",
 			setup:       func(rpc *RPC) { rpc.cm = failingConfigManager{} },
-			expectError: true,
+			expectError: false,
 		},
 		{
 			name:        "failing servers API",
@@ -78,6 +85,74 @@ func TestStartAutoConnect(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestDoAutoConnect(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name  string
+		setup func(*RPC)
+	}{
+		{
+			name: "connects to obfuscated group",
+			setup: func(rpc *RPC) {
+				rpc.serversAPI = &mockServersAPI{}
+				mockConfigManager := newMockConfigManager()
+
+				// For obfuscated the server group from API is Obfuscated_servers
+				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED, ServerTag: "obfuscated_servers"})
+				mockConfigManager.c.AutoConnectData.Obfuscate = true
+				mockConfigManager.c.Technology = config.Technology_OPENVPN
+
+				rpc.cm = mockConfigManager
+			},
+		},
+		{
+			name: "connects to country code",
+			setup: func(rpc *RPC) {
+				rpc.serversAPI = &mockServersAPI{}
+				mockConfigManager := newMockConfigManager()
+
+				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE"})
+
+				rpc.cm = mockConfigManager
+			},
+		},
+		{
+			name: "connects to country + city",
+			setup: func(rpc *RPC) {
+				rpc.serversAPI = &mockServersAPI{}
+				mockConfigManager := newMockConfigManager()
+
+				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin"})
+
+				rpc.cm = mockConfigManager
+			},
+		},
+		{
+			name: "connects to country + city + group",
+			setup: func(rpc *RPC) {
+				rpc.serversAPI = &mockServersAPI{}
+				mockConfigManager := newMockConfigManager()
+
+				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin", Group: config.ServerGroup_P2P, ServerTag: "p2p"})
+
+				rpc.cm = mockConfigManager
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rpc := testRPC()
+			if test.setup != nil {
+				test.setup(rpc)
+			}
+			err := rpc.doAutoConnect()
+			assert.NoError(t, err)
 		})
 	}
 }

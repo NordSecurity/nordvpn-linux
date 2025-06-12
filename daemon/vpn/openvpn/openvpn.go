@@ -349,17 +349,14 @@ func (ovpn *OpenVPN) getSubstate() vpn.Substate {
 }
 
 func (ovpn *OpenVPN) getConnectedConnectingEvent(state events.TypeEventStatus) events.DataConnect {
-	stats, err := tunnel.GetTransferRates(InterfaceName)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get transfer rates for the tunnel:", err)
-	}
-
 	event := vpn.GetDataConnectEvent(config.Technology_OPENVPN,
 		ovpn.serverData.Protocol,
 		state,
 		ovpn.serverData,
-		stats,
 		false)
+	if ovpn.tun != nil {
+		event.TunnelName = ovpn.tun.Interface().Name
+	}
 
 	return event
 }
@@ -485,6 +482,8 @@ func stage1Handler(
 				ovpn.setTun(tunnel)
 				// #nosec G104 -- it's okay to ignore an error here
 				internal.FileDelete(openVPNConfigFileName)
+				//publish event again, so the tunnel is for sure updated in the ConnectionInfo
+				ovpn.publishConnected()
 				return nil
 			}
 		}
