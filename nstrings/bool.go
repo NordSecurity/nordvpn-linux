@@ -75,14 +75,3 @@ func GetBoolLabel(option bool) string {
 	}
 	return disabled
 }
-
-// GetTriStateLabel returns disabled if false, enabled if true and not set otherwise.
-func GetTriStateLabel(option *bool) string {
-	if option == nil {
-		return notSet
-	}
-	if *option {
-		return enabled
-	}
-	return disabled
-}
