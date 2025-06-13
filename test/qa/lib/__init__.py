@@ -16,7 +16,7 @@ STANDARD_TECHNOLOGIES = [
     ("openvpn", "udp", "off"),
     ("openvpn", "tcp", "off"),
     ("nordlynx", "", ""),
-    ("nordwhisper", "", "")
+    ("nordwhisper", "", ""),
 ]
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated and NordWhisper.
@@ -33,6 +33,15 @@ OBFUSCATED_TECHNOLOGIES = [
     ("openvpn", "udp", "on"),
     ("openvpn", "tcp", "on"),
 ]
+
+STANDARD_TECHNOLOGIES_NO_MESHNET = [
+    # technology, protocol, obfuscation,
+    ("openvpn", "udp", "off"),
+    ("openvpn", "tcp", "off"),
+    ("nordwhisper", "", ""),
+]
+
+TECHNOLOGIES_NO_MESHNET = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES_NO_MESHNET
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 OVPN_STANDARD_TECHNOLOGIES = [
