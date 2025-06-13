@@ -40,7 +40,7 @@ type Config struct {
 	// AnalyticsConsent describes user decision about extra analytics.
 	// If `ConsentMode_NONE`, the consent flow was not yet completed by user.
 	AnalyticsConsent AnalyticsConsent `json:"analytics_consent"`
-	Mesh             bool        `json:"mesh"`
+	Mesh             bool             `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
 	MeshPrivateKey  string              `json:"mesh_private_key"`
 	MeshDevice      *mesh.Machine       `json:"mesh_device"`
