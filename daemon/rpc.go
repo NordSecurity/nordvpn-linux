@@ -57,6 +57,7 @@ type RPC struct {
 	connectContext      *sharedctx.Context
 	remoteConfigGetter  remote.RemoteConfigGetter
 	connectionInfo      *state.ConnectionInfo
+	consentChecker      ConsentChecker
 	pb.UnimplementedDaemonServer
 }
 
@@ -85,6 +86,7 @@ func NewRPC(
 	connectContext *sharedctx.Context,
 	remoteConfigGetter remote.RemoteConfigGetter,
 	connectionInfo *state.ConnectionInfo,
+	consentChecker ConsentChecker,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
@@ -113,5 +115,6 @@ func NewRPC(
 		connectContext:     connectContext,
 		remoteConfigGetter: remoteConfigGetter,
 		connectionInfo:     connectionInfo,
+		consentChecker:     consentChecker,
 	}
 }

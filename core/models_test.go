@@ -978,3 +978,15 @@ func TestNordWhisperPort_UnmarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestNewCountryCode_SetsCountryCodeToLowercase(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	codes := []string{"US", "Us", "uS"}
+	for _, codeStr := range codes {
+		t.Run(codeStr, func(t *testing.T) {
+			cc := NewCountryCode(codeStr)
+			assert.Equal(t, cc.cc, "us")
+		})
+	}
+}

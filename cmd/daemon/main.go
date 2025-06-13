@@ -460,6 +460,14 @@ func main() {
 		dataUpdateEvents,
 	)
 
+	consentChecker := newConsentChecker(
+		internal.IsDevEnv(Environment),
+		fsystem,
+		defaultAPI,
+		authChecker,
+	)
+	consentChecker.PrepareDaemonIfConsentNotCompleted()
+
 	sharedContext := sharedctx.New()
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
@@ -486,6 +494,7 @@ func main() {
 		sharedContext,
 		rcConfig,
 		connectionInfo,
+		consentChecker,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
@@ -537,6 +546,7 @@ func main() {
 
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
+
 	// Start jobs
 
 	go func() {

@@ -15,11 +15,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-var (
-	// ErrMissingExchangeToken is returned when login was successful but
-	// there is not enough data to request the token
-	ErrMissingExchangeToken = errors.New("exchange token not provided")
-)
+// ErrMissingExchangeToken is returned when login was successful but
+// there is not enough data to request the token
+var ErrMissingExchangeToken = errors.New("exchange token not provided")
 
 type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
 
@@ -29,6 +27,12 @@ var lastLoginAttemptTime time.Time
 
 // Login the user with given token
 func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error) {
+	if !r.consentChecker.IsConsentFlowCompleted() {
+		return &pb.LoginResponse{
+			Type: internal.CodeConsentMissing,
+		}, nil
+	}
+
 	if !isTokenValid(in.GetToken()) {
 		return &pb.LoginResponse{
 			Type: internal.CodeTokenInvalid,
@@ -145,9 +149,15 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 
 // LoginOAuth2 is called when logging in with OAuth2.
 func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.LoginOAuth2Response, error) {
+	if !r.consentChecker.IsConsentFlowCompleted() {
+		return &pb.LoginOAuth2Response{
+			Status: pb.LoginStatus_CONSENT_MISSING,
+		}, nil
+	}
+
 	if r.ac.IsLoggedIn() {
 		return &pb.LoginOAuth2Response{
-			Status: pb.LoginOAuth2Status_ALREADY_LOGGED_IN,
+			Status: pb.LoginStatus_ALREADY_LOGGED_IN,
 		}, nil
 	}
 
@@ -170,24 +180,30 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 		if strings.Contains(err.Error(), "network is unreachable") ||
 			strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers") {
 			return &pb.LoginOAuth2Response{
-				Status: pb.LoginOAuth2Status_NO_NET}, nil
+				Status: pb.LoginStatus_NO_NET,
+			}, nil
 		}
 
 		return &pb.LoginOAuth2Response{
-			Status: pb.LoginOAuth2Status_UNKNOWN_OAUTH2_ERROR,
+			Status: pb.LoginStatus_UNKNOWN_OAUTH2_ERROR,
 		}, nil
 	}
 
 	return &pb.LoginOAuth2Response{
-		Status: pb.LoginOAuth2Status_SUCCESS,
+		Status: pb.LoginStatus_SUCCESS,
 		Url:    url,
 	}, nil
 }
 
 // LoginOAuth2Callback is called by the browser via cli during OAuth2 login.
-func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2CallbackRequest) (payload *pb.Empty, retErr error) {
+func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2CallbackRequest) (payload *pb.LoginOAuth2CallbackResponse, retErr error) {
+	if !r.consentChecker.IsConsentFlowCompleted() {
+		return &pb.LoginOAuth2CallbackResponse{
+			Status: pb.LoginStatus_CONSENT_MISSING,
+		}, nil
+	}
 	if r.ac.IsLoggedIn() {
-		return &pb.Empty{}, internal.ErrAlreadyLoggedIn
+		return nil, internal.ErrAlreadyLoggedIn
 	}
 
 	loginType := events.LoginLogin
@@ -211,19 +227,19 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 
 	if in.GetToken() == "" {
 		r.publisher.Publish(ErrMissingExchangeToken.Error())
-		return &pb.Empty{}, ErrMissingExchangeToken
+		return nil, ErrMissingExchangeToken
 	}
 
 	resp, err := r.authentication.Token(in.GetToken())
 	if err != nil {
 		r.publisher.Publish(err.Error())
-		return &pb.Empty{}, err
+		return nil, err
 	}
 
 	credentials, err := r.credentialsAPI.ServiceCredentials(resp.Token)
 	if err != nil {
 		r.publisher.Publish(err.Error())
-		return &pb.Empty{}, err
+		return nil, err
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
@@ -239,7 +255,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 		c.AutoConnectData.ID = credentials.ID
 		return c
 	}); err != nil {
-		return &pb.Empty{}, err
+		return nil, err
 	}
 
 	// get user's current mfa status (should be invoked after config with creds are saved)
@@ -247,9 +263,19 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 	r.ac.IsMFAEnabled()
 
 	go StartNC("[login callback]", r.ncClient)
-	return &pb.Empty{}, nil
+	return &pb.LoginOAuth2CallbackResponse{
+		Status: pb.LoginStatus_SUCCESS,
+	}, nil
 }
 
-func (r *RPC) IsLoggedIn(ctx context.Context, _ *pb.Empty) (*pb.Bool, error) {
-	return &pb.Bool{Value: r.ac.IsLoggedIn()}, nil
+func (r *RPC) IsLoggedIn(ctx context.Context, _ *pb.Empty) (*pb.IsLoggedInResponse, error) {
+	if !r.consentChecker.IsConsentFlowCompleted() {
+		return &pb.IsLoggedInResponse{
+			Status: pb.LoginStatus_CONSENT_MISSING,
+		}, nil
+	}
+
+	return &pb.IsLoggedInResponse{
+		IsLoggedIn: r.ac.IsLoggedIn(),
+	}, nil
 }
