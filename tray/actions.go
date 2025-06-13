@@ -21,7 +21,7 @@ import (
 
 func (ti *Instance) login() {
 	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
-	if err != nil || resp.GetValue() {
+	if err != nil || resp.GetIsLoggedIn() {
 		ti.notify("You are already logged in")
 		return
 	}
@@ -38,13 +38,16 @@ func (ti *Instance) login() {
 	}
 
 	switch loginResp.Status {
-	case pb.LoginOAuth2Status_UNKNOWN_OAUTH2_ERROR:
+	case pb.LoginStatus_UNKNOWN_OAUTH2_ERROR:
 		ti.notify("Login error: %s", internal.ErrUnhandled)
-	case pb.LoginOAuth2Status_NO_NET:
+	case pb.LoginStatus_NO_NET:
 		ti.notify(internal.ErrNoNetWhenLoggingIn.Error())
-	case pb.LoginOAuth2Status_ALREADY_LOGGED_IN:
+	case pb.LoginStatus_ALREADY_LOGGED_IN:
 		ti.notify(internal.ErrAlreadyLoggedIn.Error())
-	case pb.LoginOAuth2Status_SUCCESS:
+	case pb.LoginStatus_CONSENT_MISSING:
+		// will be addressed in LVPN-8137
+		ti.notify("Not implemented yet")
+	case pb.LoginStatus_SUCCESS:
 		if url := loginResp.Url; url != "" {
 			// #nosec G204 -- user input is not passed in
 			cmd := exec.Command("xdg-open", url)

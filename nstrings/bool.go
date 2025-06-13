@@ -11,6 +11,7 @@ var boolFromStringError = "bool: failed to parse from string: %s"
 const (
 	enabled  = "enabled"
 	disabled = "disabled"
+	notSet   = "not set"
 )
 
 var falseMap = map[string]bool{
