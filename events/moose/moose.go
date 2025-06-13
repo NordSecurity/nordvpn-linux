@@ -22,7 +22,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
@@ -31,10 +30,13 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
+	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	moose "moose/events"
 	worker "moose/worker"
@@ -94,11 +96,6 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	var cfg config.Config
 	if err := s.Config.Load(&cfg); err != nil {
 		return err
-	}
-
-	deviceType := "server"
-	if _, err := exec.LookPath("xrandr"); err == nil {
-		deviceType = "desktop"
 	}
 
 	err := s.updateEventDomain()
@@ -167,16 +164,9 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if err := s.response(moose.NordvpnappSetContextDeviceFp(s.DeviceID)); err != nil {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
-	var deviceT moose.NordvpnappDeviceType
-	switch deviceType {
-	case "desktop":
-		deviceT = moose.NordvpnappDeviceTypeDesktop
-	case "server":
-		deviceT = moose.NordvpnappDeviceTypeServer
-	default:
-		deviceT = moose.NordvpnappDeviceTypeUndefined
-	}
-	if err := s.response(moose.NordvpnappSetContextDeviceType(deviceT)); err != nil {
+
+	dt := deviceTypeToInternalType(sysinfo.GetDeviceType())
+	if err := s.response(moose.NordvpnappSetContextDeviceType(dt)); err != nil {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}
 
@@ -579,6 +569,50 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	))
 }
 
+func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
+	switch metric {
+	case telemetry.MetricDesktopEnvironment:
+		if value.(string) == "" {
+			if err := s.response(moose.NordvpnappUnsetContextDeviceDesktopEnvironment()); err != nil {
+				return fmt.Errorf("unsetting desktop-environment: %w", err)
+			}
+		} else {
+			if err := s.response(moose.NordvpnappSetContextDeviceDesktopEnvironment(value.(string))); err != nil {
+				return fmt.Errorf("setting desktop-environment: %w", err)
+			}
+		}
+
+	case telemetry.MetricDisplayProtocol:
+		// TODO: missing moose metric support (e.g. NordvpnappSetContextDeviceDisplayProtocol)
+		switch value.(telemetrypb.DisplayProtocol) {
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNSPECIFIED:
+			// unset display protocol
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_WAYLAND:
+			// set 'wayland' metric
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_X11:
+			// set 'x11' metric
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNKNOWN:
+		default:
+			// set 'unknown' metric (e.g. NordvpnappUnsetContextDeviceDisplayProtocol)
+		}
+
+	case telemetry.MetricCustom:
+		field, ok := value.(telemetry.CustomField)
+		if !ok {
+			return fmt.Errorf("unsupported custom-field value type")
+		}
+
+		switch field {
+		// add custom fields if any
+		}
+
+	default:
+		return fmt.Errorf("unsupported metric received (id=%d)", metric)
+	}
+
+	return nil
+}
+
 func (s *Subscriber) fetchSubscriptions() error {
 	if !s.enabled {
 		return nil
@@ -933,4 +967,19 @@ func threatProtectionLiteToInternalType(enabled bool) moose.NordvpnappOptBool {
 
 	return moose.NordvpnappOptBoolFalse
 
+}
+
+func deviceTypeToInternalType(deviceType sysinfo.DeviceType) moose.NordvpnappDeviceType {
+	var dt moose.NordvpnappDeviceType
+
+	switch deviceType {
+	case sysinfo.DeviceTypeDesktop:
+		dt = moose.NordvpnappDeviceTypeDesktop
+	case sysinfo.DeviceTypeServer:
+		dt = moose.NordvpnappDeviceTypeServer
+	default:
+		dt = moose.NordvpnappDeviceTypeUndefined
+	}
+
+	return dt
 }

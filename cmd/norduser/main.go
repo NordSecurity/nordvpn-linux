@@ -78,6 +78,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 		log.Println(internal.ErrorPrefix, "Error connecting to the NordVPN daemon:", err)
 		return
 	}
+	ReportTelemetry(conn, ReportOnStart, false)
 
 	fileshareConn, err := grpc.Dial(
 		fileshare_process.FileshareURL,
@@ -97,6 +98,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 
 	onExit := func() {
 		log.Println(internal.InfoPrefix, "Exiting systray")
+		ReportTelemetry(conn, ReportOnExit, true)
 		ti.OnExit()
 	}
 
