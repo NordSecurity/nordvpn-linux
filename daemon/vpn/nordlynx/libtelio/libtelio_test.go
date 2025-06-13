@@ -114,7 +114,7 @@ func TestIsConnected(t *testing.T) {
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 			defer cancel()
-			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents(), mockTunnel{})
+			isConnectedC := isConnected(ctx, ch, connParameters{pubKey: test.publicKey}, vpn.NewInternalVPNEvents())
 
 			connectionEstablishedWG.Wait()
 			select {
@@ -396,7 +396,7 @@ func NewSubscriber(eventsReceivedWG *sync.WaitGroup) subscriber {
 	}
 }
 
-func (s *subscriber) ConnectionStatusNotifyConnect(data events.DataConnect) error {
+func (s *subscriber) ConnectionStatusNotifyInternalConnect(vpn.ConnectEvent) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -405,8 +405,8 @@ func (s *subscriber) ConnectionStatusNotifyConnect(data events.DataConnect) erro
 	return nil
 }
 
-func (s *subscriber) ConnectionStatusNotifyDisconnect(_ events.DataDisconnect) error {
-	return s.ConnectionStatusNotifyConnect(events.DataConnect{})
+func (s *subscriber) ConnectionStatusNotifyInternalDisconnect(status events.TypeEventStatus) error {
+	return s.ConnectionStatusNotifyInternalConnect(vpn.ConnectEvent{})
 }
 
 func (s *subscriber) Counter() int {

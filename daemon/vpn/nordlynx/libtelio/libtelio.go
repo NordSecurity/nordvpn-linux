@@ -17,7 +17,6 @@ import (
 	"time"
 
 	teliogo "github.com/NordSecurity/libtelio-go/v5"
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -48,10 +47,8 @@ type lib interface {
 }
 
 type state struct {
-	Nickname  string
 	State     teliogo.NodeState
 	PublicKey string
-	IsVPN     bool
 	IsExit    bool
 }
 
@@ -98,15 +95,9 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) *teliogo.TelioError 
 	var st state
 	switch evt := e.(type) {
 	case teliogo.EventNode:
-		var nickname string
-		if evt.Body.Nickname != nil {
-			nickname = *evt.Body.Nickname
-		}
 		st = state{
-			Nickname:  nickname,
 			State:     evt.Body.State,
 			PublicKey: evt.Body.PublicKey,
-			IsVPN:     evt.Body.IsVpn,
 			IsExit:    evt.Body.IsExit,
 		}
 	default:
@@ -370,8 +361,7 @@ func (l *Libtelio) connect(
 	isConnectedC := isConnected(ctx,
 		bufferedEventsChan,
 		connParameters{pubKey: serverPublicKey, server: l.currentServer},
-		l.eventsPublisher,
-		l.tun)
+		l.eventsPublisher)
 
 	var err error
 	endpoint := net.JoinHostPort(serverIP.String(), "51820")
@@ -774,8 +764,7 @@ func (l *Libtelio) GetConnectionParameters() (vpn.ServerData, bool) {
 func isConnected(ctx context.Context,
 	stateCh <-chan state,
 	connParams connParameters,
-	eventsPublisher *vpn.Events,
-	tun tunnel.T) <-chan interface{} {
+	eventsPublisher *vpn.Events) <-chan interface{} {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -783,7 +772,7 @@ func isConnected(ctx context.Context,
 	connectedCh := make(chan interface{})
 	go func() {
 		wg.Done() // signal that goroutine has started
-		monitorConnection(ctx, stateCh, connectedCh, connParams, eventsPublisher, tun)
+		monitorConnection(ctx, stateCh, connectedCh, connParams, eventsPublisher)
 	}()
 
 	wg.Wait() // wait until goroutine is started
@@ -796,30 +785,6 @@ type connParameters struct {
 	server vpn.ServerData
 }
 
-func publishConnectEvent(publisher *vpn.Events,
-	connectType events.TypeEventStatus,
-	server vpn.ServerData,
-	state state,
-	tun tunnel.T) {
-	if !state.IsVPN {
-		server.Name = state.Nickname
-	}
-	event := vpn.GetDataConnectEvent(config.Technology_NORDLYNX,
-		config.Protocol_UDP,
-		connectType,
-		server,
-		!state.IsVPN)
-	event.TunnelName = tun.Interface().Name
-	publisher.Connected.Publish(event)
-}
-
-func publishDisconnectedEvent(publisher *vpn.Events, byUser bool) {
-	publisher.Disconnected.Publish(events.DataDisconnect{
-		ByUser:     byUser,
-		Technology: config.Technology_NORDLYNX,
-		Protocol:   config.Protocol_UDP})
-}
-
 // monitorConnection awaits for incoming state changes from the states chan and publishes appropriate events. Upon
 // detecting the 'connected' state for the first time it will send true via isConnected channel and close it afterwards.
 // If goroutine is canceled before detecting 'connected', false will be sent via isConnected channel.
@@ -828,8 +793,7 @@ func monitorConnection(
 	states <-chan state,
 	isConnected chan<- interface{},
 	connParameters connParameters,
-	eventsPublisher *vpn.Events,
-	tun tunnel.T) {
+	eventsPublisher *vpn.Events) {
 	type notifyState int
 	const (
 		disconnected notifyState = iota
@@ -840,6 +804,7 @@ func monitorConnection(
 	currentNotifyState := disconnected
 	initialConnection := true
 	for {
+		event := vpn.ConnectEvent{TunnelName: nordlynx.InterfaceName}
 		select {
 		case state := <-states:
 			if !state.IsExit {
@@ -850,13 +815,15 @@ func monitorConnection(
 			case teliogo.NodeStateConnecting:
 				if currentNotifyState != connecting {
 					currentNotifyState = connecting
-					publishConnectEvent(eventsPublisher, events.StatusAttempt, connParameters.server, state, tun)
+					event.Status = events.StatusAttempt
+					eventsPublisher.Connected.Publish(event)
 				}
 			case teliogo.NodeStateConnected:
 				if state.PublicKey == connParameters.pubKey {
 					if currentNotifyState != connected {
 						currentNotifyState = connected
-						publishConnectEvent(eventsPublisher, events.StatusSuccess, connParameters.server, state, tun)
+						event.Status = events.StatusSuccess
+						eventsPublisher.Connected.Publish(event)
 					}
 					if initialConnection {
 						close(isConnected)
@@ -866,13 +833,13 @@ func monitorConnection(
 			case teliogo.NodeStateDisconnected:
 				if currentNotifyState != disconnected {
 					currentNotifyState = disconnected
-					publishDisconnectedEvent(eventsPublisher, false)
+					eventsPublisher.Disconnected.Publish(events.StatusSuccess)
 				}
 			}
 		case <-ctx.Done():
 			if currentNotifyState != disconnected {
 				currentNotifyState = disconnected
-				publishDisconnectedEvent(eventsPublisher, true)
+				eventsPublisher.Disconnected.Publish(events.StatusSuccess)
 			}
 			return
 		}
