@@ -77,10 +77,10 @@ type DaemonClient interface {
 	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
 	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
-	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error)
+	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsLoggedInResponse, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (*LoginOAuth2Response, error)
-	LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*Empty, error)
+	LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*LoginOAuth2CallbackResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Payload, error)
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -221,9 +221,9 @@ func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallO
 	return out, nil
 }
 
-func (c *daemonClient) IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error) {
+func (c *daemonClient) IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsLoggedInResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Bool)
+	out := new(IsLoggedInResponse)
 	err := c.cc.Invoke(ctx, Daemon_IsLoggedIn_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -251,9 +251,9 @@ func (c *daemonClient) LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, 
 	return out, nil
 }
 
-func (c *daemonClient) LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *daemonClient) LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*LoginOAuth2CallbackResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(LoginOAuth2CallbackResponse)
 	err := c.cc.Invoke(ctx, Daemon_LoginOAuth2Callback_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -602,10 +602,10 @@ type DaemonServer interface {
 	Countries(context.Context, *Empty) (*ServerGroupsList, error)
 	Disconnect(*Empty, grpc.ServerStreamingServer[Payload]) error
 	Groups(context.Context, *Empty) (*ServerGroupsList, error)
-	IsLoggedIn(context.Context, *Empty) (*Bool, error)
+	IsLoggedIn(context.Context, *Empty) (*IsLoggedInResponse, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
 	LoginOAuth2(context.Context, *LoginOAuth2Request) (*LoginOAuth2Response, error)
-	LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*Empty, error)
+	LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*LoginOAuth2CallbackResponse, error)
 	Logout(context.Context, *LogoutRequest) (*Payload, error)
 	Ping(context.Context, *Empty) (*PingResponse, error)
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
@@ -672,7 +672,7 @@ func (UnimplementedDaemonServer) Disconnect(*Empty, grpc.ServerStreamingServer[P
 func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Groups not implemented")
 }
-func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*Bool, error) {
+func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*IsLoggedInResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsLoggedIn not implemented")
 }
 func (UnimplementedDaemonServer) LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error) {
@@ -681,7 +681,7 @@ func (UnimplementedDaemonServer) LoginWithToken(context.Context, *LoginWithToken
 func (UnimplementedDaemonServer) LoginOAuth2(context.Context, *LoginOAuth2Request) (*LoginOAuth2Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginOAuth2 not implemented")
 }
-func (UnimplementedDaemonServer) LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*Empty, error) {
+func (UnimplementedDaemonServer) LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*LoginOAuth2CallbackResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginOAuth2Callback not implemented")
 }
 func (UnimplementedDaemonServer) Logout(context.Context, *LogoutRequest) (*Payload, error) {
