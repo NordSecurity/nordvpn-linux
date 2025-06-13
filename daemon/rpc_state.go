@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/consent"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -26,12 +27,12 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 	trayOff := cfg.UsersData.TrayOff[uid]
 
 	settings := pb.Settings{
-		Technology: cfg.Technology,
-		Firewall:   cfg.Firewall,
-		Fwmark:     cfg.FirewallMark,
-		Routing:    cfg.Routing.Get(),
-		Analytics:  cfg.Analytics.Get(),
-		KillSwitch: cfg.KillSwitch,
+		Technology:       cfg.Technology,
+		Firewall:         cfg.Firewall,
+		Fwmark:           cfg.FirewallMark,
+		Routing:          cfg.Routing.Get(),
+		AnalyticsConsent: consentToProtobuf(cfg.AnalyticsConsent),
+		KillSwitch:       cfg.KillSwitch,
 		AutoConnectData: &pb.AutoconnectData{
 			Enabled:     cfg.AutoConnect,
 			Country:     cfg.AutoConnectData.Country,
@@ -59,6 +60,18 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 	}
 
 	return &settings
+}
+
+func consentToProtobuf(analyticsConsent config.AnalyticsConsent) consent.ConsentMode {
+	switch analyticsConsent {
+	case config.ConsentDenied:
+		return consent.ConsentMode_DENIED
+	case config.ConsentGranted:
+		return consent.ConsentMode_GRANTED
+	case config.ConsentUndefined:
+		return consent.ConsentMode_UNDEFINED
+	}
+	return consent.ConsentMode_UNDEFINED
 }
 
 // statusStream starts streaming status events received by stateChan to the subscriber. When the stream is stopped(i.e
