@@ -24,7 +24,7 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 		TokensData: map[int64]TokenData{},
 		// FIXME: This is set to some value now to not break the app as the full consent flow
 		// is not yet implemented. This will be addressed in LVPN-8137
-		AnalyticsConsent: ConsentMode_FORBIDDEN,
+		AnalyticsConsent: ConsentDenied,
 	}
 }
 
@@ -39,7 +39,7 @@ type Config struct {
 	Routing      TrueField  `json:"routing"`
 	// AnalyticsConsent describes user decision about extra analytics.
 	// If `ConsentMode_NONE`, the consent flow was not yet completed by user.
-	AnalyticsConsent ConsentMode `json:"analytics_consent"`
+	AnalyticsConsent AnalyticsConsent `json:"analytics_consent"`
 	Mesh             bool        `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
 	MeshPrivateKey  string              `json:"mesh_private_key"`
@@ -69,7 +69,7 @@ func (c Config) withLoginData(other *Config) Config {
 
 // withAnalyticsConsent makes a copy of current configuration
 // with analytics consent values from `other` configuration.
-func (c Config) withAnalyticsConsent(value ConsentMode) Config {
+func (c Config) withAnalyticsConsent(value AnalyticsConsent) Config {
 	c.AnalyticsConsent = value
 	return c
 }

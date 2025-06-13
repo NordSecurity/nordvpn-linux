@@ -6,9 +6,9 @@ DESCRIPTOR: _descriptor.FileDescriptor
 
 class ConsentMode(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
-    NONE: _ClassVar[ConsentMode]
-    ALLOWED: _ClassVar[ConsentMode]
-    FORBIDDEN: _ClassVar[ConsentMode]
-NONE: ConsentMode
-ALLOWED: ConsentMode
-FORBIDDEN: ConsentMode
+    UNDEFINED: _ClassVar[ConsentMode]
+    GRANTED: _ClassVar[ConsentMode]
+    DENIED: _ClassVar[ConsentMode]
+UNDEFINED: ConsentMode
+GRANTED: ConsentMode
+DENIED: ConsentMode

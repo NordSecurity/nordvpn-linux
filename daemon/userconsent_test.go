@@ -52,12 +52,12 @@ func TestIsConsentFlowCompleted(t *testing.T) {
 		},
 		{
 			name:     "AnalyticsConsent none -> false",
-			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentMode_NONE}},
+			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentUndefined}},
 			expected: false,
 		},
 		{
 			name:     "AnalyticsConsent != None -> true",
-			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentMode_ALLOWED}},
+			manager:  &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentGranted}},
 			expected: true,
 		},
 	}
@@ -135,17 +135,17 @@ func TestConsentModeFromUserLocation(t *testing.T) {
 
 func TestSetConsentTrue(t *testing.T) {
 	category.Set(t, category.Unit)
-	cm := &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentMode_NONE}}
+	cm := &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentUndefined}}
 	acc := &AnalyticsConsentChecker{cm: cm}
 	assert.False(t, cm.Saved)
-	assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentMode_NONE)
+	assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentUndefined)
 
-	err := acc.setConsentAllowed()
+	err := acc.setConsentGranted()
 
 	assert.NoError(t, err)
 	assert.True(t, cm.Saved)
 	assert.NotNil(t, cm.Cfg.AnalyticsConsent)
-	assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentMode_ALLOWED)
+	assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentGranted)
 }
 
 func TestDoLightLogout(t *testing.T) {
@@ -180,33 +180,33 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 		authLoggedIn       bool
 		expectedSaved      bool
 		expectedConsentSet bool
-		expectedConsentVal config.ConsentMode
+		expectedConsentVal config.AnalyticsConsent
 		expectedTokensLen  int
 		expectedAutoConnID int64
 	}{
 		{
 			name:               "consent already completed",
-			initialConfig:      config.Config{AnalyticsConsent: config.ConsentMode_ALLOWED},
+			initialConfig:      config.Config{AnalyticsConsent: config.ConsentGranted},
 			expectedSaved:      false,
 			expectedConsentSet: true,
-			expectedConsentVal: config.ConsentMode_ALLOWED,
+			expectedConsentVal: config.ConsentGranted,
 			expectedTokensLen:  0,
 			expectedAutoConnID: 0,
 		},
 		{
 			name:               "standard country -> set consent",
-			initialConfig:      config.Config{AnalyticsConsent: config.ConsentMode_NONE},
+			initialConfig:      config.Config{AnalyticsConsent: config.ConsentUndefined},
 			apiInsights:        &insights.InsightsMock{InsightsResult: &core.Insights{CountryCode: "ca"}},
 			expectedSaved:      true,
 			expectedConsentSet: true,
-			expectedConsentVal: config.ConsentMode_ALLOWED,
+			expectedConsentVal: config.ConsentGranted,
 			expectedTokensLen:  0,
 			expectedAutoConnID: 0,
 		},
 		{
 			name: "GDPR country & logged in -> do light logout",
 			initialConfig: config.Config{
-				AnalyticsConsent: config.ConsentMode_NONE,
+				AnalyticsConsent: config.ConsentUndefined,
 				TokensData:       map[int64]config.TokenData{42: {}},
 				AutoConnectData:  config.AutoConnectData{ID: 42},
 			},
@@ -219,7 +219,7 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 		},
 		{
 			name:               "GDPR country & not logged in",
-			initialConfig:      config.Config{AnalyticsConsent: config.ConsentMode_NONE},
+			initialConfig:      config.Config{AnalyticsConsent: config.ConsentUndefined},
 			apiInsights:        &insights.InsightsMock{InsightsResult: &core.Insights{CountryCode: "fr"}},
 			authLoggedIn:       false,
 			expectedSaved:      false,
@@ -243,7 +243,7 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 				assert.NotNil(t, cm.Cfg.AnalyticsConsent)
 				assert.Equal(t, cm.Cfg.AnalyticsConsent, tt.expectedConsentVal)
 			} else {
-				assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentMode_NONE)
+				assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentUndefined)
 			}
 			assert.Equal(t, len(cm.Cfg.TokensData), tt.expectedTokensLen)
 			assert.Equal(t, cm.Cfg.AutoConnectData.ID, tt.expectedAutoConnID)

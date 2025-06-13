@@ -24,14 +24,14 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1e\x63onfig/analytics_consent.proto\x12\x06\x63onfig*3\n\x0b\x43onsentMode\x12\x08\n\x04NONE\x10\x00\x12\x0b\n\x07\x41LLOWED\x10\x01\x12\r\n\tFORBIDDEN\x10\x02\x42.Z,github.com/NordSecurity/nordvpn-linux/configb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x1e\x63onfig/analytics_consent.proto\x12\x07\x63onsent*5\n\x0b\x43onsentMode\x12\r\n\tUNDEFINED\x10\x00\x12\x0b\n\x07GRANTED\x10\x01\x12\n\n\x06\x44\x45NIED\x10\x02\x42\x36Z4github.com/NordSecurity/nordvpn-linux/config/consentb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'config.analytics_consent_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'Z,github.com/NordSecurity/nordvpn-linux/config'
-  _globals['_CONSENTMODE']._serialized_start=42
-  _globals['_CONSENTMODE']._serialized_end=93
+  _globals['DESCRIPTOR']._serialized_options = b'Z4github.com/NordSecurity/nordvpn-linux/config/consent'
+  _globals['_CONSENTMODE']._serialized_start=43
+  _globals['_CONSENTMODE']._serialized_end=96
 # @@protoc_insertion_point(module_scope)

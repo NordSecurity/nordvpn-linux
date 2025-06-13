@@ -31,7 +31,7 @@ message Settings {
   bool meshnet = 6;
   bool routing = 7;
   uint32 fwmark = 8;
-  config.ConsentMode analytics_consent = 9;
+  consent.ConsentMode analytics_consent = 9;
   repeated string dns = 10;
   bool threat_protection_lite = 11;
   config.Protocol protocol = 12;

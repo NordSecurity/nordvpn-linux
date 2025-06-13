@@ -17,9 +17,11 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 
-	if (cfg.AnalyticsConsent == config.ConsentMode_ALLOWED && in.GetEnabled()) ||
-		(cfg.AnalyticsConsent == config.ConsentMode_FORBIDDEN && !in.GetEnabled()) {
-		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
+	if cfg.AnalyticsConsent != config.ConsentUndefined {
+		enabled := cfg.AnalyticsConsent == config.ConsentGranted
+		if enabled == in.GetEnabled() {
+			return &pb.Payload{Type: internal.CodeNothingToDo}, nil
+		}
 	}
 
 	newConsentLevel := config.ConsentDenied
@@ -41,11 +43,7 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
-		newValue := config.ConsentMode_FORBIDDEN
-		if in.GetEnabled() {
-			newValue = config.ConsentMode_ALLOWED
-		}
-		c.AnalyticsConsent = newValue
+		c.AnalyticsConsent = newConsentLevel
 		return c
 	}); err != nil {
 		log.Println(internal.ErrorPrefix, err)

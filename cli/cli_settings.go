@@ -39,7 +39,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("Firewall: %+v\n", nstrings.GetBoolLabel(settings.GetFirewall()))
 	fmt.Printf("Firewall Mark: 0x%x\n", settings.GetFwmark())
 	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
-	fmt.Printf("Analytics: %s\n", settings.GetAnalyticsConsent())
+	fmt.Printf("Analytics Consent: %s\n", strings.ToLower(fmt.Sprintf("%s", settings.GetAnalyticsConsent())))
 	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
 	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
 	if settings.Technology == config.Technology_OPENVPN {
