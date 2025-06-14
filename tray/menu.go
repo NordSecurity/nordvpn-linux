@@ -171,7 +171,6 @@ func addVpnSection(ti *Instance) {
 				if ti.connect(c, "") {
 					ti.updateChan <- true
 				}
-
 			}
 		}(c, item)
 	}
