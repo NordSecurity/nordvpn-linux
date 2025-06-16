@@ -12,9 +12,12 @@ import (
 	"google.golang.org/grpc"
 )
 
-const telemetryTimeout = 5 * time.Second
-const tag = "[telemetry]"
 const (
+	telemetryTimeout = 5 * time.Second
+	tag              = "[telemetry]"
+)
+
+const ( // possible DE values
 	defaultDesktopEnv = ""
 	x11DesktopEnv     = "x11"
 	waylandDesktopEnv = "wayland"
