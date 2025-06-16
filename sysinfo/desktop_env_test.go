@@ -14,16 +14,17 @@ func Test_getDesktopEnvironment(t *testing.T) {
 		envValue string
 		want     string
 	}{
-		{"check for valid entry", "Unity", "unity"},
-		{"check for valid entry", "ubuntu:GNOME", "gnome"},
-		{"check for valid entry with trailing spaces", "kde ", "kde"},
-		{"check for valid entry with random capital letters", "xFce", "xfce"},
-		{"check for valid entry with preceding spaces", " mate", "mate"},
-		{"check for empty entry", "", "none"},
-		{"check for with spaces", "    ", "none"},
+		{"Checks valid entry with Unity", "Unity", "unity"},
+		{"Extracts Gnome from formatted entry", "ubuntu:GNOME", "gnome"},
+		{"Handles trailing spaces in KDE entry", "kde ", "kde"},
+		{"Corrects random capitalization in Xfce", "xFce", "xfce"},
+		{"Handles preceding spaces in Mate entry", " mate", "mate"},
+		{"Returns none for empty input", "", "none"},
+		{"Returns none for input with only spaces", "    ", "none"},
 	}
+
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name+"using 'XDG_CURRENT_DESKTOP'", func(t *testing.T) {
 			mockEnv := func(key string) string {
 				if key == "XDG_CURRENT_DESKTOP" {
 					return tt.envValue
@@ -37,7 +38,7 @@ func Test_getDesktopEnvironment(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name+"using 'DESKTOP_SESSION'", func(t *testing.T) {
 			mockEnv := func(key string) string {
 				if key == "DESKTOP_SESSION" {
 					return tt.envValue
