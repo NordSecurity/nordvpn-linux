@@ -236,17 +236,19 @@ func EnsureDirFull(path string) error {
 
 // FileWrite writes the given string array to file, previously flushing it clean
 func FileWrite(path string, contents []byte, permissions os.FileMode) error {
-	err := EnsureDir(path)
-	if err != nil {
-		return err
+	if err := EnsureDir(path); err != nil {
+		return fmt.Errorf("failed to create parent folders: %w", err)
 	}
-	err = os.WriteFile(path, contents, permissions)
-	if err != nil {
-		return err
+
+	if err := os.WriteFile(path, contents, permissions); err != nil {
+		return fmt.Errorf("writing file: %w", err)
 	}
 	// if file exists os.WriteFile is not changing the permissions,
 	// ensure file has expected permissions
-	return os.Chmod(path, permissions)
+	if err := os.Chmod(path, permissions); err != nil {
+		return fmt.Errorf("change permissions failed: %w", err)
+	}
+	return nil
 }
 
 // FileCreate with the given permissions, but leave the closing to the caller.

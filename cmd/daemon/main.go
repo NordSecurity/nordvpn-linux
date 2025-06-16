@@ -280,7 +280,9 @@ func main() {
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
 	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
-	createMooseDB(eventsDbPath)
+	if err := assignMooseDBPermissions(eventsDbPath); err != nil {
+		log.Fatalln(err)
+	}
 
 	machineID := machineIdGenerator.GetMachineID()
 
@@ -633,29 +635,26 @@ func main() {
 	}
 }
 
-// createMooseDB creates the moose DB with the desired permissions.
-// If the file already exists then its permissions and user group are updated
-func createMooseDB(eventsDbPath string) {
-	var permissions os.FileMode = internal.PermUserRWGroupRW
+// assignMooseDBPermissions updates moose DB permissions.
+// If the file doesn't exist it will be created withe the desired permissions.
+func assignMooseDBPermissions(eventsDbPath string) error {
+	const permissions os.FileMode = internal.PermUserRWGroupRW
 
 	if !internal.FileExists(eventsDbPath) {
-		file, err := internal.FileCreate(eventsDbPath, permissions)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		defer file.Close()
-	} else {
-		// Change permission of the existing DB, because older versions had read for everyone
-		if err := os.Chmod(eventsDbPath, permissions); err != nil {
-			log.Println(err)
-		}
-
-		if gid, err := internal.GetNordvpnGid(); err == nil {
-			if err := os.Chown(eventsDbPath, os.Getuid(), gid); err != nil {
-				log.Println(err)
-			}
-		} else {
-			log.Println(err)
-		}
+		_, err := internal.FileCreate(eventsDbPath, permissions)
+		return err
 	}
+	// Change permission of the existing DB, because older versions had read for everyone
+	if err := os.Chmod(eventsDbPath, permissions); err != nil {
+		log.Println(err)
+	}
+
+	if gid, err := internal.GetNordvpnGid(); err == nil {
+		if err := os.Chown(eventsDbPath, os.Getuid(), gid); err != nil {
+			log.Println(err)
+		}
+	} else {
+		log.Println(err)
+	}
+	return nil
 }

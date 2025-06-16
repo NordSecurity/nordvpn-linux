@@ -103,6 +103,7 @@ func TestFileWrite(t *testing.T) {
 			assert.NoError(t, err)
 
 			file, err := os.OpenFile(path, os.O_RDONLY|os.O_EXCL, item.permissions)
+			assert.NoError(t, err)
 			defer func() {
 				file.Close()
 				os.Remove(file.Name())
@@ -112,8 +113,36 @@ func TestFileWrite(t *testing.T) {
 			_, err = file.Read(got)
 			assert.NoError(t, err)
 			assert.EqualValues(t, got, []byte(item.data))
+
+			info, err := os.Stat(path)
+			assert.NoError(t, err)
+			perm := info.Mode().Perm()
+			assert.Equal(t, item.permissions, perm)
 		})
 	}
+}
+
+func TestFileWriteSetsCorrectPermissionsWhenFileExists(t *testing.T) {
+	category.Set(t, category.File)
+
+	createFileAndCheckPerms := func(path string, permissions os.FileMode) {
+		err := FileWrite(path, []byte("data"), permissions)
+		assert.NoError(t, err)
+
+		info, err := os.Stat(path)
+		assert.NoError(t, err)
+		assert.Equal(t, permissions, info.Mode().Perm())
+	}
+
+	fileName := "tst_" + time.Now().String() + ".txt"
+	path := TestDataPath + fileName
+	defer os.Remove(path)
+
+	// create the file and check that the permissions are correct
+	createFileAndCheckPerms(path, PermUserRWGroupROthersR)
+
+	// file already exists, the permissions are updated
+	createFileAndCheckPerms(path, PermUserRW)
 }
 
 func TestFileCreate(t *testing.T) {
