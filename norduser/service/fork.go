@@ -250,7 +250,7 @@ func (c *ChildProcessNorduser) Restart(uid uint32) error {
 // and merges them with the provided environment list.
 func mergeUserSessionEnv(uid, gid uint32, currentEnv *[]string, conf EnvConfigurator) error {
 	if currentEnv == nil {
-		return fmt.Errorf("environemnt slice does not exist")
+		return fmt.Errorf("environment slice does not exist")
 	}
 
 	// Use the injected configurator to get the prepared command
