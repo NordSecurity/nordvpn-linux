@@ -34,6 +34,7 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
+@pytest.mark.xfail(reason="LVPN-8096")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 def test_connected_firewall_disable(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):

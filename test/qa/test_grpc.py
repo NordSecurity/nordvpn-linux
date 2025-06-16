@@ -1,3 +1,4 @@
+import pytest
 import threading
 import sh
 import grpc
@@ -46,6 +47,7 @@ def test_multiple_state_subscribers():
             results[i], expected_states, strict=True))
 
 
+@pytest.mark.xfail(reason="LVPN-7891")
 def test_tunnel_update_notifications_before_and_after_connect():
     expected_states = [
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP

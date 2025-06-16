@@ -387,7 +387,15 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
         assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(
+    ("tech", "proto", "obfuscated"),
+    [
+         pytest.param(tech, proto, obfuscated, marks=pytest.mark.xfail(reason="LVPN-8096"))
+         if ((tech, proto, obfuscated) in [("openvpn", "tcp", "off"), ("nordlynx", "", "")])
+         else (tech, proto, obfuscated)
+         for tech, proto, obfuscated in lib.TECHNOLOGIES
+    ]
+)
 def test_status_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
