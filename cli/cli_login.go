@@ -27,6 +27,11 @@ func (c *cmd) Login(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
+
+	if resp.GetIsLoggedIn() {
+		return formatError(internal.ErrAlreadyLoggedIn)
+	}
+
 	if resp.Status == pb.LoginStatus_CONSENT_MISSING {
 		// ask user for consent
 		if err := c.setAnalyticsFlow(); err != nil {
@@ -39,17 +44,12 @@ func (c *cmd) Login(ctx *cli.Context) error {
 }
 
 func (c *cmd) loginCmd(ctx *cli.Context) error {
-	resp, err := c.client.IsLoggedIn(context.Background(), &pb.Empty{})
-	if err != nil || resp.GetIsLoggedIn() {
-		return formatError(internal.ErrAlreadyLoggedIn)
-	}
-
 	if ctx.IsSet(flagLoginCallback) {
 		return c.oauth2(ctx, true)
 	}
 
 	if ctx.IsSet(flagToken) {
-		err = c.loginWithToken(ctx)
+		err := c.loginWithToken(ctx)
 		if err != nil {
 			return formatError(err)
 		}
