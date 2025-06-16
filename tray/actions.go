@@ -30,7 +30,7 @@ func (ti *Instance) login() {
 	}
 	if resp.Status == pb.LoginStatus_CONSENT_MISSING {
 		// ask user for consent by opening terminal with consent flow,
-		openURI("nordvpn://consent")
+		openURI(internal.SubcommandURI(internal.ConsentSubcommand))
 		return
 	}
 
