@@ -240,7 +240,13 @@ func FileWrite(path string, contents []byte, permissions os.FileMode) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, contents, permissions)
+	err = os.WriteFile(path, contents, permissions)
+	if err != nil {
+		return err
+	}
+	// if file exists os.WriteFile is not changing the permissions,
+	// ensure file has expected permissions
+	return os.Chmod(path, permissions)
 }
 
 // FileCreate with the given permissions, but leave the closing to the caller.

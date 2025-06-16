@@ -279,33 +279,8 @@ func main() {
 	dnsSetter := dns.NewSetter(infoSubject)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
-	eventsDbPath := filepath.Join(internal.DatFilesPath, "moose.db")
-	// TODO: remove once this is fixed: https://github.com/ziglang/zig/issues/11878
-	// P.S. this issue does not happen with Zig 0.10.0, but it requires Go 1.19+
-	if !internal.FileExists(eventsDbPath) {
-		_, err := internal.FileCreate(eventsDbPath, internal.PermUserRWGroupRWOthersR)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	} else {
-		// Previously we created this file only with R permission for group, but fileshare daemon
-		// which runs with user permissions also needs to write to it. Need to always rewrite permission
-		// because of users updating from older version.
-		err = os.Chmod(eventsDbPath, internal.PermUserRWGroupRWOthersR)
-		if err != nil {
-			log.Println(err)
-		}
-
-		gid, err := internal.GetNordvpnGid()
-		if err != nil {
-			log.Println(err)
-		}
-
-		err = os.Chown(eventsDbPath, os.Getuid(), gid)
-		if err != nil {
-			log.Println(err)
-		}
-	}
+	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
+	createMooseDB(eventsDbPath)
 
 	machineID := machineIdGenerator.GetMachineID()
 
@@ -655,5 +630,32 @@ func main() {
 	}
 	if err := analytics.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
+	}
+}
+
+// createMooseDB creates the moose DB with the desired permissions.
+// If the file already exists then its permissions and user group are updated
+func createMooseDB(eventsDbPath string) {
+	var permissions os.FileMode = internal.PermUserRWGroupRW
+
+	if !internal.FileExists(eventsDbPath) {
+		file, err := internal.FileCreate(eventsDbPath, permissions)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer file.Close()
+	} else {
+		// Change permission of the existing DB, because older versions had read for everyone
+		if err := os.Chmod(eventsDbPath, permissions); err != nil {
+			log.Println(err)
+		}
+
+		if gid, err := internal.GetNordvpnGid(); err == nil {
+			if err := os.Chown(eventsDbPath, os.Getuid(), gid); err != nil {
+				log.Println(err)
+			}
+		} else {
+			log.Println(err)
+		}
 	}
 }
