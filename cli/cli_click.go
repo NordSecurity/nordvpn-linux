@@ -83,6 +83,15 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 					return formatError(err)
 				}
 				return nil
+
+			case "consent":
+				if err := c.setAnalyticsFlow(); err != nil {
+					return formatError(err)
+				}
+				// consent is triggered here only during login,
+				// so after consent flow is finished, continue with login
+				c.Login(ctx)
+				return nil
 			}
 		}
 	}
