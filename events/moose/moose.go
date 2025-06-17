@@ -578,6 +578,13 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	))
 }
 
+// NotifyDebuggerEvent processes a MooseDebuggerEvent to emit a moose debugger log.
+// It allows providing a custom JSON payload and context paths for the event.
+// For custom context paths, corresponding values must be of any of the following types: bool, float32, int32, int64, string.
+// Unsupported types are discarded.
+//
+// Parameters:
+//   - e: The MooseDebuggerEvent containing JSON data and context paths to process
 func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
 	combinedPaths := append([]string{}, e.GeneralContextPaths...)
 

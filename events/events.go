@@ -105,28 +105,48 @@ type ContextValue struct {
 	Path  string
 	Value any
 }
+
+// MooseDebuggerEvent represents a debugging event to be sent to the moose library.
+// It contains data and context information needed for debugging purposes.
 type MooseDebuggerEvent struct {
-	JsonData             string
-	GeneralContextPaths  []string
+	// JsonData contains a custom payload to be carried within a debugger event to moose.
+	// This allows for attaching specialized information relevant to the specific event.
+	JsonData string
+
+	// GeneralContextPaths is a collection of existing paths to reuse in the event context.
+	// These paths reference predefined context locations already established in the system.
+	GeneralContextPaths []string
+
+	// KeyBasedContextPaths allows defining custom context paths with associated values.
+	// Unlike GeneralContextPaths, this field enables creating new, event-specific context
+	// paths with custom values rather than reusing existing ones.
 	KeyBasedContextPaths []ContextValue
 }
 
-// WithJsonData adds JSON payload to the developer event
+// WithJsonData adds JSON payload to the event
 func (e *MooseDebuggerEvent) WithJsonData(json string) *MooseDebuggerEvent {
 	e.JsonData = json
 	return e
 }
 
+// WithKeyBasedContextPaths adds arbitrary number of key-based context paths to the event
 func (e *MooseDebuggerEvent) WithKeyBasedContextPaths(paths ...ContextValue) *MooseDebuggerEvent {
 	e.KeyBasedContextPaths = append(e.KeyBasedContextPaths, paths...)
 	return e
 }
 
+// WithGlobalContextPaths adds arbitrary number of global context paths to the event
 func (e *MooseDebuggerEvent) WithGlobalContextPaths(paths ...string) *MooseDebuggerEvent {
 	e.GeneralContextPaths = append(e.GeneralContextPaths, paths...)
 	return e
 }
 
+// NewMooseDebuggerEvent creates and initializes a new MooseDebuggerEvent instance.
+// It takes a JSON data string as input and initializes the event with empty slices
+// for GeneralContextPaths and KeyBasedContextPaths.
+//
+// Parameters:
+//   - jsonData: A string containing JSON data to be associated with the event
 func NewMooseDebuggerEvent(jsonData string) *MooseDebuggerEvent {
 	return &MooseDebuggerEvent{
 		JsonData:             jsonData,
