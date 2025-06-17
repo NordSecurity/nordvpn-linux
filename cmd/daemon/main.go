@@ -47,7 +47,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
-	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/firstopen"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
@@ -71,6 +70,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	"google.golang.org/grpc"
 )
@@ -209,7 +209,7 @@ func main() {
 		}
 	}
 
-	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
+	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, sysinfo.KernelVersion())
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 

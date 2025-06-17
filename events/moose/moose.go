@@ -22,7 +22,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
@@ -33,7 +32,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
 	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
-	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
@@ -198,9 +196,9 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
 
-	distroVersion, err := distro.ReleasePrettyName()
-	if err != nil {
-		return fmt.Errorf("determining device os: %w", err)
+	distroVersion := sysinfo.HostOSPrettyName()
+	if distroVersion != "" {
+		return fmt.Errorf("determining device os")
 	}
 	if err := s.response(moose.NordvpnappSetContextDeviceOs(distroVersion)); err != nil {
 		return fmt.Errorf("setting moose device os: %w", err)
@@ -209,7 +207,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
 
-	dt := deviceTypeToInternalType(sysinfo.GetDeviceType())
+	dt := deviceTypeToInternalType(sysinfo.DeviceType())
 	if err := s.response(moose.NordvpnappSetContextDeviceType(dt)); err != nil {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}
@@ -1003,13 +1001,13 @@ func threatProtectionLiteToInternalType(enabled bool) moose.NordvpnappOptBool {
 
 }
 
-func deviceTypeToInternalType(deviceType sysinfo.DeviceType) moose.NordvpnappDeviceType {
+func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.NordvpnappDeviceType {
 	var dt moose.NordvpnappDeviceType
 
 	switch deviceType {
-	case sysinfo.DeviceTypeDesktop:
+	case sysinfo.SystemDeviceTypeDesktop:
 		dt = moose.NordvpnappDeviceTypeDesktop
-	case sysinfo.DeviceTypeServer:
+	case sysinfo.SystemDeviceTypeServer:
 		dt = moose.NordvpnappDeviceTypeServer
 	default:
 		dt = moose.NordvpnappDeviceTypeUndefined

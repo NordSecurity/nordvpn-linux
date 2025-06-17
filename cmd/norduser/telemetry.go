@@ -71,7 +71,7 @@ func sendDesktopEnvironmentMetric(
 
 	de := defaultDesktopEnv
 	if !submitEmpty {
-		de = sysinfo.GetDesktopEnvironment()
+		de = sysinfo.DisplayDesktopEnvironment()
 	}
 
 	req := &telemetrypb.DesktopEnvironmentRequest{DesktopEnvName: de}
@@ -96,7 +96,7 @@ func sendDisplayProtocolMetric(
 
 	protocol := telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNSPECIFIED
 	if !submitEmpty {
-		switch sysinfo.GetDisplayProtocol() {
+		switch sysinfo.DisplayProtocol() {
 		case x11DesktopEnv:
 			protocol = telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_X11
 		case waylandDesktopEnv:

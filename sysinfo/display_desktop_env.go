@@ -1,6 +1,9 @@
 package sysinfo
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 // getDesktopEnvironment retrieves currently used desktop environment type otherwise 'none'
 func getDesktopEnvironment(readEnv envReader) string {
@@ -11,7 +14,7 @@ func getDesktopEnvironment(readEnv envReader) string {
 
 	de = strings.TrimSpace(de)
 	if de == "" {
-		return "none"
+		return EnvValueUnset
 	}
 
 	if strings.Contains(de, ":") {
@@ -20,4 +23,10 @@ func getDesktopEnvironment(readEnv envReader) string {
 	}
 
 	return strings.ToLower(de)
+}
+
+// DisplayDesktopEnvironment retrieves the current desktop environment.
+// This function only works in user sessions where the environment is populated with XDG info.
+func DisplayDesktopEnvironment() string {
+	return getDesktopEnvironment(os.Getenv)
 }
