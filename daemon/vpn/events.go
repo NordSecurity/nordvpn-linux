@@ -4,7 +4,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
 type InternalVPNPublisher interface {
@@ -33,7 +32,6 @@ func GetDataConnectEvent(technology config.Technology,
 	protocol config.Protocol,
 	connectType events.TypeEventStatus,
 	server ServerData,
-	tunnelStatistics tunnel.Statistics,
 	isMeshPeer bool) events.DataConnect {
 	return events.DataConnect{
 		EventStatus:             connectType,
@@ -47,8 +45,6 @@ func GetDataConnectEvent(technology config.Technology,
 		IsVirtualLocation:       server.VirtualLocation,
 		Technology:              technology,
 		Protocol:                protocol,
-		Upload:                  tunnelStatistics.Tx,
-		Download:                tunnelStatistics.Rx,
 		IsObfuscated:            server.Obfuscated,
 		IsPostQuantum:           server.PostQuantum,
 		IP:                      server.IP,
