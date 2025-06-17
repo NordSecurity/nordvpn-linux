@@ -109,9 +109,22 @@ def is_dns_disabled():
     return Settings().get("DNS") == "disabled"
 
 
-def are_analytics_enabled():
-    """Returns True, if Analytics are enabled in application settings."""
-    return Settings().get("Analytics") == "enabled"
+def is_analytics_consent_granted():
+    """
+    Returns True, if Analytics Consent is granted, False if it's denied.
+    If the consent was not declared. It raises an exception.
+    """
+    analytics_consent = Settings().get("analytics consent")
+    if analytics_consent == "granted":
+        return True
+    elif analytics_consent == "denied":
+        return False
+    raise Exception("analytics consent is undefined")
+
+
+def is_analytics_consent_declared():
+    """Returns True, if Analytics Consent is denied or granted, False if it's undefined in application settings."""
+    return Settings().get("analytics consent") != "undefined"
 
 
 def is_ipv6_enabled():
@@ -137,7 +150,8 @@ def app_has_defaults_settings():
         "Firewall: enabled" in settings and
         "Firewall Mark: 0xe1f1" in settings and
         "Routing: enabled" in settings and
-        "Analytics: enabled" in settings and
+        # Analytics Consent is not restored to default on reset
+        ("Analytics Consent: granted" in settings or "Analytics Consent: denied" in settings) and
         "Kill Switch: disabled" in settings and
         "Threat Protection Lite: disabled" in settings and
         "Notify: enabled" in settings and
