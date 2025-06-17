@@ -20,7 +20,7 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
-    sh.nordvpn.set.defaults()
+    sh.nordvpn.set.defaults("--logout")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
@@ -93,7 +93,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     assert settings.app_has_defaults_settings()
 
@@ -131,7 +131,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
 
     sh.nordvpn.logout("--persist-token")
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     assert settings.app_has_defaults_settings()
 
@@ -166,7 +166,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     assert "Status: Disconnected" in sh.nordvpn.status()
 
@@ -192,7 +192,7 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert network.is_available()
@@ -214,7 +214,7 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
 
     assert dns.is_set_for(nameserver)
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     login.login_as("default")
 
@@ -223,6 +223,12 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
     sh.nordvpn.connect()
 
     assert not dns.is_set_for(nameserver)
+
+
+def test_set_defaults_no_logout():
+    sh.nordvpn.set.defaults()
+
+    assert "Account Information" in sh.nordvpn.account()
 
 
 def test_set_analytics_off_on():

@@ -27,7 +27,7 @@ def teardown_function(function):  # noqa: ARG001
 
     print(sh.nordvpn.set.ipv6.off())
     sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults()
+    sh.nordvpn.set.defaults("--logout")
     daemon.stop()
 
 
