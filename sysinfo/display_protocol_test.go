@@ -6,7 +6,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 )
 
-func Test_getDisplayProtocol(t *testing.T) {
+func Test_DisplayProtocol(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
@@ -18,8 +18,8 @@ func Test_getDisplayProtocol(t *testing.T) {
 		{"X11 uppercase", "X11", "x11"},
 		{"Wayland lowercase", "wayland", "wayland"},
 		{"Wayland uppercase", "WAYLAND", "wayland"},
-		{"Empty value", "", "none"},
-		{"Space for value", " ", "none"},
+		{"Empty value", "", EnvValueUnset},
+		{"Space for value", " ", EnvValueUnset},
 		{"Leading spaces", "   x11", "x11"},
 		{"Trailing spaces", "wayland   ", "wayland"},
 		{"Mixed case and spaces", "  WaYlAnD  ", "wayland"},
