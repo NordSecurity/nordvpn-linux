@@ -4,9 +4,6 @@ import sh
 import lib
 from lib import (
     daemon,
-    info,
-    logging,
-    login,
     network
 )
 from test_connect import disconnect_base_test, get_alias
@@ -32,19 +29,7 @@ def connect_base_test(group: str = (), name: str = "", hostname: str = "", ipv6 
     if ipv6:
         assert network.is_ipv6_connected()
 
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults("--logout")
-    daemon.stop()
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
 
 @pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.TECHNOLOGIES)
