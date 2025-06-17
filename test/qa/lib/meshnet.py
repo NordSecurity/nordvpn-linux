@@ -72,8 +72,8 @@ class TestUtils:
     def teardown_function(ssh_client: ssh.Ssh):
         logging.log(data=info.collect())
         logging.log()
-        ssh_client.exec_command("nordvpn set defaults")
-        sh_no_tty.nordvpn.set.defaults()
+        ssh_client.exec_command("nordvpn set defaults --logout")
+        sh_no_tty.nordvpn.set.defaults("--logout")
         daemon.stop_peer(ssh_client)
         daemon.stop()
         sh_no_tty.sudo.iptables("-F")

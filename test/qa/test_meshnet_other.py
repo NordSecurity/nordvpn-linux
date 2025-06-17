@@ -62,7 +62,7 @@ def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults()
+    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults("--logout")
 
     assert settings.app_has_defaults_settings()
 
@@ -92,7 +92,7 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
 
     sh_no_tty.nordvpn.logout("--persist-token")
 
-    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults()
+    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults("--logout")
 
     assert settings.app_has_defaults_settings()
 
