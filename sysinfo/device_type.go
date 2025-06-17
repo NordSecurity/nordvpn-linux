@@ -83,7 +83,6 @@ func detectByXDGSession() SystemDeviceType {
 //
 // Returns the first non-unknown SystemDeviceType detected, or SystemDeviceTypeUnknown as a fallback.
 func DeviceType() SystemDeviceType {
-
 	sources := []func() SystemDeviceType{
 		detectBySystemDefaultTarget,
 		detectByGraphicalEnv,
