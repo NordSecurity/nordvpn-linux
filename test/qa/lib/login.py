@@ -41,10 +41,7 @@ def get_credentials(key) -> Credentials:
 
 
 def login_as(username, ssh_client: ssh.Ssh = None, with_analytics: ConsentMode = ConsentMode.Granted):
-    """
-    login_as specified user, optional SSH connection and option for
-    setting analytics consent before calling login.
-    """
+    """login_as specified user, optional SSH connection and option for setting analytics consent before calling login."""
     token = get_credentials(username).token
 
     logging.log(f"logging in as {token}")
@@ -62,9 +59,13 @@ def login_as(username, ssh_client: ssh.Ssh = None, with_analytics: ConsentMode =
 def _analytics_value(mode: ConsentMode) -> str:
     if mode == ConsentMode.Undefined:
         raise Exception("can't set analytics with undefined consent")
-    elif mode == ConsentMode.Granted:
+
+    if mode == ConsentMode.Granted:
         return "on"
-    elif mode == ConsentMode.Denied:
+
+    if mode == ConsentMode.Denied:
         return "off"
-    raise Exception(f"not supported consent mode: {mode}")
+
+    msg = f"not supported consent mode: {mode}"
+    raise Exception(msg)
 

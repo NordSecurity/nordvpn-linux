@@ -112,13 +112,16 @@ def is_dns_disabled():
 def is_analytics_consent_granted():
     """
     Returns True, if Analytics Consent is granted, False if it's denied.
+
     If the consent was not declared. It raises an exception.
     """
     analytics_consent = Settings().get("analytics consent")
     if analytics_consent == "granted":
         return True
-    elif analytics_consent == "denied":
+
+    if analytics_consent == "denied":
         return False
+
     raise Exception("analytics consent is undefined")
 
 

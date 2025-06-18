@@ -112,7 +112,7 @@ def test_analytics_consent_granted_after_pressing_y_and_does_not_appear_again():
     try:
         # try to match the consent prompt
         cli2.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)", timeout=3)
-        assert False, "Consent prompt appeared again after it was already granted"
+        raise AssertionError("Consent prompt appeared again after it was already granted")
     except pexpect.exceptions.TIMEOUT:
         # good - the prompt didn't appear
         pass
