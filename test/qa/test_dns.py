@@ -19,9 +19,8 @@ def teardown_module(module):  # noqa: ARG001
 def setup_function(function):  # noqa: ARG001
     logging.log()
 
-    # Make sure that Custom DNS, IPv6 and Threat Protection Lite are disabled before we execute each test
+    # Make sure that Custom DNS and Threat Protection Lite are disabled before we execute each test
     lib.set_dns("off")
-    lib.set_ipv6("off")
     lib.set_threat_protection_lite("off")
 
 
