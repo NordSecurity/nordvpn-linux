@@ -1,4 +1,6 @@
 import pytest
+import pexpect
+import io
 import sh
 
 import lib
@@ -8,6 +10,7 @@ from lib import (
     logging,
     login,
     network,
+    settings,
 )
 
 
@@ -26,6 +29,98 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
+
+
+def test_analytics_consent_is_displayed_on_login():
+    cli = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
+    # wait until the final prompt appears, then capture everything before it
+    cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    full_output = cli.before + cli.after  # everything printed so far, including the last line
+
+    assert (
+        lib.squash_whitespace(lib.EXPECTED_CONSENT_MESSAGE)
+        in lib.squash_whitespace(full_output)
+    ), "Consent message did not match expected full output"
+
+
+def test_invalid_input_repeats_consent_prompt_only():
+    output_buffer = io.StringIO()
+    cli = pexpect.spawn("nordvpn", args=["login"], encoding="utf-8", timeout=10)
+    cli.logfile_read = output_buffer
+
+    # wait for first full prompt
+    cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    first_output = output_buffer.getvalue()
+
+    # send invalid input
+    cli.sendline("blah")
+
+    # wait for error + prompt again
+    cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    second_output = output_buffer.getvalue()[len(first_output):]  # take just the new part
+
+    assert "We value your privacy" in lib.squash_whitespace(first_output)
+    assert "We value your privacy" not in lib.squash_whitespace(second_output)
+    assert "Invalid response" in lib.squash_whitespace(second_output)
+    assert "(y/n)" in lib.squash_whitespace(second_output)
+
+
+def test_analytics_consent_prompt_reappears_after_ctrl_c_interrupt():
+    # first run: user is interrupted with Ctrl+C at the prompt
+    cli1 = pexpect.spawn("nordvpn", args=["login"], encoding="utf-8", timeout=10)
+    buffer1 = io.StringIO()
+    cli1.logfile_read = buffer1
+
+    # wait for the consent prompt
+    cli1.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+
+    # simulate user hitting Ctrl+C
+    cli1.sendintr()  # this sends SIGINT like Ctrl+C
+    cli1.expect(pexpect.EOF)
+    first_output = buffer1.getvalue()
+
+    assert "We value your privacy" in lib.squash_whitespace(first_output), \
+        "Consent prompt not shown before Ctrl+C"
+
+    # second run: should still see the prompt
+    cli2 = pexpect.spawn("nordvpn", args=["login"], encoding="utf-8", timeout=10)
+    buffer2 = io.StringIO()
+    cli2.logfile_read = buffer2
+
+    cli2.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    second_output = buffer2.getvalue()
+
+    assert "We value your privacy" in lib.squash_whitespace(second_output), \
+        "Consent prompt did not reappear on second login attempt"
+
+
+def test_analytics_consent_granted_after_pressing_y_and_does_not_appear_again():
+    # first run: prompt appears, user consents
+    cli = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
+    cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+
+    assert not settings.is_analytics_consent_declared(), "Consent should not be declared before interaction"
+
+    cli.sendline("y")
+    cli.expect(pexpect.EOF)
+
+    assert settings.is_analytics_consent_granted(), "Consent should be recorded after pressing 'y'"
+
+    # second run: ensure the consent prompt does NOT appear again
+    cli2 = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
+
+    try:
+        # try to match the consent prompt
+        cli2.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)", timeout=3)
+        assert False, "Consent prompt appeared again after it was already granted"
+    except pexpect.exceptions.TIMEOUT:
+        # good - the prompt didn't appear
+        pass
+    except pexpect.exceptions.EOF:
+        # also good — the process exited before showing the prompt
+        pass
+
+    cli2.expect(pexpect.EOF)
 
 
 def test_login():

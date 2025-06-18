@@ -1,5 +1,6 @@
 import pytest
 import sh
+import pexpect
 
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
@@ -227,6 +228,34 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
     sh.nordvpn.connect()
 
     assert not dns.is_set_for(nameserver)
+
+
+def test_set_analytics_starts_prompt_even_if_completed_before():
+    # first run: see prompt and respond
+    cli1 = pexpect.spawn("nordvpn", args=["set", "analytics"], encoding='utf-8', timeout=10)
+    cli1.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    output1 = cli1.before + cli1.after
+
+    assert (
+        lib.squash_whitespace(lib.EXPECTED_CONSENT_MESSAGE)
+        in lib.squash_whitespace(output1)
+    ), "Consent message did not match expected full output on first run"
+
+    cli1.sendline("n")
+    cli1.expect(pexpect.EOF)
+
+    # second run: should see the prompt again
+    cli2 = pexpect.spawn("nordvpn", args=["set", "analytics"], encoding='utf-8', timeout=10)
+    cli2.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    output2 = cli2.before + cli2.after
+
+    assert (
+        lib.squash_whitespace(lib.EXPECTED_CONSENT_MESSAGE)
+        in lib.squash_whitespace(output2)
+    ), "Consent message did not appear again on second run"
+
+    cli2.sendline("y")
+    cli2.expect(pexpect.EOF)
 
 
 def test_set_analytics_off_on():

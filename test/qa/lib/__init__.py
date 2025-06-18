@@ -135,6 +135,18 @@ IPV6_SERVERS = [
 ]
 
 
+EXPECTED_CONSENT_MESSAGE = (
+    "We value your privacy.\n\n"
+    "That's why we want to be transparent about what data you agree to give us. "
+    "We only collect the bare minimum of information required to offer a smooth and stable VPN experience.\n\n"
+    'By pressing "y" (yes), you allow us to collect and use limited app performance data. '
+    "This helps us keep our features relevant to your needs and fix issues faster, as explained in our Privacy Policy. \n"
+    "https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings_account-privacy_policy&nm=app&ns=nordvpn-linux-cli&nc=settings-privacy_policy\n\n"
+    'Press "n" (no) to send only the essential data our app needs to work.\n\n'
+    "Your browsing activities remain private, regardless of your choice.\n\n"
+)
+
+
 class Protocol(Enum):
     UDP = "UDP"
     TCP = "TCP"
@@ -376,3 +388,8 @@ def technology_to_upper_camel_case(tech: str) -> str:
             return "OpenVPN"
         case "NORDWHISPER":
             return "NordWhisper"
+
+
+def squash_whitespace(text: str) -> str:
+    """Normalize whitespace by collapsing all sequences of whitespace into single spaces."""
+    return re.sub(r'\s+', ' ', text.strip())

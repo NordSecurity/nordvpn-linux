@@ -41,27 +41,30 @@ def get_credentials(key) -> Credentials:
 
 
 def login_as(username, ssh_client: ssh.Ssh = None, with_analytics: ConsentMode = ConsentMode.Granted):
-    """login_as specified user with optional delay before calling login."""
+    """
+    login_as specified user, optional SSH connection and option for
+    setting analytics consent before calling login.
+    """
     token = get_credentials(username).token
 
     logging.log(f"logging in as {token}")
 
     if ssh_client is not None:
         if with_analytics != ConsentMode.Undefined:
-            ssh_client.exec_command(f"nordvpn set analytics {analytics_value(with_analytics)}")
+            ssh_client.exec_command(f"nordvpn set analytics {_analytics_value(with_analytics)}")
         return ssh_client.exec_command(f"nordvpn login --token {token}")
 
     if with_analytics != ConsentMode.Undefined:
-        sh.nordvpn.set.analytics(analytics_value(with_analytics))
+        sh.nordvpn.set.analytics(_analytics_value(with_analytics))
     return sh.nordvpn.login("--token", token)
 
 
-def analytics_value(mode: ConsentMode) -> str:
+def _analytics_value(mode: ConsentMode) -> str:
     if mode == ConsentMode.Undefined:
-        raise "can't enable analytics with undefined consent"
+        raise Exception("can't set analytics with undefined consent")
     elif mode == ConsentMode.Granted:
         return "on"
     elif mode == ConsentMode.Denied:
         return "off"
-    raise f"not supported consent mode: {mode}"
+    raise Exception(f"not supported consent mode: {mode}")
 
