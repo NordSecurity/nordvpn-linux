@@ -172,6 +172,9 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		}
 	}
 
+	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
+		log.Println(internal.WarningPrefix, "failed to flush changes before setting analytics opt in: %w", err)
+	}
 	if cfg.AnalyticsConsent == config.ConsentUndefined {
 		if err := s.response(s.mooseOptInFunc(false)); err != nil {
 			return fmt.Errorf("failed to opt out of analytics: %w", err)
