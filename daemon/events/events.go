@@ -9,9 +9,10 @@ import (
 )
 
 type Publisher interface {
+	LoginPublisher
+	MooseDebuggerPublisher
 	SettingsPublisher
 	ServicePublisher
-	LoginPublisher
 }
 
 func NewEventsEmpty() *Events {
@@ -109,23 +110,24 @@ func NewEvents(
 			Logout: logout,
 			MFA:    mfa,
 		},
-		MooseDeveloper: &MooseDeveloperEvents{
+		MooseDebugger: &MooseDebuggerEvents{
 			DeveloperEvents: mooseDevLogs,
 		},
 	}
 }
 
 type Events struct {
-	Settings       *SettingsEvents
-	Service        *ServiceEvents
-	User           *LoginEvents
-	MooseDeveloper *MooseDeveloperEvents
+	Settings      *SettingsEvents
+	Service       *ServiceEvents
+	User          *LoginEvents
+	MooseDebugger *MooseDebuggerEvents
 }
 
 func (e *Events) Subscribe(to Publisher) {
 	e.Settings.Subscribe(to)
 	e.Service.Subscribe(to)
 	e.User.Subscribe(to)
+	e.MooseDebugger.Subscribe(to)
 }
 
 type SettingsPublisher interface {
@@ -236,15 +238,15 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 }
 
 // moose debugger events
-type MooseDebuggerEventPublisher interface {
+type MooseDebuggerPublisher interface {
 	NotifyDebuggerEvent(events.MooseDebuggerEvent) error
 }
 
-type MooseDeveloperEvents struct {
+type MooseDebuggerEvents struct {
 	DeveloperEvents events.PublishSubcriber[events.MooseDebuggerEvent]
 }
 
-func (m *MooseDeveloperEvents) Subscribe(to MooseDebuggerEventPublisher) {
+func (m *MooseDebuggerEvents) Subscribe(to MooseDebuggerPublisher) {
 	m.DeveloperEvents.Subscribe(to.NotifyDebuggerEvent)
 }
 
