@@ -160,7 +160,7 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	}
 
 	mode := modeForCountryCode(core.NewCountryCode(cc))
-	log.Printf(internal.DebugPrefix+" consent mode for country code '%s': %s", insights.CountryCode, mode)
+	log.Printf(internal.DebugPrefix+" consent mode for country code '%s': %s\n", cc, mode)
 	return mode
 }
 
