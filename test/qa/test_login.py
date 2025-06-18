@@ -34,7 +34,7 @@ def teardown_function(function):  # noqa: ARG001
 def test_user_consent_is_displayed_on_login():
     cli = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
     # wait until the final prompt appears, then capture everything before it
-    cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    cli.expect(lib.USER_CONSENT_POMPT)
     full_output = cli.before + cli.after  # everything printed so far, including the last line
 
     assert (
@@ -49,18 +49,18 @@ def test_invalid_input_repeats_consent_prompt_only():
     cli.logfile_read = output_buffer
 
     # wait for first full prompt
-    cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    cli.expect(lib.USER_CONSENT_POMPT)
     first_output = output_buffer.getvalue()
 
     # send invalid input
     cli.sendline("blah")
 
     # wait for error + prompt again
-    cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    cli.expect(lib.USER_CONSENT_POMPT)
     second_output = output_buffer.getvalue()[len(first_output):]  # take just the new part
 
-    assert "We value your privacy" in lib.squash_whitespace(first_output)
-    assert "We value your privacy" not in lib.squash_whitespace(second_output)
+    assert lib.WE_VALUE_YOUR_PRIVACY_MSG in lib.squash_whitespace(first_output)
+    assert lib.WE_VALUE_YOUR_PRIVACY_MSG not in lib.squash_whitespace(second_output)
     assert "Invalid response" in lib.squash_whitespace(second_output)
     assert "(y/n)" in lib.squash_whitespace(second_output)
 
@@ -72,14 +72,14 @@ def test_user_consent_prompt_reappears_after_ctrl_c_interrupt():
     cli1.logfile_read = buffer1
 
     # wait for the consent prompt
-    cli1.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    cli1.expect(lib.USER_CONSENT_POMPT)
 
     # simulate user hitting Ctrl+C
     cli1.sendintr()  # this sends SIGINT like Ctrl+C
     cli1.expect(pexpect.EOF)
     first_output = buffer1.getvalue()
 
-    assert "We value your privacy" in lib.squash_whitespace(first_output), \
+    assert lib.WE_VALUE_YOUR_PRIVACY_MSG in lib.squash_whitespace(first_output), \
         "Consent prompt not shown before Ctrl+C"
 
     # second run: should still see the prompt
@@ -87,17 +87,17 @@ def test_user_consent_prompt_reappears_after_ctrl_c_interrupt():
     buffer2 = io.StringIO()
     cli2.logfile_read = buffer2
 
-    cli2.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    cli2.expect(lib.USER_CONSENT_POMPT)
     second_output = buffer2.getvalue()
 
-    assert "We value your privacy" in lib.squash_whitespace(second_output), \
+    assert lib.WE_VALUE_YOUR_PRIVACY_MSG in lib.squash_whitespace(second_output), \
         "Consent prompt did not reappear on second login attempt"
 
 
 def test_user_consent_granted_after_pressing_y_and_does_not_appear_again():
     # first run: prompt appears, user consents
     cli = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
-    cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
+    cli.expect(lib.USER_CONSENT_POMPT)
 
     assert not settings.is_user_consent_declared(), "Consent should not be declared before interaction"
 
@@ -111,7 +111,7 @@ def test_user_consent_granted_after_pressing_y_and_does_not_appear_again():
 
     try:
         # try to match the consent prompt
-        cli2.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)", timeout=3)
+        cli2.expect(lib.USER_CONSENT_POMPT)
         raise AssertionError("Consent prompt appeared again after it was already granted")
     except pexpect.exceptions.TIMEOUT:
         # good - the prompt didn't appear

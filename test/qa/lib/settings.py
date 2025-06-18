@@ -2,6 +2,8 @@ import random
 
 import sh
 
+from . import UserConsentMode
+
 
 MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect is set to 'enabled' successfully."
 MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect is set to 'disabled' successfully."
@@ -116,10 +118,10 @@ def is_user_consent_granted():
     If the consent was not declared. It raises an exception.
     """
     user_consent = Settings().get("user consent")
-    if user_consent == "enabled":
+    if user_consent == UserConsentMode.ENABLED:
         return True
 
-    if user_consent == "disabled":
+    if user_consent == UserConsentMode.DISABLED:
         return False
 
     raise Exception("user consent is undefined")
@@ -127,7 +129,7 @@ def is_user_consent_granted():
 
 def is_user_consent_declared():
     """Returns True, if User Consent is enabled or disabled, False if it's undefined in application settings."""
-    return Settings().get("user consent") != "undefined"
+    return Settings().get("user consent") != UserConsentMode.UNDEFINED
 
 
 def is_ipv6_enabled():

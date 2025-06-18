@@ -145,6 +145,13 @@ EXPECTED_CONSENT_MESSAGE = (
     'Press "n" (no) to send only the essential data our app needs to work.\n\n'
     "Your browsing activities remain private, regardless of your choice.\n\n"
 )
+WE_VALUE_YOUR_PRIVACY_MSG = "We value your privacy"
+USER_CONSENT_POMPT = "Do you allow us to collect and use limited app performance data\? \(y/n\)"
+
+class UserConsentMode(str, Enum):
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+    UNDEFINED = "undefined"
 
 
 class Protocol(Enum):

@@ -1,16 +1,9 @@
 import json
 import os
-from enum import Enum
 
 import sh
 
-from . import logging, ssh
-
-
-class ConsentMode(Enum):
-    Undefined = 0
-    Granted = 1
-    Denied = 2
+from . import UserConsentMode, logging, ssh
 
 
 class Credentials:
@@ -40,30 +33,30 @@ def get_credentials(key) -> Credentials:
             password=creds.get("password", None))
 
 
-def login_as(username, ssh_client: ssh.Ssh = None, with_analytics: ConsentMode = ConsentMode.Granted):
-    """login_as specified user, optional SSH connection and option for setting analytics consent before calling login."""
+def login_as(username, ssh_client: ssh.Ssh = None, with_user_consent: UserConsentMode = UserConsentMode.ENABLED):
+    """login_as specified user, optional SSH connection and option for setting user consent before calling login."""
     token = get_credentials(username).token
 
     logging.log(f"logging in as {token}")
 
     if ssh_client is not None:
-        if with_analytics != ConsentMode.Undefined:
-            ssh_client.exec_command(f"nordvpn set analytics {_analytics_value(with_analytics)}")
+        if with_user_consent != UserConsentMode.UNDEFINED:
+            ssh_client.exec_command(f"nordvpn set analytics {_analytics_value(with_user_consent)}")
         return ssh_client.exec_command(f"nordvpn login --token {token}")
 
-    if with_analytics != ConsentMode.Undefined:
-        sh.nordvpn.set.analytics(_analytics_value(with_analytics))
+    if with_user_consent != UserConsentMode.UNDEFINED:
+        sh.nordvpn.set.analytics(_analytics_value(with_user_consent))
     return sh.nordvpn.login("--token", token)
 
 
-def _analytics_value(mode: ConsentMode) -> str:
-    if mode == ConsentMode.Undefined:
+def _analytics_value(mode: UserConsentMode) -> str:
+    if mode == UserConsentMode.UNDEFINED:
         raise Exception("can't set analytics with undefined consent")
 
-    if mode == ConsentMode.Granted:
+    if mode == UserConsentMode.ENABLED:
         return "on"
 
-    if mode == ConsentMode.Denied:
+    if mode == UserConsentMode.DISABLED:
         return "off"
 
     msg = f"not supported consent mode: {mode}"
