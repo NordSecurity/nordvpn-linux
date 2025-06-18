@@ -9,9 +9,10 @@ import (
 var boolFromStringError = "bool: failed to parse from string: %s"
 
 const (
-	enabled  = "enabled"
-	disabled = "disabled"
-	notSet   = "not set"
+	enabled   = "enabled"
+	disabled  = "disabled"
+	undefined = "undefined"
+	notSet    = "not set"
 )
 
 var falseMap = map[string]bool{
