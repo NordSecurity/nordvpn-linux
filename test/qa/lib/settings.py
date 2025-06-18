@@ -128,7 +128,7 @@ def is_user_consent_granted():
 
 
 def is_user_consent_declared():
-    """Returns True, if User Consent is enabled or disabled, False if it's undefined in application settings."""
+    """Returns True, if User Consent is enabled or disabled, False if it is undefined in application settings."""
     return Settings().get("user consent") != UserConsentMode.UNDEFINED
 
 
@@ -155,8 +155,8 @@ def app_has_defaults_settings():
         "Firewall: enabled" in settings and
         "Firewall Mark: 0xe1f1" in settings and
         "Routing: enabled" in settings and
-        # Analytics Consent is not restored to default on reset
-        ("Analytics Consent: granted" in settings or "Analytics Consent: denied" in settings) and
+        # User Consent is not restored to default on reset
+        ("User Consent: enabled" in settings or "User Consent: disabled" in settings) and
         "Kill Switch: disabled" in settings and
         "Threat Protection Lite: disabled" in settings and
         "Notify: enabled" in settings and
