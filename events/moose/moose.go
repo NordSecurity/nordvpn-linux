@@ -205,7 +205,6 @@ func (s *Subscriber) Stop() error {
 		return fmt.Errorf("flushing changes: %w", err)
 	}
 
-	log.Println(internal.DebugPrefix, "stopping worker")
 	if err := s.response(worker.Stop()); err != nil {
 		return fmt.Errorf("stopping moose worker: %w", err)
 	}
@@ -577,6 +576,43 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		"",
 		nil,
 	))
+}
+
+// NotifyDebuggerEvent processes a MooseDebuggerEvent to emit a moose debugger log.
+// It allows providing a custom JSON payload and context paths for the event.
+// For custom context paths, corresponding values must be of any of the following types: bool, float32, int32, int64, string.
+// Unsupported types are discarded.
+//
+// Parameters:
+//   - e: The MooseDebuggerEvent containing JSON data and context paths to process
+func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
+	combinedPaths := append([]string{}, e.GeneralContextPaths...)
+
+	key := moose.MooseNordvpnappGetDeveloperContextKey()
+
+	for _, ctx := range e.KeyBasedContextPaths {
+		path := fmt.Sprintf("%s.%s", key, ctx.Path)
+		switch v := ctx.Value.(type) {
+		case bool:
+			moose.MooseNordvpnappSetDeveloperEventContextBool(path, v)
+			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
+		case float32:
+			moose.MooseNordvpnappSetDeveloperEventContextFloat(path, v)
+			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
+		case int32:
+			moose.MooseNordvpnappSetDeveloperEventContextInt(path, v)
+			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
+		case int64:
+			moose.MooseNordvpnappSetDeveloperEventContextLong(path, v)
+			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
+		case string:
+			moose.MooseNordvpnappSetDeveloperEventContextString(path, v)
+			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
+		default:
+			log.Println(internal.WarningPrefix, "Discarding unssupported type (%T) on path: %s", ctx.Value, path)
+		}
+	}
+	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))
 }
 
 func (s *Subscriber) fetchSubscriptions() error {

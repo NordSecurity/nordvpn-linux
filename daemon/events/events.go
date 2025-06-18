@@ -43,6 +43,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[bool]{},
+		&subs.Subject[events.MooseDebuggerEvent]{},
 	)
 }
 
@@ -74,6 +75,7 @@ func NewEvents(
 	login events.PublishSubcriber[events.DataAuthorization],
 	logout events.PublishSubcriber[events.DataAuthorization],
 	mfa events.PublishSubcriber[bool],
+	mooseDevLogs events.PublishSubcriber[events.MooseDebuggerEvent],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -107,13 +109,17 @@ func NewEvents(
 			Logout: logout,
 			MFA:    mfa,
 		},
+		MooseDeveloper: &MooseDeveloperEvents{
+			DeveloperEvents: mooseDevLogs,
+		},
 	}
 }
 
 type Events struct {
-	Settings *SettingsEvents
-	Service  *ServiceEvents
-	User     *LoginEvents
+	Settings       *SettingsEvents
+	Service        *ServiceEvents
+	User           *LoginEvents
+	MooseDeveloper *MooseDeveloperEvents
 }
 
 func (e *Events) Subscribe(to Publisher) {
@@ -227,6 +233,19 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
 	s.VirtualLocation.Publish(cfg.VirtualLocation.Get())
 	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)
+}
+
+// moose debugger events
+type MooseDebuggerEventPublisher interface {
+	NotifyDebuggerEvent(events.MooseDebuggerEvent) error
+}
+
+type MooseDeveloperEvents struct {
+	DeveloperEvents events.PublishSubcriber[events.MooseDebuggerEvent]
+}
+
+func (m *MooseDeveloperEvents) Subscribe(to MooseDebuggerEventPublisher) {
+	m.DeveloperEvents.Subscribe(to.NotifyDebuggerEvent)
 }
 
 // Login/logout changes
