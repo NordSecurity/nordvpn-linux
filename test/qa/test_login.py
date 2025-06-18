@@ -32,9 +32,9 @@ def teardown_function(function):  # noqa: ARG001
 
 
 def test_user_consent_is_displayed_on_login():
-    cli = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
-    # wait until the final prompt appears, then capture everything before it
-    cli.expect(lib.USER_CONSENT_POMPT)
+    cli, _ = login.spawn_nordvpn_login()
+    login.wait_for_consent_prompt(cli)
+
     full_output = cli.before + cli.after  # everything printed so far, including the last line
 
     assert (
@@ -44,82 +44,49 @@ def test_user_consent_is_displayed_on_login():
 
 
 def test_invalid_input_repeats_consent_prompt_only():
-    output_buffer = io.StringIO()
-    cli = pexpect.spawn("nordvpn", args=["login"], encoding="utf-8", timeout=10)
-    cli.logfile_read = output_buffer
+    cli, buffer = login.spawn_nordvpn_login()
+    login.wait_for_consent_prompt(cli)
+    first_output = buffer.getvalue()
 
-    # wait for first full prompt
-    cli.expect(lib.USER_CONSENT_POMPT)
-    first_output = output_buffer.getvalue()
-
-    # send invalid input
     cli.sendline("blah")
+    login.wait_for_consent_prompt(cli)
+    second_output = login.get_new_output(buffer, first_output)
 
-    # wait for error + prompt again
-    cli.expect(lib.USER_CONSENT_POMPT)
-    second_output = output_buffer.getvalue()[len(first_output):]  # take just the new part
-
-    assert lib.WE_VALUE_YOUR_PRIVACY_MSG in lib.squash_whitespace(first_output)
-    assert lib.WE_VALUE_YOUR_PRIVACY_MSG not in lib.squash_whitespace(second_output)
+    login.assert_prompt_present(first_output)
+    login.assert_prompt_absent(second_output)
     assert "Invalid response" in lib.squash_whitespace(second_output)
     assert "(y/n)" in lib.squash_whitespace(second_output)
 
 
 def test_user_consent_prompt_reappears_after_ctrl_c_interrupt():
-    # first run: user is interrupted with Ctrl+C at the prompt
-    cli1 = pexpect.spawn("nordvpn", args=["login"], encoding="utf-8", timeout=10)
-    buffer1 = io.StringIO()
-    cli1.logfile_read = buffer1
-
-    # wait for the consent prompt
-    cli1.expect(lib.USER_CONSENT_POMPT)
-
-    # simulate user hitting Ctrl+C
-    cli1.sendintr()  # this sends SIGINT like Ctrl+C
+    cli1, buffer1 = login.spawn_nordvpn_login()
+    login.wait_for_consent_prompt(cli1)
+    cli1.sendintr()
     cli1.expect(pexpect.EOF)
-    first_output = buffer1.getvalue()
+    output1 = buffer1.getvalue()
+    login.assert_prompt_present(output1)
 
-    assert lib.WE_VALUE_YOUR_PRIVACY_MSG in lib.squash_whitespace(first_output), \
-        "Consent prompt not shown before Ctrl+C"
-
-    # second run: should still see the prompt
-    cli2 = pexpect.spawn("nordvpn", args=["login"], encoding="utf-8", timeout=10)
-    buffer2 = io.StringIO()
-    cli2.logfile_read = buffer2
-
-    cli2.expect(lib.USER_CONSENT_POMPT)
-    second_output = buffer2.getvalue()
-
-    assert lib.WE_VALUE_YOUR_PRIVACY_MSG in lib.squash_whitespace(second_output), \
-        "Consent prompt did not reappear on second login attempt"
+    cli2, buffer2 = login.spawn_nordvpn_login()
+    login.wait_for_consent_prompt(cli2)
+    output2 = buffer2.getvalue()
+    login.assert_prompt_present(output2)
 
 
 def test_user_consent_granted_after_pressing_y_and_does_not_appear_again():
-    # first run: prompt appears, user consents
-    cli = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
-    cli.expect(lib.USER_CONSENT_POMPT)
+    cli, _ = login.spawn_nordvpn_login()
+    login.wait_for_consent_prompt(cli)
 
     assert not settings.is_user_consent_declared(), "Consent should not be declared before interaction"
-
     cli.sendline("y")
     cli.expect(pexpect.EOF)
-
     assert settings.is_user_consent_granted(), "Consent should be recorded after pressing 'y'"
 
-    # second run: ensure the consent prompt does NOT appear again
-    cli2 = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
-
+    cli2, _ = login.spawn_nordvpn_login()
     try:
-        # try to match the consent prompt
         cli2.expect(lib.USER_CONSENT_POMPT)
         raise AssertionError("Consent prompt appeared again after it was already granted")
-    except pexpect.exceptions.TIMEOUT:
-        # good - the prompt didn't appear
-        pass
-    except pexpect.exceptions.EOF:
-        # also good — the process exited before showing the prompt
-        pass
-
+    except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
+        pass  # Good, prompt did not appear
     cli2.expect(pexpect.EOF)
 
 

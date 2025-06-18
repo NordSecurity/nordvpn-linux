@@ -1,9 +1,11 @@
 import json
 import os
+import io
+import pexpect
 
 import sh
 
-from . import UserConsentMode, logging, ssh
+from . import UserConsentMode, logging, ssh, squash_whitespace, WE_VALUE_YOUR_PRIVACY_MSG, USER_CONSENT_POMPT
 
 
 class Credentials:
@@ -62,3 +64,30 @@ def _analytics_value(mode: UserConsentMode) -> str:
     msg = f"not supported consent mode: {mode}"
     raise Exception(msg)
 
+
+def spawn_nordvpn_login():
+    """Spawns the nordvpn login process and sets up an output buffer."""
+    buffer = io.StringIO()
+    cli = pexpect.spawn("nordvpn", args=["login"], encoding="utf-8", timeout=10)
+    cli.logfile_read = buffer
+    return cli, buffer
+
+
+def wait_for_consent_prompt(cli):
+    """Waits for the consent prompt to appear."""
+    cli.expect(USER_CONSENT_POMPT)
+
+
+def get_new_output(buffer, old_output=""):
+    """Returns only the newly added output since old_output."""
+    return buffer.getvalue()[len(old_output):]
+
+
+def assert_prompt_present(output, message=WE_VALUE_YOUR_PRIVACY_MSG):
+    """Asserts that the consent message is in the output."""
+    assert message in squash_whitespace(output)
+
+
+def assert_prompt_absent(output, message=WE_VALUE_YOUR_PRIVACY_MSG):
+    """Asserts that the consent message is not in the output."""
+    assert message not in squash_whitespace(output)
