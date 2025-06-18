@@ -28,6 +28,7 @@ Example: nordvpn set dns 1.1.1.1 1.0.0.1
 
 Limits:
   Can set up to 3 DNS servers
+  Can set only IPv4 servers addresses
 
 Notes:
   Setting DNS disables ThreatProtectionLite`

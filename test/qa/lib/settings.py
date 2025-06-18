@@ -114,11 +114,6 @@ def are_analytics_enabled():
     return Settings().get("Analytics") == "enabled"
 
 
-def is_ipv6_enabled():
-    """Returns True, if IPv6 is enabled in application settings."""
-    return Settings().get("IPv6") == "enabled"
-
-
 def is_virtual_location_enabled():
     """Returns True, if Virtual Location is enabled in application settings."""
     return Settings().get("Virtual Location") == "enabled"
@@ -143,7 +138,6 @@ def app_has_defaults_settings():
         "Notify: enabled" in settings and
         "Tray: enabled" in settings and
         "Auto-connect: disabled" in settings and
-        "IPv6: disabled" in settings and
         "Meshnet: disabled" in settings and
         "DNS: disabled" in settings and
         "LAN Discovery: disabled" in settings and

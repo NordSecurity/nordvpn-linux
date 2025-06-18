@@ -25,8 +25,13 @@ func containsPrivateNetwork(subnet string) bool {
 
 // isSubnetValid returns true if subnet is valid and false and appropriate error code when it's invalid.
 func isSubnetValid(subnet string, currentSubnets []string, remove bool) (bool, int64) {
-	_, _, err := net.ParseCIDR(subnet)
+	parsedAddress, _, err := net.ParseCIDR(subnet)
 	if err != nil {
+		return false, internal.CodeAllowlistInvalidSubnet
+	}
+
+	// Do not allow IPv6 subnets
+	if parsedAddress.To4() == nil {
 		return false, internal.CodeAllowlistInvalidSubnet
 	}
 

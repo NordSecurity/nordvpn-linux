@@ -72,7 +72,6 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set.routing("off")
     sh.nordvpn.set.dns("1.1.1.1")
     sh.nordvpn.set.analytics("off")
-    sh.nordvpn.set.ipv6("on")
     sh.nordvpn.set.notify("on")
     sh.nordvpn.set("virtual-location", "off")
 
@@ -83,7 +82,6 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     assert not settings.is_routing_enabled()
     assert not settings.is_dns_disabled()
     assert not settings.are_analytics_enabled()
-    assert settings.is_ipv6_enabled()
     assert settings.is_notify_enabled()
     assert not settings.is_virtual_location_enabled()
 
@@ -111,7 +109,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     sh.nordvpn.set.autoconnect("on")
     sh.nordvpn.set.notify("on")
     sh.nordvpn.set.dns("1.1.1.1")
-    sh.nordvpn.set.ipv6("on")
     sh.nordvpn.set("virtual-location", "off")
 
     if tech == "nordlynx":
@@ -122,7 +119,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     assert settings.is_autoconnect_enabled()
     assert settings.is_notify_enabled()
     assert not settings.is_dns_disabled()
-    assert settings.is_ipv6_enabled()
     assert not settings.is_virtual_location_enabled()
 
     if tech == "nordlynx":
