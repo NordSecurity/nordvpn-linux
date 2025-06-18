@@ -109,25 +109,25 @@ def is_dns_disabled():
     return Settings().get("DNS") == "disabled"
 
 
-def is_analytics_consent_granted():
+def is_user_consent_granted():
     """
-    Returns True, if Analytics Consent is granted, False if it's denied.
+    Returns True, if User Consent is enabled, False if it's disabled.
 
     If the consent was not declared. It raises an exception.
     """
-    analytics_consent = Settings().get("analytics consent")
-    if analytics_consent == "granted":
+    user_consent = Settings().get("user consent")
+    if user_consent == "enabled":
         return True
 
-    if analytics_consent == "denied":
+    if user_consent == "disabled":
         return False
 
-    raise Exception("analytics consent is undefined")
+    raise Exception("user consent is undefined")
 
 
-def is_analytics_consent_declared():
-    """Returns True, if Analytics Consent is denied or granted, False if it's undefined in application settings."""
-    return Settings().get("analytics consent") != "undefined"
+def is_user_consent_declared():
+    """Returns True, if User Consent is enabled or disabled, False if it's undefined in application settings."""
+    return Settings().get("user consent") != "undefined"
 
 
 def is_ipv6_enabled():

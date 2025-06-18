@@ -82,7 +82,7 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
     assert "0xe1f1" not in  sh_no_tty.nordvpn.settings()
     assert daemon.is_killswitch_on()
     assert settings.is_lan_discovery_enabled()
-    assert settings.is_analytics_consent_declared()
+    assert settings.is_user_consent_declared()
     assert settings.is_tpl_enabled()
 
     if obfuscated == "on":

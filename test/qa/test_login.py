@@ -31,7 +31,7 @@ def teardown_function(function):  # noqa: ARG001
     logging.log()
 
 
-def test_analytics_consent_is_displayed_on_login():
+def test_user_consent_is_displayed_on_login():
     cli = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
     # wait until the final prompt appears, then capture everything before it
     cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
@@ -65,7 +65,7 @@ def test_invalid_input_repeats_consent_prompt_only():
     assert "(y/n)" in lib.squash_whitespace(second_output)
 
 
-def test_analytics_consent_prompt_reappears_after_ctrl_c_interrupt():
+def test_user_consent_prompt_reappears_after_ctrl_c_interrupt():
     # first run: user is interrupted with Ctrl+C at the prompt
     cli1 = pexpect.spawn("nordvpn", args=["login"], encoding="utf-8", timeout=10)
     buffer1 = io.StringIO()
@@ -94,17 +94,17 @@ def test_analytics_consent_prompt_reappears_after_ctrl_c_interrupt():
         "Consent prompt did not reappear on second login attempt"
 
 
-def test_analytics_consent_granted_after_pressing_y_and_does_not_appear_again():
+def test_user_consent_granted_after_pressing_y_and_does_not_appear_again():
     # first run: prompt appears, user consents
     cli = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)
     cli.expect(r"Do you allow us to collect and use limited app performance data\? \(y/n\)")
 
-    assert not settings.is_analytics_consent_declared(), "Consent should not be declared before interaction"
+    assert not settings.is_user_consent_declared(), "Consent should not be declared before interaction"
 
     cli.sendline("y")
     cli.expect(pexpect.EOF)
 
-    assert settings.is_analytics_consent_granted(), "Consent should be recorded after pressing 'y'"
+    assert settings.is_user_consent_granted(), "Consent should be recorded after pressing 'y'"
 
     # second run: ensure the consent prompt does NOT appear again
     cli2 = pexpect.spawn("nordvpn", args=["login"], encoding='utf-8', timeout=10)

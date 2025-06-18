@@ -83,7 +83,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     assert not settings.is_firewall_enabled()
     assert not settings.is_routing_enabled()
     assert not settings.is_dns_disabled()
-    assert settings.is_analytics_consent_declared()
+    assert settings.is_user_consent_declared()
     assert settings.is_ipv6_enabled()
     assert settings.is_notify_enabled()
     assert not settings.is_virtual_location_enabled()
@@ -159,7 +159,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
 
     assert not settings.is_routing_enabled()
     assert not settings.is_dns_disabled()
-    assert settings.is_analytics_consent_declared()
+    assert settings.is_user_consent_declared()
     assert settings.is_lan_discovery_enabled()
     assert not settings.is_virtual_location_enabled()
 
@@ -261,10 +261,10 @@ def test_set_analytics_starts_prompt_even_if_completed_before():
 def test_set_analytics_off_on():
 
     assert "Analytics is set to 'disabled' successfully." in sh.nordvpn.set.analytics("off")
-    assert not settings.is_analytics_consent_granted()
+    assert not settings.is_user_consent_granted()
 
     assert "Analytics is set to 'enabled' successfully." in sh.nordvpn.set.analytics("on")
-    assert settings.is_analytics_consent_granted()
+    assert settings.is_user_consent_granted()
 
 
 def test_set_analytics_on_off_repeated():
