@@ -23,14 +23,14 @@ func newAnalytics(
 	fs *config.FilesystemConfigManager,
 	subAPI core.SubscriptionAPI,
 	httpClient http.Client,
-	ver, env, id string) *moose.Subscriber {
+	buildTarget config.BuildTarget,
+	id string) *moose.Subscriber {
 	_ = os.Setenv("MOOSE_LOG_FILE", "Stdout")
 
 	sub := &moose.Subscriber{
 		EventsDbPath:    eventsDbPath,
 		Config:          fs,
-		Version:         ver,
-		Environment:     env,
+		BuildTarget:     buildTarget,
 		Domain:          EventsDomain,
 		Subdomain:       EventsSubdomain,
 		DeviceID:        id,
