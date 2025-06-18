@@ -150,8 +150,14 @@ func NewApp(version, environment, hash, salt string,
 				Description:  SetThreatProtectionLiteDescription,
 			},
 			{
-				Name:   "defaults",
-				Usage:  SetDefaultsUsageText,
+				Name:  "defaults",
+				Usage: SetDefaultsUsageText,
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:  flagLogout,
+						Usage: SetDefaultsLogoutFlagText,
+					},
+				},
 				Action: cmd.SetDefaults,
 			},
 			{
