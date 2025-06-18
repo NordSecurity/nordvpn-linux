@@ -392,4 +392,4 @@ def technology_to_upper_camel_case(tech: str) -> str:
 
 def squash_whitespace(text: str) -> str:
     """Normalize whitespace by collapsing all sequences of whitespace into single spaces."""
-    return re.sub(r'\s+', ' ', text.strip())
+    return ' '.join(text.split())
