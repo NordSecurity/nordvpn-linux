@@ -1,6 +1,5 @@
 import pytest
 import pexpect
-import io
 import sh
 
 import lib
