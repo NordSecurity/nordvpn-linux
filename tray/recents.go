@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 type RecentConnections struct {
@@ -19,13 +20,12 @@ func NewRecentConnections() *RecentConnections {
 }
 
 func (rc *RecentConnections) Add(country string) {
-	for i, c := range rc.List {
-		if c == country {
-			rc.List = append(rc.List[:i], rc.List[i+1:]...)
-			break
-		}
-	}
+	rc.List = slices.DeleteFunc(rc.List, func(c string) bool {
+		return c == country
+	})
+
 	rc.List = append([]string{country}, rc.List...)
+
 	if len(rc.List) > rc.Max {
 		rc.List = rc.List[:rc.Max]
 	}
