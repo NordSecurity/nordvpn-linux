@@ -6,7 +6,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 )
 
-func Test_getDesktopEnvironment(t *testing.T) {
+func Test_DisplayDesktopEnvironment(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
@@ -19,8 +19,8 @@ func Test_getDesktopEnvironment(t *testing.T) {
 		{"Handles trailing spaces in KDE entry", "kde ", "kde"},
 		{"Corrects random capitalization in Xfce", "xFce", "xfce"},
 		{"Handles preceding spaces in Mate entry", " mate", "mate"},
-		{"Returns none for empty input", "", "none"},
-		{"Returns none for input with only spaces", "    ", "none"},
+		{"Returns none for empty input", "", EnvValueUnset},
+		{"Returns none for input with only spaces", "    ", EnvValueUnset},
 	}
 
 	for _, tt := range tests {
