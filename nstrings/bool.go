@@ -12,7 +12,6 @@ const (
 	enabled   = "enabled"
 	disabled  = "disabled"
 	undefined = "undefined"
-	notSet    = "not set"
 )
 
 var falseMap = map[string]bool{
