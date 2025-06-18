@@ -233,7 +233,7 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
 def test_set_analytics_starts_prompt_even_if_completed_before():
     # first run: see prompt and respond
     cli1 = pexpect.spawn("nordvpn", args=["set", "analytics"], encoding='utf-8', timeout=10)
-    cli1.expect(lib.USER_CONSENT_POMPT)
+    cli1.expect(lib.USER_CONSENT_PROMPT)
     output1 = cli1.before + cli1.after
 
     assert (
@@ -246,7 +246,7 @@ def test_set_analytics_starts_prompt_even_if_completed_before():
 
     # second run: should see the prompt again
     cli2 = pexpect.spawn("nordvpn", args=["set", "analytics"], encoding='utf-8', timeout=10)
-    cli2.expect(lib.USER_CONSENT_POMPT)
+    cli2.expect(lib.USER_CONSENT_PROMPT)
     output2 = cli2.before + cli2.after
 
     assert (

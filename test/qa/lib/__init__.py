@@ -148,7 +148,7 @@ Press "n" (no) to send only the essential data our app needs to work.
 Your browsing activities remain private, regardless of your choice.
 """
 WE_VALUE_YOUR_PRIVACY_MSG = "We value your privacy"
-USER_CONSENT_POMPT = "Do you allow us to collect and use limited app performance data\? \(y/n\)"
+USER_CONSENT_PROMPT = "Do you allow us to collect and use limited app performance data\? \(y/n\)"
 
 
 class UserConsentMode(str, Enum):

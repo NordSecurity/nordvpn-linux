@@ -5,7 +5,7 @@ import pexpect
 
 import sh
 
-from . import UserConsentMode, logging, ssh, squash_whitespace, WE_VALUE_YOUR_PRIVACY_MSG, USER_CONSENT_POMPT
+from . import UserConsentMode, logging, ssh, squash_whitespace, WE_VALUE_YOUR_PRIVACY_MSG, USER_CONSENT_PROMPT
 
 
 class Credentials:
@@ -75,7 +75,7 @@ def spawn_nordvpn_login():
 
 def wait_for_consent_prompt(cli):
     """Waits for the consent prompt to appear."""
-    cli.expect(USER_CONSENT_POMPT)
+    cli.expect(USER_CONSENT_PROMPT)
 
 
 def get_new_output(buffer, old_output=""):

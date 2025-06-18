@@ -82,7 +82,7 @@ def test_user_consent_granted_after_pressing_y_and_does_not_appear_again():
 
     cli2, _ = login.spawn_nordvpn_login()
     try:
-        cli2.expect(lib.USER_CONSENT_POMPT)
+        cli2.expect(lib.USER_CONSENT_PROMPT)
         raise AssertionError("Consent prompt appeared again after it was already granted")
     except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF):
         pass  # Good, prompt did not appear
