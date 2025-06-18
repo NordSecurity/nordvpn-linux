@@ -32,6 +32,11 @@ const (
 	productUUID   = 1 << 6
 )
 
+// System file paths for retrieving machine details
+const (
+	procCPUInfoPath = "/proc/cpuinfo"
+)
+
 type MachineID struct {
 	hostNameReader HostNameReader
 	fileReader     FileReader
@@ -171,13 +176,13 @@ func (getter *MachineID) calculateMachineID() (uuid.UUID, error) {
 }
 
 func (getter *MachineID) readCPUSerial() ([]byte, error) {
-	data, err := getter.fileReader("/proc/cpuinfo")
+	data, err := getter.fileReader(procCPUInfoPath)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(data) == 0 {
-		return nil, fmt.Errorf("cpuinfo file is empty")
+		return nil, fmt.Errorf("'%s' file is empty", procCPUInfoPath)
 	}
 
 	val, err := getValueForKey(string(data), "Serial", ":")
@@ -187,6 +192,57 @@ func (getter *MachineID) readCPUSerial() ([]byte, error) {
 	}
 
 	return []byte(val), nil
+}
+
+// normalizeArchFamily standardizes architecture family names to canonical lowercase forms.
+func normalizeArchFamily(family string) string {
+	family = strings.ToLower(family)
+	switch {
+	case strings.Contains(family, "arm"),
+		strings.Contains(family, "aarch64"):
+		return "arm"
+	default:
+		return family
+	}
+}
+
+// GetArchitectureVariantName returns the CPU architecture name with an optional version
+// suffix (e.g., "armhfv7" for "armhf") based on available CPU metadata.
+// Currently tailored to ARM families but structured for future extensibility.
+//
+// Example:
+//
+//	Input:  "armhf"
+//	Output: "armhfv7"
+//
+// Example:
+//
+//	Input:  "amd64"
+//	Output: "amd64"
+func (m *MachineID) GetArchitectureVariantName(archFamily string) (string, error) {
+	archFamily = strings.ToLower(archFamily)
+
+	switch normalizeArchFamily(archFamily) {
+	case "arm":
+		content, err := m.fileReader(procCPUInfoPath)
+		if err != nil {
+			return "", fmt.Errorf("failed to read '%s': %w", procCPUInfoPath, err)
+		}
+		if len(content) == 0 {
+			return "", fmt.Errorf("cpu info file '%s' is empty", procCPUInfoPath)
+		}
+
+		variant, err := getValueForKey(string(content), "CPU architecture", ":")
+		if err != nil {
+			return "", fmt.Errorf("unable to extract 'cpu architecture': %w", err)
+		}
+
+		variant = strings.ToLower(strings.TrimSpace(variant))
+		return fmt.Sprintf("%sv%s", archFamily, variant), nil
+
+	default:
+		return archFamily, nil
+	}
 }
 
 func (getter *MachineID) readMotherboardSerialNumber() ([]byte, error) {
