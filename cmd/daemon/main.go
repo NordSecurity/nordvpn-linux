@@ -115,6 +115,7 @@ const (
 )
 
 func main() {
+
 	// pprof
 	if internal.IsDevEnv(Environment) {
 		go func() {
@@ -291,7 +292,17 @@ func main() {
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
 
-	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, *httpClientSimple, Version, Environment, deviceID)
+	analytics := newAnalytics(
+		eventsDbPath,
+		fsystem,
+		defaultAPI,
+		*httpClientSimple,
+		config.BuildTarget{
+			Version:      Version,
+			Environment:  Environment,
+			Architecture: Arch},
+		deviceID)
+
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
 	daemonEvents.Subscribe(analytics)
