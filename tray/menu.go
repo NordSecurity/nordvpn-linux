@@ -144,12 +144,20 @@ func addVpnSection(ti *Instance) {
 	current := ti.state.vpnCountry
 	ti.state.mu.RUnlock()
 	added := map[string]bool{}
+	hasRecents := false
 
 	for _, c := range recents {
 		if added[c] {
 			continue
 		}
 		added[c] = true
+
+		if !hasRecents {
+			recentsInfo := countryPicker.AddSubMenuItem("Recent Connections:", "Recent Connections:")
+			recentsInfo.Disable()
+			hasRecents = true
+		}
+
 		prefix := "↻ "
 		if c == current {
 			prefix = "✓ "
@@ -171,7 +179,6 @@ func addVpnSection(ti *Instance) {
 				if ti.connect(c, "") {
 					ti.updateChan <- true
 				}
-
 			}
 		}(c, item)
 	}
@@ -186,9 +193,7 @@ func addVpnSection(ti *Instance) {
 		}
 		added[c] = true
 		title := c
-		if c == current {
-			title = "✓ " + c
-		}
+		title = strings.ReplaceAll(title, "_", " ")
 		item := countryPicker.AddSubMenuItem(title, "Connect to "+c)
 		go func(c string, mi *systray.MenuItem) {
 			for {
