@@ -374,12 +374,12 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	AnalyticsPolicyLink = "https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings_account-privacy_policy&nm=app&ns=nordvpn-linux-cli&nc=settings-privacy_policy"
 	MsgConsentAgreement = `We value your privacy.
 
-That’s why we want to be transparent about what data you agree to give us. We only collect the bare minimum of information required to offer a smooth and stable VPN experience.
+That's why we want to be transparent about what data you agree to give us. We only collect the bare minimum of information required to offer a smooth and stable VPN experience.
 
-By pressing “y” (yes), you allow us to collect and use limited app performance data. This helps us keep our features relevant to your needs and fix issues faster, as explained in our Privacy Policy. 
+By pressing "y" (yes), you allow us to collect and use limited app performance data. This helps us keep our features relevant to your needs and fix issues faster, as explained in our Privacy Policy. 
 ` + AnalyticsPolicyLink + `
 
-Press “n” (no) to send only the essential data our app needs to work.
+Press "n" (no) to send only the essential data our app needs to work.
 
 Your browsing activities remain private, regardless of your choice.
 
