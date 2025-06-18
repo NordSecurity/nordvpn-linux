@@ -20,7 +20,7 @@ const (
 Example: 'nordvpn allowlist add subnet 192.168.1.1/24'
 
 Notes:
-  Address should be in CIDR notation`
+  Address should be in IPv4 CIDR notation`
 )
 
 func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
