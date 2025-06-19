@@ -18,6 +18,78 @@ jobs:
         with:
           version: v1.55.2
           args: -v --config=.golangci-lint.yml
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        with:
+          go-version-file: go.mod
+      - run: go build ./...
+
+  # Package job builds NordVPN packages as it would do on any host machine using regular mage (non
+  # Docker) jobs.
+  package:
+    env:
+      GOMODCACHE: ${{ github.workspace }}/.gomodcache
+      GOCACHE: ${{ github.workspace }}/.gocache
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - name: Cache golang dependencies
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            .gomodcache
+            .gocache
+            # key: go-${{ hashFiles('.github/workflows/ci.yml', 'go.sum') }}
+          key: go-${{ hashFiles('go.sum') }}
+      - name: Cache APT packages
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: /var/cache/apt/archives
+          key: go-${{ hashFiles('.github/workflows/ci.yml') }}
+
+      - run: |
+          sudo apt update
+          sudo apt-get install -y elfutils make gcc pkg-config dpkg-dev libnl-genl-3-dev libcap-ng-dev
+
+      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+        with:
+          # TODO: LVPN-8373: change this back to go-version-file after Go update
+          go-version: '1.22.2'
+          cache: false # caching setup-go would colide with the previous step
+
+      - name: Install build utilities
+        run: |
+          go install github.com/magefile/mage@9e91a03eaa438d0d077aca5654c7757141536a60 # v1.15.0
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@2e47af64a3f33d32ec1395dbd56165c4feb2bc21 # v2.43.0
+          go install github.com/google/go-licenses@5348b744d0983d85713295ea08a20cca1654a45e # v1.6.0
+
+      - name: Build clean DEB package
+        run: |
+          echo "FEATURES=" > .env
+          mage build:deb
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            build/foss
+          key: cargo-${{ hashFiles('lib-versions.env') }}
+
+      - name: Build DEB package with default features
+        run: |
+          rm .env
+          mage build:deb
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nordvpn-deb
+          path: dist/app/deb/*.deb
+
   shellcheck:
     runs-on: ubuntu-22.04
     steps:
