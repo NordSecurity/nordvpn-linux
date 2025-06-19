@@ -13,7 +13,9 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI) func() {
 		if currentVersion.LessThan(vdata.version) {
 			dm.SetVersionData(vdata.version, true)
 		}
-		if vdata.newerVersionAvailable {
+
+		// if vdata.version.Major == 0 that means the data is incorrect, possibly the file is missing
+		if vdata.newerVersionAvailable && vdata.version.Major != 0 {
 			return
 		}
 
@@ -39,8 +41,9 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI) func() {
 		versions := StringsToVersions(versionStrings)
 		latestVersion := GetLatestVersion(versions)
 
-		if currentVersion.LessThan(latestVersion) {
-			dm.SetVersionData(latestVersion, true)
+		newerVersionAvailable := currentVersion.LessThan(latestVersion)
+		if newerVersionAvailable || vdata.version.Major == 0 {
+			dm.SetVersionData(latestVersion, newerVersionAvailable)
 		}
 	}
 }

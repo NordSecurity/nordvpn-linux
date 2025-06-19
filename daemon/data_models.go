@@ -151,7 +151,7 @@ func (data *VersionData) save() error {
 		return err
 	}
 
-	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRWGroupROthersR)
+	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRW)
 	if err != nil {
 		return err
 	}
