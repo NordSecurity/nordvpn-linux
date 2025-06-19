@@ -15,12 +15,13 @@ else
 	TRIMPATH="-trimpath"
 fi
 
+# SALT is deprecated, therefore, example value can safely be used
 ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Environment=${ENVIRONMENT}' \
 	-X 'main.Hash=${HASH}' \
 	-X 'main.Arch=${ARCH}' \
 	-X 'main.PackageType=${PACKAGE:-deb}' \
-	-X 'main.Salt=${SALT}'"
+	-X 'main.Salt=${SALT:-f1nd1ngn3m0}'"
 
 declare -A names_map=(
 	[cli]=nordvpn
@@ -56,7 +57,7 @@ export CGO_LDFLAGS="${CGO_LDFLAGS:-""} -Wl,-z,relro,-z,now"
 [ "${ARCH}" == "armhf" ] && export GOARM=7
 
 # In order to enable additional features, provide `FEATURES` environment variable
-tags="${FEATURES:-"telio drop"}"
+tags="${FEATURES:-"none"}"
 
 source "${WORKDIR}"/ci/set_bindings_version.sh libtelio
 source "${WORKDIR}"/ci/set_bindings_version.sh libdrop
