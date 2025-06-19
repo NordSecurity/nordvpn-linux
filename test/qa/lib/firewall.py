@@ -289,7 +289,6 @@ def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], 
     return result
 
 
-# TODO: Add missing IPv6 rules (icmp6 & dhcp6)
 def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | None = None) -> list[str]:
     # Default route interface
     interface = sh.ip.route.show("default").split(None)[4]

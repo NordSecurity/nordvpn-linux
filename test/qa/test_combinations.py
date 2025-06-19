@@ -7,10 +7,30 @@ from lib import (
     info,
     logging,
     login,
+    network
 )
 from test_connect import disconnect_base_test, get_alias
-from test_connect6 import connect_base_test
 
+def connect_base_test(group: str = (), name: str = "", hostname: str = "", ipv6 = True):
+    """
+    Connects to a NordVPN server and performs a series of checks to ensure the connection is successful.
+
+    Parameters
+    ----------
+    group (str): The specific server name or group name to connect to. Default is an empty string.
+    name (str): Used to verify the connection message. Default is an empty string.
+    hostname (str): Used to verify the connection message. Default is an empty string.
+    ipv6 (bool): If True, checks if IPv6 connection is available. Default is True.
+    """
+
+    output = sh.nordvpn.connect(group, _tty_out=False)
+    print(output)
+
+    assert lib.is_connect_successful(output, name, hostname)
+    assert network.is_connected()
+
+    if ipv6:
+        assert network.is_ipv6_connected()
 
 def setup_function(function):  # noqa: ARG001
     daemon.start()

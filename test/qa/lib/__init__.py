@@ -63,16 +63,8 @@ NORDWHISPER_TECHNOLOGY = [
     ("nordwhisper", "", ""),
 ]
 
-# no obfuscated servers with ipv6 2021/05/24
-TECHNOLOGIES_WITH_IPV6 = STANDARD_TECHNOLOGIES[:-1]
-
 # Used for test parametrization, when the same test has to be run for different threat protection lite settings.
 THREAT_PROTECTION_LITE = [
-    "on",
-    "off",
-]
-
-IPV6 = [
     "on",
     "off",
 ]
@@ -135,14 +127,6 @@ CITIES = [
     "New_York",
     "Paris",
 ]
-
-# Used for testing, when specific server is offine.
-#
-# curl api.nordvpn.com/v1/servers\?limit=6000 -L | jq '[.[] | select((.ips | length) > 1)] | map(.hostname |= rtrimstr(".nordvpn.com")) | map(.hostname)'
-IPV6_SERVERS = [
-    "us9591", "us9592"
-]
-
 
 EXPECTED_CONSENT_MESSAGE = """
 We value your privacy.
@@ -272,13 +256,6 @@ def set_threat_protection_lite(dns):
 def set_dns(dns):
     try:
         print(sh.nordvpn.set.dns(dns))
-    except sh.ErrorReturnCode_1 as ex:
-        print("WARNING:", ex)
-
-
-def set_ipv6(ipv6):
-    try:
-        print(sh.nordvpn.set.ipv6(ipv6))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
