@@ -11,3 +11,4 @@ protobuf==5.28.3
 selenium==4.26.0
 grpcio==1.68.1
 pytest-html==4.1.1
+pexpect==4.8.0

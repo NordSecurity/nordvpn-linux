@@ -1,5 +1,6 @@
 import pytest
 import sh
+import pexpect
 
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
@@ -81,7 +82,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     assert not settings.is_firewall_enabled()
     assert not settings.is_routing_enabled()
     assert not settings.is_dns_disabled()
-    assert not settings.are_analytics_enabled()
+    assert settings.is_user_consent_declared()
     assert settings.is_notify_enabled()
     assert not settings.is_virtual_location_enabled()
 
@@ -154,7 +155,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
 
     assert not settings.is_routing_enabled()
     assert not settings.is_dns_disabled()
-    assert not settings.are_analytics_enabled()
+    assert settings.is_user_consent_declared()
     assert settings.is_lan_discovery_enabled()
     assert not settings.is_virtual_location_enabled()
 
@@ -225,6 +226,34 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
     assert not dns.is_set_for(nameserver)
 
 
+def test_set_analytics_starts_prompt_even_if_completed_before():
+    # first run: see prompt and respond
+    cli1 = pexpect.spawn("nordvpn", args=["set", "analytics"], encoding='utf-8', timeout=10)
+    cli1.expect(lib.USER_CONSENT_PROMPT)
+    output1 = cli1.before + cli1.after
+
+    assert (
+        lib.squash_whitespace(lib.EXPECTED_CONSENT_MESSAGE)
+        in lib.squash_whitespace(output1)
+    ), "Consent message did not match expected full output on first run"
+
+    cli1.sendline("n")
+    cli1.expect(pexpect.EOF)
+
+    # second run: should see the prompt again
+    cli2 = pexpect.spawn("nordvpn", args=["set", "analytics"], encoding='utf-8', timeout=10)
+    cli2.expect(lib.USER_CONSENT_PROMPT)
+    output2 = cli2.before + cli2.after
+
+    assert (
+        lib.squash_whitespace(lib.EXPECTED_CONSENT_MESSAGE)
+        in lib.squash_whitespace(output2)
+    ), "Consent message did not appear again on second run"
+
+    cli2.sendline("y")
+    cli2.expect(pexpect.EOF)
+
+
 def test_set_defaults_no_logout():
     sh.nordvpn.set.defaults()
 
@@ -234,10 +263,10 @@ def test_set_defaults_no_logout():
 def test_set_analytics_off_on():
 
     assert "Analytics is set to 'disabled' successfully." in sh.nordvpn.set.analytics("off")
-    assert not settings.are_analytics_enabled()
+    assert not settings.is_user_consent_granted()
 
     assert "Analytics is set to 'enabled' successfully." in sh.nordvpn.set.analytics("on")
-    assert settings.are_analytics_enabled()
+    assert settings.is_user_consent_granted()
 
 
 def test_set_analytics_on_off_repeated():

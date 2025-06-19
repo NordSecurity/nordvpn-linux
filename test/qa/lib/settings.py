@@ -2,6 +2,8 @@ import random
 
 import sh
 
+from . import UserConsentMode
+
 
 MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect is set to 'enabled' successfully."
 MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect is set to 'disabled' successfully."
@@ -109,9 +111,25 @@ def is_dns_disabled():
     return Settings().get("DNS") == "disabled"
 
 
-def are_analytics_enabled():
-    """Returns True, if Analytics are enabled in application settings."""
-    return Settings().get("Analytics") == "enabled"
+def is_user_consent_granted():
+    """
+    Returns True, if User Consent is enabled, False if it's disabled.
+
+    If the consent was not declared. It raises an exception.
+    """
+    user_consent = Settings().get("user consent")
+    if user_consent == UserConsentMode.ENABLED:
+        return True
+
+    if user_consent == UserConsentMode.DISABLED:
+        return False
+
+    raise Exception("user consent is undefined")
+
+
+def is_user_consent_declared():
+    """Returns True, if User Consent is enabled or disabled, False if it is undefined in application settings."""
+    return Settings().get("user consent") != UserConsentMode.UNDEFINED
 
 
 def is_virtual_location_enabled():
@@ -132,7 +150,8 @@ def app_has_defaults_settings():
         "Firewall: enabled" in settings and
         "Firewall Mark: 0xe1f1" in settings and
         "Routing: enabled" in settings and
-        "Analytics: enabled" in settings and
+        # User Consent is not restored to default on reset
+        ("User Consent: enabled" in settings or "User Consent: disabled" in settings) and
         "Kill Switch: disabled" in settings and
         "Threat Protection Lite: disabled" in settings and
         "Notify: enabled" in settings and
