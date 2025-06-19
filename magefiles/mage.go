@@ -1,3 +1,5 @@
+//go:build mage
+
 package main
 
 import (
@@ -458,8 +460,22 @@ func (Build) Rust(ctx context.Context) error {
 
 	env["WORKDIR"] = cwd
 	env["ARCHS_RUST"] = env["ARCH"]
+	features, ok := env["FEATURES"]
+	if !ok {
+		features = "telio drop"
+	}
 
-	return sh.RunWith(env, "ci/build_rust.sh")
+	if strings.Contains(features, "telio") {
+		if err := sh.RunWith(env, "ci/build_libtelio.sh"); err != nil {
+			return err
+		}
+	}
+	if strings.Contains(features, "drop") {
+		if err := sh.RunWith(env, "ci/build_libdrop.sh"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Builds rust dependencies using Docker builder

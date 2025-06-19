@@ -56,7 +56,7 @@ export CGO_LDFLAGS="${CGO_LDFLAGS:-""} -Wl,-z,relro,-z,now"
 [ "${ARCH}" == "armhf" ] && export GOARM=7
 
 # In order to enable additional features, provide `FEATURES` environment variable
-tags="${FEATURES:-"telio drop"}"
+tags="${FEATURES:-"none"}"
 
 source "${WORKDIR}"/ci/set_bindings_version.sh libtelio
 source "${WORKDIR}"/ci/set_bindings_version.sh libdrop
