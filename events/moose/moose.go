@@ -46,8 +46,7 @@ type mooseConsentFunc func(bool) uint32
 type Subscriber struct {
 	EventsDbPath            string
 	Config                  config.Manager
-	Version                 string
-	Environment             string
+	BuildTarget             config.BuildTarget
 	Domain                  string
 	Subdomain               string
 	DeviceID                string
@@ -162,7 +161,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
-		internal.IsProdEnv(s.Environment),
+		internal.IsProdEnv(s.BuildTarget.Environment),
 		s,
 		s,
 		sendAllEvents,
@@ -192,7 +191,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.Version)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.BuildTarget.Version)); err != nil {
 		return fmt.Errorf("setting application version: %w", err)
 	}
 
@@ -239,6 +238,11 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if err := sub.NotifyTechnology(cfg.Technology); err != nil {
 		return fmt.Errorf("setting moose technology: %w", err)
 	}
+
+	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.BuildTarget.Architecture)); err != nil {
+		return fmt.Errorf("setting device architecture: %w", err)
+	}
+
 	return nil
 }
 

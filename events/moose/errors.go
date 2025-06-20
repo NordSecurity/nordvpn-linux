@@ -30,7 +30,7 @@ func (s *Subscriber) PostInit(initResult moose.InitResult, errCode int32, errMsg
 }
 
 func (s *Subscriber) OnError(err moose.TrackerError, level uint32, code int32, msg string) *moose.ListenerError {
-	if internal.IsProdEnv(s.Environment) && level < 2 {
+	if internal.IsProdEnv(s.BuildTarget.Environment) && level < 2 {
 		return nil
 	}
 	log.Printf("%s MOOSE: %d: %d: %s", internal.ErrorPrefix, err, code, msg)
