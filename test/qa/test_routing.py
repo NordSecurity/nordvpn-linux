@@ -4,27 +4,10 @@ import pytest
 import sh
 
 import lib
-from lib import allowlist, daemon, firewall, info, logging, login, network, settings
+from lib import allowlist, daemon, firewall, network, settings
 
 
-def setup_module(module):  # noqa: ARG001
-    firewall.add_and_delete_random_route()
-
-
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults("--logout")
-    daemon.stop()
+pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
 
 
 def get_network_interface(tech):

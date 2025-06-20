@@ -2,29 +2,10 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, info, logging, login, notify, settings
+from lib import notify, settings
 
 
-def setup_module(module):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
-    logging.log()
-
-    # Make sure that Notifications are disabled before we execute each test
-    lib.set_notify("off")
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "disable_notifications")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)

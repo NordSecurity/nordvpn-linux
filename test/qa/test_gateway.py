@@ -1,32 +1,15 @@
 import sh
 
+import pytest
 import lib
 from lib import (
     daemon,
-    info,
     logging,
-    login,
     network,
 )
 
 
-def setup_module(module):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 
 # Test for 3.8.10 hotfix. Default gateway is not detected when there is not a physical interface

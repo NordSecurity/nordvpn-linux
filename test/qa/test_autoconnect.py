@@ -4,23 +4,11 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, info, logging, login, network, server, settings
+from lib import daemon, network, server, settings
 from lib.shell import sh_no_tty
 
 
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults("--logout")
-    daemon.stop()
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
 
 def autoconnect_base_test(group):

@@ -1,26 +1,15 @@
+import pytest
 import threading
 import sh
 import grpc
 from collections.abc import Sequence
-from lib import daemon, info, logging, login
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
 
+
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
+
+
 NORDVPND_SOCKET = 'unix:///run/nordvpn/nordvpnd.sock'
-
-
-def setup_function():  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-    logging.log()
-
-
-def teardown_function():  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults("--logout")
-    daemon.stop()
 
 
 def test_multiple_state_subscribers():
