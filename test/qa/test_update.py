@@ -37,12 +37,13 @@ def setup_function(function):  # noqa: ARG001
 
     daemon.start()
 
-    login.login_as("default")
-
     daemon.stop() # TODO: LVPN-6403
     deb_path = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/*amd64.deb')[0]
     sh.sudo.apt.install(deb_path, "-y")
     daemon.start() # TODO: LVPN-6403
+
+    # login into the app after update, because if user didn't agree with the consent it will be logged out at update
+    login.login_as("default")
 
     if TestData.INVOLVES_MESHNET:
         sh.nordvpn.set.notify.off()

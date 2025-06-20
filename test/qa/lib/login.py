@@ -3,9 +3,7 @@ import os
 import io
 import pexpect
 
-import sh
-
-from . import UserConsentMode, logging, ssh, squash_whitespace, WE_VALUE_YOUR_PRIVACY_MSG, USER_CONSENT_PROMPT
+from . import UserConsentMode, logging, ssh, squash_whitespace, WE_VALUE_YOUR_PRIVACY_MSG, USER_CONSENT_PROMPT, CommandExecutor
 
 
 class Credentials:
@@ -41,14 +39,11 @@ def login_as(username, ssh_client: ssh.Ssh = None, with_user_consent: UserConsen
 
     logging.log(f"logging in as {token}")
 
-    if ssh_client is not None:
-        if with_user_consent != UserConsentMode.UNDEFINED:
-            ssh_client.exec_command(f"nordvpn set analytics {_analytics_value(with_user_consent)}")
-        return ssh_client.exec_command(f"nordvpn login --token {token}")
-
+    exec_command = CommandExecutor(ssh_client=ssh_client)
     if with_user_consent != UserConsentMode.UNDEFINED:
-        sh.nordvpn.set.analytics(_analytics_value(with_user_consent))
-    return sh.nordvpn.login("--token", token)
+        logging.log(f"set consent to {with_user_consent}")
+        exec_command(f"nordvpn set analytics {_analytics_value(with_user_consent)}")
+    return exec_command(f"nordvpn login --token {token}")
 
 
 def _analytics_value(mode: UserConsentMode) -> str:
