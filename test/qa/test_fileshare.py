@@ -1067,7 +1067,7 @@ def test_permissions_send(peer_name, background):
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_meshnet_receive_forbidden(peer_name):
-    peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
 
     sh.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
     ssh_client.exec_command("nordvpn mesh peer refresh")
@@ -1085,10 +1085,10 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
     assert remote_permissions_refreshed, "Permissions were not refreshed."
 
     # transfer list should not change if transfer request was properly blocked
-    expected_transfer_list = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    expected_transfer_list = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     expected_transfer_list = expected_transfer_list[expected_transfer_list.index("Incoming"):].strip()
 
-    tester_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device().get_peer_name(peer_name)
+    tester_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().get_peer_name(peer_name)
 
     file_name = "/tmp/file_allowed"
     ssh_client.exec_command(f"echo > {file_name}")
@@ -1098,7 +1098,7 @@ def test_permissions_meshnet_receive_forbidden(peer_name):
 
     ssh_client.exec_command(f"rm -rf {file_name}")
 
-    actual_transfer_list = sh.nordvpn.fileshare.list().stdout.decode("utf-8")
+    actual_transfer_list = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
     actual_transfer_list = actual_transfer_list[actual_transfer_list.index("Incoming"):].strip()
 
     assert expected_transfer_list == actual_transfer_list
