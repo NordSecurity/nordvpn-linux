@@ -28,11 +28,11 @@ class Ssh:
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
     def exec_command(self, command: str) -> str:
-        _, stdout, stderr = self.client.exec_command(command, timeout=10)
+        _, stdout, stderr = self.client.exec_command(command, timeout=0.01)
         try:
             output = stdout.read().decode()
             error = stderr.read().decode()
-        except socket.TimeoutError as err:
+        except TimeoutError as err:
             stdout.close()
             stderr.close()
             raise RuntimeError("Socket timed out.") from err
