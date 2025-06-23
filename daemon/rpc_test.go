@@ -76,10 +76,13 @@ func testRPC() *RPC {
 	)
 	dm := testNewDataManager()
 	dm.SetServersData(time.Now(), serversList(), "")
+
+	cm := newMockConfigManager()
+
 	return NewRPC(
 		internal.Development,
 		&workingLoginChecker{},
-		newMockConfigManager(),
+		cm,
 		dm,
 		api,
 		&mockServersAPI{},
@@ -102,8 +105,8 @@ func testRPC() *RPC {
 		nil,
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),
-		vpn.NewInternalVPNEvents(),
 		state.NewConnectionInfo(),
+		NewConsentChecker(false, cm, api, &workingLoginChecker{}),
 	)
 }
 

@@ -3,6 +3,7 @@ package cli
 const (
 	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s --help' to see the options."
 	ArgumentParsingError = "The command you entered is not valid. Enter '%s --help' to see the options."
+	InputParsingError    = "Invalid response. Please answer with yes/no."
 
 	ClaimOnlinePurchaseSuccess = `You’re all set!
 You’ve successfully purchased the NordVPN subscription.
@@ -369,4 +370,21 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	SetPqAndMeshnet        = "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other."
 	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
 	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN, NordWhisper or obfuscated servers.\nThe feature is not compatible with Meshnet."
+
+	SetDefaultsLogoutFlagText = " Log out after restoring settings to their default values. Example: nordvpn set defaults --logout"
+
+	AnalyticsPolicyLink = "https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings_account-privacy_policy&nm=app&ns=nordvpn-linux-cli&nc=settings-privacy_policy"
+	MsgConsentAgreement = `We value your privacy.
+
+That's why we want to be transparent about what data you agree to give us. We only collect the bare minimum of information required to offer a smooth and stable VPN experience.
+
+By pressing "y" (yes), you allow us to collect and use limited app performance data. This helps us keep our features relevant to your needs and fix issues faster, as explained in our Privacy Policy. 
+` + AnalyticsPolicyLink + `
+
+Press "n" (no) to send only the essential data our app needs to work.
+
+Your browsing activities remain private, regardless of your choice.
+
+`
+	MsgConsentAgreementPrompt = "Do you allow us to collect and use limited app performance data? (y/n)"
 )

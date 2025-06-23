@@ -47,7 +47,6 @@ RUN dpkg --add-architecture i386 && \
 # dependency for `libxml2`, a proper library is loaded
 RUN ln -s /usr/lib/arm-linux-gnueabihf/libxml2.so /usr/lib/arm-linux-gnueabi/libxml2.so && \
     # Download and install musl to PATH (/usr/bin)
-    # Because i386 app compiled with Zig segfaults when linked against glibc during go runtime setup
     wget --progress=dot:giga "https://musl.cc/i686-linux-musl-cross.tgz" -O /tmp/musl.tar.gz && \
     echo "5047afc68170a2910895db2dfa448227e71a984bfa2130a1bc946fd1015d722b80b15e4abf90c64300815aa84fe781cc8b8a72f10174f9dce96169e035911880 /tmp/musl.tar.gz" | sha512sum -c - && \
     tar -xzf /tmp/musl.tar.gz -C /usr/lib && rm /tmp/musl.tar.gz && \

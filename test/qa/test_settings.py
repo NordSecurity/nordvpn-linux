@@ -1,5 +1,6 @@
 import pytest
 import sh
+import pexpect
 
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
@@ -20,7 +21,7 @@ def setup_function(function):  # noqa: ARG001
 def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
-    sh.nordvpn.set.defaults()
+    sh.nordvpn.set.defaults("--logout")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
@@ -72,7 +73,6 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set.routing("off")
     sh.nordvpn.set.dns("1.1.1.1")
     sh.nordvpn.set.analytics("off")
-    sh.nordvpn.set.ipv6("on")
     sh.nordvpn.set.notify("on")
     sh.nordvpn.set("virtual-location", "off")
 
@@ -82,8 +82,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     assert not settings.is_firewall_enabled()
     assert not settings.is_routing_enabled()
     assert not settings.is_dns_disabled()
-    assert not settings.are_analytics_enabled()
-    assert settings.is_ipv6_enabled()
+    assert settings.is_user_consent_declared()
     assert settings.is_notify_enabled()
     assert not settings.is_virtual_location_enabled()
 
@@ -95,7 +94,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     assert settings.app_has_defaults_settings()
 
@@ -111,7 +110,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     sh.nordvpn.set.autoconnect("on")
     sh.nordvpn.set.notify("on")
     sh.nordvpn.set.dns("1.1.1.1")
-    sh.nordvpn.set.ipv6("on")
     sh.nordvpn.set("virtual-location", "off")
 
     if tech == "nordlynx":
@@ -122,7 +120,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     assert settings.is_autoconnect_enabled()
     assert settings.is_notify_enabled()
     assert not settings.is_dns_disabled()
-    assert settings.is_ipv6_enabled()
     assert not settings.is_virtual_location_enabled()
 
     if tech == "nordlynx":
@@ -135,7 +132,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
 
     sh.nordvpn.logout("--persist-token")
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     assert settings.app_has_defaults_settings()
 
@@ -158,7 +155,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
 
     assert not settings.is_routing_enabled()
     assert not settings.is_dns_disabled()
-    assert not settings.are_analytics_enabled()
+    assert settings.is_user_consent_declared()
     assert settings.is_lan_discovery_enabled()
     assert not settings.is_virtual_location_enabled()
 
@@ -170,7 +167,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     assert "Status: Disconnected" in sh.nordvpn.status()
 
@@ -196,7 +193,7 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert network.is_available()
@@ -218,7 +215,7 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
 
     assert dns.is_set_for(nameserver)
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
 
     login.login_as("default")
 
@@ -229,13 +226,47 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
     assert not dns.is_set_for(nameserver)
 
 
+def test_set_analytics_starts_prompt_even_if_completed_before():
+    # first run: see prompt and respond
+    cli1 = pexpect.spawn("nordvpn", args=["set", "analytics"], encoding='utf-8', timeout=10)
+    cli1.expect(lib.USER_CONSENT_PROMPT)
+    output1 = cli1.before + cli1.after
+
+    assert (
+        lib.squash_whitespace(lib.EXPECTED_CONSENT_MESSAGE)
+        in lib.squash_whitespace(output1)
+    ), "Consent message did not match expected full output on first run"
+
+    cli1.sendline("n")
+    cli1.expect(pexpect.EOF)
+
+    # second run: should see the prompt again
+    cli2 = pexpect.spawn("nordvpn", args=["set", "analytics"], encoding='utf-8', timeout=10)
+    cli2.expect(lib.USER_CONSENT_PROMPT)
+    output2 = cli2.before + cli2.after
+
+    assert (
+        lib.squash_whitespace(lib.EXPECTED_CONSENT_MESSAGE)
+        in lib.squash_whitespace(output2)
+    ), "Consent message did not appear again on second run"
+
+    cli2.sendline("y")
+    cli2.expect(pexpect.EOF)
+
+
+def test_set_defaults_no_logout():
+    sh.nordvpn.set.defaults()
+
+    assert "Account Information" in sh.nordvpn.account()
+
+
 def test_set_analytics_off_on():
 
     assert "Analytics is set to 'disabled' successfully." in sh.nordvpn.set.analytics("off")
-    assert not settings.are_analytics_enabled()
+    assert not settings.is_user_consent_granted()
 
     assert "Analytics is set to 'enabled' successfully." in sh.nordvpn.set.analytics("on")
-    assert settings.are_analytics_enabled()
+    assert settings.is_user_consent_granted()
 
 
 def test_set_analytics_on_off_repeated():

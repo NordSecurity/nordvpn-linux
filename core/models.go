@@ -585,3 +585,16 @@ type Insights struct {
 type NameServers struct {
 	Servers []string `json:"servers"`
 }
+
+type CountryCode struct {
+	cc string
+}
+
+func NewCountryCode(code string) CountryCode {
+	cc := strings.ToLower(code)
+	return CountryCode{cc}
+}
+
+func (cc CountryCode) String() string {
+	return cc.cc
+}

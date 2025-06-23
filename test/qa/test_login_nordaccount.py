@@ -21,7 +21,7 @@ def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
-    sh.nordvpn.set.defaults()
+    sh.nordvpn.set.defaults("--logout")
     daemon.stop()
 
 
@@ -73,6 +73,7 @@ def test_selenium_login_callback(login_flag):
     browser = sel.browser_get()
 
     with lib.Defer(sel.browser_kill):
+        sh.nordvpn.set.analytics("on")
         # Get login link from NordVPN app, trim all spaces & chars after link itself
         login_link = sh.nordvpn.login(login_flag, _tty_out=False).strip().split(": ")[1]
         print(f"Login link: {login_link}\n")

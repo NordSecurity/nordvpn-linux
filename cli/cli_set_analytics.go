@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -19,17 +20,7 @@ const SetAnalyticsUsageText = "Help us improve by sending anonymous " +
 	"performance, and feature usage data – nothing that could " +
 	"identify you."
 
-// SetAnalytics
-func (c *cmd) SetAnalytics(ctx *cli.Context) error {
-	if ctx.NArg() != 1 {
-		return formatError(argsCountError(ctx))
-	}
-
-	flag, err := nstrings.BoolFromString(ctx.Args().First())
-	if err != nil {
-		return formatError(argsParseError(ctx))
-	}
-
+func (c *cmd) setAnalyticsFlag(flag bool) error {
 	resp, err := c.client.SetAnalytics(context.Background(), &pb.SetGenericRequest{Enabled: flag})
 	if err != nil {
 		return formatError(err)
@@ -43,5 +34,30 @@ func (c *cmd) SetAnalytics(ctx *cli.Context) error {
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Analytics", nstrings.GetBoolLabel(flag)))
 	}
+
 	return nil
+}
+
+func (c *cmd) setAnalyticsFlow() error {
+	fmt.Printf(MsgConsentAgreement)
+	flag := readForConfirmationBlockUntilValid(os.Stdin, MsgConsentAgreementPrompt)
+
+	return c.setAnalyticsFlag(flag)
+}
+
+// SetAnalytics
+func (c *cmd) SetAnalytics(ctx *cli.Context) error {
+	if ctx.NArg() > 1 {
+		return formatError(argsCountError(ctx))
+	}
+
+	if ctx.NArg() == 1 {
+		flag, err := nstrings.BoolFromString(ctx.Args().First())
+		if err != nil {
+			return formatError(argsParseError(ctx))
+		}
+		return c.setAnalyticsFlag(flag)
+	}
+
+	return c.setAnalyticsFlow()
 }

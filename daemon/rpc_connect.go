@@ -50,7 +50,7 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 
 	// set connection status to "Disconnected"
 	if didFail || err != nil {
-		r.vpnEvents.Disconnected.Publish(events.DataDisconnect{})
+		r.events.Service.Disconnect.Publish(events.DataDisconnect{})
 	}
 
 	return err
@@ -111,33 +111,11 @@ func (r *RPC) connect(
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
-
-	event := events.DataConnect{
-		APIHostname:                r.api.Base(),
-		Auto:                       false,
-		Protocol:                   cfg.AutoConnectData.Protocol,
-		Technology:                 cfg.Technology,
-		ThreatProtectionLite:       cfg.AutoConnectData.ThreatProtectionLite,
-		ResponseServersCount:       1,
-		ResponseTime:               0,
-		DurationMs:                 -1,
-		EventStatus:                events.StatusAttempt,
-		TargetServerSelection:      config.ServerSelectionRuleNone,
-		ServerFromAPI:              true,
-		TargetServerCity:           "",
-		TargetServerCountry:        "",
-		TargetServerCountryCode:    "",
-		TargetServerDomain:         "",
-		TargetServerGroup:          "",
-		TargetServerIP:             "",
-		TargetServerPick:           "",
-		TargetServerPickerResponse: "",
-	}
+	r.connectionInfo.SetInitialConnecting()
 
 	// Set status to "Connecting" and send the connection attempt event without details
 	// to inform clients about connection attempt as soon as possible so they can react.
 	// The details will be filled and delivered to clients later.
-	r.vpnEvents.Connected.Publish(event)
 
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
@@ -203,47 +181,45 @@ func (r *RPC) connect(
 		OpenVPNPassword:    tokenData.OpenVPNPassword,
 		NordLynxPrivateKey: tokenData.NordLynxPrivateKey,
 	}
-	var city string
-	if len(server.Locations) > 0 {
-		city = server.Locations[0].City.Name
-	}
 	serverData := vpn.ServerData{
 		IP:                subnet.Addr(),
 		Hostname:          server.Hostname,
-		Name:              server.Name,
-		Country:           country.Name,
-		CountryCode:       country.Code,
-		City:              city,
 		Protocol:          cfg.AutoConnectData.Protocol,
 		NordLynxPublicKey: server.NordLynxPublicKey,
 		Obfuscated:        cfg.AutoConnectData.Obfuscate,
-		OpenVPNVersion:    server.Version(),
-		VirtualLocation:   server.IsVirtualLocation(),
 		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
+		OpenVPNVersion:    server.Version(),
 		NordWhisperPort:   server.NordWhisperPort,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
 
-	event.ServerFromAPI = remote
-	event.TargetServerCity = country.City.Name
-	event.TargetServerCountry = country.Name
-	event.TargetServerDomain = server.Hostname
-	event.TargetServerIP = subnet.Addr().String()
-	event.DurationMs = getElapsedTime(connectingStartTime)
-
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
 
-	event.ServerFromAPI = remote
-	event.TargetServerSelection = determineServerSelectionRule(parameters)
-	event.TargetServerCity = country.City.Name
-	event.TargetServerCountry = country.Name
-	event.TargetServerCountryCode = country.Code
-	event.TargetServerDomain = server.Hostname
-	event.TargetServerGroup = determineTargetServerGroup(server, parameters)
-	event.TargetServerIP = subnet.Addr().String()
-	event.DurationMs = max(int(time.Since(connectingStartTime).Milliseconds()), 1)
+	city := country.City.Name
+	if len(server.Locations) > 0 {
+		city = server.Locations[0].City.Name
+	}
+
+	event := events.DataConnect{
+		Protocol:                cfg.AutoConnectData.Protocol,
+		Technology:              cfg.Technology,
+		ThreatProtectionLite:    cfg.AutoConnectData.ThreatProtectionLite,
+		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
+		DurationMs:              getElapsedTime(connectingStartTime),
+		EventStatus:             events.StatusAttempt,
+		TargetServerSelection:   determineServerSelectionRule(parameters),
+		ServerFromAPI:           remote,
+		IsVirtualLocation:       server.IsVirtualLocation(),
+		TargetServerCity:        city,
+		TargetServerCountry:     country.Name,
+		TargetServerCountryCode: country.Code,
+		TargetServerDomain:      server.Hostname,
+		TargetServerGroup:       determineTargetServerGroup(server, parameters),
+		TargetServerIP:          subnet.Addr(),
+		TargetServerName:        server.Name,
+	}
 
 	// Send the connection attempt event
 	r.events.Service.Connect.Publish(event)
@@ -283,6 +259,7 @@ func (r *RPC) connect(
 		)),
 		true, // here vpn connect - enable routing to local LAN
 	)
+
 	if err != nil {
 		event.DurationMs = getElapsedTime(connectingStartTime)
 		event.Error = err
@@ -294,7 +271,6 @@ func (r *RPC) connect(
 			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
-		r.vpnEvents.Disconnected.Publish(events.DataDisconnect{})
 		if err := srv.Send(&pb.Payload{
 			Type: t,
 			Data: data,

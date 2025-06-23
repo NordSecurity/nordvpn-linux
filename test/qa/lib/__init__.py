@@ -63,16 +63,8 @@ NORDWHISPER_TECHNOLOGY = [
     ("nordwhisper", "", ""),
 ]
 
-# no obfuscated servers with ipv6 2021/05/24
-TECHNOLOGIES_WITH_IPV6 = STANDARD_TECHNOLOGIES[:-1]
-
 # Used for test parametrization, when the same test has to be run for different threat protection lite settings.
 THREAT_PROTECTION_LITE = [
-    "on",
-    "off",
-]
-
-IPV6 = [
     "on",
     "off",
 ]
@@ -136,12 +128,26 @@ CITIES = [
     "Paris",
 ]
 
-# Used for testing, when specific server is offine.
-#
-# curl api.nordvpn.com/v1/servers\?limit=6000 -L | jq '[.[] | select((.ips | length) > 1)] | map(.hostname |= rtrimstr(".nordvpn.com")) | map(.hostname)'
-IPV6_SERVERS = [
-    "us9591", "us9592"
-]
+EXPECTED_CONSENT_MESSAGE = """
+We value your privacy.
+
+That's why we want to be transparent about what data you agree to give us. We only collect the bare minimum of information required to offer a smooth and stable VPN experience.
+
+By pressing "y" (yes), you allow us to collect and use limited app performance data. This helps us keep our features relevant to your needs and fix issues faster, as explained in our Privacy Policy.
+https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings_account-privacy_policy&nm=app&ns=nordvpn-linux-cli&nc=settings-privacy_policy
+
+Press "n" (no) to send only the essential data our app needs to work.
+
+Your browsing activities remain private, regardless of your choice.
+"""
+WE_VALUE_YOUR_PRIVACY_MSG = "We value your privacy"
+USER_CONSENT_PROMPT = "Do you allow us to collect and use limited app performance data\? \(y/n\)"
+
+
+class UserConsentMode(str, Enum):
+    ENABLED = "enabled"
+    DISABLED = "disabled"
+    UNDEFINED = "undefined"
 
 
 class Protocol(Enum):
@@ -250,13 +256,6 @@ def set_threat_protection_lite(dns):
 def set_dns(dns):
     try:
         print(sh.nordvpn.set.dns(dns))
-    except sh.ErrorReturnCode_1 as ex:
-        print("WARNING:", ex)
-
-
-def set_ipv6(ipv6):
-    try:
-        print(sh.nordvpn.set.ipv6(ipv6))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 
@@ -385,3 +384,8 @@ def technology_to_upper_camel_case(tech: str) -> str:
             return "OpenVPN"
         case "NORDWHISPER":
             return "NordWhisper"
+
+
+def squash_whitespace(text: str) -> str:
+    """Normalize whitespace by collapsing all sequences of whitespace into single spaces."""
+    return ' '.join(text.split())

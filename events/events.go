@@ -64,36 +64,25 @@ const (
 )
 
 type DataConnect struct {
-	IsMeshnetPeer              bool
-	APIHostname                string
-	Auto                       bool
-	ThreatProtectionLite       bool
-	Protocol                   config.Protocol
-	ResponseServersCount       int
-	ResponseTime               int
-	DurationMs                 int
-	ServerFromAPI              bool
-	EventStatus                TypeEventStatus
-	TargetServerSelection      config.ServerSelectionRule
-	Technology                 config.Technology
-	TargetServerCity           string
-	TargetServerCountry        string
-	TargetServerCountryCode    string
-	TargetServerDomain         string
-	TargetServerGroup          string
-	TargetServerIP             string
-	TargetServerPick           string
-	TargetServerPickerResponse string
-	TargetServerName           string
-	Error                      error
-	IsVirtualLocation          bool
-	IsObfuscated               bool
-	IsPostQuantum              bool
-	IP                         netip.Addr
-	Name                       string
-	Hostname                   string
-	StartTime                  *time.Time
-	TunnelName                 string
+	IsMeshnetPeer           bool
+	ThreatProtectionLite    bool
+	Protocol                config.Protocol
+	DurationMs              int
+	ServerFromAPI           bool
+	EventStatus             TypeEventStatus
+	TargetServerSelection   config.ServerSelectionRule
+	Technology              config.Technology
+	TargetServerCity        string
+	TargetServerCountry     string
+	TargetServerCountryCode string
+	TargetServerDomain      string
+	TargetServerGroup       string
+	TargetServerIP          netip.Addr
+	TargetServerName        string
+	Error                   error
+	IsVirtualLocation       bool
+	IsObfuscated            bool
+	IsPostQuantum           bool
 }
 
 // DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus

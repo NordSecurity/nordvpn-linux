@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -21,9 +22,10 @@ type InternalStateChangeNotif interface {
 // and provides notifications about changes for the internal listeners
 // whenver an update of connection status happens
 type ConnectionInfo struct {
-	status        types.ConnectionStatus
-	mu            sync.RWMutex
-	internalNotif events.PublishSubcriber[events.DataConnectChangeNotif]
+	status         types.ConnectionStatus
+	fullyConnected bool
+	mu             sync.RWMutex
+	internalNotif  events.PublishSubcriber[events.DataConnectChangeNotif]
 }
 
 func NewConnectionInfo() *ConnectionInfo {
@@ -63,35 +65,49 @@ func (cs *ConnectionInfo) Status() types.ConnectionStatus {
 	return status
 }
 
-func (cs *ConnectionInfo) setStatus(s types.ConnectionStatus) {
+func (cs *ConnectionInfo) setStatus(s types.ConnectionStatus, fullyConnected bool) {
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
+	if s.State != pb.ConnectionState_DISCONNECTED {
+		// Don't override tunnel name as it comes from internal events
+		s.TunnelName = cs.status.TunnelName
+	}
 	cs.status = s
+	cs.fullyConnected = fullyConnected
+}
+
+// SetInitialConnecting should be executed as soon as connection started, even when no target server
+// is known yet.
+func (c *ConnectionInfo) SetInitialConnecting() {
+	status := types.ConnectionStatus{State: pb.ConnectionState_CONNECTING}
+	c.setStatus(status, false)
+	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
 }
 
 func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) error {
 	var startTime *time.Time = nil
-	var Rx uint64 = 0
-	var Tx uint64 = 0
 
-	//invariant: for DataConnect possible values of EvenStatus are either connected or connecting
-	connectionStatus := pb.ConnectionState_CONNECTING
-	if e.EventStatus == events.StatusSuccess {
+	fullyConnected := false
+	var connectionStatus pb.ConnectionState
+	switch e.EventStatus {
+	case events.StatusAttempt:
+		connectionStatus = pb.ConnectionState_CONNECTING
+	case events.StatusCanceled, events.StatusFailure:
+		connectionStatus = pb.ConnectionState_DISCONNECTED
+	case events.StatusSuccess:
 		connectionStatus = pb.ConnectionState_CONNECTED
 		start := time.Now()
 		startTime = &start
-		if e.TunnelName != "" {
-			Tx, Rx = c.getTransferRatesForTunnel(e.TunnelName)
-		}
+		fullyConnected = true
 	}
 
 	status := types.ConnectionStatus{
 		State:             connectionStatus,
 		Technology:        e.Technology,
 		Protocol:          e.Protocol,
-		IP:                e.IP,
-		Name:              e.Name,
-		Hostname:          e.Hostname,
+		IP:                e.TargetServerIP,
+		Name:              e.TargetServerName,
+		Hostname:          e.TargetServerDomain,
 		Country:           e.TargetServerCountry,
 		CountryCode:       e.TargetServerCountryCode,
 		City:              e.TargetServerCity,
@@ -99,23 +115,56 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 		IsVirtualLocation: e.IsVirtualLocation,
 		IsPostQuantum:     e.IsPostQuantum,
 		IsObfuscated:      e.IsObfuscated,
-		TunnelName:        e.TunnelName,
 		IsMeshnetPeer:     e.IsMeshnetPeer,
-		Rx:                Rx,
-		Tx:                Tx,
 	}
-	c.setStatus(status)
+
+	c.setStatus(status, fullyConnected)
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
 	return nil
 }
 
 func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(events.DataDisconnect) error {
 	status := types.ConnectionStatus{
-		State:     pb.ConnectionState_DISCONNECTED,
-		StartTime: nil,
+		State:      pb.ConnectionState_DISCONNECTED,
+		TunnelName: "",
+		StartTime:  nil,
 	}
-	c.setStatus(status)
+	c.setStatus(status, false)
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
+	return nil
+}
+
+func (c *ConnectionInfo) ConnectionStatusNotifyInternalConnect(
+	e vpn.ConnectEvent,
+) error {
+	state := pb.ConnectionState_CONNECTED
+	if e.Status != events.StatusSuccess {
+		state = pb.ConnectionState_CONNECTING
+	}
+	return c.notifyInternalState(state, e.TunnelName)
+}
+
+func (c *ConnectionInfo) ConnectionStatusNotifyInternalDisconnect(
+	status events.TypeEventStatus,
+) error {
+	// Currently only StatusSuccess is being reported in case disconnect fails internally
+	return c.notifyInternalState(pb.ConnectionState_DISCONNECTED, "")
+}
+
+func (c *ConnectionInfo) notifyInternalState(
+	state pb.ConnectionState,
+	tunnelName string,
+) error {
+	c.mu.Lock()
+	// Always set tunnelName as internal event may be shot before the real event
+	c.status.TunnelName = tunnelName
+	if !c.fullyConnected {
+		c.mu.Unlock()
+		return nil
+	}
+	c.status.State = state
+	c.mu.Unlock()
+	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: c.status})
 	return nil
 }
 

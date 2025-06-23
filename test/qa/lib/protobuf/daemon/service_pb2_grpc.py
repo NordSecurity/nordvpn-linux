@@ -93,7 +93,7 @@ class DaemonStub(object):
         self.IsLoggedIn = channel.unary_unary(
                 '/pb.Daemon/IsLoggedIn',
                 request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Bool.FromString,
+                response_deserializer=login__pb2.IsLoggedInResponse.FromString,
                 _registered_method=True)
         self.LoginWithToken = channel.unary_unary(
                 '/pb.Daemon/LoginWithToken',
@@ -108,7 +108,7 @@ class DaemonStub(object):
         self.LoginOAuth2Callback = channel.unary_unary(
                 '/pb.Daemon/LoginOAuth2Callback',
                 request_serializer=login__pb2.LoginOAuth2CallbackRequest.SerializeToString,
-                response_deserializer=common__pb2.Empty.FromString,
+                response_deserializer=login__pb2.LoginOAuth2CallbackResponse.FromString,
                 _registered_method=True)
         self.Logout = channel.unary_unary(
                 '/pb.Daemon/Logout',
@@ -585,7 +585,7 @@ def add_DaemonServicer_to_server(servicer, server):
             'IsLoggedIn': grpc.unary_unary_rpc_method_handler(
                     servicer.IsLoggedIn,
                     request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Bool.SerializeToString,
+                    response_serializer=login__pb2.IsLoggedInResponse.SerializeToString,
             ),
             'LoginWithToken': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginWithToken,
@@ -600,7 +600,7 @@ def add_DaemonServicer_to_server(servicer, server):
             'LoginOAuth2Callback': grpc.unary_unary_rpc_method_handler(
                     servicer.LoginOAuth2Callback,
                     request_deserializer=login__pb2.LoginOAuth2CallbackRequest.FromString,
-                    response_serializer=common__pb2.Empty.SerializeToString,
+                    response_serializer=login__pb2.LoginOAuth2CallbackResponse.SerializeToString,
             ),
             'Logout': grpc.unary_unary_rpc_method_handler(
                     servicer.Logout,
@@ -1005,7 +1005,7 @@ class Daemon(object):
             target,
             '/pb.Daemon/IsLoggedIn',
             common__pb2.Empty.SerializeToString,
-            common__pb2.Bool.FromString,
+            login__pb2.IsLoggedInResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1086,7 +1086,7 @@ class Daemon(object):
             target,
             '/pb.Daemon/LoginOAuth2Callback',
             login__pb2.LoginOAuth2CallbackRequest.SerializeToString,
-            common__pb2.Empty.FromString,
+            login__pb2.LoginOAuth2CallbackResponse.FromString,
             options,
             channel_credentials,
             insecure,

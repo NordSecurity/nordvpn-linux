@@ -13,7 +13,6 @@ import (
 
 	quenchBindigns "quench"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -97,18 +96,6 @@ func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	}
 }
 
-func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataConnect {
-	event := vpn.GetDataConnectEvent(config.Technology_NORDWHISPER,
-		config.Protocol_Webtunnel,
-		status,
-		o.currentServer,
-		false)
-
-	event.TunnelName = o.nicName
-
-	return event
-}
-
 func (o *observer) Connecting(uint32) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -120,7 +107,10 @@ func (o *observer) Connecting(uint32) {
 	}
 
 	o.notifyConnectionStateChange(vpn.ConnectingState)
-	o.eventNotifier.Connected.Publish(o.getConnectEvent(events.StatusAttempt))
+	o.eventNotifier.Connected.Publish(vpn.ConnectEvent{
+		Status:     events.StatusAttempt,
+		TunnelName: o.nicName,
+	})
 }
 
 func (o *observer) Connected(uint32) {
@@ -130,7 +120,10 @@ func (o *observer) Connected(uint32) {
 	o.notifyConnectionStateChange(vpn.ConnectedState)
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "connected")
-	o.eventNotifier.Connected.Publish(o.getConnectEvent(events.StatusSuccess))
+	o.eventNotifier.Connected.Publish(vpn.ConnectEvent{
+		Status:     events.StatusSuccess,
+		TunnelName: o.nicName,
+	})
 }
 
 func (o *observer) Disconnected(_ uint32, reason quenchBindigns.DisconnectReason) {
@@ -141,16 +134,7 @@ func (o *observer) Disconnected(_ uint32, reason quenchBindigns.DisconnectReason
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "disconnected:", reason)
 
-	byUser := false
-	if reason == quenchBindigns.DisconnectReasonDisconnectRequested {
-		byUser = true
-	}
-
-	o.eventNotifier.Disconnected.Publish(events.DataDisconnect{
-		ByUser:     byUser,
-		Technology: config.Technology_NORDWHISPER,
-		Protocol:   config.Protocol_Webtunnel,
-	})
+	o.eventNotifier.Disconnected.Publish(events.StatusSuccess)
 }
 
 type Quench struct {

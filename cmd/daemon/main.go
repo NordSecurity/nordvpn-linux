@@ -279,32 +279,9 @@ func main() {
 	dnsSetter := dns.NewSetter(infoSubject)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
-	eventsDbPath := filepath.Join(internal.DatFilesPath, "moose.db")
-	// TODO: remove once this is fixed: https://github.com/ziglang/zig/issues/11878
-	// P.S. this issue does not happen with Zig 0.10.0, but it requires Go 1.19+
-	if !internal.FileExists(eventsDbPath) {
-		_, err := internal.FileCreate(eventsDbPath, internal.PermUserRWGroupRWOthersR)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	} else {
-		// Previously we created this file only with R permission for group, but fileshare daemon
-		// which runs with user permissions also needs to write to it. Need to always rewrite permission
-		// because of users updating from older version.
-		err = os.Chmod(eventsDbPath, internal.PermUserRWGroupRWOthersR)
-		if err != nil {
-			log.Println(err)
-		}
-
-		gid, err := internal.GetNordvpnGid()
-		if err != nil {
-			log.Println(err)
-		}
-
-		err = os.Chown(eventsDbPath, os.Getuid(), gid)
-		if err != nil {
-			log.Println(err)
-		}
+	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
+	if err := assignMooseDBPermissions(eventsDbPath); err != nil {
+		log.Fatalln(err)
 	}
 
 	machineID := machineIdGenerator.GetMachineID()
@@ -379,6 +356,8 @@ func main() {
 	statePublisher := state.NewState()
 	internalVpnEvents.Subscribe(connectionInfo)
 	connectionInfo.Subscribe(statePublisher)
+	daemonEvents.Service.Connect.Subscribe(connectionInfo.ConnectionStatusNotifyConnect)
+	daemonEvents.Service.Disconnect.Subscribe(connectionInfo.ConnectionStatusNotifyDisconnect)
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
 
@@ -481,6 +460,14 @@ func main() {
 		dataUpdateEvents,
 	)
 
+	consentChecker := newConsentChecker(
+		internal.IsDevEnv(Environment),
+		fsystem,
+		defaultAPI,
+		authChecker,
+	)
+	consentChecker.PrepareDaemonIfConsentNotCompleted()
+
 	sharedContext := sharedctx.New()
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
@@ -506,8 +493,8 @@ func main() {
 		statePublisher,
 		sharedContext,
 		rcConfig,
-		internalVpnEvents,
 		connectionInfo,
+		consentChecker,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
@@ -559,6 +546,7 @@ func main() {
 
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
+
 	// Start jobs
 
 	go func() {
@@ -656,4 +644,28 @@ func main() {
 	if err := analytics.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
 	}
+}
+
+// assignMooseDBPermissions updates moose DB permissions.
+// If the file doesn't exist it will be created withe the desired permissions.
+func assignMooseDBPermissions(eventsDbPath string) error {
+	const permissions os.FileMode = internal.PermUserRWGroupRW
+
+	if !internal.FileExists(eventsDbPath) {
+		_, err := internal.FileCreate(eventsDbPath, permissions)
+		return err
+	}
+	// Change permission of the existing DB, because older versions had read for everyone
+	if err := os.Chmod(eventsDbPath, permissions); err != nil {
+		log.Println(err)
+	}
+
+	if gid, err := internal.GetNordvpnGid(); err == nil {
+		if err := os.Chown(eventsDbPath, os.Getuid(), gid); err != nil {
+			log.Println(err)
+		}
+	} else {
+		log.Println(err)
+	}
+	return nil
 }
