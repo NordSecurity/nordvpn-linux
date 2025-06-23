@@ -20,9 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"os/exec"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -587,9 +589,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 //   - e: The MooseDebuggerEvent containing JSON data and context paths to process
 func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
 	combinedPaths := append([]string{}, e.GeneralContextPaths...)
-
 	key := moose.MooseNordvpnappGetDeveloperContextKey()
-
 	for _, ctx := range e.KeyBasedContextPaths {
 		path := fmt.Sprintf("%s.%s", key, ctx.Path)
 		switch v := ctx.Value.(type) {
@@ -599,17 +599,19 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
 		case float32:
 			moose.MooseNordvpnappSetDeveloperEventContextFloat(path, v)
 			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
-		case int32:
-			moose.MooseNordvpnappSetDeveloperEventContextInt(path, v)
-			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
-		case int64:
-			moose.MooseNordvpnappSetDeveloperEventContextLong(path, v)
-			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
+		//deliberately omitted uint64
+		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32:
+			val := reflect.ValueOf(v).Int()
+			if val > math.MaxInt32 {
+				moose.MooseNordvpnappSetDeveloperEventContextLong(path, int64(val))
+			} else {
+				moose.MooseNordvpnappSetDeveloperEventContextInt(path, int32(val))
+			}
 		case string:
 			moose.MooseNordvpnappSetDeveloperEventContextString(path, v)
 			combinedPaths = append(combinedPaths, fmt.Sprintf("%s.%s", key, ctx.Path))
 		default:
-			log.Println(internal.WarningPrefix, "Discarding unssupported type (%T) on path: %s", ctx.Value, path)
+			log.Printf("%s Discarding unssupported type (%T) on path: %s", internal.WarningPrefix, ctx.Value, path)
 		}
 	}
 	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))

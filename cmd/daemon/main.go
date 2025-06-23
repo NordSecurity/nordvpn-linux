@@ -316,7 +316,6 @@ func main() {
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
 	daemonEvents.Subscribe(analytics)
-	daemonEvents.MooseDeveloper.Subscribe(analytics)
 
 	firstopen.RegisterNotifier(
 		fsystem,
@@ -610,7 +609,6 @@ func main() {
 	}()
 	rpc.StartJobs(statePublisher, heartBeatSubject)
 
-	daemonEvents.MooseDeveloper.DeveloperEvents.Publish(events.MooseDebuggerEvent{})
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {
