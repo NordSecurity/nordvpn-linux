@@ -111,7 +111,7 @@ func NewEvents(
 			MFA:    mfa,
 		},
 		MooseDebugger: &MooseDebuggerEvents{
-			DeveloperEvents: mooseDevLogs,
+			DebuggerEvents: mooseDevLogs,
 		},
 	}
 }
@@ -243,11 +243,11 @@ type MooseDebuggerPublisher interface {
 }
 
 type MooseDebuggerEvents struct {
-	DeveloperEvents events.PublishSubcriber[events.MooseDebuggerEvent]
+	DebuggerEvents events.PublishSubcriber[events.MooseDebuggerEvent]
 }
 
 func (m *MooseDebuggerEvents) Subscribe(to MooseDebuggerPublisher) {
-	m.DeveloperEvents.Subscribe(to.NotifyDebuggerEvent)
+	m.DebuggerEvents.Subscribe(to.NotifyDebuggerEvent)
 }
 
 // Login/logout changes
