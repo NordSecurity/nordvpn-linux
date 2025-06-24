@@ -47,10 +47,7 @@ func (DistroImpl) ReleaseName() (string, error) {
 	}
 
 	var release osRelease
-	if err := (&release).unmarshalText(data); err != nil {
-		return "", err
-	}
-
+	release.unmarshalText(data)
 	return release.Name, nil
 }
 
@@ -61,10 +58,7 @@ func (DistroImpl) ReleasePrettyName() (string, error) {
 	}
 
 	var release osRelease
-	if err := (&release).unmarshalText(data); err != nil {
-		return "", err
-	}
-
+	release.unmarshalText(data)
 	return release.PrettyName, nil
 }
 
@@ -72,7 +66,7 @@ func (DistroImpl) KernelName() string { return uname("-sr") }
 
 func (DistroImpl) KernelFull() string { return uname("-a") }
 
-func (o *osRelease) unmarshalText(text []byte) error {
+func (o *osRelease) unmarshalText(text []byte) {
 	for _, line := range bytes.Split(bytes.TrimSpace(text), []byte("\n")) {
 		key, value, ok := bytes.Cut(line, []byte("="))
 		if !ok {
@@ -89,7 +83,6 @@ func (o *osRelease) unmarshalText(text []byte) error {
 			// ignore undefined fields
 		}
 	}
-	return nil
 }
 
 // uname returns operating system information from uname executable

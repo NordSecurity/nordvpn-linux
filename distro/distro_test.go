@@ -63,8 +63,7 @@ func TestOsRelease_UnmarshalText(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var release osRelease
-			err := (&release).UnmarshalText([]byte(test.input))
-			assert.Equal(t, test.err, err)
+			release.unmarshalText([]byte(test.input))
 			assert.EqualValues(t, test.output, release)
 		})
 	}
