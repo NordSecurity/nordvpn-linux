@@ -21,7 +21,7 @@ def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
 
-    sh.nordvpn.set.defaults("--logout")
+    sh.nordvpn.set.defaults("--logout", "--off-killswitch")
     daemon.stop()
 
 

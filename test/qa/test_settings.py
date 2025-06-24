@@ -374,3 +374,30 @@ def test_autoconnect_disable_twice(tech, proto, obfuscated):
     output = sh.nordvpn.set.autoconnect.off()
     print(str(output))
     assert settings.MSG_AUTOCONNECT_DISABLE_FAIL in str(output)
+
+
+@pytest.mark.parametrize("killswitch_initial", [True, False])
+@pytest.mark.parametrize("killswitch_flag", [True,False])
+def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag):
+    try:
+        sh.nordvpn.set.killswitch(str(killswitch_initial))
+    except sh.ErrorReturnCode_1 as ex:
+        assert "Kill Switch is already set to" in str(ex.value), "Unexpected error returned by 'set killswitch'. Expected 'Killswitch already set to enabled/disabled."
+
+    if killswitch_flag:
+        sh.nordvpn.set.defaults("--off-killswitch")
+    else:
+        sh.nordvpn.set.defaults()
+
+    # if killswitch enabled flag disabled - state disabled
+    # if killswitch enabled flag enabled - state enabled
+    # if killswitch disabled flag disabled - state disabled
+    # if killswitch disabled flag enabled - state disabled
+
+    expected_killswitch_state = killswitch_initial and not killswitch_flag
+
+    assert daemon.is_killswitch_on() is expected_killswitch_state
+    if expected_killswitch_state:
+        assert network.is_not_available(2) is True
+    else:
+        assert network.is_available(2) is True
