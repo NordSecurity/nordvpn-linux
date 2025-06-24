@@ -64,7 +64,7 @@ def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
 
     assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults("--logout")
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(True)
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -94,7 +94,7 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
 
     assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults("--logout")
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(True)
 
 
 # This doesn't directly test meshnet, but it uses it

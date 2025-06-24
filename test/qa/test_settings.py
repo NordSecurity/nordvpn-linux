@@ -193,7 +193,7 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout", "--off-killswitch")
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert network.is_available()
@@ -389,15 +389,7 @@ def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag
     else:
         sh.nordvpn.set.defaults()
 
-    # if killswitch enabled flag disabled - state disabled
-    # if killswitch enabled flag enabled - state enabled
-    # if killswitch disabled flag disabled - state disabled
-    # if killswitch disabled flag enabled - state disabled
-
     expected_killswitch_state = killswitch_initial and not killswitch_flag
 
     assert daemon.is_killswitch_on() is expected_killswitch_state
-    if expected_killswitch_state:
-        assert network.is_not_available(2) is True
-    else:
-        assert network.is_available(2) is True
+    assert network.is_not_available(2) is expected_killswitch_state

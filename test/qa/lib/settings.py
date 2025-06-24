@@ -142,7 +142,8 @@ def is_post_quantum_disabled():
     return Settings().get("Post-quantum VPN") == "disabled"
 
 
-def app_has_defaults_settings():
+def app_has_defaults_settings(expectedKillswitch = False):
+    expected_killswitch_string = "enabled" if expectedKillswitch else "disabled"
     """Returns True, if application settings match the default settings."""
     settings = sh.nordvpn.settings()
     return (
@@ -152,7 +153,7 @@ def app_has_defaults_settings():
         "Routing: enabled" in settings and
         # User Consent is not restored to default on reset
         ("User Consent: enabled" in settings or "User Consent: disabled" in settings) and
-        "Kill Switch: disabled" in settings and
+        f"Kill Switch: {expected_killswitch_string}" in settings and
         "Threat Protection Lite: disabled" in settings and
         "Notify: enabled" in settings and
         "Tray: enabled" in settings and
