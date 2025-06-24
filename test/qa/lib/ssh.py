@@ -1,7 +1,6 @@
 import contextlib
 import json
 import time
-import socket
 from collections import namedtuple
 
 import paramiko
