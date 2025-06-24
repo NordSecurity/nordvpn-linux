@@ -200,7 +200,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
 
-	distroVersion, err := distro.ReleasePrettyName()
+	distroVersion, err := distro.NewDistro().ReleasePrettyName()
 	if err != nil {
 		return fmt.Errorf("determining device os: %w", err)
 	}

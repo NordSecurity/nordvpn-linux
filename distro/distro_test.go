@@ -11,13 +11,13 @@ import (
 func TestKernelName(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	assert.Equal(t, uname("-sr"), KernelName())
+	assert.Equal(t, uname("-sr"), NewDistro().KernelName())
 }
 
 func TestKernelFull(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	assert.Equal(t, uname("-a"), KernelFull())
+	assert.Equal(t, uname("-a"), NewDistro().KernelFull())
 }
 
 func TestOsRelease_UnmarshalText(t *testing.T) {

@@ -116,7 +116,7 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		privateKey = r.gen.Private()
 	}
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	distroName, err := distro.ReleaseName()
+	distroName, err := distro.NewDistro().ReleaseName()
 	if err != nil {
 		return err
 	}

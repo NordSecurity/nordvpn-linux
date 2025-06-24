@@ -206,8 +206,10 @@ func main() {
 			log.Fatalln("Error on creating validator:", err)
 		}
 	}
-
-	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
+	userAgent, err := request.GetUserAgentValue(Version, distro.NewDistro())
+	if err != nil {
+		log.Fatalln("Error on getting user agent value:", err)
+	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
