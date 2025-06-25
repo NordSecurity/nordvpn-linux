@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"sync"
 
@@ -18,6 +17,7 @@ import (
 type CDN interface {
 	ThreatProtectionLite() (*NameServers, error)
 	ConfigTemplate(isObfuscated bool, method string) (http.Header, []byte, error)
+	GetRemoteFile(name string) ([]byte, error)
 }
 
 type CDNAPI struct {
@@ -124,7 +124,7 @@ func (api *CDNAPI) ConfigTemplate(isObfuscated bool, method string) (http.Header
 	if err != nil {
 		return nil, nil, err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -139,7 +139,7 @@ func (api *CDNAPI) ThreatProtectionLite() (*NameServers, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -151,4 +151,19 @@ func (api *CDNAPI) ThreatProtectionLite() (*NameServers, error) {
 	}
 
 	return &servers, nil
+}
+
+func (api *CDNAPI) GetRemoteFile(name string) ([]byte, error) {
+	resp, err := api.request(name, http.MethodGet)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
 }

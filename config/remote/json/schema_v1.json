@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "nordvpn-linux-app-remote-config",
+  "title": "nordvpn-linux-app-remote-config v1",
+  "description": "nordvpn-linux-app-remote-config v1",
+  "$comment": "",
+  "type": "object",
+  "required": [
+    "configs"
+  ],
+  "properties": {
+    "version": {
+      "description": "you can change this to force new hash without changing configs",
+      "type": "integer"
+    },
+    "configs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/config"
+      }
+    }
+  },
+  "definitions": {
+    "config": {
+      "type": "object",
+      "required": [
+        "name",
+        "value_type",
+        "settings"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of feature config or parameter name, must be unique",
+          "minLength": 1,
+          "pattern": "([A-Za-z0-9_-]+)"
+        },
+        "value_type": {
+          "description": "Type of value (type of settings[0].value)",
+          "type": "string",
+          "enum": [
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "file"
+          ]
+        },
+        "settings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "value",
+              "app_version",
+              "weight"
+            ],
+            "properties": {
+              "value": {
+                "type": [
+                  "boolean",
+                  "integer",
+                  "string",
+                  "number",
+                  "array",
+                  "object"
+                ]
+              },
+              "app_version": {
+                "type": "string",
+                "description": "From or for which app version this flag is for. Must be parsable by semver.validRange()",
+                "examples": [
+                  "*",
+                  ">=3.19.0",
+                  "3.20.1"
+                ]
+              },
+              "weight": {
+                "type": "integer",
+                "description": "Higher weight = Higher priority for that value (integer)"
+              },
+              "rollout": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Which users to apply to"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
