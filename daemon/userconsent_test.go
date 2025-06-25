@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/auth"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/insights"
 	"github.com/stretchr/testify/assert"
 )
@@ -64,7 +65,14 @@ func TestIsConsentFlowCompleted(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			consentChecker := NewConsentChecker(false, tt.manager, &insights.InsightsMock{}, &auth.AuthCheckerMock{})
+			analytics := events.NewAnalytics(config.ConsentUndefined)
+			consentChecker := NewConsentChecker(
+				false,
+				tt.manager,
+				&insights.InsightsMock{},
+				&auth.AuthCheckerMock{},
+				&analytics,
+			)
 			got := consentChecker.IsConsentFlowCompleted()
 			assert.Equal(t, got, tt.expected)
 		})
@@ -133,19 +141,73 @@ func TestConsentModeFromUserLocation(t *testing.T) {
 	}
 }
 
-func TestSetConsentTrue(t *testing.T) {
-	category.Set(t, category.Unit)
-	cm := &mock.ConfigManager{Cfg: &config.Config{AnalyticsConsent: config.ConsentUndefined}}
-	acc := &AnalyticsConsentChecker{cm: cm}
-	assert.False(t, cm.Saved)
-	assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentUndefined)
+func TestSetConsentGranted(t *testing.T) {
+	tests := []struct {
+		name              string
+		initialState      config.AnalyticsConsent
+		enableErr         error
+		saveErr           error
+		expectedErr       error
+		expectedState     config.AnalyticsConsent
+		expectedSaved     bool
+		expectedConsentIn config.AnalyticsConsent
+	}{
+		{
+			name:              "analytics is enabled and config is saved on success",
+			initialState:      config.ConsentUndefined,
+			expectedErr:       nil,
+			expectedState:     config.ConsentGranted,
+			expectedSaved:     true,
+			expectedConsentIn: config.ConsentGranted,
+		},
+		{
+			name:          "analytics enable fails -> config is not saved",
+			initialState:  config.ConsentUndefined,
+			enableErr:     errors.New("enable error"),
+			expectedErr:   errors.New("enable error"),
+			expectedState: config.ConsentUndefined,
+			expectedSaved: false,
+		},
+		{
+			name:              "config save fails",
+			initialState:      config.ConsentUndefined,
+			saveErr:           errors.New("save error"),
+			expectedErr:       errors.New("save error"),
+			expectedState:     config.ConsentGranted,
+			expectedSaved:     false,
+			expectedConsentIn: config.ConsentUndefined,
+		},
+	}
 
-	err := acc.setConsentGranted()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			analytics := &events.Analytics{
+				State:     tt.initialState,
+				EnableErr: tt.enableErr,
+			}
+			cm := mock.NewMockConfigManager()
+			cm.SaveErr = tt.saveErr
+			acc := &AnalyticsConsentChecker{
+				analytics: analytics,
+				cm:        cm,
+			}
 
-	assert.NoError(t, err)
-	assert.True(t, cm.Saved)
-	assert.NotNil(t, cm.Cfg.AnalyticsConsent)
-	assert.Equal(t, cm.Cfg.AnalyticsConsent, config.ConsentGranted)
+			err := acc.setConsentGranted()
+
+			if tt.expectedErr != nil {
+				assert.EqualError(t, err, tt.expectedErr.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.expectedState, analytics.State)
+			assert.Equal(t, tt.expectedSaved, cm.Saved)
+
+			if cm.Cfg != nil {
+				assert.Equal(t, tt.expectedConsentIn, cm.Cfg.AnalyticsConsent)
+			}
+		})
+	}
 }
 
 func TestDoLightLogout(t *testing.T) {
@@ -155,7 +217,8 @@ func TestDoLightLogout(t *testing.T) {
 		AutoConnectData: config.AutoConnectData{ID: 42},
 	}
 	cm := &mock.ConfigManager{Cfg: &cfg}
-	acc := &AnalyticsConsentChecker{cm: cm}
+	analytics := events.NewAnalytics(config.ConsentUndefined)
+	acc := &AnalyticsConsentChecker{cm: cm, analytics: &analytics}
 	assert.False(t, cm.Saved)
 	assert.True(t, len(cm.Cfg.TokensData) > 0)
 	assert.True(t, cm.Cfg.AutoConnectData.ID != 0)
@@ -234,8 +297,9 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 			cm := &mock.ConfigManager{Cfg: &tt.initialConfig, LoadErr: tt.loadErr}
 			api := tt.apiInsights
 			authChk := &auth.AuthCheckerMock{LoggedIn: tt.authLoggedIn}
+			analytics := events.NewAnalytics(config.ConsentUndefined)
 
-			acc := &AnalyticsConsentChecker{cm: cm, insightsAPI: api, authChecker: authChk}
+			acc := &AnalyticsConsentChecker{cm: cm, insightsAPI: api, authChecker: authChk, analytics: &analytics}
 			acc.PrepareDaemonIfConsentNotCompleted()
 
 			assert.Equal(t, cm.Saved, tt.expectedSaved)
