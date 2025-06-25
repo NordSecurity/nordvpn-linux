@@ -11,24 +11,23 @@ const etcOSReleaseFile = "/etc/os-release"
 
 // HostName retrieves the standard name of the currently running operating system.
 func HostOSName() (string, error) {
-	file, err := os.Open(etcOSReleaseFile)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-
-	return readTagFromOSRelease(file, "NAME")
+	return readOSReleaseTag("NAME")
 }
 
 // HostOSPrettyName retrieves the human-readable OS name.
 func HostOSPrettyName() (string, error) {
+	return readOSReleaseTag("PRETTY_NAME")
+}
+
+// readOSReleaseTag opens the 'etcOSReleaseFile' file and retrieves the specified tag.
+func readOSReleaseTag(tag string) (string, error) {
 	file, err := os.Open(etcOSReleaseFile)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
 
-	return readTagFromOSRelease(file, "PRETTY_NAME")
+	return readTagFromOSRelease(file, tag)
 }
 
 func readTagFromOSRelease(r io.Reader, tag string) (string, error) {
