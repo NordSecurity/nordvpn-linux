@@ -81,14 +81,11 @@ func Test_defaultCmdRunner(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := defaultCmdRunner(tt.args.name, tt.args.args...)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("defaultCmdRunner() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
 
-			if got != tt.want {
-				t.Errorf("defaultCmdRunner(%q, %q) = %q, want %q", tt.args.name, tt.args.args, got, tt.want)
-			}
+			assert.Equal(t, tt.wantErr, err != nil,
+				"defaultCmdRunner() error = %v, wantErr %v", err, tt.wantErr)
+			assert.Equal(t, tt.want, got,
+				"defaultCmdRunner(%q, %q) = %q, want %q", tt.args.name, tt.args.args, got, tt.want)
 		})
 	}
 }
