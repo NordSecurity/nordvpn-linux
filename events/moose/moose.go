@@ -196,9 +196,9 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
 
-	distroVersion := sysinfo.HostOSPrettyName()
-	if distroVersion != "" {
-		return fmt.Errorf("determining device os")
+	distroVersion, err := sysinfo.HostOSPrettyName()
+	if err != nil {
+		return fmt.Errorf("determining device os 'pretty-name'")
 	}
 	if err := s.response(moose.NordvpnappSetContextDeviceOs(distroVersion)); err != nil {
 		return fmt.Errorf("setting moose device os: %w", err)
