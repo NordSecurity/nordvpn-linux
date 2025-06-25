@@ -150,8 +150,6 @@ func main() {
 		}
 	}
 
-	rcConfig := getRemoteConfigGetter(Version)
-
 	// Events
 
 	daemonEvents := daemonevents.NewEventsEmpty()
@@ -304,6 +302,11 @@ func main() {
 
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
+
+	rcConfig := getRemoteConfigGetter(Version, Environment, cdnAPI)
+	if err := rcConfig.LoadConfig(); err != nil {
+		log.Println("loading config:", err)
+	}
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
