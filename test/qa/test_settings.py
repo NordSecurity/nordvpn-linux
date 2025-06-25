@@ -5,16 +5,9 @@ import pexpect
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
 
-def setup_module(module):  # noqa: ARG001
-    daemon.start()
-
-
-def teardown_module(module):  # noqa: ARG001
-    daemon.stop()
-
-
 def setup_function(function):  # noqa: ARG001
     logging.log()
+    daemon.start()
     login.login_as("default")
 
 
@@ -22,6 +15,7 @@ def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
     sh.nordvpn.set.defaults("--logout")
+    daemon.stop()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
@@ -377,7 +371,7 @@ def test_autoconnect_disable_twice(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize("killswitch_initial", [True, False])
-@pytest.mark.parametrize("killswitch_flag", [True,False])
+@pytest.mark.parametrize("killswitch_flag", [True, False])
 def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag):
     try:
         sh.nordvpn.set.killswitch(str(killswitch_initial))
