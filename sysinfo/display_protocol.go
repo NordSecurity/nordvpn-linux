@@ -16,8 +16,8 @@ func getDisplayProtocol(readEnv envReader) string {
 	return strings.ToLower(ds)
 }
 
-// DisplayProtocol retrieves the current display protocol.
+// GetDisplayProtocol retrieves the current display protocol.
 // This function only works in user sessions where the environment is populated with XDG info.
-func DisplayProtocol() string {
+func GetDisplayProtocol() string {
 	return getDisplayProtocol(os.Getenv)
 }

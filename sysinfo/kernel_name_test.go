@@ -15,7 +15,7 @@ func Test_KerneVersion(t *testing.T) {
 
 	out, _ := exec.Command("uname", "-sr").Output()
 	result := strings.TrimSpace(string(out))
-	assert.Equal(t, result, KernelVersion())
+	assert.Equal(t, result, GetKernelVersion())
 }
 
 func mockCommandRunner(name string, args ...string) (string, error) {

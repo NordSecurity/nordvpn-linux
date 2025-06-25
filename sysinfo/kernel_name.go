@@ -42,7 +42,7 @@ func uname(runner cmdRunner, flags string) string {
 	return out
 }
 
-// KernelVersion retrieves the name and release version of the currently running kernel.
-func KernelVersion() string {
+// GetKernelVersion retrieves the name and release version of the currently running kernel.
+func GetKernelVersion() string {
 	return uname(defaultCmdRunner, "-sr")
 }

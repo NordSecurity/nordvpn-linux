@@ -9,8 +9,8 @@ import (
 
 const etcOSReleaseFile = "/etc/os-release"
 
-// HostName retrieves the standard name of the currently running operating system.
-func HostOSName() (string, error) {
+// GetHostOSName retrieves the standard name of the currently running operating system.
+func GetHostOSName() (string, error) {
 	return readOSReleaseTag("NAME")
 }
 

@@ -31,6 +31,6 @@ func Test_detectByGraphicalEnv(t *testing.T) {
 func TestGetDeviceType(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	devType := DeviceType()
+	devType := GetDeviceType()
 	assert.NotEqual(t, SystemDeviceTypeUnknown, devType, "device type must be known")
 }

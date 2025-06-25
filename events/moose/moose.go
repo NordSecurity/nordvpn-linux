@@ -207,7 +207,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
 
-	dt := deviceTypeToInternalType(sysinfo.DeviceType())
+	dt := deviceTypeToInternalType(sysinfo.GetDeviceType())
 	if err := s.response(moose.NordvpnappSetContextDeviceType(dt)); err != nil {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}

@@ -75,14 +75,14 @@ func detectByXDGSession() SystemDeviceType {
 	}
 }
 
-// SystemDeviceType attempts to determine whether the machine is a desktop or server.
+// GetDeviceType attempts to determine whether the machine is a desktop or server.
 // It sequentially evaluates a series of detection strategies:
 // - systemd default target
 // - presence of graphical environment paths
 // - XDG session type
 //
 // Returns the first non-unknown SystemDeviceType detected, or SystemDeviceTypeUnknown as a fallback.
-func DeviceType() SystemDeviceType {
+func GetDeviceType() SystemDeviceType {
 	sources := []func() SystemDeviceType{
 		detectBySystemDefaultTarget,
 		detectByGraphicalEnv,

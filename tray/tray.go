@@ -135,7 +135,7 @@ func selectIcon(desktopEnv string) string {
 
 // updateIconsSelection selects the most appropriate icon based on the desktop environment.
 func (ti *Instance) updateIconsSelection() {
-	ti.iconDisconnected = notify.GetIconPath(selectIcon(sysinfo.DisplayDesktopEnvironment()))
+	ti.iconDisconnected = notify.GetIconPath(selectIcon(sysinfo.GetDisplayDesktopEnvironment()))
 	ti.iconConnected = notify.GetIconPath(IconBlue)
 }
 

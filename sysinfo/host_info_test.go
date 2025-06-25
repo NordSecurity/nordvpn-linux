@@ -14,5 +14,5 @@ func Test_HostInfo(t *testing.T) {
 
 	out, _ := exec.Command("uname", "-a").Output()
 	result := strings.TrimSpace(string(out))
-	assert.Equal(t, result, HostInfo())
+	assert.Equal(t, result, GetHostInfo())
 }

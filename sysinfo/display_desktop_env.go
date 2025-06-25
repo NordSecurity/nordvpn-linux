@@ -25,8 +25,8 @@ func getDesktopEnvironment(readEnv envReader) string {
 	return strings.ToLower(de)
 }
 
-// DisplayDesktopEnvironment retrieves the current desktop environment.
+// GetDisplayDesktopEnvironment retrieves the current desktop environment.
 // This function only works in user sessions where the environment is populated with XDG info.
-func DisplayDesktopEnvironment() string {
+func GetDisplayDesktopEnvironment() string {
 	return getDesktopEnvironment(os.Getenv)
 }

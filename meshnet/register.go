@@ -116,7 +116,7 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		privateKey = r.gen.Private()
 	}
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	distroName, err := sysinfo.HostOSName()
+	distroName, err := sysinfo.GetHostOSName()
 	if err != nil {
 		return err
 	}

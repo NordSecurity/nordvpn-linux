@@ -209,7 +209,7 @@ func main() {
 		}
 	}
 
-	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, sysinfo.KernelVersion())
+	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, sysinfo.GetKernelVersion())
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
