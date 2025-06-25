@@ -1,6 +1,7 @@
 package sysinfo
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,87 +15,143 @@ const (
 	SystemDeviceTypeServer  SystemDeviceType = "server"
 )
 
-// detectBySystemDefaultTarget determines the device type based on the default systemd target.
-func detectBySystemDefaultTarget() SystemDeviceType {
-	_, err := exec.LookPath("systemctl")
-	if err != nil {
-		return SystemDeviceTypeUnknown
+const (
+	defaultTargetGraphical = "graphical.target"
+	defaultTargetServer    = "multi-user.target"
+	sessionTypeX11         = "x11"
+	sessionTypeWayland     = "wayland"
+	sessionTypeTTY         = "tty"
+)
+
+type deviceTypeDetector interface {
+	Get() (SystemDeviceType, error)
+}
+
+// GetDeviceType returns the system's device type by checking systemd target,
+// desktop environment presence, and session type, in that order.
+func GetDeviceType() SystemDeviceType {
+	detectors := []deviceTypeDetector{
+		newSystemdTargetDetector(),
+		newGraphicalEnvDetector(),
+		newXDGSessionDetector(),
 	}
 
-	out, err := exec.Command("systemctl", "get-default").Output()
-	if err != nil {
-		return SystemDeviceTypeUnknown
-	}
-
-	switch strings.TrimSpace(string(out)) {
-	case "graphical.target":
-		return SystemDeviceTypeDesktop
-	case "multi-user.target":
-		return SystemDeviceTypeServer
+	for _, detector := range detectors {
+		if deviceType, err := detector.Get(); err == nil && deviceType != SystemDeviceTypeUnknown {
+			return deviceType
+		}
 	}
 
 	return SystemDeviceTypeUnknown
 }
 
-// detectByGraphicalEnv checks for the presence of common GUI-related system directories.
-// Returns SystemDeviceTypeDesktop if any are found, otherwise returns SystemDeviceTypeUnknown.
-func detectByGraphicalEnv() SystemDeviceType {
-	de := getDesktopEnvironment(os.Getenv)
-	if de != EnvValueUnset {
-		return SystemDeviceTypeDesktop
+// -------------------------------------
+// Systemd Target Detector
+// -------------------------------------
+
+type systemdTargetDetector struct {
+	detectTarget func() (string, error)
+}
+
+func (d systemdTargetDetector) Get() (SystemDeviceType, error) {
+	target, err := d.detectTarget()
+	if err != nil {
+		return SystemDeviceTypeUnknown, fmt.Errorf("detecting systemd target: %w", err)
 	}
 
-	paths := []string{
+	switch strings.TrimSpace(target) {
+	case defaultTargetGraphical:
+		return SystemDeviceTypeDesktop, nil
+	case defaultTargetServer:
+		return SystemDeviceTypeServer, nil
+	}
+
+	return SystemDeviceTypeUnknown, nil
+}
+
+func newSystemdTargetDetector() deviceTypeDetector {
+	return &systemdTargetDetector{
+		detectTarget: func() (string, error) {
+			if _, err := exec.LookPath("systemctl"); err != nil {
+				return "", err
+			}
+			out, err := exec.Command("systemctl", "get-default").Output()
+			return string(out), err
+		},
+	}
+}
+
+// -------------------------------------
+// Graphical Environment Detector
+// -------------------------------------
+
+type fileInfoFunc func(name string) (os.FileInfo, error)
+
+type graphicalEnvDetector struct {
+	detectEnv func() (string, error)
+	statPath  fileInfoFunc
+}
+
+func (d graphicalEnvDetector) Get() (SystemDeviceType, error) {
+	env, err := d.detectEnv()
+	if err != nil {
+		return SystemDeviceTypeUnknown, fmt.Errorf("detecting graphical env: %w", err)
+	}
+	if env != EnvValueUnset {
+		return SystemDeviceTypeDesktop, nil
+	}
+
+	guiPaths := []string{
 		"/etc/X11",
 		"/usr/share/xsessions",
 		"/usr/share/wayland-sessions",
 	}
-
-	for _, path := range paths {
-		if fi, err := os.Stat(path); err == nil && fi.IsDir() {
-			return SystemDeviceTypeDesktop
+	for _, path := range guiPaths {
+		if info, err := d.statPath(path); err == nil && info.IsDir() {
+			return SystemDeviceTypeDesktop, nil
 		}
 	}
 
-	return SystemDeviceTypeUnknown
+	return SystemDeviceTypeUnknown, nil
 }
 
-// detectByXDGSession evaluates the device type from the XDG_SESSION_TYPE environment variable.
-// Returns SystemDeviceTypeDesktop for "x11" or "wayland", SystemDeviceTypeServer for "tty",
-// and SystemDeviceTypeUnknown for any other or unset value.
-// Works when calling from user-level environment or its environment is propagated to the daemon
-func detectByXDGSession() SystemDeviceType {
-	sessionType := getDisplayProtocol(os.Getenv)
-	switch sessionType {
-	case "x11", "wayland":
-		return SystemDeviceTypeDesktop
-	case "tty":
-		return SystemDeviceTypeServer
-	default:
-		return SystemDeviceTypeUnknown
+func newGraphicalEnvDetector() deviceTypeDetector {
+	return &graphicalEnvDetector{
+		detectEnv: func() (string, error) {
+			return getDesktopEnvironment(os.Getenv), nil
+		},
+		statPath: os.Stat,
 	}
 }
 
-// GetDeviceType attempts to determine whether the machine is a desktop or server.
-// It sequentially evaluates a series of detection strategies:
-// - systemd default target
-// - presence of graphical environment paths
-// - XDG session type
-//
-// Returns the first non-unknown SystemDeviceType detected, or SystemDeviceTypeUnknown as a fallback.
-func GetDeviceType() SystemDeviceType {
-	sources := []func() SystemDeviceType{
-		detectBySystemDefaultTarget,
-		detectByGraphicalEnv,
-		detectByXDGSession,
+// -------------------------------------
+// XDG Session Detector
+// -------------------------------------
+
+type xdgSessionDetector struct {
+	detectSession func() (string, error)
+}
+
+func (d xdgSessionDetector) Get() (SystemDeviceType, error) {
+	session, err := d.detectSession()
+	if err != nil {
+		return SystemDeviceTypeUnknown, fmt.Errorf("detecting XDG session: %w", err)
 	}
 
-	for _, s := range sources {
-		if dt := s(); dt != SystemDeviceTypeUnknown {
-			return dt
-		}
+	switch session {
+	case sessionTypeX11, sessionTypeWayland:
+		return SystemDeviceTypeDesktop, nil
+	case sessionTypeTTY:
+		return SystemDeviceTypeServer, nil
 	}
 
-	// fallback type if none of the methods could determine it
-	return SystemDeviceTypeUnknown
+	return SystemDeviceTypeUnknown, nil
+}
+
+func newXDGSessionDetector() deviceTypeDetector {
+	return &xdgSessionDetector{
+		detectSession: func() (string, error) {
+			return getDisplayProtocol(os.Getenv), nil
+		},
+	}
 }
