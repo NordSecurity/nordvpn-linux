@@ -19,8 +19,3 @@ enum DisplayProtocol {
 message DisplayProtocolRequest {
   DisplayProtocol protocol = 1;  // Active display protocol
 }
-
-message CustomEntry {
-  string label = 1;  // Identifier for the telemetry field
-  string value = 2;  // Value associated with the field
-}

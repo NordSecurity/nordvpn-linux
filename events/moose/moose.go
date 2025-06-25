@@ -651,16 +651,6 @@ func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 			// set 'unknown' metric (e.g. NordvpnappUnsetContextDeviceDisplayProtocol)
 		}
 
-	case telemetry.MetricCustom:
-		field, ok := value.(telemetry.CustomField)
-		if !ok {
-			return fmt.Errorf("unsupported custom-field value type")
-		}
-
-		switch field {
-		// add custom fields if any
-		}
-
 	default:
 		return fmt.Errorf("unsupported metric received (id=%d)", metric)
 	}

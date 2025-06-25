@@ -23,10 +23,6 @@ type Telemetry struct {
 	pb.UnimplementedTelemetryServiceServer
 }
 
-func (t Telemetry) SetCustomEntry(ctx context.Context, in *pb.CustomEntry) (*emptypb.Empty, error) {
-	return nil, t.listen(MetricCustom, CustomField{Label: in.Label, Value: in.Value})
-}
-
 func (t Telemetry) SetDesktopEnvironment(ctx context.Context, in *pb.DesktopEnvironmentRequest) (*emptypb.Empty, error) {
 	return nil, t.listen(MetricDesktopEnvironment, in.DesktopEnvName)
 }
