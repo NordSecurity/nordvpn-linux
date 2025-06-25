@@ -37,6 +37,15 @@ func (r *RPC) StartJobs(
 		log.Println(internal.WarningPrefix, "job countries schedule error:", err)
 	}
 
+	_, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Minute), gocron.NewTask(func() { // TODO/FIXME: change time/frequency
+		if err := r.remoteConfigGetter.LoadConfig(); err != nil {
+			log.Printf("JobConfigLoader: %s", err)
+		}
+	}), gocron.WithName("job config loader"))
+	if err != nil {
+		log.Println(internal.WarningPrefix, "job config loader schedule error:", err)
+	}
+
 	jobInsights, err := r.scheduler.NewJob(gocron.DurationJob(30*time.Minute), gocron.NewTask(JobInsights(r.dm, r.api, r.netw, r.events, false)), gocron.WithName("job insights"))
 	if err != nil {
 		log.Println(internal.WarningPrefix, "job insights schedule error:", err)
