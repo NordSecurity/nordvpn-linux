@@ -1,6 +1,3 @@
-/*
-Package distro provides information about the current Linux distribution.
-*/
 package sysinfo
 
 import (
@@ -46,9 +43,9 @@ func Test_uname(t *testing.T) {
 		{"Kernel Name", "-s", "Linux"},
 		{"Kernel Release", "-r", "6.11.0"},
 		{"Full System Info", "-a", "Linux hostname 6.11.0-26-generic #26~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC"},
-		{"Unknown Flag", "-x", kernelName},
-		{"Empty Flag", "", kernelName},
-		{"Whitespace Flag", " ", kernelName},
+		{"Unknown Flag", "-x", defaultKernelName},
+		{"Empty Flag", "", defaultKernelName},
+		{"Whitespace Flag", " ", defaultKernelName},
 	}
 
 	for _, tt := range tests {

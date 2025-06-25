@@ -1,12 +1,15 @@
 package sysinfo
 
 import (
+	"log"
 	"os/exec"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// kernelName defines default kernel name
-const kernelName = "Linux"
+// defaultKernelName defines default kernel name
+const defaultKernelName = "Linux"
 
 // cmdRunner defines a function type for executing shell commands.
 type cmdRunner func(name string, args ...string) (string, error)
@@ -24,8 +27,16 @@ func defaultCmdRunner(name string, args ...string) (string, error) {
 // uname retrieves OS information using the provided command runner.
 func uname(runner cmdRunner, flags string) string {
 	out, err := runner("uname", flags)
-	if err != nil || out == "" {
-		return kernelName
+	if err != nil {
+		log.Printf("%s failed to execute 'uname %s': %v. Falling back to default: %s",
+			internal.ErrorPrefix, flags, err, defaultKernelName)
+		return defaultKernelName
+	}
+
+	if out == "" {
+		log.Printf("%s 'uname %s' returned empty output. Falling back to default: %s",
+			internal.ErrorPrefix, flags, defaultKernelName)
+		return defaultKernelName
 	}
 
 	return out
