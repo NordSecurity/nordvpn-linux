@@ -41,7 +41,7 @@ func isVersionMatching(appVer, requiredVer string) (bool, error) {
 }
 
 // download main json file and check if include files should be downloaded
-func (f *Feature) download(cdn CDN, cdnBasePath, targetPath string) (err error) {
+func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (err error) {
 	// config file consists of:
 	// - main json file e.g. nordvpn.json;
 	// - sibling file with hash e.g. nordvpn-hash.json;
@@ -219,7 +219,6 @@ func isHashValid(targetHash string, data ...[]byte) bool {
 
 // load feature config from JSON file
 func (f *Feature) load(sourcePath string) error {
-
 	if f.Name == "" {
 		return fmt.Errorf("feature name is not set")
 	}
@@ -313,7 +312,7 @@ func (f *Feature) load(sourcePath string) error {
 				if _, err := prm.AsInt(); err != nil {
 					return fmt.Errorf("loading int value [%s]: %w", prm.Value, err)
 				}
-			case "boolean", "bool":
+			case "boolean", "bool": //nolint
 				if _, err := prm.AsBool(); err != nil {
 					return fmt.Errorf("loading bool value [%s]: %w", prm.Value, err)
 				}
@@ -331,7 +330,7 @@ func (f *Feature) load(sourcePath string) error {
 				if err := json.Unmarshal([]byte(val), &temp); err != nil {
 					return fmt.Errorf("loading json object [%s]: %w", val, err)
 				}
-			case "file":
+			case "file": //nolint
 				// primary field value is an include file name
 				val, err := prm.AsString()
 				if err != nil {

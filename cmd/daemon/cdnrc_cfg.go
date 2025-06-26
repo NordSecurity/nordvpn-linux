@@ -7,10 +7,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-type CDN interface {
+type RemoteStorage interface {
 	GetRemoteFile(name string) ([]byte, error)
 }
 
-func getRemoteConfigGetter(ver, env string, cdn CDN) *remote.CdnRemoteConfig {
-	return remote.NewCdnRemoteConfig(ver, env, internal.ConfigFilesPathCommon, cdn)
+func getRemoteConfigGetter(ver, env, rpath string, cdn RemoteStorage) *remote.CdnRemoteConfig {
+	return remote.NewCdnRemoteConfig(ver, env, rpath, internal.ConfigFilesPathCommon, cdn)
 }
