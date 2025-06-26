@@ -465,6 +465,7 @@ func main() {
 		fsystem,
 		defaultAPI,
 		authChecker,
+		analytics,
 	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 

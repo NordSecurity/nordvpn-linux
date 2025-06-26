@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
+	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
 func newConsentChecker(
@@ -14,6 +15,7 @@ func newConsentChecker(
 	cm config.Manager,
 	insightsAPI core.InsightsAPI,
 	authChecker auth.Checker,
+	analytics events.Analytics,
 ) daemon.ConsentChecker {
-	return daemon.NewConsentChecker(isDevEnv, cm, insightsAPI, authChecker)
+	return daemon.NewConsentChecker(isDevEnv, cm, insightsAPI, authChecker, analytics)
 }
