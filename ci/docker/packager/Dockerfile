@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20241203
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-bullseye-20250627
 
 # Need to build nfpm with patch; expeting sometime
 # nfpm upstream will be fixed (issue submitted)
@@ -18,7 +18,7 @@ RUN cd && \
     ls -lh ./nfpm && \
     ./nfpm --version
 
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20241203
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-bullseye-20250627
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
