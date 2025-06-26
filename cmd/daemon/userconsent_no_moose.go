@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
+	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
 // AnalyticsConsentChecker here is a no-op stub struct used when there is no moose.
@@ -28,6 +29,7 @@ func newConsentChecker(
 	_ config.Manager,
 	_ core.InsightsAPI,
 	_ auth.Checker,
+	_ events.Analytics,
 ) daemon.ConsentChecker {
 	return &NoOpConsentChecker{}
 }
