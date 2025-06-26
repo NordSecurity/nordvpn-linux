@@ -11,6 +11,14 @@ mkdir -p "${WORKDIR}/build/foss"
 clone_if_absent "https://github.com/NordSecurity/libtelio.git" "${LIBTELIO_VERSION}" "${WORKDIR}/build/foss"
 rm -rf "${lib_root}/current"
 
+pushd "${WORKDIR}/build/foss/libtelio"
+rustup target add aarch64-unknown-linux-gnu \
+    aarch64-unknown-linux-gnu \
+    arm-unknown-linux-gnueabi \
+    armv7-unknown-linux-gnueabihf \
+    i686-unknown-linux-gnu
+popd
+
 # BYPASS_LLT_SECRETS is needed for libtelio builds
 BYPASS_LLT_SECRETS=1 build_rust "${WORKDIR}/build/foss/libtelio"
 link_so_files "libtelio"
