@@ -21,7 +21,7 @@ import (
 
 var (
 	httpPort  = "8005"
-	httpPath  = "/apps/linux/config/"
+	httpPath  = "/config"
 	httpHost  = "http://localhost"
 	cdnUrl    = httpHost + ":" + httpPort
 	localPath = "./tmp/cfg"
@@ -36,7 +36,7 @@ func TestGetTelioConfigFromMockCdn(t *testing.T) {
 	cdn, cancel := setupMockCdnClient(cdnUrl)
 	defer cancel()
 
-	rc := NewCdnRemoteConfig(ver, env, localPath, cdn)
+	rc := NewCdnRemoteConfig(ver, env, httpPath, localPath, cdn)
 	err := rc.LoadConfig()
 	assert.NoError(t, err)
 	tc, err := rc.GetTelioConfig()
@@ -52,7 +52,7 @@ func TestGetTelioConfigFromDisk(t *testing.T) {
 	defer cancel()
 
 	// 1st load from remote
-	rc := NewCdnRemoteConfig(ver, env, localPath, cdn)
+	rc := NewCdnRemoteConfig(ver, env, httpPath, localPath, cdn)
 	err := rc.LoadConfig()
 	assert.NoError(t, err)
 
@@ -60,7 +60,7 @@ func TestGetTelioConfigFromDisk(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 2nd load from disk
-	rc = NewCdnRemoteConfig(ver, env, localPath, cdn)
+	rc = NewCdnRemoteConfig(ver, env, httpPath, localPath, cdn)
 	err = rc.LoadConfig()
 	assert.NoError(t, err)
 	tc, err := rc.GetTelioConfig()
@@ -224,7 +224,6 @@ var nordwhisperJsonConfFile = `
     ]
 }
 `
-
 var libtelioJsonConfFile = `
 {
     "version": 1,
@@ -267,7 +266,6 @@ var libtelioJsonConfInc1File = `
     }
 }
 `
-
 var libtelioJsonConfInc2File = `
 {
     "lana": {},

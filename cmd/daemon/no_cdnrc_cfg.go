@@ -12,11 +12,11 @@ func (r RemoteConfigGetterStub) GetTelioConfig() (string, error) {
 	return "", fmt.Errorf("no remote config getter was compiled into the app")
 }
 
-type CDN interface {
-	GetRemoteFile(name string) ([]byte, error)
+type RemoteStorage interface {
+	GetRemoteFile(string) ([]byte, error)
 }
 
-func getRemoteConfigGetter(_, _ string, _ CDN) RemoteConfigGetterStub {
+func getRemoteConfigGetter(_, _, _ string, _ RemoteStorage) RemoteConfigGetterStub {
 	return RemoteConfigGetterStub{}
 }
 func (r RemoteConfigGetterStub) IsFeatureEnabled(string) bool { return false }

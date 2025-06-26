@@ -85,6 +85,7 @@ var (
 	Port        = 6960
 	ConnType    = "unix"
 	ConnURL     = internal.DaemonSocket
+	RemotePath  = ""
 )
 
 // Environment constants
@@ -324,7 +325,7 @@ func main() {
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
 
-	rcConfig := getRemoteConfigGetter(Version, Environment, cdnAPI)
+	rcConfig := getRemoteConfigGetter(Version, Environment, RemotePath, cdnAPI)
 	if err := rcConfig.LoadConfig(); err != nil {
 		log.Println("loading config:", err)
 	}

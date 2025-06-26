@@ -11,7 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-type CDN interface {
+type RemoteStorage interface {
 	GetRemoteFile(name string) ([]byte, error)
 }
 
@@ -24,7 +24,6 @@ type RemoteConfigGetter interface {
 }
 
 var (
-	remoteBasePath    = "/apps/linux/config/"
 	envUseLocalConfig = "USE_LOCAL_CONFIG"
 )
 
@@ -32,16 +31,18 @@ type CdnRemoteConfig struct {
 	appVersion     string
 	appEnvironment string
 	localCachePath string
-	cdn            CDN
+	remotePath     string
+	cdn            RemoteStorage
 	Features       FeatureMap
 	mu             sync.Mutex
 }
 
-// NewCdnRemoteConfig setup CDN based remote config loaded/getter
-func NewCdnRemoteConfig(ver, env, localPath string, cdn CDN) *CdnRemoteConfig {
+// NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
+func NewCdnRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStorage) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
 		appVersion:     ver,
 		appEnvironment: env,
+		remotePath:     remotePath,
 		localCachePath: localPath,
 		cdn:            cdn,
 		Features:       make(FeatureMap),
@@ -58,7 +59,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	if !useOnlyLocalConfig {
 		log.Println(internal.DebugPrefix, "Downloading remote config to:", c.localCachePath)
 		for _, f := range c.Features {
-			if err := f.download(c.cdn, filepath.Join(remoteBasePath, c.appEnvironment), c.localCachePath); err != nil {
+			if err := f.download(c.cdn, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath); err != nil {
 				log.Println(internal.ErrorPrefix, "failed downloading config for [", f.Name, "]:", err)
 				continue
 			}
