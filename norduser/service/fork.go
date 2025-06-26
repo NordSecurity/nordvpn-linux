@@ -291,7 +291,7 @@ func (s *systemGIDProvider) GetNordvpnGid() (uint32, error) {
 		return 0, errors.New("negative gid cannot be converted to uint32")
 	}
 
-	if gid > math.MaxUint32 {
+	if uint64(gid) > uint64(math.MaxUint32) {
 		return 0, errors.New("gid exceeds uint32 maximum value")
 	}
 
