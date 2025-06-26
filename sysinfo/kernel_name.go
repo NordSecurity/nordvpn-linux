@@ -28,13 +28,13 @@ func defaultCmdRunner(name string, args ...string) (string, error) {
 func uname(runner cmdRunner, flags string) string {
 	out, err := runner("uname", flags)
 	if err != nil {
-		log.Printf("%s failed to execute 'uname %s': %v. Falling back to default: %s",
+		log.Printf("%s failed to execute 'uname %s': %v. Falling back to default: %s\n",
 			internal.ErrorPrefix, flags, err, defaultKernelName)
 		return defaultKernelName
 	}
 
 	if out == "" {
-		log.Printf("%s 'uname %s' returned empty output. Falling back to default: %s",
+		log.Printf("%s 'uname %s' returned empty output. Falling back to default: %s\n",
 			internal.ErrorPrefix, flags, defaultKernelName)
 		return defaultKernelName
 	}
