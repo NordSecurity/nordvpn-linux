@@ -123,9 +123,19 @@ parts:
       - e2fsprogs
       - dbus-x11
       - libnl-genl-3-200
+      - libsqlite3-0
     organize:
       nordvpn: bin/nordvpn
       nordvpnd: bin/nordvpnd
+    override-prime: |
+      craftctl default
+      so_path=$(find "${SNAPCRAFT_PRIME}/usr/lib/" -name "libsqlite3.so.0" | head -n1)
+      if [ -z "${so_path}" ]; then
+        echo "ERROR: libsqlite3.so.0 not found in stage directory" >&2
+        exit 1
+      fi
+      rel_path=$(awk -F/ '{print $(NF-1) "/" $NF}' <<< "${so_path}")
+      ln -sf "./${rel_path}" "${SNAPCRAFT_PRIME}/usr/lib/libsqlite3.so"
     stage:
       - bin/*
       - usr/*
