@@ -27,7 +27,6 @@ declare -A names_map=(
 	[cli]=nordvpn
 	[daemon]=nordvpnd
 	[downloader]=downloader
-	[pulp]=pulp
 	[fileshare]=nordfileshare
 	[norduser]=norduserd
 )
