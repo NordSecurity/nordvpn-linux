@@ -113,17 +113,6 @@ func runDocker(
 		return err
 	}
 
-	containerConfig := container.Config{
-		Image:      img,
-		Cmd:        cmd,
-		Env:        envMapToList(env),
-		WorkingDir: "/opt",
-	}
-
-	if !isPrivileged {
-		containerConfig.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
-	}
-
 	mounts := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
@@ -135,6 +124,24 @@ func runDocker(
 			Source: "/lib/modules",
 			Target: "/lib/modules",
 		},
+	}
+
+	user := ""
+	if !isPrivileged {
+		user = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
+		env["HOME"] = "/home/user"
+		mounts = append(mounts, mount.Mount{
+			Type:   mount.TypeTmpfs,
+			Target: "/home/user",
+		})
+	}
+
+	containerConfig := container.Config{
+		Image:      img,
+		Cmd:        cmd,
+		Env:        envMapToList(env),
+		WorkingDir: "/opt",
+		User:       user,
 	}
 
 	if env["MOUNT_HOST_GOMODCACHE"] == "1" {
