@@ -112,6 +112,9 @@ func getLatestVersionChangelog() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if len(changelogs) == 0 {
+		return "", nil
+	}
 	changelog := slices.MaxFunc(changelogs, func(a fs.DirEntry, b fs.DirEntry) int {
 		return changelogMdToSemver(a.Name()).Compare(changelogMdToSemver(b.Name()))
 	})
