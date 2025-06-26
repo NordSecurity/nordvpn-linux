@@ -19,6 +19,6 @@ type RemoteStorage interface {
 func getRemoteConfigGetter(_, _, _ string, _ RemoteStorage) RemoteConfigGetterStub {
 	return RemoteConfigGetterStub{}
 }
-func (r RemoteConfigGetterStub) IsFeatureEnabled(string) bool { return false }
-func (r RemoteConfigGetterStub) GetFeatureParam(_, _ string)  {}
-func (r RemoteConfigGetterStub) LoadConfig() error            { return nil }
+func (r RemoteConfigGetterStub) IsFeatureEnabled(string) bool                { return false }
+func (r RemoteConfigGetterStub) GetFeatureParam(_, _ string) (string, error) { return "", nil }
+func (r RemoteConfigGetterStub) LoadConfig() error                           { return nil }

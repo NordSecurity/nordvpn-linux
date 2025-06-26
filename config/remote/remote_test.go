@@ -29,6 +29,21 @@ var (
 	env       = "dev"
 )
 
+func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStorage) *CdnRemoteConfig {
+	rc := &CdnRemoteConfig{
+		appVersion:     ver,
+		appEnvironment: env,
+		remotePath:     remotePath,
+		localCachePath: localPath,
+		cdn:            cdn,
+		Features:       make(FeatureMap),
+	}
+	rc.Features.Add(featureMain)
+	rc.Features.Add("nordwhisper")
+	rc.Features.Add(featureLibtelio)
+	return rc
+}
+
 func TestGetTelioConfigFromMockCdn(t *testing.T) {
 	stop := setupMockCdnWebServer()
 	defer stop()
@@ -36,7 +51,7 @@ func TestGetTelioConfigFromMockCdn(t *testing.T) {
 	cdn, cancel := setupMockCdnClient(cdnUrl)
 	defer cancel()
 
-	rc := NewCdnRemoteConfig(ver, env, httpPath, localPath, cdn)
+	rc := newTestRemoteConfig(ver, env, httpPath, localPath, cdn)
 	err := rc.LoadConfig()
 	assert.NoError(t, err)
 	tc, err := rc.GetTelioConfig()
@@ -52,7 +67,7 @@ func TestGetTelioConfigFromDisk(t *testing.T) {
 	defer cancel()
 
 	// 1st load from remote
-	rc := NewCdnRemoteConfig(ver, env, httpPath, localPath, cdn)
+	rc := newTestRemoteConfig(ver, env, httpPath, localPath, cdn)
 	err := rc.LoadConfig()
 	assert.NoError(t, err)
 
@@ -60,7 +75,7 @@ func TestGetTelioConfigFromDisk(t *testing.T) {
 	assert.NoError(t, err)
 
 	// 2nd load from disk
-	rc = NewCdnRemoteConfig(ver, env, httpPath, localPath, cdn)
+	rc = newTestRemoteConfig(ver, env, httpPath, localPath, cdn)
 	err = rc.LoadConfig()
 	assert.NoError(t, err)
 	tc, err := rc.GetTelioConfig()
