@@ -327,7 +327,7 @@ func main() {
 
 	rcConfig := getRemoteConfigGetter(Version, Environment, RemotePath, cdnAPI)
 	if err := rcConfig.LoadConfig(); err != nil {
-		log.Println("loading config:", err)
+		log.Fatalln(err)
 	}
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)

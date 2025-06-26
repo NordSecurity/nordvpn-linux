@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -18,8 +19,16 @@ type RemoteStorage interface {
 // RemoteConfigGetter get values from remote config
 type RemoteConfigGetter interface {
 	GetTelioConfig() (string, error)
+	FeatureConfig
+	FeatureConfigLoader
+}
+
+type FeatureConfig interface {
 	IsFeatureEnabled(featureName string) bool
-	GetFeatureParam(featureName, paramName string) //TODO/FIXME: return type?
+	GetFeatureParam(featureName, paramName string) (string, error)
+}
+
+type FeatureConfigLoader interface {
 	LoadConfig() error
 }
 
@@ -48,7 +57,6 @@ func NewCdnRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStorag
 		Features:       make(FeatureMap),
 	}
 	rc.Features.Add(featureMain)
-	rc.Features.Add("nordwhisper") // TODO/FIXME: debug/remove
 	rc.Features.Add(featureLibtelio)
 	return rc
 }
@@ -67,7 +75,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 		}
 	}
 
-	// local only when loading from local files
+	// lock only when loading from local files
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -90,8 +98,7 @@ func findMatchingRecord(ss []ParamValue, ver string) *ParamValue {
 		// find all my version matching records
 		ok, err := isVersionMatching(ver, s.AppVersion)
 		if err != nil {
-			//TODO/FIXME: abort? or ignore?
-			log.Println("invalid version:", err)
+			log.Println(internal.ErrorPrefix, "invalid version:", err)
 			continue
 		}
 		if ok {
@@ -128,6 +135,7 @@ func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
 	return "", fmt.Errorf("telio config for current app version not found")
 }
 
+// TODO/FIXME: add `rollout` support
 func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -151,24 +159,48 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	return false
 }
 
-// TODO/FIXME: return type?
-func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) {
+// TODO/FIXME: add `rollout` support
+func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	f, found := c.Features[featureName]
 	if !found {
-		return
+		return "", fmt.Errorf("feature [%s] not found", featureName)
 	}
 	p, found := f.Params[paramName]
 	if !found {
-		return
+		return "", fmt.Errorf("feature [%s] param [%s] not found", featureName, paramName)
 	}
-	switch p.Type {
-	case "bool", "boolean":
-		if item := findMatchingRecord(p.Settings, c.appVersion); item != nil {
-			item.AsBool()
-			return
+	if item := findMatchingRecord(p.Settings, c.appVersion); item != nil {
+		switch p.Type {
+		case "bool", "boolean":
+			val, err := item.AsBool()
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%t", val), nil
+		case "string", "object":
+			val, err := item.AsString()
+			if err != nil {
+				return "", err
+			}
+			return val, nil
+		case "integer", "int", "number":
+			val, err := item.AsInt()
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d", val), nil
+		case "array":
+			val, err := item.AsStringArray()
+			if err != nil {
+				return "", err
+			}
+			return strings.Join(val, ", "), nil
+		case "file":
+			return item.IncValue, nil
 		}
 	}
+	return "", fmt.Errorf("feature [%s] param [%s] value not found", featureName, paramName)
 }

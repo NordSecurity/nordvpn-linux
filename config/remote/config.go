@@ -24,16 +24,14 @@ func hash(content []byte) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func isVersionMatching(appVer, requiredVer string) (bool, error) {
-	// "" "*" "1.*" "1.1.*"
+func isVersionMatching(appVer, verConstraint string) (bool, error) {
 	// ~3.7.1 means: >= 3.7.1 and < 3.8.0
 	// ^3.7.1 means: >= 3.7.1 and < 4.0.0
 	v, err := semver.NewVersion(appVer)
 	if err != nil {
 		return false, fmt.Errorf("invalid app version: %w", err)
 	}
-	// TODO/FIXME: on config loading validate app version constraints!!!
-	constraint, err := semver.NewConstraint(requiredVer)
+	constraint, err := semver.NewConstraint(verConstraint)
 	if err != nil {
 		return false, fmt.Errorf("invalid version constraint: %w", err)
 	}
@@ -48,7 +46,7 @@ func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (e
 	// - 0..n include files e.g. libtelio-3.19.0.json;
 	// - include file hash file e.g. libtelio-3.19.0-hash.json;
 
-	tmpExt := ".bu" //TODO: move to constants
+	tmpExt := ".bu"
 
 	defer func() {
 		if err != nil {
@@ -161,17 +159,17 @@ func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (e
 	return nil
 }
 
-func walkFiles(targetPath, tmpExt string, actionFunc func(string)) error {
+func walkFiles(targetPath, fileExt string, actionFunc func(string)) error {
 	err := filepath.WalkDir(targetPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			log.Printf("accessing %s: %v", path, err)
+			log.Printf(internal.ErrorPrefix+" accessing %s: %v\n", path, err)
 			return nil // continue walking
 		}
 		// exclude symlinks
 		if d.Type()&os.ModeSymlink != 0 {
 			return nil
 		}
-		if !d.IsDir() && strings.HasSuffix(d.Name(), tmpExt) {
+		if !d.IsDir() && strings.HasSuffix(d.Name(), fileExt) {
 			actionFunc(path)
 		}
 		return nil
@@ -180,20 +178,20 @@ func walkFiles(targetPath, tmpExt string, actionFunc func(string)) error {
 }
 
 // renameFiles on transaction success - rename tmp files to normal
-func renameFiles(targetPath, tmpExt string) error {
-	return walkFiles(targetPath, tmpExt, func(path string) {
-		newPath := strings.TrimSuffix(path, tmpExt)
+func renameFiles(targetPath, fileExt string) error {
+	return walkFiles(targetPath, fileExt, func(path string) {
+		newPath := strings.TrimSuffix(path, fileExt)
 		if err := os.Rename(path, newPath); err != nil {
-			fmt.Printf("REMOVE/DEBUG: rename %s to %s: %v\n", path, newPath, err)
+			log.Printf(internal.ErrorPrefix+" renaming %s to %s: %s\n", path, newPath, err)
 		}
 	})
 }
 
 // cleanupFiles on transaction failure - remove tmp files
-func cleanupFiles(targetPath, tmpExt string) error {
-	return walkFiles(targetPath, tmpExt, func(path string) {
+func cleanupFiles(targetPath, fileExt string) error {
+	return walkFiles(targetPath, fileExt, func(path string) {
 		if err := os.Remove(path); err != nil {
-			fmt.Printf("REMOVE/DEBUG: remove %s: %v\n", path, err)
+			log.Printf(internal.ErrorPrefix+" removing %s: %s\n", path, err)
 		}
 	})
 }
@@ -383,36 +381,4 @@ func (f *Feature) walkIncludeFiles(mainJason []byte, fileActionFunc func(string)
 		}
 	}
 	return incFilesJson, nil
-}
-
-// TODO/FIME: improve output
-func (f *Feature) Print() error {
-	for _, cfgItem := range f.Params {
-		fmt.Println("~~~config, name:", cfgItem.Name, "type:", cfgItem.Type)
-		for _, prm := range cfgItem.Settings {
-			fmt.Println("~~~param, weight:", prm.Weight, ", appVersion:", prm.AppVersion)
-			switch cfgItem.Type {
-			case "string":
-				val, _ := prm.AsString()
-				fmt.Println("~~~~strVal:", val)
-			case "integer", "int", "number":
-				val, _ := prm.AsInt()
-				fmt.Println("~~~~intVal:", val)
-			case "boolean", "bool":
-				val, _ := prm.AsBool()
-				fmt.Println("~~~~boolVal:", val)
-			case "array":
-				val, _ := prm.AsStringArray()
-				fmt.Println("~~~~strArrVal:", val)
-			case "object":
-				val, _ := prm.AsString()
-				fmt.Println("~~~~jsonObjVal:", val)
-			case "file":
-				val, _ := prm.AsString()
-				fmt.Println("~~~~file:", val)
-				fmt.Println("~~~~fileStral:", prm.IncValue)
-			}
-		}
-	}
-	return nil
 }
