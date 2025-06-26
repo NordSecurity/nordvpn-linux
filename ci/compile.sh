@@ -19,6 +19,7 @@ ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Environment=${ENVIRONMENT}' \
 	-X 'main.Hash=${HASH}' \
 	-X 'main.Arch=${ARCH}' \
+	-X 'main.RemotePath=${REMOTE_PATH}' \
 	-X 'main.PackageType=${PACKAGE:-deb}' \
 	-X 'main.Salt=${SALT}'"
 
