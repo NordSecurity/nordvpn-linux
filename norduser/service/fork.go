@@ -1,10 +1,13 @@
 package service
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"strconv"
@@ -140,6 +143,11 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	// dir, where user usually does not have access.
 	cmd.Env = append(cmd.Env, "HOME="+home)
 
+	err = mergeUserSessionEnv(uid, gid, &cmd.Env, NewSystemEnvConfigurator())
+	if err != nil {
+		log.Println(internal.WarningPrefix, "failed to retrieve user session's environment: %v", err)
+	}
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("starting the process: %w", err)
 	}
@@ -236,4 +244,90 @@ func (c *ChildProcessNorduser) Restart(uid uint32) error {
 	}
 
 	return nil
+}
+
+// mergeUserSessionEnv gathers environment variables from user session
+// and merges them with the provided environment list.
+func mergeUserSessionEnv(uid, gid uint32, currentEnv *[]string, conf EnvConfigurator) error {
+	if currentEnv == nil {
+		return fmt.Errorf("environment slice does not exist")
+	}
+
+	// Use the injected configurator to get the prepared command
+	cmd, err := conf.ConfigureEnv(uid, gid)
+	if err != nil {
+		return fmt.Errorf("failed to configure environment: %w", err)
+	}
+
+	// Execute the command and retrieve output
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("could not fetch user environment: %w", err)
+	}
+
+	// Scan output and append to currentEnv
+	scanner := bufio.NewScanner(bytes.NewReader(output))
+	for scanner.Scan() {
+		*currentEnv = append(*currentEnv, scanner.Text())
+	}
+
+	return nil
+}
+
+type EnvConfigurator interface {
+	ConfigureEnv(uid, gid uint32) (*exec.Cmd, error)
+}
+
+type systemGIDProvider struct{}
+
+// GetNordvpnGid fetches the actual group ID of NordVPN.
+func (s *systemGIDProvider) GetNordvpnGid() (uint32, error) {
+	gid, err := internal.GetNordvpnGid()
+	if err != nil {
+		return 0, err
+	}
+
+	if gid < 0 {
+		return 0, errors.New("negative gid cannot be converted to uint32")
+	}
+
+	if uint64(gid) > uint64(math.MaxUint32) {
+		return 0, errors.New("gid exceeds uint32 maximum value")
+	}
+
+	return uint32(gid), nil
+}
+
+type gidProvider interface {
+	GetNordvpnGid() (uint32, error)
+}
+
+type SystemEnvConfigurator struct {
+	provider gidProvider
+}
+
+func NewSystemEnvConfigurator() EnvConfigurator {
+	return &SystemEnvConfigurator{provider: &systemGIDProvider{}}
+}
+
+func (s *SystemEnvConfigurator) ConfigureEnv(uid, gid uint32) (*exec.Cmd, error) {
+	userRtDir := fmt.Sprintf("/run/user/%d", uid)
+
+	cmd := exec.Command("systemctl", "--user", "show-environment")
+	cmd.Env = []string{"XDG_RUNTIME_DIR=" + userRtDir}
+
+	nordvpnGid, err := s.provider.GetNordvpnGid()
+	if err != nil {
+		return nil, fmt.Errorf("determining nordvpn gid: %w", err)
+	}
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Credential: &syscall.Credential{
+			Uid:    uid,
+			Gid:    gid,
+			Groups: []uint32{nordvpnGid},
+		},
+	}
+
+	return cmd, nil
 }
