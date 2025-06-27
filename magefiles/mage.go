@@ -238,16 +238,18 @@ func (Build) NoticesDocker(ctx context.Context) error {
 		return nil
 	}
 
-	cwd, err := os.Getwd()
+	env, err := getEnv()
 	if err != nil {
 		return err
 	}
-	env := map[string]string{"WORKDIR": cwd}
+	env["WORKDIR"] = dockerWorkDir
+	env["GOCACHE"] = "/tmp/go-cache"
+
 	return RunDocker(
 		ctx,
 		env,
 		imageDepender,
-		[]string{"ci/licenses"},
+		[]string{"ci/licenses.sh"},
 	)
 }
 
