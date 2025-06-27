@@ -2,6 +2,7 @@
 package fileshare
 
 import (
+	"errors"
 	"net/netip"
 	"time"
 
@@ -12,6 +13,8 @@ const (
 	DirDepthLimit     = 5
 	TransferFileLimit = 1000
 )
+
+var ErrAddressAlreadyInUse = errors.New("address already in use")
 
 // Fileshare defines a set of operations that any type that wants to act as a fileshare service
 // must implement.

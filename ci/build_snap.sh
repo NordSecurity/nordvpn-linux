@@ -18,10 +18,13 @@ BASEDIR="bin/${ARCH}"
 # shellcheck disable=SC2153
 "${STRIP}" "${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn"
 
-mkdir -p "${WORKDIR}/bin/deps/current-dump"
-
 # Snap does not dereference symlinks on its own
-cp -rL "${WORKDIR}/bin/deps/lib/current" "${WORKDIR}/bin/deps/lib/current-dump"
+# Avoid packaging errors in case of clean builds
+dump_dir="${WORKDIR}/bin/deps/lib/current-dump"
+mkdir -p "${WORKDIR}/bin/deps/lib/current/${ARCH}"
+cp -rL "${WORKDIR}/bin/deps/lib/current" "${dump_dir}"
+# Avoid missing dir errors in case of no libraries used
+[ "$(ls -A "${dump_dir}/${ARCH}")" ] || touch "${dump_dir}/${ARCH}/empty"
 trap 'rm -rf ${WORKDIR}/bin/deps/lib/current-dump' EXIT
 
 # build snap package

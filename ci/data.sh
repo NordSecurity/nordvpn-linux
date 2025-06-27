@@ -53,9 +53,12 @@ gzip "${WORKDIR}"/dist/"${NAME}".1
 # patch autocomplete scripts
 mkdir -p "${WORKDIR}"/dist/autocomplete
 go mod download github.com/urfave/cli/v2
-cp "${GOPATH}"/pkg/mod/github.com/urfave/cli/v2@v2.25.0/autocomplete/bash_autocomplete \
+
+# TODO: LVPN-8375: Remove usage of built-in go variables outside go
+gomodcache=${GOMODCACHE:-$GOPATH/pkg/mod}
+cp "${gomodcache}"/github.com/urfave/cli/v2@v2.25.0/autocomplete/bash_autocomplete \
 	"${WORKDIR}"/dist/autocomplete/bash_autocomplete
-cp "${GOPATH}"/pkg/mod/github.com/urfave/cli/v2@v2.25.0/autocomplete/zsh_autocomplete \
+cp "${gomodcache}"/github.com/urfave/cli/v2@v2.25.0/autocomplete/zsh_autocomplete \
 	"${WORKDIR}"/dist/autocomplete/zsh_autocomplete
 git apply contrib/patches/bash_autocomplete.diff
 git apply contrib/patches/zsh_autocomplete.diff
