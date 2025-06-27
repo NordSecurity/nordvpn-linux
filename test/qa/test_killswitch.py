@@ -4,30 +4,12 @@ import sh
 import lib
 from lib import (
     daemon,
-    info,
-    logging,
     login,
     network,
 )
 
 
-def setup_module(module):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 
 MSG_KILLSWITCH_ON = "Kill Switch is set to 'enabled' successfully."

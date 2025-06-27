@@ -6,29 +6,10 @@ import sh
 import lib
 from lib import (
     daemon,
-    logging,
-    login,
     network,
 )
 
-
-def setup_module(module):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    network.unblock()
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log()
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "unblock_network", "collect_logs")
 
 
 def test_api_call_after_vpn_connect():

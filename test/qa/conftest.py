@@ -1,9 +1,11 @@
 import datetime
 import io
+import lib
 import subprocess
 import signal
 import threading
 import time
+import sh
 
 import dns.resolver
 import pytest
@@ -11,7 +13,7 @@ import pytest
 import sys
 import os
 
-from lib import logging, network
+from lib import logging, network, daemon, login, info, firewall
 
 pytest_plugins = ("lib.pytest_timeouts.pytest_timeouts")
 
@@ -120,3 +122,67 @@ def _capture_traffic(stop_event):
         process.kill()
     print(f"tshark out {process.stdout.read().strip()[-10:]} - {process.stderr.read().strip()[-10:]}")
     time.sleep(1)
+
+
+@pytest.fixture
+def collect_logs():
+    """Collect logs."""
+    logging.log()
+
+    yield
+
+    logging.log(data=info.collect())
+    logging.log()
+
+
+@pytest.fixture
+def nordvpnd_scope_function(collect_logs):  # noqa: ARG001
+    """Manage the NordVPN daemon start/stop and login/logout states in a function scope."""
+    daemon.start()
+    login.login_as("default")
+
+    yield
+
+    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.set.defaults()
+    daemon.stop()
+
+
+@pytest.fixture(scope='module')
+def nordvpnd_scope_module():
+    """Manage the NordVPN daemon start/stop and login/logout states in a module scope."""
+    daemon.start()
+    login.login_as("default")
+
+    yield
+
+    sh.nordvpn.logout("--persist-token")
+    daemon.stop()
+
+
+@pytest.fixture(scope="module")
+def unblock_network(nordvpnd_scope_module):  # noqa: ARG001
+    """Unblocks the network after tests run."""
+
+    yield
+
+    network.unblock()
+
+
+@pytest.fixture(scope='module')
+def add_and_delete_random_route():
+    """Add and delete a random network route."""
+    firewall.add_and_delete_random_route()
+
+
+@pytest.fixture
+def disable_dns_and_threat_protection():
+    """Disable DNS and threat protection settings."""
+    lib.set_dns("off")
+    lib.set_threat_protection_lite("off")
+
+
+@pytest.fixture
+def disable_notifications():
+    """Disable notifications."""
+    lib.set_notify("off")
