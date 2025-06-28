@@ -28,10 +28,18 @@ class Ssh:
 
     def exec_command(self, command: str) -> str:
         _, stdout, stderr = self.client.exec_command(command, timeout=10)
+        try:
+            output = stdout.read().decode()
+            error = stderr.read().decode()
+        except TimeoutError as err:
+            stdout.close()
+            stderr.close()
+            raise RuntimeError("Socket timed out.") from err
+
         if stdout.channel.recv_exit_status() != 0:
-            msg = f'{stdout.read().decode()} {stderr.read().decode()}'
+            msg = f'{output} {error}'
             raise RuntimeError(msg)
-        return stdout.read().decode()
+        return output
 
     # Sends file in the provided path to the ssh peer
     # path and remote_path MUST be different, otherwise an empty file will be uploaded (fails to read local file for some reason)
