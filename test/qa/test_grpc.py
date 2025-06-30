@@ -2,6 +2,7 @@ import pytest
 import threading
 import sh
 import grpc
+import datetime
 from collections.abc import Sequence
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
 
@@ -47,8 +48,11 @@ def test_tunnel_update_notifications_before_and_after_connect():
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
         len(expected_states), ['connection_status'])))
     thread.start()
+    logging.log(f"DEBUG: connect: {datetime.datetime.now()}")
     sh.nordvpn.connect()
+    logging.log(f"DEBUG: connected: {datetime.datetime.now()}")
     sh.nordvpn.disconnect()
+    logging.log(f"DEBUG: disconnected: {datetime.datetime.now()}")
     thread.join()
     assert all(a.connection_status.state == b for a,
                b in zip(result, expected_states, strict=True))
