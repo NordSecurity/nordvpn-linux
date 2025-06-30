@@ -69,6 +69,7 @@ def collect_state_changes(stop_at: int, tracked_states: Sequence[str], log_time 
             logging.log(f"DEBUG: subscribed: {datetime.datetime.now()}")
         result = []
         for change in response_stream:
+            logging.log(f"DEBUG: received state change: {change}")
             # Ignore the rest of updates as some settings updates may be published
             if change.WhichOneof('state') in tracked_states:
                 result.append(change)
