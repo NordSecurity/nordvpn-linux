@@ -36,20 +36,20 @@ func readOSReleaseTag(tag string) (string, error) {
 
 // HostOSPrettyName retrieves user-friendly OS name using D-Bus communication with the system
 // hostname service.
-func GetHostOSPrettyName() string {
+func GetHostOSPrettyName() (string, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "connecting to system dbus:", err)
-		return ""
+		return "", err
 	}
 
 	name, err := getOSPrettyName(NewHostname1DBusPropertyClient(conn))
 	if err != nil {
 		log.Println(internal.WarningPrefix, "retrieving OS pretty name:", err)
-		return ""
+		return "", err
 	}
 
-	return name
+	return name, nil
 }
 
 func readTagFromOSRelease(r io.Reader, tag string) (string, error) {
