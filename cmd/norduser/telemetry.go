@@ -71,7 +71,7 @@ func sendDesktopEnvironmentMetric(
 
 	de := defaultDesktopEnv
 	if !submitEmpty {
-		de = sysinfo.GetDesktopEnvironment()
+		de = sysinfo.GetDisplayDesktopEnvironment()
 	}
 
 	req := &telemetrypb.DesktopEnvironmentRequest{DesktopEnvName: de}
