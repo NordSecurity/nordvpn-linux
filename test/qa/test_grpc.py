@@ -82,6 +82,7 @@ def collect_state_changes(stop_at: int, tracked_states: Sequence[str], subscribe
                     break
         logging.log(f"DEBUG: state changes collected: {datetime.datetime.now()}")
         response_stream.cancel()
+        channel.close()
         return result
 
 
