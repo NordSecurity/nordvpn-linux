@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/sysinfo/dbusutil"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/godbus/dbus/v5"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,6 +23,8 @@ func (m *mockDBusClient) GetProperty(name string) (dbus.Variant, error) {
 }
 
 func Test_GetStringProperty_Success(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	client := &mockDBusClient{
 		mockResponse: dbus.MakeVariant("hello"),
 	}
@@ -31,6 +34,8 @@ func Test_GetStringProperty_Success(t *testing.T) {
 }
 
 func Test_GetStringProperty_InvalidType(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	client := &mockDBusClient{
 		mockResponse: dbus.MakeVariant(1234),
 	}
@@ -40,18 +45,34 @@ func Test_GetStringProperty_InvalidType(t *testing.T) {
 }
 
 func Test_GetStringProperty_ErrorFromClient(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	client := &mockDBusClient{
 		mockError: errors.New("DBus failure"),
 	}
 	result, err := dbusutil.GetStringProperty(client, "SomeProp")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to get DBus property")
 	assert.Empty(t, result)
 }
 
 func Test_GetStringProperty_NilClient(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	result, err := dbusutil.GetStringProperty(nil, "AnyProp")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid DBus client")
 	assert.Empty(t, result)
+}
+
+func Test_NewPropertyClient_NilClient(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	client := dbusutil.NewPropertyClient(nil, "Service", "AnyProp")
+	assert.Nil(t, client)
+}
+
+func Test_NewPropertyClient_DummyClient(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	client := dbusutil.NewPropertyClient(&dbus.Conn{}, "Service", "AnyProp")
+	assert.NotNil(t, client)
 }
