@@ -5,12 +5,13 @@ import sh
 import lib
 from lib import (
     daemon,
-    info,
-    logging,
     login,
     network,
     settings,
 )
+
+
+pytestmark = pytest.mark.usefixtures("collect_logs")
 
 
 def setup_module(module):  # noqa: ARG001
@@ -19,15 +20,6 @@ def setup_module(module):  # noqa: ARG001
 
 def teardown_module(module):  # noqa: ARG001
     daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
 
 
 def test_user_consent_is_displayed_on_login():

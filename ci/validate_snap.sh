@@ -68,7 +68,10 @@ snap_connect_interfaces
 
 echo "~~~restart snap nordvpn service"
 sudo snap stop nordvpn
+# Allow to fail here to gather logs below. In case service failed to start, script will fail below.
+set +e
 sudo snap start nordvpn
+set -e
 
 sleep 5
 

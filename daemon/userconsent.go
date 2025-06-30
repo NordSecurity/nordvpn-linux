@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -41,6 +42,7 @@ type AnalyticsConsentChecker struct {
 	cm          config.Manager
 	insightsAPI core.InsightsAPI
 	authChecker auth.Checker
+	analytics   events.Analytics
 }
 
 func NewConsentChecker(
@@ -48,8 +50,15 @@ func NewConsentChecker(
 	cm config.Manager,
 	insightsAPI core.InsightsAPI,
 	authChecker auth.Checker,
+	analytics events.Analytics,
 ) *AnalyticsConsentChecker {
-	return &AnalyticsConsentChecker{isDevEnv, cm, insightsAPI, authChecker}
+	return &AnalyticsConsentChecker{
+		isDevEnv,
+		cm,
+		insightsAPI,
+		authChecker,
+		analytics,
+	}
 }
 
 // PrepareDaemonIfConsentNotCompleted sets up the daemon for analytics consent flow.
@@ -109,6 +118,9 @@ func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
 }
 
 func (acc *AnalyticsConsentChecker) setConsentGranted() error {
+	if err := acc.analytics.Enable(); err != nil {
+		return err
+	}
 	return acc.cm.SaveWith(func(c config.Config) config.Config {
 		c.AnalyticsConsent = config.ConsentGranted
 		return c

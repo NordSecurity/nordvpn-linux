@@ -10,8 +10,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	cmesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	sysinfo "github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	"github.com/google/uuid"
 )
@@ -116,7 +116,7 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		privateKey = r.gen.Private()
 	}
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	distroName, err := distro.ReleaseName()
+	distroName, err := sysinfo.GetHostOSName()
 	if err != nil {
 		return err
 	}

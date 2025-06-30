@@ -40,6 +40,8 @@ cp "${WORKDIR}/bin/${ARCH}/nordfileshare" "${BASEDIR}"/usr/lib/${NAME}/nordfiles
 cp "${WORKDIR}/bin/${ARCH}/norduserd" "${BASEDIR}"/usr/lib/${NAME}/norduserd
 
 # nfpm does not dereference symlinks on its own
+# Avoid packaging errors in case of clean builds
+mkdir -p "${WORKDIR}/bin/deps/lib/current/${ARCH}"
 cp -rL "${WORKDIR}/bin/deps/lib/current" "${WORKDIR}/bin/deps/lib/current-dump"
 trap 'rm -rf ${WORKDIR}/bin/deps/lib/current-dump' EXIT
 
