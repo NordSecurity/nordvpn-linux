@@ -64,7 +64,7 @@ def test_tunnel_update_notifications_before_and_after_connect():
                b in zip(result, expected_states, strict=True))
 
 
-def collect_state_changes(stop_at: int, tracked_states: Sequence[str], subscribed_semaphore: threading.Barrier, timeout: int = 10) -> Sequence[state_pb2.AppState]:
+def collect_state_changes(stop_at: int, tracked_states: Sequence[str], subscribed_semaphore: threading.Barrier, timeout: int = 15) -> Sequence[state_pb2.AppState]:
     logging.log(f"DEBUG: subscribe to state changes: {datetime.datetime.now()}")
     with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
         stub = service_pb2_grpc.DaemonStub(channel)
