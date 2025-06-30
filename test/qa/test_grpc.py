@@ -21,13 +21,13 @@ def test_multiple_state_subscribers():
         status_pb2.ConnectionState.CONNECTED,
     ]
 
-    num_threads = 6
-    sem = threading.Barrier(num_threads)
+    num_threads = 5
+    sem = threading.Barrier(num_threads + 1)
     threads = []
     results = {}
 
     threads = [threading.Thread(target=lambda i=i: results.update(
-        {i: collect_state_changes(len(expected_states), ['connection_status'], log_time=True, subscribed_semaphore=sem)})) for i in range(num_threads)]
+        {i: collect_state_changes(len(expected_states), ['connection_status'], sem)})) for i in range(num_threads)]
 
     [thread.start() for thread in threads]
     sem.wait()
@@ -47,10 +47,13 @@ def test_tunnel_update_notifications_before_and_after_connect():
         status_pb2.ConnectionState.DISCONNECTED,
     ]
 
+    sem = threading.Barrier(2)
+
     result = []
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
-        len(expected_states), ['connection_status'], log_time=True)))
+        len(expected_states), ['connection_status'], sem)))
     thread.start()
+    sem.wait()
     logging.log(f"DEBUG: connect: {datetime.datetime.now()}")
     sh.nordvpn.connect()
     logging.log(f"DEBUG: connected: {datetime.datetime.now()}")
@@ -61,14 +64,13 @@ def test_tunnel_update_notifications_before_and_after_connect():
                b in zip(result, expected_states, strict=True))
 
 
-def collect_state_changes(stop_at: int, tracked_states: Sequence[str], log_time = False, timeout: int = 10, subscribed_semaphore: threading.Barrier = None) -> Sequence[state_pb2.AppState]:
+def collect_state_changes(stop_at: int, tracked_states: Sequence[str], subscribed_semaphore: threading.Barrier, timeout: int = 10) -> Sequence[state_pb2.AppState]:
     logging.log(f"DEBUG: subscribe to state changes: {datetime.datetime.now()}")
     with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
         stub = service_pb2_grpc.DaemonStub(channel)
         response_stream = stub.SubscribeToStateChanges(
             common_pb2.Empty(), timeout=timeout)
-        if subscribed_semaphore is not None:
-            subscribed_semaphore.wait()
+        subscribed_semaphore.wait()
         logging.log(f"DEBUG: subscribed: {datetime.datetime.now()}")
         result = []
         for change in response_stream:
@@ -93,10 +95,13 @@ def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
         status_pb2.ConnectionState.CONNECTED
     ]
 
+    sem = threading.Barrier(2)
+
     result = []
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
-        len(expected_states), ['connection_status'])))
+        len(expected_states), ['connection_status'], sem)))
     thread.start()
+    sem.wait()
     sh.nordvpn.connect(loc)
     sh.nordvpn.disconnect()
     thread.join()
@@ -114,10 +119,13 @@ def test_manual_connection_source_is_present_in_response():
         status_pb2.ConnectionState.CONNECTED
     ]
 
+    sem = threading.Barrier(2)
+
     result = []
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
-        len(expected_states), ['connection_status'])))
+        len(expected_states), ['connection_status'], sem)))
     thread.start()
+    sem.wait()
     sh.nordvpn.connect()
     sh.nordvpn.disconnect()
     thread.join()
