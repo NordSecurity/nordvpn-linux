@@ -25,7 +25,7 @@ def test_multiple_state_subscribers():
     results = {}
 
     threads = [threading.Thread(target=lambda i=i: results.update(
-        {i: collect_state_changes(len(expected_states), ['connection_status'])})) for i in range(num_threads)]
+        {i: collect_state_changes(len(expected_states), ['connection_status'], log_time=True)})) for i in range(num_threads)]
 
     [thread.start() for thread in threads]
     sh.nordvpn.connect()
@@ -46,7 +46,7 @@ def test_tunnel_update_notifications_before_and_after_connect():
 
     result = []
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
-        len(expected_states), ['connection_status'])))
+        len(expected_states), ['connection_status'], log_time=True)))
     thread.start()
     logging.log(f"DEBUG: connect: {datetime.datetime.now()}")
     sh.nordvpn.connect()
@@ -58,13 +58,15 @@ def test_tunnel_update_notifications_before_and_after_connect():
                b in zip(result, expected_states, strict=True))
 
 
-def collect_state_changes(stop_at: int, tracked_states: Sequence[str], timeout: int = 10) -> Sequence[state_pb2.AppState]:
-    logging.log(f"DEBUG: subscribe to state changes: {datetime.datetime.now()}")
+def collect_state_changes(stop_at: int, tracked_states: Sequence[str], log_time = False, timeout: int = 10) -> Sequence[state_pb2.AppState]:
+    if log_time:
+        logging.log(f"DEBUG: subscribe to state changes: {datetime.datetime.now()}")
     with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
         stub = service_pb2_grpc.DaemonStub(channel)
         response_stream = stub.SubscribeToStateChanges(
             common_pb2.Empty(), timeout=timeout)
-        logging.log(f"DEBUG: subscribed: {datetime.datetime.now()}")
+        if log_time:
+            logging.log(f"DEBUG: subscribed: {datetime.datetime.now()}")
         result = []
         for change in response_stream:
             # Ignore the rest of updates as some settings updates may be published
@@ -72,9 +74,11 @@ def collect_state_changes(stop_at: int, tracked_states: Sequence[str], timeout: 
                 result.append(change)
                 if len(result) >= stop_at:
                     break
-        logging.log(f"DEBUG: state changes collected: {datetime.datetime.now()}")
+        if log_time:
+            logging.log(f"DEBUG: state changes collected: {datetime.datetime.now()}")
         return result
-    logging.log(f"DEBUG: timeout: {datetime.datetime.now()}")
+    if log_time:
+        logging.log(f"DEBUG: timeout: {datetime.datetime.now()}")
 
 
 def test_is_virtual_location_is_true_for_virtual_location():
