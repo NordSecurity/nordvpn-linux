@@ -65,6 +65,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	accountInfo := &pb.AccountResponse{}
 
 	vpnExpired, err := r.ac.IsVPNExpired()
+	log.Println("AccountInfo, IsVPNExpired():", vpnExpired, err)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
@@ -75,9 +76,10 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	}
 
 	accountInfo.DedicatedIpStatus = internal.CodeSuccess
+	log.Println("calling GetDedicatedIPServices")
 	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated ip services: %w", err)
+		log.Println(internal.ErrorPrefix, "getting dedicated ip services:", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	}
 
@@ -115,7 +117,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	accountInfo.ExpiresAt = tokenData.ServiceExpiry
 	accountInfo.LastDedicatedIpExpiresAt = dedicatedIPExpirationDate
 
-	currentUser, err := r.credentialsAPI.CurrentUser(tokenData.Token)
+	currentUser, err := r.credentialsAPI.CurrentUser( /*tokenData.Token*/ )
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "retrieving user:", err)
 		switch {

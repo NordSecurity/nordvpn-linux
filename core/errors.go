@@ -22,6 +22,7 @@ var (
 	ErrInvalidPrefixOrSuffix     = errors.New("nickname contains invalid prefix or suffix")
 	ErrNicknameWithDoubleHyphens = errors.New("nickname contains double hyphens")
 	ErrContainsInvalidChars      = errors.New("nickname contains invalid characters")
+	ErrTokenRevoked              = errors.New("token revoked")
 
 	// ErrUnauthorized is returned for 401 HTTP responses.
 	ErrUnauthorized = errors.New(http.StatusText(http.StatusUnauthorized))

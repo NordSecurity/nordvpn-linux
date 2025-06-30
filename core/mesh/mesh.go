@@ -20,6 +20,8 @@ type Registry interface {
 	) error
 	// Unregister Peer from the mesh network.
 	Unregister(token string, self uuid.UUID) error
+	// List peers in the mesh network for a given peer.
+	// List(token string, self uuid.UUID) (MachinePeers, error)
 	// Unpair invited peer.
 	Unpair(token string, self uuid.UUID, peer uuid.UUID) error
 	// NotifyNewTransfer notifies a device about a new incoming transfer (outgoing from this

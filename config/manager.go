@@ -17,6 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
+
 var (
 	// InstallFilePath defines filename of install id file
 	InstallFilePath = filepath.Join(internal.DatFilesPathCommon, "install.dat")
