@@ -2,6 +2,7 @@ import pytest
 import threading
 import sh
 import grpc
+import datetime
 from collections.abc import Sequence
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
 
@@ -20,13 +21,15 @@ def test_multiple_state_subscribers():
     ]
 
     num_threads = 5
+    sem = threading.Semaphore(num_threads)
     threads = []
     results = {}
 
     threads = [threading.Thread(target=lambda i=i: results.update(
-        {i: collect_state_changes(len(expected_states), ['connection_status'])})) for i in range(num_threads)]
+        {i: collect_state_changes(len(expected_states), ['connection_status'], log_time=True, subscribed_semaphore=sem)})) for i in range(num_threads)]
 
     [thread.start() for thread in threads]
+    sem.acquire()
     sh.nordvpn.connect()
     [thread.join() for thread in threads]
 
@@ -45,28 +48,43 @@ def test_tunnel_update_notifications_before_and_after_connect():
 
     result = []
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes(
-        len(expected_states), ['connection_status'])))
+        len(expected_states), ['connection_status'], log_time=True)))
     thread.start()
+    logging.log(f"DEBUG: connect: {datetime.datetime.now()}")
     sh.nordvpn.connect()
+    logging.log(f"DEBUG: connected: {datetime.datetime.now()}")
     sh.nordvpn.disconnect()
+    logging.log(f"DEBUG: disconnected: {datetime.datetime.now()}")
     thread.join()
     assert all(a.connection_status.state == b for a,
                b in zip(result, expected_states, strict=True))
 
 
-def collect_state_changes(stop_at: int, tracked_states: Sequence[str], timeout: int = 10) -> Sequence[state_pb2.AppState]:
+def collect_state_changes(stop_at: int, tracked_states: Sequence[str], log_time = False, timeout: int = 10, subscribed_semaphore: threading.Semaphore = None) -> Sequence[state_pb2.AppState]:
+    if log_time:
+        logging.log(f"DEBUG: subscribe to state changes: {datetime.datetime.now()}")
     with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
         stub = service_pb2_grpc.DaemonStub(channel)
         response_stream = stub.SubscribeToStateChanges(
             common_pb2.Empty(), timeout=timeout)
+        if subscribed_semaphore is not None:
+            subscribed_semaphore.release()
+        if log_time:
+            logging.log(f"DEBUG: subscribed: {datetime.datetime.now()}")
         result = []
         for change in response_stream:
+            logging.log(f"DEBUG: received state change: {change}")
             # Ignore the rest of updates as some settings updates may be published
             if change.WhichOneof('state') in tracked_states:
                 result.append(change)
                 if len(result) >= stop_at:
                     break
+        if log_time:
+            logging.log(f"DEBUG: state changes collected: {datetime.datetime.now()}")
         return result
+    logging.log("DEBUG: exit")
+    if log_time:
+        logging.log(f"DEBUG: timeout: {datetime.datetime.now()}")
 
 
 def test_is_virtual_location_is_true_for_virtual_location():
