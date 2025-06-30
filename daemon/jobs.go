@@ -12,6 +12,7 @@ import (
 	"github.com/godbus/dbus/v5"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -29,6 +30,7 @@ const (
 func (r *RPC) StartJobs(
 	statePublisher *state.StatePublisher,
 	heartBeatPublisher events.Publisher[time.Duration],
+	remoteConfigLoader remote.ConfigLoader,
 ) {
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
@@ -38,7 +40,7 @@ func (r *RPC) StartJobs(
 	}
 
 	_, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Minute), gocron.NewTask(func() { // TODO/FIXME: change time/frequency
-		if err := r.remoteConfigGetter.LoadConfig(); err != nil {
+		if err := remoteConfigLoader.LoadConfig(); err != nil {
 			log.Printf("JobConfigLoader: %s", err)
 		}
 	}), gocron.WithName("job config loader"))

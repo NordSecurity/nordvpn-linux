@@ -16,11 +16,10 @@ type RemoteStorage interface {
 	GetRemoteFile(name string) ([]byte, error)
 }
 
-// RemoteConfigGetter get values from remote config
-type RemoteConfigGetter interface {
+// ConfigGetter get values from remote config
+type ConfigGetter interface {
 	GetTelioConfig() (string, error)
 	FeatureConfig
-	FeatureConfigLoader
 }
 
 type FeatureConfig interface {
@@ -28,7 +27,7 @@ type FeatureConfig interface {
 	GetFeatureParam(featureName, paramName string) (string, error)
 }
 
-type FeatureConfigLoader interface {
+type ConfigLoader interface {
 	LoadConfig() error
 }
 

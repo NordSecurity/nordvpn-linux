@@ -626,7 +626,7 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}()
-	rpc.StartJobs(statePublisher, heartBeatSubject)
+	rpc.StartJobs(statePublisher, heartBeatSubject, rcConfig)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {
