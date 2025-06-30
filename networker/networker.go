@@ -882,10 +882,12 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 				Name:       "allowlist_ports_" + pair.name,
 				Interfaces: ifaces,
 				Protocols:  []string{pair.name},
-				Direction:  firewall.TwoWay,
-				Ports:      ports,
-				Allow:      true,
-				Physical:   true,
+				Direction:  firewall.Inbound,
+				// TwoWay for this is unnecessary as the rules added by following EnablePorts
+				// function is already covering the marking of outgoing packets
+				Ports:    ports,
+				Allow:    true,
+				Physical: true,
 			})
 			if err := netw.allowlistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
 				return errors.Join(fmt.Errorf("enabling allowlist routing"), err)
