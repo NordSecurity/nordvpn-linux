@@ -51,6 +51,7 @@ func newAnalytics(
 	fs *config.FilesystemConfigManager,
 	subAPI core.SubscriptionAPI,
 	httpClient http.Client,
-	version, env, id string) *dummyAnalytics {
+	buildTarget config.BuildTarget,
+	id string) *dummyAnalytics {
 	return &dummyAnalytics{}
 }
