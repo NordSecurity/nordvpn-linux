@@ -28,7 +28,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}
 	}
 
-	if in.NoLogout {
+	if !in.NoLogout {
 		// No error check in case mesh isn't even turned on
 		if err := r.netw.UnSetMesh(); err != nil {
 			log.Println(internal.WarningPrefix, err)
