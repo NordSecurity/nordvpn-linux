@@ -6,7 +6,7 @@ import datetime
 from collections.abc import Sequence
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
 from lib import logging
-
+import json
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
@@ -81,6 +81,7 @@ def collect_state_changes(stop_at: int, tracked_states: Sequence[str], subscribe
                 if len(result) >= stop_at:
                     break
         logging.log(f"DEBUG: state changes collected: {datetime.datetime.now()}")
+        response_stream.cancel()
         return result
 
 

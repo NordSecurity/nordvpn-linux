@@ -42,6 +42,7 @@ func (s *StatePublisher) notify(e any) {
 		defer cancel()
 		select {
 		case <-sub.stopChan:
+			log.Println("DEBUG: dropping subscriber")
 			close(sub.stateChan)
 		case sub.stateChan <- e:
 			newSubs = append(newSubs, sub)
