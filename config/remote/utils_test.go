@@ -32,7 +32,7 @@ func TestGroupDistribution(t *testing.T) {
 	defer uuid.DisableRandPool()
 
 	groups := make([]int, iterations)
-	for i := range iterations {
+	for i := 0; i < iterations; i++ {
 		id := uuid.New()
 		g, err := NewGroup(id, maxGroup)
 		require.NoError(t, err)
