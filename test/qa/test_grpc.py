@@ -5,6 +5,7 @@ import grpc
 import datetime
 from collections.abc import Sequence
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
+from lib import logging
 
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
