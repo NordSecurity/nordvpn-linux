@@ -26,6 +26,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	testevents "github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
@@ -78,6 +79,7 @@ func testRPC() *RPC {
 	dm.SetServersData(time.Now(), serversList(), "")
 
 	cm := newMockConfigManager()
+	analytics := testevents.NewAnalytics(config.ConsentUndefined)
 
 	return NewRPC(
 		internal.Development,
@@ -106,7 +108,7 @@ func testRPC() *RPC {
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),
 		state.NewConnectionInfo(),
-		NewConsentChecker(false, cm, api, &workingLoginChecker{}),
+		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
 	)
 }
 
