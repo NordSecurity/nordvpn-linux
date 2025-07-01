@@ -26,8 +26,30 @@ def test_multiple_state_subscribers():
     threads = []
     results = {}
 
+    chan = grpc.insecure_channel(NORDVPND_SOCKET)
+
+    def collect_state_changes_single_chan(stop_at: int, tracked_states: Sequence[str], subscribed_semaphore: threading.Barrier, channel: grpc.Channel, timeout: int = 15) -> Sequence[state_pb2.AppState]:
+        logging.log(f"DEBUG: subscribe to state changes: {datetime.datetime.now()}")
+        stub = service_pb2_grpc.DaemonStub(channel)
+        response_stream = stub.SubscribeToStateChanges(
+            common_pb2.Empty(), timeout=timeout)
+        subscribed_semaphore.wait()
+        logging.log(f"DEBUG: subscribed: {datetime.datetime.now()}")
+        result = []
+        for change in response_stream:
+            logging.log(f"DEBUG: received state change: {change}")
+            # Ignore the rest of updates as some settings updates may be published
+            if change.WhichOneof('state') in tracked_states:
+                result.append(change)
+                if len(result) >= stop_at:
+                    break
+        logging.log(f"DEBUG: state changes collected: {datetime.datetime.now()}")
+        response_stream.cancel()
+        channel.close()
+        return result
+
     threads = [threading.Thread(target=lambda i=i: results.update(
-        {i: collect_state_changes(len(expected_states), ['connection_status'], sem)})) for i in range(num_threads)]
+        {i: collect_state_changes_single_chan(len(expected_states), ['connection_status'], sem, chan)})) for i in range(num_threads)]
 
     [thread.start() for thread in threads]
     sem.wait()
