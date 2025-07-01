@@ -29,6 +29,7 @@ def test_multiple_state_subscribers():
     chan = grpc.insecure_channel(NORDVPND_SOCKET)
 
     def collect_state_changes_single_chan(stop_at: int, tracked_states: Sequence[str], subscribed_semaphore: threading.Barrier, channel: grpc.Channel, timeout: int = 15) -> Sequence[state_pb2.AppState]:
+        grpc.channel_ready_future(channel).result(timeout=timeout)
         logging.log(f"DEBUG: subscribe to state changes: {datetime.datetime.now()}")
         stub = service_pb2_grpc.DaemonStub(channel)
         response_stream = stub.SubscribeToStateChanges(
@@ -45,7 +46,6 @@ def test_multiple_state_subscribers():
                     break
         logging.log(f"DEBUG: state changes collected: {datetime.datetime.now()}")
         response_stream.cancel()
-        channel.close()
         return result
 
     threads = [threading.Thread(target=lambda i=i: results.update(
@@ -55,6 +55,8 @@ def test_multiple_state_subscribers():
     sem.wait()
     sh.nordvpn.connect()
     [thread.join() for thread in threads]
+
+    chan.close()
 
     for i in range(num_threads):
         assert all(a.connection_status.state == b for a, b in zip(
@@ -89,6 +91,7 @@ def test_tunnel_update_notifications_before_and_after_connect():
 def collect_state_changes(stop_at: int, tracked_states: Sequence[str], subscribed_semaphore: threading.Barrier, timeout: int = 15) -> Sequence[state_pb2.AppState]:
     logging.log(f"DEBUG: subscribe to state changes: {datetime.datetime.now()}")
     with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
+        grpc.channel_ready_future(channel).result(timeout=timeout)
         stub = service_pb2_grpc.DaemonStub(channel)
         response_stream = stub.SubscribeToStateChanges(
             common_pb2.Empty(), timeout=timeout)
