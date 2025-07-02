@@ -11,7 +11,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const logTag = "[telemery]"
+const logTag = "[telemetry]"
 
 // MetricsListener defines a callback function used to report collected metrics.
 type MetricsListener func(metric Metric, value any) error
