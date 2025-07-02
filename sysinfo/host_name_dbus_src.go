@@ -32,7 +32,7 @@ const (
 	dbusHostname1PropFirmwareVendor            string = "FirmwareVendor"
 )
 
-// HostOSPrettyName retrieves user-friendly OS name using D-Bus communication with the system
+// GetHostOSPrettyName retrieves user-friendly OS name using D-Bus communication with the system
 // hostname service.
 func GetHostOSPrettyName() (string, error) {
 	conn, err := dbus.SystemBus()

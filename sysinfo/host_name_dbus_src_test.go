@@ -104,14 +104,10 @@ func Test_GetPropertyFromDBus(t *testing.T) {
 func Test_NewHostname1DBusPropertyClient(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	// client := NewHostname1DBusPropertyClient(&dbus.Conn{})
 	client := dbusutil.NewPropertyClient(
 		nil,
 		"org.freedesktop.hostname1",
 		"/org/freedesktop/hostname1",
 	)
 	assert.Nil(t, client, "must be nil")
-
-	// assert.Equal(t, client.service, "org.freedesktop.hostname1")
-	// assert.Equal(t, client.objectPath, dbus.ObjectPath("/org/freedesktop/hostname1"))
 }
