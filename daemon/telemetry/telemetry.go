@@ -13,18 +13,18 @@ import (
 
 const logTag = "[telemetry]"
 
-// MetricsListener defines a callback function used to report collected metrics.
-type MetricsListener func(metric Metric, value any) error
+// MetricsFunc defines a callback function used to report collected metrics.
+type MetricsFunc func(metric Metric, value any) error
 
-// New creates a new Telemetry instance with the provided MetricsListener.
-func New(listener MetricsListener) *Telemetry {
-	return &Telemetry{metricReporter: listener}
+// New creates a new Telemetry instance with the provided MetricsFunc.
+func New(fn MetricsFunc) *Telemetry {
+	return &Telemetry{metricReporter: fn}
 }
 
 // Telemetry implements the TelemetryServiceServer interface and is used to
 // collect and report telemetry metrics from clients to the daemon.
 type Telemetry struct {
-	metricReporter MetricsListener
+	metricReporter MetricsFunc
 	pb.UnimplementedTelemetryServiceServer
 }
 
