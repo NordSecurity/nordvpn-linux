@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-set -euxo pipefail
 
-source "${WORKDIR}/ci/export_lib_versions.sh"
-source "${WORKDIR}/ci/populate_current_lib_ver.sh"
+source "${WORKDIR}/ci/archs.sh"
 
-lib_root="${WORKDIR}/bin/deps/lib/"
+lib_root="${WORKDIR}/bin/deps/lib"
 
 declare -A targets=(
   [amd64]=x86_64-unknown-linux-gnu
@@ -55,8 +53,9 @@ function build_rust() {
   fi
   repo_root=$1
   pushd "${repo_root}"
-  for arch in "${ARCHS_RUST[@]}"; do
-    target_arch="${targets[$arch]}"
+  for arch in "${ARCHS[@]}"; do
+    rust_arch="${ARCHS_RUST[$arch]}"
+    target_arch="${targets[$rust_arch]}"
     cargo build --target "${target_arch}" --release
   done
   popd
@@ -71,8 +70,9 @@ function link_so_files() {
     exit 1
   fi
   library_name=$1
-  for arch in "${ARCHS_RUST[@]}"; do
-    target_arch="${targets[${arch}]}"
+  for arch in "${ARCHS[@]}"; do
+    rust_arch="${ARCHS_RUST[$arch]}"
+    target_arch="${targets[$rust_arch]}"
     lib_dir="${lib_root}/${library_name}"
     target_dir="${WORKDIR}/build/foss/${library_name}/target"
     mkdir -p "${lib_dir}"
@@ -80,45 +80,3 @@ function link_so_files() {
     ln -sfn "${target_arch}/release" "${target_dir}/${arch}"
   done
 }
-
-mkdir -p "${WORKDIR}/build/foss"
-
-# ====================[  Build libtelio from source ]=========================
-clone_if_absent "https://github.com/NordSecurity/libtelio.git" "${LIBTELIO_VERSION}" "${WORKDIR}/build/foss"
-
-rm -rf "${lib_root}/current"
-
-# BYPASS_LLT_SECRETS is needed for libtelio builds
-BYPASS_LLT_SECRETS=1 build_rust "${WORKDIR}/build/foss/libtelio"
-link_so_files "libtelio"
-
-# ====================[  Build libdrop from source ]==========================
-clone_if_absent "https://github.com/NordSecurity/libdrop.git" "${LIBDROP_VERSION}" "${WORKDIR}/build/foss"
-
-# libdrop does not define configuration for linkers for different architectures
-linkers_config=$(
-  cat <<EOF
-[target.x86_64-unknown-linux-gnu]
-linker = "x86_64-linux-gnu-gcc"
-
-[target.i686-unknown-linux-gnu]
-linker = "i686-linux-gnu-gcc"
-
-[target.aarch64-unknown-linux-gnu]
-linker = "aarch64-linux-gnu-gcc"
-
-[target.armv7-unknown-linux-gnueabihf]
-linker = "arm-linux-gnueabihf-gcc"
-
-[target.arm-unknown-linux-gnueabi]
-linker = "arm-linux-gnueabi-gcc"
-EOF
-)
-mkdir -p "${WORKDIR}/build/foss/libdrop/.cargo"
-echo "${linkers_config}" >"${WORKDIR}/build/foss/libdrop/config.toml"
-
-build_rust "${WORKDIR}/build/foss/libdrop"
-link_so_files "libdrop"
-
-populate_current_ver "${lib_root}/current" "${lib_root}/libtelio/${LIBTELIO_VERSION}" "libtelio.so"
-populate_current_ver "${lib_root}/current" "${lib_root}/libdrop/${LIBDROP_VERSION}" "libnorddrop.so"

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 if [[ ! "${ARCHS:-}" ]]; then
-ARCHS=(
-    i386
-    amd64
-    armel
-    armhf
-    aarch64
-)
+    ARCHS=(
+        i386
+        amd64
+        armel
+        armhf
+        aarch64
+    )
 fi
 
 declare -A ARCHS_REVERSE=(

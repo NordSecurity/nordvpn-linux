@@ -20,7 +20,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_startup"
-	"github.com/NordSecurity/nordvpn-linux/fileshare/libdrop"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/storage"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -179,7 +178,7 @@ func main() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	fileshareImplementation, err := libdrop.New(
+	fileshareImplementation, fileshareStorage, err := newFileshare(
 		eventManager,
 		eventsDBPath,
 		internal.IsProdEnv(Environment),
@@ -199,9 +198,9 @@ func main() {
 
 	eventManager.SetFileshare(fileshareImplementation)
 	if legacyStoragePath != "" {
-		eventManager.SetStorage(storage.NewCombined(legacyStoragePath, fileshareImplementation))
+		eventManager.SetStorage(storage.NewCombined(legacyStoragePath, fileshareStorage))
 	} else {
-		eventManager.SetStorage(storage.NewLibdrop(fileshareImplementation))
+		eventManager.SetStorage(storage.NewLibdrop(fileshareStorage))
 	}
 
 	settings, err := daemonClient.Settings(context.Background(), &daemonpb.Empty{})
@@ -225,7 +224,7 @@ func main() {
 
 	err = fileshareImplementation.Enable(meshnetIP)
 	if err != nil {
-		if errors.Is(err, libdrop.ErrLAddressAlreadyInUse) {
+		if errors.Is(err, fileshare.ErrAddressAlreadyInUse) {
 			log.Println(internal.ErrorPrefix, "mesh already in use:", err)
 			os.Exit(int(childprocess.CodeAddressAlreadyInUse))
 		}

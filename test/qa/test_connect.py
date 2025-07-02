@@ -6,26 +6,15 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, info, logging, login, network, server
+from lib import daemon, info, logging, network, server
+
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
+
 
 CONNECT_ALIAS = [
     "connect",
     "c"
 ]
-
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults("--logout")
-    daemon.stop()
 
 
 def get_alias() -> str:

@@ -4,28 +4,11 @@ import pytest
 import sh
 
 import lib
-from lib import allowlist, daemon, firewall, info, logging, login
+from lib import allowlist, firewall
 from lib.dynamic_parametrize import dynamic_parametrize
 
 
-def setup_module(module):  # noqa: ARG001
-    firewall.add_and_delete_random_route()
-
-
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults("--logout")
-    daemon.stop()
+pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
 
 
 @dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS + lib.PORTS_RANGE,

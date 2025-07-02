@@ -6,12 +6,8 @@ function populate_current_ver() {
   lib_dir="${2}"
   so_file="${3}"
 
-  for path in "${lib_dir}"/*; do
-    arch="${path##*/}"
-    if [[ "${arch}" = "checkout-completed-flag" ]]; then
-	    continue
-    fi
+  for arch in "${ARCHS[@]}"; do
     mkdir -p "${current_ver_dir}/${arch}"
-    ln -sfnr "${path}/${so_file}" "${current_ver_dir}/${arch}/${so_file}"
+    ln -snfr "${lib_dir}/${arch}/${so_file}" "${current_ver_dir}/${arch}/${so_file}"
   done
 }

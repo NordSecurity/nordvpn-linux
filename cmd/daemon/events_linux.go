@@ -8,6 +8,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
@@ -44,6 +45,7 @@ func (*dummyAnalytics) NotifyLANDiscovery(bool) error                       { re
 func (*dummyAnalytics) NotifyVirtualLocation(bool) error                    { return nil }
 func (*dummyAnalytics) NotifyPostquantumVpn(bool) error                     { return nil }
 func (*dummyAnalytics) Stop() error                                         { return nil }
+func (*dummyAnalytics) OnTelemetry(telemetry.Metric, any) error             { return nil }
 
 func newAnalytics(
 	eventsDbPath string,

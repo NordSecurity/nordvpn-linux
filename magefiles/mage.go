@@ -1,3 +1,5 @@
+//go:build mage
+
 package main
 
 import (
@@ -20,6 +22,7 @@ const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.3.4"
 	imagePackager          = registryPrefix + "packager:1.3.1"
+	imageDepender          = registryPrefix + "depender:1.3.1"
 	imageSnapPackager      = registryPrefix + "snaper:1.0.0"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.1"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
@@ -229,12 +232,30 @@ func (Build) Notices() error {
 	return sh.RunWith(env, "ci/licenses.sh")
 }
 
+// Notices for third party dependencies
+func (Build) NoticesDocker(ctx context.Context) error {
+	if internal.FileExists("dist/THIRD-PARTY-NOTICES.md") {
+		return nil
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	env := map[string]string{"WORKDIR": cwd}
+	return RunDocker(
+		ctx,
+		env,
+		imageDepender,
+		[]string{"ci/licenses"},
+	)
+}
+
 func buildPackage(packageType string, buildFlags string) error {
 	env, err := getEnv()
 	if err != nil {
 		return err
 	}
-	env["GOPATH"] = build.Default.GOPATH
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -250,9 +271,9 @@ func buildPackage(packageType string, buildFlags string) error {
 
 	env["WORKDIR"] = cwd
 	if packageType == "snap" {
-		return sh.RunWith(env, "ci/build_snap.sh")
+		return sh.RunWithV(env, "ci/build_snap.sh")
 	}
-	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", packageType)
+	return sh.RunWithV(env, "ci/nfpm/build_packages_resources.sh", packageType)
 }
 
 // Deb package for the host architecture
@@ -277,7 +298,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	}
 	mg.Deps(Build.Data)
 	mg.Deps(mg.F(buildBinariesDocker, buildFlags))
-	mg.Deps(Build.Notices)
+	mg.Deps(Build.NoticesDocker)
 
 	// do not build openvpn dependency if it already exists
 	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/current/%s/openvpn", env["ARCH"])) {
@@ -436,11 +457,12 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 	}
 
 	env["WORKDIR"] = dockerWorkDir
-	return RunDocker(
+	return RunDockerWithSettings(
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"ci/openvpn/build.sh"},
+		[]string{"sh", "-c", "ci/openvpn/fix_dependencies.sh; ci/openvpn/build.sh"},
+		DockerSettings{Privileged: true},
 	)
 }
 
@@ -457,9 +479,22 @@ func (Build) Rust(ctx context.Context) error {
 	}
 
 	env["WORKDIR"] = cwd
-	env["ARCHS_RUST"] = env["ARCH"]
+	features, ok := env["FEATURES"]
+	if !ok {
+		features = "telio drop"
+	}
 
-	return sh.RunWith(env, "ci/build_rust.sh")
+	if strings.Contains(features, "telio") {
+		if err := sh.RunWith(env, "ci/build_libtelio.sh"); err != nil {
+			return err
+		}
+	}
+	if strings.Contains(features, "drop") {
+		if err := sh.RunWith(env, "ci/build_libdrop.sh"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Builds rust dependencies using Docker builder
@@ -470,15 +505,22 @@ func (Build) RustDocker(ctx context.Context) error {
 	}
 
 	// build only for host architecture by default
-	env["ARCHS_RUST"] = env["ARCH"]
 	env["WORKDIR"] = dockerWorkDir
-	if err := RunDocker(
-		ctx,
-		env,
-		imageRuster,
-		[]string{"ci/build_rust.sh"},
-	); err != nil {
-		return err
+
+	features, ok := env["FEATURES"]
+	if !ok {
+		features = "telio drop"
+	}
+
+	if strings.Contains(features, "telio") {
+		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libtelio.sh"}); err != nil {
+			return err
+		}
+	}
+	if strings.Contains(features, "drop") {
+		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libdrop.sh"}); err != nil {
+			return err
+		}
 	}
 
 	return nil

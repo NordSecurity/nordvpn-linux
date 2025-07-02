@@ -34,6 +34,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
@@ -42,10 +43,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norouter"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norule"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
+	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
-	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/firstopen"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
@@ -69,6 +70,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	"google.golang.org/grpc"
 )
@@ -207,7 +209,7 @@ func main() {
 		}
 	}
 
-	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
+	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, sysinfo.GetKernelVersion())
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
@@ -465,6 +467,7 @@ func main() {
 		fsystem,
 		defaultAPI,
 		authChecker,
+		analytics,
 	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
@@ -547,8 +550,11 @@ func main() {
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
 
-	// Start jobs
+	// initialize and register telemetry service with grpc server
+	telemetryService := telemetry.New(analytics.OnTelemetry)
+	telemetrypb.RegisterTelemetryServiceServer(s, telemetryService)
 
+	// Start jobs
 	go func() {
 		var (
 			listener net.Listener
