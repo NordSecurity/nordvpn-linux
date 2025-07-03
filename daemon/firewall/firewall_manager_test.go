@@ -137,7 +137,7 @@ func TestTrafficBlocking(t *testing.T) {
 				commandRunnerMock.ErrCommand = test.errCommand
 			}
 
-			firewallManager := NewFirewallManager(test.devicesFunc, &commandRunnerMock, connmark, true, true)
+			firewallManager := NewFirewallManager(test.devicesFunc, &commandRunnerMock, connmark, true)
 
 			err := firewallManager.BlockTraffic()
 
@@ -147,28 +147,17 @@ func TestTrafficBlocking(t *testing.T) {
 			}
 
 			commandsIPv4 := commandRunnerMock.PopIPv4Commands()
-			commandsIPv6 := commandRunnerMock.PopIPv6Commands()
 			expectedNumberOfCommands := len(test.expectedCommandsAfterBlocking)
 			assert.Len(t,
 				commandsIPv4,
 				expectedNumberOfCommands,
 				"Invalid number of IPv4 commands when blocking traffic. Commands:\n%s",
 				transformCommandsForPrinting(t, commandsIPv4))
-			assert.Len(t,
-				commandsIPv6,
-				expectedNumberOfCommands,
-				"Invalid number of IPv6 commands when blocking traffic. Commands:\n%s",
-				transformCommandsForPrinting(t, commandsIPv6))
 
 			// rules are added to two different chains, so ordering doesn't matter in this case and we can use Contains
 			for _, expectedCommand := range test.expectedCommandsAfterBlocking {
 				assert.Contains(t,
 					commandsIPv4,
-					expectedCommand,
-					"Input block traffic rule was not added to the firewall.")
-
-				assert.Contains(t,
-					commandsIPv6,
 					expectedCommand,
 					"Input block traffic rule was not added to the firewall.")
 			}
@@ -181,19 +170,12 @@ func TestTrafficBlocking(t *testing.T) {
 			}
 
 			commandsIPv4 = commandRunnerMock.PopIPv4Commands()
-			commandsIPv6 = commandRunnerMock.PopIPv6Commands()
 			expectedNumberOfCommands = len(test.expectedCommandsAfterUnblocking)
 			assert.Len(t, commandsIPv4, expectedNumberOfCommands, "Invalid number of commands when unblocking traffic.")
-			assert.Len(t, commandsIPv6, expectedNumberOfCommands, "Invalid number of commands when unblocking traffic.")
 
 			for _, expectedCommand := range test.expectedCommandsAfterUnblocking {
 				assert.Contains(t,
 					commandsIPv4,
-					expectedCommand,
-					"Input block traffic rule was not added to the firewall.")
-
-				assert.Contains(t,
-					commandsIPv6,
 					expectedCommand,
 					"Input block traffic rule was not added to the firewall.")
 			}
@@ -210,7 +192,7 @@ func TestBlockTraffic_AlreadyBlocked(t *testing.T) {
 	}
 
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
-	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &commandRunnerMock, connmark, true, true)
+	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &commandRunnerMock, connmark, true)
 
 	err := firewallManager.BlockTraffic()
 	assert.Nil(t, err, "Received unexpected error when blocking traffic.")
@@ -229,7 +211,7 @@ func TestUnblockTraffic_TrafficNotBlocked(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	commandRunnerMock := iptablesmock.NewCommandRunnerMock()
-	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true, true)
+	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true)
 
 	err := firewallManager.UnblockTraffic()
 	assert.ErrorIs(t, err, ErrRuleAlreadyActive, "Invalid error received when unblocking traffic when it was not blocked.")
@@ -347,7 +329,7 @@ func TestSetAllowlist(t *testing.T) {
 				commandRunnerMock.ErrCommand = test.invalidCommand
 			}
 
-			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true, true)
+			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true)
 
 			err := firewallManager.SetAllowlist(udpPorts, tcpPorts, subnets)
 			assert.ErrorIs(t, err, test.expectedErrSet, "Invalid error returned by SetAllowlist.")
@@ -397,67 +379,6 @@ func TestSetAllowlist(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestSetAllowlist_IPv6(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	udpPorts := []int{
-		30000,
-	}
-
-	// Both IPv4 and IPv6 commands should be executed for ports.
-	expectedCommandsAfterSet := []string{
-		fmt.Sprintf("-I INPUT 1 -i %s -p udp -m udp --dport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-		fmt.Sprintf("-I INPUT 1 -i %s -p udp -m udp --sport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -p udp -m udp --dport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-		fmt.Sprintf("-I OUTPUT 1 -o %s -p udp -m udp --sport 30000:30000 -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-	}
-
-	subnets := []netip.Prefix{
-		netip.MustParsePrefix("7628:c55b:3450:b739:bb1f:6112:a544:9226/30"),
-	}
-
-	subnetCommands := []string{
-		fmt.Sprintf("-I INPUT 1 -s 7628:c55b:3450:b739:bb1f:6112:a544:9226/30 -i %s -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-		fmt.Sprintf("-I OUTPUT 1 -d 7628:c55b:3450:b739:bb1f:6112:a544:9226/30 -o %s -j ACCEPT -m comment --comment nordvpn-3", mock.En0Interface.Name),
-	}
-
-	// Only IPv6 commands should be executed for subnets.
-	expectedIPv6CommandsAfterSet := append(subnetCommands, expectedCommandsAfterSet...)
-
-	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
-
-	firewallManager := NewFirewallManager(getDeviceFunc(false, mock.En0Interface), &commandRunnerMock, connmark, true, true)
-
-	firewallManager.SetAllowlist(udpPorts, nil, subnets)
-
-	commands := commandRunnerMock.PopIPv4Commands()
-	assert.Equal(t,
-		expectedCommandsAfterSet,
-		commands,
-		"Invalid ipv4 commands after setting allowlist.\nExpected commands:\n%s\nExecuted commands:\n%s",
-		transformCommandsForPrinting(t, expectedCommandsAfterSet),
-		transformCommandsForPrinting(t, commands))
-
-	commands = commandRunnerMock.PopIPv6Commands()
-	assert.Equal(t,
-		expectedIPv6CommandsAfterSet,
-		commands,
-		"Invalid ipv6 commands after unsetting allowlist.\nExpected commands:\n%s\nExecuted commands:\n%s",
-		transformCommandsForPrinting(t, expectedIPv6CommandsAfterSet),
-		transformCommandsForPrinting(t, commands))
-
-	expectedCommandsAfterUnset := transformCommandsToDelte(t, expectedCommandsAfterSet)
-	expectedIPv6CommandsAfterUnset := transformCommandsToDelte(t, expectedIPv6CommandsAfterSet)
-
-	firewallManager.UnsetAllowlist()
-
-	commands = commandRunnerMock.PopIPv4Commands()
-	assert.Equal(t, expectedCommandsAfterUnset, commands)
-
-	commands = commandRunnerMock.PopIPv6Commands()
-	assert.Equal(t, expectedIPv6CommandsAfterUnset, commands)
 }
 
 func TestApiAllowlist(t *testing.T) {
@@ -546,7 +467,7 @@ func TestApiAllowlist(t *testing.T) {
 			inputChain := iptablesmock.NewIptablesOutput(iptablesmock.InputChainName)
 			commandRunnerMock.AddIptablesListOutput(iptablesmock.InputChainName, inputChain.Get())
 
-			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true, true)
+			firewallManager := NewFirewallManager(test.deviceFunc, &commandRunnerMock, connmark, true)
 
 			err := firewallManager.APIAllowlist()
 			if test.expectedAllowlistError != nil {
@@ -555,11 +476,8 @@ func TestApiAllowlist(t *testing.T) {
 			}
 
 			commandsIPv4AfterApiAllowlist := commandRunnerMock.PopIPv4Commands()
-			commandsIPv6AfterApiAllowlist := commandRunnerMock.PopIPv6Commands()
 			assert.Len(t, commandsIPv4AfterApiAllowlist, len(test.expectedAllowlistCommands),
 				"Invalid IPv4 commands executed after api allowlist.")
-			assert.Len(t, commandsIPv6AfterApiAllowlist, len(test.expectedAllowlistCommands),
-				"Invalid IPv6 commands executed after api allowlist.")
 			for _, expectedCommand := range test.expectedAllowlistCommands {
 				assert.Contains(t,
 					commandsIPv4AfterApiAllowlist,
@@ -567,10 +485,6 @@ func TestApiAllowlist(t *testing.T) {
 					"Expected IPv4 command not found after api allowlist.\nExpected command:\n%s\nExecuted commands:\n%s",
 					expectedCommand,
 					transformCommandsForPrinting(t, commandsIPv4AfterApiAllowlist))
-				assert.Contains(t, commandsIPv6AfterApiAllowlist, expectedCommand,
-					"Expected IPv6 command not found after api allowlist.\nExpected command:\n%s\nExecuted commands:\n%s",
-					expectedCommand,
-					transformCommandsForPrinting(t, commandsIPv6AfterApiAllowlist))
 			}
 
 			err = firewallManager.APIDenylist()
@@ -582,14 +496,9 @@ func TestApiAllowlist(t *testing.T) {
 			commandsIPv4AfterApiDenylist := commandRunnerMock.PopIPv4Commands()
 			assert.Len(t, commandsIPv4AfterApiDenylist, len(test.expectedDenylistCommands),
 				"Invalid IPv4 commands executed after api denylist.")
-			commandsIPv6AfterApiDenylist := commandRunnerMock.PopIPv6Commands()
-			assert.Len(t, commandsIPv6AfterApiDenylist, len(test.expectedDenylistCommands),
-				"Invalid IPv6 commands executed after api denylist.")
 			for _, expectedCommand := range test.expectedDenylistCommands {
 				assert.Contains(t, commandsIPv4AfterApiDenylist, expectedCommand,
 					"Expected IPv4 command not found after api denylist.")
-				assert.Contains(t, commandsIPv6AfterApiDenylist, expectedCommand,
-					"Expected IPv6 command not found after api denylist.")
 			}
 		})
 	}
@@ -648,7 +557,7 @@ func TestAllowDenyFileshare(t *testing.T) {
 			if test.invalidCommand != "" {
 				commandRunnerMock.ErrCommand = test.invalidCommand
 			}
-			firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, !test.firewallDisabled)
+			firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, !test.firewallDisabled)
 
 			err := firewallManager.AllowFileshare(peerAddress)
 			if test.expectedAllowErr != nil {
@@ -764,7 +673,7 @@ func TestAllowDenyIncoming(t *testing.T) {
 				commandRunnerMock.ErrCommand = test.invalidCommand
 			}
 
-			firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, !test.firewallDisabled)
+			firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, !test.firewallDisabled)
 
 			err := firewallManager.AllowIncoming(peerAddress, test.lanAllowed)
 			if test.expectedAllowErr != nil {
@@ -796,7 +705,7 @@ func TestAllowIncoming_AleradyAllowed(t *testing.T) {
 	}
 
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
-	firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, true)
+	firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true)
 
 	err := firewallManager.AllowIncoming(peerAddress, true)
 	assert.Nil(t, err, "AllowIncoming has returned an unexpected error.")
@@ -819,7 +728,7 @@ func TestAllowIncoming_AleradyAllowed(t *testing.T) {
 
 func TestDenyIncoming_NotDenied(t *testing.T) {
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
-	firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true, true)
+	firewallManager := NewFirewallManager(nil, &commandRunnerMock, connmark, true)
 
 	err := firewallManager.DenyIncoming(peerPublicKey)
 	assert.ErrorIs(t, err, ErrRuleNotFound)
@@ -834,7 +743,7 @@ func TestAllowFileshare_AlreadyAllowed(t *testing.T) {
 
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 
-	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true, true)
+	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true)
 
 	err := firewallManager.AllowFileshare(peerAddress)
 	assert.Nil(t, err, "Unexpected error when allowing fileshare: %w", err)
@@ -850,7 +759,7 @@ func TestAllowFileshare_AlreadyAllowed(t *testing.T) {
 func TestDenyFileshare_NotAllowed(t *testing.T) {
 	commandRunnerMock := iptablesmock.NewCommandRunnerMockWithTables()
 
-	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true, true)
+	firewallManager := NewFirewallManager(getDeviceFunc(false), &commandRunnerMock, connmark, true)
 
 	err := firewallManager.DenyFileshare(peerPublicKey)
 	assert.ErrorIs(t, err, ErrRuleNotActive,

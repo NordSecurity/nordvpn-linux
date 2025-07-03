@@ -423,15 +423,6 @@ func (s *Server) getSpecificationsForIdentifier(identifier string) []string {
 	return nil
 }
 
-func (s *Server) SupportsIPv6() bool {
-	for _, ip := range s.IPs() {
-		if ip.Is6() {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *Server) IPs() []netip.Addr {
 	var serverIPs []netip.Addr
 	for _, record := range s.IPRecords {
