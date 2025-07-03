@@ -14,6 +14,12 @@ libmoose_nordvpnapp_artifact_url="${LIBMOOSE_NORDVPNAPP_ARTIFACTS_URL}/${LIBMOOS
 libmoose_worker_artifact_url="${LIBMOOSE_WORKER_ARTIFACTS_URL}/${LIBMOOSE_WORKER_VERSION}/linux.zip"
 libquench_artifact_url="${LIBQUENCH_ARTIFACTS_URL}/${LIBQUENCH_VERSION}/linux.zip"
 
+if [[ ${CI+x} ]]; then
+  header="JOB-TOKEN:${CI_JOB_TOKEN}"
+else
+  header="PRIVATE-TOKEN:${GL_ACCESS_TOKEN}"
+fi
+
 mkdir -p "${temp_dir}"
 
 function fetch_gitlab_artifact() {
@@ -35,7 +41,7 @@ function fetch_gitlab_artifact() {
     --retry 3 \
     --retry-delay 2 \
     --fail \
-    --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" \
+    --header "$header" \
     -o "${out_file}" \
     -L "${artifact_url}"
   # re-enable tracing
