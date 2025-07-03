@@ -188,7 +188,7 @@ func main() {
 		stateModule,
 		stateFlag,
 		chainPrefix,
-		iptables.FilterSupportedIPTables(internal.GetSupportedIPTables()),
+		[]string{"iptables"},
 	)
 	fw := firewall.NewFirewall(
 		&notables.Facade{},
@@ -363,6 +363,11 @@ func main() {
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
 
+	// Always disable IPv6 with sysctl in the system
+	// TODO (dfe): Should I leave it into networker and do Block every time a new adapter is added?
+	ipv6Blocker := ipv6.NewIpv6()
+	ipv6Blocker.Block()
+
 	netw := networker.NewCombined(
 		vpn,
 		mesh,
@@ -370,7 +375,6 @@ func main() {
 		infoSubject,
 		allowlistRouter,
 		dnsSetter,
-		ipv6.NewIpv6(),
 		fw,
 		allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
 			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)

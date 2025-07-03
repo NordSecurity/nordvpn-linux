@@ -155,7 +155,7 @@ func TestIptablesManager(t *testing.T) {
 			commandRunnerMock := iptablesmock.NewCommandRunnerMock()
 			commandRunnerMock.AddIptablesListOutput(iptablesmock.InputChainName, chain.Get())
 
-			iptablesManager := NewIPTablesManager(&commandRunnerMock, true, true)
+			iptablesManager := NewIPTablesManager(&commandRunnerMock, true)
 			// nolint:errcheck // Tested in other uts
 			iptablesManager.InsertRule(NewFwRule(
 				Input,

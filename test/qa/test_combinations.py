@@ -8,7 +8,7 @@ from lib import (
 )
 from test_connect import disconnect_base_test, get_alias
 
-def connect_base_test(group: str = (), name: str = "", hostname: str = "", ipv6 = True):
+def connect_base_test(group: str = (), name: str = "", hostname: str = ""):
     """
     Connects to a NordVPN server and performs a series of checks to ensure the connection is successful.
 
@@ -17,7 +17,6 @@ def connect_base_test(group: str = (), name: str = "", hostname: str = "", ipv6 
     group (str): The specific server name or group name to connect to. Default is an empty string.
     name (str): Used to verify the connection message. Default is an empty string.
     hostname (str): Used to verify the connection message. Default is an empty string.
-    ipv6 (bool): If True, checks if IPv6 connection is available. Default is True.
     """
 
     output = sh.nordvpn.connect(group, _tty_out=False)
@@ -26,8 +25,6 @@ def connect_base_test(group: str = (), name: str = "", hostname: str = "", ipv6 
     assert lib.is_connect_successful(output, name, hostname)
     assert network.is_connected()
 
-    if ipv6:
-        assert network.is_ipv6_connected()
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
@@ -43,10 +40,10 @@ def test_reconnect_matrix(
         target_obfuscated,
 ):
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
-    connect_base_test(ipv6 = False)
+    connect_base_test()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-    connect_base_test(ipv6 = False)
+    connect_base_test()
 
     disconnect_base_test()
 
@@ -56,9 +53,9 @@ def test_reconnect_matrix(
 def test_connect_country_and_city(tech, proto, obfuscated, country, city):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    connect_base_test(country, ipv6 = False)
-    connect_base_test(city, ipv6 = False)
-    connect_base_test(f"{country} {city}", ipv6 = False)
+    connect_base_test(country)
+    connect_base_test(city)
+    connect_base_test(f"{country} {city}")
 
     disconnect_base_test()
 
@@ -148,11 +145,11 @@ def test_reconnect_to_standard_group(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test(source_group, ipv6 = False)
+    connect_base_test(source_group)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test(target_group, ipv6 = False)
+    connect_base_test(target_group)
 
     disconnect_base_test()
 
@@ -174,11 +171,11 @@ def test_reconnect_to_additional_group(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test(source_group, ipv6 = False)
+    connect_base_test(source_group)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test(target_group, ipv6 = False)
+    connect_base_test(target_group)
 
     disconnect_base_test()
 
@@ -200,10 +197,10 @@ def test_reconnect_to_server_by_country_name(
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
-    connect_base_test(source_country, ipv6 = False)
+    connect_base_test(source_country)
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
-    connect_base_test(target_country, ipv6 = False)
+    connect_base_test(target_country)
 
     disconnect_base_test()

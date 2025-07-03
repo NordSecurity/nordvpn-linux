@@ -53,10 +53,9 @@ type FirewallManager struct {
 func NewFirewallManager(devices device.ListFunc,
 	cmdRunner iptablesmanager.CommandRunner,
 	connmark uint32,
-	ip6TablesSupported bool,
 	enabled bool) FirewallManager {
 	return FirewallManager{
-		iptablesManager:    iptablesmanager.NewIPTablesManager(cmdRunner, enabled, ip6TablesSupported),
+		iptablesManager:    iptablesmanager.NewIPTablesManager(cmdRunner, enabled),
 		devices:            devices,
 		allowIncomingRules: make(map[string]meshIncomingRule),
 		fileshareRules:     make(map[string]iptablesmanager.FwRule),
@@ -180,7 +179,7 @@ func (f *FirewallManager) BlockTraffic() error {
 		inputParams := fmt.Sprintf("-i %s -j DROP", iface.Name)
 		inputRule := iptablesmanager.NewFwRule(
 			iptablesmanager.Input,
-			iptablesmanager.Both,
+			iptablesmanager.IPv4,
 			inputParams,
 			TrafficBlock)
 		if err := f.iptablesManager.InsertRule(inputRule); err != nil {
@@ -191,7 +190,7 @@ func (f *FirewallManager) BlockTraffic() error {
 		outputParams := fmt.Sprintf("-o %s -j DROP", iface.Name)
 		outputRule := iptablesmanager.NewFwRule(
 			iptablesmanager.Output,
-			iptablesmanager.Both,
+			iptablesmanager.IPv4,
 			outputParams,
 			TrafficBlock)
 		if err := f.iptablesManager.InsertRule(outputRule); err != nil {
@@ -269,7 +268,7 @@ func (f *FirewallManager) allowlistPorts(iface string, protocol string, portRang
 	inputDportParams := fmt.Sprintf("-i %s -p %s -m %s --dport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
 	inputDportRule := iptablesmanager.NewFwRule(
 		iptablesmanager.Input,
-		iptablesmanager.Both,
+		iptablesmanager.IPv4,
 		inputDportParams,
 		UserAllowlist)
 	if err := f.allowlistPort(inputDportRule); err != nil {
@@ -279,7 +278,7 @@ func (f *FirewallManager) allowlistPorts(iface string, protocol string, portRang
 	inputSportParams := fmt.Sprintf("-i %s -p %s -m %s --sport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
 	inputSportRule := iptablesmanager.NewFwRule(
 		iptablesmanager.Input,
-		iptablesmanager.Both,
+		iptablesmanager.IPv4,
 		inputSportParams,
 		UserAllowlist)
 	if err := f.allowlistPort(inputSportRule); err != nil {
@@ -289,7 +288,7 @@ func (f *FirewallManager) allowlistPorts(iface string, protocol string, portRang
 	outputDportParams := fmt.Sprintf("-o %s -p %s -m %s --dport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
 	outputDportRule := iptablesmanager.NewFwRule(
 		iptablesmanager.Output,
-		iptablesmanager.Both,
+		iptablesmanager.IPv4,
 		outputDportParams,
 		UserAllowlist)
 	if err := f.allowlistPort(outputDportRule); err != nil {
@@ -299,7 +298,7 @@ func (f *FirewallManager) allowlistPorts(iface string, protocol string, portRang
 	outputSportParams := fmt.Sprintf("-o %s -p %s -m %s --sport %d:%d -j ACCEPT", iface, protocol, protocol, portRange.min, portRange.max)
 	outputSportRule := iptablesmanager.NewFwRule(
 		iptablesmanager.Output,
-		iptablesmanager.Both,
+		iptablesmanager.IPv4,
 		outputSportParams,
 		UserAllowlist)
 	if err := f.allowlistPort(outputSportRule); err != nil {
@@ -320,7 +319,7 @@ func (f *FirewallManager) SetAllowlist(udpPorts []int, tcpPorts []int, subnets [
 		for _, iface := range ifaces {
 			version := iptablesmanager.IPv4
 			if subnet.Addr().Is6() {
-				version = iptablesmanager.IPv6
+				return errors.New("IPv6 not supported")
 			}
 
 			inputParams := fmt.Sprintf("-s %s -i %s -j ACCEPT", subnet.String(), iface.Name)
@@ -384,7 +383,7 @@ func (f *FirewallManager) APIAllowlist() error {
 		inputParams := fmt.Sprintf("-i %s -m connmark --mark %d -j ACCEPT", iface.Name, f.connmark)
 		inputRule := iptablesmanager.NewFwRule(
 			iptablesmanager.Input,
-			iptablesmanager.Both,
+			iptablesmanager.IPv4,
 			inputParams,
 			ApiAllowlistMark)
 		if err := f.iptablesManager.InsertRule(inputRule); err != nil {
@@ -395,7 +394,7 @@ func (f *FirewallManager) APIAllowlist() error {
 		outputConnmarkParams := fmt.Sprintf("-o %s -m connmark --mark %d -j ACCEPT", iface.Name, f.connmark)
 		outputConnmarkRule := iptablesmanager.NewFwRule(
 			iptablesmanager.Output,
-			iptablesmanager.Both,
+			iptablesmanager.IPv4,
 			outputConnmarkParams,
 			ApiAllowlistOutputConnmark)
 		if err := f.iptablesManager.InsertRule(outputConnmarkRule); err != nil {
@@ -408,7 +407,7 @@ func (f *FirewallManager) APIAllowlist() error {
 				iface.Name, f.connmark)
 		outputRule := iptablesmanager.NewFwRule(
 			iptablesmanager.Output,
-			iptablesmanager.Both,
+			iptablesmanager.IPv4,
 			outputParams,
 			ApiAllowlistMark)
 		if err := f.iptablesManager.InsertRule(outputRule); err != nil {

@@ -225,21 +225,16 @@ func getNetworkInfo() string {
 		builder.WriteString("IP rules for ipv" + arg + ":\n" + string(out) + "\n")
 	}
 
-	for _, iptableVersion := range internal.GetSupportedIPTables() {
-		tableRules := ""
-		for _, table := range []string{"filter", "nat", "mangle", "raw", "security"} {
-			// #nosec G204 -- input is properly sanitized
-			out, err := exec.Command(iptableVersion, "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
-			if err == nil {
-				tableRules += table + ":\n" + string(out) + "\n"
-			}
+	tableRules := ""
+	for _, table := range []string{"filter", "nat", "mangle", "raw", "security"} {
+		// #nosec G204 -- input is properly sanitized
+		out, err := exec.Command("iptables", "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
+		if err == nil {
+			tableRules += table + ":\n" + string(out) + "\n"
 		}
-		version := "4"
-		if iptableVersion == "ip6tables" {
-			version = "6"
-		}
-		builder.WriteString("IP tables for ipv" + version + ":\n" + tableRules)
 	}
+	version := "4"
+	builder.WriteString("IP tables for ipv" + version + ":\n" + tableRules)
 
 	return builder.String()
 }

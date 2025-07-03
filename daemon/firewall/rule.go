@@ -78,8 +78,6 @@ type Rule struct {
 	// Allow defines if rule denies packets via current rule or allows them
 	Allow bool `json:"allow"`
 
-	Ipv6Only         bool   `json:"ipv6_only"`
-	Icmpv6Types      []int  `json:"icmp6_types"`
 	HopLimit         uint8  `json:"hop_limit"`
 	SourcePorts      []int  `json:"source_ports"`
 	DestinationPorts []int  `json:"destination_ports"`
@@ -101,8 +99,6 @@ func (r Rule) Equal(other Rule) bool {
 		r.ConnectionStates.Equal(other.ConnectionStates) &&
 		slices.Equal(r.Marks, other.Marks) &&
 		r.Allow == other.Allow &&
-		r.Ipv6Only == other.Ipv6Only &&
-		slices.Equal(r.Icmpv6Types, other.Icmpv6Types) &&
 		r.HopLimit == other.HopLimit &&
 		slices.Equal(r.SourcePorts, other.SourcePorts) &&
 		slices.Equal(r.DestinationPorts, other.DestinationPorts) &&

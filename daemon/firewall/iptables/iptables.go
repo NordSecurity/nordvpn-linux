@@ -18,7 +18,6 @@ import (
 
 const (
 	ipv4Table      = "iptables"
-	ipv6Table      = "ip6tables"
 	defaultComment = "nordvpn"
 )
 
@@ -46,7 +45,7 @@ type PortRange struct {
 	Max int
 }
 
-// @TODO upgrade to netfilter library. for now we use both ipv4, ipv6 because we disable ipv6
+// @TODO upgrade to netfilter library. (dfe) should we do that anymore?
 // IPTables handles all firewall changes with iptables
 type IPTables struct {
 	stateModule       string
@@ -200,7 +199,6 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 	// fill nil fields with elements of nil values, so each slice has at least one element and at least 1 rule is generated
 	rule = generateNonEmptyRule(rule)
 	var ipv4TableRules []string
-	var ipv6TableRules []string
 	// n-fold Cartesian Product, where n stands for the level of for loop nesting
 	for _, iface := range rule.Interfaces {
 		for _, remoteNetwork := range rule.RemoteNetworks {
@@ -208,43 +206,26 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 				for _, pRange := range PortsToPortRanges(rule.Ports) {
 					for _, protocol := range rule.Protocols {
 						for _, chain := range toChainSlice(rule.Direction, rule.Physical) {
-							for _, icmpv6Type := range defaultIcmpv6(rule.Icmpv6Types) {
-								for _, target := range toTargetSlice(rule.Allow, chain, rule.Marks) {
-									for _, mark := range rule.Marks {
-										if pRange.Min != 0 {
-											for _, portFlag := range portsDirectionToPortsFlag(rule.PortsDirection) {
-												newRule := generateIPTablesRule(
-													chain, target, iface, remoteNetwork, localNetwork, protocol, pRange,
-													module, stateFlag, rule.ConnectionStates, chainPrefix, portFlag,
-													icmpv6Type, rule.HopLimit, nil, nil,
-													rule.Comment, mark,
-												)
-												if rule.Ipv6Only || remoteNetwork.Addr().Is6() || localNetwork.Addr().Is6() {
-													ipv6TableRules = append(ipv6TableRules, newRule)
-												} else if remoteNetwork.Addr().Is4() || localNetwork.Addr().Is4() {
-													ipv4TableRules = append(ipv4TableRules, newRule)
-												} else {
-													ipv6TableRules = append(ipv6TableRules, newRule)
-													ipv4TableRules = append(ipv4TableRules, newRule)
-												}
-											}
-										} else {
+							for _, target := range toTargetSlice(rule.Allow, chain, rule.Marks) {
+								for _, mark := range rule.Marks {
+									if pRange.Min != 0 {
+										for _, portFlag := range portsDirectionToPortsFlag(rule.PortsDirection) {
 											newRule := generateIPTablesRule(
 												chain, target, iface, remoteNetwork, localNetwork, protocol, pRange,
-												module, stateFlag, rule.ConnectionStates, chainPrefix, "",
-												icmpv6Type, rule.HopLimit,
-												rule.SourcePorts, rule.DestinationPorts,
-												rule.Comment, mark,
+												module, stateFlag, rule.ConnectionStates, chainPrefix, portFlag,
+												rule.HopLimit, nil, nil, rule.Comment, mark,
 											)
-											if rule.Ipv6Only || remoteNetwork.Addr().Is6() || localNetwork.Addr().Is6() {
-												ipv6TableRules = append(ipv6TableRules, newRule)
-											} else if remoteNetwork.Addr().Is4() || localNetwork.Addr().Is4() {
-												ipv4TableRules = append(ipv4TableRules, newRule)
-											} else {
-												ipv6TableRules = append(ipv6TableRules, newRule)
-												ipv4TableRules = append(ipv4TableRules, newRule)
-											}
+
+											ipv4TableRules = append(ipv4TableRules, newRule)
 										}
+									} else {
+										newRule := generateIPTablesRule(
+											chain, target, iface, remoteNetwork, localNetwork, protocol, pRange,
+											module, stateFlag, rule.ConnectionStates, chainPrefix, "",
+											rule.HopLimit, rule.SourcePorts, rule.DestinationPorts,
+											rule.Comment, mark,
+										)
+										ipv4TableRules = append(ipv4TableRules, newRule)
 									}
 								}
 							}
@@ -254,14 +235,7 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 			}
 		}
 	}
-	return map[string][]string{ipv4Table: ipv4TableRules, ipv6Table: ipv6TableRules}
-}
-
-func defaultIcmpv6(icmp6Types []int) []int {
-	if len(icmp6Types) > 0 {
-		return icmp6Types
-	}
-	return []int{0}
+	return map[string][]string{ipv4Table: ipv4TableRules}
 }
 
 // PortsToPortRanges groups ports into ranges
@@ -358,7 +332,6 @@ func generateIPTablesRule(
 	states firewall.ConnectionStates,
 	chainPrefix string,
 	portFlag string,
-	icmpv6Type int,
 	hopLimit uint8,
 	sports []int,
 	dports []int,
@@ -438,9 +411,6 @@ func generateIPTablesRule(
 		}
 	}
 
-	if icmpv6Type > 0 {
-		rule += fmt.Sprintf(" --icmpv6-type %d", icmpv6Type)
-	}
 	if hopLimit > 0 {
 		rule += fmt.Sprintf(" -m hl --hl-eq %d", hopLimit)
 	}

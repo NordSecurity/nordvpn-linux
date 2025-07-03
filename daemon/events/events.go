@@ -30,7 +30,6 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
 		&subs.Subject[any]{},
 		&subs.Subject[events.DataConnect]{},
 		&subs.Subject[events.DataDisconnect]{},
@@ -62,7 +61,6 @@ func NewEvents(
 	analytics events.PublishSubcriber[bool],
 	notify events.PublishSubcriber[bool],
 	meshnet events.PublishSubcriber[bool],
-	ipv6 events.PublishSubcriber[bool],
 	defaults events.PublishSubcriber[any],
 	connect events.PublishSubcriber[events.DataConnect],
 	disconnect events.PublishSubcriber[events.DataDisconnect],
@@ -92,7 +90,6 @@ func NewEvents(
 			Routing:              routing,
 			Notify:               notify,
 			Meshnet:              meshnet,
-			Ipv6:                 ipv6,
 			Defaults:             defaults,
 			LANDiscovery:         lanDiscovery,
 			VirtualLocation:      virtualLocation,
@@ -143,7 +140,6 @@ type SettingsPublisher interface {
 	NotifyRouting(bool) error
 	NotifyNotify(bool) error
 	NotifyMeshnet(bool) error
-	NotifyIpv6(bool) error
 	NotifyDefaults(any) error
 	NotifyLANDiscovery(bool) error
 	NotifyVirtualLocation(bool) error
@@ -163,7 +159,6 @@ type SettingsEvents struct {
 	Routing              events.PublishSubcriber[bool]
 	Notify               events.PublishSubcriber[bool]
 	Meshnet              events.PublishSubcriber[bool]
-	Ipv6                 events.PublishSubcriber[bool]
 	Defaults             events.PublishSubcriber[any]
 	LANDiscovery         events.PublishSubcriber[bool]
 	VirtualLocation      events.PublishSubcriber[bool]
@@ -183,7 +178,6 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Routing.Subscribe(to.NotifyRouting)
 	s.Notify.Subscribe(to.NotifyNotify)
 	s.Meshnet.Subscribe(to.NotifyMeshnet)
-	s.Ipv6.Subscribe(to.NotifyIpv6)
 	s.Defaults.Subscribe(to.NotifyDefaults)
 	s.LANDiscovery.Subscribe(to.NotifyLANDiscovery)
 	s.VirtualLocation.Subscribe(to.NotifyVirtualLocation)
@@ -228,7 +222,6 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 		Subnets:  cfg.AutoConnectData.Allowlist.Subnets,
 	})
 	s.Meshnet.Publish(cfg.Mesh)
-	s.Ipv6.Publish(cfg.IPv6)
 	s.Technology.Publish(cfg.Technology)
 	s.Obfuscate.Publish(cfg.AutoConnectData.Obfuscate)
 	s.Notify.Publish(cfg.UsersData.NotifyOff == nil || len(cfg.UsersData.NotifyOff) <= 0)

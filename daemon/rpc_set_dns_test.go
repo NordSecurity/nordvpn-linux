@@ -41,7 +41,6 @@ func TestSetDNS_Success(t *testing.T) {
 		expectedDNS         config.DNS
 		expectedDNSInConfig config.DNS
 		tpl                 bool
-		ipv6                bool
 		expectedTPL         bool
 	}{
 		{
@@ -114,7 +113,6 @@ func TestSetDNS_Success(t *testing.T) {
 					DNS:                  test.currentDNS,
 					ThreatProtectionLite: test.tpl,
 				}
-				c.IPv6 = test.ipv6
 
 				return c
 			})
