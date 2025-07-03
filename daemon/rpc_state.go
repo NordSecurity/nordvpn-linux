@@ -39,7 +39,6 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 			City:        cfg.AutoConnectData.City,
 			ServerGroup: cfg.AutoConnectData.Group,
 		},
-		Ipv6:                 cfg.IPv6,
 		Meshnet:              cfg.Mesh,
 		Dns:                  cfg.AutoConnectData.DNS,
 		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,

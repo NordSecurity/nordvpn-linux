@@ -94,8 +94,6 @@ type Networker interface {
 	IsNetworkSet() bool
 	SetKillSwitch(config.Allowlist) error
 	UnsetKillSwitch() error
-	PermitIPv6() error
-	DenyIPv6() error
 	SetVPN(vpn.VPN)
 	LastServerName() string
 	SetLanDiscovery(bool)
@@ -108,38 +106,35 @@ type Networker interface {
 // It is implemented in such a way, that all public methods
 // use sync.Mutex and all private ones don't.
 type Combined struct {
-	vpnet              vpn.VPN
-	mesh               meshnet.Mesh
-	gateway            routes.GatewayRetriever
-	publisher          events.Publisher[string]
-	allowlistRouter    routes.Service
-	dnsSetter          dns.Setter
-	ipv6               ipv6.Blocker
-	fw                 firewall.Service
-	allowlistRouting   allowlist.Routing
-	devices            device.ListFunc
-	policyRouter       routes.PolicyService
-	dnsHostSetter      dns.HostnameSetter
-	router             routes.Service
-	peerRouter         routes.Service
-	exitNode           forwarder.ForwardChainManager
-	isNetworkSet       bool // used during cleanup
-	isKillSwitchSet    bool // used during cleanup
-	isV6TrafficAllowed bool // used during cleanup
-	isVpnSet           bool // used during cleanup
-	isMeshnetSet       bool
-	rules              []string // firewall rule names
-	nextVPN            vpn.VPN
-	cfg                mesh.MachineMap
-	allowlist          config.Allowlist
-	lastServer         vpn.ServerData
-	lastCreds          vpn.Credentials
-	lastNameservers    []string
-	lastPrivateKey     string
-	ipv6Enabled        bool
-	fwmark             uint32
-	mu                 sync.Mutex
-	lanDiscovery       bool
+	vpnet            vpn.VPN
+	mesh             meshnet.Mesh
+	gateway          routes.GatewayRetriever
+	publisher        events.Publisher[string]
+	allowlistRouter  routes.Service
+	dnsSetter        dns.Setter
+	fw               firewall.Service
+	allowlistRouting allowlist.Routing
+	devices          device.ListFunc
+	policyRouter     routes.PolicyService
+	dnsHostSetter    dns.HostnameSetter
+	router           routes.Service
+	peerRouter       routes.Service
+	exitNode         forwarder.ForwardChainManager
+	isNetworkSet     bool // used during cleanup
+	isKillSwitchSet  bool // used during cleanup
+	isVpnSet         bool // used during cleanup
+	isMeshnetSet     bool
+	rules            []string // firewall rule names
+	nextVPN          vpn.VPN
+	cfg              mesh.MachineMap
+	allowlist        config.Allowlist
+	lastServer       vpn.ServerData
+	lastCreds        vpn.Credentials
+	lastNameservers  []string
+	lastPrivateKey   string
+	fwmark           uint32
+	mu               sync.Mutex
+	lanDiscovery     bool
 	// need to memorize route to remote LAN state set on mesh peer connect
 	// according how remote peer has set its permission, for later when
 	// doing mesh refresh which may happen in background e.g. when network
@@ -150,6 +145,7 @@ type Combined struct {
 	interfaces           mapset.Set[string]
 	isFilesharePermitted bool
 	dnsDenied            bool
+	ipv6Blocker          ipv6.Blocker
 }
 
 // NewCombined returns a ready made version of
@@ -161,7 +157,6 @@ func NewCombined(
 	publisher events.Publisher[string],
 	allowlistRouter routes.Service,
 	dnsSetter dns.Setter,
-	ipv6 ipv6.Blocker,
 	fw firewall.Service,
 	allowlist allowlist.Routing,
 	devices device.ListFunc,
@@ -172,6 +167,7 @@ func NewCombined(
 	exitNode forwarder.ForwardChainManager,
 	fwmark uint32,
 	lanDiscovery bool,
+	ipv6Blocker ipv6.Blocker,
 ) *Combined {
 	return &Combined{
 		vpnet:              vpnet,
@@ -180,7 +176,6 @@ func NewCombined(
 		publisher:          publisher,
 		allowlistRouter:    allowlistRouter,
 		dnsSetter:          dnsSetter,
-		ipv6:               ipv6,
 		fw:                 fw,
 		allowlistRouting:   allowlist,
 		devices:            devices,
@@ -194,6 +189,7 @@ func NewCombined(
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
 		interfaces:         mapset.NewSet[string](),
+		ipv6Blocker:        ipv6Blocker,
 	}
 }
 
@@ -208,6 +204,7 @@ func (netw *Combined) Start(
 ) (err error) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
 		return netw.restart(ctx, creds, serverData, nameservers)
@@ -237,11 +234,8 @@ func failureRecover(netw *Combined) {
 		}
 	}
 
-	if netw.isV6TrafficAllowed {
-		if err := netw.stopAllowedIPv6Traffic(); err != nil {
-			log.Println(internal.DebugPrefix, err)
-		}
-	}
+	netw.unblockIPv6()
+
 	netw.isVpnSet = false
 }
 
@@ -267,6 +261,13 @@ func (netw *Combined) start(
 
 	netw.publisher.Publish("starting vpn")
 
+	// Always disable IPv6 with sysctl in the system
+	// We also do that when there is a change in network interfaces
+	if err = netw.ipv6Blocker.Block(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to block ipv6 during start using sysctl ", err)
+		return err
+	}
+
 	if serverData.IP == (netip.Addr{}) {
 		serverData = netw.lastServer
 	}
@@ -281,7 +282,6 @@ func (netw *Combined) start(
 
 	// if routing rules were set - they will be adjusted as needed
 	if err = netw.policyRouter.SetupRoutingRules(
-		serverData.IP.Is6(),
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
 		allowlist.Subnets,
@@ -326,16 +326,6 @@ func (netw *Combined) configureNetwork(
 		}
 	}
 
-	return netw.disableIPv6IfNeeded()
-}
-
-func (netw *Combined) disableIPv6IfNeeded() error {
-	if !netw.ipv6Enabled {
-		if err := netw.denyIPv6(); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -343,7 +333,7 @@ func (netw *Combined) configureDNS(serverData vpn.ServerData, nameservers config
 	dnsGetter := &dns.NameServers{}
 
 	if netw.isMeshnetSet && defaultMeshSubnet.Contains(serverData.IP) {
-		return netw.setDNS(dnsGetter.Get(false, false))
+		return netw.setDNS(dnsGetter.Get(false))
 	} else {
 		return netw.setDNS(nameservers)
 	}
@@ -426,8 +416,11 @@ func (netw *Combined) restart(
 		return err
 	}
 
-	if err := netw.disableIPv6IfNeeded(); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to disable ipv6", err)
+	// Always disable IPv6 with sysctl in the system
+	// We also do that when there is a change in network interfaces
+	if err = netw.ipv6Blocker.Block(); err != nil {
+		log.Println(internal.ErrorPrefix, "Failed to block ipv6 during restart using sysctl ", err)
+		return err
 	}
 
 	netw.lastServer = serverData
@@ -455,9 +448,9 @@ func (netw *Combined) stop() error {
 		return errNilVPN
 	}
 	netw.publisher.Publish("stopping network configuration")
-	if err := netw.ipv6.Unblock(); err != nil {
-		log.Println(internal.WarningPrefix, err)
-	}
+
+	netw.unblockIPv6()
+
 	err := netw.unsetDNS()
 	if err != nil {
 		return err
@@ -470,7 +463,6 @@ func (netw *Combined) stop() error {
 	} else {
 		// if routing rules were set - they will be adjusted as needed
 		if err = netw.policyRouter.SetupRoutingRules(
-			false,
 			true, // by default, enableLocalTraffic=true
 			netw.lanDiscovery,
 			netw.allowlist.Subnets,
@@ -551,27 +543,6 @@ func (netw *Combined) unsetDNS() error {
 	return nil
 }
 
-func (netw *Combined) PermitIPv6() error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	netw.ipv6Enabled = true
-	return netw.ipv6.Unblock()
-}
-
-func (netw *Combined) DenyIPv6() error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	return netw.denyIPv6()
-}
-
-func (netw *Combined) denyIPv6() error {
-	netw.ipv6Enabled = false
-	if !netw.isNetworkSet {
-		return nil
-	}
-	return netw.ipv6.Block()
-}
-
 func (netw *Combined) blockTraffic() error {
 	ifaces, err := netw.devices()
 	if err != nil {
@@ -581,9 +552,17 @@ func (netw *Combined) blockTraffic() error {
 	// block PREROUTING & POSTROUTING
 	return netw.fw.Add([]firewall.Rule{
 		{
-			Name:       "drop",
+			Name:       "drop IPv4",
 			Direction:  firewall.TwoWay,
 			Interfaces: ifaces,
+			Allow:      false,
+			Physical:   true,
+		},
+		{
+			Name:       "drop IPv6",
+			Direction:  firewall.TwoWay,
+			Interfaces: ifaces,
+			Ipv6Only:   true,
 			Allow:      false,
 			Physical:   true,
 		},
@@ -591,144 +570,7 @@ func (netw *Combined) blockTraffic() error {
 }
 
 func (netw *Combined) unblockTraffic() error {
-	return netw.fw.Delete([]string{"drop"})
-}
-
-/*
-https://tools.ietf.org/html/rfc4890
-
-Error messages that are essential to the establishment and
-maintenance of communications:
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 1   -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 2   -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 3   -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 4   -j ACCEPT
-
-Connectivity checking messages:
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 128   -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 129   -j ACCEPT
-
-Address Configuration and Router Selection messages:
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 133 -m hl --hl-eq 255 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 134 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 135 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 136 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 141 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 142 -j ACCEPT
-
-Link-Local Multicast Receiver Notification messages:
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 130 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 131 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 132 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 143 -j ACCEPT
-
-SEND Certificate Path Notification messages:
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 148 -j ACCEPT
--6 -A INPUT              -p ipv6-icmp --icmpv6-type 149 -j ACCEPT
-
-Multicast Router Discovery messages:
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 151 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 152 -j ACCEPT
--6 -A INPUT -s fe80::/10 -p ipv6-icmp --icmpv6-type 153 -j ACCEPT
-
-DHCP6
--6 -A INPUT -d fe80::/64 -p udp -m udp --dport 546 -m comment --comment dhcp6 -j ACCEPT
--6 -A OUTPUT -s fe80::/64 -p udp -m udp --dport 547 -m comment --comment dhcp6 -j ACCEPT
-*/
-func (netw *Combined) allowIPv6Traffic() error {
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
-
-	err = netw.fw.Add([]firewall.Rule{
-		{
-			Name:        "vpn_allowlist_icmp6_errors",
-			Interfaces:  ifaces,
-			Protocols:   []string{"ipv6-icmp"},
-			Direction:   firewall.TwoWay,
-			Allow:       true,
-			Ipv6Only:    true,
-			Icmpv6Types: []int{1, 2, 3, 4, 128, 129},
-			Physical:    true,
-		},
-		{
-			Name:        "vpn_allowlist_icmp6_address",
-			Interfaces:  ifaces,
-			Protocols:   []string{"ipv6-icmp"},
-			Direction:   firewall.TwoWay,
-			Allow:       true,
-			Ipv6Only:    true,
-			Icmpv6Types: []int{133, 134, 135, 136, 141, 142, 148, 149},
-			HopLimit:    255,
-			Physical:    true,
-		},
-		{
-			Name:       "vpn_allowlist_icmp6_multicast",
-			Interfaces: ifaces,
-			LocalNetworks: []netip.Prefix{
-				netip.PrefixFrom(netip.AddrFrom16(
-					[16]byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				), 10),
-			},
-			Protocols:   []string{"ipv6-icmp"},
-			Direction:   firewall.TwoWay,
-			Allow:       true,
-			Ipv6Only:    true,
-			Icmpv6Types: []int{130, 131, 132, 143, 151, 152, 153},
-			Physical:    true,
-		},
-		{
-			Name:       "vpn_allowlist_dhcp6_in",
-			Interfaces: ifaces,
-			LocalNetworks: []netip.Prefix{
-				netip.PrefixFrom(netip.AddrFrom16(
-					[16]byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				), 10),
-			},
-			Protocols:        []string{"udp"},
-			DestinationPorts: []int{546},
-			Direction:        firewall.Inbound,
-			Allow:            true,
-			Ipv6Only:         true,
-			Physical:         true,
-		},
-		{
-			Name:       "vpn_allowlist_dhcp6_out",
-			Interfaces: ifaces,
-			LocalNetworks: []netip.Prefix{
-				netip.PrefixFrom(netip.AddrFrom16(
-					[16]byte{0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				), 10),
-			},
-			Protocols:        []string{"udp"},
-			DestinationPorts: []int{547},
-			Direction:        firewall.Outbound,
-			Allow:            true,
-			Ipv6Only:         true,
-			Physical:         true,
-		},
-	})
-	if err != nil {
-		return err
-	}
-	netw.isV6TrafficAllowed = true
-	return nil
-}
-
-func (netw *Combined) stopAllowedIPv6Traffic() error {
-	err := netw.fw.Delete([]string{
-		"vpn_allowlist_icmp6_errors",
-		"vpn_allowlist_icmp6_address",
-		"vpn_allowlist_icmp6_multicast",
-		"vpn_allowlist_dhcp6_in",
-		"vpn_allowlist_dhcp6_out",
-	})
-	if err != nil {
-		return err
-	}
-	netw.isV6TrafficAllowed = false
-	return nil
+	return netw.fw.Delete([]string{"drop IPv4", "drop IPv6"})
 }
 
 func (netw *Combined) resetAllowlist() error {
@@ -805,6 +647,22 @@ func (netw *Combined) DisableRouting() {
 
 	if err := netw.policyRouter.Disable(); err != nil {
 		log.Println(internal.WarningPrefix)
+	}
+}
+
+func (netw *Combined) blockIPv6() {
+	// Always disable IPv6 with sysctl in the system
+	err := netw.ipv6Blocker.Block()
+	if err != nil {
+		log.Println(internal.WarningPrefix, "Failed to block ipv6 using sysctl", err)
+	}
+}
+
+func (netw *Combined) unblockIPv6() {
+	// Unblock from sysctl
+	err := netw.ipv6Blocker.Unblock()
+	if err != nil {
+		log.Println(internal.WarningPrefix, "Failed to unblock ipv6 using sysctl", err)
 	}
 }
 
@@ -918,7 +776,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 
 	// adjust allow subnet routing rules
 	if err = netw.policyRouter.SetupRoutingRules(
-		false,
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
 		netw.allowlist.Subnets,
@@ -1167,7 +1024,6 @@ func (netw *Combined) setMesh(
 	}
 
 	if err = netw.policyRouter.SetupRoutingRules(
-		false,
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
 		netw.allowlist.Subnets,
@@ -1720,7 +1576,6 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 	// if routing rules were set - they will be adjusted as needed
 	if netw.isMeshnetSet || netw.isVpnSet {
 		if err := netw.policyRouter.SetupRoutingRules(
-			netw.lastServer.IP.Is6(),
 			netw.enableLocalTraffic,
 			netw.lanDiscovery,
 			netw.allowlist.Subnets,

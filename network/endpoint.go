@@ -6,21 +6,9 @@ import (
 )
 
 // Endpoint is responsible for picking the correct IP
-// to use when connecting to the server. Sometimes,
-// even if the server supports IPv6, it cannot be used
-// to connect to it, due to limitations on the client.
+// to use when connecting to the server.
 type Endpoint struct {
-	ips          []netip.Addr
-	supportsIPv6 bool
-}
-
-func (e Endpoint) ip6() (netip.Addr, error) {
-	for _, ip := range e.ips {
-		if ip.Is6() {
-			return ip, nil
-		}
-	}
-	return netip.Addr{}, errors.New("no IPv6 addresses")
+	ips []netip.Addr
 }
 
 func (e Endpoint) ip4() (netip.Addr, error) {
@@ -33,9 +21,6 @@ func (e Endpoint) ip4() (netip.Addr, error) {
 }
 
 func (e Endpoint) ip() (netip.Addr, error) {
-	if e.supportsIPv6 {
-		return e.ip6()
-	}
 	return e.ip4()
 }
 
@@ -50,13 +35,6 @@ func (e Endpoint) Network() (netip.Prefix, error) {
 
 func NewIPv4Endpoint(ip netip.Addr) Endpoint {
 	return Endpoint{ips: []netip.Addr{ip}}
-}
-
-func NewIPv6Endpoint(ips []netip.Addr) Endpoint {
-	return Endpoint{
-		ips:          ips,
-		supportsIPv6: true,
-	}
 }
 
 func NewLocalEndpoint(ips []netip.Addr) Endpoint {

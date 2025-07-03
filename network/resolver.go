@@ -30,7 +30,7 @@ type DNSResolver interface {
 }
 
 func (r *Resolver) Resolve(domain string) ([]netip.Addr, error) {
-	nameservers := r.servers.Get(false, false)
+	nameservers := r.servers.Get(false)
 	return r.ResolveWithNameservers(domain, StringsToIPs(nameservers), "udp")
 }
 
@@ -83,7 +83,6 @@ func allowlistIP(fw firewall.Service, name string, ips ...netip.Addr) error {
 }
 
 // ResolverChain tries each resolver until the first successful one.
-// It's sole purpose is to determine whether to use IPv4 vs IPv6 endpoint.
 type ResolverChain struct {
 	resolvers []EndpointResolver
 }

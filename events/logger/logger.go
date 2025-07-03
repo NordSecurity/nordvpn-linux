@@ -207,39 +207,26 @@ func maskIPRouteOutput(output string) string {
 
 func getNetworkInfo() string {
 	builder := strings.Builder{}
-	for _, arg := range []string{"4", "6"} {
-		// #nosec G204 -- arg values are known before even running the program
-		out, err := exec.Command("ip", "-"+arg, "route", "show", "table", "all").CombinedOutput()
-		if err != nil {
-			continue
-		}
-		maskedOutput := maskIPRouteOutput(string(out))
-		builder.WriteString("Routes for ipv" + arg + ":\n")
-		builder.WriteString(maskedOutput)
+	out, _ := exec.Command("ip", "-4", "route", "show", "table", "all").CombinedOutput()
 
-		// #nosec G204 -- arg values are known before even running the program
-		out, err = exec.Command("ip", "-"+arg, "rule").CombinedOutput()
-		if err != nil {
-			continue
-		}
-		builder.WriteString("IP rules for ipv" + arg + ":\n" + string(out) + "\n")
-	}
+	maskedOutput := maskIPRouteOutput(string(out))
+	builder.WriteString("Routes for ipv4" + ":\n")
+	builder.WriteString(maskedOutput)
 
-	for _, iptableVersion := range internal.GetSupportedIPTables() {
-		tableRules := ""
-		for _, table := range []string{"filter", "nat", "mangle", "raw", "security"} {
-			// #nosec G204 -- input is properly sanitized
-			out, err := exec.Command(iptableVersion, "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
-			if err == nil {
-				tableRules += table + ":\n" + string(out) + "\n"
-			}
+	out, _ = exec.Command("ip", "-4", "rule").CombinedOutput()
+
+	builder.WriteString("IP rules for ipv4" + ":\n" + string(out) + "\n")
+
+	tableRules := ""
+	for _, table := range []string{"filter", "nat", "mangle", "raw", "security"} {
+		// #nosec G204 -- input is properly sanitized
+		out, err := exec.Command("iptables", "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
+		if err == nil {
+			tableRules += table + ":\n" + string(out) + "\n"
 		}
-		version := "4"
-		if iptableVersion == "ip6tables" {
-			version = "6"
-		}
-		builder.WriteString("IP tables for ipv" + version + ":\n" + tableRules)
 	}
+	version := "4"
+	builder.WriteString("IP tables for ipv" + version + ":\n" + tableRules)
 
 	return builder.String()
 }

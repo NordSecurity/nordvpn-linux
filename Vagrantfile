@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
   if ENV["CUSTOM_ENV_GITLAB_CI"] != "true"
     config.vm.synced_folder "dist/app", "/vagrant", type: "nfs", nfs_version: 4
   end
-  config.vm.provision :shell, inline: "sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0"
+  config.vm.provision :shell, inline: "sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1"
 
   config.vm.define "debian10", autostart: false do |debian|
     debian.vm.box = "generic/debian10"

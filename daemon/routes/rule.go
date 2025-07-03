@@ -15,8 +15,8 @@ func TableID() uint { return defaultCustomRoutingTableID }
 //
 // Used by implementers.
 type PolicyAgent interface {
-	// ipv6Enabled, enableLocal, landDiscovery, allowlist subnets
-	SetupRoutingRules(bool, bool, bool, []string) error
+	// enableLocal, landDiscovery, allowlist subnets
+	SetupRoutingRules(bool, bool, []string) error
 	CleanupRouting() error
 	TableID() uint
 }
@@ -26,8 +26,8 @@ type PolicyAgent interface {
 //
 // Used by callers.
 type PolicyService interface {
-	// ipv6Enabled, enableLocal, landDiscovery, allowlist subnets
-	SetupRoutingRules(bool, bool, bool, []string) error
+	// enableLocal, landDiscovery, allowlist subnets
+	SetupRoutingRules(bool, bool, []string) error
 	CleanupRouting() error
 	// TableID of the routing table.
 	TableID() uint
@@ -46,7 +46,6 @@ type PolicyRouter struct {
 	noop        PolicyAgent
 	working     PolicyAgent
 	appliedRule *struct {
-		ipv6         bool
 		enableLocal  bool
 		lanDiscovery bool
 		allowSubnets []string
@@ -71,22 +70,20 @@ func NewPolicyRouter(noop, working PolicyAgent, enabled bool) *PolicyRouter {
 }
 
 func (p *PolicyRouter) SetupRoutingRules(
-	ipv6,
 	enableLocal,
 	lanDiscovery bool,
 	allowSubnets []string,
 ) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if err := p.current.SetupRoutingRules(ipv6, enableLocal, lanDiscovery, allowSubnets); err != nil {
+	if err := p.current.SetupRoutingRules(enableLocal, lanDiscovery, allowSubnets); err != nil {
 		return err
 	}
 	p.appliedRule = &struct {
-		ipv6         bool
 		enableLocal  bool
 		lanDiscovery bool
 		allowSubnets []string
-	}{ipv6, enableLocal, lanDiscovery, allowSubnets}
+	}{enableLocal, lanDiscovery, allowSubnets}
 	return nil
 }
 
@@ -111,7 +108,7 @@ func (p *PolicyRouter) Enable() error {
 	defer p.mu.Unlock()
 	if !p.isEnabled {
 		if p.appliedRule != nil {
-			if err := p.working.SetupRoutingRules(p.appliedRule.ipv6, p.appliedRule.enableLocal, p.appliedRule.lanDiscovery, p.appliedRule.allowSubnets); err != nil {
+			if err := p.working.SetupRoutingRules(p.appliedRule.enableLocal, p.appliedRule.lanDiscovery, p.appliedRule.allowSubnets); err != nil {
 				return err
 			}
 		}
