@@ -209,13 +209,10 @@ func main() {
 		}
 	}
 
-	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, sysinfo.GetKernelVersion())
-	/*
-		userAgent, err := request.GetUserAgentValue(Version, distro.NewDistro())
-		if err != nil {
-			log.Fatalln("Error on getting user agent value:", err)
-		}
-	*/
+	userAgent, err := request.GetUserAgentValue(Version, sysinfo.NewHostOsPrettyName())
+	if err != nil {
+		log.Fatalln("Error on getting user agent value:", err)
+	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 

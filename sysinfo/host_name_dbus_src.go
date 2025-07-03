@@ -32,9 +32,18 @@ const (
 	dbusHostname1PropFirmwareVendor            string = "FirmwareVendor"
 )
 
+type HostOsPrettyName interface {
+	GetHostOSPrettyName() (string, error)
+}
+type HostOsPrettyNameImpl struct{}
+
+func NewHostOsPrettyName() HostOsPrettyName {
+	return HostOsPrettyNameImpl{}
+}
+
 // GetHostOSPrettyName retrieves user-friendly OS name using D-Bus communication with the system
 // hostname service.
-func GetHostOSPrettyName() (string, error) {
+func (HostOsPrettyNameImpl) GetHostOSPrettyName() (string, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		log.Printf("%s %s connecting to system dbus: %s", logTag, internal.ErrorPrefix, err)

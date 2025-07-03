@@ -198,9 +198,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
 
-	distroVersion, err := sysinfo.GetHostOSPrettyName()
-	// (SKUBIAK) used to be:
-	// distroVersion, err := distro.NewDistro().ReleasePrettyName()
+	distroVersion, err := sysinfo.NewHostOsPrettyName().GetHostOSPrettyName()
 	if err != nil {
 		return fmt.Errorf("determining device os 'pretty-name'")
 	}

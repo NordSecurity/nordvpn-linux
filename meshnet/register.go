@@ -117,8 +117,6 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 	}
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	distroName, err := sysinfo.GetHostOSName()
-	// (SKUBIAK) used to be:
-	// distroName, err := distro.NewDistro().ReleaseName()
 	if err != nil {
 		return err
 	}

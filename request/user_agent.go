@@ -3,7 +3,7 @@ package request
 import (
 	"fmt"
 
-	"github.com/NordSecurity/nordvpn-linux/distro"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 )
 
 const appName = "NordApp Linux"
@@ -19,8 +19,8 @@ const appName = "NordApp Linux"
 //   - error: An error if distribution information cannot be retrieved
 //
 // See: https://www.rfc-editor.org/rfc/rfc9110.html#section-10.1.5
-func GetUserAgentValue(version string, d distro.Distro) (string, error) {
-	distro_name, err := d.ReleasePrettyName()
+func GetUserAgentValue(version string, nameGetter sysinfo.HostOsPrettyName) (string, error) {
+	distro_name, err := nameGetter.GetHostOSPrettyName()
 	if err != nil {
 		return "", fmt.Errorf("determining device os: %w", err)
 	}
