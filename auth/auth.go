@@ -6,6 +6,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/google/uuid"
 )
 
 type DedicatedIPService struct {
@@ -42,15 +42,10 @@ const (
 	DedicatedIPServiceID = 11
 )
 
-type expirationChecker interface {
-	// isExpired checks if date in '2006-01-02 15:04:05' format has passed
-	isExpired(date string) bool
-}
-
 type systemTimeExpirationChecker struct{}
 
 // isTokenExpired reports whether the token is expired or not.
-func (systemTimeExpirationChecker) isExpired(expiryTime string) bool {
+func (systemTimeExpirationChecker) IsExpired(expiryTime string) bool {
 	if expiryTime == "" {
 		return true
 	}
@@ -63,16 +58,22 @@ func (systemTimeExpirationChecker) isExpired(expiryTime string) bool {
 	return time.Now().After(expiry)
 }
 
+// NewTokenExpirationChecker
+func NewTokenExpirationChecker() core.ExpirationChecker {
+	return *&systemTimeExpirationChecker{}
+}
+
 // RenewingChecker does both authentication checks and renewals in case of expiration.
 type RenewingChecker struct {
 	cm                  config.Manager
 	creds               core.CredentialsAPI
-	expChecker          expirationChecker
+	expChecker          core.ExpirationChecker
 	mfaPub              events.Publisher[bool]
 	logoutPub           events.Publisher[events.DataAuthorization]
 	errPub              events.Publisher[error]
 	mu                  sync.Mutex
 	accountUpdateEvents *daemonevents.AccountUpdateEvents
+	loginTokenManager   core.TokenManager
 }
 
 // NewRenewingChecker is a default constructor for RenewingChecker.
@@ -82,6 +83,7 @@ func NewRenewingChecker(cm config.Manager,
 	logoutPub events.Publisher[events.DataAuthorization],
 	errPub events.Publisher[error],
 	accountUpdateEvents *daemonevents.AccountUpdateEvents,
+	loginTokenManager core.TokenManager,
 ) *RenewingChecker {
 	return &RenewingChecker{
 		cm:                  cm,
@@ -91,6 +93,7 @@ func NewRenewingChecker(cm config.Manager,
 		logoutPub:           logoutPub,
 		errPub:              errPub,
 		accountUpdateEvents: accountUpdateEvents,
+		loginTokenManager:   loginTokenManager,
 	}
 }
 
@@ -106,14 +109,21 @@ func (r *RenewingChecker) IsLoggedIn() bool {
 		return false
 	}
 
-	isLoggedIn := true
+	// isLoggedIn := true
+
+	if err := r.loginTokenManager.Renew(); err != nil {
+		return false
+		// isLoggedIn = false
+	}
+
 	for uid, data := range cfg.TokensData {
 		if err := r.renew(uid, data); err != nil {
-			isLoggedIn = false
+			// isLoggedIn = false
+			return false
 		}
 	}
 
-	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0 && isLoggedIn
+	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0 /* && isLoggedIn*/
 }
 
 // IsMFAEnabled checks if user account has MFA turned on.
@@ -134,9 +144,9 @@ func (r *RenewingChecker) isMFAEnabled() (bool, error) {
 		return false, extraErr
 	}
 
-	data := cfg.TokensData[cfg.AutoConnectData.ID]
+	// data := cfg.TokensData[cfg.AutoConnectData.ID]
 
-	resp, err := r.creds.MultifactorAuthStatus(data.Token)
+	resp, err := r.creds.MultifactorAuthStatus( /*data.Token*/ )
 	if err != nil {
 		extraErr := fmt.Errorf("querying MFA status: %w", err)
 		r.errPub.Publish(extraErr)
@@ -159,14 +169,19 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 		return true, fmt.Errorf("loading config: %w", err)
 	}
 
-	data := cfg.TokensData[cfg.AutoConnectData.ID]
-	if r.expChecker.isExpired(data.ServiceExpiry) {
+	log.Println("cfg.TokensData:", cfg.TokensData)
+	data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+	if !ok {
+		return true, fmt.Errorf("there is no token stored for user id: %v", cfg.AutoConnectData.ID)
+	}
+
+	if r.expChecker.IsExpired(data.ServiceExpiry) {
 		if err := r.fetchSaveServices(cfg.AutoConnectData.ID, &data); err != nil {
 			return true, fmt.Errorf("updating service expiry token: %w", err)
 		}
 	}
 
-	return r.expChecker.isExpired(data.ServiceExpiry), nil
+	return r.expChecker.IsExpired(data.ServiceExpiry), nil
 }
 
 func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error) {
@@ -180,7 +195,7 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 
 	dipServices := []DedicatedIPService{}
 	for _, service := range services {
-		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.isExpired(service.ExpiresAt) {
+		if service.Service.ID == DedicatedIPServiceID && !r.expChecker.IsExpired(service.ExpiresAt) {
 			serverIDs := []int64{}
 			for _, server := range service.Details.Servers {
 				serverIDs = append(serverIDs, server.ID)
@@ -195,22 +210,22 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 
 func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	// We are renewing token if it is expired because we need to make some API calls later
-	if r.expChecker.isExpired(data.TokenExpiry) {
-		if data.IdempotencyKey == nil {
-			key := uuid.New()
-			data.IdempotencyKey = &key
-			if err := r.cm.SaveWith(saveIdempotencyKey(uid, data)); err != nil {
-				return fmt.Errorf("saving idempotency key: %w", err)
-			}
-		}
-		if err := r.renewLoginToken(&data); err != nil {
-			if errors.Is(err, core.ErrUnauthorized) ||
-				errors.Is(err, core.ErrNotFound) ||
-				errors.Is(err, core.ErrBadRequest) {
-				return r.cm.SaveWith(Logout(uid, r.logoutPub))
-			}
-			return nil
-		}
+	if r.expChecker.IsExpired(data.TokenExpiry) {
+		// if data.IdempotencyKey == nil {
+		// 	key := uuid.New()
+		// 	data.IdempotencyKey = &key
+		// 	if err := r.cm.SaveWith(saveIdempotencyKey(uid, data)); err != nil {
+		// 		return fmt.Errorf("saving idempotency key: %w", err)
+		// 	}
+		// }
+		// if err := r.renewLoginToken(&data); err != nil {
+		// 	if errors.Is(err, core.ErrUnauthorized) ||
+		// 		errors.Is(err, core.ErrNotFound) ||
+		// 		errors.Is(err, core.ErrBadRequest) {
+		// 		return r.cm.SaveWith(Logout(uid, r.logoutPub))
+		// 	}
+		// 	return nil
+		// }
 		// We renew NC credentials along the login token
 		if err := r.renewNCCredentials(&data); err != nil {
 			if errors.Is(err, core.ErrUnauthorized) ||
@@ -265,20 +280,20 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	return nil
 }
 
-func (r *RenewingChecker) renewLoginToken(data *config.TokenData) error {
-	resp, err := r.creds.TokenRenew(data.RenewToken, *data.IdempotencyKey)
-	if err != nil {
-		return err
-	}
+// func (r *RenewingChecker) renewLoginToken(data *config.TokenData) error {
+// 	resp, err := r.creds.TokenRenew(data.RenewToken, *data.IdempotencyKey)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	data.Token = resp.Token
-	data.RenewToken = resp.RenewToken
-	data.TokenExpiry = resp.ExpiresAt
-	return nil
-}
+// 	data.Token = resp.Token
+// 	data.RenewToken = resp.RenewToken
+// 	data.TokenExpiry = resp.ExpiresAt
+// 	return nil
+// }
 
 func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
-	resp, err := r.creds.NotificationCredentials(data.Token, data.NCData.UserID.String())
+	resp, err := r.creds.NotificationCredentials( /*data.Token,*/ data.NCData.UserID.String())
 	if err != nil {
 		return err
 	}
@@ -290,7 +305,7 @@ func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
 }
 
 func (r *RenewingChecker) renewTrustedPassToken(data *config.TokenData) error {
-	resp, err := r.creds.TrustedPassToken(data.Token)
+	resp, err := r.creds.TrustedPassToken( /*data.Token*/ )
 	if err != nil {
 		return fmt.Errorf("getting trusted pass token data: %w", err)
 	}
@@ -314,19 +329,27 @@ func (r *RenewingChecker) renewVpnCredentials(data *config.TokenData) error {
 }
 
 // fetchSaveServices fetches services and updates data appropriately
-func (r *RenewingChecker) fetchSaveServices(userId int64, data *config.TokenData) error {
-	services, err := r.creds.Services(data.Token)
+func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData) error {
+	services, err := r.creds.Services( /*data.Token*/ )
 	if err != nil {
 		return err
 	}
 
+	var vpnExpiry string
 	for _, service := range services {
-		if service.Service.ID == VPNServiceID { // VPN service
-			data.ServiceExpiry = service.ExpiresAt
+		if service.Service.ID == VPNServiceID {
+			vpnExpiry = service.ExpiresAt
+			break
 		}
 	}
 
-	if err := r.cm.SaveWith(saveVpnExpirationDate(userId, *data)); err != nil {
+	if vpnExpiry == "" {
+		return fmt.Errorf("vpn service not found for user %d", userID)
+	}
+
+	data.ServiceExpiry = vpnExpiry
+
+	if err := r.cm.SaveWith(saveVpnExpirationDate(userID, *data)); err != nil {
 		return fmt.Errorf("saving config: %w", err)
 	}
 	r.accountUpdateEvents.SubscriptionUpdate.Publish(&pb.AccountModification{
@@ -337,18 +360,19 @@ func (r *RenewingChecker) fetchSaveServices(userId int64, data *config.TokenData
 }
 
 func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
-	var cfg config.Config
-	if err := r.cm.Load(&cfg); err != nil {
-		return nil, fmt.Errorf("loading config: %w", err)
-	}
+	// var cfg config.Config
+	// if err := r.cm.Load(&cfg); err != nil {
+	// 	return nil, fmt.Errorf("loading config: %w", err)
+	// }
 
-	data := cfg.TokensData[cfg.AutoConnectData.ID]
+	// data := cfg.TokensData[cfg.AutoConnectData.ID]
 
-	services, err := r.creds.Services(data.Token)
+	log.Println("calling service")
+	services, err := r.creds.Services( /*data.Token*/ )
 	if err != nil {
 		return nil, fmt.Errorf("fetching available services: %w", err)
 	}
-
+	log.Println("calling service DONE")
 	return services, nil
 }
 
@@ -357,8 +381,6 @@ func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
 func saveLoginToken(userID int64, data config.TokenData) config.SaveFunc {
 	return func(c config.Config) config.Config {
 		user := c.TokensData[userID]
-		defer func() { c.TokensData[userID] = user }()
-
 		user.Token = data.Token
 		user.RenewToken = data.RenewToken
 		user.TokenExpiry = data.TokenExpiry
@@ -367,6 +389,7 @@ func saveLoginToken(userID int64, data config.TokenData) config.SaveFunc {
 		user.NCData.Password = data.NCData.Password
 		user.TrustedPassOwnerID = data.TrustedPassOwnerID
 		user.TrustedPassToken = data.TrustedPassToken
+		c.TokensData[userID] = user
 		return c
 	}
 }
@@ -374,9 +397,8 @@ func saveLoginToken(userID int64, data config.TokenData) config.SaveFunc {
 func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc {
 	return func(c config.Config) config.Config {
 		user := c.TokensData[userID]
-		defer func() { c.TokensData[userID] = user }()
-
 		user.ServiceExpiry = data.ServiceExpiry
+		c.TokensData[userID] = user
 		return c
 	}
 }
@@ -384,24 +406,22 @@ func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc 
 func saveVpnServerCredentials(userID int64, data config.TokenData) config.SaveFunc {
 	return func(c config.Config) config.Config {
 		user := c.TokensData[userID]
-		defer func() { c.TokensData[userID] = user }()
-
 		user.NordLynxPrivateKey = data.NordLynxPrivateKey
 		user.OpenVPNUsername = data.OpenVPNUsername
 		user.OpenVPNPassword = data.OpenVPNPassword
+		c.TokensData[userID] = user
 		return c
 	}
 }
 
-func saveIdempotencyKey(userID int64, data config.TokenData) config.SaveFunc {
-	return func(c config.Config) config.Config {
-		user := c.TokensData[userID]
-		defer func() { c.TokensData[userID] = user }()
-
-		user.IdempotencyKey = data.IdempotencyKey
-		return c
-	}
-}
+// func saveIdempotencyKey(userID int64, data config.TokenData) config.SaveFunc {
+// 	return func(c config.Config) config.Config {
+// 		user := c.TokensData[userID]
+// 		user.IdempotencyKey = data.IdempotencyKey
+// 		c.TokensData[userID] = user
+// 		return c
+// 	}
+// }
 
 // Logout the user.
 func Logout(user int64, logoutPub events.Publisher[events.DataAuthorization]) config.SaveFunc {

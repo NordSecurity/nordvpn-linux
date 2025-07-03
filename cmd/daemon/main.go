@@ -24,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
+	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -254,21 +255,6 @@ func main() {
 		httpGlobalCtx,
 	)
 
-	defaultAPI := core.NewDefaultAPI(
-		userAgent,
-		daemon.BaseURL,
-		httpClientWithRotator,
-		validator,
-	)
-
-	meshMapper := mapper.NewNotifyingMapper(
-		mapper.NewCachingMapper(defaultAPI, time.Minute*5),
-		meshnetEvents.SelfRemoved,
-		meshnetEvents.PeerUpdate,
-	)
-
-	meshRegistry := registry.NewNotifyingRegistry(defaultAPI, meshnetEvents.PeerUpdate)
-
 	repoAPI := daemon.NewRepoAPI(
 		daemon.RepoURL,
 		Version,
@@ -291,7 +277,22 @@ func main() {
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
 
-	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, *httpClientSimple, Version, Environment, deviceID)
+	simpleClientAPI := core.NewSimpleAPI(
+		userAgent,
+		daemon.BaseURL,
+		httpClientWithRotator,
+		validator,
+	)
+	loginTokenErrHandlingReg := core.NewErrorHandlingRegistry[func(uid int64)]()
+	loginTokenManager := core.NewLoginTokenManager(
+		fsystem,
+		simpleClientAPI.TokenRenew,
+		loginTokenErrHandlingReg,
+		auth.NewTokenExpirationChecker(),
+	)
+	clientAPI := core.NewSmartClientAPI(simpleClientAPI, loginTokenManager)
+
+	analytics := newAnalytics(eventsDbPath, fsystem, clientAPI, *httpClientSimple, Version, Environment, deviceID)
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
 	daemonEvents.Subscribe(analytics)
@@ -416,10 +417,17 @@ func main() {
 
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
+	meshRegistry := registry.NewNotifyingRegistry(clientAPI, meshnetEvents.PeerUpdate)
 	meshnetChecker := meshnet.NewRegisteringChecker(
 		fsystem,
 		keygen,
 		meshRegistry,
+	)
+
+	meshMapper := mapper.NewNotifyingMapper(
+		mapper.NewCachingMapper(clientAPI, time.Minute*5),
+		meshnetEvents.SelfRemoved,
+		meshnetEvents.PeerUpdate,
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
@@ -438,11 +446,12 @@ func main() {
 	accountUpdateEvents.Subscribe(statePublisher)
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
-		defaultAPI,
+		clientAPI,
 		daemonEvents.User.MFA,
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
+		loginTokenManager,
 	)
 	endpointResolver := network.NewDefaultResolverChain(fw)
 	notificationClient := nc.NewClient(
@@ -450,7 +459,7 @@ func main() {
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
-		nc.NewCredsFetcher(defaultAPI, fsystem))
+		nc.NewCredsFetcher(clientAPI, fsystem))
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
 	dataUpdateEvents.Subscribe(statePublisher)
@@ -465,7 +474,7 @@ func main() {
 	consentChecker := newConsentChecker(
 		internal.IsDevEnv(Environment),
 		fsystem,
-		defaultAPI,
+		clientAPI,
 		authChecker,
 		analytics,
 	)
@@ -477,9 +486,9 @@ func main() {
 		authChecker,
 		fsystem,
 		dm,
-		defaultAPI,
-		defaultAPI,
-		defaultAPI,
+		clientAPI,
+		clientAPI,
+		clientAPI,
 		cdnAPI,
 		repoAPI,
 		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
@@ -503,7 +512,7 @@ func main() {
 		authChecker,
 		fsystem,
 		meshnetChecker,
-		inviter.NewNotifyingInviter(defaultAPI, meshnetEvents.PeerUpdate),
+		inviter.NewNotifyingInviter(clientAPI, meshnetEvents.PeerUpdate),
 		netw,
 		meshRegistry,
 		meshMapper,
@@ -512,6 +521,44 @@ func main() {
 		daemonEvents,
 		norduserClient,
 		sharedContext,
+	)
+
+	loginTokenErrHandlingReg.Add(
+		core.ErrUnauthorized,
+		func(uint int64) {
+			log.Println("logout user HANDLER START")
+
+			result := access.ForceLogoutWithoutToken(access.ForceLogoutWithoutTokenInput{
+				AuthChecker:   authChecker,
+				Netw:          netw,
+				NcClient:      notificationClient,
+				ConfigManager: fsystem,
+				Events:        daemonEvents,
+				Publisher:     debugSubject,
+				DisconnectAll: rpc.DoDisconnect,
+			})
+
+			if result.Err != nil {
+				log.Println(internal.ErrorPrefix, "logging out: %w", err)
+			}
+
+			if result.Status == internal.CodeSuccess {
+				log.Println(internal.DebugPrefix, "successfully logged out after detecting invalid credentials")
+			}
+			log.Println("logout user HANDLER END")
+		},
+	)
+
+	loginTokenErrHandlingReg.AddMulti(
+		[]error{core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest},
+		func(uid int64) {
+			log.Println("LOGGING THE USER OUT")
+			daemonEvents.User.Logout.Publish(
+				events.DataAuthorization{
+					DurationMs: -1, EventTrigger: events.TriggerApp, EventStatus: events.StatusSuccess},
+			)
+			log.Println("LOGGING THE USER OUT --- DONE")
+		},
 	)
 
 	opts := []grpc.ServerOption{

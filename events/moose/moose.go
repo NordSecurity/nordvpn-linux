@@ -688,18 +688,18 @@ func (s *Subscriber) fetchSubscriptions() error {
 	if s.consent == config.ConsentUndefined {
 		return nil
 	}
-	var cfg config.Config
-	if err := s.Config.Load(&cfg); err != nil {
-		return fmt.Errorf("loading config: %w", err)
-	}
-	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
+	// var cfg config.Config
+	// if err := s.Config.Load(&cfg); err != nil {
+	// 	return fmt.Errorf("loading config: %w", err)
+	// }
+	// token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 
-	payments, err := s.SubscriptionAPI.Payments(token)
+	payments, err := s.SubscriptionAPI.Payments( /*token*/ )
 	if err != nil {
 		return fmt.Errorf("fetching payments: %w", err)
 	}
 
-	orders, err := s.SubscriptionAPI.Orders(token)
+	orders, err := s.SubscriptionAPI.Orders( /*token*/ )
 	if err != nil {
 		return fmt.Errorf("fetching orders: %w", err)
 	}
