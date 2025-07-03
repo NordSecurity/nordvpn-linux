@@ -296,7 +296,7 @@ func main() {
 		Version:      Version,
 		Environment:  Environment,
 		Architecture: Arch}
-	if archVariant, err := machineIdGenerator.GetArchitectureVariantName(Arch); err == nil {
+	if archVariant, err := machineIdGenerator.GetArchitectureVariantName(sysinfo.GetHostArchitecture()); err == nil {
 		buildTarget.Architecture = archVariant
 	}
 
