@@ -198,7 +198,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
 
-	distroVersion, err := sysinfo.HostOSPrettyName()
+	distroVersion, err := sysinfo.GetHostOSPrettyName()
 	if err != nil {
 		return fmt.Errorf("determining device os 'pretty-name'")
 	}
