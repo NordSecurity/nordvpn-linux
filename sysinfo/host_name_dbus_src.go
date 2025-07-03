@@ -60,7 +60,7 @@ func (HostOsPrettyNameImpl) GetHostOSPrettyName() (string, error) {
 
 	name, err := dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName)
 	if err != nil {
-		log.Printf("%s %s retrieving OS pretty name: %s", logTag, internal.WarningPrefix, err)
+		log.Printf("%s %s retrieving OS pretty name: %s\n", logTag, internal.WarningPrefix, err)
 		log.Println(logTag, internal.WarningPrefix, "Attempting to read os-release file instead")
 		return GetHostOSName()
 	}
