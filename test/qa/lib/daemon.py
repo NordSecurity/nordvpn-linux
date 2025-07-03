@@ -52,14 +52,6 @@ def is_killswitch_on():
         return False
 
 
-# return True when IPv6 is activated
-def is_ipv6_on():
-    try:
-        return "IPv6: enabled" in sh.nordvpn.settings()
-    except sh.ErrorReturnCode:
-        return False
-
-
 def install_peer(ssh_client: ssh.Ssh):
     """Installs nordvpn in peer."""
     project_root = os.environ["WORKDIR"]
