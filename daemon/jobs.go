@@ -12,6 +12,7 @@ import (
 	"github.com/godbus/dbus/v5"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -29,12 +30,22 @@ const (
 func (r *RPC) StartJobs(
 	statePublisher *state.StatePublisher,
 	heartBeatPublisher events.Publisher[time.Duration],
+	remoteConfigLoader remote.ConfigLoader,
 ) {
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
 	// TODO what if configs file is deleted just before servers job or disk is full?
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(6*time.Hour), gocron.NewTask(JobCountries(r.dm, r.serversAPI)), gocron.WithName("job countries")); err != nil {
 		log.Println(internal.WarningPrefix, "job countries schedule error:", err)
+	}
+
+	_, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Minute), gocron.NewTask(func() { // TODO/FIXME: change time/frequency
+		if err := remoteConfigLoader.LoadConfig(); err != nil {
+			log.Printf("JobConfigLoader: %s", err)
+		}
+	}), gocron.WithName("job config loader"))
+	if err != nil {
+		log.Println(internal.WarningPrefix, "job config loader schedule error:", err)
 	}
 
 	jobInsights, err := r.scheduler.NewJob(gocron.DurationJob(30*time.Minute), gocron.NewTask(JobInsights(r.dm, r.api, r.netw, r.events, false)), gocron.WithName("job insights"))
