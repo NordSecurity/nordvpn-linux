@@ -283,6 +283,7 @@ func testNewCDNAPI() *core.CDNAPI {
 // ready for use in tests RepoAPI
 func testNewRepoAPI() *RepoAPI {
 	return NewRepoAPI(
+		"TestNordApp Linux/4.5.6 (Ubuntu 24.04.2 LTS)",
 		localServerPath(GeneralInfo),
 		"",
 		"",
