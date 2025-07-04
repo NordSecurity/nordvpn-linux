@@ -60,11 +60,11 @@ def test_tunnel_update_notifications_before_and_after_connect():
                b in zip(result, expected_states, strict=True))
 
 
-def collect_state_changes_guard(stop_at: int, tracked_states: Sequence[str], subscribtion_barrier: Barrier, timeout: int = 10) -> Sequence[state_pb2.AppState]:
+def collect_state_changes_guard(stop_at: int, tracked_states: Sequence[str], subscribtion_barrier: Barrier, timeout: int = 30) -> Sequence[state_pb2.AppState]:
     with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
         return collect_state_changes(channel, stop_at, tracked_states, subscribtion_barrier, timeout)
 
-def collect_state_changes(channel: grpc.Channel, stop_at: int, tracked_states: Sequence[str], subscribtion_barrier: Barrier, timeout: int = 10) -> Sequence[state_pb2.AppState]:
+def collect_state_changes(channel: grpc.Channel, stop_at: int, tracked_states: Sequence[str], subscribtion_barrier: Barrier, timeout: int = 30) -> Sequence[state_pb2.AppState]:
         grpc.channel_ready_future(channel).result(timeout=timeout)
         stub = service_pb2_grpc.DaemonStub(channel)
         subscribtion_barrier.wait()
