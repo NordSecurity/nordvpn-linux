@@ -47,7 +47,7 @@ func (HostOsPrettyNameImpl) GetHostOSPrettyName() (string, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
 		log.Printf("%s %s connecting to system dbus: %s\n", logTag, internal.ErrorPrefix, err)
-		log.Println(logTag, internal.WarningPrefix, "Attempting to read os-release file instead")
+		log.Println(logTag, internal.WarningPrefix, "falling back to alternative OS detection method")
 		return GetHostOSName()
 	}
 	defer conn.Close()
@@ -61,7 +61,7 @@ func (HostOsPrettyNameImpl) GetHostOSPrettyName() (string, error) {
 	name, err := dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName)
 	if err != nil {
 		log.Printf("%s %s retrieving OS pretty name: %s\n", logTag, internal.WarningPrefix, err)
-		log.Println(logTag, internal.WarningPrefix, "Attempting to read os-release file instead")
+		log.Println(logTag, internal.WarningPrefix, "falling back to alternative OS detection method")
 		return GetHostOSName()
 	}
 
