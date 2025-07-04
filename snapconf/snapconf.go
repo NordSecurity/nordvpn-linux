@@ -65,6 +65,7 @@ type ConnChecker struct {
 func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 	return NewConnChecker(
 		[]Interface{
+			InterfaceSystemObserve,
 			InterfaceHardwareObserve,
 			InterfaceNetwork,
 			InterfaceNetworkBind,
@@ -73,9 +74,9 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceFirewallControl,
 			InterfaceHome,
 			InterfaceLoginSessionObserve,
-			InterfaceSystemObserve,
 		},
 		[]Interface{
+			InterfaceSystemObserve,
 			InterfaceHardwareObserve,
 			InterfaceNetwork,
 			InterfaceNetworkBind,
@@ -84,7 +85,6 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceFirewallControl,
 			InterfaceHome,
 			InterfaceLoginSessionObserve,
-			InterfaceSystemObserve,
 		},
 		publisherErr,
 	)
