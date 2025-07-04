@@ -55,7 +55,7 @@ def test_tunnel_update_notifications_before_and_after_connect():
     subscribtion_barrier.wait(timeout=10)
     sh.nordvpn.connect()
     sh.nordvpn.disconnect()
-    thread.join(timeout=10)
+    thread.join()
     assert all(a.connection_status.state == b for a,
                b in zip(result, expected_states, strict=True))
 
@@ -67,8 +67,9 @@ def collect_state_changes_guard(stop_at: int, tracked_states: Sequence[str], sub
 def collect_state_changes(channel: grpc.Channel, stop_at: int, tracked_states: Sequence[str], subscribtion_barrier: Barrier, timeout: int = 10) -> Sequence[state_pb2.AppState]:
         grpc.channel_ready_future(channel).result(timeout=timeout)
         stub = service_pb2_grpc.DaemonStub(channel)
-        subscribtion_barrier.wait(timeout=10)
-        response_stream = stub.SubscribeToStateChanges(common_pb2.Empty())
+        subscribtion_barrier.wait()
+        response_stream = stub.SubscribeToStateChanges(
+            common_pb2.Empty(), timeout=timeout)
         result = []
         for change in response_stream:
             # Ignore the rest of updates as some settings updates may be published
