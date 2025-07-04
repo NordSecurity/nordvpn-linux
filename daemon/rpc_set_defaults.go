@@ -21,7 +21,14 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
-	if in.NoLogout {
+	if in.OffKillswitch && cfg.KillSwitch {
+		if err := r.netw.UnsetKillSwitch(); err != nil {
+			log.Println(internal.ErrorPrefix, "error while disabling killswitch:", err)
+			return &pb.Payload{Type: internal.CodeFailure}, nil
+		}
+	}
+
+	if !in.NoLogout {
 		// No error check in case mesh isn't even turned on
 		if err := r.netw.UnSetMesh(); err != nil {
 			log.Println(internal.WarningPrefix, err)
@@ -36,7 +43,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}
 	}
 
-	if err := r.cm.Reset(in.NoLogout); err != nil {
+	if err := r.cm.Reset(in.NoLogout, in.OffKillswitch); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,

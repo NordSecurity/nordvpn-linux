@@ -14,17 +14,21 @@ const (
 	// SetDefaultsUsageText is shown next to defaults command by nordvpn set --help
 	SetDefaultsUsageText = "Restores settings to their default values."
 	flagLogout           = "logout"
+	flagOffKillswitch    = "off-killswitch"
 )
 
 func (c *cmd) SetDefaults(ctx *cli.Context) error {
 	logout := ctx.IsSet(flagLogout)
+	offKillswitch := ctx.IsSet(flagOffKillswitch)
 
-	resp, err := c.client.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: !logout})
+	resp, err := c.client.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: !logout, OffKillswitch: offKillswitch})
 	if err != nil {
 		return formatError(err)
 	}
 
 	switch resp.Type {
+	case internal.CodeFailure:
+		return formatError(internal.ErrUnhandled)
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeSuccess:

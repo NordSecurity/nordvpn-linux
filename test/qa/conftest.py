@@ -143,8 +143,7 @@ def nordvpnd_scope_function(collect_logs):  # noqa: ARG001
 
     yield
 
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults()
+    sh.nordvpn.set.defaults("--logout", "--off-killswitch")
     daemon.stop()
 
 
@@ -156,7 +155,7 @@ def nordvpnd_scope_module():
 
     yield
 
-    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.set.defaults("--logout", "--off-killswitch")
     daemon.stop()
 
 

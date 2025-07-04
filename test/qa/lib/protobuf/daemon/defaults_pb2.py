@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x64\x65\x66\x61ults.proto\x12\x02pb\"\'\n\x12SetDefaultsRequest\x12\x11\n\tno_logout\x18\x01 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x64\x65\x66\x61ults.proto\x12\x02pb\"?\n\x12SetDefaultsRequest\x12\x11\n\tno_logout\x18\x01 \x01(\x08\x12\x16\n\x0eoff_killswitch\x18\x02 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,5 +33,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
   _globals['_SETDEFAULTSREQUEST']._serialized_start=22
-  _globals['_SETDEFAULTSREQUEST']._serialized_end=61
+  _globals['_SETDEFAULTSREQUEST']._serialized_end=85
 # @@protoc_insertion_point(module_scope)

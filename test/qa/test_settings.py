@@ -5,16 +5,9 @@ import pexpect
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
 
-def setup_module(module):  # noqa: ARG001
-    daemon.start()
-
-
-def teardown_module(module):  # noqa: ARG001
-    daemon.stop()
-
-
 def setup_function(function):  # noqa: ARG001
     logging.log()
+    daemon.start()
     login.login_as("default")
 
 
@@ -22,6 +15,7 @@ def teardown_function(function):  # noqa: ARG001
     logging.log(data=info.collect())
     logging.log()
     sh.nordvpn.set.defaults("--logout")
+    daemon.stop()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
@@ -193,7 +187,7 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout", "--off-killswitch")
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert network.is_available()
@@ -374,3 +368,22 @@ def test_autoconnect_disable_twice(tech, proto, obfuscated):
     output = sh.nordvpn.set.autoconnect.off()
     print(str(output))
     assert settings.MSG_AUTOCONNECT_DISABLE_FAIL in str(output)
+
+
+@pytest.mark.parametrize("killswitch_initial", [True, False])
+@pytest.mark.parametrize("killswitch_flag", [True, False])
+def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag):
+    try:
+        sh.nordvpn.set.killswitch(str(killswitch_initial))
+    except sh.ErrorReturnCode_1 as ex:
+        assert "Kill Switch is already set to" in str(ex.value), "Unexpected error returned by 'set killswitch'. Expected 'Killswitch already set to enabled/disabled."
+
+    if killswitch_flag:
+        sh.nordvpn.set.defaults("--off-killswitch")
+    else:
+        sh.nordvpn.set.defaults()
+
+    expected_killswitch_state = killswitch_initial and not killswitch_flag
+
+    assert daemon.is_killswitch_on() is expected_killswitch_state
+    assert network.is_not_available(2) is expected_killswitch_state

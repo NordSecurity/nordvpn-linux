@@ -45,7 +45,7 @@ type Manager interface {
 	// Load config into a given struct.
 	Load(*Config) error
 	// Reset config to default values.
-	Reset(preserveLoginData bool) error
+	Reset(preserveLoginData bool, disableKillswitch bool) error
 }
 
 type FilesystemHandle interface {
@@ -166,7 +166,7 @@ func (f *FilesystemConfigManager) save(c Config) error {
 // Reset config values to defaults.
 //
 // Thread-safe.
-func (f *FilesystemConfigManager) Reset(preserveLoginData bool) (retErr error) {
+func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitch bool) (retErr error) {
 	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
@@ -194,6 +194,10 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool) (retErr error) {
 
 	if preserveLoginData {
 		newCfg = newCfg.withLoginData(&current)
+	}
+
+	if !disableKillswitch {
+		newCfg.KillSwitch = current.KillSwitch
 	}
 
 	retErr = f.save(newCfg)
