@@ -500,13 +500,10 @@ Features        : fp asimd evtstrm aes sha1 sha2 crc32`,
 			)
 
 			got, err := getter.GetArchitectureVariantName(tt.archFamily)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("MachineID.GetArchitectureVariantName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("MachineID.GetArchitectureVariantName() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, err != nil, tt.wantErr,
+				"MachineID.GetArchitectureVariantName() error = %v, wantErr %v", err, tt.wantErr)
+			assert.Equal(t, got, tt.want,
+				"MachineID.GetArchitectureVariantName() = %v, want %v", got, tt.want)
 		})
 	}
 
@@ -521,13 +518,10 @@ Features        : fp asimd evtstrm aes sha1 sha2 crc32`,
 	)
 
 	got, err := getter.GetArchitectureVariantName("aarch64")
-	if err == nil {
-		t.Errorf("MachineID.GetArchitectureVariantName() error = %v, wantErr %v", err, true)
-		return
-	}
-	if got != "" {
-		t.Errorf("MachineID.GetArchitectureVariantName() = %v, want %v", got, "")
-	}
+	assert.NotEqual(t, err, nil,
+		"MachineID.GetArchitectureVariantName() error = %v, wantErr %v", err, true)
+	assert.Equal(t, got, "",
+		"MachineID.GetArchitectureVariantName() = %v, want %v", got, "")
 }
 
 func Test_normalizeArchFamily(t *testing.T) {
@@ -587,9 +581,8 @@ func Test_normalizeArchFamily(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := normalizeArchFamily(tt.args.family); got != tt.want {
-				t.Errorf("normalizeArchFamily() = %v, want %v", got, tt.want)
-			}
+			got := normalizeArchFamily(tt.args.family)
+			assert.Equal(t, got, tt.want, "normalizeArchFamily() = %v, want %v", got, tt.want)
 		})
 	}
 }
