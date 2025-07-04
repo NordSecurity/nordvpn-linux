@@ -55,13 +55,13 @@ func (api *RepoAPI) DebianFileList() ([]byte, error) {
 
 	resp, err := api.request(fmt.Sprintf(core.DebFileinfoURLFormat, repoType, api.arch))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch debian fileinfo: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := core.MaxBytesReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read debian fileinfo data: %w", err)
 	}
 
 	return body, nil
@@ -84,13 +84,13 @@ func (api *RepoAPI) RpmFileList() ([]byte, error) {
 
 	resp, err := api.request(fmt.Sprintf(core.RpmRepoMdURLFormat, repoType, repoArch, core.RpmRepoMdURL))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch repomd: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := core.MaxBytesReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read repomd data: %w", err)
 	}
 
 	filelistPattern := regexp.MustCompile(`/.*filelists\.xml\.gz`)
@@ -98,13 +98,13 @@ func (api *RepoAPI) RpmFileList() ([]byte, error) {
 
 	resp, err = api.request(fmt.Sprintf(core.RpmRepoMdURLFormat, repoType, repoArch, filepath))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch rpm fileinfo: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err = core.MaxBytesReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read rpm fileinfo: %w", err)
 	}
 
 	return body, nil
