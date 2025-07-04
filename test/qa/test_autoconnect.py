@@ -121,11 +121,14 @@ def test_autoconnect_virtual_country(tech, proto, obfuscated):
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_autoconnect_virtual_country_disabled(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    sh.nordvpn.set("virtual-location", "on")
 
-    virtual_countries = lib.get_virtual_countries()
-    assert len(virtual_countries) > 0
-    country = random.choice(virtual_countries)
+    # fix in LVPN-8449
+    # sh.nordvpn.set("virtual-location", "on")
+    # virtual_countries = lib.get_virtual_countries()
+    # assert len(virtual_countries) > 0
+    # country = random.choice(virtual_countries)
+    # until then chose a country that has only virtual server locations
+    country = "AF"
 
     sh.nordvpn.set("virtual-location", "off")
 
