@@ -274,6 +274,7 @@ func main() {
 	meshRegistry := registry.NewNotifyingRegistry(defaultAPI, meshnetEvents.PeerUpdate)
 
 	repoAPI := daemon.NewRepoAPI(
+		userAgent,
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),
