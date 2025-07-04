@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// defaultMaxGroup represents the maximum value for a rollout group,
+// effectively making the value to be in range of 1-100 (inclusive) to reflect percentage-based groups.
 const defaultMaxGroup = 100
 
 // GenerateRolloutGroup creates a new RolloutGroup instance based on a provided UUID.
