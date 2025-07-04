@@ -34,7 +34,6 @@ func GetTestCombined() *Combined {
 		&subs.Subject[string]{},
 		workingRouter{},
 		&workingDNS{},
-		&workingIpv6{},
 		newWorkingFirewall(),
 		workingAllowlistRouting{},
 		workingDeviceList,
@@ -79,11 +78,6 @@ type failingDNS struct{}
 
 func (failingDNS) Set(string, []string) error { return mock.ErrOnPurpose }
 func (failingDNS) Unset(string) error         { return mock.ErrOnPurpose }
-
-type workingIpv6 struct{}
-
-func (workingIpv6) Block() error   { return nil }
-func (workingIpv6) Unblock() error { return nil }
 
 type workingFirewall struct {
 	rules map[string]firewall.Rule
@@ -169,7 +163,7 @@ type workingRoutingSetup struct {
 	EnableLocalTraffic bool
 }
 
-func (r *workingRoutingSetup) SetupRoutingRules(_ bool, enableLan bool, _ bool, _ []string) error {
+func (r *workingRoutingSetup) SetupRoutingRules(enableLan bool, _ bool, _ []string) error {
 	r.EnableLocalTraffic = enableLan
 	return nil
 }
@@ -361,7 +355,6 @@ func TestCombined_Start(t *testing.T) {
 				&subs.Subject[string]{},
 				test.allowlistRouter,
 				test.dns,
-				&workingIpv6{},
 				test.fw,
 				test.allowlist,
 				test.devices,
@@ -430,7 +423,6 @@ func TestCombined_Stop(t *testing.T) {
 				&subs.Subject[string]{},
 				workingRouter{},
 				test.dns,
-				&workingIpv6{},
 				&workingFirewall{},
 				workingAllowlistRouting{},
 				nil,
@@ -493,7 +485,6 @@ func TestCombined_SetDNS(t *testing.T) {
 				&subs.Subject[string]{},
 				workingRouter{},
 				test.dns,
-				&workingIpv6{},
 				&workingFirewall{},
 				nil,
 				nil,
@@ -541,7 +532,6 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				&subs.Subject[string]{},
 				workingRouter{},
 				test.dns,
-				&workingIpv6{},
 				&workingFirewall{},
 				nil,
 				nil,
@@ -604,7 +594,6 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 				&subs.Subject[string]{},
 				workingRouter{},
 				&workingDNS{},
-				workingIpv6{},
 				test.fw,
 				test.allowlist,
 				test.devices,
@@ -664,7 +653,6 @@ func TestCombined_BlockTraffic(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
 				test.fw,
 				nil,
 				test.devices,
@@ -711,7 +699,6 @@ func TestCombined_UnblockTraffic(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
 				test.fw,
 				nil,
 				nil,
@@ -724,113 +711,6 @@ func TestCombined_UnblockTraffic(t *testing.T) {
 				false,
 			)
 			assert.ErrorIs(t, netw.unblockTraffic(), test.err)
-		})
-	}
-}
-
-func TestCombined_AllowIPv6Traffic(t *testing.T) {
-	category.Set(t, category.Route)
-
-	tests := []struct {
-		name    string
-		fw      firewall.Service
-		devices device.ListFunc
-		routing routes.PolicyService
-		err     error
-	}{
-		{
-			name:    "firewall failure",
-			fw:      failingFirewall{},
-			devices: workingDeviceList,
-			err:     mock.ErrOnPurpose,
-			routing: &workingRoutingSetup{},
-		},
-		{
-			name:    "device listing failure",
-			fw:      &workingFirewall{},
-			devices: failingDeviceList,
-			err:     mock.ErrOnPurpose,
-			routing: &workingRoutingSetup{},
-		},
-		{
-			name:    "success",
-			fw:      &workingFirewall{},
-			devices: workingDeviceList,
-			routing: &workingRoutingSetup{},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// It's fine to pass nils to values provided via constructor
-			// which are not used in the test.
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				test.fw,
-				nil,
-				test.devices,
-				test.routing,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-			)
-			assert.ErrorIs(t, netw.allowIPv6Traffic(), test.err)
-		})
-	}
-}
-
-func TestCombined_StopAllowedIPv6Traffic(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name string
-		fw   firewall.Service
-		err  error
-	}{
-		{
-			name: "firewall failure",
-			fw:   failingFirewall{},
-			err:  mock.ErrOnPurpose,
-		},
-		{
-			name: "success",
-			fw:   &workingFirewall{},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// It's fine to pass nils to values provided via constructor
-			// which are not used in the test.
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				test.fw,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-			)
-			assert.ErrorIs(t, netw.stopAllowedIPv6Traffic(), test.err)
 		})
 	}
 }
@@ -915,7 +795,6 @@ func TestCombined_SetAllowlist(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				&workingIpv6{},
 				test.fw,
 				test.allowlistRouting,
 				test.devices,
@@ -972,7 +851,6 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				&workingIpv6{},
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
@@ -1051,7 +929,6 @@ func TestCombined_SetNetwork(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				&workingIpv6{},
 				test.fw,
 				test.allowlist,
 				test.devices,
@@ -1115,7 +992,6 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				&workingIpv6{},
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
@@ -1163,7 +1039,6 @@ func TestCombined_SetMesh(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				&workingIpv6{},
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
@@ -1215,7 +1090,6 @@ func TestCombined_UnSetMesh(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				&workingIpv6{},
 				test.fw,
 				test.allowlist,
 				workingDeviceList,
@@ -1272,7 +1146,6 @@ func TestCombined_Reconnect(t *testing.T) {
 				&subs.Subject[string]{},
 				nil,
 				&workingDNS{},
-				&workingIpv6{},
 				fw,
 				nil,
 				workingDeviceList,
@@ -1352,7 +1225,6 @@ func TestCombined_allowIncoming(t *testing.T) {
 				&subs.Subject[string]{},
 				nil,
 				nil,
-				nil,
 				&mockFirewall,
 				nil,
 				nil,
@@ -1422,7 +1294,6 @@ func TestCombined_blockIncoming(t *testing.T) {
 				&subs.Subject[string]{},
 				nil,
 				nil,
-				nil,
 				test.fw,
 				nil,
 				nil,
@@ -1481,7 +1352,6 @@ func TestCombined_allowGeneratedRule(t *testing.T) {
 				&subs.Subject[string]{},
 				nil,
 				nil,
-				nil,
 				test.fw,
 				nil,
 				nil,
@@ -1522,7 +1392,6 @@ func TestCombined_BlockNonExistingRuleFail(t *testing.T) {
 				nil,
 				nil,
 				&subs.Subject[string]{},
-				nil,
 				nil,
 				nil,
 				test.fw,
@@ -1570,7 +1439,6 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 				&subs.Subject[string]{},
 				nil,
 				nil,
-				nil,
 				&mockFirewall,
 				nil,
 				nil,
@@ -1605,7 +1473,6 @@ func TestCombined_Refresh(t *testing.T) {
 		&subs.Subject[string]{},
 		workingRouter{},
 		&workingDNS{},
-		&workingIpv6{},
 		fw,
 		nil,
 		workingDeviceList,
@@ -1790,7 +1657,6 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 		&subs.Subject[string]{},
 		workingRouter{},
 		dns,
-		&workingIpv6{},
 		newWorkingFirewall(),
 		workingAllowlistRouting{},
 		workingDeviceList,

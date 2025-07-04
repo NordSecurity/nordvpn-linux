@@ -154,19 +154,12 @@ func (r *RPC) connect(
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	if cfg.IPv6 {
-		if err := r.netw.PermitIPv6(); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to re-enable ipv6:", err)
-		}
-		r.endpoint = network.DefaultEndpoint(r.endpointResolver, server.IPs())
-	} else {
-		ip, err := server.IPv4()
-		if err != nil {
-			log.Println(internal.ErrorPrefix, err)
-			return false, internal.ErrUnhandled
-		}
-		r.endpoint = network.NewIPv4Endpoint(ip)
+	ip, err := server.IPv4()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return false, internal.ErrUnhandled
 	}
+	r.endpoint = network.NewIPv4Endpoint(ip)
 
 	subnet, err := r.endpoint.Network()
 	if err != nil {
@@ -255,7 +248,6 @@ func (r *RPC) connect(
 		allowlist,
 		cfg.AutoConnectData.DNS.Or(r.nameservers.Get(
 			cfg.AutoConnectData.ThreatProtectionLite,
-			server.SupportsIPv6(),
 		)),
 		true, // here vpn connect - enable routing to local LAN
 	)
@@ -280,14 +272,6 @@ func (r *RPC) connect(
 		return false, nil
 	}
 
-	// If server has at least one IPv6 address
-	// regardless if IPv4 or IPv6 is used to connect
-	// to the server - DO NOT DISABLE IPv6.
-	if !server.SupportsIPv6() {
-		if err := r.netw.DenyIPv6(); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to disable ipv6:", err)
-		}
-	}
 	event.EventStatus = events.StatusSuccess
 	event.DurationMs = getElapsedTime(connectingStartTime)
 	r.events.Service.Connect.Publish(event)

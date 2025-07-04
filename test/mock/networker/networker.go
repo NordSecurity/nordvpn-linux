@@ -83,8 +83,6 @@ func (m *Mock) IsMeshnetActive() bool {
 }
 func (*Mock) SetKillSwitch(config.Allowlist) error { return nil }
 func (*Mock) UnsetKillSwitch() error               { return nil }
-func (*Mock) PermitIPv6() error                    { return nil }
-func (*Mock) DenyIPv6() error                      { return nil }
 func (*Mock) SetVPN(vpn.VPN)                       {}
 func (*Mock) LastServerName() string               { return "" }
 
@@ -124,8 +122,6 @@ func (Failing) EnableFirewall() error                               { return moc
 func (Failing) DisableFirewall() error                              { return mock.ErrOnPurpose }
 func (Failing) EnableRouting()                                      {}
 func (Failing) DisableRouting()                                     {}
-func (Failing) PermitIPv6() error                                   { return mock.ErrOnPurpose }
-func (Failing) DenyIPv6() error                                     { return mock.ErrOnPurpose }
 func (Failing) SetAllowlist(config.Allowlist) error                 { return mock.ErrOnPurpose }
 func (Failing) UnsetAllowlist() error                               { return mock.ErrOnPurpose }
 func (Failing) IsNetworkSet() bool                                  { return false }

@@ -121,7 +121,6 @@ func (m *mockConfigManager) Load(c *config.Config) error {
 	c.Routing = m.c.Routing
 	c.KillSwitch = m.c.KillSwitch
 	c.AutoConnect = m.c.AutoConnect
-	c.IPv6 = m.c.IPv6
 	c.AutoConnectData = m.c.AutoConnectData
 	c.UsersData = m.c.UsersData
 	c.TokensData = m.c.TokensData

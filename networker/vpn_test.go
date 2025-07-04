@@ -59,7 +59,6 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
 				0,
 				false,
 			)
@@ -167,7 +166,6 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 		&subs.Subject[string]{},
 		workingRouter{},
 		&workingDNS{},
-		&workingIpv6{},
 		firewall,
 		workingAllowlistRouting{},
 		workingDeviceList,

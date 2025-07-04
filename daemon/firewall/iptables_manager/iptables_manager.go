@@ -9,17 +9,14 @@ import (
 )
 
 const (
-	iptablesCommand  = "iptables"
-	ip6tablesCommand = "ip6tables"
+	iptablesCommand = "iptables"
 )
 
-// IpVersion determines which version of iptables command should be used, i.e iptables, ip6tables or both
+// IpVersion determines which version of iptables command should be used, i.e iptables
 type IpVersion int
 
 const (
 	IPv4 IpVersion = iota
-	IPv6
-	Both
 )
 
 // RulePriority determines a line in iptables where rule should be inserted. In iptables, rules are numbered in
@@ -71,16 +68,14 @@ func (ExecCommandRunner) RunCommand(command string, args string) (string, error)
 
 // IPTablesManager manages priority and execution of firewall rules with iptables.
 type IPTablesManager struct {
-	ip6tablesSupported bool
-	enabled            bool
-	cmdRunner          CommandRunner
+	enabled   bool
+	cmdRunner CommandRunner
 }
 
-func NewIPTablesManager(cmdRunner CommandRunner, enabled bool, ip6tablesSupported bool) IPTablesManager {
+func NewIPTablesManager(cmdRunner CommandRunner, enabled bool) IPTablesManager {
 	return IPTablesManager{
-		cmdRunner:          cmdRunner,
-		enabled:            enabled,
-		ip6tablesSupported: ip6tablesSupported,
+		cmdRunner: cmdRunner,
+		enabled:   enabled,
 	}
 }
 
@@ -91,7 +86,7 @@ func (i IPTablesManager) executeCommand(insert bool, rule FwRule) error {
 
 	command := rule.ToDeleteCommand()
 
-	if rule.version == IPv4 || rule.version == Both {
+	if rule.version == IPv4 {
 		if insert {
 			index, err := i.getRuleLine(iptablesCommand, rule.chain, rule.priority)
 			if err != nil {
@@ -103,22 +98,6 @@ func (i IPTablesManager) executeCommand(insert bool, rule FwRule) error {
 		if _, err := i.cmdRunner.RunCommand(iptablesCommand, command); err != nil {
 			return err
 		}
-	}
-
-	if rule.version == IPv4 || !i.ip6tablesSupported {
-		return nil
-	}
-
-	if insert {
-		index, err := i.getRuleLine(ip6tablesCommand, rule.chain, rule.priority)
-		if err != nil {
-			return fmt.Errorf("calculating rule index: %w", err)
-		}
-		command = rule.ToInsertAppendCommand(index)
-	}
-
-	if _, err := i.cmdRunner.RunCommand(ip6tablesCommand, command); err != nil {
-		return err
 	}
 
 	return nil
@@ -221,7 +200,7 @@ type FwRule struct {
 // Args:
 //
 //	chain - chain in which rule should be inserted
-//	version - version of iptables command which should be used to execute the rule, can be ipv4, ipv6 or both
+//	version - version of iptables command which should be used to execute the rule, can be ipv4
 //	params - rest of the params, need to be valid iptables command arguments separated by spaces
 //	priority - priority at which rule should be inserted
 func NewFwRule(chain iptablesChain, version IpVersion, params string, priority RulePriority) FwRule {
