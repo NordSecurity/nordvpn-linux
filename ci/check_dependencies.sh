@@ -14,11 +14,12 @@ libmoose_nordvpnapp_artifact_url="${LIBMOOSE_NORDVPNAPP_ARTIFACTS_URL}/${LIBMOOS
 libmoose_worker_artifact_url="${LIBMOOSE_WORKER_ARTIFACTS_URL}/${LIBMOOSE_WORKER_VERSION}/linux.zip"
 libquench_artifact_url="${LIBQUENCH_ARTIFACTS_URL}/${LIBQUENCH_VERSION}/linux.zip"
 
-if [[ ${CI+x} ]]; then
-  header="JOB-TOKEN:${CI_JOB_TOKEN}"
-else
-  header="PRIVATE-TOKEN:${GL_ACCESS_TOKEN}"
-fi
+# Uncomment this when all libraries migrate artifacts
+# if [[ ${CI+x} ]]; then
+#   header="JOB-TOKEN:${CI_JOB_TOKEN}"
+# else
+#   header="PRIVATE-TOKEN:${GL_ACCESS_TOKEN}"
+# fi
 
 mkdir -p "${temp_dir}"
 
@@ -37,13 +38,18 @@ function fetch_gitlab_artifact() {
   echo "Downloading artifact from ${artifact_url} to ${out_file}"
   # disable tracing - don't show the token
   set +x
-  curl \
-    --retry 3 \
-    --retry-delay 2 \
-    --fail \
-    --header "$header" \
-    -o "${out_file}" \
-    -L "${artifact_url}"
+  header="JOB-TOKEN:${CI_JOB_TOKEN}"
+  for i in $(seq 1 2)
+  do
+    curl \
+      --retry 3 \
+      --retry-delay 2 \
+      --fail \
+      --header "$header" \
+      -o "${out_file}" \
+      -L "${artifact_url}" && break || echo "Token failed"
+    header="PRIVATE-TOKEN:${GL_ACCESS_TOKEN}"
+  done
   # re-enable tracing
   set -x
 }
