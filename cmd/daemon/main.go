@@ -209,9 +209,10 @@ func main() {
 		}
 	}
 
-	userAgent, err := request.GetUserAgentValue(Version, sysinfo.NewHostOsPrettyName())
+	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
 	if err != nil {
-		log.Fatalln("Error on getting user agent value:", err)
+		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
+		log.Printf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
 	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
