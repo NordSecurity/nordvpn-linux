@@ -18,4 +18,5 @@ jobs:
       project-id: ${{ secrets.PROJECT_ID }}
     with:
       cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
-      triggered-ref: v1.1.1
+      # TODO: Change this to a tagged version
+      triggered-ref: LVPN-7695-use-native-sqlite
