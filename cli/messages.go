@@ -371,7 +371,8 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
 	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN, NordWhisper or obfuscated servers.\nThe feature is not compatible with Meshnet."
 
-	SetDefaultsLogoutFlagText = " Log out after restoring settings to their default values. Example: nordvpn set defaults --logout"
+	SetDefaultsLogoutFlagText        = "Log out after restoring settings to their default values. Example: nordvpn set defaults --logout"
+	SetDefaultsOffKillswitchFlagText = "Turn off Kill Switch when restoring settings to their default values. Example: nordvpn set defaults --off-killswitch"
 
 	AnalyticsPolicyLink = "https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings_account-privacy_policy&nm=app&ns=nordvpn-linux-cli&nc=settings-privacy_policy"
 	MsgConsentAgreement = `We value your privacy.
