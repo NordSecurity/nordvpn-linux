@@ -89,7 +89,7 @@ func peersResponseToMachinePeers(rawPeers []mesh.MachinePeerResponse) []mesh.Mac
 }
 
 // Register peer to the mesh network.
-func (api *DefaultAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
+func (api *SimpleClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -163,7 +163,7 @@ func (api *DefaultAPI) Register(token string, peer mesh.Machine) (*mesh.Machine,
 }
 
 // Update publishes new endpoints.
-func (api *DefaultAPI) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
+func (api *SimpleClientAPI) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -189,7 +189,7 @@ func (api *DefaultAPI) Update(token string, id uuid.UUID, info mesh.MachineUpdat
 }
 
 // Configure interaction with a specific peer.
-func (api *DefaultAPI) Configure(
+func (api *SimpleClientAPI) Configure(
 	token string,
 	id uuid.UUID,
 	peerID uuid.UUID,
@@ -220,7 +220,7 @@ func (api *DefaultAPI) Configure(
 }
 
 // Unregister peer from the mesh network.
-func (api *DefaultAPI) Unregister(token string, self uuid.UUID) error {
+func (api *SimpleClientAPI) Unregister(token string, self uuid.UUID) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -262,7 +262,7 @@ func peersResponseToLocalPeers(rawPeers []mesh.MachinePeerResponse) []mesh.Machi
 	return peers
 }
 
-func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
+func (api *SimpleClientAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, error) {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -316,7 +316,7 @@ func (api *DefaultAPI) Map(token string, self uuid.UUID) (*mesh.MachineMap, erro
 }
 
 // List peers in the mesh network for a given peer.
-func (api *DefaultAPI) List(token string, self uuid.UUID) (mesh.MachinePeers, error) {
+func (api *SimpleClientAPI) List(token string, self uuid.UUID) (mesh.MachinePeers, error) {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -352,7 +352,7 @@ func (api *DefaultAPI) List(token string, self uuid.UUID) (mesh.MachinePeers, er
 }
 
 // Unpair a given peer.
-func (api *DefaultAPI) Unpair(token string, self uuid.UUID, peer uuid.UUID) error {
+func (api *SimpleClientAPI) Unpair(token string, self uuid.UUID, peer uuid.UUID) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -371,7 +371,7 @@ func (api *DefaultAPI) Unpair(token string, self uuid.UUID, peer uuid.UUID) erro
 }
 
 // Invite to mesh.
-func (api *DefaultAPI) Invite(
+func (api *SimpleClientAPI) Invite(
 	token string,
 	self uuid.UUID,
 	email string,
@@ -411,7 +411,7 @@ func (api *DefaultAPI) Invite(
 }
 
 // Received invitations from other users.
-func (api *DefaultAPI) Received(token string, self uuid.UUID) (mesh.Invitations, error) {
+func (api *SimpleClientAPI) Received(token string, self uuid.UUID) (mesh.Invitations, error) {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -444,7 +444,7 @@ func (api *DefaultAPI) Received(token string, self uuid.UUID) (mesh.Invitations,
 }
 
 // Sent invitations to other users.
-func (api *DefaultAPI) Sent(token string, self uuid.UUID) (mesh.Invitations, error) {
+func (api *SimpleClientAPI) Sent(token string, self uuid.UUID) (mesh.Invitations, error) {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -477,7 +477,7 @@ func (api *DefaultAPI) Sent(token string, self uuid.UUID) (mesh.Invitations, err
 }
 
 // Accept invitation.
-func (api *DefaultAPI) Accept(
+func (api *SimpleClientAPI) Accept(
 	token string,
 	self uuid.UUID,
 	invitation uuid.UUID,
@@ -514,7 +514,7 @@ func (api *DefaultAPI) Accept(
 }
 
 // Reject invitation.
-func (api *DefaultAPI) Reject(token string, self uuid.UUID, invitation uuid.UUID) error {
+func (api *SimpleClientAPI) Reject(token string, self uuid.UUID, invitation uuid.UUID) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -533,7 +533,7 @@ func (api *DefaultAPI) Reject(token string, self uuid.UUID, invitation uuid.UUID
 }
 
 // Revoke invitation.
-func (api *DefaultAPI) Revoke(token string, self uuid.UUID, invitation uuid.UUID) error {
+func (api *SimpleClientAPI) Revoke(token string, self uuid.UUID, invitation uuid.UUID) error {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -553,7 +553,7 @@ func (api *DefaultAPI) Revoke(token string, self uuid.UUID, invitation uuid.UUID
 }
 
 // Notify peer about a new incoming transfer
-func (api *DefaultAPI) NotifyNewTransfer(
+func (api *SimpleClientAPI) NotifyNewTransfer(
 	token string,
 	self uuid.UUID,
 	peer uuid.UUID,

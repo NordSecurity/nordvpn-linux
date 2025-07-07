@@ -77,7 +77,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	accountInfo.DedicatedIpStatus = internal.CodeSuccess
 	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated ip services: %w", err)
+		log.Println(internal.ErrorPrefix, "getting dedicated ip services:", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	}
 
@@ -115,9 +115,8 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	accountInfo.ExpiresAt = tokenData.ServiceExpiry
 	accountInfo.LastDedicatedIpExpiresAt = dedicatedIPExpirationDate
 
-	currentUser, err := r.credentialsAPI.CurrentUser(tokenData.Token)
+	currentUser, err := r.credentialsAPI.CurrentUser()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "retrieving user:", err)
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout)); err != nil {

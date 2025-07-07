@@ -55,7 +55,7 @@ func TestCreateUser(t *testing.T) {
 
 	email := "email@one.lt"
 
-	api := testNewDefaultAPI(GeneralInfo)
+	api := testNewSimpleAPI(GeneralInfo)
 	resp, err := api.CreateUser(email, "securepswd")
 	assert.NoError(t, err)
 	assert.Equal(t, email, resp.Email)
@@ -65,7 +65,7 @@ func TestCreateUser(t *testing.T) {
 func TestCreateUser_Error(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	api := testNewDefaultAPI(InvalidInfo)
+	api := testNewSimpleAPI(InvalidInfo)
 	_, err := api.CreateUser("email@one.lt", "securepswd")
 	assert.Error(t, err)
 }
@@ -73,7 +73,7 @@ func TestCreateUser_Error(t *testing.T) {
 func TestPlans(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	api := testNewDefaultAPI(GeneralInfo)
+	api := testNewSimpleAPI(GeneralInfo)
 	_, err := api.Plans()
 	assert.NoError(t, err)
 }
@@ -81,7 +81,7 @@ func TestPlans(t *testing.T) {
 func TestPlans_Error(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	api := testNewDefaultAPI(InvalidInfo)
+	api := testNewSimpleAPI(InvalidInfo)
 	_, err := api.Plans()
 	assert.Error(t, err)
 }
@@ -98,7 +98,7 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -141,7 +141,7 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -166,7 +166,7 @@ func TestDefaultAPI_Servers(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -191,7 +191,7 @@ func TestDefaultAPI_Services(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -216,7 +216,7 @@ func TestDefaultAPI_ServiceCredentials(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
