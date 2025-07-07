@@ -39,7 +39,7 @@ function fetch_gitlab_artifact() {
   # disable tracing - don't show the token
   set +x
   header="JOB-TOKEN:${CI_JOB_TOKEN}"
-  for i in $(seq 1 2)
+  for _ in $(seq 1 2)
   do
     curl \
       --retry 3 \
