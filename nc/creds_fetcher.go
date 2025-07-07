@@ -76,7 +76,7 @@ func (cf *CredentialsGetter) GetCredentialsFromAPI() (config.NCData, error) {
 		}
 	}
 
-	resp, err := cf.api.NotificationCredentials(tokenData.Token, ncData.UserID.String())
+	resp, err := cf.api.NotificationCredentials(ncData.UserID.String())
 	if err != nil {
 		return config.NCData{}, fmt.Errorf("getting NC credentials: %w", err)
 	}
@@ -109,7 +109,7 @@ func (cf *CredentialsGetter) RevokeCredentials(purgeSession bool) (bool, error) 
 		return false, ErrInvalidCredentials
 	}
 
-	resp, err := cf.api.NotificationCredentialsRevoke(tokenData.Token, tokenData.NCData.UserID.String(), purgeSession)
+	resp, err := cf.api.NotificationCredentialsRevoke(tokenData.NCData.UserID.String(), purgeSession)
 	if err != nil {
 		return false, fmt.Errorf("error revoking token: %w", err)
 	}

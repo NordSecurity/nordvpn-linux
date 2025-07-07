@@ -140,8 +140,8 @@ func CheckServer(listener net.Listener, attempts int) {
 
 // testNewDefaultAPI returns a pointer to initialized and
 // ready for use in tests DefaultAPI
-func testNewDefaultAPI(port int) *DefaultAPI {
-	return NewDefaultAPI(
+func testNewSimpleAPI(port int) RawClientAPI {
+	return NewSimpleAPI(
 		"",
 		localServerPath(port),
 		http.DefaultClient,
