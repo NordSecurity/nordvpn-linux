@@ -87,7 +87,7 @@ func (o *observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
 func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	o.currentState = state
 	if o.eventsChan != nil {
-		log.Println(internal.DebugPrefix, quenchPrefix, "unsubscribing from quench state changes")
+		log.Println(internal.DebugPrefix, quenchPrefix, "notifying about connection state change")
 		select {
 		case o.eventsChan <- state:
 		case <-o.eventsSubscribtionContext.Done():
