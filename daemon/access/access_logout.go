@@ -26,7 +26,7 @@ type LogoutInput struct {
 	Events         *daemonevents.Events
 	Publisher      events.Publisher[string]
 	PersistToken   bool
-	DisconnectAll  func() (bool, error)
+	DisconnectFunc func() (bool, error)
 }
 
 type LogoutResult struct {
@@ -64,7 +64,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
-	if _, err := input.DisconnectAll(); err != nil {
+	if _, err := input.DisconnectFunc(); err != nil {
 		log.Println(internal.ErrorPrefix, "disconnect failed:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
@@ -136,13 +136,13 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 }
 
 type ForceLogoutWithoutTokenInput struct {
-	AuthChecker   auth.Checker
-	Netw          networker.Networker
-	NcClient      nc.NotificationClient
-	ConfigManager config.Manager
-	Events        *daemonevents.Events
-	Publisher     events.Publisher[string]
-	DisconnectAll func() (bool, error)
+	AuthChecker    auth.Checker
+	Netw           networker.Networker
+	NcClient       nc.NotificationClient
+	ConfigManager  config.Manager
+	Events         *daemonevents.Events
+	Publisher      events.Publisher[string]
+	DisconnectFunc func() (bool, error)
 }
 
 // ForceLogoutWithoutToken performs user logout operation without using login toking
@@ -165,7 +165,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 
 		input.Events.User.Logout.Publish(events.DataAuthorization{
 			DurationMs:   max(int(time.Since(start).Milliseconds()), 1),
-			EventTrigger: events.TriggerUser,
+			EventTrigger: events.TriggerApp,
 			EventStatus:  status,
 		})
 	}(logoutStartTime)
@@ -176,7 +176,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
-	if _, err := input.DisconnectAll(); err != nil {
+	if _, err := input.DisconnectFunc(); err != nil {
 		log.Println(internal.ErrorPrefix, "disconnect failed:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
