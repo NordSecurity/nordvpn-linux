@@ -17,7 +17,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		Events:         r.events,
 		Publisher:      r.publisher,
 		PersistToken:   in.GetPersistToken(),
-		DisconnectAll:  r.DoDisconnect,
+		DisconnectFunc: r.DoDisconnect,
 	})
 
 	if result.Status == 0 {
