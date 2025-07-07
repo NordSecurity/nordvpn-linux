@@ -43,8 +43,8 @@ func TestIsTokenExpired(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		expirationChecker := systemTimeExpirationChecker{}
-		got := expirationChecker.isExpired(tt.input)
+		expirationChecker := NewTokenExpirationChecker()
+		got := expirationChecker.IsExpired(tt.input)
 		assert.Equal(t, tt.expected, got)
 	}
 }
@@ -77,11 +77,11 @@ type authAPI struct {
 	err     error
 }
 
-func (api *authAPI) Services(string) (core.ServicesResponse, error) {
+func (api *authAPI) Services() (core.ServicesResponse, error) {
 	return api.resp, api.err
 }
 
-func (api *authAPI) MultifactorAuthStatus(string) (*core.MultifactorAuthStatusResponse, error) {
+func (api *authAPI) MultifactorAuthStatus() (*core.MultifactorAuthStatusResponse, error) {
 	return &api.mfaResp, api.err
 }
 
@@ -95,7 +95,7 @@ func newMockExpirationChecker(expiredDates ...string) mockExpirationChecker {
 	}
 }
 
-func (m mockExpirationChecker) isExpired(expiryTime string) bool {
+func (m mockExpirationChecker) IsExpired(expiryTime string) bool {
 	if idx := slices.Index(m.expiredDates, expiryTime); idx != -1 {
 		return true
 	}
@@ -122,6 +122,10 @@ type mockErrPublisher struct {
 
 func (p *mockErrPublisher) Publish(e error) {
 	p.err = e
+}
+
+type mockTokenManager struct {
+	core.TokenManager
 }
 
 func TestIsMFAEnabled(t *testing.T) {
@@ -183,7 +187,7 @@ func TestIsMFAEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents())
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), mockTokenManager{})
 			enabled, err := rc.isMFAEnabled()
 			assert.Equal(t, test.isEnabled, enabled)
 
@@ -242,9 +246,10 @@ func TestIsVPNExpired(t *testing.T) {
 			isError: true,
 		},
 		{
-			name:    "config save error",
-			cm:      &authConfigManager{saveErr: testErr},
-			api:     &authAPI{},
+			name: "config save error",
+			cm:   &authConfigManager{saveErr: testErr},
+			api: &authAPI{resp: core.ServicesResponse{core.ServiceData{Service: core.Service{ID: VPNServiceID},
+				ExpiresAt: "1990-01-01 09:18:53"}}},
 			accPub:  &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{},
 			isError: true,
 		},
@@ -266,7 +271,9 @@ func TestIsVPNExpired(t *testing.T) {
 				&mockAuthPublisher{},
 				&mockErrPublisher{},
 				&daemonevents.AccountUpdateEvents{SubscriptionUpdate: test.accPub},
+				mockTokenManager{},
 			)
+
 			expired, err := rc.IsVPNExpired()
 			if test.isError {
 				assert.ErrorIs(t, err, testErr)
@@ -282,6 +289,22 @@ func TestIsVPNExpired(t *testing.T) {
 			}
 		})
 	}
+
+	accPub := &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{}
+
+	rc := NewRenewingChecker(
+		&authConfigManager{},
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{SubscriptionUpdate: accPub},
+		mockTokenManager{},
+	)
+
+	_, err := rc.IsVPNExpired()
+	assert.Error(t, err)
+	assert.False(t, accPub.EventPublished)
 }
 
 func TestGetDedicatedIPServices(t *testing.T) {
@@ -446,12 +469,6 @@ func TestGetDedicatedIPServices(t *testing.T) {
 			shouldBeErr:         true,
 		},
 		{
-			name:                "config error",
-			configLoadErr:       fmt.Errorf("config load error"),
-			expectedDIPSerivces: []DedicatedIPService{},
-			shouldBeErr:         true,
-		},
-		{
 			name: "no server associated with DIP service",
 			servicesResponse: []core.ServiceData{
 				dipServiceNoServer,
@@ -481,7 +498,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 
 			dipServices, err := rc.GetDedicatedIPServices()
 			if test.shouldBeErr {
-				assert.NotNil(t, err, "GetDedicatedIPServices didn't return an error when errror was expected.")
+				assert.NotNil(t, err, "GetDedicatedIPServices didn't return an error when error was expected.")
 				return
 			}
 			assert.Equal(t, test.expectedDIPSerivces, dipServices,
