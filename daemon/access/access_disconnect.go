@@ -13,15 +13,17 @@ import (
 )
 
 type DisconnectInput struct {
-	Netw          networker.Networker
+	Networker     networker.Networker
 	ConfigManager config.Manager
 	Events        *daemonevents.Events
 }
 
+// Disconnect disconnects the user from the current VPN server. Returning boolean indicates
+// whether the user was connection or not before this call.
 func Disconnect(input DisconnectInput) (bool, error) {
 	startTime := time.Now()
-	if !input.Netw.IsVPNActive() {
-		if err := input.Netw.UnsetFirewall(); err != nil {
+	if !input.Networker.IsVPNActive() {
+		if err := input.Networker.UnsetFirewall(); err != nil {
 			log.Println(internal.WarningPrefix, "failed to force unset firewall on disconnect:", err)
 		}
 		return false, nil
@@ -44,7 +46,7 @@ func Disconnect(input DisconnectInput) (bool, error) {
 		})
 	}(startTime)
 
-	if err = input.Netw.Stop(); err != nil {
+	if err = input.Networker.Stop(); err != nil {
 		err = fmt.Errorf("stopping networker: %w", err)
 		return true, err
 	}
