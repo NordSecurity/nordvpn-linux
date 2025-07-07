@@ -26,17 +26,19 @@ func NewErrorHandlingRegistry[T any]() *ErrorHandlingRegistry[T] {
 // Add registers an ErrHandler for a specific error.
 func (e *ErrorHandlingRegistry[ErrHandler]) Add(err error, handler ErrHandler) {
 	e.m.Lock()
+	defer e.m.Unlock()
+
 	e.pool[err] = append(e.pool[err], handler)
-	e.m.Unlock()
 }
 
 // AddMulti registers an ErrHandler for a list of errors.
 func (e *ErrorHandlingRegistry[ErrHandler]) AddMulti(errs []error, handler ErrHandler) {
 	e.m.Lock()
+	defer e.m.Unlock()
+
 	for _, err := range errs {
 		e.pool[err] = append(e.pool[err], handler)
 	}
-	e.m.Unlock()
 }
 
 // GetHandlers returns a deep copy list of the provided error handlers.
@@ -46,9 +48,7 @@ func (e *ErrorHandlingRegistry[ErrHandler]) GetHandlers(err error) []ErrHandler 
 
 	original := e.pool[err]
 	copied := make([]ErrHandler, len(original))
-	for k, v := range e.pool[err] {
-		copied[k] = v
-	}
+	copy(copied, e.pool[err])
 
 	return copied
 }
