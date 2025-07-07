@@ -69,12 +69,20 @@ var (
 )
 
 func testRPC() *RPC {
-	api := core.NewDefaultAPI(
-		"1.0.0",
-		"",
-		http.DefaultClient,
-		response.NoopValidator{},
+	type mockLoginTokenManager struct {
+		core.TokenManager
+	}
+
+	api := core.NewSmartClientAPI(
+		core.NewSimpleAPI(
+			"1.0.0",
+			"",
+			http.DefaultClient,
+			response.NoopValidator{},
+		),
+		&mockLoginTokenManager{},
 	)
+
 	dm := testNewDataManager()
 	dm.SetServersData(time.Now(), serversList(), "")
 
