@@ -134,7 +134,7 @@ func (m *mockConfigManager) Load(c *config.Config) error {
 	return nil
 }
 
-func (m *mockConfigManager) Reset(bool) error {
+func (m *mockConfigManager) Reset(bool, bool) error {
 	*m = *newMockConfigManager()
 	return nil
 }
@@ -149,7 +149,7 @@ func (failingConfigManager) Load(c *config.Config) error {
 	return errors.New("failed")
 }
 
-func (failingConfigManager) Reset(bool) error {
+func (failingConfigManager) Reset(bool, bool) error {
 	return errors.New("failed")
 }
 

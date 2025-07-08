@@ -145,7 +145,7 @@ func main() {
 	var cfg config.Config
 	if err := fsystem.Load(&cfg); err != nil {
 		log.Println(err)
-		if err := fsystem.Reset(false); err != nil {
+		if err := fsystem.Reset(false, false); err != nil {
 			log.Fatalln(err)
 		}
 	}
@@ -209,7 +209,11 @@ func main() {
 		}
 	}
 
-	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, sysinfo.GetKernelVersion())
+	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
+	if err != nil {
+		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
+		log.Printf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
+	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
@@ -270,6 +274,7 @@ func main() {
 	meshRegistry := registry.NewNotifyingRegistry(defaultAPI, meshnetEvents.PeerUpdate)
 
 	repoAPI := daemon.NewRepoAPI(
+		userAgent,
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),

@@ -36,7 +36,7 @@ func (m *okConfigManager) SaveWith(config.SaveFunc) error {
 	return nil
 }
 func (m *okConfigManager) Load(*config.Config) error { return nil }
-func (m *okConfigManager) Reset(bool) error          { return nil }
+func (m *okConfigManager) Reset(bool, bool) error    { return nil }
 
 func TestMeshUnsetter_unsetMesh(t *testing.T) {
 	category.Set(t, category.Unit)
