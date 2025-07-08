@@ -6,4 +6,5 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 message SetDefaultsRequest {
     bool no_logout = 1;
+    bool off_killswitch = 2;
 }

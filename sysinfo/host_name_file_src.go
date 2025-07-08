@@ -14,11 +14,6 @@ func GetHostOSName() (string, error) {
 	return readOSReleaseTag("NAME")
 }
 
-// HostOSPrettyName retrieves the human-readable OS name.
-func HostOSPrettyName() (string, error) {
-	return readOSReleaseTag("PRETTY_NAME")
-}
-
 // readOSReleaseTag opens the 'etcOSReleaseFile' file and retrieves the specified tag.
 func readOSReleaseTag(tag string) (string, error) {
 	file, err := os.Open(etcOSReleaseFile)

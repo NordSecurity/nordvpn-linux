@@ -20,8 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -47,8 +49,7 @@ type mooseConsentFunc func(bool) uint32
 type Subscriber struct {
 	EventsDbPath            string
 	Config                  config.Manager
-	Version                 string
-	Environment             string
+	BuildTarget             config.BuildTarget
 	Domain                  string
 	Subdomain               string
 	DeviceID                string
@@ -158,7 +159,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
-		internal.IsProdEnv(s.Environment),
+		internal.IsProdEnv(s.BuildTarget.Environment),
 		s,
 		s,
 		sendAllEvents,
@@ -188,7 +189,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.Version)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.BuildTarget.Version)); err != nil {
 		return fmt.Errorf("setting application version: %w", err)
 	}
 
@@ -196,7 +197,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
 
-	distroVersion, err := sysinfo.HostOSPrettyName()
+	distroVersion, err := sysinfo.GetHostOSPrettyName()
 	if err != nil {
 		return fmt.Errorf("determining device os 'pretty-name'")
 	}
@@ -228,6 +229,11 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if err := sub.NotifyTechnology(cfg.Technology); err != nil {
 		return fmt.Errorf("setting moose technology: %w", err)
 	}
+
+	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.BuildTarget.Architecture)); err != nil {
+		return fmt.Errorf("setting device architecture: %w", err)
+	}
+
 	return nil
 }
 
@@ -237,7 +243,6 @@ func (s *Subscriber) Stop() error {
 		return fmt.Errorf("flushing changes: %w", err)
 	}
 
-	log.Println(internal.DebugPrefix, "stopping worker")
 	if err := s.response(worker.Stop()); err != nil {
 		return fmt.Errorf("stopping moose worker: %w", err)
 	}
@@ -609,6 +614,44 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		"",
 		nil,
 	))
+}
+
+// NotifyDebuggerEvent processes a MooseDebuggerEvent to emit a moose debugger log.
+// It allows providing a custom JSON payload and context paths for the event.
+// For custom context paths, corresponding values must be of any of the following types: bool, float32, int32, int64, string.
+// Unsupported types are discarded.
+//
+// Parameters:
+//   - e: The MooseDebuggerEvent containing JSON data and context paths to process
+func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
+	combinedPaths := append([]string{}, e.GeneralContextPaths...)
+	key := moose.MooseNordvpnappGetDeveloperContextKey()
+	for _, ctx := range e.KeyBasedContextPaths {
+		path := fmt.Sprintf("%s.%s", key, ctx.Path)
+		switch v := ctx.Value.(type) {
+		case bool:
+			moose.MooseNordvpnappSetDeveloperEventContextBool(path, v)
+			combinedPaths = append(combinedPaths, path)
+		case float32:
+			moose.MooseNordvpnappSetDeveloperEventContextFloat(path, v)
+			combinedPaths = append(combinedPaths, path)
+		//deliberately omitted uint64
+		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32:
+			val := reflect.ValueOf(v).Int()
+			if val > math.MaxInt32 {
+				moose.MooseNordvpnappSetDeveloperEventContextLong(path, int64(val))
+			} else {
+				moose.MooseNordvpnappSetDeveloperEventContextInt(path, int32(val))
+			}
+			combinedPaths = append(combinedPaths, path)
+		case string:
+			moose.MooseNordvpnappSetDeveloperEventContextString(path, v)
+			combinedPaths = append(combinedPaths, path)
+		default:
+			log.Printf("%s Discarding unsupported type (%T) on path: %s", internal.WarningPrefix, ctx.Value, path)
+		}
+	}
+	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))
 }
 
 func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {

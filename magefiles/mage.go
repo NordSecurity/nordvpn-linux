@@ -737,7 +737,7 @@ func qaSnap(_ context.Context, testGroup, testPattern string) error {
 
 // Performs linter check against Go codebase
 func (Test) Lint() error {
-	return sh.Run("golangci-lint", "run", "-v", "--config=.golangci-lint.yml")
+	return sh.RunV("golangci-lint", "run", "-v", "--config=.golangci-lint.yml")
 }
 
 // Binaries to their respective locations and restart
