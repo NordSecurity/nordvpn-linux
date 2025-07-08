@@ -20,9 +20,11 @@ import (
 func TestGroupDistribution(t *testing.T) {
 	category.Set(t, category.Unit)
 	const (
-		iterations  = 10_000_000
-		bracketSize = 20
-		tolerance   = 0.02 // 2% tolerance
+		bracketSize        = 20
+		iterations         = 10_000_000
+		expectedCount      = iterations / 5
+		expectedPercentage = 20.0 // 100% / 5 brackets
+		tolerance          = 0.02 // 2% tolerance
 	)
 
 	uuid.EnableRandPool()
@@ -41,10 +43,6 @@ func TestGroupDistribution(t *testing.T) {
 		bracketIndex := (g - 1) / bracketSize
 		brackets[bracketIndex]++
 	}
-
-	// some expected statistics per bracket
-	expectedCount := iterations / 5
-	expectedPercentage := 20.0 // 100% / 5 brackets
 
 	diffs := make([]float64, len(brackets))
 	sum := 0
