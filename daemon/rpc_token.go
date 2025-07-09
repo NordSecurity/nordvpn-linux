@@ -2,15 +2,20 @@ package daemon
 
 import (
 	"context"
+	"errors"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // TokenInfo returns token information.
 func (r *RPC) TokenInfo(ctx context.Context, _ *pb.Empty) (*pb.TokenInfoResponse, error) {
-	if !r.ac.IsLoggedIn() {
+	if ok, err := r.ac.IsLoggedIn(); !ok {
+		if errors.Is(err, core.ErrLoginTokenExpired) {
+			return nil, err
+		}
 		return nil, internal.ErrNotLoggedIn
 	}
 
