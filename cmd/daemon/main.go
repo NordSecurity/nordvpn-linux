@@ -720,7 +720,7 @@ func main() {
 	}
 	monitor.Start(netw)
 
-	if authChecker.IsLoggedIn() {
+	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
 	}
 

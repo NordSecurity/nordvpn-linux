@@ -103,7 +103,10 @@ func (r *RPC) connect(
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
 ) (didFail bool, retErr error) {
-	if !r.ac.IsLoggedIn() {
+	if ok, err := r.ac.IsLoggedIn(); !ok {
+		if errors.Is(err, core.ErrLoginTokenExpired) {
+			return false, err
+		}
 		return false, internal.ErrNotLoggedIn
 	}
 
