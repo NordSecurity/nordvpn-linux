@@ -78,7 +78,11 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "getting dedicated ip services:", err)
-		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		if errors.Is(err, core.ErrUnauthorized) {
+			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}, nil
+		} else {
+			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		}
 	}
 
 	if len(dipServices) < 1 {
