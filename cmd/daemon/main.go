@@ -314,11 +314,16 @@ func main() {
 			validator,
 		)
 
+		tokenValidator := core.NewLoginTokenValidator(
+			api,
+			auth.NewTokenExpirationChecker(),
+		)
+
 		tokenman := core.NewLoginTokenManager(
 			fsystem,
 			api.TokenRenew,
 			loginTokenErrHandlingReg,
-			auth.NewTokenExpirationChecker(),
+			tokenValidator,
 		)
 
 		return core.NewSmartClientAPI(api, tokenman), tokenman
