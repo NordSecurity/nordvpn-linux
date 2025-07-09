@@ -127,12 +127,11 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 
 	client := request.NewStdHTTP()
 	client.Transport = &rt
-	api := &mockApi{ClientAPI: core.NewSmartClientAPI(
-		core.NewSimpleAPI("", "", client, response.NoopValidator{}),
-		&mockLoginTokenManager{}),
-	}
+	simpleApi := core.NewSimpleAPI("", "", client, response.NoopValidator{})
+	api := &mockApi{ClientAPI: core.NewSmartClientAPI(simpleApi, &mockLoginTokenManager{})}
 
 	expirationChecker := NewTokenExpirationChecker()
+
 	rc := RenewingChecker{
 		cm:         &cm,
 		creds:      api,
@@ -141,7 +140,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 			&cm,
 			api.TokenRenew,
 			core.NewErrorHandlingRegistry[func(int64)](),
-			expirationChecker,
+			core.NewLoginTokenValidator(simpleApi, expirationChecker),
 		),
 	}
 
@@ -153,7 +152,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 			RenewToken: "renewed-token",
 			ExpiresAt:  validDate.String(),
 		}
-		isLoggedIn := rc.IsLoggedIn()
+		isLoggedIn, _ := rc.IsLoggedIn()
 		assert.True(t, isLoggedIn, "user should be logged in")
 		assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token, "token should be updated in the configuration")
 		assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[0].RenewToken, "renew-token should be updated in the configuration")
@@ -181,7 +180,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		lastExpiredRenewToken := strings.Clone(cm.c.TokensData[0].RenewToken)
 		rt.resp = nil // setting the resp to nil means that the request will fail
 		rt.respError = fmt.Errorf("we pretend that the connection failed")
-		isLoggedIn := rc.IsLoggedIn()
+		isLoggedIn, _ := rc.IsLoggedIn()
 		assert.True(t, isLoggedIn, "user should be logged in, even after a failed request")
 		assert.Equal(t, lastExpiredToken, cm.c.TokensData[0].Token, "token should not be updated in the configuration after a failed request")
 		assert.Equal(t, lastExpiredRenewToken, cm.c.TokensData[0].RenewToken, "renew-token should not be updated in the configuration after a failed request")
@@ -214,7 +213,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 			RenewToken: "renew-token",
 			ExpiresAt:  validDate.String(),
 		}
-		isLoggedIn := rc.IsLoggedIn()
+		isLoggedIn, _ := rc.IsLoggedIn()
 		assert.True(t, isLoggedIn, "user should be logged in")
 		assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token, "token should be updated in the configuration")
 		assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[0].RenewToken, "renew-token should be updated in the configuration")
@@ -248,12 +247,11 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 
 	client := request.NewStdHTTP()
 	client.Transport = &rt
-	api := &mockApi{ClientAPI: core.NewSmartClientAPI(
-		core.NewSimpleAPI("", "", client, response.NoopValidator{}),
-		&mockLoginTokenManager{}),
-	}
+	simpleApi := core.NewSimpleAPI("", "", client, response.NoopValidator{})
+	api := &mockApi{ClientAPI: core.NewSmartClientAPI(simpleApi, &mockLoginTokenManager{})}
 
 	expirationChecker := NewTokenExpirationChecker()
+
 	rc := RenewingChecker{
 		cm:         &cm,
 		creds:      api,
@@ -262,7 +260,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 			&cm,
 			api.TokenRenew,
 			core.NewErrorHandlingRegistry[func(int64)](),
-			expirationChecker,
+			core.NewLoginTokenValidator(simpleApi, expirationChecker),
 		),
 	}
 
@@ -288,7 +286,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 			// next request is a failure from our custom roundtripper
 			rt.resp = nil
 			rt.respError = exptectedErr
-			isLoggedIn := rc.IsLoggedIn()
+			isLoggedIn, _ := rc.IsLoggedIn()
 
 			assert.False(t, isLoggedIn, "user should be logged out")
 			assert.Empty(t, cm.c.TokensData[0].Token, "token should be removed from the configuration")

@@ -57,7 +57,7 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 
 // loginCommon common login
 func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginResponse, retErr error) {
-	if r.ac.IsLoggedIn() {
+	if ok, _ := r.ac.IsLoggedIn(); ok {
 		return nil, internal.ErrAlreadyLoggedIn
 	}
 
@@ -151,7 +151,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 		}, nil
 	}
 
-	if r.ac.IsLoggedIn() {
+	if ok, _ := r.ac.IsLoggedIn(); ok {
 		return &pb.LoginOAuth2Response{
 			Status: pb.LoginStatus_ALREADY_LOGGED_IN,
 		}, nil
@@ -198,7 +198,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 			Status: pb.LoginStatus_CONSENT_MISSING,
 		}, nil
 	}
-	if r.ac.IsLoggedIn() {
+	if ok, _ := r.ac.IsLoggedIn(); ok {
 		return nil, internal.ErrAlreadyLoggedIn
 	}
 
