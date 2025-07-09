@@ -14,3 +14,10 @@ type TokenManager interface {
 	// Invalidate clears current token data directly or by delegating based on provided error reason
 	Invalidate(err error) error
 }
+
+// TokenValidator is responsible for identifying cases when the token is no longer valid
+type TokenValidator interface {
+	// Validate checks if the current token is still valid
+	// date format: "2006-01-02 15:04:05"
+	Validate(token string, expiryDate string) error
+}

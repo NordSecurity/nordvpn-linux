@@ -16,7 +16,7 @@ type LoginTokenManager struct {
 	cfgManager         config.Manager
 	tokenRenewAPICall  TokenRenewAPICall
 	errHandlerRegistry *ErrorHandlingRegistry[func(uid int64)]
-	expChecker         ExpirationChecker
+	validator          TokenValidator
 }
 
 // NewLoginTokenManager creates new login-token manager object
@@ -24,13 +24,13 @@ func NewLoginTokenManager(
 	cfgManager config.Manager,
 	tokenRenewAPICall TokenRenewAPICall,
 	errorHandlingRegistry *ErrorHandlingRegistry[func(uid int64)],
-	loginTokenExpirationChecker ExpirationChecker,
+	tokenValidator TokenValidator,
 ) TokenManager {
 	return &LoginTokenManager{
 		cfgManager:         cfgManager,
 		tokenRenewAPICall:  tokenRenewAPICall,
 		errHandlerRegistry: errorHandlingRegistry,
-		expChecker:         loginTokenExpirationChecker,
+		validator:          tokenValidator,
 	}
 }
 
@@ -59,7 +59,7 @@ func (l *LoginTokenManager) Renew() error {
 
 	var errs error
 	for uid, data := range cfg.TokensData {
-		if !l.expChecker.IsExpired(data.TokenExpiry) {
+		if err := l.validator.Validate(data.Token, data.TokenExpiry); err == nil {
 			continue
 		}
 
