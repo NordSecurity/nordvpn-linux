@@ -35,7 +35,7 @@ type LogoutResult struct {
 }
 
 func Logout(input LogoutInput) (logoutResult LogoutResult) {
-	if !input.AuthChecker.IsLoggedIn() {
+	if ok, _ := input.AuthChecker.IsLoggedIn(); !ok {
 		return LogoutResult{Status: 0, Err: internal.ErrNotLoggedIn}
 	}
 

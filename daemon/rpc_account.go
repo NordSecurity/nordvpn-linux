@@ -54,7 +54,10 @@ func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.Dedidcat
 
 // AccountInfo returns user account information.
 func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.AccountResponse, error) {
-	if !r.ac.IsLoggedIn() {
+	if ok, err := r.ac.IsLoggedIn(); !ok {
+		if errors.Is(err, core.ErrLoginTokenExpired) {
+			return nil, err
+		}
 		return nil, internal.ErrNotLoggedIn
 	}
 
