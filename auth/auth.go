@@ -103,12 +103,12 @@ func (r *RenewingChecker) IsLoggedIn() bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	var cfg config.Config
-	if err := r.cm.Load(&cfg); err != nil {
+	if err := r.loginTokenManager.Renew(); err != nil {
 		return false
 	}
 
-	if err := r.loginTokenManager.Renew(); err != nil {
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
 		return false
 	}
 
@@ -221,7 +221,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 				}
 			}
 		}
-		if err := r.cm.SaveWith(saveLoginToken(uid, data)); err != nil {
+		if err := r.cm.SaveWith(saveLoginCreds(uid, data)); err != nil {
 			return err
 		}
 	}
@@ -239,7 +239,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 			}
 		}
 
-		if err := r.cm.SaveWith(saveLoginToken(uid, data)); err != nil {
+		if err := r.cm.SaveWith(saveLoginCreds(uid, data)); err != nil {
 			return err
 		}
 	}
@@ -294,7 +294,7 @@ func (r *RenewingChecker) renewVpnCredentials(data *config.TokenData) error {
 
 // fetchSaveServices fetches services and updates data appropriately
 func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData) error {
-	services, err := r.creds.Services( /*data.Token*/ )
+	services, err := r.creds.Services()
 	if err != nil {
 		return err
 	}
@@ -331,14 +331,11 @@ func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
 	return services, nil
 }
 
-// saveLoginToken persists only token related data,
+// saveLoginCreds persists only token related data,
 // it does not touch vpn specific data.
-func saveLoginToken(userID int64, data config.TokenData) config.SaveFunc {
+func saveLoginCreds(userID int64, data config.TokenData) config.SaveFunc {
 	return func(c config.Config) config.Config {
 		user := c.TokensData[userID]
-		user.Token = data.Token
-		user.RenewToken = data.RenewToken
-		user.TokenExpiry = data.TokenExpiry
 		user.NCData.Endpoint = data.NCData.Endpoint
 		user.NCData.Username = data.NCData.Username
 		user.NCData.Password = data.NCData.Password
