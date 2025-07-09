@@ -26,7 +26,7 @@ type DedicatedIPService struct {
 // Checker provides information about current authentication.
 type Checker interface {
 	// IsLoggedIn returns true when the user is logged in.
-	IsLoggedIn() bool
+	IsLoggedIn() (bool, error)
 	// IsMFAEnabled returns true if Multifactor Authentication is enabled.
 	IsMFAEnabled() (bool, error)
 	// IsVPNExpired is used to check whether the user is allowed to use VPN
@@ -99,26 +99,26 @@ func NewRenewingChecker(cm config.Manager,
 // IsLoggedIn reports user login status.
 //
 // Thread safe.
-func (r *RenewingChecker) IsLoggedIn() bool {
+func (r *RenewingChecker) IsLoggedIn() (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if err := r.loginTokenManager.Renew(); err != nil {
-		return false
+		return false, err
 	}
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		return false
+		return false, err
 	}
 
 	for uid, data := range cfg.TokensData {
 		if err := r.renew(uid, data); err != nil {
-			return false
+			return false, err
 		}
 	}
 
-	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0
+	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0, nil
 }
 
 // IsMFAEnabled checks if user account has MFA turned on.
