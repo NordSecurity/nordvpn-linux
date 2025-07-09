@@ -6,7 +6,6 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -14,7 +13,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/internal/caching"
 )
 
 // ErrMissingExchangeToken is returned when login was successful but
@@ -264,24 +262,11 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 	}, nil
 }
 
-var (
-	isLoggedInCache     *caching.Cache[bool]
-	isLoggedInCacheInit sync.Once
-	isLoggedInCacheTTL  = time.Second * 9
-)
-
 func (r *RPC) IsLoggedIn(ctx context.Context, _ *pb.Empty) (*pb.IsLoggedInResponse, error) {
 	if !r.consentChecker.IsConsentFlowCompleted() {
 		return &pb.IsLoggedInResponse{Status: pb.LoginStatus_CONSENT_MISSING}, nil
 	}
 
-	// create cache on first call
-	isLoggedInCacheInit.Do(func() {
-		isLoggedInCache = caching.NewCacheWithTTL(
-			isLoggedInCacheTTL,
-			func() (bool, error) { return r.ac.IsLoggedIn(), nil },
-		)
-	})
-	loggedIn, _ := isLoggedInCache.Get()
+	loggedIn, _ := r.ac.IsLoggedIn()
 	return &pb.IsLoggedInResponse{IsLoggedIn: loggedIn}, nil
 }
