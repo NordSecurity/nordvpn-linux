@@ -1,9 +1,12 @@
 package caching
 
 import (
+	"errors"
 	"sync"
 	"time"
 )
+
+var ErrInvalidCacheData = errors.New("invalid cache data")
 
 type cachedEntry[T any] struct {
 	data      T
@@ -78,6 +81,12 @@ func (c *Cache[T]) isValid() bool {
 
 // Caller must hold a write lock
 func (c *Cache[T]) fetchLocked() (T, error) {
+	if c.fetchFunc == nil {
+		// since there is no fetch implementation we just return stale cache data along with
+		// an accompanying error
+		return c.entry.data, ErrInvalidCacheData
+	}
+
 	newData, err := c.fetchFunc()
 	if err != nil {
 		var zero T
