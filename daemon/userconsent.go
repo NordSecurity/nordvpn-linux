@@ -84,7 +84,8 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// logout user if in GDPR consent mode so that any client trying to log in
 	// will get the status informing it that user needs to complete analytics
 	// consent flow
-	if consentMode == consentModeGDPR && acc.authChecker.IsLoggedIn() {
+	loggedIn, _ := acc.authChecker.IsLoggedIn()
+	if consentMode == consentModeGDPR && loggedIn {
 		if err := acc.doLightLogout(); err != nil {
 			log.Println(internal.WarningPrefix, "failed to perform light logout when user in gdpr mode:", err)
 		}
