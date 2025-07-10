@@ -43,8 +43,8 @@ type meshRenewChecker struct {
 	IsNotLoggedIn bool // by default is logged in
 }
 
-func (m meshRenewChecker) IsLoggedIn() bool {
-	return !m.IsNotLoggedIn
+func (m meshRenewChecker) IsLoggedIn() (bool, error) {
+	return !m.IsNotLoggedIn, nil
 }
 
 func (m meshRenewChecker) IsMFAEnabled() (bool, error) {
