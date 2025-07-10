@@ -633,19 +633,19 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
-		expectedResp := core.ServicesResponse{
-			{ID: 1,
-				ExpiresAt: "someday",
-				Service: core.Service{
-					ID:   11,
-					Name: "svc1"},
-				Details: core.ServiceDetails{
-					Servers: []core.ServiceServer{
-						{ID: 1},
-						{ID: 2},
-					},
+		expectedResp := core.ServicesResponse{core.ServiceData{
+			ID:        1,
+			ExpiresAt: "someday",
+			Service: core.Service{
+				ID:   11,
+				Name: "svc1"},
+			Details: core.ServiceDetails{
+				Servers: []core.ServiceServer{
+					{ID: 1},
+					{ID: 2},
 				},
 			},
+		},
 		}
 		firstCall := true
 
@@ -1337,15 +1337,14 @@ func Test_RecommendedServers_TokenRenewalScenarios(t *testing.T) {
 		}
 		expectedLongitude := 12.345678
 		expectedLatitude := -98.765432
-		expectedServers := core.Servers{
-			{
-				ID:        1001,
-				Name:      "Test Server 1",
-				Hostname:  "testserver1.example.com",
-				Status:    "online",
-				Load:      25,
-				Locations: core.Locations{},
-			},
+		expectedServers := core.Servers{core.Server{
+			ID:        1001,
+			Name:      "Test Server 1",
+			Hostname:  "testserver1.example.com",
+			Status:    "online",
+			Load:      25,
+			Locations: core.Locations{},
+		},
 		}
 		expectedHeader := http.Header(map[string][]string{"header": {"item1, item2"}})
 
