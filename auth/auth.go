@@ -257,7 +257,7 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 	return nil
 }
 func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
-	resp, err := r.creds.NotificationCredentials( /*data.Token,*/ data.NCData.UserID.String())
+	resp, err := r.creds.NotificationCredentials(data.NCData.UserID.String())
 	if err != nil {
 		return err
 	}
@@ -269,7 +269,7 @@ func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
 }
 
 func (r *RenewingChecker) renewTrustedPassToken(data *config.TokenData) error {
-	resp, err := r.creds.TrustedPassToken( /*data.Token*/ )
+	resp, err := r.creds.TrustedPassToken()
 	if err != nil {
 		return fmt.Errorf("getting trusted pass token data: %w", err)
 	}
