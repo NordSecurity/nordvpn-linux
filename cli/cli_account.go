@@ -55,6 +55,8 @@ func (c *cmd) Account(ctx *cli.Context) error {
 	case internal.CodeTokenRenewError:
 		return formatError(errors.New(client.AccountTokenRenewError))
 	case internal.CodeExpiredAccessToken:
+		fallthrough
+	case internal.CodeRevokedAccessToken:
 		return formatError(errors.New(client.AccessTokenExpired))
 	}
 
