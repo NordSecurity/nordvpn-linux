@@ -265,7 +265,7 @@ func Test_ConcurrentAccess(t *testing.T) {
 	const numGoroutines = 10
 	done := make(chan bool, numGoroutines)
 
-	for range numGoroutines {
+	for i := 0; i < numGoroutines; i++ {
 		go func() {
 			data, _ := cache.Get()
 			assert.Equal(t, 1, data, "expected all goroutines to get the same data")
@@ -274,7 +274,7 @@ func Test_ConcurrentAccess(t *testing.T) {
 	}
 
 	// wait for all goroutines to finish
-	for range numGoroutines {
+	for i := 0; i < numGoroutines; i++ {
 		<-done
 	}
 
