@@ -7,11 +7,15 @@ import (
 	"time"
 )
 
-var ErrInvalidCacheData = errors.New("invalid cache data")
+var (
+	ErrNoCacheData = errors.New("no cache data available")
+	ErrStaleData   = errors.New("stale cache data")
+)
 
 type cachedEntry[T any] struct {
 	data      T
 	timestamp time.Time
+	stale     bool
 }
 
 // Cache provides a generic caching mechanism with validity checking
@@ -51,6 +55,19 @@ func (c *Cache[T]) Get() (T, error) {
 	return c.fetchLocked()
 }
 
+// GetEvenIfStale returns data regardless of staleness but with a bool indicating freshness
+func (c *Cache[T]) GetEvenIfStale() (data T, fresh bool, err error) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	var zero T
+	if c.entry == nil {
+		return zero, false, ErrNoCacheData
+	}
+
+	return c.entry.data, c.isValid(), nil
+}
+
 // Set explicitly sets data in the cache
 func (c *Cache[T]) Set(data T) {
 	c.mutex.Lock()
@@ -59,20 +76,37 @@ func (c *Cache[T]) Set(data T) {
 	c.entry = &cachedEntry[T]{
 		data:      data,
 		timestamp: time.Now(),
+		stale:     false,
 	}
 }
 
-// Invalidate forces the cache to be considered invalid
+// Invalidate marks the cache as stale
 func (c *Cache[T]) Invalidate() {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	if c.entry != nil {
+		c.entry.stale = true
+	}
+}
+
+// Clear completely removes any cached data
+func (c *Cache[T]) Clear() {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	c.entry = nil
+}
+
+// Fetch forces a refresh of the data regardless of current validity
+func (c *Cache[T]) Fetch() (T, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.fetchLocked()
 }
 
 // Caller must hold a read lock
 func (c *Cache[T]) isValid() bool {
-	if c.entry == nil {
+	if c.entry == nil || c.entry.stale {
 		return false
 	}
 
@@ -86,30 +120,30 @@ func (c *Cache[T]) fetchLocked() (T, error) {
 
 	if c.fetchFunc == nil {
 		if c.entry == nil {
-			return zero, ErrInvalidCacheData
+			return zero, ErrNoCacheData
 		}
-		// since there is no fetch implementation we just return stale cache data along with
-		// an accompanying error
+
 		v := reflect.ValueOf(c.entry.data)
-		if v.Kind() == reflect.Ptr {
-			if v.IsNil() {
-				return zero, ErrInvalidCacheData
-			}
+		if v.Kind() == reflect.Ptr && v.IsNil() {
+			return zero, ErrNoCacheData
 		}
-		return c.entry.data, ErrInvalidCacheData
+
+		return c.entry.data, ErrStaleData
 	}
 
 	newData, err := c.fetchFunc()
 	if err != nil {
+		// if fetch fails but we have existing data, return stale data with error
+		if c.entry != nil {
+			return c.entry.data, ErrStaleData
+		}
 		return zero, err
 	}
 
-	c.entry = &cachedEntry[T]{data: newData, timestamp: time.Now()}
+	c.entry = &cachedEntry[T]{
+		data:      newData,
+		timestamp: time.Now(),
+		stale:     false,
+	}
 	return newData, nil
-}
-
-func (c *Cache[T]) fetch() (T, error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	return c.fetchLocked()
 }
