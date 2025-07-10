@@ -2,6 +2,7 @@ package caching
 
 import (
 	"errors"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -81,15 +82,25 @@ func (c *Cache[T]) isValid() bool {
 
 // Caller must hold a write lock
 func (c *Cache[T]) fetchLocked() (T, error) {
+	var zero T
+
 	if c.fetchFunc == nil {
+		if c.entry == nil {
+			return zero, ErrInvalidCacheData
+		}
 		// since there is no fetch implementation we just return stale cache data along with
 		// an accompanying error
+		v := reflect.ValueOf(c.entry.data)
+		if v.Kind() == reflect.Ptr {
+			if v.IsNil() {
+				return zero, ErrInvalidCacheData
+			}
+		}
 		return c.entry.data, ErrInvalidCacheData
 	}
 
 	newData, err := c.fetchFunc()
 	if err != nil {
-		var zero T
 		return zero, err
 	}
 
