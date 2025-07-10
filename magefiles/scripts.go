@@ -59,24 +59,6 @@ func getVersions() (map[string]string, error) {
 	return versions, nil
 }
 
-// TODO: replace with information coming from the Go toolchain
-func getGitInfo() (*gitInfo, error) {
-	hash, err := sh.Output("git", "rev-parse", "--short", "HEAD")
-	if err != nil {
-		return nil, err
-	}
-
-	version, err := getLatestVersion()
-	if err != nil {
-		return nil, err
-	}
-
-	return &gitInfo{
-		commitHash: hash,
-		versionTag: version,
-	}, nil
-}
-
 func getLatestVersion() (string, error) {
 	version, err := getLatestVersionGit()
 	if err != nil {

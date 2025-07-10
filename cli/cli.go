@@ -111,7 +111,11 @@ func NewApp(version, environment, hash, salt string,
 	}
 
 	cli.VersionPrinter = func(c *cli.Context) {
-		fmt.Printf("NordVPN Version %s\n", c.App.Version)
+		packageType := ""
+		if snapconf.IsUnderSnap() {
+			packageType = " [snap]"
+		}
+		fmt.Printf("NordVPN Version %s%s\n", c.App.Version, packageType)
 	}
 	cli.BashCompletionFlag = &cli.BoolFlag{
 		Name:   "complete",
