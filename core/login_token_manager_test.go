@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -29,7 +28,6 @@ func (m *mockConfigManager) Load(cfg *config.Config) error {
 }
 
 func (m *mockConfigManager) Reset(preserveLoginData bool) error {
-
 	if preserveLoginData {
 		newConfig := &config.Config{
 			AutoConnectData: config.AutoConnectData{
@@ -57,17 +55,15 @@ func mockTokenRenewAPICall(token string, idempotencyKey uuid.UUID) (*TokenRenewR
 	return nil, nil
 }
 
-type mockExpirationChecker struct {
-	Expired bool
+type mockTokenValidator struct {
+	TokenValidator
+	ValidatorFunc validatorFunc
 }
 
-func (m mockExpirationChecker) IsExpired(expiryTime string) bool {
-	if expiryTime == "" {
-		return true
-	}
+type validatorFunc = func(token string, expiryDate string) error
 
-	return m.Expired
-
+func (m *mockTokenValidator) Validate(token string, expiryDate string) error {
+	return m.ValidatorFunc(token, expiryDate)
 }
 
 func Test_LoginTokenManager_Token(t *testing.T) {
@@ -79,7 +75,7 @@ func Test_LoginTokenManager_Token(t *testing.T) {
 		mockedCfgManager,
 		mockTokenRenewAPICall,
 		&mockErrRegsitry,
-		mockExpirationChecker{},
+		&mockTokenValidator{},
 	)
 
 	token, err := tokenman.Token()
@@ -127,11 +123,14 @@ func TestLoginTokenManager_Renew_NotExpiredTokenNotRenewed(t *testing.T) {
 
 	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
 
+	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
+		return nil
+	}}
 	manager := NewLoginTokenManager(
 		mockCfg,
 		mockRenewAPICall,
 		mockErrHandlerRegistry,
-		mockExpirationChecker{Expired: false},
+		validator,
 	)
 
 	err := manager.Renew()
@@ -171,15 +170,18 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithoutIdempotencyKey(t 
 
 	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
 
+	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
+		return errors.New("expired")
+	}}
 	manager := NewLoginTokenManager(
 		mockCfg,
 		mockRenewAPICall,
 		mockErrHandlerRegistry,
-		mockExpirationChecker{Expired: true},
+		validator,
 	)
 
 	err := manager.Renew()
-	require.NoError(t, err)
+	require.Error(t, err)
 
 	updated := mockCfg.c.TokensData[uid]
 	assert.Equal(t, "new-access-token", updated.Token)
@@ -217,15 +219,18 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithIdempotencyKey(t *te
 
 	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
 
+	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
+		return errors.New("expired")
+	}}
 	manager := NewLoginTokenManager(
 		mockCfg,
 		mockRenewAPICall,
 		mockErrHandlerRegistry,
-		mockExpirationChecker{Expired: true},
+		validator,
 	)
 
 	err := manager.Renew()
-	require.NoError(t, err)
+	require.Error(t, err)
 
 	updated := mockCfg.c.TokensData[uid]
 	assert.Equal(t, "new-access-token", updated.Token)
@@ -258,11 +263,14 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithUnknownAPICallError(
 
 	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
 
+	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
+		return errors.New("expired")
+	}}
 	manager := NewLoginTokenManager(
 		mockCfg,
 		mockRenewAPICall,
 		mockErrHandlerRegistry,
-		mockExpirationChecker{Expired: true},
+		validator,
 	)
 
 	copyToken := strings.Clone(mockCfg.c.TokensData[uid].Token)
@@ -270,7 +278,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithUnknownAPICallError(
 	copyTokenExpiry := strings.Clone(mockCfg.c.TokensData[uid].TokenExpiry)
 
 	err := manager.Renew()
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	updated := mockCfg.c.TokensData[uid]
 	assert.Equal(t, copyToken, updated.Token)
@@ -305,16 +313,18 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithKnownAPICallError(t 
 		}
 
 		mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
-
+		validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
+			return errors.New("expired")
+		}}
 		manager := NewLoginTokenManager(
 			mockCfg,
 			mockRenewAPICall,
 			mockErrHandlerRegistry,
-			mockExpirationChecker{Expired: true},
+			validator,
 		)
 
 		err := manager.Renew()
-		assert.NoError(t, err)
+		assert.Error(t, err)
 
 		updated := mockCfg.c.TokensData[uid]
 		assert.Empty(t, updated.Token)
@@ -333,7 +343,7 @@ func Test_LoginTokenManager_Store(t *testing.T) {
 		mockedCfgManager,
 		mockTokenRenewAPICall,
 		&mockErrRegsitry,
-		mockExpirationChecker{},
+		&mockTokenValidator{},
 	)
 
 	err := tokenman.Store("nice-token")
@@ -366,7 +376,7 @@ func TestLoginTokenManager_Invalidate(t *testing.T) {
 		mockedCfgManager,
 		mockTokenRenewAPICall,
 		mockErrRegsitry,
-		mockExpirationChecker{},
+		&mockTokenValidator{},
 	)
 
 	errDummy := errors.New("dummy")
@@ -376,7 +386,6 @@ func TestLoginTokenManager_Invalidate(t *testing.T) {
 	dummyErrHandlerCalledCnt := 0
 	dummyErrHandler := func(uid int64) {
 		dummyErrHandlerCalledCnt++
-		fmt.Println("handler called:", dummyErrHandlerCalledCnt)
 	}
 
 	const dummyErrHandlerAddCnt = 4
@@ -432,7 +441,6 @@ func (m *mockConfigManagerWithBadSave) Load(cfg *config.Config) error {
 }
 
 func (m *mockConfigManagerWithBadSave) Reset(preserveLoginData bool) error {
-
 	if preserveLoginData {
 		newConfig := &config.Config{
 			AutoConnectData: config.AutoConnectData{
@@ -483,12 +491,14 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithBadConfigSaving(t *t
 	}
 
 	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
-
+	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
+		return errors.New("expired")
+	}}
 	manager := NewLoginTokenManager(
 		mockCfg,
 		mockRenewAPICall,
 		mockErrHandlerRegistry,
-		mockExpirationChecker{Expired: true},
+		validator,
 	)
 
 	err := manager.Renew()
@@ -526,12 +536,14 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithIdempotencyKeyANdBad
 	}
 
 	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
-
+	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
+		return errors.New("expired")
+	}}
 	manager := NewLoginTokenManager(
 		mockCfg,
 		mockRenewAPICall,
 		mockErrHandlerRegistry,
-		mockExpirationChecker{Expired: true},
+		validator,
 	)
 
 	err := manager.Renew()
@@ -558,7 +570,6 @@ func (m *mockConfigManagerWithBadLoad) Load(cfg *config.Config) error {
 }
 
 func (m *mockConfigManagerWithBadLoad) Reset(preserveLoginData bool) error {
-
 	if preserveLoginData {
 		newConfig := &config.Config{
 			AutoConnectData: config.AutoConnectData{
@@ -605,7 +616,7 @@ func Test_LoginTokenManager_TokenWithBadLoad(t *testing.T) {
 		mockCfg,
 		mockTokenRenewAPICall,
 		&mockErrRegsitry,
-		mockExpirationChecker{},
+		&mockTokenValidator{},
 	)
 
 	token, err := tokenman.Token()
@@ -639,7 +650,7 @@ func Test_LoginTokenManager_RenewWithBadLoad(t *testing.T) {
 		mockCfg,
 		mockTokenRenewAPICall,
 		&mockErrRegsitry,
-		mockExpirationChecker{},
+		&mockTokenValidator{},
 	)
 
 	err := tokenman.Renew()
@@ -675,7 +686,7 @@ func Test_LoginTokenManager_StoreWithBadLoad(t *testing.T) {
 		mockCfg,
 		mockTokenRenewAPICall,
 		&mockErrRegsitry,
-		mockExpirationChecker{},
+		&mockTokenValidator{},
 	)
 
 	err := tokenman.Store("some token")
@@ -711,7 +722,7 @@ func Test_LoginTokenManager_InvalidateWithBadLoad(t *testing.T) {
 		mockCfg,
 		mockTokenRenewAPICall,
 		&mockErrRegsitry,
-		mockExpirationChecker{},
+		&mockTokenValidator{},
 	)
 
 	err := tokenman.Invalidate(errors.New("some error"))
