@@ -43,7 +43,7 @@ type workingLoginChecker struct {
 	dedicatedIPService   []auth.DedicatedIPService
 }
 
-func (*workingLoginChecker) IsLoggedIn() bool              { return true }
+func (*workingLoginChecker) IsLoggedIn() (bool, error)     { return true, nil }
 func (*workingLoginChecker) IsMFAEnabled() (bool, error)   { return false, nil }
 func (c *workingLoginChecker) IsVPNExpired() (bool, error) { return c.isVPNExpired, c.vpnErr }
 func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
