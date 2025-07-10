@@ -16,7 +16,7 @@ import (
 
 type mockAutoconnectAuthChecker struct{}
 
-func (mockAutoconnectAuthChecker) IsLoggedIn() bool            { return true }
+func (mockAutoconnectAuthChecker) IsLoggedIn() (bool, error)   { return true, nil }
 func (mockAutoconnectAuthChecker) IsMFAEnabled() (bool, error) { return false, nil }
 func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error) { return false, nil }
 func (mockAutoconnectAuthChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {

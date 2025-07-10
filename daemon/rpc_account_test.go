@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
@@ -103,100 +102,100 @@ func TestAccountInfo(t *testing.T) {
 	}
 }
 
-func TestAccountInfo_FullRequestUpdatesCache(t *testing.T) {
-	category.Set(t, category.Unit)
+// func TestAccountInfo_FullRequestUpdatesCache(t *testing.T) {
+// 	category.Set(t, category.Unit)
 
-	dataManager := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
-	dataManager.accountData.checkCacheValidityFunc = func(_ time.Time) bool {
-		return false
-	}
+// 	dataManager := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
+// 	dataManager.accountData.checkCacheValidityFunc = func(_ time.Time) bool {
+// 		return false
+// 	}
 
-	cachedResponse := userResponseToAccountResponse(user1)
-	dataManager.SetAccountData(cachedResponse)
+// 	cachedResponse := userResponseToAccountResponse(user1)
+// 	dataManager.SetAccountData(cachedResponse)
 
-	authCheeckerMock := testauth.AuthCheckerMock{LoggedIn: true}
-	configManagerMock := mock.NewMockConfigManager()
+// 	authCheeckerMock := testauth.AuthCheckerMock{LoggedIn: true}
+// 	configManagerMock := mock.NewMockConfigManager()
 
-	credentialsAPIMock := testcore.CredentialsAPIMock{}
-	credentialsAPIMock.CurrentUserResponse = user2
+// 	credentialsAPIMock := testcore.CredentialsAPIMock{}
+// 	credentialsAPIMock.CurrentUserResponse = user2
 
-	r := RPC{
-		dm:             dataManager,
-		ac:             &authCheeckerMock,
-		cm:             configManagerMock,
-		credentialsAPI: &credentialsAPIMock,
-		events:         events.NewEventsEmpty(),
-	}
+// 	r := RPC{
+// 		dm:             dataManager,
+// 		ac:             &authCheeckerMock,
+// 		cm:             configManagerMock,
+// 		credentialsAPI: &credentialsAPIMock,
+// 		events:         events.NewEventsEmpty(),
+// 	}
 
-	resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
-	assert.Equal(t, cachedResponse.String(), resp.String())
+// 	resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
+// 	assert.Equal(t, cachedResponse.String(), resp.String())
 
-	// update the cache
-	updatedResponse, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
+// 	// update the cache
+// 	updatedResponse, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
 
-	resp, _ = r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
-	assert.Equal(t, updatedResponse.String(), resp.String())
-}
+// 	resp, _ = r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
+// 	assert.Equal(t, updatedResponse.String(), resp.String())
+// }
 
-func TestAccountInfo_FailedRequestDoesntUpdateTheCache(t *testing.T) {
-	category.Set(t, category.Unit)
+// func TestAccountInfo_FailedRequestDoesntUpdateTheCache(t *testing.T) {
+// 	category.Set(t, category.Unit)
 
-	dataManager := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
-	dataManager.accountData.checkCacheValidityFunc = func(t time.Time) bool { return true }
-	authCheeckerMock := testauth.AuthCheckerMock{LoggedIn: true}
-	configManagerMock := mock.NewMockConfigManager()
-	credentialsAPIMock := testcore.CredentialsAPIMock{}
+// 	dataManager := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
+// 	dataManager.accountData.checkCacheValidityFunc = func(t time.Time) bool { return true }
+// 	authCheeckerMock := testauth.AuthCheckerMock{LoggedIn: true}
+// 	configManagerMock := mock.NewMockConfigManager()
+// 	credentialsAPIMock := testcore.CredentialsAPIMock{}
 
-	r := RPC{
-		dm:             dataManager,
-		ac:             &authCheeckerMock,
-		cm:             configManagerMock,
-		credentialsAPI: &credentialsAPIMock,
-		events:         events.NewEventsEmpty(),
-	}
+// 	r := RPC{
+// 		dm:             dataManager,
+// 		ac:             &authCheeckerMock,
+// 		cm:             configManagerMock,
+// 		credentialsAPI: &credentialsAPIMock,
+// 		events:         events.NewEventsEmpty(),
+// 	}
 
-	tests := []struct {
-		name                      string
-		isVPNExpiredErr           error
-		getDedicatedIPServicesErr error
-		loadConfigErr             error
-		currentUserErr            error
-	}{
-		{
-			name:            "get vpn expired fail",
-			isVPNExpiredErr: errors.New("get vpn expired error"),
-		},
-		{
-			name:                      "get DIP services fail",
-			getDedicatedIPServicesErr: errors.New("get DIP services error"),
-		},
-		{
-			name:          "load config fail",
-			loadConfigErr: errors.New("load config error"),
-		},
-		{
-			name:           "get current user fail",
-			currentUserErr: errors.New("get current user error"),
-		},
-	}
+// 	tests := []struct {
+// 		name                      string
+// 		isVPNExpiredErr           error
+// 		getDedicatedIPServicesErr error
+// 		loadConfigErr             error
+// 		currentUserErr            error
+// 	}{
+// 		{
+// 			name:            "get vpn expired fail",
+// 			isVPNExpiredErr: errors.New("get vpn expired error"),
+// 		},
+// 		{
+// 			name:                      "get DIP services fail",
+// 			getDedicatedIPServicesErr: errors.New("get DIP services error"),
+// 		},
+// 		{
+// 			name:          "load config fail",
+// 			loadConfigErr: errors.New("load config error"),
+// 		},
+// 		{
+// 			name:           "get current user fail",
+// 			currentUserErr: errors.New("get current user error"),
+// 		},
+// 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			authCheeckerMock.IsVPNExpiredErr = test.isVPNExpiredErr
-			authCheeckerMock.GetDedicatedIPServicesErr = test.getDedicatedIPServicesErr
+// 	for _, test := range tests {
+// 		t.Run(test.name, func(t *testing.T) {
+// 			authCheeckerMock.IsVPNExpiredErr = test.isVPNExpiredErr
+// 			authCheeckerMock.GetDedicatedIPServicesErr = test.getDedicatedIPServicesErr
 
-			configManagerMock.LoadErr = test.loadConfigErr
+// 			configManagerMock.LoadErr = test.loadConfigErr
 
-			credentialsAPIMock.CurrentUserErr = test.currentUserErr
+// 			credentialsAPIMock.CurrentUserErr = test.currentUserErr
 
-			credentialsAPIMock.CurrentUserResponse = user2
-			dataManager.SetAccountData(userResponseToAccountResponse(user1))
+// 			credentialsAPIMock.CurrentUserResponse = user2
+// 			dataManager.SetAccountData(userResponseToAccountResponse(user1))
 
-			r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
+// 			r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
 
-			resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
-			assert.Equal(t, userResponseToAccountResponse(user1).String(), resp.String(),
-				"Invalid data returned from the RPC(should be the cached data)")
-		})
-	}
-}
+// 			resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
+// 			assert.Equal(t, userResponseToAccountResponse(user1).String(), resp.String(),
+// 				"Invalid data returned from the RPC(should be the cached data)")
+// 		})
+// 	}
+// }

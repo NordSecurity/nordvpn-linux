@@ -152,7 +152,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 			RenewToken: "renewed-token",
 			ExpiresAt:  validDate.String(),
 		}
-		isLoggedIn, _ := rc.IsLoggedIn()
+		isLoggedIn, err := rc.IsLoggedIn()
+		assert.NoError(t, err)
 		assert.True(t, isLoggedIn, "user should be logged in")
 		assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token, "token should be updated in the configuration")
 		assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[0].RenewToken, "renew-token should be updated in the configuration")
@@ -184,7 +185,6 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		assert.True(t, isLoggedIn, "user should be logged in, even after a failed request")
 		assert.Equal(t, lastExpiredToken, cm.c.TokensData[0].Token, "token should not be updated in the configuration after a failed request")
 		assert.Equal(t, lastExpiredRenewToken, cm.c.TokensData[0].RenewToken, "renew-token should not be updated in the configuration after a failed request")
-
 	})
 
 	t.Run("valid token renewal request after a failure", func(t *testing.T) {
@@ -218,7 +218,6 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token, "token should be updated in the configuration")
 		assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[0].RenewToken, "renew-token should be updated in the configuration")
 	})
-
 }
 
 func Test_TokenRenewForcesUserLogout(t *testing.T) {
@@ -265,7 +264,6 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 	}
 
 	t.Run("token renewal attempt with log-out invoking errors on a HTTP level", func(t *testing.T) {
-
 		errs := []error{core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest}
 		for _, exptectedErr := range errs {
 			// replace the token in the config with one that is expired.
