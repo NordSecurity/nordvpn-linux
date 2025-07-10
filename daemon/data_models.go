@@ -180,21 +180,23 @@ func (a *AccountData) unset() {
 	a.cache.Invalidate()
 }
 
-// return true if cached data is still valid (validity periond no ended), otherwise false
-func (a *AccountData) get(respectValidityPeriod bool) (*pb.AccountResponse, bool) {
-	data, err := a.cache.Get()
-	if !respectValidityPeriod {
-		switch {
-		case errors.Is(err, caching.ErrInvalidCacheData) && data != nil:
-			return proto.Clone(data).(*pb.AccountResponse), false
-		case err == nil:
-			return proto.Clone(data).(*pb.AccountResponse), true
+// return true if cached data was used, otherwise false
+func (a *AccountData) get(requestFreshFetch bool) (*pb.AccountResponse, bool) {
+	if requestFreshFetch {
+		data, err := a.cache.Fetch()
+		if err != nil || data == nil {
+			return nil, false
 		}
+
+		return proto.Clone(data).(*pb.AccountResponse), true
 	}
 
-	if err != nil || data == nil {
+	data, err := a.cache.Get()
+	switch {
+	case errors.Is(err, caching.ErrStaleData) && data != nil:
+		return proto.Clone(data).(*pb.AccountResponse), true
+	case err != nil:
 		return nil, false
 	}
-
 	return proto.Clone(data).(*pb.AccountResponse), true
 }
