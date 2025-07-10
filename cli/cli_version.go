@@ -9,6 +9,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 )
 
 func (c *cmd) Version(ctx *cli.Context) error {
@@ -38,6 +39,9 @@ func (c *cmd) Version(ctx *cli.Context) error {
 	fmt.Printf("Daemon: NordVPN Version %d.%d.%d", resp.Major, resp.Minor, resp.Patch)
 	if resp.Metadata != "" {
 		fmt.Printf("+%s", resp.Metadata)
+	}
+	if snapconf.IsUnderSnap() {
+		fmt.Printf(" [snap]")
 	}
 	if resp.Type == internal.CodeOutdated {
 		fmt.Print(" (outdated)")
