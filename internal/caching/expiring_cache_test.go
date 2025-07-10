@@ -227,7 +227,7 @@ func Test_ComplexTypes(t *testing.T) {
 	assert.Equal(t, expected, data, "expected complex data to match")
 }
 
-func Test_DirectFetch(t *testing.T) {
+func Test_Fetch(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fetchCount := 0
@@ -241,8 +241,8 @@ func Test_DirectFetch(t *testing.T) {
 	// call to fill cache
 	cache.Get()
 
-	// call fetch directly to bypass cache
-	data, err := cache.fetch()
+	// call Fetch directly to bypass cache
+	data, err := cache.Fetch()
 
 	assert.NoError(t, err, "expected no error")
 	assert.Equal(t, 2, data, "expected data to be 2")
@@ -280,4 +280,117 @@ func Test_ConcurrentAccess(t *testing.T) {
 
 	// should only have fetched once despite concurrent access
 	assert.Equal(t, 1, fetchCount, "expected fetch function to be called once despite concurrent access")
+}
+
+// New tests for the enhanced functionality
+
+func Test_GetEvenIfStale(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fetchCount := 0
+	fetchFunc := func() (string, error) {
+		fetchCount++
+		return fmt.Sprintf("data %d", fetchCount), nil
+	}
+
+	cache := NewCacheWithTTL(50*time.Millisecond, fetchFunc)
+
+	// fill the cache
+	cache.Get()
+
+	// get current data (should be fresh)
+	data, fresh, err := cache.GetEvenIfStale()
+	assert.NoError(t, err)
+	assert.True(t, fresh, "data should be fresh")
+	assert.Equal(t, "data 1", data)
+
+	// wait for data to expire
+	time.Sleep(100 * time.Millisecond)
+
+	// get stale data
+	data, fresh, err = cache.GetEvenIfStale()
+	assert.NoError(t, err)
+	assert.False(t, fresh, "data should be stale")
+	assert.Equal(t, "data 1", data, "should return stale data")
+	assert.Equal(t, 1, fetchCount, "fetch should not be called for GetEvenIfStale")
+}
+
+func Test_Clear(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fetchCount := 0
+	fetchFunc := func() (string, error) {
+		fetchCount++
+		return fmt.Sprintf("data %d", fetchCount), nil
+	}
+
+	cache := NewCacheWithTTL(1*time.Minute, fetchFunc)
+
+	// fill the cache
+	cache.Get()
+	assert.Equal(t, 1, fetchCount)
+
+	// clear the cache
+	cache.Clear()
+
+	// get should fetch fresh data
+	data, err := cache.Get()
+	assert.NoError(t, err)
+	assert.Equal(t, "data 2", data)
+	assert.Equal(t, 2, fetchCount, "fetch should be called again after clear")
+}
+
+func Test_GetEvenIfStaleWithNoData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cache := NewCacheWithTTL[string](1*time.Minute, nil)
+
+	// try to get data when cache is empty
+	data, fresh, err := cache.GetEvenIfStale()
+	assert.Equal(t, ErrNoCacheData, err)
+	assert.False(t, fresh)
+	assert.Equal(t, "", data)
+}
+
+func Test_FetchErrorWithStaleData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fetchCount := 0
+	fetchFunc := func() (string, error) {
+		fetchCount++
+		if fetchCount > 1 {
+			return "", errors.New("fetch error")
+		}
+		return "original data", nil
+	}
+
+	cache := NewCacheWithTTL(1*time.Minute, fetchFunc)
+
+	// fill the cache
+	originalData, err := cache.Get()
+	assert.NoError(t, err)
+	assert.Equal(t, "original data", originalData)
+
+	cache.Invalidate()
+
+	newData, err := cache.Get()
+	assert.Equal(t, ErrStaleData, err)
+	assert.Equal(t, "original data", newData, "should return stale data on fetch error")
+}
+
+func Test_NoFetchFuncWithStaleData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cache := NewCacheWithTTL[string](1*time.Minute, nil)
+	cache.Set("test data")
+
+	data, err := cache.Get()
+	assert.NoError(t, err)
+	assert.Equal(t, "test data", data)
+
+	cache.Invalidate()
+
+	data, err = cache.Get()
+	assert.Equal(t, ErrStaleData, err)
+	assert.Equal(t, "test data", data, "should return stale data with error")
 }
