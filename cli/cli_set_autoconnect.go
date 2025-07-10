@@ -82,6 +82,8 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 	case internal.CodeTokenRenewError:
 		return formatError(errors.New(client.AccountTokenRenewError))
 	case internal.CodeExpiredAccessToken:
+		fallthrough
+	case internal.CodeRevokedAccessToken:
 		return formatError(errors.New(client.AccessTokenExpired))
 	case internal.CodeDedicatedIPRenewError:
 		link := client.SubscriptionDedicatedIPURL
