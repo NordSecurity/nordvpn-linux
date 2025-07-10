@@ -13,7 +13,9 @@ type AuthCheckerMock struct {
 	GetDedicatedIPServicesErr error
 }
 
-func (a *AuthCheckerMock) IsLoggedIn() (bool, error) { return a.LoggedIn, nil }
+func (a *AuthCheckerMock) IsLoggedIn() (bool, error) {
+	return a.LoggedIn, nil
+}
 
 func (a *AuthCheckerMock) IsMFAEnabled() (bool, error) {
 	return a.MFAEnabled, a.IsMFAEnabledErr
