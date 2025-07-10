@@ -66,6 +66,7 @@ const (
 	CodeNotInNordVPNGroup              int64 = 3052
 	CodeConsentMissing                 int64 = 3052
 	CodeExpiredAccessToken             int64 = 3053
+	CodeRevokedAccessToken             int64 = 3054
 )
 
 type ErrorWithCode struct {
