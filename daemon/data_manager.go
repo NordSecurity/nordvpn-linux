@@ -395,10 +395,10 @@ func (dm *DataManager) SetAccountData(accountData *pb.AccountResponse) {
 	dm.accountData.set(accountData)
 }
 
-func (dm *DataManager) GetAccountData(respectValidityPeriod bool) (*pb.AccountResponse, bool) {
+func (dm *DataManager) GetAccountData(requestFreshFetch bool) (*pb.AccountResponse, bool) {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
-	return dm.accountData.get(respectValidityPeriod)
+	return dm.accountData.get(requestFreshFetch)
 }
 
 func (dm *DataManager) InvalidateAccountData() {
