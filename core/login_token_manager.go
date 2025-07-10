@@ -59,13 +59,18 @@ func (l *LoginTokenManager) Renew() error {
 
 	var errs error
 	for uid, data := range cfg.TokensData {
-		err := l.validator.Validate(data.Token, data.TokenExpiry)
-		if err == nil {
+		validationErr := l.validator.Validate(data.Token, data.TokenExpiry)
+		if validationErr == nil {
 			continue
 		}
-		errs = errors.Join(errs, err)
 
-		if err = l.renewToken(uid, data); err != nil {
+		// if this error happens, then there is no way to recover
+		if errors.Is(validationErr, ErrLoginTokenRevoked) {
+			errs = errors.Join(errs, validationErr)
+			continue
+		}
+
+		if err := l.renewToken(uid, data); err != nil {
 			log.Printf("[auth] %s Renewing token for uid(%v): %s\n", internal.ErrorPrefix, uid, err)
 			errs = errors.Join(errs, err)
 		}

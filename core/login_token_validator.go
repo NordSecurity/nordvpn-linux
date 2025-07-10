@@ -3,11 +3,11 @@ package core
 import (
 	"errors"
 	"regexp"
-	"time"
 )
 
 var (
 	ErrLoginTokenExpired = errors.New("login token expired")
+	ErrLoginTokenRevoked = errors.New("login token revoked")
 )
 
 type LoginTokenValidator struct {
@@ -40,7 +40,7 @@ func (l LoginTokenValidator) validateCredibility(token string) error {
 	_, err := l.credsAPI.CurrentUser(token)
 	// the only interest is in whether we receive "unauthorized access" error
 	if errors.Is(err, ErrUnauthorized) {
-		return ErrLoginTokenExpired
+		return ErrLoginTokenRevoked
 	}
 
 	return nil
@@ -57,16 +57,4 @@ func (l LoginTokenValidator) validateExpiryDate(date string) error {
 // NewLoginTokenValidator creates a new login-token validator
 func NewLoginTokenValidator(api RawCredentialsAPI, expiryChecker ExpirationChecker) TokenValidator {
 	return &LoginTokenValidator{credsAPI: api, expiryChecker: expiryChecker}
-}
-
-// remoteCheckDataValidityPeriod defines how long cache entries remain valid
-const (
-	remoteCheckDataValidityPeriod = time.Minute
-)
-
-// isCacheValid determines if a cached item is still within its validity period
-func isCacheValid(addedAt time.Time) bool {
-	// calculate when the cache entry expires
-	expirationTime := addedAt.Add(remoteCheckDataValidityPeriod)
-	return time.Now().Before(expirationTime)
 }
