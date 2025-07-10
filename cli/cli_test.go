@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -311,6 +312,55 @@ func TestReadForConfirmationDefaultValue(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			answer := readForConfirmationDefaultValue(test.input, test.name, test.defaultValue)
 			assert.Equal(t, test.defaultValue, answer)
+		})
+	}
+}
+
+// TestVersion checks how the version member for App.Version is constructed
+func TestComposeAppVersion(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		buildVersion string
+		env          string
+		isUnderSnap  bool
+		expected     string
+	}{
+		{
+			name:         "version for deb/rpm production build",
+			buildVersion: "1.2.3",
+			env:          string(internal.Production),
+			isUnderSnap:  false,
+			expected:     "1.2.3",
+		},
+		{
+			name:         "version for deb/rpm development build",
+			buildVersion: "1.2.3",
+			env:          string(internal.Development),
+			isUnderSnap:  false,
+			expected:     "1.2.3 - dev",
+		},
+		{
+			name:         "version for snap production build",
+			buildVersion: "1.2.3",
+			env:          string(internal.Production),
+			isUnderSnap:  true,
+			expected:     "1.2.3 [snap]",
+		},
+		{
+			name:         "version for snap development build",
+			buildVersion: "1.2.3",
+			env:          string(internal.Development),
+			isUnderSnap:  true,
+			expected:     "1.2.3 [snap] - dev",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			version := composeAppVersion(test.buildVersion, test.env, test.isUnderSnap)
+			assert.Equal(t, test.expected, version)
 		})
 	}
 }

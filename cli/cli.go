@@ -111,7 +111,7 @@ func NewApp(version, environment, hash, salt string,
 	}
 
 	cli.VersionPrinter = func(c *cli.Context) {
-		fmt.Printf("NordVPN Version %s\n", c.App.Version)
+		cmd.Version(c)
 	}
 	cli.BashCompletionFlag = &cli.BoolFlag{
 		Name:   "complete",
@@ -350,10 +350,8 @@ func NewApp(version, environment, hash, salt string,
 		return nil
 	}
 
-	app.Version = version
-	if internal.IsDevEnv(environment) {
-		app.Version = fmt.Sprintf("%s - %s (%s)", version, internal.Environment(environment), hash)
-	}
+	app.Version = composeAppVersion(version, environment, snapconf.IsUnderSnap())
+
 	app.Commands = []*cli.Command{
 		{
 			Name:               "account",
@@ -1397,4 +1395,21 @@ func readForConfirmationBlockUntilValid(r io.Reader, prompt string) bool {
 		}
 		fmt.Println(InputParsingError)
 	}
+}
+
+// composeAppVersion concatenates the provided information to produce a string
+// representing the application version in the format: 1.2.3 [snap] - dev
+// Later it is used by the version command to display to the user
+func composeAppVersion(buildVersion string, environment string, isSnap bool) string {
+	env := ""
+	if internal.IsDevEnv(environment) {
+		env = fmt.Sprintf(" - %s", environment)
+	}
+
+	snap := ""
+	if isSnap {
+		snap = " [snap]"
+	}
+
+	return fmt.Sprintf("%s%s%s", buildVersion, snap, env)
 }
