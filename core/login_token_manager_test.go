@@ -27,7 +27,7 @@ func (m *mockConfigManager) Load(cfg *config.Config) error {
 	return nil
 }
 
-func (m *mockConfigManager) Reset(preserveLoginData bool) error {
+func (m *mockConfigManager) Reset(preserveLoginData bool, disableKillswitch bool) error {
 	if preserveLoginData {
 		newConfig := &config.Config{
 			AutoConnectData: config.AutoConnectData{
@@ -47,7 +47,7 @@ func (m *mockConfigManager) Reset(preserveLoginData bool) error {
 
 func NewMockConfigManager() config.Manager {
 	mgr := &mockConfigManager{}
-	mgr.Reset(false)
+	mgr.Reset(false, false)
 	return mgr
 }
 
@@ -181,7 +181,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithoutIdempotencyKey(t 
 	)
 
 	err := manager.Renew()
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	updated := mockCfg.c.TokensData[uid]
 	assert.Equal(t, "new-access-token", updated.Token)
@@ -230,7 +230,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithIdempotencyKey(t *te
 	)
 
 	err := manager.Renew()
-	require.Error(t, err)
+	require.NoError(t, err)
 
 	updated := mockCfg.c.TokensData[uid]
 	assert.Equal(t, "new-access-token", updated.Token)
@@ -239,7 +239,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithIdempotencyKey(t *te
 	assert.NotEmpty(t, updated.TokenExpiry)
 }
 
-func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithUnknownAPICallError(t *testing.T) {
+func TestLoginTokenManager_Renew_ExpiredTokenNotRenewedWithUnknownUnhandledAPICallError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	now := time.Now()
@@ -278,7 +278,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithUnknownAPICallError(
 	copyTokenExpiry := strings.Clone(mockCfg.c.TokensData[uid].TokenExpiry)
 
 	err := manager.Renew()
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	updated := mockCfg.c.TokensData[uid]
 	assert.Equal(t, copyToken, updated.Token)
@@ -324,7 +324,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithKnownAPICallError(t 
 		)
 
 		err := manager.Renew()
-		assert.Error(t, err)
+		assert.NoError(t, err)
 
 		updated := mockCfg.c.TokensData[uid]
 		assert.Empty(t, updated.Token)
@@ -440,7 +440,7 @@ func (m *mockConfigManagerWithBadSave) Load(cfg *config.Config) error {
 	return nil
 }
 
-func (m *mockConfigManagerWithBadSave) Reset(preserveLoginData bool) error {
+func (m *mockConfigManagerWithBadSave) Reset(preserveLoginData bool, disableKillswitch bool) error {
 	if preserveLoginData {
 		newConfig := &config.Config{
 			AutoConnectData: config.AutoConnectData{
@@ -460,7 +460,7 @@ func (m *mockConfigManagerWithBadSave) Reset(preserveLoginData bool) error {
 
 func NewMockConfigManagerWithBadSave() config.Manager {
 	mgr := &mockConfigManagerWithBadSave{}
-	mgr.Reset(false)
+	mgr.Reset(false, false)
 	return mgr
 }
 
@@ -569,7 +569,7 @@ func (m *mockConfigManagerWithBadLoad) Load(cfg *config.Config) error {
 	return errors.New("successfully failed")
 }
 
-func (m *mockConfigManagerWithBadLoad) Reset(preserveLoginData bool) error {
+func (m *mockConfigManagerWithBadLoad) Reset(preserveLoginData bool, disableKillswitch bool) error {
 	if preserveLoginData {
 		newConfig := &config.Config{
 			AutoConnectData: config.AutoConnectData{
@@ -589,7 +589,7 @@ func (m *mockConfigManagerWithBadLoad) Reset(preserveLoginData bool) error {
 
 func NewMockConfigManagerWithBadLoad() config.Manager {
 	mgr := &mockConfigManagerWithBadLoad{}
-	mgr.Reset(false)
+	mgr.Reset(false, false)
 	return mgr
 }
 
