@@ -389,7 +389,7 @@ func TestLoginTokenManager_Invalidate(t *testing.T) {
 	}
 
 	const dummyErrHandlerAddCnt = 4
-	for range dummyErrHandlerAddCnt {
+	for i := 0; i < dummyErrHandlerAddCnt; i++ {
 		mockErrRegsitry.Add(errDummy, dummyErrHandler)
 	}
 
