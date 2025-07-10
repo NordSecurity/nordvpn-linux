@@ -59,9 +59,9 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
 				0,
 				false,
+				&workingIpv6{},
 			)
 			// injecting VPN implementation without calling netw.Start
 			netw.vpnet = test.vpn
@@ -167,7 +167,6 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 		&subs.Subject[string]{},
 		workingRouter{},
 		&workingDNS{},
-		&workingIpv6{},
 		firewall,
 		workingAllowlistRouting{},
 		workingDeviceList,
@@ -178,6 +177,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 		&workingExitNode{},
 		0,
 		false,
+		&workingIpv6{},
 	)
 
 	nic1Name := "nic1"
