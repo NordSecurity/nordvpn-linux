@@ -160,8 +160,6 @@ func (data *VersionData) save() error {
 	return nil
 }
 
-type cacheValidityFunc func(time.Time) bool
-
 type AccountData struct {
 	cache *caching.Cache[*pb.AccountResponse]
 }
