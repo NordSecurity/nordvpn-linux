@@ -630,25 +630,25 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
 		path := fmt.Sprintf("%s.%s", key, ctx.Path)
 		switch v := ctx.Value.(type) {
 		case bool:
-			moose.MooseNordvpnappSetDeveloperEventContextBool(path, v)
+			moose.MooseNordvpnappSetDeveloperEventContextBool(ctx.Path, v)
 			combinedPaths = append(combinedPaths, path)
 		case float32:
-			moose.MooseNordvpnappSetDeveloperEventContextFloat(path, v)
+			moose.MooseNordvpnappSetDeveloperEventContextFloat(ctx.Path, v)
 			combinedPaths = append(combinedPaths, path)
 		//deliberately omitted uint64
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32:
 			val := reflect.ValueOf(v).Int()
 			if val > math.MaxInt32 {
-				moose.MooseNordvpnappSetDeveloperEventContextLong(path, int64(val))
+				moose.MooseNordvpnappSetDeveloperEventContextLong(ctx.Path, int64(val))
 			} else {
-				moose.MooseNordvpnappSetDeveloperEventContextInt(path, int32(val))
+				moose.MooseNordvpnappSetDeveloperEventContextInt(ctx.Path, int32(val))
 			}
 			combinedPaths = append(combinedPaths, path)
 		case string:
-			moose.MooseNordvpnappSetDeveloperEventContextString(path, v)
+			moose.MooseNordvpnappSetDeveloperEventContextString(ctx.Path, v)
 			combinedPaths = append(combinedPaths, path)
 		default:
-			log.Printf("%s Discarding unsupported type (%T) on path: %s", internal.WarningPrefix, ctx.Value, path)
+			log.Printf("%s Discarding unsupported type (%T) on path: %s\n", internal.WarningPrefix, ctx.Value, path)
 		}
 	}
 	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))
