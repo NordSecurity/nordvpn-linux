@@ -3,18 +3,28 @@ package remote
 import (
 	"crypto/sha256"
 	"encoding/binary"
-
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// defaultMaxGroup represents the maximum value for a rollout group,
-// effectively making the value to be in range of 1-100 (inclusive) to reflect percentage-based groups.
-const defaultMaxGroup uint32 = 100
+const (
+	baseKey = "remote-config"
+
+	// defaultMaxGroup represents the maximum value for a rollout group,
+	// effectively making the value to be in range of 1-100 (inclusive) to reflect percentage-based groups.
+	defaultMaxGroup  uint32 = 100
+	logPrefix               = "[Remote Confg]"
+	messageNamespace        = "nordvpn-linux"
+	rcFailure               = "failure"
+	rcSuccess               = "success"
+	subscope                = "linux-rc"
+)
 
 // GenerateRolloutGroup creates a new RolloutGroup instance based on a provided UUID.
 // It computes a group value by hashing the UUID and deriving a number between 1 and defaultMaxGroup (inclusive).
@@ -35,109 +45,168 @@ func GenerateRolloutGroup(uuid uuid.UUID) int {
 type RCEventType string
 
 const (
-	RCDownload        RCEventType = "rc_download"
-	RCDownloadSuccess RCEventType = "rc_download_success"
-	RCDownloadFailure RCEventType = "rc_download_failure"
-	RCLocalUse        RCEventType = "rc_local_use"
-	RCJSONParse       RCEventType = "rc_json_parse"
-	RCPartialRollout  RCEventType = "rc_partial_rollout"
+	RCDownload         RCEventType = "rc_download"
+	RCDownloadSuccess  RCEventType = "rc_download_success"
+	RCDownloadFailure  RCEventType = "rc_download_failure"
+	RCLocalUse         RCEventType = "rc_local_use"
+	RCJSONParseSuccess RCEventType = "rc_json_parse_success"
+	RCJSONParseFailure RCEventType = "rc_json_parse_failure"
+	RCPartialRollout   RCEventType = "rc_partial_rollout"
 )
 
-const keyBasedFeatureKey = "application.nordvpnapp"
+// RCDownloadErrorKind defines types of download errors for remote config.
+type RCDownloadErrorKind string
+
+const (
+	RCDownloadErrorRemoteHashNotFound RCDownloadErrorKind = "remote_hash_not_found"
+	RCDownloadErrorRemoteFileNotFound RCDownloadErrorKind = "remote_file_not_found"
+	RCDownloadErrorIntegrity          RCDownloadErrorKind = "integrity_error"
+	RCDownloadErrorFileDownload       RCDownloadErrorKind = "file_download_error"
+	RCDownloadErrorNetwork            RCDownloadErrorKind = "network_error"
+	RCDownloadErrorOther              RCDownloadErrorKind = "other_error"
+)
+
+type Context struct {
+	AppVersion   string
+	Country      string
+	ISP          string
+	RolloutGroup int
+}
 
 // RCEventDetails holds optional details for an event.
 type RCEventDetails struct {
-	Error        string `json:"error,omitempty"`
-	FeatureName  string `json:"feature_name,omitempty"`
-	RolloutGroup int    `json:"rollout_group,omitempty"`
-	RolloutValue int    `json:"rollout_value,omitempty"`
+	Error   string `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 // RCEvent is the main analytics event structure.
 type RCEvent struct {
-	Type       RCEventType    `json:"type"`
-	Timestamp  time.Time      `json:"timestamp"`
-	AppVersion string         `json:"app_version,omitempty"`
-	Country    string         `json:"country,omitempty"`
-	ISP        string         `json:"isp,omitempty"`
-	Details    RCEventDetails `json:"details,omitempty"`
+	Context
+	RCEventDetails
+	MessageNamespace string `json:"namespace"`
+	Result           string `json:"result"`
+	Subscope         string `json:"subscope"`
+	Client           string `json:"client,omitempty"`
+	FeatureName      string
+	Type             RCEventType `json:"type"`
+	Timestamp        time.Time   `json:"timestamp"`
 }
 
-// --- Helper constructors ---
-
-func NewRCDownloadSuccess(appVersion, country, isp string) RCEvent {
+func NewRCDownloadSuccess(ctx Context, client, featureName string) RCEvent {
 	return RCEvent{
-		Type:       RCDownloadSuccess,
-		Timestamp:  time.Now(),
-		AppVersion: appVersion,
-		Country:    country,
-		ISP:        isp,
+		Context:     ctx,
+		Client:      client,
+		FeatureName: featureName,
+		Type:        RCDownloadSuccess,
+		Timestamp:   time.Now(),
 	}
 }
 
-func NewRCDownloadFailure(appVersion, country, isp, errDetail string) RCEvent {
+func NewRCDownloadFailure(ctx Context, client, featureName string, errorKind RCDownloadErrorKind, errorMessage string) RCEvent {
 	return RCEvent{
-		Type:       RCDownloadFailure,
-		Timestamp:  time.Now(),
-		AppVersion: appVersion,
-		Country:    country,
-		ISP:        isp,
-		Details:    RCEventDetails{Error: errDetail},
+		Context:     ctx,
+		Client:      client,
+		FeatureName: featureName,
+		Type:        RCDownloadFailure,
+		Timestamp:   time.Now(),
+		RCEventDetails: RCEventDetails{
+			Error:   string(errorKind),
+			Message: errorMessage,
+		},
 	}
 }
 
-func NewRCJSONParse(appVersion, country, isp, errDetail string, success bool) RCEvent {
+func NewRCLocalUse(ctx Context, client, featureName string) RCEvent {
+	return RCEvent{
+		Context:     ctx,
+		Client:      client,
+		FeatureName: featureName,
+		Type:        RCLocalUse,
+		Timestamp:   time.Now(),
+	}
+}
+
+func NewRCJSONParse(ctx Context, client, featureName, errorKind, errorMessage string) RCEvent {
 	detail := RCEventDetails{}
-	if !success {
-		detail.Error = errDetail
+	var eventType RCEventType
+	if errorKind != "" {
+		detail.Error = errorKind
+		detail.Message = errorMessage
+		eventType = RCJSONParseFailure
+	} else {
+		eventType = RCJSONParseSuccess
 	}
+
 	return RCEvent{
-		Type:       RCJSONParse,
-		Timestamp:  time.Now(),
-		AppVersion: appVersion,
-		Country:    country,
-		ISP:        isp,
-		Details:    detail,
+		Context:        ctx,
+		Client:         client,
+		FeatureName:    featureName,
+		Type:           eventType,
+		Timestamp:      time.Now(),
+		RCEventDetails: detail,
 	}
 }
 
-func NewRCPartialRollout(appVersion, country, isp, featureName string, rolloutGroup, rolloutValue int, failure string) RCEvent {
-	detail := RCEventDetails{
-		FeatureName:  featureName,
-		RolloutGroup: rolloutGroup,
-		RolloutValue: rolloutValue,
+func NewRCPartialRollout(ctx Context, client, featureName, errorKind string, featureRollout int) RCEvent {
+	//messagae format is slightly different for partial rollout events
+	payload := struct {
+		FeatureName    string `json:"feature.name"`
+		RolloutGroup   int    `json:"rollout_group"`
+		FeatureRollout int    `json:"feature.rollout"`
+	}{
+		FeatureName:    featureName,
+		RolloutGroup:   ctx.RolloutGroup,
+		FeatureRollout: featureRollout,
 	}
-	if failure != "" {
-		detail.Error = failure
-	}
-	return RCEvent{
-		Type:       RCPartialRollout,
-		Timestamp:  time.Now(),
-		AppVersion: appVersion,
-		Country:    country,
-		ISP:        isp,
-		Details:    detail,
-	}
-}
 
-func (e RCEvent) ToMooseDebuggerEvent() (*events.MooseDebuggerEvent, error) {
-	jsonData, err := json.Marshal(e)
+	messageBytes, err := json.Marshal(payload)
 	if err != nil {
-		return nil, err
+		log.Printf("%s%s Failed to marshal partial rollout message: %s. Defaulting to an empty\n", internal.WarningPrefix, logPrefix, err)
+		messageBytes = []byte{}
 	}
-	ev := events.NewMooseDebuggerEvent(string(jsonData))
-	ev.WithKeyBasedContextPaths()
-	return ev.WithKeyBasedContextPaths(
-		events.ContextValue{Path: keyBasedFeatureKey + ".type.", Value: e.Type},
-		events.ContextValue{Path: keyBasedFeatureKey + ".app_version.", Value: e.AppVersion},
-		events.ContextValue{Path: keyBasedFeatureKey + ".country.", Value: e.Country},
-		events.ContextValue{Path: keyBasedFeatureKey + ".isp.", Value: e.ISP},
-		events.ContextValue{Path: keyBasedFeatureKey + ".error.", Value: e.Details.Error},
-		events.ContextValue{Path: keyBasedFeatureKey + ".feature_name.", Value: e.Details.FeatureName},
-		events.ContextValue{Path: keyBasedFeatureKey + ".rollout_group.", Value: e.Details.RolloutGroup},
-		events.ContextValue{Path: keyBasedFeatureKey + ".rollout_value.", Value: e.Details.RolloutValue},
-	).WithGlobalContextPaths("device.*",
-		"application.nordvpnapp.name",
-		"application.nordvpnapp.version",
-		"application.nordvpnapp.platform"), nil
+
+	detail := RCEventDetails{
+		Message: string(messageBytes),
+	}
+
+	if errorKind != "" {
+		detail.Error = errorKind
+	}
+
+	return RCEvent{
+		Context:        ctx,
+		Client:         client,
+		FeatureName:    featureName,
+		Type:           RCPartialRollout,
+		Timestamp:      time.Now(),
+		RCEventDetails: detail,
+	}
+}
+
+func (e RCEvent) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
+	eventToMarshal := e
+	eventToMarshal.MessageNamespace = messageNamespace
+	eventToMarshal.Subscope = subscope
+	if e.Error != "" {
+		eventToMarshal.Result = rcFailure
+	} else {
+		eventToMarshal.Result = rcSuccess
+	}
+
+	jsonData, err := json.Marshal(eventToMarshal)
+	if err != nil {
+		log.Printf("%s%s Failed to marshal RCEvent to JSON %s. Defaulting to empty\n", internal.WarningPrefix, logPrefix, err)
+		jsonData = []byte("{}")
+	}
+	return events.NewMooseDebuggerEvent(string(jsonData)).
+		WithKeyBasedContextPaths(
+			events.ContextValue{Path: baseKey + ".type", Value: string(e.Type)},
+			events.ContextValue{Path: baseKey + ".app_version", Value: e.AppVersion},
+			events.ContextValue{Path: baseKey + ".country", Value: e.Country},
+			events.ContextValue{Path: baseKey + ".isp", Value: e.ISP},
+			events.ContextValue{Path: baseKey + ".error", Value: e.Error},
+			events.ContextValue{Path: baseKey + ".feature_name", Value: e.FeatureName},
+			events.ContextValue{Path: baseKey + ".rollout_group", Value: e.RolloutGroup},
+		).
+		WithGlobalContextPaths("device.*", "application.nordvpnapp.*", "application.nordvpnapp.version", "application.nordvpnapp.platform")
 }
