@@ -124,7 +124,7 @@ func (api *CDNAPI) ConfigTemplate(isObfuscated bool, method string) (http.Header
 	if err != nil {
 		return nil, nil, err
 	}
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -139,7 +139,7 @@ func (api *CDNAPI) ThreatProtectionLite() (*NameServers, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (api *CDNAPI) GetRemoteFile(name string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

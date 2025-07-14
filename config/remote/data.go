@@ -12,7 +12,7 @@ const (
 
 type ParamValue struct {
 	Value      any    `json:"value"`
-	IncValue   string // include file content
+	incValue   string // include file content
 	AppVersion string `json:"app_version"`
 	Weight     int    `json:"weight"`
 	Rollout    int    `json:"rollout"`
@@ -42,7 +42,7 @@ func (pv ParamValue) AsBool() (bool, error) {
 func (pv ParamValue) AsStringArray() ([]string, error) {
 	v, ok := pv.Value.([]any)
 	if !ok {
-		return nil, fmt.Errorf("not an array")
+		return nil, fmt.Errorf("not an array, got: %T", pv.Value)
 	}
 	strSlice := make([]string, len(v))
 	for i, elem := range v {
@@ -63,26 +63,25 @@ type Param struct {
 
 // Feature is set of configs from one JSON file
 type Feature struct {
-	Version    int               `json:"version"` // JSON schema version
-	Configs    []Param           `json:"configs"`
-	Schema     string            `json:"schema"`
-	Name       string            // file name (main part)
-	Hash       string            // JSON file hash (from last download)
-	Params     map[string]*Param // parsed params
-	NeedUpdate bool
+	Version int               `json:"version"` // JSON schema version
+	Configs []Param           `json:"configs"`
+	Schema  string            `json:"schema"`
+	name    string            // file name (main part)
+	hash    string            // JSON file hash (from last download)
+	params  map[string]*Param // parsed params
 }
 
-func (f Feature) FileName(basePath string) string {
-	return filepath.Join(basePath, f.Name) + ".json"
+func (f Feature) FilePath(basePath string) string {
+	return filepath.Join(basePath, f.name) + ".json"
 }
-func (f Feature) HashFileName(basePath string) string {
-	return filepath.Join(basePath, f.Name) + "-hash.json"
+func (f Feature) HashFilePath(basePath string) string {
+	return filepath.Join(basePath, f.name) + "-hash.json"
 }
 
 type FeatureMap map[string]*Feature
 
 func (m *FeatureMap) Add(name string) {
 	(*m)[name] = &Feature{
-		Name: name,
+		name: name,
 	}
 }
