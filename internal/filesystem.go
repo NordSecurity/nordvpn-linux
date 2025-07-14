@@ -377,6 +377,28 @@ func FileTemp(name string, content []byte) (*os.File, error) {
 	return file, nil
 }
 
+// FileSize retrieve file size
+func FileSize(name string) (int64, error) {
+	fileInfo, err := os.Stat(name)
+	if err != nil {
+		return 0, err
+	}
+
+	return fileInfo.Size(), nil
+}
+
+// IsFileTooBig verify file size is not too big
+func IsFileTooBig(name string) error {
+	fileSize, err := FileSize(name)
+	if err != nil {
+		return err
+	}
+	if fileSize >= MaxBytesLimit {
+		return fmt.Errorf("file [%s] is too big, size [%d]", name, fileSize)
+	}
+	return nil
+}
+
 func FileSha256(filepath string) (sum []byte, err error) {
 	// #nosec G304 -- no input comes from the user
 	f, err := os.Open(filepath)

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -31,7 +32,7 @@ type ConfigLoader interface {
 	LoadConfig() error
 }
 
-var (
+const (
 	envUseLocalConfig = "USE_LOCAL_CONFIG"
 )
 
@@ -41,36 +42,36 @@ type CdnRemoteConfig struct {
 	localCachePath string
 	remotePath     string
 	cdn            RemoteStorage
-	Features       FeatureMap
+	features       FeatureMap
 	mu             sync.Mutex
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
-func NewCdnRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStorage) *CdnRemoteConfig {
+func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string, cdn RemoteStorage) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
-		appVersion:     ver,
-		appEnvironment: env,
+		appVersion:     buildTarget.Version,
+		appEnvironment: buildTarget.Environment,
 		remotePath:     remotePath,
 		localCachePath: localPath,
 		cdn:            cdn,
-		Features:       make(FeatureMap),
+		features:       make(FeatureMap),
 	}
-	rc.Features.Add(featureMain)
-	rc.Features.Add(featureLibtelio)
+	rc.features.Add(featureMain)
+	rc.features.Add(featureLibtelio)
 	return rc
 }
 
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
-	useOnlyLocalConfig := c.appEnvironment == "dev" && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
+	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
 		log.Println(internal.DebugPrefix, "Downloading remote config to:", c.localCachePath)
-		for _, f := range c.Features {
+		for _, f := range c.features {
 			if err := f.download(c.cdn, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath); err != nil {
-				log.Println(internal.ErrorPrefix, "failed downloading config for [", f.Name, "]:", err)
+				log.Println(internal.ErrorPrefix, "failed downloading config for [", f.name, "]:", err)
 				continue
 			}
-			log.Println(internal.DebugPrefix, "Feature [", f.Name, "] config downloaded.")
+			log.Println(internal.DebugPrefix, "Feature [", f.name, "] config downloaded.")
 		}
 	}
 
@@ -80,12 +81,12 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 
 	log.Println(internal.DebugPrefix, "Loading config from:", c.localCachePath)
 
-	for _, f := range c.Features {
+	for _, f := range c.features {
 		if err := f.load(c.localCachePath); err != nil {
-			log.Println(internal.ErrorPrefix, "failed loading config from disk for [", f.Name, "]:", err)
+			log.Println(internal.ErrorPrefix, "failed loading config from disk for [", f.name, "]:", err)
 			continue
 		}
-		log.Println(internal.DebugPrefix, "Feature [", f.Name, "] config loaded.")
+		log.Println(internal.DebugPrefix, "Feature [", f.name, "] config loaded.")
 	}
 
 	return nil
@@ -113,25 +114,8 @@ func findMatchingRecord(ss []ParamValue, ver string) *ParamValue {
 	return nil
 }
 
-// TODO/FIXME: add `rollout` support
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// have app version; find the right telio config;
-	// if multiple matching records found, sort by weight and use highest weight
-	f, found := c.Features[featureLibtelio]
-	if !found {
-		return "", fmt.Errorf("libtelio feature config not found")
-	}
-	p, found := f.Params[featureLibtelio]
-	if !found {
-		return "", fmt.Errorf("libtelio config not found")
-	}
-	if item := findMatchingRecord(p.Settings, c.appVersion); item != nil {
-		return item.IncValue, nil
-	}
-	return "", fmt.Errorf("telio config for current app version not found")
+	return c.GetFeatureParam(featureLibtelio, featureLibtelio)
 }
 
 // TODO/FIXME: add `rollout` support
@@ -140,11 +124,11 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	defer c.mu.Unlock()
 
 	// find by name, expect param name to be the same as feature name and expect boolean type
-	f, found := c.Features[featureName]
+	f, found := c.features[featureName]
 	if !found {
 		return false
 	}
-	p, found := f.Params[featureName]
+	p, found := f.params[featureName]
 	if !found {
 		return false
 	}
@@ -163,11 +147,11 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	f, found := c.Features[featureName]
+	f, found := c.features[featureName]
 	if !found {
 		return "", fmt.Errorf("feature [%s] not found", featureName)
 	}
-	p, found := f.Params[paramName]
+	p, found := f.params[paramName]
 	if !found {
 		return "", fmt.Errorf("feature [%s] param [%s] not found", featureName, paramName)
 	}
@@ -198,7 +182,7 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 			}
 			return strings.Join(val, ", "), nil
 		case "file":
-			return item.IncValue, nil
+			return item.incValue, nil
 		}
 	}
 	return "", fmt.Errorf("feature [%s] param [%s] value not found", featureName, paramName)

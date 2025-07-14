@@ -1,6 +1,7 @@
 package remote
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -54,7 +55,7 @@ func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (e
 		}
 	}()
 
-	if f.Name == "" {
+	if f.name == "" {
 		return fmt.Errorf("feature name is not set")
 	}
 
@@ -62,7 +63,7 @@ func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (e
 		return fmt.Errorf("setting-up target dir: %w", err)
 	}
 
-	mainJsonHashStr, err := cdn.GetRemoteFile(f.HashFileName(cdnBasePath))
+	mainJsonHashStr, err := cdn.GetRemoteFile(f.HashFilePath(cdnBasePath))
 	if err != nil {
 		return fmt.Errorf("downloading main hash file: %w", err)
 	}
@@ -72,90 +73,90 @@ func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (e
 		return fmt.Errorf("parsing main hash file: %w", err)
 	}
 
-	// main hash covers the include files as well
-	if f.Hash != mainJsonHash.Hash {
-		mainJsonStr, err := cdn.GetRemoteFile(f.FileName(cdnBasePath))
-		if err != nil {
-			return fmt.Errorf("downloading main file: %w", err)
-		}
-
-		// validate json against predefined schema
-		if err = NewJsonValidator().ValidateString(mainJsonStr); err != nil {
-			return fmt.Errorf("validating main: %w", err)
-		}
-
-		downloadIncludeFilesFunc := func(incFileName string) ([]byte, error) {
-			if !strings.Contains(incFileName, ".json") {
-				return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
-			}
-			// download include file
-			incJsonStr, err := cdn.GetRemoteFile(filepath.Join(cdnBasePath, incFileName))
-			if err != nil {
-				return nil, fmt.Errorf("downloading include file: %w", err)
-			}
-			// do basic json validation
-			var tmpJson any
-			if err = json.Unmarshal(incJsonStr, &tmpJson); err != nil {
-				return nil, fmt.Errorf("parsing include file: %w", err)
-			}
-			// verify include file content integrity
-			incHashFileName := strings.ReplaceAll(incFileName, ".json", "-hash.json")
-			incHashStr, err := cdn.GetRemoteFile(filepath.Join(cdnBasePath, incHashFileName))
-			if err != nil {
-				return nil, fmt.Errorf("downloading include file hash: %w", err)
-			}
-			var incJsonHash jsonHash
-			if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {
-				return nil, fmt.Errorf("parsing include file hash: %w", err)
-			}
-			if !isHashValid(incJsonHash.Hash, incJsonStr) {
-				return nil, fmt.Errorf("include file integrity problem, expected hash[%s] got hash[%s]", incJsonHash.Hash, hash(incJsonStr))
-			}
-			// write an include json to file
-			incFileTargetPath := filepath.Join(targetPath, incFileName) + tmpExt
-			if err = internal.FileWrite(incFileTargetPath, incJsonStr, internal.PermUserRW); err != nil {
-				return nil, fmt.Errorf("wrting include file: %w", err)
-			}
-			// write an include hash to file
-			incFileHashTargetPath := filepath.Join(targetPath, incHashFileName) + tmpExt
-			if err = internal.FileWrite(incFileHashTargetPath, incHashStr, internal.PermUserRW); err != nil {
-				return nil, fmt.Errorf("wrting include hash file: %w", err)
-			}
-			return incJsonStr, nil
-		} //func()
-
-		incFiles, err := f.walkIncludeFiles(mainJsonStr, downloadIncludeFilesFunc)
-		if err != nil {
-			return fmt.Errorf("downloading include files: %w", err)
-		}
-
-		// verify content integrity
-		// if main json has include failes - hash should cover whole content
-		if !isHashValid(mainJsonHash.Hash, mainJsonStr, incFiles) {
-			return fmt.Errorf("main file integrity problem")
-		}
-
-		// write main json to file
-		localFileName := filepath.Join(targetPath, f.FileName("")) + tmpExt
-		if err = internal.FileWrite(localFileName, mainJsonStr, internal.PermUserRW); err != nil {
-			return fmt.Errorf("writing main file: %w", err)
-		}
-		// write main hash to file
-		localFileName = filepath.Join(targetPath, f.HashFileName("")) + tmpExt
-		if err = internal.FileWrite(localFileName, mainJsonHashStr, internal.PermUserRW); err != nil {
-			return fmt.Errorf("writing main file: %w", err)
-		}
-
-		// while processing, save files with special extension '*.bu'
-		// if download or handling would fail in the middle - previous files are left intact,
-		// also need to cleanup tmp files (see above)
-		if err = renameFiles(targetPath, tmpExt); err != nil {
-			return fmt.Errorf("writing/renaming files: %w", err)
-		}
-
-		// after all is done, set new hash
-		f.Hash = mainJsonHash.Hash
+	if f.hash == mainJsonHash.Hash {
+		return nil
 	}
+
+	// main hash covers the include files as well
+	mainJsonStr, err := cdn.GetRemoteFile(f.FilePath(cdnBasePath))
+	if err != nil {
+		return fmt.Errorf("downloading main file: %w", err)
+	}
+
+	// validate json against predefined schema
+	if err = validateJsonString(mainJsonStr); err != nil {
+		return fmt.Errorf("validating main: %w", err)
+	}
+
+	downloadIncludeFilesFunc := func(incFileName string) ([]byte, error) {
+		if !strings.Contains(incFileName, ".json") {
+			return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
+		}
+		// download include file
+		incJsonStr, err := cdn.GetRemoteFile(filepath.Join(cdnBasePath, incFileName))
+		if err != nil {
+			return nil, fmt.Errorf("downloading include file: %w", err)
+		}
+		// do basic json validation
+		var tmpJson any
+		if err = json.Unmarshal(incJsonStr, &tmpJson); err != nil {
+			return nil, fmt.Errorf("parsing include file: %w", err)
+		}
+		// verify include file content integrity
+		incHashFileName := strings.ReplaceAll(incFileName, ".json", "-hash.json")
+		incHashStr, err := cdn.GetRemoteFile(filepath.Join(cdnBasePath, incHashFileName))
+		if err != nil {
+			return nil, fmt.Errorf("downloading include file hash: %w", err)
+		}
+		var incJsonHash jsonHash
+		if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {
+			return nil, fmt.Errorf("parsing include file hash: %w", err)
+		}
+		if !isHashEqual(incJsonHash.Hash, incJsonStr) {
+			return nil, fmt.Errorf("include file integrity problem, expected hash[%s] got hash[%s]", incJsonHash.Hash, hash(incJsonStr))
+		}
+		// write an include json to file
+		incFileTargetPath := filepath.Join(targetPath, incFileName) + tmpExt
+		if err = internal.FileWrite(incFileTargetPath, incJsonStr, internal.PermUserRW); err != nil {
+			return nil, fmt.Errorf("wrting include file: %w", err)
+		}
+		// write an include hash to file
+		incFileHashTargetPath := filepath.Join(targetPath, incHashFileName) + tmpExt
+		if err = internal.FileWrite(incFileHashTargetPath, incHashStr, internal.PermUserRW); err != nil {
+			return nil, fmt.Errorf("wrting include hash file: %w", err)
+		}
+		return incJsonStr, nil
+	} //func()
+
+	incFiles, err := walkIncludeFiles(mainJsonStr, downloadIncludeFilesFunc)
+	if err != nil {
+		return fmt.Errorf("downloading include files: %w", err)
+	}
+
+	// verify content integrity
+	// if main json has include failes - hash should cover whole content
+	if !isHashEqual(mainJsonHash.Hash, mainJsonStr, incFiles) {
+		return fmt.Errorf("main file integrity problem")
+	}
+
+	// write main json to file
+	localFileName := filepath.Join(targetPath, f.FilePath("")) + tmpExt
+	if err = internal.FileWrite(localFileName, mainJsonStr, internal.PermUserRW); err != nil {
+		return fmt.Errorf("writing main file: %w", err)
+	}
+	// write main hash to file
+	localFileName = filepath.Join(targetPath, f.HashFilePath("")) + tmpExt
+	if err = internal.FileWrite(localFileName, mainJsonHashStr, internal.PermUserRW); err != nil {
+		return fmt.Errorf("writing main file: %w", err)
+	}
+
+	// while processing, save files with special extension '*.bu'
+	// if download or handling would fail in the middle - previous files are left intact,
+	// also need to cleanup tmp files (see above)
+	if err = renameFiles(targetPath, tmpExt); err != nil {
+		return fmt.Errorf("writing/renaming files: %w", err)
+	}
+
 	return nil
 }
 
@@ -207,17 +208,13 @@ func isValidExistingDir(path string) (bool, error) {
 	return info.IsDir(), nil
 }
 
-func isHashValid(targetHash string, data ...[]byte) bool {
-	bytesForHash := []byte{}
-	for _, b := range data {
-		bytesForHash = append(bytesForHash, b...)
-	}
-	return targetHash == hash(bytesForHash)
+func isHashEqual(targetHash string, data ...[]byte) bool {
+	return targetHash == hash(bytes.Join(data, nil))
 }
 
 // load feature config from JSON file
 func (f *Feature) load(sourcePath string) error {
-	if f.Name == "" {
+	if f.name == "" {
 		return fmt.Errorf("feature name is not set")
 	}
 
@@ -229,7 +226,7 @@ func (f *Feature) load(sourcePath string) error {
 		return fmt.Errorf("config source path is not valid")
 	}
 
-	mainJsonHashStr, err := internal.FileRead(f.HashFileName(sourcePath))
+	mainJsonHashStr, err := internal.FileRead(f.HashFilePath(sourcePath))
 	if err != nil {
 		return fmt.Errorf("reading hash file: %w", err)
 	}
@@ -238,26 +235,26 @@ func (f *Feature) load(sourcePath string) error {
 		return fmt.Errorf("parsing main hash file: %w", err)
 	}
 
-	mainJsonFileName := f.FileName(sourcePath)
+	mainJsonFileName := f.FilePath(sourcePath)
+	if err := internal.IsFileTooBig(mainJsonFileName); err != nil {
+		return fmt.Errorf("reading main file: %w", err)
+	}
+
 	mainJsonStr, err := internal.FileRead(mainJsonFileName)
 	if err != nil {
 		return fmt.Errorf("reading config file: %w", err)
 	}
-
 	// validate json by predefined schema
-	if err := NewJsonValidator().ValidateString(mainJsonStr); err != nil {
+	if err := validateJsonString(mainJsonStr); err != nil {
 		return fmt.Errorf("validating json: %w", err)
-	}
-
-	// load json into structures
-	var temp Feature
-	if err := json.Unmarshal(mainJsonStr, &temp); err != nil {
-		return err
 	}
 
 	validateIncludeFilesFunc := func(incFileName string) ([]byte, error) {
 		if !strings.Contains(incFileName, ".json") {
 			return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
+		}
+		if err := internal.IsFileTooBig(filepath.Join(sourcePath, incFileName)); err != nil {
+			return nil, fmt.Errorf("reading include file: %w", err)
 		}
 		// read include file
 		incJsonStr, err := internal.FileRead(filepath.Join(sourcePath, incFileName))
@@ -279,50 +276,56 @@ func (f *Feature) load(sourcePath string) error {
 		if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {
 			return nil, fmt.Errorf("parsing include file hash: %w", err)
 		}
-		if !isHashValid(incJsonHash.Hash, incJsonStr) {
+		if !isHashEqual(incJsonHash.Hash, incJsonStr) {
 			return nil, fmt.Errorf("include file integrity problem")
 		}
 		return incJsonStr, nil
 	} //func()
 
-	incFiles, err := f.walkIncludeFiles(mainJsonStr, validateIncludeFilesFunc)
+	incFiles, err := walkIncludeFiles(mainJsonStr, validateIncludeFilesFunc)
 	if err != nil {
 		return fmt.Errorf("loading include files: %w", err)
 	}
 
 	// verify content integrity
-	// if main json has include failes - hash should cover whole content
-	if !isHashValid(mainJsonHash.Hash, mainJsonStr, incFiles) {
+	// if main json has include files - hash should cover whole content
+	if !isHashEqual(mainJsonHash.Hash, mainJsonStr, incFiles) {
 		return fmt.Errorf("main file integrity problem")
 	}
 
-	f.Params = make(map[string]*Param)
+	// load json into structures
+	var temp Feature
+	if err := json.Unmarshal(mainJsonStr, &temp); err != nil {
+		return err
+	}
+
+	f.params = make(map[string]*Param)
 	for _, cfgItem := range temp.Configs {
-		f.Params[cfgItem.Name] = &Param{Name: cfgItem.Name, Type: cfgItem.Type, Settings: []ParamValue{}}
-		for _, prm := range cfgItem.Settings {
+		f.params[cfgItem.Name] = &Param{Name: cfgItem.Name, Type: cfgItem.Type, Settings: []ParamValue{}}
+		for _, param := range cfgItem.Settings {
 			var incVal string
 			switch cfgItem.Type {
 			case "string":
-				if _, err := prm.AsString(); err != nil {
-					return fmt.Errorf("loading string value [%s]: %w", prm.Value, err)
+				if _, err := param.AsString(); err != nil {
+					return fmt.Errorf("loading string value [%s]: %w", param.Value, err)
 				}
 			case "integer", "int", "number":
-				if _, err := prm.AsInt(); err != nil {
-					return fmt.Errorf("loading int value [%s]: %w", prm.Value, err)
+				if _, err := param.AsInt(); err != nil {
+					return fmt.Errorf("loading int value [%s]: %w", param.Value, err)
 				}
 			case "boolean", "bool": //nolint
-				if _, err := prm.AsBool(); err != nil {
-					return fmt.Errorf("loading bool value [%s]: %w", prm.Value, err)
+				if _, err := param.AsBool(); err != nil {
+					return fmt.Errorf("loading bool value [%s]: %w", param.Value, err)
 				}
 			case "array":
-				if _, err := prm.AsStringArray(); err != nil {
-					return fmt.Errorf("loading string array value [%s]: %w", prm.Value, err)
+				if _, err := param.AsStringArray(); err != nil {
+					return fmt.Errorf("loading string array value [%s]: %w", param.Value, err)
 				}
 			case "object":
 				// load as string and validate json
-				val, err := prm.AsString()
+				val, err := param.AsString()
 				if err != nil {
-					return fmt.Errorf("loading json object as string value [%s]: %w", prm.Value, err)
+					return fmt.Errorf("loading json object as string value [%s]: %w", param.Value, err)
 				}
 				var temp any
 				if err := json.Unmarshal([]byte(val), &temp); err != nil {
@@ -330,13 +333,12 @@ func (f *Feature) load(sourcePath string) error {
 				}
 			case "file": //nolint
 				// primary field value is an include file name
-				val, err := prm.AsString()
+				val, err := param.AsString()
 				if err != nil {
-					return fmt.Errorf("loading include file name as string value [%s]: %w", prm.Value, err)
+					return fmt.Errorf("loading include file name as string value [%s]: %w", param.Value, err)
 				}
 				// include file expect to be located in the same directory as main json file
-				dir, _ := filepath.Split(mainJsonFileName)
-				jsnIncFile := dir + val
+				jsnIncFile := filepath.Join(sourcePath, val)
 				jsn, err := internal.FileRead(jsnIncFile)
 				if err != nil {
 					return fmt.Errorf("loading include file [%s]: %w", jsnIncFile, err)
@@ -349,28 +351,30 @@ func (f *Feature) load(sourcePath string) error {
 				// primary field value is still file name, store loaded file content in additional field
 				incVal = string(jsn)
 			}
-			f.Params[cfgItem.Name].Settings = append(f.Params[cfgItem.Name].Settings,
-				ParamValue{Value: prm.Value, IncValue: incVal, AppVersion: prm.AppVersion, Weight: prm.Weight})
+			f.params[cfgItem.Name].Settings = append(f.params[cfgItem.Name].Settings,
+				ParamValue{Value: param.Value, incValue: incVal, AppVersion: param.AppVersion, Weight: param.Weight})
+			// after all is done, set new hash //TODO/FIXME: test this!
+			f.hash = hash(bytes.Join([][]byte{mainJsonStr, incFiles}, nil))
 		}
 	}
 	return nil
 }
 
 // walkIncludeFiles
-func (f *Feature) walkIncludeFiles(mainJason []byte, fileActionFunc func(string) ([]byte, error)) ([]byte, error) {
+func walkIncludeFiles(mainJason []byte, fileActionFunc func(string) ([]byte, error)) ([]byte, error) {
 	var temp Feature
 	if err := json.Unmarshal(mainJason, &temp); err != nil {
 		return nil, err
 	}
 	incFilesJson := []byte{}
 	for _, cfgItem := range temp.Configs {
-		for _, prm := range cfgItem.Settings {
+		for _, param := range cfgItem.Settings {
 			switch cfgItem.Type {
 			case "file":
 				// primary field value is an include file name
-				incFileName, err := prm.AsString()
+				incFileName, err := param.AsString()
 				if err != nil {
-					return nil, fmt.Errorf("loading include file name as string value [%s]: %w", prm.Value, err)
+					return nil, fmt.Errorf("loading include file name as string value [%s]: %w", param.Value, err)
 				}
 				incFile, err := fileActionFunc(incFileName)
 				if err != nil {

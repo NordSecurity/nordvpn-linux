@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
+const (
 	httpPort  = "8005"
 	httpPath  = "/config"
 	httpHost  = "http://localhost"
@@ -36,11 +36,11 @@ func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStora
 		remotePath:     remotePath,
 		localCachePath: localPath,
 		cdn:            cdn,
-		Features:       make(FeatureMap),
+		features:       make(FeatureMap),
 	}
-	rc.Features.Add(featureMain)
-	rc.Features.Add("nordwhisper")
-	rc.Features.Add(featureLibtelio)
+	rc.features.Add(featureMain)
+	rc.features.Add("nordwhisper")
+	rc.features.Add(featureLibtelio)
 	return rc
 }
 

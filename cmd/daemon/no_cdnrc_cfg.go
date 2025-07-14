@@ -4,6 +4,8 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/NordSecurity/nordvpn-linux/config"
 )
 
 type RemoteConfigGetterStub struct{}
@@ -16,7 +18,7 @@ type RemoteStorage interface {
 	GetRemoteFile(string) ([]byte, error)
 }
 
-func getRemoteConfigGetter(_, _, _ string, _ RemoteStorage) RemoteConfigGetterStub {
+func getRemoteConfigGetter(_ config.BuildTarget, _ string, _ RemoteStorage) RemoteConfigGetterStub {
 	return RemoteConfigGetterStub{}
 }
 func (r RemoteConfigGetterStub) IsFeatureEnabled(string) bool                { return false }

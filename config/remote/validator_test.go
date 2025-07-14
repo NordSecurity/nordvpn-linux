@@ -26,7 +26,7 @@ func TestValidateSchemaJson(t *testing.T) {
 func TestJsonValidator(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	err := NewJsonValidator().ValidateString([]byte(nordwhisperJsonConfFile))
+	err := validateJsonString([]byte(nordwhisperJsonConfFile))
 	assert.NoError(t, err)
 }
 
