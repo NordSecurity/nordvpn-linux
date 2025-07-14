@@ -22,7 +22,7 @@ func TestRouter_Add(t *testing.T) {
 	bits := gateway.As4()
 	bits[3]++
 
-	defaultRoute := route(t, gateway, netip.AddrFrom4([4]byte{bits[0], bits[1], bits[2], 0}), 24)
+	defaultRoute := route(t, gateway, netip.AddrFrom4([4]byte{bits[0], bits[1], bits[2], 0}), 32)
 	defaultRoute.Device = iface
 
 	tests := []struct {
