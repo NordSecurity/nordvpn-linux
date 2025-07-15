@@ -528,18 +528,18 @@ func main() {
 		[]error{core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest},
 		func(uid int64) {
 			discArgs := access.DisconnectInput{
-				Networker:     netw,
-				ConfigManager: fsystem,
-				Events:        daemonEvents,
+				Networker:                  netw,
+				ConfigManager:              fsystem,
+				PublishDisconnectEventFunc: daemonEvents.Service.Disconnect.Publish,
 			}
 			result := access.ForceLogoutWithoutToken(access.ForceLogoutWithoutTokenInput{
-				AuthChecker:    authChecker,
-				Netw:           netw,
-				NcClient:       notificationClient,
-				ConfigManager:  fsystem,
-				Events:         daemonEvents,
-				Publisher:      debugSubject,
-				DisconnectFunc: func() (bool, error) { return access.Disconnect(discArgs) },
+				AuthChecker:            authChecker,
+				Netw:                   netw,
+				NcClient:               notificationClient,
+				ConfigManager:          fsystem,
+				PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
+				DebugPublisherFunc:     debugSubject.Publish,
+				DisconnectFunc:         func() (bool, error) { return access.Disconnect(discArgs) },
 			})
 
 			if result.Err != nil {
