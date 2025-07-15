@@ -55,6 +55,7 @@ type authConfigManager struct {
 	serviceExpiry string
 	loadErr       error
 	saveErr       error
+	resetErr      error
 }
 
 func (cm *authConfigManager) Load(c *config.Config) error {
@@ -71,11 +72,18 @@ func (cm *authConfigManager) SaveWith(config.SaveFunc) error {
 	return cm.saveErr
 }
 
+func (cm *authConfigManager) Reset(preserveLoginData bool, disableKillswitch bool) error {
+	return cm.resetErr
+}
+
 type authAPI struct {
 	core.CredentialsAPI
 	resp    core.ServicesResponse
 	mfaResp core.MultifactorAuthStatusResponse
 	err     error
+
+	respNC    core.NotificationCredentialsResponse
+	respCreds core.CredentialsResponse
 }
 
 func (api *authAPI) Services() (core.ServicesResponse, error) {
@@ -84,6 +92,14 @@ func (api *authAPI) Services() (core.ServicesResponse, error) {
 
 func (api *authAPI) MultifactorAuthStatus() (*core.MultifactorAuthStatusResponse, error) {
 	return &api.mfaResp, api.err
+}
+
+func (api *authAPI) NotificationCredentials(appUserID string) (core.NotificationCredentialsResponse, error) {
+	return api.respNC, api.err
+}
+
+func (api *authAPI) ServiceCredentials(token string) (*core.CredentialsResponse, error) {
+	return &api.respCreds, api.err
 }
 
 type mockExpirationChecker struct {
@@ -502,4 +518,92 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				"Invalid services returned by GetDedicatedIPServices.")
 		})
 	}
+}
+
+type mockTokenManager struct {
+	core.TokenManager
+	renewErr error
+}
+
+func (m *mockTokenManager) Renew() error {
+	return m.renewErr
+}
+
+func TestIsLoggedIn_Success(t *testing.T) {
+	mockLTM := &mockTokenManager{}
+	mockCM := &authConfigManager{}
+
+	checker := NewRenewingChecker(
+		mockCM,
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		mockLTM)
+
+	yes, err := checker.IsLoggedIn()
+	assert.True(t, yes, "must be logged in")
+	assert.NoError(t, err, "there should be no errors")
+}
+
+func TestIsLoggedIn_InvalidToken(t *testing.T) {
+	expectedRenewErr := errors.New("renew error")
+	mockLTM := &mockTokenManager{renewErr: expectedRenewErr}
+	mockCM := &authConfigManager{}
+
+	checker := NewRenewingChecker(
+		mockCM,
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		mockLTM)
+
+	yes, err := checker.IsLoggedIn()
+	assert.False(t, yes, "must not be logged in")
+	assert.Error(t, err, "there should be an error")
+	assert.Equal(t, expectedRenewErr, err)
+}
+
+func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
+	expectedLoadErr := errors.New("load error")
+	mockLTM := &mockTokenManager{}
+	mockCM := &authConfigManager{loadErr: expectedLoadErr}
+
+	checker := NewRenewingChecker(
+		mockCM,
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		mockLTM)
+
+	yes, err := checker.IsLoggedIn()
+	assert.False(t, yes, "must not be logged in")
+	assert.Error(t, err, "there should be an error")
+	assert.Equal(t, expectedLoadErr, err)
+}
+
+func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
+	expectedErr := errors.New("error")
+	mockLTM := &mockTokenManager{}
+	mockCM := &authConfigManager{serviceExpiry: "2000-01-01 09:18:53",
+		saveErr: expectedErr}
+
+	checker := NewRenewingChecker(
+		mockCM,
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		mockLTM)
+
+	yes, err := checker.IsLoggedIn()
+	assert.False(t, yes, "must not be logged in")
+	assert.Error(t, err, "there should be an error")
+	assert.Equal(t, expectedErr, err)
 }
