@@ -18,7 +18,7 @@ type DisconnectInput struct {
 }
 
 // Disconnect disconnects the user from the current VPN server. Returning boolean indicates
-// whether the user was connection or not before this call.
+// whether the user was connected or not before this call.
 func Disconnect(input DisconnectInput) (bool, error) {
 	startTime := time.Now()
 	if !input.Networker.IsVPNActive() {
@@ -28,18 +28,14 @@ func Disconnect(input DisconnectInput) (bool, error) {
 		return false, nil
 	}
 
-	var cfg config.Config
 	var err error
-	if err = input.Networker.Stop(); err != nil {
-		err = fmt.Errorf("stopping networker: %w", err)
-		return true, err
-	}
-	if err = input.ConfigManager.Load(&cfg); err != nil {
-		err = fmt.Errorf("loading config: %w", err)
-		return true, err
-	}
-
 	defer func() {
+		var cfg config.Config
+		if err := input.ConfigManager.Load(&cfg); err != nil {
+			log.Printf("%s loading config during disconnect: %v", internal.WarningPrefix, err)
+			return
+		}
+
 		status := events.StatusSuccess
 		if err != nil {
 			status = events.StatusFailure
@@ -53,6 +49,11 @@ func Disconnect(input DisconnectInput) (bool, error) {
 			Error:                err,
 		})
 	}()
+
+	if err = input.Networker.Stop(); err != nil {
+		err = fmt.Errorf("stopping networker: %w", err)
+		return true, err
+	}
 
 	return true, nil
 }
