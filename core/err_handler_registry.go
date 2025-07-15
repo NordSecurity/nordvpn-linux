@@ -2,6 +2,7 @@ package core
 
 import (
 	"reflect"
+	"slices"
 	"sync"
 )
 
@@ -46,9 +47,5 @@ func (e *ErrorHandlingRegistry[ErrHandler]) GetHandlers(err error) []ErrHandler 
 	e.m.Lock()
 	defer e.m.Unlock()
 
-	original := e.pool[err]
-	copied := make([]ErrHandler, len(original))
-	copy(copied, e.pool[err])
-
-	return copied
+	return slices.Clone(e.pool[err])
 }
