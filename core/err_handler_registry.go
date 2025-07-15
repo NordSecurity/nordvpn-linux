@@ -24,16 +24,14 @@ func NewErrorHandlingRegistry[T any]() *ErrorHandlingRegistry[T] {
 	}
 }
 
-// Add registers an ErrHandler for a specific error.
-func (e *ErrorHandlingRegistry[ErrHandler]) Add(err error, handler ErrHandler) {
-	e.m.Lock()
-	defer e.m.Unlock()
-
-	e.pool[err] = append(e.pool[err], handler)
-}
-
-// AddMulti registers an ErrHandler for a list of errors.
-func (e *ErrorHandlingRegistry[ErrHandler]) AddMulti(errs []error, handler ErrHandler) {
+// Add registers an ErrHandler for one or more specific errors.
+// The method associates the provided handler with each error in the errs slice,
+// allowing the handler to be invoked when these errors occur.
+//
+// Multiple handlers can be registered for the same error, and they will be
+// stored in the order they are added. The client is responsible for preventing
+// duplicate handler registrations as this method does not check for duplicates.
+func (e *ErrorHandlingRegistry[ErrHandler]) Add(handler ErrHandler, errs ...error) {
 	e.m.Lock()
 	defer e.m.Unlock()
 
