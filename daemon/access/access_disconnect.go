@@ -6,16 +6,15 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )
 
 type DisconnectInput struct {
-	Networker     networker.Networker
-	ConfigManager config.Manager
-	Events        *daemonevents.Events
+	Networker                  networker.Networker
+	ConfigManager              config.Manager
+	PublishDisconnectEventFunc func(events.DataDisconnect)
 }
 
 // Disconnect disconnects the user from the current VPN server. Returning boolean indicates
@@ -45,7 +44,7 @@ func Disconnect(input DisconnectInput) (bool, error) {
 		if err != nil {
 			status = events.StatusFailure
 		}
-		input.Events.Service.Disconnect.Publish(events.DataDisconnect{
+		input.PublishDisconnectEventFunc(events.DataDisconnect{
 			Protocol:             cfg.AutoConnectData.Protocol,
 			EventStatus:          status,
 			Technology:           cfg.Technology,
