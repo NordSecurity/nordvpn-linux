@@ -26,8 +26,53 @@ func TestValidateSchemaJson(t *testing.T) {
 func TestJsonValidator(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	err := validateJsonString([]byte(nordwhisperJsonConfFile))
-	assert.NoError(t, err)
+	tests := []struct {
+		name        string
+		json        string
+		expectError bool
+	}{
+		{
+			name:        "valid json",
+			json:        nordwhisperJsonConfFile,
+			expectError: false,
+		},
+		{
+			name:        "invalid json - invalid version",
+			json:        nordvpnInvalidVersionJsonConfFile,
+			expectError: true,
+		},
+		{
+			name:        "invalid json - missing version",
+			json:        nordvpnMissingVersionJsonConfFile,
+			expectError: true,
+		},
+		{
+			name:        "invalid json - invalid field value type 1",
+			json:        nordvpnInvalidFieldTypeJsonConfFile,
+			expectError: true,
+		},
+		{
+			name:        "invalid json - invalid field value type 2",
+			json:        nordvpnInvalidFieldType2JsonConfFile,
+			expectError: true,
+		},
+		{
+			name:        "invalid json - invalid fields",
+			json:        nordvpnInvalidFieldValuesJsonConfFile,
+			expectError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateJsonString([]byte(test.json))
+			if test.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
 }
 
 func TestExtractJsonVer(t *testing.T) {
