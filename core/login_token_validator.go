@@ -35,7 +35,7 @@ func (l *LoginTokenValidator) Validate(token string, expiryDate string) error {
 func (l LoginTokenValidator) validateCredibility(token string) error {
 	var isFormatValid = internal.AccessTokenFormatValidator
 	if !isFormatValid(token) {
-		return fmt.Errorf("invalid access token format:", ErrLoginTokenExpired)
+		return fmt.Errorf("invalid access token format: %w", ErrLoginTokenExpired)
 	}
 
 	// this is the least expensive api call that needs authentication
