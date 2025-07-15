@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func assertPanic(t *testing.T, fn func(), msg string) {
@@ -59,8 +59,8 @@ func Test_AddAndGetHandlers(t *testing.T) {
 		calls = append(calls, "handler2: "+e.Error())
 	}
 
-	registry.Add(errType, handler1)
-	registry.Add(errType, handler2)
+	registry.Add(handler1, errType)
+	registry.Add(handler2, errType)
 
 	handlers := registry.GetHandlers(errType)
 
@@ -86,7 +86,7 @@ func Test_AddAndGetHandlers(t *testing.T) {
 	}
 }
 
-func Test_AddMulti(t *testing.T) {
+func Test_Add_Multi(t *testing.T) {
 	type Handler func(error)
 
 	registry := core.NewErrorHandlingRegistry[Handler]()
@@ -99,7 +99,7 @@ func Test_AddMulti(t *testing.T) {
 		results = append(results, "handled: "+e.Error())
 	}
 
-	registry.AddMulti([]error{err1, err2}, handler)
+	registry.Add(handler, err1, err2)
 
 	for _, err := range []error{err1, err2} {
 		handlers := registry.GetHandlers(err)
@@ -139,7 +139,7 @@ func Test_GetHandlers_ReturnsCopy(t *testing.T) {
 		log = append(log, "original handler: "+e.Error())
 	}
 
-	registry.Add(err, originalHandler)
+	registry.Add(originalHandler, err)
 
 	handlers := registry.GetHandlers(err)
 	assert.Equal(t, len(handlers), 1)
