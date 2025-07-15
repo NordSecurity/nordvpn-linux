@@ -104,7 +104,7 @@ func (r *RenewingChecker) IsLoggedIn() (bool, error) {
 	defer r.mu.Unlock()
 
 	if err := r.loginTokenManager.Renew(); err != nil {
-		return false, err
+		return false, fmt.Errorf("renewing access token: %w", err)
 	}
 
 	var cfg config.Config
@@ -114,7 +114,7 @@ func (r *RenewingChecker) IsLoggedIn() (bool, error) {
 
 	for uid, data := range cfg.TokensData {
 		if err := r.renew(uid, data); err != nil {
-			return false, err
+			return false, fmt.Errorf("renewing credentials: %w", err)
 		}
 	}
 
