@@ -8,7 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nc"
@@ -18,15 +17,15 @@ import (
 // TODO: Refactor 'Logout' and 'ForceLogoutWithoutToken` functions to reuse core logic
 
 type LogoutInput struct {
-	AuthChecker        auth.Checker
-	CredentialsAPI     core.CredentialsAPI
-	Netw               networker.Networker
-	NcClient           nc.NotificationClient
-	ConfigManager      config.Manager
-	Events             *daemonevents.Events
-	DebugPublisherFunc func(string)
-	PersistToken       bool
-	DisconnectFunc     func() (bool, error)
+	AuthChecker                  auth.Checker
+	CredentialsAPI               core.CredentialsAPI
+	Netw                         networker.Networker
+	NcClient                     nc.NotificationClient
+	ConfigManager                config.Manager
+	UserLogoutEventPublisherFunc func(events.DataAuthorization)
+	DebugPublisherFunc           func(string)
+	PersistToken                 bool
+	DisconnectFunc               func() (bool, error)
 }
 
 type LogoutResult struct {
@@ -40,7 +39,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	}
 
 	logoutStartTime := time.Now()
-	input.Events.User.Logout.Publish(events.DataAuthorization{
+	input.UserLogoutEventPublisherFunc(events.DataAuthorization{
 		DurationMs:   -1,
 		EventTrigger: events.TriggerUser,
 		EventStatus:  events.StatusAttempt,
@@ -51,7 +50,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		if logoutResult.Err != nil && logoutResult.Status != internal.CodeSuccess {
 			status = events.StatusFailure
 		}
-		input.Events.User.Logout.Publish(events.DataAuthorization{
+		input.UserLogoutEventPublisherFunc(events.DataAuthorization{
 			DurationMs:   max(int(time.Since(logoutStartTime).Milliseconds()), 1),
 			EventTrigger: events.TriggerUser,
 			EventStatus:  status,
