@@ -331,8 +331,8 @@ func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
 	return services, nil
 }
 
-// saveLoginCreds persists only token related data,
-// it does not touch vpn specific data.
+// saveLoginCreds persists authentication-related data including NC credentials and trusted pass
+// information. It does not modify VPN-specific configuration.
 func saveLoginCreds(userID int64, data config.TokenData) config.SaveFunc {
 	return func(c config.Config) config.Config {
 		user := c.TokensData[userID]
