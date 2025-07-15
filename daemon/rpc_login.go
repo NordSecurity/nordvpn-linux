@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"regexp"
 	"strings"
 	"time"
 
@@ -21,8 +20,6 @@ var ErrMissingExchangeToken = errors.New("exchange token not provided")
 
 type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
 
-var isTokenValid = regexp.MustCompile(`^[a-f0-9]*$`).MatchString
-
 var lastLoginAttemptTime time.Time
 
 // Login the user with given token
@@ -33,7 +30,7 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 		}, nil
 	}
 
-	if !isTokenValid(in.GetToken()) {
+	if !internal.AccessTokenFormatValidator(in.GetToken()) {
 		return &pb.LoginResponse{
 			Type: internal.CodeTokenInvalid,
 		}, nil
