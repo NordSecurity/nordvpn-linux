@@ -124,6 +124,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 
 	currentUser, err := r.credentialsAPI.CurrentUser()
 	if err != nil {
+		log.Println(internal.ErrorPrefix, "retrieving user:", err)
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout)); err != nil {
