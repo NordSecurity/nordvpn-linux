@@ -26,11 +26,11 @@ var user2 core.CurrentUserResponse = core.CurrentUserResponse{
 	Email:    "user2@mail.com",
 }
 
-func userResponseToAccountResponse(freshFetchResponse core.CurrentUserResponse) *pb.AccountResponse {
+func userResponseToAccountResponse(userResponse core.CurrentUserResponse) *pb.AccountResponse {
 	return &pb.AccountResponse{
 		Type:              internal.CodeSuccess,
-		Username:          freshFetchResponse.Username,
-		Email:             freshFetchResponse.Email,
+		Username:          userResponse.Username,
+		Email:             userResponse.Email,
 		DedicatedIpStatus: internal.CodeNoService,
 		MfaStatus:         pb.TriState_DISABLED,
 	}
@@ -53,36 +53,44 @@ func TestAccountInfo(t *testing.T) {
 	}
 
 	tests := []struct {
-		name               string
-		freshFetchResponse core.CurrentUserResponse
-		cachedResponse     *pb.AccountResponse
-		expectedResponse   *pb.AccountResponse
-		cacheExpired       bool
-		full               bool
+		name              string
+		apiResponse       core.CurrentUserResponse
+		cachedResponse    *pb.AccountResponse
+		expectedResponse  *pb.AccountResponse
+		cacheExpired      bool
+		respectDataExpiry bool //former "Full" flag
 	}{
 		{
-			name:               "full request",
-			freshFetchResponse: user2,
-			cachedResponse:     userResponseToAccountResponse(user1),
-			expectedResponse:   userResponseToAccountResponse(user2),
-			cacheExpired:       false,
-			full:               true,
+			name:              "Request only valid cache data. Cache is valid.",
+			apiResponse:       user2,
+			cachedResponse:    userResponseToAccountResponse(user1),
+			expectedResponse:  userResponseToAccountResponse(user1),
+			cacheExpired:      false,
+			respectDataExpiry: true,
 		},
 		{
-			name:               "limited request",
-			freshFetchResponse: user2,
-			cachedResponse:     userResponseToAccountResponse(user1),
-			expectedResponse:   userResponseToAccountResponse(user1),
-			cacheExpired:       false,
-			full:               false,
+			name:              "Request only valid cache data. Cache is expired.",
+			apiResponse:       user2,
+			cachedResponse:    userResponseToAccountResponse(user1),
+			expectedResponse:  userResponseToAccountResponse(user2),
+			cacheExpired:      true,
+			respectDataExpiry: true,
 		},
 		{
-			name:               "limited request cache expired",
-			freshFetchResponse: user2,
-			cachedResponse:     userResponseToAccountResponse(user1),
-			expectedResponse:   userResponseToAccountResponse(user1),
-			cacheExpired:       true,
-			full:               false,
+			name:              "Request any validity cache data (a.k.a give me what you got). Cache is valid.",
+			apiResponse:       user2,
+			cachedResponse:    userResponseToAccountResponse(user1),
+			expectedResponse:  userResponseToAccountResponse(user1),
+			cacheExpired:      false,
+			respectDataExpiry: false,
+		},
+		{
+			name:              "Request any validity cache data (a.k.a give me what you got). Cache is expired.",
+			apiResponse:       user2,
+			cachedResponse:    userResponseToAccountResponse(user1),
+			expectedResponse:  userResponseToAccountResponse(user1),
+			cacheExpired:      true,
+			respectDataExpiry: false,
 		},
 	}
 
@@ -92,8 +100,8 @@ func TestAccountInfo(t *testing.T) {
 			if test.cacheExpired {
 				dataManager.accountData.unset()
 			}
-			credentialsAPIMock.CurrentUserResponse = test.freshFetchResponse
-			resp, err := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: test.full})
+			credentialsAPIMock.CurrentUserResponse = test.apiResponse
+			resp, err := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: test.respectDataExpiry})
 			assert.NoError(t, err)
 			assert.Equal(t, test.expectedResponse.String(), resp.String())
 		})
