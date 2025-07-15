@@ -18,15 +18,15 @@ import (
 // TODO: Refactor 'Logout' and 'ForceLogoutWithoutToken` functions to reuse core logic
 
 type LogoutInput struct {
-	AuthChecker    auth.Checker
-	CredentialsAPI core.CredentialsAPI
-	Netw           networker.Networker
-	NcClient       nc.NotificationClient
-	ConfigManager  config.Manager
-	Events         *daemonevents.Events
-	Publisher      events.Publisher[string]
-	PersistToken   bool
-	DisconnectFunc func() (bool, error)
+	AuthChecker        auth.Checker
+	CredentialsAPI     core.CredentialsAPI
+	Netw               networker.Networker
+	NcClient           nc.NotificationClient
+	ConfigManager      config.Manager
+	Events             *daemonevents.Events
+	DebugPublisherFunc func(string)
+	PersistToken       bool
+	DisconnectFunc     func() (bool, error)
 }
 
 type LogoutResult struct {
@@ -126,7 +126,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		return LogoutResult{Status: 0, Err: err}
 	}
 
-	input.Publisher.Publish("user logged out")
+	input.DebugPublisherFunc("user logged out")
 
 	if !input.PersistToken && tokenData.RenewToken == "" {
 		return LogoutResult{Status: internal.CodeTokenInvalidated, Err: nil}
@@ -136,25 +136,25 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 }
 
 type ForceLogoutWithoutTokenInput struct {
-	AuthChecker    auth.Checker
-	Netw           networker.Networker
-	NcClient       nc.NotificationClient
-	ConfigManager  config.Manager
-	Events         *daemonevents.Events
-	Publisher      events.Publisher[string]
-	DisconnectFunc func() (bool, error)
+	AuthChecker            auth.Checker
+	Netw                   networker.Networker
+	NcClient               nc.NotificationClient
+	ConfigManager          config.Manager
+	PublishLogoutEventFunc func(events.DataAuthorization)
+	DebugPublisherFunc     func(string)
+	DisconnectFunc         func() (bool, error)
 }
 
 // ForceLogoutWithoutToken performs user logout operation without using login toking
 func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult LogoutResult) {
 	logoutStartTime := time.Now()
-	input.Events.User.Logout.Publish(events.DataAuthorization{
+	input.PublishLogoutEventFunc(events.DataAuthorization{
 		DurationMs:   -1,
 		EventTrigger: events.TriggerApp,
 		EventStatus:  events.StatusAttempt,
 	})
 
-	defer func(start time.Time) {
+	defer func() {
 		status := events.StatusSuccess
 		if logoutResult.Err != nil &&
 			logoutResult.Status != 0 &&
@@ -163,12 +163,12 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 			status = events.StatusFailure
 		}
 
-		input.Events.User.Logout.Publish(events.DataAuthorization{
-			DurationMs:   max(int(time.Since(start).Milliseconds()), 1),
+		input.PublishLogoutEventFunc(events.DataAuthorization{
+			DurationMs:   max(int(time.Since(logoutStartTime).Milliseconds()), 1),
 			EventTrigger: events.TriggerApp,
 			EventStatus:  status,
 		})
-	}(logoutStartTime)
+	}()
 
 	var cfg config.Config
 	if err := input.ConfigManager.Load(&cfg); err != nil {
@@ -200,6 +200,6 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 		return LogoutResult{Status: 0, Err: err}
 	}
 
-	input.Publisher.Publish("user logged out")
+	input.DebugPublisherFunc("user logged out")
 	return LogoutResult{Status: internal.CodeSuccess, Err: nil}
 }
