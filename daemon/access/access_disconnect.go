@@ -31,7 +31,16 @@ func Disconnect(input DisconnectInput) (bool, error) {
 
 	var cfg config.Config
 	var err error
-	defer func(start time.Time) {
+	if err = input.Networker.Stop(); err != nil {
+		err = fmt.Errorf("stopping networker: %w", err)
+		return true, err
+	}
+	if err = input.ConfigManager.Load(&cfg); err != nil {
+		err = fmt.Errorf("loading config: %w", err)
+		return true, err
+	}
+
+	defer func() {
 		status := events.StatusSuccess
 		if err != nil {
 			status = events.StatusFailure
@@ -41,19 +50,10 @@ func Disconnect(input DisconnectInput) (bool, error) {
 			EventStatus:          status,
 			Technology:           cfg.Technology,
 			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-			Duration:             time.Since(start),
+			Duration:             time.Since(startTime),
 			Error:                err,
 		})
-	}(startTime)
-
-	if err = input.Networker.Stop(); err != nil {
-		err = fmt.Errorf("stopping networker: %w", err)
-		return true, err
-	}
-	if err = input.ConfigManager.Load(&cfg); err != nil {
-		err = fmt.Errorf("loading config: %w", err)
-		return true, err
-	}
+	}()
 
 	return true, nil
 }
