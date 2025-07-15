@@ -20,13 +20,15 @@ import (
 )
 
 const (
-	httpPort  = "8005"
-	httpPath  = "/config"
-	httpHost  = "http://localhost"
-	cdnUrl    = httpHost + ":" + httpPort
-	localPath = "./tmp/cfg"
-	ver       = "3.33.3"
-	env       = "dev"
+	httpPort     = "8005"
+	httpPath     = "/config"
+	httpHost     = "http://localhost"
+	cdnUrl       = httpHost + ":" + httpPort
+	localPath    = "./tmp/cfg"
+	ver          = "3.33.3"
+	env          = "dev"
+	testFeature1 = "feature1"
+	testFeature2 = "nordwhisper"
 )
 
 func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStorage) *CdnRemoteConfig {
@@ -38,9 +40,10 @@ func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStora
 		cdn:            cdn,
 		features:       make(FeatureMap),
 	}
-	rc.features.Add(featureMain)
-	rc.features.Add("nordwhisper")
-	rc.features.Add(featureLibtelio)
+	rc.features.Add(FeatureMain)
+	rc.features.Add(FeatureLibtelio)
+	rc.features.Add(testFeature1) // no rc
+	rc.features.Add(testFeature2)
 	return rc
 }
 
@@ -57,6 +60,22 @@ func TestGetTelioConfigFromMockCdn(t *testing.T) {
 	tc, err := rc.GetTelioConfig()
 	assert.True(t, len(tc) > 0)
 	assert.NoError(t, err)
+}
+
+func TestFeatureOnOff(t *testing.T) {
+	stop := setupMockCdnWebServer()
+	defer stop()
+
+	cdn, cancel := setupMockCdnClient(cdnUrl)
+	defer cancel()
+
+	rc := newTestRemoteConfig(ver, env, httpPath, localPath, cdn)
+	err := rc.LoadConfig()
+	assert.NoError(t, err)
+
+	assert.False(t, rc.IsFeatureEnabled(testFeature1))
+	assert.True(t, rc.IsFeatureEnabled(testFeature2))
+	//TODO/FIXME: more test cases with different app versions
 }
 
 func TestGetTelioConfigFromDisk(t *testing.T) {

@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	featureMain     = "nordvpn"
-	featureLibtelio = "libtelio"
+	FeatureMain     = "nordvpn"
+	FeatureLibtelio = "libtelio"
+	FeatureMeshnet  = "meshnet"
 )
 
 type ParamValue struct {

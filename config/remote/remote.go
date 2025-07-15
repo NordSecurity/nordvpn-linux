@@ -56,8 +56,9 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		cdn:            cdn,
 		features:       make(FeatureMap),
 	}
-	rc.features.Add(featureMain)
-	rc.features.Add(featureLibtelio)
+	rc.features.Add(FeatureMain)
+	rc.features.Add(FeatureLibtelio)
+	rc.features.Add(FeatureMeshnet)
 	return rc
 }
 
@@ -65,13 +66,16 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 func (c *CdnRemoteConfig) LoadConfig() error {
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
-		log.Println(internal.DebugPrefix, "Downloading remote config to:", c.localCachePath)
 		for _, f := range c.features {
-			if err := f.download(c.cdn, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath); err != nil {
-				log.Println(internal.ErrorPrefix, "failed downloading config for [", f.name, "]:", err)
+			dnld, err := f.download(c.cdn, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+			if err != nil {
+				log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
 				continue
 			}
-			log.Println(internal.DebugPrefix, "Feature [", f.name, "] config downloaded.")
+			if dnld {
+				// only if remote config was really downloaded
+				log.Println(internal.InfoPrefix, "Feature [", f.name, "] remote config downloaded to:", c.localCachePath)
+			}
 		}
 	}
 
@@ -79,14 +83,12 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	log.Println(internal.DebugPrefix, "Loading config from:", c.localCachePath)
-
 	for _, f := range c.features {
 		if err := f.load(c.localCachePath); err != nil {
-			log.Println(internal.ErrorPrefix, "failed loading config from disk for [", f.name, "]:", err)
+			log.Println(internal.ErrorPrefix, "failed loading feature [", f.name, "] config from the disk:", err)
 			continue
 		}
-		log.Println(internal.DebugPrefix, "Feature [", f.name, "] config loaded.")
+		log.Println(internal.InfoPrefix, "Feature [", f.name, "] config loaded from:", c.localCachePath)
 	}
 
 	return nil
@@ -115,7 +117,7 @@ func findMatchingRecord(ss []ParamValue, ver string) *ParamValue {
 }
 
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
-	return c.GetFeatureParam(featureLibtelio, featureLibtelio)
+	return c.GetFeatureParam(FeatureLibtelio, FeatureLibtelio)
 }
 
 // TODO/FIXME: add `rollout` support
