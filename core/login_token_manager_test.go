@@ -390,7 +390,7 @@ func TestLoginTokenManager_Invalidate(t *testing.T) {
 
 	const dummyErrHandlerAddCnt = 4
 	for i := 0; i < dummyErrHandlerAddCnt; i++ {
-		mockErrRegsitry.Add(errDummy, dummyErrHandler)
+		mockErrRegsitry.Add(dummyErrHandler, errDummy)
 	}
 
 	err = tokenman.Invalidate(errDummy)
@@ -414,12 +414,12 @@ func TestLoginTokenManager_Invalidate(t *testing.T) {
 	externalErrHandled := false
 	externalErrUserMatching := false
 	mockUid := int64(1)
-	mockErrRegsitry.Add(testErr, func(uid int64) {
+	mockErrRegsitry.Add(func(uid int64) {
 		if uid == mockUid {
 			externalErrUserMatching = true
 		}
 		externalErrHandled = true
-	})
+	}, testErr)
 
 	err = tokenman.Invalidate(testErr)
 	assert.Nil(t, err)
