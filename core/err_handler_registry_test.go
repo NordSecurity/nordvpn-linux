@@ -8,15 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func assertPanic(t *testing.T, fn func(), msg string) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic: %s, but no panic occurred", msg)
-		}
-	}()
-	fn()
-}
-
 func Test_NewErrorHandlingRegistry_PanicWhenNotFunc(t *testing.T) {
 	nonFuncTypes := []struct {
 		name string
@@ -39,7 +30,7 @@ func Test_NewErrorHandlingRegistry_PanicWhenNotFunc(t *testing.T) {
 
 	for _, tc := range nonFuncTypes {
 		t.Run(tc.name, func(t *testing.T) {
-			assertPanic(t, tc.test, "T is not a function")
+			assert.Panics(t, tc.test, "T is not a function")
 		})
 	}
 }
