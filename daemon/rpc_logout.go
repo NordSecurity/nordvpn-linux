@@ -9,15 +9,15 @@ import (
 
 func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, error) {
 	result := access.Logout(access.LogoutInput{
-		AuthChecker:        r.ac,
-		CredentialsAPI:     r.credentialsAPI,
-		Netw:               r.netw,
-		NcClient:           r.ncClient,
-		ConfigManager:      r.cm,
-		Events:             r.events,
-		DebugPublisherFunc: r.publisher.Publish,
-		PersistToken:       in.GetPersistToken(),
-		DisconnectFunc:     r.DoDisconnect,
+		AuthChecker:                  r.ac,
+		CredentialsAPI:               r.credentialsAPI,
+		Netw:                         r.netw,
+		NcClient:                     r.ncClient,
+		ConfigManager:                r.cm,
+		UserLogoutEventPublisherFunc: r.events.User.Logout.Publish,
+		DebugPublisherFunc:           r.publisher.Publish,
+		PersistToken:                 in.GetPersistToken(),
+		DisconnectFunc:               r.DoDisconnect,
 	})
 
 	if result.Status == 0 {
