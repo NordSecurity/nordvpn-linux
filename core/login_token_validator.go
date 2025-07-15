@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -34,7 +35,7 @@ func (l *LoginTokenValidator) Validate(token string, expiryDate string) error {
 func (l LoginTokenValidator) validateCredibility(token string) error {
 	var isFormatValid = internal.AccessTokenFormatValidator
 	if !isFormatValid(token) {
-		return ErrLoginTokenExpired
+		return fmt.Errorf("invalid access token format:", ErrLoginTokenExpired)
 	}
 
 	// this is the least expensive api call that needs authentication
