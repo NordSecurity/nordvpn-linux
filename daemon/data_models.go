@@ -207,12 +207,9 @@ func (a *AccountData) get(respectDataExpiry bool) (*pb.AccountResponse, bool) {
 	}
 
 	switch {
-	case errors.Is(err, caching.ErrStaleData) && data != nil:
+	case errors.Is(err, caching.ErrStaleData) || err == nil:
 		return proto.Clone(data).(*pb.AccountResponse), true
-	case err != nil:
-		// catch ErrNoCacheData and errors from the fetch callback
+	default:
 		return nil, false
-	default: // no error
-		return proto.Clone(data).(*pb.AccountResponse), true
 	}
 }
