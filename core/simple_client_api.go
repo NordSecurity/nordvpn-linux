@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
@@ -59,7 +58,6 @@ type SimpleClientAPI struct {
 	baseURL   string
 	client    *http.Client
 	validator response.Validator
-	mu        sync.Mutex
 }
 
 func NewSimpleAPI(
@@ -77,8 +75,6 @@ func NewSimpleAPI(
 }
 
 func (api *SimpleClientAPI) Base() string {
-	api.mu.Lock()
-	defer api.mu.Unlock()
 	return api.baseURL
 }
 
