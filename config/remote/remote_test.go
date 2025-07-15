@@ -20,16 +20,126 @@ import (
 )
 
 const (
-	httpPort     = "8005"
-	httpPath     = "/config"
-	httpHost     = "http://localhost"
-	cdnUrl       = httpHost + ":" + httpPort
-	localPath    = "./tmp/cfg"
-	ver          = "3.33.3"
-	env          = "dev"
-	testFeature1 = "feature1"
-	testFeature2 = "nordwhisper"
+	httpPort          = "8005"
+	httpPath          = "/config"
+	httpHost          = "http://localhost"
+	cdnUrl            = httpHost + ":" + httpPort
+	localPath         = "./tmp/cfg"
+	testFeatureNoRc   = "feature1"
+	testFeatureWithRc = "nordwhisper"
 )
+
+func TestFeatureOnOff(t *testing.T) {
+	stop := setupMockCdnWebServer()
+	defer stop()
+
+	cdn, cancel := setupMockCdnClient(cdnUrl)
+	defer cancel()
+
+	tests := []struct {
+		name    string
+		ver     string
+		env     string
+		feature string
+		on      bool
+	}{
+		{
+			name:    "feature1 no rc - off by default",
+			ver:     "",
+			env:     "dev",
+			feature: testFeatureNoRc,
+			on:      false,
+		},
+		{
+			name:    "feature2 1",
+			ver:     "1.1.1",
+			env:     "dev",
+			feature: testFeatureWithRc,
+			on:      false,
+		},
+		{
+			name:    "feature2 2",
+			ver:     "4.1.1",
+			env:     "dev",
+			feature: testFeatureWithRc,
+			on:      true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rc := newTestRemoteConfig(test.ver, test.env, httpPath, localPath, cdn)
+			err := rc.LoadConfig()
+			assert.NoError(t, err)
+			on := rc.IsFeatureEnabled(test.feature)
+			assert.Equal(t, test.on, on)
+		})
+	}
+}
+
+func TestGetTelioConfig(t *testing.T) {
+	stop := setupMockCdnWebServer()
+	defer stop()
+
+	cdn, cancel := setupMockCdnClient(cdnUrl)
+	defer cancel()
+
+	tests := []struct {
+		name        string
+		ver         string
+		env         string
+		fromDisk    bool
+		feature     string
+		expectError bool
+	}{
+		{
+			name:        "libtelio config from remote",
+			ver:         "3.20.1",
+			env:         "dev",
+			fromDisk:    false,
+			feature:     FeatureLibtelio,
+			expectError: false,
+		},
+		{
+			name:        "libtelio config from remote - not available for given version",
+			ver:         "3.1.1",
+			env:         "dev",
+			fromDisk:    false,
+			feature:     FeatureLibtelio,
+			expectError: true,
+		},
+		{
+			name:        "libtelio config from disk",
+			ver:         "3.20.1",
+			env:         "dev",
+			fromDisk:    true,
+			feature:     FeatureLibtelio,
+			expectError: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.fromDisk {
+				err := os.Setenv(envUseLocalConfig, "test")
+				assert.NoError(t, err)
+			} else {
+				err := os.Unsetenv(envUseLocalConfig)
+				assert.NoError(t, err)
+			}
+			rc := newTestRemoteConfig(test.ver, test.env, httpPath, localPath, cdn)
+			err := rc.LoadConfig()
+			assert.NoError(t, err)
+			telioCfg, err := rc.GetTelioConfig()
+			if test.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.True(t, len(telioCfg) > 0)
+			}
+		})
+	}
+}
 
 func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStorage) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
@@ -42,64 +152,9 @@ func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStora
 	}
 	rc.features.Add(FeatureMain)
 	rc.features.Add(FeatureLibtelio)
-	rc.features.Add(testFeature1) // no rc
-	rc.features.Add(testFeature2)
+	rc.features.Add(testFeatureNoRc)
+	rc.features.Add(testFeatureWithRc)
 	return rc
-}
-
-func TestGetTelioConfigFromMockCdn(t *testing.T) {
-	stop := setupMockCdnWebServer()
-	defer stop()
-
-	cdn, cancel := setupMockCdnClient(cdnUrl)
-	defer cancel()
-
-	rc := newTestRemoteConfig(ver, env, httpPath, localPath, cdn)
-	err := rc.LoadConfig()
-	assert.NoError(t, err)
-	tc, err := rc.GetTelioConfig()
-	assert.True(t, len(tc) > 0)
-	assert.NoError(t, err)
-}
-
-func TestFeatureOnOff(t *testing.T) {
-	stop := setupMockCdnWebServer()
-	defer stop()
-
-	cdn, cancel := setupMockCdnClient(cdnUrl)
-	defer cancel()
-
-	rc := newTestRemoteConfig(ver, env, httpPath, localPath, cdn)
-	err := rc.LoadConfig()
-	assert.NoError(t, err)
-
-	assert.False(t, rc.IsFeatureEnabled(testFeature1))
-	assert.True(t, rc.IsFeatureEnabled(testFeature2))
-	//TODO/FIXME: more test cases with different app versions
-}
-
-func TestGetTelioConfigFromDisk(t *testing.T) {
-	stop := setupMockCdnWebServer()
-	defer stop()
-
-	cdn, cancel := setupMockCdnClient(cdnUrl)
-	defer cancel()
-
-	// 1st load from remote
-	rc := newTestRemoteConfig(ver, env, httpPath, localPath, cdn)
-	err := rc.LoadConfig()
-	assert.NoError(t, err)
-
-	err = os.Setenv(envUseLocalConfig, "test")
-	assert.NoError(t, err)
-
-	// 2nd load from disk
-	rc = newTestRemoteConfig(ver, env, httpPath, localPath, cdn)
-	err = rc.LoadConfig()
-	assert.NoError(t, err)
-	tc, err := rc.GetTelioConfig()
-	assert.True(t, len(tc) > 0)
-	assert.NoError(t, err)
 }
 
 func setupMockCdnClient(cdnUrl string) (*core.CDNAPI, context.CancelFunc) {
@@ -306,5 +361,95 @@ var libtelioJsonConfInc2File = `
     "nurse": {
         "heartbeat_interval": 3600
     }
+}
+`
+var nordvpnInvalidVersionJsonConfFile = `
+{
+  "version": 99,
+  "configs": [
+    {
+      "name": 500,
+      "value_type": "string",
+      "settings": [
+        {
+          "value": 100,
+          "app_version": "*",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}
+`
+var nordvpnInvalidFieldTypeJsonConfFile = `
+{
+  "version": 1,
+  "configs": [
+    {
+      "name": 500,
+      "value_type": "string",
+      "settings": [
+        {
+          "value": 100,
+          "app_version": "*",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}
+`
+var nordvpnInvalidFieldType2JsonConfFile = `
+{
+  "version": 1,
+  "configs": [
+    {
+      "name": "500",
+      "value_type": "new-type-nogo",
+      "settings": [
+        {
+          "value": "100",
+          "app_version": "*",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}
+`
+var nordvpnMissingVersionJsonConfFile = `
+{
+  "versions": 1,
+  "configs": [
+    {
+      "name": "500",
+      "value_type": "new-type-nogo",
+      "settings": [
+        {
+          "value": "100",
+          "app_version": "*",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}
+`
+var nordvpnInvalidFieldValuesJsonConfFile = `
+{
+  "version": 1,
+  "configs": [
+    {
+      "name": "not-valid",
+      "value_type": "string",
+      "settings": [
+        {
+          "value": "100",
+          "app_version": 111,
+          "weight": "aaa"
+        }
+      ]
+    }
+  ]
 }
 `
