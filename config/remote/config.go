@@ -39,15 +39,18 @@ func isVersionMatching(appVer, verConstraint string) (bool, error) {
 	return constraint.Check(v), nil
 }
 
-// download main json file and check if include files should be downloaded
-func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (err error) {
+const (
+	tmpExt = ".bu"
+)
+
+// download main json file and check if include files should be downloaded,
+// return `true` if remote config was really downloaded.
+func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (success bool, err error) {
 	// config file consists of:
 	// - main json file e.g. nordvpn.json;
 	// - sibling file with hash e.g. nordvpn-hash.json;
 	// - 0..n include files e.g. libtelio-3.19.0.json;
 	// - include file hash file e.g. libtelio-3.19.0-hash.json;
-
-	tmpExt := ".bu"
 
 	defer func() {
 		if err != nil {
@@ -56,36 +59,36 @@ func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (e
 	}()
 
 	if f.name == "" {
-		return fmt.Errorf("feature name is not set")
+		return false, fmt.Errorf("feature name is not set")
 	}
 
 	if err = internal.EnsureDirFull(targetPath); err != nil {
-		return fmt.Errorf("setting-up target dir: %w", err)
+		return false, fmt.Errorf("setting-up target dir: %w", err)
 	}
 
 	mainJsonHashStr, err := cdn.GetRemoteFile(f.HashFilePath(cdnBasePath))
 	if err != nil {
-		return fmt.Errorf("downloading main hash file: %w", err)
+		return false, fmt.Errorf("downloading main hash file: %w", err)
 	}
 
 	var mainJsonHash jsonHash
 	if err = json.Unmarshal(mainJsonHashStr, &mainJsonHash); err != nil {
-		return fmt.Errorf("parsing main hash file: %w", err)
+		return false, fmt.Errorf("parsing main hash file: %w", err)
 	}
 
 	if f.hash == mainJsonHash.Hash {
-		return nil
+		return false, nil
 	}
 
 	// main hash covers the include files as well
 	mainJsonStr, err := cdn.GetRemoteFile(f.FilePath(cdnBasePath))
 	if err != nil {
-		return fmt.Errorf("downloading main file: %w", err)
+		return false, fmt.Errorf("downloading main file: %w", err)
 	}
 
 	// validate json against predefined schema
 	if err = validateJsonString(mainJsonStr); err != nil {
-		return fmt.Errorf("validating main: %w", err)
+		return false, fmt.Errorf("validating main: %w", err)
 	}
 
 	downloadIncludeFilesFunc := func(incFileName string) ([]byte, error) {
@@ -130,34 +133,34 @@ func (f *Feature) download(cdn RemoteStorage, cdnBasePath, targetPath string) (e
 
 	incFiles, err := walkIncludeFiles(mainJsonStr, downloadIncludeFilesFunc)
 	if err != nil {
-		return fmt.Errorf("downloading include files: %w", err)
+		return false, fmt.Errorf("downloading include files: %w", err)
 	}
 
 	// verify content integrity
 	// if main json has include failes - hash should cover whole content
 	if !isHashEqual(mainJsonHash.Hash, mainJsonStr, incFiles) {
-		return fmt.Errorf("main file integrity problem")
+		return false, fmt.Errorf("main file integrity problem")
 	}
 
 	// write main json to file
 	localFileName := filepath.Join(targetPath, f.FilePath("")) + tmpExt
 	if err = internal.FileWrite(localFileName, mainJsonStr, internal.PermUserRW); err != nil {
-		return fmt.Errorf("writing main file: %w", err)
+		return false, fmt.Errorf("writing main file: %w", err)
 	}
 	// write main hash to file
 	localFileName = filepath.Join(targetPath, f.HashFilePath("")) + tmpExt
 	if err = internal.FileWrite(localFileName, mainJsonHashStr, internal.PermUserRW); err != nil {
-		return fmt.Errorf("writing main file: %w", err)
+		return false, fmt.Errorf("writing main file: %w", err)
 	}
 
 	// while processing, save files with special extension '*.bu'
 	// if download or handling would fail in the middle - previous files are left intact,
 	// also need to cleanup tmp files (see above)
 	if err = renameFiles(targetPath, tmpExt); err != nil {
-		return fmt.Errorf("writing/renaming files: %w", err)
+		return false, fmt.Errorf("writing/renaming files: %w", err)
 	}
 
-	return nil
+	return true, nil
 }
 
 func walkFiles(targetPath, fileExt string, actionFunc func(string)) error {
