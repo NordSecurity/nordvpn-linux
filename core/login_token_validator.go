@@ -2,7 +2,8 @@ package core
 
 import (
 	"errors"
-	"regexp"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 var (
@@ -31,7 +32,7 @@ func (l *LoginTokenValidator) Validate(token string, expiryDate string) error {
 }
 
 func (l LoginTokenValidator) validateCredibility(token string) error {
-	var isFormatValid = regexp.MustCompile(`^[a-f0-9]*$`).MatchString
+	var isFormatValid = internal.AccessTokenFormatValidator
 	if !isFormatValid(token) {
 		return ErrLoginTokenExpired
 	}
