@@ -170,12 +170,6 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 		})
 	}()
 
-	var cfg config.Config
-	if err := input.ConfigManager.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
-		return LogoutResult{Status: internal.CodeFailure, Err: nil}
-	}
-
 	if _, err := input.DisconnectFunc(); err != nil {
 		log.Println(internal.ErrorPrefix, "disconnect failed:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
@@ -190,16 +184,20 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 		log.Println(internal.WarningPrefix, err)
 	}
 
-	if err := input.ConfigManager.SaveWith(func(c config.Config) config.Config {
-		delete(c.TokensData, cfg.AutoConnectData.ID)
-		c.AutoConnectData.ID = 0
-		c.Mesh = false
-		c.MeshPrivateKey = ""
-		return c
-	}); err != nil {
+	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {
 		return LogoutResult{Status: 0, Err: err}
 	}
 
 	input.DebugPublisherFunc("user logged out")
 	return LogoutResult{Status: internal.CodeSuccess, Err: nil}
+}
+
+func clearConfigData() config.SaveFunc {
+	return func(c config.Config) config.Config {
+		delete(c.TokensData, c.AutoConnectData.ID)
+		c.AutoConnectData.ID = 0
+		c.Mesh = false
+		c.MeshPrivateKey = ""
+		return c
+	}
 }
