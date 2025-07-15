@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	mock "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -124,10 +125,6 @@ func (p *mockErrPublisher) Publish(e error) {
 	p.err = e
 }
 
-type mockTokenManager struct {
-	core.TokenManager
-}
-
 func TestIsMFAEnabled(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -187,7 +184,7 @@ func TestIsMFAEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), mockTokenManager{})
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), mock.MockTokenManager{})
 			enabled, err := rc.isMFAEnabled()
 			assert.Equal(t, test.isEnabled, enabled)
 
@@ -271,7 +268,7 @@ func TestIsVPNExpired(t *testing.T) {
 				&mockAuthPublisher{},
 				&mockErrPublisher{},
 				&daemonevents.AccountUpdateEvents{SubscriptionUpdate: test.accPub},
-				mockTokenManager{},
+				mock.MockTokenManager{},
 			)
 
 			expired, err := rc.IsVPNExpired()
@@ -299,7 +296,7 @@ func TestIsVPNExpired(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{SubscriptionUpdate: accPub},
-		mockTokenManager{},
+		mock.MockTokenManager{},
 	)
 
 	_, err := rc.IsVPNExpired()
