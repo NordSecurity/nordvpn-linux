@@ -389,20 +389,13 @@ func (dm *DataManager) CountryCodeToCountryName(code string) string {
 }
 
 func (dm *DataManager) SetAccountData(accountData *pb.AccountResponse) {
-	dm.mu.Lock()
-	defer dm.mu.Unlock()
-
 	dm.accountData.set(accountData)
 }
 
 func (dm *DataManager) GetAccountData(requestFreshFetch bool) (*pb.AccountResponse, bool) {
-	dm.mu.Lock()
-	defer dm.mu.Unlock()
 	return dm.accountData.get(requestFreshFetch)
 }
 
 func (dm *DataManager) InvalidateAccountData() {
-	dm.mu.Lock()
-	defer dm.mu.Unlock()
 	dm.accountData.unset()
 }
