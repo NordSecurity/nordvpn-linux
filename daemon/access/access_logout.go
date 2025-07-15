@@ -46,17 +46,17 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		EventStatus:  events.StatusAttempt,
 	})
 
-	defer func(start time.Time) {
+	defer func() {
 		status := events.StatusSuccess
-		if logoutResult.Err != nil && logoutResult.Status != 0 && logoutResult.Status != internal.CodeSuccess && logoutResult.Status != internal.CodeTokenInvalid {
+		if logoutResult.Err != nil && logoutResult.Status != internal.CodeSuccess {
 			status = events.StatusFailure
 		}
 		input.Events.User.Logout.Publish(events.DataAuthorization{
-			DurationMs:   max(int(time.Since(start).Milliseconds()), 1),
+			DurationMs:   max(int(time.Since(logoutStartTime).Milliseconds()), 1),
 			EventTrigger: events.TriggerUser,
 			EventStatus:  status,
 		})
-	}(logoutStartTime)
+	}()
 
 	var cfg config.Config
 	if err := input.ConfigManager.Load(&cfg); err != nil {
@@ -116,14 +116,8 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		}
 	}
 
-	if err := input.ConfigManager.SaveWith(func(c config.Config) config.Config {
-		delete(c.TokensData, cfg.AutoConnectData.ID)
-		c.AutoConnectData.ID = 0
-		c.Mesh = false
-		c.MeshPrivateKey = ""
-		return c
-	}); err != nil {
-		return LogoutResult{Status: 0, Err: err}
+	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {
+		return LogoutResult{Status: internal.CodeConfigError, Err: err}
 	}
 
 	input.DebugPublisherFunc("user logged out")
@@ -185,7 +179,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 	}
 
 	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {
-		return LogoutResult{Status: 0, Err: err}
+		return LogoutResult{Status: internal.CodeConfigError, Err: err}
 	}
 
 	input.DebugPublisherFunc("user logged out")
