@@ -86,7 +86,7 @@ func TestPlans_Error(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestDefaultAPI_CurrentUser(t *testing.T) {
+func TestSimpleAPI_CurrentUser(t *testing.T) {
 	category.Set(t, category.Integration)
 	tests := []testCase{
 		testNewCase(t, http.StatusOK, CurrentUserURL, "core_current_user", nil),
@@ -110,7 +110,7 @@ func TestDefaultAPI_CurrentUser(t *testing.T) {
 	}
 }
 
-func TestDefaultAPI_TokenRenew(t *testing.T) {
+func TestSimpleAPI_TokenRenew(t *testing.T) {
 	category.Set(t, category.Integration)
 
 	idempotencyKey := uuid.New()
@@ -153,7 +153,7 @@ func TestDefaultAPI_TokenRenew(t *testing.T) {
 	}
 }
 
-func TestDefaultAPI_Servers(t *testing.T) {
+func TestSimpleAPI_Servers(t *testing.T) {
 	category.Set(t, category.Integration)
 
 	tests := []testCase{
@@ -178,7 +178,7 @@ func TestDefaultAPI_Servers(t *testing.T) {
 	}
 }
 
-func TestDefaultAPI_Services(t *testing.T) {
+func TestSimpleAPI_Services(t *testing.T) {
 	category.Set(t, category.Integration)
 
 	tests := []testCase{
@@ -203,7 +203,7 @@ func TestDefaultAPI_Services(t *testing.T) {
 	}
 }
 
-func TestDefaultAPI_ServiceCredentials(t *testing.T) {
+func TestSimpleAPI_ServiceCredentials(t *testing.T) {
 	category.Set(t, category.Integration)
 
 	tests := []testCase{
