@@ -25,8 +25,8 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 // DoDisconnect is the non-gRPC function for Disconect to be used directly.
 func (r *RPC) DoDisconnect() (bool, error) {
 	return access.Disconnect(access.DisconnectInput{
-		Networker:     r.netw,
-		ConfigManager: r.cm,
-		Events:        r.events,
+		Networker:                  r.netw,
+		ConfigManager:              r.cm,
+		PublishDisconnectEventFunc: r.events.Service.Disconnect.Publish,
 	})
 }
