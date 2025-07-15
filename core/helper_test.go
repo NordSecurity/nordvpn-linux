@@ -138,8 +138,8 @@ func CheckServer(listener net.Listener, attempts int) {
 	defer resp.Body.Close()
 }
 
-// testNewDefaultAPI returns a pointer to initialized and
-// ready for use in tests DefaultAPI
+// testNewSimpleAPI returns a pointer to initialized and
+// ready for use in tests SimpleAPI
 func testNewSimpleAPI(port int) RawClientAPI {
 	return NewSimpleAPI(
 		"",
