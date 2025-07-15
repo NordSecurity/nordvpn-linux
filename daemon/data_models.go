@@ -181,22 +181,38 @@ func (a *AccountData) unset() {
 }
 
 // return true if cached data was used, otherwise false
-func (a *AccountData) get(requestFreshFetch bool) (*pb.AccountResponse, bool) {
-	if requestFreshFetch {
-		data, err := a.cache.Fetch()
-		if err != nil || data == nil {
+// true -> get if cache is valid if not fetch
+// false -> get whatever is in the cache despite validity
+
+// get retrieves account data from cache.
+// Parameters:
+//   - respectDataExpiry: Controls cache retrieval
+//     - If true: Tries to return valid cached data, or error if it is invalid
+//     - If false: Returns whatever is in the cache regardless of validity, including stale data
+//
+// Returns:
+//   - *pb.AccountResponse: The account data
+//   - bool: Whether cached data was used (true) or not (false)
+//     - true indicates data came from cache (valid or stale)
+//     - false indicates no cache data was available or an error occurred
+
+func (a *AccountData) get(respectDataExpiry bool) (*pb.AccountResponse, bool) {
+	data, err := a.cache.Get()
+	if respectDataExpiry {
+		if err != nil {
 			return nil, false
 		}
 
 		return proto.Clone(data).(*pb.AccountResponse), true
 	}
 
-	data, err := a.cache.Get()
 	switch {
 	case errors.Is(err, caching.ErrStaleData) && data != nil:
 		return proto.Clone(data).(*pb.AccountResponse), true
 	case err != nil:
+		// catch ErrNoCacheData and errors from the fetch callback
 		return nil, false
+	default: // no error
+		return proto.Clone(data).(*pb.AccountResponse), true
 	}
-	return proto.Clone(data).(*pb.AccountResponse), true
 }
