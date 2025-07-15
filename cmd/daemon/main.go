@@ -524,8 +524,7 @@ func main() {
 
 	// on token invalidation (unauthorized access, missing server resources, invalid request)
 	// perform user log-out action
-	loginTokenErrHandlingReg.AddMulti(
-		[]error{core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest},
+	loginTokenErrHandlingReg.Add(
 		func(uid int64) {
 			discArgs := access.DisconnectInput{
 				Networker:                  netw,
@@ -550,6 +549,7 @@ func main() {
 				log.Println(internal.DebugPrefix, "successfully logged out after detecting invalid credentials")
 			}
 		},
+		core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest,
 	)
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
