@@ -44,7 +44,10 @@ func TestLogout_Token(t *testing.T) {
 		ncClient:       mockNC{},
 		publisher:      &subs.Subject[string]{},
 		credentialsAPI: &testcore.CredentialsAPIMock{},
-		events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}}},
+		events: &daemonevents.Events{
+			User:    &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}},
+			Service: &daemonevents.ServiceEvents{Disconnect: &daemonevents.MockPublisherSubscriber[events.DataDisconnect]{}},
+		},
 	}
 
 	tests := []struct {
