@@ -62,12 +62,27 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 	return rc
 }
 
+type jsonFileReaderWriter struct{}
+
+func (w jsonFileReaderWriter) writeFile(name string, content []byte, mode os.FileMode) error {
+	return internal.FileWrite(name, content, mode)
+}
+func (w jsonFileReaderWriter) readFile(name string) ([]byte, error) {
+	return internal.FileRead(name)
+}
+
+type jsonValidator struct{}
+
+func (v jsonValidator) validate(content []byte) error {
+	return validateJsonString(content)
+}
+
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
 		for _, f := range c.features {
-			dnld, err := f.download(c.cdn, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+			dnld, err := f.download(c.cdn, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
 				continue
@@ -84,7 +99,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	defer c.mu.Unlock()
 
 	for _, f := range c.features {
-		if err := f.load(c.localCachePath); err != nil {
+		if err := f.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
 			log.Println(internal.ErrorPrefix, "failed loading feature [", f.name, "] config from the disk:", err)
 			continue
 		}

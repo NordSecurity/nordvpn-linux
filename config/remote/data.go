@@ -11,6 +11,16 @@ const (
 	FeatureMeshnet  = "meshnet"
 )
 
+const (
+	fieldTypeString = "string"
+	fieldTypeInt    = "integer"
+	fieldTypeNumber = "number"
+	fieldTypeBool   = "boolean"
+	fieldTypeArray  = "array"
+	fieldTypeObject = "object"
+	fieldTypeFile   = "file"
+)
+
 type ParamValue struct {
 	Value      any    `json:"value"`
 	incValue   string // include file content
