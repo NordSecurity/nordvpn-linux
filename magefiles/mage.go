@@ -20,15 +20,15 @@ import (
 
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
-	imageBuilder           = registryPrefix + "builder:1.3.4"
-	imagePackager          = registryPrefix + "packager:1.3.1"
-	imageDepender          = registryPrefix + "depender:1.3.1"
-	imageSnapPackager      = registryPrefix + "snaper:1.0.0"
-	imageProtobufGenerator = registryPrefix + "generator:1.4.1"
+	imageBuilder           = registryPrefix + "builder:1.4.0"
+	imagePackager          = registryPrefix + "packager:1.3.2"
+	imageDepender          = registryPrefix + "depender:1.3.2"
+	imageSnapPackager      = registryPrefix + "snaper:1.1.0"
+	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.3.1"
+	imageRuster            = registryPrefix + "ruster:1.4.0"
 
 	dockerWorkDir  = "/opt"
 	devPackageType = "source"
@@ -238,16 +238,18 @@ func (Build) NoticesDocker(ctx context.Context) error {
 		return nil
 	}
 
-	cwd, err := os.Getwd()
+	env, err := getEnv()
 	if err != nil {
 		return err
 	}
-	env := map[string]string{"WORKDIR": cwd}
+	env["WORKDIR"] = dockerWorkDir
+	env["GOCACHE"] = "/tmp/go-cache"
+
 	return RunDocker(
 		ctx,
 		env,
 		imageDepender,
-		[]string{"ci/licenses"},
+		[]string{"ci/licenses.sh"},
 	)
 }
 
@@ -315,22 +317,18 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
 	env["VERSION"] = git.versionTag
+
+	cmd := []string{"ci/nfpm/build_packages_resources.sh", packageType}
+	image := imagePackager
 	if packageType == "snap" {
-		return RunDockerWithSettings(
-			ctx,
-			env,
-			imageSnapPackager,
-			[]string{"ci/build_snap.sh"},
-			// snapcraft needs to be run as privileged, because it's
-			// installing packages and has access to apt sources
-			DockerSettings{Privileged: true},
-		)
+		image = imageSnapPackager
+		cmd = []string{"ci/build_snap.sh"}
 	}
 	return RunDocker(
 		ctx,
 		env,
-		imagePackager,
-		[]string{"ci/nfpm/build_packages_resources.sh", packageType},
+		image,
+		cmd,
 	)
 }
 
