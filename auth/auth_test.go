@@ -564,7 +564,7 @@ func TestIsLoggedIn_InvalidToken(t *testing.T) {
 	yes, err := checker.IsLoggedIn()
 	assert.False(t, yes, "must not be logged in")
 	assert.Error(t, err, "there should be an error")
-	assert.Equal(t, expectedRenewErr, err)
+	assert.ErrorIs(t, err, expectedRenewErr)
 }
 
 func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
@@ -605,5 +605,5 @@ func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 	yes, err := checker.IsLoggedIn()
 	assert.False(t, yes, "must not be logged in")
 	assert.Error(t, err, "there should be an error")
-	assert.Equal(t, expectedErr, err)
+	assert.ErrorIs(t, err, expectedErr)
 }
