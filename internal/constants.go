@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strconv"
 )
 
@@ -144,6 +145,10 @@ var (
 	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
+)
+
+var (
+	AccessTokenFormatValidator = regexp.MustCompile(`^[a-f0-9]*$`).MatchString
 )
 
 func GetSupportedIPTables() []string {
