@@ -304,7 +304,7 @@ func main() {
 		machineIdGenerator.GetUsedInformationMask(),
 	)
 
-	loginTokenErrHandlingReg := core.NewErrorHandlingRegistry[func(uid int64)]()
+	loginTokenErrHandlingReg := core.NewErrorHandlingRegistry[int64]()
 	// encapsulating initialization logic
 	clientAPI, loginTokenManager := func() (core.ClientAPI, core.TokenManager) {
 		api := core.NewSimpleAPI(
