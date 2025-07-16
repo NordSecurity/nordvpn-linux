@@ -180,10 +180,6 @@ func (a *AccountData) unset() {
 	a.cache.Invalidate()
 }
 
-// return true if cached data was used, otherwise false
-// true -> get if cache is valid if not fetch
-// false -> get whatever is in the cache despite validity
-
 // get retrieves account data from cache.
 // Parameters:
 //   - respectDataExpiry: Controls cache retrieval
@@ -198,18 +194,20 @@ func (a *AccountData) unset() {
 
 func (a *AccountData) get(respectDataExpiry bool) (*pb.AccountResponse, bool) {
 	data, err := a.cache.Get()
-	if respectDataExpiry {
-		if err != nil {
-			return nil, false
-		}
-
-		return proto.Clone(data).(*pb.AccountResponse), true
-	}
-
-	switch {
-	case errors.Is(err, caching.ErrStaleData) || err == nil:
-		return proto.Clone(data).(*pb.AccountResponse), true
-	default:
+	if data == nil {
 		return nil, false
 	}
+
+	if respectDataExpiry && err != nil {
+		return nil, false
+	}
+
+	// when not respecting expiry, we can use stale data
+	if !respectDataExpiry && err != nil {
+		if isStaleDataError := errors.Is(err, caching.ErrStaleData); !isStaleDataError {
+			return nil, false
+		}
+	}
+
+	return proto.Clone(data).(*pb.AccountResponse), true
 }
