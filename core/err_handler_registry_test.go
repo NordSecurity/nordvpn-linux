@@ -2,6 +2,7 @@ package core_test
 
 import (
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -26,19 +27,35 @@ func Test_NewErrorHandlingRegistry_PanicWhenNotFunc(t *testing.T) {
 		{"any", func() { _ = core.NewErrorHandlingRegistry[any]() }},
 		{"*int", func() { _ = core.NewErrorHandlingRegistry[*int]() }},
 		{"uintptr", func() { _ = core.NewErrorHandlingRegistry[uintptr]() }},
+		{"func(int)", func() { _ = core.NewErrorHandlingRegistry[func(int)]() }},
 	}
 
 	for _, tc := range nonFuncTypes {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Panics(t, tc.test, "T is not a function")
+			assert.NotPanics(t, tc.test)
+		})
+	}
+}
+
+func Test_ValidFunctionTypes(t *testing.T) {
+	funcTypes := []struct {
+		name string
+		test func()
+	}{
+		{"func(func())", func() { _ = core.NewErrorHandlingRegistry[func()]() }},
+		{"func(error)", func() { _ = core.NewErrorHandlingRegistry[error]() }},
+		{"func(func(string) int)", func() { _ = core.NewErrorHandlingRegistry[func(string) int]() }},
+	}
+
+	for _, tc := range funcTypes {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.NotPanics(t, tc.test, "T is a function type and should not panic")
 		})
 	}
 }
 
 func Test_AddAndGetHandlers(t *testing.T) {
-	type Handler func(error)
-
-	registry := core.NewErrorHandlingRegistry[Handler]()
+	registry := core.NewErrorHandlingRegistry[error]()
 	errType := errors.New("test error")
 
 	var calls []string
@@ -78,9 +95,7 @@ func Test_AddAndGetHandlers(t *testing.T) {
 }
 
 func Test_Add_Multi(t *testing.T) {
-	type Handler func(error)
-
-	registry := core.NewErrorHandlingRegistry[Handler]()
+	registry := core.NewErrorHandlingRegistry[error]()
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
 
@@ -107,9 +122,7 @@ func Test_Add_Multi(t *testing.T) {
 }
 
 func Test_EmptyRegistry(t *testing.T) {
-	type Handler func(error)
-
-	registry := core.NewErrorHandlingRegistry[Handler]()
+	registry := core.NewErrorHandlingRegistry[error]()
 	err := errors.New("unregistered")
 
 	handlers := registry.GetHandlers(err)
@@ -119,9 +132,7 @@ func Test_EmptyRegistry(t *testing.T) {
 }
 
 func Test_GetHandlers_ReturnsCopy(t *testing.T) {
-	type Handler func(error)
-
-	registry := core.NewErrorHandlingRegistry[Handler]()
+	registry := core.NewErrorHandlingRegistry[error]()
 	err := errors.New("copy check")
 
 	var log []string
@@ -133,7 +144,7 @@ func Test_GetHandlers_ReturnsCopy(t *testing.T) {
 	registry.Add(originalHandler, err)
 
 	handlers := registry.GetHandlers(err)
-	assert.Equal(t, len(handlers), 1)
+	assert.Equal(t, 1, len(handlers))
 
 	// Modify the returned slice
 	handlers[0] = func(e error) {
@@ -147,4 +158,73 @@ func Test_GetHandlers_ReturnsCopy(t *testing.T) {
 	if len(log) != 1 || log[0] != "original handler: copy check" {
 		t.Errorf("modifying returned handlers should not affect the registry; got log: %v", log)
 	}
+}
+
+func Test_ThreadSafety(t *testing.T) {
+	registry := core.NewErrorHandlingRegistry[int]()
+	err1 := errors.New("error1")
+	err2 := errors.New("error2")
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	// Concurrently add handlers for different errors
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			registry.Add(func(int) {}, err1)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 100; i++ {
+			registry.Add(func(int) {}, err2)
+		}
+	}()
+
+	wg.Wait()
+
+	// Verify correct counts
+	assert.Equal(t, 100, len(registry.GetHandlers(err1)))
+	assert.Equal(t, 100, len(registry.GetHandlers(err2)))
+}
+
+func Test_CompoundErrors(t *testing.T) {
+	err1 := errors.New("error1")
+	err2 := errors.New("error2")
+	err1err2 := errors.Join(err1, err2)
+
+	reg := core.NewErrorHandlingRegistry[int]()
+
+	err1HandlerCalled := false
+	err2HandlerCalled := false
+	err1err2HandlerCalled := false
+
+	reg.Add(func(int) { err1HandlerCalled = true }, err1)
+	reg.Add(func(int) { err2HandlerCalled = true }, err2)
+	reg.Add(func(int) { err1err2HandlerCalled = true }, err1err2)
+
+	for _, h := range reg.GetHandlers(err1) {
+		h(0)
+	}
+	assert.True(t, err1HandlerCalled)
+	assert.False(t, err2HandlerCalled)
+	assert.False(t, err1err2HandlerCalled)
+
+	err1HandlerCalled = false
+	for _, h := range reg.GetHandlers(err2) {
+		h(0)
+	}
+	assert.False(t, err1HandlerCalled)
+	assert.True(t, err2HandlerCalled)
+	assert.False(t, err1err2HandlerCalled)
+
+	err2HandlerCalled = false
+	for _, h := range reg.GetHandlers(err1err2) {
+		h(0)
+	}
+	assert.True(t, err1HandlerCalled)
+	assert.True(t, err2HandlerCalled)
+	assert.True(t, err1err2HandlerCalled)
 }

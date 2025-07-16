@@ -15,7 +15,7 @@ type TokenRenewAPICall func(token string, idempotencyKey uuid.UUID) (*TokenRenew
 type LoginTokenManager struct {
 	cfgManager         config.Manager
 	tokenRenewAPICall  TokenRenewAPICall
-	errHandlerRegistry *ErrorHandlingRegistry[func(uid int64)]
+	errHandlerRegistry *ErrorHandlingRegistry[int64]
 	validator          TokenValidator
 }
 
@@ -23,7 +23,7 @@ type LoginTokenManager struct {
 func NewLoginTokenManager(
 	cfgManager config.Manager,
 	tokenRenewAPICall TokenRenewAPICall,
-	errorHandlingRegistry *ErrorHandlingRegistry[func(uid int64)],
+	errorHandlingRegistry *ErrorHandlingRegistry[int64],
 	tokenValidator TokenValidator,
 ) TokenManager {
 	return &LoginTokenManager{

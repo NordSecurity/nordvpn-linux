@@ -69,7 +69,7 @@ func (m *mockTokenValidator) Validate(token string, expiryDate string) error {
 func Test_LoginTokenManager_Token(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	var mockErrRegsitry ErrorHandlingRegistry[func(int64)]
+	var mockErrRegsitry ErrorHandlingRegistry[int64]
 	mockedCfgManager := NewMockConfigManager()
 	tokenman := NewLoginTokenManager(
 		mockedCfgManager,
@@ -121,7 +121,7 @@ func TestLoginTokenManager_Renew_NotExpiredTokenNotRenewed(t *testing.T) {
 		}, nil
 	}
 
-	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
+	mockErrHandlerRegistry := NewErrorHandlingRegistry[int64]()
 
 	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
 		return nil
@@ -168,7 +168,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithoutIdempotencyKey(t 
 		}, nil
 	}
 
-	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
+	mockErrHandlerRegistry := NewErrorHandlingRegistry[int64]()
 
 	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
 		return errors.New("expired")
@@ -217,7 +217,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithIdempotencyKey(t *te
 		}, nil
 	}
 
-	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
+	mockErrHandlerRegistry := NewErrorHandlingRegistry[int64]()
 
 	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
 		return errors.New("expired")
@@ -261,7 +261,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenNotRenewedWithUnknownUnhandledAPICa
 		return nil, errors.New("api call error")
 	}
 
-	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
+	mockErrHandlerRegistry := NewErrorHandlingRegistry[int64]()
 
 	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
 		return errors.New("expired")
@@ -312,7 +312,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithKnownAPICallError(t 
 			return nil, errIterator
 		}
 
-		mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
+		mockErrHandlerRegistry := NewErrorHandlingRegistry[int64]()
 		validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
 			return errors.New("expired")
 		}}
@@ -337,7 +337,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithKnownAPICallError(t 
 func Test_LoginTokenManager_Store(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	var mockErrRegsitry ErrorHandlingRegistry[func(int64)]
+	var mockErrRegsitry ErrorHandlingRegistry[int64]
 	mockedCfgManager := NewMockConfigManager()
 	tokenman := NewLoginTokenManager(
 		mockedCfgManager,
@@ -370,7 +370,7 @@ func Test_LoginTokenManager_Store(t *testing.T) {
 func TestLoginTokenManager_Invalidate(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	mockErrRegsitry := NewErrorHandlingRegistry[func(int64)]()
+	mockErrRegsitry := NewErrorHandlingRegistry[int64]()
 	mockedCfgManager := NewMockConfigManager()
 	tokenman := NewLoginTokenManager(
 		mockedCfgManager,
@@ -384,7 +384,7 @@ func TestLoginTokenManager_Invalidate(t *testing.T) {
 	assert.Nil(t, err)
 
 	dummyErrHandlerCalledCnt := 0
-	dummyErrHandler := func(uid int64) {
+	dummyErrHandler := func(int64) {
 		dummyErrHandlerCalledCnt++
 	}
 
@@ -414,7 +414,7 @@ func TestLoginTokenManager_Invalidate(t *testing.T) {
 	externalErrHandled := false
 	externalErrUserMatching := false
 	mockUid := int64(1)
-	mockErrRegsitry.Add(func(uid int64) {
+	mockErrRegsitry.Add(func(int64) {
 		if uid == mockUid {
 			externalErrUserMatching = true
 		}
@@ -490,7 +490,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithBadConfigSaving(t *t
 		}, nil
 	}
 
-	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
+	mockErrHandlerRegistry := NewErrorHandlingRegistry[int64]()
 	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
 		return errors.New("expired")
 	}}
@@ -535,7 +535,7 @@ func TestLoginTokenManager_Renew_ExpiredTokenGetsRenewedWithIdempotencyKeyANdBad
 		return nil, ErrUnauthorized
 	}
 
-	mockErrHandlerRegistry := NewErrorHandlingRegistry[func(uid int64)]()
+	mockErrHandlerRegistry := NewErrorHandlingRegistry[int64]()
 	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
 		return errors.New("expired")
 	}}
@@ -599,7 +599,7 @@ func Test_LoginTokenManager_TokenWithBadLoad(t *testing.T) {
 	now := time.Now()
 	uid := int64(42)
 
-	var mockErrRegsitry ErrorHandlingRegistry[func(int64)]
+	var mockErrRegsitry ErrorHandlingRegistry[int64]
 	mockCfg := NewMockConfigManagerWithBadLoad().(*mockConfigManagerWithBadLoad)
 	mockCfg.c = config.Config{
 		TokensData: map[int64]config.TokenData{
@@ -632,7 +632,7 @@ func Test_LoginTokenManager_RenewWithBadLoad(t *testing.T) {
 	now := time.Now()
 	uid := int64(42)
 
-	var mockErrRegsitry ErrorHandlingRegistry[func(int64)]
+	var mockErrRegsitry ErrorHandlingRegistry[int64]
 
 	mockCfg := NewMockConfigManagerWithBadLoad().(*mockConfigManagerWithBadLoad)
 	mockCfg.c = config.Config{
@@ -669,7 +669,7 @@ func Test_LoginTokenManager_StoreWithBadLoad(t *testing.T) {
 	now := time.Now()
 	uid := int64(42)
 
-	var mockErrRegsitry ErrorHandlingRegistry[func(int64)]
+	var mockErrRegsitry ErrorHandlingRegistry[int64]
 	mockCfg := NewMockConfigManagerWithBadLoad().(*mockConfigManagerWithBadLoad)
 	mockCfg.c = config.Config{
 		TokensData: map[int64]config.TokenData{
@@ -705,7 +705,7 @@ func Test_LoginTokenManager_InvalidateWithBadLoad(t *testing.T) {
 	now := time.Now()
 	uid := int64(42)
 
-	var mockErrRegsitry ErrorHandlingRegistry[func(int64)]
+	var mockErrRegsitry ErrorHandlingRegistry[int64]
 	mockCfg := NewMockConfigManagerWithBadLoad().(*mockConfigManagerWithBadLoad)
 	mockCfg.c = config.Config{
 		TokensData: map[int64]config.TokenData{
