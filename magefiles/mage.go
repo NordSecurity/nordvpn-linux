@@ -305,16 +305,9 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 		mg.Deps(Build.OpenvpnDocker)
 	}
 
-	git, err := getGitInfo()
-	if err != nil {
-		return err
-	}
-
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
-	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
-	env["VERSION"] = git.versionTag
 	if packageType == "snap" {
 		return RunDockerWithSettings(
 			ctx,
@@ -370,14 +363,8 @@ func buildBinaries(buildFlags string) error {
 		mg.Deps(Build.Rust)
 	}
 
-	git, err := getGitInfo()
-	if err != nil {
-		return err
-	}
 	env["WORKDIR"] = cwd
-	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
-	env["VERSION"] = git.versionTag
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["BUILD_FLAGS"] = buildFlags
 
@@ -405,15 +392,9 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		mg.Deps(Build.RustDocker)
 	}
 
-	git, err := getGitInfo()
-	if err != nil {
-		return err
-	}
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
-	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
-	env["VERSION"] = git.versionTag
 	env["BUILD_FLAGS"] = buildFlags
 
 	return RunDocker(
