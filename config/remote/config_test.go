@@ -1,6 +1,7 @@
 package remote
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -148,6 +149,104 @@ func TestVersionMatch(t *testing.T) {
 			assert.Equal(t, rz, test.match)
 			fmt.Println("match:", rz, ";; err:", err)
 			assert.True(t, (!test.expectsError && err == nil) || (test.expectsError && err != nil))
+		})
+	}
+}
+
+func TestValidateField(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		fieldType    Param
+		fieldValue   ParamValue
+		fileReadFn   func(string) ([]byte, error)
+		expectsError bool
+	}{
+		{
+			name:         "string",
+			fieldType:    Param{Type: fieldTypeString},
+			fieldValue:   ParamValue{Value: "field-string"},
+			expectsError: false,
+		},
+		{
+			name:         "string invalid",
+			fieldType:    Param{Type: fieldTypeString},
+			fieldValue:   ParamValue{Value: 101},
+			expectsError: true,
+		},
+		{
+			name:         "int",
+			fieldType:    Param{Type: fieldTypeInt},
+			fieldValue:   ParamValue{Value: 1002},
+			expectsError: false,
+		},
+		{
+			name:         "int invalid",
+			fieldType:    Param{Type: fieldTypeInt},
+			fieldValue:   ParamValue{Value: "1002"},
+			expectsError: true,
+		},
+		{
+			name:         "bool",
+			fieldType:    Param{Type: fieldTypeBool},
+			fieldValue:   ParamValue{Value: true},
+			expectsError: false,
+		},
+		{
+			name:         "bool invalid",
+			fieldType:    Param{Type: fieldTypeBool},
+			fieldValue:   ParamValue{Value: "true"},
+			expectsError: true,
+		},
+		{
+			name:         "array",
+			fieldType:    Param{Type: fieldTypeArray},
+			fieldValue:   ParamValue{Value: []any{"one", "two", "three"}},
+			expectsError: false,
+		},
+		{
+			name:         "array invalid",
+			fieldType:    Param{Type: fieldTypeArray},
+			fieldValue:   ParamValue{Value: "not-an-array"},
+			expectsError: true,
+		},
+		{
+			name:         "object",
+			fieldType:    Param{Type: fieldTypeObject},
+			fieldValue:   ParamValue{Value: "{ \"version\": 1}"},
+			expectsError: false,
+		},
+		{
+			name:         "object invalid",
+			fieldType:    Param{Type: fieldTypeObject},
+			fieldValue:   ParamValue{Value: "-/-"},
+			expectsError: true,
+		},
+		{
+			name:         "file",
+			fieldType:    Param{Type: fieldTypeFile},
+			fieldValue:   ParamValue{Value: "include/file1.json"},
+			fileReadFn:   func(name string) ([]byte, error) { return nil, nil },
+			expectsError: false,
+		},
+		{
+			name:         "file invalid",
+			fieldType:    Param{Type: fieldTypeFile},
+			fieldValue:   ParamValue{Value: "file1-invalid"},
+			fileReadFn:   func(name string) ([]byte, error) { return nil, errors.New("error") },
+			expectsError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := validateField(test.fieldType, test.fieldValue, test.fileReadFn)
+			if test.expectsError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
