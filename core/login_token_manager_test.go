@@ -734,3 +734,40 @@ func Test_LoginTokenManager_InvalidateWithBadLoad(t *testing.T) {
 	assert.Nil(t, updated.IdempotencyKey)
 	assert.NotEmpty(t, updated.TokenExpiry)
 }
+
+func Test_LoginTokenManager_tokenDataRemoverFunc(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	now := time.Now()
+	uid := int64(42)
+
+	var mockErrRegsitry ErrorHandlingRegistry[int64]
+	mockCfg := NewMockConfigManager().(*mockConfigManager)
+	mockCfg.c = config.Config{
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "current-access-token",
+				RenewToken:     "current-renew-token",
+				TokenExpiry:    now.Add(1 * time.Hour).Format(time.RFC3339),
+				IdempotencyKey: nil,
+			},
+		},
+	}
+
+	validator := &mockTokenValidator{ValidatorFunc: func(token string, expiryDate string) error {
+		return errors.New("something's off")
+	}}
+
+	tokenman := NewLoginTokenManager(
+		mockCfg,
+		func(token string, idempotencyKey uuid.UUID) (*TokenRenewResponse, error) {
+			return nil, ErrUnauthorized
+		},
+		&mockErrRegsitry,
+		validator,
+	)
+
+	err := tokenman.Renew()
+	assert.NoError(t, err)
+	assert.Empty(t, mockCfg.c.TokensData, "TokensData must be empty")
+}
