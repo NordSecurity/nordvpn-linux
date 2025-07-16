@@ -139,7 +139,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		loginTokenManager: core.NewLoginTokenManager(
 			&cm,
 			api.TokenRenew,
-			core.NewErrorHandlingRegistry[func(int64)](),
+			core.NewErrorHandlingRegistry[int64](),
 			core.NewLoginTokenValidator(simpleApi, expirationChecker),
 		),
 	}
@@ -258,7 +258,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 		loginTokenManager: core.NewLoginTokenManager(
 			&cm,
 			api.TokenRenew,
-			core.NewErrorHandlingRegistry[func(int64)](),
+			core.NewErrorHandlingRegistry[int64](),
 			core.NewLoginTokenValidator(simpleApi, expirationChecker),
 		),
 	}
