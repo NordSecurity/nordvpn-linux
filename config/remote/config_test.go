@@ -3,6 +3,8 @@ package remote
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -246,6 +248,122 @@ func TestValidateField(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+type mockReaderWriter struct {
+	readCnt, writeCnt  int
+	readErr, writeErr  error
+	mainJson, hashJson string
+}
+
+func (w *mockReaderWriter) writeFile(name string, content []byte, mode os.FileMode) error {
+	w.writeCnt++
+	return w.writeErr
+}
+func (w *mockReaderWriter) readFile(name string) ([]byte, error) {
+	w.readCnt++
+	if strings.Contains(name, "-hash") {
+		return []byte(w.hashJson), w.readErr
+	}
+	return []byte(w.mainJson), w.readErr
+}
+
+func TestHandleIncludeFiles(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name        string
+		fileName    string
+		mainJson    string
+		hashJson    string
+		expectError bool
+		readErr     error
+		writeErr    error
+	}{
+		{
+			name:        "sunny day",
+			fileName:    "test.json",
+			mainJson:    libtelioJsonConfInc1File,
+			hashJson:    libtelioJsonConfInc1HashFile,
+			expectError: false,
+			readErr:     nil,
+			writeErr:    nil,
+		},
+		{
+			name:        "invalid file name",
+			fileName:    "test.txt",
+			mainJson:    "",
+			hashJson:    "",
+			expectError: true,
+			readErr:     nil,
+			writeErr:    nil,
+		},
+		{
+			name:        "invalid main json",
+			fileName:    "test.json",
+			mainJson:    "invalid json",
+			hashJson:    "",
+			expectError: true,
+			readErr:     nil,
+			writeErr:    nil,
+		},
+		{
+			name:        "invalid hash json",
+			fileName:    "test.json",
+			mainJson:    "{}",
+			hashJson:    "invalid json",
+			expectError: true,
+			readErr:     nil,
+			writeErr:    nil,
+		},
+		{
+			name:        "hash does not match",
+			fileName:    "test.json",
+			mainJson:    "{}",
+			hashJson:    "{\"hash\":\"aaa\"}",
+			expectError: true,
+			readErr:     nil,
+			writeErr:    nil,
+		},
+		{
+			name:        "file read error",
+			fileName:    "test.json",
+			mainJson:    "",
+			hashJson:    "",
+			expectError: true,
+			readErr:     errors.New("error"),
+			writeErr:    nil,
+		},
+		{
+			name:        "file write error",
+			fileName:    "test.json",
+			mainJson:    "",
+			hashJson:    "",
+			expectError: true,
+			readErr:     nil,
+			writeErr:    errors.New("error"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			frw := mockReaderWriter{
+				mainJson: test.mainJson,
+				hashJson: test.hashJson,
+				readErr:  test.readErr,
+				writeErr: test.writeErr,
+			}
+			incf, err := handleIncludeFiles("", "", test.fileName, &frw, &frw)
+			if test.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, len(test.mainJson), len(incf))
+				assert.Equal(t, 2, frw.readCnt)
+				assert.Equal(t, 2, frw.writeCnt)
 			}
 		})
 	}

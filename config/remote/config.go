@@ -57,46 +57,6 @@ type validator interface {
 	validate([]byte) error
 }
 
-func handleIncludeFiles(srcBasePath, trgBasePath, incFileName string, fr fileReader, fw fileWriter) ([]byte, error) {
-	if !strings.Contains(incFileName, ".json") {
-		return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
-	}
-	// get include file
-	incJsonStr, err := fr.readFile(filepath.Join(srcBasePath, incFileName))
-	if err != nil {
-		return nil, fmt.Errorf("downloading include file: %w", err)
-	}
-	// do basic json validation
-	var tmpJson any
-	if err = json.Unmarshal(incJsonStr, &tmpJson); err != nil {
-		return nil, fmt.Errorf("parsing include file: %w", err)
-	}
-	// verify include file content integrity
-	incHashFileName := strings.ReplaceAll(incFileName, ".json", "-hash.json")
-	incHashStr, err := fr.readFile(filepath.Join(srcBasePath, incHashFileName))
-	if err != nil {
-		return nil, fmt.Errorf("downloading include file hash: %w", err)
-	}
-	var incJsonHash jsonHash
-	if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {
-		return nil, fmt.Errorf("parsing include file hash: %w", err)
-	}
-	if !isHashEqual(incJsonHash.Hash, incJsonStr) {
-		return nil, fmt.Errorf("include file integrity problem, expected hash[%s] got hash[%s]", incJsonHash.Hash, hash(incJsonStr))
-	}
-	// write an include json to file
-	incFileTargetPath := filepath.Join(trgBasePath, incFileName) + tmpExt
-	if err = fw.writeFile(incFileTargetPath, incJsonStr, internal.PermUserRW); err != nil {
-		return nil, fmt.Errorf("wrting include file: %w", err)
-	}
-	// write an include hash to file
-	incFileHashTargetPath := filepath.Join(trgBasePath, incHashFileName) + tmpExt
-	if err = fw.writeFile(incFileHashTargetPath, incHashStr, internal.PermUserRW); err != nil {
-		return nil, fmt.Errorf("wrting include hash file: %w", err)
-	}
-	return incJsonStr, nil
-} //func()
-
 // download main json file and check if include files should be downloaded,
 // return `true` if remote config was really downloaded.
 func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBasePath, targetPath string) (success bool, err error) {
@@ -332,3 +292,43 @@ func walkIncludeFiles(mainJason []byte, srcBasePath, trgBasePath string, fr file
 	}
 	return incFilesJson, nil
 }
+
+func handleIncludeFiles(srcBasePath, trgBasePath, incFileName string, fr fileReader, fw fileWriter) ([]byte, error) {
+	if !strings.Contains(incFileName, ".json") {
+		return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
+	}
+	// get include file
+	incJsonStr, err := fr.readFile(filepath.Join(srcBasePath, incFileName))
+	if err != nil {
+		return nil, fmt.Errorf("downloading include file: %w", err)
+	}
+	// do basic json validation
+	var tmpJson any
+	if err = json.Unmarshal(incJsonStr, &tmpJson); err != nil {
+		return nil, fmt.Errorf("parsing include file: %w", err)
+	}
+	// verify include file content integrity
+	incHashFileName := strings.ReplaceAll(incFileName, ".json", "-hash.json")
+	incHashStr, err := fr.readFile(filepath.Join(srcBasePath, incHashFileName))
+	if err != nil {
+		return nil, fmt.Errorf("downloading include file hash: %w", err)
+	}
+	var incJsonHash jsonHash
+	if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {
+		return nil, fmt.Errorf("parsing include file hash: %w", err)
+	}
+	if !isHashEqual(incJsonHash.Hash, incJsonStr) {
+		return nil, fmt.Errorf("include file integrity problem, expected hash[%s] got hash[%s]", incJsonHash.Hash, hash(incJsonStr))
+	}
+	// write an include json to file
+	incFileTargetPath := filepath.Join(trgBasePath, incFileName) + tmpExt
+	if err = fw.writeFile(incFileTargetPath, incJsonStr, internal.PermUserRW); err != nil {
+		return nil, fmt.Errorf("wrting include file: %w", err)
+	}
+	// write an include hash to file
+	incFileHashTargetPath := filepath.Join(trgBasePath, incHashFileName) + tmpExt
+	if err = fw.writeFile(incFileHashTargetPath, incHashStr, internal.PermUserRW); err != nil {
+		return nil, fmt.Errorf("wrting include hash file: %w", err)
+	}
+	return incJsonStr, nil
+} //func()

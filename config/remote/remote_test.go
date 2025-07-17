@@ -355,6 +355,9 @@ var libtelioJsonConfInc1File = `
     }
 }
 `
+var libtelioJsonConfInc1HashFile = `
+{"hash":"cc254823cfdab2bf618a8cd530d57295"}
+`
 var libtelioJsonConfInc2File = `
 {
     "lana": {},
