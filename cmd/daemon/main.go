@@ -85,6 +85,7 @@ var (
 	Port        = 6960
 	ConnType    = "unix"
 	ConnURL     = internal.DaemonSocket
+	RemotePath  = ""
 )
 
 // Environment constants
@@ -149,8 +150,6 @@ func main() {
 			log.Fatalln(err)
 		}
 	}
-
-	rcConfig := getRemoteConfigGetter(Version)
 
 	// Events
 
@@ -325,6 +324,11 @@ func main() {
 
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
+
+	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI)
+	if err := rcConfig.LoadConfig(); err != nil {
+		log.Println(internal.ErrorPrefix, fmt.Errorf("loading config: %w", err))
+	}
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
@@ -622,7 +626,7 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}()
-	rpc.StartJobs(statePublisher, heartBeatSubject)
+	rpc.StartJobs(statePublisher, heartBeatSubject, rcConfig)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {
