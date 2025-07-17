@@ -89,7 +89,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 			}
 			if dnld {
 				// only if remote config was really downloaded
-				log.Println(internal.InfoPrefix, "Feature [", f.name, "] remote config downloaded to:", c.localCachePath)
+				log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
 			}
 		}
 	}
@@ -103,7 +103,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 			log.Println(internal.ErrorPrefix, "failed loading feature [", f.name, "] config from the disk:", err)
 			continue
 		}
-		log.Println(internal.InfoPrefix, "Feature [", f.name, "] config loaded from:", c.localCachePath)
+		log.Println(internal.InfoPrefix, "feature [", f.name, "] config loaded from:", c.localCachePath)
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 		return false
 	}
 	switch p.Type {
-	case "bool", "boolean":
+	case fieldTypeBool:
 		if item := findMatchingRecord(p.Settings, c.appVersion); item != nil {
 			val, _ := item.AsBool()
 			return val
@@ -174,31 +174,31 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 	}
 	if item := findMatchingRecord(p.Settings, c.appVersion); item != nil {
 		switch p.Type {
-		case "bool", "boolean":
+		case fieldTypeBool:
 			val, err := item.AsBool()
 			if err != nil {
 				return "", err
 			}
 			return fmt.Sprintf("%t", val), nil
-		case "string", "object":
+		case fieldTypeString, fieldTypeObject:
 			val, err := item.AsString()
 			if err != nil {
 				return "", err
 			}
 			return val, nil
-		case "integer", "int", "number":
+		case fieldTypeInt, fieldTypeNumber:
 			val, err := item.AsInt()
 			if err != nil {
 				return "", err
 			}
 			return fmt.Sprintf("%d", val), nil
-		case "array":
+		case fieldTypeArray:
 			val, err := item.AsStringArray()
 			if err != nil {
 				return "", err
 			}
 			return strings.Join(val, ", "), nil
-		case "file":
+		case fieldTypeFile:
 			return item.incValue, nil
 		}
 	}

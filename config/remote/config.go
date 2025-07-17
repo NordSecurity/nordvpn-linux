@@ -349,7 +349,7 @@ func walkIncludeFiles(mainJason []byte, fileActionFunc func(string) ([]byte, err
 	for _, cfgItem := range temp.Configs {
 		for _, param := range cfgItem.Settings {
 			switch cfgItem.Type {
-			case "file":
+			case fieldTypeFile:
 				// primary field value is an include file name
 				incFileName, err := param.AsString()
 				if err != nil {
