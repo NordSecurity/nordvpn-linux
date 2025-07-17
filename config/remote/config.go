@@ -57,9 +57,49 @@ type validator interface {
 	validate([]byte) error
 }
 
+func handleIncludeFiles(srcBasePath, trgBasePath, incFileName string, fr fileReader, fw fileWriter) ([]byte, error) {
+	if !strings.Contains(incFileName, ".json") {
+		return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
+	}
+	// get include file
+	incJsonStr, err := fr.readFile(filepath.Join(srcBasePath, incFileName))
+	if err != nil {
+		return nil, fmt.Errorf("downloading include file: %w", err)
+	}
+	// do basic json validation
+	var tmpJson any
+	if err = json.Unmarshal(incJsonStr, &tmpJson); err != nil {
+		return nil, fmt.Errorf("parsing include file: %w", err)
+	}
+	// verify include file content integrity
+	incHashFileName := strings.ReplaceAll(incFileName, ".json", "-hash.json")
+	incHashStr, err := fr.readFile(filepath.Join(srcBasePath, incHashFileName))
+	if err != nil {
+		return nil, fmt.Errorf("downloading include file hash: %w", err)
+	}
+	var incJsonHash jsonHash
+	if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {
+		return nil, fmt.Errorf("parsing include file hash: %w", err)
+	}
+	if !isHashEqual(incJsonHash.Hash, incJsonStr) {
+		return nil, fmt.Errorf("include file integrity problem, expected hash[%s] got hash[%s]", incJsonHash.Hash, hash(incJsonStr))
+	}
+	// write an include json to file
+	incFileTargetPath := filepath.Join(trgBasePath, incFileName) + tmpExt
+	if err = fw.writeFile(incFileTargetPath, incJsonStr, internal.PermUserRW); err != nil {
+		return nil, fmt.Errorf("wrting include file: %w", err)
+	}
+	// write an include hash to file
+	incFileHashTargetPath := filepath.Join(trgBasePath, incHashFileName) + tmpExt
+	if err = fw.writeFile(incFileHashTargetPath, incHashStr, internal.PermUserRW); err != nil {
+		return nil, fmt.Errorf("wrting include hash file: %w", err)
+	}
+	return incJsonStr, nil
+} //func()
+
 // download main json file and check if include files should be downloaded,
 // return `true` if remote config was really downloaded.
-func (f *Feature) download(cdn RemoteStorage, fileWriter fileWriter, jsonValidator validator, cdnBasePath, targetPath string) (success bool, err error) {
+func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBasePath, targetPath string) (success bool, err error) {
 	// config file consists of:
 	// - main json file e.g. nordvpn.json;
 	// - sibling file with hash e.g. nordvpn-hash.json;
@@ -80,7 +120,7 @@ func (f *Feature) download(cdn RemoteStorage, fileWriter fileWriter, jsonValidat
 		return false, fmt.Errorf("setting-up target dir: %w", err)
 	}
 
-	mainJsonHashStr, err := cdn.GetRemoteFile(f.HashFilePath(cdnBasePath))
+	mainJsonHashStr, err := cdn.readFile(f.HashFilePath(cdnBasePath))
 	if err != nil {
 		return false, fmt.Errorf("downloading main hash file: %w", err)
 	}
@@ -95,57 +135,17 @@ func (f *Feature) download(cdn RemoteStorage, fileWriter fileWriter, jsonValidat
 	}
 
 	// main hash covers the include files as well
-	mainJsonStr, err := cdn.GetRemoteFile(f.FilePath(cdnBasePath))
+	mainJsonStr, err := cdn.readFile(f.FilePath(cdnBasePath))
 	if err != nil {
 		return false, fmt.Errorf("downloading main file: %w", err)
 	}
 
 	// validate json against predefined schema
-	if err = jsonValidator.validate(mainJsonStr); err != nil {
+	if err = jv.validate(mainJsonStr); err != nil {
 		return false, fmt.Errorf("validating main: %w", err)
 	}
 
-	downloadIncludeFilesFunc := func(incFileName string) ([]byte, error) {
-		if !strings.Contains(incFileName, ".json") {
-			return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
-		}
-		// download include file
-		incJsonStr, err := cdn.GetRemoteFile(filepath.Join(cdnBasePath, incFileName))
-		if err != nil {
-			return nil, fmt.Errorf("downloading include file: %w", err)
-		}
-		// do basic json validation
-		var tmpJson any
-		if err = json.Unmarshal(incJsonStr, &tmpJson); err != nil {
-			return nil, fmt.Errorf("parsing include file: %w", err)
-		}
-		// verify include file content integrity
-		incHashFileName := strings.ReplaceAll(incFileName, ".json", "-hash.json")
-		incHashStr, err := cdn.GetRemoteFile(filepath.Join(cdnBasePath, incHashFileName))
-		if err != nil {
-			return nil, fmt.Errorf("downloading include file hash: %w", err)
-		}
-		var incJsonHash jsonHash
-		if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {
-			return nil, fmt.Errorf("parsing include file hash: %w", err)
-		}
-		if !isHashEqual(incJsonHash.Hash, incJsonStr) {
-			return nil, fmt.Errorf("include file integrity problem, expected hash[%s] got hash[%s]", incJsonHash.Hash, hash(incJsonStr))
-		}
-		// write an include json to file
-		incFileTargetPath := filepath.Join(targetPath, incFileName) + tmpExt
-		if err = fileWriter.writeFile(incFileTargetPath, incJsonStr, internal.PermUserRW); err != nil {
-			return nil, fmt.Errorf("wrting include file: %w", err)
-		}
-		// write an include hash to file
-		incFileHashTargetPath := filepath.Join(targetPath, incHashFileName) + tmpExt
-		if err = fileWriter.writeFile(incFileHashTargetPath, incHashStr, internal.PermUserRW); err != nil {
-			return nil, fmt.Errorf("wrting include hash file: %w", err)
-		}
-		return incJsonStr, nil
-	} //func()
-
-	incFiles, err := walkIncludeFiles(mainJsonStr, downloadIncludeFilesFunc)
+	incFiles, err := walkIncludeFiles(mainJsonStr, cdnBasePath, targetPath, cdn, fw)
 	if err != nil {
 		return false, fmt.Errorf("downloading include files: %w", err)
 	}
@@ -158,12 +158,12 @@ func (f *Feature) download(cdn RemoteStorage, fileWriter fileWriter, jsonValidat
 
 	// write main json to file
 	localFileName := filepath.Join(targetPath, f.FilePath("")) + tmpExt
-	if err = fileWriter.writeFile(localFileName, mainJsonStr, internal.PermUserRW); err != nil {
+	if err = fw.writeFile(localFileName, mainJsonStr, internal.PermUserRW); err != nil {
 		return false, fmt.Errorf("writing main file: %w", err)
 	}
 	// write main hash to file
 	localFileName = filepath.Join(targetPath, f.HashFilePath("")) + tmpExt
-	if err = fileWriter.writeFile(localFileName, mainJsonHashStr, internal.PermUserRW); err != nil {
+	if err = fw.writeFile(localFileName, mainJsonHashStr, internal.PermUserRW); err != nil {
 		return false, fmt.Errorf("writing main file: %w", err)
 	}
 
@@ -178,7 +178,7 @@ func (f *Feature) download(cdn RemoteStorage, fileWriter fileWriter, jsonValidat
 }
 
 // load feature config from JSON file
-func (f *Feature) load(sourcePath string, fileReader fileReader, jsonValidator validator) error {
+func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 	if f.name == "" {
 		return fmt.Errorf("feature name is not set")
 	}
@@ -191,7 +191,7 @@ func (f *Feature) load(sourcePath string, fileReader fileReader, jsonValidator v
 		return fmt.Errorf("config source path is not valid")
 	}
 
-	mainJsonHashStr, err := fileReader.readFile(f.HashFilePath(sourcePath))
+	mainJsonHashStr, err := fr.readFile(f.HashFilePath(sourcePath))
 	if err != nil {
 		return fmt.Errorf("reading hash file: %w", err)
 	}
@@ -205,49 +205,16 @@ func (f *Feature) load(sourcePath string, fileReader fileReader, jsonValidator v
 		return fmt.Errorf("reading main file: %w", err)
 	}
 
-	mainJsonStr, err := fileReader.readFile(mainJsonFileName)
+	mainJsonStr, err := fr.readFile(mainJsonFileName)
 	if err != nil {
 		return fmt.Errorf("reading config file: %w", err)
 	}
 	// validate json by predefined schema
-	if err := jsonValidator.validate(mainJsonStr); err != nil {
+	if err := jv.validate(mainJsonStr); err != nil {
 		return fmt.Errorf("validating json: %w", err)
 	}
 
-	validateIncludeFilesFunc := func(incFileName string) ([]byte, error) {
-		if !strings.Contains(incFileName, ".json") {
-			return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
-		}
-		if err := internal.IsFileTooBig(filepath.Join(sourcePath, incFileName)); err != nil {
-			return nil, fmt.Errorf("reading include file: %w", err)
-		}
-		// read include file
-		incJsonStr, err := fileReader.readFile(filepath.Join(sourcePath, incFileName))
-		if err != nil {
-			return nil, fmt.Errorf("loading include file: %w", err)
-		}
-		// do basic json validation
-		var tmpJson any
-		if err = json.Unmarshal(incJsonStr, &tmpJson); err != nil {
-			return nil, fmt.Errorf("parsing include file: %w", err)
-		}
-		// verify include file content integrity
-		incHashFileName := strings.ReplaceAll(incFileName, ".json", "-hash.json")
-		incHashStr, err := fileReader.readFile(filepath.Join(sourcePath, incHashFileName))
-		if err != nil {
-			return nil, fmt.Errorf("loading include file hash: %w", err)
-		}
-		var incJsonHash jsonHash
-		if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {
-			return nil, fmt.Errorf("parsing include file hash: %w", err)
-		}
-		if !isHashEqual(incJsonHash.Hash, incJsonStr) {
-			return nil, fmt.Errorf("include file integrity problem")
-		}
-		return incJsonStr, nil
-	} //func()
-
-	incFiles, err := walkIncludeFiles(mainJsonStr, validateIncludeFilesFunc)
+	incFiles, err := walkIncludeFiles(mainJsonStr, sourcePath, "", fr, noopWriter{})
 	if err != nil {
 		return fmt.Errorf("loading include files: %w", err)
 	}
@@ -271,7 +238,7 @@ func (f *Feature) load(sourcePath string, fileReader fileReader, jsonValidator v
 			// function for special field type `file` to read and validate
 			fileReadFunc := func(name string) ([]byte, error) {
 				jsnIncFile := filepath.Join(sourcePath, name)
-				jsn, err := fileReader.readFile(jsnIncFile)
+				jsn, err := fr.readFile(jsnIncFile)
 				if err != nil {
 					return nil, fmt.Errorf("loading include file [%s]: %w", jsnIncFile, err)
 				}
@@ -340,7 +307,7 @@ func validateField(param Param, paramVal ParamValue, fileReader func(name string
 }
 
 // walkIncludeFiles iterate through include files and do action on them
-func walkIncludeFiles(mainJason []byte, fileActionFunc func(string) ([]byte, error)) ([]byte, error) {
+func walkIncludeFiles(mainJason []byte, srcBasePath, trgBasePath string, fr fileReader, fw fileWriter) ([]byte, error) {
 	var temp Feature
 	if err := json.Unmarshal(mainJason, &temp); err != nil {
 		return nil, err
@@ -355,7 +322,7 @@ func walkIncludeFiles(mainJason []byte, fileActionFunc func(string) ([]byte, err
 				if err != nil {
 					return nil, fmt.Errorf("loading include file name as string value [%s]: %w", param.Value, err)
 				}
-				incFile, err := fileActionFunc(incFileName)
+				incFile, err := handleIncludeFiles(srcBasePath, trgBasePath, incFileName, fr, fw)
 				if err != nil {
 					return nil, fmt.Errorf("downloading include file [%s]: %w", incFileName, err)
 				}

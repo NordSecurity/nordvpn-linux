@@ -68,7 +68,17 @@ func (w jsonFileReaderWriter) writeFile(name string, content []byte, mode os.Fil
 	return internal.FileWrite(name, content, mode)
 }
 func (w jsonFileReaderWriter) readFile(name string) ([]byte, error) {
+	// try to prevent overloading
+	if err := internal.IsFileTooBig(name); err != nil {
+		return nil, fmt.Errorf("reading file: %w", err)
+	}
 	return internal.FileRead(name)
+}
+
+type noopWriter struct{}
+
+func (w noopWriter) writeFile(name string, content []byte, mode os.FileMode) error {
+	return nil
 }
 
 type jsonValidator struct{}
@@ -77,12 +87,20 @@ func (v jsonValidator) validate(content []byte) error {
 	return validateJsonString(content)
 }
 
+type cdnFileGetter struct {
+	cdn RemoteStorage
+}
+
+func (cfg cdnFileGetter) readFile(fname string) ([]byte, error) {
+	return cfg.cdn.GetRemoteFile(fname)
+}
+
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
 		for _, f := range c.features {
-			dnld, err := f.download(c.cdn, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+			dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
 				continue
