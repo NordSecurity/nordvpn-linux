@@ -38,7 +38,13 @@ function fetch_gitlab_artifact() {
   echo "Downloading artifact from ${artifact_url} to ${out_file}"
   # disable tracing - don't show the token
   set +x
-  header="JOB-TOKEN:${CI_JOB_TOKEN}"
+  if [[ ${CI+x} ]]; then
+    header="JOB-TOKEN:${CI_JOB_TOKEN}"
+  else
+    # Need two tokens while the dependency migration is not fully done
+    # set CI_JOB_TOKEN as a token that can reach new GL if running locally
+    header="PRIVATE-TOKEN:${CI_JOB_TOKEN}"
+  fi
   for _ in $(seq 1 2)
   do
     curl \
