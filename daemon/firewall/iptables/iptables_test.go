@@ -57,7 +57,6 @@ func TestGenerateIPTablesRule(t *testing.T) {
 		chainPrefix string
 		portFlag    string
 		rule        string
-		icmpv6Type  int
 		hopLimit    uint8
 		addrFlag    string
 		dports      []int
@@ -182,30 +181,6 @@ func TestGenerateIPTablesRule(t *testing.T) {
 			port: PortRange{0, 0}, module: "", stateFlag: "", states: firewall.ConnectionStates{}, chainPrefix: "PRIMITIVE_",
 			rule: "PRIMITIVE_OUTPUT -m comment --comment nordvpn -j DROP",
 		}, {
-			chain: chainInput, target: accept, iface: "lo", remoteNet: "2606:4700:4700::1111/128",
-			protocol:   "ipv6-icmp",
-			icmpv6Type: 133,
-			hopLimit:   255,
-			rule:       "INPUT -i lo -s 2606:4700:4700::1111/128 -p ipv6-icmp --icmpv6-type 133 -m hl --hl-eq 255 -m comment --comment nordvpn -j ACCEPT",
-		}, {
-			chain: chainOutput, target: accept, iface: "lo", localNet: "::1/128",
-			protocol:   "ipv6-icmp",
-			icmpv6Type: 134,
-			hopLimit:   255,
-			rule:       "OUTPUT -o lo -s ::1/128 -p ipv6-icmp --icmpv6-type 134 -m hl --hl-eq 255 -m comment --comment nordvpn -j ACCEPT",
-		}, {
-			chain: chainOutput, target: accept, iface: "lo", localNet: "::1/128",
-			protocol: "udp",
-			sports:   []int{570},
-			dports:   []int{546, 547},
-			rule:     "OUTPUT -o lo -s ::1/128 -p udp --sport 570 --dport 546,547 -m comment --comment nordvpn -j ACCEPT",
-		}, {
-			chain: chainInput, target: accept, iface: "lo", remoteNet: "::1/128",
-			rule: "INPUT -i lo -s ::1/128 -m comment --comment nordvpn -j ACCEPT",
-		}, {
-			chain: chainOutput, target: accept, iface: "lo", localNet: "::1/128",
-			rule: "OUTPUT -o lo -s ::1/128 -m comment --comment nordvpn -j ACCEPT",
-		}, {
 			chain: chainInput, target: accept, mark: 0x123,
 			rule: "INPUT -m connmark --mark 0x123 -m comment --comment nordvpn -j ACCEPT",
 		}, {
@@ -244,7 +219,6 @@ func TestGenerateIPTablesRule(t *testing.T) {
 			rule := generateIPTablesRule(tt.chain, tt.target, net.Interface{Name: tt.iface},
 				remoteNetwork, localNetwork, tt.protocol, tt.port, tt.module, tt.stateFlag, tt.states, tt.chainPrefix,
 				tt.portFlag,
-				tt.icmpv6Type,
 				tt.hopLimit,
 				tt.sports,
 				tt.dports,
@@ -413,7 +387,6 @@ func TestRuleToIPTables(t *testing.T) {
 
 	net1111 := netip.MustParsePrefix("1.1.1.1/32")
 	net2220 := netip.MustParsePrefix("2.2.2.0/24")
-	netIpv6 := netip.MustParsePrefix("2606:4700:4700::1111/128")
 
 	tests := []struct {
 		name            string
@@ -422,15 +395,12 @@ func TestRuleToIPTables(t *testing.T) {
 		stateFlag       string
 		chainPrefix     string
 		ipv4TablesRules []string
-		ipv6TablesRules []string
 		ipv4Count       int
-		ipv6Count       int
 	}{
 		{
 			name:            "empty outbound rule",
 			rule:            firewall.Rule{Direction: firewall.Outbound},
 			ipv4TablesRules: []string{"OUTPUT -m comment --comment nordvpn -j DROP"},
-			ipv6TablesRules: []string{"OUTPUT -m comment --comment nordvpn -j DROP"},
 		},
 		{
 			name: "outbound rule",
@@ -452,21 +422,9 @@ func TestRuleToIPTables(t *testing.T) {
 			},
 		},
 		{
-			name: "two way rule ipv6",
-			rule: firewall.Rule{
-				Direction:      firewall.TwoWay,
-				RemoteNetworks: []netip.Prefix{netIpv6},
-			},
-			ipv6TablesRules: []string{
-				"INPUT -s 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
-				"OUTPUT -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
-			},
-		},
-		{
 			name:            "empty outbound physical rule",
 			rule:            firewall.Rule{Direction: firewall.Outbound, Physical: true},
 			ipv4TablesRules: []string{"POSTROUTING -m comment --comment nordvpn -j DROP"},
-			ipv6TablesRules: []string{"POSTROUTING -m comment --comment nordvpn -j DROP"},
 		},
 		{
 			name: "outbound physical rule",
@@ -501,12 +459,6 @@ func TestRuleToIPTables(t *testing.T) {
 				"INPUT -i eth0 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -o eth0 -m comment --comment nordvpn -j DROP",
 			},
-			ipv6TablesRules: []string{
-				"INPUT -i lo -m comment --comment nordvpn -j DROP",
-				"OUTPUT -o lo -m comment --comment nordvpn -j DROP",
-				"INPUT -i eth0 -m comment --comment nordvpn -j DROP",
-				"OUTPUT -o eth0 -m comment --comment nordvpn -j DROP",
-			},
 		},
 		{
 			name: "multi interfaces only physical",
@@ -521,18 +473,12 @@ func TestRuleToIPTables(t *testing.T) {
 				"PREROUTING -i eth0 -m comment --comment nordvpn -j DROP",
 				"POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP",
 			},
-			ipv6TablesRules: []string{
-				"PREROUTING -i lo -m comment --comment nordvpn -j DROP",
-				"POSTROUTING -o lo -m comment --comment nordvpn -j DROP",
-				"PREROUTING -i eth0 -m comment --comment nordvpn -j DROP",
-				"POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP",
-			},
 		},
 		{
 			name: "multi interfaces and networks rule",
 			rule: firewall.Rule{
 				Direction:      firewall.Outbound,
-				RemoteNetworks: []netip.Prefix{net1111, net2220, netIpv6},
+				RemoteNetworks: []netip.Prefix{net1111, net2220},
 				Interfaces:     []net.Interface{{Name: "lo"}, {Name: "eth0"}},
 			},
 			ipv4TablesRules: []string{
@@ -541,16 +487,12 @@ func TestRuleToIPTables(t *testing.T) {
 				"OUTPUT -o eth0 -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
 				"OUTPUT -o eth0 -d 2.2.2.0/24 -m comment --comment nordvpn -j DROP",
 			},
-			ipv6TablesRules: []string{
-				"OUTPUT -o lo -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
-				"OUTPUT -o eth0 -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
-			},
 		},
 		{
 			name: "multi interfaces and networks physical rule",
 			rule: firewall.Rule{
 				Direction:      firewall.Outbound,
-				RemoteNetworks: []netip.Prefix{net1111, net2220, netIpv6},
+				RemoteNetworks: []netip.Prefix{net1111, net2220},
 				Interfaces:     []net.Interface{{Name: "lo"}, {Name: "eth0"}},
 				Physical:       true,
 			},
@@ -560,16 +502,12 @@ func TestRuleToIPTables(t *testing.T) {
 				"POSTROUTING -o eth0 -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
 				"POSTROUTING -o eth0 -d 2.2.2.0/24 -m comment --comment nordvpn -j DROP",
 			},
-			ipv6TablesRules: []string{
-				"POSTROUTING -o lo -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
-				"POSTROUTING -o eth0 -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
-			},
 		},
 		{
 			name: "multi interfaces and networks forwarding rule",
 			rule: firewall.Rule{
 				Direction:      firewall.Forward,
-				RemoteNetworks: []netip.Prefix{net1111, net2220, netIpv6},
+				RemoteNetworks: []netip.Prefix{net1111, net2220},
 				Interfaces:     []net.Interface{{Name: "lo"}, {Name: "eth0"}},
 			},
 			ipv4TablesRules: []string{
@@ -578,34 +516,28 @@ func TestRuleToIPTables(t *testing.T) {
 				"FORWARD -o eth0 -d 1.1.1.1/32 -m comment --comment nordvpn -j DROP",
 				"FORWARD -o eth0 -d 2.2.2.0/24 -m comment --comment nordvpn -j DROP",
 			},
-			ipv6TablesRules: []string{
-				"FORWARD -o lo -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
-				"FORWARD -o eth0 -d 2606:4700:4700::1111/128 -m comment --comment nordvpn -j DROP",
-			},
 		},
 		{
 			name: "multiple interfaces, protocols, ports and networks",
 			rule: firewall.Rule{
-				RemoteNetworks: []netip.Prefix{net1111, net2220, netIpv6},
+				RemoteNetworks: []netip.Prefix{net1111, net2220},
 				Interfaces:     []net.Interface{{Name: "lo"}, {Name: "eth0"}},
 				Protocols:      []string{"tcp", "udp"},
 				Ports:          []int{111, 222, 333},
 				Direction:      firewall.Inbound,
 			},
 			ipv4Count: 48,
-			ipv6Count: 24,
 		},
 		{
 			name: "two way multiple interfaces, protocols, ports and networks",
 			rule: firewall.Rule{
-				RemoteNetworks: []netip.Prefix{net1111, net2220, netIpv6},
+				RemoteNetworks: []netip.Prefix{net1111, net2220},
 				Interfaces:     []net.Interface{{Name: "lo"}, {Name: "eth0"}},
 				Protocols:      []string{"tcp", "udp"},
 				Ports:          []int{111, 222, 333},
 				Direction:      firewall.TwoWay,
 			},
 			ipv4Count: 96,
-			ipv6Count: 48,
 		},
 		// Unit test cases for 3.8.4 hotfix. Split iptables rule into 2 due to a single rule being interpreted as AND, and 2 rules as OR.
 		{
@@ -869,18 +801,10 @@ func TestRuleToIPTables(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			allRules := ruleToIPTables(tt.rule, tt.module, tt.stateFlag, tt.chainPrefix)
-			var countingOnly bool
 			if tt.ipv4Count > 0 {
-				countingOnly = true
 				assert.Equal(t, tt.ipv4Count, len(allRules[ipv4Table]))
-			}
-			if tt.ipv6Count > 0 {
-				countingOnly = true
-				assert.Equal(t, tt.ipv6Count, len(allRules[ipv6Table]))
-			}
-			if countingOnly == false {
+			} else {
 				assert.Equal(t, tt.ipv4TablesRules, allRules[ipv4Table])
-				assert.Equal(t, tt.ipv6TablesRules, allRules[ipv6Table])
 			}
 		})
 	}
@@ -914,9 +838,9 @@ func TestFirewall_AddDeleteRules(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := New("", "", "", []string{ipv4Table, ipv6Table})
+			f := New("", "", "", []string{ipv4Table})
 			// save pre-existing rules
-			preRules, err := getSystemRules([]string{ipv4Table, ipv6Table})
+			preRules, err := getSystemRules([]string{ipv4Table})
 			assert.NoError(t, err)
 
 			// add all rules
@@ -926,7 +850,7 @@ func TestFirewall_AddDeleteRules(t *testing.T) {
 			}
 
 			// check if current rules do not match the pre-existing rules
-			currRules, err := getSystemRules([]string{ipv4Table, ipv6Table})
+			currRules, err := getSystemRules([]string{ipv4Table})
 			assert.NoError(t, err)
 
 			for _, rule := range tt.rules {
@@ -941,7 +865,7 @@ func TestFirewall_AddDeleteRules(t *testing.T) {
 				err = f.Delete(rule)
 				assert.NoError(t, err)
 			}
-			postRules, err := getSystemRules([]string{ipv4Table, ipv6Table})
+			postRules, err := getSystemRules([]string{ipv4Table})
 			assert.NoError(t, err)
 			assert.Equal(t, preRules, postRules)
 		})

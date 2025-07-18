@@ -2,7 +2,6 @@
 package device
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -55,26 +54,13 @@ func ListPhysical() ([]net.Interface, error) {
 	}
 
 	if len(interfaces) == len(vInterfaces) {
-		gateway4, err4 := DefaultGateway(false)
-		gateway6, err6 := DefaultGateway(true)
+		gateway, err := DefaultGateway()
 
-		if err4 == nil && err6 == nil && !InterfacesAreEqual(gateway4, gateway6) {
-			return []net.Interface{gateway4, gateway6}, nil
-		}
-		if err4 == nil {
-			return []net.Interface{gateway4}, nil
-		}
-		if err6 == nil {
-			return []net.Interface{gateway6}, nil
+		if err == nil {
+			return []net.Interface{gateway}, nil
 		}
 
-		if err4 != nil {
-			return nil, err4
-		}
-		if err6 != nil {
-			return nil, err6
-		}
-		return nil, errors.New("unable to retrieve default gateway")
+		return nil, fmt.Errorf("unable to retrieve default gateway: %w", err)
 	}
 
 	var devices []net.Interface
@@ -100,12 +86,8 @@ func ifaceListContains(list []net.Interface, device net.Interface) bool {
 // Linux generally has only a single default gateway. Although it can
 // have more than one default gateway by using routing tables, only one
 // is allowed per routing table.
-func DefaultGateway(ipv6 bool) (net.Interface, error) {
-	version := "-4"
-	if ipv6 {
-		version = "-6"
-	}
-	cmd := exec.Command("ip", version, "route", "list", "default") // local table
+func DefaultGateway() (net.Interface, error) {
+	cmd := exec.Command("ip", "-4", "route", "list", "default") // local table
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return net.Interface{}, fmt.Errorf("getting network interface used by default route: %w", err)

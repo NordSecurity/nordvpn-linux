@@ -41,7 +41,6 @@ func (i *IptablesOutput) Get() string {
 
 type CommandRunnerMock struct {
 	ipv4Commands []string
-	ipv6Commands []string
 	outputs      map[string]string
 	ErrCommand   string
 }
@@ -78,12 +77,6 @@ func (i *CommandRunnerMock) PopIPv4Commands() []string {
 	return commands
 }
 
-func (i *CommandRunnerMock) PopIPv6Commands() []string {
-	commands := i.ipv6Commands
-	i.ipv6Commands = nil
-	return commands
-}
-
 func (i *CommandRunnerMock) AddIptablesListOutput(chain string, output string) {
 	listCommand := fmt.Sprintf("-L %s --numeric", chain)
 	i.outputs[listCommand] = output
@@ -103,12 +96,7 @@ func (i *CommandRunnerMock) RunCommand(command string, args string) (string, err
 		}
 		return "", nil
 	}
-
-	if command == "iptables" {
-		i.ipv4Commands = append(i.ipv4Commands, args)
-	} else {
-		i.ipv6Commands = append(i.ipv6Commands, args)
-	}
+	i.ipv4Commands = append(i.ipv4Commands, args)
 
 	return "", nil
 }

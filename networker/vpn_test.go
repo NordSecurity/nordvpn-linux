@@ -59,9 +59,9 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
 				0,
 				false,
+				&workingIpv6{},
 			)
 			// injecting VPN implementation without calling netw.Start
 			netw.vpnet = test.vpn
@@ -167,7 +167,6 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 		&subs.Subject[string]{},
 		workingRouter{},
 		&workingDNS{},
-		&workingIpv6{},
 		firewall,
 		workingAllowlistRouting{},
 		workingDeviceList,
@@ -178,6 +177,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 		&workingExitNode{},
 		0,
 		false,
+		&workingIpv6{},
 	)
 
 	nic1Name := "nic1"
@@ -194,7 +194,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	err := combined.refreshVPN(ctx)
 	assert.NoError(t, err)
 
-	dropRule := firewall.rules["drop"]
+	dropRule := firewall.rules["drop IPv4"]
 	missingNICs := findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name)
 
 	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
@@ -211,7 +211,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	err = combined.refreshVPN(ctx)
 	assert.NoError(t, err)
 
-	dropRule = firewall.rules["drop"]
+	dropRule = firewall.rules["drop IPv4"]
 	missingNICs = findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
 
 	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
@@ -226,7 +226,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	err = combined.refreshVPN(ctx)
 	assert.NoError(t, err)
 
-	dropRule = firewall.rules["drop"]
+	dropRule = firewall.rules["drop IPv4"]
 	missingNICs = findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
 
 	assert.Len(t, missingNICs, 1, "Block rule was not updated properly when interface was removed: %s", missingNICs)
