@@ -22,6 +22,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -292,6 +293,17 @@ func main() {
 	}
 
 	machineID := machineIdGenerator.GetMachineID()
+
+	if cfg.RolloutGroup == 0 {
+		rolloutGroup := remote.GenerateRolloutGroup(machineID)
+		cfg.RolloutGroup = rolloutGroup
+		if err := fsystem.SaveWith(func(c config.Config) config.Config {
+			c.RolloutGroup = rolloutGroup
+			return c
+		}); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to save rollout group:", rolloutGroup)
+		}
+	}
 
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
