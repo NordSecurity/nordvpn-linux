@@ -3,7 +3,7 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.network "private_network", type: "dhcp"
-  # mount the root folder
+  # mount the project folder
   config.vm.synced_folder "../../", "/vagrant"
 
   # install dependencies
