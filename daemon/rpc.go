@@ -58,6 +58,7 @@ type RPC struct {
 	remoteConfigGetter  remote.ConfigGetter
 	connectionInfo      *state.ConnectionInfo
 	consentChecker      ConsentChecker
+	staticConfigManager config.StaticConfigManager
 	pb.UnimplementedDaemonServer
 }
 
@@ -87,34 +88,36 @@ func NewRPC(
 	remoteConfigGetter remote.ConfigGetter,
 	connectionInfo *state.ConnectionInfo,
 	consentChecker ConsentChecker,
+	staticConfigManager config.StaticConfigManager,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
-		environment:        environment,
-		ac:                 ac,
-		cm:                 cm,
-		dm:                 dm,
-		api:                api,
-		serversAPI:         serversAPI,
-		credentialsAPI:     credentialsAPI,
-		cdn:                cdn,
-		repo:               repo,
-		authentication:     authentication,
-		version:            version,
-		factory:            factory,
-		events:             events,
-		endpointResolver:   endpointResolver,
-		scheduler:          scheduler,
-		netw:               netw,
-		publisher:          publisher,
-		nameservers:        nameservers,
-		ncClient:           ncClient,
-		analytics:          analytics,
-		norduser:           norduser,
-		statePublisher:     statePublisher,
-		connectContext:     connectContext,
-		remoteConfigGetter: remoteConfigGetter,
-		connectionInfo:     connectionInfo,
-		consentChecker:     consentChecker,
+		environment:         environment,
+		ac:                  ac,
+		cm:                  cm,
+		dm:                  dm,
+		api:                 api,
+		serversAPI:          serversAPI,
+		credentialsAPI:      credentialsAPI,
+		cdn:                 cdn,
+		repo:                repo,
+		authentication:      authentication,
+		version:             version,
+		factory:             factory,
+		events:              events,
+		endpointResolver:    endpointResolver,
+		scheduler:           scheduler,
+		netw:                netw,
+		publisher:           publisher,
+		nameservers:         nameservers,
+		ncClient:            ncClient,
+		analytics:           analytics,
+		norduser:            norduser,
+		statePublisher:      statePublisher,
+		connectContext:      connectContext,
+		remoteConfigGetter:  remoteConfigGetter,
+		connectionInfo:      connectionInfo,
+		consentChecker:      consentChecker,
+		staticConfigManager: staticConfigManager,
 	}
 }

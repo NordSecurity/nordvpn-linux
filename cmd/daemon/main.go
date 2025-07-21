@@ -528,6 +528,7 @@ func main() {
 		rcConfig,
 		connectionInfo,
 		consentChecker,
+		&staticCfgManager,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
