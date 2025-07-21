@@ -2,6 +2,8 @@ import os
 
 import pytest
 import sh
+import json
+import time
 
 import lib
 from lib import (
@@ -10,6 +12,32 @@ from lib import (
 )
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "unblock_network", "collect_logs")
+
+
+def test_static_install_file_creation():
+    static_config_dir = "/var/lib/nordvpn/data/"
+    if daemon.is_under_snap():
+        static_config_dir = "/var/snap/nordvpn/common/var/lib/nordvpn/data/"
+    static_config_path = f"{static_config_dir}/install_static.dat"
+
+    rollout_group_field_name = "rollout_group"
+
+    rollout_group = 0
+    # use popen because config file requires need sudo privileges
+    static_config_json = os.popen(f"sudo cat {static_config_path}")
+    static_config = json.load(static_config_json)
+    rollout_group = static_config[rollout_group_field_name]
+
+    assert rollout_group != 0, "Rollout group was not configured on startup."
+
+    os.popen(f"rm {static_config_path}")
+    daemon.restart()
+
+    static_config_json = os.popen(f"sudo cat {static_config_path}")
+    static_config = json.load(static_config_json)
+    rollout_group_after_restart = static_config[rollout_group_field_name]
+
+    assert rollout_group == rollout_group_after_restart, "Different rollout group was generated after restarting the deamon."
 
 
 def test_api_call_after_vpn_connect():
