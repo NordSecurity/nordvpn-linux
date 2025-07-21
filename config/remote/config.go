@@ -117,14 +117,14 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 	}
 
 	// write main json to file
-	localFileName := filepath.Join(targetPath, f.FilePath("")) + tmpExt
+	localFileName := f.FilePath(targetPath) + tmpExt
 	if err = fw.writeFile(localFileName, mainJsonStr, internal.PermUserRW); err != nil {
 		return false, fmt.Errorf("writing main file: %w", err)
 	}
 	// write main hash to file
-	localFileName = filepath.Join(targetPath, f.HashFilePath("")) + tmpExt
+	localFileName = f.HashFilePath(targetPath) + tmpExt
 	if err = fw.writeFile(localFileName, mainJsonHashStr, internal.PermUserRW); err != nil {
-		return false, fmt.Errorf("writing main file: %w", err)
+		return false, fmt.Errorf("writing main hash file: %w", err)
 	}
 
 	// while processing, save files with special extension '*.bu'
@@ -191,9 +191,9 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 		return err
 	}
 
-	f.params = make(map[string]*Param)
+	params := make(map[string]*Param)
 	for _, cfgItem := range temp.Configs {
-		f.params[cfgItem.Name] = &Param{Name: cfgItem.Name, Type: cfgItem.Type, Settings: []ParamValue{}}
+		params[cfgItem.Name] = &Param{Name: cfgItem.Name, Type: cfgItem.Type, Settings: []ParamValue{}}
 		for _, param := range cfgItem.Settings {
 			// function for special field type `file` to read and validate
 			fileReadFunc := func(name string) ([]byte, error) {
@@ -215,12 +215,13 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 				return err
 			}
 			// store valid values in the map
-			f.params[cfgItem.Name].Settings = append(f.params[cfgItem.Name].Settings,
+			params[cfgItem.Name].Settings = append(params[cfgItem.Name].Settings,
 				ParamValue{Value: param.Value, incValue: string(incVal), AppVersion: param.AppVersion, Weight: param.Weight})
-			// after all is done, set new hash //TODO/FIXME: test this!
-			f.hash = hash(bytes.Join([][]byte{mainJsonStr, incFiles}, nil))
 		}
 	}
+	// set new params and hash
+	f.params = params
+	f.hash = hash(bytes.Join([][]byte{mainJsonStr, incFiles}, nil))
 	return nil
 }
 

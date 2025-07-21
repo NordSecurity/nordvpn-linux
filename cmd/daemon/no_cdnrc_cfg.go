@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
 type RemoteConfigGetterStub struct{}
@@ -14,11 +15,7 @@ func (r RemoteConfigGetterStub) GetTelioConfig() (string, error) {
 	return "", fmt.Errorf("no remote config getter was compiled into the app")
 }
 
-type RemoteStorage interface {
-	GetRemoteFile(string) ([]byte, error)
-}
-
-func getRemoteConfigGetter(_ config.BuildTarget, _ string, _ RemoteStorage) RemoteConfigGetterStub {
+func getRemoteConfigGetter(_ config.BuildTarget, _ string, _ core.RemoteStorage) RemoteConfigGetterStub {
 	return RemoteConfigGetterStub{}
 }
 func (r RemoteConfigGetterStub) IsFeatureEnabled(string) bool                { return false }

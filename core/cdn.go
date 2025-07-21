@@ -17,6 +17,11 @@ import (
 type CDN interface {
 	ThreatProtectionLite() (*NameServers, error)
 	ConfigTemplate(isObfuscated bool, method string) (http.Header, []byte, error)
+	RemoteStorage
+}
+
+// RemoteStorage interface to get remote files
+type RemoteStorage interface {
 	GetRemoteFile(name string) ([]byte, error)
 }
 

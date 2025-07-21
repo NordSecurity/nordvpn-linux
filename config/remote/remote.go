@@ -5,17 +5,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
-
-type RemoteStorage interface {
-	GetRemoteFile(name string) ([]byte, error)
-}
 
 // ConfigGetter get values from remote config
 type ConfigGetter interface {
@@ -33,7 +29,7 @@ type ConfigLoader interface {
 }
 
 const (
-	envUseLocalConfig = "USE_LOCAL_CONFIG"
+	envUseLocalConfig = "RC_USE_LOCAL_CONFIG"
 )
 
 type CdnRemoteConfig struct {
@@ -41,13 +37,13 @@ type CdnRemoteConfig struct {
 	appEnvironment string
 	localCachePath string
 	remotePath     string
-	cdn            RemoteStorage
+	cdn            core.RemoteStorage
 	features       FeatureMap
-	mu             sync.Mutex
+	mu             sync.RWMutex
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
-func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string, cdn RemoteStorage) *CdnRemoteConfig {
+func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string, cdn core.RemoteStorage) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
 		appVersion:     buildTarget.Version,
 		appEnvironment: buildTarget.Environment,
@@ -88,7 +84,7 @@ func (v jsonValidator) validate(content []byte) error {
 }
 
 type cdnFileGetter struct {
-	cdn RemoteStorage
+	cdn core.RemoteStorage
 }
 
 func (cfg cdnFileGetter) readFile(fname string) ([]byte, error) {
@@ -99,6 +95,7 @@ func (cfg cdnFileGetter) readFile(fname string) ([]byte, error) {
 func (c *CdnRemoteConfig) LoadConfig() error {
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
+		c.mu.RLock()
 		for _, f := range c.features {
 			dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 			if err != nil {
@@ -110,9 +107,10 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 				log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
 			}
 		}
+		c.mu.RUnlock()
 	}
 
-	// lock only when loading from local files
+	// write-lock only when loading from local files
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -127,26 +125,26 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	return nil
 }
 
-func findMatchingRecord(ss []ParamValue, ver string) *ParamValue {
-	matches := []ParamValue{}
+func findMatchingRecord(ss []ParamValue, ver string) (match *ParamValue) {
 	for _, s := range ss {
-		// find all my version matching records
+		// find my version matching records
 		ok, err := isVersionMatching(ver, s.AppVersion)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "invalid version:", err)
 			continue
 		}
 		if ok {
-			matches = append(matches, s)
+			// find matching item with highest weight
+			if match == nil {
+				match = &s
+			} else {
+				if s.Weight > match.Weight {
+					match = &s
+				}
+			}
 		}
 	}
-	if len(matches) > 0 {
-		sort.Slice(matches, func(i, j int) bool {
-			return matches[i].Weight > matches[j].Weight
-		})
-		return &matches[0]
-	}
-	return nil
+	return match
 }
 
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
@@ -155,8 +153,8 @@ func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
 
 // TODO/FIXME: add `rollout` support
 func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	// find by name, expect param name to be the same as feature name and expect boolean type
 	f, found := c.features[featureName]
@@ -179,8 +177,8 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 
 // TODO/FIXME: add `rollout` support
 func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	f, found := c.features[featureName]
 	if !found {

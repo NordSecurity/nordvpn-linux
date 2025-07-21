@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +31,118 @@ const (
 	testFeatureWithRc = "nordwhisper"
 )
 
+func TestFindMatchingRecord(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// ss []ParamValue, ver string
+	input1 := []ParamValue{
+		{
+			Value:      "val1",
+			AppVersion: "3.3.3",
+			Weight:     10,
+			Rollout:    10,
+		},
+		{
+			Value:      "val2",
+			AppVersion: "3.3.3",
+			Weight:     20,
+			Rollout:    10,
+		},
+		{
+			Value:      "val3",
+			AppVersion: "3.3.3",
+			Weight:     10,
+			Rollout:    10,
+		},
+	}
+	input2 := []ParamValue{
+		{
+			Value:      "val1",
+			AppVersion: "3.3.3",
+			Weight:     10,
+			Rollout:    10,
+		},
+		{
+			Value:      "val2",
+			AppVersion: "3.3.3",
+			Weight:     10,
+			Rollout:    10,
+		},
+		{
+			Value:      "val3",
+			AppVersion: "3.3.3",
+			Weight:     10,
+			Rollout:    10,
+		},
+	}
+	input3 := []ParamValue{
+		{
+			Value:      "val1",
+			AppVersion: "3.3.3",
+			Weight:     10,
+			Rollout:    10,
+		},
+		{
+			Value:      "val2",
+			AppVersion: "3.3.3",
+			Weight:     10,
+			Rollout:    10,
+		},
+		{
+			Value:      "val3",
+			AppVersion: "3.3.3",
+			Weight:     11,
+			Rollout:    10,
+		},
+	}
+	tests := []struct {
+		name       string
+		input      []ParamValue
+		ver        string
+		matchValue string
+	}{
+		{
+			name:       "match1",
+			input:      input1,
+			ver:        "3.3.3",
+			matchValue: "val2",
+		},
+		{
+			name:       "match2 - no match",
+			input:      input1,
+			ver:        "3.3.4",
+			matchValue: "",
+		},
+		{
+			name:       "match3",
+			input:      input2,
+			ver:        "3.3.3",
+			matchValue: "val1",
+		},
+		{
+			name:       "match4",
+			input:      input3,
+			ver:        "3.3.3",
+			matchValue: "val3",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			match := findMatchingRecord(test.input, test.ver)
+			if test.matchValue != "" {
+				assert.NotNil(t, match)
+				assert.Equal(t, test.matchValue, match.Value)
+			} else {
+				assert.Nil(t, match)
+			}
+		})
+	}
+}
+
 func TestFeatureOnOff(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	stop := setupMockCdnWebServer()
 	defer stop()
 
@@ -77,7 +190,36 @@ func TestFeatureOnOff(t *testing.T) {
 	}
 }
 
+func TestMultiAccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stop := setupMockCdnWebServer()
+	defer stop()
+
+	cdn, cancel := setupMockCdnClient(cdnUrl)
+	defer cancel()
+
+	rc := newTestRemoteConfig("3.20.1", "dev", httpPath, localPath, cdn)
+
+	cnt := 10
+	wg := sync.WaitGroup{}
+	wg.Add(cnt)
+
+	for range cnt {
+		go func() {
+			err := rc.LoadConfig()
+			assert.NoError(t, err)
+			on := rc.IsFeatureEnabled(testFeatureWithRc)
+			assert.True(t, on)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
 func TestGetTelioConfig(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	stop := setupMockCdnWebServer()
 	defer stop()
 
@@ -141,7 +283,7 @@ func TestGetTelioConfig(t *testing.T) {
 	}
 }
 
-func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn RemoteStorage) *CdnRemoteConfig {
+func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn core.RemoteStorage) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
 		appVersion:     ver,
 		appEnvironment: env,
