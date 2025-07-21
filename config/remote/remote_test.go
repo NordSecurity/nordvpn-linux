@@ -205,7 +205,7 @@ func TestMultiAccess(t *testing.T) {
 	wg := sync.WaitGroup{}
 	wg.Add(cnt)
 
-	for range cnt {
+	for i := 0; i < cnt; i++ {
 		go func() {
 			err := rc.LoadConfig()
 			assert.NoError(t, err)

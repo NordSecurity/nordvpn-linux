@@ -326,9 +326,6 @@ func main() {
 	daemonEvents.Settings.Publish(cfg)
 
 	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI)
-	if err := rcConfig.LoadConfig(); err != nil {
-		log.Println(internal.ErrorPrefix, fmt.Errorf("loading config: %w", err))
-	}
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
@@ -626,7 +623,8 @@ func main() {
 			log.Println(internal.WarningPrefix, err)
 		}
 	}()
-	rpc.StartJobs(statePublisher, heartBeatSubject, rcConfig)
+	rpc.StartJobs(statePublisher, heartBeatSubject)
+	rpc.StartRemoteConfigLoaderJob(rcConfig)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {
