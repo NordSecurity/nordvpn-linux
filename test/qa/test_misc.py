@@ -3,7 +3,6 @@ import os
 import pytest
 import sh
 import json
-import time
 
 import lib
 from lib import (
