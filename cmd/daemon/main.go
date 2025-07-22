@@ -236,7 +236,7 @@ func main() {
 	var threatProtectionLiteServers *dns.NameServers
 	nameservers, err := cdnAPI.ThreatProtectionLite()
 	if err != nil {
-		log.Printf("error retrieving nameservers: %s", err)
+		log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
 		threatProtectionLiteServers = dns.NewNameServers(nil)
 	} else {
 		threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
