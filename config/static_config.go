@@ -11,7 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// var staticConfigFilename = internal.DatFilesPathCommon + "install_static.dat"
 var staticConfigFilename = filepath.Join(internal.DatFilesPathCommon, "install_static.dat")
 var (
 	ErrStaticValueAlreadySet    = errors.New("static value already configured")
@@ -19,12 +18,12 @@ var (
 	ErrFailedToReadConfigFile   = errors.New("failed to read static config file")
 )
 
-type ConfigState int
+type configState int
 
 const (
-	NoFile ConfigState = iota
-	FailedToInitialize
-	Initialized
+	noFile configState = iota
+	failedToInitialize
+	initialized
 )
 
 type StaticConfig struct {
@@ -40,28 +39,28 @@ type StaticConfigManager interface {
 // FilesystemStaticConfigManager saves and reads values to a config file
 type FilesystemStaticConfigManager struct {
 	fs    FilesystemHandle
-	state ConfigState
+	state configState
 	cfg   StaticConfig
 }
 
-func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, ConfigState) {
+func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, configState) {
 	cfgFile, err := fs.ReadFile(staticConfigFilename)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to load static config:", err)
 		if errors.Is(err, os.ErrNotExist) {
-			return StaticConfig{}, NoFile
+			return StaticConfig{}, noFile
 		}
-		return StaticConfig{}, FailedToInitialize
+		return StaticConfig{}, failedToInitialize
 	}
 
 	var cfg StaticConfig
 	err = json.Unmarshal(cfgFile, &cfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to unmarshal static config:", err)
-		return cfg, FailedToInitialize
+		return cfg, failedToInitialize
 	}
 
-	return cfg, Initialized
+	return cfg, initialized
 }
 
 func NewFilesystemStaticConfigManager() FilesystemStaticConfigManager {
@@ -76,12 +75,12 @@ func NewFilesystemStaticConfigManager() FilesystemStaticConfigManager {
 }
 
 func (s *FilesystemStaticConfigManager) getConfig() (StaticConfig, error) {
-	if s.state == Initialized {
+	if s.state == initialized {
 		return s.cfg, nil
 	}
 
 	cfg, state := tryInitStaticConfig(s.fs)
-	if state == FailedToInitialize {
+	if state == failedToInitialize {
 		return cfg, ErrFailedToReadConfigFile
 	}
 	s.cfg = cfg

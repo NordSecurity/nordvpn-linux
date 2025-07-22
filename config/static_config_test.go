@@ -15,31 +15,31 @@ func TestTryInitConfigState(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		expectedState ConfigState
+		expectedState configState
 		filename      string
 		fileContents  []byte
 		readErr       error
 	}{
 		{
 			name:          "init success",
-			expectedState: Initialized,
+			expectedState: initialized,
 			filename:      staticConfigFilename,
 			fileContents:  []byte("{}"),
 		},
 		{
 			name:          "no file",
-			expectedState: NoFile,
+			expectedState: noFile,
 			readErr:       os.ErrNotExist,
 		},
 		{
 			name:          "invalid json",
-			expectedState: FailedToInitialize,
+			expectedState: failedToInitialize,
 			filename:      staticConfigFilename,
 			fileContents:  []byte("{"),
 		},
 		{
 			name:          "failed to read file",
-			expectedState: FailedToInitialize,
+			expectedState: failedToInitialize,
 			readErr:       os.ErrPermission,
 		},
 	}
@@ -60,7 +60,7 @@ func TestGetRolloutGroup(t *testing.T) {
 
 	tests := []struct {
 		name                 string
-		currentConfigState   ConfigState
+		currentConfigState   configState
 		currentConfig        StaticConfig
 		readErr              error
 		expectedRolloutGroup int
@@ -68,7 +68,7 @@ func TestGetRolloutGroup(t *testing.T) {
 	}{
 		{
 			name:               "config initialized, rollout group is configured",
-			currentConfigState: Initialized,
+			currentConfigState: initialized,
 			currentConfig: StaticConfig{
 				RolloutGroup: 1,
 			},
@@ -77,7 +77,7 @@ func TestGetRolloutGroup(t *testing.T) {
 		},
 		{
 			name:               "config initialized, rollout group is not configured",
-			currentConfigState: Initialized,
+			currentConfigState: initialized,
 			currentConfig: StaticConfig{
 				RolloutGroup: 0,
 			},
@@ -86,7 +86,7 @@ func TestGetRolloutGroup(t *testing.T) {
 		},
 		{
 			name:                 "config not initialized",
-			currentConfigState:   NoFile,
+			currentConfigState:   noFile,
 			currentConfig:        StaticConfig{},
 			readErr:              os.ErrNotExist,
 			expectedRolloutGroup: 0,
@@ -94,7 +94,7 @@ func TestGetRolloutGroup(t *testing.T) {
 		},
 		{
 			name:                 "failed to read config file",
-			currentConfigState:   NoFile,
+			currentConfigState:   noFile,
 			currentConfig:        StaticConfig{},
 			readErr:              os.ErrPermission,
 			expectedRolloutGroup: 0,
@@ -125,7 +125,7 @@ func TestSetRolloutGroup(t *testing.T) {
 	tests := []struct {
 		name                 string
 		currentConfig        StaticConfig
-		currentConfigState   ConfigState
+		currentConfigState   configState
 		targetRolloutGroup   int
 		readErr              error
 		writeErr             error
@@ -137,7 +137,7 @@ func TestSetRolloutGroup(t *testing.T) {
 			currentConfig: StaticConfig{
 				RolloutGroup: 0,
 			},
-			currentConfigState:   Initialized,
+			currentConfigState:   initialized,
 			targetRolloutGroup:   1,
 			expectedErr:          nil,
 			expectedRolloutGroup: 1,
@@ -147,7 +147,7 @@ func TestSetRolloutGroup(t *testing.T) {
 			currentConfig: StaticConfig{
 				RolloutGroup: 20,
 			},
-			currentConfigState:   Initialized,
+			currentConfigState:   initialized,
 			targetRolloutGroup:   1,
 			expectedErr:          ErrStaticValueAlreadySet,
 			expectedRolloutGroup: 20,
@@ -155,7 +155,7 @@ func TestSetRolloutGroup(t *testing.T) {
 		{
 			name:                 "config not initialized",
 			currentConfig:        StaticConfig{},
-			currentConfigState:   NoFile,
+			currentConfigState:   noFile,
 			targetRolloutGroup:   20,
 			expectedErr:          nil,
 			expectedRolloutGroup: 20,
@@ -163,7 +163,7 @@ func TestSetRolloutGroup(t *testing.T) {
 		{
 			name:                 "config not initialized",
 			currentConfig:        StaticConfig{},
-			currentConfigState:   NoFile,
+			currentConfigState:   noFile,
 			targetRolloutGroup:   20,
 			expectedErr:          nil,
 			expectedRolloutGroup: 20,
