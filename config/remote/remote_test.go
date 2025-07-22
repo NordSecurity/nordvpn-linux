@@ -143,10 +143,10 @@ func TestFindMatchingRecord(t *testing.T) {
 func TestFeatureOnOff(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	stop := setupMockCdnWebServer()
+	stop := setupMockCdnWebServer(false)
 	defer stop()
 
-	cdn, cancel := setupMockCdnClient(cdnUrl)
+	cdn, cancel := setupMockCdnClient()
 	defer cancel()
 
 	tests := []struct {
@@ -181,7 +181,7 @@ func TestFeatureOnOff(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := newTestRemoteConfig(test.ver, test.env, httpPath, localPath, cdn)
+			rc := newTestRemoteConfig(test.ver, test.env, cdn)
 			err := rc.LoadConfig()
 			assert.NoError(t, err)
 			on := rc.IsFeatureEnabled(test.feature)
@@ -193,13 +193,13 @@ func TestFeatureOnOff(t *testing.T) {
 func TestMultiAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	stop := setupMockCdnWebServer()
+	stop := setupMockCdnWebServer(false)
 	defer stop()
 
-	cdn, cancel := setupMockCdnClient(cdnUrl)
+	cdn, cancel := setupMockCdnClient()
 	defer cancel()
 
-	rc := newTestRemoteConfig("3.20.1", "dev", httpPath, localPath, cdn)
+	rc := newTestRemoteConfig("3.20.1", "dev", cdn)
 
 	cnt := 10
 	wg := sync.WaitGroup{}
@@ -220,10 +220,10 @@ func TestMultiAccess(t *testing.T) {
 func TestGetTelioConfig(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	stop := setupMockCdnWebServer()
+	stop := setupMockCdnWebServer(false)
 	defer stop()
 
-	cdn, cancel := setupMockCdnClient(cdnUrl)
+	cdn, cancel := setupMockCdnClient()
 	defer cancel()
 
 	tests := []struct {
@@ -269,7 +269,7 @@ func TestGetTelioConfig(t *testing.T) {
 				err := os.Unsetenv(envUseLocalConfig)
 				assert.NoError(t, err)
 			}
-			rc := newTestRemoteConfig(test.ver, test.env, httpPath, localPath, cdn)
+			rc := newTestRemoteConfig(test.ver, test.env, cdn)
 			err := rc.LoadConfig()
 			assert.NoError(t, err)
 			telioCfg, err := rc.GetTelioConfig()
@@ -279,15 +279,95 @@ func TestGetTelioConfig(t *testing.T) {
 				assert.NoError(t, err)
 				assert.True(t, len(telioCfg) > 0)
 			}
+			os.Unsetenv(envUseLocalConfig) // cleanup
 		})
 	}
 }
 
-func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn core.RemoteStorage) *CdnRemoteConfig {
+func TestGetUpdatedTelioConfig(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stopWebServer := setupMockCdnWebServer(false)
+
+	cdn, cancel := setupMockCdnClient()
+	defer cancel()
+
+	libtelioMainConfigFile := filepath.Join(localPath, "libtelio.json")
+	libtelioInc1ConfigFile := filepath.Join(localPath, "include/libtelio1.json")
+	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
+
+	rc := newTestRemoteConfig("3.4.1", "dev", cdn)
+
+	log.Println("~~~~ first attempt to load - should load whole config from web server")
+
+	err := rc.LoadConfig()
+	assert.NoError(t, err)
+
+	info1, err := os.Stat(libtelioMainConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info1)
+	info1inc1, err := os.Stat(libtelioInc1ConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info1inc1)
+	info1inc2, err := os.Stat(libtelioInc2ConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info1inc2)
+
+	log.Println("~~~~ second attempt to load - should check hash is the same and should not load main config from web server")
+
+	err = rc.LoadConfig()
+	assert.NoError(t, err)
+
+	info2, err := os.Stat(libtelioMainConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info2)
+	info2inc1, err := os.Stat(libtelioInc1ConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info2inc1)
+	info2inc2, err := os.Stat(libtelioInc2ConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info2inc2)
+
+	// files are not modified on disk - should be the same time
+	assert.Equal(t, info1.ModTime().Nanosecond(), info2.ModTime().Nanosecond())
+	assert.Equal(t, info1inc1.ModTime().Nanosecond(), info2inc1.ModTime().Nanosecond())
+	assert.Equal(t, info1inc2.ModTime().Nanosecond(), info2inc2.ModTime().Nanosecond())
+
+	stopWebServer()
+
+	time.Sleep(time.Second)
+
+	// have updated libtelio remote config
+	stopWebServer = setupMockCdnWebServer(true)
+
+	log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
+
+	err = rc.LoadConfig()
+	assert.NoError(t, err)
+
+	info3, err := os.Stat(libtelioMainConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info3)
+	info3inc1, err := os.Stat(libtelioInc1ConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info3inc1)
+	info3inc2, err := os.Stat(libtelioInc2ConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info3inc2)
+
+	// files are modified on disk - should be greater time
+	assert.Greater(t, info3.ModTime().Nanosecond(), info1.ModTime().Nanosecond())
+	assert.Greater(t, info3inc1.ModTime().Nanosecond(), info1inc1.ModTime().Nanosecond())
+	assert.Greater(t, info3inc2.ModTime().Nanosecond(), info1inc2.ModTime().Nanosecond())
+
+	stopWebServer()
+}
+
+func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
 		appVersion:     ver,
 		appEnvironment: env,
-		remotePath:     remotePath,
+		remotePath:     httpPath,
 		localCachePath: localPath,
 		cdn:            cdn,
 		features:       make(FeatureMap),
@@ -299,7 +379,7 @@ func newTestRemoteConfig(ver, env, remotePath, localPath string, cdn core.Remote
 	return rc
 }
 
-func setupMockCdnClient(cdnUrl string) (*core.CDNAPI, context.CancelFunc) {
+func setupMockCdnClient() (*core.CDNAPI, context.CancelFunc) {
 	validator := response.NoopValidator{}
 
 	userAgent := fmt.Sprintf("NordApp Linux %s %s", "3.33.3", "distro.KernelName")
@@ -335,21 +415,35 @@ func makeHashJson(data ...[]byte) []byte {
 	return rz
 }
 
-func setupMockCdnWebServer() func() {
+func setupMockCdnWebServer(updated bool) func() {
 	httpPath := filepath.Join(httpPath, "dev")
+
+	libtelioCfg := libtelioJsonConfFile
+	libtelioInc1Cfg := libtelioJsonConfInc1File
+	libtelioInc2Cfg := libtelioJsonConfInc2File
+	if updated {
+		libtelioCfg = libtelioUpdatedJsonConfFile
+		libtelioInc1Cfg = libtelioUpdatedJsonConfInc1File
+		libtelioInc2Cfg = libtelioUpdatedJsonConfInc2File
+	}
+
 	// in-memory file data
 	files := map[string][]byte{
 		filepath.Join(httpPath, "nordvpn.json"):                []byte(nordvpnJsonConfFile),
 		filepath.Join(httpPath, "nordvpn-hash.json"):           makeHashJson([]byte(nordvpnJsonConfFile)),
 		filepath.Join(httpPath, "nordwhisper.json"):            []byte(nordwhisperJsonConfFile),
 		filepath.Join(httpPath, "nordwhisper-hash.json"):       makeHashJson([]byte(nordwhisperJsonConfFile)),
-		filepath.Join(httpPath, "libtelio.json"):               []byte(libtelioJsonConfFile),
-		filepath.Join(httpPath, "include/libtelio1.json"):      []byte(libtelioJsonConfInc1File),
-		filepath.Join(httpPath, "include/libtelio2.json"):      []byte(libtelioJsonConfInc2File),
-		filepath.Join(httpPath, "libtelio-hash.json"):          makeHashJson([]byte(libtelioJsonConfFile), []byte(libtelioJsonConfInc1File), []byte(libtelioJsonConfInc2File)),
-		filepath.Join(httpPath, "include/libtelio1-hash.json"): makeHashJson([]byte(libtelioJsonConfInc1File)),
-		filepath.Join(httpPath, "include/libtelio2-hash.json"): makeHashJson([]byte(libtelioJsonConfInc2File)),
+		filepath.Join(httpPath, "libtelio.json"):               []byte(libtelioCfg),
+		filepath.Join(httpPath, "include/libtelio1.json"):      []byte(libtelioInc1Cfg),
+		filepath.Join(httpPath, "include/libtelio2.json"):      []byte(libtelioInc2Cfg),
+		filepath.Join(httpPath, "libtelio-hash.json"):          makeHashJson([]byte(libtelioCfg), []byte(libtelioInc1Cfg), []byte(libtelioInc2Cfg)),
+		filepath.Join(httpPath, "include/libtelio1-hash.json"): makeHashJson([]byte(libtelioInc1Cfg)),
+		filepath.Join(httpPath, "include/libtelio2-hash.json"): makeHashJson([]byte(libtelioInc2Cfg)),
 	}
+
+	log.Println("libtelio hash:", string(files[filepath.Join(httpPath, "libtelio-hash.json")]))
+	log.Println("libtelio inc1 hash:", string(files[filepath.Join(httpPath, "include/libtelio1-hash.json")]))
+	log.Println("libtelio inc2 hash:", string(files[filepath.Join(httpPath, "include/libtelio2-hash.json")]))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -505,6 +599,57 @@ var libtelioJsonConfInc2File = `
     "lana": {},
     "nurse": {
         "heartbeat_interval": 3600
+    }
+}
+`
+var libtelioUpdatedJsonConfFile = `
+{
+    "version": 1,
+    "configs": [
+        {
+            "name": "libtelio",
+            "value_type": "file",
+            "settings": [
+                {
+                    "value": "include/libtelio1.json",
+                    "app_version": ">=3.19.0",
+                    "weight": 1
+                },
+                {
+                    "value": "include/libtelio2.json",
+                    "app_version": ">=3.18.3",
+                    "weight": 3
+                }
+            ]
+        }
+    ]
+}
+`
+var libtelioUpdatedJsonConfInc1File = `
+{
+    "lana": {},
+    "nurse": {
+        "heartbeat_interval": 3600,
+        "enable_nat_type_collection": true,
+        "enable_relay_conn_data": true,
+        "enable_nat_traversal_conn_data": true,
+        "qos": {
+            "rtt_interval": 300,
+            "rtt_tries": 3,
+            "rtt_types": [
+                "Ping"
+            ],
+            "buckets": 5
+        }
+    }
+}
+`
+var libtelioUpdatedJsonConfInc2File = `
+{
+    "lana": {},
+    "nurse": {
+        "heartbeat_interval": 3600,
+		"new_value_updated": 1010
     }
 }
 `
