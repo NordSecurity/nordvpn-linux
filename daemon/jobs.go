@@ -123,12 +123,12 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 	// then schedule remote config loader to run periodically in the background;
 	// assume job scheduler is already started.
 	rcLoadTime := 60 * time.Minute
-	if os.Getenv(envRcLoadTime) != "" {
+	if internal.IsDevEnv(string(r.environment)) && os.Getenv(envRcLoadTime) != "" {
 		tm, err := strconv.Atoi(os.Getenv(envRcLoadTime))
 		if err != nil {
 			log.Println(internal.WarningPrefix, "converting rc load time:", err)
 		} else {
-			if tm > 0 && tm < 100 {
+			if tm > 3 && tm < 100 {
 				rcLoadTime = time.Duration(tm) * time.Minute
 			}
 		}
