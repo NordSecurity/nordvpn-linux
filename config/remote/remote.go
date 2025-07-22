@@ -103,7 +103,9 @@ func isNetworkRetryable(err error) bool {
 		return true
 	}
 	var opErr *net.OpError
-	return errors.As(err, &opErr)
+	return errors.As(err, &opErr) ||
+		errors.Is(err, core.ErrServerInternal) ||
+		errors.Is(err, core.ErrTooManyRequests)
 }
 
 // LoadConfig download from remote or load from disk
