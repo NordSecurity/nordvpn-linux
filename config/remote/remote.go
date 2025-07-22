@@ -1,8 +1,10 @@
 package remote
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -91,6 +93,19 @@ func (cfg cdnFileGetter) readFile(fname string) ([]byte, error) {
 	return cfg.cdn.GetRemoteFile(fname)
 }
 
+// isNetworkRetryable returns true if the error is due to a transient network issue
+func isNetworkRetryable(err error) bool {
+	if err == nil {
+		return false
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+	var opErr *net.OpError
+	return errors.As(err, &opErr)
+}
+
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
@@ -100,6 +115,9 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 			dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
+				if isNetworkRetryable(err) {
+					return err
+				}
 				continue
 			}
 			if dnld {
