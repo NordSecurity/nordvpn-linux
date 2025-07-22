@@ -54,7 +54,10 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("Auto-connect group: %s\n", settings.AutoConnectData.ServerGroup)
 	}
 
-	fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))
+	if !shouldHideMeshnet() {
+		fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))
+	}
+
 	if len(settings.Dns) == 0 {
 		fmt.Printf("DNS: %+v\n", nstrings.GetBoolLabel(false))
 	} else {
