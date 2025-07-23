@@ -1,0 +1,129 @@
+package session
+
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+)
+
+type trustedPassConfig struct {
+	Token     string
+	OwnerID   string
+	ExpiresAt time.Time
+}
+
+type trustedPassSession struct {
+	cm config.Manager
+}
+
+// TODO: needs global caching
+func (s *trustedPassSession) get() (trustedPassConfig, error) {
+	var cfg config.Config
+	if err := s.cm.Load(&cfg); err != nil {
+		return trustedPassConfig{}, err
+	}
+
+	data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+	if !ok {
+		return trustedPassConfig{}, errors.New("non existing data")
+	}
+
+	fmt.Println("cfg from trusted pass store:", data)
+
+	// must contain valid data
+	expiryTime, _ := time.Parse(internal.ServerDateFormat, data.TrustedPassTokenExpiry)
+
+	return trustedPassConfig{
+		Token:     data.TrustedPassToken,
+		OwnerID:   data.TrustedPassOwnerID,
+		ExpiresAt: expiryTime,
+	}, nil
+}
+
+// TODO: needs global caching
+func (s *trustedPassSession) set(cfg trustedPassConfig) error {
+	err := s.cm.SaveWith(func(c config.Config) config.Config {
+		data := c.TokensData[c.AutoConnectData.ID]
+		data.TrustedPassToken = cfg.Token
+		data.TrustedPassOwnerID = cfg.OwnerID
+		data.TrustedPassTokenExpiry = cfg.ExpiresAt.Format(internal.ServerDateFormat)
+		c.TokensData[c.AutoConnectData.ID] = data
+		return c
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *trustedPassSession) SetToken(value string) error {
+	cfg, err := s.get()
+	if err != nil {
+		return err
+	}
+	cfg.Token = value
+	return s.set(cfg)
+}
+
+func (s *trustedPassSession) SetOwnerID(value string) error {
+	cfg, err := s.get()
+	if err != nil {
+		return err
+	}
+	cfg.OwnerID = value
+	return s.set(cfg)
+}
+
+func (s *trustedPassSession) SetExpiry(value time.Time) error {
+	cfg, err := s.get()
+	if err != nil {
+		return err
+	}
+	cfg.ExpiresAt = value
+	return s.set(cfg)
+}
+
+// implements SessionTokenProvider
+func (s *trustedPassSession) GetToken() string {
+	cfg, err := s.get()
+	fmt.Println("trustedPassSession) GetToken() cfg", cfg, "err:", err)
+	if err != nil {
+		return ""
+	}
+	return cfg.Token
+}
+
+// implements SessionOwnerProvider
+func (s *trustedPassSession) GetOwnerID() string {
+	cfg, err := s.get()
+	if err != nil {
+		return ""
+	}
+	return cfg.OwnerID
+}
+
+// implements SessionExpiryProvider
+func (s *trustedPassSession) GetExpiry() time.Time {
+	cfg, err := s.get()
+	if err != nil {
+		return time.Time{}
+	}
+	return cfg.ExpiresAt
+}
+
+// implements ExpirableSession
+func (s *trustedPassSession) IsExpired() bool {
+	cfg, err := s.get()
+	if err != nil {
+		return true
+	}
+	return time.Now().After(cfg.ExpiresAt)
+}
+
+func newTrustedPassSession(confman config.Manager) *trustedPassSession {
+	return &trustedPassSession{cm: confman}
+}
