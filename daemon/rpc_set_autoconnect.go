@@ -9,11 +9,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) (*pb.Payload, error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
-		if errors.Is(err, core.ErrLoginTokenRevoked) {
+		if errors.Is(err, session.ErrAccessTokenRevoked) {
 			return nil, err
 		}
 		return nil, internal.ErrNotLoggedIn

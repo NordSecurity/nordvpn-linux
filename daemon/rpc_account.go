@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 func findLatestDIPExpirationData(dipServices []auth.DedicatedIPService) (string, error) {
@@ -55,7 +56,7 @@ func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.Dedidcat
 // AccountInfo returns user account information.
 func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.AccountResponse, error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
-		if errors.Is(err, core.ErrLoginTokenRevoked) {
+		if errors.Is(err, session.ErrAccessTokenRevoked) {
 			return &pb.AccountResponse{Type: internal.CodeRevokedAccessToken}, nil
 		}
 		return nil, internal.ErrNotLoggedIn
