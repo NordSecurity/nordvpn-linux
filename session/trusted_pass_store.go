@@ -2,7 +2,6 @@ package session
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -30,8 +29,6 @@ func (s *trustedPassSession) get() (trustedPassConfig, error) {
 	if !ok {
 		return trustedPassConfig{}, errors.New("non existing data")
 	}
-
-	fmt.Println("cfg from trusted pass store:", data)
 
 	// must contain valid data
 	expiryTime, _ := time.Parse(internal.ServerDateFormat, data.TrustedPassTokenExpiry)
@@ -90,7 +87,6 @@ func (s *trustedPassSession) SetExpiry(value time.Time) error {
 // implements SessionTokenProvider
 func (s *trustedPassSession) GetToken() string {
 	cfg, err := s.get()
-	fmt.Println("trustedPassSession) GetToken() cfg", cfg, "err:", err)
 	if err != nil {
 		return ""
 	}
