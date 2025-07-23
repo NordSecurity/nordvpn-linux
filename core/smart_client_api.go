@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -35,7 +34,6 @@ func callWithToken[T any](store session.SessionStore, call func(token string) (T
 	callAPIWithToken := func() (T, error) {
 
 		token, err := session.GetToken(store)
-		fmt.Println("callWithToken: token:", token, "err:", err)
 		if err != nil {
 			var zero T
 			return zero, err
