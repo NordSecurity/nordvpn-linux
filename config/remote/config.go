@@ -2,7 +2,7 @@ package remote
 
 import (
 	"bytes"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -23,7 +23,7 @@ type jsonHash struct {
 }
 
 func hash(content []byte) string {
-	hash := md5.Sum(content)
+	hash := sha256.Sum256(content)
 	return hex.EncodeToString(hash[:])
 }
 
