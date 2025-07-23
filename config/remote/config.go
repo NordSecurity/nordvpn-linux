@@ -267,7 +267,7 @@ func validateField(param Param, paramVal ParamValue, fileReader func(name string
 	return fileVal, nil
 }
 
-// walkIncludeFiles iterate through include files and do action on them
+// walkIncludeFiles iterate through include files and handle each of them
 func walkIncludeFiles(mainJason []byte, srcBasePath, trgBasePath string, fr fileReader, fw fileWriter) ([]byte, error) {
 	var temp Feature
 	if err := json.Unmarshal(mainJason, &temp); err != nil {
@@ -298,6 +298,9 @@ func handleIncludeFiles(srcBasePath, trgBasePath, incFileName string, fr fileRea
 	if !strings.Contains(incFileName, ".json") {
 		return nil, fmt.Errorf("only json files are allowed to include: %s", incFileName)
 	}
+	if srcBasePath == trgBasePath {
+		return nil, fmt.Errorf("source and target base paths cannot be equal")
+	}
 	// get include file
 	incJsonStr, err := fr.readFile(filepath.Join(srcBasePath, incFileName))
 	if err != nil {
@@ -321,15 +324,18 @@ func handleIncludeFiles(srcBasePath, trgBasePath, incFileName string, fr fileRea
 	if !isHashEqual(incJsonHash.Hash, incJsonStr) {
 		return nil, fmt.Errorf("include file integrity problem, expected hash[%s] got hash[%s]", incJsonHash.Hash, hash(incJsonStr))
 	}
-	// write an include json to file
-	incFileTargetPath := filepath.Join(trgBasePath, incFileName) + tmpExt
-	if err = fw.writeFile(incFileTargetPath, incJsonStr, internal.PermUserRW); err != nil {
-		return nil, fmt.Errorf("wrting include file: %w", err)
-	}
-	// write an include hash to file
-	incFileHashTargetPath := filepath.Join(trgBasePath, incHashFileName) + tmpExt
-	if err = fw.writeFile(incFileHashTargetPath, incHashStr, internal.PermUserRW); err != nil {
-		return nil, fmt.Errorf("wrting include hash file: %w", err)
+	// perform write only if target path is specified
+	if trgBasePath != "" {
+		// write an include json to file
+		incFileTargetPath := filepath.Join(trgBasePath, incFileName) + tmpExt
+		if err = fw.writeFile(incFileTargetPath, incJsonStr, internal.PermUserRW); err != nil {
+			return nil, fmt.Errorf("writing include file: %w", err)
+		}
+		// write an include hash to file
+		incFileHashTargetPath := filepath.Join(trgBasePath, incHashFileName) + tmpExt
+		if err = fw.writeFile(incFileHashTargetPath, incHashStr, internal.PermUserRW); err != nil {
+			return nil, fmt.Errorf("writing include hash file: %w", err)
+		}
 	}
 	return incJsonStr, nil
 } //func()

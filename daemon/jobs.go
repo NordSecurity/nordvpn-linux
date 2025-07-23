@@ -115,7 +115,7 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 				return
 			}
 			tryAfterDuration := network.ExponentialBackoff(i)
-			log.Println(internal.WarningPrefix, "loading rc, attempt:", i, "; next try after:", tryAfterDuration, "; error:", err)
+			log.Println(internal.WarningPrefix, "loading remote config, attempt:", i, "; next try after:", tryAfterDuration, "; error:", err)
 			<-time.After(tryAfterDuration)
 		}
 	}(remoteConfigLoader)
@@ -126,13 +126,14 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 	if internal.IsDevEnv(string(r.environment)) && os.Getenv(envRcLoadTime) != "" {
 		tm, err := strconv.Atoi(os.Getenv(envRcLoadTime))
 		if err != nil {
-			log.Println(internal.WarningPrefix, "converting rc load time:", err)
+			log.Println(internal.WarningPrefix, "converting remote config load time:", err)
 		} else {
 			if tm > 3 && tm < 100 {
 				rcLoadTime = time.Duration(tm) * time.Minute
 			}
 		}
 	}
+	log.Println(internal.InfoPrefix, "remote config download job time period:", rcLoadTime)
 	_, err := r.scheduler.NewJob(gocron.DurationJob(rcLoadTime), gocron.NewTask(func() {
 		if err := remoteConfigLoader.LoadConfig(); err != nil {
 			log.Println(internal.ErrorPrefix, "remote config load error:", err)

@@ -277,6 +277,8 @@ func TestHandleIncludeFiles(t *testing.T) {
 	tests := []struct {
 		name        string
 		fileName    string
+		srcBasePath string
+		trgBasePath string
 		mainJson    string
 		hashJson    string
 		expectError bool
@@ -286,6 +288,8 @@ func TestHandleIncludeFiles(t *testing.T) {
 		{
 			name:        "sunny day",
 			fileName:    "test.json",
+			srcBasePath: "s",
+			trgBasePath: "t",
 			mainJson:    libtelioJsonConfInc1File,
 			hashJson:    libtelioJsonConfInc1HashFile,
 			expectError: false,
@@ -295,6 +299,8 @@ func TestHandleIncludeFiles(t *testing.T) {
 		{
 			name:        "invalid file name",
 			fileName:    "test.txt",
+			srcBasePath: "s",
+			trgBasePath: "t",
 			mainJson:    "",
 			hashJson:    "",
 			expectError: true,
@@ -304,6 +310,8 @@ func TestHandleIncludeFiles(t *testing.T) {
 		{
 			name:        "invalid main json",
 			fileName:    "test.json",
+			srcBasePath: "s",
+			trgBasePath: "t",
 			mainJson:    "invalid json",
 			hashJson:    "",
 			expectError: true,
@@ -313,6 +321,8 @@ func TestHandleIncludeFiles(t *testing.T) {
 		{
 			name:        "invalid hash json",
 			fileName:    "test.json",
+			srcBasePath: "s",
+			trgBasePath: "t",
 			mainJson:    "{}",
 			hashJson:    "invalid json",
 			expectError: true,
@@ -322,6 +332,8 @@ func TestHandleIncludeFiles(t *testing.T) {
 		{
 			name:        "hash does not match",
 			fileName:    "test.json",
+			srcBasePath: "s",
+			trgBasePath: "t",
 			mainJson:    "{}",
 			hashJson:    "{\"hash\":\"aaa\"}",
 			expectError: true,
@@ -331,6 +343,8 @@ func TestHandleIncludeFiles(t *testing.T) {
 		{
 			name:        "file read error",
 			fileName:    "test.json",
+			srcBasePath: "s",
+			trgBasePath: "t",
 			mainJson:    "",
 			hashJson:    "",
 			expectError: true,
@@ -340,11 +354,24 @@ func TestHandleIncludeFiles(t *testing.T) {
 		{
 			name:        "file write error",
 			fileName:    "test.json",
+			srcBasePath: "s",
+			trgBasePath: "t",
 			mainJson:    "",
 			hashJson:    "",
 			expectError: true,
 			readErr:     nil,
 			writeErr:    errors.New("error"),
+		},
+		{
+			name:        "src same as trg - error",
+			fileName:    "test.json",
+			srcBasePath: "same",
+			trgBasePath: "same",
+			mainJson:    "",
+			hashJson:    "",
+			expectError: true,
+			readErr:     nil,
+			writeErr:    nil,
 		},
 	}
 
@@ -356,7 +383,7 @@ func TestHandleIncludeFiles(t *testing.T) {
 				readErr:  test.readErr,
 				writeErr: test.writeErr,
 			}
-			incf, err := handleIncludeFiles("", "", test.fileName, &frw, &frw)
+			incf, err := handleIncludeFiles(test.srcBasePath, test.trgBasePath, test.fileName, &frw, &frw)
 			if test.expectError {
 				assert.Error(t, err)
 			} else {

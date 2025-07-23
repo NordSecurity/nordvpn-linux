@@ -25,14 +25,14 @@ func JobTemplates(cdn core.CDN) func() {
 
 			headers, _, err := cdn.ConfigTemplate(isObfuscated, http.MethodHead)
 			if err != nil {
-				log.Println(internal.WarningPrefix, "doanloding (MethodHead) config template:", err)
+				log.Println(internal.WarningPrefix, "downloading (MethodHead) config template:", err)
 				return
 			}
 
 			if digest != headers.Get(core.HeaderDigest) {
 				_, body, err := cdn.ConfigTemplate(isObfuscated, http.MethodGet)
 				if err != nil {
-					log.Println(internal.WarningPrefix, "doanloding (MethodGet) config template:", err)
+					log.Println(internal.WarningPrefix, "downloading (MethodGet) config template:", err)
 					return
 				}
 				err = internal.FileWrite(filepath, body, internal.PermUserRW)
