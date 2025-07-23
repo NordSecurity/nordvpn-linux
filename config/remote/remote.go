@@ -112,25 +112,35 @@ func isNetworkRetryable(err error) bool {
 func (c *CdnRemoteConfig) LoadConfig() error {
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
-		c.mu.RLock()
-		for _, f := range c.features {
-			dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
-			if err != nil {
-				log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
-				if isNetworkRetryable(err) {
-					return err
-				}
-				continue
-			}
-			if dnld {
-				// only if remote config was really downloaded
-				log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
-			}
+		if err := c.download(); err != nil {
+			return err
 		}
-		c.mu.RUnlock()
 	}
+	return c.load()
+}
 
-	// write-lock only when loading from local files
+func (c *CdnRemoteConfig) download() error {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for _, f := range c.features {
+		dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
+			if isNetworkRetryable(err) {
+				return err
+			}
+			continue
+		}
+		if dnld {
+			// only if remote config was really downloaded
+			log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
+		}
+	}
+	return nil
+}
+
+func (c *CdnRemoteConfig) load() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -141,7 +151,6 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 		}
 		log.Println(internal.InfoPrefix, "feature [", f.name, "] config loaded from:", c.localCachePath)
 	}
-
 	return nil
 }
 
