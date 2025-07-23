@@ -70,6 +70,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
@@ -304,9 +305,10 @@ func main() {
 		machineIdGenerator.GetUsedInformationMask(),
 	)
 
-	loginTokenErrHandlingReg := core.NewErrorHandlingRegistry[int64]()
+	invalidSessionErrHandlingReg := internal.NewErrorHandlingRegistry[int64]()
+
 	// encapsulating initialization logic
-	clientAPI, loginTokenManager := func() (core.ClientAPI, core.TokenManager) {
+	clientAPI, accessTokenSessionStore := func() (core.ClientAPI, session.SessionStore) {
 		api := core.NewSimpleAPI(
 			userAgent,
 			daemon.BaseURL,
@@ -314,19 +316,8 @@ func main() {
 			validator,
 		)
 
-		tokenValidator := core.NewLoginTokenValidator(
-			api,
-			auth.NewTokenExpirationChecker(),
-		)
-
-		tokenman := core.NewLoginTokenManager(
-			fsystem,
-			api.TokenRenew,
-			loginTokenErrHandlingReg,
-			tokenValidator,
-		)
-
-		return core.NewSmartClientAPI(api, tokenman), tokenman
+		sessionStore := buildAccessTokenSessionStore(fsystem, invalidSessionErrHandlingReg, api)
+		return core.NewSmartClientAPI(api, sessionStore), sessionStore
 	}()
 
 	// populate build target configuration
@@ -504,6 +495,8 @@ func main() {
 
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
+
+	trustedPassSessionStore := buildTrustedPassSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
 		clientAPI,
@@ -511,7 +504,7 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
-		loginTokenManager,
+		[]session.SessionStore{accessTokenSessionStore, trustedPassSessionStore},
 	)
 
 	endpointResolver := network.NewDefaultResolverChain(fw)
@@ -522,9 +515,9 @@ func main() {
 		meshnetEvents.PeerUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem))
 
-	// on token invalidation (unauthorized access, missing server resources, invalid request)
+	// on session invalidation (unauthorized access, missing server resources, invalid request)
 	// perform user log-out action
-	loginTokenErrHandlingReg.Add(
+	invalidSessionErrHandlingReg.Add(
 		func(uid int64) {
 			discArgs := access.DisconnectInput{
 				Networker:                  netw,
@@ -542,14 +535,14 @@ func main() {
 			})
 
 			if result.Err != nil {
-				log.Println(internal.ErrorPrefix, "logging out on login-token-invalidation hook: %w", err)
+				log.Println(internal.ErrorPrefix, "logging out on invalid session hook: %w", err)
 			}
 
 			if result.Status == internal.CodeSuccess {
-				log.Println(internal.DebugPrefix, "successfully logged out after detecting invalid credentials")
+				log.Println(internal.DebugPrefix, "successfully logged out after detecting invalid session")
 			}
 		},
-		core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest,
+		session.ErrUnauthorized, session.ErrNotFound, session.ErrBadRequest,
 	)
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
