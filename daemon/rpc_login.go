@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 // ErrMissingExchangeToken is returned when login was successful but
@@ -41,7 +42,7 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 		if in.GetToken() != "" {
 			return &core.LoginResponse{
 				Token:     in.GetToken(),
-				ExpiresAt: core.ManualLoginTokenExpiryDate,
+				ExpiresAt: session.ManualAccessTokenExpiryDateString,
 			}, nil, nil
 		}
 		return nil, &pb.LoginResponse{
