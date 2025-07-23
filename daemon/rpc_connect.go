@@ -15,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/network"
+	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 func isDedicatedIP(server core.Server) bool {
@@ -104,7 +105,7 @@ func (r *RPC) connect(
 	source pb.ConnectionSource,
 ) (didFail bool, retErr error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
-		if errors.Is(err, core.ErrLoginTokenRevoked) {
+		if errors.Is(err, session.ErrAccessTokenRevoked) {
 			srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
 		}
 		return false, internal.ErrNotLoggedIn
