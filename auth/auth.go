@@ -15,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 type DedicatedIPService struct {
@@ -72,7 +73,7 @@ type RenewingChecker struct {
 	errPub              events.Publisher[error]
 	mu                  sync.Mutex
 	accountUpdateEvents *daemonevents.AccountUpdateEvents
-	loginTokenManager   core.TokenManager
+	sessionStores       []session.SessionStore
 }
 
 // NewRenewingChecker is a default constructor for RenewingChecker.
@@ -82,7 +83,7 @@ func NewRenewingChecker(cm config.Manager,
 	logoutPub events.Publisher[events.DataAuthorization],
 	errPub events.Publisher[error],
 	accountUpdateEvents *daemonevents.AccountUpdateEvents,
-	loginTokenManager core.TokenManager,
+	sessionStores []session.SessionStore,
 ) *RenewingChecker {
 	return &RenewingChecker{
 		cm:                  cm,
@@ -92,7 +93,7 @@ func NewRenewingChecker(cm config.Manager,
 		logoutPub:           logoutPub,
 		errPub:              errPub,
 		accountUpdateEvents: accountUpdateEvents,
-		loginTokenManager:   loginTokenManager,
+		sessionStores:       sessionStores,
 	}
 }
 
@@ -103,8 +104,10 @@ func (r *RenewingChecker) IsLoggedIn() (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if err := r.loginTokenManager.Renew(); err != nil {
-		return false, fmt.Errorf("renewing access token: %w", err)
+	for _, store := range r.sessionStores {
+		if err := store.Renew(); err != nil {
+			return false, fmt.Errorf("renewing session: %w", err)
+		}
 	}
 
 	var cfg config.Config
@@ -212,33 +215,6 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 			}
 			return nil
 		}
-		if data.IsOAuth {
-			if err := r.renewTrustedPassToken(&data); err != nil {
-				if errors.Is(err, core.ErrUnauthorized) ||
-					errors.Is(err, core.ErrNotFound) ||
-					errors.Is(err, core.ErrBadRequest) {
-					return r.cm.SaveWith(Logout(uid, r.logoutPub))
-				}
-			}
-		}
-		if err := r.cm.SaveWith(saveLoginCreds(uid, data)); err != nil {
-			return err
-		}
-	}
-
-	// TrustedPass was introduced later on, so it's possible that valid data is not stored even though renew token
-	// is still valid. In such cases we need to hit the api to get the initial value.
-	isTrustedPassNotValid := (data.TrustedPassToken == "" || data.TrustedPassOwnerID == "")
-	// TrustedPass is viable only in case of OAuth login.
-	if data.IsOAuth && isTrustedPassNotValid {
-		if err := r.renewTrustedPassToken(&data); err != nil {
-			if errors.Is(err, core.ErrUnauthorized) ||
-				errors.Is(err, core.ErrNotFound) ||
-				errors.Is(err, core.ErrBadRequest) {
-				return r.cm.SaveWith(Logout(uid, r.logoutPub))
-			}
-		}
-
 		if err := r.cm.SaveWith(saveLoginCreds(uid, data)); err != nil {
 			return err
 		}
@@ -265,18 +241,6 @@ func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
 	data.NCData.Endpoint = resp.Endpoint
 	data.NCData.Username = resp.Username
 	data.NCData.Password = resp.Password
-	return nil
-}
-
-func (r *RenewingChecker) renewTrustedPassToken(data *config.TokenData) error {
-	resp, err := r.creds.TrustedPassToken()
-	if err != nil {
-		return fmt.Errorf("getting trusted pass token data: %w", err)
-	}
-
-	data.TrustedPassOwnerID = resp.OwnerID
-	data.TrustedPassToken = resp.Token
-
 	return nil
 }
 
@@ -339,8 +303,6 @@ func saveLoginCreds(userID int64, data config.TokenData) config.SaveFunc {
 		user.NCData.Endpoint = data.NCData.Endpoint
 		user.NCData.Username = data.NCData.Username
 		user.NCData.Password = data.NCData.Password
-		user.TrustedPassOwnerID = data.TrustedPassOwnerID
-		user.TrustedPassToken = data.TrustedPassToken
 		c.TokensData[userID] = user
 		return c
 	}
