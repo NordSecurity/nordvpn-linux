@@ -13,8 +13,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	mocksession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -93,10 +96,6 @@ func (m *mockApi) NotificationCredentials(appUserID string) (core.NotificationCr
 	}, nil
 }
 
-type mockLoginTokenManager struct {
-	core.TokenManager
-}
-
 func TestTokenRenewWithBadConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -128,7 +127,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	client := request.NewStdHTTP()
 	client.Transport = &rt
 	simpleApi := core.NewSimpleAPI("", "", client, response.NoopValidator{})
-	api := &mockApi{ClientAPI: core.NewSmartClientAPI(simpleApi, &mockLoginTokenManager{})}
+	api := &mockApi{ClientAPI: core.NewSmartClientAPI(simpleApi, &mocksession.MockSessionStore{})}
 
 	expirationChecker := NewTokenExpirationChecker()
 
@@ -136,12 +135,24 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		cm:         &cm,
 		creds:      api,
 		expChecker: expirationChecker,
-		loginTokenManager: core.NewLoginTokenManager(
+		sessionStores: []session.SessionStore{session.NewAccessTokenSessionStore(
 			&cm,
-			api.TokenRenew,
-			core.NewErrorHandlingRegistry[int64](),
-			core.NewLoginTokenValidator(simpleApi, expirationChecker),
-		),
+			session.NewCompositeValidator(
+				session.NewExpiryValidator(),
+			),
+			internal.NewErrorHandlingRegistry[int64](),
+			func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
+				resp, err := api.TokenRenew(token, idempotencyKey)
+				if err != nil {
+					return nil, err
+				}
+				return &session.AccessTokenResponse{
+					Token:      resp.Token,
+					RenewToken: resp.RenewToken,
+					ExpiresAt:  resp.ExpiresAt,
+				}, err
+			},
+		)},
 	}
 
 	// valid token renewal request
@@ -244,7 +255,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 	client := request.NewStdHTTP()
 	client.Transport = &rt
 	simpleApi := core.NewSimpleAPI("", "", client, response.NoopValidator{})
-	api := &mockApi{ClientAPI: core.NewSmartClientAPI(simpleApi, &mockLoginTokenManager{})}
+	api := &mockApi{ClientAPI: core.NewSmartClientAPI(simpleApi, &mocksession.MockSessionStore{})}
 
 	expirationChecker := NewTokenExpirationChecker()
 
@@ -252,15 +263,27 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 		cm:         &cm,
 		creds:      api,
 		expChecker: expirationChecker,
-		loginTokenManager: core.NewLoginTokenManager(
+		sessionStores: []session.SessionStore{session.NewAccessTokenSessionStore(
 			&cm,
-			api.TokenRenew,
-			core.NewErrorHandlingRegistry[int64](),
-			core.NewLoginTokenValidator(simpleApi, expirationChecker),
-		),
+			session.NewCompositeValidator(
+				session.NewExpiryValidator(),
+			),
+			internal.NewErrorHandlingRegistry[int64](),
+			func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
+				resp, err := api.TokenRenew(token, idempotencyKey)
+				if err != nil {
+					return nil, err
+				}
+				return &session.AccessTokenResponse{
+					Token:      resp.Token,
+					RenewToken: resp.RenewToken,
+					ExpiresAt:  resp.ExpiresAt,
+				}, err
+			},
+		)},
 	}
 
-	errs := []error{core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest}
+	errs := []error{session.ErrUnauthorized, session.ErrNotFound, session.ErrBadRequest}
 	for _, exptectedErr := range errs {
 		// replace the token in the config with one that is expired.
 		// so the next IsLoggedIn() request should attempt a token renewal
