@@ -83,7 +83,7 @@ func NewRenewingChecker(cm config.Manager,
 	logoutPub events.Publisher[events.DataAuthorization],
 	errPub events.Publisher[error],
 	accountUpdateEvents *daemonevents.AccountUpdateEvents,
-	sessionStores []session.SessionStore,
+	sessionStores ...session.SessionStore,
 ) *RenewingChecker {
 	return &RenewingChecker{
 		cm:                  cm,
