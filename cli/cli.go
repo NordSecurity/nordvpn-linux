@@ -111,7 +111,7 @@ func NewApp(version, environment, hash, salt string,
 	}
 
 	cli.VersionPrinter = func(c *cli.Context) {
-		fmt.Printf("NordVPN Version %s\n", c.App.Version)
+		cmd.Version(c)
 	}
 	cli.BashCompletionFlag = &cli.BoolFlag{
 		Name:   "complete",
@@ -121,222 +121,13 @@ func NewApp(version, environment, hash, salt string,
 	cli.HelpFlag.(*cli.BoolFlag).Usage = "Show help"
 	cli.VersionFlag.(*cli.BoolFlag).Usage = "Print the version"
 
+	isMeshnetEnabled := isMeshnetEnabled(cmd)
+
 	setCommand := cli.Command{
-		Name:    "set",
-		Aliases: []string{"s"},
-		Usage:   "Sets a configuration option",
-		Subcommands: []*cli.Command{
-			{
-				Name:         "autoconnect",
-				Usage:        SetAutoconnectUsageText,
-				Action:       cmd.SetAutoConnect,
-				BashComplete: cmd.SetAutoConnectAutoComplete,
-				ArgsUsage:    SetAutoConnectArgsUsageText,
-				Description:  SetAutoConnectDescription,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:    "group",
-						Aliases: []string{"g"},
-						Usage:   ConnectFlagGroupUsageText,
-					},
-				},
-			},
-			{
-				Name:         "threatprotectionlite",
-				Aliases:      []string{"tplite", "tpl", "cybersec"},
-				Usage:        SetThreatProtectionLiteUsageText,
-				Action:       cmd.SetThreatProtectionLite,
-				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage:    SetThreatProtectionLiteArgsUsageText,
-				Description:  SetThreatProtectionLiteDescription,
-			},
-			{
-				Name:  "defaults",
-				Usage: SetDefaultsUsageText,
-				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:  flagLogout,
-						Usage: SetDefaultsLogoutFlagText,
-					},
-					&cli.BoolFlag{
-						Name:  flagOffKillswitch,
-						Usage: SetDefaultsOffKillswitchFlagText,
-					},
-				},
-				Action: cmd.SetDefaults,
-			},
-			{
-				Name:        "dns",
-				Usage:       SetDNSUsageText,
-				Action:      cmd.SetDNS,
-				ArgsUsage:   SetDNSArgsUsageText,
-				Description: SetDNSDescription,
-			},
-			{
-				Name:      "firewall",
-				Usage:     SetFirewallUsageText,
-				Action:    cmd.SetFirewall,
-				ArgsUsage: MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetFirewallUsageText,
-					"firewall",
-					"firewall",
-				),
-				BashComplete: cmd.SetBoolAutocomplete,
-			},
-			{
-				Name:   "fwmark",
-				Usage:  SetFirewallMarkUsageText,
-				Action: cmd.SetFirewallMark,
-			},
-			{
-				Name:      "routing",
-				Usage:     SetRoutingUsageText,
-				Action:    cmd.SetRouting,
-				ArgsUsage: MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetRoutingUsageText,
-					"routing",
-					"routing",
-				),
-				BashComplete: cmd.SetBoolAutocomplete,
-			},
-			{
-				Name:      "analytics",
-				Usage:     SetAnalyticsUsageText,
-				Action:    cmd.SetAnalytics,
-				ArgsUsage: MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetAnalyticsUsageText,
-					"analytics",
-					"analytics",
-				),
-				BashComplete: cmd.SetBoolAutocomplete,
-			},
-			{
-				Name:         "killswitch",
-				Usage:        SetKillSwitchUsageText,
-				Action:       cmd.SetKillSwitch,
-				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage:    MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetKillSwitchUsageText,
-					"killswitch",
-					"killswitch",
-				),
-			},
-			{
-				Name:         "notify",
-				Usage:        SetNotifyUsageText,
-				Action:       cmd.SetNotify,
-				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage:    MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetNotifyUsageText,
-					"notify",
-					"notify",
-				),
-			},
-			{
-				Name:         "tray",
-				Usage:        SetTrayUsageText,
-				Action:       cmd.SetTray,
-				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage:    MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetTrayUsageText,
-					"tray",
-					"tray",
-				),
-			},
-			{
-				Name:         "obfuscate",
-				Usage:        SetObfuscateUsageText,
-				Action:       cmd.SetObfuscate,
-				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage:    MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetObfuscateUsageText,
-					"obfuscate",
-					"obfuscate",
-				),
-				Hidden: cmd.Except(config.Technology_OPENVPN),
-			},
-			{
-				Name:         "protocol",
-				Usage:        SetProtocolUsageText,
-				Action:       cmd.SetProtocol,
-				BashComplete: cmd.SetProtocolAutoComplete,
-				ArgsUsage:    SetProtocolArgsUsageText,
-				Description:  SetProtocolDescription,
-				Hidden:       cmd.Except(config.Technology_OPENVPN),
-			},
-			{
-				Name:         "technology",
-				Usage:        SetTechnologyUsageText,
-				Action:       cmd.SetTechnology,
-				BashComplete: cmd.SetTechnologyAutoComplete,
-				ArgsUsage:    SetTechnologyArgsUsageText,
-				Description:  fmt.Sprintf(SetTechnologyDescription),
-			},
-			{
-				Name:         "meshnet",
-				Aliases:      []string{"mesh"},
-				Usage:        MsgSetMeshnetUsage,
-				ArgsUsage:    MsgSetMeshnetArgsUsage,
-				Description:  MsgSetMeshnetDescription,
-				Action:       cmd.MeshSet,
-				BashComplete: cmd.SetBoolAutocomplete,
-			},
-			{
-				Name:      "lan-discovery",
-				Usage:     SetLANDiscoveryUsage,
-				ArgsUsage: MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetLANDiscoveryUsage,
-					"lan-discovery",
-					"lan-discovery",
-				),
-				Action:       cmd.SetLANDiscovery,
-				BashComplete: cmd.SetBoolAutocomplete,
-			},
-			{
-				Name:      "virtual-location",
-				Usage:     MsgSetVirtualLocationUsageText,
-				ArgsUsage: MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					MsgSetVirtualLocationDescription,
-					"virtual-location",
-					"virtual-location",
-				),
-				Action:       cmd.SetVirtualLocation,
-				BashComplete: cmd.SetBoolAutocomplete,
-			},
-			{
-				Name:         "post-quantum",
-				Aliases:      []string{"pq"},
-				Usage:        SetPqUsageText,
-				Action:       cmd.SetPostquantumVpn,
-				BashComplete: cmd.SetBoolAutocomplete,
-				ArgsUsage:    MsgSetBoolArgsUsage,
-				Description: fmt.Sprintf(
-					MsgSetBoolDescription,
-					SetPqUsageText,
-					"post-quantum",
-					"post-quantum",
-				),
-				Hidden: cmd.Except(config.Technology_NORDLYNX),
-			},
-		},
+		Name:        "set",
+		Aliases:     []string{"s"},
+		Usage:       "Sets a configuration option",
+		Subcommands: getSetSubcommands(cmd, isMeshnetEnabled),
 	}
 
 	app := cli.NewApp()
@@ -350,10 +141,8 @@ func NewApp(version, environment, hash, salt string,
 		return nil
 	}
 
-	app.Version = version
-	if internal.IsDevEnv(environment) {
-		app.Version = fmt.Sprintf("%s - %s (%s)", version, internal.Environment(environment), hash)
-	}
+	app.Version = composeAppVersion(version, environment, snapconf.IsUnderSnap())
+
 	app.Commands = []*cli.Command{
 		{
 			Name:               "account",
@@ -558,14 +347,16 @@ func NewApp(version, environment, hash, salt string,
 		},
 	}
 
-	app.Commands = append(app.Commands, meshnetCommand(cmd))
+	if isMeshnetEnabled {
+		app.Commands = append(app.Commands, meshnetCommand(cmd))
 
-	if pingErr == nil {
-		fsCommand := fileshareCommand(cmd)
-		// TODO: This will currently result in Ping executed twice for every fileshare
-		// command but it helps to properly display errors.
-		fsCommand.Before = cmd.action(pingErr, fsCommand.Before)
-		app.Commands = append(app.Commands, fsCommand)
+		if pingErr == nil {
+			fsCommand := fileshareCommand(cmd)
+			// TODO: This will currently result in Ping executed twice for every fileshare
+			// command but it helps to properly display errors.
+			fsCommand.Before = cmd.action(pingErr, fsCommand.Before)
+			app.Commands = append(app.Commands, fsCommand)
+		}
 	}
 
 	app.Commands = addLoaderToActions(cmd, pingErr, app.Commands)
@@ -933,6 +724,228 @@ func meshnetCommand(c *cmd) *cli.Command {
 			},
 		},
 	}
+}
+
+func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
+	setSubcommands := []*cli.Command{
+		{
+			Name:         "autoconnect",
+			Usage:        SetAutoconnectUsageText,
+			Action:       cmd.SetAutoConnect,
+			BashComplete: cmd.SetAutoConnectAutoComplete,
+			ArgsUsage:    SetAutoConnectArgsUsageText,
+			Description:  SetAutoConnectDescription,
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "group",
+					Aliases: []string{"g"},
+					Usage:   ConnectFlagGroupUsageText,
+				},
+			},
+		},
+		{
+			Name:         "threatprotectionlite",
+			Aliases:      []string{"tplite", "tpl", "cybersec"},
+			Usage:        SetThreatProtectionLiteUsageText,
+			Action:       cmd.SetThreatProtectionLite,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    SetThreatProtectionLiteArgsUsageText,
+			Description:  SetThreatProtectionLiteDescription,
+		},
+		{
+			Name:  "defaults",
+			Usage: SetDefaultsUsageText,
+			Flags: []cli.Flag{
+				&cli.BoolFlag{
+					Name:  flagLogout,
+					Usage: SetDefaultsLogoutFlagText,
+				},
+				&cli.BoolFlag{
+					Name:  flagOffKillswitch,
+					Usage: SetDefaultsOffKillswitchFlagText,
+				},
+			},
+			Action: cmd.SetDefaults,
+		},
+		{
+			Name:        "dns",
+			Usage:       SetDNSUsageText,
+			Action:      cmd.SetDNS,
+			ArgsUsage:   SetDNSArgsUsageText,
+			Description: SetDNSDescription,
+		},
+		{
+			Name:      "firewall",
+			Usage:     SetFirewallUsageText,
+			Action:    cmd.SetFirewall,
+			ArgsUsage: MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetFirewallUsageText,
+				"firewall",
+				"firewall",
+			),
+			BashComplete: cmd.SetBoolAutocomplete,
+		},
+		{
+			Name:   "fwmark",
+			Usage:  SetFirewallMarkUsageText,
+			Action: cmd.SetFirewallMark,
+		},
+		{
+			Name:      "routing",
+			Usage:     SetRoutingUsageText,
+			Action:    cmd.SetRouting,
+			ArgsUsage: MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetRoutingUsageText,
+				"routing",
+				"routing",
+			),
+			BashComplete: cmd.SetBoolAutocomplete,
+		},
+		{
+			Name:      "analytics",
+			Usage:     SetAnalyticsUsageText,
+			Action:    cmd.SetAnalytics,
+			ArgsUsage: MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetAnalyticsUsageText,
+				"analytics",
+				"analytics",
+			),
+			BashComplete: cmd.SetBoolAutocomplete,
+		},
+		{
+			Name:         "killswitch",
+			Usage:        SetKillSwitchUsageText,
+			Action:       cmd.SetKillSwitch,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetKillSwitchUsageText,
+				"killswitch",
+				"killswitch",
+			),
+		},
+		{
+			Name:         "notify",
+			Usage:        SetNotifyUsageText,
+			Action:       cmd.SetNotify,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetNotifyUsageText,
+				"notify",
+				"notify",
+			),
+		},
+		{
+			Name:         "tray",
+			Usage:        SetTrayUsageText,
+			Action:       cmd.SetTray,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetTrayUsageText,
+				"tray",
+				"tray",
+			),
+		},
+		{
+			Name:         "obfuscate",
+			Usage:        SetObfuscateUsageText,
+			Action:       cmd.SetObfuscate,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetObfuscateUsageText,
+				"obfuscate",
+				"obfuscate",
+			),
+			Hidden: cmd.Except(config.Technology_OPENVPN),
+		},
+		{
+			Name:         "protocol",
+			Usage:        SetProtocolUsageText,
+			Action:       cmd.SetProtocol,
+			BashComplete: cmd.SetProtocolAutoComplete,
+			ArgsUsage:    SetProtocolArgsUsageText,
+			Description:  SetProtocolDescription,
+			Hidden:       cmd.Except(config.Technology_OPENVPN),
+		},
+		{
+			Name:         "technology",
+			Usage:        SetTechnologyUsageText,
+			Action:       cmd.SetTechnology,
+			BashComplete: cmd.SetTechnologyAutoComplete,
+			ArgsUsage:    SetTechnologyArgsUsageText,
+			Description:  fmt.Sprintf(SetTechnologyDescription),
+		},
+		{
+			Name:      "lan-discovery",
+			Usage:     SetLANDiscoveryUsage,
+			ArgsUsage: MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetLANDiscoveryUsage,
+				"lan-discovery",
+				"lan-discovery",
+			),
+			Action:       cmd.SetLANDiscovery,
+			BashComplete: cmd.SetBoolAutocomplete,
+		},
+		{
+			Name:      "virtual-location",
+			Usage:     MsgSetVirtualLocationUsageText,
+			ArgsUsage: MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				MsgSetVirtualLocationDescription,
+				"virtual-location",
+				"virtual-location",
+			),
+			Action:       cmd.SetVirtualLocation,
+			BashComplete: cmd.SetBoolAutocomplete,
+		},
+		{
+			Name:         "post-quantum",
+			Aliases:      []string{"pq"},
+			Usage:        SetPqUsageText,
+			Action:       cmd.SetPostquantumVpn,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetPqUsageText,
+				"post-quantum",
+				"post-quantum",
+			),
+			Hidden: cmd.Except(config.Technology_NORDLYNX),
+		},
+	}
+
+	setMeshCommand := cli.Command{
+		Name:         "meshnet",
+		Aliases:      []string{"mesh"},
+		Usage:        MsgSetMeshnetUsage,
+		ArgsUsage:    MsgSetMeshnetArgsUsage,
+		Description:  MsgSetMeshnetDescription,
+		Action:       cmd.MeshSet,
+		BashComplete: cmd.SetBoolAutocomplete,
+	}
+
+	if isMeshnetEnabled {
+		setSubcommands = append(setSubcommands, &setMeshCommand)
+	}
+
+	return setSubcommands
 }
 
 type cmd struct {
@@ -1397,4 +1410,26 @@ func readForConfirmationBlockUntilValid(r io.Reader, prompt string) bool {
 		}
 		fmt.Println(InputParsingError)
 	}
+}
+
+// composeAppVersion concatenates the provided information to produce a string
+// representing the application version in the format: 1.2.3 [snap] - dev
+// Later it is used by the version command to display to the user
+func composeAppVersion(buildVersion string, environment string, isSnap bool) string {
+	env := ""
+	if internal.IsDevEnv(environment) {
+		env = fmt.Sprintf(" - %s", environment)
+	}
+
+	snap := ""
+	if isSnap {
+		snap = " [snap]"
+	}
+
+	return fmt.Sprintf("%s%s%s", buildVersion, snap, env)
+}
+
+func isMeshnetEnabled(cmd *cmd) bool {
+	featureToggles := cmd.GetFeatureToggles()
+	return featureToggles.meshnetEnabled
 }

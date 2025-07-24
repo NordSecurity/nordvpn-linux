@@ -9,6 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio"
 )
 
-func vpnLibConfigGetterImplementation(cm config.Manager, rcConfig remote.RemoteConfigGetter) vpn.LibConfigGetter {
+func vpnLibConfigGetterImplementation(cm config.Manager, rcConfig remote.ConfigGetter) vpn.LibConfigGetter {
 	return libtelio.NewTelioConfig(rcConfig.GetTelioConfig)
 }
