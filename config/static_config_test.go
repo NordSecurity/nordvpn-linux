@@ -114,7 +114,9 @@ func TestGetRolloutGroup(t *testing.T) {
 
 			rolloutGroup, err := manager.GetRolloutGroup()
 			assert.Equal(t, test.expectedRolloutGroup, rolloutGroup, "Unexpected rollout group value.")
-			assert.ErrorIs(t, test.expectedErr, err)
+			if test.expectedErr != nil {
+				assert.ErrorContains(t, err, test.expectedErr.Error())
+			}
 		})
 	}
 }

@@ -58,7 +58,6 @@ type RPC struct {
 	remoteConfigGetter  remote.ConfigGetter
 	connectionInfo      *state.ConnectionInfo
 	consentChecker      ConsentChecker
-	staticConfigManager config.StaticConfigManager
 	pb.UnimplementedDaemonServer
 }
 
