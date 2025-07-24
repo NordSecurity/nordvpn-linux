@@ -204,7 +204,7 @@ func (a *AccountData) get(respectDataExpiry bool) (*pb.AccountResponse, bool) {
 
 	// when not respecting expiry, we can use stale data
 	if !respectDataExpiry && err != nil {
-		if isStaleDataError := errors.Is(err, caching.ErrStaleData); !isStaleDataError {
+		if !errors.Is(err, caching.ErrStaleData) {
 			return nil, false
 		}
 	}
