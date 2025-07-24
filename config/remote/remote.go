@@ -54,9 +54,9 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		cdn:            cdn,
 		features:       make(FeatureMap),
 	}
-	rc.features.Add(FeatureMain)
-	rc.features.Add(FeatureLibtelio)
-	rc.features.Add(FeatureMeshnet)
+	rc.features.Add(FeatureMain.String())
+	rc.features.Add(FeatureLibtelio.String())
+	rc.features.Add(FeatureMeshnet.String())
 	return rc
 }
 
@@ -177,7 +177,7 @@ func findMatchingRecord(ss []ParamValue, ver string) (match *ParamValue) {
 }
 
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
-	return c.GetFeatureParam(FeatureLibtelio, FeatureLibtelio)
+	return c.GetFeatureParam(FeatureLibtelio.String(), FeatureLibtelio.String())
 }
 
 // TODO/FIXME: add `rollout` support

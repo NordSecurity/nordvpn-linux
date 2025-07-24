@@ -6,12 +6,6 @@ import (
 )
 
 const (
-	FeatureMain     = "nordvpn"
-	FeatureLibtelio = "libtelio"
-	FeatureMeshnet  = "meshnet"
-)
-
-const (
 	fieldTypeString = "string"
 	fieldTypeInt    = "integer"
 	fieldTypeNumber = "number"
