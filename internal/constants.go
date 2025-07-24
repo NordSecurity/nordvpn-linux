@@ -102,11 +102,6 @@ const (
 )
 
 var (
-	PlatformSupportsIPv4 = true
-	PlatformSupportsIPv6 = true
-)
-
-var (
 	// RunDir defines default socket directory
 	RunDir = PrefixCommonPath("/run/nordvpn")
 
@@ -146,17 +141,6 @@ var (
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
 )
-
-func GetSupportedIPTables() []string {
-	var iptables []string
-	if PlatformSupportsIPv4 {
-		iptables = append(iptables, "iptables")
-	}
-	if PlatformSupportsIPv6 {
-		iptables = append(iptables, "ip6tables")
-	}
-	return iptables
-}
 
 func GetNorduserSocketSnap(uid int) string {
 	return fmt.Sprintf("%s%d-%s.sock", TmpDir, uid, Norduserd)
