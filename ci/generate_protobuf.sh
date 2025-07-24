@@ -22,6 +22,7 @@ protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/purchase.proto -I protobuf/daemon
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/servers.proto -I protobuf/daemon
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/state.proto -I protobuf/daemon
+protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/daemon/features.proto -I protobuf/daemon
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/meshnet/empty.proto -I protobuf/meshnet
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/meshnet/fsnotify.proto -I protobuf/meshnet
 protoc --go_opt=module=github.com/NordSecurity/nordvpn-linux --go_out=. protobuf/meshnet/service_response.proto -I protobuf/meshnet

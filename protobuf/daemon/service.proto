@@ -8,6 +8,7 @@ import "account.proto";
 import "cities.proto";
 import "common.proto";
 import "connect.proto";
+import "features.proto";
 import "login.proto";
 import "logout.proto";
 import "login_with_token.proto";
@@ -67,4 +68,5 @@ service Daemon {
   rpc GetServers(Empty) returns (ServersResponse);
   rpc SetPostQuantum(SetGenericRequest) returns (Payload);
   rpc GetDaemonApiVersion(GetDaemonApiVersionRequest) returns (GetDaemonApiVersionResponse);
+  rpc GetFeatureToggles(Empty) returns (FeatureToggles);
 }

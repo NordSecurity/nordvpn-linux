@@ -54,7 +54,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("Auto-connect group: %s\n", settings.AutoConnectData.ServerGroup)
 	}
 
-	if !shouldHideMeshnet() {
+	if isMeshnetEnabled(c) {
 		fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))
 	}
 
