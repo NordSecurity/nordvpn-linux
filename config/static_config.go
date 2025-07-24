@@ -68,11 +68,11 @@ func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, configState) {
 	return cfg, staticConfigState_initialized
 }
 
-func NewFilesystemStaticConfigManager() FilesystemStaticConfigManager {
+func NewFilesystemStaticConfigManager() *FilesystemStaticConfigManager {
 	fs := StdFilesystemHandle{}
 	cfg, state := tryInitStaticConfig(fs)
 
-	return FilesystemStaticConfigManager{
+	return &FilesystemStaticConfigManager{
 		fs:    fs,
 		state: state,
 		cfg:   cfg,

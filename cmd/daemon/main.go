@@ -117,13 +117,14 @@ const (
 	sockTCP socketType = "tcp"
 )
 
-func initializeStaticConfig(machineID uuid.UUID) {
+func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 	staticCfgManager := config.NewFilesystemStaticConfigManager()
 	if err := staticCfgManager.SetRolloutGroup(remote.GenerateRolloutGroup(machineID)); err != nil {
 		if !errors.Is(err, config.ErrStaticValueAlreadySet) {
 			log.Println(internal.ErrorPrefix, "failed to configure rollout group:", err)
 		}
 	}
+	return staticCfgManager
 }
 
 func main() {
@@ -302,7 +303,7 @@ func main() {
 	}
 
 	machineID := machineIdGenerator.GetMachineID()
-	initializeStaticConfig(machineID)
+	staticCfg := initializeStaticConfig(machineID)
 
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
@@ -337,7 +338,11 @@ func main() {
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
 
-	rolloutGroup := 10 // TODO/FIXME: get real value from static config
+	rolloutGroup, err := staticCfg.GetRolloutGroup()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "getting rollout group:", err)
+		// in case of error, rollout group is `0`
+	}
 	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI, rolloutGroup)
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)

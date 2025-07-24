@@ -187,7 +187,6 @@ func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
 	return c.GetFeatureParam(FeatureLibtelio, FeatureLibtelio)
 }
 
-// TODO/FIXME: add `rollout` support
 func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -211,7 +210,6 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	return false
 }
 
-// TODO/FIXME: add `rollout` support
 func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
