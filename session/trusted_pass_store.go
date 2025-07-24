@@ -57,6 +57,18 @@ func (s *trustedPassSession) set(cfg trustedPassConfig) error {
 	return nil
 }
 
+func (s *trustedPassSession) reset() {
+	s.cm.SaveWith(func(c config.Config) config.Config {
+		data := c.TokensData[c.AutoConnectData.ID]
+		data.TrustedPassToken = ""
+		data.TrustedPassOwnerID = ""
+		data.TrustedPassTokenExpiry = ""
+		c.TokensData[c.AutoConnectData.ID] = data
+		return c
+	})
+}
+
+// SetToken
 func (s *trustedPassSession) SetToken(value string) error {
 	cfg, err := s.get()
 	if err != nil {
@@ -66,6 +78,7 @@ func (s *trustedPassSession) SetToken(value string) error {
 	return s.set(cfg)
 }
 
+// SetOwnerID
 func (s *trustedPassSession) SetOwnerID(value string) error {
 	cfg, err := s.get()
 	if err != nil {
@@ -75,6 +88,7 @@ func (s *trustedPassSession) SetOwnerID(value string) error {
 	return s.set(cfg)
 }
 
+// SetExpiry
 func (s *trustedPassSession) SetExpiry(value time.Time) error {
 	cfg, err := s.get()
 	if err != nil {
@@ -84,6 +98,7 @@ func (s *trustedPassSession) SetExpiry(value time.Time) error {
 	return s.set(cfg)
 }
 
+// GetToken
 // implements SessionTokenProvider
 func (s *trustedPassSession) GetToken() string {
 	cfg, err := s.get()
@@ -93,6 +108,7 @@ func (s *trustedPassSession) GetToken() string {
 	return cfg.Token
 }
 
+// GetOwnerID
 // implements SessionOwnerProvider
 func (s *trustedPassSession) GetOwnerID() string {
 	cfg, err := s.get()
@@ -102,6 +118,7 @@ func (s *trustedPassSession) GetOwnerID() string {
 	return cfg.OwnerID
 }
 
+// GetExpiry
 // implements SessionExpiryProvider
 func (s *trustedPassSession) GetExpiry() time.Time {
 	cfg, err := s.get()
@@ -111,6 +128,7 @@ func (s *trustedPassSession) GetExpiry() time.Time {
 	return cfg.ExpiresAt
 }
 
+// IsExpired
 // implements ExpirableSession
 func (s *trustedPassSession) IsExpired() bool {
 	cfg, err := s.get()

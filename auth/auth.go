@@ -220,16 +220,6 @@ func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
 		}
 	}
 
-	if data.NordLynxPrivateKey == "" ||
-		data.OpenVPNUsername == "" || data.OpenVPNPassword == "" {
-		if err := r.renewVpnCredentials(&data); err != nil {
-			return err
-		}
-		if err := r.cm.SaveWith(saveVpnServerCredentials(uid, data)); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
@@ -241,18 +231,6 @@ func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
 	data.NCData.Endpoint = resp.Endpoint
 	data.NCData.Username = resp.Username
 	data.NCData.Password = resp.Password
-	return nil
-}
-
-func (r *RenewingChecker) renewVpnCredentials(data *config.TokenData) error {
-	credentials, err := r.creds.ServiceCredentials(data.Token)
-	if err != nil {
-		return err
-	}
-
-	data.NordLynxPrivateKey = credentials.NordlynxPrivateKey
-	data.OpenVPNUsername = credentials.Username
-	data.OpenVPNPassword = credentials.Password
 	return nil
 }
 
@@ -312,17 +290,6 @@ func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc 
 	return func(c config.Config) config.Config {
 		user := c.TokensData[userID]
 		user.ServiceExpiry = data.ServiceExpiry
-		c.TokensData[userID] = user
-		return c
-	}
-}
-
-func saveVpnServerCredentials(userID int64, data config.TokenData) config.SaveFunc {
-	return func(c config.Config) config.Config {
-		user := c.TokensData[userID]
-		user.NordLynxPrivateKey = data.NordLynxPrivateKey
-		user.OpenVPNUsername = data.OpenVPNUsername
-		user.OpenVPNPassword = data.OpenVPNPassword
 		c.TokensData[userID] = user
 		return c
 	}
