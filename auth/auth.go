@@ -4,7 +4,6 @@ Package auth is responsible for user authentication.
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -115,12 +114,6 @@ func (r *RenewingChecker) IsLoggedIn() (bool, error) {
 		return false, err
 	}
 
-	for uid, data := range cfg.TokensData {
-		if err := r.renew(uid, data); err != nil {
-			return false, fmt.Errorf("renewing credentials: %w", err)
-		}
-	}
-
 	return cfg.AutoConnectData.ID != 0 && len(cfg.TokensData) > 0, nil
 }
 
@@ -203,37 +196,6 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	return dipServices, nil
 }
 
-func (r *RenewingChecker) renew(uid int64, data config.TokenData) error {
-	// We are renewing token if it is expired because we need to make some API calls later
-	if r.expChecker.IsExpired(data.TokenExpiry) {
-		// We renew NC credentials along the login token
-		if err := r.renewNCCredentials(&data); err != nil {
-			if errors.Is(err, core.ErrUnauthorized) ||
-				errors.Is(err, core.ErrNotFound) ||
-				errors.Is(err, core.ErrBadRequest) {
-				return r.cm.SaveWith(Logout(uid, r.logoutPub))
-			}
-			return nil
-		}
-		if err := r.cm.SaveWith(saveLoginCreds(uid, data)); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-func (r *RenewingChecker) renewNCCredentials(data *config.TokenData) error {
-	resp, err := r.creds.NotificationCredentials(data.NCData.UserID.String())
-	if err != nil {
-		return err
-	}
-
-	data.NCData.Endpoint = resp.Endpoint
-	data.NCData.Username = resp.Username
-	data.NCData.Password = resp.Password
-	return nil
-}
-
 // fetchSaveServices fetches services and updates data appropriately
 func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData) error {
 	services, err := r.creds.Services()
@@ -271,19 +233,6 @@ func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
 		return nil, fmt.Errorf("fetching available services: %w", err)
 	}
 	return services, nil
-}
-
-// saveLoginCreds persists authentication-related data including NC credentials and trusted pass
-// information. It does not modify VPN-specific configuration.
-func saveLoginCreds(userID int64, data config.TokenData) config.SaveFunc {
-	return func(c config.Config) config.Config {
-		user := c.TokensData[userID]
-		user.NCData.Endpoint = data.NCData.Endpoint
-		user.NCData.Username = data.NCData.Username
-		user.NCData.Password = data.NCData.Password
-		c.TokensData[userID] = user
-		return c
-	}
 }
 
 func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc {

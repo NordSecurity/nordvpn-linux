@@ -126,11 +126,6 @@ func (s *vpnCredentialsSession) GetNordlynxPrivateKey() string {
 // IsExpired
 // implements ExpirableSession
 func (s *vpnCredentialsSession) IsExpired() bool {
-	_, err := s.get()
-	if err != nil {
-		return true
-	}
-	// TODO: double check here (waiting for a response)
 	return false
 }
 
