@@ -14,21 +14,22 @@ type manualAccessTokenValidator struct {
 	ValidateFunc func(token string, expiryDate time.Time) error
 }
 
+// Validate checks if the session contains a valid manual access token.
 func (v *manualAccessTokenValidator) Validate(session any) error {
 	tokenProvider, ok := session.(SessionTokenProvider)
 	if !ok {
-		return nil
+		return errors.New("unsupported store for token validation")
 	}
 
 	expiryProvider, ok := session.(SessionExpiryProvider)
 	if !ok {
-		return nil
+		return errors.New("unsupported store for expiry validation")
 	}
 
 	return v.ValidateFunc(tokenProvider.GetToken(), expiryProvider.GetExpiry())
 }
 
-// NewManualAccessTokenValidator
+// NewManualAccessTokenValidator creates a validator that verifies manually issued access tokens.
 func NewManualAccessTokenValidator(api AnyIdempotentAPICallWithToken) SessionStoreValidator {
 	return &manualAccessTokenValidator{
 		ValidateFunc: func(token string, expiryDate time.Time) error {
