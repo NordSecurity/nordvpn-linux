@@ -149,3 +149,52 @@ func buildNCCredentialsSessionStoreAPIRenewalCall(
 		}, nil
 	}
 }
+
+func buildNCCredentialsSessionStore(
+	confman config.Manager,
+	errRegistry *internal.ErrorHandlingRegistry[error],
+	clientAPI core.ClientAPI,
+) session.SessionStore {
+	return session.NewNCCredentialsSessionStore(
+		confman,
+		errRegistry,
+		session.NewCompositeValidator(
+			session.NewExpiryValidator(),
+			session.NewNCCredentialsValidator(),
+			session.NewEndpointValidator(),
+		),
+		buildNCCredentialsSessionStoreAPIRenewalCall(confman, clientAPI),
+	)
+}
+
+func buildNCCredentialsSessionStoreAPIRenewalCall(
+	confman config.Manager,
+	clientAPI core.ClientAPI,
+) session.NCCredentialsRenewalAPICall {
+	return func() (*session.NCCredentialsResponse, error) {
+		var cfg config.Config
+		if err := confman.Load(&cfg); err != nil {
+			return nil, err
+		}
+
+		data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+		if !ok {
+			return nil, errors.New("there is not data")
+		}
+
+		// actual API call passed into Session Store object
+		return func(appUserID string) (*session.NCCredentialsResponse, error) {
+			resp, err := clientAPI.NotificationCredentials(appUserID)
+			if err != nil {
+				return nil, fmt.Errorf("getting nc credentials data: %w", err)
+			}
+
+			return &session.NCCredentialsResponse{
+				Username:  resp.Username,
+				Password:  resp.Password,
+				Endpoint:  resp.Endpoint,
+				ExpiresIn: resp.ExpiresIn,
+			}, nil
+		}(data.NCData.UserID.String())
+	}
+}
