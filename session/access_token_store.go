@@ -20,7 +20,6 @@ type accessTokenSession struct {
 
 // TODO: needs global caching
 func (s *accessTokenSession) get() (accessTokenConfig, error) {
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		return accessTokenConfig{}, err
