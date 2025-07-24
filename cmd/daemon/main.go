@@ -472,6 +472,7 @@ func main() {
 	accountUpdateEvents.Subscribe(statePublisher)
 
 	trustedPassSessionStore := buildTrustedPassSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
+	vpnCredentialsSessionStore := buildVPNCredentialsSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
 		clientAPI,
@@ -479,7 +480,8 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
-		[]session.SessionStore{accessTokenSessionStore, trustedPassSessionStore},
+		// checks are processing in the provided order
+		[]session.SessionStore{accessTokenSessionStore, trustedPassSessionStore, vpnCredentialsSessionStore},
 	)
 
 	endpointResolver := network.NewDefaultResolverChain(fw)
