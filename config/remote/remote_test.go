@@ -31,6 +31,11 @@ const (
 	testFeatureWithRc = "nordwhisper"
 )
 
+func cleanLocalPath(t *testing.T) {
+	os.RemoveAll(localPath)
+	t.Cleanup(func() { os.RemoveAll(localPath) })
+}
+
 func TestFindMatchingRecord(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -361,6 +366,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	assert.Greater(t, info3inc2.ModTime().Nanosecond(), info1inc2.ModTime().Nanosecond())
 
 	stopWebServer()
+	cleanLocalPath(t)
 }
 
 func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
