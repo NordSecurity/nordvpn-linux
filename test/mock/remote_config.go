@@ -16,3 +16,7 @@ func (r *RemoteConfigMock) GetTelioConfig() (string, error) {
 func (r *RemoteConfigMock) GetNordWhisperEnabled() (bool, error) {
 	return r.NordWhisperEnabled, r.GetNordWhisperErr
 }
+
+func (r *RemoteConfigMock) IsFeatureEnabled(string) bool                { return false }
+func (r *RemoteConfigMock) GetFeatureParam(_, _ string) (string, error) { return "", nil }
+func (r *RemoteConfigMock) LoadConfig() error                           { return nil }
