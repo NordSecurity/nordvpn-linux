@@ -94,7 +94,7 @@ func (s *accessTokenSession) GetToken() string {
 	return cfg.Token
 }
 
-// implements SessionRenewTokenProvider
+// implements SessionRenewalTokenProvider
 func (s *accessTokenSession) GetRenewalToken() string {
 	cfg, err := s.get()
 	if err != nil {

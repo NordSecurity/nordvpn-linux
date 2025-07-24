@@ -504,7 +504,7 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
-		[]session.SessionStore{accessTokenSessionStore, trustedPassSessionStore},
+		accessTokenSessionStore, trustedPassSessionStore,
 	)
 
 	endpointResolver := network.NewDefaultResolverChain(fw)
