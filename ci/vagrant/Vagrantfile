@@ -1,0 +1,19 @@
+Vagrant.configure("2") do |config|
+  config.vm.provider :libvirt do |libvirt|
+  end
+
+  config.vm.network "private_network", type: "dhcp"
+  # mount the project folder
+  config.vm.synced_folder "../../", "/vagrant"
+
+  # install dependencies
+  config.vm.provision "shell", path: "provision_snap.sh"
+
+  config.vm.define "ubuntu22", autostart: false do |ubuntu|
+    ubuntu.vm.box = "generic/ubuntu2204"
+  end
+
+  config.vm.define "local_snap_testing", primary: true  do |local|
+    local.vm.box = "generic/ubuntu2204"
+  end
+end
