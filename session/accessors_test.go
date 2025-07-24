@@ -4,7 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	token              = "token"
+	expectedValidToken = "valid-token"
 )
 
 type SimpleNothingProvider struct{}
@@ -18,6 +24,8 @@ func (s *SimpleSessionTokenProvider) GetToken() string {
 }
 
 func Test_GetToken_IncompatibleInterfaces(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	res, err := GetToken(0)
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
@@ -30,18 +38,19 @@ func Test_GetToken_IncompatibleInterfaces(t *testing.T) {
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
 
-	res, err = GetToken(func() string { return "token" })
+	res, err = GetToken(func() string { return token })
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
 }
 
 func Test_GetToken_CompatibleInterface(t *testing.T) {
-	expectedToken := "valid-token"
-	prov := &SimpleSessionTokenProvider{GetTokenFunc: func() string { return expectedToken }}
+	category.Set(t, category.Unit)
+
+	prov := &SimpleSessionTokenProvider{GetTokenFunc: func() string { return expectedValidToken }}
 
 	res, err := GetToken(prov)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedToken, res, "Must match")
+	assert.Equal(t, expectedValidToken, res, "Must match")
 }
 
 type SimpleSessionRenewalProvider struct {
@@ -53,6 +62,8 @@ func (s *SimpleSessionRenewalProvider) GetRenewalToken() string {
 }
 
 func Test_GetRenewalToken_IncompatibleInterfaces(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	res, err := GetRenewalToken(0)
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
@@ -65,18 +76,19 @@ func Test_GetRenewalToken_IncompatibleInterfaces(t *testing.T) {
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
 
-	res, err = GetRenewalToken(func() string { return "token" })
+	res, err = GetRenewalToken(func() string { return token })
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
 }
 
 func Test_GetRenewalToken_CompatibleInterface(t *testing.T) {
-	expectedToken := "valid-token"
-	prov := &SimpleSessionRenewalProvider{GetRenewalTokenFunc: func() string { return expectedToken }}
+	category.Set(t, category.Unit)
+
+	prov := &SimpleSessionRenewalProvider{GetRenewalTokenFunc: func() string { return expectedValidToken }}
 
 	res, err := GetRenewalToken(prov)
 	assert.NoError(t, err)
-	assert.Equal(t, expectedToken, res, "Must match")
+	assert.Equal(t, expectedValidToken, res, "Must match")
 }
 
 type SimpleSessionOwnerIDProvider struct {
@@ -88,6 +100,8 @@ func (s *SimpleSessionOwnerIDProvider) GetOwnerID() string {
 }
 
 func Test_GetOwnerID_IncompatibleInterfaces(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	res, err := GetOwnerID(0)
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
@@ -100,12 +114,14 @@ func Test_GetOwnerID_IncompatibleInterfaces(t *testing.T) {
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
 
-	res, err = GetOwnerID(func() string { return "token" })
+	res, err = GetOwnerID(func() string { return token })
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
 }
 
 func Test_GetOwnerID_CompatibleInterface(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	expectedOwnerID := "valid-owned-id"
 	prov := &SimpleSessionOwnerIDProvider{GetOwnerIDFunc: func() string { return expectedOwnerID }}
 
@@ -123,6 +139,8 @@ func (s *SimpleSessionExpiryProvider) GetExpiry() time.Time {
 }
 
 func Test_GetExpiryToken_IncompatibleInterfaces(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	res, err := GetExpiry(0)
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
@@ -135,12 +153,14 @@ func Test_GetExpiryToken_IncompatibleInterfaces(t *testing.T) {
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
 
-	res, err = GetExpiry(func() string { return "token" })
+	res, err = GetExpiry(func() string { return token })
 	assert.Empty(t, res, "Must be empty")
 	assert.Error(t, err)
 }
 
 func Test_GetExpiryToken_CompatibleInterface(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	expectedExpiration := time.Now().Add(1234)
 	prov := &SimpleSessionExpiryProvider{GetExpiryFunc: func() time.Time { return expectedExpiration }}
 
