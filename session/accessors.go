@@ -5,42 +5,34 @@ import (
 	"time"
 )
 
-// GetToken
-func GetToken(store SessionStore) (string, error) {
-	switch s := store.(type) {
-	case *AccessTokenSessionStore:
-		return s.session.GetToken(), nil
-	default:
-		return "", errors.New("gettoken: incompatible session store")
+// GetToken retrieves a token from a SessionTokenProvider
+func GetToken(store interface{}) (string, error) {
+	if provider, ok := store.(SessionTokenProvider); ok {
+		return provider.GetToken(), nil
 	}
+	return "", errors.New("gettoken: store does not implement session token provider")
 }
 
-// GetRenewalToken
-func GetRenewalToken(store SessionStore) (string, error) {
-	switch s := store.(type) {
-	case *AccessTokenSessionStore:
-		return s.session.GetRenewalToken(), nil
-	default:
-		return "", errors.New("getrenewaltoken: incompatible session store")
+// GetRenewalToken retrieves a renewal token from a SessionRenewalTokenProvider
+func GetRenewalToken(store interface{}) (string, error) {
+	if provider, ok := store.(SessionRenewalTokenProvider); ok {
+		return provider.GetRenewalToken(), nil
 	}
+	return "", errors.New("getrenewaltoken: store does not implement session renewal token provider")
 }
 
-// GetOwnerID
-func GetOwnerID(store SessionStore) (string, error) {
-	switch s := store.(type) {
-	case *TrustedPassSessionStore:
-		return s.session.GetOwnerID(), nil
-	default:
-		return "", errors.New("getownerid: incompatible session store")
+// GetOwnerID retrieves an owner ID from a SessionOwnerProvider
+func GetOwnerID(store interface{}) (string, error) {
+	if provider, ok := store.(SessionOwnerProvider); ok {
+		return provider.GetOwnerID(), nil
 	}
+	return "", errors.New("getownerid: store does not implement session owner provider")
 }
 
-// GetExpiry
-func GetExpiry(store SessionStore) (time.Time, error) {
-	switch s := store.(type) {
-	case *AccessTokenSessionStore:
-		return s.session.GetExpiry(), nil
-	default:
-		return time.Time{}, errors.New("getexpiry: incompatible session store")
+// GetExpiry retrieves the expiry time from a SessionExpiryProvider
+func GetExpiry(store interface{}) (time.Time, error) {
+	if provider, ok := store.(SessionExpiryProvider); ok {
+		return provider.GetExpiry(), nil
 	}
+	return time.Time{}, errors.New("getexpiry: store does not implement session expiry provider")
 }
