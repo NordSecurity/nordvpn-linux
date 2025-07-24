@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -98,10 +99,25 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 
 	resp, err := s.renewAPICall(data.Token, *data.IdempotencyKey)
 	if err == nil {
-		data.Token = resp.Token
-		data.RenewToken = resp.RenewToken
-		data.TokenExpiry = resp.ExpiresAt
-		return s.cfgManager.SaveWith(s.loginTokenDataSaver(uid, data))
+		if err = s.session.SetToken(resp.Token); err != nil {
+			return err
+		}
+
+		if err = s.session.SetRenewToken(resp.RenewToken); err != nil {
+			s.session.reset()
+			return err
+		}
+
+		expTime, errParse := time.Parse(internal.ServerDateFormat, resp.ExpiresAt)
+		if errParse != nil {
+			s.session.reset()
+			return err
+		}
+
+		if err = s.session.SetExpiry(expTime); err != nil {
+			s.session.reset()
+			return err
+		}
 	}
 
 	if errors.Is(err, ErrUnauthorized) || errors.Is(err, ErrNotFound) || errors.Is(err, ErrBadRequest) {
@@ -148,19 +164,6 @@ func (s *AccessTokenSessionStore) invokeClientErrorHandlers(uid int64, err error
 func (s *AccessTokenSessionStore) tokenDataRemover(uid int64) config.SaveFunc {
 	return func(c config.Config) config.Config {
 		delete(c.TokensData, uid)
-		return c
-	}
-}
-
-// loginTokenDataSaver returns a function that stores token-related fields (token, renew token,
-// and expiry timestamp) for the specified user into the accessTokenConfig.
-func (s *AccessTokenSessionStore) loginTokenDataSaver(uid int64, data config.TokenData) config.SaveFunc {
-	return func(c config.Config) config.Config {
-		user := c.TokensData[uid]
-		user.Token = data.Token
-		user.RenewToken = data.RenewToken
-		user.TokenExpiry = data.TokenExpiry
-		c.TokensData[uid] = user
 		return c
 	}
 }

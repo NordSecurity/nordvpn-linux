@@ -58,6 +58,17 @@ func (s *accessTokenSession) set(cfg accessTokenConfig) error {
 	return nil
 }
 
+func (s *accessTokenSession) reset() {
+	s.cm.SaveWith(func(c config.Config) config.Config {
+		data := c.TokensData[c.AutoConnectData.ID]
+		data.Token = ""
+		data.RenewToken = ""
+		data.TokenExpiry = ""
+		c.TokensData[c.AutoConnectData.ID] = data
+		return c
+	})
+}
+
 func (s *accessTokenSession) SetToken(value string) error {
 	cfg, err := s.get()
 	if err != nil {

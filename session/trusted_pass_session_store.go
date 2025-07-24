@@ -107,10 +107,12 @@ func (m *TrustedPassSessionStore) renewToken(data *config.TokenData) error {
 	}
 
 	if err := m.session.SetOwnerID(resp.OwnerID); err != nil {
+		m.session.reset()
 		return err
 	}
 
 	if err = m.session.SetExpiry(time.Now().Add(trustedPassExpiryPeriod)); err != nil {
+		m.session.reset()
 		return err
 	}
 
