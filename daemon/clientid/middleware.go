@@ -2,10 +2,13 @@ package clientid
 
 import (
 	"context"
+	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -41,9 +44,10 @@ func clientIDToClientString(clientID pb.ClientID) string {
 		return guiClientString
 	case pb.ClientID_TRAY:
 		return trayClientString
-	default:
+	case pb.ClientID_UNKNOWN_CLIENT:
 		return ""
 	}
+	return ""
 }
 
 func fullMethodNameToItemName(fullMethodName string) string {
@@ -61,7 +65,26 @@ func fullMethodNameToItemName(fullMethodName string) string {
 	}
 }
 
+func parseClientID(clientID string) (string, error) {
+	clientIDInt, err := strconv.ParseInt(clientID, 10, 32)
+	if err != nil {
+		return "", fmt.Errorf("parsing client ID: %w", err)
+	}
+
+	clientString := clientIDToClientString(pb.ClientID(clientIDInt))
+	if clientString == "" {
+		return "", fmt.Errorf("unknown client ID: %s", clientID)
+	}
+
+	return clientString, nil
+}
+
 func (c *CliendIDMiddleware) notifyAboutClickEvent(ctx context.Context, fullMethod string) {
+	itemName := fullMethodNameToItemName(fullMethod)
+	if itemName == "" {
+		return
+	}
+
 	clientString := ""
 	var md metadata.MD
 	var ok bool
@@ -74,18 +97,9 @@ func (c *CliendIDMiddleware) notifyAboutClickEvent(ctx context.Context, fullMeth
 		return
 	}
 
-	clientID, err := strconv.Atoi(metadata[0])
+	clientString, err := parseClientID(metadata[0])
 	if err != nil {
-		return
-	}
-
-	clientString = clientIDToClientString(pb.ClientID(clientID))
-	if clientString == "" {
-		return
-	}
-
-	itemName := fullMethodNameToItemName(fullMethod)
-	if itemName == "" {
+		log.Println(internal.ErrorPrefix, "parsing client ID:", err)
 		return
 	}
 
