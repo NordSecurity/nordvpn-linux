@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,14 +18,15 @@ func (m *mockSessionTokenProvider) GetToken() string {
 }
 
 func Test_TokenValidator_Validate(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	t.Run("Valid token", func(t *testing.T) {
-		validToken := "valid-token"
-		session := &mockSessionTokenProvider{token: validToken}
+		session := &mockSessionTokenProvider{token: expectedValidToken}
 
 		validateCalled := false
 		validator := NewTokenValidator(func(token string) error {
 			validateCalled = true
-			assert.Equal(t, validToken, token)
+			assert.Equal(t, expectedValidToken, token)
 			return nil
 		})
 
@@ -94,6 +96,8 @@ func Test_TokenValidator_Validate(t *testing.T) {
 }
 
 func Test_NewTokenValidator(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	t.Run("Creates validator with provided function", func(t *testing.T) {
 		validateFn := func(token string) error {
 			return nil
@@ -122,6 +126,8 @@ func (m *mockExpirableSession) IsExpired() bool {
 }
 
 func Test_ExpiryValidator_Validate(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	t.Run("Non-expired session", func(t *testing.T) {
 		session := &mockExpirableSession{expired: false}
 
@@ -177,6 +183,8 @@ func Test_ExpiryValidator_Validate(t *testing.T) {
 }
 
 func Test_NewExpiryValidator(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	t.Run("Creates validator correctly", func(t *testing.T) {
 		validator := NewExpiryValidator()
 
@@ -203,6 +211,8 @@ func (m *mockCredentialsBasedSession) GetPassword() string {
 }
 
 func Test_CredentialValidator_Validate(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	t.Run("Valid credentials", func(t *testing.T) {
 		validUsername := "valid-user"
 		validPassword := "valid-pass"
@@ -298,6 +308,8 @@ func Test_CredentialValidator_Validate(t *testing.T) {
 }
 
 func Test_NewCredentialValidator(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	t.Run("Creates validator with provided function", func(t *testing.T) {
 		validateFn := func(username, password string) error {
 			return nil
@@ -342,6 +354,8 @@ func (m *mockCombinedSession) IsExpired() bool {
 }
 
 func Test_CompositeValidator_Validate(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	t.Run("All validators pass", func(t *testing.T) {
 		mockSession := struct{}{}
 
@@ -501,6 +515,8 @@ func Test_CompositeValidator_Validate(t *testing.T) {
 }
 
 func Test_NewCompositeValidator(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	t.Run("Creates validator with provided validators", func(t *testing.T) {
 		validator1 := &mockValidator{}
 		validator2 := &mockValidator{}
