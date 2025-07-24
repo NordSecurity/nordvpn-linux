@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	testsession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -69,10 +71,6 @@ var (
 )
 
 func testRPC() *RPC {
-	type mockLoginTokenManager struct {
-		core.TokenManager
-	}
-
 	api := core.NewSmartClientAPI(
 		core.NewSimpleAPI(
 			"1.0.0",
@@ -80,7 +78,7 @@ func testRPC() *RPC {
 			http.DefaultClient,
 			response.NoopValidator{},
 		),
-		&mockLoginTokenManager{},
+		&testsession.MockSessionStore{},
 	)
 
 	dm := testNewDataManager()
