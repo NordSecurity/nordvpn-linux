@@ -32,7 +32,6 @@ func NewSmartClientAPI(client RawClientAPI, accessTokenStore session.SessionStor
 
 func callWithToken[T any](store session.SessionStore, call func(token string) (T, error)) (T, error) {
 	callAPIWithToken := func() (T, error) {
-
 		token, err := session.GetToken(store)
 		if err != nil {
 			var zero T

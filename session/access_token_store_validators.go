@@ -46,7 +46,6 @@ func NewManualAccessTokenValidator(api AnyIdempotentAPICallWithToken) SessionSto
 				}
 
 				return nil
-
 			}
 			return nil
 		},
