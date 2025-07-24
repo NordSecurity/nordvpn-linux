@@ -15,7 +15,7 @@ func (r RemoteConfigGetterStub) GetTelioConfig() (string, error) {
 	return "", fmt.Errorf("no remote config getter was compiled into the app")
 }
 
-func getRemoteConfigGetter(_ config.BuildTarget, _ string, _ core.RemoteStorage) RemoteConfigGetterStub {
+func getRemoteConfigGetter(_ config.BuildTarget, _ string, _ core.RemoteStorage, _ int) RemoteConfigGetterStub {
 	return RemoteConfigGetterStub{}
 }
 func (r RemoteConfigGetterStub) IsFeatureEnabled(string) bool                { return false }

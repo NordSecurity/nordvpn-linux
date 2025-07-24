@@ -41,17 +41,19 @@ type CdnRemoteConfig struct {
 	remotePath     string
 	cdn            core.RemoteStorage
 	features       FeatureMap
+	rolloutGroup   int
 	mu             sync.RWMutex
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
-func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string, cdn core.RemoteStorage) *CdnRemoteConfig {
+func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string, cdn core.RemoteStorage, appRollout int) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
 		appVersion:     buildTarget.Version,
 		appEnvironment: buildTarget.Environment,
 		remotePath:     remotePath,
 		localCachePath: localPath,
 		cdn:            cdn,
+		rolloutGroup:   appRollout,
 		features:       make(FeatureMap),
 	}
 	rc.features.Add(FeatureMain)
@@ -154,7 +156,7 @@ func (c *CdnRemoteConfig) load() error {
 	return nil
 }
 
-func findMatchingRecord(ss []ParamValue, ver string) (match *ParamValue) {
+func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamValue) {
 	for _, s := range ss {
 		// find my version matching records
 		ok, err := isVersionMatching(ver, s.AppVersion)
@@ -172,6 +174,11 @@ func findMatchingRecord(ss []ParamValue, ver string) (match *ParamValue) {
 				}
 			}
 		}
+	}
+	// as a last step, check if app's rollout group matches feature's rollout value
+	// (do not try to use other match with lesser weight)
+	if match != nil && match.Rollout > rollout {
+		match = nil
 	}
 	return match
 }
@@ -196,7 +203,7 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	}
 	switch p.Type {
 	case fieldTypeBool:
-		if item := findMatchingRecord(p.Settings, c.appVersion); item != nil {
+		if item := findMatchingRecord(p.Settings, c.appVersion, c.rolloutGroup); item != nil {
 			val, _ := item.AsBool()
 			return val
 		}
@@ -217,7 +224,7 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 	if !found {
 		return "", fmt.Errorf("feature [%s] param [%s] not found", featureName, paramName)
 	}
-	if item := findMatchingRecord(p.Settings, c.appVersion); item != nil {
+	if item := findMatchingRecord(p.Settings, c.appVersion, c.rolloutGroup); item != nil {
 		switch p.Type {
 		case fieldTypeBool:
 			val, err := item.AsBool()

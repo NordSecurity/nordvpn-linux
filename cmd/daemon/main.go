@@ -325,7 +325,8 @@ func main() {
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
 
-	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI)
+	rolloutGroup := 10 // TODO/FIXME: get real value from static config
+	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI, rolloutGroup)
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
