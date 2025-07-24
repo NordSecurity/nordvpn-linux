@@ -10,9 +10,6 @@ import "google/protobuf/empty.proto";
 import "fields.proto";
 
 service TelemetryService {
-  // Reports a generic entry for flexible extension
-  rpc SetCustomEntry(CustomEntry) returns (google.protobuf.Empty);
-
   // Reports the desktop environment name (e.g. gnome, kde, unity)
   rpc SetDesktopEnvironment(DesktopEnvironmentRequest)
       returns (google.protobuf.Empty);
