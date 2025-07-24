@@ -153,7 +153,6 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 				if err != nil {
 					return nil, err
 				}
-				fmt.Println(resp)
 				return &session.AccessTokenResponse{
 					Token:      resp.Token,
 					RenewToken: resp.RenewToken,
