@@ -11,7 +11,7 @@ type SessionTokenProvider interface {
 	GetToken() string
 }
 
-type SessionRenewTokenProvider interface {
+type SessionRenewalTokenProvider interface {
 	GetRenewalToken() string
 }
 
