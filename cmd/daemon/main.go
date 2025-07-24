@@ -72,6 +72,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
+	"github.com/google/uuid"
 
 	"google.golang.org/grpc"
 )
@@ -115,6 +116,15 @@ const (
 	// sockTCP defines that gRPC server is listening to TCP socket
 	sockTCP socketType = "tcp"
 )
+
+func initializeStaticConfig(machineID uuid.UUID) {
+	staticCfgManager := config.NewFilesystemStaticConfigManager()
+	if err := staticCfgManager.SetRolloutGroup(remote.GenerateRolloutGroup(machineID)); err != nil {
+		if !errors.Is(err, config.ErrStaticValueAlreadySet) {
+			log.Println(internal.ErrorPrefix, "failed to configure rollout group:", err)
+		}
+	}
+}
 
 func main() {
 	// pprof
@@ -292,13 +302,7 @@ func main() {
 	}
 
 	machineID := machineIdGenerator.GetMachineID()
-
-	staticCfgManager := config.NewFilesystemStaticConfigManager()
-	if err := staticCfgManager.SetRolloutGroup(remote.GenerateRolloutGroup(machineID)); err != nil {
-		if !errors.Is(err, config.ErrStaticValueAlreadySet) {
-			log.Println(internal.ErrorPrefix, "failed to configure rollout group:", err)
-		}
-	}
+	initializeStaticConfig(machineID)
 
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())

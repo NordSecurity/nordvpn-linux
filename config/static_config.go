@@ -23,10 +23,12 @@ var (
 type configState int
 
 const (
-	noFile configState = iota
-	failedToInitialize
-	initialized
+	staticConfigState_noFile configState = iota
+	staticConfigState_failedToInitialize
+	staticConfigState_initialized
 )
+
+const rolloutGroupUnsetValue = 0
 
 type StaticConfig struct {
 	RolloutGroup int `json:"rollout_group,omitempty"`
@@ -43,7 +45,7 @@ type FilesystemStaticConfigManager struct {
 	fs    FilesystemHandle
 	state configState
 	cfg   StaticConfig
-	mu    sync.Mutex
+	mu    sync.RWMutex
 }
 
 func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, configState) {
@@ -51,19 +53,19 @@ func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, configState) {
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to load static config:", err)
 		if errors.Is(err, os.ErrNotExist) {
-			return StaticConfig{}, noFile
+			return StaticConfig{}, staticConfigState_noFile
 		}
-		return StaticConfig{}, failedToInitialize
+		return StaticConfig{}, staticConfigState_failedToInitialize
 	}
 
 	var cfg StaticConfig
 	err = json.Unmarshal(cfgFile, &cfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to unmarshal static config:", err)
-		return cfg, failedToInitialize
+		return cfg, staticConfigState_failedToInitialize
 	}
 
-	return cfg, initialized
+	return cfg, staticConfigState_initialized
 }
 
 func NewFilesystemStaticConfigManager() FilesystemStaticConfigManager {
@@ -78,12 +80,12 @@ func NewFilesystemStaticConfigManager() FilesystemStaticConfigManager {
 }
 
 func (s *FilesystemStaticConfigManager) getConfig() (StaticConfig, error) {
-	if s.state == initialized {
+	if s.state == staticConfigState_initialized {
 		return s.cfg, nil
 	}
 
 	cfg, state := tryInitStaticConfig(s.fs)
-	if state == failedToInitialize {
+	if state == staticConfigState_failedToInitialize {
 		return cfg, ErrFailedToReadConfigFile
 	}
 	s.cfg = cfg
@@ -93,15 +95,15 @@ func (s *FilesystemStaticConfigManager) getConfig() (StaticConfig, error) {
 }
 
 func (s *FilesystemStaticConfigManager) GetRolloutGroup() (int, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	cfg, err := s.getConfig()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to read config: %w", err)
 	}
 
-	if cfg.RolloutGroup == 0 {
+	if cfg.RolloutGroup == rolloutGroupUnsetValue {
 		return 0, ErrStaticValueNotConfigured
 	}
 
@@ -112,7 +114,10 @@ func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if rolloutGroup < 1 || rolloutGroup > 100 {
+	const rolloutGroupMin = 1
+	const rolloutGroupMax = 100
+
+	if rolloutGroup < rolloutGroupMin || rolloutGroup > rolloutGroupMax {
 		return ErrRolloutGroupOutOfBounds
 	}
 
@@ -121,7 +126,7 @@ func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error 
 		return fmt.Errorf("failed to read config: %w", err)
 	}
 
-	if cfg.RolloutGroup != 0 {
+	if cfg.RolloutGroup != rolloutGroupUnsetValue {
 		return ErrStaticValueAlreadySet
 	}
 
