@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
@@ -122,13 +121,13 @@ func NewApp(version, environment, hash, salt string,
 	cli.HelpFlag.(*cli.BoolFlag).Usage = "Show help"
 	cli.VersionFlag.(*cli.BoolFlag).Usage = "Print the version"
 
-	shouldHideMeshnet := shouldHideMeshnet()
+	isMeshnetEnabled := isMeshnetEnabled(cmd)
 
 	setCommand := cli.Command{
 		Name:        "set",
 		Aliases:     []string{"s"},
 		Usage:       "Sets a configuration option",
-		Subcommands: getSetSubcommands(cmd, shouldHideMeshnet),
+		Subcommands: getSetSubcommands(cmd, isMeshnetEnabled),
 	}
 
 	app := cli.NewApp()
@@ -348,7 +347,7 @@ func NewApp(version, environment, hash, salt string,
 		},
 	}
 
-	if !shouldHideMeshnet {
+	if isMeshnetEnabled {
 		app.Commands = append(app.Commands, meshnetCommand(cmd))
 
 		if pingErr == nil {
@@ -727,7 +726,7 @@ func meshnetCommand(c *cmd) *cli.Command {
 	}
 }
 
-func getSetSubcommands(cmd *cmd, shouldHideMeshnet bool) []*cli.Command {
+func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 	setSubcommands := []*cli.Command{
 		{
 			Name:         "autoconnect",
@@ -942,7 +941,7 @@ func getSetSubcommands(cmd *cmd, shouldHideMeshnet bool) []*cli.Command {
 		BashComplete: cmd.SetBoolAutocomplete,
 	}
 
-	if !shouldHideMeshnet {
+	if isMeshnetEnabled {
 		setSubcommands = append(setSubcommands, &setMeshCommand)
 	}
 
@@ -1430,19 +1429,7 @@ func composeAppVersion(buildVersion string, environment string, isSnap bool) str
 	return fmt.Sprintf("%s%s%s", buildVersion, snap, env)
 }
 
-func shouldHideMeshnet() bool {
-	value := os.Getenv("HIDE_MESHNET")
-
-	if value != "" {
-		parsed, err := strconv.ParseBool(value)
-		if err != nil {
-			// We don't hide if we fail to parse the env
-			return false
-		} else {
-			return parsed
-		}
-	} else {
-		// We don't hide if the env is not set
-		return false
-	}
+func isMeshnetEnabled(cmd *cmd) bool {
+	featureToggles := cmd.GetFeatureToggles()
+	return featureToggles.meshnetEnabled
 }
