@@ -27,7 +27,7 @@ func (v *PrivateKeyValidator) Validate(session any) error {
 	return nil
 }
 
-// NewOwnerIDValidator
+// NewPrivateKeyValidator
 func NewPrivateKeyValidator() SessionStoreValidator {
 	return &PrivateKeyValidator{}
 }
