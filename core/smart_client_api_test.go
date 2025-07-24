@@ -8,6 +8,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/session"
+	mocksession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,38 +19,6 @@ const (
 	renewedToken = "renewed-token"
 	initialToken = "token"
 )
-
-type mockTokenManager struct {
-	TokenCalls      int
-	RenewCalls      int
-	StoreCalls      int
-	InvalidateCalls int
-
-	TokenFunc      func() (string, error)
-	RenewFunc      func() error
-	StoreFunc      func(string) error
-	InvalidateFunc func(error) error
-}
-
-func (m *mockTokenManager) Token() (string, error) {
-	m.TokenCalls++
-	return m.TokenFunc()
-}
-
-func (m *mockTokenManager) Renew() error {
-	m.RenewCalls++
-	return m.RenewFunc()
-}
-
-func (m *mockTokenManager) Store(token string) error {
-	m.StoreCalls++
-	return m.StoreFunc(token)
-}
-
-func (m *mockTokenManager) Invalidate(err error) error {
-	m.InvalidateCalls++
-	return m.InvalidateFunc(err)
-}
 
 type mockSimpleClientAPI struct {
 	NotificationCredentialsFunc       func(token, appUserID string) (core.NotificationCredentialsResponse, error)
@@ -223,8 +193,8 @@ func (m *mockSimpleClientAPI) NotifyNewTransfer(token string, self uuid.UUID, pe
 	return m.NotifyNewTransferFunc(token, self, peer, fileName, fileCount, transferID)
 }
 
-func NewMockSmartClientAPI(api core.RawClientAPI, tokenman core.TokenManager) core.ClientAPI {
-	return core.NewSmartClientAPI(api, tokenman)
+func NewMockSmartClientAPI(api core.RawClientAPI, store session.SessionStore) core.ClientAPI {
+	return core.NewSmartClientAPI(api, store)
 }
 
 func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
@@ -235,9 +205,8 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 			Password: "87638468&*g23jhj#",
 		}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { t.Fatal("Renew should not be called"); return nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -248,15 +217,15 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.NotificationCredentials(appUserID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
 
 		// no need for token renewal
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
@@ -267,16 +236,14 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 		}
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
-			RenewFunc: func() error {
-				return nil
-			},
+			RenewFunc: func() error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -291,19 +258,19 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.NotificationCredentials(appUserID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renew failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renew failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -312,20 +279,20 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.NotificationCredentials(appUserID)
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but api still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -334,13 +301,13 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.NotificationCredentials(appUserID)
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -348,12 +315,8 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
 		expectedResp := core.NotificationCredentialsRevokeResponse{Status: "ok"}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error {
-				t.Fatal("Renew should not be called")
-				return nil
-			},
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -365,29 +328,27 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.NotificationCredentialsRevoke(appUserID, true)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
 		expectedResp := core.NotificationCredentialsRevokeResponse{Status: "ok"}
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
-			RenewFunc: func() error {
-				return nil
-			},
+			RenewFunc: func() error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -402,19 +363,19 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.NotificationCredentialsRevoke(appUserID, true)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -423,20 +384,20 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.NotificationCredentialsRevoke(appUserID, false)
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -445,13 +406,13 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.NotificationCredentialsRevoke(appUserID, false)
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -462,12 +423,8 @@ func Test_ServiceCredentials_TokenRenewalScenarios(t *testing.T) {
 			Password: "supersecret",
 		}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error {
-				t.Fatal("Renew should not be called")
-				return nil
-			},
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -477,13 +434,14 @@ func Test_ServiceCredentials_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.ServiceCredentials(initialToken)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		// The function should not be calling the session store since the token is passed directly
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is never triggered and succeeds", func(t *testing.T) {
@@ -494,12 +452,12 @@ func Test_ServiceCredentials_TokenRenewalScenarios(t *testing.T) {
 			Password: "renewed-pass",
 		}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error { return nil },
 		}
@@ -511,19 +469,20 @@ func Test_ServiceCredentials_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.ServiceCredentials(initialToken)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		// The function should not be calling the session store since the token is passed directly
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is never triggered but api fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renew failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renew failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -532,13 +491,14 @@ func Test_ServiceCredentials_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.ServiceCredentials(initialToken)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		// The function should not be calling the session store since the token is passed directly
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -552,8 +512,8 @@ func Test_TokenRenew_TokenRenewalScenarios(t *testing.T) {
 			ExpiresAt:  "someday",
 		}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -568,22 +528,22 @@ func Test_TokenRenew_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.TokenRenew(initialRenewalToken, initialIdemKey)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is never triggered but api fails", func(t *testing.T) {
 		initialRenewalToken := "valid-renewal-token"
 		initialIdemKey := uuid.New()
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return "", nil },
-			RenewFunc: func() error { return nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return "" },
+			RenewFunc:    func() error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -594,13 +554,13 @@ func Test_TokenRenew_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.TokenRenew(initialRenewalToken, initialIdemKey)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -608,8 +568,8 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
 		expectedResp := core.ServicesResponse{}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -623,13 +583,13 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.Services()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
@@ -649,12 +609,12 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 		}
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error {
 				return nil
@@ -672,19 +632,19 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.Services()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -693,20 +653,20 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.Services()
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -715,13 +675,13 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.Services()
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -729,8 +689,8 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
 		expectedResp := &core.CurrentUserResponse{Username: "username", Email: "email"}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -744,25 +704,25 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.CurrentUser()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
 		expectedResp := &core.CurrentUserResponse{Username: "username", Email: "email"}
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error {
 				return nil
@@ -780,19 +740,19 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.CurrentUser()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -801,20 +761,20 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.CurrentUser()
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -823,20 +783,20 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.CurrentUser()
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
 func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -850,23 +810,23 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.DeleteToken()
 
 		assert.NoError(t, err)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error {
 				return nil
@@ -884,18 +844,18 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.DeleteToken()
 
 		assert.NoError(t, err)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -904,19 +864,19 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.DeleteToken()
 
 		assert.Error(t, err)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -925,12 +885,12 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.DeleteToken()
 
 		assert.Error(t, err)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -938,8 +898,8 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
 		expectedResp := &core.TrustedPassTokenResponse{OwnerID: "good-id", Token: "good-token"}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -953,25 +913,25 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.TrustedPassToken()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
 		expectedResp := &core.TrustedPassTokenResponse{OwnerID: "good-id", Token: "good-token"}
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error {
 				return nil
@@ -989,19 +949,19 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.TrustedPassToken()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1010,20 +970,20 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.TrustedPassToken()
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1032,22 +992,24 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.TrustedPassToken()
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
 func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
-		expectedResp := &core.TrustedPassTokenResponse{OwnerID: "good-id", Token: "good-token"}
+		expectedResp := &core.MultifactorAuthStatusResponse{
+			Status: "enabled",
+		}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -1055,31 +1017,33 @@ func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 		}
 
 		mockAPI := &mockSimpleClientAPI{
-			TrustedPassTokenFunc: func(token string) (*core.TrustedPassTokenResponse, error) {
+			MultifactorAuthStatusFunc: func(token string) (*core.MultifactorAuthStatusResponse, error) {
 				assert.Equal(t, initialToken, token)
 				return expectedResp, nil
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
-		resp, err := client.TrustedPassToken()
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
+		resp, err := client.MultifactorAuthStatus()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
-		expectedResp := &core.TrustedPassTokenResponse{OwnerID: "good-id", Token: "good-token"}
+		expectedResp := &core.MultifactorAuthStatusResponse{
+			Status: "enabled",
+		}
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error {
 				return nil
@@ -1087,7 +1051,7 @@ func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 		}
 
 		mockAPI := &mockSimpleClientAPI{
-			TrustedPassTokenFunc: func(token string) (*core.TrustedPassTokenResponse, error) {
+			MultifactorAuthStatusFunc: func(token string) (*core.MultifactorAuthStatusResponse, error) {
 				if token == initialToken {
 					firstCall = false
 					return nil, core.ErrUnauthorized
@@ -1097,63 +1061,63 @@ func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
-		resp, err := client.TrustedPassToken()
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
+		resp, err := client.MultifactorAuthStatus()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
-			TrustedPassTokenFunc: func(token string) (*core.TrustedPassTokenResponse, error) {
+			MultifactorAuthStatusFunc: func(token string) (*core.MultifactorAuthStatusResponse, error) {
 				return nil, core.ErrUnauthorized
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
-		resp, err := client.TrustedPassToken()
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
+		resp, err := client.MultifactorAuthStatus()
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
-			TrustedPassTokenFunc: func(token string) (*core.TrustedPassTokenResponse, error) {
+			MultifactorAuthStatusFunc: func(token string) (*core.MultifactorAuthStatusResponse, error) {
 				return nil, core.ErrUnauthorized
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
-		resp, err := client.TrustedPassToken()
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
+		resp, err := client.MultifactorAuthStatus()
 
 		assert.Error(t, err)
 		assert.Empty(t, resp)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
 func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -1167,23 +1131,23 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Logout()
 
 		assert.NoError(t, err)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error {
 				return nil
@@ -1201,18 +1165,18 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Logout()
 
 		assert.NoError(t, err)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1221,19 +1185,19 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Logout()
 
 		assert.Error(t, err)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1242,12 +1206,12 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Logout()
 
 		assert.Error(t, err)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1264,10 +1228,10 @@ func Test_Insights_TokenRenewalScenarios(t *testing.T) {
 			Protected:   false,
 		}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1281,13 +1245,13 @@ func Test_Insights_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.Insights()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1296,10 +1260,10 @@ func Test_Servers_TokenRenewalScenarios(t *testing.T) {
 		expectedResp := core.Servers{core.Server{ID: 7}, core.Server{ID: 8}}
 		expectedHeader := http.Header(map[string][]string{"header": {"item1, item2"}})
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1313,14 +1277,14 @@ func Test_Servers_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, header, err := client.Servers()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResp, resp)
 		assert.Equal(t, expectedHeader, header)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1348,10 +1312,10 @@ func Test_RecommendedServers_TokenRenewalScenarios(t *testing.T) {
 		}
 		expectedHeader := http.Header(map[string][]string{"header": {"item1, item2"}})
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1368,14 +1332,14 @@ func Test_RecommendedServers_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		servers, header, err := client.RecommendedServers(expectedServersFilter, expectedLongitude, expectedLatitude)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedServers, servers)
 		assert.Equal(t, expectedHeader, header)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1383,10 +1347,10 @@ func Test_Server_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedServer := &core.Server{ID: 44, Name: "lt04"}
 		expectedServerId := int64(17)
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1401,13 +1365,13 @@ func Test_Server_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		server, err := client.Server(expectedServerId)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedServer, server)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1419,10 +1383,10 @@ func Test_ServerCountries_TokenRenewalScenarios(t *testing.T) {
 		}
 		expectedHeader := http.Header(map[string][]string{"header": {"item1, item2"}})
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1436,14 +1400,14 @@ func Test_ServerCountries_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		countries, header, err := client.ServersCountries()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedCountries, countries)
 		assert.Equal(t, header, expectedHeader)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1451,10 +1415,10 @@ func Test_Base_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedOutput := "something"
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1468,12 +1432,12 @@ func Test_Base_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		output := client.Base()
 
 		assert.Equal(t, expectedOutput, output)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1484,10 +1448,10 @@ func Test_Plans_TokenRenewalScenarios(t *testing.T) {
 			core.Plan{ID: 2},
 		}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1501,13 +1465,13 @@ func Test_Plans_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		plans, err := client.Plans()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPlans, plans)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1521,10 +1485,10 @@ func Test_CreateUser_TokenRenewalScenarios(t *testing.T) {
 			Email:    expectedEmail,
 		}
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1540,13 +1504,13 @@ func Test_CreateUser_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.CreateUser(expectedEmail, expectedPassword)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedResponse, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1556,8 +1520,8 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 			{ID: 1, Status: "expired"},
 			{ID: 2, Status: "ok"},
 		}
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -1571,13 +1535,13 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		orders, err := client.Orders()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedOrders, orders)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
@@ -1587,12 +1551,12 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 		}
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error {
 				return nil
@@ -1610,19 +1574,19 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		orders, err := client.Orders()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedOrders, orders)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1631,20 +1595,20 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		orders, err := client.Orders()
 
 		assert.Error(t, err)
 		assert.Empty(t, orders)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1653,13 +1617,13 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		orders, err := client.Orders()
 
 		assert.Error(t, err)
 		assert.Nil(t, orders)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1669,8 +1633,8 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 			{Payment: core.Payment{Status: "ok", Amount: 1.23}},
 			{Payment: core.Payment{Status: "ok", Amount: 4.56}},
 		}
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
 				return nil
@@ -1684,13 +1648,13 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		payments, err := client.Payments()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPayments, payments)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered and succeeds", func(t *testing.T) {
@@ -1700,12 +1664,12 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 		}
 		firstCall := true
 
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
 				if firstCall {
-					return initialToken, nil
+					return initialToken
 				}
-				return renewedToken, nil
+				return renewedToken
 			},
 			RenewFunc: func() error {
 				return nil
@@ -1723,19 +1687,19 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		payments, err := client.Payments()
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedPayments, payments)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) { return initialToken, nil },
-			RenewFunc: func() error { return errors.New("renewal failed") },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string { return initialToken },
+			RenewFunc:    func() error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1744,20 +1708,20 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		payments, err := client.Payments()
 
 		assert.Error(t, err)
 		assert.Empty(t, payments)
-		assert.Equal(t, 1, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 1, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
-		mockToken := &mockTokenManager{
-			TokenFunc:      func() (string, error) { return initialToken, nil },
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc:   func() string { return initialToken },
 			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(err error) error { return nil },
+			InvalidateFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1766,23 +1730,23 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		payments, err := client.Payments()
 
 		assert.Error(t, err)
 		assert.Nil(t, payments)
-		assert.Equal(t, 2, mockToken.TokenCalls)
-		assert.Equal(t, 1, mockToken.RenewCalls)
+		assert.Equal(t, 2, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 1, mockSessionStore.RenewCallCount)
 	})
 }
 
 func Test_Register_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedMachine := mesh.Machine{PublicKey: "magic-key"}
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1798,13 +1762,13 @@ func Test_Register_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		machine, err := client.Register(initialToken, expectedMachine)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedMachine, *machine)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1812,10 +1776,10 @@ func Test_Update_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedUUID := uuid.New()
 		expectedRequest := mesh.MachineUpdateRequest{Nickname: "temp"}
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1832,12 +1796,12 @@ func Test_Update_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Update(initialToken, expectedUUID, expectedRequest)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1846,10 +1810,10 @@ func Test_Configure_TokenRenewalScenarios(t *testing.T) {
 		expectedUUID := uuid.New()
 		expectedPeerUUID := uuid.New()
 		expectedRequest := mesh.PeerUpdateRequest{Nickname: "temp"}
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1867,22 +1831,22 @@ func Test_Configure_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Configure(initialToken, expectedUUID, expectedPeerUUID, expectedRequest)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
 func Test_Unregister_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedUUID := uuid.New()
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1898,12 +1862,12 @@ func Test_Unregister_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Unregister(initialToken, expectedUUID)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1913,10 +1877,10 @@ func Test_Map_TokenRenewalScenarios(t *testing.T) {
 		expectedMap := &mesh.MachineMap{
 			Machine: mesh.Machine{ID: uuid.New()},
 		}
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1932,13 +1896,13 @@ func Test_Map_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.Map(initialToken, expectedUUID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedMap, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1946,10 +1910,10 @@ func Test_Unpair_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedUUID := uuid.New()
 		expectedPeerUUID := uuid.New()
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1966,12 +1930,12 @@ func Test_Unpair_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Unpair(initialToken, expectedUUID, expectedPeerUUID)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -1979,10 +1943,10 @@ func Test_Received_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedUUID := uuid.New()
 		expectedInvitations := mesh.Invitations{mesh.Invitation{ID: uuid.New()}}
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -1998,13 +1962,13 @@ func Test_Received_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.Received(initialToken, expectedUUID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedInvitations, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -2012,10 +1976,10 @@ func Test_Sent_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedUUID := uuid.New()
 		expectedInvitations := mesh.Invitations{mesh.Invitation{ID: uuid.New()}}
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -2031,13 +1995,13 @@ func Test_Sent_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		resp, err := client.Sent(initialToken, expectedUUID)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedInvitations, resp)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -2049,10 +2013,10 @@ func Test_Accept_TokenRenewalScenarios(t *testing.T) {
 		expectedAllowRouting := true
 		expectedAllowLocalNetwork := false
 		expectedAllowFileshare := false
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -2073,7 +2037,7 @@ func Test_Accept_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Accept(initialToken, expectedUUID, expectedInvitUUID,
 			expectedAllowInbounding, expectedAllowRouting, expectedAllowLocalNetwork, expectedAllowFileshare)
 
@@ -2085,8 +2049,8 @@ func Test_Accept_TokenRenewalScenarios(t *testing.T) {
 		assert.Equal(t, expectedAllowRouting, expectedAllowRouting)
 		assert.Equal(t, expectedAllowLocalNetwork, expectedAllowLocalNetwork)
 		assert.Equal(t, expectedAllowFileshare, expectedAllowFileshare)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -2094,10 +2058,10 @@ func Test_Reject_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedUUID := uuid.New()
 		expectedInvitUUID := uuid.New()
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -2114,12 +2078,12 @@ func Test_Reject_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Reject(initialToken, expectedUUID, expectedInvitUUID)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -2127,10 +2091,10 @@ func Test_Revoke_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Bypass token renewal", func(t *testing.T) {
 		expectedUUID := uuid.New()
 		expectedInvitUUID := uuid.New()
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -2147,12 +2111,12 @@ func Test_Revoke_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.Revoke(initialToken, expectedUUID, expectedInvitUUID)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
 
@@ -2163,10 +2127,10 @@ func Test_NotifyNewTransfer_TokenRenewalScenarios(t *testing.T) {
 		expectedFilename := "name"
 		expectedFileCount := 4
 		expectedTransferID := "1321"
-		mockToken := &mockTokenManager{
-			TokenFunc: func() (string, error) {
-				t.Fatal("Token should not be called")
-				return "", nil
+		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+			GetTokenFunc: func() string {
+				t.Fatal("GetToken should not be called")
+				return ""
 			},
 			RenewFunc: func() error {
 				t.Fatal("Renew should not be called")
@@ -2193,12 +2157,12 @@ func Test_NotifyNewTransfer_TokenRenewalScenarios(t *testing.T) {
 			},
 		}
 
-		client := NewMockSmartClientAPI(mockAPI, mockToken)
+		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
 		err := client.NotifyNewTransfer(initialToken, expectedUUID, expectedPeerUUID,
 			expectedFilename, expectedFileCount, expectedTransferID)
 
 		assert.NoError(t, err)
-		assert.Equal(t, 0, mockToken.TokenCalls)
-		assert.Equal(t, 0, mockToken.RenewCalls)
+		assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
+		assert.Equal(t, 0, mockSessionStore.RenewCallCount)
 	})
 }
