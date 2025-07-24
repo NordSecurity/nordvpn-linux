@@ -31,6 +31,7 @@ func buildAccessTokenSessionStore(
 			}),
 		),
 		errRegistry,
+		// renewal API call
 		func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 			resp, err := clientAPI.TokenRenew(token, idempotencyKey)
 			if err == nil {
@@ -65,6 +66,7 @@ func buildTrustedPassSessionStore(
 		confman,
 		errRegistry,
 		session.NewCompositeValidator(session.NewExpiryValidator(), session.NewOwnerIDValidator()),
+		// renewal API call
 		func(token string) (*session.TrustedPassAccessTokenResponse, error) {
 			resp, err := clientAPI.TrustedPassToken()
 			if err != nil {
@@ -85,6 +87,48 @@ func buildTrustedPassSessionStore(
 				Token:   resp.Token,
 				OwnerID: resp.OwnerID,
 			}, nil
+		},
+	)
+}
+
+func buildVPNCredentialsSessionStore(
+	confman config.Manager,
+	errRegistry *internal.ErrorHandlingRegistry[int64],
+	clientAPI core.ClientAPI,
+) session.SessionStore {
+	return session.NewVPNCredentialsSessionStore(
+		confman,
+		errRegistry,
+		session.NewCompositeValidator(
+			session.NewExpiryValidator(),
+			session.NewOpenVPNCredentialsValidator(),
+			session.NewPrivateKeyValidator(),
+		),
+		// renewal API call
+		func() (*session.VPNCredentialsResponse, error) {
+			var cfg config.Config
+			if err := confman.Load(&cfg); err != nil {
+				return nil, err
+			}
+
+			data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+			if !ok {
+				return nil, errors.New("there is not data")
+			}
+
+			// actual API call passed into Session Store object
+			return func(token string) (*session.VPNCredentialsResponse, error) {
+				resp, err := clientAPI.ServiceCredentials(token)
+				if err != nil {
+					return nil, fmt.Errorf("getting vpn credentials data: %w", err)
+				}
+
+				return &session.VPNCredentialsResponse{
+					Username:           resp.Username,
+					Password:           resp.Password,
+					NordLynxPrivateKey: resp.NordlynxPrivateKey,
+				}, nil
+			}(data.Token)
 		},
 	)
 }
