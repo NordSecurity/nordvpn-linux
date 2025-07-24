@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -16,6 +17,7 @@ var (
 	ErrStaticValueAlreadySet    = errors.New("static value already configured")
 	ErrStaticValueNotConfigured = errors.New("static value was not configured")
 	ErrFailedToReadConfigFile   = errors.New("failed to read static config file")
+	ErrRolloutGroupOutOfBounds  = errors.New("rollout group out of bounds")
 )
 
 type configState int
@@ -41,6 +43,7 @@ type FilesystemStaticConfigManager struct {
 	fs    FilesystemHandle
 	state configState
 	cfg   StaticConfig
+	mu    sync.Mutex
 }
 
 func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, configState) {
@@ -90,6 +93,9 @@ func (s *FilesystemStaticConfigManager) getConfig() (StaticConfig, error) {
 }
 
 func (s *FilesystemStaticConfigManager) GetRolloutGroup() (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	cfg, err := s.getConfig()
 	if err != nil {
 		return 0, err
@@ -103,6 +109,13 @@ func (s *FilesystemStaticConfigManager) GetRolloutGroup() (int, error) {
 }
 
 func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if rolloutGroup < 1 || rolloutGroup > 100 {
+		return ErrRolloutGroupOutOfBounds
+	}
+
 	cfg, err := s.getConfig()
 	if err != nil {
 		return fmt.Errorf("failed to read config: %w", err)

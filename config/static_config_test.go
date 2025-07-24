@@ -168,6 +168,26 @@ func TestSetRolloutGroup(t *testing.T) {
 			expectedErr:          nil,
 			expectedRolloutGroup: 20,
 		},
+		{
+			name: "rollout group is out of bounds upper",
+			currentConfig: StaticConfig{
+				RolloutGroup: 0,
+			},
+			currentConfigState:   initialized,
+			targetRolloutGroup:   101,
+			expectedErr:          ErrRolloutGroupOutOfBounds,
+			expectedRolloutGroup: 0,
+		},
+		{
+			name: "rollout group is out of bounds lower",
+			currentConfig: StaticConfig{
+				RolloutGroup: 0,
+			},
+			currentConfigState:   initialized,
+			targetRolloutGroup:   0,
+			expectedErr:          ErrRolloutGroupOutOfBounds,
+			expectedRolloutGroup: 0,
+		},
 	}
 
 	for _, test := range tests {
