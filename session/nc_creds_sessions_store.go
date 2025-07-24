@@ -1,7 +1,6 @@
 package session
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -20,7 +19,7 @@ type NCCredentialsRenewalAPICall func() (*NCCredentialsResponse, error)
 
 type NCCredentialsSessionStore struct {
 	cfgManager         config.Manager
-	errHandlerRegistry *internal.ErrorHandlingRegistry[int64]
+	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	validator          SessionStoreValidator
 	renewAPICall       NCCredentialsRenewalAPICall
 	session            *ncCredentialsSession
@@ -29,7 +28,7 @@ type NCCredentialsSessionStore struct {
 // NewNCCredentialsSessionStore
 func NewNCCredentialsSessionStore(
 	cfgManager config.Manager,
-	errorHandlingRegistry *internal.ErrorHandlingRegistry[int64],
+	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
 	validator SessionStoreValidator,
 	renewAPICall NCCredentialsRenewalAPICall,
 ) SessionStore {
@@ -60,10 +59,7 @@ func (s *NCCredentialsSessionStore) Renew() error {
 
 	resp, err := s.renewAPICall()
 	if err != nil {
-		if s.isLogoutNeeded(err) {
-			s.invokeClientErrorHandlers(cfg.AutoConnectData.ID, err)
-		}
-		return nil
+		return s.Invalidate(err)
 	}
 
 	if err := s.session.SetUsername(resp.Username); err != nil {
@@ -94,28 +90,13 @@ func (s *NCCredentialsSessionStore) Renew() error {
 // It does not modify or remove any tokens from storage and leaves this responsibility to the
 // client.
 func (s *NCCredentialsSessionStore) Invalidate(reason error) error {
-	var cfg config.Config
-	if err := s.cfgManager.Load(&cfg); err != nil {
-		return err
+	handlers := s.errHandlerRegistry.GetHandlers(reason)
+	if len(handlers) == 0 {
+		return fmt.Errorf("invalidating session: %w", reason)
 	}
 
-	for uid := range cfg.TokensData {
-		s.invokeClientErrorHandlers(uid, reason)
+	for _, handler := range handlers {
+		handler(reason)
 	}
-
 	return nil
-}
-
-// invokeClientErrorHandlers executes all registered error handlers associated with the provided
-// error for the given user ID.
-func (s *NCCredentialsSessionStore) invokeClientErrorHandlers(uid int64, err error) {
-	for _, handler := range s.errHandlerRegistry.GetHandlers(err) {
-		handler(uid)
-	}
-}
-
-func (m *NCCredentialsSessionStore) isLogoutNeeded(err error) bool {
-	return errors.Is(err, ErrUnauthorized) ||
-		errors.Is(err, ErrNotFound) ||
-		errors.Is(err, ErrBadRequest)
 }

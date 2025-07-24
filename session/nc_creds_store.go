@@ -20,7 +20,6 @@ type ncCredentialsSession struct {
 
 // TODO: needs global caching
 func (s *ncCredentialsSession) get() (ncCredentialsConfig, error) {
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		return ncCredentialsConfig{}, err
