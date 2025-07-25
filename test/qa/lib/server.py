@@ -53,10 +53,13 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_id=""):
 
     if group_id != "":
         group_id = group_ids[group_id]
+    elif tech_id == 15 or tech_id == 17:    # Obfuscated
+        group_id = 17
+    # Else it will be defaulted by the API to 11, the legacy_standard
 
     # api limits
     time.sleep(2)
-    url = f"https://api.nordvpn.com/v1/servers?limit=10&filters[servers.status]=online&filters[servers_technologies]={tech_id}&filters[servers_groups]={group_id}"
+    url = f"https://api.nordvpn.com/v1/servers/recommendations?limit=10&filters[servers.status]=online&filters[servers_technologies][id]={tech_id}&filters[servers_groups][id]={group_id}"
     logging.debug(url)
     server_info = requests.get(url, timeout=5).json()[0]
     return ServerInfo(server_info=server_info)
@@ -73,7 +76,7 @@ def get_server_info(server_name):
     return city, country
 
 # TODO: LVPN-7744
-def get_dedicated_ip() -> None | str:
+def get_dedicated_ip():
     """Returns Dedicated IP server name."""
     token = shell.sh_no_tty.nordvpn.token().split("\n")[1].split(" ")[1]
 
@@ -94,5 +97,5 @@ def get_dedicated_ip() -> None | str:
 
     headers = {'Accept': 'application/json'}
     response = requests.get(f'https://api.nordvpn.com/v1/servers?&filters[servers.id]={dip_server_id}', headers=headers, timeout=5)
-
-    return str(response.json()[0]['hostname'].split(".")[0])
+    server_info = response.json()[0]
+    return ServerInfo(server_info=server_info)

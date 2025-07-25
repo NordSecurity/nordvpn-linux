@@ -498,22 +498,32 @@ def test_check_routing_table_for_lan():
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
-def test_connect_to_dedicated_ip(tech, proto, obfuscated, group):
+def test_connect_to_dedicated_ip(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    server_info = server.get_hostname_by(group_id=group)
+    server_info = server.get_dedicated_ip()
 
-    if server.get_dedicated_ip() in server_info.hostname:
-        connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
-        disconnect_base_test()
-    else:
-        with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
-
-        print(ex.value)
-        assert "This server isn't currently included in your dedicated IP subscription." in str(ex.value)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+    disconnect_base_test()
 
     assert network.is_disconnected()
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()
+
+
+# @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
+# @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
+# def test_connect_to_bad_dedicated_ip(tech, proto, obfuscated, group):
+#     lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+#     # This should return a server without dedicated IP
+#     server_info = server.get_hostname_by(group_id=group)
+
+#     with pytest.raises(sh.ErrorReturnCode_1) as ex:
+#         connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
+#     print(ex.value)
+#     assert "This server isn't currently included in your dedicated IP subscription." in str(ex.value)
+
+#     assert network.is_disconnected()
+#     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()

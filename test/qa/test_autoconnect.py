@@ -213,7 +213,7 @@ def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, pr
 
     for group in available_groups:
         if group == "Dedicated_IP":
-            server_name = server.get_dedicated_ip()
+            server_name = server.get_dedicated_ip().hostname
         else:
             server_name = server.get_hostname_by(tech, proto, obfuscated, group).hostname.split(".")[0]
 
