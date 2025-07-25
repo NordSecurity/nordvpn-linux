@@ -57,36 +57,36 @@ func (s *trustedPassSession) set(cfg trustedPassConfig) error {
 	return nil
 }
 
-func (s *trustedPassSession) SetToken(value string) error {
-	cfg, err := s.get()
+func (s *TrustedPassSessionStore) SetToken(value string) error {
+	cfg, err := s.session.get()
 	if err != nil {
 		return err
 	}
 	cfg.Token = value
-	return s.set(cfg)
+	return s.session.set(cfg)
 }
 
-func (s *trustedPassSession) SetOwnerID(value string) error {
-	cfg, err := s.get()
+func (s *TrustedPassSessionStore) SetOwnerID(value string) error {
+	cfg, err := s.session.get()
 	if err != nil {
 		return err
 	}
 	cfg.OwnerID = value
-	return s.set(cfg)
+	return s.session.set(cfg)
 }
 
-func (s *trustedPassSession) SetExpiry(value time.Time) error {
-	cfg, err := s.get()
+func (s *TrustedPassSessionStore) SetExpiry(value time.Time) error {
+	cfg, err := s.session.get()
 	if err != nil {
 		return err
 	}
 	cfg.ExpiresAt = value
-	return s.set(cfg)
+	return s.session.set(cfg)
 }
 
 // implements SessionTokenProvider
-func (s *trustedPassSession) GetToken() string {
-	cfg, err := s.get()
+func (s *TrustedPassSessionStore) GetToken() string {
+	cfg, err := s.session.get()
 	if err != nil {
 		return ""
 	}
@@ -94,8 +94,8 @@ func (s *trustedPassSession) GetToken() string {
 }
 
 // implements SessionOwnerProvider
-func (s *trustedPassSession) GetOwnerID() string {
-	cfg, err := s.get()
+func (s *TrustedPassSessionStore) GetOwnerID() string {
+	cfg, err := s.session.get()
 	if err != nil {
 		return ""
 	}
@@ -103,8 +103,8 @@ func (s *trustedPassSession) GetOwnerID() string {
 }
 
 // implements SessionExpiryProvider
-func (s *trustedPassSession) GetExpiry() time.Time {
-	cfg, err := s.get()
+func (s *TrustedPassSessionStore) GetExpiry() time.Time {
+	cfg, err := s.session.get()
 	if err != nil {
 		return time.Time{}
 	}
@@ -112,8 +112,8 @@ func (s *trustedPassSession) GetExpiry() time.Time {
 }
 
 // implements ExpirableSession
-func (s *trustedPassSession) IsExpired() bool {
-	cfg, err := s.get()
+func (s *TrustedPassSessionStore) IsExpired() bool {
+	cfg, err := s.session.get()
 	if err != nil {
 		return true
 	}
