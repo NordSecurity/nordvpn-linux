@@ -25,19 +25,19 @@ type EventDetails struct {
 type Event struct {
 	UserInfo
 	EventDetails
-	MessageNamespace string      `json:"namespace"`
-	Result           string      `json:"result"`
-	Subscope         string      `json:"subscope"`
-	Client           string      `json:"client,omitempty"`
-	FeatureName      FeatureName `json:"feature_name"`
-	Type             EventType   `json:"type"`
+	MessageNamespace string    `json:"namespace"`
+	Result           string    `json:"result"`
+	Subscope         string    `json:"subscope"`
+	Client           string    `json:"client,omitempty"`
+	FeatureName      string    `json:"feature_name"`
+	Type             EventType `json:"type"`
 }
 
 func NewDownloadSuccessEvent(info UserInfo, client string, featureName FeatureName) Event {
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName,
+		FeatureName: featureName.String(),
 		Type:        DownloadSuccess,
 	}
 }
@@ -46,7 +46,7 @@ func NewDownloadFailureEvent(info UserInfo, client string, featureName FeatureNa
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName,
+		FeatureName: featureName.String(),
 		Type:        DownloadFailure,
 		EventDetails: EventDetails{
 			Error:   errorKind.String(),
@@ -59,7 +59,7 @@ func NewLocalUseEvent(info UserInfo, client string, featureName FeatureName) Eve
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName,
+		FeatureName: featureName.String(),
 		Type:        LocalUse,
 	}
 }
@@ -78,7 +78,7 @@ func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, er
 	return Event{
 		UserInfo:     info,
 		Client:       client,
-		FeatureName:  featureName,
+		FeatureName:  featureName.String(),
 		Type:         eventType,
 		EventDetails: details,
 	}
@@ -87,11 +87,11 @@ func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, er
 func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureName, eventError error, featureRollout int) Event {
 	//message format is slightly different for partial rollout events
 	payload := struct {
-		FeatureName    FeatureName `json:"feature_name"`
-		RolloutGroup   int         `json:"rollout_group"`
-		FeatureRollout int         `json:"feature_rollout"`
+		FeatureName    string `json:"feature_name"`
+		RolloutGroup   int    `json:"rollout_group"`
+		FeatureRollout int    `json:"feature_rollout"`
 	}{
-		FeatureName:    featureName,
+		FeatureName:    featureName.String(),
 		RolloutGroup:   info.RolloutGroup,
 		FeatureRollout: featureRollout,
 	}
@@ -113,7 +113,7 @@ func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureNam
 	return Event{
 		UserInfo:     info,
 		Client:       client,
-		FeatureName:  featureName,
+		FeatureName:  featureName.String(),
 		Type:         Rollout,
 		EventDetails: details,
 	}
@@ -135,14 +135,14 @@ func (e Event) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
 		log.Printf("%s%s Failed to marshal Event to JSON %s. Fallback to a limited set of data\n", internal.WarningPrefix, logPrefix, err)
 
 		fallbackData := struct {
-			MessageNamespace string      `json:"namespace"`
-			Subscope         string      `json:"subscope"`
-			Client           string      `json:"client"`
-			Type             EventType   `json:"type"`
-			Result           string      `json:"result"`
-			Error            string      `json:"error"`
-			FeatureName      FeatureName `json:"feature_name"`
-			RolloutGroup     int         `json:"rollout_group"`
+			MessageNamespace string    `json:"namespace"`
+			Subscope         string    `json:"subscope"`
+			Client           string    `json:"client"`
+			Type             EventType `json:"type"`
+			Result           string    `json:"result"`
+			Error            string    `json:"error"`
+			FeatureName      string    `json:"feature_name"`
+			RolloutGroup     int       `json:"rollout_group"`
 		}{
 			MessageNamespace: messageNamespace,
 			Subscope:         subscope,
