@@ -53,7 +53,3 @@ func (*CredentialsAPIMock) TrustedPassToken() (*core.TrustedPassTokenResponse, e
 func (*CredentialsAPIMock) Logout() error {
 	return nil
 }
-
-type MockTokenManager struct {
-	core.TokenManager
-}

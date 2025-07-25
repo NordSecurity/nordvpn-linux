@@ -447,9 +447,10 @@ type NotificationCredentialsRequest struct {
 }
 
 type NotificationCredentialsResponse struct {
-	Endpoint string `json:"endpoint"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Endpoint  string `json:"endpoint"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	ExpiresIn int    `json:"expires_in"`
 }
 
 type NotificationCredentialsRevokeRequest struct {
