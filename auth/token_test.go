@@ -107,11 +107,12 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		expectedIdempotencyKey: idempotencyKey,
 	}
 
+	uid := int64(1)
 	cm := memoryConfigManager{
 		c: config.Config{
-			AutoConnectData: config.AutoConnectData{ID: 1},
+			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
-				0: {
+				uid: {
 					Token:              "someExpiredToken",
 					TokenExpiry:        expiredDate.String(),
 					RenewToken:         "renew-token",
@@ -166,8 +167,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	isLoggedIn, err := rc.IsLoggedIn()
 	assert.NoError(t, err)
 	assert.True(t, isLoggedIn, "user should be logged in")
-	assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token, "token should be updated in the configuration")
-	assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[0].RenewToken, "renew-token should be updated in the configuration")
+	assert.Equal(t, rt.resp.Token, cm.c.TokensData[uid].Token, "token should be updated in the configuration")
+	assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[uid].RenewToken, "renew-token should be updated in the configuration")
 
 	// token renewal attempt with expected failure on a HTTP level
 	// replace the token in the config with one that is expired.
@@ -187,14 +188,14 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 
 	// next request is a failure from our custom roundtripper,
 	// make sure that the token in the configuration itself has not been changed, thus the client didn't log out
-	lastExpiredToken := strings.Clone(cm.c.TokensData[0].Token)
-	lastExpiredRenewToken := strings.Clone(cm.c.TokensData[0].RenewToken)
+	lastExpiredToken := strings.Clone(cm.c.TokensData[uid].Token)
+	lastExpiredRenewToken := strings.Clone(cm.c.TokensData[uid].RenewToken)
 	rt.resp = nil // setting the resp to nil means that the request will fail
 	rt.respError = fmt.Errorf("we pretend that the connection failed")
 	isLoggedIn, _ = rc.IsLoggedIn()
 	assert.True(t, isLoggedIn, "user should be logged in, even after a failed request")
-	assert.Equal(t, lastExpiredToken, cm.c.TokensData[0].Token, "token should not be updated in the configuration after a failed request")
-	assert.Equal(t, lastExpiredRenewToken, cm.c.TokensData[0].RenewToken, "renew-token should not be updated in the configuration after a failed request")
+	assert.Equal(t, lastExpiredToken, cm.c.TokensData[uid].Token, "token should not be updated in the configuration after a failed request")
+	assert.Equal(t, lastExpiredRenewToken, cm.c.TokensData[uid].RenewToken, "renew-token should not be updated in the configuration after a failed request")
 
 	// valid token renewal request after a failure
 	// replace the token in the config with one that is expired.
@@ -224,8 +225,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	}
 	isLoggedIn, _ = rc.IsLoggedIn()
 	assert.True(t, isLoggedIn, "user should be logged in")
-	assert.Equal(t, rt.resp.Token, cm.c.TokensData[0].Token, "token should be updated in the configuration")
-	assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[0].RenewToken, "renew-token should be updated in the configuration")
+	assert.Equal(t, rt.resp.Token, cm.c.TokensData[uid].Token, "token should be updated in the configuration")
+	assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[uid].RenewToken, "renew-token should be updated in the configuration")
 }
 
 func Test_TokenRenewForcesUserLogout(t *testing.T) {
@@ -234,12 +235,13 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 	idempotencyKey := uuid.New()
 	expiredDate := time.Now().Truncate(time.Hour)
 	rt := mockRoundTripper{expectedIdempotencyKey: idempotencyKey}
+	uid := int64(1)
 
 	cm := memoryConfigManager{
 		c: config.Config{
-			AutoConnectData: config.AutoConnectData{ID: 1},
+			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
-				0: {
+				uid: {
 					Token:              "someExpiredToken",
 					TokenExpiry:        expiredDate.String(),
 					RenewToken:         "renew-token",
@@ -287,7 +289,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 	for _, exptectedErr := range errs {
 		// replace the token in the config with one that is expired.
 		// so the next IsLoggedIn() request should attempt a token renewal
-		cm.c.TokensData[0] = config.TokenData{
+		cm.c.TokensData[uid] = config.TokenData{
 			Token:              "expired-token",
 			RenewToken:         "expired-renew-token",
 			TokenExpiry:        expiredDate.String(),
@@ -306,7 +308,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 		isLoggedIn, _ := rc.IsLoggedIn()
 
 		assert.False(t, isLoggedIn, "user should be logged out")
-		assert.Empty(t, cm.c.TokensData[0].Token, "token should be removed from the configuration")
-		assert.Empty(t, cm.c.TokensData[0].RenewToken, "renew-token should be removed from the configuration")
+		assert.Empty(t, cm.c.TokensData[uid].Token, "token should be removed from the configuration")
+		assert.Empty(t, cm.c.TokensData[uid].RenewToken, "renew-token should be removed from the configuration")
 	}
 }
