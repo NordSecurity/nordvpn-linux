@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -30,49 +29,49 @@ func TestEventJSONOutput(t *testing.T) {
 	}{
 		{
 			name:            "PartialRollout Success",
-			event:           NewPartialRolloutEvent(ctx, "test-client", FeatureMeshnet, nil, 50, time.Now),
+			event:           NewPartialRolloutEvent(ctx, "test-client", FeatureMeshnet, nil, 50),
 			expectedResult:  rcSuccess,
 			expectedError:   "",
 			expectedMessage: `{"feature_name":"meshnet","rollout_group":42,"feature_rollout":50}`,
 		},
 		{
 			name:            "PartialRollout Failure",
-			event:           NewPartialRolloutEvent(ctx, "test-client", FeatureMeshnet, fmt.Errorf("config-error"), 50, time.Now),
+			event:           NewPartialRolloutEvent(ctx, "test-client", FeatureMeshnet, fmt.Errorf("config-error"), 50),
 			expectedResult:  rcFailure,
 			expectedError:   "config-error",
 			expectedMessage: `{"feature_name":"meshnet","rollout_group":42,"feature_rollout":50}`,
 		},
 		{
 			name:            "Download Success",
-			event:           NewDownloadSuccessEvent(ctx, "client", FeatureMeshnet, time.Now),
+			event:           NewDownloadSuccessEvent(ctx, "client", FeatureMeshnet),
 			expectedResult:  rcSuccess,
 			expectedError:   "",
 			expectedMessage: "",
 		},
 		{
 			name:            "Download Failure",
-			event:           NewDownloadFailureEvent(ctx, "client", FeatureMain, DownloadErrorNetwork, "timeout", time.Now),
+			event:           NewDownloadFailureEvent(ctx, "client", FeatureMain, DownloadErrorNetwork, "timeout"),
 			expectedResult:  rcFailure,
 			expectedError:   DownloadErrorNetwork.String(),
 			expectedMessage: "timeout",
 		},
 		{
 			name:            "JSON Parse Success",
-			event:           NewJSONParseEvent(ctx, "client", FeatureLibtelio, "", "", time.Now),
+			event:           NewJSONParseEvent(ctx, "client", FeatureLibtelio, "", ""),
 			expectedResult:  rcSuccess,
 			expectedError:   "",
 			expectedMessage: "",
 		},
 		{
 			name:            "JSON Parse Failure",
-			event:           NewJSONParseEvent(ctx, "client", FeatureLibtelio, "syntax-error", "bad token", time.Now),
+			event:           NewJSONParseEvent(ctx, "client", FeatureLibtelio, "syntax-error", "bad token"),
 			expectedResult:  rcFailure,
 			expectedError:   "syntax-error",
 			expectedMessage: "bad token",
 		},
 		{
 			name:            "Local Use",
-			event:           NewLocalUseEvent(ctx, "client", FeatureLibtelio, time.Now),
+			event:           NewLocalUseEvent(ctx, "client", FeatureLibtelio),
 			expectedResult:  rcSuccess,
 			expectedError:   "",
 			expectedMessage: "",
@@ -111,7 +110,7 @@ func TestMooseDebuggerEventContextPaths(t *testing.T) {
 		ISP:          "TestISP",
 		RolloutGroup: 42,
 	}
-	event := NewDownloadFailureEvent(ctx, "test-client", FeatureLibtelio, DownloadErrorNetwork, "timeout", time.Now).ToMooseDebuggerEvent()
+	event := NewDownloadFailureEvent(ctx, "test-client", FeatureLibtelio, DownloadErrorNetwork, "timeout").ToMooseDebuggerEvent()
 
 	expectedGeneralPaths := []string{
 		"device.*",

@@ -3,13 +3,10 @@ package remote
 import (
 	"encoding/json"
 	"log"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
-
-type TimeGetter func() time.Time
 
 type UserInfo struct {
 	AppVersion   string `json:"app_version"`
@@ -34,26 +31,23 @@ type Event struct {
 	Client           string      `json:"client,omitempty"`
 	FeatureName      FeatureName `json:"feature_name"`
 	Type             EventType   `json:"type"`
-	Timestamp        time.Time   `json:"timestamp"`
 }
 
-func NewDownloadSuccessEvent(info UserInfo, client string, featureName FeatureName, now TimeGetter) Event {
+func NewDownloadSuccessEvent(info UserInfo, client string, featureName FeatureName) Event {
 	return Event{
 		UserInfo:    info,
 		Client:      client,
 		FeatureName: featureName,
 		Type:        DownloadSuccess,
-		Timestamp:   now(),
 	}
 }
 
-func NewDownloadFailureEvent(info UserInfo, client string, featureName FeatureName, errorKind DownloadErrorKind, errorMessage string, now TimeGetter) Event {
+func NewDownloadFailureEvent(info UserInfo, client string, featureName FeatureName, errorKind DownloadErrorKind, errorMessage string) Event {
 	return Event{
 		UserInfo:    info,
 		Client:      client,
 		FeatureName: featureName,
 		Type:        DownloadFailure,
-		Timestamp:   now(),
 		EventDetails: EventDetails{
 			Error:   errorKind.String(),
 			Message: errorMessage,
@@ -61,17 +55,16 @@ func NewDownloadFailureEvent(info UserInfo, client string, featureName FeatureNa
 	}
 }
 
-func NewLocalUseEvent(info UserInfo, client string, featureName FeatureName, now TimeGetter) Event {
+func NewLocalUseEvent(info UserInfo, client string, featureName FeatureName) Event {
 	return Event{
 		UserInfo:    info,
 		Client:      client,
 		FeatureName: featureName,
 		Type:        LocalUse,
-		Timestamp:   now(),
 	}
 }
 
-func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, errorKind, errorMessage string, now TimeGetter) Event {
+func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, errorKind, errorMessage string) Event {
 	details := EventDetails{}
 	var eventType EventType
 	if errorKind != "" {
@@ -87,12 +80,11 @@ func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, er
 		Client:       client,
 		FeatureName:  featureName,
 		Type:         eventType,
-		Timestamp:    now(),
 		EventDetails: details,
 	}
 }
 
-func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureName, eventError error, featureRollout int, now TimeGetter) Event {
+func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureName, eventError error, featureRollout int) Event {
 	//message format is slightly different for partial rollout events
 	payload := struct {
 		FeatureName    FeatureName `json:"feature_name"`
@@ -123,7 +115,6 @@ func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureNam
 		Client:       client,
 		FeatureName:  featureName,
 		Type:         Rollout,
-		Timestamp:    now(),
 		EventDetails: details,
 	}
 }
