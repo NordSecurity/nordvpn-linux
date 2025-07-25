@@ -2,7 +2,6 @@ package remote
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -28,18 +27,18 @@ func TestEventJSONOutput(t *testing.T) {
 		expectedMessage string
 	}{
 		{
-			name:            "PartialRollout Success",
-			event:           NewPartialRolloutEvent(ctx, "test-client", FeatureMeshnet, nil, 50),
-			expectedResult:  rcSuccess,
-			expectedError:   "",
-			expectedMessage: `{"feature_name":"meshnet","rollout_group":42,"feature_rollout":50}`,
+			name:            "Rollout Success",
+			event:           NewRolloutEvent(ctx, "test-client", FeatureMeshnet, 50, true),
+			expectedResult:  rolloutYes,
+			expectedError:   "meshnet 42 / 50",
+			expectedMessage: FeatureMeshnet.String(),
 		},
 		{
-			name:            "PartialRollout Failure",
-			event:           NewPartialRolloutEvent(ctx, "test-client", FeatureMeshnet, fmt.Errorf("config-error"), 50),
-			expectedResult:  rcFailure,
-			expectedError:   "config-error",
-			expectedMessage: `{"feature_name":"meshnet","rollout_group":42,"feature_rollout":50}`,
+			name:            "Rollout Failure",
+			event:           NewRolloutEvent(ctx, "test-client", FeatureMeshnet, 50, false),
+			expectedResult:  rolloutNo,
+			expectedError:   "meshnet 42 / 50",
+			expectedMessage: FeatureMeshnet.String(),
 		},
 		{
 			name:            "Download Success",

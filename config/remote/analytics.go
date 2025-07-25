@@ -2,6 +2,7 @@ package remote
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -31,6 +32,7 @@ type Event struct {
 	Client           string    `json:"client,omitempty"`
 	FeatureName      string    `json:"feature_name"`
 	Type             EventType `json:"type"`
+	RolloutPerformed bool
 }
 
 func NewDownloadSuccessEvent(info UserInfo, client string, featureName FeatureName) Event {
@@ -84,38 +86,19 @@ func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, er
 	}
 }
 
-func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureName, eventError error, featureRollout int) Event {
-	//message format is slightly different for partial rollout events
-	payload := struct {
-		FeatureName    string `json:"feature_name"`
-		RolloutGroup   int    `json:"rollout_group"`
-		FeatureRollout int    `json:"feature_rollout"`
-	}{
-		FeatureName:    featureName.String(),
-		RolloutGroup:   info.RolloutGroup,
-		FeatureRollout: featureRollout,
-	}
-
-	messageBytes, err := json.Marshal(payload)
-	if err != nil {
-		log.Printf("%s%s Failed to marshal partial rollout message: %s. Defaulting to an empty\n", internal.WarningPrefix, logPrefix, err)
-		messageBytes = []byte{}
-	}
-
+func NewRolloutEvent(info UserInfo, client string, featureName FeatureName, featureRollout int, rolloutPerformed bool) Event {
 	details := EventDetails{
-		Message: string(messageBytes),
-	}
-
-	if eventError != nil {
-		details.Error = eventError.Error()
+		Error:   fmt.Sprintf("%s %d / %d", featureName.String(), info.RolloutGroup, featureRollout),
+		Message: featureName.String(),
 	}
 
 	return Event{
-		UserInfo:     info,
-		Client:       client,
-		FeatureName:  featureName.String(),
-		Type:         Rollout,
-		EventDetails: details,
+		UserInfo:         info,
+		Client:           client,
+		FeatureName:      featureName.String(),
+		Type:             Rollout,
+		EventDetails:     details,
+		RolloutPerformed: rolloutPerformed,
 	}
 }
 
@@ -123,10 +106,20 @@ func (e Event) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
 	eventToMarshal := e
 	eventToMarshal.MessageNamespace = messageNamespace
 	eventToMarshal.Subscope = subscope
-	if e.Error != "" {
-		eventToMarshal.Result = rcFailure
+	if e.Type == Rollout {
+		// rollout events have a different result values -> yes|no
+		// while other events have success|failure
+		if e.RolloutPerformed {
+			eventToMarshal.Result = rolloutYes
+		} else {
+			eventToMarshal.Result = rolloutNo
+		}
 	} else {
-		eventToMarshal.Result = rcSuccess
+		if e.Error != "" {
+			eventToMarshal.Result = rcFailure
+		} else {
+			eventToMarshal.Result = rcSuccess
+		}
 	}
 
 	jsonData, err := json.Marshal(eventToMarshal)
