@@ -2,7 +2,6 @@ package remote
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -29,20 +28,20 @@ type EventDetails struct {
 type Event struct {
 	UserInfo
 	EventDetails
-	MessageNamespace string    `json:"namespace"`
-	Result           string    `json:"result"`
-	Subscope         string    `json:"subscope"`
-	Client           string    `json:"client,omitempty"`
-	FeatureName      string    `json:"feature_name"`
-	Type             EventType `json:"type"`
-	Timestamp        time.Time `json:"timestamp"`
+	MessageNamespace string      `json:"namespace"`
+	Result           string      `json:"result"`
+	Subscope         string      `json:"subscope"`
+	Client           string      `json:"client,omitempty"`
+	FeatureName      FeatureName `json:"feature_name"`
+	Type             EventType   `json:"type"`
+	Timestamp        time.Time   `json:"timestamp"`
 }
 
 func NewDownloadSuccessEvent(info UserInfo, client string, featureName FeatureName, now TimeGetter) Event {
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName.String(),
+		FeatureName: featureName,
 		Type:        DownloadSuccess,
 		Timestamp:   now(),
 	}
@@ -52,7 +51,7 @@ func NewDownloadFailureEvent(info UserInfo, client string, featureName FeatureNa
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName.String(),
+		FeatureName: featureName,
 		Type:        DownloadFailure,
 		Timestamp:   now(),
 		EventDetails: EventDetails{
@@ -66,7 +65,7 @@ func NewLocalUseEvent(info UserInfo, client string, featureName FeatureName, now
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName.String(),
+		FeatureName: featureName,
 		Type:        LocalUse,
 		Timestamp:   now(),
 	}
@@ -86,7 +85,7 @@ func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, er
 	return Event{
 		UserInfo:     info,
 		Client:       client,
-		FeatureName:  featureName.String(),
+		FeatureName:  featureName,
 		Type:         eventType,
 		Timestamp:    now(),
 		EventDetails: details,
@@ -96,11 +95,11 @@ func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, er
 func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureName, eventError error, featureRollout int, now TimeGetter) Event {
 	//message format is slightly different for partial rollout events
 	payload := struct {
-		FeatureName    string `json:"feature_name"`
-		RolloutGroup   int    `json:"rollout_group"`
-		FeatureRollout int    `json:"feature_rollout"`
+		FeatureName    FeatureName `json:"feature_name"`
+		RolloutGroup   int         `json:"rollout_group"`
+		FeatureRollout int         `json:"feature_rollout"`
 	}{
-		FeatureName:    featureName.String(),
+		FeatureName:    featureName,
 		RolloutGroup:   info.RolloutGroup,
 		FeatureRollout: featureRollout,
 	}
@@ -122,7 +121,7 @@ func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureNam
 	return Event{
 		UserInfo:     info,
 		Client:       client,
-		FeatureName:  featureName.String(),
+		FeatureName:  featureName,
 		Type:         Rollout,
 		Timestamp:    now(),
 		EventDetails: details,
@@ -141,21 +140,35 @@ func (e Event) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
 
 	jsonData, err := json.Marshal(eventToMarshal)
 	if err != nil {
+		//in case of any marshalling error, let's at least provide basic information, we know anyway
 		log.Printf("%s%s Failed to marshal Event to JSON %s. Fallback to a limited set of data\n", internal.WarningPrefix, logPrefix, err)
-		jsonData = []byte(
-			`{"namespace":"` + messageNamespace + `",` +
-				`"subscope":"` + subscope + `",` +
-				`"result":"` + eventToMarshal.Result + `",` +
-				`"type":"` + e.Type.String() + `",` +
-				`"feature_name":"` + e.FeatureName + `",` +
-				`"client":"` + e.Client + `",` +
-				`"error":"` + e.Error + `",` +
-				`"message":"` + e.Message + `",` +
-				`"app_version":"` + e.AppVersion + `",` +
-				`"country":"` + e.Country + `",` +
-				`"isp":"` + e.ISP + `",` +
-				`"rollout_group":` + fmt.Sprintf("%v", e.RolloutGroup) + `}`,
-		)
+
+		fallbackData := struct {
+			MessageNamespace string      `json:"namespace"`
+			Subscope         string      `json:"subscope"`
+			Client           string      `json:"client"`
+			Type             EventType   `json:"type"`
+			Result           string      `json:"result"`
+			Error            string      `json:"error"`
+			FeatureName      FeatureName `json:"feature_name"`
+			RolloutGroup     int         `json:"rollout_group"`
+		}{
+			MessageNamespace: messageNamespace,
+			Subscope:         subscope,
+			Client:           e.Client,
+			Type:             e.Type,
+			Result:           eventToMarshal.Result,
+			Error:            err.Error(),
+			FeatureName:      e.FeatureName,
+			RolloutGroup:     e.RolloutGroup,
+		}
+
+		jsonData, err = json.Marshal(fallbackData)
+		//this should never happen...
+		if err != nil {
+			log.Printf("%s%s Failed to marshal fallback data to JSON %s. Defaulting to empty JSON\n", internal.ErrorPrefix, logPrefix, err)
+			jsonData = []byte(`{}`)
+		}
 	}
 	return events.NewMooseDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
