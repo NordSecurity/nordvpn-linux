@@ -50,12 +50,6 @@ func (s *AccessTokenSessionStore) Renew() error {
 		return err
 	}
 
-	uid := cfg.AutoConnectData.ID
-	data, ok := cfg.TokensData[uid]
-	if !ok {
-		return errors.New("no token data")
-	}
-
 	err := s.validator.Validate(s)
 	if err == nil {
 		return nil
@@ -63,6 +57,12 @@ func (s *AccessTokenSessionStore) Renew() error {
 	// if this error happens, then there is no way to recover
 	if errors.Is(err, ErrAccessTokenRevoked) {
 		return err
+	}
+
+	uid := cfg.AutoConnectData.ID
+	data, ok := cfg.TokensData[uid]
+	if !ok {
+		return errors.New("no token data")
 	}
 
 	if err := s.renewToken(uid, data); err != nil {
@@ -101,7 +101,15 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 		data.Token = resp.Token
 		data.RenewToken = resp.RenewToken
 		data.TokenExpiry = resp.ExpiresAt
-		return s.cfgManager.SaveWith(s.loginTokenDataSaver(uid, data))
+
+		return s.cfgManager.SaveWith(func(c config.Config) config.Config {
+			td := c.TokensData[uid]
+			td.Token = data.Token
+			td.RenewToken = data.RenewToken
+			td.TokenExpiry = data.TokenExpiry
+			c.TokensData[uid] = td
+			return c
+		})
 	}
 
 	if errors.Is(err, ErrUnauthorized) || errors.Is(err, ErrNotFound) || errors.Is(err, ErrBadRequest) {
@@ -143,18 +151,5 @@ func (s *AccessTokenSessionStore) tryUpdateIdempotencyKey(uid int64, data *confi
 func (s *AccessTokenSessionStore) invokeClientErrorHandlers(uid int64, err error) {
 	for _, handler := range s.errHandlerRegistry.GetHandlers(err) {
 		handler(uid)
-	}
-}
-
-// loginTokenDataSaver returns a function that stores token-related fields (token, renew token,
-// and expiry timestamp) for the specified user into the accessTokenConfig.
-func (s *AccessTokenSessionStore) loginTokenDataSaver(uid int64, data config.TokenData) config.SaveFunc {
-	return func(c config.Config) config.Config {
-		user := c.TokensData[uid]
-		user.Token = data.Token
-		user.RenewToken = data.RenewToken
-		user.TokenExpiry = data.TokenExpiry
-		c.TokensData[uid] = user
-		return c
 	}
 }
