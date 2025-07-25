@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	configMock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 )
 
@@ -102,7 +103,7 @@ func TestSetDNS_Success(t *testing.T) {
 			ipv4Endpoint := netip.MustParseAddr("142.114.71.151")
 
 			uuid, _ := uuid.NewUUID()
-			filesystem := newFilesystemMock(t)
+			filesystem := configMock.NewFilesystemMock(t)
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
@@ -206,7 +207,7 @@ func TestSetDNS_Errors(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := newFilesystemMock(t)
+			filesystem := configMock.NewFilesystemMock(t)
 			filesystem.WriteErr = test.writeConfigErr
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",

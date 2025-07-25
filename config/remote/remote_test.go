@@ -38,19 +38,19 @@ func TestFindMatchingRecord(t *testing.T) {
 	input1 := []ParamValue{
 		{
 			Value:      "val1",
-			AppVersion: "3.3.3",
+			AppVersion: ">=3.3.3",
 			Weight:     10,
 			Rollout:    10,
 		},
 		{
 			Value:      "val2",
-			AppVersion: "3.3.3",
+			AppVersion: ">=3.3.3",
 			Weight:     20,
 			Rollout:    10,
 		},
 		{
 			Value:      "val3",
-			AppVersion: "3.3.3",
+			AppVersion: ">=3.3.3",
 			Weight:     10,
 			Rollout:    10,
 		},
@@ -75,61 +75,61 @@ func TestFindMatchingRecord(t *testing.T) {
 			Rollout:    10,
 		},
 	}
-	input3 := []ParamValue{
-		{
-			Value:      "val1",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
-		},
-		{
-			Value:      "val2",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
-		},
-		{
-			Value:      "val3",
-			AppVersion: "3.3.3",
-			Weight:     11,
-			Rollout:    10,
-		},
-	}
+	input3 := []ParamValue{}
 	tests := []struct {
-		name       string
-		input      []ParamValue
-		ver        string
-		matchValue string
+		name         string
+		input        []ParamValue
+		myAppVer     string
+		myAppRollout int
+		matchValue   string
 	}{
 		{
-			name:       "match1",
-			input:      input1,
-			ver:        "3.3.3",
-			matchValue: "val2",
+			name:         "match1",
+			input:        input1,
+			myAppVer:     "3.3.3",
+			myAppRollout: 30,
+			matchValue:   "val2",
 		},
 		{
-			name:       "match2 - no match",
-			input:      input1,
-			ver:        "3.3.4",
-			matchValue: "",
+			name:         "match1 - no match by lesser version",
+			input:        input1,
+			myAppVer:     "1.1.1",
+			myAppRollout: 30,
+			matchValue:   "",
 		},
 		{
-			name:       "match3",
-			input:      input2,
-			ver:        "3.3.3",
-			matchValue: "val1",
+			name:         "match1 - no rollout / no match",
+			input:        input1,
+			myAppVer:     "3.3.3",
+			myAppRollout: 3,
+			matchValue:   "",
 		},
 		{
-			name:       "match4",
-			input:      input3,
-			ver:        "3.3.3",
-			matchValue: "val3",
+			name:         "match2 - match by greater version",
+			input:        input1,
+			myAppVer:     "3.3.4",
+			myAppRollout: 30,
+			matchValue:   "val2",
+		},
+		{
+			name:         "match3 - equal weights, first match used",
+			input:        input2,
+			myAppVer:     "3.3.3",
+			myAppRollout: 30,
+			matchValue:   "val1",
+		},
+		{
+			name:         "match4 - empty list, no matches",
+			input:        input3,
+			myAppVer:     "3.3.3",
+			myAppRollout: 30,
+			matchValue:   "",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			match := findMatchingRecord(test.input, test.ver)
+			match := findMatchingRecord(test.input, test.myAppVer, test.myAppRollout)
 			if test.matchValue != "" {
 				assert.NotNil(t, match)
 				assert.Equal(t, test.matchValue, match.Value)

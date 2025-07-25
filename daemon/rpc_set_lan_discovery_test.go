@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	configMock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 )
 
@@ -100,7 +101,7 @@ func TestSetLANDiscovery_Success(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			machineID, _ := uuid.NewUUID()
-			filesystem := newFilesystemMock(t)
+			filesystem := configMock.NewFilesystemMock(t)
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: machineID},
@@ -191,7 +192,7 @@ func TestSetLANDiscovery_Error(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := newFilesystemMock(t)
+			filesystem := configMock.NewFilesystemMock(t)
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
