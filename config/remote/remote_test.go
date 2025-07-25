@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,14 +23,29 @@ import (
 )
 
 const (
-	httpPort          = "8005"
-	httpPath          = "/config"
-	httpHost          = "http://localhost"
-	cdnUrl            = httpHost + ":" + httpPort
-	localPath         = "./tmp/cfg"
-	testFeatureNoRc   = "feature1"
-	testFeatureWithRc = "nordwhisper"
+	httpPort              = "8005"
+	httpPath              = "/config"
+	httpHost              = "http://localhost"
+	cdnUrl                = httpHost + ":" + httpPort
+	localPath             = "./tmp/cfg"
+	httpServerWaitTimeout = 2 * time.Second
+	testFeatureNoRc       = "feature1"
+	testFeatureWithRc     = "nordwhisper"
 )
+
+func waitForServer() error {
+	deadline := time.Now().Add(httpServerWaitTimeout)
+	addr := httpHost + ":" + httpPort
+	for time.Now().Before(deadline) {
+		conn, err := net.Dial("tcp", addr)
+		if err == nil {
+			conn.Close()
+			return nil // Server is up
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return fmt.Errorf("server at %s did not become ready in time", addr)
+}
 
 func TestFindMatchingRecord(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -145,6 +161,7 @@ func TestFeatureOnOff(t *testing.T) {
 
 	stop := setupMockCdnWebServer(false)
 	defer stop()
+	waitForServer()
 
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
@@ -195,6 +212,7 @@ func TestMultiAccess(t *testing.T) {
 
 	stop := setupMockCdnWebServer(false)
 	defer stop()
+	waitForServer()
 
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
@@ -221,6 +239,7 @@ func TestGetTelioConfig(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stop := setupMockCdnWebServer(false)
+	waitForServer()
 	defer stop()
 
 	cdn, cancel := setupMockCdnClient()
@@ -288,6 +307,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stopWebServer := setupMockCdnWebServer(false)
+	waitForServer()
 
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
@@ -339,6 +359,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	// have updated libtelio remote config
 	stopWebServer = setupMockCdnWebServer(true)
+	waitForServer()
 
 	log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
 
