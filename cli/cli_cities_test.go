@@ -8,13 +8,15 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/helpers"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
 )
 
 func TestCitiesList(t *testing.T) {
 	category.Set(t, category.Unit)
-	mockClient := mockDaemonClient{}
+	mockClient := mock.MockDaemonClient{}
 	c := cmd{&mockClient, nil, nil, "", nil}
 
 	tests := []struct {
@@ -54,10 +56,10 @@ func TestCitiesList(t *testing.T) {
 			if test.country != "" {
 				set.Parse([]string{test.country})
 			}
-			mockClient.cities = test.cities
+			mockClient.CitiesResponse = test.cities
 			ctx := cli.NewContext(app, set, &cli.Context{Context: context.Background()})
 
-			result, err := captureOutput(func() {
+			result, err := helpers.CaptureOutput(func() {
 				err := c.Cities(ctx)
 				assert.Equal(t, test.expectedError, err)
 			})

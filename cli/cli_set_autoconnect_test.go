@@ -7,6 +7,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/helpers"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -14,7 +16,7 @@ import (
 
 func TestAutoConnectAutoComplete(t *testing.T) {
 	category.Set(t, category.Unit)
-	mockClient := mockDaemonClient{}
+	mockClient := mock.MockDaemonClient{}
 	c := cmd{&mockClient, nil, nil, "", nil}
 	tests := []struct {
 		name      string
@@ -78,13 +80,13 @@ func TestAutoConnectAutoComplete(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
-			mockClient.cities = test.cities
-			mockClient.countries = test.countries
-			mockClient.groups = test.groups
+			mockClient.CitiesResponse = test.cities
+			mockClient.CountriesResponse = test.countries
+			mockClient.GroupsResponse = test.groups
 			set.Parse(test.input)
 			ctx := cli.NewContext(app, set, &cli.Context{Context: context.Background()})
 
-			result, err := captureOutput(func() {
+			result, err := helpers.CaptureOutput(func() {
 				c.SetAutoConnectAutoComplete(ctx)
 			})
 

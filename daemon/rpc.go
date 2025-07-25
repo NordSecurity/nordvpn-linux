@@ -55,7 +55,7 @@ type RPC struct {
 	statePublisher      *state.StatePublisher
 	RequestedConnParams RequestedConnParamsStorage
 	connectContext      *sharedctx.Context
-	remoteConfigGetter  remote.RemoteConfigGetter
+	remoteConfigGetter  remote.ConfigGetter
 	connectionInfo      *state.ConnectionInfo
 	consentChecker      ConsentChecker
 	pb.UnimplementedDaemonServer
@@ -84,7 +84,7 @@ func NewRPC(
 	norduser service.Service,
 	statePublisher *state.StatePublisher,
 	connectContext *sharedctx.Context,
-	remoteConfigGetter remote.RemoteConfigGetter,
+	remoteConfigGetter remote.ConfigGetter,
 	connectionInfo *state.ConnectionInfo,
 	consentChecker ConsentChecker,
 ) *RPC {

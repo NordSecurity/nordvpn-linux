@@ -125,7 +125,8 @@ var (
 
 	DatFilesPath = filepath.Join(AppDataPath, "data")
 
-	DatFilesPathCommon = filepath.Join(AppDataPathCommon, "data")
+	DatFilesPathCommon    = filepath.Join(AppDataPathCommon, "data")
+	ConfigFilesPathCommon = filepath.Join(AppDataPathCommon, "conf")
 
 	BakFilesPath = filepath.Join(AppDataPath, "backup")
 

@@ -85,6 +85,7 @@ var (
 	Port        = 6960
 	ConnType    = "unix"
 	ConnURL     = internal.DaemonSocket
+	RemotePath  = ""
 )
 
 // Environment constants
@@ -149,8 +150,6 @@ func main() {
 			log.Fatalln(err)
 		}
 	}
-
-	rcConfig := getRemoteConfigGetter(Version)
 
 	// Events
 
@@ -237,7 +236,7 @@ func main() {
 	var threatProtectionLiteServers *dns.NameServers
 	nameservers, err := cdnAPI.ThreatProtectionLite()
 	if err != nil {
-		log.Printf("error retrieving nameservers: %s", err)
+		log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
 		threatProtectionLiteServers = dns.NewNameServers(nil)
 	} else {
 		threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
@@ -325,6 +324,8 @@ func main() {
 
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
+
+	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI)
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
@@ -623,6 +624,7 @@ func main() {
 		}
 	}()
 	rpc.StartJobs(statePublisher, heartBeatSubject)
+	rpc.StartRemoteConfigLoaderJob(rcConfig)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {

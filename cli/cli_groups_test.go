@@ -8,13 +8,15 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/helpers"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
 )
 
 func TestGroupsList(t *testing.T) {
 	category.Set(t, category.Unit)
-	mockClient := mockDaemonClient{}
+	mockClient := mock.MockDaemonClient{}
 	c := cmd{&mockClient, nil, nil, "", nil}
 
 	tests := []struct {
@@ -39,10 +41,10 @@ func TestGroupsList(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
-			mockClient.groups = test.groups
+			mockClient.GroupsResponse = test.groups
 			ctx := cli.NewContext(app, set, &cli.Context{Context: context.Background()})
 
-			result, err := captureOutput(func() {
+			result, err := helpers.CaptureOutput(func() {
 				err := c.Groups(ctx)
 				assert.Equal(t, test.expectedError, err)
 			})

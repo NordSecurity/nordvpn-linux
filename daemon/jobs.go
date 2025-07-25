@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,18 +14,21 @@ import (
 	"github.com/godbus/dbus/v5"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
+	"github.com/NordSecurity/nordvpn-linux/network"
 
 	"google.golang.org/grpc/metadata"
 )
 
 const (
 	heartBeatPeriod = time.Hour * 6
+	envRcLoadTime   = "RC_LOAD_TIME_MIN" // env variable name
 )
 
 func (r *RPC) StartJobs(
@@ -96,6 +101,47 @@ func (r *RPC) StartJobs(
 			}
 		}
 	}()
+}
+
+func (r *RPC) StartRemoteConfigLoaderJob(
+	remoteConfigLoader remote.ConfigLoader,
+) {
+	// on first try - load remote config in non-blocking goroutine
+	go func(rcl remote.ConfigLoader) {
+		// try to load remote config 5 times with exponential backoff
+		for i := 0; i < 5; i++ {
+			err := rcl.LoadConfig()
+			if err == nil {
+				return
+			}
+			tryAfterDuration := network.ExponentialBackoff(i)
+			log.Println(internal.WarningPrefix, "loading remote config, attempt:", i, "; next try after:", tryAfterDuration, "; error:", err)
+			<-time.After(tryAfterDuration)
+		}
+	}(remoteConfigLoader)
+
+	// then schedule remote config loader to run periodically in the background;
+	// assume job scheduler is already started.
+	rcLoadTime := 60 * time.Minute
+	if internal.IsDevEnv(string(r.environment)) && os.Getenv(envRcLoadTime) != "" {
+		tm, err := strconv.Atoi(os.Getenv(envRcLoadTime))
+		if err != nil {
+			log.Println(internal.WarningPrefix, "converting remote config load time:", err)
+		} else {
+			if tm > 3 && tm < 100 {
+				rcLoadTime = time.Duration(tm) * time.Minute
+			}
+		}
+	}
+	log.Println(internal.InfoPrefix, "remote config download job time period:", rcLoadTime)
+	_, err := r.scheduler.NewJob(gocron.DurationJob(rcLoadTime), gocron.NewTask(func() {
+		if err := remoteConfigLoader.LoadConfig(); err != nil {
+			log.Println(internal.ErrorPrefix, "remote config load error:", err)
+		}
+	}), gocron.WithName("job config loader"))
+	if err != nil {
+		log.Println(internal.WarningPrefix, "job remote config loader schedule error:", err)
+	}
 }
 
 func (r *RPC) StartKillSwitch() {
