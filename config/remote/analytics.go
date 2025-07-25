@@ -123,7 +123,7 @@ func NewPartialRolloutEvent(info UserInfo, client string, featureName FeatureNam
 		UserInfo:     info,
 		Client:       client,
 		FeatureName:  featureName.String(),
-		Type:         PartialRollout,
+		Type:         Rollout,
 		Timestamp:    now(),
 		EventDetails: details,
 	}

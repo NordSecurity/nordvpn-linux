@@ -25,7 +25,7 @@ const (
 	LocalUse
 	JSONParseSuccess
 	JSONParseFailure
-	PartialRollout
+	Rollout
 )
 
 func (e EventType) String() string {
@@ -42,8 +42,8 @@ func (e EventType) String() string {
 		return "rc_json_parse_success"
 	case JSONParseFailure:
 		return "rc_json_parse_failure"
-	case PartialRollout:
-		return "rc_partial_rollout"
+	case Rollout:
+		return "rc_rollout"
 	default:
 		return fmt.Sprintf("%d", int(e))
 	}
