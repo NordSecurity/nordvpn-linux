@@ -56,7 +56,7 @@ func (m *TrustedPassSessionStore) Renew() error {
 	}
 
 	// check if everything is valid or data renewal is required
-	if err := m.validator.Validate(m.session); err != nil {
+	if err := m.validator.Validate(m); err != nil {
 		if err = m.renewIfOAuth(&data, cfg.AutoConnectData.ID); err != nil {
 			return err
 		}
@@ -102,15 +102,15 @@ func (m *TrustedPassSessionStore) renewToken(data *config.TokenData) error {
 		return fmt.Errorf("getting trusted pass token data: %w", err)
 	}
 
-	if err := m.session.SetToken(resp.Token); err != nil {
+	if err := m.SetToken(resp.Token); err != nil {
 		return err
 	}
 
-	if err := m.session.SetOwnerID(resp.OwnerID); err != nil {
+	if err := m.SetOwnerID(resp.OwnerID); err != nil {
 		return err
 	}
 
-	if err = m.session.SetExpiry(time.Now().Add(trustedPassExpiryPeriod)); err != nil {
+	if err = m.SetExpiry(time.Now().Add(trustedPassExpiryPeriod)); err != nil {
 		return err
 	}
 
