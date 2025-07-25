@@ -24,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
+	"github.com/NordSecurity/nordvpn-linux/daemon/clientid"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -564,6 +565,10 @@ func main() {
 		middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
 		middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 	}
+
+	clientIDMiddleware := clientid.NewClientIDMiddleware(daemonEvents.Service.UiItemsClick)
+	middleware.AddStreamMiddleware(clientIDMiddleware.StreamMiddleware)
+	middleware.AddUnaryMiddleware(clientIDMiddleware.UnaryMiddleware)
 
 	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))
