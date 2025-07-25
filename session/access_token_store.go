@@ -57,36 +57,36 @@ func (s *accessTokenSession) set(cfg accessTokenConfig) error {
 	return nil
 }
 
-func (s *accessTokenSession) SetToken(value string) error {
-	cfg, err := s.get()
+func (s *AccessTokenSessionStore) SetToken(value string) error {
+	cfg, err := s.session.get()
 	if err != nil {
 		return err
 	}
 	cfg.Token = value
-	return s.set(cfg)
+	return s.session.set(cfg)
 }
 
-func (s *accessTokenSession) SetRenewToken(value string) error {
-	cfg, err := s.get()
+func (s *AccessTokenSessionStore) SetRenewToken(value string) error {
+	cfg, err := s.session.get()
 	if err != nil {
 		return err
 	}
 	cfg.RenewToken = value
-	return s.set(cfg)
+	return s.session.set(cfg)
 }
 
-func (s *accessTokenSession) SetExpiry(value time.Time) error {
-	cfg, err := s.get()
+func (s *AccessTokenSessionStore) SetExpiry(value time.Time) error {
+	cfg, err := s.session.get()
 	if err != nil {
 		return err
 	}
 	cfg.ExpiresAt = value
-	return s.set(cfg)
+	return s.session.set(cfg)
 }
 
 // implements SessionTokenProvider
-func (s *accessTokenSession) GetToken() string {
-	cfg, err := s.get()
+func (s *AccessTokenSessionStore) GetToken() string {
+	cfg, err := s.session.get()
 	if err != nil {
 		return ""
 	}
@@ -94,8 +94,8 @@ func (s *accessTokenSession) GetToken() string {
 }
 
 // implements SessionRenewalTokenProvider
-func (s *accessTokenSession) GetRenewalToken() string {
-	cfg, err := s.get()
+func (s *AccessTokenSessionStore) GetRenewalToken() string {
+	cfg, err := s.session.get()
 	if err != nil {
 		return ""
 	}
@@ -103,8 +103,8 @@ func (s *accessTokenSession) GetRenewalToken() string {
 }
 
 // implements SessionExpiryProvider
-func (s *accessTokenSession) GetExpiry() time.Time {
-	cfg, err := s.get()
+func (s *AccessTokenSessionStore) GetExpiry() time.Time {
+	cfg, err := s.session.get()
 	if err != nil {
 		return time.Time{}
 	}
@@ -112,8 +112,8 @@ func (s *accessTokenSession) GetExpiry() time.Time {
 }
 
 // implements ExpirableSession
-func (s *accessTokenSession) IsExpired() bool {
-	cfg, err := s.get()
+func (s *AccessTokenSessionStore) IsExpired() bool {
+	cfg, err := s.session.get()
 	if err != nil {
 		return true
 	}

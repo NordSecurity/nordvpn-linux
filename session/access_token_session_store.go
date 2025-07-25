@@ -50,27 +50,27 @@ func (s *AccessTokenSessionStore) Renew() error {
 		return err
 	}
 
-	var errs error
-	// can we just use "cfg.AutoConnect.ID" as single entity to access TokensData?
-	for uid, data := range cfg.TokensData {
-		validationErr := s.validator.Validate(s.session)
-		if validationErr == nil {
-			continue
-		}
-
-		// if this error happens, then there is no way to recover
-		if errors.Is(validationErr, ErrAccessTokenRevoked) {
-			errs = errors.Join(errs, validationErr)
-			continue
-		}
-
-		if err := s.renewToken(uid, data); err != nil {
-			log.Printf("[auth] %s Renewing token for uid(%v): %s\n", internal.ErrorPrefix, uid, err)
-			errs = errors.Join(errs, err)
-		}
+	uid := cfg.AutoConnectData.ID
+	data, ok := cfg.TokensData[uid]
+	if !ok {
+		return errors.New("no token data")
 	}
 
-	return errs
+	err := s.validator.Validate(s)
+	if err == nil {
+		return nil
+	}
+	// if this error happens, then there is no way to recover
+	if errors.Is(err, ErrAccessTokenRevoked) {
+		return err
+	}
+
+	if err := s.renewToken(uid, data); err != nil {
+		log.Printf("[auth] %s Renewing token for uid(%v): %s\n", internal.ErrorPrefix, uid, err)
+		return err
+	}
+
+	return nil
 }
 
 // Invalidate triggers error handlers for all stored user tokens using the provided error.
@@ -106,7 +106,10 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 
 	if errors.Is(err, ErrUnauthorized) || errors.Is(err, ErrNotFound) || errors.Is(err, ErrBadRequest) {
 		defer s.invokeClientErrorHandlers(uid, err)
-		if err := s.cfgManager.SaveWith(s.tokenDataRemover(uid)); err != nil {
+		if err := s.cfgManager.SaveWith(func(c config.Config) config.Config {
+			delete(c.TokensData, uid)
+			return c
+		}); err != nil {
 			return fmt.Errorf("removing token data: %w", err)
 		}
 	}
@@ -140,15 +143,6 @@ func (s *AccessTokenSessionStore) tryUpdateIdempotencyKey(uid int64, data *confi
 func (s *AccessTokenSessionStore) invokeClientErrorHandlers(uid int64, err error) {
 	for _, handler := range s.errHandlerRegistry.GetHandlers(err) {
 		handler(uid)
-	}
-}
-
-// tokenDataRemover returns a function that removes the token data associated with the user ID
-// from the config object.
-func (s *AccessTokenSessionStore) tokenDataRemover(uid int64) config.SaveFunc {
-	return func(c config.Config) config.Config {
-		delete(c.TokensData, uid)
-		return c
 	}
 }
 
