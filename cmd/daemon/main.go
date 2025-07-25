@@ -22,6 +22,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -71,6 +72,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
+	"github.com/google/uuid"
 
 	"google.golang.org/grpc"
 )
@@ -114,6 +116,16 @@ const (
 	// sockTCP defines that gRPC server is listening to TCP socket
 	sockTCP socketType = "tcp"
 )
+
+func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
+	staticCfgManager := config.NewFilesystemStaticConfigManager()
+	if err := staticCfgManager.SetRolloutGroup(remote.GenerateRolloutGroup(machineID)); err != nil {
+		if !errors.Is(err, config.ErrStaticValueAlreadySet) {
+			log.Println(internal.ErrorPrefix, "failed to configure rollout group:", err)
+		}
+	}
+	return staticCfgManager
+}
 
 func main() {
 	// pprof
@@ -291,6 +303,7 @@ func main() {
 	}
 
 	machineID := machineIdGenerator.GetMachineID()
+	staticCfg := initializeStaticConfig(machineID)
 
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
@@ -325,7 +338,12 @@ func main() {
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
 
-	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI)
+	rolloutGroup, err := staticCfg.GetRolloutGroup()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "getting rollout group:", err)
+		// in case of error, rollout group is `0`
+	}
+	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI, rolloutGroup)
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 

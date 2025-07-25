@@ -1,45 +1,10 @@
 package daemon
 
 import (
-	"io/fs"
-	"testing"
-
 	"github.com/google/uuid"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 )
-
-type filesystemMock struct {
-	files    map[string][]byte
-	WriteErr error
-}
-
-func (fm *filesystemMock) FileExists(location string) bool {
-	_, ok := fm.files[location]
-
-	return ok
-}
-
-func (fm *filesystemMock) ReadFile(location string) ([]byte, error) {
-	return fm.files[location], nil
-}
-
-func (fm *filesystemMock) WriteFile(location string, data []byte, mode fs.FileMode) error {
-	if fm.WriteErr != nil {
-		return fm.WriteErr
-	}
-
-	fm.files[location] = data
-	return nil
-}
-
-func newFilesystemMock(t *testing.T) filesystemMock {
-	t.Helper()
-
-	return filesystemMock{
-		files: make(map[string][]byte),
-	}
-}
 
 type machineIDGetterMock struct {
 	machineID uuid.UUID
