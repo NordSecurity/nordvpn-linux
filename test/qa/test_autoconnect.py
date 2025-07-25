@@ -158,7 +158,7 @@ def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_i
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
-        server_name = server.get_hostname_by(group_id=group).hostname.split(".")[0]
+        server_name = server.get_hostname_by(group_name=group).hostname.split(".")[0]
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.set.autoconnect.on(server_name)
@@ -194,7 +194,7 @@ def test_prevent_autoconnect_enable_to_obfuscated_servers_when_obfuscation_is_of
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        server_name = server.get_hostname_by(group_id="Obfuscated_Servers").hostname.split(".")[0]
+        server_name = server.get_hostname_by(group_name="Obfuscated_Servers").hostname.split(".")[0]
         sh.nordvpn.set.autoconnect.on(server_name)
     print(ex.value)
     error_message = "Turn on obfuscation to connect to obfuscated servers."
@@ -213,7 +213,7 @@ def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, pr
 
     for group in available_groups:
         if group == "Dedicated_IP":
-            server_name = server.get_dedicated_ip()
+            server_name = server.get_dedicated_ip().hostname.split(".")[0]
         else:
             server_name = server.get_hostname_by(tech, proto, obfuscated, group).hostname.split(".")[0]
 
