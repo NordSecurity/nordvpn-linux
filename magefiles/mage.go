@@ -310,7 +310,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
-	env["VERSION"] = git.versionTag
+	env["VERSION"] = getGitVersionTag()
 
 	cmd := []string{"ci/nfpm/build_packages_resources.sh", packageType}
 	image := imagePackager
