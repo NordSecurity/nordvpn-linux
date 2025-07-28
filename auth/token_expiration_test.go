@@ -183,6 +183,7 @@ func setupTestEnvironment(
 		expectedIdempotencyKey: idempotencyKey,
 		createdAt:              time.Now(),
 	}
+	//nolint:bodyclose
 	rt.RoundTripFunc = createDefaultRoundTripper(rt)
 
 	mockCfg := &mockConfigManager{
