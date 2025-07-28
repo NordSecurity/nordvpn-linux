@@ -57,7 +57,7 @@ func (m *mockConfigManager) Reset(preserveLoginData bool, disableKillswitch bool
 
 func (m *mockConfigManager) SetTokenExpiry(value time.Time) {
 	dt := m.config.TokensData[m.config.AutoConnectData.ID]
-	dt.TokenExpiry = value.Format(time.RFC3339)
+	dt.TokenExpiry = value.Format(internal.ServerDateFormat)
 	m.config.TokensData[m.config.AutoConnectData.ID] = dt
 }
 
@@ -168,7 +168,7 @@ func setupTestEnvironment(
 ) (core.ClientAPI, *mockRoundTripperWithExpiration, *mockConfigManager) {
 	renewResp := &core.TokenRenewResponse{
 		Token:     renewedTokenValue,
-		ExpiresAt: time.Now().Add(defaultExpirationDays).Format(time.RFC3339),
+		ExpiresAt: time.Now().Add(defaultExpirationDays).Format(internal.ServerDateFormat),
 	}
 
 	currentUserResp := &core.CurrentUserResponse{
@@ -238,7 +238,7 @@ func Test_TokenExpiration(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	futureExpiry := time.Now().Add(defaultExpirationDays).Format(time.RFC3339)
+	futureExpiry := time.Now().Add(defaultExpirationDays).Format(internal.ServerDateFormat)
 
 	api, mockRT, mockCfg := setupTestEnvironment(idempotencyKey, futureExpiry, nil)
 
@@ -248,7 +248,7 @@ func Test_TokenExpiration(t *testing.T) {
 	assert.Equal(t, testEmail, resp.Email)
 
 	mockRT.ForceExpiration()
-	mockCfg.SetTokenExpiry(time.Now().Add(-1 * time.Hour))
+	mockCfg.SetTokenExpiry(time.Now().Add(-12 * time.Hour))
 	resp, err = api.CurrentUser()
 	assert.NoError(t, err)
 	assert.Equal(t, testUsername, resp.Username)
@@ -259,7 +259,7 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	futureExpiry := time.Now().Add(defaultExpirationDays).Format(time.RFC3339)
+	futureExpiry := time.Now().Add(defaultExpirationDays).Format(internal.ServerDateFormat)
 
 	api, mockRT, _ := setupTestEnvironment(idempotencyKey, futureExpiry, nil)
 
@@ -275,7 +275,7 @@ func Test_TokenRenewalWithInvalidToken(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	pastExpiry := time.Now().Add(-1 * time.Hour).Format(time.RFC3339)
+	pastExpiry := time.Now().Add(-1 * time.Hour).Format(internal.ServerDateFormat)
 
 	api, mockRT, _ := setupTestEnvironment(idempotencyKey, pastExpiry, nil)
 
@@ -292,7 +292,7 @@ func Test_ConfigSaveErrorDuringRenewal(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	pastExpiry := time.Now().Add(-1 * time.Hour).Format(time.RFC3339)
+	pastExpiry := time.Now().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 
 	api, mockRT, _ := setupTestEnvironment(idempotencyKey, pastExpiry, errors.New("failed to save config"))
 	mockRT.ForceExpiration()
