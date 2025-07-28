@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 type accessTokenConfig struct {
@@ -30,7 +31,7 @@ func (s *accessTokenSession) get() (accessTokenConfig, error) {
 	}
 
 	// must contain valid data
-	expiryTime, _ := time.Parse(time.RFC3339, data.TokenExpiry)
+	expiryTime, _ := time.Parse(internal.ServerDateFormat, data.TokenExpiry)
 
 	return accessTokenConfig{
 		Token:      data.Token,
@@ -45,7 +46,7 @@ func (s *accessTokenSession) set(cfg accessTokenConfig) error {
 		data := c.TokensData[c.AutoConnectData.ID]
 		data.Token = cfg.Token
 		data.RenewToken = cfg.RenewToken
-		data.TokenExpiry = cfg.ExpiresAt.Format(time.RFC3339)
+		data.TokenExpiry = cfg.ExpiresAt.Format(internal.ServerDateFormat)
 		c.TokensData[c.AutoConnectData.ID] = data
 		return c
 	})
