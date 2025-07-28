@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+# configure git safe-directories when running in containerized environment
+if [[ -n ${DOCKER_ENV+x} ]]; then
+    git config --global --add safe.directory ${WORKDIR}
+    git config --global --add safe.directory "${WORKDIR}/parts/nordvpn/build"
+fi
+
 source "${WORKDIR}/ci/env.sh"
 
 # snap package will have stripped binaries - same as deb/rpm
