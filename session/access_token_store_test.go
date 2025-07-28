@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +38,7 @@ func (m *mockConfigManager) Reset(preserveLoginData bool, disableKillswitch bool
 
 func TestAccessTokenSession_Get(t *testing.T) {
 	expiryTime := time.Now().Add(time.Hour)
-	expiryTimeStr := expiryTime.Format(time.RFC3339)
+	expiryTimeStr := expiryTime.Format(internal.ServerDateFormat)
 
 	t.Run("success", func(t *testing.T) {
 		cm := &mockConfigManager{
@@ -59,7 +60,7 @@ func TestAccessTokenSession_Get(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "test-token", cfg.Token)
 		assert.Equal(t, "test-renew-token", cfg.RenewToken)
-		parsed, _ := time.Parse(time.RFC3339, expiryTimeStr)
+		parsed, _ := time.Parse(internal.ServerDateFormat, expiryTimeStr)
 		assert.Equal(t, parsed, cfg.ExpiresAt)
 	})
 
@@ -117,7 +118,7 @@ func TestAccessTokenSession_Set(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "new-token", cm.config.TokensData[123].Token)
 		assert.Equal(t, "new-renew-token", cm.config.TokensData[123].RenewToken)
-		assert.Equal(t, expiryTime.Format(time.RFC3339), cm.config.TokensData[123].TokenExpiry)
+		assert.Equal(t, expiryTime.Format(internal.ServerDateFormat), cm.config.TokensData[123].TokenExpiry)
 	})
 
 	t.Run("save error", func(t *testing.T) {
@@ -200,7 +201,7 @@ func TestAccessTokenSessionStore_SetExpiry(t *testing.T) {
 	err := store.SetExpiry(newExpiry)
 
 	assert.NoError(t, err)
-	assert.Equal(t, newExpiry.Format(time.RFC3339), cm.config.TokensData[123].TokenExpiry)
+	assert.Equal(t, newExpiry.Format(internal.ServerDateFormat), cm.config.TokensData[123].TokenExpiry)
 }
 
 func TestAccessTokenSessionStore_GetToken(t *testing.T) {
@@ -268,7 +269,7 @@ func TestAccessTokenSessionStore_GetRenewalToken(t *testing.T) {
 func TestAccessTokenSessionStore_GetExpiry(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		expiryTime := time.Now().Add(time.Hour)
-		expiryTimeStr := expiryTime.Format(time.RFC3339)
+		expiryTimeStr := expiryTime.Format(internal.ServerDateFormat)
 		cm := &mockConfigManager{
 			config: config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 123},
@@ -283,7 +284,7 @@ func TestAccessTokenSessionStore_GetExpiry(t *testing.T) {
 		store := AccessTokenSessionStore{session: newAccessTokenSession(cm)}
 		expiry := store.GetExpiry()
 
-		parsed, _ := time.Parse(time.RFC3339, expiryTimeStr)
+		parsed, _ := time.Parse(internal.ServerDateFormat, expiryTimeStr)
 		assert.Equal(t, parsed, expiry)
 	})
 
@@ -307,7 +308,7 @@ func TestAccessTokenSessionStore_IsExpired(t *testing.T) {
 				AutoConnectData: config.AutoConnectData{ID: 123},
 				TokensData: map[int64]config.TokenData{
 					123: {
-						TokenExpiry: expiryTime.Format(time.RFC3339),
+						TokenExpiry: expiryTime.Format(internal.ServerDateFormat),
 					},
 				},
 			},
@@ -320,13 +321,13 @@ func TestAccessTokenSessionStore_IsExpired(t *testing.T) {
 	})
 
 	t.Run("expired", func(t *testing.T) {
-		expiryTime := time.Now().Add(-time.Hour) // Past time
+		expiryTime := time.Now().Add(-12 * time.Hour) // Past time
 		cm := &mockConfigManager{
 			config: config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 123},
 				TokensData: map[int64]config.TokenData{
 					123: {
-						TokenExpiry: expiryTime.Format(time.RFC3339),
+						TokenExpiry: expiryTime.Format(internal.ServerDateFormat),
 					},
 				},
 			},
