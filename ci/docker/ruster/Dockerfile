@@ -1,6 +1,5 @@
 FROM debian:bullseye-slim
 
-ARG SQLITE_DOWNLOAD_URL_PREFIX
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Rust installation borrowed from https://github.com/rust-lang/docker-rust/blob/47a11a42c5a321d688fae525eaa7f1cf9940198b/1.64.0/buster/slim/Dockerfile
@@ -19,7 +18,7 @@ RUN set -eux; \
         wget \
         ; \
     dpkgArch="$(dpkg --print-architecture)"; \
-    # https://static.rust-lang.org/rustup/archive/{rustup-version}/{target-triple}/rustup-init.sha256 
+    # https://static.rust-lang.org/rustup/archive/{rustup-version}/{target-triple}/rustup-init.sha256
     case "${dpkgArch##*-}" in \
         amd64) rustArch='x86_64-unknown-linux-gnu'; rustupSha256='0b2f6c8f85a3d02fde2efc0ced4657869d73fccfce59defb4e8d29233116e6db' ;; \
         armhf) rustArch='armv7-unknown-linux-gnueabihf'; rustupSha256='f21c44b01678c645d8fbba1e55e4180a01ac5af2d38bcbd14aa665e0d96ed69a' ;; \
