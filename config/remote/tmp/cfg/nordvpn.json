@@ -1,0 +1,19 @@
+
+{
+  "version": 1,
+  "configs": [
+    {
+      "name": "consent_region_non_eu",
+      "value_type": "array",
+      "settings": [
+        {
+          "value": [
+            "usa", "mexico", "argentina", "china", "todo-more"
+          ],
+          "app_version": "*",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

@@ -47,6 +47,18 @@ func waitForServer() error {
 	return fmt.Errorf("server at %s did not become ready in time", addr)
 }
 
+// assertEventuallyGreater checks that the new value eventually becomes greater than the old value within the timeout period.
+func assertEventuallyGreater(t *testing.T, getNew, getOld func() int, timeout time.Duration) {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if getNew() > getOld() {
+			return // exit early if condition is already met
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	assert.Greater(t, getNew(), getOld()) // Final assertion (will fail with message if not greater)
+}
+
 func TestFindMatchingRecord(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -161,7 +173,6 @@ func TestFeatureOnOff(t *testing.T) {
 
 	stop := setupMockCdnWebServer(false)
 	defer stop()
-	waitForServer()
 
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
@@ -212,7 +223,6 @@ func TestMultiAccess(t *testing.T) {
 
 	stop := setupMockCdnWebServer(false)
 	defer stop()
-	waitForServer()
 
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
@@ -239,7 +249,6 @@ func TestGetTelioConfig(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stop := setupMockCdnWebServer(false)
-	waitForServer()
 	defer stop()
 
 	cdn, cancel := setupMockCdnClient()
@@ -307,7 +316,6 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stopWebServer := setupMockCdnWebServer(false)
-	waitForServer()
 
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
@@ -359,7 +367,6 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	// have updated libtelio remote config
 	stopWebServer = setupMockCdnWebServer(true)
-	waitForServer()
 
 	log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
 
@@ -377,9 +384,11 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	assert.NotNil(t, info3inc2)
 
 	// files are modified on disk - should be greater time
-	assert.Greater(t, info3.ModTime().Nanosecond(), info1.ModTime().Nanosecond())
-	assert.Greater(t, info3inc1.ModTime().Nanosecond(), info1inc1.ModTime().Nanosecond())
-	assert.Greater(t, info3inc2.ModTime().Nanosecond(), info1inc2.ModTime().Nanosecond())
+	// sometimes I/O operations can get delayed, thus here we use active-waiting approach bounded by the timeout
+	timeout := 2 * time.Second
+	assertEventuallyGreater(t, func() int { return info3.ModTime().Nanosecond() }, func() int { return info1.ModTime().Nanosecond() }, timeout)
+	assertEventuallyGreater(t, func() int { return info3inc1.ModTime().Nanosecond() }, func() int { return info1inc1.ModTime().Nanosecond() }, timeout)
+	assertEventuallyGreater(t, func() int { return info3inc2.ModTime().Nanosecond() }, func() int { return info1inc2.ModTime().Nanosecond() }, timeout)
 
 	stopWebServer()
 }
@@ -436,6 +445,8 @@ func makeHashJson(data ...[]byte) []byte {
 	return rz
 }
 
+// setupMockCdnWebServer sets up a mock CDN web server that serves predefined JSON configuration files.
+// The CDN web server is here mocked by a local HTTP one. Also there's a call to waitForServer() to ensure the server is actually ready to handle incoming requests.
 func setupMockCdnWebServer(updated bool) func() {
 	httpPath := filepath.Join(httpPath, "dev")
 
@@ -487,6 +498,8 @@ func setupMockCdnWebServer(updated bool) func() {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()
+
+	waitForServer()
 
 	// return http server stop function
 	return func() {
