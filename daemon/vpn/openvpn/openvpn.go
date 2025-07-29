@@ -129,6 +129,7 @@ func (ovpn *OpenVPN) Start(
 		"--dev", InterfaceName,
 		// DCO cannot be used because currently servers are pushing `comp-lzo no`
 		"--disable-dco",
+		"--auth-nocache",
 	)
 	err = startOpenVPN(process)
 
