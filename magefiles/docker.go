@@ -117,7 +117,7 @@ func runDocker(
 		{
 			Type:   mount.TypeBind,
 			Source: cwd,
-			Target: "/opt",
+			Target: dockerWorkDir,
 		},
 		{
 			Type:   mount.TypeBind,
@@ -140,7 +140,7 @@ func runDocker(
 		Image:      img,
 		Cmd:        cmd,
 		Env:        envMapToList(env),
-		WorkingDir: "/opt",
+		WorkingDir: dockerWorkDir,
 		User:       user,
 	}
 

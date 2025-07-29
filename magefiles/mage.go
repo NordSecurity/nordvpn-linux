@@ -37,6 +37,12 @@ const (
 	covDir        = "covdatafiles"
 )
 
+const (
+	PackageTypeSnap = "snap"
+	PackageTypeRPM  = "rpm"
+	PackageTypeDeb  = "deb"
+)
+
 // Aliases shorthands for daily commands
 var Aliases = map[string]any{
 	"bb":  Build.Binaries,
@@ -272,25 +278,29 @@ func buildPackage(packageType string, buildFlags string) error {
 	}
 
 	env["WORKDIR"] = cwd
-	if packageType == "snap" {
+	switch packageType {
+	case PackageTypeSnap:
 		return sh.RunWithV(env, "ci/build_snap.sh")
+	case PackageTypeDeb, PackageTypeRPM:
+		return sh.RunWithV(env, "ci/nfpm/build_packages_resources.sh", packageType)
 	}
-	return sh.RunWithV(env, "ci/nfpm/build_packages_resources.sh", packageType)
+
+	return fmt.Errorf("unsupported package type: %s", packageType)
 }
 
 // Deb package for the host architecture
 func (Build) Deb() error {
-	return buildPackage("deb", "")
+	return buildPackage(PackageTypeDeb, "")
 }
 
 // Rpm package for the host architecture
 func (Build) Rpm() error {
-	return buildPackage("rpm", "")
+	return buildPackage(PackageTypeRPM, "")
 }
 
 // Snap package for the host architecture
 func (Build) Snap() error {
-	return buildPackage("snap", "")
+	return buildPackage(PackageTypeSnap, "")
 }
 
 func buildPackageDocker(ctx context.Context, packageType string, buildFlags string) error {
@@ -312,33 +322,41 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["PACKAGE"] = devPackageType
 	env["VERSION"] = getGitVersionTag()
 
-	cmd := []string{"ci/nfpm/build_packages_resources.sh", packageType}
-	image := imagePackager
-	if packageType == "snap" {
-		image = imageSnapPackager
-		cmd = []string{"ci/build_snap.sh"}
+	switch packageType {
+	case PackageTypeSnap:
+		env["DOCKER_ENV"] = "1"
+		return RunDockerWithSettings(
+			ctx,
+			env,
+			imageSnapPackager,
+			[]string{"ci/build_snap.sh"},
+			DockerSettings{Privileged: true},
+		)
+	case PackageTypeDeb, PackageTypeRPM:
+		return RunDocker(
+			ctx,
+			env,
+			imagePackager,
+			[]string{"ci/nfpm/build_packages_resources.sh", packageType},
+		)
 	}
-	return RunDocker(
-		ctx,
-		env,
-		image,
-		cmd,
-	)
+
+	return fmt.Errorf("unsupported package type: %s", packageType)
 }
 
 // DebDocker package using Docker builder
 func (Build) DebDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, "deb", "")
+	return buildPackageDocker(ctx, PackageTypeDeb, "")
 }
 
 // RpmDocker package using Docker builder
 func (Build) RpmDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, "rpm", "")
+	return buildPackageDocker(ctx, PackageTypeRPM, "")
 }
 
 // SnapDocker package using Docker builder
 func (Build) SnapDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, "snap", "")
+	return buildPackageDocker(ctx, PackageTypeSnap, "")
 }
 
 func buildBinaries(buildFlags string) error {
@@ -588,13 +606,13 @@ func (Test) Hardening(ctx context.Context) error {
 
 // Run QA tests (arguments: {testGroup} {testPattern})
 func (Test) QA(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackage, "deb", "-cover"))
+	mg.Deps(mg.F(buildPackage, PackageTypeDeb, "-cover"))
 	return qa(ctx, testGroup, testPattern)
 }
 
 // Run QA tests (arguments: {testGroup} {testPattern})
 func (Test) QASnap(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
+	mg.Deps(mg.F(buildPackageDocker, PackageTypeDeb, "-cover"))
 	return qaSnap(ctx, testGroup, testPattern)
 }
 
@@ -605,7 +623,7 @@ func (Test) QASnapFast(ctx context.Context, testGroup, testPattern string) error
 
 // Run QA tests in Docker container (arguments: {testGroup} {testPattern})
 func (Test) QADocker(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
+	mg.Deps(mg.F(buildPackageDocker, PackageTypeDeb, "-cover"))
 	return qaDocker(ctx, testGroup, testPattern)
 }
 
@@ -616,7 +634,7 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 	matches, err := filepath.Glob(debPath)
 
 	if len(matches) == 0 || err != nil {
-		mg.Deps(mg.F(buildPackage, "deb", "-cover"))
+		mg.Deps(mg.F(buildPackage, PackageTypeDeb, "-cover"))
 	}
 
 	return qaDocker(ctx, testGroup, testPattern)
