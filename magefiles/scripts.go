@@ -50,7 +50,7 @@ func getVersions() (map[string]string, error) {
 }
 
 func getGitVersionTag() string {
-	cmd := exec.Command("git", "describe", "--tags", "--always")
+	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
 	out, err := cmd.Output()
 	if err != nil {
 		return "dev"
