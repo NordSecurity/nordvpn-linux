@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
@@ -15,7 +16,7 @@ func (r RemoteConfigGetterStub) GetTelioConfig() (string, error) {
 	return "", fmt.Errorf("no remote config getter was compiled into the app")
 }
 
-func getRemoteConfigGetter(_ config.BuildTarget, _ string, _ core.RemoteStorage, _ int) RemoteConfigGetterStub {
+func getRemoteConfigGetter(_ config.BuildTarget, _ string, _ core.RemoteStorage, _ remote.Analytics, _ int) RemoteConfigGetterStub {
 	return RemoteConfigGetterStub{}
 }
 func (r RemoteConfigGetterStub) IsFeatureEnabled(string) bool                { return false }

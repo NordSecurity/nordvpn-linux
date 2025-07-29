@@ -82,24 +82,8 @@ func (e DownloadErrorKind) String() string {
 	}
 }
 
-// FeatureName defines the name of a feature for remote config.
-type FeatureName int
-
 const (
-	FeatureMain FeatureName = iota
-	FeatureLibtelio
-	FeatureMeshnet
+	FeatureMain     = "nordvpn"
+	FeatureLibtelio = "libtelio"
+	FeatureMeshnet  = "meshnet"
 )
-
-func (f FeatureName) String() string {
-	switch f {
-	case FeatureMain:
-		return "nordvpn"
-	case FeatureLibtelio:
-		return "libtelio"
-	case FeatureMeshnet:
-		return "meshnet"
-	default:
-		return fmt.Sprintf("%d", int(f))
-	}
-}

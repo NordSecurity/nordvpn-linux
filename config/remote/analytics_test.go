@@ -31,14 +31,14 @@ func TestEventJSONOutput(t *testing.T) {
 			event:           NewRolloutEvent(ctx, "test-client", FeatureMeshnet, 50, true),
 			expectedResult:  rolloutYes,
 			expectedError:   "meshnet 42 / 50",
-			expectedMessage: FeatureMeshnet.String(),
+			expectedMessage: FeatureMeshnet,
 		},
 		{
 			name:            "Rollout Failure",
 			event:           NewRolloutEvent(ctx, "test-client", FeatureMeshnet, 50, false),
 			expectedResult:  rolloutNo,
 			expectedError:   "meshnet 42 / 50",
-			expectedMessage: FeatureMeshnet.String(),
+			expectedMessage: FeatureMeshnet,
 		},
 		{
 			name:            "Download Success",
@@ -79,9 +79,9 @@ func TestEventJSONOutput(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			mooseEvent := tc.event.ToMooseDebuggerEvent()
+			debugerEvent := tc.event.ToDebuggerEvent()
 			var decodedEvent Event
-			err := json.Unmarshal([]byte(mooseEvent.JsonData), &decodedEvent)
+			err := json.Unmarshal([]byte(debugerEvent.JsonData), &decodedEvent)
 			require.NoError(t, err, "JSON should be valid and parsable into remote-config event")
 
 			assert.Equal(t, messageNamespace, decodedEvent.MessageNamespace, "namespace should be correctly set")
@@ -94,13 +94,13 @@ func TestEventJSONOutput(t *testing.T) {
 	}
 }
 
-// TestMooseDebuggerEventContextPaths verifies that the ToMooseDebuggerEvent method
-// correctly generates MooseDebuggerEvent objects with the expected context paths.
+// TestDebuggerEventContextPaths verifies that the ToDebuggerEvent method
+// correctly generates DebuggerEvent objects with the expected context paths.
 // It tests that:
 //  1. The GeneralContextPaths includes device and application information paths
 //  2. The KeyBasedContextPaths contains all the relevant remote config download failure
 //     information including type, app version, country, ISP, error, feature name and rollout group
-func TestMooseDebuggerEventContextPaths(t *testing.T) {
+func TestDebuggerEventContextPaths(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	ctx := UserInfo{
@@ -109,7 +109,7 @@ func TestMooseDebuggerEventContextPaths(t *testing.T) {
 		ISP:          "TestISP",
 		RolloutGroup: 42,
 	}
-	event := NewDownloadFailureEvent(ctx, "test-client", FeatureLibtelio, DownloadErrorNetwork, "timeout").ToMooseDebuggerEvent()
+	debugerEvent := NewDownloadFailureEvent(ctx, "test-client", FeatureLibtelio, DownloadErrorNetwork, "timeout").ToDebuggerEvent()
 
 	expectedGeneralPaths := []string{
 		"device.*",
@@ -117,7 +117,7 @@ func TestMooseDebuggerEventContextPaths(t *testing.T) {
 		"application.nordvpnapp.version",
 		"application.nordvpnapp.platform",
 	}
-	assert.ElementsMatch(t, expectedGeneralPaths, event.GeneralContextPaths)
+	assert.ElementsMatch(t, expectedGeneralPaths, debugerEvent.GeneralContextPaths)
 
 	// Assert: Verify the KeyBased context paths.
 	expectedKeyBasedPaths := []events.ContextValue{
@@ -126,13 +126,13 @@ func TestMooseDebuggerEventContextPaths(t *testing.T) {
 		{Path: debuggerEventBaseKey + ".country", Value: "Testland"},
 		{Path: debuggerEventBaseKey + ".isp", Value: "TestISP"},
 		{Path: debuggerEventBaseKey + ".error", Value: DownloadErrorNetwork.String()},
-		{Path: debuggerEventBaseKey + ".feature_name", Value: FeatureLibtelio.String()},
+		{Path: debuggerEventBaseKey + ".feature_name", Value: FeatureLibtelio},
 		{Path: debuggerEventBaseKey + ".rollout_group", Value: 42},
 	}
-	assert.ElementsMatch(t, expectedKeyBasedPaths, event.KeyBasedContextPaths)
+	assert.ElementsMatch(t, expectedKeyBasedPaths, debugerEvent.KeyBasedContextPaths)
 }
 
-func TestMooseDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
+func TestDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
 	category.Set(t, category.Unit)
 	ctx := UserInfo{
 		AppVersion:   "9.8.7",
@@ -142,10 +142,10 @@ func TestMooseDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
 	}
 
 	event := NewDownloadFailureEvent(ctx, "test-env", FeatureLibtelio, DownloadErrorIntegrity, "Integrity corrupted")
-	mooseEvent := event.ToMooseDebuggerEvent()
+	debugerEvent := event.ToDebuggerEvent()
 
 	var payload map[string]interface{}
-	err := json.Unmarshal([]byte(mooseEvent.JsonData), &payload)
+	err := json.Unmarshal([]byte(debugerEvent.JsonData), &payload)
 	require.NoError(t, err, "JSON should be valid")
 
 	// Define the expected set of keys

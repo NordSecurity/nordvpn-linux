@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-func getRemoteConfigGetter(buildTarget config.BuildTarget, rpath string, cdn core.RemoteStorage, appRollout int) *remote.CdnRemoteConfig {
-	return remote.NewCdnRemoteConfig(buildTarget, rpath, internal.ConfigFilesPathCommon, cdn, appRollout)
+func getRemoteConfigGetter(buildTarget config.BuildTarget, rpath string,
+	cdn core.RemoteStorage, rcAna remote.Analytics, appRollout int) *remote.CdnRemoteConfig {
+	return remote.NewCdnRemoteConfig(buildTarget, rpath, internal.ConfigFilesPathCommon, cdn, rcAna, appRollout)
 }

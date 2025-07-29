@@ -43,11 +43,13 @@ type CdnRemoteConfig struct {
 	cdn            core.RemoteStorage
 	features       *FeatureMap
 	rolloutGroup   int
+	ana            Analytics
 	mu             sync.RWMutex
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
-func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string, cdn core.RemoteStorage, appRollout int) *CdnRemoteConfig {
+func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string,
+	cdn core.RemoteStorage, ana Analytics, appRollout int) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
 		appVersion:     buildTarget.Version,
 		appEnvironment: buildTarget.Environment,
@@ -55,11 +57,12 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		localCachePath: localPath,
 		cdn:            cdn,
 		rolloutGroup:   appRollout,
+		ana:            ana,
 		features:       NewFeatureMap(),
 	}
-	rc.features.add(FeatureMain.String())
-	rc.features.add(FeatureLibtelio.String())
-	rc.features.add(FeatureMeshnet.String())
+	rc.features.add(FeatureMain)
+	rc.features.add(FeatureLibtelio)
+	rc.features.add(FeatureMeshnet)
 	return rc
 }
 
@@ -131,6 +134,7 @@ func (c *CdnRemoteConfig) download() error {
 		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "failed downloading feature [", feature.name, "] remote config:", err)
+			c.ana.NotifyDownload("cli", feature.name, err) // TODO/FIXME: adjust/finalize
 			if isNetworkRetryable(err) {
 				return err
 			}
@@ -139,6 +143,7 @@ func (c *CdnRemoteConfig) download() error {
 		if dnld {
 			// only if remote config was really downloaded
 			log.Println(internal.InfoPrefix, "feature [", feature.name, "] remote config downloaded to:", c.localCachePath)
+			c.ana.NotifyDownload("cli", feature.name, err) // TODO/FIXME: adjust/finalize
 		}
 	}
 	return nil
@@ -152,9 +157,11 @@ func (c *CdnRemoteConfig) load() error {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
 			log.Println(internal.ErrorPrefix, "failed loading feature [", feature.name, "] config from the disk:", err)
+			c.ana.NotifyLocalUse("cli", feature.name, err)
 			continue
 		}
 		log.Println(internal.InfoPrefix, "feature [", feature.name, "] config loaded from:", c.localCachePath)
+		c.ana.NotifyLocalUse("cli", feature.name, nil)
 	}
 	return nil
 }
@@ -187,7 +194,7 @@ func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamV
 }
 
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
-	return c.GetFeatureParam(FeatureLibtelio.String(), FeatureLibtelio.String())
+	return c.GetFeatureParam(FeatureLibtelio, FeatureLibtelio)
 }
 
 func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	devents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -278,7 +279,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 		{
@@ -286,7 +287,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.1.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: true,
 		},
 		{
@@ -294,7 +295,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    true,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 	}
@@ -406,6 +407,10 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 }
 
 func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
+	mle := subs.Subject[events.DebuggerEvent]{}
+	ve := devents.DebuggerEvents{
+		DebuggerEvents: &mle,
+	}
 	rc := &CdnRemoteConfig{
 		appVersion:     ver,
 		appEnvironment: env,
@@ -413,9 +418,10 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConf
 		localCachePath: localPath,
 		cdn:            cdn,
 		features:       NewFeatureMap(),
+		ana:            NewMooseAnalytics(ve, "", 10),
 	}
-	rc.features.add(FeatureMain.String())
-	rc.features.add(FeatureLibtelio.String())
+	rc.features.add(FeatureMain)
+	rc.features.add(FeatureLibtelio)
 	rc.features.add(testFeatureNoRc)
 	rc.features.add(testFeatureWithRc)
 	return rc

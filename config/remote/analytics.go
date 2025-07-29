@@ -35,20 +35,20 @@ type Event struct {
 	RolloutPerformed bool   `json:"-"`
 }
 
-func NewDownloadSuccessEvent(info UserInfo, client string, featureName FeatureName) Event {
+func NewDownloadSuccessEvent(info UserInfo, client string, featureName string) Event {
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName.String(),
+		FeatureName: featureName,
 		Event:       DownloadSuccess.String(),
 	}
 }
 
-func NewDownloadFailureEvent(info UserInfo, client string, featureName FeatureName, errorKind DownloadErrorKind, errorMessage string) Event {
+func NewDownloadFailureEvent(info UserInfo, client string, featureName string, errorKind DownloadErrorKind, errorMessage string) Event {
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName.String(),
+		FeatureName: featureName,
 		Event:       DownloadFailure.String(),
 		EventDetails: EventDetails{
 			Error:   errorKind.String(),
@@ -57,16 +57,16 @@ func NewDownloadFailureEvent(info UserInfo, client string, featureName FeatureNa
 	}
 }
 
-func NewLocalUseEvent(info UserInfo, client string, featureName FeatureName) Event {
+func NewLocalUseEvent(info UserInfo, client string, featureName string) Event {
 	return Event{
 		UserInfo:    info,
 		Client:      client,
-		FeatureName: featureName.String(),
+		FeatureName: featureName,
 		Event:       LocalUse.String(),
 	}
 }
 
-func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, errorKind, errorMessage string) Event {
+func NewJSONParseEvent(info UserInfo, client string, featureName string, errorKind, errorMessage string) Event {
 	details := EventDetails{}
 	var eventType EventType
 	if errorKind != "" {
@@ -80,29 +80,29 @@ func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, er
 	return Event{
 		UserInfo:     info,
 		Client:       client,
-		FeatureName:  featureName.String(),
+		FeatureName:  featureName,
 		Event:        eventType.String(),
 		EventDetails: details,
 	}
 }
 
-func NewRolloutEvent(info UserInfo, client string, featureName FeatureName, featureRollout int, rolloutPerformed bool) Event {
+func NewRolloutEvent(info UserInfo, client string, featureName string, featureRollout int, rolloutPerformed bool) Event {
 	details := EventDetails{
-		Error:   fmt.Sprintf("%s %d / %d", featureName.String(), info.RolloutGroup, featureRollout),
-		Message: featureName.String(),
+		Error:   fmt.Sprintf("%s %d / %d", featureName, info.RolloutGroup, featureRollout),
+		Message: featureName,
 	}
 
 	return Event{
 		UserInfo:         info,
 		Client:           client,
-		FeatureName:      featureName.String(),
+		FeatureName:      featureName,
 		Event:            Rollout.String(),
 		EventDetails:     details,
 		RolloutPerformed: rolloutPerformed,
 	}
 }
 
-func (e Event) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
+func (e Event) ToDebuggerEvent() *events.DebuggerEvent {
 	eventToMarshal := e
 	eventToMarshal.MessageNamespace = messageNamespace
 	eventToMarshal.Subscope = subscope
@@ -154,7 +154,7 @@ func (e Event) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
 			jsonData = []byte(`{}`)
 		}
 	}
-	return events.NewMooseDebuggerEvent(string(jsonData)).
+	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
 			events.ContextValue{Path: debuggerEventBaseKey + ".type", Value: e.Event},
 			events.ContextValue{Path: debuggerEventBaseKey + ".app_version", Value: e.AppVersion},
