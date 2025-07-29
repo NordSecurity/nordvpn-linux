@@ -1872,7 +1872,6 @@ func (s *Server) connect(
 	} else {
 		nameservers = s.nameservers.Get(
 			cfg.AutoConnectData.ThreatProtectionLite,
-			false,
 		)
 	}
 

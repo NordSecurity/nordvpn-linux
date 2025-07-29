@@ -55,11 +55,8 @@ func TestGetNetworkInfo(t *testing.T) {
 	category.Set(t, category.Route, category.Firewall)
 	str := getNetworkInfo()
 	assert.Contains(t, str, "Routes for ipv4")
-	assert.Contains(t, str, "Routes for ipv6")
 	assert.Contains(t, str, "IP rules for ipv4")
-	assert.Contains(t, str, "IP rules for ipv6")
 	assert.Contains(t, str, "IP tables for ipv4")
-	assert.Contains(t, str, "IP tables for ipv6")
 }
 
 const (

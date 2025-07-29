@@ -28,7 +28,6 @@ func (*dummyAnalytics) NotifyFirewall(bool) error                           { re
 func (*dummyAnalytics) NotifyRouting(bool) error                            { return nil }
 func (*dummyAnalytics) NotifyNotify(bool) error                             { return nil }
 func (*dummyAnalytics) NotifyMeshnet(bool) error                            { return nil }
-func (*dummyAnalytics) NotifyIpv6(bool) error                               { return nil }
 func (*dummyAnalytics) NotifyDefaults(any) error                            { return nil }
 func (*dummyAnalytics) NotifyConnect(events.DataConnect) error              { return nil }
 func (*dummyAnalytics) NotifyDisconnect(events.DataDisconnect) error        { return nil }

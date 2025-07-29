@@ -43,7 +43,6 @@ func (mockDaemonSubscriber) NotifyObfuscate(bool) error                         
 func (mockDaemonSubscriber) NotifyNotify(bool) error                             { return nil }
 func (mockDaemonSubscriber) NotifyFirewall(bool) error                           { return nil }
 func (mockDaemonSubscriber) NotifyRouting(bool) error                            { return nil }
-func (mockDaemonSubscriber) NotifyIpv6(bool) error                               { return nil }
 func (mockDaemonSubscriber) NotifyDefaults(any) error                            { return nil }
 func (mockDaemonSubscriber) NotifyMeshnet(bool) error                            { return nil }
 func (mockDaemonSubscriber) NotifyUiItemsClick(events.UiItemsAction) error       { return nil }

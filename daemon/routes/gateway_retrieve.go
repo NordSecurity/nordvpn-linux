@@ -29,6 +29,5 @@ type GatewayRetriever interface {
 	//
 	// Default gateway can be retrieved with such `prefix` values:
 	// * IPv4: `netip.Prefix{}` or `0.0.0.0/0`
-	// * IPv6: `::/0`
 	Retrieve(prefix netip.Prefix, ignoreTable uint) (netip.Addr, net.Interface, error)
 }

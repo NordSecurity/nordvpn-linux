@@ -61,7 +61,6 @@ service Daemon {
   rpc SettingsProtocols(Empty) returns (Payload);
   rpc SettingsTechnologies(Empty) returns (Payload);
   rpc Status(Empty) returns (StatusResponse);
-  rpc SetIpv6(SetGenericRequest) returns (Payload);
   rpc ClaimOnlinePurchase(Empty) returns(ClaimOnlinePurchaseResponse);
   rpc SetVirtualLocation(SetGenericRequest) returns (Payload);
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
