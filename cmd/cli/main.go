@@ -14,6 +14,8 @@ import (
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/cli"
+	"github.com/NordSecurity/nordvpn-linux/clientid"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
@@ -88,14 +90,18 @@ func main() {
 	}
 	log.SetOutput(fileLogger)
 
+	clientIDMetadataInterceptor := clientid.NewInsertClientIDInterceptor(pb.ClientID_CLI)
+
 	loaderInterceptor := cli.LoaderInterceptor{}
 	conn, err := grpc.Dial(
 		DaemonURL,
 		// Insecure credentials are OK because the connection is completely local and
 		// protected by file permissions
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(loaderInterceptor.UnaryInterceptor),
-		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),
+		grpc.WithChainUnaryInterceptor(loaderInterceptor.UnaryInterceptor,
+			clientIDMetadataInterceptor.SetMetadataUnaryInterceptor),
+		grpc.WithChainStreamInterceptor(loaderInterceptor.StreamInterceptor,
+			clientIDMetadataInterceptor.SetMetadataStreamInterceptor),
 	)
 	fileshareConn, err := grpc.Dial(
 		fileshare_process.FileshareURL,

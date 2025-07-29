@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
+	"github.com/NordSecurity/nordvpn-linux/clientid"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
@@ -66,9 +67,13 @@ func addAutostart() (string, error) {
 
 func startTray(quitChan chan<- norduser.StopRequest) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
+	cliendIDMetadataInterceptor := clientid.NewInsertClientIDInterceptor(daemonpb.ClientID_TRAY)
+
 	conn, err := grpc.Dial(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(cliendIDMetadataInterceptor.SetMetadataUnaryInterceptor),
+		grpc.WithStreamInterceptor(cliendIDMetadataInterceptor.SetMetadataStreamInterceptor),
 	)
 
 	var client daemonpb.DaemonClient
