@@ -86,7 +86,7 @@ func TestEventJSONOutput(t *testing.T) {
 
 			assert.Equal(t, messageNamespace, decodedEvent.MessageNamespace, "namespace should be correctly set")
 			assert.Equal(t, subscope, decodedEvent.Subscope, "subscope should be correctly set")
-			assert.Equal(t, tc.event.Type, decodedEvent.Type, "event type should match")
+			assert.Equal(t, tc.event.Event, decodedEvent.Event, "event type should match")
 			assert.Equal(t, tc.expectedResult, decodedEvent.Result, "result should match expected")
 			assert.Equal(t, tc.expectedError, decodedEvent.Error, "error message should match expected")
 			assert.Equal(t, tc.expectedMessage, decodedEvent.Message, "message content should match expected")
@@ -121,13 +121,57 @@ func TestMooseDebuggerEventContextPaths(t *testing.T) {
 
 	// Assert: Verify the KeyBased context paths.
 	expectedKeyBasedPaths := []events.ContextValue{
-		{Path: debuggerEventBaseKey + ".type", Value: DownloadFailure},
+		{Path: debuggerEventBaseKey + ".type", Value: DownloadFailure.String()},
 		{Path: debuggerEventBaseKey + ".app_version", Value: "3.1.0"},
 		{Path: debuggerEventBaseKey + ".country", Value: "Testland"},
 		{Path: debuggerEventBaseKey + ".isp", Value: "TestISP"},
 		{Path: debuggerEventBaseKey + ".error", Value: DownloadErrorNetwork.String()},
-		{Path: debuggerEventBaseKey + ".feature_name", Value: "libtelio"},
+		{Path: debuggerEventBaseKey + ".feature_name", Value: FeatureLibtelio.String()},
 		{Path: debuggerEventBaseKey + ".rollout_group", Value: 42},
 	}
 	assert.ElementsMatch(t, expectedKeyBasedPaths, event.KeyBasedContextPaths)
+}
+
+func TestMooseDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
+	category.Set(t, category.Unit)
+	ctx := UserInfo{
+		AppVersion:   "9.8.7",
+		Country:      "AA",
+		ISP:          "Testland ISP",
+		RolloutGroup: 99,
+	}
+
+	event := NewDownloadFailureEvent(ctx, "test-env", FeatureLibtelio, DownloadErrorIntegrity, "Integrity corrupted")
+	mooseEvent := event.ToMooseDebuggerEvent()
+
+	var payload map[string]interface{}
+	err := json.Unmarshal([]byte(mooseEvent.JsonData), &payload)
+	require.NoError(t, err, "JSON should be valid")
+
+	// Define the expected set of keys
+	expectedKeys := []string{
+		"namespace",
+		"subscope",
+		"client",
+		"event",
+		"result",
+		"error",
+		"message",
+	}
+
+	// Check that the keys match exactly
+	var actualKeys []string
+	for k := range payload {
+		actualKeys = append(actualKeys, k)
+	}
+	assert.ElementsMatch(t, expectedKeys, actualKeys, "JSON fields should match expected set")
+
+	// Optionally, check that the names are correct and values are as expected
+	assert.Equal(t, messageNamespace, payload["namespace"])
+	assert.Equal(t, subscope, payload["subscope"])
+	assert.Equal(t, "test-env", payload["client"])
+	assert.Equal(t, DownloadFailure.String(), payload["event"])
+	assert.Equal(t, rcFailure, payload["result"])
+	assert.Equal(t, DownloadErrorIntegrity.String(), payload["error"])
+	assert.Equal(t, "Integrity corrupted", payload["message"])
 }

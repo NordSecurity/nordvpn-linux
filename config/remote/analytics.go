@@ -10,29 +10,29 @@ import (
 )
 
 type UserInfo struct {
-	AppVersion   string `json:"app_version"`
-	Country      string `json:"country"`
-	ISP          string `json:"isp"`
-	RolloutGroup int    `json:"rollout_group"`
+	AppVersion   string
+	Country      string
+	ISP          string
+	RolloutGroup int
 }
 
 // EventDetails holds optional details for an event.
 type EventDetails struct {
-	Error   string `json:"error,omitempty"`
-	Message string `json:"message,omitempty"`
+	Error   string `json:"error"`
+	Message string `json:"message"`
 }
 
 // Event is the main analytics event structure.
 type Event struct {
-	UserInfo
+	UserInfo `json:"-"`
 	EventDetails
-	MessageNamespace string    `json:"namespace"`
-	Result           string    `json:"result"`
-	Subscope         string    `json:"subscope"`
-	Client           string    `json:"client,omitempty"`
-	FeatureName      string    `json:"feature_name"`
-	Type             EventType `json:"type"`
-	RolloutPerformed bool
+	MessageNamespace string `json:"namespace"`
+	Subscope         string `json:"subscope"`
+	Client           string `json:"client"`
+	Event            string `json:"event"`
+	Result           string `json:"result"`
+	FeatureName      string `json:"-"`
+	RolloutPerformed bool   `json:"-"`
 }
 
 func NewDownloadSuccessEvent(info UserInfo, client string, featureName FeatureName) Event {
@@ -40,7 +40,7 @@ func NewDownloadSuccessEvent(info UserInfo, client string, featureName FeatureNa
 		UserInfo:    info,
 		Client:      client,
 		FeatureName: featureName.String(),
-		Type:        DownloadSuccess,
+		Event:       DownloadSuccess.String(),
 	}
 }
 
@@ -49,7 +49,7 @@ func NewDownloadFailureEvent(info UserInfo, client string, featureName FeatureNa
 		UserInfo:    info,
 		Client:      client,
 		FeatureName: featureName.String(),
-		Type:        DownloadFailure,
+		Event:       DownloadFailure.String(),
 		EventDetails: EventDetails{
 			Error:   errorKind.String(),
 			Message: errorMessage,
@@ -62,7 +62,7 @@ func NewLocalUseEvent(info UserInfo, client string, featureName FeatureName) Eve
 		UserInfo:    info,
 		Client:      client,
 		FeatureName: featureName.String(),
-		Type:        LocalUse,
+		Event:       LocalUse.String(),
 	}
 }
 
@@ -81,7 +81,7 @@ func NewJSONParseEvent(info UserInfo, client string, featureName FeatureName, er
 		UserInfo:     info,
 		Client:       client,
 		FeatureName:  featureName.String(),
-		Type:         eventType,
+		Event:        eventType.String(),
 		EventDetails: details,
 	}
 }
@@ -96,7 +96,7 @@ func NewRolloutEvent(info UserInfo, client string, featureName FeatureName, feat
 		UserInfo:         info,
 		Client:           client,
 		FeatureName:      featureName.String(),
-		Type:             Rollout,
+		Event:            Rollout.String(),
 		EventDetails:     details,
 		RolloutPerformed: rolloutPerformed,
 	}
@@ -106,9 +106,9 @@ func (e Event) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
 	eventToMarshal := e
 	eventToMarshal.MessageNamespace = messageNamespace
 	eventToMarshal.Subscope = subscope
-	if e.Type == Rollout {
-		// rollout events have a different result values -> yes|no
-		// while other events have success|failure
+	if e.Event == Rollout.String() {
+		// rollout events have a different result values: yes|no
+		// while other events have: success|failure
 		if e.RolloutPerformed {
 			eventToMarshal.Result = rolloutYes
 		} else {
@@ -128,19 +128,19 @@ func (e Event) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
 		log.Printf("%s%s Failed to marshal Event to JSON %s. Fallback to a limited set of data\n", internal.WarningPrefix, logPrefix, err)
 
 		fallbackData := struct {
-			MessageNamespace string    `json:"namespace"`
-			Subscope         string    `json:"subscope"`
-			Client           string    `json:"client"`
-			Type             EventType `json:"type"`
-			Result           string    `json:"result"`
-			Error            string    `json:"error"`
-			FeatureName      string    `json:"feature_name"`
-			RolloutGroup     int       `json:"rollout_group"`
+			MessageNamespace string `json:"namespace"`
+			Subscope         string `json:"subscope"`
+			Client           string `json:"client"`
+			Event            string `json:"event"`
+			Result           string `json:"result"`
+			Error            string `json:"error"`
+			FeatureName      string `json:"feature_name"`
+			RolloutGroup     int    `json:"rollout_group"`
 		}{
 			MessageNamespace: messageNamespace,
 			Subscope:         subscope,
 			Client:           e.Client,
-			Type:             e.Type,
+			Event:            e.Event,
 			Result:           eventToMarshal.Result,
 			Error:            err.Error(),
 			FeatureName:      e.FeatureName,
@@ -156,7 +156,7 @@ func (e Event) ToMooseDebuggerEvent() *events.MooseDebuggerEvent {
 	}
 	return events.NewMooseDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
-			events.ContextValue{Path: debuggerEventBaseKey + ".type", Value: e.Type},
+			events.ContextValue{Path: debuggerEventBaseKey + ".type", Value: e.Event},
 			events.ContextValue{Path: debuggerEventBaseKey + ".app_version", Value: e.AppVersion},
 			events.ContextValue{Path: debuggerEventBaseKey + ".country", Value: e.Country},
 			events.ContextValue{Path: debuggerEventBaseKey + ".isp", Value: e.ISP},
