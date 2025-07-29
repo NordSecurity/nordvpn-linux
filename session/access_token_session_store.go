@@ -45,18 +45,19 @@ func NewAccessTokenSessionStore(
 // Renew iterates over stored user tokens and attempts to renew each one that has expired.
 // Returns a combined error if one or more renewals fail.
 func (s *AccessTokenSessionStore) Renew() error {
-	var cfg config.Config
-	if err := s.cfgManager.Load(&cfg); err != nil {
-		return err
-	}
-
 	err := s.validator.Validate(s)
 	if err == nil {
 		return nil
 	}
+
 	// if this error happens, then there is no way to recover
 	if errors.Is(err, ErrAccessTokenRevoked) {
 		s.Invalidate(ErrAccessTokenRevoked)
+		return err
+	}
+
+	var cfg config.Config
+	if err := s.cfgManager.Load(&cfg); err != nil {
 		return err
 	}
 

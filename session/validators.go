@@ -62,12 +62,12 @@ func NewCredentialValidator(fn func(username, password string) error) SessionSto
 }
 
 type CompositeValidator struct {
-	Validators []SessionStoreValidator
+	validators []SessionStoreValidator
 }
 
 // Validate runs all validators in sequence, stopping at first error.
 func (c *CompositeValidator) Validate(session any) error {
-	for _, v := range c.Validators {
+	for _, v := range c.validators {
 		if err := v.Validate(session); err != nil {
 			return err
 		}
@@ -78,5 +78,5 @@ func (c *CompositeValidator) Validate(session any) error {
 
 // NewCompositeValidator creates a validator that runs multiple validators sequentially.
 func NewCompositeValidator(validators ...SessionStoreValidator) SessionStoreValidator {
-	return &CompositeValidator{Validators: validators}
+	return &CompositeValidator{validators: validators}
 }
