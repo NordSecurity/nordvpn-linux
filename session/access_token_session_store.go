@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -98,18 +99,27 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 
 	resp, err := s.renewAPICall(data.Token, *data.IdempotencyKey)
 	if err == nil {
-		data.Token = resp.Token
-		data.RenewToken = resp.RenewToken
-		data.TokenExpiry = resp.ExpiresAt
+		if err = s.SetToken(resp.Token); err != nil {
+			return err
+		}
 
-		return s.cfgManager.SaveWith(func(c config.Config) config.Config {
-			td := c.TokensData[uid]
-			td.Token = data.Token
-			td.RenewToken = data.RenewToken
-			td.TokenExpiry = data.TokenExpiry
-			c.TokensData[uid] = td
-			return c
-		})
+		if err = s.SetRenewToken(resp.RenewToken); err != nil {
+			s.session.reset()
+			return err
+		}
+
+		expTime, errParse := time.Parse(internal.ServerDateFormat, resp.ExpiresAt)
+		if errParse != nil {
+			s.session.reset()
+			return err
+		}
+
+		if err = s.SetExpiry(expTime); err != nil {
+			s.session.reset()
+			return err
+		}
+
+		return nil
 	}
 
 	if errors.Is(err, ErrUnauthorized) || errors.Is(err, ErrNotFound) || errors.Is(err, ErrBadRequest) {

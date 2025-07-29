@@ -52,7 +52,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: 123},
 			TokensData: map[int64]config.TokenData{
-				123: {Token: "token", RenewToken: "renew", TokenExpiry: "2025-01-01"},
+				123: {Token: "token", RenewToken: "renew", TokenExpiry: "2025-01-01 10:10:10"},
 			},
 		}
 
@@ -80,7 +80,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: 123},
 			TokensData: map[int64]config.TokenData{
-				123: {Token: "token", RenewToken: "renew", TokenExpiry: "2025-01-01"},
+				123: {Token: "token", RenewToken: "renew", TokenExpiry: "2025-01-01 10:10:10"},
 			},
 		}
 
@@ -116,7 +116,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 				uid: {
 					Token:          "old-token",
 					RenewToken:     "old-renew",
-					TokenExpiry:    "2025-01-01",
+					TokenExpiry:    "2025-01-01 10:10:10",
 					IdempotencyKey: &idempotencyKey,
 				},
 			},
@@ -146,7 +146,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			return &session.AccessTokenResponse{
 				Token:      "new-token",
 				RenewToken: "new-renew",
-				ExpiresAt:  "2025-02-01",
+				ExpiresAt:  "2025-02-01 10:10:10",
 			}, nil
 		}
 
@@ -162,7 +162,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 
 		assert.Equal(t, "new-token", cfgManager.config.TokensData[uid].Token)
 		assert.Equal(t, "new-renew", cfgManager.config.TokensData[uid].RenewToken)
-		assert.Equal(t, "2025-02-01", cfgManager.config.TokensData[uid].TokenExpiry)
+		assert.Equal(t, "2025-02-01 10:10:10", cfgManager.config.TokensData[uid].TokenExpiry)
 	})
 
 	t.Run("should set idempotency key if not present", func(t *testing.T) {
@@ -173,7 +173,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 				uid: {
 					Token:          "old-token",
 					RenewToken:     "old-renew",
-					TokenExpiry:    "2025-01-01",
+					TokenExpiry:    "2025-01-01 10:10:10",
 					IdempotencyKey: nil,
 				},
 			},
@@ -195,7 +195,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			return &session.AccessTokenResponse{
 				Token:      "new-token",
 				RenewToken: "new-renew",
-				ExpiresAt:  "2025-02-01",
+				ExpiresAt:  "2025-02-01 10:10:10",
 			}, nil
 		}
 
@@ -217,7 +217,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 				uid: {
 					Token:          "old-token",
 					RenewToken:     "old-renew",
-					TokenExpiry:    "2025-01-01",
+					TokenExpiry:    "2025-01-01 10:10:10",
 					IdempotencyKey: &idempotencyKey,
 				},
 			},
