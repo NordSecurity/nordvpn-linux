@@ -623,7 +623,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 //
 // Parameters:
 //   - e: The MooseDebuggerEvent containing JSON data and context paths to process
-func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
+func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 	combinedPaths := append([]string{}, e.GeneralContextPaths...)
 	key := moose.MooseNordvpnappGetDeveloperContextKey()
 	for _, ctx := range e.KeyBasedContextPaths {
