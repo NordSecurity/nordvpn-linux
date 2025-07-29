@@ -99,11 +99,11 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 
 	resp, err := s.renewAPICall(data.Token, *data.IdempotencyKey)
 	if err == nil {
-		if err = s.session.SetToken(resp.Token); err != nil {
+		if err = s.SetToken(resp.Token); err != nil {
 			return err
 		}
 
-		if err = s.session.SetRenewToken(resp.RenewToken); err != nil {
+		if err = s.SetRenewToken(resp.RenewToken); err != nil {
 			s.session.reset()
 			return err
 		}
@@ -114,7 +114,7 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 			return err
 		}
 
-		if err = s.session.SetExpiry(expTime); err != nil {
+		if err = s.SetExpiry(expTime); err != nil {
 			s.session.reset()
 			return err
 		}
