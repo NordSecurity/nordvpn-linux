@@ -38,9 +38,9 @@ const (
 )
 
 const (
-	PackageTypeSnap = "snap"
-	PackageTypeRPM  = "rpm"
-	PackageTypeDeb  = "deb"
+	packageTypeSnap = "snap"
+	packageTypeRPM  = "rpm"
+	packageTypeDeb  = "deb"
 )
 
 // Aliases shorthands for daily commands
@@ -279,9 +279,9 @@ func buildPackage(packageType string, buildFlags string) error {
 
 	env["WORKDIR"] = cwd
 	switch packageType {
-	case PackageTypeSnap:
+	case packageTypeSnap:
 		return sh.RunWithV(env, "ci/build_snap.sh")
-	case PackageTypeDeb, PackageTypeRPM:
+	case packageTypeDeb, packageTypeRPM:
 		return sh.RunWithV(env, "ci/nfpm/build_packages_resources.sh", packageType)
 	}
 
@@ -290,17 +290,17 @@ func buildPackage(packageType string, buildFlags string) error {
 
 // Deb package for the host architecture
 func (Build) Deb() error {
-	return buildPackage(PackageTypeDeb, "")
+	return buildPackage(packageTypeDeb, "")
 }
 
 // Rpm package for the host architecture
 func (Build) Rpm() error {
-	return buildPackage(PackageTypeRPM, "")
+	return buildPackage(packageTypeRPM, "")
 }
 
 // Snap package for the host architecture
 func (Build) Snap() error {
-	return buildPackage(PackageTypeSnap, "")
+	return buildPackage(packageTypeSnap, "")
 }
 
 func buildPackageDocker(ctx context.Context, packageType string, buildFlags string) error {
@@ -323,7 +323,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["VERSION"] = getGitVersionTag()
 
 	switch packageType {
-	case PackageTypeSnap:
+	case packageTypeSnap:
 		env["DOCKER_ENV"] = "1"
 		return RunDockerWithSettings(
 			ctx,
@@ -332,7 +332,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 			[]string{"ci/build_snap.sh"},
 			DockerSettings{Privileged: true},
 		)
-	case PackageTypeDeb, PackageTypeRPM:
+	case packageTypeDeb, packageTypeRPM:
 		return RunDocker(
 			ctx,
 			env,
@@ -346,17 +346,17 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 
 // DebDocker package using Docker builder
 func (Build) DebDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, PackageTypeDeb, "")
+	return buildPackageDocker(ctx, packageTypeDeb, "")
 }
 
 // RpmDocker package using Docker builder
 func (Build) RpmDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, PackageTypeRPM, "")
+	return buildPackageDocker(ctx, packageTypeRPM, "")
 }
 
 // SnapDocker package using Docker builder
 func (Build) SnapDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, PackageTypeSnap, "")
+	return buildPackageDocker(ctx, packageTypeSnap, "")
 }
 
 func buildBinaries(buildFlags string) error {
@@ -606,13 +606,13 @@ func (Test) Hardening(ctx context.Context) error {
 
 // Run QA tests (arguments: {testGroup} {testPattern})
 func (Test) QA(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackage, PackageTypeDeb, "-cover"))
+	mg.Deps(mg.F(buildPackage, packageTypeDeb, "-cover"))
 	return qa(ctx, testGroup, testPattern)
 }
 
 // Run QA tests (arguments: {testGroup} {testPattern})
 func (Test) QASnap(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackageDocker, PackageTypeDeb, "-cover"))
+	mg.Deps(mg.F(buildPackageDocker, packageTypeDeb, "-cover"))
 	return qaSnap(ctx, testGroup, testPattern)
 }
 
@@ -623,7 +623,7 @@ func (Test) QASnapFast(ctx context.Context, testGroup, testPattern string) error
 
 // Run QA tests in Docker container (arguments: {testGroup} {testPattern})
 func (Test) QADocker(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackageDocker, PackageTypeDeb, "-cover"))
+	mg.Deps(mg.F(buildPackageDocker, packageTypeDeb, "-cover"))
 	return qaDocker(ctx, testGroup, testPattern)
 }
 
@@ -634,7 +634,7 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 	matches, err := filepath.Glob(debPath)
 
 	if len(matches) == 0 || err != nil {
-		mg.Deps(mg.F(buildPackage, PackageTypeDeb, "-cover"))
+		mg.Deps(mg.F(buildPackage, packageTypeDeb, "-cover"))
 	}
 
 	return qaDocker(ctx, testGroup, testPattern)
