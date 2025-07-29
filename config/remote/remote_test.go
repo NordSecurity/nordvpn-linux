@@ -47,6 +47,12 @@ func waitForServer() error {
 	return fmt.Errorf("server at %s did not become ready in time", addr)
 }
 
+// modTimeNanos is a helper function to get the nanosecond part of the file modification time.
+// To be used with the conjunction with the assertEventuallyGreater function.
+func modTimeNanos(fi os.FileInfo) func() int {
+	return func() int { return fi.ModTime().Nanosecond() }
+}
+
 // assertEventuallyGreater checks that the new value eventually becomes greater than the old value within the timeout period.
 func assertEventuallyGreater(t *testing.T, getNew, getOld func() int, timeout time.Duration) {
 	deadline := time.Now().Add(timeout)
@@ -386,9 +392,9 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	// files are modified on disk - should be greater time
 	// sometimes I/O operations can get delayed, thus here we use active-waiting approach bounded by the timeout
 	timeout := 2 * time.Second
-	assertEventuallyGreater(t, func() int { return info3.ModTime().Nanosecond() }, func() int { return info1.ModTime().Nanosecond() }, timeout)
-	assertEventuallyGreater(t, func() int { return info3inc1.ModTime().Nanosecond() }, func() int { return info1inc1.ModTime().Nanosecond() }, timeout)
-	assertEventuallyGreater(t, func() int { return info3inc2.ModTime().Nanosecond() }, func() int { return info1inc2.ModTime().Nanosecond() }, timeout)
+	assertEventuallyGreater(t, modTimeNanos(info3), modTimeNanos(info1), timeout)
+	assertEventuallyGreater(t, modTimeNanos(info3inc1), modTimeNanos(info1inc1), timeout)
+	assertEventuallyGreater(t, modTimeNanos(info3inc2), modTimeNanos(info1inc2), timeout)
 
 	stopWebServer()
 }
