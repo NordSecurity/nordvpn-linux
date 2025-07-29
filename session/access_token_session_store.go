@@ -56,6 +56,7 @@ func (s *AccessTokenSessionStore) Renew() error {
 	}
 	// if this error happens, then there is no way to recover
 	if errors.Is(err, ErrAccessTokenRevoked) {
+		s.Invalidate(ErrAccessTokenRevoked)
 		return err
 	}
 

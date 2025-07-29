@@ -542,7 +542,7 @@ func main() {
 				log.Println(internal.DebugPrefix, "successfully logged out after detecting invalid session")
 			}
 		},
-		session.ErrUnauthorized, session.ErrNotFound, session.ErrBadRequest,
+		session.ErrAccessTokenRevoked, session.ErrUnauthorized, session.ErrNotFound, session.ErrBadRequest,
 	)
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
