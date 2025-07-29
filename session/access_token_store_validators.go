@@ -34,7 +34,7 @@ func NewManualAccessTokenValidator(api AnyIdempotentAPICallWithToken) SessionSto
 	return &manualAccessTokenValidator{
 		ValidateFunc: func(token string, expiryDate time.Time) error {
 			if expiryDate.Equal(ManualAccessTokenExpiryDate) {
-				// here we have a manually issuesed access token
+				// here we have a manually issued access token
 				var isFormatValid = internal.AccessTokenFormatValidator
 				if !isFormatValid(token) {
 					return fmt.Errorf("invalid access token format: %w", ErrAccessTokenExpired)
@@ -45,9 +45,8 @@ func NewManualAccessTokenValidator(api AnyIdempotentAPICallWithToken) SessionSto
 				if errors.Is(err, ErrUnauthorized) {
 					return ErrAccessTokenRevoked
 				}
-
-				return nil
 			}
+
 			return nil
 		},
 	}
