@@ -83,10 +83,37 @@ func (f Feature) HashFilePath(basePath string) string {
 	return filepath.Join(basePath, f.name) + "-hash.json"
 }
 
-type FeatureMap map[string]*Feature
+type FeatureMap struct {
+	featureKeys []string
+	featureMap  map[string]*Feature
+}
 
-func (m *FeatureMap) Add(name string) {
-	(*m)[name] = &Feature{
+func NewFeatureMap() *FeatureMap {
+	return &FeatureMap{
+		featureKeys: make([]string, 0),
+		featureMap:  make(map[string]*Feature),
+	}
+}
+
+func (m *FeatureMap) keys() []string {
+	return m.featureKeys
+}
+
+func (m *FeatureMap) features() map[string]*Feature {
+	return m.featureMap
+}
+
+func (m *FeatureMap) add(name string) {
+	m.featureKeys = append(m.featureKeys, name)
+	m.featureMap[name] = &Feature{
 		name: name,
 	}
+}
+
+func (m *FeatureMap) get(name string) *Feature {
+	f, ok := m.featureMap[name]
+	if ok {
+		return f
+	}
+	return nil
 }

@@ -412,12 +412,12 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConf
 		remotePath:     httpPath,
 		localCachePath: localPath,
 		cdn:            cdn,
-		features:       make(FeatureMap),
+		features:       NewFeatureMap(),
 	}
-	rc.features.Add(FeatureMain.String())
-	rc.features.Add(FeatureLibtelio.String())
-	rc.features.Add(testFeatureNoRc)
-	rc.features.Add(testFeatureWithRc)
+	rc.features.add(FeatureMain.String())
+	rc.features.add(FeatureLibtelio.String())
+	rc.features.add(testFeatureNoRc)
+	rc.features.add(testFeatureWithRc)
 	return rc
 }
 

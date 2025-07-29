@@ -41,7 +41,7 @@ type CdnRemoteConfig struct {
 	localCachePath string
 	remotePath     string
 	cdn            core.RemoteStorage
-	features       FeatureMap
+	features       *FeatureMap
 	rolloutGroup   int
 	mu             sync.RWMutex
 }
@@ -55,11 +55,11 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		localCachePath: localPath,
 		cdn:            cdn,
 		rolloutGroup:   appRollout,
-		features:       make(FeatureMap),
+		features:       NewFeatureMap(),
 	}
-	rc.features.Add(FeatureMain.String())
-	rc.features.Add(FeatureLibtelio.String())
-	rc.features.Add(FeatureMeshnet.String())
+	rc.features.add(FeatureMain.String())
+	rc.features.add(FeatureLibtelio.String())
+	rc.features.add(FeatureMeshnet.String())
 	return rc
 }
 
@@ -126,10 +126,11 @@ func (c *CdnRemoteConfig) download() error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	for _, f := range c.features {
-		dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+	for _, f := range c.features.keys() {
+		feature := c.features.get(f)
+		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
+			log.Println(internal.ErrorPrefix, "failed downloading feature [", feature.name, "] remote config:", err)
 			if isNetworkRetryable(err) {
 				return err
 			}
@@ -137,7 +138,7 @@ func (c *CdnRemoteConfig) download() error {
 		}
 		if dnld {
 			// only if remote config was really downloaded
-			log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
+			log.Println(internal.InfoPrefix, "feature [", feature.name, "] remote config downloaded to:", c.localCachePath)
 		}
 	}
 	return nil
@@ -147,12 +148,13 @@ func (c *CdnRemoteConfig) load() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, f := range c.features {
-		if err := f.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
-			log.Println(internal.ErrorPrefix, "failed loading feature [", f.name, "] config from the disk:", err)
+	for _, f := range c.features.keys() {
+		feature := c.features.get(f)
+		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
+			log.Println(internal.ErrorPrefix, "failed loading feature [", feature.name, "] config from the disk:", err)
 			continue
 		}
-		log.Println(internal.InfoPrefix, "feature [", f.name, "] config loaded from:", c.localCachePath)
+		log.Println(internal.InfoPrefix, "feature [", feature.name, "] config loaded from:", c.localCachePath)
 	}
 	return nil
 }
@@ -193,8 +195,8 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	defer c.mu.RUnlock()
 
 	// find by name, expect param name to be the same as feature name and expect boolean type
-	f, found := c.features[featureName]
-	if !found {
+	f := c.features.get(featureName)
+	if f == nil {
 		return defaultFeatureState
 	}
 	p, found := f.params[featureName]
@@ -215,8 +217,8 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	f, found := c.features[featureName]
-	if !found {
+	f := c.features.get(featureName)
+	if f == nil {
 		return "", fmt.Errorf("feature [%s] not found", featureName)
 	}
 	p, found := f.params[paramName]
