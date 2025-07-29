@@ -33,6 +33,11 @@ const (
 	testFeatureWithRc     = "nordwhisper"
 )
 
+func cleanLocalPath(t *testing.T) {
+	os.RemoveAll(localPath)
+	t.Cleanup(func() { os.RemoveAll(localPath) })
+}
+
 func waitForServer() error {
 	deadline := time.Now().Add(httpServerWaitTimeout)
 	addr := httpHost + ":" + httpPort
@@ -273,7 +278,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio,
+			feature:     FeatureLibtelio.String(),
 			expectError: false,
 		},
 		{
@@ -281,7 +286,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.1.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio,
+			feature:     FeatureLibtelio.String(),
 			expectError: true,
 		},
 		{
@@ -289,7 +294,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    true,
-			feature:     FeatureLibtelio,
+			feature:     FeatureLibtelio.String(),
 			expectError: false,
 		},
 	}
@@ -397,6 +402,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	assertEventuallyGreater(t, modTimeNanos(info3inc2), modTimeNanos(info1inc2), timeout)
 
 	stopWebServer()
+	cleanLocalPath(t)
 }
 
 func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
@@ -408,8 +414,8 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConf
 		cdn:            cdn,
 		features:       make(FeatureMap),
 	}
-	rc.features.Add(FeatureMain)
-	rc.features.Add(FeatureLibtelio)
+	rc.features.Add(FeatureMain.String())
+	rc.features.Add(FeatureLibtelio.String())
 	rc.features.Add(testFeatureNoRc)
 	rc.features.Add(testFeatureWithRc)
 	return rc

@@ -56,9 +56,9 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		rolloutGroup:   appRollout,
 		features:       make(FeatureMap),
 	}
-	rc.features.Add(FeatureMain)
-	rc.features.Add(FeatureLibtelio)
-	rc.features.Add(FeatureMeshnet)
+	rc.features.Add(FeatureMain.String())
+	rc.features.Add(FeatureLibtelio.String())
+	rc.features.Add(FeatureMeshnet.String())
 	return rc
 }
 
@@ -184,7 +184,7 @@ func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamV
 }
 
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
-	return c.GetFeatureParam(FeatureLibtelio, FeatureLibtelio)
+	return c.GetFeatureParam(FeatureLibtelio.String(), FeatureLibtelio.String())
 }
 
 func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
