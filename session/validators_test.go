@@ -518,19 +518,24 @@ func Test_NewCompositeValidator(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	t.Run("Creates validator with provided validators", func(t *testing.T) {
-		validator1 := &mockValidator{}
-		validator2 := &mockValidator{}
+		emptyValidatorsCallCount := 0
+		validator1 := &mockValidator{validateFunc: func(session any) error {
+			emptyValidatorsCallCount++
+			return nil
+		}}
+		validator2 := &mockValidator{validateFunc: func(session any) error {
+			emptyValidatorsCallCount++
+			return nil
+		}}
 
 		composite := NewCompositeValidator(validator1, validator2)
 
 		require.NotNil(t, composite)
 
-		compositeValidator, ok := composite.(*CompositeValidator)
+		_, ok := composite.(*CompositeValidator)
 		require.True(t, ok)
-
-		assert.Len(t, compositeValidator.Validators, 2)
-		assert.Equal(t, validator1, compositeValidator.Validators[0])
-		assert.Equal(t, validator2, compositeValidator.Validators[1])
+		assert.NoError(t, composite.Validate(0))
+		assert.Equal(t, 2, emptyValidatorsCallCount)
 	})
 
 	t.Run("Creates validator with no validators", func(t *testing.T) {
@@ -538,9 +543,8 @@ func Test_NewCompositeValidator(t *testing.T) {
 
 		require.NotNil(t, composite)
 
-		compositeValidator, ok := composite.(*CompositeValidator)
+		_, ok := composite.(*CompositeValidator)
 		require.True(t, ok)
-
-		assert.Empty(t, compositeValidator.Validators)
+		assert.NoError(t, composite.Validate(0))
 	})
 }
