@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,14 +23,47 @@ import (
 )
 
 const (
-	httpPort          = "8005"
-	httpPath          = "/config"
-	httpHost          = "http://localhost"
-	cdnUrl            = httpHost + ":" + httpPort
-	localPath         = "./tmp/cfg"
-	testFeatureNoRc   = "feature1"
-	testFeatureWithRc = "nordwhisper"
+	httpPort              = "8005"
+	httpPath              = "/config"
+	httpHost              = "http://localhost"
+	cdnUrl                = httpHost + ":" + httpPort
+	localPath             = "./tmp/cfg"
+	httpServerWaitTimeout = 2 * time.Second
+	testFeatureNoRc       = "feature1"
+	testFeatureWithRc     = "nordwhisper"
 )
+
+func waitForServer() error {
+	deadline := time.Now().Add(httpServerWaitTimeout)
+	addr := httpHost + ":" + httpPort
+	for time.Now().Before(deadline) {
+		conn, err := net.Dial("tcp", addr)
+		if err == nil {
+			conn.Close()
+			return nil // Server is up
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return fmt.Errorf("server at %s did not become ready in time", addr)
+}
+
+// modTimeNanos is a helper function to get the nanosecond part of a file's modification time.
+// To be used in conjunction with the assertEventuallyGreater function.
+func modTimeNanos(fi os.FileInfo) func() int {
+	return func() int { return fi.ModTime().Nanosecond() }
+}
+
+// assertEventuallyGreater checks that the new value eventually becomes greater than the old value within the timeout period.
+func assertEventuallyGreater(t *testing.T, getNew, getOld func() int, timeout time.Duration) {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if getNew() > getOld() {
+			return // exit early if condition is already met
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	assert.Greater(t, getNew(), getOld()) // Final assertion (will fail with message if not greater)
+}
 
 func TestFindMatchingRecord(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -356,9 +390,11 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	assert.NotNil(t, info3inc2)
 
 	// files are modified on disk - should be greater time
-	assert.Greater(t, info3.ModTime().Nanosecond(), info1.ModTime().Nanosecond())
-	assert.Greater(t, info3inc1.ModTime().Nanosecond(), info1inc1.ModTime().Nanosecond())
-	assert.Greater(t, info3inc2.ModTime().Nanosecond(), info1inc2.ModTime().Nanosecond())
+	// sometimes I/O operations can get delayed, thus here we use active-waiting approach bounded by the timeout
+	timeout := 2 * time.Second
+	assertEventuallyGreater(t, modTimeNanos(info3), modTimeNanos(info1), timeout)
+	assertEventuallyGreater(t, modTimeNanos(info3inc1), modTimeNanos(info1inc1), timeout)
+	assertEventuallyGreater(t, modTimeNanos(info3inc2), modTimeNanos(info1inc2), timeout)
 
 	stopWebServer()
 }
@@ -415,6 +451,8 @@ func makeHashJson(data ...[]byte) []byte {
 	return rz
 }
 
+// setupMockCdnWebServer sets up a mock CDN web server that serves predefined JSON configuration files.
+// The CDN web server is here mocked by a local HTTP one. Also there's a call to waitForServer() to ensure the server is actually ready to handle incoming requests.
 func setupMockCdnWebServer(updated bool) func() {
 	httpPath := filepath.Join(httpPath, "dev")
 
@@ -466,6 +504,8 @@ func setupMockCdnWebServer(updated bool) func() {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()
+
+	waitForServer()
 
 	// return http server stop function
 	return func() {
