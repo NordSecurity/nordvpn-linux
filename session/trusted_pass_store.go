@@ -30,8 +30,11 @@ func (s *trustedPassSession) get() (trustedPassConfig, error) {
 		return trustedPassConfig{}, errors.New("non existing data")
 	}
 
-	// must contain valid data
-	expiryTime, _ := time.Parse(internal.ServerDateFormat, data.TrustedPassTokenExpiry)
+	expiryTime, err := time.Parse(internal.ServerDateFormat, data.TrustedPassTokenExpiry)
+	if err != nil {
+		// if we don't have valid time, just make it already expired
+		expiryTime = time.Now().Add(-1 * time.Second)
+	}
 
 	return trustedPassConfig{
 		Token:     data.TrustedPassToken,

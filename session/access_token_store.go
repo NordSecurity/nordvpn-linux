@@ -30,8 +30,11 @@ func (s *accessTokenSession) get() (accessTokenConfig, error) {
 		return accessTokenConfig{}, errors.New("non existing data")
 	}
 
-	// must contain valid data
-	expiryTime, _ := time.Parse(internal.ServerDateFormat, data.TokenExpiry)
+	expiryTime, err := time.Parse(internal.ServerDateFormat, data.TokenExpiry)
+	if err != nil {
+		// if we don't have valid time, just make it already expired
+		expiryTime = time.Now().Add(-1 * time.Second)
+	}
 
 	return accessTokenConfig{
 		Token:      data.Token,
