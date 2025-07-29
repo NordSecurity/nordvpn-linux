@@ -47,8 +47,8 @@ func waitForServer() error {
 	return fmt.Errorf("server at %s did not become ready in time", addr)
 }
 
-// modTimeNanos is a helper function to get the nanosecond part of the file modification time.
-// To be used with the conjunction with the assertEventuallyGreater function.
+// modTimeNanos is a helper function to get the nanosecond part of a file's modification time.
+// To be used in conjunction with the assertEventuallyGreater function.
 func modTimeNanos(fi os.FileInfo) func() int {
 	return func() int { return fi.ModTime().Nanosecond() }
 }
