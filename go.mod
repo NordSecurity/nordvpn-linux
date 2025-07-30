@@ -1,8 +1,8 @@
 module github.com/NordSecurity/nordvpn-linux
 
-go 1.22.1
+go 1.23.0
 
-toolchain go1.22.2
+toolchain go1.23.11
 
 // Bindings
 // NOTE: If you are chaning the binding versions here, keep in mind that you
@@ -39,13 +39,13 @@ require (
 	github.com/urfave/cli/v2 v2.25.0
 	github.com/vishvananda/netlink v1.1.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.31.0
+	golang.org/x/crypto v0.36.0
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/mod v0.17.0
-	golang.org/x/net v0.33.0
-	golang.org/x/sys v0.28.0
-	golang.org/x/term v0.27.0
-	golang.org/x/text v0.21.0
+	golang.org/x/net v0.38.0
+	golang.org/x/sys v0.31.0
+	golang.org/x/term v0.30.0
+	golang.org/x/text v0.23.0
 	golang.zx2c4.com/wireguard v0.0.0-20230313165553-0ad14a89f5f9
 	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2
@@ -93,7 +93,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240701130421-f6361c86f094 // indirect
