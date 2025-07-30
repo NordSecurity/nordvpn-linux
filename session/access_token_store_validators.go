@@ -15,15 +15,15 @@ type manualAccessTokenValidator struct {
 }
 
 // Validate checks if the session contains a valid manual access token.
-func (v *manualAccessTokenValidator) Validate(session any) error {
+func (v *manualAccessTokenValidator) Validate(session interface{}) error {
 	tokenProvider, ok := session.(SessionTokenProvider)
 	if !ok {
-		return errors.New("unsupported store for token validation")
+		return fmt.Errorf("unsupported store for token validation: got type %T", session)
 	}
 
 	expiryProvider, ok := session.(SessionExpiryProvider)
 	if !ok {
-		return errors.New("unsupported store for expiry validation")
+		return fmt.Errorf("unsupported store for expiry validation: got type %T", session)
 	}
 
 	return v.ValidateFunc(tokenProvider.GetToken(), expiryProvider.GetExpiry())
