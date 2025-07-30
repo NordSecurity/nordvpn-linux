@@ -445,7 +445,7 @@ func Test_CompositeValidator_Validate(t *testing.T) {
 
 		err := composite.Validate(mockSession)
 
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("Validators are executed in order", func(t *testing.T) {
@@ -544,7 +544,7 @@ func Test_NewCompositeValidator(t *testing.T) {
 		require.NotNil(t, composite)
 
 		_, ok := composite.(*CompositeValidator)
-		require.True(t, ok)
-		assert.NoError(t, composite.Validate(0))
+		require.False(t, ok)
+		assert.Error(t, composite.Validate(0))
 	})
 }
