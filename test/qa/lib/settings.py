@@ -11,18 +11,26 @@ MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
 
 class Settings:
     def __init__(self):
-        output = sh.nordvpn("settings").strip(" \r-\n")
+        output = sh.nordvpn("settings").replace("\r", "")
+        self.settings = {}
+        previous_key = ""
 
-        self.settings={}
-        previous_key=""
         for line in output.split("\n"):
-            values = line.split(":")
+            if not line.strip():  # skip empty lines
+                continue
+
+            values = line.split(":", 1) if ":" in line else [line]
             if len(values) == 2:
-                previous_key = values[0].lower().strip()
+                # clean the key by removing any leading dashes
+                key = values[0].lower().strip()
+                while key.startswith("-"):
+                    key = key[1:].strip()
+
+                previous_key = key
                 self.settings[previous_key] = values[1].strip()
             elif len(previous_key) > 0:
                 # for allow list the values are on a different line
-                self.settings[previous_key] += line.strip() + " "
+                self.settings[previous_key] += " " + line.strip()
 
     def get(self, key: str) -> str:
         key = key.lower()
