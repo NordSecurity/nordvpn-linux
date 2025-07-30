@@ -1,7 +1,6 @@
 import random
 
 import sh
-from lib.shell import sh_no_tty
 
 from . import UserConsentMode
 
@@ -12,26 +11,19 @@ MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
 
 class Settings:
     def __init__(self):
-        output = sh_no_tty.nordvpn("settings")
+        output = sh.nordvpn("settings")
+
         self.settings = {}
-        previous_key = ""
-
         for line in output.split("\n"):
-            if not line.strip():  # skip empty lines
-                continue
+            stripped_line = line.strip()
+            if not stripped_line:
+                continue  # skip empty lines
 
-            values = line.split(":", 1) if ":" in line else [line]
-            if len(values) == 2:
-                # clean the key by removing any leading dashes
-                key = values[0].lower().strip()
-                while key.startswith("-"):
-                    key = key[1:].strip()
-
-                previous_key = key
-                self.settings[previous_key] = values[1].strip()
-            elif len(previous_key) > 0:
-                # for allow list the values are on a different line
-                self.settings[previous_key] += " " + line.strip()
+            if ":" in stripped_line:
+                key, value = stripped_line.split(":", 1)
+                key = key.lower().strip()
+                value = value.lower().strip()
+                self.settings[key] = value
 
     def get(self, key: str) -> str:
         key = key.lower()

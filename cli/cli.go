@@ -1044,9 +1044,14 @@ func (s loaderStream) RecvMsg(m interface{}) error {
 	return s.ClientStream.RecvMsg(m)
 }
 
+func isLoaderEnabled() bool {
+	value, exists := os.LookupEnv("DISABLE_TUI_LOADER")
+	return !(exists && value == "1")
+}
+
 func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) error {
 	return func(ctx *cli.Context) error {
-		c.loaderInterceptor.enabled = true
+		c.loaderInterceptor.enabled = isLoaderEnabled()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, err)
 			color.Red(internal.ErrDaemonConnectionRefused.Error())
