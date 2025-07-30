@@ -1,6 +1,7 @@
 import random
 
 import sh
+from lib.shell import sh_no_tty
 
 from . import UserConsentMode
 
@@ -11,7 +12,7 @@ MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
 
 class Settings:
     def __init__(self):
-        output = sh.nordvpn("settings").replace("\r", "")
+        output = sh_no_tty.nordvpn("settings")
         self.settings = {}
         previous_key = ""
 
