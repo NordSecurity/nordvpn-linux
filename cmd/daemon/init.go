@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -21,6 +22,19 @@ func buildAccessTokenSessionStore(
 		buildAccessTokenSessionStoreAPIRenewalCall(clientAPI),
 		nil,
 	)
+}
+
+func convertCoreToSessionError(err error) error {
+	switch {
+	case errors.Is(err, core.ErrBadRequest):
+		err = session.ErrBadRequest
+	case errors.Is(err, core.ErrUnauthorized):
+		err = session.ErrUnauthorized
+	case errors.Is(err, core.ErrNotFound):
+		err = session.ErrNotFound
+	}
+
+	return err
 }
 
 func buildAccessTokenSessionStoreAPIRenewalCall(clientAPI core.RawClientAPI) session.AccessTokenRenewalAPICall {
