@@ -1,16 +1,24 @@
 package session
 
-import "errors"
+import (
+	"fmt"
+)
+
+type InvalidSessionValidator struct{}
+
+func (v *InvalidSessionValidator) Validate(session interface{}) error {
+	return fmt.Errorf("invalid session validator constructed")
+}
 
 type TokenValidator struct {
 	ValidateFunc func(token string) error
 }
 
 // Validate checks if the provided session has a valid token.
-func (v *TokenValidator) Validate(session any) error {
+func (v *TokenValidator) Validate(session interface{}) error {
 	carrier, ok := session.(SessionTokenProvider)
 	if !ok {
-		return errors.New("unsupported store for token validation")
+		return fmt.Errorf("unsupported store for token validation: got type %T", session)
 	}
 
 	return v.ValidateFunc(carrier.GetToken())
@@ -18,16 +26,19 @@ func (v *TokenValidator) Validate(session any) error {
 
 // NewTokenValidator creates a validator that checks session tokens.
 func NewTokenValidator(fn func(token string) error) SessionStoreValidator {
+	if fn == nil {
+		return &InvalidSessionValidator{}
+	}
 	return &TokenValidator{ValidateFunc: fn}
 }
 
 type ExpiryValidator struct{}
 
 // Validate checks if the provided session has expired.
-func (v *ExpiryValidator) Validate(session any) error {
+func (v *ExpiryValidator) Validate(session interface{}) error {
 	expirable, ok := session.(ExpirableSession)
 	if !ok {
-		return errors.New("unsupported store for expiration validation")
+		return fmt.Errorf("unsupported store for expiration validation: got type %T", session)
 	}
 
 	if expirable.IsExpired() {
@@ -47,10 +58,10 @@ type CredentialValidator struct {
 }
 
 // Validate checks if the provided session has valid credentials.
-func (v *CredentialValidator) Validate(session any) error {
+func (v *CredentialValidator) Validate(session interface{}) error {
 	carrier, ok := session.(CredentialsBasedSession)
 	if !ok {
-		return errors.New("unsupported store for credentials validation")
+		return fmt.Errorf("unsupported store for credentials validation: got type %T", session)
 	}
 
 	return v.ValidateFunc(carrier.GetUsername(), carrier.GetPassword())
@@ -58,6 +69,9 @@ func (v *CredentialValidator) Validate(session any) error {
 
 // NewCredentialValidator creates a validator that checks session credentials.
 func NewCredentialValidator(fn func(username, password string) error) SessionStoreValidator {
+	if fn == nil {
+		return &InvalidSessionValidator{}
+	}
 	return &CredentialValidator{ValidateFunc: fn}
 }
 
@@ -66,7 +80,7 @@ type CompositeValidator struct {
 }
 
 // Validate runs all validators in sequence, stopping at first error.
-func (c *CompositeValidator) Validate(session any) error {
+func (c *CompositeValidator) Validate(session interface{}) error {
 	for _, v := range c.validators {
 		if err := v.Validate(session); err != nil {
 			return err
@@ -78,5 +92,8 @@ func (c *CompositeValidator) Validate(session any) error {
 
 // NewCompositeValidator creates a validator that runs multiple validators sequentially.
 func NewCompositeValidator(validators ...SessionStoreValidator) SessionStoreValidator {
+	if len(validators) == 0 {
+		return &InvalidSessionValidator{}
+	}
 	return &CompositeValidator{validators: validators}
 }

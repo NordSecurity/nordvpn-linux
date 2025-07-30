@@ -17,5 +17,5 @@ type SessionStore interface {
 type SessionStoreValidator interface {
 	// Validate checks whether the provided session object is valid.
 	// Returns an error if the session is invalid or fails validation checks.
-	Validate(session any) error
+	Validate(session interface{}) error
 }
