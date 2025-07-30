@@ -7,7 +7,6 @@ import (
 	"go/build"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -47,15 +46,6 @@ func getVersions() (map[string]string, error) {
 		return nil, err
 	}
 	return versions, nil
-}
-
-func getGitVersionTag() string {
-	cmd := exec.Command("git", "describe", "--tags", "--abbrev=0")
-	out, err := cmd.Output()
-	if err != nil {
-		return "dev"
-	}
-	return strings.TrimSpace(string(out))
 }
 
 func mergeMaps(m1, m2 map[string]string) map[string]string {
