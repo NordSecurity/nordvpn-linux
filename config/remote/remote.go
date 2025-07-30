@@ -31,7 +31,8 @@ type ConfigLoader interface {
 }
 
 const (
-	envUseLocalConfig = "RC_USE_LOCAL_CONFIG"
+	envUseLocalConfig   = "RC_USE_LOCAL_CONFIG"
+	defaultFeatureState = true
 )
 
 type CdnRemoteConfig struct {
@@ -194,11 +195,11 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	// find by name, expect param name to be the same as feature name and expect boolean type
 	f, found := c.features[featureName]
 	if !found {
-		return false
+		return defaultFeatureState
 	}
 	p, found := f.params[featureName]
 	if !found {
-		return false
+		return defaultFeatureState
 	}
 	switch p.Type {
 	case fieldTypeBool:
@@ -207,7 +208,7 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 			return val
 		}
 	}
-	return false
+	return defaultFeatureState
 }
 
 func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string, error) {
