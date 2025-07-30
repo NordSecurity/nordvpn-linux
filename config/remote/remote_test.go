@@ -200,7 +200,7 @@ func TestFeatureOnOff(t *testing.T) {
 			ver:     "",
 			env:     "dev",
 			feature: testFeatureNoRc,
-			on:      false,
+			on:      true,
 		},
 		{
 			name:    "feature2 1",
