@@ -1,11 +1,11 @@
-package core_test
+package internal_test
 
 import (
 	"errors"
 	"sync"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,20 +14,20 @@ func Test_NewErrorHandlingRegistry_PanicWhenNotFunc(t *testing.T) {
 		name string
 		test func()
 	}{
-		{"int", func() { _ = core.NewErrorHandlingRegistry[int]() }},
-		{"string", func() { _ = core.NewErrorHandlingRegistry[string]() }},
-		{"map[int]int", func() { _ = core.NewErrorHandlingRegistry[map[int]int]() }},
-		{"bool", func() { _ = core.NewErrorHandlingRegistry[bool]() }},
-		{"float64", func() { _ = core.NewErrorHandlingRegistry[float64]() }},
-		{"complex128", func() { _ = core.NewErrorHandlingRegistry[complex128]() }},
-		{"struct{}", func() { _ = core.NewErrorHandlingRegistry[struct{}]() }},
-		{"[]int", func() { _ = core.NewErrorHandlingRegistry[[]int]() }},
-		{"[3]string", func() { _ = core.NewErrorHandlingRegistry[[3]string]() }},
-		{"chan int", func() { _ = core.NewErrorHandlingRegistry[chan int]() }},
-		{"any", func() { _ = core.NewErrorHandlingRegistry[any]() }},
-		{"*int", func() { _ = core.NewErrorHandlingRegistry[*int]() }},
-		{"uintptr", func() { _ = core.NewErrorHandlingRegistry[uintptr]() }},
-		{"func(int)", func() { _ = core.NewErrorHandlingRegistry[func(int)]() }},
+		{"int", func() { _ = internal.NewErrorHandlingRegistry[int]() }},
+		{"string", func() { _ = internal.NewErrorHandlingRegistry[string]() }},
+		{"map[int]int", func() { _ = internal.NewErrorHandlingRegistry[map[int]int]() }},
+		{"bool", func() { _ = internal.NewErrorHandlingRegistry[bool]() }},
+		{"float64", func() { _ = internal.NewErrorHandlingRegistry[float64]() }},
+		{"complex128", func() { _ = internal.NewErrorHandlingRegistry[complex128]() }},
+		{"struct{}", func() { _ = internal.NewErrorHandlingRegistry[struct{}]() }},
+		{"[]int", func() { _ = internal.NewErrorHandlingRegistry[[]int]() }},
+		{"[3]string", func() { _ = internal.NewErrorHandlingRegistry[[3]string]() }},
+		{"chan int", func() { _ = internal.NewErrorHandlingRegistry[chan int]() }},
+		{"any", func() { _ = internal.NewErrorHandlingRegistry[any]() }},
+		{"*int", func() { _ = internal.NewErrorHandlingRegistry[*int]() }},
+		{"uintptr", func() { _ = internal.NewErrorHandlingRegistry[uintptr]() }},
+		{"func(int)", func() { _ = internal.NewErrorHandlingRegistry[func(int)]() }},
 	}
 
 	for _, tc := range nonFuncTypes {
@@ -42,9 +42,9 @@ func Test_ValidFunctionTypes(t *testing.T) {
 		name string
 		test func()
 	}{
-		{"func(func())", func() { _ = core.NewErrorHandlingRegistry[func()]() }},
-		{"func(error)", func() { _ = core.NewErrorHandlingRegistry[error]() }},
-		{"func(func(string) int)", func() { _ = core.NewErrorHandlingRegistry[func(string) int]() }},
+		{"func(func())", func() { _ = internal.NewErrorHandlingRegistry[func()]() }},
+		{"func(error)", func() { _ = internal.NewErrorHandlingRegistry[error]() }},
+		{"func(func(string) int)", func() { _ = internal.NewErrorHandlingRegistry[func(string) int]() }},
 	}
 
 	for _, tc := range funcTypes {
@@ -55,7 +55,7 @@ func Test_ValidFunctionTypes(t *testing.T) {
 }
 
 func Test_AddAndGetHandlers(t *testing.T) {
-	registry := core.NewErrorHandlingRegistry[error]()
+	registry := internal.NewErrorHandlingRegistry[error]()
 	errType := errors.New("test error")
 
 	var calls []string
@@ -95,7 +95,7 @@ func Test_AddAndGetHandlers(t *testing.T) {
 }
 
 func Test_Add_Multi(t *testing.T) {
-	registry := core.NewErrorHandlingRegistry[error]()
+	registry := internal.NewErrorHandlingRegistry[error]()
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
 
@@ -122,7 +122,7 @@ func Test_Add_Multi(t *testing.T) {
 }
 
 func Test_EmptyRegistry(t *testing.T) {
-	registry := core.NewErrorHandlingRegistry[error]()
+	registry := internal.NewErrorHandlingRegistry[error]()
 	err := errors.New("unregistered")
 
 	handlers := registry.GetHandlers(err)
@@ -132,7 +132,7 @@ func Test_EmptyRegistry(t *testing.T) {
 }
 
 func Test_GetHandlers_ReturnsCopy(t *testing.T) {
-	registry := core.NewErrorHandlingRegistry[error]()
+	registry := internal.NewErrorHandlingRegistry[error]()
 	err := errors.New("copy check")
 
 	var log []string
@@ -161,7 +161,7 @@ func Test_GetHandlers_ReturnsCopy(t *testing.T) {
 }
 
 func Test_ThreadSafety(t *testing.T) {
-	registry := core.NewErrorHandlingRegistry[int]()
+	registry := internal.NewErrorHandlingRegistry[int]()
 	err1 := errors.New("error1")
 	err2 := errors.New("error2")
 
@@ -195,7 +195,7 @@ func Test_CompoundErrors(t *testing.T) {
 	err2 := errors.New("error2")
 	err1err2 := errors.Join(err1, err2)
 
-	reg := core.NewErrorHandlingRegistry[int]()
+	reg := internal.NewErrorHandlingRegistry[int]()
 
 	err1HandlerCalled := false
 	err2HandlerCalled := false

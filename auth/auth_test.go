@@ -13,7 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	mock "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	mocksession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -200,7 +200,7 @@ func TestIsMFAEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), mock.MockTokenManager{})
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), &mocksession.MockSessionStore{})
 			enabled, err := rc.isMFAEnabled()
 			assert.Equal(t, test.isEnabled, enabled)
 
@@ -284,7 +284,7 @@ func TestIsVPNExpired(t *testing.T) {
 				&mockAuthPublisher{},
 				&mockErrPublisher{},
 				&daemonevents.AccountUpdateEvents{SubscriptionUpdate: test.accPub},
-				mock.MockTokenManager{},
+				&mocksession.MockSessionStore{},
 			)
 
 			expired, err := rc.IsVPNExpired()
@@ -312,7 +312,7 @@ func TestIsVPNExpired(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{SubscriptionUpdate: accPub},
-		mock.MockTokenManager{},
+		nil,
 	)
 
 	_, err := rc.IsVPNExpired()
@@ -520,17 +520,8 @@ func TestGetDedicatedIPServices(t *testing.T) {
 	}
 }
 
-type mockTokenManager struct {
-	core.TokenManager
-	renewErr error
-}
-
-func (m *mockTokenManager) Renew() error {
-	return m.renewErr
-}
-
 func TestIsLoggedIn_Success(t *testing.T) {
-	mockLTM := &mockTokenManager{}
+	mockSS := &mocksession.MockSessionStore{}
 	mockCM := &authConfigManager{}
 
 	checker := NewRenewingChecker(
@@ -540,7 +531,7 @@ func TestIsLoggedIn_Success(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
-		mockLTM)
+		mockSS)
 
 	yes, err := checker.IsLoggedIn()
 	assert.True(t, yes, "must be logged in")
@@ -549,7 +540,7 @@ func TestIsLoggedIn_Success(t *testing.T) {
 
 func TestIsLoggedIn_InvalidToken(t *testing.T) {
 	expectedRenewErr := errors.New("renew error")
-	mockLTM := &mockTokenManager{renewErr: expectedRenewErr}
+	mockSS := &mocksession.MockSessionStore{RenewErr: expectedRenewErr}
 	mockCM := &authConfigManager{}
 
 	checker := NewRenewingChecker(
@@ -559,7 +550,7 @@ func TestIsLoggedIn_InvalidToken(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
-		mockLTM)
+		mockSS)
 
 	yes, err := checker.IsLoggedIn()
 	assert.False(t, yes, "must not be logged in")
@@ -569,7 +560,7 @@ func TestIsLoggedIn_InvalidToken(t *testing.T) {
 
 func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
 	expectedLoadErr := errors.New("load error")
-	mockLTM := &mockTokenManager{}
+	mockSS := &mocksession.MockSessionStore{}
 	mockCM := &authConfigManager{loadErr: expectedLoadErr}
 
 	checker := NewRenewingChecker(
@@ -579,7 +570,7 @@ func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
-		mockLTM)
+		mockSS)
 
 	yes, err := checker.IsLoggedIn()
 	assert.False(t, yes, "must not be logged in")
@@ -589,7 +580,7 @@ func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
 
 func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 	expectedErr := errors.New("error")
-	mockLTM := &mockTokenManager{}
+	mockSS := &mocksession.MockSessionStore{}
 	mockCM := &authConfigManager{serviceExpiry: "2000-01-01 09:18:53",
 		saveErr: expectedErr}
 
@@ -600,7 +591,7 @@ func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
-		mockLTM)
+		mockSS)
 
 	yes, err := checker.IsLoggedIn()
 	assert.False(t, yes, "must not be logged in")
