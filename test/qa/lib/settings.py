@@ -1,7 +1,6 @@
 import random
 
 import sh
-from lib.shell import sh_no_tty
 
 from . import UserConsentMode
 
