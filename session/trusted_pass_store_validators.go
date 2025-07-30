@@ -1,6 +1,9 @@
 package session
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	ErrInvalidOwnerId = errors.New("invalid owner id")
@@ -12,11 +15,11 @@ const (
 
 type OwnerIDValidator struct{}
 
-// Validate
-func (v *OwnerIDValidator) Validate(session any) error {
+// Validate checks if the session has a valid OwnerID.
+func (v *OwnerIDValidator) Validate(session interface{}) error {
 	carrier, ok := session.(SessionOwnerProvider)
 	if !ok {
-		return errors.New("unsupported store for owner id validation")
+		return fmt.Errorf("unsupported store for owner id validation: got type %T", session)
 	}
 
 	if carrier.GetOwnerID() != TrustedPassOwnerID {
@@ -26,7 +29,7 @@ func (v *OwnerIDValidator) Validate(session any) error {
 	return nil
 }
 
-// NewOwnerIDValidator
+// NewOwnerIDValidator returns a new OwnerIDValidator.
 func NewOwnerIDValidator() SessionStoreValidator {
 	return &OwnerIDValidator{}
 }

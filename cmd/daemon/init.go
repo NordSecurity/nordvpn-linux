@@ -39,6 +39,19 @@ func buildAccessTokenSessionStoreValidators(clientAPI core.RawClientAPI) session
 	)
 }
 
+func convertCoreToSessionError(err error) error {
+	switch {
+	case errors.Is(err, core.ErrBadRequest):
+		err = session.ErrBadRequest
+	case errors.Is(err, core.ErrUnauthorized):
+		err = session.ErrUnauthorized
+	case errors.Is(err, core.ErrNotFound):
+		err = session.ErrNotFound
+	}
+
+	return err
+}
+
 func buildAccessTokenSessionStoreAPIRenewalCall(clientAPI core.RawClientAPI) session.AccessTokenRenewalAPICall {
 	return func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 		resp, err := clientAPI.TokenRenew(token, idempotencyKey)
@@ -51,16 +64,7 @@ func buildAccessTokenSessionStoreAPIRenewalCall(clientAPI core.RawClientAPI) ses
 		}
 
 		// map to internal errors
-		switch {
-		case errors.Is(err, core.ErrBadRequest):
-			err = session.ErrBadRequest
-		case errors.Is(err, core.ErrUnauthorized):
-			err = session.ErrUnauthorized
-		case errors.Is(err, core.ErrNotFound):
-			err = session.ErrNotFound
-		}
-
-		return nil, err
+		return nil, fmt.Errorf("renewing access token: %w", convertCoreToSessionError(err))
 	}
 }
 
@@ -86,16 +90,7 @@ func buildTrustedPassSessionStoreAPIRenewalCall(clientAPI core.ClientAPI) sessio
 		resp, err := clientAPI.TrustedPassToken()
 		if err != nil {
 			// map to internal errors
-			switch {
-			case errors.Is(err, core.ErrBadRequest):
-				err = session.ErrBadRequest
-			case errors.Is(err, core.ErrUnauthorized):
-				err = session.ErrUnauthorized
-			case errors.Is(err, core.ErrNotFound):
-				err = session.ErrNotFound
-			}
-
-			return nil, fmt.Errorf("getting trusted pass token data: %w", err)
+			return nil, fmt.Errorf("getting trusted pass token data: %w", convertCoreToSessionError(err))
 		}
 
 		return &session.TrustedPassAccessTokenResponse{
