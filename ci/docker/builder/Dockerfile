@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu-20.04-20241203
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-bullseye-20250627
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
@@ -34,6 +34,9 @@ RUN dpkg --add-architecture i386 && \
         libnl-genl-3-200:armhf \
         libnl-genl-3-dev:armhf \
         libsqlite3-dev \
+        libsqlite3-dev:armhf \
+        libsqlite3-dev:arm64 \
+        libsqlite3-dev:i386 \
         # libxml2-dev:armel \
         # Install libc6-dev-armel-cross instead of libxml2-dev:armel to provide libc6-dev for armel
         libc6-dev-armel-cross \
@@ -45,12 +48,9 @@ RUN dpkg --add-architecture i386 && \
 # this symlink fakes the existence of armel build. The expected symbols in `libxml.so` are no
 # different than `armhf` and since real `libxml2.so` is loaded at runtime and package has a
 # dependency for `libxml2`, a proper library is loaded
-RUN ln -s /usr/lib/arm-linux-gnueabihf/libxml2.so /usr/lib/arm-linux-gnueabi/libxml2.so && \
-    # Download and install musl to PATH (/usr/bin)
-    wget --progress=dot:giga "https://musl.cc/i686-linux-musl-cross.tgz" -O /tmp/musl.tar.gz && \
-    echo "5047afc68170a2910895db2dfa448227e71a984bfa2130a1bc946fd1015d722b80b15e4abf90c64300815aa84fe781cc8b8a72f10174f9dce96169e035911880 /tmp/musl.tar.gz" | sha512sum -c - && \
-    tar -xzf /tmp/musl.tar.gz -C /usr/lib && rm /tmp/musl.tar.gz && \
-    ln -s /usr/lib/i686-linux-musl-cross/bin/i686-linux-musl-gcc /usr/bin/i686-linux-musl-gcc && \
+RUN ln -s /usr/lib/arm-linux-gnueabihf/libxml2.so /usr/lib/arm-linux-gnueabi/libxml2.so; \
+    ln -s /usr/lib/arm-linux-gnueabihf/libsqlite3.so /usr/lib/arm-linux-gnueabi/libsqlite3.so; \
+    ldconfig
     # Install gocover-cobertura which is used for test coverage visualization in the diff view
-    go install github.com/boumenot/gocover-cobertura@latest && \
+RUN go install github.com/boumenot/gocover-cobertura@latest && \
     go clean -cache -modcache

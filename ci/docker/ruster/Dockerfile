@@ -1,6 +1,5 @@
-FROM ubuntu:20.04
+FROM debian:bullseye-slim
 
-ARG SQLITE_DOWNLOAD_URL_PREFIX
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Rust installation borrowed from https://github.com/rust-lang/docker-rust/blob/47a11a42c5a321d688fae525eaa7f1cf9940198b/1.64.0/buster/slim/Dockerfile
@@ -19,7 +18,7 @@ RUN set -eux; \
         wget \
         ; \
     dpkgArch="$(dpkg --print-architecture)"; \
-    # https://static.rust-lang.org/rustup/archive/{rustup-version}/{target-triple}/rustup-init.sha256 
+    # https://static.rust-lang.org/rustup/archive/{rustup-version}/{target-triple}/rustup-init.sha256
     case "${dpkgArch##*-}" in \
         amd64) rustArch='x86_64-unknown-linux-gnu'; rustupSha256='0b2f6c8f85a3d02fde2efc0ced4657869d73fccfce59defb4e8d29233116e6db' ;; \
         armhf) rustArch='armv7-unknown-linux-gnueabihf'; rustupSha256='f21c44b01678c645d8fbba1e55e4180a01ac5af2d38bcbd14aa665e0d96ed69a' ;; \
@@ -53,17 +52,6 @@ RUN set -eux; \
     /usr/lib/arm-linux-gnueabi \
     /usr/lib/aarch64-linux-gnu
 
-RUN --mount=type=secret,id=gl_access_token export GL_ACCESS_TOKEN="$(cat /run/secrets/gl_access_token)"; \
-  set -eux; \
-  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/i386-linux-gnu/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_i686_sqlite3.so; \
-  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/x86_64-linux-gnu/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_x86_64_sqlite3.so; \
-  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/arm-linux-gnueabihf/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_armv7_eabihf_sqlite3.so; \
-  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/arm-linux-gnueabi/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_armv5_eabi_sqlite3.so; \
-  curl --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" -o /usr/lib/aarch64-linux-gnu/libsqlite3.so -L ${SQLITE_DOWNLOAD_URL_PREFIX}/linux_aarch64_sqlite3.so; \
-  apt-get remove -y --auto-remove curl
-
-RUN echo "/usr/lib/i386-linux-gnu\n/usr/lib/x86_64-linux-gnu\n/usr/lib/arm-linux-gnueabihf\n/usr/lib/arm-linux-gnueabi\n/usr/lib/aarch64-linux-gnu" > /etc/ld.so.conf.d/sqlite3.conf
-
 RUN set -eux; \
     dpkg --add-architecture i386; \
     apt-get update; \
@@ -75,29 +63,29 @@ RUN set -eux; \
 	gcc-arm-linux-gnueabihf \
 	gcc-i686-linux-gnu \
 	linux-libc-dev:i386 \
-	libc6-dev-i386; \
-    rm -rf /var/lib/apt/lists/*;
-
-# Installing protoc manually because package available in Ubuntu 18.04 does not contain
-# files Google's .proto files which are supposed to be in `/usr/include` directory.
-RUN set -eux; \
-	apt-get update; \
-	apt-get install -y curl unzip quilt python3-pip; \
-	url="https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip"; \
-	protocZipFileName="protoc-21.12-linux-x86_64.zip"; \
-	protocSha256="3a4c1e5f2516c639d3079b1586e703fc7bcfa2136d58bda24d1d54f949c315e8"; \
-	curl -L --output $protocZipFileName "$url"; \
-	echo "$protocSha256 $protocZipFileName" | sha256sum --check --status; \
-	unzip $protocZipFileName -d /usr; \
-	rm $protocZipFileName; \
- 	rm -rf /var/lib/apt/lists/*
+	libc6-dev-i386
 
 RUN set -eux; \
-  dpkg --add-architecture i386;\
-  dpkg --add-architecture armhf;  \
-  dpkg --add-architecture armel; \
-  dpkg --add-architecture arm64; \
-  ldconfig
+    dpkg --add-architecture i386;\
+    dpkg --add-architecture armhf; \
+    dpkg --add-architecture armel; \
+    dpkg --add-architecture arm64; \
+    apt-get update; \
+    apt-get install -y \
+        libsqlite3-dev \
+        libsqlite3-dev:i386 \
+        libsqlite3-dev:armhf \
+        libsqlite3-dev:arm64; \
+    ldconfig; \
+    rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install typing; \
-	pip3 install requests==2.21.0
+# This is not a dangerous hack. `libsqlite3-dev:armel` package is broken on Debian 11. Therefore,
+# this symlink fakes the existence of armel build. The expected symbols in `libsqlite3.so` are no
+# different than `armhf` and since real `libsqlite3.so` is loaded at runtime and package has a
+# dependency for `libsqlite3-0`, a proper library is loaded
+RUN ln -s /usr/lib/arm-linux-gnueabihf/libsqlite3.so /usr/lib/arm-linux-gnueabi/libsqlite3.so
+
+ENV CARGO_TARGET_I686_UNKNOWN_LINUX_GNU_LINKER=i686-linux-gnu-gcc
+ENV CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu
+ENV CARGO_TARGET_ARM_UNKNOWN_LINUX_GNUEABI_LINKER=arm-linux-gnueabi-gcc
+ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc
