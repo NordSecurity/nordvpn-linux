@@ -39,8 +39,6 @@ mkdir -p "${WORKDIR}"/coverage/unit
 
 # single architecture for tests
 export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/current/amd64"
-# Disable the TUI loader indicator to prevent interference during automated tests
-export DISABLE_TUI_LOADER=1
 
 # shellcheck disable=SC2046
 go test ${parallel:+${parallel}} -tags "$tags" -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}") \
