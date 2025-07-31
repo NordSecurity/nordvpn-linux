@@ -50,10 +50,6 @@ func callWithToken[T any](store session.TokenSessionStore, call func(token strin
 		res, err = callAPIWithToken()
 	}
 
-	if errors.Is(err, ErrUnauthorized) {
-		store.HandleError(ErrUnauthorized)
-	}
-
 	return res, err
 }
 
