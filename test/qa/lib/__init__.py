@@ -167,7 +167,7 @@ class Protocol(Enum):
             return Protocol.TCP
         if normalized in ("ALL", "UDP|TCP", "TCP|UDP"):
             return Protocol.ALL
-        raise ValueError(f"Unknown protocol: {value}")
+        raise ValueError("Unknown protocol:" + value)
 
 
 class Port:
