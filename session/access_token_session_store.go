@@ -157,6 +157,7 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 	}
 
 	return nil
+
 }
 
 func (s *AccessTokenSessionStore) tryUpdateIdempotencyKey(uid int64, data *config.TokenData) error {
