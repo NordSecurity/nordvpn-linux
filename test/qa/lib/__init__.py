@@ -158,6 +158,17 @@ class Protocol(Enum):
     def __str__(self):
         return self.value
 
+    @staticmethod
+    def construct(value: str):
+        normalized = value.upper().strip()
+        if normalized == "UDP":
+            return Protocol.UDP
+        if normalized == "TCP":
+            return Protocol.TCP
+        if normalized in ("ALL", "UDP|TCP", "TCP|UDP"):
+            return Protocol.ALL
+        raise ValueError(f"Unknown protocol: {value}")
+
 
 class Port:
     def __init__(self, value: str, protocol: Protocol):

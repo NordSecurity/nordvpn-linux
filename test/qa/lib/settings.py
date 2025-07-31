@@ -9,21 +9,36 @@ MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect is set to 'enabled' successfully.
 MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect is set to 'disabled' successfully."
 MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
 
+MULTI_LINE_PARAM_SEP = "#"
+
 class Settings:
     def __init__(self):
         output = sh.nordvpn("settings")
 
         self.settings = {}
+        prev_key = ""
         for line in output.split("\n"):
-            stripped_line = line.strip()
-            if not stripped_line:
+            if not line.strip():
                 continue  # skip empty lines
 
-            if ":" in stripped_line:
-                key, value = stripped_line.split(":", 1)
-                key = key.lower().strip()
-                value = value.lower().strip()
-                self.settings[key] = value
+            # this is a main setting line with a colon
+            if ":" in line:
+                pair = line.split(":", 1)
+                prev_key = pair[0].lower().strip()
+                value = pair[1].strip().lower()
+                self.settings[prev_key] = value
+
+            # this is a continuation line for a previous key (multi-line-value)
+            elif prev_key:
+                stripped_line = line.strip().lower()
+                # check if this is a continuation line for the current key
+                if prev_key in self.settings:
+                    prev_value = self.settings[prev_key]
+                    if not prev_value:
+                        new_value = stripped_line
+                    else:
+                        new_value = prev_value + MULTI_LINE_PARAM_SEP + stripped_line
+                    self.settings[prev_key] = new_value
 
     def get(self, key: str) -> str:
         key = key.lower()

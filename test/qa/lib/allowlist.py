@@ -3,6 +3,7 @@ import random
 import sh
 
 from . import Port, Protocol, daemon
+from lib import settings
 
 MSG_ALLOWLIST_SUBNET_ADD_SUCCESS = "Subnet %s is allowlisted successfully."
 MSG_ALLOWLIST_SUBNET_ADD_ERROR = "Subnet %s is already allowlisted."
@@ -132,3 +133,24 @@ def remove_subnet_from_allowlist(subnet_list: list[str]):
 
         iprules = sh.ip.rule.show()
         assert subnet not in iprules, "Subnet found in `ip rule show`"
+
+
+def get_allow_list_ports() -> list[Port]:
+    value = settings.Settings().get("allowlisted ports")
+    ports_str = value.split(settings.MULTI_LINE_PARAM_SEP)
+
+    port_list: list[Port] = []
+    for val in ports_str:
+        processed_val = val.replace(" - ", ":")
+        if not processed_val:
+            continue
+        try:
+            port_str, protocol_str = processed_val.split(" ", 1)
+            protocol_str = protocol_str.upper().strip("()")
+            port = Port(port_str, Protocol.construct(protocol_str))
+            print(port_str, protocol_str)
+            port_list.append(port)
+        except ValueError:
+            continue
+
+    return port_list
