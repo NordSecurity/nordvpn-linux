@@ -51,3 +51,10 @@ enum TriState {
   DISABLED = 1;
   ENABLED = 2;
 }
+
+enum ClientID {
+  UNKNOWN_CLIENT = 0;
+  CLI = 1;
+  GUI = 2;
+  TRAY = 3;
+}
