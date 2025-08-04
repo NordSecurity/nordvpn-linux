@@ -148,12 +148,6 @@ if [[ "${FEATURES:-""}" == *moose* ]]; then
 
   fetch_dependency "libmoose-nordvpnapp" "${libmoose_nordvpnapp_artifact_url}" \
   "libmoosenordvpnapp.so" "out/nordvpnapp/bin/nordvpnapp/linux" "${LIBMOOSE_NORDVPNAPP_VERSION}"
-
-  zipfile="${temp_dir}/libmoose-nordvpnapp-${LIBMOOSE_NORDVPNAPP_VERSION}.zip"
-  if [[ -e "${zipfile}" ]]; then
-    copy_to_libs "${zipfile}" "libsqlite3.so" "out/nordvpnapp/bin/common/linux" "${lib_root}/${name}/${LIBMOOSE_NORDVPNAPP_VERSION}"
-  fi
-  populate_current_ver "${lib_root}/current" "${lib_root}/libmoose-nordvpnapp/current" "libsqlite3.so"
 fi
 
 # remove leftovers

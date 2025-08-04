@@ -22,6 +22,7 @@ case "$1" in
         rm -rf /var/{lib,log}/nordvpn
         rm -rf /run/nordvpn
         rm -rf /etc/ld.so.conf.d/nordvpn.conf
+        rm -rf /usr/lib/nordvpn/libsqlite3.so
 
         # NOTE: We found some really strange behavior with `ldconfig` cache refresh here.
         # On .deb systems, using just `ldconfig` causes the nordvpnd daemon to fail on

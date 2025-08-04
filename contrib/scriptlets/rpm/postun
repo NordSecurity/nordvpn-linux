@@ -14,6 +14,8 @@ case "$1" in
         rm -rf /var/{lib,log}/nordvpn
         rm -rf /run/nordvpn
         rm -rf /etc/ld.so.conf.d/nordvpn.conf
+        rm -rf /usr/lib/nordvpn
+        rm -rf /usr/share/licenses/nordvpn
         ldconfig
     ;;
 esac
