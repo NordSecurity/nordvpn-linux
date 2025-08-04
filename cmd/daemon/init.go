@@ -13,7 +13,7 @@ import (
 
 func buildAccessTokenSessionStore(
 	confman config.Manager,
-	errRegistry *internal.ErrorHandlingRegistry[int64],
+	errRegistry *internal.ErrorHandlingRegistry[error],
 	clientAPI core.RawClientAPI,
 ) session.SessionStore {
 	return session.NewAccessTokenSessionStore(
@@ -70,7 +70,7 @@ func buildAccessTokenSessionStoreAPIRenewalCall(clientAPI core.RawClientAPI) ses
 
 func buildTrustedPassSessionStore(
 	confman config.Manager,
-	errRegistry *internal.ErrorHandlingRegistry[int64],
+	errRegistry *internal.ErrorHandlingRegistry[error],
 	clientAPI core.ClientAPI,
 ) session.SessionStore {
 	return session.NewTrustedPassSessionStore(

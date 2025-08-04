@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -20,7 +21,7 @@ type AccessTokenRenewalAPICall func(token string, idempotencyKey uuid.UUID) (*Ac
 
 type AccessTokenSessionStore struct {
 	cfgManager         config.Manager
-	errHandlerRegistry *internal.ErrorHandlingRegistry[int64]
+	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	validator          SessionStoreValidator
 	renewAPICall       AccessTokenRenewalAPICall
 	session            *accessTokenSession
@@ -30,7 +31,7 @@ type AccessTokenSessionStore struct {
 func NewAccessTokenSessionStore(
 	cfgManager config.Manager,
 	validator SessionStoreValidator,
-	errorHandlingRegistry *internal.ErrorHandlingRegistry[int64],
+	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
 	renewAPICall AccessTokenRenewalAPICall,
 ) SessionStore {
 	return &AccessTokenSessionStore{
@@ -79,15 +80,14 @@ func (s *AccessTokenSessionStore) Renew() error {
 // It does not modify or remove any tokens from storage and leaves this responsibility to the
 // client.
 func (s *AccessTokenSessionStore) Invalidate(reason error) error {
-	var cfg config.Config
-	if err := s.cfgManager.Load(&cfg); err != nil {
-		return err
+	handlers := s.errHandlerRegistry.GetHandlers(reason)
+	if len(handlers) == 0 {
+		return fmt.Errorf("invalidating session: %w", reason)
 	}
 
-	for uid := range cfg.TokensData {
-		s.invokeClientErrorHandlers(uid, reason)
+	for _, handler := range handlers {
+		handler(reason)
 	}
-
 	return nil
 }
 
@@ -99,29 +99,28 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 	}
 
 	resp, err := s.renewAPICall(data.Token, *data.IdempotencyKey)
-	if err == nil {
-		data.Token = resp.Token
-		data.RenewToken = resp.RenewToken
-		data.TokenExpiry = resp.ExpiresAt
-
-		return s.cfgManager.SaveWith(func(c config.Config) config.Config {
-			td := c.TokensData[uid]
-			td.Token = data.Token
-			td.RenewToken = data.RenewToken
-			td.TokenExpiry = data.TokenExpiry
-			c.TokensData[uid] = td
-			return c
-		})
+	if err != nil {
+		return s.Invalidate(err)
 	}
 
-	if errors.Is(err, ErrUnauthorized) || errors.Is(err, ErrNotFound) || errors.Is(err, ErrBadRequest) {
-		defer s.invokeClientErrorHandlers(uid, err)
-		if err := s.cfgManager.SaveWith(func(c config.Config) config.Config {
-			delete(c.TokensData, uid)
-			return c
-		}); err != nil {
-			return fmt.Errorf("removing token data: %w", err)
-		}
+	if err = s.SetToken(resp.Token); err != nil {
+		return err
+	}
+
+	if err = s.SetRenewToken(resp.RenewToken); err != nil {
+		s.session.reset()
+		return err
+	}
+
+	expTime, errParse := time.Parse(internal.ServerDateFormat, resp.ExpiresAt)
+	if errParse != nil {
+		s.session.reset()
+		return err
+	}
+
+	if err = s.SetExpiry(expTime); err != nil {
+		s.session.reset()
+		return err
 	}
 
 	return nil
@@ -146,12 +145,4 @@ func (s *AccessTokenSessionStore) tryUpdateIdempotencyKey(uid int64, data *confi
 	}
 
 	return nil
-}
-
-// invokeClientErrorHandlers executes all registered error handlers associated with the provided
-// error for the given user ID.
-func (s *AccessTokenSessionStore) invokeClientErrorHandlers(uid int64, err error) {
-	for _, handler := range s.errHandlerRegistry.GetHandlers(err) {
-		handler(uid)
-	}
 }

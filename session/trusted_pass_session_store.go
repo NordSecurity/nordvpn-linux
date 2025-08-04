@@ -1,7 +1,6 @@
 package session
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -23,7 +22,7 @@ type TrustedPassRenewalAPICall func(token string) (*TrustedPassAccessTokenRespon
 
 type TrustedPassSessionStore struct {
 	cfgManager         config.Manager
-	errHandlerRegistry *internal.ErrorHandlingRegistry[int64]
+	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	validator          SessionStoreValidator
 	renewAPICall       TrustedPassRenewalAPICall
 	session            *trustedPassSession
@@ -32,7 +31,7 @@ type TrustedPassSessionStore struct {
 // NewTrustedPassSessionStore
 func NewTrustedPassSessionStore(
 	cfgManager config.Manager,
-	errHandlerRegistry *internal.ErrorHandlingRegistry[int64],
+	errHandlerRegistry *internal.ErrorHandlingRegistry[error],
 	validator SessionStoreValidator,
 	renewAPICall TrustedPassRenewalAPICall,
 ) SessionStore {
@@ -44,9 +43,9 @@ func NewTrustedPassSessionStore(
 		session:            newTrustedPassSession(cfgManager),
 	}
 }
-func (m *TrustedPassSessionStore) Renew() error {
+func (s *TrustedPassSessionStore) Renew() error {
 	var cfg config.Config
-	if err := m.cfgManager.Load(&cfg); err != nil {
+	if err := s.cfgManager.Load(&cfg); err != nil {
 		return err
 	}
 
@@ -56,8 +55,8 @@ func (m *TrustedPassSessionStore) Renew() error {
 	}
 
 	// check if everything is valid or data renewal is required
-	if err := m.validator.Validate(m); err != nil {
-		if err = m.renewIfOAuth(&data, cfg.AutoConnectData.ID); err != nil {
+	if err := s.validator.Validate(s); err != nil {
+		if err = s.renewIfOAuth(&data); err != nil {
 			return err
 		}
 	}
@@ -67,7 +66,7 @@ func (m *TrustedPassSessionStore) Renew() error {
 	// is still valid. In such cases we need to hit the api to get the initial value.
 	isNotValid := (data.TrustedPassToken == "" || data.TrustedPassOwnerID == "")
 	if isNotValid {
-		if err := m.renewIfOAuth(&data, cfg.AutoConnectData.ID); err != nil {
+		if err := s.renewIfOAuth(&data); err != nil {
 			return err
 		}
 	}
@@ -75,71 +74,48 @@ func (m *TrustedPassSessionStore) Renew() error {
 	return nil
 }
 
-func (m *TrustedPassSessionStore) Invalidate(reason error) error {
-	var cfg config.Config
-	if err := m.cfgManager.Load(&cfg); err != nil {
-		return err
+func (s *TrustedPassSessionStore) Invalidate(reason error) error {
+	handlers := s.errHandlerRegistry.GetHandlers(reason)
+	if len(handlers) == 0 {
+		return fmt.Errorf("invalidating session: %w", reason)
 	}
 
-	for uid := range cfg.TokensData {
-		m.invokeClientErrorHandlers(uid, reason)
+	for _, handler := range handlers {
+		handler(reason)
 	}
-
 	return nil
 }
 
-// invokeClientErrorHandlers executes all registered error handlers associated with the provided
-// error for the given user ID.
-func (s *TrustedPassSessionStore) invokeClientErrorHandlers(uid int64, err error) {
-	for _, handler := range s.errHandlerRegistry.GetHandlers(err) {
-		handler(uid)
-	}
-}
-
-func (m *TrustedPassSessionStore) renewToken(data *config.TokenData) error {
-	resp, err := m.renewAPICall(data.Token)
+func (s *TrustedPassSessionStore) renewToken(data *config.TokenData) error {
+	resp, err := s.renewAPICall(data.Token)
 	if err != nil {
 		return fmt.Errorf("getting trusted pass token data: %w", err)
 	}
 
-	if err := m.SetToken(resp.Token); err != nil {
+	if err := s.SetToken(resp.Token); err != nil {
 		return err
 	}
 
-	if err := m.SetOwnerID(resp.OwnerID); err != nil {
+	if err := s.SetOwnerID(resp.OwnerID); err != nil {
+		s.session.reset()
 		return err
 	}
 
-	if err = m.SetExpiry(time.Now().Add(trustedPassExpiryPeriod)); err != nil {
+	if err = s.SetExpiry(time.Now().Add(trustedPassExpiryPeriod)); err != nil {
+		s.session.reset()
 		return err
 	}
 
 	return nil
 }
 
-func (m *TrustedPassSessionStore) isLogoutNeeded(err error) bool {
-	return errors.Is(err, ErrUnauthorized) ||
-		errors.Is(err, ErrNotFound) ||
-		errors.Is(err, ErrBadRequest)
-}
-
-func (m *TrustedPassSessionStore) doLogout(reason error, uid int64) {
-	// err  handler will take care of event publishing (which will need to be catched for logout)
-	for _, handler := range m.errHandlerRegistry.GetHandlers(reason) {
-		handler(uid)
-	}
-}
-
-func (m *TrustedPassSessionStore) renewIfOAuth(data *config.TokenData, uid int64) error {
+func (s *TrustedPassSessionStore) renewIfOAuth(data *config.TokenData) error {
 	if !data.IsOAuth {
 		return nil
 	}
 
-	if err := m.renewToken(data); err != nil {
-		if m.isLogoutNeeded(err) {
-			m.doLogout(err, uid)
-		}
-		return err
+	if err := s.renewToken(data); err != nil {
+		return s.Invalidate(err)
 	}
 
 	return nil

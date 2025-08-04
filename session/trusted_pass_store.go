@@ -60,6 +60,17 @@ func (s *trustedPassSession) set(cfg trustedPassConfig) error {
 	return nil
 }
 
+func (s *trustedPassSession) reset() {
+	s.cm.SaveWith(func(c config.Config) config.Config {
+		data := c.TokensData[c.AutoConnectData.ID]
+		data.TrustedPassToken = ""
+		data.TrustedPassOwnerID = ""
+		data.TrustedPassTokenExpiry = ""
+		c.TokensData[c.AutoConnectData.ID] = data
+		return c
+	})
+}
+
 func (s *TrustedPassSessionStore) SetToken(value string) error {
 	cfg, err := s.session.get()
 	if err != nil {
