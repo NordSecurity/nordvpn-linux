@@ -101,8 +101,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	expiredDate := time.Now().Add(-12 * time.Hour)
-	validDate := time.Now().Add(time.Hour)
+	expiredDate := time.Now().Truncate(24 * time.Hour)
+	validDate := time.Now().Add(24 * time.Hour)
 
 	rt := mockRoundTripper{
 		expectedIdempotencyKey: idempotencyKey,
@@ -126,7 +126,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		},
 	}
 
-	resetExpirationDate := func() {
+	resetExpiryDateToOriginal := func() {
 		dt := cm.c.TokensData[cm.c.AutoConnectData.ID]
 		dt.TokenExpiry = time.Now().UTC().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 		cm.c.TokensData[cm.c.AutoConnectData.ID] = dt
@@ -157,13 +157,15 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 					Token:      resp.Token,
 					RenewToken: resp.RenewToken,
 					ExpiresAt:  resp.ExpiresAt,
-				}, err
+				}, nil
 			},
 			nil,
 		)},
 	}
 
-	resetExpirationDate()
+	// valid token renewal request
+	// make sure initial test data is correct
+	resetExpiryDateToOriginal()
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[cm.c.AutoConnectData.ID].TokenExpiry))
 	rt.resp = &core.TokenRenewResponse{
 		Token:      uuid.New().String(),
@@ -192,7 +194,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		badConnErrHandled = true
 	}, badConnErr)
 
-	resetExpirationDate()
+	// make sure initial test data is correct
+	resetExpiryDateToOriginal()
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[cm.c.AutoConnectData.ID].TokenExpiry))
 
 	lastExpiredToken := strings.Clone(cm.c.TokensData[uid].Token)
@@ -210,7 +213,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	cm.c.TokensData[0] = config.TokenData{
 		Token:              "expired-token",
 		RenewToken:         "expired-renew-token",
-		TokenExpiry:        expiredDate.String(),
+		TokenExpiry:        expiredDate.Format(internal.ServerDateFormat),
 		IdempotencyKey:     &idempotencyKey,
 		NordLynxPrivateKey: "nordlynx-pkey",
 		OpenVPNUsername:    "openvpn-username",
@@ -218,6 +221,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	}
 
 	badConnErrHandled = false
+	// make sure initial test data is correct
+	resetExpiryDateToOriginal()
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[cm.c.AutoConnectData.ID].TokenExpiry))
 
 	rt.resp = nil
@@ -239,24 +244,13 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	expiredDate := time.Now().Truncate(time.Hour)
+	expiredDate := time.Now().Truncate(24 * time.Hour)
 	rt := mockRoundTripper{expectedIdempotencyKey: idempotencyKey}
 	uid := int64(1)
 
 	cm := memoryConfigManager{
 		c: config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:              "someExpiredToken",
-					TokenExpiry:        expiredDate.String(),
-					RenewToken:         "renew-token",
-					IdempotencyKey:     &idempotencyKey,
-					NordLynxPrivateKey: "nordlynx-pkey",
-					OpenVPNUsername:    "openvpn-username",
-					OpenVPNPassword:    "openvpn-password",
-				},
-			},
+			TokensData: map[int64]config.TokenData{},
 		},
 	}
 
@@ -267,6 +261,9 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 
 	expirationChecker := NewTokenExpirationChecker()
 	errRegistry := internal.NewErrorHandlingRegistry[error]()
+	errRegistry.Add(func(s error) {
+		delete(cm.c.TokensData, uid)
+	}, core.ErrBadRequest, core.ErrNotFound)
 
 	rc := RenewingChecker{
 		cm:         &cm,
@@ -290,7 +287,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 		)},
 	}
 
-	resetExpirationDate := func() {
+	resetExpiryDateToOriginal := func() {
 		dt := cm.c.TokensData[cm.c.AutoConnectData.ID]
 		dt.TokenExpiry = time.Now().UTC().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 		cm.c.TokensData[cm.c.AutoConnectData.ID] = dt
@@ -310,6 +307,9 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 
 	for _, exptectedErr := range randomErrs {
 		badConnErrHandled = false
+		// replace the token in the config with one that is expired.
+		// so the next IsLoggedIn() request should attempt a token renewal
+		cm.c.AutoConnectData.ID = uid
 		cm.c.TokensData[uid] = config.TokenData{
 			Token:              "expired-token",
 			RenewToken:         "expired-renew-token",
@@ -320,7 +320,8 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 			OpenVPNPassword:    "openvpn-password",
 		}
 
-		resetExpirationDate()
+		// make sure initial test data is correct
+		resetExpiryDateToOriginal()
 		assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[uid].TokenExpiry))
 
 		rt.resp = nil
@@ -346,7 +347,8 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 		OpenVPNPassword:    "openvpn-password",
 	}
 
-	resetExpirationDate()
+	// make sure initial test data is correct
+	resetExpiryDateToOriginal()
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[uid].TokenExpiry))
 
 	rt.resp = nil
