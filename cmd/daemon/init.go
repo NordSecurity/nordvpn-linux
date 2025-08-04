@@ -30,41 +30,26 @@ func buildAccessTokenSessionStoreValidators(clientAPI core.RawClientAPI) session
 		session.NewManualAccessTokenValidator(func(token string) error {
 			// this is the least expensive api call that needs authentication
 			_, err := clientAPI.CurrentUser(token)
-			// map to internal errors
 			if errors.Is(err, core.ErrUnauthorized) {
-				return session.ErrUnauthorized
+				return session.ErrAccessTokenRevoked
 			}
 			return nil
 		}),
 	)
 }
 
-func convertCoreToSessionError(err error) error {
-	switch {
-	case errors.Is(err, core.ErrBadRequest):
-		err = session.ErrBadRequest
-	case errors.Is(err, core.ErrUnauthorized):
-		err = session.ErrUnauthorized
-	case errors.Is(err, core.ErrNotFound):
-		err = session.ErrNotFound
-	}
-
-	return err
-}
-
 func buildAccessTokenSessionStoreAPIRenewalCall(clientAPI core.RawClientAPI) session.AccessTokenRenewalAPICall {
 	return func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 		resp, err := clientAPI.TokenRenew(token, idempotencyKey)
-		if err == nil {
-			return &session.AccessTokenResponse{
-				Token:      resp.Token,
-				RenewToken: resp.RenewToken,
-				ExpiresAt:  resp.ExpiresAt,
-			}, nil
+		if err != nil {
+			return nil, fmt.Errorf("renewing access token: %w", err)
 		}
 
-		// map to internal errors
-		return nil, fmt.Errorf("renewing access token: %w", convertCoreToSessionError(err))
+		return &session.AccessTokenResponse{
+			Token:      resp.Token,
+			RenewToken: resp.RenewToken,
+			ExpiresAt:  resp.ExpiresAt,
+		}, nil
 	}
 }
 
@@ -90,7 +75,7 @@ func buildTrustedPassSessionStoreAPIRenewalCall(clientAPI core.ClientAPI) sessio
 		resp, err := clientAPI.TrustedPassToken()
 		if err != nil {
 			// map to internal errors
-			return nil, fmt.Errorf("getting trusted pass token data: %w", convertCoreToSessionError(err))
+			return nil, fmt.Errorf("getting trusted pass token data: %w", err)
 		}
 
 		return &session.TrustedPassAccessTokenResponse{

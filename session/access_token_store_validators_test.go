@@ -2,6 +2,7 @@ package session_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -140,7 +141,7 @@ func Test_ManualAccessTokenValidator_Validate(t *testing.T) {
 
 		api := func(token string) error {
 			assert.Equal(t, "valid-format-but-revoked", token)
-			return session.ErrUnauthorized
+			return session.ErrAccessTokenRevoked
 		}
 
 		validator := session.NewManualAccessTokenValidator(api)
@@ -177,7 +178,7 @@ func Test_ManualAccessTokenValidator_Validate(t *testing.T) {
 		assert.True(t, apiCalled)
 	})
 
-	t.Run("Manual token with valid format but other API error", func(t *testing.T) {
+	t.Run("Manual token with valid format. API error is passed through", func(t *testing.T) {
 		originalValidator := internal.AccessTokenFormatValidator
 		internal.AccessTokenFormatValidator = func(token string) bool { return true }
 		// internal workaround
@@ -196,8 +197,8 @@ func Test_ManualAccessTokenValidator_Validate(t *testing.T) {
 		validator := session.NewManualAccessTokenValidator(api)
 
 		err := validator.Validate(store)
-
-		assert.NoError(t, err, "Non-unauthorized errors should be ignored")
+		fmt.Println("err:", err)
+		assert.ErrorIs(t, err, apiError, "Input/Output error must match")
 	})
 }
 
