@@ -2,6 +2,9 @@ package session
 
 import (
 	"fmt"
+	"log"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 type InvalidSessionValidator struct{}
@@ -27,6 +30,9 @@ func (v *TokenValidator) Validate(session interface{}) error {
 // NewTokenValidator creates a validator that checks session tokens.
 func NewTokenValidator(fn func(token string) error) SessionStoreValidator {
 	if fn == nil {
+		log.Println(
+			internal.WarningPrefix,
+			"TokenValidator creation failed due to an invalid function argument.")
 		return &InvalidSessionValidator{}
 	}
 	return &TokenValidator{ValidateFunc: fn}
@@ -70,6 +76,9 @@ func (v *CredentialValidator) Validate(session interface{}) error {
 // NewCredentialValidator creates a validator that checks session credentials.
 func NewCredentialValidator(fn func(username, password string) error) SessionStoreValidator {
 	if fn == nil {
+		log.Println(
+			internal.WarningPrefix,
+			"CredentialValidator creation failed due to an invalid function argument.")
 		return &InvalidSessionValidator{}
 	}
 	return &CredentialValidator{ValidateFunc: fn}
@@ -93,6 +102,9 @@ func (c *CompositeValidator) Validate(session interface{}) error {
 // NewCompositeValidator creates a validator that runs multiple validators sequentially.
 func NewCompositeValidator(validators ...SessionStoreValidator) SessionStoreValidator {
 	if len(validators) == 0 {
+		log.Println(
+			internal.WarningPrefix,
+			"CompositeValidator creation failed due to empty arguments.")
 		return &InvalidSessionValidator{}
 	}
 	return &CompositeValidator{validators: validators}
