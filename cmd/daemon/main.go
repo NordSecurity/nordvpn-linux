@@ -305,7 +305,7 @@ func main() {
 		machineIdGenerator.GetUsedInformationMask(),
 	)
 
-	invalidSessionErrHandlingReg := internal.NewErrorHandlingRegistry[int64]()
+	invalidSessionErrHandlingReg := internal.NewErrorHandlingRegistry[error]()
 
 	// encapsulating initialization logic
 	clientAPI, accessTokenSessionStore := func() (core.ClientAPI, session.SessionStore) {
@@ -518,7 +518,7 @@ func main() {
 	// on session invalidation (unauthorized access, missing server resources, invalid request)
 	// perform user log-out action
 	invalidSessionErrHandlingReg.Add(
-		func(uid int64) {
+		func(reason error) {
 			discArgs := access.DisconnectInput{
 				Networker:                  netw,
 				ConfigManager:              fsystem,
