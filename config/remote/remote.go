@@ -125,20 +125,28 @@ func isNetworkRetryable(err error) bool {
 
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
+	// first, try to load remote config from local disk/cache
+	loadErr := c.load()
+	needReload := false
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
 		if err := c.download(); err != nil {
 			return err
 		}
+		needReload = true
 	}
 
-	if err := c.load(); err != nil {
-		return err
+	// TODO/FIXME: proper merge is needed!!!
+	// remote config files were downloaded and need to be reloaded?
+	if needReload {
+		if err := c.load(); err != nil {
+			return err
+		}
+		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet.String())})
+		return nil
 	}
 
-	c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet.String())})
-
-	return nil
+	return loadErr
 }
 
 func (c *CdnRemoteConfig) download() error {
