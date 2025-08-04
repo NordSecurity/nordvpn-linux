@@ -122,7 +122,6 @@ func (s *TrustedPassSessionStore) validate() error {
 	if s.externalValidator != nil {
 		return s.externalValidator(cfg.Token, cfg.OwnerID)
 	}
-
 	return nil
 }
 
