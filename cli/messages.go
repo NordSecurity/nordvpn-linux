@@ -143,14 +143,14 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetNotEnabled            = "Meshnet is not enabled. Use the \"nordvpn set meshnet on\" command to enable it."
 	MsgMeshnetNordlynxMustBeEnabled = "NordLynx technology must be set to use this feature."
 	MsgMeshnetVersionNotSupported   = "Current application version does not support the Meshnet feature."
-	MsgMeshnetUsage                 = "Meshnet is a way to safely access other devices, no matter where in the world they are. Once set up, Meshnet functions just like a secure local area network (LAN) — it connects devices directly. It also allows securely sending files to other devices. Use the \"nordvpn set meshnet on\" command to enable Meshnet. Learn more: https://meshnet.nordvpn.com/"
+	MsgMeshnetUsage                 = "Meshnet is a way to safely access other devices, no matter where in the world they are. Once set up, Meshnet functions just like a secure local area network (LAN) — it connects devices directly. It also allows securely sending files to other devices. Use the \"nordvpn set meshnet on\" command to enable Meshnet. Learn more: https://meshnet.nordvpn.com/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-documentation&nm=app&ns=nordvpn-linux-cli&nc=meshnet-documentation"
 
 	MsgMeshnetRefreshUsage = "Refreshes the Meshnet in case it was not updated automatically."
 	MsgMeshnetPeerUnknown  = "Peer '%s' is unknown."
 
 	// Invites
 	MsgMeshnetInviteUsage                     = "Add other users' devices to your Meshnet."
-	MsgMeshnetInviteDescription               = MsgMeshnetInviteUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/linking-devices-in-meshnet"
+	MsgMeshnetInviteDescription               = MsgMeshnetInviteUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/linking-devices-in-meshnet?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-linking&nm=app&ns=nordvpn-linux-cli&nc=meshnet-linking_devices"
 	MsgMeshnetInviteListUsage                 = "Displays the list of all sent and received Meshnet invitations."
 	MsgMeshnetInviteAcceptUsage               = "Accepts an invitation to join inviter's mesh network."
 	MsgMeshnetInviteDenyUsage                 = "Denies an invitation to join inviter's mesh network."
@@ -191,16 +191,16 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetPeerUsage       = "Manage Meshnet peers."
 	MsgMeshnetPeerDescription = `Manage your Meshnet devices.
 Learn more:
-	Managing Meshnet devices - https://meshnet.nordvpn.com/getting-started/how-to-start-using-meshnet/using-meshnet-on-linux#manage-devices
-	Meshnet permissions explained - https://meshnet.nordvpn.com/features/explaining-permissions
-	Routing traffic in Meshnet - https://meshnet.nordvpn.com/features/routing-traffic-in-meshnet`
+	Managing Meshnet devices - https://meshnet.nordvpn.com/getting-started/how-to-start-using-meshnet/using-meshnet-on-linux?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-getting_started&nm=app&ns=nordvpn-linux-cli&nc=meshnet-getting_started
+	Meshnet permissions explained - https://meshnet.nordvpn.com/features/explaining-permissions?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-permissions&nm=app&ns=nordvpn-linux-cli&nc=meshnet-permissions
+	Routing traffic in Meshnet - https://meshnet.nordvpn.com/features/routing-traffic-in-meshnet?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-routing&nm=app&ns=nordvpn-linux-cli&nc=meshnet-routing`
 	MsgMeshnetPeerArgsUsage     = "<peer_hostname>|<peer_nickname>|<peer_ip>|<peer_pubkey>"
 	MsgMeshnetPeerListUsage     = "Lists available peers in a Meshnet."
 	MsgMeshnetPeerRemoveUsage   = "Removes a peer from a Meshnet."
 	MsgMeshnetPeerRemoveSuccess = "Peer '%s' has been removed from the Meshnet."
 
 	MsgMeshnetPeerRoutingUsage          = "Allows/denies a peer device to route all traffic through this device."
-	MsgMeshnetPeerRoutingDescription    = MsgMeshnetPeerRoutingUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/explaining-permissions/traffic-routing-permissions"
+	MsgMeshnetPeerRoutingDescription    = MsgMeshnetPeerRoutingUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/explaining-permissions/traffic-routing-permissions?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-permissions&nm=app&ns=nordvpn-linux-cli&nc=meshnet-permissions"
 	MsgMeshnetPeerRoutingAllowUsage     = "Allows a Meshnet peer to route its' traffic through this device."
 	MsgMeshnetPeerRoutingDenyUsage      = "Denies a Meshnet peer to route its' traffic through this device."
 	MsgMeshnetPeerRoutingAlreadyAllowed = "Traffic routing for '%s' is already allowed."
@@ -209,7 +209,7 @@ Learn more:
 	MsgMeshnetPeerRoutingDenySuccess    = "Traffic routing for '%s' has been denied."
 
 	MsgMeshnetPeerIncomingUsage          = "Allows/denies a peer device to access this device remotely (incoming connections)."
-	MsgMeshnetPeerIncomingDescription    = MsgMeshnetPeerIncomingUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/explaining-permissions/remote-access-permissions"
+	MsgMeshnetPeerIncomingDescription    = MsgMeshnetPeerIncomingUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/explaining-permissions/remote-access-permissions?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-permissions&nm=app&ns=nordvpn-linux-cli&nc=meshnet-permissions"
 	MsgMeshnetPeerIncomingAllowUsage     = "Allows a Meshnet peer to send traffic to this device."
 	MsgMeshnetPeerIncomingDenyUsage      = "Denies a Meshnet peer to send traffic to this device."
 	MsgMeshnetPeerIncomingAlreadyAllowed = "Incoming traffic for '%s' is already allowed."
@@ -218,7 +218,7 @@ Learn more:
 	MsgMeshnetPeerIncomingDenySuccess    = "Incoming traffic for '%s' has been denied."
 
 	MsgMeshnetPeerLocalNetworkUsage          = "Allows/denies access to your local network when a peer device is routing traffic through this device."
-	MsgMeshnetPeerLocalNetworkDescription    = MsgMeshnetPeerLocalNetworkUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/explaining-permissions/local-network-permissions"
+	MsgMeshnetPeerLocalNetworkDescription    = MsgMeshnetPeerLocalNetworkUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/explaining-permissions/local-network-permissions?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-permissions&nm=app&ns=nordvpn-linux-cli&nc=meshnet-permissions"
 	MsgMeshnetPeerLocalNetworkAllowUsage     = "Allows a Meshnet peer to access local network when routing traffic through this device."
 	MsgMeshnetPeerLocalNetworkDenyUsage      = "Denies a Meshnet peer to access local network when routing traffic through this device."
 	MsgMeshnetPeerLocalNetworkAlreadyAllowed = "Local network access for '%s' is already allowed."
@@ -227,7 +227,7 @@ Learn more:
 	MsgMeshnetPeerLocalNetworkDenySuccess    = "Local network access for '%s' has been denied."
 
 	MsgMeshnetPeerFileshareUsage          = "Allows/denies peer to send files to this device."
-	MsgMeshnetPeerFileshareDescription    = MsgMeshnetPeerFileshareUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/explaining-permissions/file-sharing-permissions"
+	MsgMeshnetPeerFileshareDescription    = MsgMeshnetPeerFileshareUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/explaining-permissions/file-sharing-permissions?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-permissions&nm=app&ns=nordvpn-linux-cli&nc=meshnet-permissions"
 	MsgMeshnetPeerFileshareAllowUsage     = "Allows a Meshnet peer to send files to this device."
 	MsgMeshnetPeerFileshareDenyUsage      = "Denies a Meshnet peer to send files to this device."
 	MsgMeshnetPeerFileshareAlreadyAllowed = "Fileshare for '%s' is already allowed."
@@ -288,7 +288,7 @@ Learn more:
 	flagFileshareListOut = "outgoing"
 
 	MsgFileshareUsage                     = "Transfer files of any size between Meshnet peers securely and privately"
-	MsgFileshareDescription               = MsgFileshareUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/sharing-files-in-meshnet\n\nNote: most arguments (peer name, transfer ID, file name) in fileshare commands can be entered faster using auto-completion. Simply press Tab and the app will suggest valid options for you."
+	MsgFileshareDescription               = MsgFileshareUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/sharing-files-in-meshnet?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-sharing&nm=app&ns=nordvpn-linux-cli&nc=meshnet-sharing\n\nNote: most arguments (peer name, transfer ID, file name) in fileshare commands can be entered faster using auto-completion. Simply press Tab and the app will suggest valid options for you."
 	MsgFileshareTransferNotFound          = "Transfer not found."
 	MsgFileshareInvalidPath               = "Invalid path provided: %s"
 	MsgFilesharePathNotFound              = "Download directory %q does not exist. Make sure the directory exists or provide an alternative via --" + flagFilesharePath

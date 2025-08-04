@@ -48,7 +48,7 @@ Global options:
 
 For more detailed information, please check manual page.
 
-Our customer support works 24/7 so if you have any questions or issues, drop us a line at https://support.nordvpn.com/
+Our customer support works 24/7 so if you have any questions or issues, drop us a line at https://support.nordvpn.com/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings-get_help&nm=app&ns=nordvpn-linux-cli&nc=settings-get_help
 `
 
 // CommandHelpTemplate is the template we use to show help

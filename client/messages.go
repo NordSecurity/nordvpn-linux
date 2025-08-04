@@ -21,8 +21,8 @@ const (
 	MsgTryAgain        = "We're having trouble reaching our servers. Please try again later. If the issue persists, please contact our customer support."
 	UFWDisabledMessage = "The active UFW firewall on your system prevents us from setting up our firewall properly. We have disabled UFW for the duration of your VPN connection and enabled our firewall to ensure your online security. Your custom UFW rules are imported to our firewall ruleset."
 
-	SubscriptionURL                 = "https://my.nordaccount.com/plans/?product_group=nordvpn&login_target=nordvpn&utm_source=linux&utm_medium=app&utm_campaign=desktop-app&redirect_uri=nordvpn://claim-online-purchase"
-	SubscriptionURLLogin            = "https://my.nordaccount.com/plans/?product_group=nordvpn&login_target=nordvpn&utm_source=linux&utm_medium=app&utm_campaign=desktop-app&trusted_pass_token=%s&owner_id=%s&redirect_uri=nordvpn://claim-online-purchase"
-	SubscriptionDedicatedIPURL      = "https://my.nordaccount.com/dashboard/nordvpn/dedicatedip/?product_group=nordvpn&utm_source=linux&utm_medium=in-app&utm_campaign=desktop-app"
-	SubscriptionDedicatedIPURLLogin = "https://my.nordaccount.com/dashboard/nordvpn/dedicatedip/?product_group=nordvpn&utm_source=linux&utm_medium=in-app&utm_campaign=desktop-app&trusted_pass_token=%s&owner_id=%s"
+	SubscriptionURL                 = "https://my.nordaccount.com/plans/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=home-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=home-choose_plan&redirect_uri=nordvpn://claim-online-purchase"
+	SubscriptionURLLogin            = "https://my.nordaccount.com/plans/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=home-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=home-choose_plan&trusted_pass_token=%s&owner_id=%s&redirect_uri=nordvpn://claim-online-purchase"
+	SubscriptionDedicatedIPURL      = "https://my.nordaccount.com/plans/dedicated-ip/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=dedicatedip-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=dedicatedip-choose_plan"
+	SubscriptionDedicatedIPURLLogin = "https://my.nordaccount.com/plans/dedicated-ip/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=dedicatedip-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=dedicatedip-choose_plan&trusted_pass_token=%s&owner_id=%s"
 )
