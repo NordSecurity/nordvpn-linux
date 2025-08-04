@@ -12,6 +12,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -35,6 +37,14 @@ const (
 	defaultFeatureState = true
 )
 
+type RemoteConfigEvent struct {
+	MeshnetFeatureEnabled bool
+}
+
+type RemoteConfigNotifier interface {
+	RemoteConfigUpdate(RemoteConfigEvent) error
+}
+
 type CdnRemoteConfig struct {
 	appVersion     string
 	appEnvironment string
@@ -44,6 +54,7 @@ type CdnRemoteConfig struct {
 	features       FeatureMap
 	rolloutGroup   int
 	mu             sync.RWMutex
+	notifier       events.PublishSubcriber[RemoteConfigEvent]
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
@@ -56,6 +67,7 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		cdn:            cdn,
 		rolloutGroup:   appRollout,
 		features:       make(FeatureMap),
+		notifier:       &subs.Subject[RemoteConfigEvent]{},
 	}
 	rc.features.Add(FeatureMain.String())
 	rc.features.Add(FeatureLibtelio.String())
@@ -119,7 +131,14 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 			return err
 		}
 	}
-	return c.load()
+
+	if err := c.load(); err != nil {
+		return err
+	}
+
+	c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet.String())})
+
+	return nil
 }
 
 func (c *CdnRemoteConfig) download() error {
@@ -254,4 +273,8 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 		}
 	}
 	return "", fmt.Errorf("feature [%s] param [%s] value not found", featureName, paramName)
+}
+
+func (c *CdnRemoteConfig) Subscribe(to RemoteConfigNotifier) {
+	c.notifier.Subscribe(to.RemoteConfigUpdate)
 }
