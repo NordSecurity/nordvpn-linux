@@ -1,6 +1,8 @@
 package session
 
 import (
+	"fmt"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -15,16 +17,16 @@ type VPNCredentialsRenewalAPICall func() (*VPNCredentialsResponse, error)
 
 type VPNCredentialsSessionStore struct {
 	cfgManager         config.Manager
-	errHandlerRegistry *internal.ErrorHandlingRegistry[int64]
+	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	validator          SessionStoreValidator
 	renewAPICall       VPNCredentialsRenewalAPICall
 	session            *vpnCredentialsSession
 }
 
-// NewVPNCredentialsSessionStore
+// NewVPNCredentialsSessionStore create new VPN credential session store
 func NewVPNCredentialsSessionStore(
 	cfgManager config.Manager,
-	errorHandlingRegistry *internal.ErrorHandlingRegistry[int64],
+	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
 	validator SessionStoreValidator,
 	renewAPICall VPNCredentialsRenewalAPICall,
 ) SessionStore {
@@ -37,7 +39,7 @@ func NewVPNCredentialsSessionStore(
 	}
 }
 
-// Renew
+// Renew VPN credentials if they have expired.
 func (s *VPNCredentialsSessionStore) Renew() error {
 	if err := s.validator.Validate(s.session); err == nil { // everything's valid and up-to-date
 		return nil
@@ -45,7 +47,7 @@ func (s *VPNCredentialsSessionStore) Renew() error {
 
 	resp, err := s.renewAPICall()
 	if err != nil {
-		return err
+		return s.Invalidate(err)
 	}
 
 	if err := s.session.SetNordlynxPrivateKey(resp.NordLynxPrivateKey); err != nil {
@@ -65,26 +67,17 @@ func (s *VPNCredentialsSessionStore) Renew() error {
 	return nil
 }
 
-// Invalidate triggers error handlers for all stored user tokens using the provided error.
+// Invalidate triggers registered error handlers.
 // It does not modify or remove any tokens from storage and leaves this responsibility to the
 // client.
 func (s *VPNCredentialsSessionStore) Invalidate(reason error) error {
-	var cfg config.Config
-	if err := s.cfgManager.Load(&cfg); err != nil {
-		return err
+	handlers := s.errHandlerRegistry.GetHandlers(reason)
+	if len(handlers) == 0 {
+		return fmt.Errorf("invalidating session: %w", reason)
 	}
 
-	for uid := range cfg.TokensData {
-		s.invokeClientErrorHandlers(uid, reason)
+	for _, handler := range handlers {
+		handler(reason)
 	}
-
 	return nil
-}
-
-// invokeClientErrorHandlers executes all registered error handlers associated with the provided
-// error for the given user ID.
-func (s *VPNCredentialsSessionStore) invokeClientErrorHandlers(uid int64, err error) {
-	for _, handler := range s.errHandlerRegistry.GetHandlers(err) {
-		handler(uid)
-	}
 }
