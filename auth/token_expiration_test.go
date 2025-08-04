@@ -259,6 +259,7 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 
 	resp, err := api.CurrentUser()
 	assert.Error(t, err)
+	assert.ErrorIs(t, err, core.ErrUnauthorized)
 	assert.Nil(t, resp)
 }
 
