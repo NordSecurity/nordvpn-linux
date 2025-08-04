@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 var (
@@ -39,15 +40,14 @@ var (
 
 type apiError struct {
 	Errors struct {
-		Message string `json:"message"`
 		Code    int    `json:"code"`
+		Message string `json:"message"`
 	} `json:"errors"`
 }
 
 // ExtractError from the response if it exists
 //
-// if an error was returned, do not try to read a
-// response again.
+// if an error was returned, do not try to read a response again.
 func ExtractError(resp *http.Response) error {
 	if resp.StatusCode < 400 {
 		return nil
@@ -61,7 +61,7 @@ func ExtractError(resp *http.Response) error {
 	}
 
 	var info apiError
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -75,42 +75,45 @@ func ExtractError(resp *http.Response) error {
 		)
 	}
 
-	status := http.StatusText(resp.StatusCode)
-	if info.Errors.Message != "" {
-		switch resp.StatusCode {
-		case http.StatusBadRequest:
-			if strings.Contains(info.Errors.Message, "count reached") {
-				return ErrMaximumDeviceCount
-			}
-			if err := extractErrorForMeshnet(info); err != nil {
-				return err
-			}
-			return fmt.Errorf("%w: %s", ErrBadRequest, info.Errors.Message)
-		case http.StatusUnauthorized:
-			return fmt.Errorf("%w: %s", ErrUnauthorized, info.Errors.Message)
-		case http.StatusForbidden:
-			return fmt.Errorf("%w: %s", ErrForbidden, info.Errors.Message)
-		case http.StatusNotFound:
-			return fmt.Errorf("%w: %s", ErrNotFound, info.Errors.Message)
-		case http.StatusConflict:
-			return fmt.Errorf("%w: %s", ErrConflict, info.Errors.Message)
-		default:
-			return fmt.Errorf("%s: %s", status, info.Errors.Message)
+	switch resp.StatusCode {
+	case http.StatusBadRequest:
+		if err := extractErrorForMeshnet(info); err != nil {
+			return err
 		}
+		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrBadRequest)
+
+	case http.StatusUnauthorized:
+		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrUnauthorized)
+
+	case http.StatusForbidden:
+		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrForbidden)
+
+	case http.StatusNotFound:
+		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrNotFound)
+
+	case http.StatusConflict:
+		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrConflict)
+
+	default:
+		status := http.StatusText(resp.StatusCode)
+		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, errors.New(status))
 	}
-	return errors.New(status)
 }
 
 func extractErrorForMeshnet(info apiError) error {
 	const (
-		rateLimitReachCode           = 101126 // rate limit reached (max allowed nickname changes per user per week)
-		nicknameTooLongCode          = 101127 // nickname too long
-		duplicateNicknameCode        = 101128 // duplicate nickname (nickname already exist)
-		forbiddenWordCode            = 101129 // nickname with forbidden word
-		invalidPrefixOrSuffixCode    = 101130 // nickname contains invalid prefix or suffix
-		nicknameHasDoubleHyphensCode = 101131 // nickname contains double hyphens
-		invalidCharsCode             = 101132 // nickname contains invalid characters
+		rateLimitReachCode                   = 101126 // rate limit reached (max allowed nickname changes per user per week)
+		nicknameTooLongCode                  = 101127 // nickname too long
+		duplicateNicknameCode                = 101128 // duplicate nickname (nickname already exist)
+		forbiddenWordCode                    = 101129 // nickname with forbidden word
+		invalidPrefixOrSuffixCode            = 101130 // nickname contains invalid prefix or suffix
+		nicknameHasDoubleHyphensCode         = 101131 // nickname contains double hyphens
+		invalidCharsCode                     = 101132 // nickname contains invalid characters
+		maxMachineCountReached               = 101120
+		maxMachinePerPeerCountReached        = 101121
+		maxPeerCountReachedOnExternalMachine = 101122
 	)
+
 	switch info.Errors.Code {
 	case rateLimitReachCode:
 		return ErrRateLimitReach
@@ -126,6 +129,8 @@ func extractErrorForMeshnet(info apiError) error {
 		return ErrNicknameWithDoubleHyphens
 	case invalidCharsCode:
 		return ErrContainsInvalidChars
+	case maxMachineCountReached, maxMachinePerPeerCountReached, maxPeerCountReachedOnExternalMachine:
+		return ErrMaximumDeviceCount
 	}
 	return nil
 }

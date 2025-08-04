@@ -2,7 +2,36 @@ package internal
 
 import (
 	"errors"
+	"fmt"
 )
+
+type CodedError struct {
+	Code    int
+	Message string
+	Err     error
+}
+
+// Error formats human readable representation of an underlying coded error
+func (e CodedError) Error() string {
+	if e.Err != nil {
+		return fmt.Sprintf("[Code %d] %s: %v", e.Code, e.Message, e.Err)
+	}
+	return fmt.Sprintf("[Code %d] %s", e.Code, e.Message)
+}
+
+// Unwrap underlying error is one exists
+func (e *CodedError) Unwrap() error {
+	return e.Err
+}
+
+// NewCodedError constructs a new coded error
+func NewCodedError(code int, message string, err error) error {
+	return &CodedError{
+		Code:    code,
+		Message: message,
+		Err:     err,
+	}
+}
 
 var (
 	ErrDaemonConnectionRefused = errors.New(DaemonConnRefusedErrorMessage)
