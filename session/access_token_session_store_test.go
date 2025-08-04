@@ -52,7 +52,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: 123},
 			TokensData: map[int64]config.TokenData{
-				123: {Token: "token", RenewToken: "renew", TokenExpiry: "2025-01-01"},
+				123: {Token: "token", RenewToken: "renew", TokenExpiry: "2025-01-01 10:10:10"},
 			},
 		}
 
@@ -66,7 +66,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			},
 		}
 
-		errorRegistry := internal.NewErrorHandlingRegistry[int64]()
+		errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
 		store := session.NewAccessTokenSessionStore(cfgManager, validator, errorRegistry, nil)
 
@@ -80,7 +80,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: 123},
 			TokensData: map[int64]config.TokenData{
-				123: {Token: "token", RenewToken: "renew", TokenExpiry: "2025-01-01"},
+				123: {Token: "token", RenewToken: "renew", TokenExpiry: "2025-01-01 10:10:10"},
 			},
 		}
 
@@ -95,7 +95,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		store := session.NewAccessTokenSessionStore(
 			cfgManager,
 			validator,
-			internal.NewErrorHandlingRegistry[int64](),
+			internal.NewErrorHandlingRegistry[error](),
 			func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 				return &session.AccessTokenResponse{}, nil
 			},
@@ -107,7 +107,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		assert.Equal(t, 1, validator.validateCalls)
 	})
 
-	t.Run("should renew token when validation fails with other error", func(t *testing.T) {
+	t.Run("should renew token when validation fails with unhandled error", func(t *testing.T) {
 		uid := int64(123)
 		idempotencyKey := uuid.New()
 		testCfg := config.Config{
@@ -116,7 +116,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 				uid: {
 					Token:          "old-token",
 					RenewToken:     "old-renew",
-					TokenExpiry:    "2025-01-01",
+					TokenExpiry:    "2025-01-01 10:10:10",
 					IdempotencyKey: &idempotencyKey,
 				},
 			},
@@ -132,7 +132,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			},
 		}
 
-		errorRegistry := internal.NewErrorHandlingRegistry[int64]()
+		errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
 		var renewCalled bool
 		var passedToken string
@@ -146,7 +146,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			return &session.AccessTokenResponse{
 				Token:      "new-token",
 				RenewToken: "new-renew",
-				ExpiresAt:  "2025-02-01",
+				ExpiresAt:  "2025-02-01 10:10:10",
 			}, nil
 		}
 
@@ -162,7 +162,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 
 		assert.Equal(t, "new-token", cfgManager.config.TokensData[uid].Token)
 		assert.Equal(t, "new-renew", cfgManager.config.TokensData[uid].RenewToken)
-		assert.Equal(t, "2025-02-01", cfgManager.config.TokensData[uid].TokenExpiry)
+		assert.Equal(t, "2025-02-01 10:10:10", cfgManager.config.TokensData[uid].TokenExpiry)
 	})
 
 	t.Run("should set idempotency key if not present", func(t *testing.T) {
@@ -173,7 +173,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 				uid: {
 					Token:          "old-token",
 					RenewToken:     "old-renew",
-					TokenExpiry:    "2025-01-01",
+					TokenExpiry:    "2025-01-01 10:10:10",
 					IdempotencyKey: nil,
 				},
 			},
@@ -189,13 +189,13 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			},
 		}
 
-		errorRegistry := internal.NewErrorHandlingRegistry[int64]()
+		errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
 		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
 			return &session.AccessTokenResponse{
 				Token:      "new-token",
 				RenewToken: "new-renew",
-				ExpiresAt:  "2025-02-01",
+				ExpiresAt:  "2025-02-01 10:10:10",
 			}, nil
 		}
 
@@ -208,7 +208,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		assert.NotNil(t, cfgManager.config.TokensData[uid].IdempotencyKey)
 	})
 
-	t.Run("should handle unauthorized error during renewal", func(t *testing.T) {
+	t.Run("should handle not-found error during renewal", func(t *testing.T) {
 		uid := int64(123)
 		idempotencyKey := uuid.New()
 		testCfg := config.Config{
@@ -217,7 +217,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 				uid: {
 					Token:          "old-token",
 					RenewToken:     "old-renew",
-					TokenExpiry:    "2025-01-01",
+					TokenExpiry:    "2025-01-01 10:10:10",
 					IdempotencyKey: &idempotencyKey,
 				},
 			},
@@ -233,19 +233,20 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			},
 		}
 
-		errorRegistry := internal.NewErrorHandlingRegistry[int64]()
+		someError := errors.New("not-found")
+		errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
 		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return nil, session.ErrUnauthorized
+			return nil, someError
 		}
 
 		var handlerCalled bool
-		var handledId int64
+		var handledError error
 
-		errorRegistry.Add(func(id int64) {
+		errorRegistry.Add(func(reason error) {
 			handlerCalled = true
-			handledId = id
-		}, session.ErrUnauthorized)
+			handledError = reason
+		}, someError)
 
 		store := session.NewAccessTokenSessionStore(cfgManager, validator, errorRegistry, mockRenewAPICall)
 
@@ -254,10 +255,11 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 1, validator.validateCalls)
 		assert.True(t, handlerCalled)
-		assert.Equal(t, uid, handledId)
+		assert.Equal(t, someError, handledError)
 
+		// external handler did not remove any configuration
 		_, exists := cfgManager.config.TokensData[uid]
-		assert.False(t, exists)
+		assert.True(t, exists)
 	})
 }
 
@@ -279,13 +281,13 @@ func TestAccessTokenSessionStore_Invalidate(t *testing.T) {
 			},
 		}
 
-		errorRegistry := internal.NewErrorHandlingRegistry[int64]()
+		errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
-		handledIds := make(map[int64]bool)
+		handledIds := make(map[error]bool)
 		testError := errors.New("test error")
 
-		errorRegistry.Add(func(id int64) {
-			handledIds[id] = true
+		errorRegistry.Add(func(reason error) {
+			handledIds[reason] = true
 		}, testError)
 
 		store := session.NewAccessTokenSessionStore(cfgManager, validator, errorRegistry, nil)
@@ -293,6 +295,6 @@ func TestAccessTokenSessionStore_Invalidate(t *testing.T) {
 		err := store.Invalidate(testError)
 
 		assert.NoError(t, err)
-		assert.True(t, handledIds[123])
+		assert.True(t, handledIds[testError])
 	})
 }

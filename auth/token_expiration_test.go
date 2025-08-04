@@ -207,7 +207,7 @@ func setupTestEnvironment(
 	sessionStore := session.NewAccessTokenSessionStore(
 		mockCfg,
 		session.NewExpiryValidator(),
-		internal.NewErrorHandlingRegistry[int64](),
+		internal.NewErrorHandlingRegistry[error](),
 		func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 			resp, err := simpleApi.TokenRenew(token, idempotencyKey)
 			if err == nil {
