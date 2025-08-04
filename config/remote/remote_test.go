@@ -334,6 +334,8 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
 
+	os.RemoveAll(localPath)
+
 	libtelioMainConfigFile := filepath.Join(localPath, "libtelio.json")
 	libtelioInc1ConfigFile := filepath.Join(localPath, "include/libtelio1.json")
 	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
