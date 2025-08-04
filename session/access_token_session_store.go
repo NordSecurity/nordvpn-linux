@@ -43,8 +43,7 @@ func NewAccessTokenSessionStore(
 	}
 }
 
-// Renew iterates over stored user tokens and attempts to renew each one that has expired.
-// Returns a combined error if one or more renewals fail.
+// Renew attempts to renew a token if it has expired.
 func (s *AccessTokenSessionStore) Renew() error {
 	err := s.validator.Validate(s)
 	if err == nil {
