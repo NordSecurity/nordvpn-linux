@@ -101,7 +101,6 @@ func (s *AccessTokenSessionStore) validate() error {
 			return fmt.Errorf("validating access token with external validator: %w", err)
 		}
 	}
-
 	return nil
 }
 
