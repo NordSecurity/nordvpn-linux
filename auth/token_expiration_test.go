@@ -75,7 +75,7 @@ func (rt *mockRoundTripperWithExpiration) RoundTrip(req *http.Request) (*http.Re
 }
 
 func (rt *mockRoundTripperWithExpiration) ForceExpiration() {
-	rt.createdAt = time.Now().Add(-2 * defaultExpirationDays)
+	rt.createdAt = time.Now().Add(-12 * defaultExpirationDays)
 }
 
 func (rt *mockRoundTripperWithExpiration) ResetExpiration() {
@@ -218,15 +218,6 @@ func setupTestEnvironment(
 				}, nil
 			}
 
-			switch {
-			case errors.Is(err, core.ErrBadRequest):
-				err = session.ErrBadRequest
-			case errors.Is(err, core.ErrUnauthorized):
-				err = session.ErrUnauthorized
-			case errors.Is(err, core.ErrNotFound):
-				err = session.ErrNotFound
-			}
-
 			return nil, err
 		},
 	)
@@ -275,16 +266,17 @@ func Test_TokenRenewalWithInvalidToken(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	pastExpiry := time.Now().Add(-1 * time.Hour).Format(internal.ServerDateFormat)
+	pastExpiry := time.Now().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 
 	api, mockRT, _ := setupTestEnvironment(idempotencyKey, pastExpiry, nil)
 
 	mockRT.renewResp = nil
+	mockRT.respError = core.ErrNotFound
 	mockRT.ForceExpiration()
 
 	resp, err := api.CurrentUser()
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, core.ErrUnauthorized)
+	assert.ErrorIs(t, err, core.ErrNotFound)
 	assert.Nil(t, resp)
 }
 

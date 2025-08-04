@@ -1,7 +1,6 @@
 package session
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -30,6 +29,7 @@ func (v *manualAccessTokenValidator) Validate(session interface{}) error {
 }
 
 // NewManualAccessTokenValidator creates a validator that verifies manually issued access tokens.
+// api should only return an error if API result indicates unauthorized access, otherwise - nil
 func NewManualAccessTokenValidator(api AnyIdempotentAPICallWithToken) SessionStoreValidator {
 	return &manualAccessTokenValidator{
 		ValidateFunc: func(token string, expiryDate time.Time) error {
@@ -40,11 +40,7 @@ func NewManualAccessTokenValidator(api AnyIdempotentAPICallWithToken) SessionSto
 					return fmt.Errorf("invalid access token format: %w", ErrAccessTokenExpired)
 				}
 
-				err := api(token)
-				// the only interest is in whether we receive "unauthorized access" error
-				if errors.Is(err, ErrUnauthorized) {
-					return ErrAccessTokenRevoked
-				}
+				return api(token)
 			}
 
 			return nil
