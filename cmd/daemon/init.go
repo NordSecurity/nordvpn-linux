@@ -61,13 +61,9 @@ func buildTrustedPassSessionStore(
 	return session.NewTrustedPassSessionStore(
 		confman,
 		errRegistry,
-		buildTrustedPassSessionStoreValidators(),
 		buildTrustedPassSessionStoreAPIRenewalCall(clientAPI),
+		nil,
 	)
-}
-
-func buildTrustedPassSessionStoreValidators() session.SessionStoreValidator {
-	return session.NewCompositeValidator(session.NewExpiryValidator(), session.NewOwnerIDValidator())
 }
 
 func buildTrustedPassSessionStoreAPIRenewalCall(clientAPI core.ClientAPI) session.TrustedPassRenewalAPICall {
