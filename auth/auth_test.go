@@ -580,12 +580,12 @@ func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
 
 func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 	expectedErr := errors.New("error")
-	mockSS := &mocksession.MockSessionStore{}
-	mockCM := &authConfigManager{serviceExpiry: "2000-01-01 09:18:53",
-		saveErr: expectedErr}
+	mockSS := &mocksession.MockSessionStore{
+		RenewErr: expectedErr,
+	}
 
 	checker := NewRenewingChecker(
-		mockCM,
+		&authConfigManager{},
 		&authAPI{},
 		&mockBoolPublisher{},
 		&mockAuthPublisher{},
@@ -597,4 +597,5 @@ func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 	assert.False(t, yes, "must not be logged in")
 	assert.Error(t, err, "there should be an error")
 	assert.ErrorIs(t, err, expectedErr)
+	assert.Equal(t, 1, mockSS.RenewCallCount)
 }
