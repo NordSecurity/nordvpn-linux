@@ -18,7 +18,6 @@ type vpnCredentialsSession struct {
 
 // TODO: needs global caching
 func (s *vpnCredentialsSession) get() (vpnCredentialsConfig, error) {
-
 	var cfg config.Config
 	if err := s.cm.Load(&cfg); err != nil {
 		return vpnCredentialsConfig{}, err
@@ -127,11 +126,7 @@ func (s *vpnCredentialsSession) GetNordlynxPrivateKey() string {
 // implements ExpirableSession
 func (s *vpnCredentialsSession) IsExpired() bool {
 	_, err := s.get()
-	if err != nil {
-		return true
-	}
-	// TODO: double check here (waiting for a response)
-	return false
+	return err != nil
 }
 
 func newVPNCredentialsSession(confman config.Manager) *vpnCredentialsSession {
