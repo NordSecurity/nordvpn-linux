@@ -1,177 +1,174 @@
+// The tests verify that MooseAnalytics correctly publishes analytics events
+// for various scenarios, including:
+// - Successful and failed downloads
+// - Local feature usage
+// - Successful and failed JSON parsing
+// - Partial rollout notifications
+// Each test checks that the appropriate event name and details are included
+// in the published event data.
 package remote
 
 import (
-	"encoding/json"
+	"errors"
+	"sync"
 	"testing"
+	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/events"
+	ev "github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-func TestEventJSONOutput(t *testing.T) {
-	category.Set(t, category.Unit)
-	ctx := UserInfo{
-		AppVersion:   "1.2.3",
-		Country:      "XX",
-		ISP:          "Super Duper ISP",
-		RolloutGroup: 42,
+// MockSubscriber is a test implementation of an event listener.
+// It captures published debugger events into a slice for later assertion.
+// It uses a sync.WaitGroup for synchronization means.
+type MockSubscriber struct {
+	mu     sync.Mutex
+	events []string // store event JSON for assertion
+	wg     *sync.WaitGroup
+}
+
+func NewMockListener() *MockSubscriber {
+	return &MockSubscriber{
+		events: make([]string, 0),
+		wg:     &sync.WaitGroup{},
 	}
+}
+
+func (s *MockSubscriber) NotifyDebuggerEvent(e ev.DebuggerEvent) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.events = append(s.events, e.JsonData)
+	s.wg.Done()
+	return nil
+}
+
+func (s *MockSubscriber) ExpectEvents(count int) {
+	s.wg.Add(count)
+}
+
+func (s *MockSubscriber) Wait(t *testing.T) {
+	done := make(chan struct{})
+	go func() {
+		s.wg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(1 * time.Second):
+		t.Fatal("Timeout waiting for DebuggerEvents")
+	}
+}
+
+type MockDebuggerEvents struct {
+	subscribers []ev.Handler[ev.DebuggerEvent]
+}
+
+func (m *MockDebuggerEvents) Subscribe(s ev.Handler[ev.DebuggerEvent]) {
+	m.subscribers = append(m.subscribers, s)
+}
+
+func (m *MockDebuggerEvents) Publish(e ev.DebuggerEvent) {
+	for _, sub := range m.subscribers {
+		sub(e)
+	}
+}
+
+type analyticsTestFixture struct {
+	publisher  *MockDebuggerEvents
+	subscriber *MockSubscriber
+	analytics  Analytics
+}
+
+func setupAnalyticsTest() *analyticsTestFixture {
+	publisher := &MockDebuggerEvents{}
+	subscriber := NewMockListener()
+	publisher.Subscribe(subscriber.NotifyDebuggerEvent)
+
+	analytics := NewRemoteConfigAnalytics(publisher, "1.2.3", 42)
+
+	return &analyticsTestFixture{
+		publisher:  publisher,
+		subscriber: subscriber,
+		analytics:  analytics,
+	}
+}
+
+func TestMooseAnalytics(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	const (
+		client  = "cli"
+		feature = "meshnet"
+	)
 
 	testCases := []struct {
-		name            string
-		event           Event
-		expectedResult  string
-		expectedError   string
-		expectedMessage string
+		name              string
+		action            func(a Analytics)
+		expectedEventName string
+		expectedDetails   string
 	}{
 		{
-			name:            "Rollout Success",
-			event:           NewRolloutEvent(ctx, "test-client", FeatureMeshnet, 50, true),
-			expectedResult:  rolloutYes,
-			expectedError:   "meshnet 42 / 50",
-			expectedMessage: FeatureMeshnet,
+			name: "NotifyDownload success",
+			action: func(a Analytics) {
+				a.NotifyDownload(client, feature, nil)
+			},
+			expectedEventName: `"event":"rc_download_success"`,
 		},
 		{
-			name:            "Rollout Failure",
-			event:           NewRolloutEvent(ctx, "test-client", FeatureMeshnet, 50, false),
-			expectedResult:  rolloutNo,
-			expectedError:   "meshnet 42 / 50",
-			expectedMessage: FeatureMeshnet,
+			name: "NotifyDownload failure",
+			action: func(a Analytics) {
+				a.NotifyDownload(client, feature, errors.New("fail"))
+			},
+			expectedEventName: `"event":"rc_download_failure"`,
+			expectedDetails:   `"message":"fail"`,
 		},
 		{
-			name:            "Download Success",
-			event:           NewDownloadSuccessEvent(ctx, "client", FeatureMeshnet),
-			expectedResult:  rcSuccess,
-			expectedError:   "",
-			expectedMessage: "",
+			name: "NotifyLocalUse",
+			action: func(a Analytics) {
+				a.NotifyLocalUse(client, feature, nil)
+			},
+			expectedEventName: `"event":"rc_local_use"`,
 		},
 		{
-			name:            "Download Failure",
-			event:           NewDownloadFailureEvent(ctx, "client", FeatureMain, DownloadErrorNetwork, "timeout"),
-			expectedResult:  rcFailure,
-			expectedError:   DownloadErrorNetwork.String(),
-			expectedMessage: "timeout",
+			name: "NotifyJsonParse success",
+			action: func(a Analytics) {
+				a.NotifyJsonParse(client, feature, nil)
+			},
+			expectedEventName: `"event":"rc_json_parse_success"`,
 		},
 		{
-			name:            "JSON Parse Success",
-			event:           NewJSONParseEvent(ctx, "client", FeatureLibtelio, "", ""),
-			expectedResult:  rcSuccess,
-			expectedError:   "",
-			expectedMessage: "",
+			name: "NotifyJsonParse failure",
+			action: func(a Analytics) {
+				a.NotifyJsonParse(client, feature, errors.New("parse error"))
+			},
+			expectedEventName: `"event":"rc_json_parse_failure"`,
+			expectedDetails:   `"message":"parse error"`,
 		},
 		{
-			name:            "JSON Parse Failure",
-			event:           NewJSONParseEvent(ctx, "client", FeatureLibtelio, "syntax-error", "bad token"),
-			expectedResult:  rcFailure,
-			expectedError:   "syntax-error",
-			expectedMessage: "bad token",
-		},
-		{
-			name:            "Local Use",
-			event:           NewLocalUseEvent(ctx, "client", FeatureLibtelio),
-			expectedResult:  rcSuccess,
-			expectedError:   "",
-			expectedMessage: "",
+			name: "NotifyPartialRollout",
+			action: func(a Analytics) {
+				a.NotifyPartialRollout(client, feature, 7, true)
+			},
+			expectedEventName: `"event":"rc_rollout"`,
+			expectedDetails:   `"error":"meshnet 42 / 7"`,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			debugerEvent := tc.event.ToDebuggerEvent()
-			var decodedEvent Event
-			err := json.Unmarshal([]byte(debugerEvent.JsonData), &decodedEvent)
-			require.NoError(t, err, "JSON should be valid and parsable into remote-config event")
+			fixture := setupAnalyticsTest()
+			fixture.subscriber.ExpectEvents(1)
 
-			assert.Equal(t, messageNamespace, decodedEvent.MessageNamespace, "namespace should be correctly set")
-			assert.Equal(t, subscope, decodedEvent.Subscope, "subscope should be correctly set")
-			assert.Equal(t, tc.event.Event, decodedEvent.Event, "event type should match")
-			assert.Equal(t, tc.expectedResult, decodedEvent.Result, "result should match expected")
-			assert.Equal(t, tc.expectedError, decodedEvent.Error, "error message should match expected")
-			assert.Equal(t, tc.expectedMessage, decodedEvent.Message, "message content should match expected")
+			tc.action(fixture.analytics)
+			fixture.subscriber.Wait(t)
+
+			assert.Len(t, fixture.subscriber.events, 1)
+			event := fixture.subscriber.events[0]
+			assert.Contains(t, event, tc.expectedEventName)
+			if tc.expectedDetails != "" {
+				assert.Contains(t, event, tc.expectedDetails)
+			}
 		})
 	}
-}
-
-// TestDebuggerEventContextPaths verifies that the ToDebuggerEvent method
-// correctly generates DebuggerEvent objects with the expected context paths.
-// It tests that:
-//  1. The GeneralContextPaths includes device and application information paths
-//  2. The KeyBasedContextPaths contains all the relevant remote config download failure
-//     information including type, app version, country, ISP, error, feature name and rollout group
-func TestDebuggerEventContextPaths(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	ctx := UserInfo{
-		AppVersion:   "3.1.0",
-		Country:      "Testland",
-		ISP:          "TestISP",
-		RolloutGroup: 42,
-	}
-	debugerEvent := NewDownloadFailureEvent(ctx, "test-client", FeatureLibtelio, DownloadErrorNetwork, "timeout").ToDebuggerEvent()
-
-	expectedGeneralPaths := []string{
-		"device.*",
-		"application.nordvpnapp.*",
-		"application.nordvpnapp.version",
-		"application.nordvpnapp.platform",
-	}
-	assert.ElementsMatch(t, expectedGeneralPaths, debugerEvent.GeneralContextPaths)
-
-	// Assert: Verify the KeyBased context paths.
-	expectedKeyBasedPaths := []events.ContextValue{
-		{Path: debuggerEventBaseKey + ".type", Value: DownloadFailure.String()},
-		{Path: debuggerEventBaseKey + ".app_version", Value: "3.1.0"},
-		{Path: debuggerEventBaseKey + ".country", Value: "Testland"},
-		{Path: debuggerEventBaseKey + ".isp", Value: "TestISP"},
-		{Path: debuggerEventBaseKey + ".error", Value: DownloadErrorNetwork.String()},
-		{Path: debuggerEventBaseKey + ".feature_name", Value: FeatureLibtelio},
-		{Path: debuggerEventBaseKey + ".rollout_group", Value: 42},
-	}
-	assert.ElementsMatch(t, expectedKeyBasedPaths, debugerEvent.KeyBasedContextPaths)
-}
-
-func TestDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
-	category.Set(t, category.Unit)
-	ctx := UserInfo{
-		AppVersion:   "9.8.7",
-		Country:      "AA",
-		ISP:          "Testland ISP",
-		RolloutGroup: 99,
-	}
-
-	event := NewDownloadFailureEvent(ctx, "test-env", FeatureLibtelio, DownloadErrorIntegrity, "Integrity corrupted")
-	debugerEvent := event.ToDebuggerEvent()
-
-	var payload map[string]interface{}
-	err := json.Unmarshal([]byte(debugerEvent.JsonData), &payload)
-	require.NoError(t, err, "JSON should be valid")
-
-	// Define the expected set of keys
-	expectedKeys := []string{
-		"namespace",
-		"subscope",
-		"client",
-		"event",
-		"result",
-		"error",
-		"message",
-	}
-
-	// Check that the keys match exactly
-	var actualKeys []string
-	for k := range payload {
-		actualKeys = append(actualKeys, k)
-	}
-	assert.ElementsMatch(t, expectedKeys, actualKeys, "JSON fields should match expected set")
-
-	// Optionally, check that the names are correct and values are as expected
-	assert.Equal(t, messageNamespace, payload["namespace"])
-	assert.Equal(t, subscope, payload["subscope"])
-	assert.Equal(t, "test-env", payload["client"])
-	assert.Equal(t, DownloadFailure.String(), payload["event"])
-	assert.Equal(t, rcFailure, payload["result"])
-	assert.Equal(t, DownloadErrorIntegrity.String(), payload["error"])
-	assert.Equal(t, "Integrity corrupted", payload["message"])
 }

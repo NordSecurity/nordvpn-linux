@@ -43,13 +43,13 @@ type CdnRemoteConfig struct {
 	cdn            core.RemoteStorage
 	features       *FeatureMap
 	rolloutGroup   int
-	ana            Analytics
+	analytics      Analytics
 	mu             sync.RWMutex
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
 func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string,
-	cdn core.RemoteStorage, ana Analytics, appRollout int) *CdnRemoteConfig {
+	cdn core.RemoteStorage, analytics Analytics, appRollout int) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
 		appVersion:     buildTarget.Version,
 		appEnvironment: buildTarget.Environment,
@@ -57,7 +57,7 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		localCachePath: localPath,
 		cdn:            cdn,
 		rolloutGroup:   appRollout,
-		ana:            ana,
+		analytics:      analytics,
 		features:       NewFeatureMap(),
 	}
 	rc.features.add(FeatureMain)
@@ -134,7 +134,7 @@ func (c *CdnRemoteConfig) download() error {
 		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "failed downloading feature [", feature.name, "] remote config:", err)
-			c.ana.NotifyDownload("cli", feature.name, err) // TODO/FIXME: adjust/finalize
+			c.analytics.NotifyDownload("cli", feature.name, err) // TODO/FIXME: adjust/finalize
 			if isNetworkRetryable(err) {
 				return err
 			}
@@ -143,7 +143,7 @@ func (c *CdnRemoteConfig) download() error {
 		if dnld {
 			// only if remote config was really downloaded
 			log.Println(internal.InfoPrefix, "feature [", feature.name, "] remote config downloaded to:", c.localCachePath)
-			c.ana.NotifyDownload("cli", feature.name, err) // TODO/FIXME: adjust/finalize
+			c.analytics.NotifyDownload("cli", feature.name, err) // TODO/FIXME: adjust/finalize
 		}
 	}
 	return nil
@@ -157,11 +157,11 @@ func (c *CdnRemoteConfig) load() error {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
 			log.Println(internal.ErrorPrefix, "failed loading feature [", feature.name, "] config from the disk:", err)
-			c.ana.NotifyLocalUse("cli", feature.name, err)
+			c.analytics.NotifyLocalUse("cli", feature.name, err)
 			continue
 		}
 		log.Println(internal.InfoPrefix, "feature [", feature.name, "] config loaded from:", c.localCachePath)
-		c.ana.NotifyLocalUse("cli", feature.name, nil)
+		c.analytics.NotifyLocalUse("cli", feature.name, nil)
 	}
 	return nil
 }

@@ -418,7 +418,7 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConf
 		localCachePath: localPath,
 		cdn:            cdn,
 		features:       NewFeatureMap(),
-		ana:            NewMooseAnalytics(ve, "", 10),
+		ana:            NewRemoteConfigAnalytics(ve.DebuggerEvents, "", 10),
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
