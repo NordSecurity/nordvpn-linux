@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
@@ -1995,6 +1997,15 @@ func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh
 	}
 
 	return &peers[index]
+}
+
+func (s *Server) RemoteConfigUpdate(config remote.RemoteConfigEvent) error {
+	if !config.MeshnetFeatureEnabled {
+		if _, err := s.DisableMeshnet(context.Background(), &pb.Empty{}); err != nil {
+			log.Println(internal.WarningPrefix, "Failed to disable meshnet after remote config update:", err)
+		}
+	}
+	return nil
 }
 
 func MakePeerMaps(peers *pb.PeerList) (map[string]*pb.Peer, map[string]*pb.Peer) {

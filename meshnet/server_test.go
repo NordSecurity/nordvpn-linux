@@ -11,6 +11,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -266,6 +267,25 @@ func TestServer_DisableMeshnet(t *testing.T) {
 			assert.Equal(t, false, cfg.Mesh)
 		})
 	}
+}
+
+func TestServer_DisableMeshnetViaRemoteConfig(t *testing.T) {
+	category.Set(t, category.Unit)
+	t.Run("basic test", func(t *testing.T) {
+		// Check server creation
+		mserver := newMockedServer(t, true)
+		assert.NotEqual(t, nil, mserver)
+
+		// Disable Mesh via Remote config update
+		err := mserver.RemoteConfigUpdate(remote.RemoteConfigEvent{MeshnetFeatureEnabled: false})
+		assert.NoError(t, err)
+
+		// Check new server configuration
+		var cfg config.Config
+		err = mserver.cm.Load(&cfg)
+		assert.NoError(t, err)
+		assert.Equal(t, false, cfg.Mesh)
+	})
 }
 
 func TestServer_Invite(t *testing.T) {

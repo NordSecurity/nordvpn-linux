@@ -559,6 +559,7 @@ func main() {
 		norduserClient,
 		sharedContext,
 	)
+	rcConfig.Subscribe(meshService)
 
 	opts := []grpc.ServerOption{
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
