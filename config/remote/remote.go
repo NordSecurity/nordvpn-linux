@@ -126,28 +126,24 @@ func isNetworkRetryable(err error) bool {
 
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
-	var loadErr, err error
+	var err error
 	reloadDone := false
 	c.initOnce.Do(func() {
-		loadErr = c.load()          // on start init cache from disk
-		reloadDone = loadErr == nil // only success counts
+		c.load() // on start init cache from disk
+		reloadDone = true
 	})
 	needReload := false
-	useOnlyLocalConfig :=
-		internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
+	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
 		if needReload, err = c.download(); err != nil {
-			return err
+			return fmt.Errorf("downloading remote config: %w", err)
 		}
 	}
 
 	// remote config files were downloaded and need to be reloaded?
 	if needReload {
-		if err := c.load(); err != nil {
-			return err
-		}
+		c.load()
 		reloadDone = true
-		loadErr = nil // previous load err does not matther if second load is success
 	}
 
 	if reloadDone {
@@ -155,7 +151,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet.String())})
 	}
 
-	return loadErr
+	return nil
 }
 
 func (c *CdnRemoteConfig) download() (bool, error) {
@@ -182,7 +178,7 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 	return newChangesDownloaded, nil
 }
 
-func (c *CdnRemoteConfig) load() error {
+func (c *CdnRemoteConfig) load() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -193,7 +189,6 @@ func (c *CdnRemoteConfig) load() error {
 		}
 		log.Println(internal.InfoPrefix, "feature [", f.name, "] config loaded from:", c.localCachePath)
 	}
-	return nil
 }
 
 func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamValue) {
