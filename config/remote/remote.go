@@ -53,6 +53,7 @@ type CdnRemoteConfig struct {
 	cdn            core.RemoteStorage
 	features       FeatureMap
 	rolloutGroup   int
+	initOnce       sync.Once
 	mu             sync.RWMutex
 	notifier       events.PublishSubcriber[RemoteConfigEvent]
 }
@@ -125,15 +126,17 @@ func isNetworkRetryable(err error) bool {
 
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
-	// first, try to load remote config from local disk/cache
-	loadErr := c.load()
+	var loadErr, err error
+	// on start init cache from disk
+	c.initOnce.Do(func() {
+		loadErr = c.load()
+	})
 	needReload := false
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
-		if err := c.download(); err != nil {
+		if needReload, err = c.download(); err != nil {
 			return err
 		}
-		needReload = true
 	}
 
 	// TODO/FIXME: proper merge is needed!!!
@@ -149,25 +152,28 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	return loadErr
 }
 
-func (c *CdnRemoteConfig) download() error {
+func (c *CdnRemoteConfig) download() (bool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
+
+	newChangesDownloaded := false
 
 	for _, f := range c.features {
 		dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
 			if isNetworkRetryable(err) {
-				return err
+				return false, err
 			}
 			continue
 		}
 		if dnld {
 			// only if remote config was really downloaded
 			log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
+			newChangesDownloaded = true
 		}
 	}
-	return nil
+	return newChangesDownloaded, nil
 }
 
 func (c *CdnRemoteConfig) load() error {
