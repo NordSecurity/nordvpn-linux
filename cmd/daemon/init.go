@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -20,19 +19,8 @@ func buildAccessTokenSessionStore(
 		confman,
 		errRegistry,
 		buildAccessTokenSessionStoreAPIRenewalCall(clientAPI),
-		buildAccessTokenExternalValidator(clientAPI),
+		nil,
 	)
-}
-
-func buildAccessTokenExternalValidator(clientAPI core.RawClientAPI) session.AccessTokenExternalValidator {
-	return func(token string) error {
-		// this is the least expensive api call that needs authentication
-		_, err := clientAPI.CurrentUser(token)
-		if errors.Is(err, core.ErrUnauthorized) {
-			return session.ErrAccessTokenRevoked
-		}
-		return nil
-	}
 }
 
 func buildAccessTokenSessionStoreAPIRenewalCall(clientAPI core.RawClientAPI) session.AccessTokenRenewalAPICall {

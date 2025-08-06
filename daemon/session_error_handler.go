@@ -12,7 +12,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/networker"
-	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 // SessionErrorHandlerDependencies contains all dependencies needed for session error handling
@@ -41,7 +40,6 @@ func RegisterSessionErrorHandler(
 	handler := createSessionErrorHandler(deps, state)
 	registry.Add(
 		handler,
-		session.ErrAccessTokenRevoked,
 		core.ErrUnauthorized,
 		core.ErrNotFound,
 		core.ErrBadRequest,

@@ -111,14 +111,14 @@ func (s *AccessTokenSessionStore) validate() error {
 func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		return fmt.Errorf("handling session error: %w", reason)
+		return nil
 	}
 
 	for _, handler := range handlers {
 		handler(reason)
 	}
 
-	return nil
+	return fmt.Errorf("handling session error: %w", reason)
 }
 
 func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) error {
