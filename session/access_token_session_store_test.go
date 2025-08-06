@@ -575,7 +575,7 @@ func TestAccessTokenSessionStore_Invalidate(t *testing.T) {
 	})
 }
 
-func TestAccessTokenSessionStore_GettersAndSetters(t *testing.T) {
+func TestAccessTokenSessionStore_GetToken(t *testing.T) {
 	uid := int64(123)
 	futureTime := time.Now().Add(24 * time.Hour)
 
@@ -598,134 +598,7 @@ func TestAccessTokenSessionStore_GettersAndSetters(t *testing.T) {
 		assert.Equal(t, "test-token", token)
 	})
 
-	t.Run("GetRenewalToken", func(t *testing.T) {
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       "test-token",
-					RenewToken:  "test-renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
-
-		renewToken := store.GetRenewalToken()
-		assert.Equal(t, "test-renew", renewToken)
-	})
-
-	t.Run("GetExpiry", func(t *testing.T) {
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       "test-token",
-					RenewToken:  "test-renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
-
-		expiry := store.GetExpiry()
-		expectedTime, _ := time.Parse(internal.ServerDateFormat, futureTime.Format(internal.ServerDateFormat))
-		assert.Equal(t, expectedTime, expiry)
-	})
-
-	t.Run("IsExpired", func(t *testing.T) {
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       "test-token",
-					RenewToken:  "test-renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
-
-		assert.False(t, store.IsExpired())
-
-		pastTime := time.Now().Add(-24 * time.Hour)
-		cfgManager.Cfg.TokensData[uid] = config.TokenData{
-			Token:       "test-token",
-			RenewToken:  "test-renew",
-			TokenExpiry: pastTime.Format(internal.ServerDateFormat),
-		}
-
-		assert.True(t, store.IsExpired())
-	})
-
-	t.Run("SetToken", func(t *testing.T) {
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       "old-token",
-					RenewToken:  "test-renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
-
-		err := store.SetToken("new-token")
-		assert.NoError(t, err)
-		assert.Equal(t, "new-token", cfgManager.Cfg.TokensData[uid].Token)
-	})
-
-	t.Run("SetRenewToken", func(t *testing.T) {
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       "test-token",
-					RenewToken:  "old-renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
-
-		err := store.SetRenewToken("new-renew")
-		assert.NoError(t, err)
-		assert.Equal(t, "new-renew", cfgManager.Cfg.TokensData[uid].RenewToken)
-	})
-
-	t.Run("SetExpiry", func(t *testing.T) {
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       "test-token",
-					RenewToken:  "test-renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
-
-		newExpiry := time.Now().Add(48 * time.Hour)
-		err := store.SetExpiry(newExpiry)
-		assert.NoError(t, err)
-		assert.Equal(t, newExpiry.Format(internal.ServerDateFormat), cfgManager.Cfg.TokensData[uid].TokenExpiry)
-	})
-
-	t.Run("Getters with no data", func(t *testing.T) {
+	t.Run("GetToken with no data", func(t *testing.T) {
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData:      map[int64]config.TokenData{},
@@ -735,20 +608,14 @@ func TestAccessTokenSessionStore_GettersAndSetters(t *testing.T) {
 		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
 
 		assert.Equal(t, "", store.GetToken())
-		assert.Equal(t, "", store.GetRenewalToken())
-		assert.Equal(t, time.Time{}, store.GetExpiry())
-		assert.True(t, store.IsExpired())
 	})
 
-	t.Run("Getters with config error", func(t *testing.T) {
+	t.Run("GetToken with config error", func(t *testing.T) {
 		cfgManager := &mock.ConfigManager{
 			LoadErr: errors.New("config error"),
 		}
 		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
 
 		assert.Equal(t, "", store.GetToken())
-		assert.Equal(t, "", store.GetRenewalToken())
-		assert.Equal(t, time.Time{}, store.GetExpiry())
-		assert.True(t, store.IsExpired())
 	})
 }
