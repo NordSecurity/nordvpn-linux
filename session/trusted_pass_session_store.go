@@ -16,6 +16,7 @@ const (
 	TrustedPassOwnerID = "nordvpn"
 )
 
+// TrustedPassAccessTokenResponse represents the response from the TrustedPass token renewal API
 type TrustedPassAccessTokenResponse struct {
 	Token   string
 	OwnerID string
@@ -24,6 +25,7 @@ type TrustedPassAccessTokenResponse struct {
 // TrustedPassRenewalAPICall renews TrustedPass tokens
 type TrustedPassRenewalAPICall func(token string) (*TrustedPassAccessTokenResponse, error)
 
+// TrustedPassSessionStore manages TrustedPass-based sessions
 type TrustedPassSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
@@ -101,7 +103,7 @@ func (s *TrustedPassSessionStore) Validate() error {
 		return err
 	}
 
-	if err := ValidateToken(cfg.Token); err != nil {
+	if err := ValidateTrustedPassTokenFormat(cfg.Token); err != nil {
 		return err
 	}
 
