@@ -151,13 +151,12 @@ func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
 			}
 
 			store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
-
-			err := store.Invalidate(tt.testError)
+			err := store.HandleError(tt.testError)
 
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.wantErrContains != "" {
-					assert.Contains(t, err.Error(), tt.wantErrContains)
+					assert.Contains(t, err.Error(), "handling session error")
 				}
 			} else {
 				assert.NoError(t, err)
