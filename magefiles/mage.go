@@ -34,7 +34,6 @@ const (
 	devPackageType = "source"
 
 	qaPeerAddress = "http://qa-peer:8000/exec"
-	covDir        = "covdatafiles"
 )
 
 const (
@@ -609,15 +608,26 @@ func (Test) QA(ctx context.Context, testGroup, testPattern string) error {
 	return qa(ctx, testGroup, testPattern)
 }
 
-// Run QA tests (arguments: {testGroup} {testPattern})
+// Build the snap application and run the QA tests (arguments: {testGroup} {testPattern})
 func (Test) QASnap(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackageDocker, packageTypeDeb, "-cover"))
+	mg.Deps(mg.F(buildPackageDocker, packageTypeSnap, "-cover"))
 	return qaSnap(ctx, testGroup, testPattern)
 }
 
-// Run QA tests (arguments: {testGroup} {testPattern})
+// Run QA tests, without building the application (arguments: {testGroup} {testPattern})
 func (Test) QASnapFast(ctx context.Context, testGroup, testPattern string) error {
 	return qaSnap(ctx, testGroup, testPattern)
+}
+
+// Build the snap application and run the QA tests in a VM (arguments: {testGroup} {testPattern})
+func (Test) QASnapVM(ctx context.Context, testGroup, testPattern string) error {
+	mg.Deps(mg.F(buildPackageDocker, packageTypeSnap, "-cover"))
+	return qaSnap(ctx, testGroup, testPattern)
+}
+
+// Run QA tests in VM, without building the application (arguments: {testGroup} {testPattern})
+func (Test) QASnapVMFast(ctx context.Context, testGroup, testPattern string) error {
+	return RunInVM("ci/test_snap.sh", testGroup, testPattern)
 }
 
 // Run QA tests in Docker container (arguments: {testGroup} {testPattern})
@@ -646,10 +656,6 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	}
 	env["WORKDIR"] = dockerWorkDir
 	env["QA_PEER_ADDRESS"] = qaPeerAddress
-	env["COVERDIR"] = covDir
-
-	dir := env["WORKDIR"] + "/" + env["COVERDIR"]
-	_ = os.RemoveAll(dir)
 
 	_ = RemoveDockerNetwork(context.Background(), "qa") // Needed if job was killed
 	networkID, err := CreateDockerNetwork(ctx, "qa")
@@ -696,10 +702,6 @@ func qa(_ context.Context, testGroup, testPattern string) error {
 		return err
 	}
 	env["QA_PEER_ADDRESS"] = qaPeerAddress
-	env["COVERDIR"] = covDir
-
-	dir := env["WORKDIR"] + "/" + env["COVERDIR"]
-	_ = os.RemoveAll(dir)
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -717,10 +719,6 @@ func qaSnap(_ context.Context, testGroup, testPattern string) error {
 		return err
 	}
 	env["QA_PEER_ADDRESS"] = qaPeerAddress
-	env["COVERDIR"] = covDir
-
-	dir := env["WORKDIR"] + "/" + env["COVERDIR"]
-	_ = os.RemoveAll(dir)
 
 	cwd, err := os.Getwd()
 	if err != nil {

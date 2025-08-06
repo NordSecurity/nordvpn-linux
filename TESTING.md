@@ -77,6 +77,10 @@ To run tests without rebuilding everything each time use `test:qaDockerFast` ins
 ### Test credentials for QA tests
 `NA_TESTS_CREDENTIALS` environment variable is used to configure test credentials. It is a JSON
 object containing a key(string):value(credentials) map.
+For running the tests using Vagrant for the snap build the following environment variable are required:
+* `SNAP_TEST_BOX_NAME` - represents the configuration name used by vagrant from [Vagrantfile](ci/snap/vagrant/Vagrantfile).
+* `SNAP_TEST_DESTROY_VM_ON_EXIT` - [optional] a boolean value that controls if vagrant should destroy the created virtual machine after running the tests. By default is is `false`.
+When testing the snap application using Vagrant `SNAP_TEST_BOX_NAME` environment variable must be defined
 
 #### key
 QA tests use a list of the following keys:
