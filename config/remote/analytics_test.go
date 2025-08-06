@@ -123,7 +123,7 @@ func TestMooseAnalytics(t *testing.T) {
 				a.NotifyDownloadFailure(client, feature, DownloadError{Kind: DownloadErrorFileDownload, Cause: errors.New("fail")})
 			},
 			expectedEventName: `"event":"rc_download_failure"`,
-			expectedDetails:   `"message":"fail"`,
+			expectedDetails:   `"message":"file_download_error: fail"`,
 		},
 		{
 			name: "NotifyLocalUse",
