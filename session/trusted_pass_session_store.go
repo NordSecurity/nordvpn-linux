@@ -57,14 +57,15 @@ func (s *TrustedPassSessionStore) Renew() error {
 		return err
 	}
 
-	data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+	uid := cfg.AutoConnectData.ID
+	data, ok := cfg.TokensData[uid]
 	if !ok {
 		return fmt.Errorf("there is no data")
 	}
 
 	// check if everything is valid or data renewal is required
 	if err := s.Validate(); err != nil {
-		if err = s.renewIfOAuth(&data); err != nil {
+		if err = s.renewIfOAuth(uid, &data); err != nil {
 			return err
 		}
 	}
@@ -74,7 +75,7 @@ func (s *TrustedPassSessionStore) Renew() error {
 	// is still valid. In such cases we need to hit the api to get the initial value.
 	isNotValid := (data.TrustedPassToken == "" || data.TrustedPassOwnerID == "")
 	if isNotValid {
-		if err := s.renewIfOAuth(&data); err != nil {
+		if err := s.renewIfOAuth(uid, &data); err != nil {
 			return err
 		}
 	}
@@ -121,7 +122,7 @@ func (s *TrustedPassSessionStore) Validate() error {
 	return nil
 }
 
-func (s *TrustedPassSessionStore) renewToken(data *config.TokenData) error {
+func (s *TrustedPassSessionStore) renewToken(uid int64, data *config.TokenData) error {
 	if s.renewAPICall == nil {
 		return errors.New("renewal API call not configured")
 	}
@@ -139,29 +140,29 @@ func (s *TrustedPassSessionStore) renewToken(data *config.TokenData) error {
 		return errors.New("renewal API returned empty token")
 	}
 
-	if err := s.SetToken(resp.Token); err != nil {
-		return err
-	}
+	expiryTime := time.Now().Add(trustedPassExpiryPeriod)
+	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
+		data := c.TokensData[uid]
+		data.TrustedPassToken = resp.Token
+		data.TrustedPassOwnerID = resp.OwnerID
+		data.TrustedPassTokenExpiry = expiryTime.Format(internal.ServerDateFormat)
+		c.TokensData[uid] = data
+		return c
+	})
 
-	if err := s.SetOwnerID(resp.OwnerID); err != nil {
-		s.session.reset()
-		return err
-	}
-
-	if err = s.SetExpiry(time.Now().Add(trustedPassExpiryPeriod)); err != nil {
-		s.session.reset()
+	if err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *TrustedPassSessionStore) renewIfOAuth(data *config.TokenData) error {
+func (s *TrustedPassSessionStore) renewIfOAuth(uid int64, data *config.TokenData) error {
 	if !data.IsOAuth {
 		return nil
 	}
 
-	if err := s.renewToken(data); err != nil {
+	if err := s.renewToken(uid, data); err != nil {
 		return s.Invalidate(err)
 	}
 
@@ -221,85 +222,7 @@ func (s *trustedPassSession) set(cfg trustedPassConfig) error {
 	return nil
 }
 
-// reset clears the TrustedPass session data
-func (s *trustedPassSession) reset() {
-	s.cm.SaveWith(func(c config.Config) config.Config {
-		data := c.TokensData[c.AutoConnectData.ID]
-		data.TrustedPassToken = ""
-		data.TrustedPassOwnerID = ""
-		data.TrustedPassTokenExpiry = ""
-		c.TokensData[c.AutoConnectData.ID] = data
-		return c
-	})
-}
-
 // newTrustedPassSession creates a new trustedPassSession instance
 func newTrustedPassSession(confman config.Manager) *trustedPassSession {
 	return &trustedPassSession{cm: confman}
-}
-
-// SetToken sets the token value
-func (s *TrustedPassSessionStore) SetToken(value string) error {
-	cfg, err := s.session.get()
-	if err != nil {
-		return err
-	}
-	cfg.Token = value
-	return s.session.set(cfg)
-}
-
-// SetOwnerID sets the owner ID value
-func (s *TrustedPassSessionStore) SetOwnerID(value string) error {
-	cfg, err := s.session.get()
-	if err != nil {
-		return err
-	}
-	cfg.OwnerID = value
-	return s.session.set(cfg)
-}
-
-// SetExpiry sets the expiry time
-func (s *TrustedPassSessionStore) SetExpiry(value time.Time) error {
-	cfg, err := s.session.get()
-	if err != nil {
-		return err
-	}
-	cfg.ExpiresAt = value
-	return s.session.set(cfg)
-}
-
-// GetToken returns the current token
-func (s *TrustedPassSessionStore) GetToken() string {
-	cfg, err := s.session.get()
-	if err != nil {
-		return ""
-	}
-	return cfg.Token
-}
-
-// GetOwnerID returns the current owner ID
-func (s *TrustedPassSessionStore) GetOwnerID() string {
-	cfg, err := s.session.get()
-	if err != nil {
-		return ""
-	}
-	return cfg.OwnerID
-}
-
-// GetExpiry returns the token expiry time
-func (s *TrustedPassSessionStore) GetExpiry() time.Time {
-	cfg, err := s.session.get()
-	if err != nil {
-		return time.Time{}
-	}
-	return cfg.ExpiresAt
-}
-
-// IsExpired returns true if the token is expired
-func (s *TrustedPassSessionStore) IsExpired() bool {
-	cfg, err := s.session.get()
-	if err != nil {
-		return true
-	}
-	return time.Now().After(cfg.ExpiresAt)
 }

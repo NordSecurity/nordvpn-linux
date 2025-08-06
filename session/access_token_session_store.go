@@ -140,7 +140,6 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 		return fmt.Errorf("parsing expiry time: %w", err)
 	}
 
-	// Use config's SaveWith for atomic bulk update
 	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
 		data := c.TokensData[uid]
 		data.Token = resp.Token
@@ -217,72 +216,10 @@ func (s *AccessTokenSessionStore) setConfig(cfg accessTokenConfig) error {
 	return nil
 }
 
-func (s *AccessTokenSessionStore) reset() {
-	s.cfgManager.SaveWith(func(c config.Config) config.Config {
-		data := c.TokensData[c.AutoConnectData.ID]
-		data.Token = ""
-		data.RenewToken = ""
-		data.TokenExpiry = ""
-		c.TokensData[c.AutoConnectData.ID] = data
-		return c
-	})
-}
-
-func (s *AccessTokenSessionStore) SetToken(value string) error {
-	cfg, err := s.getConfig()
-	if err != nil {
-		return err
-	}
-	cfg.Token = value
-	return s.setConfig(cfg)
-}
-
-func (s *AccessTokenSessionStore) SetRenewToken(value string) error {
-	cfg, err := s.getConfig()
-	if err != nil {
-		return err
-	}
-	cfg.RenewToken = value
-	return s.setConfig(cfg)
-}
-
-func (s *AccessTokenSessionStore) SetExpiry(value time.Time) error {
-	cfg, err := s.getConfig()
-	if err != nil {
-		return err
-	}
-	cfg.ExpiresAt = value
-	return s.setConfig(cfg)
-}
-
 func (s *AccessTokenSessionStore) GetToken() string {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return ""
 	}
 	return cfg.Token
-}
-
-func (s *AccessTokenSessionStore) GetRenewalToken() string {
-	cfg, err := s.getConfig()
-	if err != nil {
-		return ""
-	}
-	return cfg.RenewToken
-}
-
-func (s *AccessTokenSessionStore) GetExpiry() time.Time {
-	cfg, err := s.getConfig()
-	if err != nil {
-		return time.Time{}
-	}
-	return cfg.ExpiresAt
-}
-
-func (s *AccessTokenSessionStore) IsExpired() bool {
-	cfg, err := s.getConfig()
-	if err != nil {
-		return true
-	}
-	return time.Now().After(cfg.ExpiresAt)
 }
