@@ -12,7 +12,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 func findLatestDIPExpirationData(dipServices []auth.DedicatedIPService) (string, error) {
