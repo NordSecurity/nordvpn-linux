@@ -46,7 +46,7 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 			token:   "valid-token",
 			ownerID: "invalid",
 			expiry:  time.Now().Add(time.Hour),
-			wantErr: ErrInvalidOwnerId,
+			wantErr: ErrInvalidOwnerID,
 		},
 		{
 			name:    "external validator success",
@@ -218,7 +218,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 				IsOAuth:                true,
 			},
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
-				t.Error("Renew API should not be called for valid session")
+				assert.Fail(t, "Renew API should not be called for valid session")
 				return nil, nil
 			},
 			wantErr: false,
