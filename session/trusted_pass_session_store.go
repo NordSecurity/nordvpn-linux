@@ -89,14 +89,14 @@ func (s *TrustedPassSessionStore) Renew() error {
 func (s *TrustedPassSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		return fmt.Errorf("handling session error: %w", reason)
+		return nil
 	}
 
 	for _, handler := range handlers {
 		handler(reason)
 	}
 
-	return nil
+	return fmt.Errorf("handling session error: %w", reason)
 }
 
 // validate performs validation on the TrustedPass session
