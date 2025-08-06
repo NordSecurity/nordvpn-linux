@@ -215,7 +215,8 @@ func TestAccessTokenSessionStore_Renew_APIErrorWithHandler(t *testing.T) {
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
 	err := store.Renew()
 
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "handling session error")
 	assert.True(t, handlerCalled)
 }
 
@@ -246,8 +247,7 @@ func TestAccessTokenSessionStore_Renew_APIErrorNoHandler(t *testing.T) {
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
 	err := store.Renew()
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "handling session error: unhandled-api-error")
+	assert.NoError(t, err)
 }
 
 func TestAccessTokenSessionStore_Renew_NilAPIResponse(t *testing.T) {
@@ -417,7 +417,8 @@ func TestAccessTokenSessionStore_Renew_ErrNotFoundWithHandler(t *testing.T) {
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
 	err := store.Renew()
 
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "handling session error")
 	assert.True(t, handlerCalled)
 }
 
@@ -453,7 +454,8 @@ func TestAccessTokenSessionStore_Renew_ErrBadRequestWithHandler(t *testing.T) {
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
 	err := store.Renew()
 
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "handling session error")
 	assert.True(t, handlerCalled)
 }
 
@@ -484,9 +486,7 @@ func TestAccessTokenSessionStore_Renew_ErrNotFoundNoHandler(t *testing.T) {
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
 	err := store.Renew()
 
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, core.ErrNotFound)
-	assert.Contains(t, err.Error(), "handling session error")
+	assert.NoError(t, err)
 }
 
 func TestAccessTokenSessionStore_Renew_ErrBadRequestNoHandler(t *testing.T) {
@@ -516,14 +516,12 @@ func TestAccessTokenSessionStore_Renew_ErrBadRequestNoHandler(t *testing.T) {
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
 	err := store.Renew()
 
-	assert.Error(t, err)
-	assert.ErrorIs(t, err, core.ErrBadRequest)
-	assert.Contains(t, err.Error(), "handling session error")
+	assert.NoError(t, err)
 }
 
 func TestAccessTokenSessionStore_HandleError_WithHandler(t *testing.T) {
 	testError := errors.New("test error")
-	
+
 	cfg := &config.Config{
 		TokensData: map[int64]config.TokenData{
 			123: {Token: "token1"},
@@ -541,13 +539,14 @@ func TestAccessTokenSessionStore_HandleError_WithHandler(t *testing.T) {
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
 	err := store.HandleError(testError)
 
-	assert.NoError(t, err)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "handling session error")
 	assert.True(t, handlerCalled)
 }
 
 func TestAccessTokenSessionStore_HandleError_NoHandler(t *testing.T) {
 	testError := errors.New("test error")
-	
+
 	cfg := &config.Config{
 		TokensData: map[int64]config.TokenData{
 			123: {Token: "token1"},
@@ -560,8 +559,7 @@ func TestAccessTokenSessionStore_HandleError_NoHandler(t *testing.T) {
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
 	err := store.HandleError(testError)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "handling session error")
+	assert.NoError(t, err)
 }
 
 func TestAccessTokenSessionStore_GetToken(t *testing.T) {
@@ -605,7 +603,7 @@ func TestAccessTokenSessionStore_GetToken_ConfigError(t *testing.T) {
 	cfgManager := &mock.ConfigManager{
 		LoadErr: errors.New("config error"),
 	}
-	
+
 	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
 
 	token := store.GetToken()

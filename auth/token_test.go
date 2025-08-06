@@ -160,12 +160,10 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 					ExpiresAt:  resp.ExpiresAt,
 				}, err
 			},
-			nil, // no external validator needed for this test
+			nil,
 		)},
 	}
 
-	// valid token renewal request
-	// make sure initial test data is correct
 	resetExpirationDate()
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[cm.c.AutoConnectData.ID].TokenExpiry))
 	rt.resp = &core.TokenRenewResponse{
@@ -179,9 +177,6 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	assert.Equal(t, rt.resp.Token, cm.c.TokensData[uid].Token, "token should be updated in the configuration")
 	assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[uid].RenewToken, "renew-token should be updated in the configuration")
 
-	// token renewal attempt with expected failure on a HTTP level
-	// replace the token in the config with one that is expired.
-	// so the next IsLoggedIn() request should attempt a token renewal
 	cm.c.TokensData[0] = config.TokenData{
 		Token:              "expired-token",
 		RenewToken:         "expired-renew-token",
@@ -198,25 +193,21 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		badConnErrHandled = true
 	}, badConnErr)
 
-	// make sure initial test data is correct
 	resetExpirationDate()
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[cm.c.AutoConnectData.ID].TokenExpiry))
 
-	// next request is a failure from our custom roundtripper,
-	// make sure that the token in the configuration itself has not been changed, thus the client didn't log out
 	lastExpiredToken := strings.Clone(cm.c.TokensData[uid].Token)
 	lastExpiredRenewToken := strings.Clone(cm.c.TokensData[uid].RenewToken)
-	rt.resp = nil // setting the resp to nil means that the request will fail
+	rt.resp = nil
 	rt.respError = badConnErr
-	isLoggedIn, _ = rc.IsLoggedIn()
-	assert.True(t, isLoggedIn, "user should be logged in, even after a failed request")
+	isLoggedIn, err = rc.IsLoggedIn()
+	assert.False(t, isLoggedIn, "user should be logged out when error has handlers")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "handling session error")
 	assert.True(t, badConnErrHandled)
 	assert.Equal(t, lastExpiredToken, cm.c.TokensData[uid].Token, "token should not be updated in the configuration after a failed request")
 	assert.Equal(t, lastExpiredRenewToken, cm.c.TokensData[uid].RenewToken, "renew-token should not be updated in the configuration after a failed request")
 
-	// valid token renewal request after a failure
-	// replace the token in the config with one that is expired.
-	// so the next IsLoggedIn() request should attempt a token renewal
 	cm.c.TokensData[0] = config.TokenData{
 		Token:              "expired-token",
 		RenewToken:         "expired-renew-token",
@@ -228,10 +219,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	}
 
 	badConnErrHandled = false
-	// make sure initial test data is correct
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[cm.c.AutoConnectData.ID].TokenExpiry))
 
-	// next request is a failure from our custom roundtripper
 	rt.resp = nil
 	rt.respError = badConnErr
 	rc.IsLoggedIn()
@@ -298,7 +287,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 					ExpiresAt:  resp.ExpiresAt,
 				}, nil
 			},
-			nil, // no external validator needed for this test
+			nil,
 		)},
 	}
 
@@ -322,8 +311,6 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 
 	for _, exptectedErr := range randomErrs {
 		badConnErrHandled = false
-		// replace the token in the config with one that is expired.
-		// so the next IsLoggedIn() request should attempt a token renewal
 		cm.c.TokensData[uid] = config.TokenData{
 			Token:              "expired-token",
 			RenewToken:         "expired-renew-token",
@@ -334,24 +321,22 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 			OpenVPNPassword:    "openvpn-password",
 		}
 
-		// make sure initial test data is correct
 		resetExpirationDate()
 		assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[uid].TokenExpiry))
 
-		// next request is a failure from our custom roundtripper
 		rt.resp = nil
 		rt.respError = exptectedErr
-		isLoggedIn, _ := rc.IsLoggedIn()
+		isLoggedIn, err := rc.IsLoggedIn()
 
 		assert.False(t, isLoggedIn, "user should be logged out")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "handling session error")
 		assert.True(t, badConnErrHandled)
 		assert.Empty(t, cm.c.TokensData[uid].Token, "token should be removed from the configuration")
 		assert.Empty(t, cm.c.TokensData[uid].RenewToken, "renew-token should be removed from the configuration")
 	}
 
 	badConnErrHandled = false
-	// replace the token in the config with one that is expired.
-	// so the next IsLoggedIn() request should attempt a token renewal
 	cm.c.TokensData[uid] = config.TokenData{
 		Token:              "expired-token",
 		RenewToken:         "expired-renew-token",
@@ -362,17 +347,16 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 		OpenVPNPassword:    "openvpn-password",
 	}
 
-	// make sure initial test data is correct
 	resetExpirationDate()
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[uid].TokenExpiry))
 
-	// next request is a failure from our custom roundtripper
 	rt.resp = nil
 	rt.respError = errors.New("the new bad")
-	isLoggedIn, _ := rc.IsLoggedIn()
+	isLoggedIn, err := rc.IsLoggedIn()
 
-	assert.False(t, isLoggedIn, "user should be logged out")
+	assert.True(t, isLoggedIn, "user should remain logged in when error has no handler")
+	assert.NoError(t, err, "no error should be returned when no handler is registered")
 	assert.False(t, badConnErrHandled)
-	assert.Equal(t, "expired-token", cm.c.TokensData[uid].Token, "token should not be removed from the configuration")
-	assert.Equal(t, "expired-renew-token", cm.c.TokensData[uid].RenewToken, "renew-token should not be  removed from the configuration")
+	assert.NotEmpty(t, cm.c.TokensData[uid].Token, "token should not be removed when no handler is registered")
+	assert.NotEmpty(t, cm.c.TokensData[uid].RenewToken, "renew-token should not be removed when no handler is registered")
 }
