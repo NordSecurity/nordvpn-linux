@@ -182,31 +182,29 @@ func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
 	}
 }
 
-func TestTrustedPassSessionStore_EdgeCases(t *testing.T) {
-	t.Run("validate with invalid expiry format", func(t *testing.T) {
-		userID := int64(123)
-		tokenData := config.TokenData{
-			TrustedPassToken:       "valid-token",
-			TrustedPassOwnerID:     "nordvpn",
-			TrustedPassTokenExpiry: "invalid-date-format",
-		}
+func TestTrustedPassSessionStore_ValidateWithInvalidExpiryFormat(t *testing.T) {
+	userID := int64(123)
+	tokenData := config.TokenData{
+		TrustedPassToken:       "valid-token",
+		TrustedPassOwnerID:     "nordvpn",
+		TrustedPassTokenExpiry: "invalid-date-format",
+	}
 
-		cfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: userID},
-			TokensData:      map[int64]config.TokenData{userID: tokenData},
-		}
+	cfg := config.Config{
+		AutoConnectData: config.AutoConnectData{ID: userID},
+		TokensData:      map[int64]config.TokenData{userID: tokenData},
+	}
 
-		cfgManager := mock.NewMockConfigManager()
-		cfgManager.Cfg = &cfg
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
+	cfgManager := mock.NewMockConfigManager()
+	cfgManager.Cfg = &cfg
+	errRegistry := internal.NewErrorHandlingRegistry[error]()
 
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
+	store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
 
-		err := testValidate(store)
+	err := testValidate(store)
 
-		assert.Error(t, err)
-		assert.Equal(t, ErrSessionExpired, err)
-	})
+	assert.Error(t, err)
+	assert.Equal(t, ErrSessionExpired, err)
 }
 
 func TestTrustedPassSessionStore_Renew(t *testing.T) {
