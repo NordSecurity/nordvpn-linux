@@ -89,7 +89,6 @@ func TestAccessTokenSessionStore_Renew_SimpleScenarios(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew(t *testing.T) {
-
 	t.Run("should handle external validator error and renew", func(t *testing.T) {
 		uid := int64(123)
 		validHexToken := "ab78bb36299d442fa0715fb53b5e3e57"
@@ -508,7 +507,6 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		assert.True(t, handlerCalled)
 		assert.ErrorIs(t, handledError, core.ErrBadRequest)
 	})
-
 }
 
 func TestAccessTokenSessionStore_Renew_ErrorHandlingWithoutHandlers(t *testing.T) {

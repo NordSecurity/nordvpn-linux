@@ -195,38 +195,6 @@ func (m *mockSimpleClientAPI) NotifyNewTransfer(token string, self uuid.UUID, pe
 	return m.NotifyNewTransferFunc(token, self, peer, fileName, fileCount, transferID)
 }
 
-// mockConfigManager implements config.Manager for testing
-type mockConfigManager struct {
-	cfg         config.Config
-	saveWithErr error
-}
-
-func (m *mockConfigManager) Load(cfg *config.Config) error {
-	*cfg = m.cfg
-	return nil
-}
-
-func (m *mockConfigManager) SaveWith(fn config.SaveFunc) error {
-	if m.saveWithErr != nil {
-		return m.saveWithErr
-	}
-	m.cfg = fn(m.cfg)
-	return nil
-}
-
-func (m *mockConfigManager) Reset(preserveLoginData bool, disableKillswitch bool) error {
-	if preserveLoginData {
-		// Keep login data
-		oldCfg := m.cfg
-		m.cfg = config.Config{}
-		m.cfg.TokensData = oldCfg.TokensData
-		m.cfg.AutoConnectData = oldCfg.AutoConnectData
-	} else {
-		m.cfg = config.Config{}
-	}
-	return nil
-}
-
 // testConfigManager is a test implementation of config.Manager
 type testConfigManager struct {
 	token      string

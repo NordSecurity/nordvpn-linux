@@ -117,6 +117,7 @@ func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	for _, handler := range handlers {
 		handler(reason)
 	}
+
 	return nil
 }
 
@@ -201,22 +202,6 @@ func (s *AccessTokenSessionStore) getConfig() (accessTokenConfig, error) {
 		RenewToken: data.RenewToken,
 		ExpiresAt:  expiryTime,
 	}, nil
-}
-
-func (s *AccessTokenSessionStore) setConfig(cfg accessTokenConfig) error {
-	err := s.cfgManager.SaveWith(func(c config.Config) config.Config {
-		data := c.TokensData[c.AutoConnectData.ID]
-		data.Token = cfg.Token
-		data.RenewToken = cfg.RenewToken
-		data.TokenExpiry = cfg.ExpiresAt.Format(internal.ServerDateFormat)
-		c.TokensData[c.AutoConnectData.ID] = data
-		return c
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // GetToken returns the current access token or empty string if not available

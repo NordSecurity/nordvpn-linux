@@ -207,7 +207,6 @@ func TestTrustedPassSessionStore_EdgeCases(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, ErrSessionExpired, err)
 	})
-
 }
 
 func TestTrustedPassSessionStore_Renew(t *testing.T) {
