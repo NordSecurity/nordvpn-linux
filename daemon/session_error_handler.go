@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"log"
+	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -25,12 +26,19 @@ type SessionErrorHandlerDependencies struct {
 	DebugPublisherFunc     func(string)
 }
 
+// sessionErrorHandlerState maintains the state for preventing concurrent logouts
+type sessionErrorHandlerState struct {
+	mu               sync.Mutex
+	logoutInProgress bool
+}
+
 // RegisterSessionErrorHandler registers the error handler for session-related errors
 func RegisterSessionErrorHandler(
 	registry *internal.ErrorHandlingRegistry[error],
 	deps SessionErrorHandlerDependencies,
 ) {
-	handler := createSessionErrorHandler(deps)
+	state := &sessionErrorHandlerState{}
+	handler := createSessionErrorHandler(deps, state)
 	registry.Add(
 		handler,
 		session.ErrAccessTokenRevoked,
@@ -41,8 +49,30 @@ func RegisterSessionErrorHandler(
 }
 
 // createSessionErrorHandler creates the error handler function
-func createSessionErrorHandler(deps SessionErrorHandlerDependencies) func(error) {
+func createSessionErrorHandler(
+	deps SessionErrorHandlerDependencies,
+	state *sessionErrorHandlerState,
+) func(error) {
 	return func(reason error) {
+		// Prevent concurrent logout attempts
+		state.mu.Lock()
+		if state.logoutInProgress {
+			state.mu.Unlock()
+			log.Printf(
+				"%s Session error detected but logout already in progress, ignoring: %v",
+				internal.DebugPrefix,
+				reason)
+			return
+		}
+		state.logoutInProgress = true
+		state.mu.Unlock()
+
+		defer func() {
+			state.mu.Lock()
+			state.logoutInProgress = false
+			state.mu.Unlock()
+		}()
+
 		log.Printf("%s Session error detected: %v. Forcing logout.", internal.DebugPrefix, reason)
 
 		discArgs := access.DisconnectInput{
