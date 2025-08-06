@@ -5,10 +5,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestValidateExpiry(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name    string
 		expiry  time.Time
@@ -50,6 +53,8 @@ func TestValidateExpiry(t *testing.T) {
 }
 
 func TestValidateToken(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name    string
 		token   string
@@ -86,6 +91,8 @@ func TestValidateToken(t *testing.T) {
 }
 
 func TestValidateAccessTokenFormat(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name    string
 		token   string
@@ -142,6 +149,8 @@ func TestValidateAccessTokenFormat(t *testing.T) {
 }
 
 func TestValidateTrustedPassTokenFormat(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name    string
 		token   string
@@ -208,6 +217,8 @@ func TestValidateTrustedPassTokenFormat(t *testing.T) {
 }
 
 func TestValidateTrustedPassOwnerID(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name    string
 		ownerID string
@@ -254,6 +265,8 @@ func TestValidateTrustedPassOwnerID(t *testing.T) {
 }
 
 func TestValidateRenewToken(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name       string
 		renewToken string
@@ -315,6 +328,8 @@ func TestValidateRenewToken(t *testing.T) {
 }
 
 func TestTrustedPassExternalValidator(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name      string
 		token     string
@@ -395,6 +410,8 @@ func TestTrustedPassExternalValidator(t *testing.T) {
 }
 
 func TestValidateExpiry_TimeBoundary(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	// Test with time very close to now
 	almostNow := time.Now().Add(1 * time.Millisecond)
 	err := ValidateExpiry(almostNow)
@@ -405,6 +422,8 @@ func TestValidateExpiry_TimeBoundary(t *testing.T) {
 }
 
 func TestValidateAccessTokenFormat_ExactLengthBoundaries(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	// Test with various hex string lengths
 	testCases := []struct {
 		length  int
@@ -435,6 +454,8 @@ func TestValidateAccessTokenFormat_ExactLengthBoundaries(t *testing.T) {
 }
 
 func TestValidateTrustedPassTokenFormat_EdgeCharacters(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	// Test boundary characters
 	testCases := []struct {
 		token   string
