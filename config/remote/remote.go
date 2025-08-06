@@ -79,14 +79,10 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 type jsonFileReaderWriter struct{}
 
 func (w jsonFileReaderWriter) writeFile(name string, content []byte, mode os.FileMode) error {
-	return internal.FileWrite(name, content, mode)
+	return internal.SecureFileWrite(name, content, mode)
 }
 func (w jsonFileReaderWriter) readFile(name string) ([]byte, error) {
-	// try to prevent overloading
-	if err := internal.IsFileTooBig(name); err != nil {
-		return nil, fmt.Errorf("reading file: %w", err)
-	}
-	return internal.FileRead(name)
+	return internal.SecureFileRead(name)
 }
 
 type noopWriter struct{}
