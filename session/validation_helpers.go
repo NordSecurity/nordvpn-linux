@@ -30,7 +30,7 @@ func ValidateAccessTokenFormat(token string) error {
 		return err
 	}
 	if !internal.AccessTokenFormatValidator(token) {
-		return ErrAccessTokenExpired
+		return ErrInvalidToken
 	}
 	return nil
 }
