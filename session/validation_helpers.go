@@ -47,6 +47,5 @@ func ValidateRenewToken(renewToken string) error {
 }
 
 // Type-safe external validators for each session type
-type AccessTokenExternalValidator func(token string, renewToken string) error
 type TrustedPassExternalValidator func(token string, ownerID string) error
 type CredentialsExternalValidator func(username, password string) error
