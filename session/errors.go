@@ -23,6 +23,9 @@ var (
 	// ErrMissingRenewToken indicates that the renew token is missing.
 	ErrMissingRenewToken = errors.New("missing renew token")
 
+	// ErrInvalidRenewToken indicates that the renew token has invalid format.
+	ErrInvalidRenewToken = errors.New("invalid renew token")
+
 	// ErrInvalidOwnerId indicates that the owner id does not match expected value.
 	ErrInvalidOwnerId = errors.New("invalid owner id")
 )
