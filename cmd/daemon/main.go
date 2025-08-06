@@ -26,7 +26,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
-	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -541,34 +540,18 @@ func main() {
 		meshnetEvents.PeerUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem))
 
-	// on session invalidation (unauthorized access, missing server resources, invalid request)
-	// perform user log-out action
-	invalidSessionErrHandlingReg.Add(
-		func(reason error) {
-			discArgs := access.DisconnectInput{
-				Networker:                  netw,
-				ConfigManager:              fsystem,
-				PublishDisconnectEventFunc: daemonEvents.Service.Disconnect.Publish,
-			}
-			result := access.ForceLogoutWithoutToken(access.ForceLogoutWithoutTokenInput{
-				AuthChecker:            authChecker,
-				Netw:                   netw,
-				NcClient:               notificationClient,
-				ConfigManager:          fsystem,
-				PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
-				DebugPublisherFunc:     debugSubject.Publish,
-				DisconnectFunc:         func() (bool, error) { return access.Disconnect(discArgs) },
-			})
-
-			if result.Err != nil {
-				log.Println(internal.ErrorPrefix, "logging out on invalid session hook: %w", err)
-			}
-
-			if result.Status == internal.CodeSuccess {
-				log.Println(internal.DebugPrefix, "successfully logged out after detecting invalid session")
-			}
+	// on session unrecoverable error perform user log-out action
+	daemon.RegisterSessionErrorHandler(
+		invalidSessionErrHandlingReg,
+		daemon.SessionErrorHandlerDependencies{
+			AuthChecker:            authChecker,
+			Networker:              netw,
+			NotificationClient:     notificationClient,
+			ConfigManager:          fsystem,
+			PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
+			PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
+			DebugPublisherFunc:     debugSubject.Publish,
 		},
-		session.ErrAccessTokenRevoked, core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest,
 	)
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()

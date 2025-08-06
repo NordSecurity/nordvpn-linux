@@ -64,7 +64,7 @@ func (s *TrustedPassSessionStore) Renew() error {
 	}
 
 	// check if everything is valid or data renewal is required
-	if err := s.Validate(); err != nil {
+	if err := s.validate(); err != nil {
 		if err = s.renewIfOAuth(uid, &data); err != nil {
 			return err
 		}
@@ -98,8 +98,8 @@ func (s *TrustedPassSessionStore) HandleError(reason error) error {
 	return nil
 }
 
-// Validate performs validation on the TrustedPass session
-func (s *TrustedPassSessionStore) Validate() error {
+// validate performs validation on the TrustedPass session
+func (s *TrustedPassSessionStore) validate() error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
