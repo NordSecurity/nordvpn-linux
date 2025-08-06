@@ -9,12 +9,15 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/session"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAccessTokenSessionStore_Renew_NotExpired(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
 
@@ -38,6 +41,8 @@ func TestAccessTokenSessionStore_Renew_NotExpired(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_NoTokenData(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 
 	cfg := &config.Config{
@@ -55,6 +60,8 @@ func TestAccessTokenSessionStore_Renew_NoTokenData(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ConfigLoadError(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	cfgManager := &mock.ConfigManager{
 		LoadErr: errors.New("config load error"),
 	}
@@ -68,6 +75,8 @@ func TestAccessTokenSessionStore_Renew_ConfigLoadError(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ExternalValidatorError(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
 	validHexToken := "ab78bb36299d442fa0715fb53b5e3e57"
@@ -108,6 +117,8 @@ func TestAccessTokenSessionStore_Renew_ExternalValidatorError(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ExpiredToken(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
@@ -148,6 +159,8 @@ func TestAccessTokenSessionStore_Renew_ExpiredToken(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
@@ -183,6 +196,8 @@ func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_APIErrorWithHandler(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
@@ -221,6 +236,8 @@ func TestAccessTokenSessionStore_Renew_APIErrorWithHandler(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_APIErrorNoHandler(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
@@ -251,6 +268,8 @@ func TestAccessTokenSessionStore_Renew_APIErrorNoHandler(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_NilAPIResponse(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
@@ -282,6 +301,8 @@ func TestAccessTokenSessionStore_Renew_NilAPIResponse(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_InvalidExpiryFormat(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
@@ -317,6 +338,8 @@ func TestAccessTokenSessionStore_Renew_InvalidExpiryFormat(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ExternalValidatorSuccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
 
@@ -349,6 +372,8 @@ func TestAccessTokenSessionStore_Renew_ExternalValidatorSuccess(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ExternalValidatorFailure(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
 
@@ -386,6 +411,8 @@ func TestAccessTokenSessionStore_Renew_ExternalValidatorFailure(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ErrNotFoundWithHandler(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
@@ -423,6 +450,8 @@ func TestAccessTokenSessionStore_Renew_ErrNotFoundWithHandler(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ErrBadRequestWithHandler(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
@@ -460,6 +489,8 @@ func TestAccessTokenSessionStore_Renew_ErrBadRequestWithHandler(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ErrNotFoundNoHandler(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().Add(-24 * time.Hour)
@@ -490,6 +521,8 @@ func TestAccessTokenSessionStore_Renew_ErrNotFoundNoHandler(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_Renew_ErrBadRequestNoHandler(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().Add(-24 * time.Hour)
@@ -520,6 +553,8 @@ func TestAccessTokenSessionStore_Renew_ErrBadRequestNoHandler(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_HandleError_WithHandler(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	testError := errors.New("test error")
 
 	cfg := &config.Config{
@@ -545,6 +580,8 @@ func TestAccessTokenSessionStore_HandleError_WithHandler(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_HandleError_NoHandler(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	testError := errors.New("test error")
 
 	cfg := &config.Config{
@@ -563,6 +600,8 @@ func TestAccessTokenSessionStore_HandleError_NoHandler(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_GetToken(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
 
@@ -585,6 +624,8 @@ func TestAccessTokenSessionStore_GetToken(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_GetToken_NoData(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	uid := int64(123)
 
 	cfg := &config.Config{
@@ -600,6 +641,8 @@ func TestAccessTokenSessionStore_GetToken_NoData(t *testing.T) {
 }
 
 func TestAccessTokenSessionStore_GetToken_ConfigError(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	cfgManager := &mock.ConfigManager{
 		LoadErr: errors.New("config error"),
 	}
