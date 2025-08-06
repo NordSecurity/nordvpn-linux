@@ -27,6 +27,7 @@ const (
 	testUsername          = "testuser"
 	testEmail             = "test@example.com"
 	defaultExpirationDays = 24 * time.Hour
+	renewAPIPath          = "/v1/users/tokens/renew"
 )
 
 type mockConfigManager struct {
@@ -103,12 +104,12 @@ func createUnauthorizedResponse() (*http.Response, error) {
 
 func createDefaultRoundTripper(rt *mockRoundTripperWithExpiration) func(req *http.Request) (*http.Response, error) {
 	return func(req *http.Request) (*http.Response, error) {
-		if req.URL.Path != "/v1/users/tokens/renew" && time.Since(rt.createdAt) > defaultExpirationDays {
+		if req.URL.Path != renewAPIPath && time.Since(rt.createdAt) > defaultExpirationDays {
 			return createUnauthorizedResponse()
 		}
 
 		switch req.URL.Path {
-		case "/v1/users/tokens/renew":
+		case renewAPIPath:
 			idempotencyKey, ok := req.Header["Idempotency-Key"]
 			if !ok {
 				panic("missing Idempotency-Key header in the request")
@@ -263,7 +264,7 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 
 	rt.RoundTripFunc = func(req *http.Request) (*http.Response, error) {
 		switch req.URL.Path {
-		case "/v1/users/tokens/renew":
+		case renewAPIPath:
 			// Return network error for renewal attempt
 			return nil, rt.respError
 		case "/v1/users/current":
