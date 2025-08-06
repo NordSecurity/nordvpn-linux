@@ -4,10 +4,12 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/session"
 	mocksession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 	"github.com/google/uuid"
@@ -193,8 +195,173 @@ func (m *mockSimpleClientAPI) NotifyNewTransfer(token string, self uuid.UUID, pe
 	return m.NotifyNewTransferFunc(token, self, peer, fileName, fileCount, transferID)
 }
 
-func NewMockSmartClientAPI(api core.RawClientAPI, store session.SessionStore) core.ClientAPI {
+// mockConfigManager implements config.Manager for testing
+type mockConfigManager struct {
+	cfg         config.Config
+	saveWithErr error
+}
+
+func (m *mockConfigManager) Load(cfg *config.Config) error {
+	*cfg = m.cfg
+	return nil
+}
+
+func (m *mockConfigManager) SaveWith(fn config.SaveFunc) error {
+	if m.saveWithErr != nil {
+		return m.saveWithErr
+	}
+	m.cfg = fn(m.cfg)
+	return nil
+}
+
+func (m *mockConfigManager) Reset(preserveLoginData bool, disableKillswitch bool) error {
+	if preserveLoginData {
+		// Keep login data
+		oldCfg := m.cfg
+		m.cfg = config.Config{}
+		m.cfg.TokensData = oldCfg.TokensData
+		m.cfg.AutoConnectData = oldCfg.AutoConnectData
+	} else {
+		m.cfg = config.Config{}
+	}
+	return nil
+}
+
+// testConfigManager is a test implementation of config.Manager
+type testConfigManager struct {
+	token      string
+	renewToken string
+	expiry     time.Time
+}
+
+func (t *testConfigManager) Load(cfg *config.Config) error {
+	*cfg = config.Config{
+		AutoConnectData: config.AutoConnectData{ID: 1},
+		TokensData: map[int64]config.TokenData{
+			1: {
+				Token:       t.token,
+				RenewToken:  t.renewToken,
+				TokenExpiry: t.expiry.Format(internal.ServerDateFormat),
+			},
+		},
+	}
+	return nil
+}
+
+func (t *testConfigManager) SaveWith(fn config.SaveFunc) error {
+	cfg := config.Config{
+		AutoConnectData: config.AutoConnectData{ID: 1},
+		TokensData: map[int64]config.TokenData{
+			1: {
+				Token:       t.token,
+				RenewToken:  t.renewToken,
+				TokenExpiry: t.expiry.Format(internal.ServerDateFormat),
+			},
+		},
+	}
+	newCfg := fn(cfg)
+	data := newCfg.TokensData[1]
+	t.token = data.Token
+	t.renewToken = data.RenewToken
+	if data.TokenExpiry != "" {
+		t.expiry, _ = time.Parse(internal.ServerDateFormat, data.TokenExpiry)
+	}
+	return nil
+}
+
+func (t *testConfigManager) Reset(preserveLoginData bool, disableKillswitch bool) error {
+	if !preserveLoginData {
+		t.token = ""
+		t.renewToken = ""
+		t.expiry = time.Time{}
+	}
+	return nil
+}
+
+// NewMockSmartClientAPI creates a SmartClientAPI for testing
+func NewMockSmartClientAPI(api core.RawClientAPI, mockStore session.SessionStore) core.ClientAPI {
+	// Convert the mock to get its behavior
+	mock, ok := mockStore.(*mocksession.MockAccessTokenSessionStore)
+	if !ok {
+		panic("NewMockSmartClientAPI requires MockAccessTokenSessionStore")
+	}
+
+	// Create a test config manager
+	cfgManager := &testConfigManager{
+		token:      initialToken,
+		renewToken: "test-renew-token",
+		expiry:     time.Now().Add(time.Hour),
+	}
+
+	// Create error handler registry
+	errHandlerRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	// Create a wrapper that delegates to mock behavior
+	store := &mockAccessTokenStoreWrapper{
+		mock:               mock,
+		cfgManager:         cfgManager,
+		errHandlerRegistry: errHandlerRegistry,
+	}
+
 	return core.NewSmartClientAPI(api, store)
+}
+
+// mockAccessTokenStoreWrapper wraps mock behavior to match AccessTokenSessionStore interface
+type mockAccessTokenStoreWrapper struct {
+	mock               *mocksession.MockAccessTokenSessionStore
+	cfgManager         *testConfigManager
+	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
+}
+
+func (m *mockAccessTokenStoreWrapper) GetToken() string {
+	m.mock.GetTokenCallCount++
+	if m.mock.GetTokenFunc != nil {
+		return m.mock.GetTokenFunc()
+	}
+	return m.cfgManager.token
+}
+
+func (m *mockAccessTokenStoreWrapper) SetToken(token string) error {
+	m.cfgManager.token = token
+	return nil
+}
+
+func (m *mockAccessTokenStoreWrapper) SetRenewToken(token string) error {
+	m.cfgManager.renewToken = token
+	return nil
+}
+
+func (m *mockAccessTokenStoreWrapper) SetExpiry(expiry time.Time) error {
+	m.cfgManager.expiry = expiry
+	return nil
+}
+
+func (m *mockAccessTokenStoreWrapper) GetRenewalToken() string {
+	return m.cfgManager.renewToken
+}
+
+func (m *mockAccessTokenStoreWrapper) GetExpiry() time.Time {
+	return m.cfgManager.expiry
+}
+
+func (m *mockAccessTokenStoreWrapper) IsExpired() bool {
+	return time.Now().After(m.cfgManager.expiry)
+}
+
+func (m *mockAccessTokenStoreWrapper) Renew() error {
+	m.mock.RenewCallCount++
+	if m.mock.RenewFunc != nil {
+		return m.mock.RenewFunc()
+	}
+	return nil
+}
+
+func (m *mockAccessTokenStoreWrapper) Invalidate(reason error) error {
+	m.mock.InvalidateCallCount++
+	if m.mock.InvalidateFunc != nil {
+		return m.mock.InvalidateFunc(reason)
+	}
+	return nil
 }
 
 func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
