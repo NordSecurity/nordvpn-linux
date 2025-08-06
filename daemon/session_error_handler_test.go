@@ -652,7 +652,7 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 				externalValidator = func(token string) error {
 					_, err := mockAPI.CurrentUser(token)
 					if errors.Is(err, core.ErrUnauthorized) {
-						return session.ErrAccessTokenRevoked
+						return session.ErrInvalidToken
 					}
 					return err
 				}
@@ -1324,7 +1324,7 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 	externalValidator := func(token string) error {
 		_, err := mockAPI.CurrentUser(token)
 		if errors.Is(err, core.ErrUnauthorized) {
-			return session.ErrAccessTokenRevoked
+			return session.ErrInvalidToken
 		}
 		return err
 	}
