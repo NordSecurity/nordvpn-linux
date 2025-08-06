@@ -260,6 +260,13 @@ func main() {
 		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
 	}
 
+	//once resolver is created, let's recreate httpsClientSimple transport with the firewall mark
+	httpClientSimple.Transport = request.NewHTTPReTransport(
+		1, 1, "HTTP/1.1",
+		createH1Transport(resolver, cfg.FirewallMark),
+		nil,
+	)
+
 	httpClientWithRotator := request.NewStdHTTP()
 	httpClientWithRotator.Transport = createTimedOutTransport(
 		resolver,
