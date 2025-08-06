@@ -33,7 +33,7 @@ func TestAccessTokenSessionStore_Renew_SimpleScenarios(t *testing.T) {
 						uid: {
 							Token:       "ab78bb36299d442fa0715fb53b5e3e57", // valid hex token
 							RenewToken:  "renew",
-							TokenExpiry: time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
+							TokenExpiry: time.Now().UTC().Add(24 * time.Hour).Format(internal.ServerDateFormat),
 						},
 					},
 				}
@@ -93,7 +93,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 	t.Run("should handle external validator error and renew", func(t *testing.T) {
 		uid := int64(123)
 		validHexToken := "ab78bb36299d442fa0715fb53b5e3e57"
-		futureTime := time.Now().Add(24 * time.Hour)
+		futureTime := time.Now().UTC().Add(24 * time.Hour)
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
@@ -137,8 +137,8 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 	t.Run("should renew token when expired", func(t *testing.T) {
 		uid := int64(123)
 		idempotencyKey := uuid.New()
-		pastTime := time.Now().Add(-24 * time.Hour)
-		futureTime := time.Now().Add(24 * time.Hour)
+		pastTime := time.Now().UTC().Add(-24 * time.Hour)
+		futureTime := time.Now().UTC().Add(24 * time.Hour)
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
@@ -189,8 +189,8 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 
 	t.Run("should set idempotency key if not present", func(t *testing.T) {
 		uid := int64(123)
-		pastTime := time.Now().Add(-24 * time.Hour)
-		futureTime := time.Now().Add(24 * time.Hour)
+		pastTime := time.Now().UTC().Add(-24 * time.Hour)
+		futureTime := time.Now().UTC().Add(24 * time.Hour)
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
@@ -309,7 +309,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 	t.Run("should handle invalid expiry date format", func(t *testing.T) {
 		uid := int64(123)
 		idempotencyKey := uuid.New()
-		pastTime := time.Now().Add(-24 * time.Hour)
+		pastTime := time.Now().UTC().Add(-24 * time.Hour)
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
@@ -346,7 +346,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 	t.Run("should call external validator when token is valid", func(t *testing.T) {
 		uid := int64(123)
 		validHexToken := "de62575eaaa54ca8bd9416d98bdc9c1c"
-		futureTime := time.Now().Add(24 * time.Hour)
+		futureTime := time.Now().UTC().Add(24 * time.Hour)
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
@@ -411,7 +411,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			return &session.AccessTokenResponse{
 				Token:      "new-token",
 				RenewToken: "new-renew",
-				ExpiresAt:  time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
+				ExpiresAt:  time.Now().UTC().Add(24 * time.Hour).Format(internal.ServerDateFormat),
 			}, nil
 		}
 
@@ -426,7 +426,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 	t.Run("should handle ErrNotFound during renewal and invalidate", func(t *testing.T) {
 		uid := int64(123)
 		idempotencyKey := uuid.New()
-		pastTime := time.Now().Add(-24 * time.Hour)
+		pastTime := time.Now().UTC().Add(-24 * time.Hour)
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
@@ -649,7 +649,7 @@ func TestAccessTokenSessionStore_Invalidate(t *testing.T) {
 
 func TestAccessTokenSessionStore_GetToken(t *testing.T) {
 	uid := int64(123)
-	futureTime := time.Now().Add(24 * time.Hour)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
 
 	tests := []struct {
 		name      string
