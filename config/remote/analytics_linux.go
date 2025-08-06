@@ -12,8 +12,8 @@ func NewRemoteConfigAnalytics(events.PublishSubcriber[events.DebuggerEvent], str
 	return &DummyAnalytics{}
 }
 
-func (ma *DummyAnalytics) NotifyDownload(string, string)                       {}
-func (ma *DummyAnalytics) NotifyDownloadFailure(string, string, DownloadError) {}
-func (ma *DummyAnalytics) NotifyLocalUse(string, string, error)                {}
-func (ma *DummyAnalytics) NotifyJsonParse(string, string, error)               {}
-func (ma *DummyAnalytics) NotifyPartialRollout(string, string, int, bool)      {}
+func (*DummyAnalytics) NotifyDownload(string, string)                       {}
+func (*DummyAnalytics) NotifyDownloadFailure(string, string, DownloadError) {}
+func (*DummyAnalytics) NotifyLocalUse(string, string, error)                {}
+func (*DummyAnalytics) NotifyJsonParse(string, string, error)               {}
+func (*DummyAnalytics) NotifyPartialRollout(string, string, int, bool)      {}
