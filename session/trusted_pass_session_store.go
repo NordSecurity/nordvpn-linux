@@ -83,11 +83,13 @@ func (s *TrustedPassSessionStore) Renew() error {
 	return nil
 }
 
-// Invalidate calls error handlers for the given error
-func (s *TrustedPassSessionStore) Invalidate(reason error) error {
+// HandleError processes errors that occur during session operations by dispatching
+// them to registered error handlers. If no handlers are registered for the given
+// error type, it returns the error wrapped with additional context.
+func (s *TrustedPassSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		return fmt.Errorf("invalidating session: %w", reason)
+		return fmt.Errorf("handling session error: %w", reason)
 	}
 
 	for _, handler := range handlers {
@@ -163,7 +165,7 @@ func (s *TrustedPassSessionStore) renewIfOAuth(uid int64, data *config.TokenData
 	}
 
 	if err := s.renewToken(uid, data); err != nil {
-		return s.Invalidate(err)
+		return s.HandleError(err)
 	}
 
 	return nil
