@@ -28,7 +28,6 @@ type TrustedPassSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       TrustedPassRenewalAPICall
-	session            *trustedPassSession
 
 	// optional external validator with
 	externalValidator TrustedPassExternalValidator
@@ -45,7 +44,6 @@ func NewTrustedPassSessionStore(
 		cfgManager:         cfgManager,
 		renewAPICall:       renewAPICall,
 		errHandlerRegistry: errHandlerRegistry,
-		session:            newTrustedPassSession(cfgManager),
 		externalValidator:  externalValidator,
 	}
 }
@@ -98,7 +96,7 @@ func (s *TrustedPassSessionStore) Invalidate(reason error) error {
 
 // Validate performs validation on the TrustedPass session
 func (s *TrustedPassSessionStore) Validate() error {
-	cfg, err := s.session.get()
+	cfg, err := s.getConfig()
 	if err != nil {
 		return err
 	}
@@ -176,15 +174,10 @@ type trustedPassConfig struct {
 	ExpiresAt time.Time
 }
 
-// trustedPassSession manages TrustedPass session data in config
-type trustedPassSession struct {
-	cm config.Manager
-}
-
-// get retrieves the current TrustedPass session configuration
-func (s *trustedPassSession) get() (trustedPassConfig, error) {
+// getConfig retrieves the current TrustedPass session configuration
+func (s *TrustedPassSessionStore) getConfig() (trustedPassConfig, error) {
 	var cfg config.Config
-	if err := s.cm.Load(&cfg); err != nil {
+	if err := s.cfgManager.Load(&cfg); err != nil {
 		return trustedPassConfig{}, err
 	}
 
@@ -203,26 +196,4 @@ func (s *trustedPassSession) get() (trustedPassConfig, error) {
 		OwnerID:   data.TrustedPassOwnerID,
 		ExpiresAt: expiryTime,
 	}, nil
-}
-
-// set saves the TrustedPass session configuration
-func (s *trustedPassSession) set(cfg trustedPassConfig) error {
-	err := s.cm.SaveWith(func(c config.Config) config.Config {
-		data := c.TokensData[c.AutoConnectData.ID]
-		data.TrustedPassToken = cfg.Token
-		data.TrustedPassOwnerID = cfg.OwnerID
-		data.TrustedPassTokenExpiry = cfg.ExpiresAt.Format(internal.ServerDateFormat)
-		c.TokensData[c.AutoConnectData.ID] = data
-		return c
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// newTrustedPassSession creates a new trustedPassSession instance
-func newTrustedPassSession(confman config.Manager) *trustedPassSession {
-	return &trustedPassSession{cm: confman}
 }

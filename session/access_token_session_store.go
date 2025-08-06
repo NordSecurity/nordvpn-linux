@@ -54,9 +54,8 @@ func (s *AccessTokenSessionStore) Renew() error {
 		return err
 	}
 
-	// Handle manual access tokens
 	if cfg.ExpiresAt.Equal(ManualAccessTokenExpiryDate) {
-		if err := s.Validate(cfg); err != nil {
+		if err := s.Validate(); err != nil {
 			_ = s.Invalidate(err)
 			return ErrAccessTokenRevoked
 		}
@@ -64,7 +63,7 @@ func (s *AccessTokenSessionStore) Renew() error {
 	}
 
 	// Check if token needs renewal
-	if err := s.Validate(cfg); err == nil {
+	if err := s.Validate(); err == nil {
 		return nil
 	}
 
@@ -89,7 +88,12 @@ func (s *AccessTokenSessionStore) Renew() error {
 }
 
 // Validate checks if the access token is valid
-func (s *AccessTokenSessionStore) Validate(cfg accessTokenConfig) error {
+func (s *AccessTokenSessionStore) Validate() error {
+	cfg, err := s.getConfig()
+	if err != nil {
+		return err
+	}
+
 	if cfg.ExpiresAt.Equal(ManualAccessTokenExpiryDate) {
 		if !internal.AccessTokenFormatValidator(cfg.Token) {
 			return fmt.Errorf("invalid access token format: %w", ErrAccessTokenExpired)
