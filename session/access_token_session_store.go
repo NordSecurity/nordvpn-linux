@@ -105,9 +105,8 @@ func (s *AccessTokenSessionStore) validate() error {
 	return nil
 }
 
-// HandleError processes errors that occur during session operations by dispatching
-// them to registered error handlers. If no handlers are registered for the given
-// error type, it returns the error wrapped with additional context.
+// HandleError processes errors that occur during session operations.
+// It returns nil if the error was not handled, or the error itself if it was.
 func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
