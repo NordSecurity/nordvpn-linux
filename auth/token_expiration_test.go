@@ -168,7 +168,7 @@ func setupTestEnvironment(
 ) (core.ClientAPI, *mockRoundTripperWithExpiration, *mockConfigManager) {
 	renewResp := &core.TokenRenewResponse{
 		Token:     renewedTokenValue,
-		ExpiresAt: time.Now().Add(defaultExpirationDays).Format(internal.ServerDateFormat),
+		ExpiresAt: time.Now().UTC().Add(defaultExpirationDays).Format(internal.ServerDateFormat),
 	}
 
 	currentUserResp := &core.CurrentUserResponse{
@@ -229,7 +229,7 @@ func Test_TokenExpiration(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	futureExpiry := time.Now().Add(defaultExpirationDays).Format(internal.ServerDateFormat)
+	futureExpiry := time.Now().UTC().Add(defaultExpirationDays).Format(internal.ServerDateFormat)
 
 	api, mockRT, mockCfg := setupTestEnvironment(idempotencyKey, futureExpiry, nil)
 
@@ -239,7 +239,7 @@ func Test_TokenExpiration(t *testing.T) {
 	assert.Equal(t, testEmail, resp.Email)
 
 	mockRT.ForceExpiration()
-	mockCfg.SetTokenExpiry(time.Now().Add(-12 * time.Hour))
+	mockCfg.SetTokenExpiry(time.Now().UTC().Add(-12 * time.Hour))
 	resp, err = api.CurrentUser()
 	assert.NoError(t, err)
 	assert.Equal(t, testUsername, resp.Username)
@@ -250,16 +250,69 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	futureExpiry := time.Now().Add(defaultExpirationDays).Format(internal.ServerDateFormat)
+	pastExpiry := time.Now().UTC().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 
-	api, mockRT, _ := setupTestEnvironment(idempotencyKey, futureExpiry, nil)
+	// Create a custom round tripper that returns network error for renewal
+	rt := &mockRoundTripperWithExpiration{
+		renewResp:              nil,
+		currentUserResp:        nil,
+		respError:              errors.New("network error"),
+		expectedIdempotencyKey: idempotencyKey,
+		createdAt:              time.Now().Add(-2 * defaultExpirationDays), // Already expired
+	}
 
-	mockRT.respError = errors.New("network error")
-	mockRT.ForceExpiration()
+	rt.RoundTripFunc = func(req *http.Request) (*http.Response, error) {
+		switch req.URL.Path {
+		case "/v1/users/tokens/renew":
+			// Return network error for renewal attempt
+			return nil, rt.respError
+		case "/v1/users/current":
+			// First call should return unauthorized to trigger renewal
+			return createUnauthorizedResponse()
+		default:
+			panic(fmt.Errorf("unexpected path: %s", req.URL.Path))
+		}
+	}
+
+	mockCfg := &mockConfigManager{
+		config: config.Config{
+			AutoConnectData: config.AutoConnectData{ID: 1},
+			TokensData: map[int64]config.TokenData{
+				1: {
+					Token:          defaultTokenValue,
+					TokenExpiry:    pastExpiry,
+					IdempotencyKey: &idempotencyKey,
+				},
+			},
+		},
+	}
+
+	client := request.NewStdHTTP()
+	client.Transport = rt
+
+	simpleApi := core.NewSimpleAPI("", "", client, response.NoopValidator{})
+	sessionStore := session.NewAccessTokenSessionStore(
+		mockCfg,
+		internal.NewErrorHandlingRegistry[error](),
+		func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
+			resp, err := simpleApi.TokenRenew(token, idempotencyKey)
+			if err == nil {
+				return &session.AccessTokenResponse{
+					Token:      resp.Token,
+					RenewToken: resp.RenewToken,
+					ExpiresAt:  resp.ExpiresAt,
+				}, nil
+			}
+			return nil, err
+		},
+		nil,
+	)
+
+	api := core.NewSmartClientAPI(simpleApi, sessionStore)
 
 	resp, err := api.CurrentUser()
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, core.ErrUnauthorized)
+	assert.ErrorIs(t, err, rt.respError)
 	assert.Nil(t, resp)
 }
 
@@ -267,7 +320,7 @@ func Test_TokenRenewalWithInvalidToken(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	pastExpiry := time.Now().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
+	pastExpiry := time.Now().UTC().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 
 	api, mockRT, _ := setupTestEnvironment(idempotencyKey, pastExpiry, nil)
 
@@ -285,7 +338,7 @@ func Test_ConfigSaveErrorDuringRenewal(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	idempotencyKey := uuid.New()
-	pastExpiry := time.Now().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
+	pastExpiry := time.Now().UTC().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 
 	api, mockRT, _ := setupTestEnvironment(idempotencyKey, pastExpiry, errors.New("failed to save config"))
 	mockRT.ForceExpiration()

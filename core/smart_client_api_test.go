@@ -356,10 +356,10 @@ func (m *mockAccessTokenStoreWrapper) Renew() error {
 	return nil
 }
 
-func (m *mockAccessTokenStoreWrapper) Invalidate(reason error) error {
-	m.mock.InvalidateCallCount++
-	if m.mock.InvalidateFunc != nil {
-		return m.mock.InvalidateFunc(reason)
+func (m *mockAccessTokenStoreWrapper) HandleError(reason error) error {
+	m.mock.HandleErrorCallCount++
+	if m.mock.HandleErrorFunc != nil {
+		return m.mock.HandleErrorFunc(reason)
 	}
 	return nil
 }
@@ -457,9 +457,9 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal is triggered but api still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -562,9 +562,9 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -831,9 +831,9 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -939,9 +939,9 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1041,9 +1041,9 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1148,9 +1148,9 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1260,9 +1260,9 @@ func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1362,9 +1362,9 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1773,9 +1773,9 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1886,9 +1886,9 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
-			GetTokenFunc:   func() string { return initialToken },
-			RenewFunc:      func() error { return nil },
-			InvalidateFunc: func(reason error) error { return nil },
+			GetTokenFunc:    func() string { return initialToken },
+			RenewFunc:       func() error { return nil },
+			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{

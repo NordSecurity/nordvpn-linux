@@ -11,6 +11,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// testValidate is a test helper that tests the validation logic of TrustedPassSessionStore
+// without going through the full Renew flow
+func testValidate(store SessionStore) error {
+	// Type assert to access the unexported validate method
+	tpStore, ok := store.(*TrustedPassSessionStore)
+	if !ok {
+		return errors.New("not a TrustedPassSessionStore")
+	}
+	return tpStore.validate()
+}
+
 func TestTrustedPassSessionStore_Validate(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -24,14 +35,14 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 			name:    "valid session",
 			token:   "valid-token",
 			ownerID: "nordvpn",
-			expiry:  time.Now().Add(time.Hour),
+			expiry:  time.Now().UTC().Add(time.Hour),
 			wantErr: nil,
 		},
 		{
 			name:    "empty token",
 			token:   "",
 			ownerID: "nordvpn",
-			expiry:  time.Now().Add(time.Hour),
+			expiry:  time.Now().UTC().Add(time.Hour),
 			wantErr: ErrInvalidToken,
 		},
 		{
@@ -45,14 +56,14 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 			name:    "invalid owner ID",
 			token:   "valid-token",
 			ownerID: "invalid",
-			expiry:  time.Now().Add(time.Hour),
+			expiry:  time.Now().UTC().Add(time.Hour),
 			wantErr: ErrInvalidOwnerID,
 		},
 		{
 			name:    "external validator success",
 			token:   "valid-token",
 			ownerID: "nordvpn",
-			expiry:  time.Now().Add(time.Hour),
+			expiry:  time.Now().UTC().Add(time.Hour),
 			externalValidator: func(token string, ownerID string) error {
 				assert.Equal(t, "valid-token", token)
 				assert.Equal(t, "nordvpn", ownerID)
@@ -64,7 +75,7 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 			name:    "external validator failure",
 			token:   "valid-token",
 			ownerID: "nordvpn",
-			expiry:  time.Now().Add(time.Hour),
+			expiry:  time.Now().UTC().Add(time.Hour),
 			externalValidator: func(token string, ownerID string) error {
 				return errors.New("external validation failed")
 			},
@@ -97,7 +108,8 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 				tt.externalValidator,
 			)
 
-			err := store.(*TrustedPassSessionStore).Validate()
+			// Test validation directly using the test helper
+			err := testValidate(store)
 
 			if tt.wantErr != nil {
 				assert.Error(t, err)
@@ -190,7 +202,7 @@ func TestTrustedPassSessionStore_EdgeCases(t *testing.T) {
 
 		store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
 
-		err := store.(*TrustedPassSessionStore).Validate()
+		err := testValidate(store)
 
 		assert.Error(t, err)
 		assert.Equal(t, ErrSessionExpired, err)
@@ -214,7 +226,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			tokenData: config.TokenData{
 				TrustedPassToken:       "valid-token",
 				TrustedPassOwnerID:     "nordvpn",
-				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
 				IsOAuth:                true,
 			},
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
@@ -231,7 +243,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			tokenData: config.TokenData{
 				TrustedPassToken:       "",
 				TrustedPassOwnerID:     "nordvpn",
-				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
 				IsOAuth:                true,
 			},
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
@@ -250,7 +262,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			tokenData: config.TokenData{
 				TrustedPassToken:       "",
 				TrustedPassOwnerID:     "nordvpn",
-				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
 				IsOAuth:                true,
 			},
 			renewAPICall:    nil,
@@ -262,7 +274,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			tokenData: config.TokenData{
 				TrustedPassToken:       "",
 				TrustedPassOwnerID:     "nordvpn",
-				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
 				IsOAuth:                true,
 			},
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
@@ -276,7 +288,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			tokenData: config.TokenData{
 				TrustedPassToken:       "",
 				TrustedPassOwnerID:     "nordvpn",
-				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
 				IsOAuth:                true,
 			},
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
@@ -293,7 +305,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			tokenData: config.TokenData{
 				TrustedPassToken:       "",
 				TrustedPassOwnerID:     "nordvpn",
-				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
 				IsOAuth:                true,
 			},
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
