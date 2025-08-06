@@ -54,6 +54,7 @@ type CdnRemoteConfig struct {
 	features       *FeatureMap
 	rolloutGroup   int
 	analytics      Analytics
+	initOnce       sync.Once
 	mu             sync.RWMutex
 	notifier       events.PublishSubcriber[RemoteConfigEvent]
 }
@@ -128,51 +129,65 @@ func isNetworkRetryable(err error) bool {
 
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
+	var err error
+	reloadDone := false
+	c.initOnce.Do(func() {
+		c.load() // on start init cache from disk
+		reloadDone = true
+	})
+	needReload := false
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
-		if err := c.download(); err != nil {
-			return err
+		if needReload, err = c.download(); err != nil {
+			return fmt.Errorf("downloading remote config: %w", err)
 		}
 	}
 
-	if err := c.load(); err != nil {
-		return err
+	// remote config files were downloaded and need to be reloaded?
+	if needReload {
+		c.load()
+		reloadDone = true
 	}
 
-	c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet)})
+	if reloadDone {
+		// notify what is current state after config reload
+		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet)})
+	}
 
 	return nil
 }
 
-func (c *CdnRemoteConfig) download() error {
+func (c *CdnRemoteConfig) download() (bool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	for _, f := range c.features.keys() {
-		feature := c.features.get(f)
-		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+	newChangesDownloaded := false
+
+	for _, f := range c.features.featureMap {
+		dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed downloading feature [", feature.name, "] remote config:", err)
+			log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
 
 			var downloadErr *DownloadError
 			if errors.As(err, &downloadErr) {
-				c.analytics.NotifyDownloadFailure("cli", feature.name, *downloadErr)
+				c.analytics.NotifyDownloadFailure("cli", f.name, *downloadErr)
 			}
 			if isNetworkRetryable(err) {
-				return err
+				return false, err
 			}
 			continue
 		}
 		if dnld {
 			// only if remote config was really downloaded
-			log.Println(internal.InfoPrefix, "feature [", feature.name, "] remote config downloaded to:", c.localCachePath)
-			c.analytics.NotifyDownload("cli", feature.name)
+			log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
+			c.analytics.NotifyDownload("cli", f.name)
+			newChangesDownloaded = true
 		}
 	}
-	return nil
+	return newChangesDownloaded, nil
 }
 
-func (c *CdnRemoteConfig) load() error {
+func (c *CdnRemoteConfig) load() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -186,7 +201,6 @@ func (c *CdnRemoteConfig) load() error {
 		log.Println(internal.InfoPrefix, "feature [", feature.name, "] config loaded from:", c.localCachePath)
 		c.analytics.NotifyLocalUse("cli", feature.name, nil)
 	}
-	return nil
 }
 
 func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamValue) {
