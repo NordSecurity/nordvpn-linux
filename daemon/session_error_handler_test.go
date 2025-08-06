@@ -645,19 +645,6 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 			}
 			RegisterSessionErrorHandler(errorRegistry, deps)
 
-			// Create external validator only for tests that need it
-			var externalValidator session.AccessTokenExternalValidator
-			if tt.name == "successful API call with valid token" {
-				// Only use external validator when we expect the token to be valid
-				externalValidator = func(token string) error {
-					_, err := mockAPI.CurrentUser(token)
-					if errors.Is(err, core.ErrUnauthorized) {
-						return session.ErrInvalidToken
-					}
-					return err
-				}
-			}
-
 			renewalAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
 				resp, err := mockAPI.TokenRenew(token, key)
 				if err != nil {
@@ -674,7 +661,7 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 				cfgManager,
 				errorRegistry,
 				renewalAPICall,
-				externalValidator,
+				nil,
 			)
 
 			smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
