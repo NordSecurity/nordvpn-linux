@@ -221,8 +221,11 @@ func TestFeatureOnOff(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			eh := newTestRemoteConfigEventHandler()
 			rc := newTestRemoteConfig(test.ver, test.env, cdn)
+			rc.Subscribe(eh)
 			err := rc.LoadConfig()
+			assert.True(t, eh.notified)
 			assert.NoError(t, err)
 			on := rc.IsFeatureEnabled(test.feature)
 			assert.Equal(t, test.on, on)
@@ -406,6 +409,21 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	cleanLocalPath(t)
 }
 
+type RemoteConfigEventHandler struct {
+	notified       bool
+	meshnetEnabled bool
+}
+
+func newTestRemoteConfigEventHandler() *RemoteConfigEventHandler {
+	return &RemoteConfigEventHandler{notified: false}
+}
+
+func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error {
+	e.notified = true
+	e.meshnetEnabled = c.MeshnetFeatureEnabled
+	return nil
+}
+
 func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
 	mle := subs.Subject[events.DebuggerEvent]{}
 	ve := devents.DebuggerEvents{
@@ -419,6 +437,7 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConf
 		cdn:            cdn,
 		features:       NewFeatureMap(),
 		analytics:      NewRemoteConfigAnalytics(ve.DebuggerEvents, "", 10),
+		notifier:       &subs.Subject[RemoteConfigEvent]{},
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)

@@ -31,6 +31,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(err)
 	}
+	meshEnabled := isMeshnetEnabled(c)
 
 	fmt.Printf("Technology: %s\n", settings.GetTechnology())
 	if settings.Technology == config.Technology_OPENVPN {
@@ -54,7 +55,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("Auto-connect group: %s\n", settings.AutoConnectData.ServerGroup)
 	}
 
-	if isMeshnetEnabled(c) {
+	if meshEnabled {
 		fmt.Printf("Meshnet: %+v\n", nstrings.GetBoolLabel(settings.Meshnet))
 	}
 

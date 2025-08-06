@@ -34,7 +34,7 @@ import (
 // AppHelpTemplate is the template we use for forming the cli message on no command
 const AppHelpTemplate = `Welcome to NordVPN Linux client app!
 Version {{.Version}}
-Website: https://nordvpn.com
+Website: https://nordvpn.com/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings-explore_nordvpn&nm=app&ns=nordvpn-linux-cli&nc=settings-explore_nordvpn
 
 Usage: {{if .UsageText}}{{.UsageText}}{{else}}{{.HelpName}} {{if .VisibleFlags}}[global options]{{end}}{{if .Commands}} command [command options]{{end}} {{if .ArgsUsage}}{{.ArgsUsage}}{{else}}[arguments...]{{end}}
 
@@ -48,7 +48,7 @@ Global options:
 
 For more detailed information, please check manual page.
 
-Our customer support works 24/7 so if you have any questions or issues, drop us a line at https://support.nordvpn.com/
+Our customer support works 24/7 so if you have any questions or issues, drop us a line at https://support.nordvpn.com/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings-get_help&nm=app&ns=nordvpn-linux-cli&nc=settings-get_help
 `
 
 // CommandHelpTemplate is the template we use to show help
@@ -1044,9 +1044,14 @@ func (s loaderStream) RecvMsg(m interface{}) error {
 	return s.ClientStream.RecvMsg(m)
 }
 
+func isLoaderEnabled() bool {
+	value, exists := os.LookupEnv("DISABLE_TUI_LOADER")
+	return !(exists && value == "1")
+}
+
 func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) error {
 	return func(ctx *cli.Context) error {
-		c.loaderInterceptor.enabled = true
+		c.loaderInterceptor.enabled = isLoaderEnabled()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, err)
 			color.Red(internal.ErrDaemonConnectionRefused.Error())
