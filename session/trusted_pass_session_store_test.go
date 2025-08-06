@@ -110,40 +110,65 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 }
 
 func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
-	t.Run("with registered handler", func(t *testing.T) {
-		cfgManager := mock.NewMockConfigManager()
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
+	tests := []struct {
+		name            string
+		testError       error
+		setupHandler    bool
+		wantErr         bool
+		wantErrContains string
+		wantHandlerCall bool
+	}{
+		{
+			name:            "with registered handler",
+			testError:       errors.New("test error"),
+			setupHandler:    true,
+			wantErr:         false,
+			wantHandlerCall: true,
+		},
+		{
+			name:            "no registered handler",
+			testError:       errors.New("unhandled error"),
+			setupHandler:    false,
+			wantErr:         true,
+			wantErrContains: "invalidating session: unhandled error",
+			wantHandlerCall: false,
+		},
+	}
 
-		handlerCalled := false
-		var handlerErr error
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfgManager := mock.NewMockConfigManager()
+			errRegistry := internal.NewErrorHandlingRegistry[error]()
 
-		testErr := errors.New("test error")
-		errRegistry.Add(func(err error) {
-			handlerCalled = true
-			handlerErr = err
-		}, testErr)
+			handlerCalled := false
+			var handlerErr error
 
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
+			if tt.setupHandler {
+				errRegistry.Add(func(err error) {
+					handlerCalled = true
+					handlerErr = err
+				}, tt.testError)
+			}
 
-		err := store.Invalidate(testErr)
+			store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
 
-		assert.NoError(t, err)
-		assert.True(t, handlerCalled)
-		assert.Equal(t, testErr, handlerErr)
-	})
+			err := store.Invalidate(tt.testError)
 
-	t.Run("no registered handler", func(t *testing.T) {
-		cfgManager := mock.NewMockConfigManager()
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.wantErrContains != "" {
+					assert.Contains(t, err.Error(), tt.wantErrContains)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
 
-		testErr := errors.New("unhandled error")
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
-
-		err := store.Invalidate(testErr)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalidating session: unhandled error")
-	})
+			assert.Equal(t, tt.wantHandlerCall, handlerCalled)
+			if tt.wantHandlerCall {
+				assert.Equal(t, tt.testError, handlerErr)
+			}
+		})
+	}
 }
 
 func TestTrustedPassSessionStore_EdgeCases(t *testing.T) {
@@ -175,189 +200,148 @@ func TestTrustedPassSessionStore_EdgeCases(t *testing.T) {
 }
 
 func TestTrustedPassSessionStore_Renew(t *testing.T) {
-	t.Run("valid session does not renew", func(t *testing.T) {
-		userID := int64(123)
-		tokenData := config.TokenData{
-			TrustedPassToken:       "valid-token",
-			TrustedPassOwnerID:     "nordvpn",
-			TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
-			IsOAuth:                true,
-		}
+	userID := int64(123)
 
-		cfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: userID},
-			TokensData:      map[int64]config.TokenData{userID: tokenData},
-		}
+	tests := []struct {
+		name            string
+		tokenData       config.TokenData
+		renewAPICall    TrustedPassRenewalAPICall
+		wantErr         bool
+		wantErrContains string
+		checkRenewCall  func(t *testing.T, renewCalled bool)
+	}{
+		{
+			name: "valid session does not renew",
+			tokenData: config.TokenData{
+				TrustedPassToken:       "valid-token",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				t.Error("Renew API should not be called for valid session")
+				return nil, nil
+			},
+			wantErr: false,
+			checkRenewCall: func(t *testing.T, renewCalled bool) {
+				assert.False(t, renewCalled, "Renew API should not be called for valid session")
+			},
+		},
+		{
+			name: "invalid session triggers renewal",
+			tokenData: config.TokenData{
+				TrustedPassToken:       "",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				return &TrustedPassAccessTokenResponse{
+					Token:   "new-token",
+					OwnerID: "nordvpn",
+				}, nil
+			},
+			wantErr: false,
+			checkRenewCall: func(t *testing.T, renewCalled bool) {
+				assert.True(t, renewCalled, "Renew API should be called for invalid session")
+			},
+		},
+		{
+			name: "nil renewal API",
+			tokenData: config.TokenData{
+				TrustedPassToken:       "",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall:    nil,
+			wantErr:         true,
+			wantErrContains: "renewal API call not configured",
+		},
+		{
+			name: "renewal API returns nil response",
+			tokenData: config.TokenData{
+				TrustedPassToken:       "",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				return nil, nil
+			},
+			wantErr:         true,
+			wantErrContains: "renewal API returned nil response",
+		},
+		{
+			name: "renewal API returns empty token",
+			tokenData: config.TokenData{
+				TrustedPassToken:       "",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				return &TrustedPassAccessTokenResponse{
+					Token:   "",
+					OwnerID: "nordvpn",
+				}, nil
+			},
+			wantErr:         true,
+			wantErrContains: "renewal API returned empty token",
+		},
+		{
+			name: "renewal API error",
+			tokenData: config.TokenData{
+				TrustedPassToken:       "",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				return nil, errors.New("API error")
+			},
+			wantErr:         true,
+			wantErrContains: "API error",
+		},
+	}
 
-		cfgManager := mock.NewMockConfigManager()
-		cfgManager.Cfg = &cfg
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.Config{
+				AutoConnectData: config.AutoConnectData{ID: userID},
+				TokensData:      map[int64]config.TokenData{userID: tt.tokenData},
+			}
 
-		renewCalled := false
-		renewAPICall := func(token string) (*TrustedPassAccessTokenResponse, error) {
-			renewCalled = true
-			return nil, nil
-		}
+			cfgManager := mock.NewMockConfigManager()
+			cfgManager.Cfg = &cfg
+			errRegistry := internal.NewErrorHandlingRegistry[error]()
 
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+			renewCalled := false
+			var renewAPICall TrustedPassRenewalAPICall
+			if tt.renewAPICall != nil {
+				originalCall := tt.renewAPICall
+				renewAPICall = func(token string) (*TrustedPassAccessTokenResponse, error) {
+					renewCalled = true
+					return originalCall(token)
+				}
+			}
 
-		err := store.Renew()
+			store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
 
-		assert.NoError(t, err)
-		assert.False(t, renewCalled, "Renew API should not be called for valid session")
-	})
+			err := store.Renew()
 
-	t.Run("invalid session triggers renewal", func(t *testing.T) {
-		userID := int64(123)
-		tokenData := config.TokenData{
-			TrustedPassToken:       "",
-			TrustedPassOwnerID:     "nordvpn",
-			TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
-			IsOAuth:                true,
-		}
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.wantErrContains != "" {
+					assert.Contains(t, err.Error(), tt.wantErrContains)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
 
-		cfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: userID},
-			TokensData:      map[int64]config.TokenData{userID: tokenData},
-		}
-
-		cfgManager := mock.NewMockConfigManager()
-		cfgManager.Cfg = &cfg
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		renewCalled := false
-		renewAPICall := func(token string) (*TrustedPassAccessTokenResponse, error) {
-			renewCalled = true
-			return &TrustedPassAccessTokenResponse{
-				Token:   "new-token",
-				OwnerID: "nordvpn",
-			}, nil
-		}
-
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.True(t, renewCalled, "Renew API should be called for invalid session")
-	})
-
-	t.Run("nil renewal API", func(t *testing.T) {
-		userID := int64(123)
-		tokenData := config.TokenData{
-			TrustedPassToken:       "",
-			TrustedPassOwnerID:     "nordvpn",
-			TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
-			IsOAuth:                true,
-		}
-
-		cfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: userID},
-			TokensData:      map[int64]config.TokenData{userID: tokenData},
-		}
-
-		cfgManager := mock.NewMockConfigManager()
-		cfgManager.Cfg = &cfg
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "renewal API call not configured")
-	})
-
-	t.Run("renewal API returns nil response", func(t *testing.T) {
-		userID := int64(123)
-		tokenData := config.TokenData{
-			TrustedPassToken:       "",
-			TrustedPassOwnerID:     "nordvpn",
-			TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
-			IsOAuth:                true,
-		}
-
-		cfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: userID},
-			TokensData:      map[int64]config.TokenData{userID: tokenData},
-		}
-
-		cfgManager := mock.NewMockConfigManager()
-		cfgManager.Cfg = &cfg
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		renewAPICall := func(token string) (*TrustedPassAccessTokenResponse, error) {
-			return nil, nil
-		}
-
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "renewal API returned nil response")
-	})
-
-	t.Run("renewal API returns empty token", func(t *testing.T) {
-		userID := int64(123)
-		tokenData := config.TokenData{
-			TrustedPassToken:       "",
-			TrustedPassOwnerID:     "nordvpn",
-			TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
-			IsOAuth:                true,
-		}
-
-		cfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: userID},
-			TokensData:      map[int64]config.TokenData{userID: tokenData},
-		}
-
-		cfgManager := mock.NewMockConfigManager()
-		cfgManager.Cfg = &cfg
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		renewAPICall := func(token string) (*TrustedPassAccessTokenResponse, error) {
-			return &TrustedPassAccessTokenResponse{
-				Token:   "",
-				OwnerID: "nordvpn",
-			}, nil
-		}
-
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "renewal API returned empty token")
-	})
-
-	t.Run("renewal API error", func(t *testing.T) {
-		userID := int64(123)
-		tokenData := config.TokenData{
-			TrustedPassToken:       "",
-			TrustedPassOwnerID:     "nordvpn",
-			TrustedPassTokenExpiry: time.Now().Add(time.Hour).Format(internal.ServerDateFormat),
-			IsOAuth:                true,
-		}
-
-		cfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: userID},
-			TokensData:      map[int64]config.TokenData{userID: tokenData},
-		}
-
-		cfgManager := mock.NewMockConfigManager()
-		cfgManager.Cfg = &cfg
-		errRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		renewAPICall := func(token string) (*TrustedPassAccessTokenResponse, error) {
-			return nil, errors.New("API error")
-		}
-
-		store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "API error")
-	})
+			if tt.checkRenewCall != nil {
+				tt.checkRenewCall(t, renewCalled)
+			}
+		})
+	}
 }

@@ -14,33 +14,81 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAccessTokenSessionStore_Renew(t *testing.T) {
-	t.Run("should return nil when token is not expired", func(t *testing.T) {
-		uid := int64(123)
-		futureTime := time.Now().Add(24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       "token",
-					RenewToken:  "renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
+func TestAccessTokenSessionStore_Renew_SimpleScenarios(t *testing.T) {
+	uid := int64(123)
+
+	tests := []struct {
+		name            string
+		setupConfig     func() *config.Config
+		configLoadErr   error
+		wantErr         bool
+		wantErrContains string
+	}{
+		{
+			name: "should return nil when token is not expired",
+			setupConfig: func() *config.Config {
+				return &config.Config{
+					AutoConnectData: config.AutoConnectData{ID: uid},
+					TokensData: map[int64]config.TokenData{
+						uid: {
+							Token:       "token",
+							RenewToken:  "renew",
+							TokenExpiry: time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
+						},
+					},
+				}
 			},
-		}
+			wantErr: false,
+		},
+		{
+			name: "should handle no token data",
+			setupConfig: func() *config.Config {
+				return &config.Config{
+					AutoConnectData: config.AutoConnectData{ID: uid},
+					TokensData:      map[int64]config.TokenData{},
+				}
+			},
+			wantErr:         true,
+			wantErrContains: "non existing data",
+		},
+		{
+			name:            "should handle config load error",
+			configLoadErr:   errors.New("config load error"),
+			wantErr:         true,
+			wantErrContains: "config load error",
+		},
+	}
 
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var cfg *config.Config
+			if tt.setupConfig != nil {
+				cfg = tt.setupConfig()
+			}
 
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
+			cfgManager := &mock.ConfigManager{
+				Cfg:     cfg,
+				LoadErr: tt.configLoadErr,
+			}
 
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+			errorRegistry := internal.NewErrorHandlingRegistry[error]()
+			store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
 
-		err := store.Renew()
+			err := store.Renew()
 
-		assert.NoError(t, err)
-	})
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.wantErrContains != "" {
+					assert.Contains(t, err.Error(), tt.wantErrContains)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestAccessTokenSessionStore_Renew(t *testing.T) {
 
 	t.Run("should return error when token is revoked", func(t *testing.T) {
 		uid := int64(123)
@@ -334,42 +382,6 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		assert.Equal(t, validHexToken, passedToken)
 	})
 
-	t.Run("should handle no token data", func(t *testing.T) {
-		uid := int64(123)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData:      map[int64]config.TokenData{},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "non existing data")
-	})
-
-	t.Run("should handle config load error", func(t *testing.T) {
-		cfgManager := &mock.ConfigManager{
-			LoadErr: errors.New("config load error"),
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "config load error")
-	})
-
 	t.Run("should handle ErrNotFound during renewal and invalidate", func(t *testing.T) {
 		uid := int64(123)
 		idempotencyKey := uuid.New()
@@ -456,166 +468,194 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		assert.ErrorIs(t, handledError, core.ErrBadRequest)
 	})
 
-	t.Run("should return error from invalidate when no handlers for ErrNotFound", func(t *testing.T) {
-		uid := int64(123)
-		idempotencyKey := uuid.New()
-		pastTime := time.Now().Add(-24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: &idempotencyKey,
+}
+
+func TestAccessTokenSessionStore_Renew_ErrorHandlingWithoutHandlers(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().Add(-24 * time.Hour)
+
+	tests := []struct {
+		name            string
+		renewError      error
+		wantErr         error
+		wantErrContains string
+	}{
+		{
+			name:            "should return error from invalidate when no handlers for ErrNotFound",
+			renewError:      core.ErrNotFound,
+			wantErr:         core.ErrNotFound,
+			wantErrContains: "invalidating session",
+		},
+		{
+			name:            "should return error from invalidate when no handlers for ErrBadRequest",
+			renewError:      core.ErrBadRequest,
+			wantErr:         core.ErrBadRequest,
+			wantErrContains: "invalidating session",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testCfg := config.Config{
+				AutoConnectData: config.AutoConnectData{ID: uid},
+				TokensData: map[int64]config.TokenData{
+					uid: {
+						Token:          "old-token",
+						RenewToken:     "old-renew",
+						TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+						IdempotencyKey: &idempotencyKey,
+					},
 				},
-			},
-		}
+			}
 
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
+			cfgManager := &mock.ConfigManager{
+				Cfg: &testCfg,
+			}
 
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
+			errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return nil, core.ErrNotFound
-		}
+			mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+				return nil, tt.renewError
+			}
 
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
+			store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
 
-		err := store.Renew()
+			err := store.Renew()
 
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, core.ErrNotFound)
-		assert.Contains(t, err.Error(), "invalidating session")
-	})
-
-	t.Run("should return error from invalidate when no handlers for ErrBadData", func(t *testing.T) {
-		uid := int64(123)
-		idempotencyKey := uuid.New()
-		pastTime := time.Now().Add(-24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: &idempotencyKey,
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return nil, core.ErrBadRequest
-		}
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, core.ErrBadRequest)
-		assert.Contains(t, err.Error(), "invalidating session")
-	})
+			assert.Error(t, err)
+			assert.ErrorIs(t, err, tt.wantErr)
+			assert.Contains(t, err.Error(), tt.wantErrContains)
+		})
+	}
 }
 
 func TestAccessTokenSessionStore_Invalidate(t *testing.T) {
-	t.Run("should call error handlers", func(t *testing.T) {
-		testCfg := config.Config{
-			TokensData: map[int64]config.TokenData{
-				123: {Token: "token1"},
+	tests := []struct {
+		name            string
+		setupRegistry   func() *internal.ErrorHandlingRegistry[error]
+		testError       error
+		wantErr         bool
+		wantErrContains string
+		checkHandler    func(t *testing.T, handlerCalled bool)
+	}{
+		{
+			name: "should call error handlers",
+			setupRegistry: func() *internal.ErrorHandlingRegistry[error] {
+				registry := internal.NewErrorHandlingRegistry[error]()
+				registry.Add(func(reason error) {}, errors.New("test error"))
+				return registry
 			},
-		}
+			testError: errors.New("test error"),
+			wantErr:   false,
+			checkHandler: func(t *testing.T, handlerCalled bool) {
+				assert.True(t, handlerCalled)
+			},
+		},
+		{
+			name: "should return error when no handlers registered",
+			setupRegistry: func() *internal.ErrorHandlingRegistry[error] {
+				return internal.NewErrorHandlingRegistry[error]()
+			},
+			testError:       errors.New("test error"),
+			wantErr:         true,
+			wantErrContains: "invalidating session",
+			checkHandler: func(t *testing.T, handlerCalled bool) {
+				assert.False(t, handlerCalled)
+			},
+		},
+	}
 
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testCfg := config.Config{
+				TokensData: map[int64]config.TokenData{
+					123: {Token: "token1"},
+				},
+			}
 
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
+			cfgManager := &mock.ConfigManager{
+				Cfg: &testCfg,
+			}
 
-		handledIds := make(map[error]bool)
-		testError := errors.New("test error")
+			handlerCalled := false
+			errorRegistry := tt.setupRegistry()
 
-		errorRegistry.Add(func(reason error) {
-			handledIds[reason] = true
-		}, testError)
+			// Override the handler to track if it was called
+			if tt.name == "should call error handlers" {
+				errorRegistry = internal.NewErrorHandlingRegistry[error]()
+				errorRegistry.Add(func(reason error) {
+					handlerCalled = true
+				}, tt.testError)
+			}
 
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+			store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
 
-		err := store.Invalidate(testError)
+			err := store.Invalidate(tt.testError)
 
-		assert.NoError(t, err)
-		assert.True(t, handledIds[testError])
-	})
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.wantErrContains != "" {
+					assert.Contains(t, err.Error(), tt.wantErrContains)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
 
-	t.Run("should return error when no handlers registered", func(t *testing.T) {
-		testCfg := config.Config{}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-		testError := errors.New("test error")
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
-
-		err := store.Invalidate(testError)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalidating session")
-	})
+			tt.checkHandler(t, handlerCalled)
+		})
+	}
 }
 
 func TestAccessTokenSessionStore_GetToken(t *testing.T) {
 	uid := int64(123)
 	futureTime := time.Now().Add(24 * time.Hour)
 
-	t.Run("GetToken", func(t *testing.T) {
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       "test-token",
-					RenewToken:  "test-renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
+	tests := []struct {
+		name      string
+		cfg       *config.Config
+		loadErr   error
+		wantToken string
+	}{
+		{
+			name: "GetToken",
+			cfg: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: uid},
+				TokensData: map[int64]config.TokenData{
+					uid: {
+						Token:       "test-token",
+						RenewToken:  "test-renew",
+						TokenExpiry: futureTime.Format(internal.ServerDateFormat),
+					},
 				},
 			},
-		}
+			wantToken: "test-token",
+		},
+		{
+			name: "GetToken with no data",
+			cfg: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: uid},
+				TokensData:      map[int64]config.TokenData{},
+			},
+			wantToken: "",
+		},
+		{
+			name:      "GetToken with config error",
+			loadErr:   errors.New("config error"),
+			wantToken: "",
+		},
+	}
 
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfgManager := &mock.ConfigManager{
+				Cfg:     tt.cfg,
+				LoadErr: tt.loadErr,
+			}
+			store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
 
-		token := store.GetToken()
-		assert.Equal(t, "test-token", token)
-	})
-
-	t.Run("GetToken with no data", func(t *testing.T) {
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData:      map[int64]config.TokenData{},
-		}
-
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
-
-		assert.Equal(t, "", store.GetToken())
-	})
-
-	t.Run("GetToken with config error", func(t *testing.T) {
-		cfgManager := &mock.ConfigManager{
-			LoadErr: errors.New("config error"),
-		}
-		store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
-
-		assert.Equal(t, "", store.GetToken())
-	})
+			token := store.GetToken()
+			assert.Equal(t, tt.wantToken, token)
+		})
+	}
 }
