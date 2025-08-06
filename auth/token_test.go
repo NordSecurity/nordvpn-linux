@@ -128,7 +128,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 
 	resetExpirationDate := func() {
 		dt := cm.c.TokensData[cm.c.AutoConnectData.ID]
-		dt.TokenExpiry = time.Now().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
+		dt.TokenExpiry = time.Now().UTC().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 		cm.c.TokensData[cm.c.AutoConnectData.ID] = dt
 	}
 
@@ -304,7 +304,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 
 	resetExpirationDate := func() {
 		dt := cm.c.TokensData[cm.c.AutoConnectData.ID]
-		dt.TokenExpiry = time.Now().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
+		dt.TokenExpiry = time.Now().UTC().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 		cm.c.TokensData[cm.c.AutoConnectData.ID] = dt
 	}
 

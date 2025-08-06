@@ -56,7 +56,7 @@ func NewAccessTokenSessionStore(
 // Renew checks if the access token needs renewal and renews it if necessary
 func (s *AccessTokenSessionStore) Renew() error {
 	// Check if token needs renewal
-	if err := s.Validate(); err == nil {
+	if err := s.validate(); err == nil {
 		return nil
 	}
 
@@ -80,8 +80,8 @@ func (s *AccessTokenSessionStore) Renew() error {
 	return nil
 }
 
-// Validate checks if the access token is valid
-func (s *AccessTokenSessionStore) Validate() error {
+// validate checks if the access token is valid
+func (s *AccessTokenSessionStore) validate() error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
