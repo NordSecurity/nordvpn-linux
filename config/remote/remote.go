@@ -134,7 +134,11 @@ func (c *CdnRemoteConfig) download() error {
 		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "failed downloading feature [", feature.name, "] remote config:", err)
-			c.analytics.NotifyDownload("cli", feature.name, err) // TODO/FIXME: adjust/finalize
+
+			var downloadErr *DownloadError
+			if errors.As(err, &downloadErr) {
+				c.analytics.NotifyDownloadFailure("cli", feature.name, *downloadErr)
+			}
 			if isNetworkRetryable(err) {
 				return err
 			}
@@ -143,7 +147,7 @@ func (c *CdnRemoteConfig) download() error {
 		if dnld {
 			// only if remote config was really downloaded
 			log.Println(internal.InfoPrefix, "feature [", feature.name, "] remote config downloaded to:", c.localCachePath)
-			c.analytics.NotifyDownload("cli", feature.name, err) // TODO/FIXME: adjust/finalize
+			c.analytics.NotifyDownload("cli", feature.name)
 		}
 	}
 	return nil

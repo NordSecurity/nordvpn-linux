@@ -20,16 +20,13 @@ func NewRemoteConfigAnalytics(publisher events.PublishSubcriber[events.DebuggerE
 	}
 	return &MooseAnalytics{publisher: publisher, ctx: ctx}
 }
+func (ma *MooseAnalytics) NotifyDownload(client, featureName string) {
+	ma.publisher.Publish(*NewDownloadSuccessEvent(ma.ctx.UserInfo, client, featureName).ToDebuggerEvent())
+}
 
-func (ma *MooseAnalytics) NotifyDownload(client, featureName string, err error) {
-	var evt Event
-	if err != nil { //TODO/FIXME: downloadErrorKind
-		evt = NewDownloadFailureEvent(ma.ctx.UserInfo, client, featureName, DownloadErrorOther, err.Error())
-	} else {
-		evt = NewDownloadSuccessEvent(ma.ctx.UserInfo, client, featureName)
-	}
+func (ma *MooseAnalytics) NotifyDownloadFailure(client, featureName string, err DownloadError) {
 	ma.publisher.Publish(
-		*evt.ToDebuggerEvent())
+		*NewDownloadFailureEvent(ma.ctx.UserInfo, client, featureName, err.Kind, err.Error()).ToDebuggerEvent())
 }
 
 func (ma *MooseAnalytics) NotifyLocalUse(client, featureName string, err error) {

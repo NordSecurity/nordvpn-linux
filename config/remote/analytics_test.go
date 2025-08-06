@@ -111,14 +111,14 @@ func TestMooseAnalytics(t *testing.T) {
 		{
 			name: "NotifyDownload success",
 			action: func(a Analytics) {
-				a.NotifyDownload(client, feature, nil)
+				a.NotifyDownload(client, feature)
 			},
 			expectedEventName: `"event":"rc_download_success"`,
 		},
 		{
 			name: "NotifyDownload failure",
 			action: func(a Analytics) {
-				a.NotifyDownload(client, feature, errors.New("fail"))
+				a.NotifyDownloadFailure(client, feature, DownloadError{Kind: DownloadErrorFileDownload, Cause: errors.New("fail")})
 			},
 			expectedEventName: `"event":"rc_download_failure"`,
 			expectedDetails:   `"message":"fail"`,
