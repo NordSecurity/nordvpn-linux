@@ -173,7 +173,7 @@ func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.wantErrContains != "" {
-					assert.Contains(t, err.Error(), "handling session error")
+					assert.Contains(t, err.Error(), tt.wantErrContains)
 				}
 			} else {
 				assert.NoError(t, err)
