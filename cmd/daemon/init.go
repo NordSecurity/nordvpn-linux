@@ -15,27 +15,24 @@ func buildAccessTokenSessionStore(
 	confman config.Manager,
 	errRegistry *internal.ErrorHandlingRegistry[error],
 	clientAPI core.RawClientAPI,
-) session.SessionStore {
+) *session.AccessTokenSessionStore {
 	return session.NewAccessTokenSessionStore(
 		confman,
-		buildAccessTokenSessionStoreValidators(clientAPI),
 		errRegistry,
 		buildAccessTokenSessionStoreAPIRenewalCall(clientAPI),
+		buildAccessTokenExternalValidator(clientAPI),
 	)
 }
 
-func buildAccessTokenSessionStoreValidators(clientAPI core.RawClientAPI) session.SessionStoreValidator {
-	return session.NewCompositeValidator(
-		session.NewExpiryValidator(),
-		session.NewManualAccessTokenValidator(func(token string) error {
-			// this is the least expensive api call that needs authentication
-			_, err := clientAPI.CurrentUser(token)
-			if errors.Is(err, core.ErrUnauthorized) {
-				return session.ErrAccessTokenRevoked
-			}
-			return nil
-		}),
-	)
+func buildAccessTokenExternalValidator(clientAPI core.RawClientAPI) session.AccessTokenExternalValidator {
+	return func(token string) error {
+		// this is the least expensive api call that needs authentication
+		_, err := clientAPI.CurrentUser(token)
+		if errors.Is(err, core.ErrUnauthorized) {
+			return session.ErrAccessTokenRevoked
+		}
+		return nil
+	}
 }
 
 func buildAccessTokenSessionStoreAPIRenewalCall(clientAPI core.RawClientAPI) session.AccessTokenRenewalAPICall {
@@ -70,7 +67,6 @@ func buildTrustedPassSessionStoreAPIRenewalCall(clientAPI core.ClientAPI) sessio
 	return func(token string) (*session.TrustedPassAccessTokenResponse, error) {
 		resp, err := clientAPI.TrustedPassToken()
 		if err != nil {
-			// map to internal errors
 			return nil, fmt.Errorf("getting trusted pass token data: %w", err)
 		}
 

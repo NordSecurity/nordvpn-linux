@@ -147,9 +147,6 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 		expChecker: expirationChecker,
 		sessionStores: []session.SessionStore{session.NewAccessTokenSessionStore(
 			&cm,
-			session.NewCompositeValidator(
-				session.NewExpiryValidator(),
-			),
 			errRegistry,
 			func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 				resp, err := api.TokenRenew(token, idempotencyKey)
@@ -163,6 +160,7 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 					ExpiresAt:  resp.ExpiresAt,
 				}, err
 			},
+			nil, // no external validator needed for this test
 		)},
 	}
 
@@ -288,9 +286,6 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 		expChecker: expirationChecker,
 		sessionStores: []session.SessionStore{session.NewAccessTokenSessionStore(
 			&cm,
-			session.NewCompositeValidator(
-				session.NewExpiryValidator(),
-			),
 			errRegistry,
 			func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 				resp, err := api.TokenRenew(token, idempotencyKey)
@@ -303,6 +298,7 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 					ExpiresAt:  resp.ExpiresAt,
 				}, nil
 			},
+			nil, // no external validator needed for this test
 		)},
 	}
 

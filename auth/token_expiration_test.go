@@ -206,7 +206,6 @@ func setupTestEnvironment(
 	simpleApi := core.NewSimpleAPI("", "", client, response.NoopValidator{})
 	sessionStore := session.NewAccessTokenSessionStore(
 		mockCfg,
-		session.NewExpiryValidator(),
 		internal.NewErrorHandlingRegistry[error](),
 		func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 			resp, err := simpleApi.TokenRenew(token, idempotencyKey)
@@ -220,6 +219,7 @@ func setupTestEnvironment(
 
 			return nil, err
 		},
+		nil, // no external validator needed for this test
 	)
 
 	return core.NewSmartClientAPI(simpleApi, sessionStore), rt, mockCfg

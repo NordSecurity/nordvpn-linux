@@ -13,9 +13,8 @@ type SessionStore interface {
 	Invalidate(reason error) error
 }
 
-// SessionStoreValidator is an interface for validating session data.
-type SessionStoreValidator interface {
-	// Validate checks whether the provided session object is valid.
-	// Returns an error if the session is invalid or fails validation checks.
-	Validate(session interface{}) error
+// TokenSessionStore extends SessionStore with token access capabilities
+type TokenSessionStore interface {
+	SessionStore
+	GetToken() string
 }

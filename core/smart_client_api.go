@@ -22,21 +22,17 @@ type ClientAPI interface {
 
 type smartClientAPI struct {
 	wrapped RawClientAPI
-	store   session.SessionStore
+	store   session.TokenSessionStore
 }
 
 // NewSmartClientAPI creates new client instance of smart-API
-func NewSmartClientAPI(client RawClientAPI, accessTokenStore session.SessionStore) ClientAPI {
-	return &smartClientAPI{wrapped: client, store: accessTokenStore}
+func NewSmartClientAPI(client RawClientAPI, sessionStore session.TokenSessionStore) ClientAPI {
+	return &smartClientAPI{wrapped: client, store: sessionStore}
 }
 
-func callWithToken[T any](store session.SessionStore, call func(token string) (T, error)) (T, error) {
+func callWithToken[T any](store session.TokenSessionStore, call func(token string) (T, error)) (T, error) {
 	callAPIWithToken := func() (T, error) {
-		token, err := session.GetToken(store)
-		if err != nil {
-			var zero T
-			return zero, err
-		}
+		token := store.GetToken()
 		return call(token)
 	}
 
