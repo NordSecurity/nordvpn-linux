@@ -60,7 +60,7 @@ func ValidateTrustedPassOwnerID(ownerID string) error {
 		return err
 	}
 	if ownerID != TrustedPassOwnerID {
-		return ErrInvalidOwnerId
+		return ErrInvalidOwnerID
 	}
 	return nil
 }
