@@ -1,11 +1,5 @@
-// The tests verify that MooseAnalytics correctly publishes analytics events
-// for various scenarios, including:
-// - Successful and failed downloads
-// - Local feature usage
-// - Successful and failed JSON parsing
-// - Partial rollout notifications
-// Each test checks that the appropriate event name and details are included
-// in the published event data.
+//go:build moose
+
 package remote
 
 import (
@@ -94,6 +88,14 @@ func setupAnalyticsTest() *analyticsTestFixture {
 	}
 }
 
+// The tests verify that MooseAnalytics correctly publishes analytics events
+// for various scenarios, including:
+// - Successful and failed downloads
+// - Local feature usage
+// - Successful and failed JSON parsing
+// - Partial rollout notifications
+// Each test checks that the appropriate event name and details are included
+// in the published event data.
 func TestMooseAnalytics(t *testing.T) {
 	category.Set(t, category.Unit)
 
