@@ -105,11 +105,13 @@ func (s *AccessTokenSessionStore) Validate() error {
 	return nil
 }
 
-// Invalidate calls error handlers for the given error or returns the error if no handlers are registered
-func (s *AccessTokenSessionStore) Invalidate(reason error) error {
+// HandleError processes errors that occur during session operations by dispatching
+// them to registered error handlers. If no handlers are registered for the given
+// error type, it returns the error wrapped with additional context.
+func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		return fmt.Errorf("invalidating session: %w", reason)
+		return fmt.Errorf("handling session error: %w", reason)
 	}
 
 	for _, handler := range handlers {
@@ -129,7 +131,7 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 
 	resp, err := s.renewAPICall(data.Token, *data.IdempotencyKey)
 	if err != nil {
-		return s.Invalidate(err)
+		return s.HandleError(err)
 	}
 
 	if resp == nil {

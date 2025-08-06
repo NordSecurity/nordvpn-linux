@@ -526,13 +526,13 @@ func TestAccessTokenSessionStore_Renew_ErrorHandlingWithoutHandlers(t *testing.T
 			name:            "should return error from invalidate when no handlers for ErrNotFound",
 			renewError:      core.ErrNotFound,
 			wantErr:         core.ErrNotFound,
-			wantErrContains: "invalidating session",
+			wantErrContains: "handling session error",
 		},
 		{
 			name:            "should return error from invalidate when no handlers for ErrBadRequest",
 			renewError:      core.ErrBadRequest,
 			wantErr:         core.ErrBadRequest,
-			wantErrContains: "invalidating session",
+			wantErrContains: "handling session error",
 		},
 	}
 
@@ -600,7 +600,7 @@ func TestAccessTokenSessionStore_Invalidate(t *testing.T) {
 			},
 			testError:       errors.New("test error"),
 			wantErr:         true,
-			wantErrContains: "invalidating session",
+			wantErrContains: "handling session error",
 			checkHandler: func(t *testing.T, handlerCalled bool) {
 				assert.False(t, handlerCalled)
 			},
@@ -631,8 +631,7 @@ func TestAccessTokenSessionStore_Invalidate(t *testing.T) {
 			}
 
 			store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
-
-			err := store.Invalidate(tt.testError)
+			err := store.HandleError(tt.testError)
 
 			if tt.wantErr {
 				assert.Error(t, err)

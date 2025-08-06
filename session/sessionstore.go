@@ -7,10 +7,9 @@ type SessionStore interface {
 	// Returns an error if the session cannot be renewed.
 	Renew() error
 
-	// Invalidate terminates the current session with the specified reason.
-	// The reason is provided as an error that explains why the session was invalidated.
-	// Returns an error if the session cannot be invalidated.
-	Invalidate(reason error) error
+	// HandleError processes errors that occur during session operations.
+	// It returns nil if the error was handled, or the error itself if not.
+	HandleError(reason error) error
 }
 
 // TokenSessionStore extends SessionStore with token access capabilities
