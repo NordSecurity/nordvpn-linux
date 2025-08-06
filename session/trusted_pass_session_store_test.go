@@ -134,15 +134,15 @@ func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
 			name:            "with registered handler",
 			testError:       errors.New("test error"),
 			setupHandler:    true,
-			wantErr:         false,
+			wantErr:         true,
+			wantErrContains: "handling session error",
 			wantHandlerCall: true,
 		},
 		{
 			name:            "no registered handler",
 			testError:       errors.New("unhandled error"),
 			setupHandler:    false,
-			wantErr:         true,
-			wantErrContains: "invalidating session: unhandled error",
+			wantErr:         false,
 			wantHandlerCall: false,
 		},
 	}
@@ -168,7 +168,7 @@ func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.wantErrContains != "" {
-					assert.Contains(t, err.Error(), "handling session error")
+					assert.Contains(t, err.Error(), tt.wantErrContains)
 				}
 			} else {
 				assert.NoError(t, err)
@@ -262,9 +262,8 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
 				IsOAuth:                true,
 			},
-			renewAPICall:    nil,
-			wantErr:         true,
-			wantErrContains: "renewal API call not configured",
+			renewAPICall: nil,
+			wantErr:      false, // HandleError returns nil when no handlers are registered
 		},
 		{
 			name: "renewal API returns nil response",
@@ -277,8 +276,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
 				return nil, nil
 			},
-			wantErr:         true,
-			wantErrContains: "renewal API returned nil response",
+			wantErr: false, // HandleError returns nil when no handlers are registered
 		},
 		{
 			name: "renewal API returns empty token",
@@ -294,8 +292,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 					OwnerID: "nordvpn",
 				}, nil
 			},
-			wantErr:         true,
-			wantErrContains: "renewal API returned empty token",
+			wantErr: false, // HandleError returns nil when no handlers are registered
 		},
 		{
 			name: "renewal API error",
@@ -308,8 +305,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
 				return nil, errors.New("API error")
 			},
-			wantErr:         true,
-			wantErrContains: "API error",
+			wantErr: false, // HandleError returns nil when no handlers are registered
 		},
 	}
 

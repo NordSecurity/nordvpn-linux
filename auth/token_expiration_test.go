@@ -28,6 +28,7 @@ const (
 	testEmail             = "test@example.com"
 	defaultExpirationDays = 24 * time.Hour
 	renewAPIPath          = "/v1/users/tokens/renew"
+	usersAPIPath          = "/v1/users/current"
 )
 
 type mockConfigManager struct {
@@ -137,7 +138,7 @@ func createDefaultRoundTripper(rt *mockRoundTripperWithExpiration) func(req *htt
 				}, nil
 			}
 
-		case "/v1/users/current":
+		case usersAPIPath:
 			if rt.currentUserResp == nil {
 				return nil, rt.respError
 			} else {
@@ -267,8 +268,8 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 		case renewAPIPath:
 			// Return network error for renewal attempt
 			return nil, rt.respError
-		case "/v1/users/current":
-			// First call should return unauthorized to trigger renewal
+		case usersAPIPath:
+			// Always return unauthorized since renewal fails
 			return createUnauthorizedResponse()
 		default:
 			panic(fmt.Errorf("unexpected path: %s", req.URL.Path))
@@ -312,8 +313,10 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 	api := core.NewSmartClientAPI(simpleApi, sessionStore)
 
 	resp, err := api.CurrentUser()
+	// Network error has no handler, so HandleError returns nil during renewal
+	// SmartClientAPI retries the call which fails again with Unauthorized
 	assert.Error(t, err)
-	assert.ErrorIs(t, err, rt.respError)
+	assert.ErrorIs(t, err, core.ErrUnauthorized, "Should return unauthorized from retry")
 	assert.Nil(t, resp)
 }
 
@@ -323,16 +326,79 @@ func Test_TokenRenewalWithInvalidToken(t *testing.T) {
 	idempotencyKey := uuid.New()
 	pastExpiry := time.Now().UTC().Add(-12 * time.Hour).Format(internal.ServerDateFormat)
 
-	api, mockRT, _ := setupTestEnvironment(idempotencyKey, pastExpiry, nil)
+	// Setup with expired token
+	mockCfg := &mockConfigManager{
+		config: config.Config{
+			AutoConnectData: config.AutoConnectData{ID: 1},
+			TokensData: map[int64]config.TokenData{
+				1: {
+					Token:          defaultTokenValue,
+					TokenExpiry:    pastExpiry,
+					IdempotencyKey: &idempotencyKey,
+				},
+			},
+		},
+	}
 
-	mockRT.renewResp = nil
-	mockRT.respError = core.ErrNotFound
-	mockRT.ForceExpiration()
+	// Create error registry and register handler for NotFound
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+	handlerCalled := false
+	errorRegistry.Add(func(err error) {
+		handlerCalled = true
+		// Clear tokens on NotFound
+		delete(mockCfg.config.TokensData, 1)
+	}, core.ErrNotFound)
+
+	rt := &mockRoundTripperWithExpiration{
+		renewResp:              nil,
+		respError:              core.ErrNotFound,
+		expectedIdempotencyKey: idempotencyKey,
+		createdAt:              time.Now().Add(-2 * defaultExpirationDays),
+	}
+
+	rt.RoundTripFunc = func(req *http.Request) (*http.Response, error) {
+		switch req.URL.Path {
+		case renewAPIPath:
+			// Return NotFound for renewal attempt
+			return nil, rt.respError
+		case usersAPIPath:
+			// Return unauthorized to trigger renewal
+			return createUnauthorizedResponse()
+		default:
+			panic(fmt.Errorf("unexpected path: %s", req.URL.Path))
+		}
+	}
+
+	client := request.NewStdHTTP()
+	client.Transport = rt
+
+	simpleApi := core.NewSimpleAPI("", "", client, response.NoopValidator{})
+	sessionStore := session.NewAccessTokenSessionStore(
+		mockCfg,
+		errorRegistry,
+		func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
+			resp, err := simpleApi.TokenRenew(token, idempotencyKey)
+			if err == nil {
+				return &session.AccessTokenResponse{
+					Token:      resp.Token,
+					RenewToken: resp.RenewToken,
+					ExpiresAt:  resp.ExpiresAt,
+				}, nil
+			}
+			return nil, err
+		},
+		nil,
+	)
+
+	api := core.NewSmartClientAPI(simpleApi, sessionStore)
 
 	resp, err := api.CurrentUser()
+	// NotFound has a handler, so HandleError returns wrapped error
+	// SmartClientAPI returns the renewal error
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, core.ErrNotFound)
 	assert.Nil(t, resp)
+	assert.True(t, handlerCalled, "Handler should be called for NotFound error")
 }
 
 func Test_ConfigSaveErrorDuringRenewal(t *testing.T) {
