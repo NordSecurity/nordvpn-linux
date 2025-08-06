@@ -163,14 +163,15 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 
 	newChangesDownloaded := false
 
-	for _, f := range c.features.featureMap {
-		dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+	for _, f := range c.features.keys() {
+		feature := c.features.get(f)
+		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
+			log.Println(internal.ErrorPrefix, "failed downloading feature [", feature, "] remote config:", err)
 
 			var downloadErr *DownloadError
 			if errors.As(err, &downloadErr) {
-				c.analytics.NotifyDownloadFailure("cli", f.name, *downloadErr)
+				c.analytics.NotifyDownloadFailure("cli", feature.name, *downloadErr)
 			}
 			if isNetworkRetryable(err) {
 				return false, err
@@ -179,8 +180,8 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 		}
 		if dnld {
 			// only if remote config was really downloaded
-			log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
-			c.analytics.NotifyDownload("cli", f.name)
+			log.Println(internal.InfoPrefix, "feature [", feature, "] remote config downloaded to:", c.localCachePath)
+			c.analytics.NotifyDownload("cli", feature.name)
 			newChangesDownloaded = true
 		}
 	}
