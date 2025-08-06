@@ -14,686 +14,600 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAccessTokenSessionStore_Renew_SimpleScenarios(t *testing.T) {
+func TestAccessTokenSessionStore_Renew_NotExpired(t *testing.T) {
+	uid := int64(123)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:       "ab78bb36299d442fa0715fb53b5e3e57", // valid hex token
+				RenewToken:  "renew",
+				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+
+	err := store.Renew()
+	assert.NoError(t, err)
+}
+
+func TestAccessTokenSessionStore_Renew_NoTokenData(t *testing.T) {
 	uid := int64(123)
 
-	tests := []struct {
-		name            string
-		setupConfig     func() *config.Config
-		configLoadErr   error
-		wantErr         bool
-		wantErrContains string
-	}{
-		{
-			name: "should return nil when token is not expired",
-			setupConfig: func() *config.Config {
-				return &config.Config{
-					AutoConnectData: config.AutoConnectData{ID: uid},
-					TokensData: map[int64]config.TokenData{
-						uid: {
-							Token:       "ab78bb36299d442fa0715fb53b5e3e57", // valid hex token
-							RenewToken:  "renew",
-							TokenExpiry: time.Now().UTC().Add(24 * time.Hour).Format(internal.ServerDateFormat),
-						},
-					},
-				}
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData:      map[int64]config.TokenData{},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+
+	err := store.Renew()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no token data")
+}
+
+func TestAccessTokenSessionStore_Renew_ConfigLoadError(t *testing.T) {
+	cfgManager := &mock.ConfigManager{
+		LoadErr: errors.New("config load error"),
+	}
+
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+
+	err := store.Renew()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "config load error")
+}
+
+func TestAccessTokenSessionStore_Renew_ExternalValidatorError(t *testing.T) {
+	uid := int64(123)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
+	validHexToken := "ab78bb36299d442fa0715fb53b5e3e57"
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:       validHexToken,
+				RenewToken:  "renew",
+				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
 			},
-			wantErr: false,
-		},
-		{
-			name: "should handle no token data",
-			setupConfig: func() *config.Config {
-				return &config.Config{
-					AutoConnectData: config.AutoConnectData{ID: uid},
-					TokensData:      map[int64]config.TokenData{},
-				}
-			},
-			wantErr:         true,
-			wantErrContains: "no token data",
-		},
-		{
-			name:            "should handle config load error",
-			configLoadErr:   errors.New("config load error"),
-			wantErr:         true,
-			wantErrContains: "config load error",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var cfg *config.Config
-			if tt.setupConfig != nil {
-				cfg = tt.setupConfig()
-			}
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
-			cfgManager := &mock.ConfigManager{
-				Cfg:     cfg,
-				LoadErr: tt.configLoadErr,
-			}
-
-			errorRegistry := internal.NewErrorHandlingRegistry[error]()
-			store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
-
-			err := store.Renew()
-
-			if tt.wantErr {
-				assert.Error(t, err)
-				if tt.wantErrContains != "" {
-					assert.Contains(t, err.Error(), tt.wantErrContains)
-				}
-			} else {
-				assert.NoError(t, err)
-			}
-		})
+	renewalCalled := false
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		renewalCalled = true
+		return &session.AccessTokenResponse{
+			Token:      "new-token",
+			RenewToken: "new-renew",
+			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
+		}, nil
 	}
+
+	externalValidator := func(token string) error {
+		return errors.New("external validation failed")
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, externalValidator)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+	assert.True(t, renewalCalled, "Should renew because external validation failed")
 }
 
-func TestAccessTokenSessionStore_Renew(t *testing.T) {
-	t.Run("should handle external validator error and renew", func(t *testing.T) {
-		uid := int64(123)
-		validHexToken := "ab78bb36299d442fa0715fb53b5e3e57"
-		futureTime := time.Now().UTC().Add(24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       validHexToken,
-					RenewToken:  "renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
+func TestAccessTokenSessionStore_Renew_ExpiredToken(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
 			},
-		}
-
-		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		renewCalled := false
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			renewCalled = true
-			return &session.AccessTokenResponse{
-				Token:      "new-token",
-				RenewToken: "new-renew",
-				ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
-			}, nil
-		}
-
-		store := session.NewAccessTokenSessionStore(
-			cfgManager,
-			errorRegistry,
-			mockRenewAPICall,
-			func(token string) error {
-				return errors.New("external validation failed")
-			},
-		)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.True(t, renewCalled) // Should renew because external validation failed
-	})
-
-	t.Run("should renew token when expired", func(t *testing.T) {
-		uid := int64(123)
-		idempotencyKey := uuid.New()
-		pastTime := time.Now().UTC().Add(-24 * time.Hour)
-		futureTime := time.Now().UTC().Add(24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: &idempotencyKey,
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		var renewCalled bool
-		var passedToken string
-		var passedKey uuid.UUID
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			renewCalled = true
-			passedToken = token
-			passedKey = key
-
-			return &session.AccessTokenResponse{
-				Token:      "new-token",
-				RenewToken: "new-renew",
-				ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
-			}, nil
-		}
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.True(t, renewCalled)
-		assert.Equal(t, "old-token", passedToken)
-		assert.Equal(t, idempotencyKey, passedKey)
-
-		assert.Equal(t, "new-token", cfgManager.Cfg.TokensData[uid].Token)
-		assert.Equal(t, "new-renew", cfgManager.Cfg.TokensData[uid].RenewToken)
-		assert.Equal(t, futureTime.Format(internal.ServerDateFormat), cfgManager.Cfg.TokensData[uid].TokenExpiry)
-	})
-
-	t.Run("should set idempotency key if not present", func(t *testing.T) {
-		uid := int64(123)
-		pastTime := time.Now().UTC().Add(-24 * time.Hour)
-		futureTime := time.Now().UTC().Add(24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: nil,
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return &session.AccessTokenResponse{
-				Token:      "new-token",
-				RenewToken: "new-renew",
-				ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
-			}, nil
-		}
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.NotNil(t, cfgManager.Cfg.TokensData[uid].IdempotencyKey)
-	})
-
-	t.Run("should handle API error during renewal", func(t *testing.T) {
-		uid := int64(123)
-		idempotencyKey := uuid.New()
-		pastTime := time.Now().Add(-24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: &idempotencyKey,
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		someError := errors.New("api-error")
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return nil, someError
-		}
-
-		var handlerCalled bool
-		var handledError error
-
-		errorRegistry.Add(func(reason error) {
-			handlerCalled = true
-			handledError = reason
-		}, someError)
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.True(t, handlerCalled)
-		assert.Equal(t, someError, handledError)
-
-		_, exists := cfgManager.Cfg.TokensData[uid]
-		assert.True(t, exists)
-	})
-
-	t.Run("should handle nil renewal API response", func(t *testing.T) {
-		uid := int64(123)
-		idempotencyKey := uuid.New()
-		pastTime := time.Now().Add(-24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: &idempotencyKey,
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return nil, nil
-		}
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "renewal API returned nil response")
-	})
-
-	t.Run("should handle invalid expiry date format", func(t *testing.T) {
-		uid := int64(123)
-		idempotencyKey := uuid.New()
-		pastTime := time.Now().UTC().Add(-24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: &idempotencyKey,
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return &session.AccessTokenResponse{
-				Token:      "new-token",
-				RenewToken: "new-renew",
-				ExpiresAt:  "invalid-date-format",
-			}, nil
-		}
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.Error(t, err)
-	})
-
-	t.Run("should call external validator when token is valid", func(t *testing.T) {
-		uid := int64(123)
-		validHexToken := "de62575eaaa54ca8bd9416d98bdc9c1c"
-		futureTime := time.Now().UTC().Add(24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       validHexToken,
-					RenewToken:  "renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		var externalValidatorCalled bool
-		var passedToken string
-
-		externalValidator := func(token string) error {
-			externalValidatorCalled = true
-			passedToken = token
-			return nil
-		}
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, externalValidator)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.True(t, externalValidatorCalled)
-		assert.Equal(t, validHexToken, passedToken)
-	})
-
-	t.Run("should renew when external validator returns error", func(t *testing.T) {
-		uid := int64(123)
-		validHexToken := "de62575eaaa54ca8bd9416d98bdc9c1c"
-		futureTime := time.Now().Add(24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:       validHexToken,
-					RenewToken:  "renew",
-					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		externalValidator := func(token string) error {
-			return errors.New("token validation failed")
-		}
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return &session.AccessTokenResponse{
-				Token:      "new-token",
-				RenewToken: "new-renew",
-				ExpiresAt:  time.Now().UTC().Add(24 * time.Hour).Format(internal.ServerDateFormat),
-			}, nil
-		}
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, externalValidator)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.Equal(t, "new-token", cfgManager.Cfg.TokensData[uid].Token)
-	})
-
-	t.Run("should handle ErrNotFound during renewal and invalidate", func(t *testing.T) {
-		uid := int64(123)
-		idempotencyKey := uuid.New()
-		pastTime := time.Now().UTC().Add(-24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: &idempotencyKey,
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return nil, core.ErrNotFound
-		}
-
-		var handlerCalled bool
-		var handledError error
-
-		errorRegistry.Add(func(reason error) {
-			handlerCalled = true
-			handledError = reason
-		}, core.ErrNotFound)
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.True(t, handlerCalled)
-		assert.ErrorIs(t, handledError, core.ErrNotFound)
-	})
-
-	t.Run("should handle ErrBadData during renewal and invalidate", func(t *testing.T) {
-		uid := int64(123)
-		idempotencyKey := uuid.New()
-		pastTime := time.Now().Add(-24 * time.Hour)
-		testCfg := config.Config{
-			AutoConnectData: config.AutoConnectData{ID: uid},
-			TokensData: map[int64]config.TokenData{
-				uid: {
-					Token:          "old-token",
-					RenewToken:     "old-renew",
-					TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-					IdempotencyKey: &idempotencyKey,
-				},
-			},
-		}
-
-		cfgManager := &mock.ConfigManager{
-			Cfg: &testCfg,
-		}
-
-		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-			return nil, core.ErrBadRequest
-		}
-
-		var handlerCalled bool
-		var handledError error
-
-		errorRegistry.Add(func(reason error) {
-			handlerCalled = true
-			handledError = reason
-		}, core.ErrBadRequest)
-
-		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-		err := store.Renew()
-
-		assert.NoError(t, err)
-		assert.True(t, handlerCalled)
-		assert.ErrorIs(t, handledError, core.ErrBadRequest)
-	})
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		assert.Equal(t, "old-token", token)
+		assert.Equal(t, idempotencyKey, key)
+		return &session.AccessTokenResponse{
+			Token:      "new-token",
+			RenewToken: "new-renew",
+			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
+		}, nil
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "new-token", cfgManager.Cfg.TokensData[uid].Token)
+	assert.Equal(t, "new-renew", cfgManager.Cfg.TokensData[uid].RenewToken)
+	assert.Equal(t, futureTime.Format(internal.ServerDateFormat), cfgManager.Cfg.TokensData[uid].TokenExpiry)
 }
 
-func TestAccessTokenSessionStore_Renew_ErrorHandlingWithoutHandlers(t *testing.T) {
+func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
+	uid := int64(123)
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: nil, // No idempotency key
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return &session.AccessTokenResponse{
+			Token:      "new-token",
+			RenewToken: "new-renew",
+			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
+		}, nil
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+	assert.NotNil(t, cfgManager.Cfg.TokensData[uid].IdempotencyKey)
+}
+
+func TestAccessTokenSessionStore_Renew_APIErrorWithHandler(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	apiError := errors.New("api-error")
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	handlerCalled := false
+	errorRegistry.Add(func(reason error) {
+		handlerCalled = true
+	}, apiError)
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, apiError
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+	assert.True(t, handlerCalled)
+}
+
+func TestAccessTokenSessionStore_Renew_APIErrorNoHandler(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, errors.New("unhandled-api-error")
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "handling session error: unhandled-api-error")
+}
+
+func TestAccessTokenSessionStore_Renew_NilAPIResponse(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, nil
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "renewal API returned nil response")
+}
+
+func TestAccessTokenSessionStore_Renew_InvalidExpiryFormat(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return &session.AccessTokenResponse{
+			Token:      "new-token",
+			RenewToken: "new-renew",
+			ExpiresAt:  "invalid-date-format",
+		}, nil
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "parsing expiry time")
+}
+
+func TestAccessTokenSessionStore_Renew_ExternalValidatorSuccess(t *testing.T) {
+	uid := int64(123)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:       "de62575eaaa54ca8bd9416d98bdc9c1c",
+				RenewToken:  "renew",
+				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	validatorCalled := false
+	externalValidator := func(token string) error {
+		validatorCalled = true
+		assert.Equal(t, "de62575eaaa54ca8bd9416d98bdc9c1c", token)
+		return nil
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, externalValidator)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+	assert.True(t, validatorCalled)
+}
+
+func TestAccessTokenSessionStore_Renew_ExternalValidatorFailure(t *testing.T) {
+	uid := int64(123)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:       "de62575eaaa54ca8bd9416d98bdc9c1c",
+				RenewToken:  "renew",
+				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	externalValidator := func(token string) error {
+		return errors.New("token validation failed")
+	}
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return &session.AccessTokenResponse{
+			Token:      "new-token",
+			RenewToken: "new-renew",
+			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
+		}, nil
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, externalValidator)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "new-token", cfgManager.Cfg.TokensData[uid].Token)
+}
+
+func TestAccessTokenSessionStore_Renew_ErrNotFoundWithHandler(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	handlerCalled := false
+	errorRegistry.Add(func(reason error) {
+		handlerCalled = true
+	}, core.ErrNotFound)
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, core.ErrNotFound
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+	assert.True(t, handlerCalled)
+}
+
+func TestAccessTokenSessionStore_Renew_ErrBadRequestWithHandler(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	handlerCalled := false
+	errorRegistry.Add(func(reason error) {
+		handlerCalled = true
+	}, core.ErrBadRequest)
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, core.ErrBadRequest
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+	assert.True(t, handlerCalled)
+}
+
+func TestAccessTokenSessionStore_Renew_ErrNotFoundNoHandler(t *testing.T) {
 	uid := int64(123)
 	idempotencyKey := uuid.New()
 	pastTime := time.Now().Add(-24 * time.Hour)
 
-	tests := []struct {
-		name            string
-		renewError      error
-		wantErr         error
-		wantErrContains string
-	}{
-		{
-			name:            "should return error from invalidate when no handlers for ErrNotFound",
-			renewError:      core.ErrNotFound,
-			wantErr:         core.ErrNotFound,
-			wantErrContains: "handling session error",
-		},
-		{
-			name:            "should return error from invalidate when no handlers for ErrBadRequest",
-			renewError:      core.ErrBadRequest,
-			wantErr:         core.ErrBadRequest,
-			wantErrContains: "handling session error",
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			testCfg := config.Config{
-				AutoConnectData: config.AutoConnectData{ID: uid},
-				TokensData: map[int64]config.TokenData{
-					uid: {
-						Token:          "old-token",
-						RenewToken:     "old-renew",
-						TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-						IdempotencyKey: &idempotencyKey,
-					},
-				},
-			}
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
-			cfgManager := &mock.ConfigManager{
-				Cfg: &testCfg,
-			}
-
-			errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-			mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-				return nil, tt.renewError
-			}
-
-			store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, mockRenewAPICall, nil)
-
-			err := store.Renew()
-
-			assert.Error(t, err)
-			assert.ErrorIs(t, err, tt.wantErr)
-			assert.Contains(t, err.Error(), tt.wantErrContains)
-		})
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, core.ErrNotFound
 	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, core.ErrNotFound)
+	assert.Contains(t, err.Error(), "handling session error")
 }
 
-func TestAccessTokenSessionStore_Invalidate(t *testing.T) {
-	tests := []struct {
-		name            string
-		setupRegistry   func() *internal.ErrorHandlingRegistry[error]
-		testError       error
-		wantErr         bool
-		wantErrContains string
-		checkHandler    func(t *testing.T, handlerCalled bool)
-	}{
-		{
-			name: "should call error handlers",
-			setupRegistry: func() *internal.ErrorHandlingRegistry[error] {
-				registry := internal.NewErrorHandlingRegistry[error]()
-				registry.Add(func(reason error) {}, errors.New("test error"))
-				return registry
-			},
-			testError: errors.New("test error"),
-			wantErr:   false,
-			checkHandler: func(t *testing.T, handlerCalled bool) {
-				assert.True(t, handlerCalled)
-			},
-		},
-		{
-			name: "should return error when no handlers registered",
-			setupRegistry: func() *internal.ErrorHandlingRegistry[error] {
-				return internal.NewErrorHandlingRegistry[error]()
-			},
-			testError:       errors.New("test error"),
-			wantErr:         true,
-			wantErrContains: "handling session error",
-			checkHandler: func(t *testing.T, handlerCalled bool) {
-				assert.False(t, handlerCalled)
+func TestAccessTokenSessionStore_Renew_ErrBadRequestNoHandler(t *testing.T) {
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().Add(-24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
 			},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			testCfg := config.Config{
-				TokensData: map[int64]config.TokenData{
-					123: {Token: "token1"},
-				},
-			}
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
-			cfgManager := &mock.ConfigManager{
-				Cfg: &testCfg,
-			}
-
-			handlerCalled := false
-			errorRegistry := tt.setupRegistry()
-
-			// Override the handler to track if it was called
-			if tt.name == "should call error handlers" {
-				errorRegistry = internal.NewErrorHandlingRegistry[error]()
-				errorRegistry.Add(func(reason error) {
-					handlerCalled = true
-				}, tt.testError)
-			}
-
-			store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
-			err := store.HandleError(tt.testError)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-				if tt.wantErrContains != "" {
-					assert.Contains(t, err.Error(), tt.wantErrContains)
-				}
-			} else {
-				assert.NoError(t, err)
-			}
-
-			tt.checkHandler(t, handlerCalled)
-		})
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, core.ErrBadRequest
 	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, core.ErrBadRequest)
+	assert.Contains(t, err.Error(), "handling session error")
+}
+
+func TestAccessTokenSessionStore_HandleError_WithHandler(t *testing.T) {
+	testError := errors.New("test error")
+	
+	cfg := &config.Config{
+		TokensData: map[int64]config.TokenData{
+			123: {Token: "token1"},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	handlerCalled := false
+	errorRegistry.Add(func(reason error) {
+		handlerCalled = true
+	}, testError)
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+	err := store.HandleError(testError)
+
+	assert.NoError(t, err)
+	assert.True(t, handlerCalled)
+}
+
+func TestAccessTokenSessionStore_HandleError_NoHandler(t *testing.T) {
+	testError := errors.New("test error")
+	
+	cfg := &config.Config{
+		TokensData: map[int64]config.TokenData{
+			123: {Token: "token1"},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+	err := store.HandleError(testError)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "handling session error")
 }
 
 func TestAccessTokenSessionStore_GetToken(t *testing.T) {
 	uid := int64(123)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
 
-	tests := []struct {
-		name      string
-		cfg       *config.Config
-		loadErr   error
-		wantToken string
-	}{
-		{
-			name: "GetToken",
-			cfg: &config.Config{
-				AutoConnectData: config.AutoConnectData{ID: uid},
-				TokensData: map[int64]config.TokenData{
-					uid: {
-						Token:       "test-token",
-						RenewToken:  "test-renew",
-						TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-					},
-				},
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:       "test-token",
+				RenewToken:  "test-renew",
+				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
 			},
-			wantToken: "test-token",
-		},
-		{
-			name: "GetToken with no data",
-			cfg: &config.Config{
-				AutoConnectData: config.AutoConnectData{ID: uid},
-				TokensData:      map[int64]config.TokenData{},
-			},
-			wantToken: "",
-		},
-		{
-			name:      "GetToken with config error",
-			loadErr:   errors.New("config error"),
-			wantToken: "",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfgManager := &mock.ConfigManager{
-				Cfg:     tt.cfg,
-				LoadErr: tt.loadErr,
-			}
-			store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
 
-			token := store.GetToken()
-			assert.Equal(t, tt.wantToken, token)
-		})
+	token := store.GetToken()
+	assert.Equal(t, "test-token", token)
+}
+
+func TestAccessTokenSessionStore_GetToken_NoData(t *testing.T) {
+	uid := int64(123)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData:      map[int64]config.TokenData{},
 	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
+
+	token := store.GetToken()
+	assert.Equal(t, "", token)
+}
+
+func TestAccessTokenSessionStore_GetToken_ConfigError(t *testing.T) {
+	cfgManager := &mock.ConfigManager{
+		LoadErr: errors.New("config error"),
+	}
+	
+	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
+
+	token := store.GetToken()
+	assert.Equal(t, "", token)
 }
