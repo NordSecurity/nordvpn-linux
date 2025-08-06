@@ -31,7 +31,7 @@ func TestAccessTokenSessionStore_Renew_SimpleScenarios(t *testing.T) {
 					AutoConnectData: config.AutoConnectData{ID: uid},
 					TokensData: map[int64]config.TokenData{
 						uid: {
-							Token:       "token",
+							Token:       "ab78bb36299d442fa0715fb53b5e3e57", // valid hex token
 							RenewToken:  "renew",
 							TokenExpiry: time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
 						},
@@ -49,7 +49,7 @@ func TestAccessTokenSessionStore_Renew_SimpleScenarios(t *testing.T) {
 				}
 			},
 			wantErr:         true,
-			wantErrContains: "non existing data",
+			wantErrContains: "no token data",
 		},
 		{
 			name:            "should handle config load error",
@@ -90,16 +90,17 @@ func TestAccessTokenSessionStore_Renew_SimpleScenarios(t *testing.T) {
 
 func TestAccessTokenSessionStore_Renew(t *testing.T) {
 
-	t.Run("should return error when token is revoked", func(t *testing.T) {
+	t.Run("should handle external validator error and renew", func(t *testing.T) {
 		uid := int64(123)
 		validHexToken := "ab78bb36299d442fa0715fb53b5e3e57"
+		futureTime := time.Now().Add(24 * time.Hour)
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
 				uid: {
 					Token:       validHexToken,
 					RenewToken:  "renew",
-					TokenExpiry: session.ManualAccessTokenExpiryDate.Format(internal.ServerDateFormat),
+					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
 				},
 			},
 		}
@@ -107,24 +108,30 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		cfgManager := &mock.ConfigManager{Cfg: &testCfg}
 
 		errorRegistry := internal.NewErrorHandlingRegistry[error]()
-		handlerCalled := false
-		errorRegistry.Add(func(err error) {
-			handlerCalled = true
-		}, session.ErrAccessTokenRevoked)
+
+		renewCalled := false
+		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+			renewCalled = true
+			return &session.AccessTokenResponse{
+				Token:      "new-token",
+				RenewToken: "new-renew",
+				ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
+			}, nil
+		}
 
 		store := session.NewAccessTokenSessionStore(
 			cfgManager,
 			errorRegistry,
-			nil,
+			mockRenewAPICall,
 			func(token string) error {
-				return session.ErrAccessTokenRevoked
+				return errors.New("external validation failed")
 			},
 		)
 
 		err := store.Renew()
 
-		assert.ErrorIs(t, err, session.ErrAccessTokenRevoked)
-		assert.True(t, handlerCalled)
+		assert.NoError(t, err)
+		assert.True(t, renewCalled) // Should renew because external validation failed
 	})
 
 	t.Run("should renew token when expired", func(t *testing.T) {
@@ -336,16 +343,17 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	t.Run("should validate manual access token", func(t *testing.T) {
+	t.Run("should call external validator when token is valid", func(t *testing.T) {
 		uid := int64(123)
 		validHexToken := "de62575eaaa54ca8bd9416d98bdc9c1c"
+		futureTime := time.Now().Add(24 * time.Hour)
 		testCfg := config.Config{
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
 				uid: {
 					Token:       validHexToken,
 					RenewToken:  "renew",
-					TokenExpiry: session.ManualAccessTokenExpiryDate.Format(internal.ServerDateFormat),
+					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
 				},
 			},
 		}
@@ -365,6 +373,40 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 			return nil
 		}
 
+		store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, externalValidator)
+
+		err := store.Renew()
+
+		assert.NoError(t, err)
+		assert.True(t, externalValidatorCalled)
+		assert.Equal(t, validHexToken, passedToken)
+	})
+
+	t.Run("should renew when external validator returns error", func(t *testing.T) {
+		uid := int64(123)
+		validHexToken := "de62575eaaa54ca8bd9416d98bdc9c1c"
+		futureTime := time.Now().Add(24 * time.Hour)
+		testCfg := config.Config{
+			AutoConnectData: config.AutoConnectData{ID: uid},
+			TokensData: map[int64]config.TokenData{
+				uid: {
+					Token:       validHexToken,
+					RenewToken:  "renew",
+					TokenExpiry: futureTime.Format(internal.ServerDateFormat),
+				},
+			},
+		}
+
+		cfgManager := &mock.ConfigManager{
+			Cfg: &testCfg,
+		}
+
+		errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+		externalValidator := func(token string) error {
+			return errors.New("token validation failed")
+		}
+
 		mockRenewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
 			return &session.AccessTokenResponse{
 				Token:      "new-token",
@@ -378,8 +420,7 @@ func TestAccessTokenSessionStore_Renew(t *testing.T) {
 		err := store.Renew()
 
 		assert.NoError(t, err)
-		assert.True(t, externalValidatorCalled)
-		assert.Equal(t, validHexToken, passedToken)
+		assert.Equal(t, "new-token", cfgManager.Cfg.TokensData[uid].Token)
 	})
 
 	t.Run("should handle ErrNotFound during renewal and invalidate", func(t *testing.T) {

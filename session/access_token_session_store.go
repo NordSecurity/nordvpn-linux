@@ -11,14 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
+// AccessTokenResponse represents the response from the access token renewal API
 type AccessTokenResponse struct {
 	Token      string
 	RenewToken string
 	ExpiresAt  string
 }
 
+// AccessTokenRenewalAPICall is a function type for renewing access tokens
 type AccessTokenRenewalAPICall func(token string, idempotencyKey uuid.UUID) (*AccessTokenResponse, error)
 
+// AccessTokenExternalValidator is a function type for external validation of access tokens
 type AccessTokenExternalValidator func(token string) error
 
 type accessTokenConfig struct {
@@ -27,6 +30,7 @@ type accessTokenConfig struct {
 	ExpiresAt  time.Time
 }
 
+// AccessTokenSessionStore manages access token-based sessions
 type AccessTokenSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
@@ -34,6 +38,7 @@ type AccessTokenSessionStore struct {
 	externalValidator  AccessTokenExternalValidator
 }
 
+// NewAccessTokenSessionStore creates a new AccessTokenSessionStore instance
 func NewAccessTokenSessionStore(
 	cfgManager config.Manager,
 	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
@@ -48,26 +53,14 @@ func NewAccessTokenSessionStore(
 	}
 }
 
+// Renew checks if the access token needs renewal and renews it if necessary
 func (s *AccessTokenSessionStore) Renew() error {
-	cfg, err := s.getConfig()
-	if err != nil {
-		return err
-	}
-
-	if cfg.ExpiresAt.Equal(ManualAccessTokenExpiryDate) {
-		if err := s.Validate(); err != nil {
-			_ = s.Invalidate(err)
-			return ErrAccessTokenRevoked
-		}
-		return nil
-	}
-
 	// Check if token needs renewal
 	if err := s.Validate(); err == nil {
 		return nil
 	}
 
-	// Token is expired, proceed with renewal
+	// Token is invalid or expired, proceed with renewal
 	var fullCfg config.Config
 	if err := s.cfgManager.Load(&fullCfg); err != nil {
 		return err
@@ -94,21 +87,25 @@ func (s *AccessTokenSessionStore) Validate() error {
 		return err
 	}
 
-	if cfg.ExpiresAt.Equal(ManualAccessTokenExpiryDate) {
-		if !internal.AccessTokenFormatValidator(cfg.Token) {
-			return fmt.Errorf("invalid access token format: %w", ErrAccessTokenExpired)
-		}
-
-		if s.externalValidator != nil {
-			return s.externalValidator(cfg.Token)
-		}
-
-		return nil
+	if err := ValidateAccessTokenFormat(cfg.Token); err != nil {
+		return fmt.Errorf("invalid access token format: %w", err)
 	}
 
-	return ValidateExpiry(cfg.ExpiresAt)
+	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
+		return fmt.Errorf("validating access token: %w", err)
+	}
+
+	// Run external validation if available
+	if s.externalValidator != nil {
+		if err := s.externalValidator(cfg.Token); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
+// Invalidate calls error handlers for the given error or returns the error if no handlers are registered
 func (s *AccessTokenSessionStore) Invalidate(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
@@ -220,6 +217,7 @@ func (s *AccessTokenSessionStore) setConfig(cfg accessTokenConfig) error {
 	return nil
 }
 
+// GetToken returns the current access token or empty string if not available
 func (s *AccessTokenSessionStore) GetToken() string {
 	cfg, err := s.getConfig()
 	if err != nil {
