@@ -95,6 +95,7 @@ func (s *TrustedPassSessionStore) HandleError(reason error) error {
 	for _, handler := range handlers {
 		handler(reason)
 	}
+
 	return nil
 }
 
