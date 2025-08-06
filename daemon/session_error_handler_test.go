@@ -322,11 +322,11 @@ type mockRawClientAPI struct {
 	servicesError          error
 	logoutError            error
 
-	// Track calls
-	currentUserCalls int
-	tokenRenewCalls  int
-	servicesCalls    int
-	logoutCalls      int
+	// Track calls - using atomic for thread safety
+	currentUserCalls int32
+	tokenRenewCalls  int32
+	servicesCalls    int32
+	logoutCalls      int32
 
 	// Return values
 	currentUserResponse *core.CurrentUserResponse
@@ -348,7 +348,7 @@ func (m *mockRawClientAPI) ServiceCredentials(token string) (*core.CredentialsRe
 }
 
 func (m *mockRawClientAPI) TokenRenew(token string, idempotencyKey uuid.UUID) (*core.TokenRenewResponse, error) {
-	m.tokenRenewCalls++
+	atomic.AddInt32(&m.tokenRenewCalls, 1)
 	if m.tokenRenewError != nil {
 		return nil, m.tokenRenewError
 	}
@@ -363,7 +363,7 @@ func (m *mockRawClientAPI) TokenRenew(token string, idempotencyKey uuid.UUID) (*
 }
 
 func (m *mockRawClientAPI) Services(token string) (core.ServicesResponse, error) {
-	m.servicesCalls++
+	atomic.AddInt32(&m.servicesCalls, 1)
 	if m.servicesError != nil {
 		return nil, m.servicesError
 	}
@@ -374,20 +374,20 @@ func (m *mockRawClientAPI) Services(token string) (core.ServicesResponse, error)
 }
 
 func (m *mockRawClientAPI) CurrentUser(token string) (*core.CurrentUserResponse, error) {
-	m.currentUserCalls++
+	calls := atomic.AddInt32(&m.currentUserCalls, 1)
 
 	// First call - return the configured error
-	if m.currentUserCalls == 1 && m.currentUserError != nil {
+	if calls == 1 && m.currentUserError != nil {
 		return nil, m.currentUserError
 	}
 
 	// Second call - return second error if configured
-	if m.currentUserCalls == 2 && m.currentUserSecondError != nil {
+	if calls == 2 && m.currentUserSecondError != nil {
 		return nil, m.currentUserSecondError
 	}
 
 	// Second call - if no second error configured but first was unauthorized, return success
-	if m.currentUserCalls == 2 && m.currentUserError == core.ErrUnauthorized && m.currentUserSecondError == nil {
+	if calls == 2 && m.currentUserError == core.ErrUnauthorized && m.currentUserSecondError == nil {
 		return &core.CurrentUserResponse{}, nil
 	}
 
@@ -411,7 +411,7 @@ func (m *mockRawClientAPI) MultifactorAuthStatus(token string) (*core.Multifacto
 }
 
 func (m *mockRawClientAPI) Logout(token string) error {
-	m.logoutCalls++
+	atomic.AddInt32(&m.logoutCalls, 1)
 	return m.logoutError
 }
 
@@ -671,7 +671,7 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 			t.Logf("Test case: %s", tt.name)
 			t.Logf("Initial error from CurrentUser: %v", err)
 			t.Logf("MockAPI state - CurrentUser calls: %d, TokenRenew calls: %d",
-				mockAPI.currentUserCalls, mockAPI.tokenRenewCalls)
+				atomic.LoadInt32(&mockAPI.currentUserCalls), atomic.LoadInt32(&mockAPI.tokenRenewCalls))
 
 			if tt.expectLogout {
 				assert.NotEmpty(t, logoutEvents, "Expected logout event to be published")
@@ -681,16 +681,16 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 			}
 
 			if tt.initialTokenExpired && tt.currentUserFirstError == nil {
-				assert.Equal(t, 0, mockAPI.tokenRenewCalls, "Should not renew if API call succeeds")
+				assert.Equal(t, int32(0), atomic.LoadInt32(&mockAPI.tokenRenewCalls), "Should not renew if API call succeeds")
 			} else if tt.expectRenewal {
-				assert.Greater(t, mockAPI.tokenRenewCalls, 0, "Expected token renewal to be attempted")
+				assert.Greater(t, atomic.LoadInt32(&mockAPI.tokenRenewCalls), int32(0), "Expected token renewal to be attempted")
 			} else {
-				assert.Equal(t, 0, mockAPI.tokenRenewCalls, "Did not expect token renewal")
+				assert.Equal(t, int32(0), atomic.LoadInt32(&mockAPI.tokenRenewCalls), "Did not expect token renewal")
 			}
 
 			t.Logf("API call sequence: %s", tt.expectedAPICalls)
 			t.Logf("CurrentUser calls: %d, TokenRenew calls: %d, Logout calls: %d",
-				mockAPI.currentUserCalls, mockAPI.tokenRenewCalls, mockAPI.logoutCalls)
+				atomic.LoadInt32(&mockAPI.currentUserCalls), atomic.LoadInt32(&mockAPI.tokenRenewCalls), atomic.LoadInt32(&mockAPI.logoutCalls))
 
 			if tt.expectError {
 				assert.Error(t, err, "Should return error even when handled")
@@ -776,8 +776,8 @@ func TestSessionErrorHandler_ServicesAPIWithSmartClient(t *testing.T) {
 
 	assert.Error(t, err, "Should return error")
 	assert.True(t, logoutCalled, "Expected logout to be called")
-	assert.Equal(t, 1, mockAPI.servicesCalls, "Services should be called once (renewal fails with handled error)")
-	assert.Equal(t, 1, mockAPI.tokenRenewCalls, "Token renewal should be attempted")
+	assert.Equal(t, int32(1), atomic.LoadInt32(&mockAPI.servicesCalls), "Services should be called once (renewal fails with handled error)")
+	assert.Equal(t, int32(1), atomic.LoadInt32(&mockAPI.tokenRenewCalls), "Token renewal should be attempted")
 }
 
 // Test that concurrent logout attempts result in only one actual logout
@@ -1070,8 +1070,8 @@ func TestSessionErrorHandler_NetworkErrorDuringRenewal(t *testing.T) {
 	assert.Error(t, err)
 	assert.ErrorIs(t, err, core.ErrUnauthorized, "Should return the API error")
 	assert.True(t, logoutCalled, "Logout is triggered by the second unauthorized error")
-	assert.Equal(t, 1, mockAPI.tokenRenewCalls, "Should attempt renewal")
-	assert.Equal(t, 2, mockAPI.currentUserCalls, "Should call CurrentUser twice (before and after failed renewal)")
+	assert.Equal(t, int32(1), atomic.LoadInt32(&mockAPI.tokenRenewCalls), "Should attempt renewal")
+	assert.Equal(t, int32(2), atomic.LoadInt32(&mockAPI.currentUserCalls), "Should call CurrentUser twice (before and after failed renewal)")
 }
 
 // Test empty/nil token scenarios
@@ -1251,7 +1251,7 @@ func TestSessionErrorHandler_MalformedTokenExpiry(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "handling session error")
 	assert.True(t, logoutCalled, "Should trigger logout due to unauthorized during renewal")
-	assert.Equal(t, 1, mockAPI.tokenRenewCalls, "Should attempt renewal with malformed expiry")
+	assert.Equal(t, int32(1), atomic.LoadInt32(&mockAPI.tokenRenewCalls), "Should attempt renewal with malformed expiry")
 }
 
 // Test that verifies logout removes user data
