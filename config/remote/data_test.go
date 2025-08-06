@@ -50,7 +50,7 @@ func TestFeatureOrderFixed(t *testing.T) {
 	const featureNamePattern = "feature-%d"
 
 	featureMap := NewFeatureMap()
-	for i := range featureCount {
+	for i := 0; i < featureCount; i++ {
 		featureMap.add(fmt.Sprintf(featureNamePattern, i))
 	}
 	assert.Equal(t, featureCount, len(featureMap.keys()))
