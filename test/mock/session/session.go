@@ -50,13 +50,13 @@ func (m *MockAccessTokenSessionStore) GetToken() string {
 }
 
 type MockAccessTokenSessionStore struct {
-	RenewFunc      func() error
-	InvalidateFunc func(reason error) error
-	GetTokenFunc   func() string
+	RenewFunc       func() error
+	HandleErrorFunc func(reason error) error
+	GetTokenFunc    func() string
 
-	RenewCallCount      int
-	InvalidateCallCount int
-	GetTokenCallCount   int
+	RenewCallCount       int
+	HandleErrorCallCount int
+	GetTokenCallCount    int
 }
 
 func (m *MockAccessTokenSessionStore) Renew() error {
@@ -64,9 +64,12 @@ func (m *MockAccessTokenSessionStore) Renew() error {
 	return m.RenewFunc()
 }
 
-func (m *MockAccessTokenSessionStore) Invalidate(reason error) error {
-	m.InvalidateCallCount++
-	return m.InvalidateFunc(reason)
+func (m *MockAccessTokenSessionStore) HandleError(reason error) error {
+	m.HandleErrorCallCount++
+	if m.HandleErrorFunc != nil {
+		return m.HandleErrorFunc(reason)
+	}
+	return nil
 }
 
 func (m *MockAccessTokenSessionStore) GetToken() string {
