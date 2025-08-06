@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,6 +24,8 @@ func testValidate(store SessionStore) error {
 }
 
 func TestTrustedPassSessionStore_Validate(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name              string
 		token             string
@@ -122,6 +125,8 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 }
 
 func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name            string
 		testError       error
@@ -183,6 +188,8 @@ func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
 }
 
 func TestTrustedPassSessionStore_ValidateWithInvalidExpiryFormat(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	userID := int64(123)
 	tokenData := config.TokenData{
 		TrustedPassToken:       "valid-token",
@@ -208,6 +215,8 @@ func TestTrustedPassSessionStore_ValidateWithInvalidExpiryFormat(t *testing.T) {
 }
 
 func TestTrustedPassSessionStore_Renew(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	userID := int64(123)
 
 	tests := []struct {
