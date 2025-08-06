@@ -2,6 +2,8 @@ package session
 
 import (
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // Common validation functions that can be reused across different session types
@@ -22,6 +24,28 @@ func ValidateToken(token string) error {
 	return nil
 }
 
+// ValidateAccessTokenFormat checks if the access token has valid format (hexadecimal characters only)
+func ValidateAccessTokenFormat(token string) error {
+	if err := ValidateToken(token); err != nil {
+		return err
+	}
+	if !internal.AccessTokenFormatValidator(token) {
+		return ErrAccessTokenExpired
+	}
+	return nil
+}
+
+// ValidateTrustedPassTokenFormat checks if the TrustedPass token is not empty and has valid format
+func ValidateTrustedPassTokenFormat(token string) error {
+	if err := ValidateToken(token); err != nil {
+		return err
+	}
+	if !internal.TrustedPassTokenFormatValidator(token) {
+		return ErrInvalidToken
+	}
+	return nil
+}
+
 // ValidateOwnerID checks if the owner ID is not empty
 func ValidateOwnerID(ownerID string) error {
 	if ownerID == "" {
@@ -32,16 +56,22 @@ func ValidateOwnerID(ownerID string) error {
 
 // ValidateTrustedPassOwnerID checks if the owner ID matches the expected TrustedPass owner ID
 func ValidateTrustedPassOwnerID(ownerID string) error {
+	if err := ValidateOwnerID(ownerID); err != nil {
+		return err
+	}
 	if ownerID != TrustedPassOwnerID {
 		return ErrInvalidOwnerId
 	}
 	return nil
 }
 
-// ValidateRenewToken checks if the renew token is not empty
+// ValidateRenewToken checks if the renew token is not empty and has valid format (hexadecimal characters only)
 func ValidateRenewToken(renewToken string) error {
 	if renewToken == "" {
 		return ErrMissingRenewToken
+	}
+	if !internal.RenewalTokenFormatValidator(renewToken) {
+		return ErrInvalidRenewToken
 	}
 	return nil
 }
