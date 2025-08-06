@@ -99,12 +99,12 @@ func TestValidateAccessTokenFormat(t *testing.T) {
 		{
 			name:    "invalid hex token uppercase",
 			token:   "AB78BB36299D442FA0715FB53B5E3E57",
-			wantErr: ErrAccessTokenExpired,
+			wantErr: ErrInvalidToken,
 		},
 		{
 			name:    "invalid hex token mixed case",
 			token:   "Ab78Bb36299d442fA0715fB53b5e3e57",
-			wantErr: ErrAccessTokenExpired,
+			wantErr: ErrInvalidToken,
 		},
 		{
 			name:    "empty token",
@@ -114,7 +114,7 @@ func TestValidateAccessTokenFormat(t *testing.T) {
 		{
 			name:    "invalid format - not hex",
 			token:   "not-a-hex-token",
-			wantErr: ErrAccessTokenExpired,
+			wantErr: ErrInvalidToken,
 		},
 		{
 			name:    "valid format - short hex",
@@ -124,7 +124,7 @@ func TestValidateAccessTokenFormat(t *testing.T) {
 		{
 			name:    "invalid format - contains special chars",
 			token:   "ab78bb36-299d-442f-a071-5fb53b5e3e57",
-			wantErr: ErrAccessTokenExpired,
+			wantErr: ErrInvalidToken,
 		},
 	}
 

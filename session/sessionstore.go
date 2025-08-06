@@ -8,7 +8,7 @@ type SessionStore interface {
 	Renew() error
 
 	// HandleError processes errors that occur during session operations.
-	// It returns nil if the error was handled, or the error itself if not.
+	// It returns nil if the error was not handled, or the error itself if it was.
 	HandleError(reason error) error
 }
 
