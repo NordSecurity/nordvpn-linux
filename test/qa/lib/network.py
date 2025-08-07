@@ -227,22 +227,6 @@ def is_connected() -> bool:
     return True
 
 
-def is_ipv4_and_ipv6_connected(retry=5) -> bool:
-    return (
-            daemon.is_connected()
-            and is_available(retry)
-            and _is_ipv6_internet_reachable(retry)
-    )
-
-
-def is_ipv6_connected(retry=5) -> bool:
-    return (
-            daemon.is_connected()
-            and _is_ipv6_internet_reachable(retry)
-            and _is_dns_resolvable()
-    )
-
-
 def is_disconnected(retry=5) -> bool:
     """Returns True when not connected to VPN server or throws AssertionError otherwise."""
     assert firewall.is_empty()

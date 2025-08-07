@@ -79,9 +79,7 @@ Each category name is made by stripping `test_` and `.py` from the file name:
 * autoconnect - tests autoconnect scenarios.
 * combinations - tests every single reconnect combination.
 * connect - tests IPv4 connections.
-* connect6 - tests IPv6 connections.
 * dns - tests DNS changes over the lifetime of IPv4 connection.
-* dns6 - tests DNS changes over the lifetime of IPv6 connection.
 * firewall - tests iptables rules.
 * firewall6 - tests ip6tables rules.
 * login - tests login scenarios.

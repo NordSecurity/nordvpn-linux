@@ -24,7 +24,6 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 
 	tests := []struct {
 		testName       string
-		ipv6           bool
 		desiredTpl     bool
 		currentTpl     bool
 		currentDNS     []string
@@ -38,25 +37,10 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
 		},
 		{
-			testName:       "set tpl ipv6",
-			ipv6:           true,
-			desiredTpl:     true,
-			expectedDNS:    append(mock.TplNameserversV4, mock.TplNameserversV6...),
-			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
-		},
-		{
 			testName:       "set tpl reset dns ipv4",
 			desiredTpl:     true,
 			currentDNS:     dns,
 			expectedDNS:    mock.TplNameserversV4,
-			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET,
-		},
-		{
-			testName:       "set tpl reset dns ipv6",
-			ipv6:           true,
-			desiredTpl:     true,
-			currentDNS:     dns,
-			expectedDNS:    append(mock.TplNameserversV4, mock.TplNameserversV6...),
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET,
 		},
 		{
@@ -65,15 +49,6 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 			currentTpl:     true,
 			currentDNS:     mock.TplNameserversV4,
 			expectedDNS:    mock.DefaultNameserversV4,
-			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
-		},
-		{
-			testName:       "set tpl on ipv6",
-			ipv6:           true,
-			desiredTpl:     false,
-			currentTpl:     true,
-			currentDNS:     mock.TplNameserversV4,
-			expectedDNS:    append(mock.DefaultNameserversV4, mock.DefaultNameserversV6...),
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
 		},
 	}
@@ -93,7 +68,6 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 					ThreatProtectionLite: test.currentTpl,
 					DNS:                  test.currentDNS,
 				}
-				c.IPv6 = test.ipv6
 
 				return c
 			})

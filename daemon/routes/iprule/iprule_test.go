@@ -14,31 +14,31 @@ import (
 func TestFwmarkRule(t *testing.T) {
 	category.Set(t, category.Route)
 
-	prioID, err := calculateRulePriority(false)
+	prioID, err := calculateRulePriority()
 	assert.NoError(t, err)
 	assert.Greater(t, prioID, uint(0))
 
-	tblID, err := calculateCustomTableID(false)
+	tblID, err := calculateCustomTableID()
 	assert.NoError(t, err)
 	assert.Greater(t, tblID, uint(0))
 
-	err = addFwmarkRule(0, prioID, tblID, false)
+	err = addFwmarkRule(0, prioID, tblID)
 	assert.Error(t, err)
 
 	var fwmarkval uint32 = 0xe1f1
 	assert.Greater(t, fwmarkval, uint32(0))
 
-	err = addFwmarkRule(fwmarkval, prioID, tblID, false)
+	err = addFwmarkRule(fwmarkval, prioID, tblID)
 	assert.NoError(t, err)
 
-	fndTblID, err := findFwmarkRule(fwmarkval, false)
+	fndTblID, err := findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, tblID, fndTblID)
 
-	err = removeFwmarkRule(fwmarkval, false)
+	err = removeFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 
-	fndTblID, err = findFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, uint(0), fndTblID)
 }
@@ -46,11 +46,11 @@ func TestFwmarkRule(t *testing.T) {
 func TestMultiFwmarkRule(t *testing.T) {
 	category.Set(t, category.Route)
 
-	prioID, err := calculateRulePriority(false)
+	prioID, err := calculateRulePriority()
 	assert.NoError(t, err)
 	assert.Greater(t, prioID, uint(0))
 
-	tblID, err := calculateCustomTableID(false)
+	tblID, err := calculateCustomTableID()
 	assert.NoError(t, err)
 	assert.Greater(t, tblID, uint(0))
 
@@ -58,43 +58,43 @@ func TestMultiFwmarkRule(t *testing.T) {
 	assert.Greater(t, fwmarkval, uint32(0))
 
 	// add 1st rule
-	err = addFwmarkRule(fwmarkval, prioID, tblID, false)
+	err = addFwmarkRule(fwmarkval, prioID, tblID)
 	assert.NoError(t, err)
 
 	// check
-	fndTblID, err := findFwmarkRule(fwmarkval, false)
+	fndTblID, err := findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, tblID, fndTblID)
 
-	prioID2, err := calculateRulePriority(false)
+	prioID2, err := calculateRulePriority()
 	assert.NoError(t, err)
 	assert.Greater(t, prioID2, uint(0))
 
-	tblID2, err := calculateCustomTableID(false)
+	tblID2, err := calculateCustomTableID()
 	assert.NoError(t, err)
 	assert.Greater(t, tblID2, uint(0))
 
 	// add 2nd rule
-	err = addFwmarkRule(fwmarkval, prioID2, tblID2, false)
+	err = addFwmarkRule(fwmarkval, prioID2, tblID2)
 	assert.NoError(t, err)
 
 	// check
-	fndTblID, err = findFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, tblID, fndTblID)
 
 	// will remove one
-	err = removeFwmarkRule(fwmarkval, false)
+	err = removeFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 
-	fndTblID, err = findFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, tblID2, fndTblID)
 
-	err = removeFwmarkRule(fwmarkval, false)
+	err = removeFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 
-	fndTblID, err = findFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, uint(0), fndTblID)
 }
@@ -102,60 +102,60 @@ func TestMultiFwmarkRule(t *testing.T) {
 func TestSuppressRule(t *testing.T) {
 	category.Set(t, category.Route)
 
-	prioID, err := calculateRulePriority(false)
+	prioID, err := calculateRulePriority()
 	assert.NoError(t, err)
 	assert.Greater(t, prioID, uint(0))
 
-	tblID, err := calculateCustomTableID(false)
+	tblID, err := calculateCustomTableID()
 	assert.NoError(t, err)
 	assert.Greater(t, tblID, uint(0))
 
 	var fwmarkval uint32 = 0xe1f1
 	assert.Greater(t, fwmarkval, uint32(0))
 
-	fndTblID, err := findFwmarkRule(fwmarkval, false)
+	fndTblID, err := findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, uint(0), fndTblID)
 
-	err = addFwmarkRule(fwmarkval, prioID, tblID, false)
+	err = addFwmarkRule(fwmarkval, prioID, tblID)
 	assert.NoError(t, err)
 
-	prioID2, err := calculateRulePriority(false)
+	prioID2, err := calculateRulePriority()
 	assert.NoError(t, err)
 	assert.Greater(t, prioID2, uint(0))
 
-	fnd, err := checkSuppressRule(false)
+	fnd, err := checkSuppressRule()
 	assert.NoError(t, err)
 	assert.False(t, fnd)
 
-	err = addSuppressRule(prioID2, false, true)
+	err = addSuppressRule(prioID2, true)
 	assert.NoError(t, err)
 
-	fnd, err = checkSuppressRule(false)
-	assert.NoError(t, err)
-	assert.True(t, fnd)
-
-	err = removeSuppressRule(false)
-	assert.NoError(t, err)
-
-	err = addSuppressRule(prioID2, false, false)
-	assert.NoError(t, err)
-
-	fnd, err = checkSuppressRule(false)
+	fnd, err = checkSuppressRule()
 	assert.NoError(t, err)
 	assert.True(t, fnd)
 
-	err = removeSuppressRule(false)
+	err = removeSuppressRule()
 	assert.NoError(t, err)
 
-	fnd, err = checkSuppressRule(false)
+	err = addSuppressRule(prioID2, false)
+	assert.NoError(t, err)
+
+	fnd, err = checkSuppressRule()
+	assert.NoError(t, err)
+	assert.True(t, fnd)
+
+	err = removeSuppressRule()
+	assert.NoError(t, err)
+
+	fnd, err = checkSuppressRule()
 	assert.NoError(t, err)
 	assert.False(t, fnd)
 
-	err = removeFwmarkRule(fwmarkval, false)
+	err = removeFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 
-	fndTblID, err = findFwmarkRule(fwmarkval, false)
+	fndTblID, err = findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, uint(0), fndTblID)
 }
@@ -163,26 +163,26 @@ func TestSuppressRule(t *testing.T) {
 func TestCustomTable(t *testing.T) {
 	category.Set(t, category.Route)
 
-	prioID, err := calculateRulePriority(false)
+	prioID, err := calculateRulePriority()
 	assert.NoError(t, err)
 	assert.Greater(t, prioID, uint(0))
 
-	tblID, err := calculateCustomTableID(false)
+	tblID, err := calculateCustomTableID()
 	assert.NoError(t, err)
 	assert.Greater(t, tblID, uint(0))
 
 	var fwmarkval uint32 = 0xe1f1
 	assert.Greater(t, fwmarkval, uint32(0))
 
-	err = addFwmarkRule(fwmarkval, prioID, tblID, false)
+	err = addFwmarkRule(fwmarkval, prioID, tblID)
 	assert.NoError(t, err)
 
-	fndTblID, err := findFwmarkRule(fwmarkval, false)
+	fndTblID, err := findFwmarkRule(fwmarkval)
 	assert.NoError(t, err)
 	assert.Equal(t, tblID, fndTblID)
 
 	// prev prio id is in use, so, next one should be less (less is higher prio)
-	prioID2, err := calculateRulePriority(false)
+	prioID2, err := calculateRulePriority()
 	assert.NoError(t, err)
 	assert.Greater(t, prioID, prioID2)
 }
@@ -205,7 +205,7 @@ func TestAddAllowlistRules(t *testing.T) {
 		"237.164.3.235/32",
 	}
 
-	err = router.addAllowlistRules(allowlist, false)
+	err = router.addAllowlistRules(allowlist)
 	assert.NoError(t, err, "Unexpected error when adding allowlist rules: %s", err)
 
 	rulesAfterAdd, err := netlink.RuleList(netlink.FAMILY_V4)
@@ -236,7 +236,7 @@ func TestAddAllowlistRules(t *testing.T) {
 		assert.NotEqual(t, -1, ruleIdx, "Desired subnet %s not added to ip rules.", subnet.String())
 	}
 
-	router.removeAllowSubnetRules(false)
+	router.removeAllowSubnetRules()
 	rulesAfterRemove, err := netlink.RuleList(netlink.FAMILY_V4)
 	assert.NoError(t, err, "Failed to save prevous state for ip rules: %s", err)
 

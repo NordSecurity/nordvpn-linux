@@ -155,6 +155,12 @@ func main() {
 		config.StdFilesystemHandle{},
 		configEvents.Config,
 	)
+
+	// Remove any remains of IPv6 settings
+	if err := fsystem.SaveWith(removeIPv6Remains); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to remove IPv6 entries from settings ", err)
+	}
+
 	var cfg config.Config
 	if err := fsystem.Load(&cfg); err != nil {
 		log.Println(err)
@@ -199,7 +205,7 @@ func main() {
 		stateModule,
 		stateFlag,
 		chainPrefix,
-		iptables.FilterSupportedIPTables(internal.GetSupportedIPTables()),
+		iptables.FilterSupportedIPTables([]string{"iptables", "ip6tables"}),
 	)
 	fw := firewall.NewFirewall(
 		&notables.Facade{},
@@ -417,7 +423,6 @@ func main() {
 		infoSubject,
 		allowlistRouter,
 		dnsSetter,
-		ipv6.NewIpv6(),
 		fw,
 		allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
 			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
@@ -447,6 +452,7 @@ func main() {
 			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
+		ipv6.NewIpv6(),
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)
@@ -560,6 +566,7 @@ func main() {
 		norduserClient,
 		sharedContext,
 	)
+	rcConfig.Subscribe(meshService)
 
 	opts := []grpc.ServerOption{
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
@@ -721,4 +728,37 @@ func assignMooseDBPermissions(eventsDbPath string) error {
 		log.Println(err)
 	}
 	return nil
+}
+
+func removeIPv6Remains(c config.Config) config.Config {
+	// Remove all nameservers with IPv6 addresses
+	var dnsList []string
+	for _, addr := range c.AutoConnectData.DNS {
+		ip := net.ParseIP(addr)
+		if ip == nil {
+			continue
+		}
+		if ip.To4() != nil {
+			dnsList = append(dnsList, addr)
+		}
+	}
+
+	c.AutoConnectData.DNS = dnsList
+
+	// Remove all IPv6 subnets from AllowList
+	var allowList []string
+	for _, addr := range c.AutoConnectData.Allowlist.Subnets {
+		_, subnet, err := net.ParseCIDR(addr)
+		if err != nil {
+			continue
+		}
+
+		if subnet.IP.To4() != nil {
+			allowList = append(allowList, addr)
+		}
+	}
+
+	c.AutoConnectData.Allowlist.Subnets = allowList
+
+	return c
 }

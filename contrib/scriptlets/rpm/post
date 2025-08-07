@@ -26,6 +26,17 @@ helpMessage="If you need help using the app, use the command 'nordvpn --help'."
 
 # update configuration and shared library cache for linker to find .so files
 echo "/usr/lib/nordvpn" > /etc/ld.so.conf.d/nordvpn.conf
+
+# NOTE: We found some really strange behavior with `ldconfig` cache refresh here.
+# On .deb systems, using just `ldconfig` causes the nordvpnd daemon to fail on
+# the first start with error that .so are missing. On restart, it's working again.
+# Adding ANY flag to `ldconfig` (even the one we added on our own which does
+# literally nothing) fixes the issue.
+ldconfig
+
+ln -sf $(ldconfig -p | awk '/libsqlite3.so.0/ && /=>/ {print $NF; exit}') /usr/lib/nordvpn/libsqlite3.so
+
+# ldconfig needs to be executed twice in case libsqlite3.so.0 was not available during a lookup
 ldconfig
 
 groupadd --system "$NORDVPN_GROUP" 1>/dev/null 2> /dev/null

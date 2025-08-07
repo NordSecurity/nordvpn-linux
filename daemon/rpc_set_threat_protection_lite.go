@@ -26,7 +26,7 @@ func (r *RPC) SetThreatProtectionLite(
 		}, nil
 	}
 
-	nameservers := r.nameservers.Get(threatProtectionLite, cfg.IPv6)
+	nameservers := r.nameservers.Get(threatProtectionLite)
 
 	if err := r.netw.SetDNS(nameservers); err != nil {
 		log.Println(internal.ErrorPrefix, err)

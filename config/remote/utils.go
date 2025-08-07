@@ -7,10 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// defaultMaxGroup represents the maximum value for a rollout group,
-// effectively making the value to be in range of 1-100 (inclusive) to reflect percentage-based groups.
-const defaultMaxGroup uint32 = 100
-
 // GenerateRolloutGroup creates a new RolloutGroup instance based on a provided UUID.
 // It computes a group value by hashing the UUID and deriving a number between 1 and defaultMaxGroup (inclusive).
 //

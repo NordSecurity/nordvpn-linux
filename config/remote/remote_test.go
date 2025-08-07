@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,14 +23,52 @@ import (
 )
 
 const (
-	httpPort          = "8005"
-	httpPath          = "/config"
-	httpHost          = "http://localhost"
-	cdnUrl            = httpHost + ":" + httpPort
-	localPath         = "./tmp/cfg"
-	testFeatureNoRc   = "feature1"
-	testFeatureWithRc = "nordwhisper"
+	httpPort              = "8005"
+	httpPath              = "/config"
+	httpHost              = "http://localhost"
+	cdnUrl                = httpHost + ":" + httpPort
+	localPath             = "./tmp/cfg"
+	httpServerWaitTimeout = 2 * time.Second
+	testFeatureNoRc       = "feature1"
+	testFeatureWithRc     = "nordwhisper"
 )
+
+func cleanLocalPath(t *testing.T) {
+	os.RemoveAll(localPath)
+	t.Cleanup(func() { os.RemoveAll(localPath) })
+}
+
+func waitForServer() error {
+	deadline := time.Now().Add(httpServerWaitTimeout)
+	addr := httpHost + ":" + httpPort
+	for time.Now().Before(deadline) {
+		conn, err := net.Dial("tcp", addr)
+		if err == nil {
+			conn.Close()
+			return nil // Server is up
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	return fmt.Errorf("server at %s did not become ready in time", addr)
+}
+
+// modTimeNanos is a helper function to get the nanosecond part of a file's modification time.
+// To be used in conjunction with the assertEventuallyGreater function.
+func modTimeNanos(fi os.FileInfo) func() int {
+	return func() int { return fi.ModTime().Nanosecond() }
+}
+
+// assertEventuallyGreater checks that the new value eventually becomes greater than the old value within the timeout period.
+func assertEventuallyGreater(t *testing.T, getNew, getOld func() int, timeout time.Duration) {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if getNew() > getOld() {
+			return // exit early if condition is already met
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	assert.Greater(t, getNew(), getOld()) // Final assertion (will fail with message if not greater)
+}
 
 func TestFindMatchingRecord(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -161,7 +200,7 @@ func TestFeatureOnOff(t *testing.T) {
 			ver:     "",
 			env:     "dev",
 			feature: testFeatureNoRc,
-			on:      false,
+			on:      true,
 		},
 		{
 			name:    "feature2 1",
@@ -181,8 +220,11 @@ func TestFeatureOnOff(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			eh := newTestRemoteConfigEventHandler()
 			rc := newTestRemoteConfig(test.ver, test.env, cdn)
+			rc.Subscribe(eh)
 			err := rc.LoadConfig()
+			assert.True(t, eh.notified)
 			assert.NoError(t, err)
 			on := rc.IsFeatureEnabled(test.feature)
 			assert.Equal(t, test.on, on)
@@ -239,7 +281,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio,
+			feature:     FeatureLibtelio.String(),
 			expectError: false,
 		},
 		{
@@ -247,7 +289,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.1.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio,
+			feature:     FeatureLibtelio.String(),
 			expectError: true,
 		},
 		{
@@ -255,7 +297,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    true,
-			feature:     FeatureLibtelio,
+			feature:     FeatureLibtelio.String(),
 			expectError: false,
 		},
 	}
@@ -291,6 +333,8 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
+
+	os.RemoveAll(localPath)
 
 	libtelioMainConfigFile := filepath.Join(localPath, "libtelio.json")
 	libtelioInc1ConfigFile := filepath.Join(localPath, "include/libtelio1.json")
@@ -356,11 +400,29 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	assert.NotNil(t, info3inc2)
 
 	// files are modified on disk - should be greater time
-	assert.Greater(t, info3.ModTime().Nanosecond(), info1.ModTime().Nanosecond())
-	assert.Greater(t, info3inc1.ModTime().Nanosecond(), info1inc1.ModTime().Nanosecond())
-	assert.Greater(t, info3inc2.ModTime().Nanosecond(), info1inc2.ModTime().Nanosecond())
+	// sometimes I/O operations can get delayed, thus here we use active-waiting approach bounded by the timeout
+	timeout := 2 * time.Second
+	assertEventuallyGreater(t, modTimeNanos(info3), modTimeNanos(info1), timeout)
+	assertEventuallyGreater(t, modTimeNanos(info3inc1), modTimeNanos(info1inc1), timeout)
+	assertEventuallyGreater(t, modTimeNanos(info3inc2), modTimeNanos(info1inc2), timeout)
 
 	stopWebServer()
+	cleanLocalPath(t)
+}
+
+type RemoteConfigEventHandler struct {
+	notified       bool
+	meshnetEnabled bool
+}
+
+func newTestRemoteConfigEventHandler() *RemoteConfigEventHandler {
+	return &RemoteConfigEventHandler{notified: false}
+}
+
+func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error {
+	e.notified = true
+	e.meshnetEnabled = c.MeshnetFeatureEnabled
+	return nil
 }
 
 func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
@@ -371,9 +433,10 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConf
 		localCachePath: localPath,
 		cdn:            cdn,
 		features:       make(FeatureMap),
+		notifier:       &subs.Subject[RemoteConfigEvent]{},
 	}
-	rc.features.Add(FeatureMain)
-	rc.features.Add(FeatureLibtelio)
+	rc.features.Add(FeatureMain.String())
+	rc.features.Add(FeatureLibtelio.String())
 	rc.features.Add(testFeatureNoRc)
 	rc.features.Add(testFeatureWithRc)
 	return rc
@@ -415,6 +478,8 @@ func makeHashJson(data ...[]byte) []byte {
 	return rz
 }
 
+// setupMockCdnWebServer sets up a mock CDN web server that serves predefined JSON configuration files.
+// The CDN web server is here mocked by a local HTTP one. Also there's a call to waitForServer() to ensure the server is actually ready to handle incoming requests.
 func setupMockCdnWebServer(updated bool) func() {
 	httpPath := filepath.Join(httpPath, "dev")
 
@@ -466,6 +531,8 @@ func setupMockCdnWebServer(updated bool) func() {
 			log.Fatalf("Server error: %v", err)
 		}
 	}()
+
+	waitForServer()
 
 	// return http server stop function
 	return func() {

@@ -36,7 +36,7 @@ cd "${WORKDIR}"/test/qa || exit
 args=()
 read -ra array <<< "$categories"
 for category in "${array[@]}"
-do 
+do
     case "${category}" in
         "all")
             ;;
@@ -55,7 +55,7 @@ case "${pattern}" in
 esac
 
 
-mkdir -p "${WORKDIR}"/"${COVERDIR}" 
+mkdir -p "${WORKDIR}"/"${COVERDIR}"
 
 if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
     sudo sed -i "1a export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"
@@ -70,6 +70,9 @@ if [[ -n ${LATTE:-} ]]; then
         sudo sed -i "1a export HTTP_TRANSPORTS=http1" "/etc/init.d/nordvpn"
     fi
 fi
+
+# Disable the TUI loader indicator to prevent interference during automated tests
+export DISABLE_TUI_LOADER=1
 
 python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true \
 --html="${WORKDIR}"/dist/test_artifacts/report.html --self-contained-html  --junitxml="${WORKDIR}"/dist/test_artifacts/report.xml "${args[@]}"

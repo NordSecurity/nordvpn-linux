@@ -12,6 +12,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -31,8 +33,17 @@ type ConfigLoader interface {
 }
 
 const (
-	envUseLocalConfig = "RC_USE_LOCAL_CONFIG"
+	envUseLocalConfig   = "RC_USE_LOCAL_CONFIG"
+	defaultFeatureState = true
 )
+
+type RemoteConfigEvent struct {
+	MeshnetFeatureEnabled bool
+}
+
+type RemoteConfigNotifier interface {
+	RemoteConfigUpdate(RemoteConfigEvent) error
+}
 
 type CdnRemoteConfig struct {
 	appVersion     string
@@ -42,7 +53,9 @@ type CdnRemoteConfig struct {
 	cdn            core.RemoteStorage
 	features       FeatureMap
 	rolloutGroup   int
+	initOnce       sync.Once
 	mu             sync.RWMutex
+	notifier       events.PublishSubcriber[RemoteConfigEvent]
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
@@ -55,10 +68,11 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		cdn:            cdn,
 		rolloutGroup:   appRollout,
 		features:       make(FeatureMap),
+		notifier:       &subs.Subject[RemoteConfigEvent]{},
 	}
-	rc.features.Add(FeatureMain)
-	rc.features.Add(FeatureLibtelio)
-	rc.features.Add(FeatureMeshnet)
+	rc.features.Add(FeatureMain.String())
+	rc.features.Add(FeatureLibtelio.String())
+	rc.features.Add(FeatureMeshnet.String())
 	return rc
 }
 
@@ -112,37 +126,59 @@ func isNetworkRetryable(err error) bool {
 
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
+	var err error
+	reloadDone := false
+	c.initOnce.Do(func() {
+		c.load() // on start init cache from disk
+		reloadDone = true
+	})
+	needReload := false
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
-		if err := c.download(); err != nil {
-			return err
+		if needReload, err = c.download(); err != nil {
+			return fmt.Errorf("downloading remote config: %w", err)
 		}
 	}
-	return c.load()
+
+	// remote config files were downloaded and need to be reloaded?
+	if needReload {
+		c.load()
+		reloadDone = true
+	}
+
+	if reloadDone {
+		// notify what is current state after config reload
+		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet.String())})
+	}
+
+	return nil
 }
 
-func (c *CdnRemoteConfig) download() error {
+func (c *CdnRemoteConfig) download() (bool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
+
+	newChangesDownloaded := false
 
 	for _, f := range c.features {
 		dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
 			if isNetworkRetryable(err) {
-				return err
+				return false, err
 			}
 			continue
 		}
 		if dnld {
 			// only if remote config was really downloaded
 			log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
+			newChangesDownloaded = true
 		}
 	}
-	return nil
+	return newChangesDownloaded, nil
 }
 
-func (c *CdnRemoteConfig) load() error {
+func (c *CdnRemoteConfig) load() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -153,7 +189,6 @@ func (c *CdnRemoteConfig) load() error {
 		}
 		log.Println(internal.InfoPrefix, "feature [", f.name, "] config loaded from:", c.localCachePath)
 	}
-	return nil
 }
 
 func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamValue) {
@@ -184,7 +219,7 @@ func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamV
 }
 
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
-	return c.GetFeatureParam(FeatureLibtelio, FeatureLibtelio)
+	return c.GetFeatureParam(FeatureLibtelio.String(), FeatureLibtelio.String())
 }
 
 func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
@@ -194,11 +229,11 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	// find by name, expect param name to be the same as feature name and expect boolean type
 	f, found := c.features[featureName]
 	if !found {
-		return false
+		return defaultFeatureState
 	}
 	p, found := f.params[featureName]
 	if !found {
-		return false
+		return defaultFeatureState
 	}
 	switch p.Type {
 	case fieldTypeBool:
@@ -207,7 +242,7 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 			return val
 		}
 	}
-	return false
+	return defaultFeatureState
 }
 
 func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string, error) {
@@ -253,4 +288,8 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 		}
 	}
 	return "", fmt.Errorf("feature [%s] param [%s] value not found", featureName, paramName)
+}
+
+func (c *CdnRemoteConfig) Subscribe(to RemoteConfigNotifier) {
+	c.notifier.Subscribe(to.RemoteConfigUpdate)
 }

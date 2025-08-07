@@ -661,15 +661,6 @@ func TestServerGroupsString(t *testing.T) {
 	assert.True(t, slices.Equal([]int64{11, 15, 19}, groupIDs))
 }
 
-func TestServer_SupportsIPv6(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	var server Server
-	err := json.Unmarshal([]byte(inputTest), &server)
-	assert.NoError(t, err)
-	assert.True(t, server.SupportsIPv6())
-}
-
 func TestServer_IPs(t *testing.T) {
 	category.Set(t, category.Unit)
 

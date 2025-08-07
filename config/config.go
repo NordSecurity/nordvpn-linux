@@ -44,7 +44,6 @@ type Config struct {
 	MeshDevice      *mesh.Machine       `json:"mesh_device"`
 	KillSwitch      bool                `json:"kill_switch,omitempty"`
 	AutoConnect     bool                `json:"auto_connect,omitempty"`
-	IPv6            bool                `json:"ipv6"`
 	Meshnet         meshnet             `json:"meshnet"`
 	AutoConnectData AutoConnectData     `json:"auto_connect_data"` // omitempty breaks this
 	UsersData       *UsersData          `json:"users_data,omitempty"`
