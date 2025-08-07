@@ -115,11 +115,6 @@ func buildNCCredentialsSessionStore(
 	return session.NewNCCredentialsSessionStore(
 		confman,
 		errRegistry,
-		session.NewCompositeValidator(
-			session.NewExpiryValidator(),
-			session.NewNCCredentialsValidator(),
-			session.NewEndpointValidator(),
-		),
 		buildNCCredentialsSessionStoreAPIRenewalCall(confman, clientAPI),
 	)
 }
