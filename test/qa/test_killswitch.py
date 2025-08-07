@@ -174,14 +174,14 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
     Jira ID: LVPN-8626
     """
 
-    CONF_DIR = "/var/lib/nordvpn/conf/"
+    conf_dir = "/var/lib/nordvpn/conf/"
     expected_files = [
         "libtelio.json",
         "meshnet.json",
     ]
 
     for fname in expected_files:
-        path = os.path.join(CONF_DIR, fname)
+        path = os.path.join(conf_dir, fname)
         res = os.popen(f"sudo test -f {path} && echo exists || echo missing").read().strip()
         assert res == "missing", f"File {path} should not exist"
 
@@ -193,12 +193,12 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
     assert daemon.is_disconnected()
     # remove previously fetched files
     # upon restart, they should be loaded again
-    os.system(f"sudo rm -rf {CONF_DIR}")
+    os.system(f"sudo rm -rf {conf_dir}")
     daemon.restart()
     time.sleep(3)
 
     for fname in expected_files:
-        path = os.path.join(CONF_DIR, fname)
+        path = os.path.join(conf_dir, fname)
         res = os.popen(f"sudo test -f {path} && echo exists || echo missing").read().strip()
         assert res == "exists", f"File {os.path} should exist after kill-switch was enabled"
 
