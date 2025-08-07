@@ -19,9 +19,7 @@ categories="${1}"
 pattern="${2:-}"
 
 # check that some env variables are set before running the tests
-: "${DISABLE_TUI_LOADER:?Environment variable DISABLE_TUI_LOADER must be set}"
-: "${COVERDIR:?Environment variable COVERDIR must be set}"
-: "${GOCOVERDIR:?Environment variable GOCOVERDIR must be set}"
+: "${DISABLE_TUI_LOADER:?DISABLE_TUI_LOADER must be set to disable ANSI loading indicator in CLI commands}"
 
 cd "${WORKDIR}"/test/qa || exit
 

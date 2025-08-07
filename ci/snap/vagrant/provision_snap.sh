@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -euxo pipefail
 
 # used to provision the vagrant VM for snap

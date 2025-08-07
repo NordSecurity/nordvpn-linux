@@ -14,13 +14,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
 )
 
-// Define a new type to hide it's content from prints
-type secret struct {
-	value string
-}
+// Define a new type to hide its content from prints
+type secret string
 
 func newSecret(val string) secret {
-	return secret{value: val}
+	return secret(val)
 }
 func (s secret) GoString() string {
 	return s.String()
@@ -28,7 +26,7 @@ func (s secret) GoString() string {
 
 func (s secret) String() string {
 	const display = 10
-	str := string(s.value)
+	str := string(s)
 
 	// If the string is too short to mask
 	if len(str) <= display*2 {
@@ -81,6 +79,11 @@ func streamLines(r io.Reader, out io.Writer) {
 	for sc.Scan() {
 		fmt.Fprintln(out, sc.Text())
 	}
+
+	if err := sc.Err(); err != nil {
+		fmt.Printf("Scanner error: %s", err)
+	}
+
 }
 
 // runCommandInVM - runs a command using vagrant ssh inside the VM
@@ -91,7 +94,7 @@ func runCommandInVM(vagrantEnv VagrantEnv, args []string) error {
 	}
 
 	// compose the remote command to be on single string:
-	// cd /vagrant + env + <cmd + params>
+	// cd /vagrant && ENV_VARS cmd "param1" "param2"
 	fullRemoteCmd := fmt.Sprintf("cd %s && %s %s",
 		vagrantEnv.RemoteCwd,
 		strings.Join(env, " "),
@@ -106,18 +109,22 @@ func vagrantUp(vagrantEnv VagrantEnv) error {
 }
 
 func vagrantStop(vagrantEnv VagrantEnv) {
-	runVagrantCmd(vagrantEnv, "halt", "-f", vagrantEnv.BoxName)
+	if err := runVagrantCmd(vagrantEnv, "halt", "-f", vagrantEnv.BoxName); err != nil {
+		fmt.Println("Failed to stop the VM", err)
+	}
 	if vagrantEnv.ShouldDestroyVM {
-		runVagrantCmd(vagrantEnv, "destroy", "-f", vagrantEnv.BoxName)
+		if err := runVagrantCmd(vagrantEnv, "destroy", "-f", vagrantEnv.BoxName); err != nil {
+			fmt.Println("Failed to destroy the VM", err)
+		}
 	}
 }
 
-// buildVagrantEnvEnv will construct a VagrantEnv storing all the env variables needed
+// buildVagrantEnv will construct a VagrantEnv storing all the env variables needed
 // Used env variables:
 // * SNAP_TEST_BOX_NAME specifies what box to use, for example generic/ubuntu2204
 // * SNAP_TEST_DESTROY_VM_ON_EXIT - optional, when set to 1|true it will delete the VM after running the tests
 // * NA_TESTS_CREDENTIALS - test credentials
-func buildVagrantEnvEnv() (VagrantEnv, error) {
+func buildVagrantEnv() (VagrantEnv, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return VagrantEnv{}, err
@@ -143,7 +150,7 @@ func buildVagrantEnvEnv() (VagrantEnv, error) {
 	if val, ok := env["SNAP_TEST_DESTROY_VM_ON_EXIT"]; ok {
 		shouldDestroyVM, err = nstrings.BoolFromString(val)
 		if err != nil {
-			shouldDestroyVM = false
+			return VagrantEnv{}, fmt.Errorf("Invalid value for SNAP_TEST_DESTROY_VM_ON_EXIT", err)
 		}
 	}
 
@@ -162,7 +169,7 @@ func buildVagrantEnvEnv() (VagrantEnv, error) {
 // It will also setup, configure and start(+stop) the VM using vagrant
 func RunInVM(args ...string) error {
 	// select all the needed env variables to create and run the tests
-	vagrantEnv, err := buildVagrantEnvEnv()
+	vagrantEnv, err := buildVagrantEnv()
 	if err != nil {
 		return err
 	}
@@ -170,7 +177,7 @@ func RunInVM(args ...string) error {
 
 	// setup and start the VM
 	if err := vagrantUp(vagrantEnv); err != nil {
-		return err
+		return fmt.Errorf("Failed to start the VM %w", err)
 	}
 	defer vagrantStop(vagrantEnv)
 
