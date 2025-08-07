@@ -16,4 +16,10 @@ var (
 
 	// ErrInvalidRenewToken indicates that the renew token has invalid format.
 	ErrInvalidRenewToken = errors.New("invalid renew token")
+
+	// ErrMissingVPNCredentials indicates that VPN credentials (username/password) are missing.
+	ErrMissingVPNCredentials = errors.New("missing openvpn credentials")
+
+	// ErrMissingNordLynxPrivateKey indicates that the NordLynx private key is missing.
+	ErrMissingNordLynxPrivateKey = errors.New("missing nordlynx private key")
 )

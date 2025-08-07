@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -73,12 +74,8 @@ func buildVPNCredentialsSessionStore(
 	return session.NewVPNCredentialsSessionStore(
 		confman,
 		errRegistry,
-		session.NewCompositeValidator(
-			session.NewExpiryValidator(),
-			session.NewOpenVPNCredentialsValidator(),
-			session.NewPrivateKeyValidator(),
-		),
 		buildVPNCredentialsSessionStoreAPIRenewalCall(confman, clientAPI),
+		nil, // No external validator for now
 	)
 }
 

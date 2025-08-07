@@ -48,6 +48,23 @@ func ValidateRenewToken(renewToken string) error {
 	return nil
 }
 
+// ValidateOpenVPNCredentials checks if OpenVPN credentials are valid
+func ValidateOpenVPNCredentials(username, password string) error {
+	if username == "" || password == "" {
+		return ErrMissingVPNCredentials
+	}
+	return nil
+}
+
+// ValidateNordLynxPrivateKey checks if NordLynx private key is valid
+func ValidateNordLynxPrivateKey(key string) error {
+	if key == "" {
+		return ErrMissingNordLynxPrivateKey
+	}
+	return nil
+}
+
 // Type-safe external validators for each session type
 type TrustedPassExternalValidator func(token string, ownerID string) error
 type CredentialsExternalValidator func(username, password string) error
+type VPNCredentialsExternalValidator func(username, password, nordlynxKey string) error
