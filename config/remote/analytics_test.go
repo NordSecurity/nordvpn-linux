@@ -109,46 +109,46 @@ func TestMooseAnalytics(t *testing.T) {
 		expectedDetails   string
 	}{
 		{
-			name: "NotifyDownload success",
+			name: "EmitDownloadEvent success",
 			action: func(a Analytics) {
-				a.NotifyDownload(client, feature)
+				a.EmitDownloadEvent(client, feature)
 			},
 			expectedEventName: `"event":"rc_download_success"`,
 		},
 		{
-			name: "NotifyDownload failure",
+			name: "EmitDownloadEvent failure",
 			action: func(a Analytics) {
-				a.NotifyDownloadFailure(client, feature, DownloadError{Kind: DownloadErrorFileDownload, Cause: errors.New("fail")})
+				a.EmitDownloadFailureEvent(client, feature, DownloadError{Kind: DownloadErrorFileDownload, Cause: errors.New("fail")})
 			},
 			expectedEventName: `"event":"rc_download_failure"`,
 			expectedDetails:   `"message":"file_download_error: fail"`,
 		},
 		{
-			name: "NotifyLocalUse",
+			name: "EmitLocalUseEvent",
 			action: func(a Analytics) {
-				a.NotifyLocalUse(client, feature, nil)
+				a.EmitLocalUseEvent(client, feature, nil)
 			},
 			expectedEventName: `"event":"rc_local_use"`,
 		},
 		{
-			name: "NotifyJsonParse success",
+			name: "EmitJsonParseEvent success",
 			action: func(a Analytics) {
-				a.NotifyJsonParse(client, feature, nil)
+				a.EmitJsonParseEvent(client, feature, nil)
 			},
 			expectedEventName: `"event":"rc_json_parse_success"`,
 		},
 		{
-			name: "NotifyJsonParse failure",
+			name: "EmitJsonParseEvent failure",
 			action: func(a Analytics) {
-				a.NotifyJsonParse(client, feature, errors.New("parse error"))
+				a.EmitJsonParseEvent(client, feature, errors.New("parse error"))
 			},
 			expectedEventName: `"event":"rc_json_parse_failure"`,
 			expectedDetails:   `"message":"parse error"`,
 		},
 		{
-			name: "NotifyPartialRollout",
+			name: "EmitPartialRolloutEvent",
 			action: func(a Analytics) {
-				a.NotifyPartialRollout(client, feature, 7, true)
+				a.EmitPartialRolloutEvent(client, feature, 7, true)
 			},
 			expectedEventName: `"event":"rc_rollout"`,
 			expectedDetails:   `"error":"meshnet 42 / 7"`,

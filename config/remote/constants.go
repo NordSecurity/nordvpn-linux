@@ -111,3 +111,7 @@ const (
 	FeatureLibtelio = "libtelio"
 	FeatureMeshnet  = "meshnet"
 )
+
+const (
+	ClientCli = "cli"
+)

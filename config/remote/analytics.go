@@ -4,58 +4,51 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
-// Analytics defines an interface for reporting various analytics events related to downloads,
-// local usage, JSON parsing, and partial rollouts. Implementations of this interface are
-// responsible for handling the notification logic for each event type.
+// Analytics defines an interface for reporting various analytics related to remote config
+// including: download, RC local usage, JSON parsing, and partial rollouts event.
 type Analytics interface {
-	NotifyDownload(string, string)
-	NotifyDownloadFailure(string, string, DownloadError)
-	NotifyLocalUse(string, string, error)
-	NotifyJsonParse(string, string, error)
-	NotifyPartialRollout(string, string, int, bool)
+	EmitDownloadEvent(string, string)
+	EmitDownloadFailureEvent(string, string, DownloadError)
+	EmitLocalUseEvent(string, string, error)
+	EmitJsonParseEvent(string, string, error)
+	EmitPartialRolloutEvent(string, string, int, bool)
 }
-type MooseAnalytics struct {
+type RemoteConfigAnalytics struct {
 	publisher events.PublishSubcriber[events.DebuggerEvent]
-	ctx       Event
+	userInfo  UserInfo
 }
 
-func NewRemoteConfigAnalytics(publisher events.PublishSubcriber[events.DebuggerEvent], ver string, rg int) *MooseAnalytics {
-	ctx := Event{
-		UserInfo: UserInfo{
-			AppVersion:   ver,
-			RolloutGroup: rg,
-		},
-	}
-	return &MooseAnalytics{publisher: publisher, ctx: ctx}
+func NewRemoteConfigAnalytics(publisher events.PublishSubcriber[events.DebuggerEvent], ver string, rg int) *RemoteConfigAnalytics {
+	return &RemoteConfigAnalytics{publisher: publisher, userInfo: UserInfo{AppVersion: ver, RolloutGroup: rg}}
 }
-func (ma *MooseAnalytics) NotifyDownload(client, featureName string) {
-	ma.publisher.Publish(*NewDownloadSuccessEvent(ma.ctx.UserInfo, client, featureName).ToDebuggerEvent())
+func (rca *RemoteConfigAnalytics) EmitDownloadEvent(client, featureName string) {
+	rca.publisher.Publish(*NewDownloadSuccessEvent(rca.userInfo, client, featureName).ToDebuggerEvent())
 }
 
-func (ma *MooseAnalytics) NotifyDownloadFailure(client, featureName string, err DownloadError) {
-	ma.publisher.Publish(
-		*NewDownloadFailureEvent(ma.ctx.UserInfo, client, featureName, err.Kind, err.Error()).ToDebuggerEvent())
+func (rca *RemoteConfigAnalytics) EmitDownloadFailureEvent(client, featureName string, err DownloadError) {
+	rca.publisher.Publish(
+		*NewDownloadFailureEvent(rca.userInfo, client, featureName, err.Kind, err.Error()).ToDebuggerEvent())
 }
 
-func (ma *MooseAnalytics) NotifyLocalUse(client, featureName string, err error) {
-	ma.publisher.Publish(
-		*NewLocalUseEvent(ma.ctx.UserInfo, client, featureName).ToDebuggerEvent())
+func (rca *RemoteConfigAnalytics) EmitLocalUseEvent(client, featureName string, err error) {
+	rca.publisher.Publish(
+		*NewLocalUseEvent(rca.userInfo, client, featureName).ToDebuggerEvent())
 }
 
-func (ma *MooseAnalytics) NotifyJsonParse(client, featureName string, err error) {
+func (rca *RemoteConfigAnalytics) EmitJsonParseEvent(client, featureName string, err error) {
 	var errMsg string
 	errorKind := ""
 	if err != nil {
 		errMsg = err.Error()
 		errorKind = err.Error()
 	}
-	ma.publisher.Publish(
-		*NewJSONParseEvent(ma.ctx.UserInfo, client, featureName, errorKind, errMsg).
+	rca.publisher.Publish(
+		*NewJSONParseEvent(rca.userInfo, client, featureName, errorKind, errMsg).
 			ToDebuggerEvent())
 }
 
-func (ma *MooseAnalytics) NotifyPartialRollout(client, featureName string, frg int, rolloutPerformed bool) {
-	ma.publisher.Publish(
-		*NewRolloutEvent(ma.ctx.UserInfo, client, featureName, frg, rolloutPerformed).
+func (rca *RemoteConfigAnalytics) EmitPartialRolloutEvent(client, featureName string, frg int, rolloutPerformed bool) {
+	rca.publisher.Publish(
+		*NewRolloutEvent(rca.userInfo, client, featureName, frg, rolloutPerformed).
 			ToDebuggerEvent())
 }

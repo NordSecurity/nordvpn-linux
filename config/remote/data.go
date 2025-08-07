@@ -99,12 +99,10 @@ func (m *FeatureMap) keys() []string {
 	return m.featureKeys
 }
 
-func (m *FeatureMap) features() map[string]*Feature {
-	return m.featureMap
-}
-
 func (m *FeatureMap) add(name string) {
-	m.featureKeys = append(m.featureKeys, name)
+	if _, ok := m.featureMap[name]; !ok {
+		m.featureKeys = append(m.featureKeys, name)
+	}
 	m.featureMap[name] = &Feature{
 		name: name,
 	}

@@ -427,9 +427,9 @@ func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error
 }
 
 func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
-	mle := subs.Subject[events.DebuggerEvent]{}
+	testSubject := subs.Subject[events.DebuggerEvent]{}
 	ve := devents.DebuggerEvents{
-		DebuggerEvents: &mle,
+		DebuggerEvents: &testSubject,
 	}
 	rc := &CdnRemoteConfig{
 		appVersion:     ver,

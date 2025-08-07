@@ -22,7 +22,7 @@ type jsonHash struct {
 	Hash string `json:"hash"`
 }
 
-// DownloadError holds information about a specific download faillure that is then used while reporting analytics about RemoteConfig.
+// DownloadError holds information about a specific download failure that is then used while reporting analytics about RemoteConfig.
 type DownloadError struct {
 	Kind  DownloadErrorKind
 	Cause error
@@ -117,7 +117,6 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 
 	incFiles, err := walkIncludeFiles(mainJsonStr, cdnBasePath, targetPath, cdn, fw)
 	if err != nil {
-		//TODO: fixme!
 		return false, &DownloadError{Kind: DownloadErrorIncludeFile, Cause: fmt.Errorf("downloading include files: %w", err)}
 	}
 

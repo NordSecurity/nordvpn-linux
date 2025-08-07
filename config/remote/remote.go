@@ -150,7 +150,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	}
 
 	if reloadDone {
-		// notify what is current state after config reload
+		// EmitEvent what is current state after config reload
 		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet)})
 	}
 
@@ -171,7 +171,7 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 
 			var downloadErr *DownloadError
 			if errors.As(err, &downloadErr) {
-				c.analytics.NotifyDownloadFailure("cli", feature.name, *downloadErr)
+				c.analytics.EmitDownloadFailureEvent(ClientCli, feature.name, *downloadErr)
 			}
 			if isNetworkRetryable(err) {
 				return false, err
@@ -181,7 +181,7 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 		if dnld {
 			// only if remote config was really downloaded
 			log.Println(internal.InfoPrefix, "feature [", feature, "] remote config downloaded to:", c.localCachePath)
-			c.analytics.NotifyDownload("cli", feature.name)
+			c.analytics.EmitDownloadEvent(ClientCli, feature.name)
 			newChangesDownloaded = true
 		}
 	}
@@ -196,11 +196,11 @@ func (c *CdnRemoteConfig) load() {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
 			log.Println(internal.ErrorPrefix, "failed loading feature [", feature.name, "] config from the disk:", err)
-			c.analytics.NotifyLocalUse("cli", feature.name, err)
+			c.analytics.EmitLocalUseEvent(ClientCli, feature.name, err)
 			continue
 		}
 		log.Println(internal.InfoPrefix, "feature [", feature.name, "] config loaded from:", c.localCachePath)
-		c.analytics.NotifyLocalUse("cli", feature.name, nil)
+		c.analytics.EmitLocalUseEvent(ClientCli, feature.name, nil)
 	}
 }
 
