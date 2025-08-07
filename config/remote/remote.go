@@ -125,8 +125,11 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	var err error
 	reloadDone := false
 	c.initOnce.Do(func() {
-		c.load() // on start init cache from disk
-		reloadDone = true
+		validDir, _ := internal.IsValidExistingDir(c.localCachePath)
+		if validDir {
+			c.load() // on start init cache from disk
+			reloadDone = true
+		}
 	})
 	needReload := false
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
