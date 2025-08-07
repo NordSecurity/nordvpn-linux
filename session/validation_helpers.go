@@ -92,7 +92,24 @@ func ValidateNordLynxPrivateKey(key string) error {
 	return nil
 }
 
+// ValidateNCCredentials checks if NC credentials are valid
+func ValidateNCCredentials(username, password string) error {
+	if username == "" || password == "" {
+		return ErrMissingNCCredentials
+	}
+	return nil
+}
+
+// ValidateEndpoint checks if the endpoint is valid
+func ValidateEndpoint(endpoint string) error {
+	if endpoint == "" {
+		return ErrInvalidEndpoint
+	}
+	return nil
+}
+
 // Type-safe external validators for each session type
 type TrustedPassExternalValidator func(token string, ownerID string) error
 type CredentialsExternalValidator func(username, password string) error
 type VPNCredentialsExternalValidator func(username, password, nordlynxKey string) error
+type NCCredentialsExternalValidator func(username, password, endpoint string) error
