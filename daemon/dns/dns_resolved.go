@@ -97,7 +97,7 @@ func setDNSWithSystemdResolve(ifname string, addresses []string) error {
 		"org.freedesktop.resolve1",
 		"/org/freedesktop/resolve1",
 		"org.freedesktop.resolve1.Manager",
-		"SetLinkDNSSEC", "is", fmt.Sprintf("%d", iface.Index), "allow-downgrade",
+		"SetLinkDNSSEC", "is", fmt.Sprintf("%d", iface.Index), "no",
 	).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("setting link dns sec for %s via dbus: %s: %w", iface.Name, strings.TrimSpace(string(out)), err)
