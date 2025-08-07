@@ -1,6 +1,7 @@
 package session
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -15,69 +16,127 @@ type VPNCredentialsResponse struct {
 
 type VPNCredentialsRenewalAPICall func() (*VPNCredentialsResponse, error)
 
+type vpnCredentialsConfig struct {
+	Username           string
+	Password           string
+	NordLynxPrivateKey string
+}
+
 type VPNCredentialsSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
-	validator          SessionStoreValidator
 	renewAPICall       VPNCredentialsRenewalAPICall
-	session            *vpnCredentialsSession
+	externalValidator  VPNCredentialsExternalValidator
 }
 
 // NewVPNCredentialsSessionStore create new VPN credential session store
 func NewVPNCredentialsSessionStore(
 	cfgManager config.Manager,
 	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
-	validator SessionStoreValidator,
 	renewAPICall VPNCredentialsRenewalAPICall,
+	externalValidator VPNCredentialsExternalValidator,
 ) SessionStore {
 	return &VPNCredentialsSessionStore{
 		cfgManager:         cfgManager,
 		errHandlerRegistry: errorHandlingRegistry,
-		validator:          validator,
 		renewAPICall:       renewAPICall,
-		session:            newVPNCredentialsSession(cfgManager),
+		externalValidator:  externalValidator,
 	}
 }
 
 // Renew VPN credentials if they have expired.
 func (s *VPNCredentialsSessionStore) Renew() error {
-	if err := s.validator.Validate(s.session); err == nil { // everything's valid and up-to-date
+	if err := s.validate(); err == nil {
 		return nil
+	}
+
+	if s.renewAPICall == nil {
+		return errors.New("renewal API call not configured")
 	}
 
 	resp, err := s.renewAPICall()
 	if err != nil {
-		return s.Invalidate(err)
+		return s.HandleError(err)
 	}
 
-	if err := s.session.SetNordlynxPrivateKey(resp.NordLynxPrivateKey); err != nil {
-		return err
+	if resp == nil {
+		return errors.New("renewal API returned nil response")
 	}
 
-	if err := s.session.SetUsername(resp.Username); err != nil {
-		s.session.reset()
-		return err
+	if resp.Username == "" || resp.Password == "" {
+		return errors.New("renewal API returned incomplete credentials")
 	}
 
-	if err := s.session.SetPassword(resp.Password); err != nil {
-		s.session.reset()
-		return err
+	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
+		data := c.TokensData[c.AutoConnectData.ID]
+		data.NordLynxPrivateKey = resp.NordLynxPrivateKey
+		data.OpenVPNUsername = resp.Username
+		data.OpenVPNPassword = resp.Password
+		c.TokensData[c.AutoConnectData.ID] = data
+		return c
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to save VPN credentials: %w", err)
 	}
 
 	return nil
 }
 
-// Invalidate triggers registered error handlers.
-// It does not modify or remove any tokens from storage and leaves this responsibility to the
-// client.
-func (s *VPNCredentialsSessionStore) Invalidate(reason error) error {
+// HandleError processes errors that occur during session operations.
+// It returns nil if the error was not handled, or the error itself if it was.
+func (s *VPNCredentialsSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		return fmt.Errorf("invalidating session: %w", reason)
+		return nil
 	}
 
 	for _, handler := range handlers {
 		handler(reason)
 	}
+
+	return fmt.Errorf("handling session error: %w", reason)
+}
+
+func (s *VPNCredentialsSessionStore) validate() error {
+	cfg, err := s.getConfig()
+	if err != nil {
+		return err
+	}
+
+	// Use validation helpers
+	if err := ValidateOpenVPNCredentials(cfg.Username, cfg.Password); err != nil {
+		return err
+	}
+
+	if err := ValidateNordLynxPrivateKey(cfg.NordLynxPrivateKey); err != nil {
+		return err
+	}
+
+	// Run external validation if available
+	if s.externalValidator != nil {
+		if err := s.externalValidator(cfg.Username, cfg.Password, cfg.NordLynxPrivateKey); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func (s *VPNCredentialsSessionStore) getConfig() (vpnCredentialsConfig, error) {
+	var cfg config.Config
+	if err := s.cfgManager.Load(&cfg); err != nil {
+		return vpnCredentialsConfig{}, err
+	}
+
+	data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+	if !ok {
+		return vpnCredentialsConfig{}, errors.New("non existing data")
+	}
+
+	return vpnCredentialsConfig{
+		Username:           data.OpenVPNUsername,
+		Password:           data.OpenVPNPassword,
+		NordLynxPrivateKey: data.NordLynxPrivateKey,
+	}, nil
 }
