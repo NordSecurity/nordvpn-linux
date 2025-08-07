@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -62,5 +63,49 @@ func buildTrustedPassSessionStoreAPIRenewalCall(clientAPI core.ClientAPI) sessio
 			Token:   resp.Token,
 			OwnerID: resp.OwnerID,
 		}, nil
+	}
+}
+
+func buildVPNCredentialsSessionStore(
+	confman config.Manager,
+	errRegistry *internal.ErrorHandlingRegistry[error],
+	clientAPI core.ClientAPI,
+) session.SessionStore {
+	return session.NewVPNCredentialsSessionStore(
+		confman,
+		errRegistry,
+		buildVPNCredentialsSessionStoreAPIRenewalCall(confman, clientAPI),
+		nil, // No external validator for now
+	)
+}
+
+func buildVPNCredentialsSessionStoreAPIRenewalCall(
+	confman config.Manager,
+	clientAPI core.ClientAPI,
+) session.VPNCredentialsRenewalAPICall {
+	return func() (*session.VPNCredentialsResponse, error) {
+		var cfg config.Config
+		if err := confman.Load(&cfg); err != nil {
+			return nil, err
+		}
+
+		data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+		if !ok {
+			return nil, errors.New("there is not data")
+		}
+
+		// actual API call passed into Session Store object
+		return func(token string) (*session.VPNCredentialsResponse, error) {
+			resp, err := clientAPI.ServiceCredentials(token)
+			if err != nil {
+				return nil, fmt.Errorf("getting vpn credentials data: %w", err)
+			}
+
+			return &session.VPNCredentialsResponse{
+				Username:           resp.Username,
+				Password:           resp.Password,
+				NordLynxPrivateKey: resp.NordlynxPrivateKey,
+			}, nil
+		}(data.Token)
 	}
 }
