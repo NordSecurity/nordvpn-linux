@@ -371,6 +371,152 @@ func TestTrustedPassExternalValidator(t *testing.T) {
 	}
 }
 
+func TestValidateOpenVPNCredentials(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		username string
+		password string
+		wantErr  error
+	}{
+		{
+			name:     "valid credentials",
+			username: "user123",
+			password: "pass456",
+			wantErr:  nil,
+		},
+		{
+			name:     "empty username",
+			username: "",
+			password: "pass456",
+			wantErr:  ErrMissingVPNCredentials,
+		},
+		{
+			name:     "empty password",
+			username: "user123",
+			password: "",
+			wantErr:  ErrMissingVPNCredentials,
+		},
+		{
+			name:     "both empty",
+			username: "",
+			password: "",
+			wantErr:  ErrMissingVPNCredentials,
+		},
+		{
+			name:     "whitespace username",
+			username: "   ",
+			password: "pass456",
+			wantErr:  nil, // whitespace is considered valid
+		},
+		{
+			name:     "whitespace password",
+			username: "user123",
+			password: "   ",
+			wantErr:  nil, // whitespace is considered valid
+		},
+		{
+			name:     "username with newline",
+			username: "user\n123",
+			password: "pass456",
+			wantErr:  nil,
+		},
+		{
+			name:     "password with tab",
+			username: "user123",
+			password: "pass\t456",
+			wantErr:  nil,
+		},
+		{
+			name:     "very long credentials",
+			username: "verylongusernamethatexceedsnormallengthbutshouldbefine",
+			password: "verylongpasswordthatexceedsnormallengthbutshouldbefine",
+			wantErr:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateOpenVPNCredentials(tt.username, tt.password)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.wantErr, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestValidateNordLynxPrivateKey(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name    string
+		key     string
+		wantErr error
+	}{
+		{
+			name:    "valid key",
+			key:     "abcdef123456789",
+			wantErr: nil,
+		},
+		{
+			name:    "empty key",
+			key:     "",
+			wantErr: ErrMissingNordLynxPrivateKey,
+		},
+		{
+			name:    "whitespace key",
+			key:     "   ",
+			wantErr: nil, // whitespace is considered valid
+		},
+		{
+			name:    "key with special characters",
+			key:     "key-with-special-chars!@#",
+			wantErr: nil, // any non-empty string is valid
+		},
+		{
+			name:    "base64-like key",
+			key:     "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXo=",
+			wantErr: nil,
+		},
+		{
+			name:    "hex-like key",
+			key:     "deadbeef1234567890abcdef",
+			wantErr: nil,
+		},
+		{
+			name:    "key with equals padding",
+			key:     "somekey==",
+			wantErr: nil,
+		},
+		{
+			name:    "key with forward slash",
+			key:     "some/key/value",
+			wantErr: nil,
+		},
+		{
+			name:    "very long key",
+			key:     "verylongkeythatexceedsnormallengthbutshouldbefineforprivatekeyusage1234567890",
+			wantErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateNordLynxPrivateKey(tt.key)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.wantErr, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestValidateExpiry_TimeBoundary(t *testing.T) {
 	category.Set(t, category.Unit)
 
