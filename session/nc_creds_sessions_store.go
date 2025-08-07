@@ -20,83 +20,136 @@ type NCCredentialsRenewalAPICall func() (*NCCredentialsResponse, error)
 type NCCredentialsSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
-	validator          SessionStoreValidator
 	renewAPICall       NCCredentialsRenewalAPICall
-	session            *ncCredentialsSession
 }
 
-// NewNCCredentialsSessionStore
+// NewNCCredentialsSessionStore creates a new NC credentials session store
 func NewNCCredentialsSessionStore(
 	cfgManager config.Manager,
 	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
-	validator SessionStoreValidator,
 	renewAPICall NCCredentialsRenewalAPICall,
 ) SessionStore {
 	return &NCCredentialsSessionStore{
 		cfgManager:         cfgManager,
 		errHandlerRegistry: errorHandlingRegistry,
-		validator:          validator,
 		renewAPICall:       renewAPICall,
-		session:            newNCCredentialsSession(cfgManager),
 	}
 }
 
-// Renew
+// Renew renews the NC credentials session
 func (s *NCCredentialsSessionStore) Renew() error {
-	if err := s.validator.Validate(s.session); err == nil { // everything's valid and up-to-date
+	if err := s.validate(); err == nil { // Credentials are still valid
 		return nil
 	}
 
-	var cfg config.Config
-	if err := s.cfgManager.Load(&cfg); err != nil {
-		return err
-	}
-
-	_, ok := cfg.TokensData[cfg.AutoConnectData.ID]
-	if !ok {
-		return fmt.Errorf("there is no data")
+	if s.renewAPICall == nil {
+		return fmt.Errorf("renewal API not configured")
 	}
 
 	resp, err := s.renewAPICall()
 	if err != nil {
-		return s.Invalidate(err)
+		return s.HandleError(err)
 	}
 
-	if err := s.session.SetUsername(resp.Username); err != nil {
-		s.session.reset()
+	if resp == nil {
+		return fmt.Errorf("renewal API returned nil response")
+	}
+
+	if err := ValidateNCCredentialsPresence(resp.Username, resp.Password); err != nil {
 		return err
 	}
 
-	if err := s.session.SetPassword(resp.Password); err != nil {
-		s.session.reset()
+	if err := ValidateEndpointPresence(resp.Endpoint); err != nil {
 		return err
 	}
 
-	if err := s.session.SetEndpoint(resp.Endpoint); err != nil {
-		s.session.reset()
+	expiryTime := time.Now().UTC().Add(time.Duration(resp.ExpiresIn) * time.Second)
+
+	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
+		if c.TokensData == nil {
+			c.TokensData = make(map[int64]config.TokenData)
+		}
+
+		data, ok := c.TokensData[c.AutoConnectData.ID]
+		if !ok {
+			data = config.TokenData{}
+		}
+		data.NCData.Username = resp.Username
+		data.NCData.Password = resp.Password
+		data.NCData.Endpoint = resp.Endpoint
+		data.NCData.ExpirationDate = expiryTime
+		c.TokensData[c.AutoConnectData.ID] = data
+		return c
+	})
+
+	if err != nil {
+		return fmt.Errorf("saving renewed nc creds: %w", err)
+	}
+
+	return nil
+}
+
+// HandleError processes errors that occur during session operations.
+// It returns nil if the error was not handled, or the error itself if it was.
+func (s *NCCredentialsSessionStore) HandleError(err error) error {
+	handlers := s.errHandlerRegistry.GetHandlers(err)
+	if len(handlers) == 0 {
+		return fmt.Errorf("handling NC credentials error: %w", err)
+	}
+
+	for _, handler := range handlers {
+		handler(err)
+	}
+
+	return err
+}
+
+// validate performs validation on the NC credentials session
+func (s *NCCredentialsSessionStore) validate() error {
+	cfg, err := s.getConfig()
+	if err != nil {
 		return err
 	}
 
-	expiresdAt := time.Now().Add(time.Duration(resp.ExpiresIn))
-	if err := s.session.SetExpiry(expiresdAt); err != nil {
-		s.session.reset()
+	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
+		return err
+	}
+
+	if err := ValidateNCCredentialsPresence(cfg.Username, cfg.Password); err != nil {
+		return err
+	}
+
+	if err := ValidateEndpointPresence(cfg.Endpoint); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Invalidate triggers error handlers for all stored user tokens using the provided error.
-// It does not modify or remove any tokens from storage and leaves this responsibility to the
-// client.
-func (s *NCCredentialsSessionStore) Invalidate(reason error) error {
-	handlers := s.errHandlerRegistry.GetHandlers(reason)
-	if len(handlers) == 0 {
-		return fmt.Errorf("invalidating session: %w", reason)
+// ncCredentialsConfig holds the NC credentials session configuration
+type ncCredentialsConfig struct {
+	Username  string
+	Password  string
+	Endpoint  string
+	ExpiresAt time.Time
+}
+
+// getConfig retrieves the current NC credentials session configuration
+func (s *NCCredentialsSessionStore) getConfig() (ncCredentialsConfig, error) {
+	var cfg config.Config
+	if err := s.cfgManager.Load(&cfg); err != nil {
+		return ncCredentialsConfig{}, err
 	}
 
-	for _, handler := range handlers {
-		handler(reason)
+	data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+	if !ok {
+		return ncCredentialsConfig{}, fmt.Errorf("no token data found for user ID: %d", cfg.AutoConnectData.ID)
 	}
-	return nil
+
+	return ncCredentialsConfig{
+		Username:  data.NCData.Username,
+		Password:  data.NCData.Password,
+		Endpoint:  data.NCData.Endpoint,
+		ExpiresAt: data.NCData.ExpirationDate,
+	}, nil
 }

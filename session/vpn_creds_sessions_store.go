@@ -71,7 +71,7 @@ func (s *VPNCredentialsSessionStore) Renew() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to save VPN credentials: %w", err)
+		return fmt.Errorf("failed to save vpn credentials: %w", err)
 	}
 
 	return nil
