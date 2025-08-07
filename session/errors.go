@@ -22,4 +22,10 @@ var (
 
 	// ErrMissingNordLynxPrivateKey indicates that the NordLynx private key is missing.
 	ErrMissingNordLynxPrivateKey = errors.New("missing nordlynx private key")
+
+	// ErrMissingNCCredentials indicates that NC credentials (username/password) are missing.
+	ErrMissingNCCredentials = errors.New("missing nc credentials")
+
+	// ErrInvalidEndpoint indicates that the endpoint is invalid or empty.
+	ErrInvalidEndpoint = errors.New("invalid endpoint")
 )

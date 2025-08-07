@@ -642,6 +642,157 @@ func TestValidateAccessTokenFormat_ExactLengthBoundaries(t *testing.T) {
 	}
 }
 
+func TestValidateNCCredentials(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		username string
+		password string
+		wantErr  error
+	}{
+		{
+			name:     "valid credentials",
+			username: "ncuser123",
+			password: "ncpass456",
+			wantErr:  nil,
+		},
+		{
+			name:     "empty username",
+			username: "",
+			password: "ncpass456",
+			wantErr:  ErrMissingNCCredentials,
+		},
+		{
+			name:     "empty password",
+			username: "ncuser123",
+			password: "",
+			wantErr:  ErrMissingNCCredentials,
+		},
+		{
+			name:     "both empty",
+			username: "",
+			password: "",
+			wantErr:  ErrMissingNCCredentials,
+		},
+		{
+			name:     "whitespace username",
+			username: "   ",
+			password: "ncpass456",
+			wantErr:  nil, // whitespace is considered valid
+		},
+		{
+			name:     "whitespace password",
+			username: "ncuser123",
+			password: "   ",
+			wantErr:  nil, // whitespace is considered valid
+		},
+		{
+			name:     "username with special chars",
+			username: "user@example.com",
+			password: "ncpass456",
+			wantErr:  nil,
+		},
+		{
+			name:     "password with special chars",
+			username: "ncuser123",
+			password: "p@ssw0rd!",
+			wantErr:  nil,
+		},
+		{
+			name:     "very long credentials",
+			username: "verylongusernamethatmightbeusedfornotificationcredentials",
+			password: "verylongpasswordthatmightbeusedfornotificationcredentials",
+			wantErr:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateNCCredentialsPresence(tt.username, tt.password)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.wantErr, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestValidateEndpoint(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		endpoint string
+		wantErr  error
+	}{
+		{
+			name:     "valid http endpoint",
+			endpoint: "http://example.com",
+			wantErr:  nil,
+		},
+		{
+			name:     "valid https endpoint",
+			endpoint: "https://example.com",
+			wantErr:  nil,
+		},
+		{
+			name:     "valid endpoint with port",
+			endpoint: "https://example.com:8080",
+			wantErr:  nil,
+		},
+		{
+			name:     "valid endpoint with path",
+			endpoint: "https://example.com/api/v1",
+			wantErr:  nil,
+		},
+		{
+			name:     "valid websocket endpoint",
+			endpoint: "wss://example.com/socket",
+			wantErr:  nil,
+		},
+		{
+			name:     "empty endpoint",
+			endpoint: "",
+			wantErr:  ErrInvalidEndpoint,
+		},
+		{
+			name:     "whitespace endpoint",
+			endpoint: "   ",
+			wantErr:  nil, // whitespace is considered valid
+		},
+		{
+			name:     "endpoint without protocol",
+			endpoint: "example.com",
+			wantErr:  nil, // any non-empty string is valid
+		},
+		{
+			name:     "localhost endpoint",
+			endpoint: "http://localhost:3000",
+			wantErr:  nil,
+		},
+		{
+			name:     "IP address endpoint",
+			endpoint: "http://192.168.1.1:8080",
+			wantErr:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateEndpointPresence(tt.endpoint)
+			if tt.wantErr != nil {
+				assert.Error(t, err)
+				assert.Equal(t, tt.wantErr, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestValidateTrustedPassTokenFormat_EdgeCharacters(t *testing.T) {
 	category.Set(t, category.Unit)
 
