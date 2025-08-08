@@ -79,14 +79,10 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 type jsonFileReaderWriter struct{}
 
 func (w jsonFileReaderWriter) writeFile(name string, content []byte, mode os.FileMode) error {
-	return internal.FileWrite(name, content, mode)
+	return internal.SecureFileWrite(name, content, mode)
 }
 func (w jsonFileReaderWriter) readFile(name string) ([]byte, error) {
-	// try to prevent overloading
-	if err := internal.IsFileTooBig(name); err != nil {
-		return nil, fmt.Errorf("reading file: %w", err)
-	}
-	return internal.FileRead(name)
+	return internal.SecureFileRead(name)
 }
 
 type noopWriter struct{}
@@ -129,8 +125,11 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	var err error
 	reloadDone := false
 	c.initOnce.Do(func() {
-		c.load() // on start init cache from disk
-		reloadDone = true
+		validDir, _ := internal.IsValidExistingDir(c.localCachePath)
+		if validDir {
+			c.load() // on start init cache from disk
+			reloadDone = true
+		}
 	})
 	needReload := false
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?

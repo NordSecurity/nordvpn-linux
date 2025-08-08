@@ -68,7 +68,10 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 
 	defer func() {
 		if err != nil {
-			internal.CleanupTmpFiles(targetPath, tmpExt)
+			validDir, _ := internal.IsValidExistingDir(targetPath)
+			if validDir {
+				internal.CleanupTmpFiles(targetPath, tmpExt)
+			}
 		}
 	}()
 
@@ -161,10 +164,6 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 	}
 
 	mainJsonFileName := f.FilePath(sourcePath)
-	if err := internal.IsFileTooBig(mainJsonFileName); err != nil {
-		return fmt.Errorf("reading main file: %w", err)
-	}
-
 	mainJsonStr, err := fr.readFile(mainJsonFileName)
 	if err != nil {
 		return fmt.Errorf("reading config file: %w", err)
