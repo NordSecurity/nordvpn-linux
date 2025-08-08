@@ -55,51 +55,63 @@ func (e EventType) String() string {
 type DownloadErrorKind int
 
 const (
-	DownloadErrorRemoteHashNotFound DownloadErrorKind = iota
-	DownloadErrorRemoteFileNotFound
+	DownloadErrorFileDownload DownloadErrorKind = iota
+	DownloadErrorFileRename
+	DownloadErrorHashIntegrity
+	DownloadErrorHashParsing
+	DownloadErrorIncludeFile
 	DownloadErrorIntegrity
-	DownloadErrorFileDownload
+	DownloadErrorLocalFS
 	DownloadErrorNetwork
 	DownloadErrorOther
+	DownloadErrorParsing
+	DownloadErrorRemoteFileNotFound
+	DownloadErrorRemoteHashNotFound
+	DownloadErrorWriteHash
+	DownloadErrorWriteJson
 )
 
 func (e DownloadErrorKind) String() string {
 	switch e {
-	case DownloadErrorRemoteHashNotFound:
-		return "remote_hash_not_found"
-	case DownloadErrorRemoteFileNotFound:
-		return "remote_file_not_found"
-	case DownloadErrorIntegrity:
-		return "integrity_error"
 	case DownloadErrorFileDownload:
 		return "file_download_error"
+	case DownloadErrorFileRename:
+		return "file_rename_error"
+	case DownloadErrorHashIntegrity:
+		return "hash_integrity_error"
+	case DownloadErrorHashParsing:
+		return "hash_parsing_error"
+	case DownloadErrorIncludeFile:
+		return "include_file_error"
+	case DownloadErrorIntegrity:
+		return "integrity_error"
+	case DownloadErrorLocalFS:
+		return "local_fs_error"
 	case DownloadErrorNetwork:
 		return "network_error"
 	case DownloadErrorOther:
 		return "other_error"
+	case DownloadErrorParsing:
+		return "parsing_error"
+	case DownloadErrorRemoteFileNotFound:
+		return "remote_file_not_found"
+	case DownloadErrorRemoteHashNotFound:
+		return "remote_hash_not_found"
+	case DownloadErrorWriteHash:
+		return "write_hash_error"
+	case DownloadErrorWriteJson:
+		return "write_json_error"
 	default:
 		return fmt.Sprintf("%d", int(e))
 	}
 }
 
-// FeatureName defines the name of a feature for remote config.
-type FeatureName int
-
 const (
-	FeatureMain FeatureName = iota
-	FeatureLibtelio
-	FeatureMeshnet
+	FeatureMain     = "nordvpn"
+	FeatureLibtelio = "libtelio"
+	FeatureMeshnet  = "meshnet"
 )
 
-func (f FeatureName) String() string {
-	switch f {
-	case FeatureMain:
-		return "nordvpn"
-	case FeatureLibtelio:
-		return "libtelio"
-	case FeatureMeshnet:
-		return "meshnet"
-	default:
-		return fmt.Sprintf("%d", int(f))
-	}
-}
+const (
+	ClientCli = "cli"
+)

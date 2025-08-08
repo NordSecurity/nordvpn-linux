@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	devents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -281,7 +282,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 		{
@@ -289,7 +290,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.1.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: true,
 		},
 		{
@@ -297,7 +298,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    true,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 	}
@@ -426,19 +427,24 @@ func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error
 }
 
 func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
+	testSubject := subs.Subject[events.DebuggerEvent]{}
+	ve := devents.DebuggerEvents{
+		DebuggerEvents: &testSubject,
+	}
 	rc := &CdnRemoteConfig{
 		appVersion:     ver,
 		appEnvironment: env,
 		remotePath:     httpPath,
 		localCachePath: localPath,
 		cdn:            cdn,
-		features:       make(FeatureMap),
+		features:       NewFeatureMap(),
+		analytics:      NewRemoteConfigAnalytics(ve.DebuggerEvents, "", 10),
 		notifier:       &subs.Subject[RemoteConfigEvent]{},
 	}
-	rc.features.Add(FeatureMain.String())
-	rc.features.Add(FeatureLibtelio.String())
-	rc.features.Add(testFeatureNoRc)
-	rc.features.Add(testFeatureWithRc)
+	rc.features.add(FeatureMain)
+	rc.features.add(FeatureLibtelio)
+	rc.features.add(testFeatureNoRc)
+	rc.features.add(testFeatureWithRc)
 	return rc
 }
 
