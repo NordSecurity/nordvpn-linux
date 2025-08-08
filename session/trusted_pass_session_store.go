@@ -3,6 +3,7 @@ package session
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -31,7 +32,7 @@ type TrustedPassSessionStore struct {
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       TrustedPassRenewalAPICall
 
-	// optional external validator with
+	// optional external validator
 	externalValidator TrustedPassExternalValidator
 }
 
@@ -88,6 +89,7 @@ func (s *TrustedPassSessionStore) Renew() error {
 func (s *TrustedPassSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
+		log.Println(internal.InfoPrefix, "No handlers for trusted pass session store is registered")
 		return nil
 	}
 

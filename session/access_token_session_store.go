@@ -110,6 +110,7 @@ func (s *AccessTokenSessionStore) validate() error {
 func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
+		log.Println(internal.InfoPrefix, "No handlers for access token session store is registered")
 		return nil
 	}
 
@@ -153,7 +154,7 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("saving access token data: %w", err)
 	}
 
 	return nil
