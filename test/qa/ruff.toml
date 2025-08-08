@@ -61,8 +61,6 @@ select = [
     "D213",
     # Use triple double quotes
     "D300",
-    # First line should end with a period
-    "D400",
     # First word of the first line should be capitalized
     "D403",
     # Missing dashed underline after section
