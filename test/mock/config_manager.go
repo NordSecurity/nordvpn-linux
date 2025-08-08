@@ -1,6 +1,7 @@
 package mock
 
 import (
+	"encoding/json"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -23,52 +24,24 @@ func NewMockConfigManager() *ConfigManager {
 	return &m
 }
 
-// deepCopyConfig creates a complete deep copy of the config to prevent race conditions
-// when accessing maps and pointers.
-func deepCopyConfig(src config.Config) config.Config {
-	// Shallow copy all value fields
-	dst := src
+// makeDeepCopy creates a complete deep copy of the config using JSON marshaling
+// to prevent race conditions when accessing maps and pointers.
+func makeDeepCopy(src config.Config) (config.Config, error) {
+	var dst config.Config
 
-	// Deep copy TokensData map to prevent concurrent map access
-	if src.TokensData != nil {
-		dst.TokensData = make(map[int64]config.TokenData, len(src.TokensData))
-		for userID, tokenData := range src.TokensData {
-			tokenCopy := tokenData
-			if tokenData.IdempotencyKey != nil {
-				keyCopy := *tokenData.IdempotencyKey
-				tokenCopy.IdempotencyKey = &keyCopy
-			}
-			dst.TokensData[userID] = tokenCopy
-		}
+	// Marshal the source config to JSON
+	data, err := json.Marshal(src)
+	if err != nil {
+		return dst, err
 	}
 
-	// Deep copy UsersData to prevent concurrent access to nested maps
-	if src.UsersData != nil {
-		usersCopy := *src.UsersData
-		if src.UsersData.NotifyOff != nil {
-			usersCopy.NotifyOff = make(config.UidBoolMap, len(src.UsersData.NotifyOff))
-			for uid, value := range src.UsersData.NotifyOff {
-				usersCopy.NotifyOff[uid] = value
-			}
-		}
-
-		if src.UsersData.TrayOff != nil {
-			usersCopy.TrayOff = make(config.UidBoolMap, len(src.UsersData.TrayOff))
-			for uid, value := range src.UsersData.TrayOff {
-				usersCopy.TrayOff[uid] = value
-			}
-		}
-
-		dst.UsersData = &usersCopy
+	// Unmarshal back to create a deep copy
+	err = json.Unmarshal(data, &dst)
+	if err != nil {
+		return dst, err
 	}
 
-	// Deep copy MeshDevice pointer to prevent concurrent access
-	if src.MeshDevice != nil {
-		meshCopy := *src.MeshDevice
-		dst.MeshDevice = &meshCopy
-	}
-
-	return dst
+	return dst, nil
 }
 
 func (m *ConfigManager) SaveWith(fn config.SaveFunc) error {
@@ -83,7 +56,11 @@ func (m *ConfigManager) SaveWith(fn config.SaveFunc) error {
 		m.Cfg = &config.Config{}
 	}
 
-	copyCfg := deepCopyConfig(*m.Cfg)
+	copyCfg, err := makeDeepCopy(*m.Cfg)
+	if err != nil {
+		return err
+	}
+
 	updatedCfg := fn(copyCfg)
 	*m.Cfg = updatedCfg
 
@@ -103,7 +80,12 @@ func (m *ConfigManager) Load(c *config.Config) error {
 		m.Cfg = &config.Config{}
 	}
 
-	*c = deepCopyConfig(*m.Cfg)
+	copyCfg, err := makeDeepCopy(*m.Cfg)
+	if err != nil {
+		return err
+	}
+
+	*c = copyCfg
 	return nil
 }
 
