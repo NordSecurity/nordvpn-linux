@@ -7,7 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -37,9 +38,9 @@ func SecureFileRead(path string) ([]byte, error) {
 		return nil, fmt.Errorf("%w: %d bytes", ErrFileTooLarge, info.Size())
 	}
 
-	fd, err := syscall.Open(cleanPath, syscall.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	fd, err := unix.Open(cleanPath, unix.O_RDONLY|unix.O_NOFOLLOW, 0)
 	if err != nil {
-		if !errors.Is(err, syscall.EINVAL) {
+		if !errors.Is(err, unix.EINVAL) {
 			return nil, fmt.Errorf("open failed: %w", err)
 		}
 		// fallback to regular open if O_NOFOLLOW is not supported
@@ -50,11 +51,11 @@ func SecureFileRead(path string) ([]byte, error) {
 		// use regular file read
 		return FileRead(cleanPath)
 	}
-	defer syscall.Close(fd)
+	defer unix.Close(fd)
 
 	// get file info from already open file descriptor (second check)
-	var stat syscall.Stat_t
-	if err := syscall.Fstat(fd, &stat); err != nil {
+	var stat unix.Stat_t
+	if err := unix.Fstat(fd, &stat); err != nil {
 		return nil, fmt.Errorf("fstat failed: %w", err)
 	}
 
@@ -64,7 +65,7 @@ func SecureFileRead(path string) ([]byte, error) {
 	}
 
 	// check if regular file (not tty or device)
-	if stat.Mode&syscall.S_IFMT != syscall.S_IFREG {
+	if stat.Mode&unix.S_IFMT != unix.S_IFREG {
 		return nil, ErrNotRegularFile
 	}
 
@@ -127,7 +128,7 @@ func CheckPathForSymlinks(path string) error {
 func VerifyNotLink(path string) error {
 	info, err := os.Lstat(path)
 	if err != nil {
-		return fmt.Errorf("lstat failed: %w", err)
+		return fmt.Errorf("os.lstat failed: %w", err)
 	}
 
 	// check if symlink
@@ -136,10 +137,13 @@ func VerifyNotLink(path string) error {
 	}
 
 	// check for hardlinks
-	if stat, ok := info.Sys().(*syscall.Stat_t); ok {
-		if stat.Nlink > 1 {
-			return fmt.Errorf("%w: %d links", ErrHardlinkDetected, stat.Nlink)
-		}
+	var stat unix.Stat_t
+	err = unix.Lstat(path, &stat)
+	if err != nil {
+		return fmt.Errorf("unix.lstat failed: %w", err)
+	}
+	if stat.Nlink > 1 {
+		return fmt.Errorf("%w: %d links", ErrHardlinkDetected, stat.Nlink)
 	}
 
 	return nil
