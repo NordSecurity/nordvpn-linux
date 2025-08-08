@@ -104,7 +104,7 @@ func (r *RPC) connect(
 	source pb.ConnectionSource,
 ) (didFail bool, retErr error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
-		if errors.Is(err, core.ErrLoginTokenRevoked) {
+		if errors.Is(err, core.ErrUnauthorized) {
 			srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
 		}
 		return false, internal.ErrNotLoggedIn

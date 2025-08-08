@@ -25,7 +25,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
-	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -70,6 +69,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
@@ -304,9 +304,10 @@ func main() {
 		machineIdGenerator.GetUsedInformationMask(),
 	)
 
-	loginTokenErrHandlingReg := core.NewErrorHandlingRegistry[int64]()
+	invalidSessionErrHandlingReg := internal.NewErrorHandlingRegistry[error]()
+
 	// encapsulating initialization logic
-	clientAPI, loginTokenManager := func() (core.ClientAPI, core.TokenManager) {
+	clientAPI, accessTokenSessionStore := func() (core.ClientAPI, session.SessionStore) {
 		api := core.NewSimpleAPI(
 			userAgent,
 			daemon.BaseURL,
@@ -314,19 +315,8 @@ func main() {
 			validator,
 		)
 
-		tokenValidator := core.NewLoginTokenValidator(
-			api,
-			auth.NewTokenExpirationChecker(),
-		)
-
-		tokenman := core.NewLoginTokenManager(
-			fsystem,
-			api.TokenRenew,
-			loginTokenErrHandlingReg,
-			tokenValidator,
-		)
-
-		return core.NewSmartClientAPI(api, tokenman), tokenman
+		sessionStore := buildAccessTokenSessionStore(fsystem, invalidSessionErrHandlingReg, api)
+		return core.NewSmartClientAPI(api, sessionStore), sessionStore
 	}()
 
 	// populate build target configuration
@@ -504,6 +494,8 @@ func main() {
 
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
+
+	trustedPassSessionStore := buildTrustedPassSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
 		clientAPI,
@@ -511,7 +503,7 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
-		loginTokenManager,
+		accessTokenSessionStore, trustedPassSessionStore,
 	)
 
 	endpointResolver := network.NewDefaultResolverChain(fw)
@@ -522,34 +514,18 @@ func main() {
 		meshnetEvents.PeerUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem))
 
-	// on token invalidation (unauthorized access, missing server resources, invalid request)
-	// perform user log-out action
-	loginTokenErrHandlingReg.Add(
-		func(uid int64) {
-			discArgs := access.DisconnectInput{
-				Networker:                  netw,
-				ConfigManager:              fsystem,
-				PublishDisconnectEventFunc: daemonEvents.Service.Disconnect.Publish,
-			}
-			result := access.ForceLogoutWithoutToken(access.ForceLogoutWithoutTokenInput{
-				AuthChecker:            authChecker,
-				Netw:                   netw,
-				NcClient:               notificationClient,
-				ConfigManager:          fsystem,
-				PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
-				DebugPublisherFunc:     debugSubject.Publish,
-				DisconnectFunc:         func() (bool, error) { return access.Disconnect(discArgs) },
-			})
-
-			if result.Err != nil {
-				log.Println(internal.ErrorPrefix, "logging out on login-token-invalidation hook: %w", err)
-			}
-
-			if result.Status == internal.CodeSuccess {
-				log.Println(internal.DebugPrefix, "successfully logged out after detecting invalid credentials")
-			}
+	// on session unrecoverable error perform user log-out action
+	daemon.RegisterSessionErrorHandler(
+		invalidSessionErrHandlingReg,
+		daemon.SessionErrorHandlerDependencies{
+			AuthChecker:            authChecker,
+			Networker:              netw,
+			NotificationClient:     notificationClient,
+			ConfigManager:          fsystem,
+			PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
+			PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
+			DebugPublisherFunc:     debugSubject.Publish,
 		},
-		core.ErrUnauthorized, core.ErrNotFound, core.ErrBadRequest,
 	)
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()

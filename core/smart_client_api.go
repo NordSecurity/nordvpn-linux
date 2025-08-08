@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/google/uuid"
 )
 
@@ -20,22 +21,18 @@ type ClientAPI interface {
 }
 
 type smartClientAPI struct {
-	wrapped  RawClientAPI
-	tokenMan TokenManager
+	wrapped RawClientAPI
+	store   session.TokenSessionStore
 }
 
 // NewSmartClientAPI creates new client instance of smart-API
-func NewSmartClientAPI(client RawClientAPI, loginTokenMan TokenManager) ClientAPI {
-	return &smartClientAPI{wrapped: client, tokenMan: loginTokenMan}
+func NewSmartClientAPI(client RawClientAPI, sessionStore session.TokenSessionStore) ClientAPI {
+	return &smartClientAPI{wrapped: client, store: sessionStore}
 }
 
-func callWithToken[T any](tokenMan TokenManager, call func(token string) (T, error)) (T, error) {
+func callWithToken[T any](store session.TokenSessionStore, call func(token string) (T, error)) (T, error) {
 	callAPIWithToken := func() (T, error) {
-		token, err := tokenMan.Token()
-		if err != nil {
-			var zero T
-			return zero, err
-		}
+		token := store.GetToken()
 		return call(token)
 	}
 
@@ -45,7 +42,7 @@ func callWithToken[T any](tokenMan TokenManager, call func(token string) (T, err
 	}
 
 	if errors.Is(err, ErrUnauthorized) {
-		if err := tokenMan.Renew(); err != nil {
+		if err := store.Renew(); err != nil {
 			var zero T
 			return zero, err
 		}
@@ -54,20 +51,20 @@ func callWithToken[T any](tokenMan TokenManager, call func(token string) (T, err
 	}
 
 	if errors.Is(err, ErrUnauthorized) {
-		tokenMan.Invalidate(ErrUnauthorized)
+		store.HandleError(ErrUnauthorized)
 	}
 
 	return res, err
 }
 
 func (s *smartClientAPI) NotificationCredentials(appUserID string) (NotificationCredentialsResponse, error) {
-	return callWithToken(s.tokenMan, func(token string) (NotificationCredentialsResponse, error) {
+	return callWithToken(s.store, func(token string) (NotificationCredentialsResponse, error) {
 		return s.wrapped.NotificationCredentials(token, appUserID)
 	})
 }
 
 func (s *smartClientAPI) NotificationCredentialsRevoke(appUserID string, purgeSession bool) (NotificationCredentialsRevokeResponse, error) {
-	return callWithToken(s.tokenMan, func(token string) (NotificationCredentialsRevokeResponse, error) {
+	return callWithToken(s.store, func(token string) (NotificationCredentialsRevokeResponse, error) {
 		return s.wrapped.NotificationCredentialsRevoke(token, appUserID, purgeSession)
 	})
 }
@@ -81,38 +78,38 @@ func (s *smartClientAPI) TokenRenew(renewalToken string, idempotencyKey uuid.UUI
 }
 
 func (s *smartClientAPI) Services() (ServicesResponse, error) {
-	return callWithToken(s.tokenMan, func(token string) (ServicesResponse, error) {
+	return callWithToken(s.store, func(token string) (ServicesResponse, error) {
 		return s.wrapped.Services(token)
 	})
 }
 
 func (s *smartClientAPI) CurrentUser() (*CurrentUserResponse, error) {
-	return callWithToken(s.tokenMan, func(token string) (*CurrentUserResponse, error) {
+	return callWithToken(s.store, func(token string) (*CurrentUserResponse, error) {
 		return s.wrapped.CurrentUser(token)
 	})
 }
 
 func (s *smartClientAPI) DeleteToken() error {
-	_, err := callWithToken(s.tokenMan, func(token string) (struct{}, error) {
+	_, err := callWithToken(s.store, func(token string) (struct{}, error) {
 		return struct{}{}, s.wrapped.DeleteToken(token)
 	})
 	return err
 }
 
 func (s *smartClientAPI) TrustedPassToken() (*TrustedPassTokenResponse, error) {
-	return callWithToken(s.tokenMan, func(token string) (*TrustedPassTokenResponse, error) {
+	return callWithToken(s.store, func(token string) (*TrustedPassTokenResponse, error) {
 		return s.wrapped.TrustedPassToken(token)
 	})
 }
 
 func (s *smartClientAPI) MultifactorAuthStatus() (*MultifactorAuthStatusResponse, error) {
-	return callWithToken(s.tokenMan, func(token string) (*MultifactorAuthStatusResponse, error) {
+	return callWithToken(s.store, func(token string) (*MultifactorAuthStatusResponse, error) {
 		return s.wrapped.MultifactorAuthStatus(token)
 	})
 }
 
 func (s *smartClientAPI) Logout() error {
-	_, ret := callWithToken(s.tokenMan, func(token string) (struct{}, error) {
+	_, ret := callWithToken(s.store, func(token string) (struct{}, error) {
 		return struct{}{}, s.wrapped.Logout(token)
 	})
 	return ret
@@ -151,13 +148,13 @@ func (s *smartClientAPI) CreateUser(email, password string) (*UserCreateResponse
 }
 
 func (s *smartClientAPI) Orders() ([]Order, error) {
-	return callWithToken(s.tokenMan, func(token string) ([]Order, error) {
+	return callWithToken(s.store, func(token string) ([]Order, error) {
 		return s.wrapped.Orders(token)
 	})
 }
 
 func (s *smartClientAPI) Payments() ([]PaymentResponse, error) {
-	return callWithToken(s.tokenMan, func(token string) ([]PaymentResponse, error) {
+	return callWithToken(s.store, func(token string) ([]PaymentResponse, error) {
 		return s.wrapped.Payments(token)
 	})
 }

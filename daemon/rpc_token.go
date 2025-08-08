@@ -13,7 +13,7 @@ import (
 // TokenInfo returns token information.
 func (r *RPC) TokenInfo(ctx context.Context, _ *pb.Empty) (*pb.TokenInfoResponse, error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
-		if errors.Is(err, core.ErrLoginTokenRevoked) {
+		if errors.Is(err, core.ErrUnauthorized) {
 			return &pb.TokenInfoResponse{Type: internal.CodeRevokedAccessToken}, nil
 		}
 		return nil, internal.ErrNotLoggedIn
