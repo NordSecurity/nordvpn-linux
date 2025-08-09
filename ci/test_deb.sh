@@ -1,10 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euxo pipefail
 
-categories="${1}"
-pattern="${2:-}"
 
-export COVERDIR="covdatafiles"
+# load the env vars needed for tests
+source "${WORKDIR}/ci/qa_tests_env.sh"
 
 if ! "${WORKDIR}"/ci/install_deb.sh; then
     echo "failed to install deb"
@@ -29,61 +28,17 @@ sudo ip link del wg0diagnose
 echo "~~~~~~~~~~~~~~"
 
 
-mkdir -p "${WORKDIR}"/dist/logs
+rm -fr "${GOCOVERDIR}"
+mkdir -p "${GOCOVERDIR}"
 
-cd "${WORKDIR}"/test/qa || exit
+if ! sudo grep -q "export GOCOVERDIR=${GOCOVERDIR}" "/etc/init.d/nordvpn"; then
+    sudo sed -i "1a export GOCOVERDIR=${GOCOVERDIR}" "/etc/init.d/nordvpn"
 
-args=()
-read -ra array <<< "$categories"
-for category in "${array[@]}"
-do
-    case "${category}" in
-        "all")
-            ;;
-        *)
-        args+=("test_${category}.py")
-            ;;
-    esac
-done
+    revert_go_cov() {
+        sudo sed -i "2d" "/etc/init.d/nordvpn"
+    }
 
-case "${pattern}" in
-    "")
-        ;;
-    *)
-	args+=("-k ${pattern}")
-        ;;
-esac
-
-
-mkdir -p "${WORKDIR}"/"${COVERDIR}"
-
-if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
-    sudo sed -i "1a export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"
+    trap revert_go_cov EXIT INT TERM
 fi
 
-if [[ -n ${LATTE:-} ]]; then
-    if ! sudo grep -q "export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"; then
-        sudo sed -i "1a export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"
-    fi
-
-    if ! sudo grep -q "export HTTP_TRANSPORTS=http1" "/etc/init.d/nordvpn"; then
-        sudo sed -i "1a export HTTP_TRANSPORTS=http1" "/etc/init.d/nordvpn"
-    fi
-fi
-
-# Disable the TUI loader indicator to prevent interference during automated tests
-export DISABLE_TUI_LOADER=1
-
-python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true \
---html="${WORKDIR}"/dist/test_artifacts/report.html --self-contained-html  --junitxml="${WORKDIR}"/dist/test_artifacts/report.xml "${args[@]}"
-
-if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
-    sudo sed -i "2d" "/etc/init.d/nordvpn"
-fi
-
-# # To print goroutine profile when debugging:
-# RET=$?
-# if [ $RET != 0 ]; then
-#     curl http://localhost:6960/debug/pprof/goroutine?debug=1
-# fi
-# exit $RET
+"${WORKDIR}/ci/qa_run_tests.sh" "$@"
