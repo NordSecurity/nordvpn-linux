@@ -105,11 +105,11 @@ func (s *VPNCredentialsSessionStore) validate() error {
 	}
 
 	// Use validation helpers
-	if err := ValidateOpenVPNCredentials(cfg.Username, cfg.Password); err != nil {
+	if err := ValidateOpenVPNCredentialsPresence(cfg.Username, cfg.Password); err != nil {
 		return err
 	}
 
-	if err := ValidateNordLynxPrivateKey(cfg.NordLynxPrivateKey); err != nil {
+	if err := ValidateNordLynxPrivateKeyPresence(cfg.NordLynxPrivateKey); err != nil {
 		return err
 	}
 
