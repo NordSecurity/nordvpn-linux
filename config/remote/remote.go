@@ -150,7 +150,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	}
 
 	if reloadDone {
-		// EmitEvent what is current state after config reload
+		// notify what is current state after config reload
 		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet)})
 	}
 
