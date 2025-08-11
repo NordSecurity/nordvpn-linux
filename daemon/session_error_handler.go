@@ -71,7 +71,7 @@ func createSessionErrorHandler(
 			state.mu.Unlock()
 		}()
 
-		log.Printf("%s Session error detected: %v. Forcing logout.", internal.DebugPrefix, reason)
+		log.Printf("%s Session error detected: %v. Forcing logout.\n", internal.DebugPrefix, reason)
 
 		discArgs := access.DisconnectInput{
 			Networker:                  deps.Networker,

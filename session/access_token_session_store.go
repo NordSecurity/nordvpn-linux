@@ -98,7 +98,7 @@ func (s *AccessTokenSessionStore) validate() error {
 	// Run external validation if available
 	if s.externalValidator != nil {
 		if err := s.externalValidator(cfg.Token); err != nil {
-			return err
+			return fmt.Errorf("validating access token with external validator: %w", err)
 		}
 	}
 
