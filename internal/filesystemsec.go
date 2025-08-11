@@ -14,9 +14,6 @@ import (
 var (
 	ErrSymlinkDetected  = errors.New("symlink detected in path")
 	ErrHardlinkDetected = errors.New("hardlink detected")
-	ErrPathTraversal    = errors.New("path traversal attempt detected")
-	ErrInvalidPath      = errors.New("path outside allowed directories")
-	ErrSuspiciousPath   = errors.New("suspicious path pattern detected")
 	ErrFileTooLarge     = errors.New("file size exceeds maximum allowed")
 	ErrNotRegularFile   = errors.New("not a regular file")
 )
@@ -29,15 +26,6 @@ func SecureFileRead(path string) ([]byte, error) {
 		return nil, fmt.Errorf("symlink check failed: %w", err)
 	}
 
-	// check file size first
-	info, err := os.Lstat(cleanPath)
-	if err != nil {
-		return nil, fmt.Errorf("stat failed: %w", err)
-	}
-	if info.Size() > MaxBytesLimit {
-		return nil, fmt.Errorf("%w: %d bytes", ErrFileTooLarge, info.Size())
-	}
-
 	fd, err := unix.Open(cleanPath, unix.O_RDONLY|unix.O_NOFOLLOW, 0)
 	if err != nil {
 		if !errors.Is(err, unix.EINVAL) {
@@ -48,18 +36,33 @@ func SecureFileRead(path string) ([]byte, error) {
 		if err := VerifyNotLink(cleanPath); err != nil {
 			return nil, err
 		}
-		// use regular file read
-		return FileRead(cleanPath)
+
+		// for fallback case, check file size before reading
+		info, err := os.Lstat(cleanPath)
+		if err != nil {
+			return nil, fmt.Errorf("stat failed: %w", err)
+		}
+		if info.Size() > MaxBytesLimit {
+			return nil, fmt.Errorf("%w: %d bytes", ErrFileTooLarge, info.Size())
+		}
+
+		// use regular file read with size limit
+		file, err := os.Open(cleanPath)
+		if err != nil {
+			return nil, fmt.Errorf("fallback open failed: %w", err)
+		}
+		defer file.Close()
+		return io.ReadAll(io.LimitReader(file, MaxBytesLimit))
 	}
 	defer unix.Close(fd)
 
-	// get file info from already open file descriptor (second check)
+	// get file info from already open file descriptor
 	var stat unix.Stat_t
 	if err := unix.Fstat(fd, &stat); err != nil {
 		return nil, fmt.Errorf("fstat failed: %w", err)
 	}
 
-	// validate file size again
+	// validate file size
 	if stat.Size > MaxBytesLimit {
 		return nil, fmt.Errorf("%w: %d bytes", ErrFileTooLarge, stat.Size)
 	}
