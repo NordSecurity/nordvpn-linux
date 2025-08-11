@@ -14,20 +14,20 @@ type Analytics interface {
 	EmitPartialRolloutEvent(string, string, int, bool)
 }
 type RemoteConfigAnalytics struct {
-	publisher events.PublishSubcriber[events.DebuggerEvent]
-	userInfo  UserInfo
+	publisher        events.PublishSubcriber[events.DebuggerEvent]
+	userRolloutGroup int
 }
 
-func NewRemoteConfigAnalytics(publisher events.PublishSubcriber[events.DebuggerEvent], ver string, rg int) *RemoteConfigAnalytics {
-	return &RemoteConfigAnalytics{publisher: publisher, userInfo: UserInfo{AppVersion: ver, RolloutGroup: rg}}
+func NewRemoteConfigAnalytics(publisher events.PublishSubcriber[events.DebuggerEvent], rg int) *RemoteConfigAnalytics {
+	return &RemoteConfigAnalytics{publisher: publisher, userRolloutGroup: rg}
 }
 func (rca *RemoteConfigAnalytics) EmitDownloadEvent(client, featureName string) {
-	rca.publisher.Publish(*NewDownloadSuccessEvent(rca.userInfo, client, featureName).ToDebuggerEvent())
+	rca.publisher.Publish(*NewDownloadSuccessEvent(rca.userRolloutGroup, client, featureName).ToDebuggerEvent())
 }
 
 func (rca *RemoteConfigAnalytics) EmitDownloadFailureEvent(client, featureName string, err DownloadError) {
 	rca.publisher.Publish(
-		*NewDownloadFailureEvent(rca.userInfo, client, featureName, err.Kind, err.Error()).ToDebuggerEvent())
+		*NewDownloadFailureEvent(rca.userRolloutGroup, client, featureName, err.Kind, err.Error()).ToDebuggerEvent())
 }
 
 func (rca *RemoteConfigAnalytics) EmitLocalUseEvent(client, featureName string, err error) {
@@ -38,7 +38,7 @@ func (rca *RemoteConfigAnalytics) EmitLocalUseEvent(client, featureName string, 
 		errorKind = err.Error()
 	}
 	rca.publisher.Publish(
-		*NewLocalUseEvent(rca.userInfo, client, featureName, errorKind, errMsg).ToDebuggerEvent())
+		*NewLocalUseEvent(rca.userRolloutGroup, client, featureName, errorKind, errMsg).ToDebuggerEvent())
 }
 
 func (rca *RemoteConfigAnalytics) EmitJsonParseEvent(client, featureName string, err error) {
@@ -49,12 +49,12 @@ func (rca *RemoteConfigAnalytics) EmitJsonParseEvent(client, featureName string,
 		errorKind = err.Error()
 	}
 	rca.publisher.Publish(
-		*NewJSONParseEvent(rca.userInfo, client, featureName, errorKind, errMsg).
+		*NewJSONParseEvent(rca.userRolloutGroup, client, featureName, errorKind, errMsg).
 			ToDebuggerEvent())
 }
 
 func (rca *RemoteConfigAnalytics) EmitPartialRolloutEvent(client, featureName string, frg int, rolloutPerformed bool) {
 	rca.publisher.Publish(
-		*NewRolloutEvent(rca.userInfo, client, featureName, frg, rolloutPerformed).
+		*NewRolloutEvent(rca.userRolloutGroup, client, featureName, frg, rolloutPerformed).
 			ToDebuggerEvent())
 }

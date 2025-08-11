@@ -12,12 +12,7 @@ import (
 
 func TestEventJSONOutput(t *testing.T) {
 	category.Set(t, category.Unit)
-	ctx := UserInfo{
-		AppVersion:   "1.2.3",
-		Country:      "XX",
-		ISP:          "Super Duper ISP",
-		RolloutGroup: 42,
-	}
+	rolloutGroup := 42
 
 	testCases := []struct {
 		name            string
@@ -28,49 +23,49 @@ func TestEventJSONOutput(t *testing.T) {
 	}{
 		{
 			name:            "Rollout Success",
-			event:           NewRolloutEvent(ctx, "test-client", FeatureMeshnet, 50, true),
+			event:           NewRolloutEvent(rolloutGroup, "test-client", FeatureMeshnet, 50, true),
 			expectedResult:  rolloutYes,
 			expectedError:   "meshnet 42 / 50",
 			expectedMessage: FeatureMeshnet,
 		},
 		{
 			name:            "Rollout Failure",
-			event:           NewRolloutEvent(ctx, "test-client", FeatureMeshnet, 50, false),
+			event:           NewRolloutEvent(rolloutGroup, "test-client", FeatureMeshnet, 50, false),
 			expectedResult:  rolloutNo,
 			expectedError:   "meshnet 42 / 50",
 			expectedMessage: FeatureMeshnet,
 		},
 		{
 			name:            "Download Success",
-			event:           NewDownloadSuccessEvent(ctx, "client", FeatureMeshnet),
+			event:           NewDownloadSuccessEvent(rolloutGroup, "client", FeatureMeshnet),
 			expectedResult:  rcSuccess,
 			expectedError:   "",
 			expectedMessage: "",
 		},
 		{
 			name:            "Download Failure",
-			event:           NewDownloadFailureEvent(ctx, "client", FeatureMain, DownloadErrorNetwork, "timeout"),
+			event:           NewDownloadFailureEvent(rolloutGroup, "client", FeatureMain, DownloadErrorNetwork, "timeout"),
 			expectedResult:  rcFailure,
 			expectedError:   DownloadErrorNetwork.String(),
 			expectedMessage: "timeout",
 		},
 		{
 			name:            "JSON Parse Success",
-			event:           NewJSONParseEvent(ctx, "client", FeatureLibtelio, "", ""),
+			event:           NewJSONParseEvent(rolloutGroup, "client", FeatureLibtelio, "", ""),
 			expectedResult:  rcSuccess,
 			expectedError:   "",
 			expectedMessage: "",
 		},
 		{
 			name:            "JSON Parse Failure",
-			event:           NewJSONParseEvent(ctx, "client", FeatureLibtelio, "syntax-error", "bad token"),
+			event:           NewJSONParseEvent(rolloutGroup, "client", FeatureLibtelio, "syntax-error", "bad token"),
 			expectedResult:  rcFailure,
 			expectedError:   "syntax-error",
 			expectedMessage: "bad token",
 		},
 		{
 			name:            "Local Use",
-			event:           NewLocalUseEvent(ctx, "client", FeatureLibtelio, "", ""),
+			event:           NewLocalUseEvent(rolloutGroup, "client", FeatureLibtelio, "", ""),
 			expectedResult:  rcSuccess,
 			expectedError:   "",
 			expectedMessage: "",
@@ -103,13 +98,8 @@ func TestEventJSONOutput(t *testing.T) {
 func TestDebuggerEventContextPaths(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	ctx := UserInfo{
-		AppVersion:   "3.1.0",
-		Country:      "Testland",
-		ISP:          "TestISP",
-		RolloutGroup: 42,
-	}
-	debugerEvent := NewDownloadFailureEvent(ctx, "test-client", FeatureLibtelio, DownloadErrorNetwork, "timeout").ToDebuggerEvent()
+	rolloutGroup := 42
+	debugerEvent := NewDownloadFailureEvent(rolloutGroup, "test-client", FeatureLibtelio, DownloadErrorNetwork, "timeout").ToDebuggerEvent()
 
 	expectedGeneralPaths := []string{
 		"device.*",
@@ -122,9 +112,6 @@ func TestDebuggerEventContextPaths(t *testing.T) {
 	// Assert: Verify the KeyBased context paths.
 	expectedKeyBasedPaths := []events.ContextValue{
 		{Path: debuggerEventBaseKey + ".type", Value: DownloadFailure.String()},
-		{Path: debuggerEventBaseKey + ".app_version", Value: "3.1.0"},
-		{Path: debuggerEventBaseKey + ".country", Value: "Testland"},
-		{Path: debuggerEventBaseKey + ".isp", Value: "TestISP"},
 		{Path: debuggerEventBaseKey + ".error", Value: DownloadErrorNetwork.String()},
 		{Path: debuggerEventBaseKey + ".feature_name", Value: FeatureLibtelio},
 		{Path: debuggerEventBaseKey + ".rollout_group", Value: 42},
@@ -134,14 +121,9 @@ func TestDebuggerEventContextPaths(t *testing.T) {
 
 func TestDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
 	category.Set(t, category.Unit)
-	ctx := UserInfo{
-		AppVersion:   "9.8.7",
-		Country:      "AA",
-		ISP:          "Testland ISP",
-		RolloutGroup: 99,
-	}
+	rolloutGroup := 99
 
-	event := NewDownloadFailureEvent(ctx, "test-env", FeatureLibtelio, DownloadErrorIntegrity, "Integrity corrupted")
+	event := NewDownloadFailureEvent(rolloutGroup, "test-env", FeatureLibtelio, DownloadErrorIntegrity, "Integrity corrupted")
 	debugerEvent := event.ToDebuggerEvent()
 
 	var payload map[string]interface{}

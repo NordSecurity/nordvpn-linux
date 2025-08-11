@@ -9,13 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-type UserInfo struct {
-	AppVersion   string
-	Country      string
-	ISP          string
-	RolloutGroup int
-}
-
 // EventDetails holds optional details for an event.
 type EventDetails struct {
 	Error   string `json:"error"`
@@ -24,8 +17,8 @@ type EventDetails struct {
 
 // Event is the main analytics event structure.
 type Event struct {
-	UserInfo `json:"-"`
 	EventDetails
+	RolloutGroup     int    `json:"-"`
 	MessageNamespace string `json:"namespace"`
 	Subscope         string `json:"subscope"`
 	Client           string `json:"client"`
@@ -35,21 +28,21 @@ type Event struct {
 	RolloutPerformed bool   `json:"-"`
 }
 
-func NewDownloadSuccessEvent(info UserInfo, client string, featureName string) Event {
+func NewDownloadSuccessEvent(rolloutGroup int, client string, featureName string) Event {
 	return Event{
-		UserInfo:    info,
-		Client:      client,
-		FeatureName: featureName,
-		Event:       DownloadSuccess.String(),
+		RolloutGroup: rolloutGroup,
+		Client:       client,
+		FeatureName:  featureName,
+		Event:        DownloadSuccess.String(),
 	}
 }
 
-func NewDownloadFailureEvent(info UserInfo, client string, featureName string, errorKind DownloadErrorKind, errorMessage string) Event {
+func NewDownloadFailureEvent(rolloutGroup int, client string, featureName string, errorKind DownloadErrorKind, errorMessage string) Event {
 	return Event{
-		UserInfo:    info,
-		Client:      client,
-		FeatureName: featureName,
-		Event:       DownloadFailure.String(),
+		RolloutGroup: rolloutGroup,
+		Client:       client,
+		FeatureName:  featureName,
+		Event:        DownloadFailure.String(),
 		EventDetails: EventDetails{
 			Error:   errorKind.String(),
 			Message: errorMessage,
@@ -57,14 +50,14 @@ func NewDownloadFailureEvent(info UserInfo, client string, featureName string, e
 	}
 }
 
-func NewLocalUseEvent(info UserInfo, client, featureName, errorKind, errorMessage string) Event {
+func NewLocalUseEvent(rolloutGroup int, client, featureName, errorKind, errorMessage string) Event {
 	details := EventDetails{}
 	if errorKind != "" {
 		details.Error = errorKind
 		details.Message = errorMessage
 	}
 	return Event{
-		UserInfo:     info,
+		RolloutGroup: rolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        LocalUse.String(),
@@ -72,7 +65,7 @@ func NewLocalUseEvent(info UserInfo, client, featureName, errorKind, errorMessag
 	}
 }
 
-func NewJSONParseEvent(info UserInfo, client string, featureName string, errorKind, errorMessage string) Event {
+func NewJSONParseEvent(rolloutGroup int, client string, featureName string, errorKind, errorMessage string) Event {
 	details := EventDetails{}
 	var eventType EventType
 	if errorKind != "" {
@@ -84,7 +77,7 @@ func NewJSONParseEvent(info UserInfo, client string, featureName string, errorKi
 	}
 
 	return Event{
-		UserInfo:     info,
+		RolloutGroup: rolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        eventType.String(),
@@ -92,14 +85,14 @@ func NewJSONParseEvent(info UserInfo, client string, featureName string, errorKi
 	}
 }
 
-func NewRolloutEvent(info UserInfo, client string, featureName string, featureRollout int, rolloutPerformed bool) Event {
+func NewRolloutEvent(rolloutGroup int, client string, featureName string, featureRollout int, rolloutPerformed bool) Event {
 	details := EventDetails{
-		Error:   fmt.Sprintf("%s %d / %d", featureName, info.RolloutGroup, featureRollout),
+		Error:   fmt.Sprintf("%s %d / %d", featureName, rolloutGroup, featureRollout),
 		Message: featureName,
 	}
 
 	return Event{
-		UserInfo:         info,
+		RolloutGroup:     rolloutGroup,
 		Client:           client,
 		FeatureName:      featureName,
 		Event:            Rollout.String(),
@@ -163,9 +156,6 @@ func (e Event) ToDebuggerEvent() *events.DebuggerEvent {
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
 			events.ContextValue{Path: debuggerEventBaseKey + ".type", Value: e.Event},
-			events.ContextValue{Path: debuggerEventBaseKey + ".app_version", Value: e.AppVersion},
-			events.ContextValue{Path: debuggerEventBaseKey + ".country", Value: e.Country},
-			events.ContextValue{Path: debuggerEventBaseKey + ".isp", Value: e.ISP},
 			events.ContextValue{Path: debuggerEventBaseKey + ".error", Value: e.Error},
 			events.ContextValue{Path: debuggerEventBaseKey + ".feature_name", Value: e.FeatureName},
 			events.ContextValue{Path: debuggerEventBaseKey + ".rollout_group", Value: e.RolloutGroup},
