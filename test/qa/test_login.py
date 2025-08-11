@@ -23,6 +23,8 @@ def teardown_module(module):  # noqa: ARG001
 
 
 def test_user_consent_is_displayed_on_login():
+    """Manual TC: LVPN-8241"""
+
     cli, _ = login.spawn_nordvpn_login()
     login.wait_for_consent_prompt(cli)
 
@@ -35,6 +37,8 @@ def test_user_consent_is_displayed_on_login():
 
 
 def test_invalid_input_repeats_consent_prompt_only():
+    """Manual TC: LVPN-8227"""
+
     cli, buffer = login.spawn_nordvpn_login()
     login.wait_for_consent_prompt(cli)
     first_output = buffer.getvalue()
@@ -50,6 +54,8 @@ def test_invalid_input_repeats_consent_prompt_only():
 
 
 def test_user_consent_prompt_reappears_after_ctrl_c_interrupt():
+    """Manual TC: LVPN-8244"""
+
     cli1, buffer1 = login.spawn_nordvpn_login()
     login.wait_for_consent_prompt(cli1)
     cli1.sendintr()
@@ -64,6 +70,8 @@ def test_user_consent_prompt_reappears_after_ctrl_c_interrupt():
 
 
 def test_user_consent_granted_after_pressing_y_and_does_not_appear_again():
+    """Manual TC: LVPN-8772"""
+
     cli, _ = login.spawn_nordvpn_login()
     login.wait_for_consent_prompt(cli)
 
@@ -82,12 +90,16 @@ def test_user_consent_granted_after_pressing_y_and_does_not_appear_again():
 
 
 def test_login():
+    """Manual TC: LVPN-505"""
+
     with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
         output = login.login_as("default")
         assert "Welcome to NordVPN! You can now connect to VPN by using 'nordvpn connect'." in output
 
 
 def test_invalid_token_login():
+    """Manual TC: LVPN-503"""
+
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--token", "xyz%#")
 
@@ -95,6 +107,8 @@ def test_invalid_token_login():
 
 
 def test_repeated_login():
+    """Manual TC: LVPN-549"""
+
     login.login_as("default")
 
     with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
@@ -106,6 +120,8 @@ def test_repeated_login():
 
 @pytest.mark.skip(reason="can't get login token for expired account")
 def test_expired_account_connect():
+    """Manual TC: LVPN-1407"""
+
     lib.set_technology_and_protocol("openvpn", "udp", "off")
 
     output = login.login_as("expired")
@@ -122,6 +138,8 @@ def test_expired_account_connect():
 
 
 def test_login_while_connected():
+    """Manual TC: LVPN-8577"""
+
     login.login_as("default")
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -137,6 +155,8 @@ def test_login_while_connected():
 
 
 def test_login_without_internet():
+    """Manual TC: LVPN-8578"""
+
     default_gateway = network.stop()
 
     with pytest.raises(sh.ErrorReturnCode_1):
@@ -146,6 +166,8 @@ def test_login_without_internet():
 
 
 def test_repeated_logout():
+    """Manual TC: LVPN-695"""
+
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.logout("--persist-token")
 
@@ -153,6 +175,8 @@ def test_repeated_logout():
 
 
 def test_logged_out_connect():
+    """Manual TC: LVPN-8690"""
+
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.connect()
 
@@ -160,6 +184,8 @@ def test_logged_out_connect():
 
 
 def test_logout_disconnects():
+    """Manual TC: LVPN-8752"""
+
     output = login.login_as("default")
     print(output)
 
@@ -176,6 +202,8 @@ def test_logout_disconnects():
 
 
 def test_missing_token_login():
+    """Manual TC: LVPN-485"""
+
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--token")
 
@@ -183,6 +211,8 @@ def test_missing_token_login():
 
 
 def test_missing_url_callback_login():
+    """Manual TC: LVPN-667"""
+
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--callback")
 
@@ -190,6 +220,8 @@ def test_missing_url_callback_login():
 
 
 def test_invalid_url_callback_login():
+    """Manual TC: LVPN-472"""
+
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--callback", "https://www.google.com/")
 
@@ -197,6 +229,8 @@ def test_invalid_url_callback_login():
 
 
 def test_repeated_login_callback():
+    """Manual TC: LVPN-443"""
+
     login.login_as("default")
 
     with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
@@ -207,6 +241,8 @@ def test_repeated_login_callback():
 
 
 def test_repeated_login_callback_invalid_url():
+    """Manual TC: LVPN-439"""
+
     login.login_as("default")
 
     with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
@@ -217,6 +253,8 @@ def test_repeated_login_callback_invalid_url():
 
 
 def test_repeated_login_callback_nordvpn_scheme_url():
+    """Manual TC: LVPN-460"""
+
     login.login_as("default")
 
     with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
