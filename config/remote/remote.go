@@ -204,10 +204,10 @@ func (c *CdnRemoteConfig) load() {
 	}
 }
 
-func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamValue) {
+func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string) (match *ParamValue) {
 	for _, s := range ss {
 		// find my version matching records
-		ok, err := isVersionMatching(ver, s.AppVersion)
+		ok, err := isVersionMatching(c.appVersion, s.AppVersion)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "invalid version:", err)
 			continue
@@ -225,9 +225,11 @@ func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamV
 	}
 	// as a last step, check if app's rollout group matches feature's rollout value
 	// (do not try to use other match with lesser weight)
-	if match != nil && match.Rollout > rollout {
+	if match != nil && match.Rollout > c.rolloutGroup {
+		c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, c.rolloutGroup, partialRolloutPerformedFailure)
 		match = nil
 	}
+	c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, c.rolloutGroup, partialRolloutPerformedSuccess)
 	return match
 }
 
@@ -250,7 +252,7 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	}
 	switch p.Type {
 	case fieldTypeBool:
-		if item := findMatchingRecord(p.Settings, c.appVersion, c.rolloutGroup); item != nil {
+		if item := c.findMatchingRecord(p.Settings, featureName); item != nil {
 			val, _ := item.AsBool()
 			return val
 		}
@@ -270,7 +272,7 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 	if !found {
 		return "", fmt.Errorf("feature [%s] param [%s] not found", featureName, paramName)
 	}
-	if item := findMatchingRecord(p.Settings, c.appVersion, c.rolloutGroup); item != nil {
+	if item := c.findMatchingRecord(p.Settings, featureName); item != nil {
 		switch p.Type {
 		case fieldTypeBool:
 			val, err := item.AsBool()

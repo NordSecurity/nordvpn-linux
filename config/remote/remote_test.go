@@ -32,6 +32,8 @@ const (
 	httpServerWaitTimeout = 2 * time.Second
 	testFeatureNoRc       = "feature1"
 	testFeatureWithRc     = "nordwhisper"
+
+	defaultRolloutGroup = 10
 )
 
 func cleanLocalPath(t *testing.T) {
@@ -169,7 +171,11 @@ func TestFindMatchingRecord(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			match := findMatchingRecord(test.input, test.myAppVer, test.myAppRollout)
+			cdn, cancel := setupMockCdnClient()
+			defer cancel()
+			rc := newTestRemoteConfig(test.myAppVer, "dev", cdn, test.myAppRollout)
+			match := rc.findMatchingRecord(test.input, test.myAppVer)
+
 			if test.matchValue != "" {
 				assert.NotNil(t, match)
 				assert.Equal(t, test.matchValue, match.Value)
@@ -222,7 +228,7 @@ func TestFeatureOnOff(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			eh := newTestRemoteConfigEventHandler()
-			rc := newTestRemoteConfig(test.ver, test.env, cdn)
+			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
 			rc.Subscribe(eh)
 			err := rc.LoadConfig()
 			assert.True(t, eh.notified)
@@ -242,7 +248,7 @@ func TestMultiAccess(t *testing.T) {
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
 
-	rc := newTestRemoteConfig("3.20.1", "dev", cdn)
+	rc := newTestRemoteConfig("3.20.1", "dev", cdn, defaultRolloutGroup)
 
 	cnt := 10
 	wg := sync.WaitGroup{}
@@ -312,7 +318,7 @@ func TestGetTelioConfig(t *testing.T) {
 				err := os.Unsetenv(envUseLocalConfig)
 				assert.NoError(t, err)
 			}
-			rc := newTestRemoteConfig(test.ver, test.env, cdn)
+			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
 			err := rc.LoadConfig()
 			assert.NoError(t, err)
 			telioCfg, err := rc.GetTelioConfig()
@@ -341,7 +347,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	libtelioInc1ConfigFile := filepath.Join(localPath, "include/libtelio1.json")
 	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
 
-	rc := newTestRemoteConfig("3.4.1", "dev", cdn)
+	rc := newTestRemoteConfig("3.4.1", "dev", cdn, defaultRolloutGroup)
 
 	log.Println("~~~~ first attempt to load - should load whole config from web server")
 
@@ -426,7 +432,7 @@ func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error
 	return nil
 }
 
-func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
+func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage, rolloutGroup int) *CdnRemoteConfig {
 	testSubject := subs.Subject[events.DebuggerEvent]{}
 	ve := devents.DebuggerEvents{
 		DebuggerEvents: &testSubject,
@@ -438,8 +444,9 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConf
 		localCachePath: localPath,
 		cdn:            cdn,
 		features:       NewFeatureMap(),
-		analytics:      NewRemoteConfigAnalytics(ve.DebuggerEvents, "", 10),
+		analytics:      NewRemoteConfigAnalytics(ve.DebuggerEvents, "", rolloutGroup),
 		notifier:       &subs.Subject[RemoteConfigEvent]{},
+		rolloutGroup:   rolloutGroup,
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
