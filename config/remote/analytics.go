@@ -31,13 +31,19 @@ func (rca *RemoteConfigAnalytics) EmitDownloadFailureEvent(client, featureName s
 }
 
 func (rca *RemoteConfigAnalytics) EmitLocalUseEvent(client, featureName string, err error) {
+	var errMsg string
+	var errorKind string
+	if err != nil {
+		errMsg = err.Error()
+		errorKind = err.Error()
+	}
 	rca.publisher.Publish(
-		*NewLocalUseEvent(rca.userInfo, client, featureName).ToDebuggerEvent())
+		*NewLocalUseEvent(rca.userInfo, client, featureName, errorKind, errMsg).ToDebuggerEvent())
 }
 
 func (rca *RemoteConfigAnalytics) EmitJsonParseEvent(client, featureName string, err error) {
 	var errMsg string
-	errorKind := ""
+	var errorKind string
 	if err != nil {
 		errMsg = err.Error()
 		errorKind = err.Error()

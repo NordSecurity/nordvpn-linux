@@ -57,12 +57,18 @@ func NewDownloadFailureEvent(info UserInfo, client string, featureName string, e
 	}
 }
 
-func NewLocalUseEvent(info UserInfo, client string, featureName string) Event {
+func NewLocalUseEvent(info UserInfo, client, featureName, errorKind, errorMessage string) Event {
+	details := EventDetails{}
+	if errorKind != "" {
+		details.Error = errorKind
+		details.Message = errorMessage
+	}
 	return Event{
-		UserInfo:    info,
-		Client:      client,
-		FeatureName: featureName,
-		Event:       LocalUse.String(),
+		UserInfo:     info,
+		Client:       client,
+		FeatureName:  featureName,
+		Event:        LocalUse.String(),
+		EventDetails: details,
 	}
 }
 

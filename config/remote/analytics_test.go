@@ -107,6 +107,7 @@ func TestMooseAnalytics(t *testing.T) {
 		action            func(a Analytics)
 		expectedEventName string
 		expectedDetails   string
+		expectedResult    string
 	}{
 		{
 			name: "EmitDownloadEvent success",
@@ -114,6 +115,7 @@ func TestMooseAnalytics(t *testing.T) {
 				a.EmitDownloadEvent(client, feature)
 			},
 			expectedEventName: `"event":"rc_download_success"`,
+			expectedResult:    `"result":"success"`,
 		},
 		{
 			name: "EmitDownloadEvent failure",
@@ -122,6 +124,7 @@ func TestMooseAnalytics(t *testing.T) {
 			},
 			expectedEventName: `"event":"rc_download_failure"`,
 			expectedDetails:   `"message":"file_download_error: fail"`,
+			expectedResult:    `"result":"failure"`,
 		},
 		{
 			name: "EmitLocalUseEvent",
@@ -129,6 +132,16 @@ func TestMooseAnalytics(t *testing.T) {
 				a.EmitLocalUseEvent(client, feature, nil)
 			},
 			expectedEventName: `"event":"rc_local_use"`,
+			expectedResult:    `"result":"success"`,
+		},
+		{
+			name: "EmitLocalUseEvent_failure",
+			action: func(a Analytics) {
+				a.EmitLocalUseEvent(client, feature, errors.New("local-use-test-error"))
+			},
+			expectedEventName: `"event":"rc_local_use"`,
+			expectedDetails:   `"message":"local-use-test-error"`,
+			expectedResult:    `"result":"failure"`,
 		},
 		{
 			name: "EmitJsonParseEvent success",
@@ -136,6 +149,7 @@ func TestMooseAnalytics(t *testing.T) {
 				a.EmitJsonParseEvent(client, feature, nil)
 			},
 			expectedEventName: `"event":"rc_json_parse_success"`,
+			expectedResult:    `"result":"success"`,
 		},
 		{
 			name: "EmitJsonParseEvent failure",
@@ -144,6 +158,7 @@ func TestMooseAnalytics(t *testing.T) {
 			},
 			expectedEventName: `"event":"rc_json_parse_failure"`,
 			expectedDetails:   `"message":"parse error"`,
+			expectedResult:    `"result":"failure"`,
 		},
 		{
 			name: "EmitPartialRolloutEvent",
@@ -152,6 +167,8 @@ func TestMooseAnalytics(t *testing.T) {
 			},
 			expectedEventName: `"event":"rc_rollout"`,
 			expectedDetails:   `"error":"meshnet 42 / 7"`,
+			//rollout uses different expected results - yes|no
+			expectedResult: `"result":"yes"`,
 		},
 	}
 
@@ -168,6 +185,10 @@ func TestMooseAnalytics(t *testing.T) {
 			assert.Contains(t, event, tc.expectedEventName)
 			if tc.expectedDetails != "" {
 				assert.Contains(t, event, tc.expectedDetails)
+			}
+
+			if tc.expectedResult != "" {
+				assert.Contains(t, event, tc.expectedResult)
 			}
 		})
 	}

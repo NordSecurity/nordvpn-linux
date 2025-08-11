@@ -70,7 +70,7 @@ func TestEventJSONOutput(t *testing.T) {
 		},
 		{
 			name:            "Local Use",
-			event:           NewLocalUseEvent(ctx, "client", FeatureLibtelio),
+			event:           NewLocalUseEvent(ctx, "client", FeatureLibtelio, "", ""),
 			expectedResult:  rcSuccess,
 			expectedError:   "",
 			expectedMessage: "",
