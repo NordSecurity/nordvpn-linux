@@ -122,16 +122,22 @@ func isNetworkRetryable(err error) bool {
 
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
-	var err error
-	reloadDone := false
+	var initErr error
+	var reloadDone bool
 	c.initOnce.Do(func() {
-		validDir, _ := internal.IsValidExistingDir(c.localCachePath)
-		if validDir {
+		validDir, err := internal.IsValidExistingDir(c.localCachePath)
+		if err != nil {
+			initErr = fmt.Errorf("accessing config path on init: %w", err)
+		} else if validDir {
 			c.load() // on start init cache from disk
 			reloadDone = true
 		}
 	})
-	needReload := false
+	if initErr != nil {
+		return initErr
+	}
+	var err error
+	var needReload bool
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
 		if needReload, err = c.download(); err != nil {

@@ -28,31 +28,16 @@ func SecureFileRead(path string) ([]byte, error) {
 
 	fd, err := unix.Open(cleanPath, unix.O_RDONLY|unix.O_NOFOLLOW, 0)
 	if err != nil {
+		// on some systems O_NOFOLLOW is not supported
 		if !errors.Is(err, unix.EINVAL) {
 			return nil, fmt.Errorf("open failed: %w", err)
 		}
-		// fallback to regular open if O_NOFOLLOW is not supported
-		// but verify it's not a symlink first
-		if err := VerifyNotLink(cleanPath); err != nil {
-			return nil, err
-		}
 
-		// for fallback case, check file size before reading
-		info, err := os.Lstat(cleanPath)
-		if err != nil {
-			return nil, fmt.Errorf("stat failed: %w", err)
-		}
-		if info.Size() > MaxBytesLimit {
-			return nil, fmt.Errorf("%w: %d bytes", ErrFileTooLarge, info.Size())
-		}
-
-		// use regular file read with size limit
-		file, err := os.Open(cleanPath)
+		// open without O_NOFOLLOW
+		fd, err = unix.Open(cleanPath, unix.O_RDONLY, 0)
 		if err != nil {
 			return nil, fmt.Errorf("fallback open failed: %w", err)
 		}
-		defer file.Close()
-		return io.ReadAll(io.LimitReader(file, MaxBytesLimit))
 	}
 	defer unix.Close(fd)
 
@@ -89,11 +74,10 @@ func CheckPathForSymlinks(path string) error {
 	// handle absolute and relative paths
 	cleanPath := filepath.Clean(path)
 
+	pathComponents = strings.Split(cleanPath, string(os.PathSeparator))
 	if filepath.IsAbs(cleanPath) {
-		pathComponents = strings.Split(cleanPath, string(os.PathSeparator))
 		checkPath = "/"
 	} else {
-		pathComponents = strings.Split(cleanPath, string(os.PathSeparator))
 		checkPath = ""
 	}
 
@@ -184,8 +168,8 @@ func SecureFileWrite(path string, contents []byte, permissions os.FileMode) erro
 	defer func() {
 		if tmpfile != nil {
 			tmpfile.Close()
-			os.Remove(tmpname)
 		}
+		os.Remove(tmpname)
 	}()
 
 	// verify temp file is not a link
