@@ -83,6 +83,8 @@ def teardown_function(function):  # noqa: ARG001
 
 
 def test_meshnet_available_after_update():
+    """Manual TC: LVPN-3204"""
+
     meshnet_help_page = sh_no_tty.nordvpn.meshnet("--help")
     assert "Learn more: https://meshnet.nordvpn.com/" in meshnet_help_page
 
@@ -105,6 +107,8 @@ def test_meshnet_available_after_update():
 
 
 def test_fileshare_available_after_update():
+    """Manual TC: LVPN-3205"""
+
     fileshare_help_page = sh.nordvpn.fileshare("--help", _tty_out=False)
     assert "Learn more: https://meshnet.nordvpn.com/features/sharing-files-in-meshnet" in fileshare_help_page
 
@@ -127,6 +131,17 @@ def test_fileshare_available_after_update():
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_quick_connect_after_update(tech, proto, obfuscated):
+    """
+    Manual TCs:
+
+        [openvpn-udp-on] - LVPN-8505
+        [openvpn-tcp-on] - LVPN-8506
+        [openvpn-udp-off] - LVPN-3208
+        [openvpn-tcp-off] - LVPN-3209
+        [nordlynx--] - LVPN-3207
+        [nordwhisper--] - LVPN-8507
+    """
+
     if tech == "openvpn" and proto == "udp" and obfuscated == "on":
         tech_name = lib.technology_to_upper_camel_case(tech)
         assert f"Technology is set to '{tech_name}' successfully." in sh.nordvpn.set.technology(tech)
@@ -138,6 +153,8 @@ def test_quick_connect_after_update(tech, proto, obfuscated):
 
 
 def test_changelog_after_update():
+    """Manual TC: LVPN-4152"""
+
     if ProductionApplicationData.APP_VERSION in sh.nordvpn("-v"):
         pytest.skip("Changelog not implemented yet.")
 
