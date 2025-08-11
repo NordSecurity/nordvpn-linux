@@ -170,6 +170,16 @@ func TestMooseAnalytics(t *testing.T) {
 			//rollout uses different expected results - yes|no
 			expectedResult: `"result":"yes"`,
 		},
+		{
+			name: "EmitPartialRolloutEvent failure",
+			action: func(a Analytics) {
+				a.EmitPartialRolloutEvent(client, feature, 7, false)
+			},
+			expectedEventName: `"event":"rc_rollout"`,
+			expectedDetails:   `"error":"meshnet 42 / 7"`,
+			//rollout uses different expected results - yes|no
+			expectedResult: `"result":"no"`,
+		},
 	}
 
 	for _, tc := range testCases {
