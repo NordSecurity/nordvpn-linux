@@ -31,7 +31,7 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 		}, nil
 	}
 
-	if !internal.AccessTokenFormatValidator(in.GetToken()) {
+	if !internal.AccessTokenFormatValidatorFunc(in.GetToken()) {
 		return &pb.LoginResponse{
 			Type: internal.CodeTokenInvalid,
 		}, nil

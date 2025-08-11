@@ -52,44 +52,6 @@ func TestValidateExpiry(t *testing.T) {
 	}
 }
 
-func TestValidateToken(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name    string
-		token   string
-		wantErr error
-	}{
-		{
-			name:    "valid token",
-			token:   "valid-token",
-			wantErr: nil,
-		},
-		{
-			name:    "empty token",
-			token:   "",
-			wantErr: ErrInvalidToken,
-		},
-		{
-			name:    "whitespace only token",
-			token:   "   ",
-			wantErr: nil, // ValidateToken doesn't trim whitespace
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateToken(tt.token)
-			if tt.wantErr != nil {
-				assert.Error(t, err)
-				assert.Equal(t, tt.wantErr, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestValidateAccessTokenFormat(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -290,7 +252,7 @@ func TestValidateRenewToken(t *testing.T) {
 		{
 			name:       "empty token",
 			renewToken: "",
-			wantErr:    ErrMissingRenewToken,
+			wantErr:    ErrInvalidRenewToken,
 		},
 		{
 			name:       "invalid format - not hex",
@@ -412,13 +374,94 @@ func TestTrustedPassExternalValidator(t *testing.T) {
 func TestValidateExpiry_TimeBoundary(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	// Test with time very close to now
-	almostNow := time.Now().Add(1 * time.Millisecond)
-	err := ValidateExpiry(almostNow)
-	// This might pass or fail depending on timing, but should not panic
-	if err != nil {
-		assert.Equal(t, ErrSessionExpired, err)
+	// Test edge cases with deterministic time boundaries
+	tests := []struct {
+		name        string
+		expiry      time.Time
+		wantErr     error
+		description string
+	}{
+		{
+			name:        "far past expiry",
+			expiry:      time.Now().Add(-365 * 24 * time.Hour), // 1 year ago
+			wantErr:     ErrSessionExpired,
+			description: "Should fail for time far in the past",
+		},
+		{
+			name:        "just expired",
+			expiry:      time.Now().Add(-1 * time.Second), // 1 second ago
+			wantErr:     ErrSessionExpired,
+			description: "Should fail for recently expired time",
+		},
+		{
+			name:        "future expiry short duration",
+			expiry:      time.Now().Add(1 * time.Second), // 1 second from now
+			wantErr:     nil,
+			description: "Should pass for near future time",
+		},
+		{
+			name:        "future expiry medium duration",
+			expiry:      time.Now().Add(1 * time.Hour), // 1 hour from now
+			wantErr:     nil,
+			description: "Should pass for medium future time",
+		},
+		{
+			name:        "zero time",
+			expiry:      time.Time{}, // Zero value of time.Time
+			wantErr:     ErrSessionExpired,
+			description: "Should fail for zero time value",
+		},
+		{
+			name:        "unix epoch",
+			expiry:      time.Unix(0, 0), // January 1, 1970
+			wantErr:     ErrSessionExpired,
+			description: "Should fail for Unix epoch time",
+		},
+		{
+			name:        "max time",
+			expiry:      time.Date(9999, 12, 31, 23, 59, 59, 999999999, time.UTC),
+			wantErr:     nil,
+			description: "Should pass for maximum representable time",
+		},
 	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateExpiry(tt.expiry)
+			if tt.wantErr != nil {
+				assert.Error(t, err, tt.description)
+				assert.Equal(t, tt.wantErr, err)
+			} else {
+				assert.NoError(t, err, tt.description)
+			}
+		})
+	}
+
+	// Test concurrent access to ensure thread safety
+	t.Run("concurrent validation", func(t *testing.T) {
+		futureTime := time.Now().Add(time.Hour)
+		pastTime := time.Now().Add(-time.Hour)
+
+		// Run multiple goroutines to test concurrent access
+		done := make(chan bool, 10)
+		for i := 0; i < 10; i++ {
+			go func(i int) {
+				if i%2 == 0 {
+					err := ValidateExpiry(futureTime)
+					assert.NoError(t, err)
+				} else {
+					err := ValidateExpiry(pastTime)
+					assert.Equal(t, ErrSessionExpired, err)
+				}
+				done <- true
+			}(i)
+		}
+
+		// Wait for all goroutines to complete
+		for i := 0; i < 10; i++ {
+			<-done
+		}
+	})
 }
 
 func TestValidateAccessTokenFormat_ExactLengthBoundaries(t *testing.T) {

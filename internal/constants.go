@@ -145,9 +145,9 @@ var (
 )
 
 var (
-	AccessTokenFormatValidator      = regexp.MustCompile(`^[a-f0-9]*$`).MatchString
-	RenewalTokenFormatValidator     = regexp.MustCompile(`^[a-f0-9]+$`).MatchString
-	TrustedPassTokenFormatValidator = regexp.MustCompile(`^[A-Za-z0-9_-]+$`).MatchString
+	AccessTokenFormatValidatorFunc      = regexp.MustCompile(`^[a-f0-9]+$`).MatchString
+	RenewalTokenFormatValidatorFunc     = regexp.MustCompile(`^[a-f0-9]+$`).MatchString
+	TrustedPassTokenFormatValidatorFunc = regexp.MustCompile(`^[A-Za-z0-9_-]+$`).MatchString
 )
 
 func GetNorduserSocketSnap(uid int) string {
