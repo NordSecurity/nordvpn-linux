@@ -444,7 +444,7 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage, rolloutGroup i
 		localCachePath: localPath,
 		cdn:            cdn,
 		features:       NewFeatureMap(),
-		analytics:      NewRemoteConfigAnalytics(ve.DebuggerEvents, "", rolloutGroup),
+		analytics:      NewRemoteConfigAnalytics(ve.DebuggerEvents, rolloutGroup),
 		notifier:       &subs.Subject[RemoteConfigEvent]{},
 		rolloutGroup:   rolloutGroup,
 	}

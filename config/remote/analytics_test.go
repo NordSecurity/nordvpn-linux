@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	ev "github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
@@ -66,18 +67,24 @@ func (m *MockDebuggerEvents) Publish(e ev.DebuggerEvent) {
 	}
 }
 
+type MockRemoteStorage struct{}
+
+func (m *MockRemoteStorage) GetRemoteFile(string) ([]byte, error) {
+	return nil, nil
+}
+
 type analyticsTestFixture struct {
 	publisher  *MockDebuggerEvents
 	subscriber *MockSubscriber
 	analytics  Analytics
 }
 
-func setupAnalyticsTest() *analyticsTestFixture {
+func setupAnalyticsTest(rolloutGroup int) *analyticsTestFixture {
 	publisher := &MockDebuggerEvents{}
 	subscriber := NewMockListener()
 	publisher.Subscribe(subscriber.NotifyDebuggerEvent)
 
-	analytics := NewRemoteConfigAnalytics(publisher, "1.2.3", 42)
+	analytics := NewRemoteConfigAnalytics(publisher, rolloutGroup)
 
 	return &analyticsTestFixture{
 		publisher:  publisher,
@@ -184,7 +191,7 @@ func TestMooseAnalytics(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			fixture := setupAnalyticsTest()
+			fixture := setupAnalyticsTest(42)
 			fixture.subscriber.ExpectEvents(1)
 
 			tc.action(fixture.analytics)
@@ -200,6 +207,92 @@ func TestMooseAnalytics(t *testing.T) {
 			if tc.expectedResult != "" {
 				assert.Contains(t, event, tc.expectedResult)
 			}
+		})
+	}
+}
+
+// TestFindMatchingRecord_EmitsOneEvent tests that findMatchingRecord emits exactly one
+// EmitPartialRolloutEvent when called through IsFeatureEnabled
+func TestFindMatchingRecord_EmitsOneEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	const (
+		featureName = FeatureMeshnet
+		rollout     = 50
+	)
+
+	testCases := []struct {
+		name              string
+		rolloutGroup      int
+		expectedEventName string
+		expectedDetails   string
+		expectedResult    string
+	}{
+		{
+			name:              "Partiall Rollout failed - rollout group above limit",
+			rolloutGroup:      60,
+			expectedEventName: `"event":"rc_rollout"`,
+			expectedDetails:   `"error":"meshnet 60 / 50"`,
+			expectedResult:    `"result":"no"`,
+		},
+		{
+			name:              "Rollout success - rollout group under the limit",
+			rolloutGroup:      40,
+			expectedEventName: `"event":"rc_rollout"`,
+			expectedDetails:   `"error":"meshnet 40 / 50"`,
+			expectedResult:    `"result":"yes"`,
+		},
+		{
+			name:              "Rollout success - rollout group same as the limit",
+			rolloutGroup:      50,
+			expectedEventName: `"event":"rc_rollout"`,
+			expectedDetails:   `"error":"meshnet 50 / 50"`,
+			expectedResult:    `"result":"no"`,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fixture := setupAnalyticsTest(tc.rolloutGroup)
+
+			fixture.subscriber.ExpectEvents(1)
+
+			rc := NewCdnRemoteConfig(
+				config.BuildTarget{Version: "1.2.3", Environment: "test"},
+				"/remote/path",
+				"/local/path",
+				&MockRemoteStorage{},
+				fixture.analytics,
+				tc.rolloutGroup,
+			)
+
+			feature := rc.features.get(featureName)
+			feature.params = map[string]*Param{
+				featureName: {
+					Type: fieldTypeBool,
+					Settings: []ParamValue{
+						{
+							AppVersion: "^1.0.0",
+							Value:      true,
+							Weight:     100,
+							Rollout:    rollout,
+						},
+					},
+				},
+			}
+
+			// Call IsFeatureEnabled, which will trigger findMatchingRecord
+			rc.IsFeatureEnabled(featureName)
+
+			fixture.subscriber.Wait(t)
+
+			assert.Len(t, fixture.subscriber.events, 1,
+				"Expected exactly one analytics event to be emitted")
+
+			event := fixture.subscriber.events[0]
+			assert.Contains(t, event, tc.expectedEventName)
+			assert.Contains(t, event, tc.expectedDetails)
+			assert.Contains(t, event, tc.expectedResult)
 		})
 	}
 }
