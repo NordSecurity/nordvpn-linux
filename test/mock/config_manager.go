@@ -30,6 +30,7 @@ func NewMockConfigManager() *ConfigManager {
 			},
 		},
 		AutoConnectData: config.AutoConnectData{
+			ID: 0,
 			Allowlist: config.Allowlist{
 				Ports: config.Ports{
 					TCP: config.PortSet{},
@@ -58,6 +59,11 @@ func makeDeepCopy(src config.Config) (config.Config, error) {
 	err = json.Unmarshal(data, &dst)
 	if err != nil {
 		return dst, err
+	}
+
+	// Preserve initialized but empty maps that might have been omitted during JSON marshaling
+	if src.TokensData != nil && dst.TokensData == nil {
+		dst.TokensData = make(map[int64]config.TokenData)
 	}
 
 	return dst, nil
