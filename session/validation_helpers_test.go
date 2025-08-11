@@ -438,7 +438,7 @@ func TestValidateOpenVPNCredentials(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateOpenVPNCredentials(tt.username, tt.password)
+			err := ValidateOpenVPNCredentialsPresence(tt.username, tt.password)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.Equal(t, tt.wantErr, err)
@@ -506,7 +506,7 @@ func TestValidateNordLynxPrivateKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateNordLynxPrivateKey(tt.key)
+			err := ValidateNordLynxPrivateKeyPresence(tt.key)
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.Equal(t, tt.wantErr, err)
