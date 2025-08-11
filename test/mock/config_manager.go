@@ -18,7 +18,26 @@ type ConfigManager struct {
 
 func NewMockConfigManager() *ConfigManager {
 	m := ConfigManager{}
-	m.Cfg = &config.Config{}
+	m.Cfg = &config.Config{
+		TokensData: map[int64]config.TokenData{
+			0: {
+				Token:              "",
+				TokenExpiry:        "",
+				RenewToken:         "",
+				NordLynxPrivateKey: "",
+				OpenVPNUsername:    "",
+				OpenVPNPassword:    "",
+			},
+		},
+		AutoConnectData: config.AutoConnectData{
+			Allowlist: config.Allowlist{
+				Ports: config.Ports{
+					TCP: config.PortSet{},
+					UDP: config.PortSet{},
+				},
+			},
+		},
+	}
 	m.Cfg.MeshDevice = &mesh.Machine{}
 
 	return &m
