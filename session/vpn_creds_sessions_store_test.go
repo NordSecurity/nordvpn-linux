@@ -426,7 +426,7 @@ func TestVPNCredentialsSessionStore_Renew(t *testing.T) {
 				}, nil
 			},
 			wantErr:         true,
-			wantErrContains: "failed to save VPN credentials",
+			wantErrContains: "failed to save vpn credentials",
 		},
 	}
 
