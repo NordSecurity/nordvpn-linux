@@ -232,6 +232,10 @@ func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string
 		} else {
 			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.Rollout, partialRolloutPerformedSuccess)
 		}
+	} else {
+		//when there's no match (eg., due to a version value mismatch) emit the partial rollout event failure
+		//TODO: change the structure of this event to hold error anyway?
+		c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, 0, partialRolloutPerformedFailure)
 	}
 	return match
 }
