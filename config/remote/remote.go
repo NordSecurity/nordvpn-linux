@@ -197,6 +197,7 @@ func (c *CdnRemoteConfig) load() {
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
 			var loadErr *LoadError
 			if errors.As(err, &loadErr) {
+				// only specific load errors are used for JSON related failures
 				switch loadErr.Kind {
 				case LoadErrorParsing, LoadErrorParsingIncludeFile, LoadErrorMainHashJsonParsing, LoadErrorMainJsonValidationFailure:
 					c.analytics.EmitJsonParseFailureEvent(ClientCli, feature.name, *loadErr)
