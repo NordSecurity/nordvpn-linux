@@ -65,22 +65,17 @@ func NewLocalUseEvent(rolloutGroup int, client, featureName, errorKind, errorMes
 	}
 }
 
-func NewJSONParseEvent(rolloutGroup int, client string, featureName string, errorKind, errorMessage string) Event {
-	details := EventDetails{}
-	var eventType EventType
-	if errorKind != "" {
-		details.Error = errorKind
-		details.Message = errorMessage
-		eventType = JSONParseFailure
-	} else {
-		eventType = JSONParseSuccess
+func NewJSONParseEventFailure(rolloutGroup int, client string, featureName string, errorKind LoadErrorKind, errorMessage string) Event {
+	details := EventDetails{
+		Error:   errorKind.String(),
+		Message: errorMessage,
 	}
 
 	return Event{
 		RolloutGroup: rolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
-		Event:        eventType.String(),
+		Event:        JSONParseFailure.String(),
 		EventDetails: details,
 	}
 }

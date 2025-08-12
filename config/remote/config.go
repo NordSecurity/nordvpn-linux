@@ -22,27 +22,6 @@ type jsonHash struct {
 	Hash string `json:"hash"`
 }
 
-// DownloadError holds information about a specific download failure that is then used while reporting analytics about RemoteConfig.
-type DownloadError struct {
-	Kind  DownloadErrorKind
-	Cause error
-}
-
-func (e *DownloadError) Error() string {
-	return fmt.Sprintf("%s: %v", e.Kind, e.Cause)
-}
-
-func (e *DownloadError) Unwrap() error {
-	return e.Cause
-}
-
-func NewDownloadError(kind DownloadErrorKind, err error) *DownloadError {
-	return &DownloadError{
-		Kind:  kind,
-		Cause: err,
-	}
-}
-
 func hash(content []byte) string {
 	hash := sha256.Sum256(content)
 	return hex.EncodeToString(hash[:])
@@ -161,55 +140,55 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 // load feature config from JSON file
 func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 	if f.name == "" {
-		return fmt.Errorf("feature name is not set")
+		return NewLoadError(LoadErrorOther, fmt.Errorf("feature name is not set"))
 	}
 
 	validDir, err := internal.IsValidExistingDir(sourcePath)
 	if err != nil {
-		return fmt.Errorf("accessing source path: %w", err)
+		return NewLoadError(LoadErrorOther, fmt.Errorf("accessing source path: %w", err))
 	}
 	if !validDir {
-		return fmt.Errorf("config source path is not valid")
+		return NewLoadError(LoadErrorOther, fmt.Errorf("config source path is not valid"))
 	}
 
 	mainJsonHashStr, err := fr.readFile(f.HashFilePath(sourcePath))
 	if err != nil {
-		return fmt.Errorf("reading hash file: %w", err)
+		return NewLoadError(LoadErrorFileNotFound, fmt.Errorf("reading hash file: %w", err))
 	}
 	var mainJsonHash jsonHash
 	if err = json.Unmarshal(mainJsonHashStr, &mainJsonHash); err != nil {
-		return fmt.Errorf("parsing main hash file: %w", err)
+		return NewLoadError(LoadErrorMainHashJsonParsing, fmt.Errorf("parsing main hash file: %w", err))
 	}
 
 	mainJsonFileName := f.FilePath(sourcePath)
 	if err := internal.IsFileTooBig(mainJsonFileName); err != nil {
-		return fmt.Errorf("reading main file: %w", err)
+		return NewLoadError(LoadErrorValidation, fmt.Errorf("reading main file: %w", err))
 	}
 
 	mainJsonStr, err := fr.readFile(mainJsonFileName)
 	if err != nil {
-		return fmt.Errorf("reading config file: %w", err)
+		return NewLoadError(LoadErrorFileNotFound, fmt.Errorf("reading config file: %w", err))
 	}
 	// validate json by predefined schema
 	if err := jv.validate(mainJsonStr); err != nil {
-		return fmt.Errorf("validating json: %w", err)
+		return NewLoadError(LoadErrorMainJsonValidationFailure, fmt.Errorf("validating json: %w", err))
 	}
 
 	incFiles, err := walkIncludeFiles(mainJsonStr, sourcePath, "", fr, noopWriter{})
 	if err != nil {
-		return fmt.Errorf("loading include files: %w", err)
+		return NewLoadError(LoadErrorIncludeFile, fmt.Errorf("loading include files: %w", err))
 	}
 
 	// verify content integrity
 	// if main json has include files - hash should cover whole content
 	if !isHashEqual(mainJsonHash.Hash, mainJsonStr, incFiles) {
-		return fmt.Errorf("main file integrity problem")
+		return NewLoadError(LoadErrorIntegrity, fmt.Errorf("main file integrity problem"))
 	}
 
 	// load json into structures
 	var temp Feature
 	if err := json.Unmarshal(mainJsonStr, &temp); err != nil {
-		return err
+		return NewLoadError(LoadErrorParsing, err)
 	}
 
 	params := make(map[string]*Param)
@@ -233,7 +212,7 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 			// validate field
 			incVal, err := validateField(cfgItem, param, fileReadFunc)
 			if err != nil {
-				return err
+				return NewLoadError(LoadErrorParsingIncludeFile, err)
 			}
 			// store valid values in the map
 			params[cfgItem.Name].Settings = append(params[cfgItem.Name].Settings,

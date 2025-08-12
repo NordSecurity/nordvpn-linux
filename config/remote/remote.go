@@ -195,6 +195,13 @@ func (c *CdnRemoteConfig) load() {
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
+			var loadErr *LoadError
+			if errors.As(err, &loadErr) {
+				switch loadErr.Kind {
+				case LoadErrorParsing, LoadErrorParsingIncludeFile, LoadErrorMainHashJsonParsing, LoadErrorMainJsonValidationFailure:
+					c.analytics.EmitJsonParseFailureEvent(ClientCli, feature.name, *loadErr)
+				}
+			}
 			log.Println(internal.ErrorPrefix, "failed loading feature [", feature.name, "] config from the disk:", err)
 			c.analytics.EmitLocalUseEvent(ClientCli, feature.name, err)
 			continue

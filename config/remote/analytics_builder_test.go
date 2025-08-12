@@ -50,18 +50,11 @@ func TestEventJSONOutput(t *testing.T) {
 			expectedMessage: "timeout",
 		},
 		{
-			name:            "JSON Parse Success",
-			event:           NewJSONParseEvent(rolloutGroup, "client", FeatureLibtelio, "", ""),
-			expectedResult:  rcSuccess,
-			expectedError:   "",
-			expectedMessage: "",
-		},
-		{
 			name:            "JSON Parse Failure",
-			event:           NewJSONParseEvent(rolloutGroup, "client", FeatureLibtelio, "syntax-error", "bad token"),
+			event:           NewJSONParseEventFailure(rolloutGroup, "client", FeatureLibtelio, LoadErrorMainHashJsonParsing, "bad hash"),
 			expectedResult:  rcFailure,
-			expectedError:   "syntax-error",
-			expectedMessage: "bad token",
+			expectedError:   "main_hash_json_parsing_error",
+			expectedMessage: "bad hash",
 		},
 		{
 			name:            "Local Use",

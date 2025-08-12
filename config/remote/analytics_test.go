@@ -127,7 +127,7 @@ func TestMooseAnalytics(t *testing.T) {
 		{
 			name: "EmitDownloadEvent failure",
 			action: func(a Analytics) {
-				a.EmitDownloadFailureEvent(client, feature, DownloadError{Kind: DownloadErrorFileDownload, Cause: errors.New("fail")})
+				a.EmitDownloadFailureEvent(client, feature, *NewDownloadError(DownloadErrorFileDownload, errors.New("fail")))
 			},
 			expectedEventName: `"event":"rc_download_failure"`,
 			expectedDetails:   `"message":"file_download_error: fail"`,
@@ -151,20 +151,12 @@ func TestMooseAnalytics(t *testing.T) {
 			expectedResult:    `"result":"failure"`,
 		},
 		{
-			name: "EmitJsonParseEvent success",
-			action: func(a Analytics) {
-				a.EmitJsonParseEvent(client, feature, nil)
-			},
-			expectedEventName: `"event":"rc_json_parse_success"`,
-			expectedResult:    `"result":"success"`,
-		},
-		{
 			name: "EmitJsonParseEvent failure",
 			action: func(a Analytics) {
-				a.EmitJsonParseEvent(client, feature, errors.New("parse error"))
+				a.EmitJsonParseFailureEvent(client, feature, *NewLoadError(LoadErrorValidation, errors.New("parse error")))
 			},
 			expectedEventName: `"event":"rc_json_parse_failure"`,
-			expectedDetails:   `"message":"parse error"`,
+			expectedDetails:   `"message":"validation_error: parse error"`,
 			expectedResult:    `"result":"failure"`,
 		},
 		{

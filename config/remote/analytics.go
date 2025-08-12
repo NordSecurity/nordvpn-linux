@@ -10,7 +10,7 @@ type Analytics interface {
 	EmitDownloadEvent(string, string)
 	EmitDownloadFailureEvent(string, string, DownloadError)
 	EmitLocalUseEvent(string, string, error)
-	EmitJsonParseEvent(string, string, error)
+	EmitJsonParseFailureEvent(string, string, LoadError)
 	EmitPartialRolloutEvent(string, string, int, bool)
 }
 type RemoteConfigAnalytics struct {
@@ -41,15 +41,9 @@ func (rca *RemoteConfigAnalytics) EmitLocalUseEvent(client, featureName string, 
 		*NewLocalUseEvent(rca.userRolloutGroup, client, featureName, errorKind, errMsg).ToDebuggerEvent())
 }
 
-func (rca *RemoteConfigAnalytics) EmitJsonParseEvent(client, featureName string, err error) {
-	var errMsg string
-	var errorKind string
-	if err != nil {
-		errMsg = err.Error()
-		errorKind = err.Error()
-	}
+func (rca *RemoteConfigAnalytics) EmitJsonParseFailureEvent(client, featureName string, err LoadError) {
 	rca.publisher.Publish(
-		*NewJSONParseEvent(rca.userRolloutGroup, client, featureName, errorKind, errMsg).
+		*NewJSONParseEventFailure(rca.userRolloutGroup, client, featureName, err.Kind, err.Error()).
 			ToDebuggerEvent())
 }
 
