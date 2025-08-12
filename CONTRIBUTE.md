@@ -21,6 +21,13 @@ Here are some guidelines:
 **A clean history can make things easier:** Some PRs are easier to review commit-by-commit, rather than looking at the full changelist in one go. To enable that, prefer rebase over merge when updating your branch. Keeping PRs small and short-lived will also help keep your history clean since there's less time for upstream to change that.
 ## Licensing
 NordVPN Linux® is released under GPL-3.0 License. For more details please refer to [LICENSE.md](LICENSE.md) file.
+# Committing rules
+[DCO](https://probot.github.io/apps/dco/) sign off is enforced for all commits. Be sure to use the `-s` option to add a `Signed-off-by` line to your commit messages.
+```
+git commit -s -m 'This is my commit message'
+
+TEST
+```
 ## Contributor License Agreement
 To accept your pull request, we need you to agree with the Nord Security Contributor License Agreement (CLA).
 The CLA signing is integrated into the PR workflow, you only need to authenticate with your GitHub account to validate your identity. Additionally the CLA needs to be agreed just once.
