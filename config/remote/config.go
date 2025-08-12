@@ -68,8 +68,8 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 
 	defer func() {
 		if err != nil {
-			validDir, _ := internal.IsValidExistingDir(targetPath)
-			if validDir {
+			validDir, err := internal.IsValidExistingDir(targetPath)
+			if err == nil && validDir {
 				internal.CleanupTmpFiles(targetPath, tmpExt)
 			}
 		}

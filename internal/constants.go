@@ -122,6 +122,7 @@ var (
 
 	DatFilesPathCommon    = filepath.Join(AppDataPathCommon, "data")
 	ConfigFilesPathCommon = filepath.Join(DatFilesPath, "conf")
+	StaticConfigFilename  = filepath.Join(DatFilesPathCommon, "install_static.dat")
 
 	BakFilesPath = filepath.Join(AppDataPath, "backup")
 
