@@ -115,6 +115,58 @@ func (TriState) EnumDescriptor() ([]byte, []int) {
 	return file_common_proto_rawDescGZIP(), []int{1}
 }
 
+type ClientID int32
+
+const (
+	ClientID_UNKNOWN_CLIENT ClientID = 0
+	ClientID_CLI            ClientID = 1
+	ClientID_GUI            ClientID = 2
+	ClientID_TRAY           ClientID = 3
+)
+
+// Enum value maps for ClientID.
+var (
+	ClientID_name = map[int32]string{
+		0: "UNKNOWN_CLIENT",
+		1: "CLI",
+		2: "GUI",
+		3: "TRAY",
+	}
+	ClientID_value = map[string]int32{
+		"UNKNOWN_CLIENT": 0,
+		"CLI":            1,
+		"GUI":            2,
+		"TRAY":           3,
+	}
+)
+
+func (x ClientID) Enum() *ClientID {
+	p := new(ClientID)
+	*p = x
+	return p
+}
+
+func (x ClientID) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ClientID) Descriptor() protoreflect.EnumDescriptor {
+	return file_common_proto_enumTypes[2].Descriptor()
+}
+
+func (ClientID) Type() protoreflect.EnumType {
+	return &file_common_proto_enumTypes[2]
+}
+
+func (x ClientID) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ClientID.Descriptor instead.
+func (ClientID) EnumDescriptor() ([]byte, []int) {
+	return file_common_proto_rawDescGZIP(), []int{2}
+}
+
 type GetDaemonApiVersionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -582,10 +634,14 @@ var file_common_proto_rawDesc = []byte{
 	0x54, 0x72, 0x69, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e,
 	0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12, 0x0c, 0x0a, 0x08, 0x44, 0x49, 0x53, 0x41, 0x42, 0x4c, 0x45,
 	0x44, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x45, 0x4e, 0x41, 0x42, 0x4c, 0x45, 0x44, 0x10, 0x02,
-	0x42, 0x31, 0x5a, 0x2f, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x4e,
-	0x6f, 0x72, 0x64, 0x53, 0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x2f, 0x6e, 0x6f, 0x72, 0x64,
-	0x76, 0x70, 0x6e, 0x2d, 0x6c, 0x69, 0x6e, 0x75, 0x78, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f, 0x6e,
-	0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x2a, 0x3a, 0x0a, 0x08, 0x43, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x49, 0x44, 0x12, 0x12, 0x0a, 0x0e,
+	0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x5f, 0x43, 0x4c, 0x49, 0x45, 0x4e, 0x54, 0x10, 0x00,
+	0x12, 0x07, 0x0a, 0x03, 0x43, 0x4c, 0x49, 0x10, 0x01, 0x12, 0x07, 0x0a, 0x03, 0x47, 0x55, 0x49,
+	0x10, 0x02, 0x12, 0x08, 0x0a, 0x04, 0x54, 0x52, 0x41, 0x59, 0x10, 0x03, 0x42, 0x31, 0x5a, 0x2f,
+	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x4e, 0x6f, 0x72, 0x64, 0x53,
+	0x65, 0x63, 0x75, 0x72, 0x69, 0x74, 0x79, 0x2f, 0x6e, 0x6f, 0x72, 0x64, 0x76, 0x70, 0x6e, 0x2d,
+	0x6c, 0x69, 0x6e, 0x75, 0x78, 0x2f, 0x64, 0x61, 0x65, 0x6d, 0x6f, 0x6e, 0x2f, 0x70, 0x62, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -600,29 +656,30 @@ func file_common_proto_rawDescGZIP() []byte {
 	return file_common_proto_rawDescData
 }
 
-var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_common_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_common_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_common_proto_goTypes = []any{
 	(DaemonApiVersion)(0),               // 0: pb.DaemonApiVersion
 	(TriState)(0),                       // 1: pb.TriState
-	(*GetDaemonApiVersionRequest)(nil),  // 2: pb.GetDaemonApiVersionRequest
-	(*GetDaemonApiVersionResponse)(nil), // 3: pb.GetDaemonApiVersionResponse
-	(*Empty)(nil),                       // 4: pb.Empty
-	(*Bool)(nil),                        // 5: pb.Bool
-	(*Payload)(nil),                     // 6: pb.Payload
-	(*Allowlist)(nil),                   // 7: pb.Allowlist
-	(*Ports)(nil),                       // 8: pb.Ports
-	(*ServerGroup)(nil),                 // 9: pb.ServerGroup
-	(*ServerGroupsList)(nil),            // 10: pb.ServerGroupsList
+	(ClientID)(0),                       // 2: pb.ClientID
+	(*GetDaemonApiVersionRequest)(nil),  // 3: pb.GetDaemonApiVersionRequest
+	(*GetDaemonApiVersionResponse)(nil), // 4: pb.GetDaemonApiVersionResponse
+	(*Empty)(nil),                       // 5: pb.Empty
+	(*Bool)(nil),                        // 6: pb.Bool
+	(*Payload)(nil),                     // 7: pb.Payload
+	(*Allowlist)(nil),                   // 8: pb.Allowlist
+	(*Ports)(nil),                       // 9: pb.Ports
+	(*ServerGroup)(nil),                 // 10: pb.ServerGroup
+	(*ServerGroupsList)(nil),            // 11: pb.ServerGroupsList
 }
 var file_common_proto_depIdxs = []int32{
-	8, // 0: pb.Allowlist.ports:type_name -> pb.Ports
-	9, // 1: pb.ServerGroupsList.servers:type_name -> pb.ServerGroup
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	9,  // 0: pb.Allowlist.ports:type_name -> pb.Ports
+	10, // 1: pb.ServerGroupsList.servers:type_name -> pb.ServerGroup
+	2,  // [2:2] is the sub-list for method output_type
+	2,  // [2:2] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_common_proto_init() }
@@ -635,7 +692,7 @@ func file_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_common_proto_rawDesc,
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
