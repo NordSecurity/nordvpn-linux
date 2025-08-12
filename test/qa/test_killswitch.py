@@ -180,11 +180,6 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
         "meshnet.json",
     ]
 
-    for fname in expected_files:
-        path = os.path.join(conf_dir, fname)
-        res = os.popen(f"sudo test -f {path} && echo exists || echo missing").read().strip()
-        assert res == "missing", f"File {path} should not exist"
-
     # enabling killswitch should not affect http transport of the remote config
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
     assert daemon.is_killswitch_on()
@@ -194,6 +189,13 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
     # remove previously fetched files
     # upon restart, they should be loaded again
     os.system(f"sudo rm -rf {conf_dir}")
+
+    # make sure the rc files are gone
+    for fname in expected_files:
+        path = os.path.join(conf_dir, fname)
+        res = os.popen(f"sudo test -f {path} && echo exists || echo missing").read().strip()
+        assert res == "missing", f"File {path} should not exist"
+
     daemon.restart()
     time.sleep(3)
 
