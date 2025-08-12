@@ -217,7 +217,8 @@ func main() {
 	// API
 	var err error
 	var validator response.Validator
-	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
+	// TODO/FIXME: debug/test, then restore
+	if internal.IsDevEnv(Environment) || (internal.IsDevEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1") {
 		validator = response.NoopValidator{}
 	} else {
 		validator, err = response.NewNordValidator()
