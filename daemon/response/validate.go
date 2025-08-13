@@ -86,7 +86,7 @@ func (v *NordValidator) Validate(code int, headers http.Header, body []byte) err
 	}
 
 	// TODO/FIXME: enable when fixed
-	disabled := true
+	disabled := false
 	if !disabled {
 		// Check if data is still valid in current time
 		acceptBeforeUnix, err := strconv.ParseInt(xAcceptBefore, 10, 64)
