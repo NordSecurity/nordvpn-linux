@@ -16,12 +16,6 @@ type VPNCredentialsResponse struct {
 
 type VPNCredentialsRenewalAPICall func() (*VPNCredentialsResponse, error)
 
-type vpnCredentialsConfig struct {
-	Username           string
-	Password           string
-	NordLynxPrivateKey string
-}
-
 type VPNCredentialsSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
@@ -121,6 +115,12 @@ func (s *VPNCredentialsSessionStore) validate() error {
 	}
 
 	return nil
+}
+
+type vpnCredentialsConfig struct {
+	Username           string
+	Password           string
+	NordLynxPrivateKey string
 }
 
 func (s *VPNCredentialsSessionStore) getConfig() (vpnCredentialsConfig, error) {
