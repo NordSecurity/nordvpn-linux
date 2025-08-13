@@ -13,7 +13,7 @@ type FeatureToggles struct {
 }
 
 func defaultToggles() FeatureToggles {
-	return FeatureToggles{meshnetEnabled: false}
+	return FeatureToggles{meshnetEnabled: true}
 }
 
 func (c *cmd) GetFeatureToggles() FeatureToggles {

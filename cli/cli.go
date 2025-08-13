@@ -450,6 +450,7 @@ func meshnetCommand(c *cmd) *cli.Command {
 		Name:    "meshnet",
 		Aliases: []string{"mesh"},
 		Usage:   MsgMeshnetUsage,
+		After:   meshnetDeprecationBanner,
 		Subcommands: []*cli.Command{
 			{
 				Name:        "peer",
@@ -939,6 +940,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 		Description:  MsgSetMeshnetDescription,
 		Action:       cmd.MeshSet,
 		BashComplete: cmd.SetBoolAutocomplete,
+		After:        meshnetDeprecationBanner,
 	}
 
 	if isMeshnetEnabled {
@@ -1437,4 +1439,9 @@ func composeAppVersion(buildVersion string, environment string, isSnap bool) str
 func isMeshnetEnabled(cmd *cmd) bool {
 	featureToggles := cmd.GetFeatureToggles()
 	return featureToggles.meshnetEnabled
+}
+
+func meshnetDeprecationBanner(ctx *cli.Context) error {
+	fmt.Println("Meshnet is leaving NordVPN on December 1. Learn more: https://nordvpn.com/blog/meshnet-shutdown")
+	return nil
 }
