@@ -48,7 +48,7 @@ func ValidateRenewToken(renewToken string) error {
 	return nil
 }
 
-// ValidateOpenVPNCredentialsPresence checks if OpenVPN credentials are valid
+// ValidateOpenVPNCredentialsPresence checks if OpenVPN credentials are present
 func ValidateOpenVPNCredentialsPresence(username, password string) error {
 	if username == "" || password == "" {
 		return ErrMissingVPNCredentials
@@ -56,7 +56,7 @@ func ValidateOpenVPNCredentialsPresence(username, password string) error {
 	return nil
 }
 
-// ValidateNordLynxPrivateKeyPresence checks if NordLynx private key is valid
+// ValidateNordLynxPrivateKeyPresence checks if NordLynx private key is present
 func ValidateNordLynxPrivateKeyPresence(key string) error {
 	if key == "" {
 		return ErrMissingNordLynxPrivateKey
