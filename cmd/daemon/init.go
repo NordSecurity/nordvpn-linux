@@ -94,18 +94,15 @@ func buildVPNCredentialsSessionStoreAPIRenewalCall(
 			return nil, errors.New("there is not data")
 		}
 
-		// actual API call passed into Session Store object
-		return func(token string) (*session.VPNCredentialsResponse, error) {
-			resp, err := clientAPI.ServiceCredentials(token)
-			if err != nil {
-				return nil, fmt.Errorf("getting vpn credentials data: %w", err)
-			}
+		resp, err := clientAPI.ServiceCredentials(data.Token)
+		if err != nil {
+			return nil, fmt.Errorf("getting vpn credentials data: %w", err)
+		}
 
-			return &session.VPNCredentialsResponse{
-				Username:           resp.Username,
-				Password:           resp.Password,
-				NordLynxPrivateKey: resp.NordlynxPrivateKey,
-			}, nil
-		}(data.Token)
+		return &session.VPNCredentialsResponse{
+			Username:           resp.Username,
+			Password:           resp.Password,
+			NordLynxPrivateKey: resp.NordlynxPrivateKey,
+		}, nil
 	}
 }
