@@ -217,14 +217,14 @@ func main() {
 	// API
 	var err error
 	var validator response.Validator
-	// if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
-	validator = response.NoopValidator{}
-	// } else {
-	// 	validator, err = response.NewNordValidator()
-	// 	if err != nil {
-	// 		log.Fatalln("Error on creating validator:", err)
-	// 	}
-	// }
+	if !internal.IsProdEnv(Environment) && os.Getenv(EnvIgnoreHeaderValidation) == "1" {
+		validator = response.NoopValidator{}
+	} else {
+		validator, err = response.NewNordValidator()
+		if err != nil {
+			log.Fatalln("Error on creating validator:", err)
+		}
+	}
 
 	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
 	if err != nil {

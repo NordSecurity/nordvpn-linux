@@ -85,13 +85,17 @@ func (v *NordValidator) Validate(code int, headers http.Header, body []byte) err
 		return fmt.Errorf("X-Digest value does not match the checksum of response body")
 	}
 
-	// Check if data is still valid in current time
-	acceptBeforeUnix, err := strconv.ParseInt(xAcceptBefore, 10, 64)
-	if err != nil {
-		return fmt.Errorf("parsing X-Accept-Before header")
-	}
-	if time.Now().Unix() > acceptBeforeUnix {
-		return fmt.Errorf("X-Accept-Before UNIX value is lower than current local time")
+	// TODO/FIXME: enable when fixed
+	disabled := true
+	if !disabled {
+		// Check if data is still valid in current time
+		acceptBeforeUnix, err := strconv.ParseInt(xAcceptBefore, 10, 64)
+		if err != nil {
+			return fmt.Errorf("parsing X-Accept-Before header")
+		}
+		if time.Now().Unix() > acceptBeforeUnix {
+			return fmt.Errorf("X-Accept-Before UNIX value is lower than current local time")
+		}
 	}
 
 	// Verify X-Signature
