@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
+var staticConfigFilename = filepath.Join(internal.DatFilesPathCommon, "install_static.dat")
 var (
 	ErrStaticValueAlreadySet    = errors.New("static value already configured")
 	ErrStaticValueNotConfigured = errors.New("static value was not configured")
@@ -47,7 +49,7 @@ type FilesystemStaticConfigManager struct {
 }
 
 func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, configState) {
-	cfgFile, err := fs.ReadFile(internal.StaticConfigFilename)
+	cfgFile, err := fs.ReadFile(staticConfigFilename)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to load static config:", err)
 		if errors.Is(err, os.ErrNotExist) {
@@ -134,7 +136,7 @@ func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error 
 		return fmt.Errorf("failed to serialize json: %w", err)
 	}
 
-	err = s.fs.WriteFile(internal.StaticConfigFilename, json, internal.PermUserRW)
+	err = s.fs.WriteFile(staticConfigFilename, json, internal.PermUserRW)
 	if err != nil {
 		return fmt.Errorf("failed to save static config file: %w", err)
 	}
