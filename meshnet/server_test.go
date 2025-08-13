@@ -43,8 +43,8 @@ type meshRenewChecker struct {
 	IsNotLoggedIn bool // by default is logged in
 }
 
-func (m meshRenewChecker) IsLoggedIn() bool {
-	return !m.IsNotLoggedIn
+func (m meshRenewChecker) IsLoggedIn() (bool, error) {
+	return !m.IsNotLoggedIn, nil
 }
 
 func (m meshRenewChecker) IsMFAEnabled() (bool, error) {
@@ -1383,24 +1383,28 @@ func TestServer_fetchCfg(t *testing.T) {
 			ac.IsNotLoggedIn = tt.isNotLoggedIn
 			s.ac = ac
 
-			// Make sure it fetches the same config as cm would
-			var expectedCfg config.Config
-			s.cm.Load(&expectedCfg)
-
 			cfg, err := s.fetchCfg()
 
-			// Ignore meshnet settings as they are likely to be changed by reg checker
-			cfg.Mesh = false
-			cfg.MeshDevice = nil
-			cfg.MeshPrivateKey = ""
-			cfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
-			expectedCfg.Mesh = false
-			expectedCfg.MeshDevice = nil
-			expectedCfg.MeshPrivateKey = ""
-			expectedCfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
-
 			assert.EqualValues(t, tt.err, err)
-			assert.Equal(t, expectedCfg, cfg)
+
+			// Only compare configs when there's no error
+			if err == nil {
+				// Make sure it fetches the same config as cm would
+				var expectedCfg config.Config
+				s.cm.Load(&expectedCfg)
+
+				// Ignore meshnet settings as they are likely to be changed by reg checker
+				cfg.Mesh = false
+				cfg.MeshDevice = nil
+				cfg.MeshPrivateKey = ""
+				cfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
+				expectedCfg.Mesh = false
+				expectedCfg.MeshDevice = nil
+				expectedCfg.MeshPrivateKey = ""
+				expectedCfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
+
+				assert.Equal(t, expectedCfg, cfg)
+			}
 		})
 	}
 }

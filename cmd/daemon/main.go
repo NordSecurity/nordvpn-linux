@@ -69,6 +69,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
+	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
@@ -275,21 +276,6 @@ func main() {
 		httpGlobalCtx,
 	)
 
-	defaultAPI := core.NewDefaultAPI(
-		userAgent,
-		daemon.BaseURL,
-		httpClientWithRotator,
-		validator,
-	)
-
-	meshMapper := mapper.NewNotifyingMapper(
-		mapper.NewCachingMapper(defaultAPI, time.Minute*5),
-		meshnetEvents.SelfRemoved,
-		meshnetEvents.PeerUpdate,
-	)
-
-	meshRegistry := registry.NewNotifyingRegistry(defaultAPI, meshnetEvents.PeerUpdate)
-
 	repoAPI := daemon.NewRepoAPI(
 		userAgent,
 		daemon.RepoURL,
@@ -312,7 +298,26 @@ func main() {
 	staticCfg := initializeStaticConfig(machineID)
 
 	// obfuscated machineID and add the mask to identify how the ID was generated
-	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
+	deviceID := fmt.Sprintf(
+		"%x_%d",
+		sha256.Sum256([]byte(machineID.String()+Salt)),
+		machineIdGenerator.GetUsedInformationMask(),
+	)
+
+	invalidSessionErrHandlingReg := internal.NewErrorHandlingRegistry[error]()
+
+	// encapsulating initialization logic
+	clientAPI, accessTokenSessionStore := func() (core.ClientAPI, session.SessionStore) {
+		api := core.NewSimpleAPI(
+			userAgent,
+			daemon.BaseURL,
+			httpClientWithRotator,
+			validator,
+		)
+
+		sessionStore := buildAccessTokenSessionStore(fsystem, invalidSessionErrHandlingReg, api)
+		return core.NewSmartClientAPI(api, sessionStore), sessionStore
+	}()
 
 	// populate build target configuration
 	buildTarget := config.BuildTarget{
@@ -326,7 +331,7 @@ func main() {
 	analytics := newAnalytics(
 		eventsDbPath,
 		fsystem,
-		defaultAPI,
+		clientAPI,
 		*httpClientSimple,
 		buildTarget,
 		deviceID)
@@ -462,10 +467,17 @@ func main() {
 
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
+	meshRegistry := registry.NewNotifyingRegistry(clientAPI, meshnetEvents.PeerUpdate)
 	meshnetChecker := meshnet.NewRegisteringChecker(
 		fsystem,
 		keygen,
 		meshRegistry,
+	)
+
+	meshMapper := mapper.NewNotifyingMapper(
+		mapper.NewCachingMapper(clientAPI, time.Minute*5),
+		meshnetEvents.SelfRemoved,
+		meshnetEvents.PeerUpdate,
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
@@ -482,21 +494,42 @@ func main() {
 
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
+
+	ncCredentialsSessionStore := buildNCCredentialsSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
+	trustedPassSessionStore := buildTrustedPassSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
+	vpnCredentialsSessionStore := buildVPNCredentialsSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
-		defaultAPI,
+		clientAPI,
 		daemonEvents.User.MFA,
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
+		// checks are processing in the provided order
+		accessTokenSessionStore, ncCredentialsSessionStore, trustedPassSessionStore, vpnCredentialsSessionStore,
 	)
+
 	endpointResolver := network.NewDefaultResolverChain(fw)
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
-		nc.NewCredsFetcher(defaultAPI, fsystem))
+		nc.NewCredsFetcher(clientAPI, fsystem))
+
+	// on session unrecoverable error perform user log-out action
+	daemon.RegisterSessionErrorHandler(
+		invalidSessionErrHandlingReg,
+		daemon.SessionErrorHandlerDependencies{
+			AuthChecker:            authChecker,
+			Networker:              netw,
+			NotificationClient:     notificationClient,
+			ConfigManager:          fsystem,
+			PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
+			PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
+			DebugPublisherFunc:     debugSubject.Publish,
+		},
+	)
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
 	dataUpdateEvents.Subscribe(statePublisher)
@@ -511,7 +544,7 @@ func main() {
 	consentChecker := newConsentChecker(
 		internal.IsDevEnv(Environment),
 		fsystem,
-		defaultAPI,
+		clientAPI,
 		authChecker,
 		analytics,
 	)
@@ -523,9 +556,9 @@ func main() {
 		authChecker,
 		fsystem,
 		dm,
-		defaultAPI,
-		defaultAPI,
-		defaultAPI,
+		clientAPI,
+		clientAPI,
+		clientAPI,
 		cdnAPI,
 		repoAPI,
 		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
@@ -549,7 +582,7 @@ func main() {
 		authChecker,
 		fsystem,
 		meshnetChecker,
-		inviter.NewNotifyingInviter(defaultAPI, meshnetEvents.PeerUpdate),
+		inviter.NewNotifyingInviter(clientAPI, meshnetEvents.PeerUpdate),
 		netw,
 		meshRegistry,
 		meshMapper,
@@ -666,7 +699,7 @@ func main() {
 	}
 	monitor.Start(netw)
 
-	if authChecker.IsLoggedIn() {
+	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
 	}
 

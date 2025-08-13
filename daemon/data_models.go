@@ -3,11 +3,13 @@ package daemon
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/internal/caching"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/coreos/go-semver/semver"
@@ -158,44 +160,54 @@ func (data *VersionData) save() error {
 	return nil
 }
 
-func isAccountCacheValid(added time.Time) bool {
-	return time.Now().Before(added.Add(accountDataValidityPeriod))
-}
-
-type cacheValidityFunc func(time.Time) bool
-
 type AccountData struct {
-	accountData            *pb.AccountResponse
-	isSet                  bool
-	updatedAt              time.Time
-	checkCacheValidityFunc cacheValidityFunc
+	cache *caching.Cache[*pb.AccountResponse]
 }
 
 func NewAccountData() AccountData {
-	return AccountData{checkCacheValidityFunc: isAccountCacheValid}
+	// create a new cache without a fetch function since we don't have the actual fetch logic here
+	return AccountData{
+		cache: caching.NewCacheWithTTL[*pb.AccountResponse](accountDataValidityPeriod, nil),
+	}
 }
 
 func (a *AccountData) set(data *pb.AccountResponse) {
 	dataCopy := proto.Clone(data).(*pb.AccountResponse)
-	a.accountData = dataCopy
-	a.isSet = true
-	a.updatedAt = time.Now()
+	a.cache.Set(dataCopy)
 }
 
 func (a *AccountData) unset() {
-	a.isSet = false
-	a.accountData = &pb.AccountResponse{}
+	a.cache.Invalidate()
 }
 
-func (a *AccountData) get(respectValidityPeriod bool) (*pb.AccountResponse, bool) {
-	if !a.isSet {
+// get retrieves account data from cache.
+// Parameters:
+//   - respectDataExpiry: Controls cache retrieval
+//     - If true: Tries to return valid cached data, or error if it is invalid
+//     - If false: Returns whatever is in the cache regardless of validity, including stale data
+//
+// Returns:
+//   - *pb.AccountResponse: The account data
+//   - bool: Whether cached data was used (true) or not (false)
+//     - true indicates data came from cache (valid or stale)
+//     - false indicates no cache data was available or an error occurred
+
+func (a *AccountData) get(respectDataExpiry bool) (*pb.AccountResponse, bool) {
+	data, err := a.cache.Get()
+	if data == nil {
 		return nil, false
 	}
 
-	if respectValidityPeriod && !a.checkCacheValidityFunc(a.updatedAt) {
-		a.isSet = false
+	if respectDataExpiry && err != nil {
 		return nil, false
 	}
 
-	return proto.Clone(a.accountData).(*pb.AccountResponse), a.isSet
+	// when not respecting expiry, we can use stale data
+	if !respectDataExpiry && err != nil {
+		if !errors.Is(err, caching.ErrStaleData) {
+			return nil, false
+		}
+	}
+
+	return proto.Clone(data).(*pb.AccountResponse), true
 }

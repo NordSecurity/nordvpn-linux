@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	testsession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -69,12 +71,16 @@ var (
 )
 
 func testRPC() *RPC {
-	api := core.NewDefaultAPI(
-		"1.0.0",
-		"",
-		http.DefaultClient,
-		response.NoopValidator{},
+	api := core.NewSmartClientAPI(
+		core.NewSimpleAPI(
+			"1.0.0",
+			"",
+			http.DefaultClient,
+			response.NoopValidator{},
+		),
+		&testsession.MockSessionStore{},
 	)
+
 	dm := testNewDataManager()
 	dm.SetServersData(time.Now(), serversList(), "")
 
