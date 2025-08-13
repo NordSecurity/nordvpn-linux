@@ -198,8 +198,7 @@ func (c *CdnRemoteConfig) load() {
 			var loadErr *LoadError
 			if errors.As(err, &loadErr) {
 				// only specific load errors are used for JSON related failures
-				switch loadErr.Kind {
-				case LoadErrorParsing, LoadErrorParsingIncludeFile, LoadErrorMainHashJsonParsing, LoadErrorMainJsonValidationFailure:
+				if loadErr.Kind == LoadErrorParsing || loadErr.Kind == LoadErrorParsingIncludeFile || loadErr.Kind == LoadErrorMainHashJsonParsing || loadErr.Kind == LoadErrorMainJsonValidationFailure {
 					c.analytics.EmitJsonParseFailureEvent(ClientCli, feature.name, *loadErr)
 				}
 			}
