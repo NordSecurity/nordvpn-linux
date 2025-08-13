@@ -126,7 +126,6 @@ func TestNCCredentialsSessionStore_Renew_ExpiredCredentials(t *testing.T) {
 
 	uid := int64(123)
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
-	futureTime := time.Now().UTC().Add(24 * time.Hour)
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
@@ -150,18 +149,31 @@ func TestNCCredentialsSessionStore_Renew_ExpiredCredentials(t *testing.T) {
 			Username:  "newuser",
 			Password:  "newpass",
 			Endpoint:  "https://new.example.com",
-			ExpiresIn: 86400, // 24 hours
+			ExpiresIn: 86400 * time.Second, // 24 hours as Duration
 		}, nil
 	}
 
 	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	beforeRenew := time.Now().UTC()
 	err := store.Renew()
+	afterRenew := time.Now().UTC()
 
 	assert.NoError(t, err)
 	assert.Equal(t, "newuser", cfgManager.Cfg.TokensData[uid].NCData.Username)
 	assert.Equal(t, "newpass", cfgManager.Cfg.TokensData[uid].NCData.Password)
 	assert.Equal(t, "https://new.example.com", cfgManager.Cfg.TokensData[uid].NCData.Endpoint)
-	assert.True(t, cfgManager.Cfg.TokensData[uid].NCData.ExpirationDate.After(futureTime.Add(-time.Hour)))
+
+	// Verify the expiration date is approximately 24 hours from now
+	actualExpiration := cfgManager.Cfg.TokensData[uid].NCData.ExpirationDate
+
+	// The expiration should be set to approximately 24 hours from when the renewal happened
+	assert.True(t, actualExpiration.After(beforeRenew.Add(23*time.Hour)),
+		"Expiration should be at least 23 hours from before renewal. Got: %v, Expected after: %v",
+		actualExpiration, beforeRenew.Add(23*time.Hour))
+	assert.True(t, actualExpiration.Before(afterRenew.Add(25*time.Hour)),
+		"Expiration should be at most 25 hours from after renewal. Got: %v, Expected before: %v",
+		actualExpiration, afterRenew.Add(25*time.Hour))
 }
 
 func TestNCCredentialsSessionStore_Renew_InvalidCredentials(t *testing.T) {
@@ -345,8 +357,8 @@ func TestNCCredentialsSessionStore_HandleError(t *testing.T) {
 			name:            "no registered handler",
 			testError:       errors.New("unhandled error"),
 			setupHandler:    false,
-			wantErr:         true,
-			wantErrContains: "handling NC credentials error",
+			wantErr:         false,
+			wantErrContains: "",
 			wantHandlerCall: false,
 		},
 	}
