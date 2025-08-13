@@ -1,0 +1,202 @@
+{
+  "name": "nordvpn-linux-dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "runArgs": [
+    "--privileged",
+    "-v", "/var/run/docker.sock:/var/run/docker.sock"
+  ],
+  "settings": {
+    "go.toolsManagement.autoUpdate": true,
+    "go.useLanguageServer": true
+  },
+  "extensions": [
+    "golang.Go",
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+    "timonwong.shellcheck",
+    "rust-lang.rust-analyzer"
+  ],
+  "postCreateCommand": "/usr/local/go/bin/go version && mage --version && rustc --version",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "tasks": [
+        {
+          "label": "mage build:deb",
+          "type": "shell",
+          "command": "mage build:deb",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:rpm",
+          "type": "shell",
+          "command": "mage build:rpm",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:snap",
+          "type": "shell",
+          "command": "mage build:snap",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:debdocker",
+          "type": "shell",
+          "command": "mage build:debdocker",
+          "problemMatcher": [],
+          "group": {
+            "kind": "build",
+            "isDefault": true
+          }
+        },
+        {
+          "label": "mage build:rpmdocker",
+          "type": "shell",
+          "command": "mage build:rpmdocker",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:snapdocker",
+          "type": "shell",
+          "command": "mage build:snapdocker",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:binaries",
+          "type": "shell",
+          "command": "mage build:binaries",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:binariesdocker",
+          "type": "shell",
+          "command": "mage build:binariesdocker",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:openvpn",
+          "type": "shell",
+          "command": "mage build:openvpn",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:openvpndocker",
+          "type": "shell",
+          "command": "mage build:openvpndocker",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:rust",
+          "type": "shell",
+          "command": "mage build:rust",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage build:rustdocker",
+          "type": "shell",
+          "command": "mage build:rustdocker",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage generate:protobufdocker",
+          "type": "shell",
+          "command": "mage generate:protobufdocker",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:go",
+          "type": "shell",
+          "command": "mage test:go",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:cgodocker",
+          "type": "shell",
+          "command": "mage test:cgodocker",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:gosec",
+          "type": "shell",
+          "command": "mage test:gosec",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:hardening",
+          "type": "shell",
+          "command": "mage test:hardening",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:lint",
+          "type": "shell",
+          "command": "mage test:lint",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:qa",
+          "type": "shell",
+          "command": "mage test:qa",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:qasnap",
+          "type": "shell",
+          "command": "mage test:qasnap",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:qasnapfast",
+          "type": "shell",
+          "command": "mage test:qasnapfast",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:qadocker",
+          "type": "shell",
+          "command": "mage test:qadocker",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage test:qadockerfast",
+          "type": "shell",
+          "command": "mage test:qadockerfast",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage view:coverage",
+          "type": "shell",
+          "command": "mage view:coverage",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage view:docs",
+          "type": "shell",
+          "command": "mage view:docs",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage clean",
+          "type": "shell",
+          "command": "mage clean",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage download",
+          "type": "shell",
+          "command": "mage download",
+          "problemMatcher": []
+        },
+        {
+          "label": "mage downloadopenvpn",
+          "type": "shell",
+          "command": "mage downloadopenvpn",
+          "problemMatcher": []
+        }
+      ]
+    }
+  }
+}
