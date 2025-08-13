@@ -2,6 +2,7 @@ package session
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -12,7 +13,7 @@ type NCCredentialsResponse struct {
 	Username  string
 	Password  string
 	Endpoint  string
-	ExpiresIn int
+	ExpiresIn time.Duration
 }
 
 type NCCredentialsRenewalAPICall func() (*NCCredentialsResponse, error)
@@ -63,7 +64,7 @@ func (s *NCCredentialsSessionStore) Renew() error {
 		return err
 	}
 
-	expiryTime := time.Now().UTC().Add(time.Duration(resp.ExpiresIn) * time.Second)
+	expiryTime := time.Now().UTC().Add(resp.ExpiresIn)
 
 	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
 		if c.TokensData == nil {
@@ -94,7 +95,8 @@ func (s *NCCredentialsSessionStore) Renew() error {
 func (s *NCCredentialsSessionStore) HandleError(err error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(err)
 	if len(handlers) == 0 {
-		return fmt.Errorf("handling NC credentials error: %w", err)
+		log.Println(internal.InfoPrefix, "No handlers for nc creds session store is registered")
+		return nil
 	}
 
 	for _, handler := range handlers {

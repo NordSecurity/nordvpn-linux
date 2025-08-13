@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -134,19 +135,16 @@ func buildNCCredentialsSessionStoreAPIRenewalCall(
 			return nil, errors.New("there is not data")
 		}
 
-		// actual API call passed into Session Store object
-		return func(appUserID string) (*session.NCCredentialsResponse, error) {
-			resp, err := clientAPI.NotificationCredentials(appUserID)
-			if err != nil {
-				return nil, fmt.Errorf("getting nc credentials data: %w", err)
-			}
+		resp, err := clientAPI.NotificationCredentials(data.NCData.UserID.String())
+		if err != nil {
+			return nil, fmt.Errorf("getting nc credentials data: %w", err)
+		}
 
-			return &session.NCCredentialsResponse{
-				Username:  resp.Username,
-				Password:  resp.Password,
-				Endpoint:  resp.Endpoint,
-				ExpiresIn: resp.ExpiresIn,
-			}, nil
-		}(data.NCData.UserID.String())
+		return &session.NCCredentialsResponse{
+			Username:  resp.Username,
+			Password:  resp.Password,
+			Endpoint:  resp.Endpoint,
+			ExpiresIn: time.Duration(resp.ExpiresIn),
+		}, nil
 	}
 }
