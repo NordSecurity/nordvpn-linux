@@ -13,11 +13,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	// testUserID is the default user ID used in tests
+	testUserID = int64(123)
+	// testExpiredDuration represents a duration in the past for expired credentials
+	testExpiredDuration = -24 * time.Hour
+	// testValidDuration represents a duration in the future for valid credentials
+	testValidDuration = 24 * time.Hour
+)
+
 func TestNCCredentialsSessionStore_Renew_NotExpired(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
-	futureTime := time.Now().UTC().Add(24 * time.Hour)
+	uid := testUserID
+	futureTime := time.Now().UTC().Add(testValidDuration)
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
@@ -57,7 +66,7 @@ func TestNCCredentialsSessionStore_Renew_NotExpired(t *testing.T) {
 func TestNCCredentialsSessionStore_Renew_NoTokenData(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
+	uid := testUserID
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
@@ -124,8 +133,8 @@ func TestNCCredentialsSessionStore_Renew_ConfigLoadError(t *testing.T) {
 func TestNCCredentialsSessionStore_Renew_ExpiredCredentials(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
-	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
@@ -218,8 +227,8 @@ func TestNCCredentialsSessionStore_Renew_InvalidCredentials(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			uid := int64(123)
-			pastTime := time.Now().UTC().Add(-24 * time.Hour)
+			uid := testUserID
+			pastTime := time.Now().UTC().Add(testExpiredDuration)
 
 			cfg := &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: uid},
@@ -254,8 +263,8 @@ func TestNCCredentialsSessionStore_Renew_InvalidCredentials(t *testing.T) {
 func TestNCCredentialsSessionStore_Renew_APIError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
-	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
 	apiError := errors.New("api-error")
 
 	cfg := &config.Config{
@@ -295,8 +304,8 @@ func TestNCCredentialsSessionStore_Renew_APIError(t *testing.T) {
 func TestNCCredentialsSessionStore_Renew_SaveError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
-	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
@@ -367,7 +376,7 @@ func TestNCCredentialsSessionStore_HandleError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &config.Config{
 				TokensData: map[int64]config.TokenData{
-					123: {},
+					testUserID: {},
 				},
 			}
 
@@ -458,7 +467,7 @@ func TestNCCredentialsSessionStore_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			uid := int64(123)
+			uid := testUserID
 
 			cfg := &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: uid},
@@ -495,7 +504,7 @@ func TestNCCredentialsSessionStore_Validate(t *testing.T) {
 func TestNCCredentialsSessionStore_GetConfig(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
+	uid := testUserID
 	expectedTime := time.Now().UTC().Add(time.Hour)
 
 	cfg := &config.Config{
@@ -566,7 +575,7 @@ func TestNCCredentialsSessionStore_GetConfig_LoadError(t *testing.T) {
 func TestNCCredentialsSessionStore_GetConfig_NoTokenData(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
+	uid := testUserID
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
@@ -600,8 +609,8 @@ func TestNCCredentialsSessionStore_GetConfig_NoTokenData(t *testing.T) {
 func TestNCCredentialsSessionStore_Renew_NilRenewalAPI(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
-	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
@@ -630,8 +639,8 @@ func TestNCCredentialsSessionStore_Renew_NilRenewalAPI(t *testing.T) {
 func TestNCCredentialsSessionStore_Renew_NilResponse(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	uid := int64(123)
-	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
 
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
