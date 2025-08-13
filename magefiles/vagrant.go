@@ -36,6 +36,11 @@ func (s secret) String() string {
 	return "secret:" + str[:display] + "..." + str[len(str)-display:]
 }
 
+// Get the raw value of the secret without obfuscation
+func (s secret) getValue() string {
+	return string(s)
+}
+
 // VagrantEnv stores all the env variables needed to setup the VM using vagrant and to execute the tests inside VM
 type VagrantEnv struct {
 	Cwd             string // project folder
@@ -90,7 +95,7 @@ func streamLines(r io.Reader, out io.Writer) {
 func runCommandInVM(vagrantEnv VagrantEnv, args []string) error {
 	env := []string{
 		fmt.Sprintf("WORKDIR=%s", vagrantEnv.RemoteCwd),
-		fmt.Sprintf("NA_TESTS_CREDENTIALS='%s'", vagrantEnv.TestCredentials),
+		fmt.Sprintf("NA_TESTS_CREDENTIALS='%s'", vagrantEnv.TestCredentials.getValue()),
 	}
 
 	// compose the remote command to be on single string:

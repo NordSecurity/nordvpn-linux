@@ -13,6 +13,3 @@ fi
 rm -fr "${GOCOVERDIR}"
 
 "${WORKDIR}/ci/qa_run_tests.sh" "$@"
-
-
-
