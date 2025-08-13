@@ -82,7 +82,6 @@ func (s *NCCredentialsSessionStore) Renew() error {
 		c.TokensData[c.AutoConnectData.ID] = data
 		return c
 	})
-
 	if err != nil {
 		return fmt.Errorf("saving renewed nc creds: %w", err)
 	}

@@ -92,7 +92,7 @@ func buildVPNCredentialsSessionStoreAPIRenewalCall(
 
 		data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
 		if !ok {
-			return nil, errors.New("there is not data")
+			return nil, errors.New("there is no config for calling vpn creds api")
 		}
 
 		resp, err := clientAPI.ServiceCredentials(data.Token)
