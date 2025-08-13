@@ -117,6 +117,7 @@ func buildNCCredentialsSessionStore(
 		confman,
 		errRegistry,
 		buildNCCredentialsSessionStoreAPIRenewalCall(confman, clientAPI),
+		nil, // No external validator for now
 	)
 }
 
