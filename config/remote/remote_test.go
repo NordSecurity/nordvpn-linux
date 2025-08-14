@@ -78,42 +78,42 @@ func TestFindMatchingRecord(t *testing.T) {
 	// ss []ParamValue, ver string
 	input1 := []ParamValue{
 		{
-			Value:      "val1",
-			AppVersion: ">=3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val1",
+			AppVersion:    ">=3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val2",
-			AppVersion: ">=3.3.3",
-			Weight:     20,
-			Rollout:    10,
+			Value:         "val2",
+			AppVersion:    ">=3.3.3",
+			Weight:        20,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val3",
-			AppVersion: ">=3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val3",
+			AppVersion:    ">=3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 	}
 	input2 := []ParamValue{
 		{
-			Value:      "val1",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val1",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val2",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val2",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val3",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val3",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 	}
 	input3 := []ParamValue{}
@@ -125,11 +125,11 @@ func TestFindMatchingRecord(t *testing.T) {
 		matchValue   string
 	}{
 		{
-			name:         "match1",
+			name:         "match1 - no rollout / no match",
 			input:        input1,
 			myAppVer:     "3.3.3",
 			myAppRollout: 30,
-			matchValue:   "val2",
+			matchValue:   "",
 		},
 		{
 			name:         "match1 - no match by lesser version",
@@ -139,31 +139,31 @@ func TestFindMatchingRecord(t *testing.T) {
 			matchValue:   "",
 		},
 		{
-			name:         "match1 - no rollout / no match",
+			name:         "match1",
 			input:        input1,
 			myAppVer:     "3.3.3",
 			myAppRollout: 3,
-			matchValue:   "",
+			matchValue:   "val2",
 		},
 		{
 			name:         "match2 - match by greater version",
 			input:        input1,
 			myAppVer:     "3.3.4",
-			myAppRollout: 30,
+			myAppRollout: 9,
 			matchValue:   "val2",
 		},
 		{
 			name:         "match3 - equal weights, first match used",
 			input:        input2,
 			myAppVer:     "3.3.3",
-			myAppRollout: 30,
+			myAppRollout: 10,
 			matchValue:   "val1",
 		},
 		{
 			name:         "match4 - empty list, no matches",
 			input:        input3,
 			myAppVer:     "3.3.3",
-			myAppRollout: 30,
+			myAppRollout: 19,
 			matchValue:   "",
 		},
 	}
@@ -195,32 +195,32 @@ func TestFeatureOnOff(t *testing.T) {
 	defer cancel()
 
 	tests := []struct {
-		name    string
-		ver     string
-		env     string
-		feature string
-		on      bool
+		name                   string
+		ver                    string
+		env                    string
+		feature                string
+		featureEnabledExpected bool
 	}{
 		{
-			name:    "feature1 no rc - off by default",
-			ver:     "",
-			env:     "dev",
-			feature: testFeatureNoRc,
-			on:      true,
+			name:                   "feature1 no rc - off by default",
+			ver:                    "",
+			env:                    "dev",
+			feature:                testFeatureNoRc,
+			featureEnabledExpected: true,
 		},
 		{
-			name:    "feature2 1",
-			ver:     "1.1.1",
-			env:     "dev",
-			feature: testFeatureWithRc,
-			on:      false,
+			name:                   "feature2 1",
+			ver:                    "1.1.1",
+			env:                    "dev",
+			feature:                testFeatureWithRc,
+			featureEnabledExpected: false,
 		},
 		{
-			name:    "feature2 2",
-			ver:     "4.1.1",
-			env:     "dev",
-			feature: testFeatureWithRc,
-			on:      true,
+			name:                   "feature2 2",
+			ver:                    "4.1.1",
+			env:                    "dev",
+			feature:                testFeatureWithRc,
+			featureEnabledExpected: true,
 		},
 	}
 
@@ -232,8 +232,8 @@ func TestFeatureOnOff(t *testing.T) {
 			err := rc.LoadConfig()
 			assert.True(t, eh.notified)
 			assert.NoError(t, err)
-			on := rc.IsFeatureEnabled(test.feature)
-			assert.Equal(t, test.on, on)
+			isFeatureEnabled := rc.IsFeatureEnabled(test.feature)
+			assert.Equal(t, test.featureEnabledExpected, isFeatureEnabled)
 		})
 	}
 }
@@ -560,7 +560,8 @@ var nordwhisperJsonConfFile = `
                 {
                     "value": false,
                     "app_version": "*",
-                    "weight": 1
+                    "weight": 1,
+					"rollout": 20
                 },
                 {
                     "value": true,
@@ -612,12 +613,14 @@ var libtelioJsonConfFile = `
                 {
                     "value": "include/libtelio1.json",
                     "app_version": ">=3.19.0",
-                    "weight": 1
+                    "weight": 1,
+                    "rollout": 20
                 },
                 {
                     "value": "include/libtelio2.json",
                     "app_version": ">=3.18.3",
-                    "weight": 3
+                    "weight": 3,
+                    "rollout": 20
                 }
             ]
         }
@@ -665,12 +668,14 @@ var libtelioUpdatedJsonConfFile = `
                 {
                     "value": "include/libtelio1.json",
                     "app_version": ">=3.19.0",
-                    "weight": 1
+                    "weight": 1,
+                    "rollout": 20
                 },
                 {
                     "value": "include/libtelio2.json",
                     "app_version": ">=3.18.3",
-                    "weight": 3
+                    "weight": 3,
+                    "rollout": 20
                 }
             ]
         }
