@@ -209,43 +209,43 @@ func TestFindMatchingRecord_EmitsOneEvent(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	const (
-		featureName = FeatureMeshnet
-		rollout     = 50
+		featureName    = FeatureMeshnet
+		featureRollout = 50
 	)
 
 	testCases := []struct {
 		name              string
-		rolloutGroup      int
+		userRolloutGroup  int
 		expectedEventName string
 		expectedDetails   string
 		expectedResult    string
 	}{
 		{
 			name:              "Partiall Rollout failed - rollout group above limit",
-			rolloutGroup:      60,
+			userRolloutGroup:  60,
 			expectedEventName: `"event":"rc_rollout"`,
 			expectedDetails:   `"error":"meshnet 60 / 50"`,
 			expectedResult:    `"result":"no"`,
 		},
 		{
 			name:              "Rollout success - rollout group under the limit",
-			rolloutGroup:      40,
+			userRolloutGroup:  40,
 			expectedEventName: `"event":"rc_rollout"`,
 			expectedDetails:   `"error":"meshnet 40 / 50"`,
 			expectedResult:    `"result":"yes"`,
 		},
 		{
 			name:              "Rollout success - rollout group same as the limit",
-			rolloutGroup:      50,
+			userRolloutGroup:  50,
 			expectedEventName: `"event":"rc_rollout"`,
 			expectedDetails:   `"error":"meshnet 50 / 50"`,
-			expectedResult:    `"result":"no"`,
+			expectedResult:    `"result":"yes"`,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			fixture := setupAnalyticsTest(tc.rolloutGroup)
+			fixture := setupAnalyticsTest(tc.userRolloutGroup)
 
 			fixture.subscriber.ExpectEvents(1)
 
@@ -255,7 +255,7 @@ func TestFindMatchingRecord_EmitsOneEvent(t *testing.T) {
 				"/local/path",
 				&MockRemoteStorage{},
 				fixture.analytics,
-				tc.rolloutGroup,
+				tc.userRolloutGroup,
 			)
 
 			feature := rc.features.get(featureName)
@@ -267,7 +267,7 @@ func TestFindMatchingRecord_EmitsOneEvent(t *testing.T) {
 							AppVersion: "^1.0.0",
 							Value:      true,
 							Weight:     100,
-							Rollout:    rollout,
+							Rollout:    featureRollout,
 						},
 					},
 				},

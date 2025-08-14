@@ -46,32 +46,32 @@ type RemoteConfigNotifier interface {
 }
 
 type CdnRemoteConfig struct {
-	appVersion     string
-	appEnvironment string
-	localCachePath string
-	remotePath     string
-	cdn            core.RemoteStorage
-	features       *FeatureMap
-	rolloutGroup   int
-	analytics      Analytics
-	initOnce       sync.Once
-	mu             sync.RWMutex
-	notifier       events.PublishSubcriber[RemoteConfigEvent]
+	appVersion      string
+	appEnvironment  string
+	localCachePath  string
+	remotePath      string
+	cdn             core.RemoteStorage
+	features        *FeatureMap
+	appRolloutGroup int
+	analytics       Analytics
+	initOnce        sync.Once
+	mu              sync.RWMutex
+	notifier        events.PublishSubcriber[RemoteConfigEvent]
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
 func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string,
 	cdn core.RemoteStorage, analytics Analytics, appRollout int) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
-		appVersion:     buildTarget.Version,
-		appEnvironment: buildTarget.Environment,
-		remotePath:     remotePath,
-		localCachePath: localPath,
-		cdn:            cdn,
-		rolloutGroup:   appRollout,
-		analytics:      analytics,
-		features:       NewFeatureMap(),
-		notifier:       &subs.Subject[RemoteConfigEvent]{},
+		appVersion:      buildTarget.Version,
+		appEnvironment:  buildTarget.Environment,
+		remotePath:      remotePath,
+		localCachePath:  localPath,
+		cdn:             cdn,
+		appRolloutGroup: appRollout,
+		analytics:       analytics,
+		features:        NewFeatureMap(),
+		notifier:        &subs.Subject[RemoteConfigEvent]{},
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
@@ -238,7 +238,7 @@ func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string
 	// as a last step, check if app's rollout group matches feature's rollout value
 	// (do not try to use other match with lesser weight)
 	if match != nil {
-		if match.Rollout > c.rolloutGroup {
+		if match.Rollout < c.appRolloutGroup {
 			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.Rollout, partialRolloutPerformedFailure)
 			match = nil
 		} else {

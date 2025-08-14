@@ -12,8 +12,8 @@ const (
 	messageNamespace                      = "nordvpn-linux"
 	rcFailure                             = "failure"
 	rcSuccess                             = "success"
-	partialRolloutPerformedFailure        = true
-	partialRolloutPerformedSuccess        = false
+	partialRolloutPerformedFailure        = false
+	partialRolloutPerformedSuccess        = true
 	rolloutNo                             = "no"
 	rolloutYes                            = "yes"
 	subscope                              = "linux-rc"

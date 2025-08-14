@@ -410,15 +410,15 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage, rolloutGroup i
 		DebuggerEvents: &testSubject,
 	}
 	rc := &CdnRemoteConfig{
-		appVersion:     ver,
-		appEnvironment: env,
-		remotePath:     httpPath,
-		localCachePath: localPath,
-		cdn:            cdn,
-		features:       NewFeatureMap(),
-		analytics:      NewRemoteConfigAnalytics(ve.DebuggerEvents, rolloutGroup),
-		notifier:       &subs.Subject[RemoteConfigEvent]{},
-		rolloutGroup:   rolloutGroup,
+		appVersion:      ver,
+		appEnvironment:  env,
+		remotePath:      httpPath,
+		localCachePath:  localPath,
+		cdn:             cdn,
+		features:        NewFeatureMap(),
+		analytics:       NewRemoteConfigAnalytics(ve.DebuggerEvents, rolloutGroup),
+		notifier:        &subs.Subject[RemoteConfigEvent]{},
+		appRolloutGroup: rolloutGroup,
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
