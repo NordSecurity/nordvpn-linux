@@ -40,10 +40,19 @@ func NewNCCredentialsSessionStore(
 	}
 }
 
-// Renew renews the NC credentials session
-func (s *NCCredentialsSessionStore) Renew() error {
-	if err := s.validate(); err == nil { // Credentials are still valid
-		return nil
+// Renew renews the NC credentials session.
+// Use SilentRenewal() option to perform renewal without triggering side effects.
+// Use ForceRenewal() option to force renewal even if the credentials are valid.
+func (s *NCCredentialsSessionStore) Renew(opts ...RenewalOption) error {
+	options := &renewalOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	if !options.forceRenewal {
+		if err := s.validate(); err == nil {
+			return nil
+		}
 	}
 
 	if s.renewAPICall == nil {
@@ -52,22 +61,32 @@ func (s *NCCredentialsSessionStore) Renew() error {
 
 	resp, err := s.renewAPICall()
 	if err != nil {
+		if options.skipErrorHandlers {
+			return err
+		}
 		return s.HandleError(err)
 	}
 
 	if resp == nil {
-		return fmt.Errorf("renewal API returned nil response")
+		if options.skipErrorHandlers {
+			return ErrMissingNCCredentialsResponse
+		}
+		return ErrMissingNCCredentialsResponse
 	}
 
 	if err := ValidateNCCredentialsPresence(resp.Username, resp.Password); err != nil {
+		if options.skipErrorHandlers {
+			return err
+		}
 		return err
 	}
 
 	if err := ValidateEndpointPresence(resp.Endpoint); err != nil {
+		if options.skipErrorHandlers {
+			return err
+		}
 		return err
 	}
-
-	expiryTime := time.Now().UTC().Add(resp.ExpiresIn)
 
 	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
 		if c.TokensData == nil {
@@ -78,6 +97,8 @@ func (s *NCCredentialsSessionStore) Renew() error {
 		if !ok {
 			data = config.TokenData{}
 		}
+		expiryTime := time.Now().UTC().Add(resp.ExpiresIn)
+
 		data.NCData.Username = resp.Username
 		data.NCData.Password = resp.Password
 		data.NCData.Endpoint = resp.Endpoint
@@ -93,7 +114,7 @@ func (s *NCCredentialsSessionStore) Renew() error {
 }
 
 // HandleError processes errors that occur during session operations.
-// It returns nil if the error was not handled, or the error itself if it was.
+// It returns nil if no handlers are registered, or the error itself after handlers are called.
 func (s *NCCredentialsSessionStore) HandleError(err error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(err)
 	if len(handlers) == 0 {
@@ -108,7 +129,6 @@ func (s *NCCredentialsSessionStore) HandleError(err error) error {
 	return err
 }
 
-// validate performs validation on the NC credentials session
 func (s *NCCredentialsSessionStore) validate() error {
 	cfg, err := s.getConfig()
 	if err != nil {
@@ -127,7 +147,6 @@ func (s *NCCredentialsSessionStore) validate() error {
 		return err
 	}
 
-	// Run external validation if available
 	if s.externalValidator != nil {
 		if err := s.externalValidator(cfg.Username, cfg.Password, cfg.Endpoint); err != nil {
 			return err

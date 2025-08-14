@@ -75,7 +75,7 @@ func ValidateNCCredentialsPresence(username, password string) error {
 // ValidateEndpointPresence checks if the endpoint is valid
 func ValidateEndpointPresence(endpoint string) error {
 	if endpoint == "" {
-		return ErrInvalidEndpoint
+		return ErrMissingEndpoint
 	}
 	return nil
 }

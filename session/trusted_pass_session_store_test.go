@@ -12,15 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// testValidate is a test helper that tests the validation logic of TrustedPassSessionStore
-// without going through the full Renew flow
 func testValidate(store SessionStore) error {
-	// Type assert to access the unexported validate method
 	tpStore, ok := store.(*TrustedPassSessionStore)
 	if !ok {
 		return errors.New("not a TrustedPassSessionStore")
 	}
-	return tpStore.validate()
+	return tpStore.validate(false)
 }
 
 func TestTrustedPassSessionStore_Validate(t *testing.T) {
@@ -111,7 +108,6 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 				tt.externalValidator,
 			)
 
-			// Test validation directly using the test helper
 			err := testValidate(store)
 
 			if tt.wantErr != nil {
@@ -187,6 +183,142 @@ func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
 	}
 }
 
+func TestTrustedPassSessionStore_Renew_ForceRenewal(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	userID := int64(123)
+
+	tests := []struct {
+		name          string
+		tokenData     config.TokenData
+		renewAPICall  TrustedPassRenewalAPICall
+		forceRenewal  bool
+		wantRenewCall bool
+		wantErr       bool
+		wantNewToken  string
+	}{
+		{
+			name: "valid session without force renewal - no renewal",
+			tokenData: config.TokenData{
+				Token:                  "access-token",
+				TrustedPassToken:       "valid-token",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				t.Fatal("Renew API should not be called for valid session without ForceRenewal")
+				return nil, nil
+			},
+			forceRenewal:  false,
+			wantRenewCall: false,
+			wantErr:       false,
+		},
+		{
+			name: "valid session with force renewal - triggers renewal",
+			tokenData: config.TokenData{
+				Token:                  "access-token",
+				TrustedPassToken:       "valid-token",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				assert.Equal(t, "access-token", token)
+				return &TrustedPassAccessTokenResponse{
+					Token:   "new-trusted-pass-token",
+					OwnerID: "nordvpn",
+				}, nil
+			},
+			forceRenewal:  true,
+			wantRenewCall: true,
+			wantErr:       false,
+			wantNewToken:  "new-trusted-pass-token",
+		},
+		{
+			name: "expired session without force renewal - triggers renewal",
+			tokenData: config.TokenData{
+				Token:                  "access-token",
+				TrustedPassToken:       "valid-token",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().UTC().Add(-time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				return &TrustedPassAccessTokenResponse{
+					Token:   "renewed-token",
+					OwnerID: "nordvpn",
+				}, nil
+			},
+			forceRenewal:  false,
+			wantRenewCall: true,
+			wantErr:       false,
+			wantNewToken:  "renewed-token",
+		},
+		{
+			name: "force renewal with API error",
+			tokenData: config.TokenData{
+				Token:                  "access-token",
+				TrustedPassToken:       "valid-token",
+				TrustedPassOwnerID:     "nordvpn",
+				TrustedPassTokenExpiry: time.Now().UTC().Add(time.Hour).Format(internal.ServerDateFormat),
+				IsOAuth:                true,
+			},
+			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
+				return nil, errors.New("API error")
+			},
+			forceRenewal:  true,
+			wantRenewCall: true,
+			wantErr:       false, // Error is handled internally
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.Config{
+				AutoConnectData: config.AutoConnectData{ID: userID},
+				TokensData:      map[int64]config.TokenData{userID: tt.tokenData},
+			}
+
+			cfgManager := mock.NewMockConfigManager()
+			cfgManager.Cfg = &cfg
+			errRegistry := internal.NewErrorHandlingRegistry[error]()
+
+			renewCalled := false
+			var renewAPICall TrustedPassRenewalAPICall
+			if tt.renewAPICall != nil {
+				originalCall := tt.renewAPICall
+				renewAPICall = func(token string) (*TrustedPassAccessTokenResponse, error) {
+					renewCalled = true
+					return originalCall(token)
+				}
+			}
+
+			store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+
+			var err error
+			if tt.forceRenewal {
+				err = store.Renew(ForceRenewal())
+			} else {
+				err = store.Renew()
+			}
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.wantRenewCall, renewCalled, "Renewal API call expectation mismatch")
+
+			if tt.wantNewToken != "" {
+				savedData := cfg.TokensData[userID]
+				assert.Equal(t, tt.wantNewToken, savedData.TrustedPassToken)
+			}
+		})
+	}
+}
+
 func TestTrustedPassSessionStore_ValidateWithInvalidExpiryFormat(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -236,12 +368,12 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 				IsOAuth:                true,
 			},
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
-				assert.Fail(t, "Renew API should not be called for valid session")
+				t.Fatal("Renew API should not be called for valid session")
 				return nil, nil
 			},
 			wantErr: false,
 			checkRenewCall: func(t *testing.T, renewCalled bool) {
-				assert.False(t, renewCalled, "Renew API should not be called for valid session")
+				assert.False(t, renewCalled)
 			},
 		},
 		{
@@ -260,7 +392,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			},
 			wantErr: false,
 			checkRenewCall: func(t *testing.T, renewCalled bool) {
-				assert.True(t, renewCalled, "Renew API should be called for invalid session")
+				assert.True(t, renewCalled)
 			},
 		},
 		{
@@ -272,7 +404,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 				IsOAuth:                true,
 			},
 			renewAPICall: nil,
-			wantErr:      false, // HandleError returns nil when no handlers are registered
+			wantErr:      false,
 		},
 		{
 			name: "renewal API returns nil response",
@@ -285,7 +417,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
 				return nil, nil
 			},
-			wantErr: false, // HandleError returns nil when no handlers are registered
+			wantErr: false,
 		},
 		{
 			name: "renewal API returns empty token",
@@ -301,7 +433,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 					OwnerID: "nordvpn",
 				}, nil
 			},
-			wantErr: false, // HandleError returns nil when no handlers are registered
+			wantErr: false,
 		},
 		{
 			name: "renewal API error",
@@ -314,7 +446,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
 				return nil, errors.New("API error")
 			},
-			wantErr: false, // HandleError returns nil when no handlers are registered
+			wantErr: false,
 		},
 	}
 
