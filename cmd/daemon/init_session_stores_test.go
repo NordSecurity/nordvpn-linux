@@ -222,15 +222,6 @@ func setupTestConfig() *config.Config {
 	}
 }
 
-func setupExpiredTokenConfig() *config.Config {
-	cfg := setupTestConfig()
-	uid := cfg.AutoConnectData.ID
-	data := cfg.TokensData[uid]
-	data.TokenExpiry = time.Now().Add(-24 * time.Hour).Format(internal.ServerDateFormat)
-	cfg.TokensData[uid] = data
-	return cfg
-}
-
 func TestNewSessionStoresBuilder(t *testing.T) {
 	category.Set(t, category.Unit)
 
