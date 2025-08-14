@@ -166,14 +166,16 @@ func (b *SessionStoresBuilder) registerVPNCredsHandlers(logoutHandler *daemon.Lo
 				case errors.Is(err, core.ErrNotFound):
 					return events.ReasonCorruptedVPNCredsAuthMissing
 				default:
-					return events.ReasonCorruptedVPNCreds
+					return events.ReasonNone
 				}
 			}
 
+			// Access token renewal succeeded
 			if errors.Is(reason, session.ErrMissingVPNCredsResponse) {
-				return events.ReasonNone
+				return events.ReasonCorruptedVPNCreds
 			}
 
+			// For missing credentials or missing nordlynx key, return corrupted VPN creds
 			return events.ReasonCorruptedVPNCreds
 		}
 

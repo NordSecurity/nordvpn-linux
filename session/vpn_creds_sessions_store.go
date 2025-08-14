@@ -156,7 +156,7 @@ func (s *VPNCredentialsSessionStore) getConfig() (vpnCredentialsConfig, error) {
 
 	data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
 	if !ok {
-		return vpnCredentialsConfig{}, errors.New("non existing data")
+		return vpnCredentialsConfig{}, errors.New("non existing data for vpn cred session store")
 	}
 
 	return vpnCredentialsConfig{

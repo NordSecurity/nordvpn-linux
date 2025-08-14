@@ -50,13 +50,8 @@ func (s *NCCredentialsSessionStore) Renew(opts ...RenewalOption) error {
 	}
 
 	if !options.forceRenewal {
-		if err := s.validate(false); err == nil {
+		if err := s.validate(); err == nil {
 			return nil
-		}
-	} else {
-		// With force renewal, we still need to validate but skip expiry
-		if err := s.validate(true); err != nil {
-			return err
 		}
 	}
 
@@ -134,16 +129,14 @@ func (s *NCCredentialsSessionStore) HandleError(err error) error {
 	return err
 }
 
-func (s *NCCredentialsSessionStore) validate(skipExpiry bool) error {
+func (s *NCCredentialsSessionStore) validate() error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
 	}
 
-	if !skipExpiry {
-		if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
-			return err
-		}
+	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
+		return err
 	}
 
 	if err := ValidateNCCredentialsPresence(cfg.Username, cfg.Password); err != nil {
